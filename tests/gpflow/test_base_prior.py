@@ -109,6 +109,9 @@ class DummyModel(gpflow.models.BayesianModel):
 
         self.theta = gpflow.Parameter(self.value, prior=prior, transform=transform)
 
+    def training_loss(self):
+        return - self.log_likelihood()
+
     def log_likelihood(self):
         return (self.theta + 5) ** 2
 
@@ -117,7 +120,7 @@ def test_map_invariance_to_transform():
     m1 = DummyModel(with_transform=True)
     m2 = DummyModel(with_transform=False)
     assert np.allclose(
-        m1.log_marginal_likelihood().numpy(), m2.log_marginal_likelihood().numpy()
+        m1.log_posterior_density().numpy(), m2.log_posterior_density().numpy()
     ), "MAP objective should not be affected by a transform"
 
 

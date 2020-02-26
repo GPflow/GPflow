@@ -47,11 +47,9 @@ def test_sgpr_qu():
         (X, Y), kernel=gpflow.kernels.SquaredExponential(), inducing_variable=Z
     )
 
-    @tf.function
-    def closure():
-        return -model.log_marginal_likelihood()
-
-    gpflow.optimizers.Scipy().minimize(closure, variables=model.trainable_variables)
+    gpflow.optimizers.Scipy().minimize(
+        model.training_loss, variables=model.trainable_variables
+    )
 
     qu_mean, qu_cov = model.compute_qu()
     f_at_Z_mean, f_at_Z_cov = model.predict_f(model.inducing_variable.Z, full_cov=True)

@@ -41,15 +41,10 @@ class Data:
 )
 def test_gplvm_with_kernels(kernel):
     m = gpflow.models.GPLVM(Data.Y, Data.Q, kernel=kernel)
-    log_likelihood_initial = m.log_likelihood()
+    lml_initial = m.log_marginal_likelihood()
     opt = gpflow.optimizers.Scipy()
-
-    @tf.function
-    def objective_closure():
-        return -m.log_marginal_likelihood()
-
-    opt.minimize(objective_closure, m.trainable_variables, options=dict(maxiter=2))
-    assert m.log_likelihood() > log_likelihood_initial
+    opt.minimize(m.training_loss, m.trainable_variables, options=dict(maxiter=2))
+    assert m.log_marginal_likelihood() > lml_initial
 
 
 def test_bayesian_gplvm_1d():
@@ -64,15 +59,11 @@ def test_bayesian_gplvm_1d():
         inducing_variable=inducing_variable,
     )
     assert len(m.inducing_variable) == Data.M
-    log_likelihood_initial = m.log_likelihood()
+
+    elbo_initial = m.elbo()
     opt = gpflow.optimizers.Scipy()
-
-    @tf.function
-    def objective_closure():
-        return -m.log_marginal_likelihood()
-
-    opt.minimize(objective_closure, m.trainable_variables, options=dict(maxiter=2))
-    assert m.log_likelihood() > log_likelihood_initial
+    opt.minimize(m.training_loss, m.trainable_variables, options=dict(maxiter=2))
+    assert m.elbo() > elbo_initial
 
 
 def test_bayesian_gplvm_2d():
@@ -84,15 +75,10 @@ def test_bayesian_gplvm_2d():
         Data.Y, x_data_mean, np.ones((Data.N, Q)), kernel, num_inducing_variables=Data.M
     )
 
-    log_likelihood_initial = m.log_likelihood()
+    elbo_initial = m.elbo()
     opt = gpflow.optimizers.Scipy()
-
-    @tf.function
-    def objective_closure():
-        return -m.log_marginal_likelihood()
-
-    opt.minimize(objective_closure, m.trainable_variables, options=dict(maxiter=2))
-    assert m.log_likelihood() > log_likelihood_initial
+    opt.minimize(m.training_loss, m.trainable_variables, options=dict(maxiter=2))
+    assert m.elbo() > elbo_initial
 
     # test prediction
     Xtest = Data.rng.randn(10, Q)

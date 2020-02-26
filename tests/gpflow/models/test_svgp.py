@@ -89,8 +89,7 @@ def test_svgp_white():
     )
     model_2.q_mu.assign(default_datum_svgp.qmean)
     assert_allclose(
-        model_1.log_likelihood(default_datum_svgp.data),
-        model_2.log_likelihood(default_datum_svgp.data),
+        model_1.elbo(default_datum_svgp.data), model_2.elbo(default_datum_svgp.data)
     )
 
 
@@ -128,8 +127,7 @@ def test_svgp_non_white():
     )
     model_2.q_mu.assign(default_datum_svgp.qmean)
     assert_allclose(
-        model_1.log_likelihood(default_datum_svgp.data),
-        model_2.log_likelihood(default_datum_svgp.data),
+        model_1.elbo(default_datum_svgp.data), model_2.elbo(default_datum_svgp.data)
     )
 
 
@@ -183,7 +181,7 @@ def test_stochastic_gradients(indices_1, indices_2, num_data1, num_data2, max_it
         data = X[indices], Y[indices]
         for _ in range(max_iter):
             with tf.GradientTape() as tape:
-                loss = model.log_likelihood(data)
+                loss = model.training_loss(data)
                 grads = tape.gradient(loss, model.trainable_variables)
             opt.apply_gradients(zip(grads, model.trainable_variables))
         return model

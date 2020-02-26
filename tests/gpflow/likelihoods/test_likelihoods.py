@@ -523,7 +523,7 @@ def test_switched_likelihood_regression_valid_num_latent(num_latent):
         num_latent=num_latent,
     )
     if num_latent == 1:
-        m.log_likelihood(data)
+        _ = m.training_loss(data)
     else:
         with pytest.raises(tf.errors.InvalidArgumentError):
-            m.log_likelihood(data)
+            _ = m.training_loss(data)
