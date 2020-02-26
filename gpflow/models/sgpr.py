@@ -41,12 +41,14 @@ class SGPRBase(GPModel):
                  noise_variance: float = 1.0,
                  ):
         """
-        X is a data matrix, size [N, D]
-        Y is a data matrix, size [N, R]
-        Z is a matrix of pseudo inputs, size [M, D]
-        kernel, mean_function are appropriate GPflow objects
+        `data`:  a tuple of (X, Y), where the inputs X has shape [N, D]
+            and the outputs Y has shape [N, R].
+        `inducing_variable`:  an InducingPoints instance or a matrix of
+            the pseudo inputs Z, of shape [M, D].
+        `kernel`, `mean_function` are appropriate GPflow objects
 
-        This method only works with a Gaussian likelihood.
+        This method only works with a Gaussian likelihood, its variance is
+        initialized to `noise_variance`.
         """
         likelihood = likelihoods.Gaussian(noise_variance)
         x_data, y_data = data
