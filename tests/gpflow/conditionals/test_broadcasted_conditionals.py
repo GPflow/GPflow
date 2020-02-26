@@ -35,7 +35,11 @@ from gpflow.conditionals.util import mix_latent_gp, rollaxis_left, rollaxis_righ
 
 class Data:
     S1, S2, N, M = 7, 6, 4, 3
-    Dx, Dy, L = 2, 5, 4  # input dim, output dim, observation dimensionality i.e. num latent GPs
+    Dx, Dy, L = (
+        2,
+        5,
+        4,
+    )  # input dim, output dim, observation dimensionality i.e. num latent GPs
     W = np.random.randn(Dy, L)  # mixing matrix
 
     SX = np.random.randn(S1 * S2, N, Dx)
@@ -66,10 +70,12 @@ def test_conditional_broadcasting(full_cov, white, conditional_type):
         # variational params have different output dim in this case
         q_mu = np.random.randn(Data.M, Data.L)
         q_sqrt = np.tril(np.random.randn(Data.L, Data.M, Data.M), -1)
-        inducing_variable = mf.SharedIndependentInducingVariables(gpflow.inducing_variables.InducingPoints(Data.Z))
+        inducing_variable = mf.SharedIndependentInducingVariables(
+            gpflow.inducing_variables.InducingPoints(Data.Z)
+        )
         kernel = mk.LinearCoregionalization(
             kernels=[gpflow.kernels.Matern52(lengthscale=0.5) for _ in range(Data.L)],
-            W=Data.W
+            W=Data.W,
         )
     else:
         raise (NotImplementedError)
@@ -80,40 +86,56 @@ def test_conditional_broadcasting(full_cov, white, conditional_type):
     num_samples = 5
 
     def sample_conditional_fn(X):
-        return sample_conditional(X,
-                                  inducing_variable,
-                                  kernel,
-                                  tf.convert_to_tensor(q_mu),
-                                  q_sqrt=tf.convert_to_tensor(q_sqrt),
-                                  white=white,
-                                  full_cov=full_cov,
-                                  num_samples=num_samples)
+        return sample_conditional(
+            X,
+            inducing_variable,
+            kernel,
+            tf.convert_to_tensor(q_mu),
+            q_sqrt=tf.convert_to_tensor(q_sqrt),
+            white=white,
+            full_cov=full_cov,
+            num_samples=num_samples,
+        )
 
     samples = np.array([sample_conditional_fn(X)[0] for X in Data.SX])
     means = np.array([sample_conditional_fn(X)[1] for X in Data.SX])
     variables = np.array([sample_conditional_fn(X)[2] for X in Data.SX])
 
-    samples_S12, means_S12, vars_S12 = \
-        sample_conditional(Data.SX, inducing_variable, kernel,
-                           tf.convert_to_tensor(q_mu),
-                           q_sqrt=tf.convert_to_tensor(q_sqrt),
-                           white=white, full_cov=full_cov,
-                           num_samples=num_samples)
+    samples_S12, means_S12, vars_S12 = sample_conditional(
+        Data.SX,
+        inducing_variable,
+        kernel,
+        tf.convert_to_tensor(q_mu),
+        q_sqrt=tf.convert_to_tensor(q_sqrt),
+        white=white,
+        full_cov=full_cov,
+        num_samples=num_samples,
+    )
 
-    samples_S1_S2, means_S1_S2, vars_S1_S2 = \
-        sample_conditional(Data.S1_S2_X, inducing_variable, kernel,
-                           tf.convert_to_tensor(q_mu),
-                           q_sqrt=tf.convert_to_tensor(q_sqrt),
-                           white=white, full_cov=full_cov,
-                           num_samples=num_samples)
+    samples_S1_S2, means_S1_S2, vars_S1_S2 = sample_conditional(
+        Data.S1_S2_X,
+        inducing_variable,
+        kernel,
+        tf.convert_to_tensor(q_mu),
+        q_sqrt=tf.convert_to_tensor(q_sqrt),
+        white=white,
+        full_cov=full_cov,
+        num_samples=num_samples,
+    )
 
     assert_allclose(samples_S12.shape, samples.shape)
-    assert_allclose(samples_S1_S2.shape, [Data.S1, Data.S2, num_samples, Data.N, Data.Dy])
+    assert_allclose(
+        samples_S1_S2.shape, [Data.S1, Data.S2, num_samples, Data.N, Data.Dy]
+    )
     assert_allclose(means_S12, means)
     assert_allclose(vars_S12, variables)
-    assert_allclose(means_S1_S2.numpy().reshape(Data.S1 * Data.S2, Data.N, Data.Dy), means)
+    assert_allclose(
+        means_S1_S2.numpy().reshape(Data.S1 * Data.S2, Data.N, Data.Dy), means
+    )
     if full_cov:
-        vars_s1_s2 = vars_S1_S2.numpy().reshape(Data.S1 * Data.S2, Data.Dy, Data.N, Data.N)
+        vars_s1_s2 = vars_S1_S2.numpy().reshape(
+            Data.S1 * Data.S2, Data.Dy, Data.N, Data.N
+        )
         assert_allclose(vars_s1_s2, variables)
     else:
         vars_s1_s2 = vars_S1_S2.numpy().reshape(Data.S1 * Data.S2, Data.N, Data.Dy)
@@ -138,7 +160,9 @@ def test_broadcasting_mix_latent_gps(full_cov, full_output_cov):
     g_var_diag = g_sqrt_diag @ np.transpose(g_sqrt_diag, [0, 1, 3, 2])  # [L, S, N, N]
     g_var = np.zeros([S, N, L, N, L])
     for l in range(L):
-        g_var[:, :, l, :, l] = g_var_diag[l, :, :, :]  # replace diagonal elements by g_var_diag
+        g_var[:, :, l, :, l] = g_var_diag[
+            l, :, :, :
+        ]  # replace diagonal elements by g_var_diag
 
     # reference numpy implementation for mean
     f_mu_ref = g_mu @ W.T  # [S, N, P]
@@ -158,21 +182,27 @@ def test_broadcasting_mix_latent_gps(full_cov, full_output_cov):
         tf.convert_to_tensor(g_mu),
         tf.convert_to_tensor(g_var_diag),
         full_cov,
-        full_output_cov
+        full_output_cov,
     )
 
     # we strip down f_var_ref to the elements we need
     if not full_output_cov and not full_cov:
-        f_var_ref = np.array([f_var_ref[:, :, p, :, p] for p in range(P)])  # [P, S, N, N]
+        f_var_ref = np.array(
+            [f_var_ref[:, :, p, :, p] for p in range(P)]
+        )  # [P, S, N, N]
         f_var_ref = np.array([f_var_ref[:, :, n, n] for n in range(N)])  # [N, P, S]
         f_var_ref = np.transpose(f_var_ref, [2, 0, 1])  # [S, N, P]
 
     elif not full_output_cov and full_cov:
-        f_var_ref = np.array([f_var_ref[:, :, p, :, p] for p in range(P)])  # [P, S, N, N]
+        f_var_ref = np.array(
+            [f_var_ref[:, :, p, :, p] for p in range(P)]
+        )  # [P, S, N, N]
         f_var_ref = np.transpose(f_var_ref, [1, 0, 2, 3])  # [S, P, N, N]
 
     elif full_output_cov and not full_cov:
-        f_var_ref = np.array([f_var_ref[:, n, :, n, :] for n in range(N)])  # [N, S, P, P]
+        f_var_ref = np.array(
+            [f_var_ref[:, n, :, n, :] for n in range(N)]
+        )  # [N, S, P, P]
         f_var_ref = np.transpose(f_var_ref, [1, 0, 2, 3])  # [S, N, P, P]
 
     else:

@@ -30,14 +30,18 @@ def test_gpr_objective_equivalence():
     l_value = Datum.lengthscale
 
     l_variable = tf.Variable(l_value, dtype=gpflow.default_float(), trainable=True)
-    m1 = gpflow.models.GPR(data, kernel=gpflow.kernels.SquaredExponential(lengthscale=l_value))
+    m1 = gpflow.models.GPR(
+        data, kernel=gpflow.kernels.SquaredExponential(lengthscale=l_value)
+    )
     m2 = gpflow.models.GPR(data, kernel=gpflow.kernels.SquaredExponential())
     m2.kernel.lengthscale = gpflow.Parameter(l_variable, transform=None)
-    assert np.allclose(m1.kernel.lengthscale.numpy(), m2.kernel.lengthscale.numpy())  # consistency check
+    assert np.allclose(
+        m1.kernel.lengthscale.numpy(), m2.kernel.lengthscale.numpy()
+    )  # consistency check
 
-    assert np.allclose(m1.log_marginal_likelihood().numpy(),
-                       m2.log_marginal_likelihood().numpy()), \
-                       "MLE objective should not depend on Parameter transform"
+    assert np.allclose(
+        m1.log_marginal_likelihood().numpy(), m2.log_marginal_likelihood().numpy()
+    ), "MLE objective should not depend on Parameter transform"
 
 
 def test_log_prior_with_no_prior():
@@ -56,10 +60,11 @@ def test_log_prior_for_uniform_prior():
     """
 
     uniform_prior = Uniform(low=np.float64(0), high=np.float64(100))
-    param = gpflow.Parameter(1., transform=gpflow.utilities.positive(),
-                             prior=uniform_prior)
+    param = gpflow.Parameter(
+        1.0, transform=gpflow.utilities.positive(), prior=uniform_prior
+    )
     low_value = param.log_prior().numpy()
-    param.assign(10.)
+    param.assign(10.0)
     high_value = param.log_prior().numpy()
 
     assert np.isclose(low_value, high_value)
@@ -71,12 +76,15 @@ def test_log_prior_on_unconstrained():
     prior in the constrained space that scales as 1/value.
     """
 
-    initial_value = 1.
-    scale_factor = 10.
+    initial_value = 1.0
+    scale_factor = 10.0
     uniform_prior = Uniform(low=np.float64(0), high=np.float64(100))
-    param = gpflow.Parameter(initial_value, transform=Exp(),
-                             prior=uniform_prior,
-                             prior_on=PriorOn.UNCONSTRAINED)
+    param = gpflow.Parameter(
+        initial_value,
+        transform=Exp(),
+        prior=uniform_prior,
+        prior_on=PriorOn.UNCONSTRAINED,
+    )
     low_value = param.log_prior().numpy()
     param.assign(scale_factor * initial_value)
     high_value = param.log_prior().numpy()
@@ -102,15 +110,15 @@ class DummyModel(gpflow.models.BayesianModel):
         self.theta = gpflow.Parameter(self.value, prior=prior, transform=transform)
 
     def log_likelihood(self):
-        return (self.theta + 5)**2
+        return (self.theta + 5) ** 2
 
 
 def test_map_invariance_to_transform():
     m1 = DummyModel(with_transform=True)
     m2 = DummyModel(with_transform=False)
-    assert np.allclose(m1.log_marginal_likelihood().numpy(),
-                       m2.log_marginal_likelihood().numpy()), \
-                       "MAP objective should not be affected by a transform"
+    assert np.allclose(
+        m1.log_marginal_likelihood().numpy(), m2.log_marginal_likelihood().numpy()
+    ), "MAP objective should not be affected by a transform"
 
 
 def get_gpmc_model_params():
@@ -121,11 +129,12 @@ def get_gpmc_model_params():
 
 
 @pytest.mark.parametrize(
-    'model_class, args',
+    "model_class, args",
     [
         (gpflow.models.GPMC, get_gpmc_model_params()),
-        #(gpflow.models.SGPMC, get_SGPMC_model_params()) # Fails due to inducing_variable=None bug
-    ])
+        # (gpflow.models.SGPMC, get_SGPMC_model_params()) # Fails due to inducing_variable=None bug
+    ],
+)
 def test_v_prior_dtypes(model_class, args):
     with gpflow.config.as_context():
         set_default_float(np.float32)

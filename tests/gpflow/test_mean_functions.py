@@ -19,7 +19,14 @@ from numpy.testing import assert_allclose
 import gpflow
 from gpflow.config import default_int
 from gpflow.inducing_variables import InducingPoints
-from gpflow.mean_functions import Additive, Constant, Linear, Product, SwitchedMeanFunction, Zero
+from gpflow.mean_functions import (
+    Additive,
+    Constant,
+    Linear,
+    Product,
+    SwitchedMeanFunction,
+    Zero,
+)
 
 rng = np.random.RandomState(99021)
 
@@ -31,14 +38,17 @@ class Datum:
 
 _mean_functions = [
     Zero(),
-    Linear(A=rng.randn(Datum.input_dim, Datum.output_dim), b=rng.randn(Datum.output_dim, 1).reshape(-1)),
-    Constant(c=rng.randn(Datum.output_dim, 1).reshape(-1))
+    Linear(
+        A=rng.randn(Datum.input_dim, Datum.output_dim),
+        b=rng.randn(Datum.output_dim, 1).reshape(-1),
+    ),
+    Constant(c=rng.randn(Datum.output_dim, 1).reshape(-1)),
 ]
 
 
-@pytest.mark.parametrize('mean_function_1', _mean_functions)
-@pytest.mark.parametrize('mean_function_2', _mean_functions)
-@pytest.mark.parametrize('operation', ['+', 'x'])
+@pytest.mark.parametrize("mean_function_1", _mean_functions)
+@pytest.mark.parametrize("mean_function_2", _mean_functions)
+@pytest.mark.parametrize("operation", ["+", "x"])
 def test_mean_functions_output_shape(mean_function_1, mean_function_2, operation):
     """
     Test the output shape for basic and compositional mean functions, also
@@ -50,9 +60,9 @@ def test_mean_functions_output_shape(mean_function_1, mean_function_2, operation
     assert Y.shape in [(Datum.N, Datum.output_dim), (Datum.N, 1)]
 
     # composed mean function output shape check
-    if operation == '+':
+    if operation == "+":
         mean_composed = mean_function_1 + mean_function_2
-    elif operation == 'x':
+    elif operation == "x":
         mean_composed = mean_function_1 * mean_function_2
     else:
         raise (NotImplementedError)
@@ -61,14 +71,14 @@ def test_mean_functions_output_shape(mean_function_1, mean_function_2, operation
     assert Y_composed.shape in [(Datum.N, Datum.output_dim), (Datum.N, 1)]
 
 
-@pytest.mark.parametrize('mean_function_1', _mean_functions)
-@pytest.mark.parametrize('mean_function_2', _mean_functions)
-@pytest.mark.parametrize('operation', ['+', 'x'])
+@pytest.mark.parametrize("mean_function_1", _mean_functions)
+@pytest.mark.parametrize("mean_function_2", _mean_functions)
+@pytest.mark.parametrize("operation", ["+", "x"])
 def test_mean_functions_composite_type(mean_function_1, mean_function_2, operation):
-    if operation == '+':
+    if operation == "+":
         mean_composed = mean_function_1 + mean_function_2
         assert isinstance(mean_composed, Additive)
-    elif operation == 'x':
+    elif operation == "x":
         mean_composed = mean_function_1 * mean_function_2
         assert isinstance(mean_composed, Product)
     else:
@@ -76,23 +86,32 @@ def test_mean_functions_composite_type(mean_function_1, mean_function_2, operati
 
 
 _linear_functions = [
-    Linear(A=rng.randn(Datum.input_dim, Datum.output_dim), b=rng.randn(Datum.output_dim, 1).reshape(-1))
+    Linear(
+        A=rng.randn(Datum.input_dim, Datum.output_dim),
+        b=rng.randn(Datum.output_dim, 1).reshape(-1),
+    )
     for _ in range(3)
 ]
 
 # Append inverse of first Linear mean function in _linear_functions
-_linear_functions.append(Linear(A=-1. * _linear_functions[0].A, b=-1. * _linear_functions[0].b))
+_linear_functions.append(
+    Linear(A=-1.0 * _linear_functions[0].A, b=-1.0 * _linear_functions[0].b)
+)
 
-_constant_functions = [Constant(c=rng.randn(Datum.output_dim, 1).reshape(-1)) for _ in range(3)]
+_constant_functions = [
+    Constant(c=rng.randn(Datum.output_dim, 1).reshape(-1)) for _ in range(3)
+]
 # Append inverse of first Constant mean function in _constant_functions
-_constant_functions.append(Constant(c=-1. * _constant_functions[0].c))
+_constant_functions.append(Constant(c=-1.0 * _constant_functions[0].c))
 
 
 def _create_GPR_model_with_bias(X, Y, mean_function):
-    return gpflow.models.GPR((X, Y), mean_function=mean_function, kernel=gpflow.kernels.Bias(Datum.input_dim))
+    return gpflow.models.GPR(
+        (X, Y), mean_function=mean_function, kernel=gpflow.kernels.Bias(Datum.input_dim)
+    )
 
 
-@pytest.mark.parametrize('mean_functions', [_linear_functions, _constant_functions])
+@pytest.mark.parametrize("mean_functions", [_linear_functions, _constant_functions])
 def test_mean_functions_distributive_property(mean_functions):
     """
     Tests that distributive property of addition and multiplication holds for mean functions
@@ -114,7 +133,7 @@ def test_mean_functions_distributive_property(mean_functions):
     assert_allclose(var_lhs, var_rhs)
 
 
-@pytest.mark.parametrize('mean_functions', [_linear_functions, _constant_functions])
+@pytest.mark.parametrize("mean_functions", [_linear_functions, _constant_functions])
 def test_mean_functions_A_minus_A_equals_zero(mean_functions):
     """
     Tests that the addition the inverse of a mean function to itself is equivalent to having a
@@ -136,7 +155,7 @@ def test_mean_functions_A_minus_A_equals_zero(mean_functions):
     assert_allclose(var_lhs, var_rhs)
 
 
-@pytest.mark.parametrize('mean_functions', [_linear_functions])
+@pytest.mark.parametrize("mean_functions", [_linear_functions])
 def test_linear_mean_functions_associative_property(mean_functions):
     """
     Tests that associative property of addition holds for linear mean functions:
@@ -163,7 +182,7 @@ def test_linear_mean_functions_associative_property(mean_functions):
     assert_allclose(var_b, var_rhs)
 
 
-@pytest.mark.parametrize('N, D', [[10, 3]])
+@pytest.mark.parametrize("N, D", [[10, 3]])
 def test_switched_mean_function(N, D):
     """
     Test for the SwitchedMeanFunction.
@@ -172,7 +191,7 @@ def test_switched_mean_function(N, D):
     zeros, ones = Constant(np.zeros(1)), Constant(np.ones(1))
     switched_mean = SwitchedMeanFunction([zeros, ones])
 
-    np_list = np.array([0., 1.])
+    np_list = np.array([0.0, 1.0])
     result_ref = (np_list[X[:, D].astype(default_int())]).reshape(-1, 1)
     result = switched_mean(X)
 
@@ -185,7 +204,7 @@ def test_bug_277_regression():
     """
     model1, model2 = Linear(), Linear()
     assert model1.b.numpy() == model2.b.numpy()
-    model2.b.assign([1.])
+    model2.b.assign([1.0])
     assert not model1.b.numpy() == model2.b.numpy()
 
 
@@ -197,11 +216,11 @@ _model_classes = [
     gpflow.models.SVGP,
     gpflow.models.VGP,
     gpflow.models.GPMC,
-    gpflow.models.SGPMC
+    gpflow.models.SGPMC,
 ]
 
 
-@pytest.mark.parametrize('model_class', _model_classes)
+@pytest.mark.parametrize("model_class", _model_classes)
 def test_models_with_mean_functions_changes(model_class):
     """
     Simply check that all models have a higher prediction with a constant mean
@@ -221,48 +240,64 @@ def test_models_with_mean_functions_changes(model_class):
 
     if model_class in [gpflow.models.GPR]:
         model_zero_mean = model_class(data, kernel=kernel, mean_function=zero_mean)
-        model_non_zero_mean = model_class(data, kernel=kernel, mean_function=non_zero_mean)
+        model_non_zero_mean = model_class(
+            data, kernel=kernel, mean_function=non_zero_mean
+        )
     elif model_class in [gpflow.models.VGP]:
-        model_zero_mean = model_class(data, likelihood=likelihood, kernel=kernel, mean_function=zero_mean)
-        model_non_zero_mean = model_class(data, likelihood=likelihood, kernel=kernel, mean_function=non_zero_mean)
+        model_zero_mean = model_class(
+            data, likelihood=likelihood, kernel=kernel, mean_function=zero_mean
+        )
+        model_non_zero_mean = model_class(
+            data, likelihood=likelihood, kernel=kernel, mean_function=non_zero_mean
+        )
     elif model_class in [gpflow.models.SVGP]:
-        model_zero_mean = model_class(kernel=kernel,
-                                      likelihood=likelihood,
-                                      inducing_variable=inducing_variable,
-                                      mean_function=zero_mean)
-        model_non_zero_mean = model_class(kernel=kernel,
-                                          likelihood=likelihood,
-                                          inducing_variable=inducing_variable,
-                                          mean_function=non_zero_mean)
+        model_zero_mean = model_class(
+            kernel=kernel,
+            likelihood=likelihood,
+            inducing_variable=inducing_variable,
+            mean_function=zero_mean,
+        )
+        model_non_zero_mean = model_class(
+            kernel=kernel,
+            likelihood=likelihood,
+            inducing_variable=inducing_variable,
+            mean_function=non_zero_mean,
+        )
     elif model_class in [gpflow.models.SGPR, gpflow.models.GPRFITC]:
-        model_zero_mean = model_class(data,
-                                      kernel=kernel,
-                                      inducing_variable=inducing_variable,
-                                      mean_function=zero_mean)
-        model_non_zero_mean = model_class(data,
-                                          kernel=kernel,
-                                          inducing_variable=inducing_variable,
-                                          mean_function=non_zero_mean)
+        model_zero_mean = model_class(
+            data,
+            kernel=kernel,
+            inducing_variable=inducing_variable,
+            mean_function=zero_mean,
+        )
+        model_non_zero_mean = model_class(
+            data,
+            kernel=kernel,
+            inducing_variable=inducing_variable,
+            mean_function=non_zero_mean,
+        )
     elif model_class in [gpflow.models.SGPMC]:
-        model_zero_mean = model_class(data,
-                                      kernel=kernel,
-                                      likelihood=likelihood,
-                                      inducing_variable=inducing_variable,
-                                      mean_function=zero_mean)
-        model_non_zero_mean = model_class(data,
-                                          kernel=kernel,
-                                          likelihood=likelihood,
-                                          inducing_variable=inducing_variable,
-                                          mean_function=non_zero_mean)
+        model_zero_mean = model_class(
+            data,
+            kernel=kernel,
+            likelihood=likelihood,
+            inducing_variable=inducing_variable,
+            mean_function=zero_mean,
+        )
+        model_non_zero_mean = model_class(
+            data,
+            kernel=kernel,
+            likelihood=likelihood,
+            inducing_variable=inducing_variable,
+            mean_function=non_zero_mean,
+        )
     elif model_class in [gpflow.models.GPMC]:
-        model_zero_mean = model_class(data,
-                                      kernel=kernel,
-                                      likelihood=likelihood,
-                                      mean_function=zero_mean)
-        model_non_zero_mean = model_class(data,
-                                          kernel=kernel,
-                                          likelihood=likelihood,
-                                          mean_function=non_zero_mean)
+        model_zero_mean = model_class(
+            data, kernel=kernel, likelihood=likelihood, mean_function=zero_mean
+        )
+        model_non_zero_mean = model_class(
+            data, kernel=kernel, likelihood=likelihood, mean_function=non_zero_mean
+        )
     else:
         raise (NotImplementedError)
 

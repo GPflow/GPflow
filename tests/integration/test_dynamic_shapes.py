@@ -36,8 +36,8 @@ class Datum:
     cdata = (X, Yc)
 
 
-@pytest.mark.parametrize('whiten', [True, False])
-@pytest.mark.parametrize('q_diag', [True, False])
+@pytest.mark.parametrize("whiten", [True, False])
+@pytest.mark.parametrize("q_diag", [True, False])
 def test_svgp(whiten, q_diag):
     model = gpflow.models.SVGP(
         gpflow.kernels.SquaredExponential(),
@@ -52,19 +52,21 @@ def test_svgp(whiten, q_diag):
 
     # test with explicitly unknown shapes:
     tensor_spec = tf.TensorSpec(shape=None, dtype=default_float())
-    elbo = tf.function(
-        model.elbo,
-        input_signature=[(tensor_spec, tensor_spec)],
-    )
+    elbo = tf.function(model.elbo, input_signature=[(tensor_spec, tensor_spec)],)
 
     @tf.function
     def model_closure():
-        return - elbo(Datum.data)
+        return -elbo(Datum.data)
 
     opt = gpflow.optimizers.Scipy()
 
     # simply test whether it runs without erroring...:
-    opt.minimize(model_closure, variables=model.trainable_variables, options=dict(maxiter=3), jit=True)
+    opt.minimize(
+        model_closure,
+        variables=model.trainable_variables,
+        options=dict(maxiter=3),
+        jit=True,
+    )
 
 
 def test_multiclass():
@@ -79,16 +81,18 @@ def test_multiclass():
 
     # test with explicitly unknown shapes:
     tensor_spec = tf.TensorSpec(shape=None, dtype=default_float())
-    elbo = tf.function(
-        model.elbo,
-        input_signature=[(tensor_spec, tensor_spec)],
-    )
+    elbo = tf.function(model.elbo, input_signature=[(tensor_spec, tensor_spec)],)
 
     @tf.function
     def model_closure():
-        return - elbo(Datum.cdata)
+        return -elbo(Datum.cdata)
 
     opt = gpflow.optimizers.Scipy()
 
     # simply test whether it runs without erroring...:
-    opt.minimize(model_closure, variables=model.trainable_variables, options=dict(maxiter=3), jit=True)
+    opt.minimize(
+        model_closure,
+        variables=model.trainable_variables,
+        options=dict(maxiter=3),
+        jit=True,
+    )

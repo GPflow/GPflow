@@ -17,7 +17,12 @@ import gpflow
 import numpy as np
 import pytest
 import tensorflow as tf
-from gpflow.utilities import multiple_assign, set_trainable, leaf_components, read_values
+from gpflow.utilities import (
+    multiple_assign,
+    set_trainable,
+    leaf_components,
+    read_values,
+)
 
 rng = np.random.RandomState(0)
 
@@ -31,20 +36,23 @@ class Data:
     ls = 2.0
     ls_new = 1.5
     var = 1.0
-    var_new = 10.
+    var_new = 10.0
 
 
 # ------------------------------------------
 # Fixtures
 # ------------------------------------------
 
+
 @pytest.fixture
 def model():
     return gpflow.models.SVGP(
-        kernel=gpflow.kernels.SquaredExponential(lengthscale=Data.ls, variance=Data.var),
+        kernel=gpflow.kernels.SquaredExponential(
+            lengthscale=Data.ls, variance=Data.var
+        ),
         likelihood=gpflow.likelihoods.Gaussian(),
         inducing_variable=Data.Z,
-        q_diag=True
+        q_diag=True,
     )
 
 
@@ -53,43 +61,46 @@ def model():
 # ------------------------------------------
 
 model_param_updates = {
-    '.kernel.lengthscale': Data.ls_new,
-    '.likelihood.variance': Data.var_new,
-    '.inducing_variable.Z': np.zeros_like(Data.Z),
-    '.q_sqrt': 0.5 * np.ones((Data.M, 1))
+    ".kernel.lengthscale": Data.ls_new,
+    ".likelihood.variance": Data.var_new,
+    ".inducing_variable.Z": np.zeros_like(Data.Z),
+    ".q_sqrt": 0.5 * np.ones((Data.M, 1)),
 }
 model_wrong_path = [
-    {'kernel.lengthscale': Data.ls_new},
-    {'.Gaussian.variance': Data.var_new},
-    {'inducing_variable.Z': np.zeros_like(Data.Z)},
-    {'.q_std': 0.5 * np.ones((Data.M, 1))}
+    {"kernel.lengthscale": Data.ls_new},
+    {".Gaussian.variance": Data.var_new},
+    {"inducing_variable.Z": np.zeros_like(Data.Z)},
+    {".q_std": 0.5 * np.ones((Data.M, 1))},
 ]
 
 model_wrong_value = [
-    {'.likelihood.variance': np.ones((2, 1), dtype=np.int32)},
-    {'.inducing_variable.Z': [1, 2, 3]}
+    {".likelihood.variance": np.ones((2, 1), dtype=np.int32)},
+    {".inducing_variable.Z": [1, 2, 3]},
 ]
 
 
-@pytest.mark.parametrize('var_update_dict', [model_param_updates])
+@pytest.mark.parametrize("var_update_dict", [model_param_updates])
 def test_multiple_assign_updates_correct_values(model, var_update_dict):
     old_value_dict = leaf_components(model).copy()
     multiple_assign(model, var_update_dict)
     for path, variable in leaf_components(model).items():
         if path in var_update_dict.keys():
-            np.testing.assert_almost_equal(variable.value().numpy(), var_update_dict[path],
-                                           decimal=7)
+            np.testing.assert_almost_equal(
+                variable.value().numpy(), var_update_dict[path], decimal=7
+            )
         else:
-            np.testing.assert_equal(variable.value().numpy(), old_value_dict[path].value().numpy())
+            np.testing.assert_equal(
+                variable.value().numpy(), old_value_dict[path].value().numpy()
+            )
 
 
-@pytest.mark.parametrize('wrong_var_update_dict', model_wrong_path)
+@pytest.mark.parametrize("wrong_var_update_dict", model_wrong_path)
 def test_multiple_assign_fails_with_invalid_path(model, wrong_var_update_dict):
     with pytest.raises(KeyError):
         multiple_assign(model, wrong_var_update_dict)
 
 
-@pytest.mark.parametrize('wrong_var_update_dict', model_wrong_value)
+@pytest.mark.parametrize("wrong_var_update_dict", model_wrong_value)
 def test_multiple_assign_fails_with_invalid_values(model, wrong_var_update_dict):
     with pytest.raises(ValueError):
         multiple_assign(model, wrong_var_update_dict)
@@ -127,8 +138,16 @@ def test_dict_utilities(model):
     #   ".submodule.parameter": <parameter object>,
     #   ".submodule.variable": <variable object>
     # }
-    assert list(params.keys()) == [".submodule.parameter", ".submodule.variable", ".top_parameter"]
-    assert list(params.values()) == [m.submodule.parameter, m.submodule.variable, m.top_parameter]
+    assert list(params.keys()) == [
+        ".submodule.parameter",
+        ".submodule.variable",
+        ".top_parameter",
+    ]
+    assert list(params.values()) == [
+        m.submodule.parameter,
+        m.submodule.variable,
+        m.top_parameter,
+    ]
 
     for k, v in read_values(m).items():
         assert params[k].numpy() == v

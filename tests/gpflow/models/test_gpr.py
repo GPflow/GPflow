@@ -38,7 +38,9 @@ def test_non_trainable_model_objective():
     """
     model = gpflow.models.GPR(
         (Data.X, Data.Y),
-        kernel=gpflow.kernels.SquaredExponential(lengthscale=Data.ls, variance=Data.var),
+        kernel=gpflow.kernels.SquaredExponential(
+            lengthscale=Data.ls, variance=Data.var
+        ),
     )
 
     set_trainable(model, False)
