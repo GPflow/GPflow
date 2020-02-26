@@ -101,3 +101,60 @@ def test_svgp_non_white():
     model_2.q_sqrt.assign(np.array([np.diag(default_datum_svgp.qsqrt[:, 0]), np.diag(default_datum_svgp.qsqrt[:, 1])]))
     model_2.q_mu.assign(default_datum_svgp.qmean)
     assert_allclose(model_1.log_likelihood(default_datum_svgp.data), model_2.log_likelihood(default_datum_svgp.data))
+
+
+def _check_models_close(m1, m2, tolerance=1e-2):
+    m1_params = {p.name: p for p in list(m1.trainable_parameters)}
+    m2_params = {p.name: p for p in list(m2.trainable_parameters)}
+    if set(m2_params.keys()) != set(m2_params.keys()):
+        return False
+    for key in m1_params:
+        p1 = m1_params[key]
+        p2 = m2_params[key]
+        if not np.allclose(p1.read_value(), p2.read_value(), rtol=tolerance, atol=tolerance):
+            return False
+    return True
+
+
+@pytest.mark.parametrize('indices_1, indices_2, num_data1, num_data2, max_iter', [
+    [[0, 1], [1, 0], 2, 2, 3],
+    [[0, 1], [0, 0], 1, 2, 1],
+    [[0, 0], [0, 1], 1, 1, 2],
+])
+def test_stochastic_gradients(indices_1, indices_2, num_data1, num_data2, max_iter):
+    """
+    In response to bug #281, we need to make sure stochastic update
+    happens correctly in tf optimizer mode.
+    To do this compare stochastic updates with deterministic updates
+    that should be equivalent.
+
+    Data term in svgp likelihood is
+    \sum_{i=1^N}E_{q(i)}[\log p(y_i | f_i )
+
+    This sum is then approximated with an unbiased minibatch estimate.
+    In this test we substitute a deterministic analogue of the batchs
+    sampler for which we can predict the effects of different updates.
+    """
+    X, Y = np.atleast_2d(np.array([0., 1.])).T, np.atleast_2d(np.array([-1., 3.])).T
+    Z = np.atleast_2d(np.array([0.5]))
+
+    def get_model(num_data):
+        return gpflow.models.SVGP(kernel=gpflow.kernels.SquaredExponential(),
+                                  num_data=num_data,
+                                  likelihood=gpflow.likelihoods.Gaussian(),
+                                  inducing_variable=Z)
+
+    def training_loop(indices, num_data, max_iter):
+        model = get_model(num_data)
+        opt = tf.optimizers.SGD(learning_rate=.001)
+        data = X[indices], Y[indices]
+        for _ in range(max_iter):
+            with tf.GradientTape() as tape:
+                loss = model.log_likelihood(data)
+                grads = tape.gradient(loss, model.trainable_variables)
+            opt.apply_gradients(zip(grads, model.trainable_variables))
+        return model
+
+    model_1 = training_loop(indices_1, num_data=num_data1, max_iter=max_iter)
+    model_2 = training_loop(indices_2, num_data=num_data2, max_iter=max_iter)
+    assert _check_models_close(model_1, model_2)
