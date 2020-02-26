@@ -32,10 +32,13 @@ class Data:
     X = rng.randn(N, Q)
 
 
-@pytest.mark.parametrize("kernel", [
-    None,  # default kernel: SquaredExponential
-    gpflow.kernels.Periodic(base=gpflow.kernels.SquaredExponential()),
-])
+@pytest.mark.parametrize(
+    "kernel",
+    [
+        None,  # default kernel: SquaredExponential
+        gpflow.kernels.Periodic(base=gpflow.kernels.SquaredExponential()),
+    ],
+)
 def test_gplvm_with_kernels(kernel):
     m = gpflow.models.GPLVM(Data.Y, Data.Q, kernel=kernel)
     log_likelihood_initial = m.log_likelihood()
@@ -43,7 +46,7 @@ def test_gplvm_with_kernels(kernel):
 
     @tf.function
     def objective_closure():
-        return - m.log_marginal_likelihood()
+        return -m.log_marginal_likelihood()
 
     opt.minimize(objective_closure, m.trainable_variables, options=dict(maxiter=2))
     assert m.log_likelihood() > log_likelihood_initial
@@ -53,18 +56,20 @@ def test_bayesian_gplvm_1d():
     Q = 1
     kernel = gpflow.kernels.SquaredExponential()
     inducing_variable = np.linspace(0, 1, Data.M)[:, None]
-    m = gpflow.models.BayesianGPLVM(Data.Y,
-                                    np.zeros((Data.N, Q)),
-                                    np.ones((Data.N, Q)),
-                                    kernel,
-                                    inducing_variable=inducing_variable)
+    m = gpflow.models.BayesianGPLVM(
+        Data.Y,
+        np.zeros((Data.N, Q)),
+        np.ones((Data.N, Q)),
+        kernel,
+        inducing_variable=inducing_variable,
+    )
     assert len(m.inducing_variable) == Data.M
     log_likelihood_initial = m.log_likelihood()
     opt = gpflow.optimizers.Scipy()
 
     @tf.function
     def objective_closure():
-        return - m.log_marginal_likelihood()
+        return -m.log_marginal_likelihood()
 
     opt.minimize(objective_closure, m.trainable_variables, options=dict(maxiter=2))
     assert m.log_likelihood() > log_likelihood_initial
@@ -75,14 +80,16 @@ def test_bayesian_gplvm_2d():
     x_data_mean = pca_reduce(Data.Y, Q)
     kernel = gpflow.kernels.SquaredExponential()
 
-    m = gpflow.models.BayesianGPLVM(Data.Y, x_data_mean, np.ones((Data.N, Q)), kernel, num_inducing_variables=Data.M)
+    m = gpflow.models.BayesianGPLVM(
+        Data.Y, x_data_mean, np.ones((Data.N, Q)), kernel, num_inducing_variables=Data.M
+    )
 
     log_likelihood_initial = m.log_likelihood()
     opt = gpflow.optimizers.Scipy()
 
     @tf.function
     def objective_closure():
-        return - m.log_marginal_likelihood()
+        return -m.log_marginal_likelihood()
 
     opt.minimize(objective_closure, m.trainable_variables, options=dict(maxiter=2))
     assert m.log_likelihood() > log_likelihood_initial
@@ -100,23 +107,26 @@ def test_bayesian_gplvm_2d():
 def test_gplvm_constructor_checks():
     with pytest.raises(ValueError):
         assert Data.X.shape[1] == Data.Q
-        latents_wrong_shape = Data.X[:, :Data.Q - 1]
+        latents_wrong_shape = Data.X[:, : Data.Q - 1]
         gpflow.models.GPLVM(Data.Y, Data.Q, x_data_mean=latents_wrong_shape)
     with pytest.raises(ValueError):
-        observations_wrong_shape = Data.Y[:, :Data.Q - 1]
+        observations_wrong_shape = Data.Y[:, : Data.Q - 1]
         gpflow.models.GPLVM(observations_wrong_shape, Data.Q)
     with pytest.raises(ValueError):
-        observations_wrong_shape = Data.Y[:, :Data.Q - 1]
+        observations_wrong_shape = Data.Y[:, : Data.Q - 1]
         gpflow.models.GPLVM(observations_wrong_shape, Data.Q, x_data_mean=Data.X)
+
 
 def test_bayesian_gplvm_constructor_check():
     Q = 1
     kernel = gpflow.kernels.SquaredExponential()
     inducing_variable = np.linspace(0, 1, Data.M)[:, None]
     with pytest.raises(ValueError):
-        gpflow.models.BayesianGPLVM(Data.Y,
-                                    np.zeros((Data.N, Q)),
-                                    np.ones((Data.N, Q)),
-                                    kernel,
-                                    inducing_variable=inducing_variable,
-                                    num_inducing_variables=len(inducing_variable))
+        gpflow.models.BayesianGPLVM(
+            Data.Y,
+            np.zeros((Data.N, Q)),
+            np.ones((Data.N, Q)),
+            kernel,
+            inducing_variable=inducing_variable,
+            num_inducing_variables=len(inducing_variable),
+        )

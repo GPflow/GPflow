@@ -6,11 +6,14 @@ from gpflow.config import Config, as_context
 from gpflow.utilities import positive, triangular
 
 
-@pytest.mark.parametrize("env_lower, override_lower", [
-    (0.1, None),  # ensure default from config is applied
-    (None, 0.2),  # ensure override is applied
-    (0.3, 0.4),  # ensure local overrides config
-])
+@pytest.mark.parametrize(
+    "env_lower, override_lower",
+    [
+        (0.1, None),  # ensure default from config is applied
+        (None, 0.2),  # ensure override is applied
+        (0.3, 0.4),  # ensure local overrides config
+    ],
+)
 def test_positive_lower(env_lower, override_lower):
     expected_lower = override_lower or env_lower
     with as_context(Config(positive_bijector="softplus", positive_minimum=env_lower)):
@@ -19,12 +22,15 @@ def test_positive_lower(env_lower, override_lower):
         assert np.isclose(bijector.bijectors[0].shift, expected_lower)
 
 
-@pytest.mark.parametrize("env_bijector, override_bijector, expected_class", [
-    ("softplus", None, tfp.bijectors.Softplus),
-    ("softplus", "Exp", tfp.bijectors.Exp),
-    ("exp", None, tfp.bijectors.Exp),
-    ("exp", "Softplus", tfp.bijectors.Softplus),
-])
+@pytest.mark.parametrize(
+    "env_bijector, override_bijector, expected_class",
+    [
+        ("softplus", None, tfp.bijectors.Softplus),
+        ("softplus", "Exp", tfp.bijectors.Exp),
+        ("exp", None, tfp.bijectors.Exp),
+        ("exp", "Softplus", tfp.bijectors.Softplus),
+    ],
+)
 def test_positive_bijector(env_bijector, override_bijector, expected_class):
     with as_context(Config(positive_bijector=env_bijector, positive_minimum=None)):
         bijector = positive(base=override_bijector)

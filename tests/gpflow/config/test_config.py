@@ -68,10 +68,13 @@ def test_env_variables_failures(attr_name):
             gpflow.config.Config()
 
 
-@pytest.mark.parametrize('getter, setter, valid_type_1, valid_type_2', [
-    (default_int, set_default_int, tf.int64, np.int32),
-    (default_float, set_default_float, tf.float32, np.float64),
-])
+@pytest.mark.parametrize(
+    "getter, setter, valid_type_1, valid_type_2",
+    [
+        (default_int, set_default_int, tf.int64, np.int32),
+        (default_float, set_default_float, tf.float32, np.float64),
+    ],
+)
 def test_dtype_setting(getter, setter, valid_type_1, valid_type_2):
     if valid_type_1 == valid_type_2:
         raise ValueError("cannot test config setting/getting when both types are equal")
@@ -81,12 +84,15 @@ def test_dtype_setting(getter, setter, valid_type_1, valid_type_2):
     assert getter() == valid_type_2
 
 
-@pytest.mark.parametrize('setter, invalid_type', [
-    (set_default_int, str),
-    (set_default_int, np.float64),
-    (set_default_float, list),
-    (set_default_float, tf.int32),
-])
+@pytest.mark.parametrize(
+    "setter, invalid_type",
+    [
+        (set_default_int, str),
+        (set_default_int, np.float64),
+        (set_default_float, list),
+        (set_default_float, tf.int32),
+    ],
+)
 def test_dtype_errorcheck(setter, invalid_type):
     with pytest.raises(TypeError):
         setter(invalid_type)
@@ -106,10 +112,13 @@ def test_jitter_errorcheck():
         set_default_jitter(-1e-10)
 
 
-@pytest.mark.parametrize("value, error_msg", [
-    ("Unknown", r"`unknown` not in set of valid bijectors: \['exp', 'softplus'\]"),
-    (1.0, r"`1.0` not in set of valid bijectors: \['exp', 'softplus'\]"),
-])
+@pytest.mark.parametrize(
+    "value, error_msg",
+    [
+        ("Unknown", r"`unknown` not in set of valid bijectors: \['exp', 'softplus'\]"),
+        (1.0, r"`1.0` not in set of valid bijectors: \['exp', 'softplus'\]"),
+    ],
+)
 def test_positive_bijector_error(value, error_msg):
     with pytest.raises(ValueError, match=error_msg):
         set_default_positive_bijector(value)
@@ -133,16 +142,37 @@ def test_default_summary_fmt_errorcheck():
         set_default_summary_fmt("this_format_definitely_does_not_exist")
 
 
-@pytest.mark.parametrize('setter, getter, converter, dtype, value', [
-    (set_default_int, default_int, to_default_int, np.int32, 3),
-    (set_default_int, default_int, to_default_int, tf.int32, 3),
-    (set_default_int, default_int, to_default_int, tf.int64, [3, 1, 4, 1, 5, 9]),
-    (set_default_int, default_int, to_default_int, np.int64, [3, 1, 4, 1, 5, 9]),
-    (set_default_float, default_float, to_default_float, np.float32, 3.14159),
-    (set_default_float, default_float, to_default_float, tf.float32, [3.14159, 3.14159, 3.14159]),
-    (set_default_float, default_float, to_default_float, np.float64, [3.14159, 3.14159, 3.14159]),
-    (set_default_float, default_float, to_default_float, tf.float64, [3.14159, 3.14159, 3.14159]),
-])
+@pytest.mark.parametrize(
+    "setter, getter, converter, dtype, value",
+    [
+        (set_default_int, default_int, to_default_int, np.int32, 3),
+        (set_default_int, default_int, to_default_int, tf.int32, 3),
+        (set_default_int, default_int, to_default_int, tf.int64, [3, 1, 4, 1, 5, 9]),
+        (set_default_int, default_int, to_default_int, np.int64, [3, 1, 4, 1, 5, 9]),
+        (set_default_float, default_float, to_default_float, np.float32, 3.14159),
+        (
+            set_default_float,
+            default_float,
+            to_default_float,
+            tf.float32,
+            [3.14159, 3.14159, 3.14159],
+        ),
+        (
+            set_default_float,
+            default_float,
+            to_default_float,
+            np.float64,
+            [3.14159, 3.14159, 3.14159],
+        ),
+        (
+            set_default_float,
+            default_float,
+            to_default_float,
+            tf.float64,
+            [3.14159, 3.14159, 3.14159],
+        ),
+    ],
+)
 def test_native_to_default_dtype(setter, getter, converter, dtype, value):
     with gpflow.config.as_context():
         setter(dtype)

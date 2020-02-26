@@ -59,11 +59,13 @@ def sgpr_and_svgp(data, inducing_variable, kernel, likelihood):
     return sgpr, svgp
 
 
-def assert_gpr_vs_vgp(m1: tf.Module,
-                      m2: tf.Module,
-                      gamma: float = 1.0,
-                      maxiter: int = 1,
-                      xi_transform: Optional[gpflow.optimizers.natgrad.XiTransform] = None):
+def assert_gpr_vs_vgp(
+    m1: tf.Module,
+    m2: tf.Module,
+    gamma: float = 1.0,
+    maxiter: int = 1,
+    xi_transform: Optional[gpflow.optimizers.natgrad.XiTransform] = None,
+):
     assert maxiter >= 1
 
     m2_ll_before = m2.log_likelihood()
@@ -73,11 +75,11 @@ def assert_gpr_vs_vgp(m1: tf.Module,
 
     @tf.function
     def loss_cb() -> tf.Tensor:
-        return - m2.log_marginal_likelihood()
+        return -m2.log_marginal_likelihood()
 
     params = (m2.q_mu, m2.q_sqrt)
     if xi_transform is not None:
-        params += (xi_transform, )
+        params += (xi_transform,)
 
     opt = NaturalGradient(gamma)
 
@@ -104,10 +106,10 @@ def assert_sgpr_vs_svgp(m1: tf.Module, m2: tf.Module):
 
     @tf.function
     def loss_cb() -> tf.Tensor:
-        return - m2.log_marginal_likelihood(data)
+        return -m2.log_marginal_likelihood(data)
 
     params = [(m2.q_mu, m2.q_sqrt)]
-    opt = NaturalGradient(1.)
+    opt = NaturalGradient(1.0)
     opt.minimize(loss_cb, var_list=params)
 
     m1_ll_after = m1.log_likelihood()

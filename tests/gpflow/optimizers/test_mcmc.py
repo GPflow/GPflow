@@ -17,7 +17,7 @@ np.random.seed(1)
 def build_data():
     N = 30
     X = np.random.rand(N, 1)
-    Y = np.sin(12*X) + 0.66*np.cos(25*X) + np.random.randn(N, 1)*0.1 + 3
+    Y = np.sin(12 * X) + 0.66 * np.cos(25 * X) + np.random.randn(N, 1) * 0.1 + 3
     return (X, Y)
 
 
@@ -43,7 +43,10 @@ def test_mcmc_helper_parameters():
         assert model.trainable_parameters[i].shape == hmc_helper.current_state[i].shape
         assert model.trainable_parameters[i] == hmc_helper._parameters[i]
         if isinstance(model.trainable_parameters[i], gpflow.Parameter):
-            assert model.trainable_parameters[i].unconstrained_variable == hmc_helper.current_state[i]
+            assert (
+                model.trainable_parameters[i].unconstrained_variable
+                == hmc_helper.current_state[i]
+            )
 
 
 def test_mcmc_helper_target_function_constrained():
@@ -60,7 +63,7 @@ def test_mcmc_helper_target_function_constrained():
     target_log_prob_fn = hmc_helper.target_log_prob_fn
 
     # Priors which are set on the constrained space
-    expected_log_prior = 0.
+    expected_log_prior = 0.0
     for param in model.trainable_parameters:
         if param.value() < 1e-3:
             # Avoid values which would be pathological for the Exp transform
@@ -92,7 +95,7 @@ def test_mcmc_helper_target_function_unconstrained():
     model = build_model(data)
 
     # Set up priors on the model parameters such that we can readily compute their expected values.
-    expected_log_prior = 0.
+    expected_log_prior = 0.0
     prior_width = 200.0
 
     hmc_helper = gpflow.optimizers.SamplingHelper(
@@ -103,7 +106,7 @@ def test_mcmc_helper_target_function_unconstrained():
         low_value = -100
         high_value = low_value + prior_width
         param.prior = Uniform(low=np.float64(low_value), high=np.float64(high_value))
-        param.prior_on = 'unconstrained'
+        param.prior_on = "unconstrained"
 
         prior_density = 1 / prior_width
         expected_log_prior += np.log(prior_density)
@@ -120,7 +123,7 @@ def test_mcmc_helper_target_function_no_transforms(prior_on):
     """
     data = build_data()
     model = build_model(data)
-    expected_log_prior = 0.
+    expected_log_prior = 0.0
     prior_width = 200.0
 
     hmc_helper = gpflow.optimizers.SamplingHelper(
@@ -161,14 +164,14 @@ def test_mcmc_sampler_integration():
     hmc = tfp.mcmc.HamiltonianMonteCarlo(
         target_log_prob_fn=hmc_helper.target_log_prob_fn,
         num_leapfrog_steps=2,
-        step_size=0.01
+        step_size=0.01,
     )
 
     adaptive_hmc = tfp.mcmc.SimpleStepSizeAdaptation(
         hmc,
         num_adaptation_steps=2,
         target_accept_prob=gpflow.utilities.to_default_float(0.75),
-        adaptation_rate=0.1
+        adaptation_rate=0.1,
     )
 
     num_samples = 5
@@ -180,8 +183,9 @@ def test_mcmc_sampler_integration():
             num_burnin_steps=2,
             current_state=hmc_helper.current_state,
             kernel=adaptive_hmc,
-            trace_fn=lambda _, pkr: pkr.inner_results.is_accepted
+            trace_fn=lambda _, pkr: pkr.inner_results.is_accepted,
         )
+
     samples, _ = run_chain_fn()
 
     assert len(samples) == len(model.trainable_parameters)
