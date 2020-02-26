@@ -106,14 +106,10 @@ class NaturalGradient(tf.optimizers.Optimizer):
                 ```
         """
         parameters = [(v[0], v[1], v[2] if len(v) > 2 else XiNat()) for v in var_list]
-        self._natgrad_steps(loss_fn, parameters)
-
-    def _natgrad_steps(self, loss_fn: Callable, parameters: List[Tuple[Parameter, Parameter, XiTransform]]):
-        def natural_gradient_step(q_mu, q_sqrt, xi_transform):
-            self._natgrad_step(loss_fn, q_mu, q_sqrt, xi_transform)
 
         with tf.name_scope(f"{self._name}/natural_gradient_steps"):
-            list(map(natural_gradient_step, *zip(*parameters)))
+            for q_mu, q_sqrt, xi_transform in parameters:
+                self._natgrad_step(loss_fn, q_mu, q_sqrt, xi_transform)
 
     def _natgrad_step(self, loss_fn: Callable, q_mu: Parameter, q_sqrt: Parameter, xi_transform: XiTransform):
         """
