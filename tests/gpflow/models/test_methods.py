@@ -93,25 +93,6 @@ def test_methods_predict_log_density(model):
     assert_array_equal(d.shape, (10, 1))
 
 
-def test_sgpr_qu():
-    rng = Datum().rng
-    X, Z = tf.cast(rng.randn(100, 2), default_float()), tf.cast(rng.randn(20, 2), default_float())
-    Y = tf.cast(np.sin(X @ np.array([[-1.4], [0.5]])) + 0.5 * np.random.randn(len(X), 1), default_float())
-    model = gpflow.models.SGPR((X, Y), kernel=gpflow.kernels.SquaredExponential(), inducing_variable=Z)
-
-    @tf.function
-    def closure():
-        return - model.log_marginal_likelihood()
-
-    gpflow.optimizers.Scipy().minimize(closure, variables=model.trainable_variables)
-
-    qu_mean, qu_cov = model.compute_qu()
-    f_at_Z_mean, f_at_Z_cov = model.predict_f(model.inducing_variable.Z, full_cov=True)
-
-    np.testing.assert_allclose(qu_mean, f_at_Z_mean, rtol=1e-5, atol=1e-5)
-    np.testing.assert_allclose(tf.reshape(qu_cov, (1, 20, 20)), f_at_Z_cov, rtol=1e-5, atol=1e-5)
-
-
 @pytest.mark.parametrize('indices_1, indices_2, num_data1, num_data2, max_iter', [
     [[0, 1], [1, 0], 2, 2, 3],
     [[0, 1], [0, 0], 1, 2, 1],
