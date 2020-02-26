@@ -118,8 +118,11 @@ def objective_closure():
 natgrad_opt = NaturalGradient(gamma=1.0)
 scipy_opt = gpflow.optimizers.Scipy()
 
+model.q_mu.set_trainable(False)
+model.q_sqrt.set_trainable(False)
+
 for _ in range(ci_niter(1000)):
-    scipy_opt.minimize(objective_closure, model.kernel.trainable_variables, options={'maxiter': 1})
+    scipy_opt.minimize(objective_closure, model.trainable_variables, options={'maxiter': 1})
     natgrad_opt.minimize(objective_closure, [(model.q_mu, model.q_sqrt)])
 
 # %%
@@ -237,8 +240,11 @@ model = gpflow.models.VGP((X, Y_data), kernel=kernel, likelihood=likelihood, num
 def objective_closure():
     return - model.log_marginal_likelihood()
 
+model.q_mu.set_trainable(False)
+model.q_sqrt.set_trainable(False)
+
 for _ in range(ci_niter(1000)):
-    scipy_opt.minimize(objective_closure, model.kernel.trainable_variables, options={'maxiter': 1})
+    scipy_opt.minimize(objective_closure, model.trainable_variables, options={'maxiter': 1})
     natgrad_opt.minimize(objective_closure, [(model.q_mu, model.q_sqrt)])
 
 # %% [markdown]
