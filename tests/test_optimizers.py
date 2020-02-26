@@ -52,7 +52,7 @@ def test_scipy_jit():
     def closure1():
         return - m1.log_marginal_likelihood()
 
-    @tf.function(autograph=False)
+    @tf.function
     def closure2():
         return - m2.log_marginal_likelihood()
 

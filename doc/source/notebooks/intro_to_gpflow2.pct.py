@@ -200,7 +200,7 @@ def optimization_step(model: gpflow.models.SVGP, batch: Tuple[tf.Tensor, tf.Tens
 # %%
 def simple_training_loop(model: gpflow.models.SVGP, epochs: int = 1, logging_epoch_freq: int = 10):
     batches = iter(train_dataset)
-    tf_optimization_step = tf.function(optimization_step, autograph=False)
+    tf_optimization_step = tf.function(optimization_step)
     for epoch in range(epochs):
         for _ in range(num_batches_per_epoch):
             tf_optimization_step(model, next(batches))
