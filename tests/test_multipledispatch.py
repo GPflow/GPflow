@@ -1,3 +1,4 @@
+import re
 import warnings
 
 import multipledispatch
@@ -42,13 +43,17 @@ def test_our_multipledispatch():
     assert test_fn(A2(), B1()) == 'a2-b1'
     assert test_fn(A1(), B2()) == 'a1-b2'
 
+    # test the ambiguous case:
+
     with warnings.catch_warnings(record=True) as w:
         warnings.simplefilter("always")
 
-        assert test_fn(A2(), B2()) == 'a1-b2'
+        assert test_fn(A2(), B2()) == 'a1-b2'  # the last definition wins
 
         assert len(w) == 1
         assert issubclass(w[0].category, multipledispatch.conflict.AmbiguityWarning)
+
+    # test that adding the child-child definition removes ambiguity warning:
 
     @test_fn.register(A2, B2)
     def test_a2_b2(x, y):
@@ -62,24 +67,29 @@ def test_our_multipledispatch():
         assert len(w) == 0
 
 
-@pytest.mark.parametrize("Dispatcher, gives_autograph_warning", [
+@pytest.mark.parametrize("Dispatcher, expect_autograph_warning", [
     (multipledispatch.Dispatcher, True),
     (gpflow.utilities.Dispatcher, False),
 ])
-def test_dispatcher_autograph_warnings(capsys, Dispatcher, gives_autograph_warning):
-    tf.autograph.set_verbosity(0, alsologtostdout=True)
+def test_dispatcher_autograph_warnings(capsys, Dispatcher, expect_autograph_warning):
+    tf.autograph.set_verbosity(0, alsologtostdout=True)  # to be able to capture it using capsys
 
     test_fn = Dispatcher('test_fn')
 
+    # generator would only be invoked when defining for base class...
     @test_fn.register(gpflow.inducing_variables.InducingVariables)
     def test_iv(x):
         return tf.reduce_sum(x.Z)
 
-    test_fn_jit = tf.function(test_fn)
+    test_fn_jit = tf.function(test_fn)  # with autograph=True by default
 
+    # ...but calling using subclass
     result = test_fn_jit(gpflow.inducing_variables.InducingPoints([1., 2.]))
-    assert result.numpy() == 3.0
+    assert result.numpy() == 3.0  # expect computation to work either way
 
     captured = capsys.readouterr()
-    tf_warning = 'appears to be a generator function. It will not be converted by AutoGraph.'
-    assert (tf_warning in captured.out) is gives_autograph_warning
+
+    tf_warn1 = 'WARNING:.*Entity .* appears to be a generator function. It will not be converted by AutoGraph.'
+    tf_warn2 = 'WARNING:.*AutoGraph could not transform .* and will run it as-is.'
+    autograph_warning_match = re.match(tf_warn1, captured.out) or re.match(tf_warn2, captured.out)
+    assert bool(autograph_warning_match) == expect_autograph_warning
