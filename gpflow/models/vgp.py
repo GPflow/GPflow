@@ -225,9 +225,10 @@ class VGPOpperArchambeau(GPModel):
            q(F*) = N ( F* | K_{*F} alpha + mean, K_{**} - K_{*f}[K_{ff} +
                                            diag(lambda**-2)]^-1 K_{f*} )
 
-        Note: This model cuurently does not allow full output covariances
+        Note: This model currently does not allow full output covariances
         """
-        assert full_output_cov == False
+        if full_output_cov:
+            raise NotImplementedError
 
         x_data, _y_data = self.data
         # compute kernel things

@@ -326,7 +326,7 @@ gpflow.utilities.set_trainable(m.kernel, False)
 gpflow.utilities.set_trainable(m.likelihood, False)
 gpflow.utilities.set_trainable(m.inducing_variable, True)  # whether to optimize bounds [a, b]
 
-@tf.function(autograph=False)
+@tf.function
 def objective():
     return - m.log_marginal_likelihood(data)
 
@@ -351,7 +351,7 @@ gpflow.utilities.set_trainable(m_ip.kernel, False)
 gpflow.utilities.set_trainable(m_ip.likelihood, False)
 gpflow.utilities.set_trainable(m_ip.inducing_variable, True)  # whether to optimize inducing point locations
 
-@tf.function(autograph=False)
+@tf.function
 def objective_ip():
     return - m_ip.log_marginal_likelihood(data)
 
@@ -370,7 +370,7 @@ m_ref.likelihood.variance = np.array(noise_scale**2).astype(np.float64)
 gpflow.utilities.set_trainable(m_ref.kernel, False)
 gpflow.utilities.set_trainable(m_ref.likelihood, False)
 
-@tf.function(autograph=False)
+@tf.function
 def objective_ref():
     return - m_ref.log_marginal_likelihood()
 

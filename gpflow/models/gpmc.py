@@ -71,7 +71,7 @@ class GPMC(GPModel):
         Construct a tf function to compute the likelihood of a general GP
         model.
 
-            \log p(Y, V | theta).
+            \log p(Y | V, theta).
 
         """
         if data is None:

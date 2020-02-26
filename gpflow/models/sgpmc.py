@@ -29,7 +29,7 @@ from .util import inducingpoint_wrapper
 
 
 class SGPMC(GPModel):
-    """
+    r"""
     This is the Sparse Variational GP using MCMC (SGPMC). The key reference is
 
     ::
@@ -48,15 +48,15 @@ class SGPMC(GPModel):
     .. math::
        :nowrap:
 
-       \\begin{align}
-       \\mathbf v & \\sim N(0, \\mathbf I) \\\\
-       \\mathbf u &= \\mathbf L\\mathbf v
-       \\end{align}
+       \begin{align}
+       \mathbf v & \sim N(0, \mathbf I) \\
+       \mathbf u &= \mathbf L\mathbf v
+       \end{align}
 
     with
 
     .. math::
-        \\mathbf L \\mathbf L^\\top = \\mathbf K
+        \mathbf L \mathbf L^\top = \mathbf K
 
 
     """

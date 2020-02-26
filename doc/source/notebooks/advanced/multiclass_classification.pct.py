@@ -57,7 +57,9 @@ from gpflow.ci_utils import ci_niter
 
 from multiclass_classification import plot_posterior_predictions, colors
 
-np.random.seed(0)  # reproducibility
+# reproducibility:
+np.random.seed(0)
+tf.random.set_seed(123)
 
 # %% [markdown]
 # ## Sampling from the GP multiclass generative model
@@ -159,7 +161,7 @@ print_summary(m, fmt='notebook')
 # %%
 opt = gpflow.optimizers.Scipy()
 
-@tf.function(autograph=False)
+@tf.function
 def objective_closure():
     return - m.log_marginal_likelihood(data)
 

@@ -79,7 +79,7 @@ vfe_hyps = []
 for M in Ms:
     Zinit = X[:M, :].copy()
     vfe = gpflow.models.SGPR((X, Y), gpflow.kernels.SquaredExponential(), inducing_variable=Zinit)
-    objective = tf.function(autograph=False)(lambda: - vfe.log_marginal_likelihood())
+    objective = tf.function(lambda: - vfe.log_marginal_likelihood())
     gpflow.optimizers.Scipy().minimize(objective, vfe.trainable_variables,
                                        options=dict(disp=False, maxiter=ci_niter(1000)))
 
@@ -126,7 +126,7 @@ for M in fMs:
     set_trainable(vfe.kernel, False)
     set_trainable(vfe.likelihood, False)
 
-    objective = tf.function(autograph=False)(lambda: - vfe.log_marginal_likelihood())
+    objective = tf.function(lambda: - vfe.log_marginal_likelihood())
     gpflow.optimizers.Scipy().minimize(objective, vfe.trainable_variables,
                                        options=dict(disp=False, maxiter=ci_niter(1000)))
 
@@ -154,7 +154,7 @@ assert np.all(np.array(fvupper_lml) - np.array(fvfe_lml) > 0.0)
 # %%
 single_inducing_point = X[:1, :].copy()
 vfe = gpflow.models.SGPR((X, Y), gpflow.kernels.SquaredExponential(), inducing_variable=single_inducing_point)
-objective = tf.function(autograph=False)(lambda: - vfe.log_marginal_likelihood())
+objective = tf.function(lambda: - vfe.log_marginal_likelihood())
 gpflow.optimizers.Scipy().minimize(objective, vfe.trainable_variables,
                                    options=dict(maxiter=ci_niter(1000)), jit=False)
 # Note that we need to set jit=False here due to a discrepancy in tf.function jitting

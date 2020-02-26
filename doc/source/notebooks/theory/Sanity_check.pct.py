@@ -85,6 +85,7 @@ for m in models:
         loss_fn = lambda: - m.log_marginal_likelihood(data)
     else:
         loss_fn = lambda: - m.log_marginal_likelihood()
+    loss_fn = tf.function(loss_fn)
         
     opt.minimize(loss_fn, variables=m.trainable_variables, options=dict(maxiter=ci_niter(1000)))
 

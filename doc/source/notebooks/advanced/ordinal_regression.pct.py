@@ -28,6 +28,8 @@ import matplotlib
 matplotlib.rcParams['figure.figsize'] = (12, 6)
 plt = matplotlib.pyplot
 
+np.random.seed(123)  # for reproducibility
+
 
 # %%
 # make a one-dimensional ordinal regression problem

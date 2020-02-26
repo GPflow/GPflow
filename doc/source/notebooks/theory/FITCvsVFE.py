@@ -76,7 +76,7 @@ def plotPredictions(ax, model, color, label=None):
 def repeatMinimization(model, xtest, ytest):
     callback = Callback(model, xtest, ytest)
 
-    @tf.function(autograph=False)
+    @tf.function
     def objective_closure():
         return - model.log_marginal_likelihood()
 

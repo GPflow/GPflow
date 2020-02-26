@@ -198,7 +198,9 @@ class BayesianGPLVM(GPModel):
 
         :param predict_at: Point to predict at.
         """
-        assert full_output_cov == False
+        if full_output_cov:
+            raise NotImplementedError
+
         pX = DiagonalGaussian(self.x_data_mean, self.x_data_var)
 
         y_data = self.data
