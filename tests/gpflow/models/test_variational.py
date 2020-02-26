@@ -19,7 +19,7 @@ from numpy.testing import assert_allclose
 import gpflow
 from gpflow.kernels import SquaredExponential
 from gpflow.likelihoods import Gaussian
-from tests.reference import ref_rbf_kernel
+from tests.gpflow.kernels.reference import ref_rbf_kernel
 
 rng = np.random.RandomState(1)
 
