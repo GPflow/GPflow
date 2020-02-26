@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 from dataclasses import dataclass
 
 import numpy as np
@@ -135,28 +136,3 @@ def test_stochastic_gradients(indices_1, indices_2, num_data1, num_data2, max_it
     model_1 = training_loop(indices_1, num_data=num_data1, max_iter=max_iter)
     model_2 = training_loop(indices_2, num_data=num_data2, max_iter=max_iter)
     assert _check_models_close(model_1, model_2)
-
-
-def test_sparse_mcmc_likelihoods_and_gradients():
-    """
-    This test makes sure that when the inducing points are the same as the data
-    points, the sparse mcmc is the same as full mcmc
-    """
-    rng = Datum().rng
-    X, Y = rng.randn(10, 1), rng.randn(10, 1)
-    v_vals = rng.randn(10, 1)
-
-    likelihood = gpflow.likelihoods.StudentT()
-    model_1 = gpflow.models.GPMC(data=(X, Y), kernel=gpflow.kernels.Exponential(), likelihood=likelihood)
-    model_2 = gpflow.models.SGPMC(data=(X, Y),
-                                  kernel=gpflow.kernels.Exponential(),
-                                  inducing_variable=X.copy(),
-                                  likelihood=likelihood)
-    model_1.V = tf.convert_to_tensor(v_vals, dtype=default_float())
-    model_2.V = tf.convert_to_tensor(v_vals, dtype=default_float())
-    model_1.kernel.lengthscale.assign(0.8)
-    model_2.kernel.lengthscale.assign(0.8)
-    model_1.kernel.variance.assign(4.2)
-    model_2.kernel.variance.assign(4.2)
-
-    assert_allclose(model_1.log_likelihood(), model_2.log_likelihood(), rtol=1e-5, atol=1e-5)
