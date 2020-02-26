@@ -142,9 +142,9 @@ class SGPR(SGPRUpperMixin):
         return True
 
     def training_loss(self, data: Optional[RegressionData] = None):
-        return - (self.log_marginal_likelihood(data) + self.log_prior())
+        return - (self.elbo(data) + self.log_prior())
 
-    def log_marginal_likelihood(self, data: Optional[RegressionData] = None):
+    def elbo(self, data: Optional[RegressionData] = None):
         """
         Construct a tensorflow function to compute the bound on the marginal
         likelihood. For a derivation of the terms in here, see the associated
