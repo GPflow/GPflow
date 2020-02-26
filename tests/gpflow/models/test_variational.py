@@ -19,7 +19,7 @@ from numpy.testing import assert_allclose
 import gpflow
 from gpflow.kernels import SquaredExponential
 from gpflow.likelihoods import Gaussian
-from tests.reference import ref_rbf_kernel
+from tests.gpflow.kernels.reference import ref_rbf_kernel
 
 rng = np.random.RandomState(1)
 
@@ -97,7 +97,7 @@ class MultiDatum:
     q_sqrt_full = np.tril(rng.rand(dim, dim))
 
 
-def test_refrence_implementation_consistency():
+def test_reference_implementation_consistency():
     q_mean = rng.rand(1, 1)
     q_cov = rng.rand(1, 1)
     p_mean = rng.rand(1, 1)
