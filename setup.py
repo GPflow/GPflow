@@ -19,6 +19,7 @@ requirements = [
     'scipy>=0.18.0',
     'multipledispatch>=0.4.9',
     'tabulate',
+    'gast==0.2.2',
 ]
 
 if not is_py37:

@@ -89,7 +89,5 @@ def test_dispatcher_autograph_warnings(capsys, Dispatcher, expect_autograph_warn
 
     captured = capsys.readouterr()
 
-    tf_warn1 = 'WARNING:.*Entity .* appears to be a generator function. It will not be converted by AutoGraph.'
-    tf_warn2 = 'WARNING:.*AutoGraph could not transform .* and will run it as-is.'
-    autograph_warning_match = re.match(tf_warn1, captured.out) or re.match(tf_warn2, captured.out)
-    assert bool(autograph_warning_match) == expect_autograph_warning
+    tf_warning = 'WARNING:.*Entity .* appears to be a generator function. It will not be converted by AutoGraph.'
+    assert bool(re.match(tf_warning, captured.out)) == expect_autograph_warning
