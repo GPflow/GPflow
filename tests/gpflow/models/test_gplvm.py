@@ -32,7 +32,11 @@ class Data:
     X = rng.randn(N, Q)
 
 
-def _run_optimize(kernel: Optional[tf.Module] = None):
+@pytest.mark.parametrize("kernel", [
+    None,  # default kernel: SquaredExponential
+    gpflow.kernels.Periodic(base=gpflow.kernels.SquaredExponential()),
+])
+def test_gplvm_with_kernels(kernel):
     m = gpflow.models.GPLVM(Data.Y, Data.Q, kernel=kernel)
     log_likelihood_initial = m.log_likelihood()
     opt = gpflow.optimizers.Scipy()
@@ -43,15 +47,6 @@ def _run_optimize(kernel: Optional[tf.Module] = None):
 
     opt.minimize(objective_closure, m.trainable_variables, options=dict(maxiter=2))
     assert m.log_likelihood() > log_likelihood_initial
-
-
-def test_gplvm_default_kernel():
-    _run_optimize()
-
-
-def test_gplvm_periodic_kernel():
-    kernel = gpflow.kernels.Periodic(base=gpflow.kernels.SquaredExponential())
-    _run_optimize(kernel)
 
 
 def test_bayesian_gplvm_1d():
