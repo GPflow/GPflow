@@ -29,26 +29,18 @@ class Data:
     var = 1.0
 
 
-# ------------------------------------------
-# Fixtures
-# ------------------------------------------
-
-
-@pytest.fixture
-def model():
-    return gpflow.models.GPR(
-        (Data.X, Data.Y),
-        kernel=gpflow.kernels.SquaredExponential(lengthscale=Data.ls, variance=Data.var),
-    )
-
-
-def test_non_trainable_model_objective(model):
+def test_non_trainable_model_objective():
     """
     Checks that we can still compute the objective of a model that has no
     trainable parameters whatsoever (regression test for bug in log_prior()).
     In this case we have no priors, so log_prior should be zero to add no
     contribution to the objective.
     """
+    model = gpflow.models.GPR(
+        (Data.X, Data.Y),
+        kernel=gpflow.kernels.SquaredExponential(lengthscale=Data.ls, variance=Data.var),
+    )
+
     set_trainable(model, False)
 
     _ = model.log_marginal_likelihood()
