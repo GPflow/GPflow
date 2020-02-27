@@ -109,10 +109,7 @@ class DummyModel(gpflow.models.BayesianModel):
 
         self.theta = gpflow.Parameter(self.value, prior=prior, transform=transform)
 
-    def training_loss(self):
-        return - self.log_likelihood()
-
-    def log_likelihood(self):
+    def maximum_likelihood_objective(self):
         return (self.theta + 5) ** 2
 
 
