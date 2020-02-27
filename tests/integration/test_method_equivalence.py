@@ -193,16 +193,9 @@ def test_equivalence(approximate_model):
     subject to some optimization).
     """
     gpr_model = _create_full_gp_model()
-    gpr_likelihood = -gpr_model.log_marginal_likelihood()
-
-    if isinstance(
-        approximate_model, (gpflow.models.SVGP, gpflow.models.VGP, gpflow.models.SGPR)
-    ):
-        approximate_likelihood = -approximate_model.elbo(Datum.data)
-    elif isinstance(approximate_model, gpflow.models.GPRFITC):
-        approximate_likelihood = -approximate_model.fitc_log_marginal_likelihood()
-
-    assert_allclose(gpr_likelihood, approximate_likelihood, rtol=1e-6)
+    gpr_likelihood = gpr_model.log_marginal_likelihood()
+    approximate_likelihood = approximate_model.maximum_likelihood_objective(Datum.data)
+    assert_allclose(approximate_likelihood, gpr_likelihood, rtol=1e-6)
 
     gpr_kernel_ls = gpr_model.kernel.lengthscale.read_value()
     gpr_kernel_var = gpr_model.kernel.variance.read_value()
