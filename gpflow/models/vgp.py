@@ -76,8 +76,8 @@ class VGP(GPModel):
     def has_own_data(self):
         return True
 
-    def training_loss(self, data: Optional[RegressionData] = None) -> tf.Tensor:
-        return - (self.elbo(data) + self.log_prior())
+    def maximum_likelihood_objective(self, data: Optional[RegressionData] = None) -> tf.Tensor:
+        return self.elbo(data)
 
     def elbo(self, data: Optional[RegressionData] = None):
         r"""
@@ -179,8 +179,8 @@ class VGPOpperArchambeau(GPModel):
     def has_own_data(self):
         return True
 
-    def training_loss(self, data: Optional[RegressionData] = None) -> tf.Tensor:
-        return - (self.elbo(data) + self.log_prior())
+    def maximum_likelihood_objective(self, data: Optional[RegressionData] = None) -> tf.Tensor:
+        return self.elbo(data)
 
     def elbo(self, data: Optional[RegressionData] = None):
         r"""

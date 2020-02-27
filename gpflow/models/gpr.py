@@ -49,8 +49,8 @@ class GPR(GPModel):
     def has_own_data(self):
         True
 
-    def training_loss(self, data: Optional[RegressionData] = None):
-        return - (self.log_marginal_likelihood(data) + self.log_prior())
+    def maximum_likelihood_objective(self, data: Optional[RegressionData] = None):
+        return self.log_marginal_likelihood(data)
 
     def log_marginal_likelihood(self, data: Optional[RegressionData] = None):
         r"""

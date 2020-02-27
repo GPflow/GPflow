@@ -137,8 +137,8 @@ class BayesianGPLVM(GPModel):
     def has_own_data(self):
         return True
 
-    def training_loss(self, data: Optional[InputData] = None):
-        return - (self.elbo(data) + self.log_prior())
+    def maximum_likelihood_objective(self, data: Optional[InputData] = None):
+        return self.elbo(data)
 
     def elbo(self, data: Optional[InputData] = None):
         """

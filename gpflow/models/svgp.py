@@ -135,8 +135,8 @@ class SVGP(GPModel):
     def has_own_data(self):
         return False
 
-    def training_loss(self, data: RegressionData) -> tf.Tensor:
-        return - (self.elbo(data) + self.log_prior())
+    def maximum_likelihood_objective(self, data: RegressionData) -> tf.Tensor:
+        return self.elbo(data)
 
     def elbo(self, data: RegressionData) -> tf.Tensor:
         """

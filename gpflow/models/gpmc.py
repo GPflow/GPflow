@@ -61,10 +61,13 @@ class GPMC(GPModel):
         return True
 
     def training_loss(self, data: Optional[RegressionData] = None) -> tf.Tensor:
-        return - (self.log_likelihood(data) + self.log_prior())
+        return - self.log_posterior_density(data)
 
-    def target_log_prob_fn(self):
-        return self.log_likelihood() + self.log_prior()
+    def log_posterior_density(self, data: Optional[RegressionData] = None) -> tf.Tensor:
+        return self.log_likelihood(data) + self.log_prior_density()
+
+    def maximum_likelihood_objective(self, data: Optional[RegressionData] = None) -> tf.Tensor:
+        return self.log_likelihood(data)
 
     def log_likelihood(self, data: Optional[RegressionData] = None) -> tf.Tensor:
         r"""

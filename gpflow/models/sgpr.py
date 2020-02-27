@@ -149,8 +149,8 @@ class SGPR(SGPRBase):
     def has_own_data(self):
         return True
 
-    def training_loss(self, data: Optional[RegressionData] = None):
-        return - (self.elbo(data) + self.log_prior())
+    def maximum_likelihood_objective(self, data: Optional[RegressionData] = None):
+        return self.elbo(data)
 
     def elbo(self, data: Optional[RegressionData] = None):
         """
@@ -305,8 +305,8 @@ class GPRFITC(SGPRBase):
     def has_own_data(self):
         return True
 
-    def training_loss(self, data: Optional[RegressionData] = None):
-        return - (self.fitc_log_marginal_likelihood(data) + self.log_prior())
+    def maximum_likelihood_objective(self, data: Optional[RegressionData] = None):
+        return self.fitc_log_marginal_likelihood(data)
 
     def fitc_log_marginal_likelihood(self, data: Optional[RegressionData] = None):
         """
