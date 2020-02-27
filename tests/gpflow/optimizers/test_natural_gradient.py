@@ -59,6 +59,12 @@ def sgpr_and_svgp(data, inducing_variable, kernel, likelihood):
     return sgpr, svgp
 
 
+def assert_different(value1, value2, rtol=0.1):
+    """ assert relative difference > rtol """
+    relative_difference = (value1 - value2) / (value1 + value2)
+    assert np.abs(relative_difference) > rtol
+
+
 def assert_gpr_vs_vgp(
     m1: gpflow.models.BayesianModel,
     m2: gpflow.models.BayesianModel,
@@ -71,7 +77,7 @@ def assert_gpr_vs_vgp(
     m1_ll_before = m1.training_loss()
     m2_ll_before = m2.training_loss()
 
-    assert m2_ll_before != m1_ll_before
+    assert_different(m2_ll_before, m1_ll_before)
 
     params = (m2.q_mu, m2.q_sqrt)
     if xi_transform is not None:
@@ -101,7 +107,7 @@ def assert_sgpr_vs_svgp(
     m1_ll_before = m1.training_loss()
     m2_ll_before = m2.training_loss(data)
 
-    assert m2_ll_before != m1_ll_before
+    assert_different(m2_ll_before, m1_ll_before)
 
     params = [(m2.q_mu, m2.q_sqrt)]
     opt = NaturalGradient(1.0)
