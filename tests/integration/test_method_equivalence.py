@@ -281,6 +281,22 @@ def test_equivalence_vgp_and_opper_archambeau():
     assert_allclose(svgp_unwhitened_mu, vgp_mu)
     assert_allclose(svgp_unwhitened_var, vgp_var, rtol=1e-4)
 
+    gpflow.optimizers.Scipy().minimize(
+        vgp_oa_model.training_loss,
+        vgp_oa_model.trainable_variables,
+        method='BFGS',
+        options=dict(ftol=0.0, gtol=0.0),
+    )
+    gpflow.optimizers.Scipy().minimize(
+        vgp_model.training_loss,
+        vgp_model.trainable_variables,
+    )
+    vgp_oa_mu, vgp_oa_var = vgp_oa_model.predict_f(DatumVGP.Xs)
+    vgp_mu, vgp_var = vgp_model.predict_f(DatumVGP.Xs)
+
+    assert_allclose(vgp_oa_mu, vgp_mu)
+    assert_allclose(vgp_oa_var, vgp_var, rtol=1e-4)  # jitter?
+
 
 def test_upper_bound_few_inducing_points():
     """

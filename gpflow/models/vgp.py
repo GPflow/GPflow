@@ -171,10 +171,6 @@ class VGPOpperArchambeau(GPModel):
         self.q_alpha = Parameter(np.zeros((self.num_data, self.num_latent)))
         self.q_lambda = Parameter(np.ones((self.num_data, self.num_latent)), transform=gpflow.utilities.positive())
 
-    @property
-    def has_own_data(self):
-        return True
-
     def maximum_likelihood_objective(self, data: Optional[RegressionData] = None) -> tf.Tensor:
         return self.elbo(data)
 
