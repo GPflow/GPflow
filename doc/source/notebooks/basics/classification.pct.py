@@ -115,12 +115,8 @@ m = gpflow.models.VGP((X, Y),
                       likelihood=gpflow.likelihoods.Bernoulli(),
                       kernel=gpflow.kernels.Matern52())
 
-o = gpflow.optimizers.Scipy()
-
-@tf.function
-def objective():
-    return - m.log_marginal_likelihood()
-o.minimize(objective, variables=m.trainable_variables)
+opt = gpflow.optimizers.Scipy()
+opt.minimize(m.training_loss, variables=m.trainable_variables)
 
 # %% [markdown]
 # We can now inspect the result of the optimization with `gpflow.utilities.print_summary(m)`:
@@ -188,10 +184,7 @@ m = gpflow.models.VGP((X, Y),
                       likelihood=gpflow.likelihoods.Bernoulli())
 
 opt = gpflow.optimizers.Scipy()
-@tf.function
-def objective():
-    return - m.log_marginal_likelihood()
-opt.minimize(objective,
+opt.minimize(m.training_loss,
              variables=m.trainable_variables,
              options=dict(maxiter=25), method='L-BFGS-B')  # TODO: make work with BFGS
 # in practice, the optimization needs around 250 iterations to converge

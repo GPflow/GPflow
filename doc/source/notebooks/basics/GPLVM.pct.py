@@ -112,12 +112,7 @@ gplvm.likelihood.variance.assign(0.01)
 # %%
 opt = gpflow.optimizers.Scipy()
 maxiter = ci_niter(1000)
-
-@tf.function
-def optimization_step():
-    return - gplvm.log_marginal_likelihood()
-
-_ = opt.minimize(optimization_step, method="bfgs", variables=gplvm.trainable_variables, options=dict(maxiter=maxiter))
+_ = opt.minimize(gplvm.training_loss, method="bfgs", variables=gplvm.trainable_variables, options=dict(maxiter=maxiter))
 
 # %% [markdown]
 # ## Model analysis
