@@ -81,9 +81,12 @@ m = gpflow.models.SVGP(kernel, gpflow.likelihoods.Gaussian(), Z, num_data=N)
 elbo = tf.function(m.elbo)
 
 # %%
-# %%timeit
 # TensorFlow re-traces & compiles a `tf.function`-wrapped method at *every* call if the arguments are numpy arrays instead of tf.Tensors. Hence:
 tensor_data = tuple(map(tf.convert_to_tensor, data))
+elbo(tensor_data)  # run it once to trace & compile
+
+# %%
+# %%timeit
 elbo(tensor_data)
 
 # %% [markdown]
