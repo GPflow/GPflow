@@ -131,10 +131,6 @@ class SVGP(GPModel):
                                           self.q_sqrt,
                                           whiten=self.whiten)
 
-    @property
-    def has_own_data(self):
-        return False
-
     def maximum_likelihood_objective(self, data: RegressionData) -> tf.Tensor:
         return self.elbo(data)
 

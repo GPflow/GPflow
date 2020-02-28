@@ -72,10 +72,6 @@ class VGP(GPModel):
         q_sqrt = np.array([np.eye(num_data) for _ in range(self.num_latent)])
         self.q_sqrt = Parameter(q_sqrt, transform=triangular())
 
-    @property
-    def has_own_data(self):
-        return True
-
     def maximum_likelihood_objective(self, data: Optional[RegressionData] = None) -> tf.Tensor:
         return self.elbo(data)
 

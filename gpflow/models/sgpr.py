@@ -145,10 +145,6 @@ class SGPR(SGPRBase):
 
     """
 
-    @property
-    def has_own_data(self):
-        return True
-
     def maximum_likelihood_objective(self, data: Optional[RegressionData] = None):
         return self.elbo(data)
 
@@ -300,10 +296,6 @@ class GPRFITC(SGPRBase):
         gamma = tf.linalg.triangular_solve(L, alpha, lower=True)  # size [N, R]
 
         return err, nu, Luu, L, alpha, beta, gamma
-
-    @property
-    def has_own_data(self):
-        return True
 
     def maximum_likelihood_objective(self, data: Optional[RegressionData] = None):
         return self.fitc_log_marginal_likelihood(data)

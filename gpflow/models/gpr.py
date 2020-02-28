@@ -45,10 +45,6 @@ class GPR(GPModel):
         super().__init__(kernel, likelihood, mean_function, num_latent=y_data.shape[-1])
         self.data = data
 
-    @property
-    def has_own_data(self):
-        True
-
     def maximum_likelihood_objective(self, data: Optional[RegressionData] = None):
         return self.log_marginal_likelihood(data)
 

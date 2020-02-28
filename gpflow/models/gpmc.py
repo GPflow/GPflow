@@ -56,10 +56,6 @@ class GPMC(GPModel):
         self.V = Parameter(np.zeros((self.num_data, self.num_latent)))
         self.V.prior = tfp.distributions.Normal(loc=to_default_float(0.), scale=to_default_float(1.))
 
-    @property
-    def has_own_data(self) -> bool:
-        return True
-
     def training_loss(self, data: Optional[RegressionData] = None) -> tf.Tensor:
         return - self.log_posterior_density(data)
 

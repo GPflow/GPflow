@@ -133,10 +133,6 @@ class BayesianGPLVM(GPModel):
         assert self.x_prior_var.shape[0] == self.num_data
         assert self.x_prior_var.shape[1] == self.num_latent
 
-    @property
-    def has_own_data(self):
-        return True
-
     def maximum_likelihood_objective(self, data: Optional[InputData] = None):
         return self.elbo(data)
 
