@@ -110,12 +110,8 @@ model = gpflow.models.VGP((X, Y_data), kernel=kernel, likelihood=likelihood, num
 
 
 # %%
-@tf.function
-def objective_closure():
-    return - model.log_marginal_likelihood()
-
 opt = gpflow.optimizers.Scipy()
-opt.minimize(objective_closure,
+opt.minimize(model.training_loss,
              model.trainable_variables,
              options=dict(maxiter=ci_niter(1000)))
 
@@ -196,16 +192,12 @@ model = gpflow.models.VGP((X, Y_data), kernel=kernel, likelihood=likelihood, num
 
 
 # %%
-@tf.function
-def objective_closure():
-    return - model.log_marginal_likelihood()
-
 from gpflow.utilities import set_trainable
 set_trainable(model.kernel, False)
 set_trainable(model.likelihood, False)
 
 opt = gpflow.optimizers.Scipy()
-opt.minimize(objective_closure,
+opt.minimize(model.training_loss,
              model.trainable_variables,
              options=dict(maxiter=ci_niter(1000)))
 
@@ -236,11 +228,7 @@ likelihood = gpflow.likelihoods.SwitchedLikelihood([gpflow.likelihoods.Gaussian(
 kernel = gpflow.kernels.Matern52(lengthscale=0.5)
 model = gpflow.models.VGP((X, Y_data), kernel=kernel, likelihood=likelihood, num_latent=1)
 
-@tf.function
-def objective_closure():
-    return - model.log_marginal_likelihood()
-
-opt.minimize(objective_closure,
+opt.minimize(model.training_loss,
              model.trainable_variables,
              options=dict(maxiter=ci_niter(1000)))
 

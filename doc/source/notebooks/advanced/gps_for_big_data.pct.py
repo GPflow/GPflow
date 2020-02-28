@@ -78,11 +78,13 @@ m = gpflow.models.SVGP(kernel, gpflow.likelihoods.Gaussian(), Z, num_data=N)
 # First we showcase the model's performance using the whole dataset to compute the ELBO.
 
 # %%
-log_likelihood = tf.function(m.log_likelihood)
+elbo = tf.function(m.elbo)
 
 # %%
 # %%timeit
-log_likelihood(data)
+# TensorFlow re-traces & compiles a `tf.function`-wrapped method at *every* call if the arguments are numpy arrays instead of tf.Tensors. Hence:
+tensor_data = tuple(map(tf.convert_to_tensor, data))
+elbo(tensor_data)
 
 # %% [markdown]
 # We can speed up this calculation by using minibatches of the data. For this example, we use minibatches of size 100.
@@ -96,18 +98,18 @@ train_dataset = tf.data.Dataset.from_tensor_slices((X, Y)) \
 
 train_it = iter(train_dataset.batch(minibatch_size))
 
-ground_truth = m.log_likelihood(data).numpy()
+ground_truth = elbo(tensor_data).numpy()
 
 # %%
 # %%timeit
-log_likelihood(next(train_it))
+elbo(next(train_it))
 
 # %% [markdown]
 # ### Stochastical estimation of ELBO
 # The minibatch estimate should be an unbiased estimator of the `ground_truth`. Here we show a histogram of the value from different evaluations, together with its mean and the ground truth. The small difference between the mean of the minibatch estimations and the ground truth shows that the minibatch estimator is working as expected.
 
 # %%
-evals = [log_likelihood(minibatch).numpy()
+evals = [elbo(minibatch).numpy()
          for minibatch in itertools.islice(train_it, 100)]
 
 # %%
@@ -132,7 +134,7 @@ for mbp in minibatch_proportions:
     batchsize = int(N * mbp)
     train_it = iter(train_dataset.batch(batchsize))
     start_time = time.time()
-    objs.append([log_likelihood(minibatch)
+    objs.append([elbo(minibatch)
                  for minibatch in itertools.islice(train_it, 20)])
     times.append(time.time() - start_time)
 

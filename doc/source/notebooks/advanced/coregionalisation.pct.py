@@ -111,14 +111,9 @@ lik = gpflow.likelihoods.SwitchedLikelihood([gpflow.likelihoods.Gaussian(), gpfl
 m = gpflow.models.VGP((X_augmented, Y_augmented), kernel=kern, likelihood=lik, num_latent=1)
 # Here we specify num_latent=1 to avoid getting two outputs when predicting as Y_augmented is 2-dimensional
 
-# closure
-@tf.function
-def objective_closure():
-    return - m.log_marginal_likelihood()
-
 # fit the covariance function parameters
 maxiter = ci_niter(10000)
-gpflow.optimizers.Scipy().minimize(objective_closure, m.trainable_variables,
+gpflow.optimizers.Scipy().minimize(m.training_loss, m.trainable_variables,
                                    options=dict(maxiter=maxiter),
                                    method='L-BFGS-B')
 

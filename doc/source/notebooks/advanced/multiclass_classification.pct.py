@@ -161,11 +161,7 @@ print_summary(m, fmt='notebook')
 # %%
 opt = gpflow.optimizers.Scipy()
 
-@tf.function
-def objective_closure():
-    return - m.log_marginal_likelihood(data)
-
-opt_logs = opt.minimize(objective_closure,
+opt_logs = opt.minimize(m.training_loss_closure(data),
                         m.trainable_variables,
                         options=dict(maxiter=ci_niter(1000)))
 print_summary(m, fmt='notebook')

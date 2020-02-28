@@ -101,13 +101,9 @@ model.likelihood.variance.assign(0.01)
 
 # %%
 optimizer = gpflow.optimizers.Scipy()
+optimizer.minimize(model.training_loss, variables=model.trainable_variables)
 
-@tf.function
-def objective():
-    return - model.log_marginal_likelihood()
-optimizer.minimize(objective, variables=model.trainable_variables)
-
-print(f'log likelihood at optimum: {model.log_likelihood()}')
+print(f'log marginal likelihood at optimum: {model.log_marginal_likelihood()}')
 
 # %% [markdown]
 # Thirdly, we add priors to the hyperparameters.
@@ -127,7 +123,7 @@ gpflow.utilities.print_summary(model)
 
 # %%
 hmc_helper = gpflow.optimizers.SamplingHelper(
-    model.log_marginal_likelihood, model.trainable_parameters
+    model.log_posterior_density, model.trainable_parameters
 )
 
 hmc = tfp.mcmc.HamiltonianMonteCarlo(
@@ -320,14 +316,7 @@ gpflow.utilities.print_summary(model)
 
 # %%
 optimizer = gpflow.optimizers.Scipy()
-
-
-@tf.function
-def objective():
-    return - model.log_marginal_likelihood()
-
-
-optimizer.minimize(objective, variables=model.trainable_variables, options={'maxiter':20})
+optimizer.minimize(model.training_loss, variables=model.trainable_variables, options={'maxiter':20})
 print(f'log likelihood at optimum: {model.log_likelihood()}')
 
 # %% [markdown]
@@ -341,7 +330,7 @@ thin = ci_niter(10)
 num_samples = 500
 
 hmc_helper =  gpflow.optimizers.SamplingHelper(
-    model.log_marginal_likelihood, model.trainable_parameters
+    model.log_posterior_density, model.trainable_parameters
 )
 
 hmc = tfp.mcmc.HamiltonianMonteCarlo(
@@ -459,7 +448,7 @@ gpflow.utilities.print_summary(model)
 def optimization_step(optimizer, model):
     with tf.GradientTape(watch_accessed_variables=False) as tape:
         tape.watch(model.trainable_variables)
-        objective = - model.log_marginal_likelihood()
+        objective = - model.log_posterior_density()
         grads = tape.gradient(objective, model.trainable_variables)
     optimizer.apply_gradients(zip(grads, model.trainable_variables))
     return - objective
@@ -478,7 +467,7 @@ logf = run_adam(model, maxiter) # start near Maximum a posteriori (MAP)
 
 plt.plot(np.arange(maxiter)[::10], logf)
 plt.xlabel('iteration')
-plt.ylabel('neg_log_marginal_likelihood');
+plt.ylabel('log likelihood');
 
 
 
@@ -489,7 +478,7 @@ plt.ylabel('neg_log_marginal_likelihood');
 num_samples = 500
 
 hmc_helper =  gpflow.optimizers.SamplingHelper(
-    model.log_marginal_likelihood, model.trainable_parameters
+    model.log_posterior_density, model.trainable_parameters
 )
 
 hmc = tfp.mcmc.HamiltonianMonteCarlo(

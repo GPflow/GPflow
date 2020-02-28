@@ -36,6 +36,7 @@ import tensorflow as tf
 import gpflow
 
 from gpflow.config import default_float
+from gpflow.ci_utils import ci_niter
 
 import warnings
 
@@ -183,14 +184,15 @@ optimizer.apply_gradients(zip(grads, model.trainable_variables))
 
 
 # %% [markdown]
-# For a more elaborate example of a gradient update we can define an ```optimization_step``` that uses the decorator ```tf.function``` on a closure. A closure is a callable that returns the model objective evaluated at a given dataset when called.
+# For a more elaborate example of a gradient update we can define an ```optimization_step``` that explicitly computes and applies gradients to the model.
+# The `optimization_step` can (and should) be wrapped in `tf.function` to be compiled to a graph if executing it many times.
 
 # %%
 def optimization_step(model: gpflow.models.SVGP, batch: Tuple[tf.Tensor, tf.Tensor]):
     with tf.GradientTape(watch_accessed_variables=False) as tape:
         tape.watch(model.trainable_variables)
-        obj = - model.elbo(batch)
-        grads = tape.gradient(obj, model.trainable_variables)
+        objective = - model.elbo(batch)
+        grads = tape.gradient(objective, model.trainable_variables)
     optimizer.apply_gradients(zip(grads, model.trainable_variables))
 
 
@@ -202,7 +204,7 @@ def simple_training_loop(model: gpflow.models.SVGP, epochs: int = 1, logging_epo
     batches = iter(train_dataset)
     tf_optimization_step = tf.function(optimization_step)
     for epoch in range(epochs):
-        for _ in range(num_batches_per_epoch):
+        for _ in range(ci_niter(num_batches_per_epoch)):
             tf_optimization_step(model, next(batches))
 
         epoch_id = epoch + 1
@@ -232,7 +234,7 @@ def monitored_training_loop(model: gpflow.models.SVGP, logdir: str,
 
     with summary_writer.as_default():
         for epoch in range(epochs):
-            for _ in range(num_batches_per_epoch):
+            for _ in range(ci_niter(num_batches_per_epoch)):
                 tf_optimization_step(model, next(batches))
 
             epoch_id = epoch + 1
@@ -312,7 +314,7 @@ def checkpointing_training_loop(model: gpflow.models.SVGP,
     batches = iter(train_dataset)
 
     for epoch in range(epochs):
-        for step in range(num_batches_per_epoch):
+        for step in range(ci_niter(num_batches_per_epoch)):
             tf_optimization_step(model, next(batches))
             if step_var is not None:
                 step_var.assign(epoch * num_batches_per_epoch + step + 1)
