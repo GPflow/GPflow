@@ -81,13 +81,7 @@ models = [m1, m2, m3, m4, m5, m6]
 # %%
 for m in models:
     opt = gpflow.optimizers.Scipy()
-    if isinstance(m, gpflow.models.SVGP):
-        loss_fn = lambda: - m.log_marginal_likelihood(data)
-    else:
-        loss_fn = lambda: - m.log_marginal_likelihood()
-    loss_fn = tf.function(loss_fn)
-        
-    opt.minimize(loss_fn, variables=m.trainable_variables, options=dict(maxiter=ci_niter(1000)))
+    opt.minimize(m.training_loss_closure(data), variables=m.trainable_variables, options=dict(maxiter=ci_niter(1000)))
 
 
 # %% [markdown]
@@ -131,7 +125,4 @@ for m in models:
 
 # %%
 for m in models:
-    if isinstance(m, gpflow.models.SVGP):
-        print(f"{m.__class__.__name__:30}  {m.log_likelihood(data)}")
-    else:
-        print(f"{m.__class__.__name__:30}  {m.log_likelihood()}")
+    print(f"{m.__class__.__name__:30}  {m.maximum_likelihood_objective(data)}")

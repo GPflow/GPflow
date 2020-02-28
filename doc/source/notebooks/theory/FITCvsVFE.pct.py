@@ -44,12 +44,8 @@ def getKernel():
 # Run exact inference on training data:
 exact_model = gpflow.models.GPR((xtrain, ytrain), kernel=getKernel())
 
-@tf.function
-def objective_closure():
-    return - exact_model.log_marginal_likelihood()
-
 opt = gpflow.optimizers.Scipy()
-opt.minimize(objective_closure, exact_model.trainable_variables,
+opt.minimize(exact_model.training_loss, exact_model.trainable_variables,
              method='L-BFGS-B',
              options=dict(maxiter=ci_niter(20000)), tol=1e-11)
 
