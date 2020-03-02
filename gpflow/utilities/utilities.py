@@ -247,7 +247,7 @@ def reset_cache_bijectors(input_module: tf.Module) -> tf.Module:
     return input_module
 
 
-def _get_by_name_or_index(parent: object, attr_str: str, index_str: str) -> object:
+def _get_by_name_index(parent: object, attr_str: str, index_str: str) -> object:
     attr = getattr(parent, attr_str)
     if index_str != "":
         try:
@@ -258,7 +258,7 @@ def _get_by_name_or_index(parent: object, attr_str: str, index_str: str) -> obje
     return attr
 
 
-def _set_by_name_or_index(parent: object, value: Any, attr_str: str, index_str: str):
+def _set_by_name_index(parent: object, value: Any, attr_str: str, index_str: str):
     if index_str != "":
         try:
             index = int(index_str)
@@ -275,7 +275,7 @@ def _get_last_attr_spec(parent: Any, attr_path: str) -> Any:
     curr_parent = parent
     attrs = re.findall(restr, attr_path)
     for _, attr_str, _, index_str in attrs[:-1]:
-        curr_parent = _get_by_name_or_index(curr_parent, attr_str, index_str)
+        curr_parent = _get_by_name_index(curr_parent, attr_str, index_str)
     _, attr_str, _, index_str = attrs[-1]
     return curr_parent, attr_str, index_str
 
@@ -292,7 +292,7 @@ def getattr_by_path(target: Any, attr_path: str) -> Any:
         lengthscale = getattr_by_string(m, "kernel.lengthscale")
     """
     descendant, attr, index = _get_last_attr_spec(target, attr_path)
-    return _get_by_name_or_index(descendant, attr, index)
+    return _get_by_name_index(descendant, attr, index)
 
 
 def setattr_by_path(target: Any, attr_path: str, value: Any):
@@ -308,7 +308,7 @@ def setattr_by_path(target: Any, attr_path: str, value: Any):
         setattr_by_string(m, "kernel.lengthscale", tf.constant(1.0, dtype=...))
     """
     descendant, attr, index = _get_last_attr_spec(target, attr_path)
-    return _set_by_name_or_index(descendant, value, attr, index)
+    return _set_by_name_index(descendant, value, attr, index)
 
 
 def deepcopy(input_module: tf.Module, freeze: bool = False) -> tf.Module:
