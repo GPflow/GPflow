@@ -40,8 +40,8 @@ def mvhermgauss(H: int, D: int):
     :return: eval_locations 'x' (H**DxD), weights 'w' (H**D)
     """
     gh_x, gh_w = hermgauss(H)
-    x = np.array(list(itertools.product(*(gh_x, ) * D)))  # H**DxD
-    w = np.prod(np.array(list(itertools.product(*(gh_w, ) * D))), 1)  # H**D
+    x = np.array(list(itertools.product(*(gh_x,) * D)))  # H**DxD
+    w = np.prod(np.array(list(itertools.product(*(gh_w,) * D))), 1)  # H**D
     return x, w
 
 
@@ -74,17 +74,16 @@ def mvnquad(func, means, covs, H: int, Din: int = None, Dout=None):
 
     # transform points based on Gaussian parameters
     cholXcov = tf.linalg.cholesky(covs)  # NxDxD
-    Xt = tf.linalg.matmul(cholXcov,
-                          tf.tile(xn[None, :, :], (N, 1, 1)),
-                          transpose_b=True)  # NxDxH**D
-    X = 2.0**0.5 * Xt + tf.expand_dims(means, 2)  # NxDxH**D
+    Xt = tf.linalg.matmul(
+        cholXcov, tf.tile(xn[None, :, :], (N, 1, 1)), transpose_b=True
+    )  # NxDxH**D
+    X = 2.0 ** 0.5 * Xt + tf.expand_dims(means, 2)  # NxDxH**D
     Xr = tf.reshape(tf.transpose(X, [2, 0, 1]), (-1, Din))  # (H**D*N)xD
 
     # perform quadrature
     fevals = func(Xr)
     if Dout is None:
-        Dout = tuple(
-            (d if type(d) is int else d.value) for d in fevals.shape[1:])
+        Dout = tuple((d if type(d) is int else d.value) for d in fevals.shape[1:])
 
     if any([d is None for d in Dout]):
         raise ValueError(
@@ -92,11 +91,8 @@ def mvnquad(func, means, covs, H: int, Din: int = None, Dout=None):
             "shape. Running mvnquad in `autoflow` without specifying `Din` and `Dout` "
             "is problematic. Consider using your own session."
         )  # pragma: no cover
-    fX = tf.reshape(fevals, (
-        H**Din,
-        N,
-    ) + Dout)
-    wr = np.reshape(wn * np.pi**(-Din * 0.5), (-1, ) + (1, ) * (1 + len(Dout)))
+    fX = tf.reshape(fevals, (H ** Din, N,) + Dout)
+    wr = np.reshape(wn * np.pi ** (-Din * 0.5), (-1,) + (1,) * (1 + len(Dout)))
     return tf.reduce_sum(fX * wr, 0)
 
 
@@ -122,9 +118,7 @@ def ndiagquad(funcs, H: int, Fmu, Fvar, logspace: bool = False, **Ys):
         """
         Stack a list of means/vars into a full block
         """
-        return tf.reshape(
-            tf.concat([tf.reshape(f, (-1, 1)) for f in f_list], axis=1),
-            (-1, 1, Din))
+        return tf.reshape(tf.concat([tf.reshape(f, (-1, 1)) for f in f_list], axis=1), (-1, 1, Din))
 
     if isinstance(Fmu, (tuple, list)):
         Din = len(Fmu)
@@ -142,17 +136,16 @@ def ndiagquad(funcs, H: int, Fmu, Fvar, logspace: bool = False, **Ys):
     Xall = gh_x * tf.sqrt(2.0 * Fvar) + Fmu  # [N, H]**Din x Din
     Xs = [Xall[:, :, i] for i in range(Din)]  # [N, H]**Din  each
 
-    gh_w = wn * np.pi**(-0.5 * Din)  # H**Din x 1
+    gh_w = wn * np.pi ** (-0.5 * Din)  # H**Din x 1
 
     for name, Y in Ys.items():
         Y = tf.reshape(Y, (-1, 1))
-        Y = tf.tile(Y, [1, H**Din])  # broadcast Y to match X
+        Y = tf.tile(Y, [1, H ** Din])  # broadcast Y to match X
         # without the tiling, some calls such as tf.where() (in bernoulli) fail
         Ys[name] = Y  # now [N, H]**Din
 
     def eval_func(f):
-        feval = f(*Xs,
-                  **Ys)  # f should be elementwise: return shape [N, H]**Din
+        feval = f(*Xs, **Ys)  # f should be elementwise: return shape [N, H]**Din
         if logspace:
             log_gh_w = np.log(gh_w.reshape(1, -1))
             result = tf.reduce_logsumexp(feval + log_gh_w, axis=1)
@@ -166,13 +159,7 @@ def ndiagquad(funcs, H: int, Fmu, Fvar, logspace: bool = False, **Ys):
     return eval_func(funcs)
 
 
-def ndiag_mc(funcs,
-             S: int,
-             Fmu,
-             Fvar,
-             logspace: bool = False,
-             epsilon=None,
-             **Ys):
+def ndiag_mc(funcs, S: int, Fmu, Fvar, logspace: bool = False, epsilon=None, **Ys):
     """
     Computes N Gaussian expectation integrals of one or more functions
     using Monte Carlo samples. The Gaussians must be independent.

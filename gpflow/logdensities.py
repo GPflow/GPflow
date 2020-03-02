@@ -18,8 +18,7 @@ from .config import default_float
 
 
 def gaussian(x, mu, var):
-    return -0.5 * (np.log(2 * np.pi) + tf.math.log(var) +
-                   tf.square(mu - x) / var)
+    return -0.5 * (np.log(2 * np.pi) + tf.math.log(var) + tf.square(mu - x) / var)
 
 
 def lognormal(x, mu, var):
@@ -32,7 +31,7 @@ def bernoulli(x, p):
 
 
 def poisson(x, lam):
-    return x * tf.math.log(lam) - lam - tf.math.lgamma(x + 1.)
+    return x * tf.math.log(lam) - lam - tf.math.lgamma(x + 1.0)
 
 
 def exponential(x, scale):
@@ -40,30 +39,41 @@ def exponential(x, scale):
 
 
 def gamma(x, shape, scale):
-    return -shape * tf.math.log(scale) - tf.math.lgamma(shape) \
-        + (shape - 1.) * tf.math.log(x) - x / scale
+    return (
+        -shape * tf.math.log(scale)
+        - tf.math.lgamma(shape)
+        + (shape - 1.0) * tf.math.log(x)
+        - x / scale
+    )
 
 
 def student_t(x, mean, scale, df):
     df = tf.cast(df, default_float())
-    const = tf.math.lgamma((df + 1.) * 0.5) - tf.math.lgamma(df * 0.5) \
+    const = (
+        tf.math.lgamma((df + 1.0) * 0.5)
+        - tf.math.lgamma(df * 0.5)
         - 0.5 * (tf.math.log(tf.square(scale)) + tf.math.log(df) + np.log(np.pi))
+    )
     const = tf.cast(const, default_float())
-    return const - 0.5 * (df + 1.) * \
-        tf.math.log(1. + (1. / df) * (tf.square((x - mean) / scale)))
+    return const - 0.5 * (df + 1.0) * tf.math.log(
+        1.0 + (1.0 / df) * (tf.square((x - mean) / scale))
+    )
 
 
 def beta(x, alpha, beta):
     # need to clip x, since log of 0 is nan...
     x = tf.clip_by_value(x, 1e-6, 1 - 1e-6)
-    return (alpha - 1.) * tf.math.log(x) + (beta - 1.) * tf.math.log(1. - x) \
-        + tf.math.lgamma(alpha + beta)\
-        - tf.math.lgamma(alpha)\
+    return (
+        (alpha - 1.0) * tf.math.log(x)
+        + (beta - 1.0) * tf.math.log(1.0 - x)
+        + tf.math.lgamma(alpha + beta)
+        - tf.math.lgamma(alpha)
         - tf.math.lgamma(beta)
+    )
 
 
 def laplace(x, mu, sigma):
-    return -tf.abs(mu - x) / sigma - tf.math.log(2. * sigma)
+    return -tf.abs(mu - x) / sigma - tf.math.log(2.0 * sigma)
 
 
 def multivariate_normal(x, mu, L):
