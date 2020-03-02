@@ -25,10 +25,7 @@ class Datum:
     N1, N2 = 6, 12
     X = [rng.rand(N1, 2) * 1, rng.rand(N2, 2) * 1]
     Y = [
-        np.sin(x[:, :1])
-        + 0.9 * np.cos(x[:, 1:2] * 1.6)
-        + rng.randn(x.shape[0], 1) * 0.8
-        for x in X
+        np.sin(x[:, :1]) + 0.9 * np.cos(x[:, 1:2] * 1.6) + rng.randn(x.shape[0], 1) * 0.8 for x in X
     ]
     label = [np.zeros((N1, 1)), np.ones((N2, 1))]
     perm = list(range(30))
@@ -106,22 +103,13 @@ def _prepare_models():
         return -cvgp.log_marginal_likelihood()
 
     opt.minimize(
-        vgp0_closure,
-        variables=vgp0.trainable_variables,
-        options=dict(maxiter=1000),
-        method="BFGS",
+        vgp0_closure, variables=vgp0.trainable_variables, options=dict(maxiter=1000), method="BFGS",
     )
     opt.minimize(
-        vgp1_closure,
-        variables=vgp1.trainable_variables,
-        options=dict(maxiter=1000),
-        method="BFGS",
+        vgp1_closure, variables=vgp1.trainable_variables, options=dict(maxiter=1000), method="BFGS",
     )
     opt.minimize(
-        cvgp_closure,
-        variables=cvgp.trainable_variables,
-        options=dict(maxiter=1000),
-        method="BFGS",
+        cvgp_closure, variables=cvgp.trainable_variables, options=dict(maxiter=1000), method="BFGS",
     )
 
     return vgp0, vgp1, cvgp
@@ -194,18 +182,14 @@ def test_predict_f():
 def test_predict_y():
     vgp0, vgp1, cvgp = _prepare_models()
     mu1, var1 = vgp0.predict_y(Datum.Xtest)
-    c_mu1, c_var1 = cvgp.predict_y(
-        np.hstack([Datum.Xtest, np.zeros((Datum.Xtest.shape[0], 1))])
-    )
+    c_mu1, c_var1 = cvgp.predict_y(np.hstack([Datum.Xtest, np.zeros((Datum.Xtest.shape[0], 1))]))
 
     # predict_y returns results for all the likelihoods in multi_likelihood
     assert_allclose(mu1, c_mu1[:, :1], atol=1.0e-4)
     assert_allclose(var1, c_var1[:, :1], atol=1.0e-4)
 
     mu2, var2 = vgp1.predict_y(Datum.Xtest)
-    c_mu2, c_var2 = cvgp.predict_y(
-        np.hstack([Datum.Xtest, np.ones((Datum.Xtest.shape[0], 1))])
-    )
+    c_mu2, c_var2 = cvgp.predict_y(np.hstack([Datum.Xtest, np.ones((Datum.Xtest.shape[0], 1))]))
 
     # predict_y returns results for all the likelihoods in multi_likelihood
     assert_allclose(mu2, c_mu2[:, 1:2], atol=1.0e-4)
@@ -216,14 +200,10 @@ def test_predict_log_density():
     vgp0, vgp1, cvgp = _prepare_models()
 
     pred_ydensity0 = vgp0.predict_log_density((Datum.Xtest, Datum.Ytest))
-    pred_ydensity_c0 = cvgp.predict_log_density(
-        (Datum.X_augumented0, Datum.Y_augumented0)
-    )
+    pred_ydensity_c0 = cvgp.predict_log_density((Datum.X_augumented0, Datum.Y_augumented0))
     assert_allclose(pred_ydensity0, pred_ydensity_c0, atol=1e-2)
     pred_ydensity1 = vgp1.predict_log_density((Datum.Xtest, Datum.Ytest))
-    pred_ydensity_c1 = cvgp.predict_log_density(
-        (Datum.X_augumented1, Datum.Y_augumented1)
-    )
+    pred_ydensity_c1 = cvgp.predict_log_density((Datum.X_augumented1, Datum.Y_augumented1))
     assert_allclose(pred_ydensity1, pred_ydensity_c1, atol=1e-2)
 
 

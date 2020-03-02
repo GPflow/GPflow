@@ -43,12 +43,8 @@ default_datum = Datum()
 
 
 _gp_models = [
-    gpflow.models.VGP(
-        (default_datum.X, default_datum.Y), default_datum.kernel, default_datum.lik
-    ),
-    gpflow.models.GPMC(
-        (default_datum.X, default_datum.Y), default_datum.kernel, default_datum.lik
-    ),
+    gpflow.models.VGP((default_datum.X, default_datum.Y), default_datum.kernel, default_datum.lik),
+    gpflow.models.GPMC((default_datum.X, default_datum.Y), default_datum.kernel, default_datum.lik),
     gpflow.models.SGPMC(
         (default_datum.X, default_datum.Y),
         default_datum.kernel,
@@ -56,22 +52,16 @@ _gp_models = [
         inducing_variable=default_datum.Z,
     ),
     gpflow.models.SGPR(
-        (default_datum.X, default_datum.Y),
-        default_datum.kernel,
-        inducing_variable=default_datum.Z,
+        (default_datum.X, default_datum.Y), default_datum.kernel, inducing_variable=default_datum.Z,
     ),
     gpflow.models.GPR((default_datum.X, default_datum.Y), default_datum.kernel),
     gpflow.models.GPRFITC(
-        (default_datum.X, default_datum.Y),
-        default_datum.kernel,
-        inducing_variable=default_datum.Z,
+        (default_datum.X, default_datum.Y), default_datum.kernel, inducing_variable=default_datum.Z,
     ),
 ]
 
 _state_less_gp_models = [
-    gpflow.models.SVGP(
-        default_datum.kernel, default_datum.lik, inducing_variable=default_datum.Z
-    )
+    gpflow.models.SVGP(default_datum.kernel, default_datum.lik, inducing_variable=default_datum.Z)
 ]
 
 

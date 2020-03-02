@@ -29,11 +29,7 @@ rng = np.random.RandomState(1)
 
 
 def univariate_log_marginal_likelihood(y, K, noise_var):
-    return (
-        -0.5 * y * y / (K + noise_var)
-        - 0.5 * np.log(K + noise_var)
-        - 0.5 * np.log(np.pi * 2.0)
-    )
+    return -0.5 * y * y / (K + noise_var) - 0.5 * np.log(K + noise_var) - 0.5 * np.log(np.pi * 2.0)
 
 
 def univariate_posterior(y, K, noise_var):
@@ -45,11 +41,7 @@ def univariate_posterior(y, K, noise_var):
 def univariate_prior_KL(meanA, meanB, varA, varB):
     # KL[ qA | qB ] = E_{qA} \log [qA / qB] where qA and qB are univariate normal distributions.
     return 0.5 * (
-        np.log(varB)
-        - np.log(varA)
-        - 1.0
-        + varA / varB
-        + (meanB - meanA) * (meanB - meanA) / varB
+        np.log(varB) - np.log(varA) - 1.0 + varA / varB + (meanB - meanA) * (meanB - meanA) / varB
     )
 
 
@@ -89,9 +81,7 @@ class Datum:
     zero_mean = 0.0
     K = 1.0
     noise_var = 0.5
-    posterior_mean, posterior_var = univariate_posterior(
-        y=y_data, K=K, noise_var=noise_var
-    )
+    posterior_mean, posterior_var = univariate_posterior(y=y_data, K=K, noise_var=noise_var)
     posterior_std = np.sqrt(posterior_var)
     data = (X, Y)
 
@@ -206,15 +196,11 @@ def test_variational_multivariate_prior_KL_full_q(whiten):
         if whiten
         else ref_rbf_kernel(MultiDatum.X, MultiDatum.ls, MultiDatum.signal_var)
     )
-    reference_kl = multivariate_prior_KL(
-        MultiDatum.q_mean, cov_q, mean_prior, cov_prior
-    )
+    reference_kl = multivariate_prior_KL(MultiDatum.q_mean, cov_q, mean_prior, cov_prior)
 
     q_sqrt = MultiDatum.q_sqrt_full[None, :, :]
     model = gpflow.models.SVGP(
-        kernel=SquaredExponential(
-            variance=MultiDatum.signal_var, lengthscale=MultiDatum.ls
-        ),
+        kernel=SquaredExponential(variance=MultiDatum.signal_var, lengthscale=MultiDatum.ls),
         likelihood=Gaussian(MultiDatum.noise_var),
         inducing_variable=MultiDatum.Z,
         num_latent=MultiDatum.num_latent,
