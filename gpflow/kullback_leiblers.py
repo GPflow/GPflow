@@ -16,7 +16,7 @@
 
 import tensorflow as tf
 from .config import default_float
-from multipledispatch import Dispatcher
+from .utilities import Dispatcher
 from .inducing_variables import InducingVariables
 from .kernels import Kernel
 from .covariances.kuus import Kuu

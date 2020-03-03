@@ -25,23 +25,32 @@ from typing import List, Optional, Union
 import numpy as np
 import tensorflow as tf
 
+from ..base import Module
 
-class Kernel(tf.Module, metaclass=abc.ABCMeta):
+ActiveDims = Union[slice, list]
+
+
+class Kernel(Module, metaclass=abc.ABCMeta):
     """
     The basic kernel class. Handles active dims.
     """
 
-    def __init__(self,
-                 active_dims: Optional[Union[slice, list]] = None,
-                 name: Optional[str] = None):
+    def __init__(self, active_dims: Optional[ActiveDims] = None, name: Optional[str] = None):
         """
-        :param active_dims: active dimensions, has the slice type.
+        :param active_dims: active dimensions, either a slice or list of
+            indices into the columns of X.
         :param name: optional kernel name.
         """
         super().__init__(name=name)
-        if isinstance(active_dims, list):
-            active_dims = np.array(active_dims)
-        self._active_dims = active_dims
+        self._active_dims = self._normalize_active_dims(active_dims)
+
+    @staticmethod
+    def _normalize_active_dims(value):
+        if value is None:
+            value = slice(None, None, None)
+        if not isinstance(value, slice):
+            value = np.array(value, dtype=int)
+        return value
 
     @property
     def active_dims(self):
@@ -49,11 +58,7 @@ class Kernel(tf.Module, metaclass=abc.ABCMeta):
 
     @active_dims.setter
     def active_dims(self, value):
-        if value is None:
-            value = slice(None, None, None)
-        if not isinstance(value, slice):
-            value = np.array(value, dtype=int)
-        self._active_dims = value
+        self._active_dims = self._normalize_active_dims(value)
 
     def on_separate_dims(self, other):
         """
@@ -83,11 +88,13 @@ class Kernel(tf.Module, metaclass=abc.ABCMeta):
         dims = self.active_dims
         if isinstance(dims, slice):
             X = X[..., dims]
-            X2 = X2[..., dims] if X2 is not None else X
+            if X2 is not None:
+                X2 = X2[..., dims]
         elif dims is not None:
             # TODO(@awav): Convert when TF2.0 will support proper slicing.
             X = tf.gather(X, dims, axis=-1)
-            X2 = tf.gather(X2, dims, axis=-1) if X2 is not None else X
+            if X2 is not None:
+                X2 = tf.gather(X2, dims, axis=-1)
         return X, X2
 
     def slice_cov(self, cov: tf.Tensor) -> tf.Tensor:
@@ -134,20 +141,26 @@ class Kernel(tf.Module, metaclass=abc.ABCMeta):
                              f"size of ard parameter ({ard_parameter.shape[0]})")
 
     @abc.abstractmethod
-    def K(self, X, X2=None, presliced=False):
+    def K(self, X, X2=None):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def K_diag(self, X, presliced=False):
+    def K_diag(self, X):
         raise NotImplementedError
 
     def __call__(self, X, X2=None, full=True, presliced=False):
-        if not full and X2 is not None:
-            raise ValueError(
-                "Ambiguous inputs: `diagonal` and `y` are not compatible.")
+        if (not full) and (X2 is not None):
+            raise ValueError("Ambiguous inputs: `not full` and `X2` are not compatible.")
+
+        if not presliced:
+            X, X2 = self.slice(X, X2)
+
         if not full:
+            assert X2 is None
             return self.K_diag(X)
-        return self.K(X, X2)
+
+        else:
+            return self.K(X, X2)
 
     def __add__(self, other):
         return Sum([self, other])
@@ -171,8 +184,7 @@ class Combination(Kernel):
         super().__init__(name=name)
 
         if not all(isinstance(k, Kernel) for k in kernels):
-            raise TypeError(
-                "can only combine Kernel instances")  # pragma: no cover
+            raise TypeError("can only combine Kernel instances")  # pragma: no cover
 
         self._set_kernels(kernels)
 
@@ -208,22 +220,32 @@ class Combination(Kernel):
                         overlapping = True
             return not overlapping
 
-    def K(self, X: tf.Tensor, X2: Optional[tf.Tensor] = None, presliced: bool = False) -> tf.Tensor:
-        res = [k.K(X, X2, presliced=presliced) for k in self.kernels]
-        return self._reduce(res)
 
-    def K_diag(self, X: tf.Tensor, presliced: bool = False) -> tf.Tensor:
-        res = [k.K_diag(X, presliced=presliced) for k in self.kernels]
-        return self._reduce(res)
+class ReducingCombination(Combination):
+    def __call__(self, X, X2=None, full=True, presliced=False):
+        return self._reduce(
+            [k(X, X2, full=full, presliced=presliced) for k in self.kernels]
+        )
 
+    def K(self, X: tf.Tensor, X2: Optional[tf.Tensor] = None) -> tf.Tensor:
+        return self._reduce([k.K(X, X2) for k in self.kernels])
 
-class Sum(Combination):
+    def K_diag(self, X: tf.Tensor) -> tf.Tensor:
+        return self._reduce([k.K_diag(X) for k in self.kernels])
+
     @property
-    def _reduce(cls):
+    @abc.abstractmethod
+    def _reduce(self):
+        pass
+
+
+class Sum(ReducingCombination):
+    @property
+    def _reduce(self):
         return tf.add_n
 
 
-class Product(Combination):
+class Product(ReducingCombination):
     @property
-    def _reduce(cls):
+    def _reduce(self):
         return partial(reduce, tf.multiply)

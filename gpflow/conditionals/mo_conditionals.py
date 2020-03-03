@@ -31,7 +31,7 @@ def shared_independent_conditional(
     -----------------
     - See `gpflow.conditionals._conditional` for a detailed explanation of
       conditional in the single-output case.
-    - See the multiouput notebook for more information about the multiouput framework.
+    - See the multioutput notebook for more information about the multioutput framework.
     Parameters
     ----------
     :param Xnew: data matrix, size [N, D].
@@ -73,7 +73,7 @@ def separate_independent_conditional(
     -----------------
     - See `gpflow.conditionals._conditional` for a detailed explanation of
       conditional in the single-output case.
-    - See the multiouput notebook for more information about the multiouput framework.
+    - See the multioutput notebook for more information about the multioutput framework.
     - See above for the parameters and the return value.
     """
     # Following are: [P, M, M]  -  [P, M, N]  -  [P, N](x N)
@@ -122,7 +122,7 @@ def fallback_independent_latent_conditional(
     -----------------
     - See `gpflow.conditionals._conditional` for a detailed explanation of
       conditional in the single-output case.
-    - See the multiouput notebook for more information about the multiouput framework.
+    - See the multioutput notebook for more information about the multioutput framework.
     - See above for the parameters and the return value.
     """
     Kmm = covariances.Kuu(inducing_variable, kernel, jitter=default_jitter())  # [L, M, M]
@@ -154,7 +154,7 @@ def inducing_point_conditional(
     -----------------
     - See `gpflow.conditionals._conditional` for a detailed explanation of
       conditional in the single-output case.
-    - See the multiouput notebook for more information about the multiouput framework.
+    - See the multioutput notebook for more information about the multioutput framework.
 
     Parameters
     ----------
@@ -203,7 +203,7 @@ def coregionalization_conditional(
     -----------------
     - See `gpflow.conditionals._conditional` for a detailed explanation of
       conditional in the single-output case.
-    - See the multiouput notebook for more information about the multiouput framework.
+    - See the multioutput notebook for more information about the multioutput framework.
     """
     ind_conditional = conditional.dispatch(object, SeparateIndependentInducingVariables, SeparateIndependent, object)
     gmu, gvar = ind_conditional(Xnew,

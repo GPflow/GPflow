@@ -18,6 +18,7 @@ __all__ = [
     "multiple_assign",
     "training_loop",
     "print_summary",
+    "tabulate_module_summary",
     "deepcopy_components",
     "leaf_components",
     "parameter_dict",
@@ -243,16 +244,28 @@ def reset_cache_bijectors(input_module: tf.Module) -> tf.Module:
     target_types = (tfp.bijectors.Bijector, )
     accumulator = ('', None)
 
+    def clear_cache(b):
+        if isinstance(b, tfp.bijectors.Bijector):
+            # `_from_x` and `_from_y` are cache dictionaries for forward and inverse transformations
+            # in bijector class.
+            b._from_x.clear()
+            b._from_y.clear()
+
     def clear_bijector(bijector, _, state):
-        bijector._from_x.clear()
-        bijector._from_y.clear()
+        clear_cache(bijector)
+        if isinstance(bijector, tfp.bijectors.Chain):
+            for m in bijector.submodules:
+                clear_cache(m)
         return state
 
     _ = traverse_module(input_module, accumulator, clear_bijector, target_types)
     return input_module
 
 
-def deepcopy_components(input_module: tf.Module) -> tf.Module:
+M = TypeVar('M', bound=tf.Module)
+
+
+def deepcopy_components(input_module: M) -> M:
     """
     Returns a deepcopy of the input tf.Module. To do that first resets the caches stored inside each
     tfp.bijectors.Bijector to allow the deepcopy of the tf.Module.

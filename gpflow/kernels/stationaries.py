@@ -20,12 +20,14 @@ class Stationary(Kernel):
 
     def __init__(self, variance=1.0, lengthscale=1.0, **kwargs):
         """
-        :param variance: the (initial) value for the variance parameter
-        :param lengthscale: the (initial) value for the lengthscale parameter(s),
-            to induce ARD behaviour this must be initialised as an array the same
-            length as the the number of active dimensions e.g. [1., 1., 1.]
-        :param kwargs: accepts `name` and `active_dims`, which is a list of
-            length input_dim which controls which columns of X are used
+        :param variance: the (initial) value for the variance parameter.
+        :param lengthscale: the (initial) value for the lengthscale
+            parameter(s), to induce ARD behaviour this must be initialised as
+            an array the same length as the the number of active dimensions
+            e.g. [1., 1., 1.]
+        :param kwargs: accepts `name` and `active_dims`, which is a list or
+            slice of indices which controls which columns of X are used (by
+            default, all columns are used).
         """
         for kwarg in kwargs:
             if kwarg not in {'name', 'active_dims'}:
@@ -51,13 +53,11 @@ class Stationary(Kernel):
         X2_scaled = X2 / self.lengthscale if X2 is not None else X2
         return square_distance(X_scaled, X2_scaled)
 
-    def K(self, X, X2=None, presliced=False):
-        if not presliced:
-            X, X2 = self.slice(X, X2)
+    def K(self, X, X2=None):
         r2 = self.scaled_squared_euclid_dist(X, X2)
         return self.K_r2(r2)
 
-    def K_diag(self, X, presliced=False):
+    def K_diag(self, X):
         return tf.fill(tf.shape(X)[:-1], tf.squeeze(self.variance))
 
     def K_r2(self, r2):

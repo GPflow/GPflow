@@ -18,7 +18,15 @@
 #
 import os
 import sys
-sys.path.insert(0, os.path.abspath('./ext'))
+import types
+
+# When we install GPflow on readthedocs we omit installing Tensorflow
+# and Tensorflow Probability. We make up for it by mocking them here.
+autodoc_mock_imports = [
+    "tensorflow",
+    "tensorflow_probability"
+]
+
 
 # on_rtd is whether we are on readthedocs.org, this line of code grabbed from docs.readthedocs.org
 on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
@@ -40,8 +48,6 @@ if not on_rtd:  # only import and set the theme if we're building docs locally
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    # custom extension
-    'gpflow_api_ext',
     # builtin extansions
     'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',
@@ -368,3 +374,19 @@ texinfo_documents = [
 # If true, do not generate a @detailmenu in the "Top" node's menu.
 #
 # texinfo_no_detailmenu = False
+
+
+def setup(app):
+    """ Entry point to sphinx build customisation. """
+    app.connect("autodoc-skip-member", autodoc_skip_member_callback)
+
+
+def autodoc_skip_member_callback(app, what, name, obj, skip, options):
+    """
+    Only skip special methods and functions, including `__init__`, if they have no docstring.
+    """
+    if isinstance(obj, (types.FunctionType, types.MethodType)):
+        if getattr(obj, "__doc__", None) is not None:
+            return False  # never skip methods containing a docstring
+
+    return skip
