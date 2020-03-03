@@ -69,4 +69,7 @@ def test_scipy_jit():
             [var.value().numpy().squeeze() for var in model.trainable_variables]
         )
 
-    np.testing.assert_allclose(get_values(m1), get_values(m2), rtol=1e-14, atol=1e-15)
+    # The tolerance of the following test had to be loosened slightly from atol=1e-15
+    # due to the changes introduced by PR #1213, which removed some implicit casts
+    # to float32.
+    np.testing.assert_allclose(get_values(m1), get_values(m2), rtol=1e-14, atol=1e-14)
