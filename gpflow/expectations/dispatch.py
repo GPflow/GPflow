@@ -1,4 +1,4 @@
-from multipledispatch import Dispatcher
+from ..utilities import Dispatcher
 
 expectation = Dispatcher('expectation')
 quadrature_expectation = Dispatcher('quadrature_expectation')

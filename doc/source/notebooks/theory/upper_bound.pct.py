@@ -34,6 +34,8 @@ from gpflow.ci_utils import ci_niter
 import logging
 logging.disable(logging.WARNING)
 
+np.random.seed(1)
+
 from FITCvsVFE import getTrainingTestData
 
 # %%
@@ -77,10 +79,10 @@ vfe_hyps = []
 for M in Ms:
     Zinit = X[:M, :].copy()
     vfe = gpflow.models.SGPR((X, Y), gpflow.kernels.SquaredExponential(), inducing_variable=Zinit)
-    objective = tf.function(autograph=False)(lambda: - vfe.log_marginal_likelihood())
+    objective = tf.function(lambda: - vfe.log_marginal_likelihood())
     gpflow.optimizers.Scipy().minimize(objective, vfe.trainable_variables,
                                        options=dict(disp=False, maxiter=ci_niter(1000)))
-    
+
     vfe_lml.append(vfe.log_likelihood().numpy())
     vupper_lml.append(vfe.upper_bound().numpy())
     vfe_hyps.append([(p.name, p.numpy()) for p in vfe.trainable_parameters])
@@ -107,32 +109,27 @@ fMs = np.arange(3, ci_niter(20, test_n=5), 1)
 fvfe_lml = []  # Fixed vfe lml
 fvupper_lml = []  # Fixed upper lml
 
-init_params = [p.numpy() for p in vfe.parameters]  # TODO: provide convenience function
+init_params = gpflow.utilities.parameter_dict(vfe)
+
+# cannot copy this due to shape mismatch with different numbers of inducing points between models:
+del init_params['.inducing_variable.Z']
 
 for M in fMs:
     Zinit = vfe.inducing_variable.Z.numpy()[:M, :]
     Zinit = np.vstack((Zinit, X[np.random.permutation(len(X))[:(M - len(Zinit))], :].copy()))
-    
-    vfe = gpflow.models.SGPR((X, Y), gpflow.kernels.SquaredExponential(), inducing_variable=Zinit)
-    
-    # copy hyperparameters from optimized model:
-    
-    for p, val in zip(vfe.parameters, init_params):
-        if p is vfe.inducing_variable.Z:
-            # would fail due to shape mismatch with different numbers of inducing points between models
-            continue
-        p.assign(val)
 
-    # keep our own augmented set of inducing point locations:
-    vfe.inducing_variable.Z = gpflow.Parameter(Zinit, dtype=gpflow.default_float())
-    
+    vfe = gpflow.models.SGPR((X, Y), gpflow.kernels.SquaredExponential(), inducing_variable=Zinit)
+
+    # copy hyperparameters (omitting inducing_variable.Z) from optimized model:
+    gpflow.utilities.multiple_assign(vfe, init_params)
+
     set_trainable(vfe.kernel, False)
     set_trainable(vfe.likelihood, False)
-    
-    objective = tf.function(autograph=False)(lambda: - vfe.log_marginal_likelihood())
+
+    objective = tf.function(lambda: - vfe.log_marginal_likelihood())
     gpflow.optimizers.Scipy().minimize(objective, vfe.trainable_variables,
                                        options=dict(disp=False, maxiter=ci_niter(1000)))
-    
+
     fvfe_lml.append(vfe.log_likelihood().numpy())
     fvupper_lml.append(vfe.upper_bound().numpy())
     print("%i" % M, end=" ")
@@ -157,9 +154,11 @@ assert np.all(np.array(fvupper_lml) - np.array(fvfe_lml) > 0.0)
 # %%
 single_inducing_point = X[:1, :].copy()
 vfe = gpflow.models.SGPR((X, Y), gpflow.kernels.SquaredExponential(), inducing_variable=single_inducing_point)
-objective = tf.function(autograph=False)(lambda: - vfe.log_marginal_likelihood())
+objective = tf.function(lambda: - vfe.log_marginal_likelihood())
 gpflow.optimizers.Scipy().minimize(objective, vfe.trainable_variables,
-                                   options=dict(maxiter=ci_niter(1000)))
+                                   options=dict(maxiter=ci_niter(1000)), jit=False)
+# Note that we need to set jit=False here due to a discrepancy in tf.function jitting
+# see https://github.com/GPflow/GPflow/issues/1260
 
 print("Lower bound: %f" % vfe.log_likelihood().numpy())
 print("Upper bound: %f" % vfe.upper_bound().numpy())

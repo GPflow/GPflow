@@ -190,7 +190,9 @@ class BayesianGPLVM(GPModel):
 
         :param predict_at: Point to predict at.
         """
-        assert full_output_cov == False
+        if full_output_cov:
+            raise NotImplementedError
+
         pX = DiagonalGaussian(self.x_data_mean, self.x_data_var)
 
         y_data = self.data
@@ -225,3 +227,6 @@ class BayesianGPLVM(GPModel):
             shape = tf.stack([1, tf.shape(y_data)[1]])
             var = tf.tile(tf.expand_dims(var, 1), shape)
         return mean + self.mean_function(predict_at), var
+
+    def predict_log_density(self, data: tf.Tensor):
+        raise NotImplementedError
