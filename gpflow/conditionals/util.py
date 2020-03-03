@@ -1,3 +1,4 @@
+from typing import Optional
 import tensorflow as tf
 
 from ..config import default_float, default_jitter
@@ -11,7 +12,7 @@ def base_conditional(Kmn: tf.Tensor,
                      f: tf.Tensor,
                      *,
                      full_cov=False,
-                     q_sqrt=None,
+                     q_sqrt: Optional[tf.Tensor] = None,
                      white=False):
     r"""
     Given a g1 and g2, and distribution p and q such that
@@ -31,7 +32,8 @@ def base_conditional(Kmn: tf.Tensor,
     :param Knn: [..., N, N]  or  N
     :param f: [M, R]
     :param full_cov: bool
-    :param q_sqrt: None or [R, M, M] (lower triangular) or [M, R] (diagonal)
+    :param q_sqrt: If this is a Tensor, it must have shape [R, M, M] (lower
+        triangular) or [M, R] (diagonal)
     :param white: bool
     :return: [N, R]  or [R, N, N]
     """
