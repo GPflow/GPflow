@@ -33,6 +33,7 @@ import tensorflow as tf
 import gpflow
 from gpflow.ci_utils import ci_niter
 from gpflow.optimizers import NaturalGradient
+from gpflow.utilities import set_trainable
 import matplotlib
 import matplotlib.pyplot as plt
 # %matplotlib inline
@@ -102,6 +103,8 @@ class HeteroskedasticGaussian(gpflow.likelihoods.Likelihood):
 # Here we'll build a variational GP model with the previous likelihood on the dataset that we generated. We'll use the natural gradient optimizer (see [Natural gradients](natural_gradients.ipynb) for more information).
 #
 # The variational GP object is capable of variational inference with any GPflow-derived likelihood. Usually, the inference is an inexact (but pretty good) approximation, but in the special case considered here, where the noise is Gaussian, it will achieve exact inference. Optimizing over the variational parameters is easy using the natural gradients method, which provably converges in a single step. 
+#
+# Note: We mark the variational parameters as not trainable so that they are not included in the `model.trainable_variables` when we optimize using the Adam optimizer. We train the variational parameters separately using the natural gradient method.
 
 # %%
 # model construction (notice that num_latent is 1)
@@ -118,13 +121,12 @@ def objective_closure():
 natgrad = NaturalGradient(gamma=1.0)
 adam = tf.optimizers.Adam()
 
-from gpflow.utilities import set_trainable
 set_trainable(model.q_mu, False)
 set_trainable(model.q_sqrt, False)
 
 for _ in range(ci_niter(1000)):
-    adam.minimize(objective_closure, model.trainable_variables)
     natgrad.minimize(objective_closure, [(model.q_mu, model.q_sqrt)])
+    adam.minimize(objective_closure, model.trainable_variables)
 
 # %%
 # let's do some plotting!
@@ -139,7 +141,7 @@ plt.plot(xx, mu - 2*np.sqrt(var), 'C0', lw=0.5)
 
 plt.errorbar(X.squeeze(), Y.squeeze(), yerr=2*(np.sqrt(NoiseVar)).squeeze(),
              marker='x', lw=0, elinewidth=1., color='C1')
-plt.xlim(-5, 5)
+plt.xlim(-5, 5);
 
 # %% [markdown]
 # ### Questions for the reader
@@ -225,11 +227,13 @@ ax.plot(xx, mu + 2*np.sqrt(var), 'C0', lw=0.5)
 ax.plot(xx, mu - 2*np.sqrt(var), 'C0', lw=0.5)
 
 ax.plot(X, Y, 'C1x', mew=2)
-ax.set_xlim(-5, 5)
+ax.set_xlim(-5, 5);
 
 # %% [markdown]
 # ### Optimizing the noise variances
 # Here we'll optimize over both the noise variance and the variational parameters, applying natural gradients interleaved with the Adam optimizer.
+#
+# As before, we mark the variational parameters as not trainable, in order to train them separately with the natural gradient method.
 
 # %%
 likelihood = gpflow.likelihoods.SwitchedLikelihood([gpflow.likelihoods.Gaussian(variance=1.0),
@@ -245,8 +249,8 @@ set_trainable(model.q_mu, False)
 set_trainable(model.q_sqrt, False)
 
 for _ in range(ci_niter(1000)):
-    adam.minimize(objective_closure, model.trainable_variables)
     natgrad.minimize(objective_closure, [(model.q_mu, model.q_sqrt)])
+    adam.minimize(objective_closure, model.trainable_variables)
 
 # %% [markdown]
 # ### Plotting the fitted model
@@ -269,7 +273,7 @@ ax.plot(xx, mu - 2*np.sqrt(var), 'C0', lw=0.5)
 
 ax.plot(X, Y, 'C1x', mew=2)
 ax.set_xlim(-5, 5)
-ax.plot(xx, 2.5 * np.sin(6 * xx) + np.cos(3 * xx), 'C2--')
+ax.plot(xx, 2.5 * np.sin(6 * xx) + np.cos(3 * xx), 'C2--');
 
 # %%
 from gpflow.utilities import print_summary
