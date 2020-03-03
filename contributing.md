@@ -68,7 +68,7 @@ class Foo:
 GPflow uses [black](https://github.com/psf/black) for formatting in the following way:
 
 ```bash
-black -t py36 --line-length=100 gpflow/
+black -t py36 -l 100 gpflow tests
 ```
 
 ## Pull requests and the master branch
