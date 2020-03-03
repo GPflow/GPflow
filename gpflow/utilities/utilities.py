@@ -30,6 +30,7 @@ State = Any
 Path = str
 Accumulator = Tuple[Path, State]
 TraverseUpdateCallable = Callable[[TraverseInput, Path, State], State]
+M = TypeVar('M', bound=tf.Module)
 
 
 def to_default_int(x):
@@ -311,7 +312,7 @@ def setattr_by_path(target: Any, attr_path: str, value: Any):
     return _set_by_name_index(descendant, value, attr, index)
 
 
-def deepcopy(input_module: tf.Module, freeze: bool = False) -> tf.Module:
+def deepcopy(input_module: M, freeze: bool = False) -> M:
     """
     Returns a deepcopy of the input tf.Module. To do that first resets the caches stored inside each
     tfp.bijectors.Bijector to allow the deepcopy of the tf.Module.

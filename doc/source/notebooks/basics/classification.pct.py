@@ -117,7 +117,7 @@ m = gpflow.models.VGP((X, Y),
 
 o = gpflow.optimizers.Scipy()
 
-@tf.function(autograph=False)
+@tf.function
 def objective():
     return - m.log_marginal_likelihood()
 o.minimize(objective, variables=m.trainable_variables)
@@ -188,7 +188,7 @@ m = gpflow.models.VGP((X, Y),
                       likelihood=gpflow.likelihoods.Bernoulli())
 
 opt = gpflow.optimizers.Scipy()
-@tf.function(autograph=False)
+@tf.function
 def objective():
     return - m.log_marginal_likelihood()
 opt.minimize(objective,

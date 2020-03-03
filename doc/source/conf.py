@@ -19,7 +19,14 @@
 import os
 import sys
 import types
-sys.path.insert(0, os.path.abspath('./ext'))
+
+# When we install GPflow on readthedocs we omit installing Tensorflow
+# and Tensorflow Probability. We make up for it by mocking them here.
+autodoc_mock_imports = [
+    "tensorflow",
+    "tensorflow_probability"
+]
+
 
 # on_rtd is whether we are on readthedocs.org, this line of code grabbed from docs.readthedocs.org
 on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
@@ -41,8 +48,6 @@ if not on_rtd:  # only import and set the theme if we're building docs locally
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    # custom extension
-    'gpflow_api_ext',
     # builtin extansions
     'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',

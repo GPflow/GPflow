@@ -36,6 +36,9 @@ from gpflow.base import Parameter
 
 from gpflow.ci_utils import ci_niter
 
+# for reproducibility of this notebook:
+np.random.seed(1)  
+tf.random.set_seed(2)
 # %matplotlib inline
 
 # %% [markdown]
@@ -131,7 +134,7 @@ def build_model(data, mean_function):
 # %%
 def create_optimization_step(optimizer, model: gpflow.models.GPR):
     
-    @tf.function(autograph=False)
+    @tf.function
     def optimization_step():
         with tf.GradientTape(watch_accessed_variables=False) as tape:
             tape.watch(model.trainable_variables)

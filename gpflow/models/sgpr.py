@@ -26,37 +26,70 @@ from ..inducing_variables import InducingPoints
 from ..mean_functions import Zero, MeanFunction
 
 
-class SGPRUpperMixin(GPModel):
+class SGPRBase(GPModel):
     """
-    Upper bound for the GP regression marginal likelihood.
-    It is implemented here as a Mixin class which works with SGPR and GPRFITC.
-    Note that the same inducing points are used for calculating the upper bound,
-    as are used for computing the likelihood approximation. This may not lead to
-    the best upper bound. The upper bound can be tightened by optimising Z, just
-    as just like the lower bound. This is especially important in FITC, as FITC
-    is known to produce poor inducing point locations. An optimisable upper bound
-    can be found in https://github.com/markvdw/gp_upper.
-
-    The key reference is
-
-    ::
-
-      @misc{titsias_2014,
-        title={Variational Inference for Gaussian and Determinantal Point Processes},
-        url={http://www2.aueb.gr/users/mtitsias/papers/titsiasNipsVar14.pdf},
-        publisher={Workshop on Advances in Variational Inference (NIPS 2014)},
-        author={Titsias, Michalis K.},
-        year={2014},
-        month={Dec}
-      }
-
-    The key quantity, the trace term, can be computed with
-            # To compute each individual element of the trace term, use...
-    v = conditionals.conditional(X, r.model.inducing_variable.Z.numpy(), r.model.kernel,
-                                 np.zeros((len(r.model.inducing_variable), 1)))[1].numpy()
+    Common base class for SGPR and GPRFITC that provides the common __init__
+    and upper_bound() methods.
     """
+
+    def __init__(self,
+                 data: Data,
+                 kernel: Kernel,
+                 mean_function: Optional[MeanFunction] = None,
+                 inducing_variable: Optional[InducingPoints] = None,
+                 num_latent: Optional[int] = None,
+                 noise_variance: float = 1.0,
+                 ):
+        """
+        `data`:  a tuple of (X, Y), where the inputs X has shape [N, D]
+            and the outputs Y has shape [N, R].
+        `inducing_variable`:  an InducingPoints instance or a matrix of
+            the pseudo inputs Z, of shape [M, D].
+        `kernel`, `mean_function` are appropriate GPflow objects
+
+        This method only works with a Gaussian likelihood, its variance is
+        initialized to `noise_variance`.
+        """
+        likelihood = likelihoods.Gaussian(noise_variance)
+        x_data, y_data = data
+        num_latent = y_data.shape[-1] if num_latent is None else num_latent
+        super().__init__(kernel, likelihood, mean_function, num_latent=num_latent)
+
+        self.data = data
+        self.num_data = x_data.shape[0]
+
+        self.inducing_variable = inducingpoint_wrapper(inducing_variable)
 
     def upper_bound(self):
+        """
+        Upper bound for the sparse GP regression marginal likelihood.  Note that
+        the same inducing points are used for calculating the upper bound, as are
+        used for computing the likelihood approximation. This may not lead to the
+        best upper bound. The upper bound can be tightened by optimising Z, just
+        like the lower bound. This is especially important in FITC, as FITC is
+        known to produce poor inducing point locations. An optimisable upper bound
+        can be found in https://github.com/markvdw/gp_upper.
+
+        The key reference is
+
+        ::
+
+          @misc{titsias_2014,
+            title={Variational Inference for Gaussian and Determinantal Point Processes},
+            url={http://www2.aueb.gr/users/mtitsias/papers/titsiasNipsVar14.pdf},
+            publisher={Workshop on Advances in Variational Inference (NIPS 2014)},
+            author={Titsias, Michalis K.},
+            year={2014},
+            month={Dec}
+          }
+
+        The key quantity, the trace term, can be computed via
+
+        >>> _, v = conditionals.conditional(X, model.inducing_variable.Z, model.kernel,
+        ...                                 np.zeros((len(model.inducing_variable), 1)))
+
+        which computes each individual element of the trace term.
+        """
         x_data, y_data = self.data
         num_data = tf.cast(tf.shape(y_data)[0], default_float())
 
@@ -92,7 +125,7 @@ class SGPRUpperMixin(GPModel):
         return const + logdet + quad
 
 
-class SGPR(SGPRUpperMixin):
+class SGPR(SGPRBase):
     """
     Sparse Variational GP regression. The key reference is
 
@@ -111,31 +144,6 @@ class SGPR(SGPRUpperMixin):
 
 
     """
-
-    def __init__(self,
-                 data: Data,
-                 kernel: Kernel,
-                 mean_function: Optional[MeanFunction] = None,
-                 inducing_variable: Optional[InducingPoints] = None,
-                 num_latent: Optional[int] = None,
-                 noise_variance: float = 1.0,
-                 ):
-        """
-        X is a data matrix, size [N, D]
-        Y is a data matrix, size [N, R]
-        Z is a matrix of pseudo inputs, size [M, D]
-        kernel, mean_function are appropriate GPflow objects
-
-        This method only works with a Gaussian likelihood.
-        """
-        likelihood = likelihoods.Gaussian(noise_variance)
-        x_data, y_data = data
-        num_latent = y_data.shape[-1] if num_latent is None else num_latent
-        super().__init__(kernel, likelihood, mean_function, num_latent)
-        self.data = data
-        self.num_data = x_data.shape[0]
-
-        self.inducing_variable = inducingpoint_wrapper(inducing_variable)
 
     def log_likelihood(self):
         """
@@ -238,50 +246,25 @@ class SGPR(SGPRUpperMixin):
         return mu, cov
 
 
-class GPRFITC(SGPRUpperMixin):
-    def __init__(self,
-                 data: Data,
-                 kernel: Kernel,
-                 mean_function: Optional[MeanFunction] = None,
-                 inducing_variable: Optional[InducingPoints] = None,
-                 noise_variance: float = 1.0,
-                 ):
-        """
-        This implements GP regression with the FITC approximation.
-        The key reference is
+class GPRFITC(SGPRBase):
+    """
+    This implements GP regression with the FITC approximation.
+    The key reference is
 
-        @inproceedings{Snelson06sparsegaussian,
+    ::
+
+      @inproceedings{Snelson06sparsegaussian,
         author = {Edward Snelson and Zoubin Ghahramani},
         title = {Sparse Gaussian Processes using Pseudo-inputs},
-        booktitle = {Advances In Neural Information Processing Systems },
+        booktitle = {Advances In Neural Information Processing Systems},
         year = {2006},
         pages = {1257--1264},
         publisher = {MIT press}
-        }
+      }
 
-        Implementation loosely based on code from GPML matlab library although
-        obviously gradients are automatic in GPflow.
-
-        X is a data matrix, size [N, D]
-        Y is a data matrix, size [N, R]
-        Z is a matrix of pseudo inputs, size [M, D]
-        kernel, mean_function are appropriate GPflow objects
-
-        This method only works with a Gaussian likelihood.
-
-        """
-
-        mean_function = Zero() if mean_function is None else mean_function
-
-        likelihood = likelihoods.Gaussian(noise_variance)
-        x_data, y_data = data
-        num_latent = y_data.shape[-1]
-        super().__init__(kernel, likelihood, mean_function, num_latent=num_latent)
-
-        self.data = data
-        self.num_data = x_data.shape[0]
-
-        self.inducing_variable = inducingpoint_wrapper(inducing_variable)
+    Implementation loosely based on code from GPML matlab library although
+    obviously gradients are automatic in GPflow.
+    """
 
     def common_terms(self):
         x_data, y_data = self.data
