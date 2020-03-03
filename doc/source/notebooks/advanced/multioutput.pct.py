@@ -154,7 +154,7 @@ print_summary(m)
 # %%
 def optimize_model_with_scipy(model):
 
-    @tf.function(autograph=False)
+    @tf.function
     def obj():
         return -model.elbo(data)
 

@@ -32,12 +32,12 @@ class GPR(GPModel):
     This is a vanilla implementation of GP regression with a Gaussian
     likelihood.  Multiple columns of Y are treated independently.
 
-    The log likelihood of this models is sometimes referred to as the 'marginal log likelihood',
-    and is given by
+    The log likelihood of this model is sometimes referred to as the 'log
+    marginal likelihood', and is given by
 
     .. math::
        \log p(\mathbf y \,|\, \mathbf f) =
-            \mathcal N\left(\mathbf y\,|\, 0, \mathbf K + \sigma_n \mathbf I\right)
+            \mathcal N(\mathbf{y} \,|\, 0, \mathbf{K} + \sigma_n \mathbf{I})
     """
 
     def __init__(self, data: Data, kernel: Kernel, mean_function: Optional[MeanFunction] = None,
@@ -49,7 +49,7 @@ class GPR(GPModel):
 
     def log_likelihood(self):
         r"""
-        Computes the log likelihood.
+        Computes the log marginal likelihood.
 
         .. math::
             \log p(Y | \theta).

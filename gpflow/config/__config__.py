@@ -2,25 +2,32 @@ import contextlib
 import enum
 import os
 from dataclasses import dataclass, field, replace
-from typing import Dict, Optional, Union
+from typing import Dict, Optional
 
 import numpy as np
 import tabulate
 import tensorflow as tf
 import tensorflow_probability as tfp
 
-
 __all__ = [
-    "Config", "as_context", "config", "set_config",
-    "default_float", "set_default_float",
-    "default_int", "set_default_int",
-    "default_jitter", "set_default_jitter",
-    "default_positive_bijector", "set_default_positive_bijector",
-    "default_positive_minimum", "set_default_positive_minimum",
-    "default_summary_fmt", "set_default_summary_fmt",
-    "positive_bijector_type_map"
+    "Config",
+    "as_context",
+    "config",
+    "set_config",
+    "default_float",
+    "set_default_float",
+    "default_int",
+    "set_default_int",
+    "default_jitter",
+    "set_default_jitter",
+    "default_positive_bijector",
+    "set_default_positive_bijector",
+    "default_positive_minimum",
+    "set_default_positive_minimum",
+    "default_summary_fmt",
+    "set_default_summary_fmt",
+    "positive_bijector_type_map",
 ]
-
 
 __config = None
 
@@ -29,11 +36,12 @@ class _Values(enum.Enum):
     """Setting's names collection with default values. The `name` method returns name
     of the environment variable. E.g. for `SUMMARY_FMT` field the environment variable
     will be `GPFLOW_SUMMARY_FMT`."""
+
     INT = np.int32
     FLOAT = np.float64
     POSITIVE_BIJECTOR = "softplus"
     POSITIVE_MINIMUM = None
-    SUMMARY_FMT = None
+    SUMMARY_FMT = "fancy_grid"
     JITTER = 1e-6
 
     @property
@@ -41,9 +49,58 @@ class _Values(enum.Enum):
         return f"GPFLOW_{super().name}"
 
 
-def default(value: _Values):
+def _default(value: _Values):
     """Checks if value is set in the environment."""
     return os.getenv(value.name, default=value.value)
+
+
+def _default_numeric_type_factory(valid_types, enum_key, type_name):
+    value = _default(enum_key)
+    if value in valid_types.values():
+        return value
+    if value not in valid_types:
+        raise TypeError(f"Config cannot recognize {type_name} type.")
+    return valid_types[value]
+
+
+def _default_int_factory():
+    valid_types = dict(int16=np.int16, int32=np.int32, int64=np.int64)
+    return _default_numeric_type_factory(valid_types, _Values.INT, "int")
+
+
+def _default_float_factory():
+    valid_types = dict(float16=np.float16, float32=np.float32, float64=np.float64)
+    return _default_numeric_type_factory(valid_types, _Values.FLOAT, "float")
+
+
+def _default_jitter_factory():
+    try:
+        value = float(_default(_Values.JITTER))
+    except ValueError:
+        raise TypeError("Config cannot set the jitter value with non float type.")
+    return value
+
+
+def _default_positive_bijector_factory():
+    bijector_type = _default(_Values.POSITIVE_BIJECTOR)
+    if bijector_type not in positive_bijector_type_map().keys():
+        raise TypeError("Config cannot set the passed value as a default positive bijector."
+                        f"Available options: {set(positive_bijector_type_map().keys())}")
+    return bijector_type
+
+
+def _default_positive_minimum_factory():
+    try:
+        value = _default(_Values.POSITIVE_MINIMUM)
+        if value is not None:
+            value = float(value)
+    except ValueError:
+        raise TypeError("Config cannot set the positive_minimum value with non float type.")
+    return value
+
+
+def _default_summary_fmt_factory():
+    return _default(_Values.SUMMARY_FMT)
 
 
 @dataclass(frozen=True)
@@ -62,12 +119,12 @@ class Config:
         summary_fmt: Summary format for module printing.
     """
 
-    int: type = field(default_factory=lambda: default(_Values.INT))
-    float: type = field(default_factory=lambda: default(_Values.FLOAT))
-    jitter: float = field(default_factory=lambda: default(_Values.JITTER))
-    positive_bijector: str = field(default_factory=lambda: default(_Values.POSITIVE_BIJECTOR))
-    positive_minimum: float = field(default_factory=lambda: default(_Values.POSITIVE_MINIMUM))
-    summary_fmt: str = field(default_factory=lambda: default(_Values.SUMMARY_FMT))
+    int: type = field(default_factory=_default_int_factory)
+    float: type = field(default_factory=_default_float_factory)
+    jitter: float = field(default_factory=_default_jitter_factory)
+    positive_bijector: str = field(default_factory=_default_positive_bijector_factory)
+    positive_minimum: float = field(default_factory=_default_positive_minimum_factory)
+    summary_fmt: str = field(default_factory=_default_summary_fmt_factory)
 
 
 def config() -> Config:
@@ -130,8 +187,9 @@ def set_default_float(value_type):
 
 
 def set_default_jitter(value: float):
-    if not (isinstance(value, (tf.Tensor, np.ndarray)) and len(value.shape) == 0) and \
-            not isinstance(value, float):
+    if not (
+        isinstance(value, (tf.Tensor, np.ndarray)) and len(value.shape) == 0
+    ) and not isinstance(value, float):
         raise TypeError("Expected float32 or float64 scalar value")
 
     if value < 0:
@@ -151,8 +209,9 @@ def set_default_positive_bijector(value: str):
 
 
 def set_default_positive_minimum(value: float):
-    if not (isinstance(value, (tf.Tensor, np.ndarray)) and len(value.shape) == 0) and \
-            not isinstance(value, float):
+    if not (
+        isinstance(value, (tf.Tensor, np.ndarray)) and len(value.shape) == 0
+    ) and not isinstance(value, float):
         raise TypeError("Expected float32 or float64 scalar value")
 
     if value < 0:
@@ -162,7 +221,7 @@ def set_default_positive_minimum(value: float):
 
 
 def set_default_summary_fmt(value: str):
-    formats = tabulate.tabulate_formats + ['notebook', None]
+    formats = tabulate.tabulate_formats + ["notebook", None]
     if value not in formats:
         raise ValueError(f"Summary does not support '{value}' format")
 

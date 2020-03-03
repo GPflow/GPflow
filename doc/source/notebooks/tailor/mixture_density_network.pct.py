@@ -30,6 +30,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 # %matplotlib inline
 
+np.random.seed(1)  # for reproducibility of this notebook
+
 CMAP = plt.get_cmap('Blues')
 
 # %%
@@ -52,12 +54,12 @@ plt.ylabel("$y$");
 # %% [markdown]
 # At first sight, this dataset doesn't seem overly complex. Both input and output have a single dimension, and the data has a clear sinusoidal pattern. However, notice that a single input $x$ can correspond to multiple output values $y$, so for example $x=0$ can yield any of the values $\{-1.5, -3/4, 0, 0.8, 1.5\}$. Typical regression algorithms such as Linear Regression, Gaussian Process regression and Multilayer Perceptrons (MLPs) struggle as they can only predict one output value for every input.
 #
-# To model this dataset we can use a Conditional Density Estimation (CDE) model. CDE models infer $p(f(x)|x)$ instead of just calculating the expectation $E[f(x) | x]$. Modeling the complete distribution $p(f(x)|x)$ is typically harder but it reveals more interesting properties, such as the modes, outlier boundaries and samples. A real-world example might be modeling taxi drop-offs, conditioned on the pick-up location. We would expect a taxi drop-off location to be multi-modal as passengers need to go to different destinations (airport/city center/suburbs and so on) and the density depends on the starting location [2]. 
+# To model this dataset we can use a Conditional Density Estimation (CDE) model. CDE models infer $p(f(x)|x)$ instead of just calculating the expectation $E[f(x) | x]$. Modeling the complete distribution $p(f(x)|x)$ is typically harder but it reveals more interesting properties, such as the modes, outlier boundaries and samples. A real-world example might be modeling taxi drop-offs, conditioned on the pick-up location. We would expect a taxi drop-off location to be multi-modal as passengers need to go to different destinations (airport/city center/suburbs and so on) and the density depends on the starting location [2].
 
 # %% [markdown]
 # ## Mixture Density Network models
 #
-# Mixture Density Networks (MDNs) are a parametric class of models that allow for conditional density estimation. They consist of two parts: a neural net and a Mixture of Gaussians (MoG). The neural net is responsible for producing the characteristics of the MoG. In practice, given that the MoG consists of $M$ Gaussians, the neural net will output a collection of $M$ means, variances and weights $\{\mu_m, \sigma_m^2, \pi_m\}_{m=1}^M$. These means, variances and weights are used to define the conditional probability distribution function: 
+# Mixture Density Networks (MDNs) are a parametric class of models that allow for conditional density estimation. They consist of two parts: a neural net and a Mixture of Gaussians (MoG). The neural net is responsible for producing the characteristics of the MoG. In practice, given that the MoG consists of $M$ Gaussians, the neural net will output a collection of $M$ means, variances and weights $\{\mu_m, \sigma_m^2, \pi_m\}_{m=1}^M$. These means, variances and weights are used to define the conditional probability distribution function:
 # $$
 # p(Y = y\,|\,X = x) = \sum_{m=1}^{M} \pi_{m}(x)\,\mathcal{N}\big(y\, \left|\,\mu_{m}(x), \sigma_{m}^2(x)\big)\right.
 # $$
@@ -74,7 +76,7 @@ plt.ylabel("$y$");
 # %% [markdown]
 # ## A GPflow MDN implementation
 #
-# GPflow doesn't reinvent the wheel; most of what follows is just plain Python/TensorFlow code. We choose to use GPflow, however, because it provides us with functionality to easily define a model. Once we have a GPflow model, we can specify its objective function, parameters and dataset. This extra layer of abstraction makes interacting with the model much easier, for example optimizing or performing inference. 
+# GPflow doesn't reinvent the wheel; most of what follows is just plain Python/TensorFlow code. We choose to use GPflow, however, because it provides us with functionality to easily define a model. Once we have a GPflow model, we can specify its objective function, parameters and dataset. This extra layer of abstraction makes interacting with the model much easier, for example optimizing or performing inference.
 #
 # We begin by importing the required packages from TensorFlow and GPflow.
 
@@ -90,15 +92,15 @@ from gpflow.base import Parameter
 # Next, we create a `MDN` class that inherits from GPflow's `Model` class. We need to do the following:
 # 1. Store each of the feature and target matrices (X, Y) as a `DataHolder` object.
 # 2. Define our model's parameters using GPflow's `Parameter` and `ParamList` objects.
-# 3. Define the objective function using the `_build_likelihood` method. When we optimize the model the negative of this function will be minimized. 
+# 3. Define the objective function using the `_build_likelihood` method. When we optimize the model the negative of this function will be minimized.
 
 # %%
 from typing import Callable, Optional, Tuple
 
 class MDN(BayesianModel):
-    
+
     def __init__(
-        self, 
+        self,
         num_mixtures: Optional[int] = 5,
         inner_dims: Optional[list] = [10, 10,],
         activation: Optional[Callable[[tf.Tensor], tf.Tensor]] = tf.keras.activations.relu
@@ -112,7 +114,7 @@ class MDN(BayesianModel):
         self.dims = [1, ] + list(inner_dims) + [3 * num_mixtures]
         self.activation = activation
         self._create_network()
-        
+
     def _create_network(self):
         self.Ws, self.bs = [], []
 
@@ -132,7 +134,7 @@ class MDN(BayesianModel):
         pis, mus, sigmas = tf.split(X, 3, axis=1)
         pis = tf.nn.softmax(pis)  # make sure they normalize to 1
         sigmas = tf.exp(sigmas)   # make sure std. dev. are positive
-        
+
         return pis, mus, sigmas
 
     def log_marginal_likelihood(self, data: Tuple[tf.Tensor, tf.Tensor]):
@@ -185,7 +187,7 @@ Scipy().minimize(
 print("Final Likelihood", model.log_marginal_likelihood(data).numpy())
 
 # %% [markdown]
-# To evaluate the validity of our model, we draw the posterior density. We also plot $\mu(x)$ of the optimized neural net. Remember that for every $x$ the neural net outputs $M$ means $\mu_m(x)$. These determine the location of the Gaussians. We plot all $M$ means and use their corresponding mixture weight $\pi_m(X)$ to determine their size. Larger dots will have more impact in the Gaussian ensemble. 
+# To evaluate the validity of our model, we draw the posterior density. We also plot $\mu(x)$ of the optimized neural net. Remember that for every $x$ the neural net outputs $M$ means $\mu_m(x)$. These determine the location of the Gaussians. We plot all $M$ means and use their corresponding mixture weight $\pi_m(X)$ to determine their size. Larger dots will have more impact in the Gaussian ensemble.
 
 # %%
 try:

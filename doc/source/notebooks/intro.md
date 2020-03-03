@@ -20,7 +20,7 @@ You can use this document to get familiar with GPflow. We've split up the materi
 
 ## GPflow 2
 
-Users of GPflow 1 should check the [upgrade guide to GPflow 2](gpflow_2_upgrade/gpflow_2_upgrade_guide.ipynb).
+Users of GPflow 1 should check the [upgrade guide to GPflow 2](gpflow2_upgrade/gpflow2_upgrade_guide.ipynb).
 
 ## Basics
 
@@ -39,7 +39,7 @@ This section covers the building blocks of GPflow from an implementation perspec
   - [Manipulating models](understanding/models.ipynb)
   - [GPflow with TensorFlow 2](intro_to_gpflow2.ipynb) for handling datasets, training, monitoring, and checkpointing.
 
-    
+
 ## Advanced needs
 
 This section explains the more complex models and features that are available in GPflow.
@@ -74,7 +74,7 @@ These can be seen as complete examples.
   - [Mixing TensorFlow models with GPflow](tailor/gp_nn.ipynb): two ways to combine TensorFlow neural networks with GPflow models.
   - [External mean functions](tailor/external-mean-function.ipynb): how to use a neural network as a mean function.
   - [Mixture density network](tailor/mixture_density_network.ipynb): how GPflow's utilities make it easy to build other, non-GP probabilistic models.
-    
+
 
 ## Theoretical notes
 

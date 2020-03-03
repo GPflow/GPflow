@@ -3,6 +3,7 @@
 
 # pylint: skip-file
 
+import os
 import sys
 from pathlib import Path
 
@@ -10,15 +11,22 @@ from pkg_resources import parse_version
 from setuptools import find_packages, setup
 
 is_py37 = sys.version_info.major == 3 and sys.version_info.minor == 7
+on_rtd = os.environ.get('READTHEDOCS', None) == 'True'  # copied from the docs
 
 # Dependencies of GPflow
 requirements = [
     'numpy>=1.10.0',
     'scipy>=0.18.0',
     'multipledispatch>=0.4.9',
-    'tensorflow-probability>=0.9',
     'tabulate',
-] + ([] if is_py37 else ["dataclasses"])
+    'gast==0.2.2',
+]
+
+if not is_py37:
+    requirements.append("dataclasses")
+
+if not on_rtd:
+    requirements.append("tensorflow-probability>=0.9")
 
 min_tf_version = '2.1.0'
 tf_cpu = 'tensorflow'
@@ -36,7 +44,9 @@ try:
         raise DeprecationWarning("TensorFlow version below minimum requirement")
 except (ImportError, DeprecationWarning):
     # Add TensorFlow to dependencies to trigger installation/update
-    requirements.append(tf_cpu)
+    if not on_rtd:
+        # Do not add TF if we are installing GPflow on readthedocs
+        requirements.append(tf_cpu)
 
 with open(str(Path(".", "VERSION").absolute())) as version_file:
     version = version_file.read().strip()

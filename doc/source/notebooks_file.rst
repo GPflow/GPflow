@@ -12,7 +12,7 @@ Basic
    notebooks/basics/*
 
 Advanced
-------
+--------
 .. toctree::
    :maxdepth: 1
    :glob:
@@ -36,7 +36,7 @@ Theory
    notebooks/theory/*
 
 Understanding
-------
+-------------
 .. toctree::
    :maxdepth: 1
    :glob:
