@@ -289,7 +289,7 @@ def getattr_by_path(target: Any, attr_path: str) -> Any:
     Example:
         k = gpflow.kernels.Matern52()
         m = gpflow.models.GPR(..., kernel=kernel)
-        lengthscale = getattr_by_string(m, "kernel.lengthscale")
+        lengthscale = getattr_by_path(m, "kernel.lengthscale")
     """
     descendant, attr, index = _get_last_attr_spec(target, attr_path)
     return _get_by_name_index(descendant, attr, index)
@@ -305,7 +305,7 @@ def setattr_by_path(target: Any, attr_path: str, value: Any):
     Example:
         k = gpflow.kernels.Matern52()
         m = gpflow.models.GPR(..., kernel=kernel)
-        setattr_by_string(m, "kernel.lengthscale", tf.constant(1.0, dtype=...))
+        setattr_by_path(m, "kernel.lengthscale", tf.constant(1.0, dtype=...))
     """
     descendant, attr, index = _get_last_attr_spec(target, attr_path)
     return _set_by_name_index(descendant, value, attr, index)
