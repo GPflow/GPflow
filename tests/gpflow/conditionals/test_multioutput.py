@@ -360,11 +360,14 @@ def test_sample_conditional_mixedkernel():
     )
 
 
-@pytest.mark.parametrize("func, R", [
-    (fully_correlated_conditional_repeat, 5),
-    (fully_correlated_conditional_repeat, 1),
-    (fully_correlated_conditional, 1)
-])
+@pytest.mark.parametrize(
+    "func, R",
+    [
+        (fully_correlated_conditional_repeat, 5),
+        (fully_correlated_conditional_repeat, 1),
+        (fully_correlated_conditional, 1),
+    ],
+)
 def test_fully_correlated_conditional_repeat_shapes(func, R):
     L, M, N, P = Data.L, Data.M, Data.N, Data.P
 
