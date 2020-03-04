@@ -30,7 +30,7 @@ State = Any
 Path = str
 Accumulator = Tuple[Path, State]
 TraverseUpdateCallable = Callable[[TraverseInput, Path, State], State]
-M = TypeVar('M', bound=tf.Module)
+M = TypeVar("M", bound=tf.Module)
 
 
 def to_default_int(x):
@@ -272,6 +272,31 @@ def _set_by_name_index(parent: object, value: Any, attr_str: str, index_str: str
 
 
 def _get_last_attr_spec(parent: Any, attr_path: str) -> Any:
+    """Returns second to last attribute, the next attribute name, and
+    an index if there is a list access.
+
+    Example:
+        module = ModuleWithNestedStructure(...)
+        attr_path = "a.b.c[0].d[1000]"
+        value = module.a.b.c[0].d[1000]
+        c0, dname, dindex = _get_last_attr_spec(module, "a.b.c[0].d[1000]")
+        assert c0 is module.a.b.c[0]
+        assert dname == "d"
+        assert dindex == "1000"
+
+    :param parent: A python object with a nested structure.
+    :param attr_path: An attribute path.
+
+    :returns: The value stored in the nested object by the attribute path.
+    """
+
+    # Regexp searches for 4 groups:
+    # Outer brackets represent repeated pattern inside and contains 3 groups:
+    # - '(\w+)' is a group for attribute name.
+    # - '(\[(-?[\s\d]+)\])' is the index group and has a subgroup '(-?[\s\d]+)', it may or may
+    #   not appear in the pattern
+    # - '(-?[\s\d]+)' is an index without squared brackets
+    # - Last part of the expression reflects that the period delimeter cannot be last in a path.
     restr = r"((\w+)(\[(-?[\s\d]+)\])?(?<!\.))+"
     curr_parent = parent
     attrs = re.findall(restr, attr_path)
