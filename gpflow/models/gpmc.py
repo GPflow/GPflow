@@ -61,7 +61,7 @@ class GPMC(GPModel):
         Construct a tf function to compute the likelihood of a general GP
         model.
 
-            \log p(Y, V | theta).
+            \log p(Y | V, theta).
 
         """
         x_data, y_data = self.data

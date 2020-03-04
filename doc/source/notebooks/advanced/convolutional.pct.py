@@ -33,13 +33,15 @@ import tensorflow as tf
 import tensorflow_probability as tfp
 import time
 import os
+from gpflow.ci_utils import is_continuous_integration
 
 gpflow.config.set_default_float(np.float64)
 gpflow.config.set_default_jitter(1e-4)
 gpflow.config.set_default_summary_fmt("notebook")
 
-def is_continuous_integration():
-    return os.environ.get('CI', None) is not None
+# for reproducibility of this notebook:
+np.random.seed(123)
+tf.random.set_seed(42)
 
 MAXITER = 2 if is_continuous_integration() else 100
 NUM_TRAIN_DATA = 5 if is_continuous_integration() else 100  # This is less than in the original rectangles dataset
@@ -96,7 +98,7 @@ rbf_m = gpflow.models.SVGP(gpflow.kernels.SquaredExponential(), gpflow.likelihoo
 # %%
 rbf_m_log_likelihood = rbf_m.log_likelihood
 print("RBF elbo before training: %.4e" % rbf_m_log_likelihood(data))
-rbf_m_log_likelihood = tf.function(rbf_m_log_likelihood, autograph=False)
+rbf_m_log_likelihood = tf.function(rbf_m_log_likelihood)
 
 # %%
 gpflow.utilities.set_trainable(rbf_m.inducing_variable, False)
@@ -141,7 +143,7 @@ conv_m.kernel.weights.trainable = False
 # %%
 conv_m_log_likelihood = conv_m.log_likelihood
 print("conv elbo before training: %.4e" % conv_m_log_likelihood(data))
-conv_m_log_likelihood = tf.function(conv_m_log_likelihood, autograph=False)
+conv_m_log_likelihood = tf.function(conv_m_log_likelihood)
 
 # %%
 start_time = time.time()

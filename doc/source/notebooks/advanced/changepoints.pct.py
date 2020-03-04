@@ -29,6 +29,8 @@ import gpflow
 import numpy as np
 import matplotlib.pyplot as plt
 
+np.random.seed(123)  # for reproducibility of this notebook
+
 plt.style.use('ggplot')
 # %matplotlib inline
 
