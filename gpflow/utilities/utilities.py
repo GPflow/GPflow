@@ -253,7 +253,8 @@ def _get_by_name_index(parent: object, attr_str: str, index_str: str) -> object:
     if index_str != "":
         index = int(index_str)
         return attr[index]
-    return attr
+    else:
+        return attr
 
 
 def _set_by_name_index(parent: object, value: Any, attr_str: str, index_str: str):
