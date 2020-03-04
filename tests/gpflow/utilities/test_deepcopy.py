@@ -53,5 +53,5 @@ def test_deepcopy_with_freeze():
     module_frozen = deepcopy(module, freeze=True)
     assert len(module.variables) == 2
     assert module_frozen.variables == ()
-    assert isinstance(module_frozen.module.module.var, tf.Tensor)
+    assert isinstance(module.module.module.var, tf.Variable)
     assert isinstance(module_frozen.module.module.var, tf.Tensor)

@@ -251,27 +251,21 @@ def reset_cache_bijectors(input_module: tf.Module) -> tf.Module:
 def _get_by_name_index(parent: object, attr_str: str, index_str: str) -> object:
     attr = getattr(parent, attr_str)
     if index_str != "":
-        try:
-            index = int(index_str)
-        except ValueError:
-            raise ValueError(f"Invalid index passed in the path'")
+        index = int(index_str)
         return attr[index]
     return attr
 
 
 def _set_by_name_index(parent: object, value: Any, attr_str: str, index_str: str):
     if index_str != "":
-        try:
-            index = int(index_str)
-        except ValueError:
-            raise ValueError(f"Invalid index passed in the path")
+        index = int(index_str)
         attr = getattr(parent, attr_str)
         attr[index] = value
     else:
         setattr(parent, attr_str, value)
 
 
-def _get_last_attr_spec(parent: Any, attr_path: str) -> Any:
+def _get_last_attr_spec(parent: object, attr_path: str) -> Tuple[object, str, str]:
     """Returns second to last attribute, the next attribute name, and
     an index if there is a list access.
 
@@ -306,7 +300,7 @@ def _get_last_attr_spec(parent: Any, attr_path: str) -> Any:
     return curr_parent, attr_str, index_str
 
 
-def getattr_by_path(target: Any, attr_path: str) -> Any:
+def getattr_by_path(target: object, attr_path: str) -> Any:
     """Get a value of nested attribute by a string path.
 
     :param target: Root object that contains nested attribute
@@ -317,11 +311,15 @@ def getattr_by_path(target: Any, attr_path: str) -> Any:
         m = gpflow.models.GPR(..., kernel=kernel)
         lengthscale = getattr_by_path(m, "kernel.lengthscale")
     """
-    descendant, attr, index = _get_last_attr_spec(target, attr_path)
-    return _get_by_name_index(descendant, attr, index)
+    try:
+        descendant, attr, index = _get_last_attr_spec(target, attr_path)
+        return _get_by_name_index(descendant, attr, index)
+    except ValueError as error:
+        raise ValueError(f"Cannot get value at path '{attr_path}'\n"
+                         f"Got error: {error}")
 
 
-def setattr_by_path(target: Any, attr_path: str, value: Any):
+def setattr_by_path(target: object, attr_path: str, value: Any):
     """Set `value` by a given path to a nested attribute.
 
     :param target: Root object that contains a nested attribute.
@@ -333,8 +331,12 @@ def setattr_by_path(target: Any, attr_path: str, value: Any):
         m = gpflow.models.GPR(..., kernel=kernel)
         setattr_by_path(m, "kernel.lengthscale", tf.constant(1.0, dtype=...))
     """
-    descendant, attr, index = _get_last_attr_spec(target, attr_path)
-    return _set_by_name_index(descendant, value, attr, index)
+    try:
+        descendant, attr, index = _get_last_attr_spec(target, attr_path)
+        return _set_by_name_index(descendant, value, attr, index)
+    except (AttributeError, IndexError, ValueError) as error:
+        raise ValueError(f"Cannot assign value at path '{attr_path}'\n"
+                         f"Got error: {error}")
 
 
 def deepcopy(input_module: M, freeze: bool = False) -> M:
