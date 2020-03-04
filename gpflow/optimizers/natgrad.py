@@ -79,7 +79,12 @@ class NaturalGradient(tf.optimizers.Optimizer):
         super().__init__(name)
         self.gamma = gamma
 
-    def minimize(self, loss_fn: Callable, var_list: List[Parameter]):
+    def minimize(
+            self,
+            loss_fn: Callable,
+            var_list: List[
+                Union[Tuple[Parameter, Parameter], Tuple[Parameter, Parameter, XiTransform]]]
+    ):
         """
         Minimizes objective function of the model.
         Natural Gradient optimizer works with variational parameters only.
