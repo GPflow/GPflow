@@ -30,7 +30,6 @@ State = Any
 Path = str
 Accumulator = Tuple[Path, State]
 TraverseUpdateCallable = Callable[[TraverseInput, Path, State], State]
-M = TypeVar("M", bound=tf.Module)
 
 
 def to_default_int(x):
@@ -337,6 +336,9 @@ def setattr_by_path(target: object, attr_path: str, value: Any):
     except (AttributeError, IndexError, ValueError) as error:
         raise ValueError(f"Cannot assign value at path '{attr_path}'\n"
                          f"Got error: {error}")
+
+
+M = TypeVar("M", bound=tf.Module)
 
 
 def deepcopy(input_module: M, freeze: bool = False) -> M:
