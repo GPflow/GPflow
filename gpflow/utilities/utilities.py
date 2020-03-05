@@ -283,7 +283,7 @@ def _get_last_attr_spec(parent: object, attr_path: str) -> Tuple[object, str, st
     :returns: The value stored in the nested object by the attribute path.
     """
 
-    # Regexp searches for 4 groups:
+    # Regexp extracts attribute names and indices if available.
     # Outer brackets represent repeated pattern inside and contains 3 groups:
     # - '(\w+)' is a group for attribute name.
     # - '(\[(-?[\s\d]+)\])' is the index group and has a subgroup '(-?[\s\d]+)', it may or may
