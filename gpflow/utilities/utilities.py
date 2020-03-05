@@ -347,7 +347,7 @@ def deepcopy(input_module: M, freeze: bool = False) -> M:
     tfp.bijectors.Bijector to allow the deepcopy of the tf.Module.
 
     :param input_module: tf.Module including keras.Model, keras.layers.Layer and gpflow.Module.
-    :param freeze: Boolean value. If `True` all variables and parameters replaced with constants
+    :param freeze: Boolean value. If `True` all variables and parameters are replaced with constants
         in a copy object.
     :return: Returns a deepcopy of an input object.
     """
