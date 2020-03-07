@@ -67,7 +67,7 @@ For example:
 Any additional keyword arguments that are passed to the `minimize` method are passed directly through to the [SciPy optimizer's minimize method](https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize.html).
 
 
-# Model Initialisers
+## Model Initialisers
 
 In many cases the initialiser for the model will have changed. Typical changes include:
 
@@ -80,7 +80,7 @@ For example, for the `GPR` model:
 <img src="model_2_new.png">
 
 
-# SVGP Initialiser
+## SVGP Initialiser
 
 The SVGP model’s initialiser no longer accepts X and Y data. Instead this data must be passed to the various computation methods of the model (`elbo`, `log_likelihood` etc).
 
@@ -89,14 +89,14 @@ In the [Introduction to GPflow 2 notebook](../intro_to_gpflow2.ipynb) there is a
 In addition, SVGP’s `Z` parameter has been removed. To pass-in inducing points use the `inducing_variable` parameter. Also `SVGP`'s `feature` attribute has been renamed to `inducing_variable`.
 
 
-# Autoflow
+## Autoflow
 
 The `@autoflow` decorator has been removed. Since eager execution is the default in TensorFlow 2 this is no longer necessary.
 
 You may wish to consider wrapping functions that were previously wrapped in the `@autoflow` decorator in the `tf.function` decorator instead, to improve performance (but this is not necessary from a functionality point of view).
 
 
-# Use of tf.function
+## Use of tf.function
 
 Wrapping compute-heavy operations such as calculating a model objective or even the optimizer steps (such as `tf.optimizers.Adam().minimize()`) with `tf.function` is crucial for efficient computation.
 
@@ -105,24 +105,24 @@ Wrapping compute-heavy operations such as calculating a model objective or even 
 You can convert a numpy array to a tensor by using `tf.constant`. For example: `compiled_function(tf.constant(numpy_array))`.
 
 
-# Model Compilation
+## Model Compilation
 
 Models no longer need to be compiled before use. Remove all calls to the `compile` method.
 
 
-# Sessions and Graphs
+## Sessions and Graphs
 
 GPflow only supports eager execution, which is the default in TensorFlow 2. It does not support graph mode, which was the default execution mode in TensorFlow 1. Therefore all references to Sessions and Graphs should be removed. You should also remove references to the `gpflow.reset_default_graph_and_session` function.
 
 **Warning**: code that creates graphs (for example `tf.Graph().as_default()`) will disable eager execution, which will not work well with GPflow 2. If you get errors like “'Tensor' object has no attribute 'numpy'” then you may not have removed all references to graphs and sessions in your code.
 
 
-# Defer Build
+## Defer Build
 
 The `defer_build` context manager has been removed. References to it can simply be removed.
 
 
-# Return Types from Auto-flowed Methods
+## Return Types from Auto-flowed Methods
 
 GPflow methods that used the `@autoflow` decorator, like for example `predict_f` and `predict_y`, will previously have returned NumPy Arrays. These now return TensorFlow tensors. In many cases these can be used like NumPy arrays (they can be passed directly to many of NumPy’s functions and even be plotted by matplotlib), but to actually turn them into numpy arrays you will need to call `.numpy()` on them.
 
@@ -131,7 +131,7 @@ For example:
 <img src="numpy_new.png">
 
 
-# Parameter Values
+## Parameter Values
 
 GPflow’s `Parameter.value` has changed from a property to a method.
 
@@ -143,12 +143,12 @@ However, in many cases it is not necessary to call `value` anymore, since `Param
 
 
 
-# Model Class
+## Model Class
 
 The `Model` class has been removed. A suitable replacement, for those models that do not wish to inherit from `GPModel`, may be `BayesianModel`.
 
 
-# Periodic Base Kernel
+## Periodic Base Kernel
 
 The base kernel for the `Periodic` kernel must now be specified explicitly. Previously the default was  `SquaredExponential`, so to maintain the same behaviour as before this must be passed-in to the `Periodic` kernel’s initialiser (note that `active_dims` is specified in the base kernel).
 
@@ -158,7 +158,7 @@ For example:
 <img src="periodic_2.png">
 
 
-# Predict Full Covariance
+## Predict Full Covariance
 
 The `predict_f_full_cov` method has been removed from `GPModel`. Instead, pass `full_cov=True` to the `predict_f` method.
 
@@ -167,7 +167,7 @@ For example:
 <img src="full_cov.png">
 
 
-# Data Types
+## Data Types
 
 In some cases TensorFlow will try to figure out an appropriate data type for certain variables. If Python floats have been used, TensorFlow may default these variables to `float32`, which can cause incompatibilities with GPflow, which defaults to using `float64`.
 
@@ -176,24 +176,24 @@ To resolve this you can use `tf.constant` instead of a Python float, and explici
 <img src="constant.png">
 
 
-# Float and Int Types
+## Float and Int Types
 
 In GPflow 2 `gpflow.settings.float_type` has changed to `gpflow.default_float()` and `gpflow.settings.int_type` has changed to `gpflow.default_int()`.
 
 
-# Transforms
+## Transforms
 
 These have been removed in favour of the tools in `tensorflow_probability.bijectors`. See for example [this Stackoverflow post](https://stackoverflow.com/q/58903446/5986907).
 
 GPflow 2 still provides the `gpflow.utilities.triangular` alias for `tfp.bijectors.FillTriangular`, and `gpflow.utilities.positive` which is configurable to be either softplus or exp, with an optional shift to ensure a lower bound that is larger than zero.
 
 
-# Name Scoping
+## Name Scoping
 
 The `name_scope` decorator does not exist in GPflow 2 anymore. Use TensorFlow’s [name_scope](https://www.tensorflow.org/api_docs/python/tf/name_scope?version=stable) context manager instead.
 
 
-# Model Persistence
+## Model Persistence
 
 Model persistence with `gpflow.saver` has been removed in GPflow 2, in favour of TensorFlow 2’s [checkpointing](https://www.tensorflow.org/guide/checkpoint) and [model persistence using the SavedModel format](https://www.tensorflow.org/guide/saved_model).
 
