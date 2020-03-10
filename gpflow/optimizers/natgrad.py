@@ -80,10 +80,11 @@ class NaturalGradient(tf.optimizers.Optimizer):
         self.gamma = gamma
 
     def minimize(
-            self,
-            loss_fn: Callable,
-            var_list: List[
-                Union[Tuple[Parameter, Parameter], Tuple[Parameter, Parameter, XiTransform]]]
+        self,
+        loss_fn: Callable,
+        var_list: List[
+            Union[Tuple[Parameter, Parameter], Tuple[Parameter, Parameter, XiTransform]]
+        ],
     ):
         """
         Minimizes objective function of the model.
