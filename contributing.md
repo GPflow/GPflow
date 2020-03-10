@@ -63,6 +63,14 @@ class Foo:
         return session.run(incr_tensor)
 ```
 
+### Formatting
+
+GPflow uses [black](https://github.com/psf/black) for formatting in the following way:
+
+```bash
+black -t py36 -l 100 gpflow tests
+```
+
 ## Pull requests and the master branch
 
 If you think that your contribution falls within the project scope (see above) please submit a Pull Request (PR) to our GitHub page. In order to maintain code quality, and make life easy for the reviewers, please ensure that your PR:
