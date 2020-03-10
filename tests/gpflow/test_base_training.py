@@ -47,9 +47,7 @@ class Data:
 @pytest.fixture
 def model():
     return gpflow.models.SVGP(
-        kernel=gpflow.kernels.SquaredExponential(
-            lengthscale=Data.ls, variance=Data.var
-        ),
+        kernel=gpflow.kernels.SquaredExponential(lengthscale=Data.ls, variance=Data.var),
         likelihood=gpflow.likelihoods.Gaussian(),
         inducing_variable=Data.Z,
         q_diag=True,
@@ -89,9 +87,7 @@ def test_multiple_assign_updates_correct_values(model, var_update_dict):
                 variable.value().numpy(), var_update_dict[path], decimal=7
             )
         else:
-            np.testing.assert_equal(
-                variable.value().numpy(), old_value_dict[path].value().numpy()
-            )
+            np.testing.assert_equal(variable.value().numpy(), old_value_dict[path].value().numpy())
 
 
 @pytest.mark.parametrize("wrong_var_update_dict", model_wrong_path)

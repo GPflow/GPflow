@@ -82,6 +82,7 @@ class SharedIndependent(MultioutputKernel):
     Note: this class is created only for testing and comparison purposes.
     Use `gpflow.kernels` instead for more efficient code.
     """
+
     def __init__(self, kernel: Kernel, output_dim: int):
         super().__init__()
         self.kernel = kernel
@@ -111,6 +112,7 @@ class SeparateIndependent(MultioutputKernel, Combination):
     - Separate: we use different kernel for each output latent
     - Independent: Latents are uncorrelated a priori.
     """
+
     def __init__(self, kernels, name=None):
         super().__init__(kernels=kernels, name=name)
 
@@ -143,6 +145,7 @@ class IndependentLatent(MultioutputKernel):
     conditional()`. This can be specified by using `Fallback{Separate|Shared}
     IndependentInducingVariables`.
     """
+
     @abc.abstractmethod
     def Kgg(self, X, X2):
         raise NotImplementedError
@@ -152,6 +155,7 @@ class LinearCoregionalization(IndependentLatent, Combination):
     """
     Linear mixing of the latent GPs to form the output.
     """
+
     def __init__(self, kernels, W, name=None):
         Combination.__init__(self, kernels=kernels, name=name)
         self.W = Parameter(W)  # [P, L]
@@ -180,8 +184,11 @@ class LinearCoregionalization(IndependentLatent, Combination):
             # Can currently not use einsum due to unknown shape from `tf.stack()`
             # return tf.einsum('nl,lk,lq->nkq', K, self.W, self.W)  # [N, P, P]
             Wt = tf.transpose(self.W)  # [L, P]
-            return tf.reduce_sum(K[:, :, None, None] * Wt[None, :, :, None] * Wt[None, :, None, :],
-                                 axis=1)  # [N, P, P]
+            return tf.reduce_sum(
+                K[:, :, None, None] * Wt[None, :, :, None] * Wt[None, :, None, :], axis=1
+            )  # [N, P, P]
         else:
             # return tf.einsum('nl,lk,lk->nkq', K, self.W, self.W)  # [N, P]
-            return tf.linalg.matmul(K, self.W**2.0, transpose_b=True)  # [N, L]  *  [L, P]  ->  [N, P]
+            return tf.linalg.matmul(
+                K, self.W ** 2.0, transpose_b=True
+            )  # [N, L]  *  [L, P]  ->  [N, P]

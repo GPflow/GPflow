@@ -6,20 +6,45 @@
 import tensorflow as tf
 
 from .. import covariances
-from ..inducing_variables import (InducingPoints, FallbackSharedIndependentInducingVariables,
-                                  FallbackSeparateIndependentInducingVariables, SharedIndependentInducingVariables,
-                                  SeparateIndependentInducingVariables)
-from ..kernels import (Combination, MultioutputKernel, SeparateIndependent, SharedIndependent, IndependentLatent,
-                       LinearCoregionalization)
+from ..inducing_variables import (
+    InducingPoints,
+    FallbackSharedIndependentInducingVariables,
+    FallbackSeparateIndependentInducingVariables,
+    SharedIndependentInducingVariables,
+    SeparateIndependentInducingVariables,
+)
+from ..kernels import (
+    Combination,
+    MultioutputKernel,
+    SeparateIndependent,
+    SharedIndependent,
+    IndependentLatent,
+    LinearCoregionalization,
+)
 from ..config import default_float, default_jitter
 from .dispatch import conditional
-from .util import (base_conditional, expand_independent_outputs, fully_correlated_conditional,
-                   independent_interdomain_conditional, mix_latent_gp, rollaxis_left)
+from .util import (
+    base_conditional,
+    expand_independent_outputs,
+    fully_correlated_conditional,
+    independent_interdomain_conditional,
+    mix_latent_gp,
+    rollaxis_left,
+)
 
 
 @conditional.register(object, SharedIndependentInducingVariables, SharedIndependent, object)
 def shared_independent_conditional(
-        Xnew, inducing_variable, kernel, f, *, full_cov=False, full_output_cov=False, q_sqrt=None, white=False):
+    Xnew,
+    inducing_variable,
+    kernel,
+    f,
+    *,
+    full_cov=False,
+    full_output_cov=False,
+    q_sqrt=None,
+    white=False,
+):
     """Multioutput conditional for an independent kernel and shared inducing inducing.
     Same behaviour as conditional with non-multioutput kernels.
     The covariance matrices used to calculate the conditional have the following shape:
@@ -53,8 +78,9 @@ def shared_independent_conditional(
     Knn = kernel(Xnew, full=full_cov, full_output_cov=False)
     Knn = Knn[0, ...] if full_cov else Knn[..., 0]  # [N, N] or [N]
 
-    fmean, fvar = base_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov, q_sqrt=q_sqrt,
-                                   white=white)  # [N, P],  [P, N, N] or [N, P]
+    fmean, fvar = base_conditional(
+        Kmn, Kmm, Knn, f, full_cov=full_cov, q_sqrt=q_sqrt, white=white
+    )  # [N, P],  [P, N, N] or [N, P]
     return fmean, expand_independent_outputs(fvar, full_cov, full_output_cov)
 
 
@@ -62,7 +88,16 @@ def shared_independent_conditional(
 @conditional.register(object, SharedIndependentInducingVariables, SeparateIndependent, object)
 @conditional.register(object, SeparateIndependentInducingVariables, SharedIndependent, object)
 def separate_independent_conditional(
-        Xnew, inducing_variable, kernel, f, *, full_cov=False, full_output_cov=False, q_sqrt=None, white=False):
+    Xnew,
+    inducing_variable,
+    kernel,
+    f,
+    *,
+    full_cov=False,
+    full_output_cov=False,
+    q_sqrt=None,
+    white=False,
+):
     """Multi-output GP with independent GP priors.
     Number of latent processes equals the number of outputs (L = P).
     The covariance matrices used to calculate the conditional have the following shape:
@@ -93,8 +128,9 @@ def separate_independent_conditional(
         Kmm, Kmn, Knn, f, q_sqrt = t
         return base_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov, q_sqrt=q_sqrt, white=white)
 
-    rmu, rvar = tf.map_fn(single_gp_conditional, (Kmms, Kmns, Knns, fs, q_sqrts),
-                          (default_float(), default_float()))  # [P, N, 1], [P, 1, N, N] or [P, N, 1]
+    rmu, rvar = tf.map_fn(
+        single_gp_conditional, (Kmms, Kmns, Knns, fs, q_sqrts), (default_float(), default_float())
+    )  # [P, N, 1], [P, 1, N, N] or [P, N, 1]
 
     fmu = rollaxis_left(rmu[..., 0], 1)  # [N, P]
 
@@ -106,12 +142,23 @@ def separate_independent_conditional(
     return fmu, expand_independent_outputs(fvar, full_cov, full_output_cov)
 
 
-@conditional.register(object,
-                      (FallbackSharedIndependentInducingVariables, FallbackSeparateIndependentInducingVariables),
-                      IndependentLatent,
-                      object)
+@conditional.register(
+    object,
+    (FallbackSharedIndependentInducingVariables, FallbackSeparateIndependentInducingVariables),
+    IndependentLatent,
+    object,
+)
 def fallback_independent_latent_conditional(
-        Xnew, inducing_variable, kernel, f, *, full_cov=False, full_output_cov=False, q_sqrt=None, white=False):
+    Xnew,
+    inducing_variable,
+    kernel,
+    f,
+    *,
+    full_cov=False,
+    full_output_cov=False,
+    q_sqrt=None,
+    white=False,
+):
     """Interdomain conditional with independent latents.
     In this case the number of latent GPs (L) will be different than the number of outputs (P)
     The covariance matrices used to calculate the conditional have the following shape:
@@ -128,21 +175,34 @@ def fallback_independent_latent_conditional(
     """
     Kmm = covariances.Kuu(inducing_variable, kernel, jitter=default_jitter())  # [L, M, M]
     Kmn = covariances.Kuf(inducing_variable, kernel, Xnew)  # [M, L, N, P]
-    Knn = kernel(Xnew, full=full_cov, full_output_cov=full_output_cov)  # [N, P](x N)x P  or  [N, P](x P)
+    Knn = kernel(
+        Xnew, full=full_cov, full_output_cov=full_output_cov
+    )  # [N, P](x N)x P  or  [N, P](x P)
 
-    return independent_interdomain_conditional(Kmn,
-                                               Kmm,
-                                               Knn,
-                                               f,
-                                               full_cov=full_cov,
-                                               full_output_cov=full_output_cov,
-                                               q_sqrt=q_sqrt,
-                                               white=white)
+    return independent_interdomain_conditional(
+        Kmn,
+        Kmm,
+        Knn,
+        f,
+        full_cov=full_cov,
+        full_output_cov=full_output_cov,
+        q_sqrt=q_sqrt,
+        white=white,
+    )
 
 
 @conditional.register(object, InducingPoints, MultioutputKernel, object)
 def inducing_point_conditional(
-        Xnew, inducing_variable, kernel, f, *, full_cov=False, full_output_cov=False, q_sqrt=None, white=False):
+    Xnew,
+    inducing_variable,
+    kernel,
+    f,
+    *,
+    full_cov=False,
+    full_output_cov=False,
+    q_sqrt=None,
+    white=False,
+):
     """Multi-output GP with fully correlated inducing variables.
     The inducing variables are shaped in the same way as evaluations of K, to allow a default
     inducing point scheme for multi-output kernels.
@@ -164,7 +224,9 @@ def inducing_point_conditional(
     """
     Kmm = covariances.Kuu(inducing_variable, kernel, jitter=default_jitter())  # [M, L, M, L]
     Kmn = covariances.Kuf(inducing_variable, kernel, Xnew)  # [M, L, N, P]
-    Knn = kernel(Xnew, full=full_cov, full_output_cov=full_output_cov)  # [N, P](x N)x P  or  [N, P](x P)
+    Knn = kernel(
+        Xnew, full=full_cov, full_output_cov=full_output_cov
+    )  # [N, P](x N)x P  or  [N, P](x P)
 
     M, L, N, K = tf.unstack(tf.shape(Kmn), num=Kmn.shape.ndims, axis=0)
     Kmm = tf.reshape(Kmm, (M * L, M * L))
@@ -172,27 +234,43 @@ def inducing_point_conditional(
     if full_cov == full_output_cov:
         Kmn = tf.reshape(Kmn, (M * L, N * K))
         Knn = tf.reshape(Knn, (N * K, N * K)) if full_cov else tf.reshape(Knn, (N * K,))
-        fmean, fvar = base_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov, q_sqrt=q_sqrt,
-                                       white=white)  # [K, 1], [1, K](x NK)
+        fmean, fvar = base_conditional(
+            Kmn, Kmm, Knn, f, full_cov=full_cov, q_sqrt=q_sqrt, white=white
+        )  # [K, 1], [1, K](x NK)
         fmean = tf.reshape(fmean, (N, K))
         fvar = tf.reshape(fvar, (N, K, N, K) if full_cov else (N, K))
     else:
         Kmn = tf.reshape(Kmn, (M * L, N, K))
-        fmean, fvar = fully_correlated_conditional(Kmn,
-                                                   Kmm,
-                                                   Knn,
-                                                   f,
-                                                   full_cov=full_cov,
-                                                   full_output_cov=full_output_cov,
-                                                   q_sqrt=q_sqrt,
-                                                   white=white)
+        fmean, fvar = fully_correlated_conditional(
+            Kmn,
+            Kmm,
+            Knn,
+            f,
+            full_cov=full_cov,
+            full_output_cov=full_output_cov,
+            q_sqrt=q_sqrt,
+            white=white,
+        )
     return fmean, fvar
 
 
-@conditional.register(object, (SharedIndependentInducingVariables, SeparateIndependentInducingVariables),
-                      LinearCoregionalization, object)
+@conditional.register(
+    object,
+    (SharedIndependentInducingVariables, SeparateIndependentInducingVariables),
+    LinearCoregionalization,
+    object,
+)
 def coregionalization_conditional(
-        Xnew, inducing_variable, kernel, f, *, full_cov=False, full_output_cov=False, q_sqrt=None, white=False):
+    Xnew,
+    inducing_variable,
+    kernel,
+    f,
+    *,
+    full_cov=False,
+    full_output_cov=False,
+    q_sqrt=None,
+    white=False,
+):
     """Most efficient routine to project L independent latent gps through a mixing matrix W.
     The mixing matrix is a member of the `LinearCoregionalization` and has shape [P, L].
     The covariance matrices used to calculate the conditional have the following shape:
@@ -206,13 +284,17 @@ def coregionalization_conditional(
       conditional in the single-output case.
     - See the multioutput notebook for more information about the multioutput framework.
     """
-    ind_conditional = conditional.dispatch(object, SeparateIndependentInducingVariables, SeparateIndependent, object)
-    gmu, gvar = ind_conditional(Xnew,
-                                inducing_variable,
-                                kernel,
-                                f,
-                                full_cov=full_cov,
-                                q_sqrt=q_sqrt,
-                                full_output_cov=False,
-                                white=white)  # [N, L], [L, N, N] or [N, L]
+    ind_conditional = conditional.dispatch(
+        object, SeparateIndependentInducingVariables, SeparateIndependent, object
+    )
+    gmu, gvar = ind_conditional(
+        Xnew,
+        inducing_variable,
+        kernel,
+        f,
+        full_cov=full_cov,
+        q_sqrt=q_sqrt,
+        full_output_cov=False,
+        white=white,
+    )  # [N, L], [L, N, N] or [N, L]
     return mix_latent_gp(kernel.W, gmu, gvar, full_cov, full_output_cov)
