@@ -22,7 +22,7 @@
 # $$f(\cdot) \sim \mathcal{GP}\big(0, k(\cdot, \cdot)\big)$$
 # $$y_i | f, x_i \sim \mathcal N\big(y_i; f(x_i), \sigma^2_i\big)$$
 #
-# We'll demonstrate two methods. In the first demonstration, we'll assume that the noise variance is known for every data point. We'll incorporate the known noise variances $\sigma^2_i$ into the data matrix $\mathbf Y$, make a likelihood that can deal with this structure, and implement inference using variational GPs with natural gradients (#TODO no natural gradients in GPflow 2 yet). 
+# We'll demonstrate two methods. In the first demonstration, we'll assume that the noise variance is known for every data point. We'll incorporate the known noise variances $\sigma^2_i$ into the data matrix $\mathbf Y$, make a likelihood that can deal with this structure, and implement inference using variational GPs with natural gradients.
 #
 # In the second demonstration, we'll assume that the noise variance is not known, but we'd like to estimate it for different groups of data. We'll show how to construct an appropriate likelihood for this task and set up inference similarly to the first demonstration, with optimization over the noise variances. 
 #
@@ -32,6 +32,8 @@ import numpy as np
 import tensorflow as tf
 import gpflow
 from gpflow.ci_utils import ci_niter
+from gpflow.optimizers import NaturalGradient
+from gpflow.utilities import set_trainable
 import matplotlib
 import matplotlib.pyplot as plt
 # %matplotlib inline
@@ -98,9 +100,11 @@ class HeteroskedasticGaussian(gpflow.likelihoods.Likelihood):
 
 # %% [markdown]
 # ### Put it together with Variational Gaussian Process (VGP)
-# Here we'll build a variational GP model with the previous likelihood on the dataset that we generated. We'll use the natural gradient optimizer (see [Natural gradients](natural_gradients.ipynb) for more information) (#TODO no natural gradients in GPflow 2 yet).
+# Here we'll build a variational GP model with the previous likelihood on the dataset that we generated. We'll use the natural gradient optimizer (see [Natural gradients](natural_gradients.ipynb) for more information).
 #
 # The variational GP object is capable of variational inference with any GPflow-derived likelihood. Usually, the inference is an inexact (but pretty good) approximation, but in the special case considered here, where the noise is Gaussian, it will achieve exact inference. Optimizing over the variational parameters is easy using the natural gradients method, which provably converges in a single step. 
+#
+# Note: We mark the variational parameters as not trainable so that they are not included in the `model.trainable_variables` when we optimize using the Adam optimizer. We train the variational parameters separately using the natural gradient method.
 
 # %%
 # model construction (notice that num_latent is 1)
@@ -114,10 +118,15 @@ model = gpflow.models.VGP((X, Y_data), kernel=kernel, likelihood=likelihood, num
 def objective_closure():
     return - model.log_marginal_likelihood()
 
-opt = gpflow.optimizers.Scipy()
-opt.minimize(objective_closure,
-             model.trainable_variables,
-             options=dict(maxiter=ci_niter(1000)))
+natgrad = NaturalGradient(gamma=1.0)
+adam = tf.optimizers.Adam()
+
+set_trainable(model.q_mu, False)
+set_trainable(model.q_sqrt, False)
+
+for _ in range(ci_niter(1000)):
+    natgrad.minimize(objective_closure, [(model.q_mu, model.q_sqrt)])
+    adam.minimize(objective_closure, model.trainable_variables)
 
 # %%
 # let's do some plotting!
@@ -200,14 +209,8 @@ model = gpflow.models.VGP((X, Y_data), kernel=kernel, likelihood=likelihood, num
 def objective_closure():
     return - model.log_marginal_likelihood()
 
-from gpflow.utilities import set_trainable
-set_trainable(model.kernel, False)
-set_trainable(model.likelihood, False)
-
-opt = gpflow.optimizers.Scipy()
-opt.minimize(objective_closure,
-             model.trainable_variables,
-             options=dict(maxiter=ci_niter(1000)))
+for _ in range(ci_niter(1000)):
+    natgrad.minimize(objective_closure, [(model.q_mu, model.q_sqrt)])
 
 # %% [markdown]
 # We've now fitted the VGP model to the data, but without optimizing over the hyperparameters. Plotting the data, we see that the fit is not terrible, but hasn't made use of our knowledge of the varying noise. 
@@ -228,7 +231,9 @@ ax.set_xlim(-5, 5);
 
 # %% [markdown]
 # ### Optimizing the noise variances
-# Here we'll optimize over both the noise variance and the variational parameters, applying natural gradients interleaved with the Adam optimizer. See [Natural gradients](natural_gradients.ipynb) for more details and explanation (#TODO no natural gradients in GPflow 2 yet).
+# Here we'll optimize over both the noise variance and the variational parameters, applying natural gradients interleaved with the Adam optimizer.
+#
+# As before, we mark the variational parameters as not trainable, in order to train them separately with the natural gradient method.
 
 # %%
 likelihood = gpflow.likelihoods.SwitchedLikelihood([gpflow.likelihoods.Gaussian(variance=1.0),
@@ -240,9 +245,12 @@ model = gpflow.models.VGP((X, Y_data), kernel=kernel, likelihood=likelihood, num
 def objective_closure():
     return - model.log_marginal_likelihood()
 
-opt.minimize(objective_closure,
-             model.trainable_variables,
-             options=dict(maxiter=ci_niter(1000)))
+set_trainable(model.q_mu, False)
+set_trainable(model.q_sqrt, False)
+
+for _ in range(ci_niter(1000)):
+    natgrad.minimize(objective_closure, [(model.q_mu, model.q_sqrt)])
+    adam.minimize(objective_closure, model.trainable_variables)
 
 # %% [markdown]
 # ### Plotting the fitted model
