@@ -64,15 +64,17 @@ def test_rbf_1d(variance, lengthscale):
 
     assert_allclose(gram_matrix, reference_gram_matrix)
 
+
 @pytest.mark.parametrize("variance, lengthscale", [[2.3, 1.3]])
 def test_cos_1d(variance, lengthscale):
     X = rng.randn(3, 1)
     kernel = gpflow.kernels.Cosine(lengthscale=lengthscale, variance=variance)
 
     gram_matrix = kernel(X)
-    reference_gram_matrix = variance * np.cos((X-X.T)/lengthscale)
+    reference_gram_matrix = variance * np.cos((X - X.T) / lengthscale)
 
     assert_allclose(gram_matrix, reference_gram_matrix)
+
 
 @pytest.mark.parametrize("variance, lengthscale", [[2.3, 1.4]])
 def test_sinc_1d(variance, lengthscale):
@@ -80,9 +82,10 @@ def test_sinc_1d(variance, lengthscale):
     kernel = gpflow.kernels.Sinc(lengthscale=lengthscale, variance=variance)
 
     gram_matrix = kernel(X)
-    reference_gram_matrix = variance * np.sinc((X-X.T)/np.pi/lengthscale)
+    reference_gram_matrix = variance * np.sinc((X - X.T) / np.pi / lengthscale)
 
     assert_allclose(gram_matrix, reference_gram_matrix)
+
 
 @pytest.mark.parametrize("variance, lengthscale", [[2.3, 1.4]])
 def test_rq_1d(variance, lengthscale):
