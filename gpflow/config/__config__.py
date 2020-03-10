@@ -84,8 +84,10 @@ def _default_jitter_factory():
 def _default_positive_bijector_factory():
     bijector_type = _default(_Values.POSITIVE_BIJECTOR)
     if bijector_type not in positive_bijector_type_map().keys():
-        raise TypeError("Config cannot set the passed value as a default positive bijector."
-                        f"Available options: {set(positive_bijector_type_map().keys())}")
+        raise TypeError(
+            "Config cannot set the passed value as a default positive bijector."
+            f"Available options: {set(positive_bijector_type_map().keys())}"
+        )
     return bijector_type
 
 

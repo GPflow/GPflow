@@ -22,6 +22,7 @@ class ProbabilityDistribution:
     This is the base class for a probability distributions,
     over which we take the expectations in the expectations framework.
     """
+
     pass
 
 

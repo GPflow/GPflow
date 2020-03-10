@@ -106,9 +106,7 @@ def test_multivariate_normal(x, mu, cov_sqrt):
         if x.shape[1] > 1:
             sp_result = [mvn.logpdf(x[:, i], mu[:, i], cov) for i in range(mu.shape[1])]
         else:
-            sp_result = [
-                mvn.logpdf(x.ravel(), mu[:, i], cov) for i in range(mu.shape[1])
-            ]
+            sp_result = [mvn.logpdf(x.ravel(), mu[:, i], cov) for i in range(mu.shape[1])]
     else:
         sp_result = mvn.logpdf(x.T, mu.ravel(), cov)
     assert_allclose(gp_result, sp_result)

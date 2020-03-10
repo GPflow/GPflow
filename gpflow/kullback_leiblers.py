@@ -23,7 +23,7 @@ from .covariances.kuus import Kuu
 from .config import default_jitter
 from .utilities import assert_shapes
 
-prior_kl = Dispatcher('prior_kl')
+prior_kl = Dispatcher("prior_kl")
 
 
 @prior_kl.register(InducingVariables, Kernel, object, object)
@@ -64,13 +64,11 @@ def gauss_kl(q_mu, q_sqrt, K=None):
     diag = len(q_sqrt.shape) == 2
 
     shape_constraints = [
-        (q_mu, ['M', 'L']),
-        (q_sqrt, (['M', 'L'] if diag else ['L', 'M', 'M'])),
+        (q_mu, ["M", "L"]),
+        (q_sqrt, (["M", "L"] if diag else ["L", "M", "M"])),
     ]
     if not white:
-        shape_constraints.append(
-            (K, (['L', 'M', 'M'] if len(K.shape) == 3 else ['M', 'M']))
-        )
+        shape_constraints.append((K, (["L", "M", "M"] if len(K.shape) == 3 else ["M", "M"])))
     assert_shapes(shape_constraints)
 
     M, L = tf.shape(q_mu)[0], tf.shape(q_mu)[1]
@@ -81,25 +79,21 @@ def gauss_kl(q_mu, q_sqrt, K=None):
         batch = len(K.shape) == 3
 
         Lp = tf.linalg.cholesky(K)  # [L, M, M] or [M, M]
-        q_mu = tf.transpose(
-            q_mu)[:, :, None] if batch else q_mu  # [L, M, 1] or [M, L]
-        alpha = tf.linalg.triangular_solve(Lp, q_mu,
-                                           lower=True)  # [L, M, 1] or [M, L]
+        q_mu = tf.transpose(q_mu)[:, :, None] if batch else q_mu  # [L, M, 1] or [M, L]
+        alpha = tf.linalg.triangular_solve(Lp, q_mu, lower=True)  # [L, M, 1] or [M, L]
 
     if diag:
         Lq = Lq_diag = q_sqrt
         Lq_full = tf.linalg.diag(tf.transpose(q_sqrt))  # [L, M, M]
     else:
-        Lq = Lq_full = tf.linalg.band_part(
-            q_sqrt, -1, 0)  # force lower triangle # [L, M, M]
+        Lq = Lq_full = tf.linalg.band_part(q_sqrt, -1, 0)  # force lower triangle # [L, M, M]
         Lq_diag = tf.linalg.diag_part(Lq)  # [M, L]
 
     # Mahalanobis term: μqᵀ Σp⁻¹ μq
     mahalanobis = tf.reduce_sum(tf.square(alpha))
 
     # Constant term: - L * M
-    constant = -tf.cast(tf.size(q_mu, out_type=tf.int64),
-                        dtype=default_float())
+    constant = -tf.cast(tf.size(q_mu, out_type=tf.int64), dtype=default_float())
 
     # Log-determinant of the covariance of q(x):
     logdet_qcov = tf.reduce_sum(tf.math.log(tf.square(Lq_diag)))
@@ -111,18 +105,16 @@ def gauss_kl(q_mu, q_sqrt, K=None):
         if diag and not batch:
             # K is [M, M] and q_sqrt is [M, L]: fast specialisation
             LpT = tf.transpose(Lp)  # [M, M]
-            Lp_inv = tf.linalg.triangular_solve(Lp,
-                                                tf.eye(M,
-                                                       dtype=default_float()),
-                                                lower=True)  # [M, M]
-            K_inv = tf.linalg.diag_part(
-                tf.linalg.triangular_solve(
-                    LpT, Lp_inv, lower=False))[:, None]  # [M, M] -> [M, 1]
+            Lp_inv = tf.linalg.triangular_solve(
+                Lp, tf.eye(M, dtype=default_float()), lower=True
+            )  # [M, M]
+            K_inv = tf.linalg.diag_part(tf.linalg.triangular_solve(LpT, Lp_inv, lower=False))[
+                :, None
+            ]  # [M, M] -> [M, 1]
             trace = tf.reduce_sum(K_inv * tf.square(q_sqrt))
         else:
             # TODO: broadcast instead of tile when tf allows (not implemented in tf <= 1.6.0)
-            Lp_full = Lp if batch else tf.tile(tf.expand_dims(Lp, 0),
-                                               [L, 1, 1])
+            Lp_full = Lp if batch else tf.tile(tf.expand_dims(Lp, 0), [L, 1, 1])
             LpiLq = tf.linalg.triangular_solve(Lp_full, Lq_full, lower=True)
             trace = tf.reduce_sum(tf.square(LpiLq))
 

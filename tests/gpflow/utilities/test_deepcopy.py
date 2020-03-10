@@ -9,9 +9,7 @@ from gpflow.utilities import deepcopy_components
 class A(tf.Module):
     def __init__(self):
         self.var = tf.Variable([1.0])
-        self.bijector = tfp.bijectors.Chain(
-            [tfp.bijectors.Softplus(), tfp.bijectors.Shift(1e-6)]
-        )
+        self.bijector = tfp.bijectors.Chain([tfp.bijectors.Softplus(), tfp.bijectors.Shift(1e-6)])
 
     def __call__(self, x):
         return self.bijector(x)
