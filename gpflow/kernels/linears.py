@@ -55,6 +55,7 @@ class Polynomial(Linear):
     γ is the offset parameter,
     d is the degree parameter.
     """
+
     def __init__(self, degree=3.0, variance=1.0, offset=1.0, active_dims=None):
         """
         :param degree: the degree of the polynomial
@@ -69,7 +70,7 @@ class Polynomial(Linear):
         self.offset = Parameter(offset, transform=positive())
 
     def K(self, X, X2=None):
-        return (super().K(X, X2) + self.offset)**self.degree
+        return (super().K(X, X2) + self.offset) ** self.degree
 
     def K_diag(self, X):
-        return (super().K_diag(X) + self.offset)**self.degree
+        return (super().K_diag(X) + self.offset) ** self.degree

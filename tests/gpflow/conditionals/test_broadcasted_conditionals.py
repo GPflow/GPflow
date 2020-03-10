@@ -74,8 +74,7 @@ def test_conditional_broadcasting(full_cov, white, conditional_type):
             gpflow.inducing_variables.InducingPoints(Data.Z)
         )
         kernel = mk.LinearCoregionalization(
-            kernels=[gpflow.kernels.Matern52(lengthscale=0.5) for _ in range(Data.L)],
-            W=Data.W,
+            kernels=[gpflow.kernels.Matern52(lengthscale=0.5) for _ in range(Data.L)], W=Data.W,
         )
     else:
         raise (NotImplementedError)
@@ -124,18 +123,12 @@ def test_conditional_broadcasting(full_cov, white, conditional_type):
     )
 
     assert_allclose(samples_S12.shape, samples.shape)
-    assert_allclose(
-        samples_S1_S2.shape, [Data.S1, Data.S2, num_samples, Data.N, Data.Dy]
-    )
+    assert_allclose(samples_S1_S2.shape, [Data.S1, Data.S2, num_samples, Data.N, Data.Dy])
     assert_allclose(means_S12, means)
     assert_allclose(vars_S12, variables)
-    assert_allclose(
-        means_S1_S2.numpy().reshape(Data.S1 * Data.S2, Data.N, Data.Dy), means
-    )
+    assert_allclose(means_S1_S2.numpy().reshape(Data.S1 * Data.S2, Data.N, Data.Dy), means)
     if full_cov:
-        vars_s1_s2 = vars_S1_S2.numpy().reshape(
-            Data.S1 * Data.S2, Data.Dy, Data.N, Data.N
-        )
+        vars_s1_s2 = vars_S1_S2.numpy().reshape(Data.S1 * Data.S2, Data.Dy, Data.N, Data.N)
         assert_allclose(vars_s1_s2, variables)
     else:
         vars_s1_s2 = vars_S1_S2.numpy().reshape(Data.S1 * Data.S2, Data.N, Data.Dy)
@@ -160,9 +153,7 @@ def test_broadcasting_mix_latent_gps(full_cov, full_output_cov):
     g_var_diag = g_sqrt_diag @ np.transpose(g_sqrt_diag, [0, 1, 3, 2])  # [L, S, N, N]
     g_var = np.zeros([S, N, L, N, L])
     for l in range(L):
-        g_var[:, :, l, :, l] = g_var_diag[
-            l, :, :, :
-        ]  # replace diagonal elements by g_var_diag
+        g_var[:, :, l, :, l] = g_var_diag[l, :, :, :]  # replace diagonal elements by g_var_diag
 
     # reference numpy implementation for mean
     f_mu_ref = g_mu @ W.T  # [S, N, P]
@@ -187,22 +178,16 @@ def test_broadcasting_mix_latent_gps(full_cov, full_output_cov):
 
     # we strip down f_var_ref to the elements we need
     if not full_output_cov and not full_cov:
-        f_var_ref = np.array(
-            [f_var_ref[:, :, p, :, p] for p in range(P)]
-        )  # [P, S, N, N]
+        f_var_ref = np.array([f_var_ref[:, :, p, :, p] for p in range(P)])  # [P, S, N, N]
         f_var_ref = np.array([f_var_ref[:, :, n, n] for n in range(N)])  # [N, P, S]
         f_var_ref = np.transpose(f_var_ref, [2, 0, 1])  # [S, N, P]
 
     elif not full_output_cov and full_cov:
-        f_var_ref = np.array(
-            [f_var_ref[:, :, p, :, p] for p in range(P)]
-        )  # [P, S, N, N]
+        f_var_ref = np.array([f_var_ref[:, :, p, :, p] for p in range(P)])  # [P, S, N, N]
         f_var_ref = np.transpose(f_var_ref, [1, 0, 2, 3])  # [S, P, N, N]
 
     elif full_output_cov and not full_cov:
-        f_var_ref = np.array(
-            [f_var_ref[:, n, :, n, :] for n in range(N)]
-        )  # [N, S, P, P]
+        f_var_ref = np.array([f_var_ref[:, n, :, n, :] for n in range(N)])  # [N, S, P, P]
         f_var_ref = np.transpose(f_var_ref, [1, 0, 2, 3])  # [S, N, P, P]
 
     else:

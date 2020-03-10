@@ -26,9 +26,9 @@ def get_eval_func(obj, inducing_variable, slice=None):
     if inducing_variable is not None:
         # kernel + inducing_variable combination
         if not isinstance(inducing_variable, InducingVariables) or not isinstance(
-                obj, kernels.Kernel):
-            raise TypeError(
-                "If `inducing_variable` is supplied, `obj` must be a kernel.")
+            obj, kernels.Kernel
+        ):
+            raise TypeError("If `inducing_variable` is supplied, `obj` must be a kernel.")
         return lambda x: tf.transpose(Kuf(inducing_variable, obj, x))[slice]
     elif isinstance(obj, mfn.MeanFunction):
         return lambda x: obj(x)[slice]
@@ -38,9 +38,13 @@ def get_eval_func(obj, inducing_variable, slice=None):
     raise NotImplementedError()
 
 
-@dispatch.quadrature_expectation.register((Gaussian, DiagonalGaussian), object,
-                                          (InducingVariables, NoneType), object,
-                                          (InducingVariables, NoneType))
+@dispatch.quadrature_expectation.register(
+    (Gaussian, DiagonalGaussian),
+    object,
+    (InducingVariables, NoneType),
+    object,
+    (InducingVariables, NoneType),
+)
 def _quadrature_expectation(p, obj1, inducing_variable1, obj2, inducing_variable2, nghp=None):
     """
     General handling of quadrature expectations for Gaussians and DiagonalGaussians
@@ -61,8 +65,7 @@ def _quadrature_expectation(p, obj1, inducing_variable1, obj2, inducing_variable
     else:
         iskern1 = isinstance(obj1, kernels.Kernel)
         iskern2 = isinstance(obj2, kernels.Kernel)
-        if iskern1 and iskern2 and obj1.on_separate_dims(
-                obj2):  # no joint expectations required
+        if iskern1 and iskern2 and obj1.on_separate_dims(obj2):  # no joint expectations required
             eKxz1 = quadrature_expectation(p, (obj1, inducing_variable1), nghp=nghp)
             eKxz2 = quadrature_expectation(p, (obj2, inducing_variable2), nghp=nghp)
             return eKxz1[:, :, None] * eKxz2[:, None, :]
@@ -73,6 +76,7 @@ def _quadrature_expectation(p, obj1, inducing_variable1, obj2, inducing_variable
         def eval_func(x):
             fn = get_eval_func(obj1, inducing_variable1)
             return fn(x)
+
     else:
 
         def eval_func(x):
@@ -83,9 +87,9 @@ def _quadrature_expectation(p, obj1, inducing_variable1, obj2, inducing_variable
     return mvnquad(eval_func, p.mu, cov, nghp)
 
 
-@dispatch.quadrature_expectation.register(MarkovGaussian, object,
-                                          (InducingVariables, NoneType), object,
-                                          (InducingVariables, NoneType))
+@dispatch.quadrature_expectation.register(
+    MarkovGaussian, object, (InducingVariables, NoneType), object, (InducingVariables, NoneType)
+)
 def _quadrature_expectation(p, obj1, inducing_variable1, obj2, inducing_variable2, nghp=None):
     """
     Handling of quadrature expectations for Markov Gaussians (useful for time series)
@@ -123,10 +127,8 @@ def _quadrature_expectation(p, obj1, inducing_variable1, obj2, inducing_variable
             return res1 * res2
 
         mu = tf.concat((p.mu[:-1, :], p.mu[1:, :]), 1)  # Nx2D
-        cov_top = tf.concat((p.cov[0, :-1, :, :], p.cov[1, :-1, :, :]),
-                            2)  # NxDx2D
-        cov_bottom = tf.concat(
-            (tf.linalg.adjoint(p.cov[1, :-1, :, :]), p.cov[0, 1:, :, :]), 2)
+        cov_top = tf.concat((p.cov[0, :-1, :, :], p.cov[1, :-1, :, :]), 2)  # NxDx2D
+        cov_bottom = tf.concat((tf.linalg.adjoint(p.cov[1, :-1, :, :]), p.cov[0, 1:, :, :]), 2)
         cov = tf.concat((cov_top, cov_bottom), 1)  # Nx2Dx2D
 
     return mvnquad(eval_func, mu, cov, nghp)

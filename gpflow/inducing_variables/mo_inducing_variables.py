@@ -25,6 +25,7 @@ class MultioutputInducingVariables(InducingVariables):
     because it is constructed from independent GPs (eg IndependentLatent,
     LinearCoregionalization).
     """
+
     pass
 
 
@@ -109,6 +110,7 @@ class SharedIndependentInducingVariables(FallbackSharedIndependentInducingVariab
     `Kuu()` and `Kuf()` return. This allows a custom `conditional()` to provide
     the most efficient implementation.
     """
+
     pass
 
 
@@ -119,4 +121,5 @@ class SeparateIndependentInducingVariables(FallbackSeparateIndependentInducingVa
     `Kuu()` and `Kuf()` return. This allows a custom `conditional()` to provide
     the most efficient implementation.
     """
+
     pass

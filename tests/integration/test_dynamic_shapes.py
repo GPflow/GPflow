@@ -62,10 +62,7 @@ def test_svgp(whiten, q_diag):
 
     # simply test whether it runs without erroring...:
     opt.minimize(
-        model_closure,
-        variables=model.trainable_variables,
-        options=dict(maxiter=3),
-        jit=True,
+        model_closure, variables=model.trainable_variables, options=dict(maxiter=3), jit=True,
     )
 
 
@@ -91,8 +88,5 @@ def test_multiclass():
 
     # simply test whether it runs without erroring...:
     opt.minimize(
-        model_closure,
-        variables=model.trainable_variables,
-        options=dict(maxiter=3),
-        jit=True,
+        model_closure, variables=model.trainable_variables, options=dict(maxiter=3), jit=True,
     )

@@ -69,24 +69,16 @@ model_setups = [
     ModelSetup(model_class=gpflow.models.SVGP, whiten=True, q_diag=False),
     ModelSetup(model_class=gpflow.models.SVGP, whiten=True, q_diag=True),
     ModelSetup(model_class=gpflow.models.SVGP, whiten=False, q_diag=False),
+    ModelSetup(model_class=gpflow.models.SGPR, requires_data=True, requires_likelihood=False),
     ModelSetup(
-        model_class=gpflow.models.SGPR, requires_data=True, requires_likelihood=False
-    ),
-    ModelSetup(
-        model_class=gpflow.models.VGP,
-        requires_inducing_variables=False,
-        requires_data=True,
+        model_class=gpflow.models.VGP, requires_inducing_variables=False, requires_data=True,
     ),
     #     ModelSetup(model_class=gpflow.models.GPRF),
     ModelSetup(
-        model_class=gpflow.models.GPMC,
-        requires_data=True,
-        requires_inducing_variables=False,
+        model_class=gpflow.models.GPMC, requires_data=True, requires_inducing_variables=False,
     ),
     ModelSetup(
-        model_class=gpflow.models.SGPMC,
-        requires_data=True,
-        requires_inducing_variables=True,
+        model_class=gpflow.models.SGPMC, requires_data=True, requires_inducing_variables=True,
     ),
 ]
 
@@ -116,9 +108,7 @@ def test_gaussian_log_density(Ntrain, Ntest, D):
     data = Xtest, Ytest
     log_density = model_gp.predict_log_density(data)
     log_density_hand = (
-        -0.5 * np.log(2 * np.pi)
-        - 0.5 * np.log(var_y)
-        - 0.5 * np.square(mu_y - Ytest) / var_y
+        -0.5 * np.log(2 * np.pi) - 0.5 * np.log(var_y) - 0.5 * np.square(mu_y - Ytest) / var_y
     )
 
     assert np.allclose(log_density_hand, log_density)
@@ -143,9 +133,7 @@ def test_gaussian_full_cov(input_dim, output_dim, N, Ntest, M):
 
 
 @pytest.mark.skip(reason="GPR model is not ready")
-@pytest.mark.parametrize(
-    "input_dim, output_dim, N, Ntest, M, num_samples", [[3, 2, 20, 30, 5, 5]]
-)
+@pytest.mark.parametrize("input_dim, output_dim, N, Ntest, M, num_samples", [[3, 2, 20, 30, 5, 5]])
 def test_gaussian_full_cov_samples(input_dim, output_dim, N, Ntest, M, num_samples):
     samples_shape = (num_samples, Ntest, output_dim)
     X, Y, _ = rng.randn(N, input_dim), rng.randn(N, output_dim), rng.randn(M, input_dim)

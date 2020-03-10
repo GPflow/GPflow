@@ -151,29 +151,19 @@ def _create_approximate_models():
         return -model_5.log_marginal_likelihood()
 
     opt.minimize(
-        model_1_closure,
-        variables=model_1.trainable_variables,
-        options=dict(maxiter=300),
+        model_1_closure, variables=model_1.trainable_variables, options=dict(maxiter=300),
     )
     opt.minimize(
-        model_2_closure,
-        variables=model_2.trainable_variables,
-        options=dict(maxiter=300),
+        model_2_closure, variables=model_2.trainable_variables, options=dict(maxiter=300),
     )
     opt.minimize(
-        model_3_closure,
-        variables=model_3.trainable_variables,
-        options=dict(maxiter=300),
+        model_3_closure, variables=model_3.trainable_variables, options=dict(maxiter=300),
     )
     opt.minimize(
-        model_4_closure,
-        variables=model_4.trainable_variables,
-        options=dict(maxiter=300),
+        model_4_closure, variables=model_4.trainable_variables, options=dict(maxiter=300),
     )
     opt.minimize(
-        model_5_closure,
-        variables=model_5.trainable_variables,
-        options=dict(maxiter=300),
+        model_5_closure, variables=model_5.trainable_variables, options=dict(maxiter=300),
     )
 
     return model_1, model_2, model_3, model_4, model_5
@@ -198,12 +188,7 @@ def _create_vgpao_model(kernel, likelihood, q_alpha, q_lambda):
 
 def _create_svgp_model(kernel, likelihood, q_mu, q_sqrt, whiten):
     model_svgp = gpflow.models.SVGP(
-        kernel,
-        likelihood,
-        DatumVGP.X.copy(),
-        whiten=whiten,
-        q_diag=False,
-        num_latent=DatumVGP.DY,
+        kernel, likelihood, DatumVGP.X.copy(), whiten=whiten, q_diag=False, num_latent=DatumVGP.DY,
     )
     model_svgp.q_mu.assign(q_mu)
     model_svgp.q_sqrt.assign(q_sqrt)
@@ -246,9 +231,7 @@ def test_equivalence_vgp_and_svgp():
     kernel = gpflow.kernels.Matern52()
     likelihood = gpflow.likelihoods.StudentT()
 
-    svgp_model = _create_svgp_model(
-        kernel, likelihood, DatumVGP.q_mu, DatumVGP.q_sqrt, whiten=True
-    )
+    svgp_model = _create_svgp_model(kernel, likelihood, DatumVGP.q_mu, DatumVGP.q_sqrt, whiten=True)
     vgp_model = _create_vgp_model(kernel, likelihood, DatumVGP.q_mu, DatumVGP.q_sqrt)
 
     likelihood_svgp = svgp_model.log_likelihood(DatumVGP.data)
@@ -266,9 +249,7 @@ def test_equivalence_vgp_and_opper_archambeau():
     kernel = gpflow.kernels.Matern52()
     likelihood = gpflow.likelihoods.StudentT()
 
-    vgp_oa_model = _create_vgpao_model(
-        kernel, likelihood, DatumVGP.q_alpha, DatumVGP.q_lambda
-    )
+    vgp_oa_model = _create_vgpao_model(kernel, likelihood, DatumVGP.q_alpha, DatumVGP.q_lambda)
 
     K = kernel(DatumVGP.X) + np.eye(DatumVGP.N) * default_jitter()
     L = np.linalg.cholesky(K)
@@ -277,9 +258,7 @@ def test_equivalence_vgp_and_opper_archambeau():
 
     mean = K @ DatumVGP.q_alpha
 
-    prec_dnn = K_inv[None, :, :] + np.array(
-        [np.diag(l ** 2) for l in DatumVGP.q_lambda.T]
-    )
+    prec_dnn = K_inv[None, :, :] + np.array([np.diag(l ** 2) for l in DatumVGP.q_lambda.T])
     var_dnn = np.linalg.inv(prec_dnn)
 
     svgp_model_unwhitened = _create_svgp_model(
@@ -300,9 +279,7 @@ def test_equivalence_vgp_and_opper_archambeau():
     assert_allclose(likelihood_vgp, likelihood_svgp_unwhitened, rtol=1e-2)
 
     vgp_oa_mu, vgp_oa_var = vgp_oa_model.predict_f(DatumVGP.Xs)
-    svgp_unwhitened_mu, svgp_unwhitened_var = svgp_model_unwhitened.predict_f(
-        DatumVGP.Xs
-    )
+    svgp_unwhitened_mu, svgp_unwhitened_var = svgp_model_unwhitened.predict_f(DatumVGP.Xs)
     vgp_mu, vgp_var = vgp_model.predict_f(DatumVGP.Xs)
 
     assert_allclose(vgp_oa_mu, vgp_mu)
@@ -328,9 +305,7 @@ def test_upper_bound_few_inducing_points():
         return -model_vfe.log_marginal_likelihood()
 
     opt.minimize(
-        model_vfe_closure,
-        variables=model_vfe.trainable_variables,
-        options=dict(maxiter=500),
+        model_vfe_closure, variables=model_vfe.trainable_variables, options=dict(maxiter=500),
     )
 
     full_gp = gpflow.models.GPR(

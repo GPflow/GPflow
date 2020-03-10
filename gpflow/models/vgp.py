@@ -48,12 +48,15 @@ class VGP(GPModel):
        q(\mathbf f) = N(\mathbf f \,|\, \boldsymbol \mu, \boldsymbol \Sigma)
 
     """
-    def __init__(self,
-                 data: Data,
-                 kernel: Kernel,
-                 likelihood: Likelihood,
-                 mean_function: Optional[MeanFunction] = None,
-                 num_latent: Optional[int] = None):
+
+    def __init__(
+        self,
+        data: Data,
+        kernel: Kernel,
+        likelihood: Likelihood,
+        mean_function: Optional[MeanFunction] = None,
+        num_latent: Optional[int] = None,
+    ):
         """
         X is a data matrix, size [N, D]
         Y is a data matrix, size [N, R]
@@ -105,16 +108,19 @@ class VGP(GPModel):
 
         return tf.reduce_sum(var_exp) - KL
 
-    def predict_f(self, predict_at: DataPoint, full_cov: bool = False,
-                  full_output_cov: bool = False) -> MeanAndVariance:
+    def predict_f(
+        self, predict_at: DataPoint, full_cov: bool = False, full_output_cov: bool = False
+    ) -> MeanAndVariance:
         x_data, _y_data = self.data
-        mu, var = conditional(predict_at,
-                              x_data,
-                              self.kernel,
-                              self.q_mu,
-                              q_sqrt=self.q_sqrt,
-                              full_cov=full_cov,
-                              white=True)
+        mu, var = conditional(
+            predict_at,
+            x_data,
+            self.kernel,
+            self.q_mu,
+            q_sqrt=self.q_sqrt,
+            full_cov=full_cov,
+            white=True,
+        )
         return mu + self.mean_function(predict_at), var
 
 
@@ -144,12 +150,15 @@ class VGPOpperArchambeau(GPModel):
     but the optimization is non-convex and in practice may cause difficulty.
 
     """
-    def __init__(self,
-                 data: Data,
-                 kernel: Kernel,
-                 likelihood: Likelihood,
-                 mean_function: MeanFunction = None,
-                 num_latent: Optional[int] = None):
+
+    def __init__(
+        self,
+        data: Data,
+        kernel: Kernel,
+        likelihood: Likelihood,
+        mean_function: MeanFunction = None,
+        num_latent: Optional[int] = None,
+    ):
         """
         X is a data matrix, size [N, D]
         Y is a data matrix, size [N, R]
@@ -164,7 +173,9 @@ class VGPOpperArchambeau(GPModel):
         self.num_data = x_data.shape[0]
         self.num_latent = num_latent or y_data.shape[1]
         self.q_alpha = Parameter(np.zeros((self.num_data, self.num_latent)))
-        self.q_lambda = Parameter(np.ones((self.num_data, self.num_latent)), transform=gpflow.utilities.positive())
+        self.q_lambda = Parameter(
+            np.ones((self.num_data, self.num_latent)), transform=gpflow.utilities.positive()
+        )
 
     def log_likelihood(self):
         r"""
@@ -181,23 +192,37 @@ class VGPOpperArchambeau(GPModel):
         f_mean = K_alpha + self.mean_function(x_data)
 
         # compute the variance for each of the outputs
-        I = tf.tile(tf.eye(self.num_data, dtype=default_float())[None, ...], [self.num_latent, 1, 1])
-        A = I + tf.transpose(self.q_lambda)[:, None, ...] * tf.transpose(self.q_lambda)[:, :, None, ...] * K
+        I = tf.tile(
+            tf.eye(self.num_data, dtype=default_float())[None, ...], [self.num_latent, 1, 1]
+        )
+        A = (
+            I
+            + tf.transpose(self.q_lambda)[:, None, ...]
+            * tf.transpose(self.q_lambda)[:, :, None, ...]
+            * K
+        )
         L = tf.linalg.cholesky(A)
         Li = tf.linalg.triangular_solve(L, I)
         tmp = Li / tf.transpose(self.q_lambda)[:, None, ...]
-        f_var = 1. / tf.square(self.q_lambda) - tf.transpose(tf.reduce_sum(tf.square(tmp), 1))
+        f_var = 1.0 / tf.square(self.q_lambda) - tf.transpose(tf.reduce_sum(tf.square(tmp), 1))
 
         # some statistics about A are used in the KL
         A_logdet = 2.0 * tf.reduce_sum(tf.math.log(tf.linalg.diag_part(L)))
         trAi = tf.reduce_sum(tf.square(Li))
 
-        KL = 0.5 * (A_logdet + trAi - self.num_data * self.num_latent + tf.reduce_sum(K_alpha * self.q_alpha))
+        KL = 0.5 * (
+            A_logdet
+            + trAi
+            - self.num_data * self.num_latent
+            + tf.reduce_sum(K_alpha * self.q_alpha)
+        )
 
         v_exp = self.likelihood.variational_expectations(f_mean, f_var, y_data)
         return tf.reduce_sum(v_exp) - KL
 
-    def predict_f(self, predict_at: DataPoint, full_cov: bool = False, full_output_cov: bool = False):
+    def predict_f(
+        self, predict_at: DataPoint, full_cov: bool = False, full_output_cov: bool = False
+    ):
         r"""
         The posterior variance of F is given by
             q(f) = N(f | K alpha + mean, [K^-1 + diag(lambda**2)]^-1)
@@ -217,10 +242,12 @@ class VGPOpperArchambeau(GPModel):
         K = self.kernel(x_data)
 
         # predictive mean
-        f_mean = tf.linalg.matmul(Kx, self.q_alpha, transpose_a=True) + self.mean_function(predict_at)
+        f_mean = tf.linalg.matmul(Kx, self.q_alpha, transpose_a=True) + self.mean_function(
+            predict_at
+        )
 
         # predictive var
-        A = K + tf.linalg.diag(tf.transpose(1. / tf.square(self.q_lambda)))
+        A = K + tf.linalg.diag(tf.transpose(1.0 / tf.square(self.q_lambda)))
         L = tf.linalg.cholesky(A)
         Kx_tiled = tf.tile(Kx[None, ...], [self.num_latent, 1, 1])
         LiKx = tf.linalg.triangular_solve(L, Kx_tiled)

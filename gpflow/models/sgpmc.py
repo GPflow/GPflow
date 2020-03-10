@@ -60,13 +60,16 @@ class SGPMC(GPModel):
 
 
     """
-    def __init__(self,
-                 data: Data,
-                 kernel: Kernel,
-                 likelihood: Likelihood,
-                 mean_function: Optional[MeanFunction] = None,
-                 num_latent: int = 1,
-                 inducing_variable: Optional[InducingPoints] = None):
+
+    def __init__(
+        self,
+        data: Data,
+        kernel: Kernel,
+        likelihood: Likelihood,
+        mean_function: Optional[MeanFunction] = None,
+        num_latent: int = 1,
+        inducing_variable: Optional[InducingPoints] = None,
+    ):
         """
         data is a tuple of X, Y with X, a data matrix, size [N, D] and Y, a data matrix, size [N, R]
         Z is a data matrix, of inducing inputs, size [M, D]
@@ -77,7 +80,9 @@ class SGPMC(GPModel):
         self.num_data = data[0].shape[0]
         self.inducing_variable = inducingpoint_wrapper(inducing_variable)
         self.V = Parameter(np.zeros((len(self.inducing_variable), self.num_latent)))
-        self.V.prior = tfp.distributions.Normal(loc=to_default_float(0.), scale=to_default_float(1.))
+        self.V.prior = tfp.distributions.Normal(
+            loc=to_default_float(0.0), scale=to_default_float(1.0)
+        )
 
     def log_likelihood(self, *args, **kwargs) -> tf.Tensor:
         """
@@ -99,12 +104,14 @@ class SGPMC(GPModel):
         where F* are points on the GP at Xnew, F=LV are points on the GP at Z,
 
         """
-        mu, var = conditional(X,
-                              self.inducing_variable,
-                              self.kernel,
-                              self.V,
-                              full_cov=full_cov,
-                              q_sqrt=None,
-                              white=True,
-                              full_output_cov=full_output_cov)
+        mu, var = conditional(
+            X,
+            self.inducing_variable,
+            self.kernel,
+            self.V,
+            full_cov=full_cov,
+            q_sqrt=None,
+            white=True,
+            full_output_cov=full_output_cov,
+        )
         return mu + self.mean_function(X), var
