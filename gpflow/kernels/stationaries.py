@@ -170,6 +170,25 @@ class Matern52(Stationary):
         return self.variance * (1.0 + sqrt5 * r + 5.0 / 3.0 * tf.square(r)) * tf.exp(-sqrt5 * r)
 
 
+class Sinc(Stationary):
+    """
+    The sinc kernel. Functions drawn from a GP with this kernel have a quasi-periodic behaviour.
+    The kernel equation is
+
+        k(r) = σ² sin{r}/r     for r>0
+        k(r) = σ²              for r=0
+
+    where:
+    r  is the Euclidean distance between the input points, scaled by the lengthscale parameter ℓ,
+    σ² is the variance parameter.
+    """
+
+    def K_r(self, r):
+        k0 = tf.ones_like(r)
+        k = tf.divide(tf.sin(r), r)
+        return self.variance * tf.where(tf.equal(r, 0), k0, k)
+
+
 class Cosine(Stationary):
     """
     The Cosine kernel. Functions drawn from a GP with this kernel are sinusoids

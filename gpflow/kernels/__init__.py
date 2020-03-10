@@ -20,6 +20,7 @@ from .stationaries import (
     Matern32,
     Matern52,
     RationalQuadratic,
+    Sinc,
     Stationary,
 )
 
