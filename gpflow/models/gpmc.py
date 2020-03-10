@@ -28,12 +28,14 @@ from .model import RegressionData, GPModel, MeanAndVariance
 
 
 class GPMC(GPModel):
-    def __init__(self,
-                 data: RegressionData,
-                 kernel: Kernel,
-                 likelihood: Likelihood,
-                 mean_function: Optional[MeanFunction] = None,
-                 num_latent: int = 1):
+    def __init__(
+        self,
+        data: RegressionData,
+        kernel: Kernel,
+        likelihood: Likelihood,
+        mean_function: Optional[MeanFunction] = None,
+        num_latent: int = 1,
+    ):
         """
         data is a tuple of X, Y with X, a data matrix, size [N, D] and Y, a data matrix, size [N, R]
         kernel, likelihood, mean_function are appropriate GPflow objects
@@ -54,10 +56,12 @@ class GPMC(GPModel):
         self.data = data
         self.num_data = data[0].shape[0]
         self.V = Parameter(np.zeros((self.num_data, self.num_latent)))
-        self.V.prior = tfp.distributions.Normal(loc=to_default_float(0.), scale=to_default_float(1.))
+        self.V.prior = tfp.distributions.Normal(
+            loc=to_default_float(0.0), scale=to_default_float(1.0)
+        )
 
     def training_loss(self, data: Optional[RegressionData] = None) -> tf.Tensor:
-        return - self.log_posterior_density(data)
+        return -self.log_posterior_density(data)
 
     def log_posterior_density(self, data: Optional[RegressionData] = None) -> tf.Tensor:
         return self.log_likelihood(data) + self.log_prior_density()
@@ -77,7 +81,9 @@ class GPMC(GPModel):
             data = self.data
         x_data, y_data = data
         K = self.kernel(x_data)
-        L = tf.linalg.cholesky(K + tf.eye(tf.shape(x_data)[0], dtype=default_float()) * default_jitter())
+        L = tf.linalg.cholesky(
+            K + tf.eye(tf.shape(x_data)[0], dtype=default_float()) * default_jitter()
+        )
         F = tf.linalg.matmul(L, self.V) + self.mean_function(x_data)
 
         return tf.reduce_sum(self.likelihood.log_prob(F, y_data))
@@ -94,5 +100,7 @@ class GPMC(GPModel):
 
         """
         x_data, y_data = self.data
-        mu, var = conditional(Xnew, x_data, self.kernel, self.V, full_cov=full_cov, q_sqrt=None, white=True)
+        mu, var = conditional(
+            Xnew, x_data, self.kernel, self.V, full_cov=full_cov, q_sqrt=None, white=True
+        )
         return mu + self.mean_function(Xnew), var

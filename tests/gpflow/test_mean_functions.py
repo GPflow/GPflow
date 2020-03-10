@@ -94,13 +94,9 @@ _linear_functions = [
 ]
 
 # Append inverse of first Linear mean function in _linear_functions
-_linear_functions.append(
-    Linear(A=-1.0 * _linear_functions[0].A, b=-1.0 * _linear_functions[0].b)
-)
+_linear_functions.append(Linear(A=-1.0 * _linear_functions[0].A, b=-1.0 * _linear_functions[0].b))
 
-_constant_functions = [
-    Constant(c=rng.randn(Datum.output_dim, 1).reshape(-1)) for _ in range(3)
-]
+_constant_functions = [Constant(c=rng.randn(Datum.output_dim, 1).reshape(-1)) for _ in range(3)]
 # Append inverse of first Constant mean function in _constant_functions
 _constant_functions.append(Constant(c=-1.0 * _constant_functions[0].c))
 
@@ -240,9 +236,7 @@ def test_models_with_mean_functions_changes(model_class):
 
     if model_class in [gpflow.models.GPR]:
         model_zero_mean = model_class(data, kernel=kernel, mean_function=zero_mean)
-        model_non_zero_mean = model_class(
-            data, kernel=kernel, mean_function=non_zero_mean
-        )
+        model_non_zero_mean = model_class(data, kernel=kernel, mean_function=non_zero_mean)
     elif model_class in [gpflow.models.VGP]:
         model_zero_mean = model_class(
             data, likelihood=likelihood, kernel=kernel, mean_function=zero_mean
@@ -265,16 +259,10 @@ def test_models_with_mean_functions_changes(model_class):
         )
     elif model_class in [gpflow.models.SGPR, gpflow.models.GPRFITC]:
         model_zero_mean = model_class(
-            data,
-            kernel=kernel,
-            inducing_variable=inducing_variable,
-            mean_function=zero_mean,
+            data, kernel=kernel, inducing_variable=inducing_variable, mean_function=zero_mean,
         )
         model_non_zero_mean = model_class(
-            data,
-            kernel=kernel,
-            inducing_variable=inducing_variable,
-            mean_function=non_zero_mean,
+            data, kernel=kernel, inducing_variable=inducing_variable, mean_function=non_zero_mean,
         )
     elif model_class in [gpflow.models.SGPMC]:
         model_zero_mean = model_class(

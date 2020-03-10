@@ -91,11 +91,13 @@ def parameter_dict(module: tf.Module) -> Dict[str, Union[Parameter, tf.Variable]
     return {f".{key.split('.', 1)[-1]}": value for key, value in param_dict.items()}
 
 
-def training_loop(closure: Callable[..., tf.Tensor],
-                  optimizer: Optional[tf.optimizers.Optimizer] = None,
-                  var_list: List[tf.Variable] = None,
-                  maxiter=1e3,
-                  jit=False):
+def training_loop(
+    closure: Callable[..., tf.Tensor],
+    optimizer: Optional[tf.optimizers.Optimizer] = None,
+    var_list: List[tf.Variable] = None,
+    maxiter=1e3,
+    jit=False,
+):
     """
     Simple generic training loop. At each iteration uses a GradientTape to compute
     the gradients of a loss function with respect to a set of variables.
@@ -131,6 +133,7 @@ def print_summary(module: tf.Module, fmt: str = None):
     fmt = fmt if fmt is not None else default_summary_fmt()
     if fmt == "notebook":
         from IPython.core.display import display, HTML
+
         tab = tabulate_module_summary(module, "html")
         display(HTML(tab))
     else:
@@ -139,14 +142,14 @@ def print_summary(module: tf.Module, fmt: str = None):
 
 def tabulate_module_summary(module: tf.Module, tablefmt: Optional[str] = None) -> str:
     def get_transform(path, var):
-        if hasattr(var, 'transform') and var.transform is not None:
+        if hasattr(var, "transform") and var.transform is not None:
             if isinstance(var.transform, tfp.bijectors.Chain):
                 return " + ".join(b.__class__.__name__ for b in var.transform.bijectors[::-1])
             return var.transform.__class__.__name__
         return None
 
     def get_prior(path, var):
-        if hasattr(var, 'prior') and var.prior is not None:
+        if hasattr(var, "prior") and var.prior is not None:
             return var.prior.name
         return None
 
@@ -160,7 +163,7 @@ def tabulate_module_summary(module: tf.Module, tablefmt: Optional[str] = None) -
         ("shape", lambda path, var: var.shape),
         ("dtype", lambda path, var: var.dtype.name),
         ("value", lambda path, var: _str_tensor_value(var.numpy())),
-        ]
+    ]
     column_names, column_getters = zip(*column_definition)
 
     merged_leaf_components = _merge_leaf_components(leaf_components(module))
@@ -177,12 +180,10 @@ def leaf_components(input: tf.Module):
 
 
 def _merge_leaf_components(
-        input: Dict[str, Union[tf.Variable, tf.Tensor, Parameter]]
+    input: Dict[str, Union[tf.Variable, tf.Tensor, Parameter]]
 ) -> Dict[str, Union[tf.Variable, tf.Tensor, Parameter]]:
 
-    input_values = set(
-        [value.experimental_ref() for value in input.values()]
-    )
+    input_values = set([value.experimental_ref() for value in input.values()])
     if len(input_values) == len(input):
         return input
     tmp_dict = dict()  # Type: Dict[ref, str]
@@ -225,8 +226,8 @@ def reset_cache_bijectors(input_module: tf.Module) -> tf.Module:
     :param input_module: tf.Module including keras.Model, keras.layers.Layer and gpflow.Module.
     :return:
     """
-    target_types = (tfp.bijectors.Bijector, )
-    accumulator = ('', None)
+    target_types = (tfp.bijectors.Bijector,)
+    accumulator = ("", None)
 
     def clear_cache(b):
         if isinstance(b, tfp.bijectors.Bijector):
@@ -246,7 +247,7 @@ def reset_cache_bijectors(input_module: tf.Module) -> tf.Module:
     return input_module
 
 
-M = TypeVar('M', bound=tf.Module)
+M = TypeVar("M", bound=tf.Module)
 
 
 def deepcopy_components(input_module: M) -> M:
@@ -260,8 +261,9 @@ def deepcopy_components(input_module: M) -> M:
     return deepcopy(reset_cache_bijectors(input_module))
 
 
-def traverse_module(m: TraverseInput, acc: Accumulator, update_cb: TraverseUpdateCallable,
-                    target_types: tuple) -> Accumulator:
+def traverse_module(
+    m: TraverseInput, acc: Accumulator, update_cb: TraverseUpdateCallable, target_types: tuple
+) -> Accumulator:
     """
     Recursively traverses `m`, accumulating in `acc` a path and a state until it finds an object of type
     in `target_types` to apply `update_cb` to update the accumulator `acc` and/or the object.

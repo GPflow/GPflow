@@ -51,21 +51,13 @@ def test_scipy_jit():
     opt2 = gpflow.optimizers.Scipy()
 
     opt1.minimize(
-        m1.training_loss,
-        variables=m1.trainable_variables,
-        options=dict(maxiter=50),
-        jit=False,
+        m1.training_loss, variables=m1.trainable_variables, options=dict(maxiter=50), jit=False,
     )
     opt2.minimize(
-        m2.training_loss,
-        variables=m2.trainable_variables,
-        options=dict(maxiter=50),
-        jit=True,
+        m2.training_loss, variables=m2.trainable_variables, options=dict(maxiter=50), jit=True,
     )
 
     def get_values(model):
-        return np.array(
-            [var.value().numpy().squeeze() for var in model.trainable_variables]
-        )
+        return np.array([var.value().numpy().squeeze() for var in model.trainable_variables])
 
     np.testing.assert_allclose(get_values(m1), get_values(m2), rtol=1e-14, atol=1e-15)

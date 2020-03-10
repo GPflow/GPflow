@@ -46,9 +46,7 @@ def get_notebooks():
         return os.path.basename(nb) in blacklisted_notebooks_basename
 
     # recursively traverse the notebook directory in search for ipython notebooks
-    all_py_notebooks = glob.iglob(
-        os.path.join(_nbpath(), "**", "*.pct.py"), recursive=True
-    )
+    all_py_notebooks = glob.iglob(os.path.join(_nbpath(), "**", "*.pct.py"), recursive=True)
     all_md_notebooks = glob.iglob(os.path.join(_nbpath(), "**", "*.md"), recursive=True)
     all_notebooks = itertools.chain(all_md_notebooks, all_py_notebooks)
     notebooks_to_test = [nb for nb in all_notebooks if not notebook_blacklisted(nb)]
@@ -57,9 +55,7 @@ def get_notebooks():
 
 def _preproc():
     pythonkernel = "python" + str(sys.version_info[0])
-    return ExecutePreprocessor(
-        timeout=300, kernel_name=pythonkernel, interrupt_on_timeout=True
-    )
+    return ExecutePreprocessor(timeout=300, kernel_name=pythonkernel, interrupt_on_timeout=True)
 
 
 def _exec_notebook(notebook_filename):

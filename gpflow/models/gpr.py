@@ -38,8 +38,13 @@ class GPR(GPModel):
             \mathcal N(\mathbf{y} \,|\, 0, \mathbf{K} + \sigma_n \mathbf{I})
     """
 
-    def __init__(self, data: RegressionData, kernel: Kernel, mean_function: Optional[MeanFunction] = None,
-                 noise_variance: float = 1.0):
+    def __init__(
+        self,
+        data: RegressionData,
+        kernel: Kernel,
+        mean_function: Optional[MeanFunction] = None,
+        noise_variance: float = 1.0,
+    ):
         likelihood = gpflow.likelihoods.Gaussian(noise_variance)
         _, y_data = data
         super().__init__(kernel, likelihood, mean_function, num_latent=y_data.shape[-1])
@@ -72,7 +77,9 @@ class GPR(GPModel):
         log_prob = multivariate_normal(Y, m, L)
         return tf.reduce_sum(log_prob)
 
-    def predict_f(self, predict_at: tf.Tensor, full_cov: bool = False, full_output_cov: bool = False):
+    def predict_f(
+        self, predict_at: tf.Tensor, full_cov: bool = False, full_output_cov: bool = False
+    ):
         r"""
         This method computes predictions at X \in R^{N \x D} input points
 
@@ -92,7 +99,8 @@ class GPR(GPModel):
         s = tf.linalg.diag(tf.fill([num_data], self.likelihood.variance))
 
         conditional = gpflow.conditionals.base_conditional
-        f_mean_zero, f_var = conditional(kmn, kmm + s, knn, err, full_cov=full_cov,
-                                         white=False)  # [N, P], [N, P] or [P, N, N]
+        f_mean_zero, f_var = conditional(
+            kmn, kmm + s, knn, err, full_cov=full_cov, white=False
+        )  # [N, P], [N, P] or [P, N, N]
         f_mean = f_mean_zero + self.mean_function(predict_at)
         return f_mean, f_var

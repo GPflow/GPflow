@@ -71,9 +71,7 @@ def make_K_batch(N, M):
 def compute_kl_1d(q_mu, q_sigma, p_var=1.0):
     p_var = tf.ones_like(q_sigma) if p_var is None else p_var
     q_var = tf.square(q_sigma)
-    kl = 0.5 * (
-        q_var / p_var + tf.square(q_mu) / p_var - 1 + tf.math.log(p_var / q_var)
-    )
+    kl = 0.5 * (q_var / p_var + tf.square(q_mu) / p_var - 1 + tf.math.log(p_var / q_var))
     return tf.reduce_sum(kl)
 
 
@@ -146,9 +144,7 @@ def test_sumkl_equals_batchkl(shared_k, diag):
         q_sqrt_n = (
             Datum.sqrt_diag[:, n][:, None] if diag else Datum.sqrt[n, :, :][None, :, :]
         )  # [1, M, M] or [M, 1]
-        K_n = (
-            Datum.K if shared_k else Datum.K_batch[n, :, :][None, :, :]
-        )  # [1, M, M] or [M, M]
+        K_n = Datum.K if shared_k else Datum.K_batch[n, :, :][None, :, :]  # [1, M, M] or [M, M]
         kl_n = gauss_kl(q_mu_n, q_sqrt_n, K=K_n)
         kl_sum.append(kl_n)
 

@@ -51,7 +51,9 @@ class SamplingHelper:
         model_parameters: List of `tensorflow.Variable`s or `gpflow.Parameter`s used as a state of the Markov chain.
     """
 
-    def __init__(self, target_log_prob_fn: LogProbabilityFunction, model_parameters: ModelParameters):
+    def __init__(
+        self, target_log_prob_fn: LogProbabilityFunction, model_parameters: ModelParameters
+    ):
         assert all([isinstance(p, (Parameter, tf.Variable)) for p in model_parameters])
 
         self._model_parameters = model_parameters
@@ -60,7 +62,9 @@ class SamplingHelper:
         self._parameters = []
         self._unconstrained_variables = []
         for p in self._model_parameters:
-            self._unconstrained_variables.append(p.unconstrained_variable if isinstance(p, Parameter) else p)
+            self._unconstrained_variables.append(
+                p.unconstrained_variable if isinstance(p, Parameter) else p
+            )
             self._parameters.append(p)
 
     @property
@@ -89,14 +93,16 @@ class SamplingHelper:
                 for param in self._model_parameters:
                     if isinstance(param, Parameter) and param.transform is not None:
                         x = param.unconstrained_variable
-                        log_det_jacobian = param.transform.forward_log_det_jacobian(x,
-                                                                                    x.shape.ndims)
+                        log_det_jacobian = param.transform.forward_log_det_jacobian(
+                            x, x.shape.ndims
+                        )
                         log_prob += tf.reduce_sum(log_det_jacobian)
 
             @tf.function
             def grad_fn(dy, variables: Optional[tf.Tensor] = None):
                 grad = tape.gradient(log_prob, variables_list)
                 return grad, [None] * len(variables)
+
             return log_prob, grad_fn
 
         return _target_log_prob_fn_closure

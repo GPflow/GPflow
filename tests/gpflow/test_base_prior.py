@@ -30,9 +30,7 @@ def test_gpr_objective_equivalence():
     l_value = Datum.lengthscale
 
     l_variable = tf.Variable(l_value, dtype=gpflow.default_float(), trainable=True)
-    m1 = gpflow.models.GPR(
-        data, kernel=gpflow.kernels.SquaredExponential(lengthscale=l_value)
-    )
+    m1 = gpflow.models.GPR(data, kernel=gpflow.kernels.SquaredExponential(lengthscale=l_value))
     m2 = gpflow.models.GPR(data, kernel=gpflow.kernels.SquaredExponential())
     m2.kernel.lengthscale = gpflow.Parameter(l_variable, transform=None)
     assert np.allclose(
@@ -60,9 +58,7 @@ def test_log_prior_for_uniform_prior():
     """
 
     uniform_prior = Uniform(low=np.float64(0), high=np.float64(100))
-    param = gpflow.Parameter(
-        1.0, transform=gpflow.utilities.positive(), prior=uniform_prior
-    )
+    param = gpflow.Parameter(1.0, transform=gpflow.utilities.positive(), prior=uniform_prior)
     low_value = param.log_prior().numpy()
     param.assign(10.0)
     high_value = param.log_prior().numpy()
@@ -80,10 +76,7 @@ def test_log_prior_on_unconstrained():
     scale_factor = 10.0
     uniform_prior = Uniform(low=np.float64(0), high=np.float64(100))
     param = gpflow.Parameter(
-        initial_value,
-        transform=Exp(),
-        prior=uniform_prior,
-        prior_on=PriorOn.UNCONSTRAINED,
+        initial_value, transform=Exp(), prior=uniform_prior, prior_on=PriorOn.UNCONSTRAINED,
     )
     low_value = param.log_prior().numpy()
     param.assign(scale_factor * initial_value)

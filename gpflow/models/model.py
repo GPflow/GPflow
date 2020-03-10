@@ -29,7 +29,7 @@ from ..utilities import ops
 InputData = tf.Tensor
 OutputData = tf.Tensor
 RegressionData = Tuple[InputData, OutputData]
-Data = TypeVar('Data', RegressionData, InputData)
+Data = TypeVar("Data", RegressionData, InputData)
 MeanAndVariance = Tuple[tf.Tensor, tf.Tensor]
 
 
@@ -41,7 +41,7 @@ class BayesianModel(Module, metaclass=abc.ABCMeta):
         if log_priors:
             return tf.add_n(log_priors)
         else:
-            return tf.convert_to_tensor(0., dtype=default_float())
+            return tf.convert_to_tensor(0.0, dtype=default_float())
 
     def log_posterior_density(self, data: Optional[Data] = None) -> tf.Tensor:
         """
@@ -58,7 +58,7 @@ class BayesianModel(Module, metaclass=abc.ABCMeta):
         gpflow.optimizers.Scipy). Includes the log prior density for maximum
         a-posteriori (MAP) estimation.
         """
-        return - (self._call_maximum_likelihood_objective(data) + self.log_prior_density())
+        return -(self._call_maximum_likelihood_objective(data) + self.log_prior_density())
 
     def training_loss_closure(self, data: Optional[Data] = None) -> Callable[[], tf.Tensor]:
         def training_loss_closure():
@@ -116,11 +116,13 @@ class GPModel(BayesianModel):
     self.predict_f_samples.
     """
 
-    def __init__(self,
-                 kernel: Kernel,
-                 likelihood: Likelihood,
-                 mean_function: Optional[MeanFunction] = None,
-                 num_latent: int = 1):
+    def __init__(
+        self,
+        kernel: Kernel,
+        likelihood: Likelihood,
+        mean_function: Optional[MeanFunction] = None,
+        num_latent: int = 1,
+    ):
         super().__init__()
         self.num_latent = num_latent
         # TODO(@awav): Why is this here when MeanFunction does not have a __len__ method
@@ -131,15 +133,18 @@ class GPModel(BayesianModel):
         self.likelihood = likelihood
 
     @abc.abstractmethod
-    def predict_f(self, predict_at: InputData, full_cov: bool = False,
-                  full_output_cov: bool = False) -> MeanAndVariance:
+    def predict_f(
+        self, predict_at: InputData, full_cov: bool = False, full_output_cov: bool = False
+    ) -> MeanAndVariance:
         raise NotImplementedError
 
-    def predict_f_samples(self,
-                          predict_at: InputData,
-                          num_samples: int = 1,
-                          full_cov: bool = True,
-                          full_output_cov: bool = False) -> tf.Tensor:
+    def predict_f_samples(
+        self,
+        predict_at: InputData,
+        num_samples: int = 1,
+        full_cov: bool = True,
+        full_output_cov: bool = False,
+    ) -> tf.Tensor:
         """
         Produce samples from the posterior latent function(s) at the input points.
         """
@@ -153,15 +158,20 @@ class GPModel(BayesianModel):
         mu_t = tf.linalg.adjoint(mu)  # [P, N]
         return tf.transpose(mu_t[..., np.newaxis] + LV)  # [S, N, P]
 
-    def predict_y(self, predict_at: InputData, full_cov: bool = False,
-                  full_output_cov: bool = False) -> MeanAndVariance:
+    def predict_y(
+        self, predict_at: InputData, full_cov: bool = False, full_output_cov: bool = False
+    ) -> MeanAndVariance:
         """
         Compute the mean and variance of the held-out data at the input points.
         """
-        f_mean, f_var = self.predict_f(predict_at, full_cov=full_cov, full_output_cov=full_output_cov)
+        f_mean, f_var = self.predict_f(
+            predict_at, full_cov=full_cov, full_output_cov=full_output_cov
+        )
         return self.likelihood.predict_mean_and_var(f_mean, f_var)
 
-    def predict_log_density(self, data: RegressionData, full_cov: bool = False, full_output_cov: bool = False):
+    def predict_log_density(
+        self, data: RegressionData, full_cov: bool = False, full_output_cov: bool = False
+    ):
         """
         Compute the log density of the data at the new data points.
         """
