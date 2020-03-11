@@ -5,7 +5,7 @@ import tensorflow as tf
 
 import gpflow
 from gpflow.config import default_float
-from gpflow.optimizers import NaturalGradient
+from gpflow.optimizers import natgrad, NaturalGradient
 from gpflow.utilities import set_trainable
 
 
@@ -64,7 +64,7 @@ def assert_gpr_vs_vgp(
     m2: tf.Module,
     gamma: float = 1.0,
     maxiter: int = 1,
-    xi_transform: Optional[gpflow.optimizers.natgrad.XiTransform] = None,
+    xi_transform: Optional[natgrad.XiTransform] = None,
 ):
     assert maxiter >= 1
 
@@ -108,9 +108,15 @@ def assert_sgpr_vs_svgp(m1: tf.Module, m2: tf.Module):
     def loss_cb() -> tf.Tensor:
         return -m2.log_marginal_likelihood(data)
 
-    params = [(m2.q_mu, m2.q_sqrt)]
+    params = (m2.q_mu, m2.q_sqrt)
+
     opt = NaturalGradient(1.0)
-    opt.minimize(loss_cb, var_list=params)
+
+    @tf.function
+    def minimize_step():
+        opt.minimize(loss_cb, var_list=[params])
+
+    minimize_step()
 
     m1_ll_after = m1.log_likelihood()
     m2_ll_after = m2.log_likelihood(data)
@@ -147,18 +153,18 @@ def test_svgp_vs_sgpr(sgpr_and_svgp):
     assert_sgpr_vs_svgp(sgpr, svgp)
 
 
-class XiEta(gpflow.optimizers.XiTransform):
+class XiEta(natgrad.XiTransform):
     def meanvarsqrt_to_xi(self, mean: tf.Tensor, varsqrt: tf.Tensor) -> tf.Tensor:
-        return gpflow.optimizers.natgrad.meanvarsqrt_to_expectation(mean, varsqrt)
+        return natgrad.meanvarsqrt_to_expectation(mean, varsqrt)
 
     def xi_to_meanvarsqrt(self, xi1: tf.Tensor, xi2: tf.Tensor) -> tf.Tensor:
-        return gpflow.optimizers.natgrad.expectation_to_meanvarsqrt(xi1, xi2)
+        return natgrad.expectation_to_meanvarsqrt(xi1, xi2)
 
     def naturals_to_xi(self, nat1: tf.Tensor, nat2: tf.Tensor) -> tf.Tensor:
-        return gpflow.optimizers.natgrad.natural_to_expectation(nat1, nat2)
+        return natgrad.natural_to_expectation(nat1, nat2)
 
 
-@pytest.mark.parametrize("xi_transform", [gpflow.optimizers.XiSqrtMeanVar(), XiEta()])
+@pytest.mark.parametrize("xi_transform", [natgrad.XiSqrtMeanVar(), XiEta()])
 def test_xi_transform_vgp_vs_gpr(gpr_and_vgp, xi_transform):
     """
     With other transforms the solution is not given in a single step, but it should still give the same answer
