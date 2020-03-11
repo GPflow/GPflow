@@ -34,11 +34,14 @@ class ChangePoints(Combination):
       url = {http://dl.acm.org/citation.cfm?id=2893873.2894066},
     }
     """
-    def __init__(self,
-                 kernels: List[Kernel],
-                 locations: List[float],
-                 steepness: Union[float, List[float]] = 1.0,
-                 name: Optional[str] = None):
+
+    def __init__(
+        self,
+        kernels: List[Kernel],
+        locations: List[float],
+        steepness: Union[float, List[float]] = 1.0,
+        name: Optional[str] = None,
+    ):
         """
         :param kernels: list of kernels defining the different regimes
         :param locations: list of change-point locations in the 1d input space
@@ -46,12 +49,16 @@ class ChangePoints(Combination):
             common between them or decoupled
         """
         if len(kernels) != len(locations) + 1:
-            raise ValueError("Number of kernels ({nk}) must be one more than the number of "
-                             "changepoint locations ({nl})".format(nk=len(kernels), nl=len(locations)))
+            raise ValueError(
+                "Number of kernels ({nk}) must be one more than the number of "
+                "changepoint locations ({nl})".format(nk=len(kernels), nl=len(locations))
+            )
 
         if isinstance(steepness, Iterable) and len(steepness) != len(locations):
-            raise ValueError("Dimension of steepness ({ns}) does not match number of changepoint "
-                             "locations ({nl})".format(ns=len(steepness), nl=len(locations)))
+            raise ValueError(
+                "Dimension of steepness ({ns}) does not match number of changepoint "
+                "locations ({nl})".format(ns=len(steepness), nl=len(locations))
+            )
 
         super().__init__(kernels, name=name)
 
@@ -66,7 +73,7 @@ class ChangePoints(Combination):
         sig_X = self._sigmoids(X)  # N x 1 x Ncp
         sig_X2 = self._sigmoids(X2) if X2 is not None else sig_X
 
-        # `starters` are the sigmoids going from 0 -> 1, whilst `stoppers` go 
+        # `starters` are the sigmoids going from 0 -> 1, whilst `stoppers` go
         # from 1 -> 0, dimensions are N x N x Ncp
         starters = sig_X * tf.transpose(sig_X2, perm=(1, 0, 2))
         stoppers = (1 - sig_X) * tf.transpose((1 - sig_X2), perm=(1, 0, 2))

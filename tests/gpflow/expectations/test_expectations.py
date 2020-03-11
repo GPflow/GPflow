@@ -61,16 +61,12 @@ _distrs = {
     "dirac_gauss": Gaussian(Xmu, np.zeros((num_data, D_in, D_in))),
     "gauss_diag": DiagonalGaussian(Xmu, rng.rand(num_data, D_in)),
     "dirac_diag": DiagonalGaussian(Xmu, np.zeros((num_data, D_in))),
-    "dirac_markov_gauss": MarkovGaussian(
-        Xmu_markov, np.zeros((2, num_data + 1, D_in, D_in))
-    ),
+    "dirac_markov_gauss": MarkovGaussian(Xmu_markov, np.zeros((2, num_data + 1, D_in, D_in))),
     "markov_gauss": markov_gauss(),
 }
 
 _kerns = {
-    "rbf": kernels.SquaredExponential(
-        variance=rng.rand(), lengthscale=rng.rand() + 1.0
-    ),
+    "rbf": kernels.SquaredExponential(variance=rng.rand(), lengthscale=rng.rand() + 1.0),
     "lin": kernels.Linear(variance=rng.rand()),
     "matern": kernels.Matern32(variance=rng.rand()),
     "rbf_act_dim_0": kernels.SquaredExponential(
@@ -83,22 +79,16 @@ _kerns = {
     "lin_act_dim_1": kernels.Linear(variance=rng.rand(), active_dims=[1]),
     "rbf_lin_sum": kernels.Sum(
         [
-            kernels.SquaredExponential(
-                variance=rng.rand(), lengthscale=rng.rand() + 1.0
-            ),
+            kernels.SquaredExponential(variance=rng.rand(), lengthscale=rng.rand() + 1.0),
             kernels.Linear(variance=rng.rand()),
         ]
     ),
     "rbf_lin_sum2": kernels.Sum(
         [
             kernels.Linear(variance=rng.rand()),
-            kernels.SquaredExponential(
-                variance=rng.rand(), lengthscale=rng.rand() + 1.0
-            ),
+            kernels.SquaredExponential(variance=rng.rand(), lengthscale=rng.rand() + 1.0),
             kernels.Linear(variance=rng.rand()),
-            kernels.SquaredExponential(
-                variance=rng.rand(), lengthscale=rng.rand() + 1.0
-            ),
+            kernels.SquaredExponential(variance=rng.rand(), lengthscale=rng.rand() + 1.0),
         ]
     ),
     "rbf_lin_prod": kernels.Product(
@@ -146,9 +136,7 @@ kern_args2 = kerns("lin", "rbf", "rbf_lin_sum")
 @pytest.mark.parametrize("distribution", distr_args1)
 @pytest.mark.parametrize("mean1", mean_args)
 @pytest.mark.parametrize("mean2", mean_args)
-@pytest.mark.parametrize(
-    "arg_filter", [lambda p, m1, m2: (p, m1), lambda p, m1, m2: (p, m1, m2)]
-)
+@pytest.mark.parametrize("arg_filter", [lambda p, m1, m2: (p, m1), lambda p, m1, m2: (p, m1, m2)])
 def test_mean_function_only_expectations(distribution, mean1, mean2, arg_filter):
     params = arg_filter(distribution, mean1, mean2)
     _check(params)
@@ -158,11 +146,7 @@ def test_mean_function_only_expectations(distribution, mean1, mean2, arg_filter)
 @pytest.mark.parametrize("kernel", kern_args1)
 @pytest.mark.parametrize(
     "arg_filter",
-    [
-        lambda p, k, f: (p, k),
-        lambda p, k, f: (p, (k, f)),
-        lambda p, k, f: (p, (k, f), (k, f)),
-    ],
+    [lambda p, k, f: (p, k), lambda p, k, f: (p, (k, f)), lambda p, k, f: (p, (k, f), (k, f)),],
 )
 def test_kernel_only_expectations(distribution, kernel, inducing_variable, arg_filter):
     params = arg_filter(distribution, kernel, inducing_variable)
@@ -224,8 +208,7 @@ def test_RBF_eKzxKxz_gradient_notNaN():
     kernel.variance.assign(2.0)
 
     p = gpflow.probability_distributions.Gaussian(
-        tf.constant([[10]], dtype=default_float()),
-        tf.constant([[[0.1]]], dtype=default_float()),
+        tf.constant([[10]], dtype=default_float()), tf.constant([[[0.1]]], dtype=default_float()),
     )
     z = gpflow.inducing_variables.InducingPoints([[-10.0], [10.0]])
 
@@ -238,9 +221,7 @@ def test_RBF_eKzxKxz_gradient_notNaN():
 @pytest.mark.parametrize("distribution", distrs("gauss_diag"))
 @pytest.mark.parametrize("kern1", kerns("rbf_act_dim_0", "lin_act_dim_0"))
 @pytest.mark.parametrize("kern2", kerns("rbf_act_dim_1", "lin_act_dim_1"))
-def test_eKzxKxz_separate_dims_simplification(
-    distribution, kern1, kern2, inducing_variable
-):
+def test_eKzxKxz_separate_dims_simplification(distribution, kern1, kern2, inducing_variable):
     _check((distribution, (kern1, inducing_variable), (kern2, inducing_variable)))
 
 
@@ -254,16 +235,10 @@ def test_eKzxKxz_different_sum_kernels(distribution, kern1, kern2, inducing_vari
 @pytest.mark.parametrize("distribution", distr_args1)
 @pytest.mark.parametrize("kern1", kerns("rbf_lin_sum2"))
 @pytest.mark.parametrize("kern2", kerns("rbf_lin_sum2"))
-def test_eKzxKxz_same_vs_different_sum_kernels(
-    distribution, kern1, kern2, inducing_variable
-):
+def test_eKzxKxz_same_vs_different_sum_kernels(distribution, kern1, kern2, inducing_variable):
     # check the result is the same if we pass different objects with the same value
-    same = expectation(
-        *(distribution, (kern1, inducing_variable), (kern1, inducing_variable))
-    )
-    different = expectation(
-        *(distribution, (kern1, inducing_variable), (kern2, inducing_variable))
-    )
+    same = expectation(*(distribution, (kern1, inducing_variable), (kern1, inducing_variable)))
+    different = expectation(*(distribution, (kern1, inducing_variable), (kern2, inducing_variable)))
     assert_allclose(same, different, rtol=RTOL)
 
 

@@ -4,14 +4,16 @@ from ..config import default_float, default_jitter
 from ..utilities.ops import leading_transpose
 
 
-def base_conditional(Kmn: tf.Tensor,
-                     Kmm: tf.Tensor,
-                     Knn: tf.Tensor,
-                     function: tf.Tensor,
-                     *,
-                     full_cov=False,
-                     q_sqrt=None,
-                     white=False):
+def base_conditional(
+    Kmn: tf.Tensor,
+    Kmm: tf.Tensor,
+    Knn: tf.Tensor,
+    function: tf.Tensor,
+    *,
+    full_cov=False,
+    q_sqrt=None,
+    white=False,
+):
     r"""
     Given a g1 and g2, and distribution p and q such that
       p(g2) = N(g2; 0, Kmm)
@@ -46,9 +48,10 @@ def base_conditional(Kmn: tf.Tensor,
         [
             tf.reshape(tf.range(1, K - 1), [K - 2]),  # leading dims (...)
             tf.reshape(0, [1]),  # [M]
-            tf.reshape(K - 1, [1])
+            tf.reshape(K - 1, [1]),
         ],
-        0)  # [N]
+        0,
+    )  # [N]
     Kmn = tf.transpose(Kmn, perm)  # [..., M, N]
 
     leading_dims = tf.shape(Kmn)[:-2]
@@ -82,7 +85,7 @@ def base_conditional(Kmn: tf.Tensor,
         if q_sqrt_dims == 2:
             LTA = A * tf.expand_dims(tf.transpose(q_sqrt), 2)  # [R, M, N]
         elif q_sqrt_dims == 3:
-            L =  tf.linalg.band_part(q_sqrt, -1, 0)  # force lower triangle # [R, M, M]
+            L = tf.linalg.band_part(q_sqrt, -1, 0)  # force lower triangle # [R, M, M]
             L_shape = tf.shape(L)
             L = tf.broadcast_to(L, tf.concat([leading_dims, L_shape], 0))
 
@@ -129,8 +132,9 @@ def sample_mvn(mean, cov, cov_structure=None, num_samples=None):
     elif cov_structure == "full":
         # mean: [..., N, D] and cov [..., N, D, D]
         tf.assert_equal(tf.rank(mean) + 1, tf.rank(cov))
-        jittermat = (tf.eye(D, batch_shape=mean_shape[:-1], dtype=default_float()) * default_jitter()
-                     )  # [..., N, D, D]
+        jittermat = (
+            tf.eye(D, batch_shape=mean_shape[:-1], dtype=default_float()) * default_jitter()
+        )  # [..., N, D, D]
         eps_shape = tf.concat([mean_shape, [S]], 0)
         eps = tf.random.normal(eps_shape, dtype=default_float())  # [..., N, D, S]
         chol = tf.linalg.cholesky(cov + jittermat)  # [..., N, D, D]
@@ -170,15 +174,9 @@ def expand_independent_outputs(fvar, full_cov, full_output_cov):
     return fvar
 
 
-def independent_interdomain_conditional(Kmn,
-                                        Kmm,
-                                        Knn,
-                                        f,
-                                        *,
-                                        full_cov=False,
-                                        full_output_cov=False,
-                                        q_sqrt=None,
-                                        white=False):
+def independent_interdomain_conditional(
+    Kmn, Kmm, Knn, f, *, full_cov=False, full_output_cov=False, q_sqrt=None, white=False
+):
     """
     The inducing outputs live in the g-space (R^L).
     Interdomain conditional calculation.
@@ -225,9 +223,11 @@ def independent_interdomain_conditional(Kmn,
     if q_sqrt is not None:
         if q_sqrt.shape.ndims == 3:
             Lf = tf.linalg.band_part(q_sqrt, -1, 0)  # [L, M, M]
-            LTA = tf.linalg.matmul(Lf, A, transpose_a=True)  # [L, M, M]  *  [L, M, P]  ->  [L, M, P]
+            LTA = tf.linalg.matmul(
+                Lf, A, transpose_a=True
+            )  # [L, M, M]  *  [L, M, P]  ->  [L, M, P]
         else:  # q_sqrt [M, L]
-            LTA = (A * tf.transpose(q_sqrt)[..., None])  # [L, M, P]
+            LTA = A * tf.transpose(q_sqrt)[..., None]  # [L, M, P]
 
         if full_cov and full_output_cov:
             LTAr = tf.reshape(LTA, (L * M, N * P))
@@ -243,7 +243,9 @@ def independent_interdomain_conditional(Kmn,
     return fmean, fvar
 
 
-def fully_correlated_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, full_output_cov=False, q_sqrt=None, white=False):
+def fully_correlated_conditional(
+    Kmn, Kmm, Knn, f, *, full_cov=False, full_output_cov=False, q_sqrt=None, white=False
+):
     """
     This function handles conditioning of multi-output GPs in the case where the conditioning
     points are all fully correlated, in both the prior and posterior.
@@ -259,26 +261,22 @@ def fully_correlated_conditional(Kmn, Kmm, Knn, f, *, full_cov=False, full_outpu
         - mean: [N, P]
         - variance: [N, P], [N, P, P], [P, N, N], [N, P, N, P]
     """
-    m, v = fully_correlated_conditional_repeat(Kmn,
-                                               Kmm,
-                                               Knn,
-                                               f,
-                                               full_cov=full_cov,
-                                               full_output_cov=full_output_cov,
-                                               q_sqrt=q_sqrt,
-                                               white=white)
+    m, v = fully_correlated_conditional_repeat(
+        Kmn,
+        Kmm,
+        Knn,
+        f,
+        full_cov=full_cov,
+        full_output_cov=full_output_cov,
+        q_sqrt=q_sqrt,
+        white=white,
+    )
     return m[0, ...], v[0, ...]
 
 
-def fully_correlated_conditional_repeat(Kmn,
-                                        Kmm,
-                                        Knn,
-                                        f,
-                                        *,
-                                        full_cov=False,
-                                        full_output_cov=False,
-                                        q_sqrt=None,
-                                        white=False):
+def fully_correlated_conditional_repeat(
+    Kmn, Kmm, Knn, f, *, full_cov=False, full_output_cov=False, q_sqrt=None, white=False
+):
     """
     This function handles conditioning of multi-output GPs in the case where the conditioning
     points are all fully correlated, in both the prior and posterior.
@@ -397,7 +395,7 @@ def mix_latent_gp(W, g_mu, g_var, full_cov, full_output_cov):
 
     elif full_cov and not full_output_cov:  # g_var is [L, ..., N, N]
         # this branch is practically never taken
-        f_var = tf.tensordot(g_var, W**2, [[0], [-1]])  # [..., N, N, P]
+        f_var = tf.tensordot(g_var, W ** 2, [[0], [-1]])  # [..., N, N, P]
         f_var = leading_transpose(f_var, [..., -1, -3, -2])  # [..., P, N, N]
 
     elif not full_cov and full_output_cov:  # g_var is [..., N, L]
@@ -406,7 +404,7 @@ def mix_latent_gp(W, g_mu, g_var, full_cov, full_output_cov):
         f_var = tf.tensordot(g_var_W, W, [[-1], [-1]])  # [..., N, P, P]
 
     elif not full_cov and not full_output_cov:  # g_var is [..., N, L]
-        W_squared = W**2  # [P, L]
+        W_squared = W ** 2  # [P, L]
         f_var = tf.tensordot(g_var, W_squared, [[-1], [-1]])  # [..., N, P]
 
     return f_mu, f_var

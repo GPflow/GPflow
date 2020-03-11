@@ -81,10 +81,7 @@ def test_svgp_white():
     model_1.q_mu.assign(default_datum_svgp.qmean)
     model_2.q_sqrt.assign(
         np.array(
-            [
-                np.diag(default_datum_svgp.qsqrt[:, 0]),
-                np.diag(default_datum_svgp.qsqrt[:, 1]),
-            ]
+            [np.diag(default_datum_svgp.qsqrt[:, 0]), np.diag(default_datum_svgp.qsqrt[:, 1]),]
         )
     )
     model_2.q_mu.assign(default_datum_svgp.qmean)
@@ -120,10 +117,7 @@ def test_svgp_non_white():
     model_1.q_mu.assign(default_datum_svgp.qmean)
     model_2.q_sqrt.assign(
         np.array(
-            [
-                np.diag(default_datum_svgp.qsqrt[:, 0]),
-                np.diag(default_datum_svgp.qsqrt[:, 1]),
-            ]
+            [np.diag(default_datum_svgp.qsqrt[:, 0]), np.diag(default_datum_svgp.qsqrt[:, 1]),]
         )
     )
     model_2.q_mu.assign(default_datum_svgp.qmean)
@@ -141,9 +135,7 @@ def _check_models_close(m1, m2, tolerance=1e-2):
     for key in m1_params:
         p1 = m1_params[key]
         p2 = m2_params[key]
-        if not np.allclose(
-            p1.read_value(), p2.read_value(), rtol=tolerance, atol=tolerance
-        ):
+        if not np.allclose(p1.read_value(), p2.read_value(), rtol=tolerance, atol=tolerance):
             return False
     return True
 

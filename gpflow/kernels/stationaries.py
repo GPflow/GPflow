@@ -30,8 +30,8 @@ class Stationary(Kernel):
             default, all columns are used).
         """
         for kwarg in kwargs:
-            if kwarg not in {'name', 'active_dims'}:
-                raise TypeError('Unknown keyword argument:', kwarg)
+            if kwarg not in {"name", "active_dims"}:
+                raise TypeError("Unknown keyword argument:", kwarg)
 
         super().__init__(**kwargs)
         self.variance = Parameter(variance, transform=positive())
@@ -149,8 +149,8 @@ class Matern32(Stationary):
     """
 
     def K_r(self, r):
-        sqrt3 = np.sqrt(3.)
-        return self.variance * (1. + sqrt3 * r) * tf.exp(-sqrt3 * r)
+        sqrt3 = np.sqrt(3.0)
+        return self.variance * (1.0 + sqrt3 * r) * tf.exp(-sqrt3 * r)
 
 
 class Matern52(Stationary):
@@ -166,7 +166,7 @@ class Matern52(Stationary):
     """
 
     def K_r(self, r):
-        sqrt5 = np.sqrt(5.)
+        sqrt5 = np.sqrt(5.0)
         return self.variance * (1.0 + sqrt5 * r + 5.0 / 3.0 * tf.square(r)) * tf.exp(-sqrt5 * r)
 
 

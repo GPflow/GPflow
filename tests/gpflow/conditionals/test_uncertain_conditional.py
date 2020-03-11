@@ -67,8 +67,7 @@ def gen_L(n, *shape):
 
 def gen_q_sqrt(D_out, *shape):
     return tf.convert_to_tensor(
-        np.array([np.tril(rng.randn(*shape)) for _ in range(D_out)]),
-        dtype=default_float(),
+        np.array([np.tril(rng.randn(*shape)) for _ in range(D_out)]), dtype=default_float(),
     )
 
 
@@ -155,10 +154,7 @@ def test_no_uncertainty(white, mean):
         return -model.log_marginal_likelihood(Data.data)
 
     training_loop(
-        closure,
-        optimizer=tf.optimizers.Adam(),
-        var_list=model.trainable_variables,
-        maxiter=100,
+        closure, optimizer=tf.optimizers.Adam(), var_list=model.trainable_variables, maxiter=100,
     )
 
     mean1, var1 = model.predict_f(Data.Xnew_mu)
@@ -191,10 +187,7 @@ def test_monte_carlo_1_din(white, mean):
         return -model.log_marginal_likelihood(DataMC1.data)
 
     training_loop(
-        closure,
-        optimizer=tf.optimizers.Adam(),
-        var_list=model.trainable_variables,
-        maxiter=200,
+        closure, optimizer=tf.optimizers.Adam(), var_list=model.trainable_variables, maxiter=200,
     )
 
     mean1, var1 = model.uncertain_predict_f_moment_matching(
@@ -229,10 +222,7 @@ def test_monte_carlo_2_din(white, mean):
         return -model.log_marginal_likelihood(DataMC2.data)
 
     training_loop(
-        closure,
-        optimizer=tf.optimizers.Adam(),
-        var_list=model.trainable_variables,
-        maxiter=100,
+        closure, optimizer=tf.optimizers.Adam(), var_list=model.trainable_variables, maxiter=100,
     )
 
     mean1, var1 = model.uncertain_predict_f_moment_matching(
@@ -258,12 +248,7 @@ def test_quadrature(white, mean):
 
     def conditional_fn(X):
         return conditional(
-            X,
-            inducing_variable,
-            kernel,
-            DataQuad.q_mu,
-            q_sqrt=DataQuad.q_sqrt,
-            white=white,
+            X, inducing_variable, kernel, DataQuad.q_mu, q_sqrt=DataQuad.q_sqrt, white=white,
         )
 
     def mean_fn(X):
