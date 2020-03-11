@@ -186,7 +186,7 @@ class Sinc(Stationary):
     def K_r(self, r):
         k0 = tf.ones_like(r)
         k = tf.sin(r) / r
-        return self.variance * tf.where(tf.equal(r, 0), k0, k)
+        return self.variance * tf.where(tf.equal(r, 0.0), k0, k)
 
 
 class Cosine(Stationary):
