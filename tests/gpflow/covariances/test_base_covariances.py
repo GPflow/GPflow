@@ -29,12 +29,8 @@ def test_inducing_points_inducing_variable_len(N, D):
 
 
 _kernel_setups = [
-    gpflow.kernels.SquaredExponential(
-        variance=0.46, lengthscale=np.random.uniform(0.5, 3.0, 5)
-    ),
-    gpflow.kernels.Periodic(
-        base=gpflow.kernels.SquaredExponential(variance=1.8), period=0.4
-    ),
+    gpflow.kernels.SquaredExponential(variance=0.46, lengthscale=np.random.uniform(0.5, 3.0, 5)),
+    gpflow.kernels.Periodic(base=gpflow.kernels.SquaredExponential(variance=1.8), period=0.4),
 ]
 
 
@@ -51,26 +47,20 @@ def test_inducing_equivalence(N, kernel):
 def test_multi_scale_inducing_equivalence_inducing_points(N, M, D):
     # Multiscale must be equivalent to inducing points when variance is zero
     Xnew, Z = np.random.randn(N, D), np.random.randn(M, D)
-    rbf = gpflow.kernels.SquaredExponential(
-        1.3441, lengthscale=np.random.uniform(0.5, 3.0, D)
-    )
+    rbf = gpflow.kernels.SquaredExponential(1.3441, lengthscale=np.random.uniform(0.5, 3.0, D))
     inducing_variable_zero_lengthscale = Multiscale(Z, scales=np.zeros(Z.shape) + 1e-10)
     inducing_variable_inducing_point = InducingPoints(Z)
 
     multi_scale_Kuf = Kuf(inducing_variable_zero_lengthscale, rbf, Xnew)
     inducing_point_Kuf = Kuf(inducing_variable_inducing_point, rbf, Xnew)
 
-    relative_error_Kuf = (
-        np.abs(multi_scale_Kuf - inducing_point_Kuf) / inducing_point_Kuf
-    )
+    relative_error_Kuf = np.abs(multi_scale_Kuf - inducing_point_Kuf) / inducing_point_Kuf
     assert np.max(relative_error_Kuf) < 0.1e-2  # 0.1 %
 
     multi_scale_Kuu = Kuu(inducing_variable_zero_lengthscale, rbf)
     inducing_point_Kuu = Kuu(inducing_variable_inducing_point, rbf)
 
-    relative_error_Kuu = (
-        np.abs(multi_scale_Kuu - inducing_point_Kuu) / inducing_point_Kuu
-    )
+    relative_error_Kuu = np.abs(multi_scale_Kuu - inducing_point_Kuu) / inducing_point_Kuu
     assert np.max(relative_error_Kuu) < 0.1e-2  # 0.1 %
 
 
@@ -85,9 +75,7 @@ _inducing_variables_and_kernels = [
     [
         2,
         InducingPoints(np.random.randn(71, 2)),
-        gpflow.kernels.Matern12(
-            variance=1.84, lengthscale=np.random.uniform(0.5, 3.0, 2)
-        ),
+        gpflow.kernels.Matern12(variance=1.84, lengthscale=np.random.uniform(0.5, 3.0, 2)),
     ],
     [
         2,
@@ -99,16 +87,12 @@ _inducing_variables_and_kernels = [
     [
         9,
         InducingPatches(np.random.randn(71, 4)),
-        gpflow.kernels.Convolutional(
-            gpflow.kernels.SquaredExponential(), [3, 3], [2, 2]
-        ),
+        gpflow.kernels.Convolutional(gpflow.kernels.SquaredExponential(), [3, 3], [2, 2]),
     ],
 ]
 
 
-@pytest.mark.parametrize(
-    "input_dim, inducing_variable, kernel", _inducing_variables_and_kernels
-)
+@pytest.mark.parametrize("input_dim, inducing_variable, kernel", _inducing_variables_and_kernels)
 def test_inducing_variables_psd_schur(input_dim, inducing_variable, kernel):
     # Conditional variance must be PSD.
     X = np.random.randn(5, input_dim)

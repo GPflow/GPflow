@@ -57,17 +57,11 @@ def test_scipy_jit():
     def closure2():
         return -m2.log_marginal_likelihood()
 
-    opt1.minimize(
-        closure1, variables=m1.trainable_variables, options=dict(maxiter=50), jit=False
-    )
-    opt2.minimize(
-        closure2, variables=m2.trainable_variables, options=dict(maxiter=50), jit=True
-    )
+    opt1.minimize(closure1, variables=m1.trainable_variables, options=dict(maxiter=50), jit=False)
+    opt2.minimize(closure2, variables=m2.trainable_variables, options=dict(maxiter=50), jit=True)
 
     def get_values(model):
-        return np.array(
-            [var.value().numpy().squeeze() for var in model.trainable_variables]
-        )
+        return np.array([var.value().numpy().squeeze() for var in model.trainable_variables])
 
     # The tolerance of the following test had to be loosened slightly from atol=1e-15
     # due to the changes introduced by PR #1213, which removed some implicit casts

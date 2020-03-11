@@ -40,18 +40,20 @@ class SVGP(GPModel):
 
     """
 
-    def __init__(self,
-                 kernel,
-                 likelihood,
-                 inducing_variable,
-                 *,
-                 mean_function=None,
-                 num_latent: int = 1,
-                 q_diag: bool = False,
-                 q_mu=None,
-                 q_sqrt=None,
-                 whiten: bool = True,
-                 num_data=None):
+    def __init__(
+        self,
+        kernel,
+        likelihood,
+        inducing_variable,
+        *,
+        mean_function=None,
+        num_latent: int = 1,
+        q_diag: bool = False,
+        q_mu=None,
+        q_sqrt=None,
+        whiten: bool = True,
+        num_data=None,
+    ):
         """
         - kernel, likelihood, inducing_variables, mean_function are appropriate
           GPflow objects
@@ -110,7 +112,9 @@ class SVGP(GPModel):
                 ones = np.ones((num_inducing, self.num_latent), dtype=default_float())
                 self.q_sqrt = Parameter(ones, transform=positive())  # [M, P]
             else:
-                q_sqrt = [np.eye(num_inducing, dtype=default_float()) for _ in range(self.num_latent)]
+                q_sqrt = [
+                    np.eye(num_inducing, dtype=default_float()) for _ in range(self.num_latent)
+                ]
                 q_sqrt = np.array(q_sqrt)
                 self.q_sqrt = Parameter(q_sqrt, transform=triangular())  # [P, M, M]
         else:
@@ -125,11 +129,9 @@ class SVGP(GPModel):
                 self.q_sqrt = Parameter(q_sqrt, transform=triangular())  # [L|P, M, M]
 
     def prior_kl(self):
-        return kullback_leiblers.prior_kl(self.inducing_variable,
-                                          self.kernel,
-                                          self.q_mu,
-                                          self.q_sqrt,
-                                          whiten=self.whiten)
+        return kullback_leiblers.prior_kl(
+            self.inducing_variable, self.kernel, self.q_mu, self.q_sqrt, whiten=self.whiten
+        )
 
     def log_likelihood(self, data: Tuple[tf.Tensor, tf.Tensor]) -> tf.Tensor:
         """
@@ -156,13 +158,15 @@ class SVGP(GPModel):
     def predict_f(self, Xnew: tf.Tensor, full_cov=False, full_output_cov=False) -> tf.Tensor:
         q_mu = self.q_mu
         q_sqrt = self.q_sqrt
-        mu, var = conditional(Xnew,
-                              self.inducing_variable,
-                              self.kernel,
-                              q_mu,
-                              q_sqrt=q_sqrt,
-                              full_cov=full_cov,
-                              white=self.whiten,
-                              full_output_cov=full_output_cov)
+        mu, var = conditional(
+            Xnew,
+            self.inducing_variable,
+            self.kernel,
+            q_mu,
+            q_sqrt=q_sqrt,
+            full_cov=full_cov,
+            white=self.whiten,
+            full_output_cov=full_output_cov,
+        )
         # tf.debugging.assert_positive(var)  # We really should make the tests pass with this here
         return mu + self.mean_function(Xnew), var

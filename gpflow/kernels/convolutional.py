@@ -30,8 +30,9 @@ class Convolutional(Kernel):
         self.patch_size = patch_size
         self.basekern = basekern
         self.colour_channels = colour_channels
-        self.weights = Parameter(np.ones(self.num_patches, dtype=default_float()) if weights is None
-                                 else weights)
+        self.weights = Parameter(
+            np.ones(self.num_patches, dtype=default_float()) if weights is None else weights
+        )
 
     # @lru_cache() -- Can we do some kind of memoizing with TF2?
     def get_patches(self, X):
@@ -45,16 +46,18 @@ class Convolutional(Kernel):
         # and reshape to have the first axis the same as the number of images.
         # The separate patches will then be in the second axis.
         num_data = tf.shape(X)[0]
-        castX = tf.transpose(
-            tf.reshape(X, [num_data, -1, self.colour_channels]),
-            [0, 2, 1])
+        castX = tf.transpose(tf.reshape(X, [num_data, -1, self.colour_channels]), [0, 2, 1])
         patches = tf.image.extract_patches(
             tf.reshape(castX, [-1, self.img_size[0], self.img_size[1], 1], name="rX"),
             [1, self.patch_size[0], self.patch_size[1], 1],
             [1, 1, 1, 1],
-            [1, 1, 1, 1], "VALID")
+            [1, 1, 1, 1],
+            "VALID",
+        )
         shp = tf.shape(patches)  # img x out_rows x out_cols
-        reshaped_patches = tf.reshape(patches, [num_data, self.colour_channels * shp[1] * shp[2], shp[3]])
+        reshaped_patches = tf.reshape(
+            patches, [num_data, self.colour_channels * shp[1] * shp[2], shp[3]]
+        )
         return to_default_float(reshaped_patches)
 
     def K(self, X, X2=None):
@@ -79,6 +82,8 @@ class Convolutional(Kernel):
 
     @property
     def num_patches(self):
-        return ((self.img_size[0] - self.patch_size[0] + 1)
-                * (self.img_size[1] - self.patch_size[1] + 1)
-                * self.colour_channels)
+        return (
+            (self.img_size[0] - self.patch_size[0] + 1)
+            * (self.img_size[1] - self.patch_size[1] + 1)
+            * self.colour_channels
+        )

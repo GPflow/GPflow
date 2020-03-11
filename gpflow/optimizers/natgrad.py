@@ -80,10 +80,11 @@ class NaturalGradient(tf.optimizers.Optimizer):
         self.gamma = gamma
 
     def minimize(
-            self,
-            loss_fn: Callable,
-            var_list: List[
-                Union[Tuple[Parameter, Parameter], Tuple[Parameter, Parameter, XiTransform]]]
+        self,
+        loss_fn: Callable,
+        var_list: List[
+            Union[Tuple[Parameter, Parameter], Tuple[Parameter, Parameter, XiTransform]]
+        ],
     ):
         """
         Minimizes objective function of the model.
@@ -109,14 +110,18 @@ class NaturalGradient(tf.optimizers.Optimizer):
         parameters = [(v[0], v[1], v[2] if len(v) > 2 else XiNat()) for v in var_list]
         self._natgrad_steps(loss_fn, parameters)
 
-    def _natgrad_steps(self, loss_fn: Callable, parameters: List[Tuple[Parameter, Parameter, XiTransform]]):
+    def _natgrad_steps(
+        self, loss_fn: Callable, parameters: List[Tuple[Parameter, Parameter, XiTransform]]
+    ):
         def natural_gradient_step(q_mu, q_sqrt, xi_transform):
             self._natgrad_step(loss_fn, q_mu, q_sqrt, xi_transform)
 
         with tf.name_scope(f"{self._name}/natural_gradient_steps"):
             list(map(natural_gradient_step, *zip(*parameters)))
 
-    def _natgrad_step(self, loss_fn: Callable, q_mu: Parameter, q_sqrt: Parameter, xi_transform: XiTransform):
+    def _natgrad_step(
+        self, loss_fn: Callable, q_mu: Parameter, q_sqrt: Parameter, xi_transform: XiTransform
+    ):
         """
         Implements equation [10] from
 
@@ -153,19 +158,23 @@ class NaturalGradient(tf.optimizers.Optimizer):
                 dummy_tensors = tf.ones_like(xi1_nat), tf.ones_like(xi2_nat)
                 with tf.GradientTape(watch_accessed_variables=False) as forward_tape:
                     forward_tape.watch(dummy_tensors)
-                    dummy_gradients = tape.gradient([xi1_nat, xi2_nat], [nat1, nat2], output_gradients=dummy_tensors)
+                    dummy_gradients = tape.gradient(
+                        [xi1_nat, xi2_nat], [nat1, nat2], output_gradients=dummy_tensors
+                    )
 
         # 1) the oridinary gpflow gradient
         dL_dmean, dL_dvarsqrt = tape.gradient(loss, [q_mu, q_sqrt])
         dL_dvarsqrt = q_sqrt.transform.forward(dL_dvarsqrt)
 
         # 2) the chain rule to get ∂L/∂η, where η (eta) are the expectation parameters
-        dL_deta1, dL_deta2 = tape.gradient(meanvarsqrt, [eta1, eta2], output_gradients=[dL_dmean, dL_dvarsqrt])
+        dL_deta1, dL_deta2 = tape.gradient(
+            meanvarsqrt, [eta1, eta2], output_gradients=[dL_dmean, dL_dvarsqrt]
+        )
 
         if not isinstance(xi_transform, XiNat):
-            nat_dL_xi1, nat_dL_xi2 = forward_tape.gradient(dummy_gradients,
-                                                           dummy_tensors,
-                                                           output_gradients=[dL_deta1, dL_deta2])
+            nat_dL_xi1, nat_dL_xi2 = forward_tape.gradient(
+                dummy_gradients, dummy_tensors, output_gradients=[dL_deta1, dL_deta2]
+            )
         else:
             nat_dL_xi1, nat_dL_xi2 = dL_deta1, dL_deta2
 
@@ -183,9 +192,9 @@ class NaturalGradient(tf.optimizers.Optimizer):
 
     def get_config(self):
         config = super().get_config()
-        config.update({
-            'gamma': self._serialize_hyperparameter('gamma'),
-        })
+        config.update(
+            {"gamma": self._serialize_hyperparameter("gamma"),}
+        )
         return config
 
 

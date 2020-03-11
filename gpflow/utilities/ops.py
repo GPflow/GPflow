@@ -66,7 +66,7 @@ def leading_transpose(
     perm_tf = perm % rank
 
     leading_dims = tf.range(rank - len(perm) + 1)
-    perm = tf.concat([perm_tf[:idx], leading_dims, perm_tf[idx + 1:]], 0)
+    perm = tf.concat([perm_tf[:idx], leading_dims, perm_tf[idx + 1 :]], 0)
     return tf.transpose(tensor, perm)
 
 
@@ -111,7 +111,7 @@ def pca_reduce(X: tf.Tensor, Q: tf.Tensor) -> tf.Tensor:
     :return: PCA projection array of size N x Q.
     """
     if Q > X.shape[1]:  # pragma: no cover
-        raise ValueError('Cannot have more latent dimensions than observed')
+        raise ValueError("Cannot have more latent dimensions than observed")
     if isinstance(X, tf.Tensor):
         X = X.numpy()
         # TODO why not use tf.linalg.eigh?

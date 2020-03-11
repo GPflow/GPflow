@@ -11,7 +11,9 @@ from .config import default_float
 
 DType = Union[np.dtype, tf.DType]
 VariableData = Union[List, Tuple, np.ndarray, int, float]
-TensorLike = object  # Union[tf.Tensor, tf.Variable, np.ndarray], but doesn't work with multipledispatch
+TensorLike = (
+    object  # Union[tf.Tensor, tf.Variable, np.ndarray], but doesn't work with multipledispatch
+)
 Transform = tfp.bijectors.Bijector
 Prior = tfp.distributions.Distribution
 
@@ -21,7 +23,7 @@ def _IS_PARAMETER(o):
 
 
 def _IS_TRAINABLE_PARAMETER(o):
-    return (_IS_PARAMETER(o) and o.trainable)
+    return _IS_PARAMETER(o) and o.trainable
 
 
 class Module(tf.Module):
@@ -35,28 +37,32 @@ class Module(tf.Module):
 
     def _repr_html_(self):
         from .utilities import tabulate_module_summary
-        return tabulate_module_summary(self, tablefmt='html')
+
+        return tabulate_module_summary(self, tablefmt="html")
 
     def _repr_pretty_(self, p, cycle):
         from .utilities import tabulate_module_summary
-        p.text(tabulate_module_summary(self, tablefmt=''))
+
+        p.text(tabulate_module_summary(self, tablefmt=""))
 
 
 class PriorOn(Enum):
-     CONSTRAINED = "constrained"
-     UNCONSTRAINED = "unconstrained"
+    CONSTRAINED = "constrained"
+    UNCONSTRAINED = "unconstrained"
 
 
 class Parameter(tf.Module):
-    def __init__(self,
-                 value,
-                 *,
-                 transform: Optional[Transform] = None,
-                 prior: Optional[Prior] = None,
-                 prior_on: Union[str, PriorOn] = PriorOn.CONSTRAINED,
-                 trainable: bool = True,
-                 dtype: Optional[DType] = None,
-                 name: Optional[str] = None):
+    def __init__(
+        self,
+        value,
+        *,
+        transform: Optional[Transform] = None,
+        prior: Optional[Prior] = None,
+        prior_on: Union[str, PriorOn] = PriorOn.CONSTRAINED,
+        trainable: bool = True,
+        dtype: Optional[DType] = None,
+        name: Optional[str] = None,
+    ):
         """
         A parameter retains both constrained and unconstrained
         representations. If no transform is provided, these two values will be the same.
@@ -74,14 +80,15 @@ class Parameter(tf.Module):
             self._unconstrained = value
         else:
             unconstrained_value = self.validate_unconstrained_value(value, dtype)
-            self._unconstrained = tf.Variable(unconstrained_value,
-                                              dtype=dtype, name=name, trainable=trainable)
+            self._unconstrained = tf.Variable(
+                unconstrained_value, dtype=dtype, name=name, trainable=trainable
+            )
 
     def log_prior(self):
         """ Prior probability density of the constrained variable. """
 
         if self.prior is None:
-            return tf.convert_to_tensor(0., dtype=self.dtype)
+            return tf.convert_to_tensor(0.0, dtype=self.dtype)
 
         y = self.read_value()
 
@@ -142,11 +149,15 @@ class Parameter(tf.Module):
     def validate_unconstrained_value(self, value: tf.Tensor, dtype: DType) -> tf.Tensor:
         value = _cast_to_dtype(value, dtype)
         unconstrained_value = _to_unconstrained(value, self.transform)
-        message = "gpflow.Parameter: unconstrained value of passed value " \
-                  "has NaN or Inf and cannot be assigned."
+        message = (
+            "gpflow.Parameter: unconstrained value of passed value "
+            "has NaN or Inf and cannot be assigned."
+        )
         return tf.debugging.assert_all_finite(unconstrained_value, message=message)
 
-    def assign(self, value: tf.Tensor, use_locking=False, name=None, read_value=True) -> tf.Variable:
+    def assign(
+        self, value: tf.Tensor, use_locking=False, name=None, read_value=True
+    ) -> tf.Variable:
         """
         Assigns constrained `value` to the unconstrained parameter's variable.
         It passes constrained value through parameter's transform first.
@@ -168,8 +179,9 @@ class Parameter(tf.Module):
             value of the variable; if False will return the assign op.
         """
         unconstrained_value = self.validate_unconstrained_value(value, self.dtype)
-        return self._unconstrained.assign(unconstrained_value,
-                use_locking=use_locking, name=name, read_value=read_value)
+        return self._unconstrained.assign(
+            unconstrained_value, use_locking=use_locking, name=name, read_value=read_value
+        )
 
     @property
     def is_tensor_like(self):
@@ -224,16 +236,20 @@ class Parameter(tf.Module):
         unconstrained = self.unconstrained_variable
         constrained = self.read_value()
         if tf.executing_eagerly():
-            info = f"unconstrained-shape={unconstrained.shape} " \
-                   f"unconstrained-value={unconstrained.numpy()} " \
-                   f"constrained-shape={constrained.shape} " \
-                   f"constrained-value={constrained.numpy()}"
+            info = (
+                f"unconstrained-shape={unconstrained.shape} "
+                f"unconstrained-value={unconstrained.numpy()} "
+                f"constrained-shape={constrained.shape} "
+                f"constrained-value={constrained.numpy()}"
+            )
         else:
             if unconstrained.shape == constrained.shape:
                 info = f"shape={constrained.shape}"
             else:
-                info = f"unconstrained-shape={unconstrained.shape} " \
-                       f"constrained-shape={constrained.shape}"
+                info = (
+                    f"unconstrained-shape={unconstrained.shape} "
+                    f"constrained-shape={constrained.shape}"
+                )
 
         return f"<gpflow.Parameter {self.name!r} dtype={self.dtype.name} {info}>"
 
