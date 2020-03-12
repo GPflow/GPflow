@@ -251,7 +251,7 @@ def reset_cache_bijectors(input_module: tf.Module) -> tf.Module:
     return input_module
 
 
-def _get_by_name_index(parent: object, attr_str: str, index_str: str) -> object:
+def _get_by_name_index(parent: object, attr_str: str, index_str: Union[str, None]) -> object:
     attr = getattr(parent, attr_str)
     if index_str is not None:
         index = int(index_str)
@@ -259,7 +259,7 @@ def _get_by_name_index(parent: object, attr_str: str, index_str: str) -> object:
     return attr
 
 
-def _set_by_name_index(parent: object, value: Any, attr_str: str, index_str: str):
+def _set_by_name_index(parent: object, value: Any, attr_str: str, index_str: Union[str, None]):
     if index_str is not None:
         index = int(index_str)
         attr = getattr(parent, attr_str)

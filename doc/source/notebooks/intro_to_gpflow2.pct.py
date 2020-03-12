@@ -406,5 +406,4 @@ tf.saved_model.save(module_to_save, save_dir)
 loaded_model = tf.saved_model.load(save_dir)
 loaded_result = loaded_model.predict(samples_input)
 
-np.testing.assert_allclose(loaded_result[0], original_result[0])
-np.testing.assert_allclose(loaded_result[1], original_result[1])
+np.testing.assert_array_equal(loaded_result, original_result)
