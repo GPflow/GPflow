@@ -38,11 +38,13 @@ def test_leading_transpose():
     assert d.shape == e.shape == f.shape
 
 
-@pytest.mark.xfail(raises=ValueError)
-def test_leading_transpose_fail():
+def test_leading_transpose_fails():
+    """ Check that error is thrown if `perm` is not compatible with `a` """
     dims = [1, 2, 3, 4]
     a = tf.zeros(dims)
-    leading_transpose(a, [-1, -2])
+
+    with pytest.raises(ValueError):
+        leading_transpose(a, [-1, -2])
 
 
 # rollaxis
