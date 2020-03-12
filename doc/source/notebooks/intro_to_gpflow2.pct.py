@@ -377,7 +377,7 @@ gpflow.utilities.multiple_assign(model, params)\
 model
 
 # %%
-frozen_model = gpflow.utilities.deepcopy(model, freeze=True)
+frozen_model = gpflow.utilities.freeze(model)
 
 # %% [markdown]
 # In order to save the model we need to define a `tf.Module` holding the `tf.function`'s that we wish to export, as well as a reference to the underlying model:

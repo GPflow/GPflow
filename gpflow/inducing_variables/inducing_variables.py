@@ -25,6 +25,7 @@ class InducingVariables(Module):
     """
     Abstract base class for inducing variables.
     """
+
     @abc.abstractmethod
     def __len__(self) -> int:
         """
@@ -67,12 +68,15 @@ class Multiscale(InducingPointsBase):
         year = {2009},
       }
     """
+
     def __init__(self, Z, scales):
         super().__init__(Z)
         # Multi-scale inducing_variable widths (std. dev. of Gaussian)
         self.scales = Parameter(scales, transform=positive())
         if self.Z.shape != scales.shape:
-            raise ValueError("Input locations `Z` and `scales` must have the same shape.")  # pragma: no cover
+            raise ValueError(
+                "Input locations `Z` and `scales` must have the same shape."
+            )  # pragma: no cover
 
     @staticmethod
     def _cust_square_dist(A, B, sc):

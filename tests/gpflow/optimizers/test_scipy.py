@@ -57,16 +57,10 @@ def test_scipy_jit():
     def closure2():
         return -m2.log_marginal_likelihood()
 
-    opt1.minimize(
-        closure1, variables=m1.trainable_variables, options=dict(maxiter=50), jit=False
-    )
-    opt2.minimize(
-        closure2, variables=m2.trainable_variables, options=dict(maxiter=50), jit=True
-    )
+    opt1.minimize(closure1, variables=m1.trainable_variables, options=dict(maxiter=50), jit=False)
+    opt2.minimize(closure2, variables=m2.trainable_variables, options=dict(maxiter=50), jit=True)
 
     def get_values(model):
-        return np.array(
-            [var.value().numpy().squeeze() for var in model.trainable_variables]
-        )
+        return np.array([var.value().numpy().squeeze() for var in model.trainable_variables])
 
     np.testing.assert_allclose(get_values(m1), get_values(m2), rtol=1e-14, atol=1e-15)

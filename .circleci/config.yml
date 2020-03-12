@@ -33,6 +33,21 @@ jobs:
         environment:
           PYTEST_FILTER: notebooks
 
+  format-checker:
+    docker:
+      - image: awav/tensorflow:2.0-preview
+
+    steps:
+      - checkout
+      - run:
+          name: Install Black
+          command: |
+            pip install black==19.10b0
+      - run:
+          name: Run format checker
+          command: |
+            black --check -t py36 --line-length=100 gpflow tests
+
   trigger-docs-generation:
     docker:
       - image: awav/tensorflow:2.0-preview
@@ -86,11 +101,19 @@ workflows:
   version: 2.1
   build_test_and_deploy:
     jobs:
+      - format-checker:
+          filters:
+            tags:
+              only: /^v[0-9]+(\.[0-9]+)*(-rc[0-9]+)?/
       - unit-test:
+          requires:
+            - format-checker
           filters:
             tags:
               only: /^v[0-9]+(\.[0-9]+)*(-rc[0-9]+)?/
       - notebook-test:
+          requires:
+            - format-checker
           filters:
             tags:
               only: /^v[0-9]+(\.[0-9]+)*(-rc[0-9]+)?/
@@ -99,7 +122,7 @@ workflows:
             - unit-test
             - notebook-test
           filters:
-            branches: 
+            branches:
               only: develop
       - deploy:
           requires:

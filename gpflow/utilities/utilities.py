@@ -18,6 +18,7 @@ __all__ = [
     "print_summary",
     "tabulate_module_summary",
     "deepcopy",
+    "freeze",
     "leaf_components",
     "parameter_dict",
     "read_values",
@@ -316,6 +317,7 @@ def getattr_by_path(target: object, attr_path: str) -> Any:
 
     :param target: Root object that contains nested attribute
     :param attr_path: String type value that represents path to an attribute.
+    :return: Object stored at `attr_path`.
 
     Example:
         k = gpflow.kernels.Matern52()
@@ -351,23 +353,30 @@ def setattr_by_path(target: object, attr_path: str, value: Any):
 M = TypeVar("M", bound=tf.Module)
 
 
-def deepcopy(input_module: M, freeze: bool = False) -> M:
+def deepcopy(input_module: M) -> M:
     """
     Returns a deepcopy of the input tf.Module. To do that first resets the caches stored inside each
     tfp.bijectors.Bijector to allow the deepcopy of the tf.Module.
 
     :param input_module: tf.Module including keras.Model, keras.layers.Layer and gpflow.Module.
-    :param freeze: Boolean value. If `True` all variables and parameters are replaced with constants
-        in a copy object.
     :return: Returns a deepcopy of an input object.
     """
-    module_copy = copy.deepcopy(reset_cache_bijectors(input_module))
-    if freeze:
-        for name, value in parameter_dict(module_copy).items():
-            tensor = tf.convert_to_tensor(value, dtype=value.dtype)
-            const_value = tf.constant(tensor)
-            attr_path = name.lstrip(".")
-            setattr_by_path(module_copy, attr_path, const_value)
+    return copy.deepcopy(reset_cache_bijectors(input_module))
+
+
+def freeze(input_module: M) -> M:
+    """
+    Returns a deepcopy of the input tf.Module with constants instead of variables and parameters.
+
+    :param input_module: tf.Module or gpflow.Module.
+    :return: Returns a frozen deepcopy of an input object.
+    """
+    module_copy = deepcopy(input_module)
+    for name, value in parameter_dict(module_copy).items():
+        tensor = tf.convert_to_tensor(value, dtype=value.dtype)
+        const_value = tf.constant(tensor)
+        attr_path = name.lstrip(".")
+        setattr_by_path(module_copy, attr_path, const_value)
     return module_copy
 
 

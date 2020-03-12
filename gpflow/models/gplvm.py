@@ -35,12 +35,15 @@ class GPLVM(GPR):
     """
     Standard GPLVM where the likelihood can be optimised with respect to the latent X.
     """
-    def __init__(self,
-                 data: tf.Tensor,
-                 latent_dim: int,
-                 x_data_mean: Optional[tf.Tensor] = None,
-                 kernel: Optional[Kernel] = None,
-                 mean_function: Optional[MeanFunction] = None):
+
+    def __init__(
+        self,
+        data: tf.Tensor,
+        latent_dim: int,
+        x_data_mean: Optional[tf.Tensor] = None,
+        kernel: Optional[Kernel] = None,
+        mean_function: Optional[MeanFunction] = None,
+    ):
         """
         Initialise GPLVM object. This method only works with a Gaussian likelihood.
 
@@ -55,32 +58,34 @@ class GPLVM(GPR):
 
         num_latent = x_data_mean.shape[1]
         if num_latent != latent_dim:
-            msg = 'Passed in number of latent {0} does not match initial X {1}.'
+            msg = "Passed in number of latent {0} does not match initial X {1}."
             raise ValueError(msg.format(latent_dim, num_latent))
 
         if mean_function is None:
             mean_function = Zero()
 
         if kernel is None:
-            kernel = kernels.SquaredExponential(lengthscale=tf.ones((latent_dim, )))
+            kernel = kernels.SquaredExponential(lengthscale=tf.ones((latent_dim,)))
 
         if data.shape[1] < num_latent:
-            raise ValueError('More latent dimensions than observed.')
+            raise ValueError("More latent dimensions than observed.")
 
         gpr_data = (Parameter(x_data_mean), data)
         super().__init__(gpr_data, kernel, mean_function=mean_function)
 
 
 class BayesianGPLVM(GPModel):
-    def __init__(self,
-                 data: tf.Tensor,
-                 x_data_mean: tf.Tensor,
-                 x_data_var: tf.Tensor,
-                 kernel: Kernel,
-                 num_inducing_variables: Optional[int] = None,
-                 inducing_variable=None,
-                 x_prior_mean=None,
-                 x_prior_var=None):
+    def __init__(
+        self,
+        data: tf.Tensor,
+        x_data_mean: tf.Tensor,
+        x_data_var: tf.Tensor,
+        kernel: Kernel,
+        num_inducing_variables: Optional[int] = None,
+        inducing_variable=None,
+        x_prior_mean=None,
+        x_prior_var=None,
+    ):
         """
         Initialise Bayesian GPLVM object. This method only works with a Gaussian likelihood.
 
@@ -105,11 +110,13 @@ class BayesianGPLVM(GPModel):
         self.output_dim = data.shape[-1]
 
         assert np.all(x_data_mean.shape == x_data_var.shape)
-        assert x_data_mean.shape[0] == data.shape[0], 'X mean and Y must be same size.'
-        assert x_data_var.shape[0] == data.shape[0], 'X var and Y must be same size.'
+        assert x_data_mean.shape[0] == data.shape[0], "X mean and Y must be same size."
+        assert x_data_var.shape[0] == data.shape[0], "X var and Y must be same size."
 
         if (inducing_variable is None) == (num_inducing_variables is None):
-            raise ValueError("BayesianGPLVM needs exactly one of `inducing_variable` and `num_inducing_variables`")
+            raise ValueError(
+                "BayesianGPLVM needs exactly one of `inducing_variable` and `num_inducing_variables`"
+            )
 
         if inducing_variable is None:
             # By default we initialize by subset of initial latent points
@@ -144,9 +151,12 @@ class BayesianGPLVM(GPModel):
         num_inducing = len(self.inducing_variable)
         psi0 = tf.reduce_sum(expectation(pX, self.kernel))
         psi1 = expectation(pX, (self.kernel, self.inducing_variable))
-        psi2 = tf.reduce_sum(expectation(pX, (self.kernel, self.inducing_variable),
-                                         (self.kernel, self.inducing_variable)),
-                             axis=0)
+        psi2 = tf.reduce_sum(
+            expectation(
+                pX, (self.kernel, self.inducing_variable), (self.kernel, self.inducing_variable)
+            ),
+            axis=0,
+        )
         cov_uu = covariances.Kuu(self.inducing_variable, self.kernel, jitter=default_jitter())
         L = tf.linalg.cholesky(cov_uu)
         sigma2 = self.likelihood.variance
@@ -158,17 +168,23 @@ class BayesianGPLVM(GPModel):
         AAT = tf.linalg.triangular_solve(L, tf.transpose(tmp), lower=True) / sigma2
         B = AAT + tf.eye(num_inducing, dtype=default_float())
         LB = tf.linalg.cholesky(B)
-        log_det_B = 2. * tf.reduce_sum(tf.math.log(tf.linalg.diag_part(LB)))
+        log_det_B = 2.0 * tf.reduce_sum(tf.math.log(tf.linalg.diag_part(LB)))
         c = tf.linalg.triangular_solve(LB, tf.linalg.matmul(A, y_data), lower=True) / sigma
 
         # KL[q(x) || p(x)]
-        dx_data_var = self.x_data_var if self.x_data_var.shape.ndims == 2 else tf.linalg.diag_part(self.x_data_var)
+        dx_data_var = (
+            self.x_data_var
+            if self.x_data_var.shape.ndims == 2
+            else tf.linalg.diag_part(self.x_data_var)
+        )
         NQ = tf.cast(tf.size(self.x_data_mean), default_float())
         D = tf.cast(tf.shape(y_data)[1], default_float())
         KL = -0.5 * tf.reduce_sum(tf.math.log(dx_data_var))
         KL += 0.5 * tf.reduce_sum(tf.math.log(self.x_prior_var))
         KL -= 0.5 * NQ
-        KL += 0.5 * tf.reduce_sum((tf.square(self.x_data_mean - self.x_prior_mean) + dx_data_var) / self.x_prior_var)
+        KL += 0.5 * tf.reduce_sum(
+            (tf.square(self.x_data_mean - self.x_prior_mean) + dx_data_var) / self.x_prior_var
+        )
 
         # compute log marginal bound
         ND = tf.cast(tf.size(y_data), default_float())
@@ -180,7 +196,9 @@ class BayesianGPLVM(GPModel):
         bound -= KL
         return bound
 
-    def predict_f(self, predict_at: tf.Tensor, full_cov: bool = False, full_output_cov: bool = False):
+    def predict_f(
+        self, predict_at: tf.Tensor, full_cov: bool = False, full_output_cov: bool = False
+    ):
         """
         Compute the mean and variance of the latent function at some new points.
         Note that this is very similar to the SGPR prediction, for which
@@ -198,9 +216,12 @@ class BayesianGPLVM(GPModel):
         y_data = self.data
         num_inducing = len(self.inducing_variable)
         psi1 = expectation(pX, (self.kernel, self.inducing_variable))
-        psi2 = tf.reduce_sum(expectation(pX, (self.kernel, self.inducing_variable),
-                                         (self.kernel, self.inducing_variable)),
-                             axis=0)
+        psi2 = tf.reduce_sum(
+            expectation(
+                pX, (self.kernel, self.inducing_variable), (self.kernel, self.inducing_variable)
+            ),
+            axis=0,
+        )
         jitter = default_jitter()
         Kus = covariances.Kuf(self.inducing_variable, self.kernel, predict_at)
         sigma2 = self.likelihood.variance
@@ -217,13 +238,19 @@ class BayesianGPLVM(GPModel):
         tmp2 = tf.linalg.triangular_solve(LB, tmp1, lower=True)
         mean = tf.linalg.matmul(tmp2, c, transpose_a=True)
         if full_cov:
-            var = self.kernel(predict_at) + tf.linalg.matmul(tmp2, tmp2, transpose_a=True) \
-                  - tf.linalg.matmul(tmp1, tmp1, transpose_a=True)
+            var = (
+                self.kernel(predict_at)
+                + tf.linalg.matmul(tmp2, tmp2, transpose_a=True)
+                - tf.linalg.matmul(tmp1, tmp1, transpose_a=True)
+            )
             shape = tf.stack([1, 1, tf.shape(y_data)[1]])
             var = tf.tile(tf.expand_dims(var, 2), shape)
         else:
-            var = self.kernel(predict_at, full=False) + tf.reduce_sum(tf.square(tmp2), 0) - tf.reduce_sum(
-                tf.square(tmp1), 0)
+            var = (
+                self.kernel(predict_at, full=False)
+                + tf.reduce_sum(tf.square(tmp2), 0)
+                - tf.reduce_sum(tf.square(tmp1), 0)
+            )
             shape = tf.stack([1, tf.shape(y_data)[1]])
             var = tf.tile(tf.expand_dims(var, 1), shape)
         return mean + self.mean_function(predict_at), var

@@ -12,15 +12,17 @@ from .util import base_conditional, expand_independent_outputs
 
 
 @conditional.register(object, InducingVariables, Kernel, object)
-def _conditional(Xnew: tf.Tensor,
-                 inducing_variable: InducingVariables,
-                 kernel: Kernel,
-                 function: tf.Tensor,
-                 *,
-                 full_cov=False,
-                 full_output_cov=False,
-                 q_sqrt=None,
-                 white=False):
+def _conditional(
+    Xnew: tf.Tensor,
+    inducing_variable: InducingVariables,
+    kernel: Kernel,
+    function: tf.Tensor,
+    *,
+    full_cov=False,
+    full_output_cov=False,
+    q_sqrt=None,
+    white=False,
+):
     """
     Single-output GP conditional.
 
@@ -55,26 +57,24 @@ def _conditional(Xnew: tf.Tensor,
     Kmm = Kuu(inducing_variable, kernel, jitter=default_jitter())  # [M, M]
     Kmn = Kuf(inducing_variable, kernel, Xnew)  # [M, N]
     Knn = kernel(Xnew, full=full_cov)
-    fmean, fvar = base_conditional(Kmn,
-                                   Kmm,
-                                   Knn,
-                                   function,
-                                   full_cov=full_cov,
-                                   q_sqrt=q_sqrt,
-                                   white=white)  # [N, R],  [R, N, N] or [N, R]
+    fmean, fvar = base_conditional(
+        Kmn, Kmm, Knn, function, full_cov=full_cov, q_sqrt=q_sqrt, white=white
+    )  # [N, R],  [R, N, N] or [N, R]
     return fmean, expand_independent_outputs(fvar, full_cov, full_output_cov)
 
 
 @conditional.register(object, object, Kernel, object)
-def _conditional(Xnew: tf.Tensor,
-                 X: tf.Tensor,
-                 kernel: Kernel,
-                 function: tf.Tensor,
-                 *,
-                 full_cov=False,
-                 full_output_cov=False,
-                 q_sqrt=None,
-                 white=False):
+def _conditional(
+    Xnew: tf.Tensor,
+    X: tf.Tensor,
+    kernel: Kernel,
+    function: tf.Tensor,
+    *,
+    full_cov=False,
+    full_output_cov=False,
+    q_sqrt=None,
+    white=False,
+):
     """
     Given f, representing the GP at the points X, produce the mean and
     (co-)variance of the GP at the points Xnew.
@@ -112,12 +112,8 @@ def _conditional(Xnew: tf.Tensor,
     Kmm = kernel(X) + eye(tf.shape(X)[-2], value=default_jitter(), dtype=X.dtype)
     Kmn = kernel(X, Xnew)
     Knn = kernel(Xnew, full=full_cov)
-    mean, var = base_conditional(Kmn,
-                                 Kmm,
-                                 Knn,
-                                 function,
-                                 full_cov=full_cov,
-                                 q_sqrt=q_sqrt,
-                                 white=white)
+    mean, var = base_conditional(
+        Kmn, Kmm, Knn, function, full_cov=full_cov, q_sqrt=q_sqrt, white=white
+    )
 
     return mean, var  # [N, R], [N, R] or [R, N, N]

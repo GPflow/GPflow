@@ -43,11 +43,16 @@ class ArcCosine(Kernel):
 
     implemented_orders = {0, 1, 2}
 
-    def __init__(self, order: int = 0,
-                 variance=1.0, weight_variances=1.0, bias_variance=1.0,
-                 *,
-                 active_dims: Optional[ActiveDims] = None,
-                 name: Optional[str] = None):
+    def __init__(
+        self,
+        order: int = 0,
+        variance=1.0,
+        weight_variances=1.0,
+        bias_variance=1.0,
+        *,
+        active_dims: Optional[ActiveDims] = None,
+        name: Optional[str] = None,
+    ):
         """
         :param order: specifies the activation function of the neural network
           the function is a rectified monomial of the chosen order
@@ -62,7 +67,7 @@ class ArcCosine(Kernel):
         super().__init__(active_dims=active_dims, name=name)
 
         if order not in self.implemented_orders:
-            raise ValueError('Requested kernel order is not implemented.')
+            raise ValueError("Requested kernel order is not implemented.")
         self.order = order
 
         self.variance = Parameter(variance, transform=positive())
@@ -80,7 +85,9 @@ class ArcCosine(Kernel):
     def _weighted_product(self, X, X2=None):
         if X2 is None:
             return tf.reduce_sum(self.weight_variances * tf.square(X), axis=1) + self.bias_variance
-        return tf.linalg.matmul((self.weight_variances * X), X2, transpose_b=True) + self.bias_variance
+        return (
+            tf.linalg.matmul((self.weight_variances * X), X2, transpose_b=True) + self.bias_variance
+        )
 
     def _J(self, theta):
         """
@@ -92,7 +99,9 @@ class ArcCosine(Kernel):
         elif self.order == 1:
             return tf.sin(theta) + (np.pi - theta) * tf.cos(theta)
         elif self.order == 2:
-            return 3. * tf.sin(theta) * tf.cos(theta) + (np.pi - theta) * (1. + 2. * tf.cos(theta)**2)
+            return 3.0 * tf.sin(theta) * tf.cos(theta) + (np.pi - theta) * (
+                1.0 + 2.0 * tf.cos(theta) ** 2
+            )
 
     def K(self, X, X2=None):
         X_denominator = tf.sqrt(self._weighted_product(X))
@@ -107,14 +116,18 @@ class ArcCosine(Kernel):
         jitter = 1e-15
         theta = tf.acos(jitter + (1 - 2 * jitter) * cos_theta)
 
-        return self.variance * (1. / np.pi) * self._J(theta) * \
-               X_denominator[:, None] ** self.order * \
-               X2_denominator[None, :] ** self.order
+        return (
+            self.variance
+            * (1.0 / np.pi)
+            * self._J(theta)
+            * X_denominator[:, None] ** self.order
+            * X2_denominator[None, :] ** self.order
+        )
 
     def K_diag(self, X):
         X_product = self._weighted_product(X)
-        const = tf.cast((1. / np.pi) * self._J(0.), default_float())
-        return self.variance * const * X_product**self.order
+        const = tf.cast((1.0 / np.pi) * self._J(0.0), default_float())
+        return self.variance * const * X_product ** self.order
 
 
 class Coregion(Kernel):
@@ -142,10 +155,14 @@ class Coregion(Kernel):
     optimization (or MCMC chain) using a random W.
     """
 
-    def __init__(self, output_dim: int, rank: int,
-                 *,
-                 active_dims: Optional[ActiveDims] = None,
-                 name: Optional[str] = None):
+    def __init__(
+        self,
+        output_dim: int,
+        rank: int,
+        *,
+        active_dims: Optional[ActiveDims] = None,
+        name: Optional[str] = None,
+    ):
         """
         :param output_dim: number of outputs expected (0 <= X < output_dim)
         :param rank: number of degrees of correlation between outputs
@@ -171,10 +188,10 @@ class Coregion(Kernel):
 
     def K(self, X, X2=None):
         shape_constraints = [
-            (X, [..., 'N', 1]),
+            (X, [..., "N", 1]),
         ]
         if X2 is not None:
-            shape_constraints.append((X2, [..., 'M', 1]))
+            shape_constraints.append((X2, [..., "M", 1]))
         tf.debugging.assert_shapes(shape_constraints)
 
         X = tf.cast(X[..., 0], tf.int32)
@@ -187,7 +204,7 @@ class Coregion(Kernel):
         return tf.gather(tf.transpose(tf.gather(B, X2)), X)
 
     def K_diag(self, X):
-        tf.debugging.assert_shapes([(X, [..., 'N', 1])])
+        tf.debugging.assert_shapes([(X, [..., "N", 1])])
         X = tf.cast(X[..., 0], tf.int32)
         B_diag = self.output_variance()
         return tf.gather(B_diag, X)

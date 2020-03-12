@@ -4,7 +4,6 @@ import gpflow
 import pytest
 import tensorflow as tf
 import tensorflow_probability as tfp
-from gpflow.utilities import deepcopy, getattr_by_path, setattr_by_path
 
 
 class A(tf.Module):
@@ -26,7 +25,7 @@ class B(tf.Module):
         return self.a(x)
 
 
-class Nested(tf.Module):
+class NestedModule(tf.Module):
     def __init__(self, module: tf.Module):
         self.module = module
 
@@ -42,16 +41,16 @@ def test_deepcopy_clears_bijector_cache_and_deecopy(module):
     _ = module(input)
     with pytest.raises(TypeError):
         copy.deepcopy(module)
-    module_copy = deepcopy(module)
+    module_copy = gpflow.utilities.deepcopy(module)
     assert module.var == module_copy.var
     assert module.var is not module_copy.var
     module_copy.var.assign([5.0])
     assert module.var != module_copy.var
 
 
-def test_deepcopy_with_freeze():
-    module = Nested(Nested(A()))
-    module_frozen = deepcopy(module, freeze=True)
+def test_freeze():
+    module = NestedModule(NestedModule(A()))
+    module_frozen = gpflow.utilities.freeze(module)
     assert len(module.variables) == 2
     assert module_frozen.variables == ()
     assert isinstance(module.module.module.var, tf.Variable)
@@ -65,11 +64,11 @@ def test_failures_getset_by_path(path):
     m = gpflow.models.GPR(d, kernel=k)
 
     with pytest.raises((ValueError, TypeError)):
-        getattr_by_path(m, path)
+        gpflow.utilities.getattr_by_path(m, path)
 
     if all([c in path for c in "[]"]):
         with pytest.raises((ValueError, TypeError)):
-            setattr_by_path(m, path, None)
+            gpflow.utilities.setattr_by_path(m, path, None)
 
 
 @pytest.mark.parametrize(
@@ -83,5 +82,5 @@ def test_getset_by_path(path):
     k = gpflow.kernels.RBF() * gpflow.kernels.RBF()
     m = gpflow.models.GPR(d, kernel=k)
 
-    getattr_by_path(m, path)
-    setattr_by_path(m, path, None)
+    gpflow.utilities.getattr_by_path(m, path)
+    gpflow.utilities.setattr_by_path(m, path, None)

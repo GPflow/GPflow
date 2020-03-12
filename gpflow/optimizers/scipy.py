@@ -5,7 +5,7 @@ import scipy.optimize
 import tensorflow as tf
 from scipy.optimize import OptimizeResult
 
-__all__ = ['Scipy']
+__all__ = ["Scipy"]
 
 Loss = tf.Tensor
 Variables = Tuple[tf.Variable]
@@ -14,13 +14,15 @@ LossClosure = Callable[..., tf.Tensor]
 
 
 class Scipy:
-    def minimize(self,
-                 closure: LossClosure,
-                 variables: Variables,
-                 method: Optional[str] = "L-BFGS-B",
-                 step_callback: Optional[StepCallback] = None,
-                 jit: bool = True,
-                 **scipy_kwargs) -> OptimizeResult:
+    def minimize(
+        self,
+        closure: LossClosure,
+        variables: Variables,
+        method: Optional[str] = "L-BFGS-B",
+        step_callback: Optional[StepCallback] = None,
+        jit: bool = True,
+        **scipy_kwargs,
+    ) -> OptimizeResult:
         """
         Minimize is a wrapper around the `scipy.optimize.minimize` function
         handling the packing and unpacking of a list of shaped variables on the
@@ -50,19 +52,20 @@ class Scipy:
             object. See the Scipy documentation for description of attributes.
         """
         if not callable(closure):
-            raise TypeError('Callable object expected.')  # pragma: no cover
+            raise TypeError("Callable object expected.")  # pragma: no cover
         initial_params = self.initial_parameters(variables)
 
         func = self.eval_func(closure, variables, jit=jit)
         if step_callback is not None:
-            if 'callback' in scipy_kwargs:
+            if "callback" in scipy_kwargs:
                 raise ValueError("Callback passed both via `step_callback` and `callback`")
 
             callback = self.callback_func(variables, step_callback)
             scipy_kwargs.update(dict(callback=callback))
 
-        return scipy.optimize.minimize(func, initial_params, jac=True, method=method,
-                                       **scipy_kwargs)
+        return scipy.optimize.minimize(
+            func, initial_params, jac=True, method=method, **scipy_kwargs
+        )
 
     @classmethod
     def initial_parameters(cls, variables):
@@ -100,7 +103,7 @@ class Scipy:
 
     @staticmethod
     def pack_tensors(tensors: Iterator[tf.Tensor]) -> tf.Tensor:
-        flats = [tf.reshape(tensor, (-1, )) for tensor in tensors]
+        flats = [tf.reshape(tensor, (-1,)) for tensor in tensors]
         tensors_vector = tf.concat(flats, axis=0)
         return tensors_vector
 
@@ -111,7 +114,7 @@ class Scipy:
         for tensor in to_tensors:
             shape = tf.shape(tensor)
             tensor_size = tf.reduce_prod(shape)
-            tensor_vector = tf.cast(from_vector[s:s + tensor_size], tensor.dtype)
+            tensor_vector = tf.cast(from_vector[s : s + tensor_size], tensor.dtype)
             tensor_vector = tf.reshape(tensor_vector, shape)
             values.append(tensor_vector)
             s += tensor_size
