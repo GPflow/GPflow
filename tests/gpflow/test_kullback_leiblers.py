@@ -90,6 +90,20 @@ class Datum:
     sqrt = make_sqrt(N, M)  # [N, M, M]
     sqrt_diag = rng.randn(M, N)  # [M, N]
     K_batch = make_K_batch(N, M)
+    K_cholesky = np.linalg.cholesky(K)
+
+
+@pytest.mark.parametrize("diag", [True, False])
+def test_kl_k_cholesky(diag):
+    """
+    Test that passing K or K_cholesky yield the same answer
+    """
+    q_mu = Datum.mu
+    q_sqrt = Datum.sqrt_diag if diag else Datum.sqrt
+    kl_K = gauss_kl(q_mu, q_sqrt, K=Datum.K)
+    kl_K_chol = gauss_kl(q_mu, q_sqrt, K_cholesky=Datum.K_cholesky)
+
+    np.testing.assert_allclose(kl_K.numpy(), kl_K_chol.numpy())
 
 
 @pytest.mark.parametrize("white", [True, False])

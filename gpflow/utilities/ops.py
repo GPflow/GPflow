@@ -80,6 +80,12 @@ def square_distance(X, X2):
     Due to the implementation and floating-point imprecision, the
     result may actually be very slightly negative for entries very
     close to each other.
+
+    This function can deal with leading dimensions in X and X2. 
+    In the sample case, where X and X2 are both 2 dimensional, 
+    for example, X is [N, D] and X2 is [M, D], then a tensor of shape 
+    [N, M] is returned. If X is [N1, S1, D] and X2 is [N2, S2, D] 
+    then the output will be [N1, S1, N2, S2].
     """
     if X2 is None:
         Xs = tf.reduce_sum(tf.square(X), axis=-1, keepdims=True)

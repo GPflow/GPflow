@@ -109,9 +109,9 @@ def _conditional(
         - mean:     [N, R]
         - variance: [N, R] (full_cov = False), [R, N, N] (full_cov = True)
     """
-    Kmm = kernel(X) + eye(tf.shape(X)[-2], value=default_jitter(), dtype=X.dtype)
-    Kmn = kernel(X, Xnew)
-    Knn = kernel(Xnew, diag=not full_cov)
+    Kmm = kernel(X) + eye(tf.shape(X)[-2], value=default_jitter(), dtype=X.dtype)  # [..., M, M]
+    Kmn = kernel(X, Xnew)  # [M, ..., N]
+    Knn = kernel(Xnew, diag=not full_cov)  # [..., N] (full_cov = False) or [..., N, N] (True)
     mean, var = base_conditional(
         Kmn, Kmm, Knn, function, full_cov=full_cov, q_sqrt=q_sqrt, white=white
     )
