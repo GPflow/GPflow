@@ -364,14 +364,14 @@ gpflow.utilities.parameter_dict(model)
 
 # %%
 params = gpflow.utilities.parameter_dict(model)
-gpflow.utilities.multiple_assign(model, params)\
+gpflow.utilities.multiple_assign(model, params)
 
 # %% [markdown]
-# ### TensorFlow saved_model
+# ### TensorFlow `saved_model`
 #
-# At present tensorflow does not support saving custom variables like instances of the `gpflow.base.Parameter` class, see [here](https://github.com/tensorflow/tensorflow/issues/34908).
+# At present, TensorFlow does not support saving custom variables like instances of the `gpflow.base.Parameter` class, see [this TensorFlow github issue](https://github.com/tensorflow/tensorflow/issues/34908).
 #
-# However, once trained completed, it is possible to clone the model and replace all Parameters with constants holding the same value:
+# However, once training is complete, it is possible to clone the model and replace all `gpflow.base.Parameter`s with `tf.constant`s holding the same value:
 
 # %%
 model
