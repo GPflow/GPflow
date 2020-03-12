@@ -45,34 +45,34 @@ KERNEL_CLASSES = [
 ]
 
 
-@pytest.mark.parametrize("Kernel", KERNEL_CLASSES)
-def test_broadcast_no_active_dims(Kernel):
+@pytest.mark.parametrize("kernel_class", KERNEL_CLASSES)
+def test_broadcast_no_active_dims(kernel_class):
     S, N, M, D = 5, 4, 3, 2
     X1 = np.random.randn(S, N, D)
     X2 = np.random.randn(M, D)
-    kernel = Kernel() + gpflow.kernels.White()
+    kernel = kernel_class() + gpflow.kernels.White()
 
     compare_vs_map(X1, X2, kernel)
 
 
-@pytest.mark.parametrize("Kernel", [gpflow.kernels.SquaredExponential])
-def test_broadcast_slice_active_dims(Kernel):
+@pytest.mark.parametrize("kernel_class", [gpflow.kernels.SquaredExponential])
+def test_broadcast_slice_active_dims(kernel_class):
     S, N, M, D = 5, 4, 3, 4
     d = 2
     X1 = np.random.randn(S, N, D)
     X2 = np.random.randn(M, D)
-    kernel = Kernel(active_dims=slice(1, 1 + d))
+    kernel = kernel_class(active_dims=slice(1, 1 + d))
 
     compare_vs_map(X1, X2, kernel)
 
 
-@pytest.mark.parametrize("Kernel", [gpflow.kernels.SquaredExponential])
-def test_broadcast_indices_active_dims(Kernel):
+@pytest.mark.parametrize("kernel_class", [gpflow.kernels.SquaredExponential])
+def test_broadcast_indices_active_dims(kernel_class):
     S, N, M, D = 5, 4, 3, 4
 
     X1 = np.random.randn(S, N, D)
     X2 = np.random.randn(M, D)
-    kernel = Kernel(active_dims=[1, 3])
+    kernel = kernel_class(active_dims=[1, 3])
 
     compare_vs_map(X1, X2, kernel)
 
