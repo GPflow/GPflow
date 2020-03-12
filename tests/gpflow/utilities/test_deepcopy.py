@@ -31,7 +31,7 @@ class NestedModule(tf.Module):
 
 
 @pytest.mark.parametrize("module", [A(), B()])
-def test_deepcopy_clears_bijector_cache_and_deecopy(module):
+def test_clears_bijector_cache_and_deepcopy(module):
     """
     With each forward pass through a bijector, a cache is stored inside which prohibits the deepcopy of the bijector.
     This is due to the fact that HashableWeakRef objects are not pickle-able, which raises a TypeError. Alternatively,

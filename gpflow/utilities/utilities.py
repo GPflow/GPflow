@@ -328,7 +328,7 @@ def getattr_by_path(target: object, attr_path: str) -> Any:
         descendant, attr, index = _get_last_attr_spec(target, attr_path)
         return _get_by_name_index(descendant, attr, index)
     except (ValueError, TypeError, AttributeError) as error:
-        raise ValueError(f"Cannot get value at path '{attr_path}'\n" f"Got error: {error}")
+        raise ValueError(f"Cannot get value at path '{attr_path}'") from error
 
 
 def setattr_by_path(target: object, attr_path: str, value: Any):
@@ -347,7 +347,7 @@ def setattr_by_path(target: object, attr_path: str, value: Any):
         descendant, attr, index = _get_last_attr_spec(target, attr_path)
         return _set_by_name_index(descendant, value, attr, index)
     except (AttributeError, IndexError, TypeError, ValueError) as error:
-        raise ValueError(f"Cannot assign value at path '{attr_path}'\n" f"Got error: {error}")
+        raise ValueError(f"Cannot assign value at path '{attr_path}'") from error
 
 
 M = TypeVar("M", bound=tf.Module)
