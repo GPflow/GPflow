@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.3.3
+#       jupytext_version: 1.3.0
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -25,7 +25,8 @@
 
 # %%
 from typing import Tuple, Optional
-from pathlib import Path
+import tempfile
+import pathlib
 
 import datetime
 import io
@@ -55,7 +56,7 @@ output_logdir = "/tmp/tensorboard"
 
 
 def enumerated_logdir(_logdir_id: int = [0]):
-    logdir = Path(output_logdir, str(_logdir_id[0]))
+    logdir = pathlib.Path(output_logdir, str(_logdir_id[0]))
     _logdir_id[0] += 1
     return str(logdir)
 
@@ -263,7 +264,9 @@ monitored_training_loop(model, output_logdir, epochs=1000, logging_epoch_freq=10
 # # %tensorboard --logdir "{output_logdir}"
 
 # %% [markdown]
-# ## Checkpointing: saving and loading models
+# ## Saving and loading models
+#
+# ### Checkpointing
 #
 # With the help of `tf.train.CheckpointManager` and `tf.train.Checkpoint`, we can checkpoint the model throughout the training procedure. Let's start with a simple example using checkpointing to save and load a `tf.Variable`:
 
@@ -362,3 +365,45 @@ gpflow.utilities.parameter_dict(model)
 # %%
 params = gpflow.utilities.parameter_dict(model)
 gpflow.utilities.multiple_assign(model, params)
+
+# %% [markdown]
+# ### TensorFlow `saved_model`
+#
+# At present, TensorFlow does not support saving custom variables like instances of the `gpflow.base.Parameter` class, see [this TensorFlow github issue](https://github.com/tensorflow/tensorflow/issues/34908).
+#
+# However, once training is complete, it is possible to clone the model and replace all `gpflow.base.Parameter`s with `tf.constant`s holding the same value:
+
+# %%
+model
+
+# %%
+frozen_model = gpflow.utilities.freeze(model)
+
+# %% [markdown]
+# In order to save the model we need to define a `tf.Module` holding the `tf.function`'s that we wish to export, as well as a reference to the underlying model:
+
+# %%
+module_to_save = tf.Module()
+predict_fn = tf.function(frozen_model.predict_f, input_signature=[tf.TensorSpec(shape=[None, 1], dtype=tf.float64)], autograph=False)
+module_to_save.predict = predict_fn
+
+# %% [markdown]
+# Save original result for futher comparison
+
+# %%
+original_result = module_to_save.predict(samples_input)
+
+# %% [markdown]
+# Let's save the module
+# %%
+save_dir = str(pathlib.Path(tempfile.gettempdir()))
+tf.saved_model.save(module_to_save, save_dir)
+
+# %% [markdown]
+# Load module back as new instance and compare predict results
+
+# %%
+loaded_model = tf.saved_model.load(save_dir)
+loaded_result = loaded_model.predict(samples_input)
+
+np.testing.assert_array_equal(loaded_result, original_result)
