@@ -35,12 +35,12 @@ class Linear(Kernel):
 
     def K(self, X, X2=None):
         if X2 is None:
-            X2 = X
-
-        return tf.linalg.matmul(X * self.variance, X2, transpose_b=True)
+            return tf.matmul(X * self.variance, X, transpose_b=True)
+        else:
+            return tf.tensordot(X * self.variance, X2, [[-1], [-1]])
 
     def K_diag(self, X):
-        return tf.reduce_sum(tf.square(X) * self.variance, 1)
+        return tf.reduce_sum(tf.square(X) * self.variance, axis=-1)
 
 
 class Polynomial(Linear):
