@@ -40,10 +40,13 @@ KERNEL_CLASSES = [
     pytest.param(kernels.ArcCosine, marks=pytest.mark.xfail),  # broadcasting not implemented
     pytest.param(kernels.Coregion, marks=pytest.mark.xfail),  # broadcasting not implemented
     pytest.param(kernels.Periodic, marks=pytest.mark.xfail),  # broadcasting not implemented
+    lambda: kernels.White() + kernels.Matern12(),
+    lambda: kernels.White() * kernels.Matern12(),
 ]
 
 
-def _test_no_active_dims(Kernel):
+@pytest.mark.parametrize("Kernel", KERNEL_CLASSES)
+def test_broadcast_no_active_dims(Kernel):
     S, N, M, D = 5, 4, 3, 2
     X1 = np.random.randn(S, N, D)
     X2 = np.random.randn(M, D)
@@ -52,7 +55,8 @@ def _test_no_active_dims(Kernel):
     compare_vs_map(X1, X2, kernel)
 
 
-def _test_slice_active_dims(Kernel):
+@pytest.mark.parametrize("Kernel", [gpflow.kernels.SquaredExponential])
+def test_broadcast_slice_active_dims(Kernel):
     S, N, M, D = 5, 4, 3, 4
     d = 2
     X1 = np.random.randn(S, N, D)
@@ -62,7 +66,8 @@ def _test_slice_active_dims(Kernel):
     compare_vs_map(X1, X2, kernel)
 
 
-def _test_indices_active_dims(Kernel):
+@pytest.mark.parametrize("Kernel", [gpflow.kernels.SquaredExponential])
+def test_broadcast_indices_active_dims(Kernel):
     S, N, M, D = 5, 4, 3, 4
 
     X1 = np.random.randn(S, N, D)
@@ -84,20 +89,3 @@ def compare_vs_map(X1, X2, kernel):
     K1_loop = tf.stack([kernel(x, full=False) for x in X1])
     K1_native = kernel(X1, full=False)
     assert_allclose(K1_loop.numpy(), K1_native.numpy())
-
-
-def test_squaredexponential():
-    _test_no_active_dims(gpflow.kernels.SquaredExponential)
-
-
-def test_squaredexponential_slice():
-    _test_slice_active_dims(gpflow.kernels.SquaredExponential)
-
-
-def test_squaredexponential_indices():
-    _test_indices_active_dims(gpflow.kernels.SquaredExponential)
-
-
-@pytest.mark.parametrize("Kernel", KERNEL_CLASSES)
-def test_all_no_active_dims(Kernel):
-    _test_no_active_dims(Kernel)

@@ -57,7 +57,7 @@ def test_rollaxis(rolls, direction):
     elif direction == "right":
         perm = [2, 0, 1] if rolls == 1 else [1, 2, 0]
     else:
-        raise (NotImplementedError)
+        raise NotImplementedError
 
     A_rolled_ref = np.transpose(A, perm)
 
@@ -66,7 +66,7 @@ def test_rollaxis(rolls, direction):
     elif direction == "right":
         A_rolled_tf = rollaxis_right(A_tf, rolls)
     else:
-        raise (NotImplementedError)
+        raise NotImplementedError
 
     assert_allclose(A_rolled_ref, A_rolled_tf)
 

@@ -40,7 +40,7 @@ class Linear(Kernel):
             return tf.tensordot(X * self.variance, X2, [[-1], [-1]])
 
     def K_diag(self, X):
-        return tf.reduce_sum(tf.square(X) * self.variance, -1)
+        return tf.reduce_sum(tf.square(X) * self.variance, axis=-1)
 
 
 class Polynomial(Linear):

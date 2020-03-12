@@ -35,7 +35,7 @@ class White(Static):
             d = tf.fill(tf.shape(X)[:-1], tf.squeeze(self.variance))
             return tf.linalg.diag(d)
         else:
-            shape = tf.concat([tf.shape(X)[:-1], tf.shape(X2)[:-1]], 0)
+            shape = tf.concat([tf.shape(X)[:-1], tf.shape(X2)[:-1]], axis=0)
             return tf.zeros(shape, dtype=X.dtype)
 
 
@@ -58,9 +58,9 @@ class Constant(Static):
                     tf.reshape(tf.shape(X)[-2], [1]),
                     tf.reshape(tf.shape(X)[-2], [1]),
                 ],
-                0,
+                axis=0,
             )
         else:
-            shape = tf.concat([tf.shape(X)[:-1], tf.shape(X2)[:-1]], 0)
+            shape = tf.concat([tf.shape(X)[:-1], tf.shape(X2)[:-1]], axis=0)
 
         return tf.fill(shape, tf.squeeze(self.variance))
