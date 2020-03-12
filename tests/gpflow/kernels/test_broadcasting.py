@@ -37,9 +37,9 @@ KERNEL_CLASSES = [
     kernels.Linear,
     kernels.Polynomial,
     # Following kernels do not broadcast:
-    # kernels.Coregion
-    # kernels.ArcCosine,
-    # kernels.Periodic,
+    pytest.param(kernels.ArcCosine, marks=pytest.mark.xfail),  # broadcasting not implemented
+    pytest.param(kernels.Coregion, marks=pytest.mark.xfail),  # broadcasting not implemented
+    pytest.param(kernels.Periodic, marks=pytest.mark.xfail),  # broadcasting not implemented
 ]
 
 
