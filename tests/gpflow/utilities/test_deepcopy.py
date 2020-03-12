@@ -1,9 +1,10 @@
-import pytest
 import copy
 
+import gpflow
+import pytest
 import tensorflow as tf
 import tensorflow_probability as tfp
-from gpflow.utilities import deepcopy
+from gpflow.utilities import deepcopy, getattr_by_path, setattr_by_path
 
 
 class A(tf.Module):
@@ -55,3 +56,32 @@ def test_deepcopy_with_freeze():
     assert module_frozen.variables == ()
     assert isinstance(module.module.module.var, tf.Variable)
     assert isinstance(module_frozen.module.module.var, tf.Tensor)
+
+
+@pytest.mark.parametrize("path", ["kernel[wrong_index]", "kernel.non_existing_attr", "kernel[100]"])
+def test_failures_getset_by_path(path):
+    d = (tf.random.normal((10, 1)), tf.random.normal((10, 1)))
+    k = gpflow.kernels.RBF() * gpflow.kernels.RBF()
+    m = gpflow.models.GPR(d, kernel=k)
+
+    with pytest.raises((ValueError, TypeError)):
+        getattr_by_path(m, path)
+
+    if all([c in path for c in "[]"]):
+        with pytest.raises((ValueError, TypeError)):
+            setattr_by_path(m, path, None)
+
+
+@pytest.mark.parametrize(
+    "path", ["kernel.kernels[0]", "kernel.kernels[0].variance", "kernel.kernels[0].lengthscale"]
+)
+def test_getset_by_path(path):
+    d = (
+        tf.random.normal((10, 1), dtype=gpflow.default_float()),
+        tf.random.normal((10, 1), dtype=gpflow.default_float()),
+    )
+    k = gpflow.kernels.RBF() * gpflow.kernels.RBF()
+    m = gpflow.models.GPR(d, kernel=k)
+
+    getattr_by_path(m, path)
+    setattr_by_path(m, path, None)

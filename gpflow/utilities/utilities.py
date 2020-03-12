@@ -1,7 +1,7 @@
-import re
 import copy
+import re
 from functools import lru_cache
-from typing import Callable, Dict, List, Optional, Union, TypeVar, Any, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple, TypeVar, Union
 
 import numpy as np
 import tensorflow as tf
@@ -9,7 +9,7 @@ import tensorflow_probability as tfp
 from tabulate import tabulate
 
 from ..base import Parameter
-from ..config import default_summary_fmt, default_float, default_int
+from ..config import default_float, default_int, default_summary_fmt
 
 __all__ = [
     "set_trainable",
@@ -23,6 +23,9 @@ __all__ = [
     "read_values",
     "to_default_float",
     "to_default_int",
+    "getattr_by_path",
+    "setattr_by_path",
+    "reset_cache_bijectors",
 ]
 
 TraverseInput = TypeVar("TraverseInput", tf.Variable, tf.Module, Parameter)
@@ -249,14 +252,14 @@ def reset_cache_bijectors(input_module: tf.Module) -> tf.Module:
 
 def _get_by_name_index(parent: object, attr_str: str, index_str: str) -> object:
     attr = getattr(parent, attr_str)
-    if index_str != "":
+    if index_str is not None:
         index = int(index_str)
         return attr[index]
     return attr
 
 
 def _set_by_name_index(parent: object, value: Any, attr_str: str, index_str: str):
-    if index_str != "":
+    if index_str is not None:
         index = int(index_str)
         attr = getattr(parent, attr_str)
         attr[index] = value
@@ -265,7 +268,8 @@ def _set_by_name_index(parent: object, value: Any, attr_str: str, index_str: str
 
 
 def _get_last_attr_spec(parent: object, attr_path: str) -> Tuple[object, str, str]:
-    """Returns second to last attribute, the next attribute name, and
+    """
+    Returns second to last attribute, the next attribute name, and
     an index if there is a list access.
 
     Example:
@@ -280,23 +284,31 @@ def _get_last_attr_spec(parent: object, attr_path: str) -> Tuple[object, str, st
     :param parent: A python object with a nested structure.
     :param attr_path: An attribute path.
 
-    :returns: The value stored in the nested object by the attribute path.
+    :returns: The value stored in the nested object by the attribute path,
+        and last attribute name with an optional index.
     """
 
-    # Regexp extracts attribute names and indices if available.
-    # Outer brackets represent repeated pattern inside and contains 3 groups:
+    # Regexp extracts attribute name and index if available.
     # - '(\w+)' is a group for attribute name.
-    # - '(\[(-?[\s\d]+)\])' is the index group and has a subgroup '(-?[\s\d]+)', it may or may
-    #   not appear in the pattern
-    # - '(-?[\s\d]+)' is an index without squared brackets
-    # - Last part of the expression reflects that the period delimeter cannot be last in a path.
-    restr = r"((\w+)(\[(-?[\s\d]+)\])?(?<!\.))+"
-    curr_parent = parent
-    attrs = re.findall(restr, attr_path)
-    for _, attr_str, _, index_str in attrs[:-1]:
-        curr_parent = _get_by_name_index(curr_parent, attr_str, index_str)
-    _, attr_str, _, index_str = attrs[-1]
-    return curr_parent, attr_str, index_str
+    # - '(\[\s*(-?\d+)\s*\])?' is the index group and has a subgroup '(-?\d+)',
+    #   that matches a number. This group may not appear in the search string.
+    regexp = re.compile(r"^(\w+)(\[\s*(-?\d+)\s*\])?$")
+
+    def parse(token: str) -> Tuple[str, str]:
+        m = regexp.match(token)
+        if m is None:
+            raise ValueError(f"Cannot parse attribute path '{attr_path}'")
+        attr_token, _, index_token = m.groups()
+        return attr_token, index_token
+
+    curr = parent
+    tokens = attr_path.split(".")
+    for group_token in tokens[:-1]:
+        attr_token, index_token = parse(group_token)
+        curr = _get_by_name_index(curr, attr_token, index_token)
+
+    attr_token, index_token = parse(tokens[-1])
+    return curr, attr_token, index_token
 
 
 def getattr_by_path(target: object, attr_path: str) -> Any:
@@ -313,9 +325,8 @@ def getattr_by_path(target: object, attr_path: str) -> Any:
     try:
         descendant, attr, index = _get_last_attr_spec(target, attr_path)
         return _get_by_name_index(descendant, attr, index)
-    except ValueError as error:
-        raise ValueError(f"Cannot get value at path '{attr_path}'\n"
-                         f"Got error: {error}")
+    except (ValueError, TypeError, AttributeError) as error:
+        raise ValueError(f"Cannot get value at path '{attr_path}'\n" f"Got error: {error}")
 
 
 def setattr_by_path(target: object, attr_path: str, value: Any):
@@ -333,9 +344,8 @@ def setattr_by_path(target: object, attr_path: str, value: Any):
     try:
         descendant, attr, index = _get_last_attr_spec(target, attr_path)
         return _set_by_name_index(descendant, value, attr, index)
-    except (AttributeError, IndexError, ValueError) as error:
-        raise ValueError(f"Cannot assign value at path '{attr_path}'\n"
-                         f"Got error: {error}")
+    except (AttributeError, IndexError, TypeError, ValueError) as error:
+        raise ValueError(f"Cannot assign value at path '{attr_path}'\n" f"Got error: {error}")
 
 
 M = TypeVar("M", bound=tf.Module)
