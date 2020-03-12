@@ -345,7 +345,7 @@ def setattr_by_path(target: object, attr_path: str, value: Any):
     """
     try:
         descendant, attr, index = _get_last_attr_spec(target, attr_path)
-        return _set_by_name_index(descendant, value, attr, index)
+        _set_by_name_index(descendant, value, attr, index)
     except (AttributeError, IndexError, TypeError, ValueError) as error:
         raise ValueError(f"Cannot assign value at path '{attr_path}'") from error
 
