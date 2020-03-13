@@ -54,10 +54,11 @@ def assert_shapes(shapes, *args, **kwargs):
     """
     Wrapper around tf.debugging.assert_shapes() to replace ValueError with ShapeError
     """
-    try:
-        tf.debugging.assert_shapes(shapes, *args, **kwargs)
-    except ValueError as e:
-        raise ShapeError(e)
+    if __debug__:
+        try:
+            tf.debugging.assert_shapes(shapes, *args, **kwargs)
+        except ValueError as e:
+            raise ShapeError(e)
 
 
 def set_trainable(model: tf.Module, flag: bool):
