@@ -74,3 +74,7 @@ def _exec_notebook(notebook_filename):
 @pytest.mark.parametrize("notebook_file", get_notebooks())
 def test_notebook(notebook_file):
     _exec_notebook(notebook_file)
+
+
+def test_has_notebooks():
+    assert get_notebooks()
