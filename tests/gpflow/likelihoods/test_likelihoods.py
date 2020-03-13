@@ -111,13 +111,16 @@ def test_no_missing_likelihoods():
     tested_likelihood_types = [get_likelihood(l).__class__ for l in likelihood_setups]
     for likelihood_class in all_likelihood_types:
         if likelihood_class in tested_likelihood_types:
-            continue  # already tested
+            continue  # tested by parametrized tests
         if likelihood_class is SwitchedLikelihood:
-            continue  # tested separately
+            continue  # tested explicitly in test_switchedlikelihood
         if likelihood_class is MonteCarloLikelihood:
             continue  # abstract base class
         if issubclass(likelihood_class, MonteCarloLikelihood):
-            continue  # TODO
+            if likelihood_class is GaussianMC:
+                continue  # tested explicitly by test_montecarlo_*
+            if likelihood_class is Softmax:
+                continue  # tested explicitly by test_softmax_{y_shape_assert,bernoulli_equivalence}
         assert False, f"no test for likelihood class {likelihood_class}"
 
 
