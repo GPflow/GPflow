@@ -77,7 +77,7 @@ def gauss_kl(q_mu, q_sqrt, K=None, *, K_cholesky=None):
         (q_mu, ["M", "L"]),
         (q_sqrt, (["M", "L"] if is_diag else ["L", "M", "M"])),
     ]
-    if not white:
+    if not is_white:
         shape_constraints.append((K, (["L", "M", "M"] if len(K.shape) == 3 else ["M", "M"])))
     assert_shapes(shape_constraints)
 
