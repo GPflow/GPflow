@@ -129,11 +129,11 @@ def test_SwitchedLikelihood_withVGP():
     """
     Reproduces the bug in https://github.com/GPflow/GPflow/issues/951
     """
-    X = np.random.randn(12+15, 1)
-    Y = np.random.randn(12+15, 1)
-    idx = np.array([0]*12 + [1]*15)
+    X = np.random.randn(12 + 15, 1)
+    Y = np.random.randn(12 + 15, 1)
+    idx = np.array([0] * 12 + [1] * 15)
     Y_aug = np.c_[Y, idx]
-    assert Y_aug.shape == (12+15, 2)
+    assert Y_aug.shape == (12 + 15, 2)
 
     kernel = gpflow.kernels.Matern32()
     likelihood = gpflow.likelihoods.SwitchedLikelihood([StudentT(), StudentT()])
@@ -141,4 +141,6 @@ def test_SwitchedLikelihood_withVGP():
     ## optimization errors out
     opt = gpflow.optimizers.Scipy()
     # TODO fix following line once training_loss PR is merged
-    opt.minimize(lambda: - model.log_likelihood(), model.trainable_variables, options=dict(maxiter=1))
+    opt.minimize(
+        lambda: -model.log_likelihood(), model.trainable_variables, options=dict(maxiter=1)
+    )
