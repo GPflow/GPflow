@@ -27,6 +27,7 @@ from nbconvert.preprocessors.execute import CellExecutionError
 
 NOTEBOOK_DIR = "../../doc/source/notebooks"
 
+
 def test_notebook_dir_exists():
     assert os.path.isdir(NOTEBOOK_DIR)
 
@@ -36,6 +37,7 @@ def test_notebook_dir_exists():
 # different directories with the same base name, they will all get blacklisted
 # (change the blacklisting check to something else in that case, if need be!)
 BLACKLISTED_NOTEBOOKS = []
+
 
 def _nbpath():
     this_dir = os.path.dirname(__file__)
@@ -83,4 +85,4 @@ def test_notebook(notebook_file):
 
 
 def test_has_notebooks():
-    assert get_notebooks()
+    assert len(get_notebooks()) > 35, "there are clearly some notebooks that are not found"
