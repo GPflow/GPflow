@@ -107,10 +107,10 @@ class HeteroskedasticGaussian(gpflow.likelihoods.Likelihood):
 # Note: We mark the variational parameters as not trainable so that they are not included in the `model.trainable_variables` when we optimize using the Adam optimizer. We train the variational parameters separately using the natural gradient method.
 
 # %%
-# model construction (notice that num_latent is 1)
+# model construction (notice that num_latent_gps is 1)
 likelihood = HeteroskedasticGaussian()
 kernel = gpflow.kernels.Matern52(lengthscale=0.5)
-model = gpflow.models.VGP((X, Y_data), kernel=kernel, likelihood=likelihood, num_latent=1)
+model = gpflow.models.VGP((X, Y_data), kernel=kernel, likelihood=likelihood, num_latent_gps=1)
 
 
 # %%
@@ -199,9 +199,9 @@ likelihood = gpflow.likelihoods.SwitchedLikelihood([gpflow.likelihoods.Gaussian(
                                                     gpflow.likelihoods.Gaussian(variance=1.0)])
 
 # %%
-# model construction (notice that num_latent is 1)
+# model construction (notice that num_latent_gps is 1)
 kernel = gpflow.kernels.Matern52(lengthscale=0.5)
-model = gpflow.models.VGP((X, Y_data), kernel=kernel, likelihood=likelihood, num_latent=1)
+model = gpflow.models.VGP((X, Y_data), kernel=kernel, likelihood=likelihood, num_latent_gps=1)
 
 
 # %%
@@ -239,7 +239,7 @@ ax.set_xlim(-5, 5);
 likelihood = gpflow.likelihoods.SwitchedLikelihood([gpflow.likelihoods.Gaussian(variance=1.0),
                                                     gpflow.likelihoods.Gaussian(variance=1.0)])
 kernel = gpflow.kernels.Matern52(lengthscale=0.5)
-model = gpflow.models.VGP((X, Y_data), kernel=kernel, likelihood=likelihood, num_latent=1)
+model = gpflow.models.VGP((X, Y_data), kernel=kernel, likelihood=likelihood, num_latent_gps=1)
 
 @tf.function
 def objective_closure():

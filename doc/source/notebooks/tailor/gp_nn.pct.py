@@ -141,7 +141,7 @@ inducing_variable = KernelSpaceInducingPoints(inducing_variable_cnn)
 model = gpflow.models.SVGP(kernel, likelihood,
                            inducing_variable=inducing_variable,
                            num_data=total_num_data,
-                           num_latent=num_mnist_classes)
+                           num_latent_gps=num_mnist_classes)
 
 # %% [markdown]
 # And start optimization:
