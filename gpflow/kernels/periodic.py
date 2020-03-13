@@ -45,8 +45,8 @@ class Periodic(Kernel):
             this must be initialized with an array the same length as the number
             of active dimensions e.g. [1., 1., 1.]
         """
-        if not isinstance(base, Stationary):
-            raise TypeError("Periodic requires a Stationary kernel as the `base`")
+        if not isinstance(base_kernel, Stationary):
+            raise TypeError("Periodic requires a Stationary kernel as the `base_kernel`")
 
         super().__init__()
         self.base_kernel = base_kernel
