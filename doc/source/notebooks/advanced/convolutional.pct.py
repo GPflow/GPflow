@@ -49,7 +49,7 @@ MAXITER = 2 if is_continuous_integration() else 100
 NUM_TRAIN_DATA = 5 if is_continuous_integration() else 100  # This is less than in the original rectangles dataset
 NUM_TEST_DATA = 7 if is_continuous_integration() else 300
 H = W = 14  # width and height. In the original paper this is 28
-IMG_SIZE = [H, W]
+IMAGE_SHAPE = [H, W]
 
 
 # %%
@@ -82,14 +82,14 @@ def make_rectangles_dataset(num, w, h):
 
 
 # %%
-X, Y = data = make_rectangles_dataset(NUM_TRAIN_DATA, *IMG_SIZE)
-Xt, Yt = test_data = make_rectangles_dataset(NUM_TEST_DATA, *IMG_SIZE)
+X, Y = data = make_rectangles_dataset(NUM_TRAIN_DATA, *IMAGE_SHAPE)
+Xt, Yt = test_data = make_rectangles_dataset(NUM_TEST_DATA, *IMAGE_SHAPE)
 
 # %%
 plt.figure(figsize=(8, 3))
 for i in range(4):
     plt.subplot(1, 4, i + 1)
-    plt.imshow(X[i, :].reshape(*IMG_SIZE))
+    plt.imshow(X[i, :].reshape(*IMAGE_SHAPE))
     plt.title(Y[i, 0])
 
 # %% [markdown]
@@ -129,8 +129,8 @@ positive_with_min = lambda: tfp.bijectors.AffineScalar(shift=f64(1e-4))(tfp.bije
 constrained = lambda: tfp.bijectors.AffineScalar(shift=f64(1e-4), scale=f64(100.0))(tfp.bijectors.Sigmoid())
 max_abs_1 = lambda: tfp.bijectors.AffineScalar(shift=f64(-2.0), scale=f64(4.0))(tfp.bijectors.Sigmoid())
 
-patch_size = [3, 3]
-conv_k = gpflow.kernels.Convolutional(gpflow.kernels.SquaredExponential(), IMG_SIZE, patch_size)
+patch_shape = [3, 3]
+conv_k = gpflow.kernels.Convolutional(gpflow.kernels.SquaredExponential(), IMAGE_SHAPE, patch_shape)
 conv_k.base_kernel.lengthscale = gpflow.Parameter(1.0, transform=positive_with_min())
 # Weight scale and variance are non-identifiable. We also need to prevent variance from shooting off crazily.
 conv_k.base_kernel.variance = gpflow.Parameter(1.0, transform=constrained())
