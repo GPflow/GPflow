@@ -233,9 +233,9 @@ class Combination(Kernel):
 
 class ReducingCombination(Combination):
     def __call__(self, X, X2=None, *, full_cov=True, presliced=False):
-        return self._reduce([
-            k(X, X2, full_cov=full_cov, presliced=presliced) for k in self.kernels
-        ])
+        return self._reduce(
+            [k(X, X2, full_cov=full_cov, presliced=presliced) for k in self.kernels]
+        )
 
     def K(self, X: tf.Tensor, X2: Optional[tf.Tensor] = None) -> tf.Tensor:
         return self._reduce([k.K(X, X2) for k in self.kernels])
