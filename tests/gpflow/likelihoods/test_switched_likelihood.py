@@ -139,4 +139,6 @@ def test_SwitchedLikelihood_withVGP():
     likelihood = gpflow.likelihoods.SwitchedLikelihood([StudentT(), StudentT()])
     model = gpflow.models.VGP((X, Y_aug), kernel=kernel, likelihood=likelihood)
     ## optimization errors out
-    gpflow.optimizers.Scipy().minimize(lambda: - model.log_likelihood(), model.trainable_variables, options=dict(maxiter=1))
+    opt = gpflow.optimizers.Scipy()
+    # TODO fix following line once training_loss PR is merged
+    opt.minimize(lambda: - model.log_likelihood(), model.trainable_variables, options=dict(maxiter=1))
