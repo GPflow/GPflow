@@ -63,12 +63,13 @@ class VGP(GPModel):
         kernel, likelihood, mean_function are appropriate GPflow objects
 
         """
+        if num_latent_gps is None:
+            num_latent_gps = self.num_latent_gps_for_likelihood_and_data(likelihood, data)
         super().__init__(kernel, likelihood, mean_function, num_latent_gps)
 
         x_data, y_data = data
         num_data = x_data.shape[0]
         self.num_data = num_data
-        self.num_latent_gps = num_latent_gps or y_data.shape[1]
         self.data = data
 
         self.q_mu = Parameter(np.zeros((num_data, self.num_latent_gps)))

@@ -22,7 +22,7 @@ import tensorflow as tf
 from ..base import Module
 from ..config import default_float, default_jitter
 from ..kernels import Kernel
-from ..likelihoods import Likelihood
+from ..likelihoods import Likelihood, SwitchedLikelihood
 from ..mean_functions import MeanFunction, Zero
 from ..utilities import ops
 
@@ -102,6 +102,30 @@ class GPModel(BayesianModel):
         self.mean_function = mean_function
         self.kernel = kernel
         self.likelihood = likelihood
+
+    def num_latent_gps_for_likelihood_and_data(self, likelihood, data) -> int:
+        _, Y = data
+        output_dim = Y.shape[1]
+        return self.num_latent_gps_for_likelihood_and_output_dim(likelihood, output_dim)
+
+    def num_latent_gps_for_likelihood_and_output_dim(self, likelihood, output_dim) -> int:
+        """
+        Note: It's not nice for `GPModel` to need to be aware of specific
+        likelihoods as here. However, `num_latent_gps` is a bit more broken in
+        general, specifically regarding multioutput kernels. We should fix this
+        in the future.
+        It also has slightly problematic assumptions re the output dimensions
+        of mean_function.
+        """
+        num_latent_gps = output_dim
+        if isinstance(likelihood, SwitchedLikelihood):
+            # the SwitchedLikelihood partitions/stitches based on the last
+            # column in Y, but we should not add a separate latent GP for this!
+            # hence decrement by 1
+            assert num_latent_gps >= 2
+            num_latent_gps -= 1
+
+        return num_latent_gps
 
     @abc.abstractmethod
     def predict_f(
