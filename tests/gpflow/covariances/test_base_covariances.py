@@ -30,7 +30,9 @@ def test_inducing_points_inducing_variable_len(N, D):
 
 _kernel_setups = [
     gpflow.kernels.SquaredExponential(variance=0.46, lengthscale=np.random.uniform(0.5, 3.0, 5)),
-    gpflow.kernels.Periodic(base=gpflow.kernels.SquaredExponential(variance=1.8), period=0.4),
+    gpflow.kernels.Periodic(
+        base_kernel=gpflow.kernels.SquaredExponential(variance=1.8), period=0.4
+    ),
 ]
 
 

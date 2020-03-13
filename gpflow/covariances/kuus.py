@@ -26,4 +26,4 @@ def Kuu_sqexp_multiscale(inducing_variable: Multiscale, kernel: SquaredExponenti
 
 @Kuu.register(InducingPatches, Convolutional)
 def Kuu_conv_patch(feat, kern, jitter=0.0):
-    return kern.basekern.K(feat.Z) + jitter * tf.eye(len(feat), dtype=default_float())
+    return kern.base_kernel.K(feat.Z) + jitter * tf.eye(len(feat), dtype=default_float())

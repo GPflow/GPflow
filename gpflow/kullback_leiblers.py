@@ -35,7 +35,7 @@ def _(inducing_variable, kernel, q_mu, q_sqrt, whiten=False):
         return gauss_kl(q_mu, q_sqrt, K)
 
 
-def gauss_kl(q_mu, q_sqrt, K=None):
+def gauss_kl(q_mu, q_sqrt, K=None, *, K_cholesky=None):
     """
     Compute the KL divergence KL[q || p] between
 
@@ -45,7 +45,7 @@ def gauss_kl(q_mu, q_sqrt, K=None):
           p(x) = N(0, I)    if K is None
 
     We assume L multiple independent distributions, given by the columns of
-    q_mu and the first or last dimension of q_sqrt.  Returns the sum of the
+    q_mu and the first or last dimension of q_sqrt. Returns the *sum* of the
     divergences.
 
     q_mu is a matrix ([M, L]), each column contains a mean.
@@ -55,13 +55,23 @@ def gauss_kl(q_mu, q_sqrt, K=None):
     q_sqrt can be a matrix ([M, L]), each column represents the diagonal of a
         square-root matrix of the covariance of q.
 
-    K is the covariance of p.
-    It is a positive definite matrix ([M, M]) or a tensor of stacked such matrices ([L, M, M])
-    If K is None, compute the KL divergence to p(x) = N(0, I) instead.
+    K is the covariance of p (positive-definite matrix).  The K matrix can be
+    passed either directly as `K`, or as its Cholesky factor, `K_cholesky`.  In
+    either case, it can be a single matrix [M, M], in which case the sum of the
+    L KL divergences is computed by broadcasting, or L different covariances
+    [L, M, M].
+
+    Note: if no K matrix is given (both `K` and `K_cholesky` are None),
+    `gauss_kl` computes the KL divergence from p(x) = N(0, I) instead.
     """
 
-    white = K is None
-    diag = len(q_sqrt.shape) == 2
+    if (K is not None) and (K_cholesky is not None):
+        raise ValueError(
+            "Ambiguous arguments: gauss_kl() must only be passed one of `K` or `K_cholesky`."
+        )
+
+    is_white = (K is None) and (K_cholesky is None)
+    is_diag = len(q_sqrt.shape) == 2
 
     shape_constraints = [
         (q_mu, ["M", "L"]),
@@ -73,16 +83,20 @@ def gauss_kl(q_mu, q_sqrt, K=None):
 
     M, L = tf.shape(q_mu)[0], tf.shape(q_mu)[1]
 
-    if white:
+    if is_white:
         alpha = q_mu  # [M, L]
     else:
-        batch = len(K.shape) == 3
+        if K is not None:
+            Lp = tf.linalg.cholesky(K)  # [L, M, M] or [M, M]
+        elif K_cholesky is not None:
+            Lp = K_cholesky  # [L, M, M] or [M, M]
 
-        Lp = tf.linalg.cholesky(K)  # [L, M, M] or [M, M]
-        q_mu = tf.transpose(q_mu)[:, :, None] if batch else q_mu  # [L, M, 1] or [M, L]
+        is_batched = len(Lp.shape) == 3
+
+        q_mu = tf.transpose(q_mu)[:, :, None] if is_batched else q_mu  # [L, M, 1] or [M, L]
         alpha = tf.linalg.triangular_solve(Lp, q_mu, lower=True)  # [L, M, 1] or [M, L]
 
-    if diag:
+    if is_diag:
         Lq = Lq_diag = q_sqrt
         Lq_full = tf.linalg.diag(tf.transpose(q_sqrt))  # [L, M, M]
     else:
@@ -99,10 +113,10 @@ def gauss_kl(q_mu, q_sqrt, K=None):
     logdet_qcov = tf.reduce_sum(tf.math.log(tf.square(Lq_diag)))
 
     # Trace term: tr(Σp⁻¹ Σq)
-    if white:
+    if is_white:
         trace = tf.reduce_sum(tf.square(Lq))
     else:
-        if diag and not batch:
+        if is_diag and not is_batched:
             # K is [M, M] and q_sqrt is [M, L]: fast specialisation
             LpT = tf.transpose(Lp)  # [M, M]
             Lp_inv = tf.linalg.triangular_solve(
@@ -113,19 +127,19 @@ def gauss_kl(q_mu, q_sqrt, K=None):
             ]  # [M, M] -> [M, 1]
             trace = tf.reduce_sum(K_inv * tf.square(q_sqrt))
         else:
-            # TODO: broadcast instead of tile when tf allows (not implemented in tf <= 1.6.0)
-            Lp_full = Lp if batch else tf.tile(tf.expand_dims(Lp, 0), [L, 1, 1])
+            # TODO: broadcast instead of tile when tf allows -- tf2.1 segfaults
+            Lp_full = Lp if is_batched else tf.tile(tf.expand_dims(Lp, 0), [L, 1, 1])
             LpiLq = tf.linalg.triangular_solve(Lp_full, Lq_full, lower=True)
             trace = tf.reduce_sum(tf.square(LpiLq))
 
     twoKL = mahalanobis + constant - logdet_qcov + trace
 
     # Log-determinant of the covariance of p(x):
-    if not white:
+    if not is_white:
         log_sqdiag_Lp = tf.math.log(tf.square(tf.linalg.diag_part(Lp)))
         sum_log_sqdiag_Lp = tf.reduce_sum(log_sqdiag_Lp)
-        # If K is [L, M, M], num_latent is no longer implicit, no need to multiply the single kernel logdet
-        scale = 1.0 if batch else tf.cast(L, default_float())
+        # If K is [L, M, M], num_latent_gps is no longer implicit, no need to multiply the single kernel logdet
+        scale = 1.0 if is_batched else tf.cast(L, default_float())
         twoKL += scale * sum_log_sqdiag_Lp
 
     assert_shapes([(twoKL, ())])  # returns scalar

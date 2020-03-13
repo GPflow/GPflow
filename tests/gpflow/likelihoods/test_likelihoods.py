@@ -458,8 +458,8 @@ def test__switched_likelihood_variational_expectations(Y_list, F_list, Fvar_list
     assert_allclose(switched_results, np.concatenate(results)[Y_perm, :])
 
 
-@pytest.mark.parametrize("num_latent", [1, 2])
-def test_switched_likelihood_regression_valid_num_latent(num_latent):
+@pytest.mark.parametrize("num_latent_gps", [1, 2])
+def test_switched_likelihood_regression_valid_num_latent_gps(num_latent_gps):
     """
     A Regression test when using Switched likelihood: the number of latent
     functions in a GP model must be equal to the number of columns in Y minus
@@ -470,16 +470,16 @@ def test_switched_likelihood_regression_valid_num_latent(num_latent):
     y = np.hstack((np.random.randn(100, 1), np.random.randint(0, 3, (100, 1))))
     data = x, y
 
-    Z = InducingPoints(np.random.randn(num_latent, 1))
+    Z = InducingPoints(np.random.randn(num_latent_gps, 1))
     likelihoods = [StudentT()] * 3
     switched_likelihood = SwitchedLikelihood(likelihoods)
     m = gpflow.models.SVGP(
         kernel=gpflow.kernels.Matern12(),
         inducing_variable=Z,
         likelihood=switched_likelihood,
-        num_latent=num_latent,
+        num_latent_gps=num_latent_gps,
     )
-    if num_latent == 1:
+    if num_latent_gps == 1:
         m.log_likelihood(data)
     else:
         with pytest.raises(tf.errors.InvalidArgumentError):

@@ -38,7 +38,7 @@ class MultioutputKernel(Kernel):
 
     @property
     @abc.abstractmethod
-    def num_latents(self):
+    def num_latent_gps(self):
         """The number of latent GPs in the multioutput kernel"""
         raise NotImplementedError
 
@@ -89,7 +89,7 @@ class SharedIndependent(MultioutputKernel):
         self.output_dim = output_dim
 
     @property
-    def num_latents(self):
+    def num_latent_gps(self):
         # In this case number of latent GPs (L) == output_dim (P)
         return self.output_dim
 
@@ -117,7 +117,7 @@ class SeparateIndependent(MultioutputKernel, Combination):
         super().__init__(kernels=kernels, name=name)
 
     @property
-    def num_latents(self):
+    def num_latent_gps(self):
         return len(self.kernels)
 
     def K(self, X, X2=None, full_output_cov=True):
@@ -161,7 +161,7 @@ class LinearCoregionalization(IndependentLatent, Combination):
         self.W = Parameter(W)  # [P, L]
 
     @property
-    def num_latents(self):
+    def num_latent_gps(self):
         return self.W.shape[-1]  # L
 
     def Kgg(self, X, X2):

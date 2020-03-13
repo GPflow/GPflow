@@ -354,14 +354,14 @@ def test_shapes_of_mok():
     kern_list = [SquaredExponential() for _ in range(data.L)]
 
     k1 = mk.LinearCoregionalization(kern_list, W=data.W)
-    assert k1.num_latents == data.L
+    assert k1.num_latent_gps == data.L
 
     k2 = mk.SeparateIndependent(kern_list)
-    assert k2.num_latents == data.L
+    assert k2.num_latent_gps == data.L
 
     dims = 5
     k3 = mk.SharedIndependent(SquaredExponential(), dims)
-    assert k3.num_latents == dims
+    assert k3.num_latent_gps == dims
 
 
 # ------------------------------------------
@@ -414,7 +414,7 @@ def test_shared_independent_mok():
         inducing_variable,
         q_mu=q_mu_1,
         q_sqrt=q_sqrt_1,
-        num_latent=Data.Y.shape[-1],
+        num_latent_gps=Data.Y.shape[-1],
     )
     set_trainable(model_1, False)
     model_1.q_sqrt.trainable = True
@@ -435,7 +435,12 @@ def test_shared_independent_mok():
     kernel_2 = SquaredExponential(variance=0.5, lengthscale=1.2)
     inducing_variable_2 = InducingPoints(Data.X[: Data.M, ...])
     model_2 = SVGP(
-        kernel_2, Gaussian(), inducing_variable_2, num_latent=Data.P, q_mu=q_mu_2, q_sqrt=q_sqrt_2,
+        kernel_2,
+        Gaussian(),
+        inducing_variable_2,
+        num_latent_gps=Data.P,
+        q_mu=q_mu_2,
+        q_sqrt=q_sqrt_2,
     )
     set_trainable(model_2, False)
     model_2.q_sqrt.trainable = True
@@ -458,7 +463,12 @@ def test_shared_independent_mok():
         InducingPoints(Data.X[: Data.M, ...])
     )
     model_3 = SVGP(
-        kernel_3, Gaussian(), inducing_variable_3, num_latent=Data.P, q_mu=q_mu_3, q_sqrt=q_sqrt_3,
+        kernel_3,
+        Gaussian(),
+        inducing_variable_3,
+        num_latent_gps=Data.P,
+        q_mu=q_mu_3,
+        q_sqrt=q_sqrt_3,
     )
     set_trainable(model_3, False)
     model_3.q_sqrt.trainable = True
@@ -491,7 +501,7 @@ def test_separate_independent_mok():
     kernel_1 = mk.SeparateIndependent(kern_list_1)
     inducing_variable_1 = InducingPoints(Data.X[: Data.M, ...])
     model_1 = SVGP(
-        kernel_1, Gaussian(), inducing_variable_1, num_latent=1, q_mu=q_mu_1, q_sqrt=q_sqrt_1,
+        kernel_1, Gaussian(), inducing_variable_1, num_latent_gps=1, q_mu=q_mu_1, q_sqrt=q_sqrt_1,
     )
     set_trainable(model_1, False)
     model_1.q_sqrt.trainable = True
@@ -516,7 +526,12 @@ def test_separate_independent_mok():
         InducingPoints(Data.X[: Data.M, ...])
     )
     model_2 = SVGP(
-        kernel_2, Gaussian(), inducing_variable_2, num_latent=Data.P, q_mu=q_mu_2, q_sqrt=q_sqrt_2,
+        kernel_2,
+        Gaussian(),
+        inducing_variable_2,
+        num_latent_gps=Data.P,
+        q_mu=q_mu_2,
+        q_sqrt=q_sqrt_2,
     )
     set_trainable(model_2, False)
     model_2.q_sqrt.trainable = True
