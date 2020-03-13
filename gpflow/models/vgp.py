@@ -65,10 +65,10 @@ class VGP(GPModel):
         """
         super().__init__(kernel, likelihood, mean_function, num_latent)
 
-        x_data, y_data = data
-        num_data = x_data.shape[0]
+        X_data, Y_data = data
+        num_data = X_data.shape[0]
         self.num_data = num_data
-        self.num_latent = num_latent or y_data.shape[1]
+        self.num_latent = num_latent or Y_data.shape[1]
         self.data = data
 
         self.q_mu = Parameter(np.zeros((num_data, self.num_latent)))
@@ -88,14 +88,14 @@ class VGP(GPModel):
 
         """
 
-        x_data, y_data = self.data
+        X_data, Y_data = self.data
         # Get prior KL.
         KL = gauss_kl(self.q_mu, self.q_sqrt)
 
         # Get conditionals
-        K = self.kernel(x_data) + tf.eye(self.num_data, dtype=default_float()) * default_jitter()
+        K = self.kernel(X_data) + tf.eye(self.num_data, dtype=default_float()) * default_jitter()
         L = tf.linalg.cholesky(K)
-        fmean = tf.linalg.matmul(L, self.q_mu) + self.mean_function(x_data)  # [NN, ND] -> ND
+        fmean = tf.linalg.matmul(L, self.q_mu) + self.mean_function(X_data)  # [NN, ND] -> ND
         q_sqrt_dnn = tf.linalg.band_part(self.q_sqrt, -1, 0)  # [D, N, N]
         L_tiled = tf.tile(tf.expand_dims(L, 0), tf.stack([self.num_latent, 1, 1]))
         LTA = tf.linalg.matmul(L_tiled, q_sqrt_dnn)  # [D, N, N]
@@ -104,7 +104,7 @@ class VGP(GPModel):
         fvar = tf.transpose(fvar)
 
         # Get variational expectations.
-        var_exp = self.likelihood.variational_expectations(fmean, fvar, y_data)
+        var_exp = self.likelihood.variational_expectations(fmean, fvar, Y_data)
 
         return tf.reduce_sum(var_exp) - KL
 
@@ -162,10 +162,10 @@ class VGPOpperArchambeau(GPModel):
 
         super().__init__(kernel, likelihood, mean_function, num_latent)
 
-        x_data, y_data = data
+        X_data, Y_data = data
         self.data = data
-        self.num_data = x_data.shape[0]
-        self.num_latent = num_latent or y_data.shape[1]
+        self.num_data = X_data.shape[0]
+        self.num_latent = num_latent or Y_data.shape[1]
         self.q_alpha = Parameter(np.zeros((self.num_data, self.num_latent)))
         self.q_lambda = Parameter(
             np.ones((self.num_data, self.num_latent)), transform=gpflow.utilities.positive()
@@ -180,10 +180,10 @@ class VGPOpperArchambeau(GPModel):
         with
             q(f) = N(f | K alpha + mean, [K^-1 + diag(square(lambda))]^-1) .
         """
-        x_data, y_data = self.data
-        K = self.kernel(x_data)
+        X_data, Y_data = self.data
+        K = self.kernel(X_data)
         K_alpha = tf.linalg.matmul(K, self.q_alpha)
-        f_mean = K_alpha + self.mean_function(x_data)
+        f_mean = K_alpha + self.mean_function(X_data)
 
         # compute the variance for each of the outputs
         I = tf.tile(
@@ -211,7 +211,7 @@ class VGPOpperArchambeau(GPModel):
             + tf.reduce_sum(K_alpha * self.q_alpha)
         )
 
-        v_exp = self.likelihood.variational_expectations(f_mean, f_var, y_data)
+        v_exp = self.likelihood.variational_expectations(f_mean, f_var, Y_data)
         return tf.reduce_sum(v_exp) - KL
 
     def predict_f(self, Xnew: DataPoint, full_cov: bool = False, full_output_cov: bool = False):
@@ -228,10 +228,10 @@ class VGPOpperArchambeau(GPModel):
         if full_output_cov:
             raise NotImplementedError
 
-        x_data, _y_data = self.data
+        X_data, _Y_data = self.data
         # compute kernel things
-        Kx = self.kernel(x_data, Xnew)
-        K = self.kernel(x_data)
+        Kx = self.kernel(X_data, Xnew)
+        K = self.kernel(X_data)
 
         # predictive mean
         f_mean = tf.linalg.matmul(Kx, self.q_alpha, transpose_a=True) + self.mean_function(Xnew)

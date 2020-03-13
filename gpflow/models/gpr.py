@@ -48,8 +48,8 @@ class GPR(GPModel):
         noise_variance: float = 1.0,
     ):
         likelihood = gpflow.likelihoods.Gaussian(noise_variance)
-        _, y_data = data
-        super().__init__(kernel, likelihood, mean_function, num_latent=y_data.shape[-1])
+        _, Y_data = data
+        super().__init__(kernel, likelihood, mean_function, num_latent=Y_data.shape[-1])
         self.data = data
 
     def log_likelihood(self):
@@ -60,17 +60,17 @@ class GPR(GPModel):
             \log p(Y | \theta).
 
         """
-        x, y = self.data
-        K = self.kernel(x)
-        num_data = x.shape[0]
+        X, Y = self.data
+        K = self.kernel(X)
+        num_data = X.shape[0]
         k_diag = tf.linalg.diag_part(K)
         s_diag = tf.fill([num_data], self.likelihood.variance)
         ks = tf.linalg.set_diag(K, k_diag + s_diag)
         L = tf.linalg.cholesky(ks)
-        m = self.mean_function(x)
+        m = self.mean_function(X)
 
         # [R,] log-likelihoods for each independent dimension of Y
-        log_prob = multivariate_normal(y, m, L)
+        log_prob = multivariate_normal(Y, m, L)
         return tf.reduce_sum(log_prob)
 
     def predict_f(self, Xnew: tf.Tensor, full_cov: bool = False, full_output_cov: bool = False):
