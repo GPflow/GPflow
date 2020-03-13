@@ -64,14 +64,14 @@ class FallbackSharedIndependentInducingVariables(MultioutputInducingVariables):
 
     def __init__(self, inducing_variable):
         super().__init__()
-        self.inducing_variable_shared = inducing_variable
+        self.inducing_variable = inducing_variable
 
     def __len__(self):
-        return len(self.inducing_variable_shared)
+        return len(self.inducing_variable)
 
     @property
     def inducing_variables(self):
-       return (self.inducing_variable_shared,)
+       return (self.inducing_variable,)
 
 
 class FallbackSeparateIndependentInducingVariables(MultioutputInducingVariables):
