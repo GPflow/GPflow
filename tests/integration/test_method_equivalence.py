@@ -188,7 +188,12 @@ def _create_vgpao_model(kernel, likelihood, q_alpha, q_lambda):
 
 def _create_svgp_model(kernel, likelihood, q_mu, q_sqrt, whiten):
     model_svgp = gpflow.models.SVGP(
-        kernel, likelihood, DatumVGP.X.copy(), whiten=whiten, q_diag=False, num_latent_gps=DatumVGP.DY,
+        kernel,
+        likelihood,
+        DatumVGP.X.copy(),
+        whiten=whiten,
+        q_diag=False,
+        num_latent_gps=DatumVGP.DY,
     )
     model_svgp.q_mu.assign(q_mu)
     model_svgp.q_sqrt.assign(q_sqrt)
