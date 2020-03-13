@@ -41,12 +41,12 @@ def test_svgp_fixing_q_sqrt():
     """
     In response to bug #46, we need to make sure that the q_sqrt matrix can be fixed
     """
-    num_latent = default_datum_svgp.Y.shape[1]
+    num_latent_gps = default_datum_svgp.Y.shape[1]
     model = gpflow.models.SVGP(
         kernel=gpflow.kernels.SquaredExponential(),
         likelihood=default_datum_svgp.lik,
         q_diag=True,
-        num_latent=num_latent,
+        num_latent_gps=num_latent_gps,
         inducing_variable=default_datum_svgp.Z,
         whiten=False,
     )
@@ -60,12 +60,12 @@ def test_svgp_white():
     Tests that the SVGP bound on the likelihood is the same when using
     with and without diagonals when whitening.
     """
-    num_latent = default_datum_svgp.Y.shape[1]
+    num_latent_gps = default_datum_svgp.Y.shape[1]
     model_1 = gpflow.models.SVGP(
         kernel=gpflow.kernels.SquaredExponential(),
         likelihood=default_datum_svgp.lik,
         q_diag=True,
-        num_latent=num_latent,
+        num_latent_gps=num_latent_gps,
         inducing_variable=default_datum_svgp.Z,
         whiten=True,
     )
@@ -73,7 +73,7 @@ def test_svgp_white():
         kernel=gpflow.kernels.SquaredExponential(),
         likelihood=default_datum_svgp.lik,
         q_diag=False,
-        num_latent=num_latent,
+        num_latent_gps=num_latent_gps,
         inducing_variable=default_datum_svgp.Z,
         whiten=True,
     )
@@ -96,12 +96,12 @@ def test_svgp_non_white():
     Tests that the SVGP bound on the likelihood is the same when using
     with and without diagonals when whitening is not used.
     """
-    num_latent = default_datum_svgp.Y.shape[1]
+    num_latent_gps = default_datum_svgp.Y.shape[1]
     model_1 = gpflow.models.SVGP(
         kernel=gpflow.kernels.SquaredExponential(),
         likelihood=default_datum_svgp.lik,
         q_diag=True,
-        num_latent=num_latent,
+        num_latent_gps=num_latent_gps,
         inducing_variable=default_datum_svgp.Z,
         whiten=False,
     )
@@ -109,7 +109,7 @@ def test_svgp_non_white():
         kernel=gpflow.kernels.SquaredExponential(),
         likelihood=default_datum_svgp.lik,
         q_diag=False,
-        num_latent=num_latent,
+        num_latent_gps=num_latent_gps,
         inducing_variable=default_datum_svgp.Z,
         whiten=False,
     )

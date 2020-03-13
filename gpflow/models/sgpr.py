@@ -38,7 +38,7 @@ class SGPRBase(GPModel):
         kernel: Kernel,
         mean_function: Optional[MeanFunction] = None,
         inducing_variable: Optional[InducingPoints] = None,
-        num_latent: Optional[int] = None,
+        num_latent_gps: Optional[int] = None,
         noise_variance: float = 1.0,
     ):
         """
@@ -53,8 +53,8 @@ class SGPRBase(GPModel):
         """
         likelihood = likelihoods.Gaussian(noise_variance)
         X_data, Y_data = data
-        num_latent = Y_data.shape[-1] if num_latent is None else num_latent
-        super().__init__(kernel, likelihood, mean_function, num_latent=num_latent)
+        num_latent_gps = Y_data.shape[-1] if num_latent_gps is None else num_latent_gps
+        super().__init__(kernel, likelihood, mean_function, num_latent_gps=num_latent_gps)
 
         self.data = data
         self.num_data = X_data.shape[0]
@@ -212,14 +212,14 @@ class SGPR(SGPRBase):
                 + tf.linalg.matmul(tmp2, tmp2, transpose_a=True)
                 - tf.linalg.matmul(tmp1, tmp1, transpose_a=True)
             )
-            var = tf.tile(var[None, ...], [self.num_latent, 1, 1])  # [P, N, N]
+            var = tf.tile(var[None, ...], [self.num_latent_gps, 1, 1])  # [P, N, N]
         else:
             var = (
                 self.kernel(X, full=False)
                 + tf.reduce_sum(tf.square(tmp2), 0)
                 - tf.reduce_sum(tf.square(tmp1), 0)
             )
-            var = tf.tile(var[:, None], [1, self.num_latent])
+            var = tf.tile(var[:, None], [1, self.num_latent_gps])
         return mean + self.mean_function(X), var
 
     def compute_qu(self):
@@ -343,7 +343,7 @@ class GPRFITC(SGPRBase):
         )
         logNormalizingTerm = constantTerm + logDeterminantTerm
 
-        return mahalanobisTerm + logNormalizingTerm * self.num_latent
+        return mahalanobisTerm + logNormalizingTerm * self.num_latent_gps
 
     def predict_f(self, X: tf.Tensor, full_cov=False, full_output_cov=False) -> MeanAndVariance:
         """
@@ -365,13 +365,13 @@ class GPRFITC(SGPRBase):
                 - tf.linalg.matmul(w, w, transpose_a=True)
                 + tf.linalg.matmul(intermediateA, intermediateA, transpose_a=True)
             )
-            var = tf.tile(var[None, ...], [self.num_latent, 1, 1])  # [P, N, N]
+            var = tf.tile(var[None, ...], [self.num_latent_gps, 1, 1])  # [P, N, N]
         else:
             var = (
                 self.kernel(X, full=False)
                 - tf.reduce_sum(tf.square(w), 0)
                 + tf.reduce_sum(tf.square(intermediateA), 0)
             )  # size Xnew,
-            var = tf.tile(var[:, None], [1, self.num_latent])
+            var = tf.tile(var[:, None], [1, self.num_latent_gps])
 
         return mean, var
