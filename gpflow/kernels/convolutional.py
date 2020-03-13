@@ -24,11 +24,11 @@ class Convolutional(Kernel):
     }
     """
 
-    def __init__(self, basekern, img_size, patch_size, weights=None, colour_channels=1):
+    def __init__(self, base_kernel, image_shape, patch_shape, weights=None, colour_channels=1):
         super().__init__()
-        self.img_size = img_size
-        self.patch_size = patch_size
-        self.basekern = basekern
+        self.image_shape = image_shape
+        self.patch_shape = patch_shape
+        self.base_kernel = base_kernel
         self.colour_channels = colour_channels
         self.weights = Parameter(
             np.ones(self.num_patches, dtype=default_float()) if weights is None else weights
@@ -39,7 +39,7 @@ class Convolutional(Kernel):
         """
         Extracts patches from the images X. Patches are extracted separately for each of the colour channels.
         :param X: (N x input_dim)
-        :return: Patches (N, num_patches, patch_size)
+        :return: Patches (N, num_patches, patch_shape)
         """
         # Roll the colour channel to the front, so it appears to
         # `tf.extract_image_patches()` as separate images. Then extract patches
@@ -48,8 +48,8 @@ class Convolutional(Kernel):
         num_data = tf.shape(X)[0]
         castX = tf.transpose(tf.reshape(X, [num_data, -1, self.colour_channels]), [0, 2, 1])
         patches = tf.image.extract_patches(
-            tf.reshape(castX, [-1, self.img_size[0], self.img_size[1], 1], name="rX"),
-            [1, self.patch_size[0], self.patch_size[1], 1],
+            tf.reshape(castX, [-1, self.image_shape[0], self.image_shape[1], 1], name="rX"),
+            [1, self.patch_shape[0], self.patch_shape[1], 1],
             [1, 1, 1, 1],
             [1, 1, 1, 1],
             "VALID",
@@ -64,7 +64,7 @@ class Convolutional(Kernel):
         Xp = self.get_patches(X)  # [N, P, patch_len]
         Xp2 = Xp if X2 is None else self.get_patches(X2)
 
-        bigK = self.basekern.K(Xp, Xp2)  # [N, num_patches, N, num_patches]
+        bigK = self.base_kernel.K(Xp, Xp2)  # [N, num_patches, N, num_patches]
 
         W2 = self.weights[:, None] * self.weights[None, :]  # [P, P]
         W2bigK = bigK * W2[None, :, None, :]
@@ -73,17 +73,17 @@ class Convolutional(Kernel):
     def K_diag(self, X):
         Xp = self.get_patches(X)  # N x num_patches x patch_dim
         W2 = self.weights[:, None] * self.weights[None, :]  # [P, P]
-        bigK = self.basekern.K(Xp)  # [N, P, P]
+        bigK = self.base_kernel.K(Xp)  # [N, P, P]
         return tf.reduce_sum(bigK * W2[None, :, :], [1, 2]) / self.num_patches ** 2.0
 
     @property
     def patch_len(self):
-        return np.prod(self.patch_size)
+        return np.prod(self.patch_shape)
 
     @property
     def num_patches(self):
         return (
-            (self.img_size[0] - self.patch_size[0] + 1)
-            * (self.img_size[1] - self.patch_size[1] + 1)
+            (self.image_shape[0] - self.patch_shape[0] + 1)
+            * (self.image_shape[1] - self.patch_shape[1] + 1)
             * self.colour_channels
         )

@@ -8,7 +8,7 @@ def base_conditional(
     Kmn: tf.Tensor,
     Kmm: tf.Tensor,
     Knn: tf.Tensor,
-    function: tf.Tensor,
+    f: tf.Tensor,
     *,
     full_cov=False,
     q_sqrt=None,
@@ -37,9 +37,9 @@ def base_conditional(
     :return: [N, R]  or [R, N, N]
     """
     # compute kernel stuff
-    num_func = tf.shape(function)[-1]  # R
+    num_func = tf.shape(f)[-1]  # R
     N = tf.shape(Kmn)[-1]
-    M = tf.shape(function)[-2]
+    M = tf.shape(f)[-2]
 
     # get the leadings dims in Kmn to the front of the tensor
     # if Kmn has rank two, i.e. [M, N], this is the identity op.
@@ -77,7 +77,7 @@ def base_conditional(
 
     # construct the conditional mean
     f_shape = tf.concat([leading_dims, [M, num_func]], 0)  # [..., M, R]
-    f = tf.broadcast_to(function, f_shape)  # [..., M, R]
+    f = tf.broadcast_to(f, f_shape)  # [..., M, R]
     fmean = tf.linalg.matmul(A, f, transpose_a=True)  # [..., N, R]
 
     if q_sqrt is not None:

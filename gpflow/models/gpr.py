@@ -49,7 +49,7 @@ class GPR(GPModel):
     ):
         likelihood = gpflow.likelihoods.Gaussian(noise_variance)
         _, y_data = data
-        super().__init__(kernel, likelihood, mean_function, num_latent=y_data.shape[-1])
+        super().__init__(kernel, likelihood, mean_function, num_latent_gps=y_data.shape[-1])
         self.data = data
 
     def log_likelihood(self):

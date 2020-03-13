@@ -308,7 +308,7 @@ kernel = gpflow.kernels.Matern32(lengthscale=0.1) + gpflow.kernels.White(varianc
 model = gpflow.models.SGPMC(data, 
                  kernel=kernel,
                  likelihood=gpflow.likelihoods.MultiClass(3),
-                 inducing_variable=X[::5].copy(), num_latent=3)
+                 inducing_variable=X[::5].copy(), num_latent_gps=3)
 model.kernel.kernels[0].variance.prior = tfp.distributions.Gamma(f64(1.), f64(1.))
 model.kernel.kernels[0].lengthscale.prior = tfp.distributions.Gamma(f64(2.), f64(2.))
 model.kernel.kernels[1].variance.trainable = False

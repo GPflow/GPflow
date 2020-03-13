@@ -56,14 +56,14 @@ def _prepare_models():
         kernel=k0,
         mean_function=Constant(),
         likelihood=gpflow.likelihoods.Gaussian(),
-        num_latent=1,
+        num_latent_gps=1,
     )
     vgp1 = gpflow.models.VGP(
         (Datum.X[1], Datum.Y[1]),
         kernel=k1,
         mean_function=Constant(),
         likelihood=gpflow.likelihoods.Gaussian(),
-        num_latent=1,
+        num_latent_gps=1,
     )
     # 2. Coregionalized GPR
     kc = gpflow.kernels.SquaredExponential(active_dims=[0, 1])
@@ -83,7 +83,7 @@ def _prepare_models():
         kernel=kc * coreg,
         mean_function=mean_c,
         likelihood=lik,
-        num_latent=1,
+        num_latent_gps=1,
     )
 
     # Train them for a small number of iterations

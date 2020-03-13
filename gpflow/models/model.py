@@ -92,10 +92,10 @@ class GPModel(BayesianModel):
         kernel: Kernel,
         likelihood: Likelihood,
         mean_function: Optional[MeanFunction] = None,
-        num_latent: int = 1,
+        num_latent_gps: int = 1,
     ):
         super().__init__()
-        self.num_latent = num_latent
+        self.num_latent_gps = num_latent_gps
         # TODO(@awav): Why is this here when MeanFunction does not have a __len__ method
         if mean_function is None:
             mean_function = Zero()
@@ -120,11 +120,11 @@ class GPModel(BayesianModel):
         Produce samples from the posterior latent function(s) at the input points.
         """
         mu, var = self.predict_f(predict_at, full_cov=full_cov)  # [N, P], [P, N, N]
-        num_latent = var.shape[0]
+        num_latent_gps = var.shape[0]
         num_elems = tf.shape(var)[1]
         var_jitter = ops.add_to_diagonal(var, default_jitter())
         L = tf.linalg.cholesky(var_jitter)  # [P, N, N]
-        V = tf.random.normal([num_latent, num_elems, num_samples], dtype=mu.dtype)  # [P, N, S]
+        V = tf.random.normal([num_latent_gps, num_elems, num_samples], dtype=mu.dtype)  # [P, N, S]
         LV = L @ V  # [P, N, S]
         mu_t = tf.linalg.adjoint(mu)  # [P, N]
         return tf.transpose(mu_t[..., np.newaxis] + LV)  # [S, N, P]
