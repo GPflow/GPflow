@@ -20,5 +20,8 @@ install:
 package:
 	python setup.py bdist
 
+format:
+	black -t py36 -l 100 gpflow/ tests/
+
 test:
 	pytest -n auto tests/
