@@ -521,21 +521,21 @@ samples, _ = run_chain_fn()
 # And compute the posterior prediction on a grid for plotting purposes.
 
 # %%
-xtest = np.linspace(-4,4,100)[:,None]
+Xtest = np.linspace(-4,4,100)[:,None]
 f_samples = []
 
 for i in range(num_samples):
     for var, var_samples in zip(hmc_helper.current_state, samples):
         var.assign(var_samples[i])
-    f = model.predict_f_samples(xtest, 5)
+    f = model.predict_f_samples(Xtest, 5)
     f_samples.append(f)
 f_samples = np.vstack(f_samples)
 
 # %%
 rate_samples = np.exp(f_samples[:, :, 0])
 
-line, = plt.plot(xtest, np.mean(rate_samples, 0), lw=2)
-plt.fill_between(xtest[:,0],
+line, = plt.plot(Xtest, np.mean(rate_samples, 0), lw=2)
+plt.fill_between(Xtest[:,0],
                  np.percentile(rate_samples, 5, axis=0),
                  np.percentile(rate_samples, 95, axis=0),
                  color=line.get_color(), alpha = 0.2)
