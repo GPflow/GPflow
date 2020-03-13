@@ -47,7 +47,7 @@ class SVGP(GPModel):
         inducing_variable,
         *,
         mean_function=None,
-        num_latent: int = 1,
+        num_latent_gps: int = 1,
         q_diag: bool = False,
         q_mu=None,
         q_sqrt=None,
@@ -57,7 +57,7 @@ class SVGP(GPModel):
         """
         - kernel, likelihood, inducing_variables, mean_function are appropriate
           GPflow objects
-        - num_latent is the number of latent processes to use, defaults to 1
+        - num_latent_gps is the number of latent processes to use, defaults to 1
         - q_diag is a boolean. If True, the covariance is approximated by a
           diagonal matrix.
         - whiten is a boolean. If True, we use the whitened representation of
@@ -66,7 +66,7 @@ class SVGP(GPModel):
           (relevant when feeding in external minibatches)
         """
         # init the super class, accept args
-        super().__init__(kernel, likelihood, mean_function, num_latent)
+        super().__init__(kernel, likelihood, mean_function, num_latent_gps)
         self.num_data = num_data
         self.q_diag = q_diag
         self.whiten = whiten
@@ -104,27 +104,27 @@ class SVGP(GPModel):
             `q_sqrt` is two dimensional and only holds the square root of the
             covariance diagonal elements. If False, `q_sqrt` is three dimensional.
         """
-        q_mu = np.zeros((num_inducing, self.num_latent)) if q_mu is None else q_mu
+        q_mu = np.zeros((num_inducing, self.num_latent_gps)) if q_mu is None else q_mu
         self.q_mu = Parameter(q_mu, dtype=default_float())  # [M, P]
 
         if q_sqrt is None:
             if self.q_diag:
-                ones = np.ones((num_inducing, self.num_latent), dtype=default_float())
+                ones = np.ones((num_inducing, self.num_latent_gps), dtype=default_float())
                 self.q_sqrt = Parameter(ones, transform=positive())  # [M, P]
             else:
                 q_sqrt = [
-                    np.eye(num_inducing, dtype=default_float()) for _ in range(self.num_latent)
+                    np.eye(num_inducing, dtype=default_float()) for _ in range(self.num_latent_gps)
                 ]
                 q_sqrt = np.array(q_sqrt)
                 self.q_sqrt = Parameter(q_sqrt, transform=triangular())  # [P, M, M]
         else:
             if q_diag:
                 assert q_sqrt.ndim == 2
-                self.num_latent = q_sqrt.shape[1]
+                self.num_latent_gps = q_sqrt.shape[1]
                 self.q_sqrt = Parameter(q_sqrt, transform=positive())  # [M, L|P]
             else:
                 assert q_sqrt.ndim == 3
-                self.num_latent = q_sqrt.shape[0]
+                self.num_latent_gps = q_sqrt.shape[0]
                 num_inducing = q_sqrt.shape[1]
                 self.q_sqrt = Parameter(q_sqrt, transform=triangular())  # [L|P, M, M]
 

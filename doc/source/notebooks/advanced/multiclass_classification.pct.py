@@ -148,7 +148,7 @@ likelihood = gpflow.likelihoods.MultiClass(3, invlink=invlink)  # Multiclass lik
 Z = X[::5].copy()  # inducing inputs
 
 m = gpflow.models.SVGP(kernel=kernel, likelihood=likelihood,
-    inducing_variable=Z, num_latent=C, whiten=True, q_diag=True)
+    inducing_variable=Z, num_latent_gps=C, whiten=True, q_diag=True)
 
 # Only train the variational parameters
 set_trainable(m.kernel.kernels[1].variance, False)

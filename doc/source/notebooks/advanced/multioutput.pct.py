@@ -147,7 +147,7 @@ iv = gpf.inducing_variables.SharedIndependentInducingVariables(gpf.inducing_vari
 
 # %%
 # create SVGP model as usual and optimize
-m = gpf.models.SVGP(kernel, gpf.likelihoods.Gaussian(), inducing_variable=iv, num_latent=P)
+m = gpf.models.SVGP(kernel, gpf.likelihoods.Gaussian(), inducing_variable=iv, num_latent_gps=P)
 print_summary(m)
 
 
@@ -189,7 +189,7 @@ iv = gpf.inducing_variables.SharedIndependentInducingVariables(gpf.inducing_vari
 
 # %%
 # create SVGP model as usual and optimize
-m = gpf.models.SVGP(kernel, gpf.likelihoods.Gaussian(), inducing_variable=iv, num_latent=P)
+m = gpf.models.SVGP(kernel, gpf.likelihoods.Gaussian(), inducing_variable=iv, num_latent_gps=P)
 
 # %%
 optimize_model_with_scipy(m)
@@ -224,7 +224,7 @@ iv = gpf.inducing_variables.SeparateIndependentInducingVariables(iv_list)
 
 # %%
 # create SVGP model as usual and optimize
-m = gpf.models.SVGP(kernel, gpf.likelihoods.Gaussian(), inducing_variable=iv, num_latent=P)
+m = gpf.models.SVGP(kernel, gpf.likelihoods.Gaussian(), inducing_variable=iv, num_latent_gps=P)
 
 # %%
 optimize_model_with_scipy(m)

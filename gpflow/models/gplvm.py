@@ -56,10 +56,10 @@ class GPLVM(GPR):
         if x_data_mean is None:
             x_data_mean = pca_reduce(data, latent_dim)
 
-        num_latent = x_data_mean.shape[1]
-        if num_latent != latent_dim:
+        num_latent_gps = x_data_mean.shape[1]
+        if num_latent_gps != latent_dim:
             msg = "Passed in number of latent {0} does not match initial X {1}."
-            raise ValueError(msg.format(latent_dim, num_latent))
+            raise ValueError(msg.format(latent_dim, num_latent_gps))
 
         if mean_function is None:
             mean_function = Zero()
@@ -67,7 +67,7 @@ class GPLVM(GPR):
         if kernel is None:
             kernel = kernels.SquaredExponential(lengthscale=tf.ones((latent_dim,)))
 
-        if data.shape[1] < num_latent:
+        if data.shape[1] < num_latent_gps:
             raise ValueError("More latent dimensions than observed.")
 
         gpr_data = (Parameter(x_data_mean), data)
@@ -106,7 +106,7 @@ class BayesianGPLVM(GPModel):
         self.x_data_mean = Parameter(x_data_mean)
         self.x_data_var = Parameter(x_data_var, transform=positive())
 
-        self.num_data, self.num_latent = x_data_mean.shape
+        self.num_data, self.num_latent_gps = x_data_mean.shape
         self.output_dim = data.shape[-1]
 
         assert np.all(x_data_mean.shape == x_data_var.shape)
@@ -124,21 +124,21 @@ class BayesianGPLVM(GPModel):
 
         self.inducing_variable = inducingpoint_wrapper(inducing_variable)
 
-        assert x_data_mean.shape[1] == self.num_latent
+        assert x_data_mean.shape[1] == self.num_latent_gps
 
         # deal with parameters for the prior mean variance of X
         if x_prior_mean is None:
-            x_prior_mean = tf.zeros((self.num_data, self.num_latent), dtype=default_float())
+            x_prior_mean = tf.zeros((self.num_data, self.num_latent_gps), dtype=default_float())
         if x_prior_var is None:
-            x_prior_var = tf.ones((self.num_data, self.num_latent))
+            x_prior_var = tf.ones((self.num_data, self.num_latent_gps))
 
         self.x_prior_mean = tf.convert_to_tensor(np.atleast_1d(x_prior_mean), dtype=default_float())
         self.x_prior_var = tf.convert_to_tensor(np.atleast_1d(x_prior_var), dtype=default_float())
 
         assert self.x_prior_mean.shape[0] == self.num_data
-        assert self.x_prior_mean.shape[1] == self.num_latent
+        assert self.x_prior_mean.shape[1] == self.num_latent_gps
         assert self.x_prior_var.shape[0] == self.num_data
-        assert self.x_prior_var.shape[1] == self.num_latent
+        assert self.x_prior_var.shape[1] == self.num_latent_gps
 
     def maximum_likelihood_objective(self, data: Optional[InputData] = None):
         return self.elbo(data)

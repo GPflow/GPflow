@@ -25,7 +25,7 @@ import gpflow
 import gpflow.inducing_variables.mo_inducing_variables as mf
 import gpflow.kernels.mo_kernels as mk
 from gpflow.conditionals import sample_conditional
-from gpflow.conditionals.util import mix_latent_gp, rollaxis_left, rollaxis_right
+from gpflow.conditionals.util import mix_latent_gp
 
 
 # ------------------------------------------
@@ -34,12 +34,17 @@ from gpflow.conditionals.util import mix_latent_gp, rollaxis_left, rollaxis_righ
 
 
 class Data:
-    S1, S2, N, M = 7, 6, 4, 3
+    S1, S2, N, M = (
+        7,  # num samples 1
+        6,  # num samples 2
+        4,  # num datapoints
+        3,  # num inducing
+    )
     Dx, Dy, L = (
-        2,
-        5,
-        4,
-    )  # input dim, output dim, observation dimensionality i.e. num latent GPs
+        2,  # input dim
+        5,  # output dim
+        4,  # num latent GPs
+    )
     W = np.random.randn(Dy, L)  # mixing matrix
 
     SX = np.random.randn(S1 * S2, N, Dx)
@@ -77,7 +82,7 @@ def test_conditional_broadcasting(full_cov, white, conditional_type):
             kernels=[gpflow.kernels.Matern52(lengthscale=0.5) for _ in range(Data.L)], W=Data.W,
         )
     else:
-        raise (NotImplementedError)
+        raise NotImplementedError
 
     if conditional_type == "mixing" and full_cov:
         pytest.skip("combination is not implemented")
@@ -196,40 +201,3 @@ def test_broadcasting_mix_latent_gps(full_cov, full_output_cov):
     # check equality for mean and variance of f
     assert_allclose(f_mu_ref, f_mu)
     assert_allclose(f_var_ref, f_var)
-
-
-# rollaxis
-@pytest.mark.parametrize("rolls", [1, 2])
-@pytest.mark.parametrize("direction", ["left", "right"])
-def test_rollaxis(rolls, direction):
-    A = np.random.randn(10, 5, 3)
-    A_tf = tf.convert_to_tensor(A)
-
-    if direction == "left":
-        perm = [1, 2, 0] if rolls == 1 else [2, 0, 1]
-    elif direction == "right":
-        perm = [2, 0, 1] if rolls == 1 else [1, 2, 0]
-    else:
-        raise (NotImplementedError)
-
-    A_rolled_ref = np.transpose(A, perm)
-
-    if direction == "left":
-        A_rolled_tf = rollaxis_left(A_tf, rolls)
-    elif direction == "right":
-        A_rolled_tf = rollaxis_right(A_tf, rolls)
-    else:
-        raise (NotImplementedError)
-
-    assert_allclose(A_rolled_ref, A_rolled_tf)
-
-
-@pytest.mark.parametrize("rolls", [1, 2])
-def test_rollaxis_idempotent(rolls):
-    A = np.random.randn(10, 5, 3, 20, 1)
-    A_tf = tf.convert_to_tensor(A)
-    A_left_right = rollaxis_left(rollaxis_right(A_tf, 2), 2)
-    A_right_left = rollaxis_right(rollaxis_left(A_tf, 2), 2)
-
-    assert_allclose(A, A_left_right)
-    assert_allclose(A, A_right_left)

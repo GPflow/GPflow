@@ -190,9 +190,9 @@ def gauss_kl_vff(q_mu, q_sqrt, K):
     
     mahalanobis_term = tf.squeeze(tf.matmul(q_mu, Kinv_q_mu, transpose_a=True))
 
-    # GPflow: q_sqrt is num_latent x N x N
-    num_latent = tf.cast(tf.shape(q_mu)[1], gpflow.default_float())
-    logdet_prior = num_latent * K.log_abs_determinant()
+    # GPflow: q_sqrt is num_latent_gps x N x N
+    num_latent_gps = tf.cast(tf.shape(q_mu)[1], gpflow.default_float())
+    logdet_prior = num_latent_gps * K.log_abs_determinant()
 
     product_of_dimensions__int = tf.reduce_prod(tf.shape(q_sqrt)[:-1])  # dimensions are integers
     constant_term = tf.cast(product_of_dimensions__int, gpflow.default_float())

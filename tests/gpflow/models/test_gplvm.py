@@ -36,7 +36,7 @@ class Data:
     "kernel",
     [
         None,  # default kernel: SquaredExponential
-        gpflow.kernels.Periodic(base=gpflow.kernels.SquaredExponential()),
+        gpflow.kernels.Periodic(base_kernel=gpflow.kernels.SquaredExponential()),
     ],
 )
 def test_gplvm_with_kernels(kernel):

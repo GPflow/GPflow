@@ -1,4 +1,4 @@
-.PHONY: help clean dev docs package test
+.PHONY: help clean dev-install install package format test
 
 help:
 	@echo "The following make targets are available:"
@@ -20,5 +20,8 @@ install:
 package:
 	python setup.py bdist
 
+format:
+	black -t py36 --line-length=100 gpflow tests
+
 test:
-	pytest -n auto tests/
+	pytest -v --durations=10 tests/

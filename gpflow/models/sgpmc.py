@@ -67,7 +67,7 @@ class SGPMC(GPModel):
         kernel: Kernel,
         likelihood: Likelihood,
         mean_function: Optional[MeanFunction] = None,
-        num_latent: int = 1,
+        num_latent_gps: int = 1,
         inducing_variable: Optional[InducingPoints] = None,
     ):
         """
@@ -75,11 +75,11 @@ class SGPMC(GPModel):
         Z is a data matrix, of inducing inputs, size [M, D]
         kernel, likelihood, mean_function are appropriate GPflow objects
         """
-        super().__init__(kernel, likelihood, mean_function, num_latent=num_latent)
+        super().__init__(kernel, likelihood, mean_function, num_latent_gps=num_latent_gps)
         self.data = data
         self.num_data = data[0].shape[0]
         self.inducing_variable = inducingpoint_wrapper(inducing_variable)
-        self.V = Parameter(np.zeros((len(self.inducing_variable), self.num_latent)))
+        self.V = Parameter(np.zeros((len(self.inducing_variable), self.num_latent_gps)))
         self.V.prior = tfp.distributions.Normal(
             loc=to_default_float(0.0), scale=to_default_float(1.0)
         )
