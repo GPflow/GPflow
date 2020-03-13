@@ -206,7 +206,11 @@ class Combination(Kernel):
                 kernels_list.extend(k.kernels)
             else:
                 kernels_list.append(k)
-        self.kernels = kernels_list
+        self._kernels = kernels_list
+
+    @property
+    def kernels(self):
+        return self._kernels
 
     @property
     def on_separate_dimensions(self):
