@@ -135,9 +135,7 @@ class GPModel(BayesianModel):
         """
         Compute the mean and variance of the held-out data at the input points.
         """
-        f_mean, f_var = self.predict_f(
-            Xnew, full_cov=full_cov, full_output_cov=full_output_cov
-        )
+        f_mean, f_var = self.predict_f(Xnew, full_cov=full_cov, full_output_cov=full_output_cov)
         return self.likelihood.predict_mean_and_var(f_mean, f_var)
 
     def predict_log_density(

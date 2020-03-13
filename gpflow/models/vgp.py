@@ -113,13 +113,7 @@ class VGP(GPModel):
     ) -> MeanAndVariance:
         X_data, _Y_data = self.data
         mu, var = conditional(
-            Xnew,
-            X_data,
-            self.kernel,
-            self.q_mu,
-            q_sqrt=self.q_sqrt,
-            full_cov=full_cov,
-            white=True,
+            Xnew, X_data, self.kernel, self.q_mu, q_sqrt=self.q_sqrt, full_cov=full_cov, white=True,
         )
         return mu + self.mean_function(Xnew), var
 
@@ -220,9 +214,7 @@ class VGPOpperArchambeau(GPModel):
         v_exp = self.likelihood.variational_expectations(f_mean, f_var, y_data)
         return tf.reduce_sum(v_exp) - KL
 
-    def predict_f(
-        self, Xnew: DataPoint, full_cov: bool = False, full_output_cov: bool = False
-    ):
+    def predict_f(self, Xnew: DataPoint, full_cov: bool = False, full_output_cov: bool = False):
         r"""
         The posterior variance of F is given by
             q(f) = N(f | K alpha + mean, [K^-1 + diag(lambda**2)]^-1)
