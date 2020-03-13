@@ -92,9 +92,10 @@ class GPModel(BayesianModel):
         kernel: Kernel,
         likelihood: Likelihood,
         mean_function: Optional[MeanFunction] = None,
-        num_latent_gps: int = 1,
+        num_latent_gps: int = None,
     ):
         super().__init__()
+        assert num_latent_gps is not None, "GPModel requires specification of num_latent_gps"
         self.num_latent_gps = num_latent_gps
         # TODO(@awav): Why is this here when MeanFunction does not have a __len__ method
         if mean_function is None:
@@ -103,12 +104,14 @@ class GPModel(BayesianModel):
         self.kernel = kernel
         self.likelihood = likelihood
 
-    def num_latent_gps_for_likelihood_and_data(self, likelihood, data) -> int:
+    @staticmethod
+    def num_latent_gps_for_likelihood_and_data(likelihood, data) -> int:
         _, Y = data
         output_dim = Y.shape[1]
-        return self.num_latent_gps_for_likelihood_and_output_dim(likelihood, output_dim)
+        return GPModel.num_latent_gps_for_likelihood_and_output_dim(likelihood, output_dim)
 
-    def num_latent_gps_for_likelihood_and_output_dim(self, likelihood, output_dim) -> int:
+    @staticmethod
+    def num_latent_gps_for_likelihood_and_output_dim(likelihood, output_dim) -> int:
         """
         Note: It's not nice for `GPModel` to need to be aware of specific
         likelihoods as here. However, `num_latent_gps` is a bit more broken in
