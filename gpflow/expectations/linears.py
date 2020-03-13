@@ -24,7 +24,7 @@ def _E(p, kernel, _, __, ___, nghp=None):
     Xmu, _ = kernel.slice(p.mu, None)
     Xcov = kernel.slice_cov(p.cov)
 
-    return tf.reduce_sum(kernel.variance * (tf.linalg.diag_part(Xcov) + Xmu**2), 1)
+    return tf.reduce_sum(kernel.variance * (tf.linalg.diag_part(Xcov) + Xmu ** 2), 1)
 
 
 @dispatch.expectation.register(Gaussian, kernels.Linear, InducingPoints, NoneType, NoneType)
@@ -59,7 +59,9 @@ def _E(p, kernel, inducing_variable, mean, _, nghp=None):
     return tf.linalg.matmul(tiled_Z, Xcov + (Xmu[..., None] * Xmu[:, None, :]))
 
 
-@dispatch.expectation.register(MarkovGaussian, kernels.Linear, InducingPoints, mfn.Identity, NoneType)
+@dispatch.expectation.register(
+    MarkovGaussian, kernels.Linear, InducingPoints, mfn.Identity, NoneType
+)
 def _E(p, kernel, inducing_variable, mean, _, nghp=None):
     """
     Compute the expectation:
@@ -78,8 +80,9 @@ def _E(p, kernel, inducing_variable, mean, _, nghp=None):
     return tf.linalg.matmul(tiled_Z, eXX)
 
 
-@dispatch.expectation.register((Gaussian, DiagonalGaussian), kernels.Linear, InducingPoints, kernels.Linear,
-                               InducingPoints)
+@dispatch.expectation.register(
+    (Gaussian, DiagonalGaussian), kernels.Linear, InducingPoints, kernels.Linear, InducingPoints
+)
 def _E(p, kern1, feat1, kern2, feat2, nghp=None):
     """
     Compute the expectation:
@@ -91,14 +94,18 @@ def _E(p, kern1, feat1, kern2, feat2, nghp=None):
 
     :return: NxMxM
     """
-    if kern1.on_separate_dims(kern2) and isinstance(p, DiagonalGaussian):  # no joint expectations required
+    if kern1.on_separate_dims(kern2) and isinstance(
+        p, DiagonalGaussian
+    ):  # no joint expectations required
         eKxz1 = expectation(p, (kern1, feat1))
         eKxz2 = expectation(p, (kern2, feat2))
         return eKxz1[:, :, None] * eKxz2[:, None, :]
 
     if kern1 != kern2 or feat1 != feat2:
-        raise NotImplementedError("The expectation over two kernels has only an "
-                                  "analytical implementation if both kernels are equal.")
+        raise NotImplementedError(
+            "The expectation over two kernels has only an "
+            "analytical implementation if both kernels are equal."
+        )
 
     kernel = kern1
     inducing_variable = feat1

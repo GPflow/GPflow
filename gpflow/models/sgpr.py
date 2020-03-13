@@ -26,37 +26,71 @@ from ..inducing_variables import InducingPoints
 from ..mean_functions import Zero, MeanFunction
 
 
-class SGPRUpperMixin(GPModel):
+class SGPRBase(GPModel):
     """
-    Upper bound for the GP regression marginal likelihood.
-    It is implemented here as a Mixin class which works with SGPR and GPRFITC.
-    Note that the same inducing points are used for calculating the upper bound,
-    as are used for computing the likelihood approximation. This may not lead to
-    the best upper bound. The upper bound can be tightened by optimising Z, just
-    as just like the lower bound. This is especially important in FITC, as FITC
-    is known to produce poor inducing point locations. An optimisable upper bound
-    can be found in https://github.com/markvdw/gp_upper.
-
-    The key reference is
-
-    ::
-
-      @misc{titsias_2014,
-        title={Variational Inference for Gaussian and Determinantal Point Processes},
-        url={http://www2.aueb.gr/users/mtitsias/papers/titsiasNipsVar14.pdf},
-        publisher={Workshop on Advances in Variational Inference (NIPS 2014)},
-        author={Titsias, Michalis K.},
-        year={2014},
-        month={Dec}
-      }
-
-    The key quantity, the trace term, can be computed with
-            # To compute each individual element of the trace term, use...
-    v = conditionals.conditional(X, r.model.inducing_variable.Z.numpy(), r.model.kernel,
-                                 np.zeros((len(r.model.inducing_variable), 1)))[1].numpy()
+    Common base class for SGPR and GPRFITC that provides the common __init__
+    and upper_bound() methods.
     """
+
+    def __init__(
+        self,
+        data: Data,
+        kernel: Kernel,
+        mean_function: Optional[MeanFunction] = None,
+        inducing_variable: Optional[InducingPoints] = None,
+        num_latent: Optional[int] = None,
+        noise_variance: float = 1.0,
+    ):
+        """
+        `data`:  a tuple of (X, Y), where the inputs X has shape [N, D]
+            and the outputs Y has shape [N, R].
+        `inducing_variable`:  an InducingPoints instance or a matrix of
+            the pseudo inputs Z, of shape [M, D].
+        `kernel`, `mean_function` are appropriate GPflow objects
+
+        This method only works with a Gaussian likelihood, its variance is
+        initialized to `noise_variance`.
+        """
+        likelihood = likelihoods.Gaussian(noise_variance)
+        x_data, y_data = data
+        num_latent = y_data.shape[-1] if num_latent is None else num_latent
+        super().__init__(kernel, likelihood, mean_function, num_latent=num_latent)
+
+        self.data = data
+        self.num_data = x_data.shape[0]
+
+        self.inducing_variable = inducingpoint_wrapper(inducing_variable)
 
     def upper_bound(self):
+        """
+        Upper bound for the sparse GP regression marginal likelihood.  Note that
+        the same inducing points are used for calculating the upper bound, as are
+        used for computing the likelihood approximation. This may not lead to the
+        best upper bound. The upper bound can be tightened by optimising Z, just
+        like the lower bound. This is especially important in FITC, as FITC is
+        known to produce poor inducing point locations. An optimisable upper bound
+        can be found in https://github.com/markvdw/gp_upper.
+
+        The key reference is
+
+        ::
+
+          @misc{titsias_2014,
+            title={Variational Inference for Gaussian and Determinantal Point Processes},
+            url={http://www2.aueb.gr/users/mtitsias/papers/titsiasNipsVar14.pdf},
+            publisher={Workshop on Advances in Variational Inference (NIPS 2014)},
+            author={Titsias, Michalis K.},
+            year={2014},
+            month={Dec}
+          }
+
+        The key quantity, the trace term, can be computed via
+
+        >>> _, v = conditionals.conditional(X, model.inducing_variable.Z, model.kernel,
+        ...                                 np.zeros((len(model.inducing_variable), 1)))
+
+        which computes each individual element of the trace term.
+        """
         x_data, y_data = self.data
         num_data = tf.cast(tf.shape(y_data)[0], default_float())
 
@@ -78,21 +112,21 @@ class SGPRUpperMixin(GPModel):
         # Alternative bound on max eigenval:
         corrected_noise = self.likelihood.variance + c
 
-        const = -0.5 * num_data * tf.math.log(
-            2 * np.pi * self.likelihood.variance)
-        logdet = - tf.reduce_sum(tf.math.log(tf.linalg.diag_part(LB)))
+        const = -0.5 * num_data * tf.math.log(2 * np.pi * self.likelihood.variance)
+        logdet = -tf.reduce_sum(tf.math.log(tf.linalg.diag_part(LB)))
 
         LC = tf.linalg.cholesky(I + AAT / corrected_noise)
-        v = tf.linalg.triangular_solve(LC,
-                                       tf.linalg.matmul(A, y_data) / corrected_noise,
-                                       lower=True)
-        quad = (-0.5 * tf.reduce_sum(tf.square(y_data)) / corrected_noise
-                + 0.5 * tf.reduce_sum(tf.square(v)))
+        v = tf.linalg.triangular_solve(
+            LC, tf.linalg.matmul(A, y_data) / corrected_noise, lower=True
+        )
+        quad = -0.5 * tf.reduce_sum(tf.square(y_data)) / corrected_noise + 0.5 * tf.reduce_sum(
+            tf.square(v)
+        )
 
         return const + logdet + quad
 
 
-class SGPR(SGPRUpperMixin):
+class SGPR(SGPRBase):
     """
     Sparse Variational GP regression. The key reference is
 
@@ -111,31 +145,6 @@ class SGPR(SGPRUpperMixin):
 
 
     """
-
-    def __init__(self,
-                 data: Data,
-                 kernel: Kernel,
-                 mean_function: Optional[MeanFunction] = None,
-                 inducing_variable: Optional[InducingPoints] = None,
-                 num_latent: Optional[int] = None,
-                 noise_variance: float = 1.0,
-                 ):
-        """
-        X is a data matrix, size [N, D]
-        Y is a data matrix, size [N, R]
-        Z is a matrix of pseudo inputs, size [M, D]
-        kernel, mean_function are appropriate GPflow objects
-
-        This method only works with a Gaussian likelihood.
-        """
-        likelihood = likelihoods.Gaussian(noise_variance)
-        x_data, y_data = data
-        num_latent = y_data.shape[-1] if num_latent is None else num_latent
-        super().__init__(kernel, likelihood, mean_function, num_latent)
-        self.data = data
-        self.num_data = x_data.shape[0]
-
-        self.inducing_variable = inducingpoint_wrapper(inducing_variable)
 
     def log_likelihood(self):
         """
@@ -166,21 +175,16 @@ class SGPR(SGPRUpperMixin):
 
         # compute log marginal bound
         bound = -0.5 * num_data * output_dim * np.log(2 * np.pi)
-        bound += tf.negative(output_dim) * tf.reduce_sum(
-            tf.math.log(tf.linalg.diag_part(LB)))
-        bound -= 0.5 * num_data * output_dim * tf.math.log(
-            self.likelihood.variance)
-        bound += -0.5 * tf.reduce_sum(
-            tf.square(err)) / self.likelihood.variance
+        bound += tf.negative(output_dim) * tf.reduce_sum(tf.math.log(tf.linalg.diag_part(LB)))
+        bound -= 0.5 * num_data * output_dim * tf.math.log(self.likelihood.variance)
+        bound += -0.5 * tf.reduce_sum(tf.square(err)) / self.likelihood.variance
         bound += 0.5 * tf.reduce_sum(tf.square(c))
-        bound += -0.5 * output_dim * tf.reduce_sum(
-            Kdiag) / self.likelihood.variance
+        bound += -0.5 * output_dim * tf.reduce_sum(Kdiag) / self.likelihood.variance
         bound += 0.5 * output_dim * tf.reduce_sum(tf.linalg.diag_part(AAT))
 
         return bound
 
-    def predict_f(self, X: tf.Tensor, full_cov=False,
-                  full_output_cov=False) -> MeanAndVariance:
+    def predict_f(self, X: tf.Tensor, full_cov=False, full_output_cov=False) -> MeanAndVariance:
         """
         Compute the mean and variance of the latent function at some new points
         Xnew. For a derivation of the terms in here, see the associated SGPR
@@ -195,8 +199,7 @@ class SGPR(SGPRUpperMixin):
         sigma = tf.sqrt(self.likelihood.variance)
         L = tf.linalg.cholesky(kuu)
         A = tf.linalg.triangular_solve(L, kuf, lower=True) / sigma
-        B = tf.linalg.matmul(A, A, transpose_b=True) + tf.eye(
-            num_inducing, dtype=default_float())
+        B = tf.linalg.matmul(A, A, transpose_b=True) + tf.eye(num_inducing, dtype=default_float())
         LB = tf.linalg.cholesky(B)
         Aerr = tf.linalg.matmul(A, err)
         c = tf.linalg.triangular_solve(LB, Aerr, lower=True) / sigma
@@ -204,12 +207,18 @@ class SGPR(SGPRUpperMixin):
         tmp2 = tf.linalg.triangular_solve(LB, tmp1, lower=True)
         mean = tf.linalg.matmul(tmp2, c, transpose_a=True)
         if full_cov:
-            var = self.kernel(X) + tf.linalg.matmul(tmp2, tmp2, transpose_a=True) \
-                  - tf.linalg.matmul(tmp1, tmp1, transpose_a=True)
+            var = (
+                self.kernel(X)
+                + tf.linalg.matmul(tmp2, tmp2, transpose_a=True)
+                - tf.linalg.matmul(tmp1, tmp1, transpose_a=True)
+            )
             var = tf.tile(var[None, ...], [self.num_latent, 1, 1])  # [P, N, N]
         else:
-            var = self.kernel(X, full=False) + tf.reduce_sum(tf.square(tmp2), 0) \
-                  - tf.reduce_sum(tf.square(tmp1), 0)
+            var = (
+                self.kernel(X, full=False)
+                + tf.reduce_sum(tf.square(tmp2), 0)
+                - tf.reduce_sum(tf.square(tmp1), 0)
+            )
             var = tf.tile(var[:, None], [1, self.num_latent])
         return mean + self.mean_function(X), var
 
@@ -232,57 +241,37 @@ class SGPR(SGPRUpperMixin):
 
         cov = tf.linalg.matmul(sig_sqrt_kuu, sig_sqrt_kuu, transpose_a=True)
         err = y_data - self.mean_function(x_data)
-        mu = tf.linalg.matmul(
-            sig_sqrt_kuu, tf.linalg.triangular_solve(sig_sqrt, tf.linalg.matmul(kuf, err)),
-            transpose_a=True) / self.likelihood.variance
+        mu = (
+            tf.linalg.matmul(
+                sig_sqrt_kuu,
+                tf.linalg.triangular_solve(sig_sqrt, tf.linalg.matmul(kuf, err)),
+                transpose_a=True,
+            )
+            / self.likelihood.variance
+        )
 
         return mu, cov
 
 
-class GPRFITC(SGPRUpperMixin):
-    def __init__(self,
-                 data: Data,
-                 kernel: Kernel,
-                 mean_function: Optional[MeanFunction] = None,
-                 inducing_variable: Optional[InducingPoints] = None,
-                 noise_variance: float = 1.0,
-                 ):
-        """
-        This implements GP regression with the FITC approximation.
-        The key reference is
+class GPRFITC(SGPRBase):
+    """
+    This implements GP regression with the FITC approximation.
+    The key reference is
 
-        @inproceedings{Snelson06sparsegaussian,
+    ::
+
+      @inproceedings{Snelson06sparsegaussian,
         author = {Edward Snelson and Zoubin Ghahramani},
         title = {Sparse Gaussian Processes using Pseudo-inputs},
-        booktitle = {Advances In Neural Information Processing Systems },
+        booktitle = {Advances In Neural Information Processing Systems},
         year = {2006},
         pages = {1257--1264},
         publisher = {MIT press}
-        }
+      }
 
-        Implementation loosely based on code from GPML matlab library although
-        obviously gradients are automatic in GPflow.
-
-        X is a data matrix, size [N, D]
-        Y is a data matrix, size [N, R]
-        Z is a matrix of pseudo inputs, size [M, D]
-        kernel, mean_function are appropriate GPflow objects
-
-        This method only works with a Gaussian likelihood.
-
-        """
-
-        mean_function = Zero() if mean_function is None else mean_function
-
-        likelihood = likelihoods.Gaussian(noise_variance)
-        x_data, y_data = data
-        num_latent = y_data.shape[-1]
-        super().__init__(kernel, likelihood, mean_function, num_latent=num_latent)
-
-        self.data = data
-        self.num_data = x_data.shape[0]
-
-        self.inducing_variable = inducingpoint_wrapper(inducing_variable)
+    Implementation loosely based on code from GPML matlab library although
+    obviously gradients are automatic in GPflow.
+    """
 
     def common_terms(self):
         x_data, y_data = self.data
@@ -293,14 +282,14 @@ class GPRFITC(SGPRUpperMixin):
         kuu = Kuu(self.inducing_variable, self.kernel, jitter=default_jitter())
 
         Luu = tf.linalg.cholesky(kuu)  # => Luu Luu^T = kuu
-        V = tf.linalg.triangular_solve(
-            Luu, kuf)  # => V^T V = Qff = kuf^T kuu^-1 kuf
+        V = tf.linalg.triangular_solve(Luu, kuf)  # => V^T V = Qff = kuf^T kuu^-1 kuf
 
         diagQff = tf.reduce_sum(tf.square(V), 0)
         nu = Kdiag - diagQff + self.likelihood.variance
 
         B = tf.eye(num_inducing, dtype=default_float()) + tf.linalg.matmul(
-            V / nu, V, transpose_b=True)
+            V / nu, V, transpose_b=True
+        )
         L = tf.linalg.cholesky(B)
         beta = err / tf.expand_dims(nu, 1)  # size [N, R]
         alpha = tf.linalg.matmul(V, beta)  # size [N, R]
@@ -335,8 +324,9 @@ class GPRFITC(SGPRUpperMixin):
 
         err, nu, Luu, L, alpha, beta, gamma = self.common_terms()
 
-        mahalanobisTerm = -0.5 * tf.reduce_sum(tf.square(err) / tf.expand_dims(nu, 1)) \
-                          + 0.5 * tf.reduce_sum(tf.square(gamma))
+        mahalanobisTerm = -0.5 * tf.reduce_sum(
+            tf.square(err) / tf.expand_dims(nu, 1)
+        ) + 0.5 * tf.reduce_sum(tf.square(gamma))
 
         # We need to compute the log normalizing term -N/2 \log 2 pi - 0.5 \log \det( K_fitc )
 
@@ -347,17 +337,15 @@ class GPRFITC(SGPRUpperMixin):
         #                    = \log [ \det \diag( \nu ) \det( I + V \diag( \nu^{-1} ) V^T ) ]
         #                    = \log [ \det \diag( \nu ) ] + \log [ \det( I + V \diag( \nu^{-1} ) V^T ) ]
 
-        constantTerm = -0.5 * self.num_data * tf.math.log(
-            tf.constant(2. * np.pi, default_float()))
-        logDeterminantTerm = -0.5 * tf.reduce_sum(
-            tf.math.log(nu)) - tf.reduce_sum(
-            tf.math.log(tf.linalg.diag_part(L)))
+        constantTerm = -0.5 * self.num_data * tf.math.log(tf.constant(2.0 * np.pi, default_float()))
+        logDeterminantTerm = -0.5 * tf.reduce_sum(tf.math.log(nu)) - tf.reduce_sum(
+            tf.math.log(tf.linalg.diag_part(L))
+        )
         logNormalizingTerm = constantTerm + logDeterminantTerm
 
         return mahalanobisTerm + logNormalizingTerm * self.num_latent
 
-    def predict_f(self, X: tf.Tensor, full_cov=False,
-                  full_output_cov=False) -> MeanAndVariance:
+    def predict_f(self, X: tf.Tensor, full_cov=False, full_output_cov=False) -> MeanAndVariance:
         """
         Compute the mean and variance of the latent function at some new points
         Xnew.
@@ -368,17 +356,22 @@ class GPRFITC(SGPRUpperMixin):
         w = tf.linalg.triangular_solve(Luu, Kus, lower=True)  # size [M, X]new
 
         tmp = tf.linalg.triangular_solve(tf.transpose(L), gamma, lower=False)
-        mean = tf.linalg.matmul(w, tmp,
-                                transpose_a=True) + self.mean_function(X)
+        mean = tf.linalg.matmul(w, tmp, transpose_a=True) + self.mean_function(X)
         intermediateA = tf.linalg.triangular_solve(L, w, lower=True)
 
         if full_cov:
-            var = self.kernel(X) - tf.linalg.matmul(w, w, transpose_a=True) \
-                  + tf.linalg.matmul(intermediateA, intermediateA, transpose_a=True)
+            var = (
+                self.kernel(X)
+                - tf.linalg.matmul(w, w, transpose_a=True)
+                + tf.linalg.matmul(intermediateA, intermediateA, transpose_a=True)
+            )
             var = tf.tile(var[None, ...], [self.num_latent, 1, 1])  # [P, N, N]
         else:
-            var = self.kernel(X, full=False) - tf.reduce_sum(tf.square(w), 0) \
-                  + tf.reduce_sum(tf.square(intermediateA), 0)  # size Xnew,
+            var = (
+                self.kernel(X, full=False)
+                - tf.reduce_sum(tf.square(w), 0)
+                + tf.reduce_sum(tf.square(intermediateA), 0)
+            )  # size Xnew,
             var = tf.tile(var[:, None], [1, self.num_latent])
 
         return mean, var

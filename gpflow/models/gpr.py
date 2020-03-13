@@ -32,16 +32,21 @@ class GPR(GPModel):
     This is a vanilla implementation of GP regression with a Gaussian
     likelihood.  Multiple columns of Y are treated independently.
 
-    The log likelihood of this models is sometimes referred to as the 'marginal log likelihood',
-    and is given by
+    The log likelihood of this model is sometimes referred to as the 'log
+    marginal likelihood', and is given by
 
     .. math::
        \log p(\mathbf y \,|\, \mathbf f) =
-            \mathcal N\left(\mathbf y\,|\, 0, \mathbf K + \sigma_n \mathbf I\right)
+            \mathcal N(\mathbf{y} \,|\, 0, \mathbf{K} + \sigma_n \mathbf{I})
     """
 
-    def __init__(self, data: Data, kernel: Kernel, mean_function: Optional[MeanFunction] = None,
-                 noise_variance: float = 1.0):
+    def __init__(
+        self,
+        data: Data,
+        kernel: Kernel,
+        mean_function: Optional[MeanFunction] = None,
+        noise_variance: float = 1.0,
+    ):
         likelihood = gpflow.likelihoods.Gaussian(noise_variance)
         _, y_data = data
         super().__init__(kernel, likelihood, mean_function, num_latent=y_data.shape[-1])
@@ -49,7 +54,7 @@ class GPR(GPModel):
 
     def log_likelihood(self):
         r"""
-        Computes the log likelihood.
+        Computes the log marginal likelihood.
 
         .. math::
             \log p(Y | \theta).
@@ -88,7 +93,8 @@ class GPR(GPModel):
         s = tf.linalg.diag(tf.fill([num_data], self.likelihood.variance))
 
         conditional = gpflow.conditionals.base_conditional
-        f_mean_zero, f_var = conditional(kmn, kmm + s, knn, err, full_cov=full_cov,
-                                         white=False)  # [N, P], [N, P] or [P, N, N]
+        f_mean_zero, f_var = conditional(
+            kmn, kmm + s, knn, err, full_cov=full_cov, white=False
+        )  # [N, P], [N, P] or [P, N, N]
         f_mean = f_mean_zero + self.mean_function(Xnew)
         return f_mean, f_var

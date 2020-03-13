@@ -16,6 +16,14 @@ Kernels form a core component of GPflow models and allow prior information to
 be encoded about a latent function of interest. The effect of choosing
 different kernels, and how it is possible to combine multiple kernels is shown
 in the `"Using kernels in GPflow" notebook <notebooks/kernels.html>`_.
+
+Broadcasting over leading dimensions:
+`kernel.K(X1, X2)` returns the kernel evaluated on every pair in X1 and X2.
+E.g. if X1 has shape [S1, N1, D] and X2 has shape [S2, N2, D], kernel.K(X1, X2)
+will return a tensor of shape [S1, N1, S2, N2]. Similarly, kernel.K(X1, X1)
+returns a tensor of shape [S1, N1, S1, N1]. In contrast, the return shape of
+kernel.K(X1) is [S1, N1, N1]. (Without leading dimensions, the behaviour of
+kernel.K(X, None) is identical to kernel.K(X, X).)
 """
 
 import abc
@@ -65,8 +73,7 @@ class Kernel(Module, metaclass=abc.ABCMeta):
         Checks if the dimensions, over which the kernels are specified, overlap.
         Returns True if they are defined on different/separate dimensions and False otherwise.
         """
-        if isinstance(self.active_dims, slice) or isinstance(
-                other.active_dims, slice):
+        if isinstance(self.active_dims, slice) or isinstance(other.active_dims, slice):
             # Be very conservative for kernels defined over slices of dimensions
             return False
 
@@ -122,8 +129,9 @@ class Kernel(Module, metaclass=abc.ABCMeta):
             cov_reshaped = tf.reshape(cov, [-1, nlast, nlast])
             gather1 = tf.gather(tf.transpose(cov_reshaped, [2, 1, 0]), dims)
             gather2 = tf.gather(tf.transpose(gather1, [1, 0, 2]), dims)
-            cov = tf.reshape(tf.transpose(gather2, [2, 0, 1]),
-                             tf.concat([cov_shape[:-2], [ndims, ndims]], 0))
+            cov = tf.reshape(
+                tf.transpose(gather2, [2, 0, 1]), tf.concat([cov_shape[:-2], [ndims, ndims]], 0)
+            )
 
         return cov
 
@@ -137,8 +145,10 @@ class Kernel(Module, metaclass=abc.ABCMeta):
             return
 
         if ard_parameter.shape.rank > 0 and ard_parameter.shape[0] != len(self.active_dims):
-            raise ValueError(f"Size of `active_dims` {self.active_dims} does not match "
-                             f"size of ard parameter ({ard_parameter.shape[0]})")
+            raise ValueError(
+                f"Size of `active_dims` {self.active_dims} does not match "
+                f"size of ard parameter ({ard_parameter.shape[0]})"
+            )
 
     @abc.abstractmethod
     def K(self, X, X2=None):
@@ -214,7 +224,7 @@ class Combination(Kernel):
             dimlist = [k.active_dims for k in self.kernels]
             overlapping = False
             for i, dims_i in enumerate(dimlist):
-                for dims_j in dimlist[i + 1:]:
+                for dims_j in dimlist[i + 1 :]:
                     print(f"dims_i = {type(dims_i)}")
                     if np.any(dims_i.reshape(-1, 1) == dims_j.reshape(1, -1)):
                         overlapping = True
@@ -223,9 +233,7 @@ class Combination(Kernel):
 
 class ReducingCombination(Combination):
     def __call__(self, X, X2=None, full=True, presliced=False):
-        return self._reduce(
-            [k(X, X2, full=full, presliced=presliced) for k in self.kernels]
-        )
+        return self._reduce([k(X, X2, full=full, presliced=presliced) for k in self.kernels])
 
     def K(self, X: tf.Tensor, X2: Optional[tf.Tensor] = None) -> tf.Tensor:
         return self._reduce([k.K(X, X2) for k in self.kernels])

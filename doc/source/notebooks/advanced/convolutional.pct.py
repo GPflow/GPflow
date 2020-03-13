@@ -26,24 +26,30 @@
 # Generate a simple dataset of rectangles. We want to classify whether they are tall or wide. **NOTE:** Here we take care to make sure that the rectangles don't touch the edge, which is different to the original paper. We do this to avoid needing to use patch weights, which are needed to correctly account for edge effects.
 
 # %%
+import time
 import numpy as np
 import matplotlib.pyplot as plt
+
 import gpflow
 import tensorflow as tf
 import tensorflow_probability as tfp
-import time
-import os
+
+from gpflow.utilities import set_trainable
+from gpflow.ci_utils import is_continuous_integration
 
 gpflow.config.set_default_float(np.float64)
 gpflow.config.set_default_jitter(1e-4)
 gpflow.config.set_default_summary_fmt("notebook")
 
-def is_continuous_integration():
-    return os.environ.get('CI', None) is not None
+# for reproducibility of this notebook:
+np.random.seed(123)
+tf.random.set_seed(42)
 
 MAXITER = 2 if is_continuous_integration() else 100
 NUM_TRAIN_DATA = 5 if is_continuous_integration() else 100  # This is less than in the original rectangles dataset
 NUM_TEST_DATA = 7 if is_continuous_integration() else 300
+H = W = 14  # width and height. In the original paper this is 28
+IMG_SIZE = [H, W]
 
 
 # %%
@@ -76,14 +82,14 @@ def make_rectangles_dataset(num, w, h):
 
 
 # %%
-X, Y = data = make_rectangles_dataset(NUM_TRAIN_DATA, 28, 28)
-Xt, Yt = test_data = make_rectangles_dataset(NUM_TEST_DATA, 28, 28)
+X, Y = data = make_rectangles_dataset(NUM_TRAIN_DATA, *IMG_SIZE)
+Xt, Yt = test_data = make_rectangles_dataset(NUM_TEST_DATA, *IMG_SIZE)
 
 # %%
 plt.figure(figsize=(8, 3))
 for i in range(4):
     plt.subplot(1, 4, i + 1)
-    plt.imshow(X[i, :].reshape(28, 28))
+    plt.imshow(X[i, :].reshape(*IMG_SIZE))
     plt.title(Y[i, 0])
 
 # %% [markdown]
@@ -96,10 +102,10 @@ rbf_m = gpflow.models.SVGP(gpflow.kernels.SquaredExponential(), gpflow.likelihoo
 # %%
 rbf_m_log_likelihood = rbf_m.log_likelihood
 print("RBF elbo before training: %.4e" % rbf_m_log_likelihood(data))
-rbf_m_log_likelihood = tf.function(rbf_m_log_likelihood, autograph=False)
+rbf_m_log_likelihood = tf.function(rbf_m_log_likelihood)
 
 # %%
-gpflow.utilities.set_trainable(rbf_m.inducing_variable, False)
+set_trainable(rbf_m.inducing_variable, False)
 start_time = time.time()
 res = gpflow.optimizers.Scipy().minimize(
     lambda: -rbf_m_log_likelihood(data),
@@ -123,7 +129,8 @@ positive_with_min = lambda: tfp.bijectors.AffineScalar(shift=f64(1e-4))(tfp.bije
 constrained = lambda: tfp.bijectors.AffineScalar(shift=f64(1e-4), scale=f64(100.0))(tfp.bijectors.Sigmoid())
 max_abs_1 = lambda: tfp.bijectors.AffineScalar(shift=f64(-2.0), scale=f64(4.0))(tfp.bijectors.Sigmoid())
 
-conv_k = gpflow.kernels.Convolutional(gpflow.kernels.SquaredExponential(), [28, 28], [3, 3])
+patch_size = [3, 3]
+conv_k = gpflow.kernels.Convolutional(gpflow.kernels.SquaredExponential(), IMG_SIZE, patch_size)
 conv_k.basekern.lengthscale = gpflow.Parameter(1.0, transform=positive_with_min())
 # Weight scale and variance are non-identifiable. We also need to prevent variance from shooting off crazily.
 conv_k.basekern.variance = gpflow.Parameter(1.0, transform=constrained())
@@ -134,14 +141,14 @@ conv_f = gpflow.inducing_variables.InducingPatches(np.unique(conv_k.get_patches(
 conv_m = gpflow.models.SVGP(conv_k, gpflow.likelihoods.Bernoulli(), conv_f)
 
 # %%
-gpflow.utilities.set_trainable(conv_m.inducing_variable, False)
-conv_m.kernel.basekern.variance.trainable = False
-conv_m.kernel.weights.trainable = False
+set_trainable(conv_m.inducing_variable, False)
+set_trainable(conv_m.kernel.basekern.variance, False)
+set_trainable(conv_m.kernel.weights, False)
 
 # %%
 conv_m_log_likelihood = conv_m.log_likelihood
 print("conv elbo before training: %.4e" % conv_m_log_likelihood(data))
-conv_m_log_likelihood = tf.function(conv_m_log_likelihood, autograph=False)
+conv_m_log_likelihood = tf.function(conv_m_log_likelihood)
 
 # %%
 start_time = time.time()
@@ -153,7 +160,7 @@ res = gpflow.optimizers.Scipy().minimize(
 print(f"{res.nfev / (time.time() - start_time):.3f} iter/s")
 
 # %%
-conv_m.kernel.basekern.variance.trainable = True
+set_trainable(conv_m.kernel.basekern.variance, True)
 res = gpflow.optimizers.Scipy().minimize(
     lambda: -conv_m.log_likelihood(data),
     variables=conv_m.trainable_variables,
@@ -176,7 +183,7 @@ print(f"Train acc: {train_err * 100}%\nTest acc : {test_err*100}%")
 print("conv elbo after training: %.4e" % conv_m_log_likelihood(data))
 
 # %%
-conv_m.kernel.weights.trainable = True
+set_trainable(conv_m.kernel.weights, True)
 res = gpflow.optimizers.Scipy().minimize(
     lambda: -conv_m.log_likelihood(data),
     variables=conv_m.trainable_variables,

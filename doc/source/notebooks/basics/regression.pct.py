@@ -25,14 +25,15 @@
 #   - viewing, getting, and setting model parameters
 #   - optimizing the model parameters
 #   - making predictions
-#   
+#
 # We focus here on the implementation of the models in GPflow; for more intuition on these models, see [A Practical Guide to Gaussian Processes](https://drafts.distill.pub/gp/).
-#  
+#
 
 # %%
 import gpflow
 import numpy as np
 import matplotlib
+import tensorflow as tf
 from gpflow.utilities import print_summary
 
 # The lines below are specific to the notebook format
@@ -56,14 +57,14 @@ plt.plot(X, Y, 'kx', mew=2);
 # where $f \sim \mathcal{GP}(\mu(\cdot), k(\cdot, \cdot'))$, and $\varepsilon \sim \mathcal{N}(0, \tau^2 I)$.
 
 # %% [markdown]
-# ## Choose a kernel 
+# ## Choose a kernel
 # Several kernels (covariance functions) are implemented in GPflow. You can easily combine them to create new ones (see [Manipulating kernels](../advanced/kernels.ipynb)). You can also implement new covariance functions, as shown in the [Kernel design](../tailor/kernel_design.ipynb) notebook. Here, we will use a simple one:
 
 # %%
 k = gpflow.kernels.Matern52()
 
 # %% [markdown]
-# For more advanced kernels see the [advanced kernel notebook](../advanced/kernels.ipynb) (including kernels defined on subspaces). A summary of the kernel can be obtained by 
+# For more advanced kernels see the [advanced kernel notebook](../advanced/kernels.ipynb) (including kernels defined on subspaces). A summary of the kernel can be obtained by
 
 # %%
 print_summary(k)
@@ -73,7 +74,7 @@ print_summary(k)
 
 # %% [markdown]
 # ## Choose a mean function (optional)
-# It is common to choose $\mu = 0$, which is the GPflow default. 
+# It is common to choose $\mu = 0$, which is the GPflow default.
 #
 # However, if there is a clear pattern (such as a mean value of `Y` that is far away from 0, or a linear trend in the data), mean functions can  be beneficial. Some simple ones are provided in the `gpflow.mean_functions` module.
 #
@@ -83,7 +84,7 @@ print_summary(k)
 
 # %% [markdown]
 # ## Construct a model
-# A GPflow model is created by instantiating one of the GPflow model classes, in this case GPR. We'll make a kernel `k` and instantiate a GPR object using the generated data and the kernel. We'll also set the variance of the likelihood to a sensible initial guess. 
+# A GPflow model is created by instantiating one of the GPflow model classes, in this case GPR. We'll make a kernel `k` and instantiate a GPR object using the generated data and the kernel. We'll also set the variance of the likelihood to a sensible initial guess.
 
 # %%
 m = gpflow.models.GPR(data=(X, Y), kernel=k, mean_function=None)
@@ -107,7 +108,7 @@ m.kernel.lengthscale.assign(0.3)
 # %% [markdown]
 # ## Optimize the model parameters
 #
-# To obtain meaningful predictions, you need to tune the model parameters (that is, the parameters of the kernel, the likelihood, and the mean function if applicable) to the data at hand. 
+# To obtain meaningful predictions, you need to tune the model parameters (that is, the parameters of the kernel, the likelihood, and the mean function if applicable) to the data at hand.
 #
 # There are several optimizers available in GPflow. Here we use the `Scipy` optimizer, which by default implements the L-BFGS-B algorithm. (You can select other algorithms by using the `method=` keyword argument to its `minimize` method; see [the SciPy documentation](https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize.html) for details of available options.)
 
@@ -139,7 +140,7 @@ print_summary(m)
 # GPflow models have several prediction methods:
 
 # %% [markdown]
-#  - `m.predict_f` returns the mean and marginal variance of $f$ at the points `Xnew`. 
+#  - `m.predict_f` returns the mean and marginal variance of $f$ at the points `Xnew`.
 #
 #  - `m.predict_f` with argument `full_cov=True` returns the mean and the full covariance matrix of $f$ at the points `Xnew`.
 #
@@ -148,7 +149,7 @@ print_summary(m)
 #  - `m.predict_y` returns the mean and variance of a new data point (that is, it includes the noise variance).
 #
 #  - `m.predict_log_density` returns the log density of the observations `Ynew` at `Xnew`.
-#  
+#
 # We use `predict_f` and `predict_f_samples` to plot 95% confidence intervals and samples from the posterior distribution.
 
 # %%
@@ -159,9 +160,10 @@ xx = np.linspace(-0.1, 1.1, 100).reshape(100, 1)  # test points must be of shape
 mean, var = m.predict_f(xx)
 
 ## generate 10 samples from posterior
+tf.random.set_seed(1)  # for reproducibility
 samples = m.predict_f_samples(xx, 10)  # shape (10, 100, 1)
 
-## plot 
+## plot
 plt.figure(figsize=(12, 6))
 plt.plot(X, Y, 'kx', mew=2)
 plt.plot(xx, mean, 'C0', lw=2)
