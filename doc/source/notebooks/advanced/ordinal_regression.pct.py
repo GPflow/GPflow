@@ -87,24 +87,24 @@ opt.minimize(objective_closure, m.trainable_variables, options=dict(maxiter=100)
 # %%
 # here we'll plot the expected value of Y +- 2 std deviations, as if the distribution were Gaussian
 plt.figure(figsize=(11, 6))
-x_data, y_data = m.data
-Xtest = np.linspace(x_data.min(), x_data.max(), 100).reshape(-1, 1)
+X_data, Y_data = m.data
+Xtest = np.linspace(X_data.min(), X_data.max(), 100).reshape(-1, 1)
 mu, var = m.predict_y(Xtest)
 line, = plt.plot(Xtest, mu, lw=2)
 col=line.get_color()
 plt.plot(Xtest, mu+2*np.sqrt(var), '--', lw=2, color=col)
 plt.plot(Xtest, mu-2*np.sqrt(var), '--', lw=2, color=col)
-plt.plot(x_data, y_data, 'kx', mew=2)
+plt.plot(X_data, Y_data, 'kx', mew=2)
 
 
 # %%
 ## to see the predictive density, try predicting every possible discrete value for Y.
 def pred_log_density(m):
-    Xtest = np.linspace(x_data.min(), x_data.max(), 100).reshape(-1, 1)
-    ys = np.arange(y_data.max()+1)
+    Xtest = np.linspace(X_data.min(), X_data.max(), 100).reshape(-1, 1)
+    ys = np.arange(Y_data.max()+1)
     densities = []
     for y in ys:
-        Ytest = np.ones_like(Xtest) * y
+        Ytest = np.full_like(Xtest, y)
         # Predict the log density
         densities.append(m.predict_log_density((Xtest, Ytest)))
     return np.hstack(densities).T
@@ -113,7 +113,7 @@ def pred_log_density(m):
 # %%
 fig = plt.figure(figsize=(14, 6))
 plt.imshow(np.exp(pred_log_density(m)), interpolation='nearest',
-           extent=[x_data.min(), x_data.max(), -0.5,y_data.max()+0.5],
+           extent=[X_data.min(), X_data.max(), -0.5, Y_data.max()+0.5],
            origin='lower', aspect='auto', cmap=plt.cm.viridis)
 plt.colorbar()
 plt.plot(X, Y, 'kx', mew=2, scalex=False, scaley=False)
@@ -121,11 +121,11 @@ plt.plot(X, Y, 'kx', mew=2, scalex=False, scaley=False)
 # %%
 # Predictive density for a single input x=0.5
 x_new = 0.5
-ys = np.arange(np.max(y_data+1)).reshape([-1, 1])
-x_new_vec = x_new*np.ones_like(ys)
+Y_new = np.arange(np.max(Y_data+1)).reshape([-1, 1])
+X_new = np.full_like(Y_new, x_new)
 # for predict_density x and y need to have the same number of rows
-dens_new = np.exp(m.predict_log_density((x_new_vec, ys)))
+dens_new = np.exp(m.predict_log_density((X_new, Y_new)))
 fig = plt.figure(figsize=(8, 4))
-plt.bar(x=ys.flatten(), height=dens_new.flatten())
+plt.bar(x=Y_new.flatten(), height=dens_new.flatten())
 
 # %%
