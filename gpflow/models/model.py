@@ -11,19 +11,15 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-import abc
-import warnings
-from typing import Optional, Tuple, TypeVar
+from abc import ABC, abstractmethod
+from typing import Tuple, TypeVar, Sequence, Callable
 
 import numpy as np
 import tensorflow as tf
 
-from ..base import Module
+from .. import Parameter
 from ..config import default_float, default_jitter
-from ..kernels import Kernel
 from ..likelihoods import Likelihood
-from ..mean_functions import MeanFunction, Zero
 from ..utilities import ops
 
 Data = TypeVar("Data", Tuple[tf.Tensor, tf.Tensor], tf.Tensor)
@@ -31,34 +27,45 @@ DataPoint = tf.Tensor
 MeanAndVariance = Tuple[tf.Tensor, tf.Tensor]
 
 
-class BayesianModel(Module):
-    """ Bayesian model. """
+class Prior(ABC):
+    @property
+    @abstractmethod
+    def trainable_parameters(self) -> Sequence[Parameter]:
+        pass
 
-    def neg_log_marginal_likelihood(self, *args, **kwargs) -> tf.Tensor:
-        msg = (
-            "`BayesianModel.neg_log_marginal_likelihood` is deprecated and "
-            " and will be removed in a future release. Please update your code "
-            " to use `BayesianModel.log_marginal_likelihood`."
+    def log_prior_density(self) -> tf.Tensor:
+        return (
+            tf.add_n([p.log_prior() for p in self.trainable_parameters])
+            if self.trainable_parameters
+            else tf.convert_to_tensor(0., dtype=default_float())
         )
-        warnings.warn(msg, category=DeprecationWarning)
-        return -self.log_marginal_likelihood(*args, **kwargs)
-
-    def log_marginal_likelihood(self, *args, **kwargs) -> tf.Tensor:
-        return self.log_likelihood(*args, **kwargs) + self.log_prior()
-
-    def log_prior(self) -> tf.Tensor:
-        log_priors = [p.log_prior() for p in self.trainable_parameters]
-        if log_priors:
-            return tf.add_n(log_priors)
-        else:
-            return tf.convert_to_tensor(0.0, dtype=default_float())
-
-    @abc.abstractmethod
-    def log_likelihood(self, *args, **kwargs) -> tf.Tensor:
-        raise NotImplementedError
 
 
-class GPModel(BayesianModel):
+class BayesianModel(ABC, Prior):
+    def log_posterior_density(self, data: ...) -> tf.Tensor:
+        return self.maximum_likelihood_objective(data) + self.log_prior_density()
+
+    @abstractmethod
+    def maximum_likelihood_objective(self, data: ...) -> tf.Tensor:
+        pass
+
+    def training_loss_closure(self, data: ...) -> Callable[[], tf.Tensor]:
+        return lambda: - self.maximum_likelihood_objective(data) - self.log_prior_density()
+
+
+class BayesianModelWithData(ABC, Prior):
+    def log_posterior_density(self) -> tf.Tensor:
+        return self.maximum_likelihood_objective() + self.log_prior_density()
+
+    @abstractmethod
+    def maximum_likelihood_objective(self) -> tf.Tensor:
+        pass
+
+    def training_loss_closure(self) -> Callable[[], tf.Tensor]:
+        return lambda: - self.maximum_likelihood_objective() - self.log_prior_density()
+
+
+class GPModel(ABC):
     r"""
     A stateless base class for Gaussian process models, that is, those of the
     form
@@ -86,24 +93,12 @@ class GPModel(BayesianModel):
     It is also possible to draw samples from the latent GPs using
     self.predict_f_samples.
     """
+    @property
+    @abstractmethod
+    def likelihood(self) -> Likelihood:
+        pass
 
-    def __init__(
-        self,
-        kernel: Kernel,
-        likelihood: Likelihood,
-        mean_function: Optional[MeanFunction] = None,
-        num_latent_gps: int = 1,
-    ):
-        super().__init__()
-        self.num_latent_gps = num_latent_gps
-        # TODO(@awav): Why is this here when MeanFunction does not have a __len__ method
-        if mean_function is None:
-            mean_function = Zero()
-        self.mean_function = mean_function
-        self.kernel = kernel
-        self.likelihood = likelihood
-
-    @abc.abstractmethod
+    @abstractmethod
     def predict_f(
         self, predict_at: DataPoint, full_cov: bool = False, full_output_cov: bool = False
     ) -> MeanAndVariance:
