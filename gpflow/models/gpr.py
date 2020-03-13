@@ -11,13 +11,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 from typing import Optional, Tuple
 
 import tensorflow as tf
 
 import gpflow
-from .model import GPModel
+from .model import GPModel, BayesianModelWithData
 from ..kernels import Kernel
 from ..logdensities import multivariate_normal
 from ..mean_functions import MeanFunction
@@ -25,7 +24,7 @@ from ..mean_functions import MeanFunction
 Data = Tuple[tf.Tensor, tf.Tensor]
 
 
-class GPR(GPModel):
+class GPR(GPModel, BayesianModelWithData, tf.Module):
     r"""
     Gaussian Process Regression.
 
@@ -52,7 +51,7 @@ class GPR(GPModel):
         super().__init__(kernel, likelihood, mean_function, num_latent_gps=y_data.shape[-1])
         self.data = data
 
-    def log_likelihood(self):
+    def maximum_likelihood_objective(self):
         r"""
         Computes the log marginal likelihood.
 
