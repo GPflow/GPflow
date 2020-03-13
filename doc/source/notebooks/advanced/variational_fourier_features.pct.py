@@ -247,7 +247,7 @@ def conditional_vff(Xnew, inducing_variable, kernel, f, *,
         shape = (num_func, 1, 1)
     else:
         KufT_KuuInv_Kuf_diag = tf.reduce_sum(Kuf * KuuInv_Kuf, axis=-2)
-        fvar = kernel(Xnew, full=False) - KufT_KuuInv_Kuf_diag
+        fvar = kernel(Xnew, full_cov=False) - KufT_KuuInv_Kuf_diag
         shape = (num_func, 1)
     fvar = tf.expand_dims(fvar, 0) * tf.ones(shape, dtype=gpflow.default_float())  # K x N x N or K x N
 

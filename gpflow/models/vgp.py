@@ -254,5 +254,5 @@ class VGPOpperArchambeau(GPModel):
         if full_cov:
             f_var = self.kernel(predict_at) - tf.linalg.matmul(LiKx, LiKx, transpose_a=True)
         else:
-            f_var = self.kernel(predict_at, full=False) - tf.reduce_sum(tf.square(LiKx), 1)
+            f_var = self.kernel(predict_at, full_cov=False) - tf.reduce_sum(tf.square(LiKx), 1)
         return f_mean, tf.transpose(f_var)
