@@ -131,9 +131,9 @@ max_abs_1 = lambda: tfp.bijectors.AffineScalar(shift=f64(-2.0), scale=f64(4.0))(
 
 patch_size = [3, 3]
 conv_k = gpflow.kernels.Convolutional(gpflow.kernels.SquaredExponential(), IMG_SIZE, patch_size)
-conv_k.basekern.lengthscale = gpflow.Parameter(1.0, transform=positive_with_min())
+conv_k.base_kernel.lengthscale = gpflow.Parameter(1.0, transform=positive_with_min())
 # Weight scale and variance are non-identifiable. We also need to prevent variance from shooting off crazily.
-conv_k.basekern.variance = gpflow.Parameter(1.0, transform=constrained())
+conv_k.base_kernel.variance = gpflow.Parameter(1.0, transform=constrained())
 conv_k.weights = gpflow.Parameter(conv_k.weights.numpy(), transform=max_abs_1())
 conv_f = gpflow.inducing_variables.InducingPatches(np.unique(conv_k.get_patches(X).numpy().reshape(-1, 9), axis=0))
 
@@ -142,7 +142,7 @@ conv_m = gpflow.models.SVGP(conv_k, gpflow.likelihoods.Bernoulli(), conv_f)
 
 # %%
 set_trainable(conv_m.inducing_variable, False)
-set_trainable(conv_m.kernel.basekern.variance, False)
+set_trainable(conv_m.kernel.base_kernel.variance, False)
 set_trainable(conv_m.kernel.weights, False)
 
 # %%
@@ -160,7 +160,7 @@ res = gpflow.optimizers.Scipy().minimize(
 print(f"{res.nfev / (time.time() - start_time):.3f} iter/s")
 
 # %%
-set_trainable(conv_m.kernel.basekern.variance, True)
+set_trainable(conv_m.kernel.base_kernel.variance, True)
 res = gpflow.optimizers.Scipy().minimize(
     lambda: -conv_m.log_likelihood(data),
     variables=conv_m.trainable_variables,
