@@ -16,7 +16,7 @@ def _conditional(
     Xnew: tf.Tensor,
     inducing_variable: InducingVariables,
     kernel: Kernel,
-    function: tf.Tensor,
+    f: tf.Tensor,
     *,
     full_cov=False,
     full_output_cov=False,
@@ -58,7 +58,7 @@ def _conditional(
     Kmn = Kuf(inducing_variable, kernel, Xnew)  # [M, N]
     Knn = kernel(Xnew, full=full_cov)
     fmean, fvar = base_conditional(
-        Kmn, Kmm, Knn, function, full_cov=full_cov, q_sqrt=q_sqrt, white=white
+        Kmn, Kmm, Knn, f, full_cov=full_cov, q_sqrt=q_sqrt, white=white
     )  # [N, R],  [R, N, N] or [N, R]
     return fmean, expand_independent_outputs(fvar, full_cov, full_output_cov)
 
@@ -68,7 +68,7 @@ def _conditional(
     Xnew: tf.Tensor,
     X: tf.Tensor,
     kernel: Kernel,
-    function: tf.Tensor,
+    f: tf.Tensor,
     *,
     full_cov=False,
     full_output_cov=False,
@@ -113,7 +113,7 @@ def _conditional(
     Kmn = kernel(X, Xnew)  # [M, ..., N]
     Knn = kernel(Xnew, full=full_cov)  # [..., N] (full_cov = False) or [..., N, N] (True)
     mean, var = base_conditional(
-        Kmn, Kmm, Knn, function, full_cov=full_cov, q_sqrt=q_sqrt, white=white
+        Kmn, Kmm, Knn, f, full_cov=full_cov, q_sqrt=q_sqrt, white=white
     )
 
     return mean, var  # [N, R], [N, R] or [R, N, N]
