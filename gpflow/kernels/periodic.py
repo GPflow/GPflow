@@ -37,9 +37,9 @@ class Periodic(Kernel):
         the constructor doesn't have it as an argument.
     """
 
-    def __init__(self, base: Stationary, period: Union[float, List[float]] = 1.0):
+    def __init__(self, base_kernel: Stationary, period: Union[float, List[float]] = 1.0):
         """
-        :param base: the base kernel to make periodic; must inherit from Stationary
+        :param base_kernel: the base kernel to make periodic; must inherit from Stationary
             Note that `active_dims` should be specified in the base kernel.
         :param period: the period; to induce a different period per active dimension
             this must be initialized with an array the same length as the number
@@ -49,20 +49,20 @@ class Periodic(Kernel):
             raise TypeError("Periodic requires a Stationary kernel as the `base`")
 
         super().__init__()
-        self.base = base
+        self.base_kernel = base_kernel
         self.period = Parameter(period, transform=positive())
-        self.base._validate_ard_active_dims(self.period)
+        self.base_kernel._validate_ard_active_dims(self.period)
 
     @property
     def active_dims(self):
-        return self.base.active_dims
+        return self.base_kernel.active_dims
 
     @active_dims.setter
     def active_dims(self, value):
-        self.base.active_dims = value
+        self.base_kernel.active_dims = value
 
     def K_diag(self, X: tf.Tensor) -> tf.Tensor:
-        return self.base.K_diag(X)
+        return self.base_kernel.K_diag(X)
 
     def K(self, X: tf.Tensor, X2: Optional[tf.Tensor] = None) -> tf.Tensor:
         if X2 is None:
@@ -74,11 +74,11 @@ class Periodic(Kernel):
         f2 = tf.expand_dims(X2, 0)  # now [1, M, D]
 
         r = np.pi * (f - f2) / self.period
-        scaled_sine = tf.sin(r) / self.base.lengthscale
-        if hasattr(self.base, "K_r"):
+        scaled_sine = tf.sin(r) / self.base_kernel.lengthscale
+        if hasattr(self.base_kernel, "K_r"):
             sine_r = tf.reduce_sum(tf.abs(scaled_sine), -1)
-            K = self.base.K_r(sine_r)
+            K = self.base_kernel.K_r(sine_r)
         else:
             sine_r2 = tf.reduce_sum(tf.square(scaled_sine), -1)
-            K = self.base.K_r2(sine_r2)
+            K = self.base_kernel.K_r2(sine_r2)
         return K

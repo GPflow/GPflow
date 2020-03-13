@@ -115,17 +115,6 @@ def test_arccosine_nan_gradient(D, N):
     assert not np.any(np.isnan(grads))
 
 
-def _assert_periodic_kern_err(base_class, lengthscale, variance, period, X):
-    base = base_class(lengthscale=lengthscale, variance=variance)
-    kernel = gpflow.kernels.Periodic(base, period=period)
-    gram_matrix = kernel(X)
-    reference_gram_matrix = ref_periodic_kernel(
-        X, base_class.__name__, lengthscale, variance, period
-    )
-
-    assert_allclose(gram_matrix, reference_gram_matrix)
-
-
 @pytest.mark.parametrize(
     "base_class",
     [
@@ -148,7 +137,15 @@ def _assert_periodic_kern_err(base_class, lengthscale, variance, period, X):
 @pytest.mark.parametrize("N, variance", [[3, 2.3], [5, 1.3],])
 def test_periodic(base_class, D, N, lengthscale, variance, period):
     X = rng.randn(N, D) if D == 1 else rng.multivariate_normal(np.zeros(D), np.eye(D), N)
-    _assert_periodic_kern_err(base_class, lengthscale, variance, period, X)
+
+    base_kernel = base_class(lengthscale=lengthscale, variance=variance)
+    kernel = gpflow.kernels.Periodic(base_kernel, period=period)
+    gram_matrix = kernel(X)
+    reference_gram_matrix = ref_periodic_kernel(
+        X, base_class.__name__, lengthscale, variance, period
+    )
+
+    assert_allclose(gram_matrix, reference_gram_matrix)
 
 
 @pytest.mark.parametrize(
@@ -157,22 +154,22 @@ def test_periodic(base_class, D, N, lengthscale, variance, period):
 def test_periodic_diag(base_class):
     N, D = 5, 3
     X = rng.multivariate_normal(np.zeros(D), np.eye(D), N)
-    base = base_class(lengthscale=2.0, variance=1.0)
-    kernel = gpflow.kernels.Periodic(base, period=6.0)
-    assert_allclose(base(X, full=False), kernel(X, full=False))
+    base_kernel = base_class(lengthscale=2.0, variance=1.0)
+    kernel = gpflow.kernels.Periodic(base_kernel, period=6.0)
+    assert_allclose(base_kernel(X, full=False), kernel(X, full=False))
 
 
-def test_periodic_non_stationary_base():
-    error_msg = r"Periodic requires a Stationary kernel as the `base`"
+def test_periodic_non_stationary_base_kernel():
+    error_msg = r"Periodic requires a Stationary kernel as the `base_kernel`"
     with pytest.raises(TypeError, match=error_msg):
         gpflow.kernels.Periodic(gpflow.kernels.Linear())
 
 
 def test_periodic_bad_ard_period():
     error_msg = r"Size of `active_dims` \[1 2\] does not match size of ard parameter \(3\)"
-    base = gpflow.kernels.RBF(active_dims=[1, 2])
+    base_kernel = gpflow.kernels.RBF(active_dims=[1, 2])
     with pytest.raises(ValueError, match=error_msg):
-        gpflow.kernels.Periodic(base, period=[1.0, 1.0, 1.0])
+        gpflow.kernels.Periodic(base_kernel, period=[1.0, 1.0, 1.0])
 
 
 kernel_setups = [kernel() for kernel in gpflow.kernels.Stationary.__subclasses__()] + [
@@ -508,13 +505,13 @@ def test_kernel_call_diag_and_X2_errors(kernel):
 
 def test_periodic_active_dims_matches():
     active_dims = [1]
-    base = gpflow.kernels.SquaredExponential(active_dims=active_dims)
-    kernel = gpflow.kernels.Periodic(base=base)
+    base_kernel = gpflow.kernels.SquaredExponential(active_dims=active_dims)
+    kernel = gpflow.kernels.Periodic(base_kernel=base_kernel)
 
-    assert kernel.active_dims == base.active_dims
+    assert kernel.active_dims == base_kernel.active_dims
 
     kernel.active_dims = [2]
-    assert kernel.active_dims == base.active_dims
+    assert kernel.active_dims == base_kernel.active_dims
 
-    base.active_dims = [3]
-    assert kernel.active_dims == base.active_dims
+    base_kernel.active_dims = [3]
+    assert kernel.active_dims == base_kernel.active_dims
