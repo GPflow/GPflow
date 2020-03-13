@@ -30,7 +30,7 @@ class MultioutputInducingVariables(InducingVariables):
 
     @property
     def inducing_variables(self):
-       raise NotImplementedError
+        raise NotImplementedError
 
 
 class FallbackSharedIndependentInducingVariables(MultioutputInducingVariables):
@@ -71,7 +71,7 @@ class FallbackSharedIndependentInducingVariables(MultioutputInducingVariables):
 
     @property
     def inducing_variables(self):
-       return (self.inducing_variable,)
+        return (self.inducing_variable,)
 
 
 class FallbackSeparateIndependentInducingVariables(MultioutputInducingVariables):
@@ -112,7 +112,8 @@ class FallbackSeparateIndependentInducingVariables(MultioutputInducingVariables)
 
     @property
     def inducing_variables(self):
-       return tuple(self.inducing_variable_list)
+        return tuple(self.inducing_variable_list)
+
 
 class SharedIndependentInducingVariables(FallbackSharedIndependentInducingVariables):
     """
