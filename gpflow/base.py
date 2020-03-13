@@ -138,10 +138,6 @@ class Parameter(tf.Module):
     def trainable(self):
         return self._unconstrained.trainable
 
-    @trainable.setter
-    def trainable(self, flag: Union[bool, int]):
-        self._unconstrained._trainable = bool(flag)
-
     @property
     def initial_value(self):
         return self._unconstrained.initial_value
