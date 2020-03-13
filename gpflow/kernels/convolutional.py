@@ -23,11 +23,11 @@ class Convolutional(Kernel):
     }
     """
 
-    def __init__(self, basekern, img_size, patch_size, weights=None, colour_channels=1):
+    def __init__(self, base_kernel, img_size, patch_size, weights=None, colour_channels=1):
         super().__init__()
         self.img_size = img_size
         self.patch_size = patch_size
-        self.basekern = basekern
+        self.base_kernel = base_kernel
         self.colour_channels = colour_channels
         self.weights = Parameter(
             np.ones(self.num_patches, dtype=default_float()) if weights is None else weights
@@ -61,7 +61,7 @@ class Convolutional(Kernel):
         Xp = self.get_patches(X)  # [N, P, patch_len]
         Xp2 = Xp if X2 is None else self.get_patches(X2)
 
-        bigK = self.basekern.K(Xp, Xp2)  # [N, num_patches, N, num_patches]
+        bigK = self.base_kernel.K(Xp, Xp2)  # [N, num_patches, N, num_patches]
 
         W2 = self.weights[:, None] * self.weights[None, :]  # [P, P]
         W2bigK = bigK * W2[None, :, None, :]
@@ -70,7 +70,7 @@ class Convolutional(Kernel):
     def K_diag(self, X):
         Xp = self.get_patches(X)  # N x num_patches x patch_dim
         W2 = self.weights[:, None] * self.weights[None, :]  # [P, P]
-        bigK = self.basekern.K(Xp)  # [N, P, P]
+        bigK = self.base_kernel.K(Xp)  # [N, P, P]
         return tf.reduce_sum(bigK * W2[None, :, :], [1, 2]) / self.num_patches ** 2.0
 
     @property
