@@ -142,7 +142,7 @@ def test_no_uncertainty(white, mean):
     model = MomentMatchingSVGP(
         kernel,
         gpflow.likelihoods.Gaussian(),
-        num_latent=Data.D_out,
+        num_latent_gps=Data.D_out,
         mean_function=mean_function,
         inducing_variable=Data.X.copy(),
         whiten=white,
@@ -175,7 +175,7 @@ def test_monte_carlo_1_din(white, mean):
     model = MomentMatchingSVGP(
         kernel,
         gpflow.likelihoods.Gaussian(),
-        num_latent=DataMC1.D_out,
+        num_latent_gps=DataMC1.D_out,
         mean_function=mean_function,
         inducing_variable=DataMC1.X.copy(),
         whiten=white,
@@ -210,7 +210,7 @@ def test_monte_carlo_2_din(white, mean):
     model = MomentMatchingSVGP(
         kernel,
         gpflow.likelihoods.Gaussian(),
-        num_latent=DataMC2.D_out,
+        num_latent_gps=DataMC2.D_out,
         mean_function=mean_function,
         inducing_variable=DataMC2.X.copy(),
         whiten=white,

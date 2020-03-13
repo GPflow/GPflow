@@ -43,8 +43,8 @@ class ModelSetup:
         self.requires_data = requires_data
         self.requires_likelihood = requires_likelihood
 
-    def get_model(self, Z, num_latent, data=None):
-        params = dict(kernel=self.kernel, num_latent=num_latent)
+    def get_model(self, Z, num_latent_gps, data=None):
+        params = dict(kernel=self.kernel, num_latent_gps=num_latent_gps)
 
         if self.whiten is not None and self.q_diag is not None:
             params.update(inducing_variable=Z, whiten=self.whiten, q_diag=self.q_diag)
@@ -156,7 +156,7 @@ def test_other_models_full_cov(model_setup, input_dim, output_dim, N, Ntest, M):
     X, Y = rng.randn(N, input_dim), rng.randn(N, output_dim)
     Z = InducingPoints(rng.randn(M, input_dim))
     Xtest = rng.randn(Ntest, input_dim)
-    model_gp = model_setup.get_model(Z, num_latent=output_dim, data=(X, Y))
+    model_gp = model_setup.get_model(Z, num_latent_gps=output_dim, data=(X, Y))
 
     mu1, var = model_gp.predict_f(Xtest, full_cov=False)
     mu2, covar = model_gp.predict_f(Xtest, full_cov=True)
@@ -181,7 +181,7 @@ def test_other_models_full_cov_samples(
     samples_shape = (num_samples, Ntest, output_dim)
     X, Y, Z = rng.randn(N, input_dim), rng.randn(N, output_dim), rng.randn(M, input_dim)
     Xtest = rng.randn(Ntest, input_dim)
-    model_gp = model_setup.get_model(Z, num_latent=output_dim, data=(X, Y))
+    model_gp = model_setup.get_model(Z, num_latent_gps=output_dim, data=(X, Y))
 
     samples = model_gp.predict_f_samples(Xtest, num_samples)
     assert samples.shape == samples_shape
