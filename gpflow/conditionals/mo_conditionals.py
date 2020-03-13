@@ -75,7 +75,7 @@ def shared_independent_conditional(
     """
     Kmm = covariances.Kuu(inducing_variable, kernel, jitter=default_jitter())  # [M, M]
     Kmn = covariances.Kuf(inducing_variable, kernel, Xnew)  # [M, N]
-    Knn = kernel.kernel(Xnew, full=full_cov)
+    Knn = kernel.kernel(Xnew, full_cov=full_cov)
 
     fmean, fvar = base_conditional(
         Kmn, Kmm, Knn, f, full_cov=full_cov, q_sqrt=q_sqrt, white=white
@@ -175,7 +175,7 @@ def fallback_independent_latent_conditional(
     Kmm = covariances.Kuu(inducing_variable, kernel, jitter=default_jitter())  # [L, M, M]
     Kmn = covariances.Kuf(inducing_variable, kernel, Xnew)  # [M, L, N, P]
     Knn = kernel(
-        Xnew, full=full_cov, full_output_cov=full_output_cov
+        Xnew, full_cov=full_cov, full_output_cov=full_output_cov
     )  # [N, P](x N)x P  or  [N, P](x P)
 
     return independent_interdomain_conditional(
@@ -224,7 +224,7 @@ def inducing_point_conditional(
     Kmm = covariances.Kuu(inducing_variable, kernel, jitter=default_jitter())  # [M, L, M, L]
     Kmn = covariances.Kuf(inducing_variable, kernel, Xnew)  # [M, L, N, P]
     Knn = kernel(
-        Xnew, full=full_cov, full_output_cov=full_output_cov
+        Xnew, full_cov=full_cov, full_output_cov=full_output_cov
     )  # [N, P](x N)x P  or  [N, P](x P)
 
     M, L, N, K = tf.unstack(tf.shape(Kmn), num=Kmn.shape.ndims, axis=0)
