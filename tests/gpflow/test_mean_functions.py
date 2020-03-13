@@ -48,7 +48,7 @@ _mean_functions = [
 
 @pytest.mark.parametrize("mean_function_1", _mean_functions)
 @pytest.mark.parametrize("mean_function_2", _mean_functions)
-@pytest.mark.parametrize("operation", ["+", "x"])
+@pytest.mark.parametrize("operation", ["+", "*"])
 def test_mean_functions_output_shape(mean_function_1, mean_function_2, operation):
     """
     Test the output shape for basic and compositional mean functions, also
@@ -62,7 +62,7 @@ def test_mean_functions_output_shape(mean_function_1, mean_function_2, operation
     # composed mean function output shape check
     if operation == "+":
         mean_composed = mean_function_1 + mean_function_2
-    elif operation == "x":
+    elif operation == "*":
         mean_composed = mean_function_1 * mean_function_2
     else:
         raise (NotImplementedError)
@@ -73,12 +73,12 @@ def test_mean_functions_output_shape(mean_function_1, mean_function_2, operation
 
 @pytest.mark.parametrize("mean_function_1", _mean_functions)
 @pytest.mark.parametrize("mean_function_2", _mean_functions)
-@pytest.mark.parametrize("operation", ["+", "x"])
+@pytest.mark.parametrize("operation", ["+", "*"])
 def test_mean_functions_composite_type(mean_function_1, mean_function_2, operation):
     if operation == "+":
         mean_composed = mean_function_1 + mean_function_2
         assert isinstance(mean_composed, Additive)
-    elif operation == "x":
+    elif operation == "*":
         mean_composed = mean_function_1 * mean_function_2
         assert isinstance(mean_composed, Product)
     else:
