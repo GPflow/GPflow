@@ -97,7 +97,7 @@ class ChangePoints(Combination):
         starters = tf.concat([ones, sig_X * sig_X], axis=1)  # N x Ncp
         stoppers = tf.concat([(1 - sig_X) * (1 - sig_X), ones], axis=1)
 
-        kernel_stack = tf.stack([k(X, full=False) for k in self.kernels], axis=1)
+        kernel_stack = tf.stack([k(X, full_cov=False) for k in self.kernels], axis=1)
         return tf.reduce_sum(kernel_stack * starters * stoppers, axis=1)
 
     def _sigmoids(self, X: tf.Tensor) -> tf.Tensor:

@@ -33,7 +33,7 @@ def get_eval_func(obj, inducing_variable, slice=None):
     elif isinstance(obj, mfn.MeanFunction):
         return lambda x: obj(x)[slice]
     elif isinstance(obj, kernels.Kernel):
-        return lambda x: obj(x, full=False)
+        return lambda x: obj(x, full_cov=False)
 
     raise NotImplementedError()
 
