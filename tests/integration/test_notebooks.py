@@ -85,4 +85,4 @@ def test_notebook(notebook_file):
 
 
 def test_has_notebooks():
-    assert len(get_notebooks()) > 35, "there are clearly some notebooks that are not found"
+    assert len(get_notebooks()) >= 35, "there are clearly some notebooks that are not found"
