@@ -108,8 +108,8 @@ kern = k * coreg
 lik = gpflow.likelihoods.SwitchedLikelihood([gpflow.likelihoods.Gaussian(), gpflow.likelihoods.Gaussian()])
 
 # now build the GP model as normal
-m = gpflow.models.VGP((X_augmented, Y_augmented), kernel=kern, likelihood=lik, num_latent=1)
-# Here we specify num_latent=1 to avoid getting two outputs when predicting as Y_augmented is 2-dimensional
+m = gpflow.models.VGP((X_augmented, Y_augmented), kernel=kern, likelihood=lik, num_latent_gps=1)
+# Here we specify num_latent_gps=1 to avoid getting two outputs when predicting as Y_augmented is 2-dimensional
 
 # closure
 @tf.function
