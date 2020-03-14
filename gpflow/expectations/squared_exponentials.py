@@ -20,7 +20,7 @@ def _E(p, kernel, _, __, ___, nghp=None):
 
     :return: N
     """
-    return kernel(p.mu, full=False)
+    return kernel(p.mu, full_cov=False)
 
 
 @dispatch.expectation.register(

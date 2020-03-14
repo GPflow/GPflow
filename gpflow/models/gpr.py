@@ -86,7 +86,7 @@ class GPR(GPModel):
         err = Y_data - self.mean_function(X_data)
 
         kmm = self.kernel(X_data)
-        knn = self.kernel(Xnew, full=full_cov)
+        knn = self.kernel(Xnew, full_cov=full_cov)
         kmn = self.kernel(X_data, Xnew)
 
         num_data = X_data.shape[0]

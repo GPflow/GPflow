@@ -245,7 +245,7 @@ class BayesianGPLVM(GPModel):
             var = tf.tile(tf.expand_dims(var, 2), shape)
         else:
             var = (
-                self.kernel(Xnew, full=False)
+                self.kernel(Xnew, full_cov=False)
                 + tf.reduce_sum(tf.square(tmp2), axis=0)
                 - tf.reduce_sum(tf.square(tmp1), axis=0)
             )

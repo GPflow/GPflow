@@ -94,7 +94,7 @@ class SGPRBase(GPModel):
         X_data, Y_data = self.data
         num_data = tf.cast(tf.shape(Y_data)[0], default_float())
 
-        Kdiag = self.kernel(X_data, full=False)
+        Kdiag = self.kernel(X_data, full_cov=False)
         kuu = Kuu(self.inducing_variable, self.kernel, jitter=default_jitter())
         kuf = Kuf(self.inducing_variable, self.kernel, X_data)
 
@@ -159,7 +159,7 @@ class SGPR(SGPRBase):
         output_dim = tf.cast(tf.shape(Y_data)[1], default_float())
 
         err = Y_data - self.mean_function(X_data)
-        Kdiag = self.kernel(X_data, full=False)
+        Kdiag = self.kernel(X_data, full_cov=False)
         kuf = Kuf(self.inducing_variable, self.kernel, X_data)
         kuu = Kuu(self.inducing_variable, self.kernel, jitter=default_jitter())
         L = tf.linalg.cholesky(kuu)
@@ -215,7 +215,7 @@ class SGPR(SGPRBase):
             var = tf.tile(var[None, ...], [self.num_latent_gps, 1, 1])  # [P, N, N]
         else:
             var = (
-                self.kernel(X, full=False)
+                self.kernel(X, full_cov=False)
                 + tf.reduce_sum(tf.square(tmp2), 0)
                 - tf.reduce_sum(tf.square(tmp1), 0)
             )
@@ -277,7 +277,7 @@ class GPRFITC(SGPRBase):
         X_data, Y_data = self.data
         num_inducing = len(self.inducing_variable)
         err = Y_data - self.mean_function(X_data)  # size [N, R]
-        Kdiag = self.kernel(X_data, full=False)
+        Kdiag = self.kernel(X_data, full_cov=False)
         kuf = Kuf(self.inducing_variable, self.kernel, X_data)
         kuu = Kuu(self.inducing_variable, self.kernel, jitter=default_jitter())
 
@@ -368,7 +368,7 @@ class GPRFITC(SGPRBase):
             var = tf.tile(var[None, ...], [self.num_latent_gps, 1, 1])  # [P, N, N]
         else:
             var = (
-                self.kernel(X, full=False)
+                self.kernel(X, full_cov=False)
                 - tf.reduce_sum(tf.square(w), 0)
                 + tf.reduce_sum(tf.square(intermediateA), 0)
             )  # size Xnew,
