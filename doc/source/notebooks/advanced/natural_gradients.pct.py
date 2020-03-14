@@ -28,10 +28,10 @@ from gpflow.ci_utils import ci_niter, ci_range
 from gpflow.models import VGP, GPR, SGPR, SVGP
 from gpflow.optimizers import NaturalGradient
 from gpflow.optimizers.natgrad import XiSqrtMeanVar
+from gpflow.utilities import set_trainable
 
 # %matplotlib inline
 # %precision 4
-from gpflow.utilities import set_trainable
 
 np.random.seed(0)
 tf.random.set_seed(0)

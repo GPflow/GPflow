@@ -28,9 +28,8 @@ import tensorflow_probability as tfp
 
 import gpflow
 from gpflow.ci_utils import ci_niter, is_continuous_integration
-from multiclass_classification import plot_from_samples, colors
-
 from gpflow.utilities import set_trainable
+from multiclass_classification import plot_from_samples, colors
 
 gpflow.config.set_default_float(np.float64)
 gpflow.config.set_default_jitter(1e-4)
