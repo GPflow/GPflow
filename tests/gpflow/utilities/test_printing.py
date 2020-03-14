@@ -22,6 +22,7 @@ from gpflow.utilities.utilities import (
     leaf_components,
     _merge_leaf_components,
     tabulate_module_summary,
+    set_trainable,
 )
 
 rng = np.random.RandomState(0)
@@ -68,7 +69,7 @@ class C(tf.keras.Model):
 
 def create_kernel():
     kern = gpflow.kernels.SquaredExponential(lengthscales=Data.ls, variance=Data.var)
-    kern.lengthscales.trainable = False
+    set_trainable(kern.lengthscale, False)
     return kern
 
 
@@ -90,7 +91,7 @@ def create_model():
         inducing_variable=Data.Z,
         q_diag=True,
     )
-    model.q_mu.trainable = False
+    set_trainable(model.q_mu, False)
     return model
 
 

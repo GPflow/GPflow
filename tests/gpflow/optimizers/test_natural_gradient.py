@@ -43,8 +43,8 @@ def gpr_and_vgp(data, kernel, likelihood):
     gpr = gpflow.models.GPR(data, kernel)
     gpr.likelihood.variance.assign(likelihood.variance)
     set_trainable(vgp, False)
-    vgp.q_mu.trainable = True
-    vgp.q_sqrt.trainable = True
+    set_trainable(vgp.q_mu, True)
+    set_trainable(vgp.q_sqrt, True)
     return gpr, vgp
 
 
@@ -54,8 +54,8 @@ def sgpr_and_svgp(data, inducing_variable, kernel, likelihood):
     sgpr = gpflow.models.SGPR(data, kernel, inducing_variable=inducing_variable)
     sgpr.likelihood.variance.assign(Setup.likelihood_variance)
     set_trainable(svgp, False)
-    svgp.q_mu.trainable = True
-    svgp.q_sqrt.trainable = True
+    set_trainable(svgp.q_mu, True)
+    set_trainable(svgp.q_sqrt, True)
     return sgpr, svgp
 
 
