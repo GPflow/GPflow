@@ -30,6 +30,8 @@ import gpflow
 from gpflow.ci_utils import ci_niter, is_continuous_integration
 from multiclass_classification import plot_from_samples, colors
 
+from gpflow.utilities import set_trainable
+
 gpflow.config.set_default_float(np.float64)
 gpflow.config.set_default_jitter(1e-4)
 gpflow.config.set_default_summary_fmt("notebook")
@@ -311,7 +313,7 @@ model = gpflow.models.SGPMC(data,
                  inducing_variable=X[::5].copy(), num_latent_gps=3)
 model.kernel.kernels[0].variance.prior = tfp.distributions.Gamma(f64(1.), f64(1.))
 model.kernel.kernels[0].lengthscales.prior = tfp.distributions.Gamma(f64(2.), f64(2.))
-model.kernel.kernels[1].variance.trainable = False
+set_trainable(model.kernel.kernels[1].variance, False)
 
 gpflow.utilities.print_summary(model)
 
