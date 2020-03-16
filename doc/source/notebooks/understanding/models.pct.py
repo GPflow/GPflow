@@ -59,7 +59,7 @@ print_summary(m, fmt="notebook")
 gpflow.config.set_default_summary_fmt("notebook")
 
 # %% [markdown]
-# This model has four parameters. The kernel is made of the sum of two parts. The first (counting from zero) is a Matern32 kernel that has a variance parameter and a lengthscale parameter; the second is a linear kernel that has only a variance parameter. There is also a parameter that controls the variance of the noise, as part of the likelihood. 
+# This model has four parameters. The kernel is made of the sum of two parts. The first (counting from zero) is a Matern32 kernel that has a variance parameter and a lengthscales parameter; the second is a linear kernel that has only a variance parameter. There is also a parameter that controls the variance of the noise, as part of the likelihood. 
 #
 # All the model variables have been initialized at `1.0`. You can access individual parameters in the same way that you display the state of the model in a terminal; for example, to see all the parameters that are part of the likelihood, run:
 
@@ -73,7 +73,7 @@ print_summary(m.likelihood)
 # To set the value of a parameter, just use `assign()`:
 
 # %%
-m.kernel.kernels[0].lengthscale.assign(0.5)
+m.kernel.kernels[0].lengthscales.assign(0.5)
 m.likelihood.variance.assign(0.01)
 print_summary(m, fmt='notebook')
 
@@ -89,7 +89,7 @@ m.trainable_parameters
 # Each parameter has an `unconstrained_variable` attribute that enables you to access the unconstrained value as a TensorFlow `Variable`.
 
 # %%
-p = m.kernel.kernels[0].lengthscale
+p = m.kernel.kernels[0].lengthscales
 p.unconstrained_variable
 
 # %% [markdown]
@@ -102,13 +102,13 @@ p.transform.inverse(p)
 # Constraints are handled by the Bijector classes from the `tensorflow_probability` package. You might prefer to use the constraint $\alpha = \log(\theta)$; this is easily done by replacing the parameter with one that has a different `transform` attribute (here we make sure to copy all other attributes across from the old parameter; this is not necessary when there is no `prior` and the `trainable` state is still the default of `True`):
 
 # %%
-old_parameter = m.kernel.kernels[0].lengthscale
+old_parameter = m.kernel.kernels[0].lengthscales
 new_parameter = gpflow.Parameter(old_parameter,
                                  trainable=old_parameter.trainable,
                                  prior=old_parameter.prior,
                                  name=old_parameter.name.split(':')[0],  # tensorflow is weird and adds ':0' to the name
                                  transform=tfp.bijectors.Exp())
-m.kernel.kernels[0].lengthscale = new_parameter
+m.kernel.kernels[0].lengthscales = new_parameter
 
 # %% [markdown]
 # Though the lengthscale itself remains the same, the unconstrained lengthscale has changed:

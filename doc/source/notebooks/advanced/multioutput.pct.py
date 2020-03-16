@@ -176,7 +176,7 @@ plot_model(m)
 
 # %%
 print_summary(m.kernel)
-m.kernel.kernel.kernels[0].lengthscale
+m.kernel.kernel.kernels[0].lengthscales
 
 # %% [markdown]
 # ### 2. Separate independent MOK and shared independent inducing variables
@@ -206,7 +206,7 @@ print_summary(m.kernel)
 plot_model(m)
 
 # %%
-[k.kernels[0].lengthscale for k in m.kernel.kernels]
+[k.kernels[0].lengthscales for k in m.kernel.kernels]
 
 # %% [markdown]
 # ### 3. Separate independent kernel and separate independent inducing variables

@@ -44,13 +44,13 @@ class Datum:
 def _prepare_models():
     """
     Prepare models to make sure the coregionalized model with diagonal coregion kernel and
-    with fixed lengthscale is equivalent with normal GP regression.
+    with fixed lengthscales is equivalent with normal GP regression.
     """
     # 1. Two independent VGPs for two sets of data
     k0 = gpflow.kernels.SquaredExponential()
-    k0.lengthscale.trainable = False
+    k0.lengthscales.trainable = False
     k1 = gpflow.kernels.SquaredExponential()
-    k1.lengthscale.trainable = False
+    k1.lengthscales.trainable = False
     vgp0 = gpflow.models.VGP(
         (Datum.X[0], Datum.Y[0]),
         kernel=k0,
@@ -67,7 +67,7 @@ def _prepare_models():
     )
     # 2. Coregionalized GPR
     kc = gpflow.kernels.SquaredExponential(active_dims=[0, 1])
-    kc.lengthscale.trainable = False
+    kc.lengthscales.trainable = False
     kc.variance.trainable = False  # variance is handles by the coregion kernel
     coreg = gpflow.kernels.Coregion(output_dim=2, rank=1, active_dims=[2])
     coreg.W.assign(np.zeros((2, 1)))  # zero correlation between outputs

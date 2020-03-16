@@ -53,12 +53,12 @@ class SGPRBase(GPModel):
         initialized to `noise_variance`.
         """
         likelihood = likelihoods.Gaussian(noise_variance)
-        x_data, y_data = data
-        num_latent_gps = y_data.shape[-1] if num_latent_gps is None else num_latent_gps
+        X_data, Y_data = data
+        num_latent_gps = Y_data.shape[-1] if num_latent_gps is None else num_latent_gps
         super().__init__(kernel, likelihood, mean_function, num_latent_gps=num_latent_gps)
 
         self.data = data
-        self.num_data = x_data.shape[0]
+        self.num_data = X_data.shape[0]
 
         self.inducing_variable = inducingpoint_wrapper(inducing_variable)
 
@@ -92,12 +92,12 @@ class SGPRBase(GPModel):
 
         which computes each individual element of the trace term.
         """
-        x_data, y_data = self.data
-        num_data = to_default_float(tf.shape(y_data)[0])
+        X_data, Y_data = self.data
+        num_data = to_default_float(tf.shape(Y_data)[0])
 
-        Kdiag = self.kernel(x_data, full=False)
+        Kdiag = self.kernel(X_data, full_cov=False)
         kuu = Kuu(self.inducing_variable, self.kernel, jitter=default_jitter())
-        kuf = Kuf(self.inducing_variable, self.kernel, x_data)
+        kuf = Kuf(self.inducing_variable, self.kernel, X_data)
 
         I = tf.eye(tf.shape(kuu)[0], dtype=default_float())
 
@@ -118,9 +118,9 @@ class SGPRBase(GPModel):
 
         LC = tf.linalg.cholesky(I + AAT / corrected_noise)
         v = tf.linalg.triangular_solve(
-            LC, tf.linalg.matmul(A, y_data) / corrected_noise, lower=True
+            LC, tf.linalg.matmul(A, Y_data) / corrected_noise, lower=True
         )
-        quad = -0.5 * tf.reduce_sum(tf.square(y_data)) / corrected_noise + 0.5 * tf.reduce_sum(
+        quad = -0.5 * tf.reduce_sum(tf.square(Y_data)) / corrected_noise + 0.5 * tf.reduce_sum(
             tf.square(v)
         )
 
@@ -153,14 +153,15 @@ class SGPR(SGPRBase):
         likelihood. For a derivation of the terms in here, see the associated
         SGPR notebook.
         """
-        x_data, y_data = self.data
-        num_inducing = len(self.inducing_variable)
-        num_data = to_default_float(tf.shape(y_data)[0])
-        output_dim = to_default_float(tf.shape(y_data)[1])
+        X_data, Y_data = self.data
 
-        err = y_data - self.mean_function(x_data)
-        Kdiag = self.kernel(x_data, full=False)
-        kuf = Kuf(self.inducing_variable, self.kernel, x_data)
+        num_inducing = len(self.inducing_variable)
+        num_data = to_default_float(tf.shape(Y_data)[0])
+        output_dim = to_default_float(tf.shape(Y_data)[1])
+
+        err = Y_data - self.mean_function(X_data)
+        Kdiag = self.kernel(X_data, full_cov=False)
+        kuf = Kuf(self.inducing_variable, self.kernel, X_data)
         kuu = Kuu(self.inducing_variable, self.kernel, jitter=default_jitter())
         L = tf.linalg.cholesky(kuu)
         sigma = tf.sqrt(self.likelihood.variance)
@@ -190,10 +191,10 @@ class SGPR(SGPRBase):
         Xnew. For a derivation of the terms in here, see the associated SGPR
         notebook.
         """
-        x_data, y_data = self.data
+        X_data, Y_data = self.data
         num_inducing = len(self.inducing_variable)
-        err = y_data - self.mean_function(x_data)
-        kuf = Kuf(self.inducing_variable, self.kernel, x_data)
+        err = Y_data - self.mean_function(X_data)
+        kuf = Kuf(self.inducing_variable, self.kernel, X_data)
         kuu = Kuu(self.inducing_variable, self.kernel, jitter=default_jitter())
         Kus = Kuf(self.inducing_variable, self.kernel, X)
         sigma = tf.sqrt(self.likelihood.variance)
@@ -215,7 +216,7 @@ class SGPR(SGPRBase):
             var = tf.tile(var[None, ...], [self.num_latent_gps, 1, 1])  # [P, N, N]
         else:
             var = (
-                self.kernel(X, full=False)
+                self.kernel(X, full_cov=False)
                 + tf.reduce_sum(tf.square(tmp2), 0)
                 - tf.reduce_sum(tf.square(tmp1), 0)
             )
@@ -229,9 +230,9 @@ class SGPR(SGPRBase):
         SGPR.
         :return: mu, cov
         """
-        x_data, y_data = self.data
+        X_data, Y_data = self.data
 
-        kuf = Kuf(self.inducing_variable, self.kernel, x_data)
+        kuf = Kuf(self.inducing_variable, self.kernel, X_data)
         kuu = Kuu(self.inducing_variable, self.kernel, jitter=default_jitter())
 
         sig = kuu + (self.likelihood.variance ** -1) * tf.matmul(kuf, kuf, transpose_b=True)
@@ -240,7 +241,7 @@ class SGPR(SGPRBase):
         sig_sqrt_kuu = tf.linalg.triangular_solve(sig_sqrt, kuu)
 
         cov = tf.linalg.matmul(sig_sqrt_kuu, sig_sqrt_kuu, transpose_a=True)
-        err = y_data - self.mean_function(x_data)
+        err = Y_data - self.mean_function(X_data)
         mu = (
             tf.linalg.matmul(
                 sig_sqrt_kuu,
@@ -274,11 +275,11 @@ class GPRFITC(SGPRBase):
     """
 
     def common_terms(self):
-        x_data, y_data = self.data
+        X_data, Y_data = self.data
         num_inducing = len(self.inducing_variable)
-        err = y_data - self.mean_function(x_data)  # size [N, R]
-        Kdiag = self.kernel(x_data, full=False)
-        kuf = Kuf(self.inducing_variable, self.kernel, x_data)
+        err = Y_data - self.mean_function(X_data)  # size [N, R]
+        Kdiag = self.kernel(X_data, full_cov=False)
+        kuf = Kuf(self.inducing_variable, self.kernel, X_data)
         kuu = Kuu(self.inducing_variable, self.kernel, jitter=default_jitter())
 
         Luu = tf.linalg.cholesky(kuu)  # => Luu Luu^T = kuu
@@ -368,7 +369,7 @@ class GPRFITC(SGPRBase):
             var = tf.tile(var[None, ...], [self.num_latent_gps, 1, 1])  # [P, N, N]
         else:
             var = (
-                self.kernel(X, full=False)
+                self.kernel(X, full_cov=False)
                 - tf.reduce_sum(tf.square(w), 0)
                 + tf.reduce_sum(tf.square(intermediateA), 0)
             )  # size Xnew,

@@ -1,7 +1,7 @@
 import numpy as np
 
 
-def ref_rbf_kernel(X, lengthscale, signal_variance):
+def ref_rbf_kernel(X, lengthscales, signal_variance):
     N, _ = X.shape
     kernel = np.zeros((N, N))
     for row_index in range(N):
@@ -11,7 +11,7 @@ def ref_rbf_kernel(X, lengthscale, signal_variance):
             delta = vecA - vecB
             distance_squared = np.dot(delta.T, delta)
             kernel[row_index, column_index] = signal_variance * np.exp(
-                -0.5 * distance_squared / lengthscale ** 2
+                -0.5 * distance_squared / lengthscales ** 2
             )
     return kernel
 
@@ -49,12 +49,12 @@ def ref_arccosine_kernel(X, order, weight_variances, bias_variance, signal_varia
     return kernel
 
 
-def ref_periodic_kernel(X, base_name, lengthscale, signal_variance, period):
+def ref_periodic_kernel(X, base_name, lengthscales, signal_variance, period):
     """
     Calculates K(X) for the periodic kernel based on various base kernels.
     """
     sine_arg = np.pi * (X[:, None, :] - X[None, :, :]) / period
-    sine_base = np.sin(sine_arg) / lengthscale
+    sine_base = np.sin(sine_arg) / lengthscales
     if base_name in {"RBF", "SquaredExponential"}:
         dist = 0.5 * np.sum(np.square(sine_base), axis=-1)
         exp_dist = np.exp(-dist)

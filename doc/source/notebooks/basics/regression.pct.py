@@ -70,7 +70,7 @@ k = gpflow.kernels.Matern52()
 print_summary(k)
 
 # %% [markdown]
-# The Matern 5/2 kernel has two parameters: `lengthscale`, which encodes the "wiggliness" of the GP, and `variance`, which tunes the amplitude. They are both set to 1.0 as the default value. For more details on the meaning of the other columns, see [Manipulating kernels](../advanced/kernels.ipynb).
+# The Matern 5/2 kernel has two parameters: `lengthscales`, which encodes the "wiggliness" of the GP, and `variance`, which tunes the amplitude. They are both set to 1.0 as the default value. For more details on the meaning of the other columns, see [Manipulating kernels](../advanced/kernels.ipynb).
 
 # %% [markdown]
 # ## Choose a mean function (optional)
@@ -103,7 +103,7 @@ print_summary(m)
 
 # %%
 m.likelihood.variance.assign(0.01)
-m.kernel.lengthscale.assign(0.3)
+m.kernel.lengthscales.assign(0.3)
 
 # %% [markdown]
 # ## Optimize the model parameters
@@ -179,7 +179,8 @@ plt.xlim(-0.1, 1.1);
 # %% [markdown]
 # ## GP regression in higher dimensions
 #
-# Very little changes when the input space has more than one dimension. By default, the `lengthscale` is an isotropic (scalar) parameter. It is generally recommended that you allow to tune a different lengthscale for each dimension (Automatic Relevance Determination, ARD): simply initialize `lengthscale` with an array of length $D$ corresponding to the input dimension of `X`.
+# Very little changes when the input space has more than one dimension. By default, the `lengthscales` is an isotropic (scalar) parameter. It is generally recommended that you allow to tune a different lengthscale for each dimension (Automatic Relevance Determination, ARD): simply initialize `lengthscales` with an array of length $D$ corresponding to the input dimension of `X`.  See [Manipulating kernels](../advanced/kernels.ipynb) for further information.
+
 
 # %% [markdown]
 # ## Further reading
