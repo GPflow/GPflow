@@ -17,9 +17,9 @@ class Setup:
 @pytest.fixture
 def data():
     N, D = Setup.N, Setup.D
-    x = tf.random.normal((N, D), dtype=default_float())
-    y = tf.random.normal((N, 1), dtype=default_float())
-    return (x, y)
+    X = tf.random.normal((N, D), dtype=default_float())
+    Y = tf.random.normal((N, 1), dtype=default_float())
+    return (X, Y)
 
 
 @pytest.fixture

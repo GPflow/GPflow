@@ -156,7 +156,7 @@ def test_base_conditional_vs_ref(full_cov, features_inducing_points):
     Dy, N, M, Dx = 5, 4, 3, 2
     X = np.random.randn(N, Dx)
     Z = np.random.randn(M, Dx)
-    kern = gpflow.kernels.Matern52(lengthscale=0.5)
+    kern = gpflow.kernels.Matern52(lengthscales=0.5)
     q_mu = np.random.randn(M, Dy)
     q_sqrt = np.tril(np.random.randn(Dy, M, M), -1)
 

@@ -135,14 +135,14 @@ def plot_gp(x, mu, var, color, label):
 
 def plot(m):
     plt.figure(figsize=(8, 4))
-    xtest = np.linspace(0, 1, 100)[:, None]
+    Xtest = np.linspace(0, 1, 100)[:, None]
     line, = plt.plot(X1, Y1, 'x', mew=2)
-    mu, var = m.predict_f(np.hstack((xtest, np.zeros_like(xtest))))
-    plot_gp(xtest, mu, var, line.get_color(), 'Y1')
+    mu, var = m.predict_f(np.hstack((Xtest, np.zeros_like(Xtest))))
+    plot_gp(Xtest, mu, var, line.get_color(), 'Y1')
 
     line, = plt.plot(X2, Y2, 'x', mew=2)
-    mu, var = m.predict_f(np.hstack((xtest, np.ones_like(xtest))))
-    plot_gp(xtest, mu, var, line.get_color(), 'Y2')
+    mu, var = m.predict_f(np.hstack((Xtest, np.ones_like(Xtest))))
+    plot_gp(Xtest, mu, var, line.get_color(), 'Y2')
     
     plt.legend()
 
@@ -153,7 +153,7 @@ plot(m)
 #
 #  - The first function (blue) has low posterior variance everywhere because there are so many observations, and the noise variance is small. 
 #  - The second function (orange) has higher posterior variance near the data, because the data are more noisy, and very high posterior variance where there are no observations (x > 0.5). 
-#  - The model has done a reasonable job of estimating the noise variance and lengthscales.
+#  - The model has done a reasonable job of estimating the noise variance and lengthscale.
 #  - The model recognises the correlation between the two functions and is able to suggest (with uncertainty) that because x > 0.5 the orange curve should follow the blue curve (which we know to be the truth from the data-generating procedure).
 #  
 # The covariance matrix between outputs is as follows:
