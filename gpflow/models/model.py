@@ -131,7 +131,7 @@ class GPModel(BayesianModel):
             If True, draw correlated samples over the inputs. Computes the Cholesky over the
             dense covariance matrix of size [num_data, num_data].
             If False, draw samples that are uncorrelated over the inputs.
-        :param full_output_cov: bool, defaults to `False`.
+        :param full_output_cov:
             If True, draw correlated samples over the outputs.
             If False, draw samples that are uncorrelated over the outputs.
 
