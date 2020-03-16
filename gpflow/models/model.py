@@ -142,7 +142,8 @@ class GPModel(BayesianModel):
                 "The combination of both `full_cov` and `full_output_cov` is not supported."
             )
 
-        mean, cov = self.predict_f(Xnew, full_cov=full_cov)  # [N, P], [P, N, N] or [N, P]
+        # check below for shape info
+        mean, cov = self.predict_f(Xnew, full_cov=full_cov, full_output_cov=full_output_cov)
         if full_cov:
             # mean: [..., N, P]
             # cov: [..., P, N, N]
