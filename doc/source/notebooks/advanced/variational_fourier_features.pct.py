@@ -68,7 +68,7 @@ def Kuu_matern12_fourierfeatures1d(inducing_variable, kernel, jitter=None):
     omegas = 2. * np.pi * ms / (b - a)
 
     # Cosine block:
-    lamb = 1. / kernel.lengthscale
+    lamb = 1. / kernel.lengthscales
     two_or_four = tf.cast(tf.where(omegas == 0, 2., 4.), gpflow.default_float())
     d_cos = (b - a) * (tf.square(lamb) + tf.square(omegas)) \
         / lamb / kernel.variance / two_or_four  # eq. (111)
@@ -96,8 +96,8 @@ def Kuf_matern12_fourierfeatures1d(inducing_variable, kernel, X):
     # correct Kuf outside [a, b] -- see Table 1
     Kuf_sin = tf.where((X < a) | (X > b), tf.zeros_like(Kuf_sin), Kuf_sin)  # just zero
     
-    left_tail = tf.exp(- tf.abs(X - a) / kernel.lengthscale)[None, :]
-    right_tail = tf.exp(- tf.abs(X - b) / kernel.lengthscale)[None, :]
+    left_tail = tf.exp(- tf.abs(X - a) / kernel.lengthscales)[None, :]
+    right_tail = tf.exp(- tf.abs(X - b) / kernel.lengthscales)[None, :]
     Kuf_cos = tf.where(X < a, left_tail, Kuf_cos)  # replace with left tail
     Kuf_cos = tf.where(X > b, right_tail, Kuf_cos)  # replace with right tail
 
@@ -109,7 +109,7 @@ def Kuu_matern32_fourierfeatures1d(inducing_variable, kernel, jitter=None):
     omegas = 2. * np.pi * ms / (b - a)
 
     # Cosine block: eq. (114)
-    lamb = np.sqrt(3.) / kernel.lengthscale
+    lamb = np.sqrt(3.) / kernel.lengthscales
     four_or_eight = tf.cast(tf.where(omegas == 0, 4., 8.), gpflow.default_float())
     d_cos = (b - a) * tf.square(tf.square(lamb) + tf.square(omegas)) \
         / tf.pow(lamb, 3) / kernel.variance / four_or_eight
@@ -138,14 +138,14 @@ def Kuf_matern32_fourierfeatures1d(inducing_variable, kernel, X):
     # correct Kuf outside [a, b] -- see Table 1
     
     def tail_cos(delta_X):
-        arg = np.sqrt(3) * tf.abs(delta_X) / kernel.lengthscale
+        arg = np.sqrt(3) * tf.abs(delta_X) / kernel.lengthscales
         return (1 + arg) * tf.exp(- arg)[None, :]
     
     Kuf_cos = tf.where(X < a, tail_cos(X - a), Kuf_cos)
     Kuf_cos = tf.where(X > b, tail_cos(X - b), Kuf_cos)
 
     def tail_sin(delta_X):
-        arg = np.sqrt(3) * tf.abs(delta_X) / kernel.lengthscale
+        arg = np.sqrt(3) * tf.abs(delta_X) / kernel.lengthscales
         return delta_X[None, :] * tf.exp(- arg) * omegas_sin[:, None]
     
     Kuf_sin = tf.where(X < a, tail_sin(X - a), Kuf_sin)

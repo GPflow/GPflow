@@ -64,7 +64,7 @@ def getSparseModel(X, Y, isFITC=False):
 def printModelParameters(model):
     print("  Likelihood variance = {:.5g}".format(model.likelihood.variance.numpy()))
     print("  Kernel variance     = {:.5g}".format(model.kernel.variance.numpy()))
-    print("  Kernel lengthscale  = {:.5g}".format(model.kernel.lengthscale.numpy()))
+    print("  Kernel lengthscale  = {:.5g}".format(model.kernel.lengthscales.numpy()))
 
 def plotPredictions(ax, model, color, label=None):
     xtest = np.sort(readCsvFile('data/snelson_test_inputs.dat'))

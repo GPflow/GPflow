@@ -72,7 +72,7 @@ def test_failures_getset_by_path(path):
 
 
 @pytest.mark.parametrize(
-    "path", ["kernel.kernels[0]", "kernel.kernels[0].variance", "kernel.kernels[0].lengthscale"]
+    "path", ["kernel.kernels[0]", "kernel.kernels[0].variance", "kernel.kernels[0].lengthscales"]
 )
 def test_getset_by_path(path):
     d = (

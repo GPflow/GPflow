@@ -42,7 +42,7 @@ def generate_data(num_data):
     X = np.random.rand(num_data, 1)
     
     # Now generate values of a latent GP
-    kern = gpflow.kernels.SquaredExponential(lengthscale=0.1)
+    kern = gpflow.kernels.SquaredExponential(lengthscales=0.1)
     K = kern(X)
     f = np.random.multivariate_normal(mean=np.zeros(num_data), cov=K).reshape(-1, 1)
     

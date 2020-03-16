@@ -86,8 +86,8 @@ inducing_variable = tf.convert_to_tensor(np.random.permutation(x_mean_init.numpy
 # we learn a different lengthscale for each of the input dimensions. See [Manipulating kernels](../advanced/kernels.ipynb) for more information.
 
 # %%
-lengthscale = tf.convert_to_tensor([1.0] * latent_dim, dtype=default_float())
-kernel = gpflow.kernels.RBF(lengthscale=lengthscale)
+lengthscales = tf.convert_to_tensor([1.0] * latent_dim, dtype=default_float())
+kernel = gpflow.kernels.RBF(lengthscales=lengthscales)
 
 # %% [markdown]
 # We have all the necessary ingredients to construct the model. GPflow contains an implementation of the Bayesian GPLVM:

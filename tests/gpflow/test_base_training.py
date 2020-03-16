@@ -47,7 +47,7 @@ class Data:
 @pytest.fixture
 def model():
     return gpflow.models.SVGP(
-        kernel=gpflow.kernels.SquaredExponential(lengthscale=Data.ls, variance=Data.var),
+        kernel=gpflow.kernels.SquaredExponential(lengthscales=Data.ls, variance=Data.var),
         likelihood=gpflow.likelihoods.Gaussian(),
         inducing_variable=Data.Z,
         q_diag=True,
@@ -59,13 +59,13 @@ def model():
 # ------------------------------------------
 
 model_param_updates = {
-    ".kernel.lengthscale": Data.ls_new,
+    ".kernel.lengthscales": Data.ls_new,
     ".likelihood.variance": Data.var_new,
     ".inducing_variable.Z": np.zeros_like(Data.Z),
     ".q_sqrt": 0.5 * np.ones((Data.M, 1)),
 }
 model_wrong_path = [
-    {"kernel.lengthscale": Data.ls_new},
+    {"kernel.lengthscales": Data.ls_new},
     {".Gaussian.variance": Data.var_new},
     {"inducing_variable.Z": np.zeros_like(Data.Z)},
     {".q_std": 0.5 * np.ones((Data.M, 1))},

@@ -63,9 +63,9 @@ plotPredictions(ax, exact_model, color='g')
 
 # %%
 def initializeHyperparametersFromExactSolution(sparse_model):
-    sparse_model.likelihood.variance.assign( exact_model.likelihood.variance )
-    sparse_model.kernel.variance.assign( exact_model.kernel.variance )
-    sparse_model.kernel.lengthscale.assign( exact_model.kernel.lengthscale )
+    sparse_model.likelihood.variance.assign(exact_model.likelihood.variance)
+    sparse_model.kernel.variance.assign(exact_model.kernel.variance)
+    sparse_model.kernel.lengthscales.assign(exact_model.kernel.lengthscales)
 
 
 # %% [markdown]

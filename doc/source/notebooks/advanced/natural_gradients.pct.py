@@ -123,10 +123,10 @@ for i in range(iterations):
 # %%
 for i in range(iterations):
     adam_opt_for_vgp.minimize(
-        lambda: - vgp.log_marginal_likelihood(), 
+        lambda: - vgp.log_marginal_likelihood(),
         var_list=vgp.trainable_variables)
     natgrad_opt.minimize(
-        lambda: - vgp.log_marginal_likelihood(), 
+        lambda: - vgp.log_marginal_likelihood(),
         var_list=variational_params)
     likelihood = vgp.log_likelihood()
     tf.print(f'VGP with NaturalGradient and Adam: iteration {i + 1} likelihood {likelihood:.04f}')
@@ -135,8 +135,8 @@ for i in range(iterations):
 # Compare GPR and VGP lengthscales after optimization:
 
 # %%
-print(f'GPR lengthscales = {gpr.kernel.lengthscale.numpy():.04f}')
-print(f'VGP lengthscales = {vgp.kernel.lengthscale.numpy():.04f}')
+print(f'GPR lengthscales = {gpr.kernel.lengthscales.numpy():.04f}')
+print(f'VGP lengthscales = {vgp.kernel.lengthscales.numpy():.04f}')
 
 # %% [markdown]
 # ### Natural gradients also work for the sparse model
