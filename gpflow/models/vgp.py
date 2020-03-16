@@ -111,7 +111,7 @@ class VGP(GPModel):
     def predict_f(
         self, Xnew: DataPoint, full_cov: bool = False, full_output_cov: bool = False
     ) -> MeanAndVariance:
-        X_data, _Y_data = self.data
+        X_data, _ = self.data
         mu, var = conditional(
             Xnew, X_data, self.kernel, self.q_mu, q_sqrt=self.q_sqrt, full_cov=full_cov, white=True,
         )
@@ -228,7 +228,7 @@ class VGPOpperArchambeau(GPModel):
         if full_output_cov:
             raise NotImplementedError
 
-        X_data, _Y_data = self.data
+        X_data, _ = self.data
         # compute kernel things
         Kx = self.kernel(X_data, Xnew)
         K = self.kernel(X_data)

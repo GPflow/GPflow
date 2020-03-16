@@ -97,7 +97,7 @@ class BayesianGPLVM(GPModel):
         :param inducing_variable: matrix of inducing points, size M (inducing points) x Q (latent dimensions). By default
             random permutation of X_data_mean.
         :param X_prior_mean: prior mean used in KL term of bound. By default 0. Same size as X_data_mean.
-        :param X_prior_var: pripor variance used in KL term of bound. By default 1.
+        :param X_prior_var: prior variance used in KL term of bound. By default 1.
         """
         super().__init__(kernel, likelihoods.Gaussian())
         self.data = data
