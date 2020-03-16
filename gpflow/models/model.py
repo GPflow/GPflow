@@ -128,15 +128,18 @@ class GPModel(BayesianModel):
             for any positive integer the return shape contains an extra batch
             dimension, [..., S, N, P], with S = num_samples.
         :param full_cov:
-            Draw correlated samples over the inputs. Computes the cholesky over the
+            If True, draw correlated samples over the inputs. Computes the Cholesky over the
             dense covariance matrix of size [num_data, num_data].
+            If False, draw samples that are uncorrelated over the inputs.
         :param full_output_cov: bool, defaults to `False`.
-            Draw correlated samples over the outputs.
-            The method currently only supports `full_output_cov` equals to `False`.
+            If True, draw correlated samples over the outputs.
+            If False, draw samples that are uncorrelated over the outputs.
+
+        Currently, the method does not support `full_output_cov=True` and `full_cov=True`.
         """
-        if full_output_cov:
+        if full_cov and full_output_cov:
             raise NotImplementedError(
-                "`full_output_cov=True` is currently not supported by `predict_f_samples`"
+                "The combination of both `full_cov` and `full_output_cov` is not supported."
             )
 
         mean, cov = self.predict_f(Xnew, full_cov=full_cov)  # [N, P], [P, N, N] or [N, P]
