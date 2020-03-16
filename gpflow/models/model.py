@@ -18,6 +18,7 @@ from typing import Callable, Optional, Tuple, TypeVar
 
 import numpy as np
 import tensorflow as tf
+from tensorflow.python.data.ops import iterator_ops
 
 from ..base import Module
 from ..conditionals.util import sample_mvn
@@ -62,6 +63,16 @@ class BayesianModel(Module, metaclass=abc.ABCMeta):
         return -(self.maximum_likelihood_objective(*args, **kwargs) + self.log_prior_density())
 
     @abc.abstractmethod
+    def training_loss(self, *args, **kwargs) -> tf.Tensor:
+        """
+        Overwritten by BayesianModelStoringData and BayesianModelNotStoringData
+        to specify whether or not a model stores data internally and hence
+        whether it should not or should receive data as an argument to the
+        training_loss.
+        """
+        raise NotImplementedError
+
+    @abc.abstractmethod
     def maximum_likelihood_objective(self, *args, **kwargs) -> tf.Tensor:
         """
         Objective for maximum likelihood estimation. Should be maximized. E.g.
@@ -81,8 +92,11 @@ class BayesianModelStoringData(BayesianModel):
     def training_loss(self):
         return self._training_loss()
 
-    def training_loss_closure(self) -> Callable[[], tf.Tensor]:
-        return self.training_loss
+    def training_loss_closure(self, jit=True) -> Callable[[], tf.Tensor]:
+        if jit:
+            return tf.function(self.training_loss)
+        else:
+            return self.training_loss
 
 
 class BayesianModelNotStoringData(BayesianModel):
@@ -94,11 +108,26 @@ class BayesianModelNotStoringData(BayesianModel):
     def training_loss(self, data):
         return self._training_loss(data)
 
-    def training_loss_closure(self, data: Data) -> Callable[[], tf.Tensor]:
+    def training_loss_closure(self, data: Data, jit=True) -> Callable[[], tf.Tensor]:
         def training_loss_closure():
             return self.training_loss(data)
 
-        return training_loss_closure
+        if jit:
+            return tf.function(training_loss_closure)
+        else:
+            return training_loss_closure
+
+    def minibatch_training_loss_closure(
+        self, batch_iterator: iterator_ops.OwnedIterator
+    ) -> Callable[[], tf.Tensor]:
+        def minibatch_training_loss_closure():
+            batch = next(batch_iterator)
+            return self.training_loss(batch)
+
+        if jit:
+            return tf.function(minibatch_training_loss_closure)
+        else:
+            return minibatch_training_loss_closure
 
 
 class GPModel(BayesianModel):
