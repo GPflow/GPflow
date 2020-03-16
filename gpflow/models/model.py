@@ -78,6 +78,7 @@ class BayesianModelWithData(BayesianModel):
     def training_loss_closure(self) -> Callable[[], tf.Tensor]:
         return self.training_loss
 
+
 class BayesianModelWithoutData(BayesianModel):
     def training_loss_closure(self, data: Data) -> Callable[[], tf.Tensor]:
         def training_loss_closure():
