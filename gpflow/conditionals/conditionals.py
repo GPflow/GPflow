@@ -56,7 +56,7 @@ def _conditional(
     """
     Kmm = Kuu(inducing_variable, kernel, jitter=default_jitter())  # [M, M]
     Kmn = Kuf(inducing_variable, kernel, Xnew)  # [M, N]
-    Knn = kernel(Xnew, full=full_cov)
+    Knn = kernel(Xnew, full_cov=full_cov)
     fmean, fvar = base_conditional(
         Kmn, Kmm, Knn, f, full_cov=full_cov, q_sqrt=q_sqrt, white=white
     )  # [N, R],  [R, N, N] or [N, R]
@@ -111,7 +111,7 @@ def _conditional(
     """
     Kmm = kernel(X) + eye(tf.shape(X)[-2], value=default_jitter(), dtype=X.dtype)  # [..., M, M]
     Kmn = kernel(X, Xnew)  # [M, ..., N]
-    Knn = kernel(Xnew, full=full_cov)  # [..., N] (full_cov = False) or [..., N, N] (True)
+    Knn = kernel(Xnew, full_cov=full_cov)  # [..., N] (full_cov = False) or [..., N, N] (True)
     mean, var = base_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov, q_sqrt=q_sqrt, white=white)
 
     return mean, var  # [N, R], [N, R] or [R, N, N]

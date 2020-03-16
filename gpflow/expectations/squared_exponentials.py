@@ -20,7 +20,7 @@ def _E(p, kernel, _, __, ___, nghp=None):
 
     :return: N
     """
-    return kernel(p.mu, full=False)
+    return kernel(p.mu, full_cov=False)
 
 
 @dispatch.expectation.register(
@@ -39,11 +39,11 @@ def _E(p, kernel, inducing_variable, _, __, nghp=None):
     Z, Xmu = kernel.slice(inducing_variable.Z, p.mu)
     D = tf.shape(Xmu)[1]
 
-    lengthscale = kernel.lengthscale
+    lengthscales = kernel.lengthscales
     if not kernel.ard:
-        lengthscale = tf.zeros((D,), dtype=lengthscale.dtype) + kernel.lengthscale
+        lengthscales = tf.zeros((D,), dtype=lengthscales.dtype) + kernel.lengthscales
 
-    chol_L_plus_Xcov = tf.linalg.cholesky(tf.linalg.diag(lengthscale ** 2) + Xcov)  # NxDxD
+    chol_L_plus_Xcov = tf.linalg.cholesky(tf.linalg.diag(lengthscales ** 2) + Xcov)  # NxDxD
 
     all_diffs = tf.transpose(Z) - tf.expand_dims(Xmu, 2)  # NxDxM
     exponent_mahalanobis = tf.linalg.triangular_solve(
@@ -52,7 +52,7 @@ def _E(p, kernel, inducing_variable, _, __, nghp=None):
     exponent_mahalanobis = tf.reduce_sum(tf.square(exponent_mahalanobis), 1)  # NxM
     exponent_mahalanobis = tf.exp(-0.5 * exponent_mahalanobis)  # NxM
 
-    sqrt_det_L = tf.reduce_prod(lengthscale)
+    sqrt_det_L = tf.reduce_prod(lengthscales)
     sqrt_det_L_plus_Xcov = tf.exp(
         tf.reduce_sum(tf.math.log(tf.linalg.diag_part(chol_L_plus_Xcov)), axis=1)
     )
@@ -76,14 +76,14 @@ def _E(p, mean, _, kernel, inducing_variable, nghp=None):
 
     D = tf.shape(Xmu)[1]
 
-    lengthscale = kernel.lengthscale
+    lengthscales = kernel.lengthscales
     if not kernel.ard:
-        lengthscale = tf.zeros((D,), dtype=lengthscale.dtype) + lengthscale
+        lengthscales = tf.zeros((D,), dtype=lengthscales.dtype) + lengthscales
 
-    chol_L_plus_Xcov = tf.linalg.cholesky(tf.linalg.diag(lengthscale ** 2) + Xcov)  # NxDxD
+    chol_L_plus_Xcov = tf.linalg.cholesky(tf.linalg.diag(lengthscales ** 2) + Xcov)  # NxDxD
     all_diffs = tf.transpose(inducing_variable.Z) - tf.expand_dims(Xmu, 2)  # NxDxM
 
-    sqrt_det_L = tf.reduce_prod(lengthscale)
+    sqrt_det_L = tf.reduce_prod(lengthscales)
     sqrt_det_L_plus_Xcov = tf.exp(
         tf.reduce_sum(tf.math.log(tf.linalg.diag_part(chol_L_plus_Xcov)), axis=1)
     )
@@ -118,14 +118,14 @@ def _E(p, mean, _, kernel, inducing_variable, nghp=None):
     Xmu, Xcov = p.mu, p.cov
 
     D = tf.shape(Xmu)[1]
-    lengthscale = kernel.lengthscale
+    lengthscales = kernel.lengthscales
     if not kernel.ard:
-        lengthscale = tf.zeros((D,), dtype=lengthscale.dtype) + lengthscale
+        lengthscales = tf.zeros((D,), dtype=lengthscales.dtype) + lengthscales
 
-    chol_L_plus_Xcov = tf.linalg.cholesky(tf.linalg.diag(lengthscale ** 2) + Xcov[0, :-1])  # NxDxD
+    chol_L_plus_Xcov = tf.linalg.cholesky(tf.linalg.diag(lengthscales ** 2) + Xcov[0, :-1])  # NxDxD
     all_diffs = tf.transpose(inducing_variable.Z) - tf.expand_dims(Xmu[:-1], 2)  # NxDxM
 
-    sqrt_det_L = tf.reduce_prod(lengthscale)
+    sqrt_det_L = tf.reduce_prod(lengthscales)
     sqrt_det_L_plus_Xcov = tf.exp(
         tf.reduce_sum(tf.math.log(tf.linalg.diag_part(chol_L_plus_Xcov)), axis=1)
     )
@@ -186,13 +186,13 @@ def _E(p, kern1, feat1, kern2, feat2, nghp=None):
     N = tf.shape(Xmu)[0]
     D = tf.shape(Xmu)[1]
 
-    squared_lengthscale = kernel.lengthscale ** 2
+    squared_lengthscales = kernel.lengthscales ** 2
     if not kernel.ard:
-        zero_lengthscale = tf.zeros((D,), dtype=squared_lengthscale.dtype)
-        squared_lengthscale = squared_lengthscale + zero_lengthscale
+        zero_lengthscales = tf.zeros((D,), dtype=squared_lengthscales.dtype)
+        squared_lengthscales = squared_lengthscales + zero_lengthscales
 
-    sqrt_det_L = tf.reduce_prod(0.5 * squared_lengthscale) ** 0.5
-    C = tf.linalg.cholesky(0.5 * tf.linalg.diag(squared_lengthscale) + Xcov)  # NxDxD
+    sqrt_det_L = tf.reduce_prod(0.5 * squared_lengthscales) ** 0.5
+    C = tf.linalg.cholesky(0.5 * tf.linalg.diag(squared_lengthscales) + Xcov)  # NxDxD
     dets = sqrt_det_L / tf.exp(tf.reduce_sum(tf.math.log(tf.linalg.diag_part(C)), axis=1))  # N
 
     C_inv_mu = tf.linalg.triangular_solve(C, tf.expand_dims(Xmu, 2), lower=True)  # NxDx1
@@ -216,5 +216,5 @@ def _E(p, kern1, feat1, kern2, feat2, nghp=None):
 
     # Compute sqrt(self(Z)) explicitly to prevent automatic gradient from
     # being NaN sometimes, see pull request #615
-    kernel_sqrt = tf.exp(-0.25 * square_distance(Z / kernel.lengthscale, None))
+    kernel_sqrt = tf.exp(-0.25 * square_distance(Z / kernel.lengthscales, None))
     return kernel.variance ** 2 * kernel_sqrt * tf.reshape(dets, [N, 1, 1]) * exponent_mahalanobis

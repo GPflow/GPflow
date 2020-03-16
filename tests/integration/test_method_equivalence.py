@@ -191,10 +191,10 @@ def test_equivalence(approximate_model):
     approximate_likelihood = approximate_model.maximum_likelihood_objective(Datum.data)
     assert_allclose(approximate_likelihood, gpr_likelihood, rtol=1e-6)
 
-    gpr_kernel_ls = gpr_model.kernel.lengthscale.read_value()
+    gpr_kernel_ls = gpr_model.kernel.lengthscales.read_value()
     gpr_kernel_var = gpr_model.kernel.variance.read_value()
 
-    approximate_kernel_ls = approximate_model.kernel.lengthscale.read_value()
+    approximate_kernel_ls = approximate_model.kernel.lengthscales.read_value()
     approximate_kernel_var = approximate_model.kernel.variance.read_value()
 
     assert_allclose(gpr_kernel_ls, approximate_kernel_ls, 1e-4)
@@ -304,7 +304,7 @@ def test_upper_bound_few_inducing_points():
         kernel=gpflow.kernels.SquaredExponential(),
         mean_function=Constant(),
     )
-    full_gp.kernel.lengthscale.assign(model_vfe.kernel.lengthscale)
+    full_gp.kernel.lengthscales.assign(model_vfe.kernel.lengthscales)
     full_gp.kernel.variance.assign(model_vfe.kernel.variance)
     full_gp.likelihood.variance.assign(model_vfe.likelihood.variance)
     full_gp.mean_function.c.assign(model_vfe.mean_function.c)

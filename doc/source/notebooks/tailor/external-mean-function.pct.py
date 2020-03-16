@@ -49,7 +49,7 @@ tf.random.set_seed(2)
 def generate_data(num_functions=10, N=1000):
     jitter = 1e-6
     Xs = np.linspace(-5.0, 5.0, N)[:, None]
-    kernel = RBF(lengthscale=1.)
+    kernel = RBF(lengthscales=1.)
     cov = kernel(Xs)
     L = np.linalg.cholesky(cov + np.eye(N) * jitter)
     epsilon = np.random.randn(N, num_functions)

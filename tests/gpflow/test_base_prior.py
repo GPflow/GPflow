@@ -30,11 +30,11 @@ def test_gpr_objective_equivalence():
     l_value = Datum.lengthscale
 
     l_variable = tf.Variable(l_value, dtype=gpflow.default_float(), trainable=True)
-    m1 = gpflow.models.GPR(data, kernel=gpflow.kernels.SquaredExponential(lengthscale=l_value))
+    m1 = gpflow.models.GPR(data, kernel=gpflow.kernels.SquaredExponential(lengthscales=l_value))
     m2 = gpflow.models.GPR(data, kernel=gpflow.kernels.SquaredExponential())
-    m2.kernel.lengthscale = gpflow.Parameter(l_variable, transform=None)
+    m2.kernel.lengthscales = gpflow.Parameter(l_variable, transform=None)
     assert np.allclose(
-        m1.kernel.lengthscale.numpy(), m2.kernel.lengthscale.numpy()
+        m1.kernel.lengthscales.numpy(), m2.kernel.lengthscales.numpy()
     )  # consistency check
 
     assert np.allclose(

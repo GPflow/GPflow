@@ -102,8 +102,7 @@ class SGPMC(GPModel):
             data = self.data
         X_data, Y_data = data
         fmean, fvar = self.predict_f(X_data, full_cov=False)
-        var_exps = self.likelihood.variational_expectations(fmean, fvar, Y_data)
-        return tf.reduce_sum(var_exps)
+        return tf.reduce_sum(self.likelihood.variational_expectations(fmean, fvar, Y_data))
 
     def predict_f(self, X: tf.Tensor, full_cov=False, full_output_cov=False) -> MeanAndVariance:
         """
