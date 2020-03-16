@@ -6,7 +6,7 @@ import tensorflow as tf
 import gpflow
 from gpflow.config import default_float
 from gpflow.optimizers import NaturalGradient
-from gpflow.utilities import set_trainable
+from gpflow import set_trainable
 
 
 class Setup:

@@ -15,7 +15,7 @@
 import gpflow
 import numpy as np
 import pytest
-from gpflow.utilities import set_trainable
+from gpflow import set_trainable
 
 rng = np.random.RandomState(0)
 

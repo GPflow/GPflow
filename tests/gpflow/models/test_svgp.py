@@ -20,7 +20,7 @@ from numpy.testing import assert_allclose, assert_array_equal, assert_array_less
 
 import gpflow
 from gpflow.config import default_float
-from gpflow.utilities import set_trainable
+from gpflow import set_trainable
 
 
 @dataclass(frozen=True)

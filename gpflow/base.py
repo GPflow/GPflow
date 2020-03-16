@@ -139,7 +139,7 @@ class Parameter(tf.Module):
         """
         `True` if this instance is trainable, else `False`. Cannot be set directly. Instead use
 
-            >>> from gpflow.utilities import set_trainable
+            >>> from gpflow import set_trainable
             >>> p = Parameter(...)
             >>> set_trainable(p)
 

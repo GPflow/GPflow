@@ -17,7 +17,7 @@ from gpflow.kernels import SquaredExponential
 from gpflow.likelihoods import Gaussian
 from gpflow.models import SVGP
 from gpflow.config import default_jitter, default_float
-from gpflow.utilities import set_trainable
+from gpflow import set_trainable
 
 float_type = default_float()
 rng = np.random.RandomState(99201)

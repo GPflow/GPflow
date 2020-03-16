@@ -17,7 +17,7 @@ from numpy.testing import assert_allclose
 import gpflow
 import tensorflow as tf
 from gpflow.mean_functions import Constant
-from gpflow.utilities import set_trainable
+from gpflow import set_trainable
 
 rng = np.random.RandomState(0)
 

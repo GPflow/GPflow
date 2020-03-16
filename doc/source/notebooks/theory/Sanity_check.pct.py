@@ -41,7 +41,7 @@ import tensorflow as tf
 import matplotlib
 import matplotlib.pyplot as plt
 
-from gpflow.utilities import set_trainable
+from gpflow import set_trainable
 from gpflow.config import default_float
 from gpflow.ci_utils import ci_niter
 
