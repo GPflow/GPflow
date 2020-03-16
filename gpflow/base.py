@@ -88,7 +88,7 @@ class Parameter(tf.Module):
         """ Prior probability density of the constrained variable. """
 
         if self.prior is None:
-            return tf.convert_to_tensor(0.0, default_float())
+            return tf.convert_to_tensor(0.0, dtype=self.dtype)
 
         y = self.read_value()
 
