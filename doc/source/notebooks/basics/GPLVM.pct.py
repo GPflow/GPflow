@@ -83,7 +83,7 @@ inducing_variable = tf.convert_to_tensor(np.random.permutation(x_mean_init.numpy
 # %% [markdown]
 # We construct a Squared Exponential (SE) kernel operating on the two-dimensional latent space. 
 # The `ARD` parameter stands for Automatic Relevance Determination, which in practice means that
-# we learn a different lengthscales for each of the input dimensions. See [Manipulating kernels](../advanced/kernels.ipynb) for more information.
+# we learn a different lengthscale for each of the input dimensions. See [Manipulating kernels](../advanced/kernels.ipynb) for more information.
 
 # %%
 lengthscales = tf.convert_to_tensor([1.0] * latent_dim, dtype=default_float())

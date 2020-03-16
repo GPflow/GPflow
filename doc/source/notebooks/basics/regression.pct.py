@@ -179,7 +179,7 @@ plt.xlim(-0.1, 1.1);
 # %% [markdown]
 # ## GP regression in higher dimensions
 #
-# Very little changes when the input space has more than one dimension. By default, the `lengthscales` is an isotropic (scalar) parameter. It is generally recommended that you allow to tune a different lengthscale for each dimension (Automatic Relevance Determination, ARD): simply initialize `lengthscale` with an array of length $D$ corresponding to the input dimension of `X`.
+# Very little changes when the input space has more than one dimension. By default, the `lengthscales` is an isotropic (scalar) parameter. It is generally recommended that you allow to tune a different lengthscale for each dimension (Automatic Relevance Determination, ARD): simply initialize `lengthscales` with an array of length $D$ corresponding to the input dimension of `X`.
 
 # %% [markdown]
 # ## Further reading

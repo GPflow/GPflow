@@ -72,7 +72,7 @@ tf.random.set_seed(123)
 C = 3
 N = 100
 
-# RBF kernel lengthscales
+# Lengthscale of the SquaredExponential kernel (isotropic -- change to `[0.1] * C` for ARD)
 lengthscales = 0.1
 
 # Jitter

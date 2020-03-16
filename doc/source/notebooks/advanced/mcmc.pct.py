@@ -219,11 +219,11 @@ def plot_joint_marginals(samples, y_axis_label):
     axs[1].plot(samples[name_to_index['.likelihood.variance']],
                 samples[name_to_index['.kernel.lengthscales']], 'k.', alpha = 0.15)
     axs[1].set_xlabel('noise_variance')
-    axs[1].set_ylabel('lengthscales')
+    axs[1].set_ylabel('lengthscale')
 
     axs[2].plot(samples[name_to_index['.kernel.lengthscales']],
                 samples[name_to_index['.kernel.variance']], 'k.', alpha = 0.1)
-    axs[2].set_xlabel('lengthscales')
+    axs[2].set_xlabel('lengthscale')
     axs[2].set_ylabel('signal_variance')
     f.suptitle(y_axis_label);
     plt.show()

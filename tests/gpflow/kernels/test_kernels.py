@@ -375,7 +375,7 @@ def test_active_product(N, D):
 def test_ard_init_scalar(D):
     """
     For ard kernels, make sure that kernels can be instantiated with a single
-    lengthscales or a suitable array of lengthscales
+    scalar lengthscale or a suitable array of lengthscales
     """
     kernel_1 = gpflow.kernels.SquaredExponential(lengthscales=2.3)
     kernel_2 = gpflow.kernels.SquaredExponential(lengthscales=np.ones(D) * 2.3)
