@@ -65,7 +65,7 @@ class Foo:
 
 ### Naming conventions
 
-Variable names: scalars and vectors start lowercase, but following the notation used in Gaussian process papers, all matrices are denoted with upper case. For example, `lengthscales` denotes a vector, whereas `Xnew` denotes a matrix.
+Variable names: scalars and vectors start lowercase, but following the notation used in Gaussian process papers, all matrices are denoted with upper case. For example, `lengthscales` denotes a vector (i.e., rank 1, for example a tensor with shape [D]), whereas `Xnew` denotes a matrix (i.e., rank 2, for example a tensor with shape [N, D]; note that a [N, 1] tensor is a matrix, not a vector).
 
 ### Formatting
 
