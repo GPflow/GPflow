@@ -87,7 +87,7 @@ All code goes through a PR; there are no direct commits to the master and develo
 
 ## Tests and continuous integration
 
-GPflow is ~97% covered by the testing suite. We expect changes to code to pass these tests, and for new code to be covered by new tests. Currently, tests are run by travis and coverage is reported by codecov.
+GPflow is ~97% covered by the testing suite. We expect changes to code to pass these tests, and for new code to be covered by new tests. Currently, tests are run by CircleCI and coverage is reported by codecov. Pull requests should aim to have >97% *patch* coverage (i.e., all the lines that are *changing* should be covered by tests).
 
 ## Documentation
 
