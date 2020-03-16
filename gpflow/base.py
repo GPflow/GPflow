@@ -8,6 +8,7 @@ import tensorflow_probability as tfp
 from tensorflow.python.ops import array_ops
 
 from .config import default_float
+from .utilities import to_default_float
 
 DType = Union[np.dtype, tf.DType]
 VariableData = Union[List, Tuple, np.ndarray, int, float]
@@ -84,11 +85,11 @@ class Parameter(tf.Module):
                 unconstrained_value, dtype=dtype, name=name, trainable=trainable
             )
 
-    def log_prior(self):
+    def log_prior_density(self):
         """ Prior probability density of the constrained variable. """
 
         if self.prior is None:
-            return tf.convert_to_tensor(0.0, dtype=self.dtype)
+            return to_default_float(0.0)
 
         y = self.read_value()
 
