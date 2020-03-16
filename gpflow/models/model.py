@@ -113,7 +113,7 @@ class GPModel(BayesianModel):
     def predict_f_samples(
         self,
         Xnew: DataPoint,
-        num_samples: Optional[int] = 1,
+        num_samples: Optional[int] = None,
         full_cov: bool = True,
         full_output_cov: bool = False,
     ) -> tf.Tensor:
