@@ -36,13 +36,13 @@ import logging
 
 # %%
 # Load the training data:
-xtrain, ytrain, xtest, ytest = getTrainingTestData()
+Xtrain, Ytrain, Xtest, Ytest = getTrainingTestData()
 
 def getKernel():
     return gpflow.kernels.SquaredExponential()
 
 # Run exact inference on training data:
-exact_model = gpflow.models.GPR((xtrain, ytrain), kernel=getKernel())
+exact_model = gpflow.models.GPR((Xtrain, Ytrain), kernel=getKernel())
 
 @tf.function
 def objective_closure():
@@ -57,7 +57,7 @@ print("Exact model parameters:")
 printModelParameters(exact_model)
 
 figA, ax = plt.subplots(1,1)
-ax.plot(xtrain, ytrain, 'ro')
+ax.plot(Xtrain, Ytrain, 'ro')
 plotPredictions(ax, exact_model, color='g')
 
 
@@ -73,23 +73,23 @@ def initializeHyperparametersFromExactSolution(sparse_model):
 
 # %%
 # Train VFE model initialized from the perfect solution.
-VFEmodel = gpflow.models.SGPR((xtrain, ytrain), kernel=getKernel(),
-                              inducing_variable=xtrain.copy())
+VFEmodel = gpflow.models.SGPR((Xtrain, Ytrain), kernel=getKernel(),
+                              inducing_variable=Xtrain.copy())
 
 initializeHyperparametersFromExactSolution(VFEmodel)
 
-VFEcb = repeatMinimization(VFEmodel, xtest, ytest)  # optimize with several restarts
+VFEcb = repeatMinimization(VFEmodel, Xtest, Ytest)  # optimize with several restarts
 print("Sparse model parameters after VFE optimization:")
 printModelParameters(VFEmodel)
 
 # %%
 # Train FITC model initialized from the perfect solution.
-FITCmodel = gpflow.models.GPRFITC((xtrain, ytrain), kernel=getKernel(),
-                                  inducing_variable=xtrain.copy())
+FITCmodel = gpflow.models.GPRFITC((Xtrain, Ytrain), kernel=getKernel(),
+                                  inducing_variable=Xtrain.copy())
 
 initializeHyperparametersFromExactSolution(FITCmodel)
 
-FITCcb = repeatMinimization(FITCmodel, xtest, ytest)  # optimize with several restarts
+FITCcb = repeatMinimization(FITCmodel, Xtest, Ytest)  # optimize with several restarts
 print("Sparse model parameters after FITC optimization:")
 printModelParameters(FITCmodel)
 
@@ -106,11 +106,11 @@ VFElog_likelihoods = stretch(len(VFEiters), VFEcb.log_likelihoods)
 VFEhold_out_likelihood = stretch(len(VFEiters), VFEcb.hold_out_likelihood)
 
 axes[0,0].set_title('VFE', loc='center', fontdict = {'fontsize': 22})
-plotComparisonFigure(xtrain, VFEmodel, exact_model, axes[0,0], axes[1,0], axes[2,0],
+plotComparisonFigure(Xtrain, VFEmodel, exact_model, axes[0,0], axes[1,0], axes[2,0],
                      VFEiters, VFElog_likelihoods, VFEhold_out_likelihood)
 
 axes[0,1].set_title('FITC', loc='center', fontdict = {'fontsize': 22})
-plotComparisonFigure(xtrain, FITCmodel, exact_model, axes[0,1], axes[1,1], axes[2,1],
+plotComparisonFigure(Xtrain, FITCmodel, exact_model, axes[0,1], axes[1,1], axes[2,1],
                      FITCcb.n_iters, FITCcb.log_likelihoods, FITCcb.hold_out_likelihood)
 
 # %% [markdown]

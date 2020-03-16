@@ -28,12 +28,12 @@ def getTrainingTestData():
         else:
             testIndices.append(index)
 
-    xtrain = overallX[trainIndices,:]
-    xtest  = overallX[testIndices, :]
-    ytrain = overallY[trainIndices, :]
-    ytest  = overallY[testIndices, :]
+    Xtrain = overallX[trainIndices,:]
+    Xtest  = overallX[testIndices, :]
+    Ytrain = overallY[trainIndices, :]
+    Ytest  = overallY[testIndices, :]
 
-    return xtrain, ytrain, xtest, ytest
+    return Xtrain, Ytrain, Xtest, Ytest
 
 def getLogPredictiveDensities(targetValues, means, variances):
     assert targetValues.shape == means.shape
@@ -67,14 +67,14 @@ def printModelParameters(model):
     print("  Kernel lengthscale  = {:.5g}".format(model.kernel.lengthscales.numpy()))
 
 def plotPredictions(ax, model, color, label=None):
-    xtest = np.sort(readCsvFile('data/snelson_test_inputs.dat'))
-    predMean, predVar = model.predict_y(xtest)
-    ax.plot(xtest, predMean, color, label=label)
-    ax.plot(xtest, predMean + 2.*np.sqrt(predVar), color)
-    ax.plot(xtest, predMean - 2.*np.sqrt(predVar), color)
+    Xtest = np.sort(readCsvFile('data/snelson_test_inputs.dat'))
+    predMean, predVar = model.predict_y(Xtest)
+    ax.plot(Xtest, predMean, color, label=label)
+    ax.plot(Xtest, predMean + 2.*np.sqrt(predVar), color)
+    ax.plot(Xtest, predMean - 2.*np.sqrt(predVar), color)
 
-def repeatMinimization(model, xtest, ytest):
-    callback = Callback(model, xtest, ytest)
+def repeatMinimization(model, Xtest, Ytest):
+    callback = Callback(model, Xtest, Ytest)
 
     @tf.function
     def objective_closure():
@@ -91,20 +91,20 @@ def repeatMinimization(model, xtest, ytest):
                      step_callback=callback)
     return callback
 
-def trainSparseModel(xtrain, ytrain, exact_model, isFITC, xtest, ytest):
-    sparse_model = getSparseModel(xtrain, ytrain, isFITC)
+def trainSparseModel(Xtrain, Ytrain, exact_model, isFITC, Xtest, Ytest):
+    sparse_model = getSparseModel(Xtrain, Ytrain, isFITC)
     sparse_model.likelihood.variance = exact_model.likelihood.variance.read_value().copy()
     sparse_model.kern.lengthscales = exact_model.kern.lengthscales.read_value().copy()
     sparse_model.kern.variance = exact_model.kern.variance.read_value().copy()
-    return sparse_model, repeatMinimization(sparse_model, xtest, ytest)
+    return sparse_model, repeatMinimization(sparse_model, Xtest, Ytest)
 
-def plotComparisonFigure(xtrain, sparse_model,exact_model, ax_predictions, ax_inducing_points, ax_optimization, iterations, log_likelihoods,hold_out_likelihood, title=None):
+def plotComparisonFigure(Xtrain, sparse_model,exact_model, ax_predictions, ax_inducing_points, ax_optimization, iterations, log_likelihoods,hold_out_likelihood, title=None):
     plotPredictions(ax_predictions, exact_model, 'g', label='Exact')
     plotPredictions(ax_predictions, sparse_model, 'b', label='Approximate')
     ax_predictions.legend(loc=9)
-    ax_predictions.plot( sparse_model.inducing_variable.Z.numpy() , -1.*np.ones( xtrain.shape ), 'ko' )
+    ax_predictions.plot( sparse_model.inducing_variable.Z.numpy() , -1.*np.ones( Xtrain.shape ), 'ko' )
     ax_predictions.set_ylim( predict_limits )
-    ax_inducing_points.plot( xtrain, sparse_model.inducing_variable.Z.numpy(), 'bo' )
+    ax_inducing_points.plot( Xtrain, sparse_model.inducing_variable.Z.numpy(), 'bo' )
     xs= np.linspace( ax_inducing_points.get_xlim()[0], ax_inducing_points.get_xlim()[1], 200 )
     ax_inducing_points.plot( xs, xs, 'g' )
     ax_inducing_points.set_xlabel('Optimal inducing point position')
@@ -120,11 +120,11 @@ def plotComparisonFigure(xtrain, sparse_model,exact_model, ax_predictions, ax_in
     ax2.set_ylabel('Hold out negative log likelihood', color='b')
 
 class Callback:
-    def __init__(self, model, xtest, ytest, holdout_interval=10):
+    def __init__(self, model, Xtest, Ytest, holdout_interval=10):
         self.model = model
         self.holdout_interval = holdout_interval
-        self.xtest = xtest
-        self.ytest = ytest
+        self.Xtest = Xtest
+        self.Ytest = Ytest
         self.log_likelihoods = []
         self.hold_out_likelihood = []
         self.n_iters = []
@@ -140,8 +140,8 @@ class Callback:
             self.n_iters.append(self.counter)
             self.log_likelihoods.append(self.model.log_likelihood().numpy())
 
-            predictive_mean, predictive_variance = self.model.predict_y(self.xtest)
-            test_log_likelihood = tf.reduce_mean(getLogPredictiveDensities(self.ytest, predictive_mean, predictive_variance))
+            predictive_mean, predictive_variance = self.model.predict_y(self.Xtest)
+            test_log_likelihood = tf.reduce_mean(getLogPredictiveDensities(self.Ytest, predictive_mean, predictive_variance))
             self.hold_out_likelihood.append(test_log_likelihood.numpy())
 
         self.counter+=1
@@ -154,23 +154,23 @@ def stretch(lenNIters, initialValues):
 def snelsonDemo():
     from matplotlib import pyplot as plt
     from IPython import embed
-    xtrain,ytrain,xtest,ytest = getTrainingTestData()
+    Xtrain,Ytrain,Xtest,Ytest = getTrainingTestData()
 
     # run exact inference on training data.
-    exact_model = getRegressionModel(xtrain,ytrain)
+    exact_model = getRegressionModel(Xtrain,Ytrain)
     opt = gpflow.train.ScipyOptimizer()
     opt.minimize(exact_model, maxiter=ci_niter(2000000))
 
     figA, axes = plt.subplots(1,1)
-    inds = np.argsort(xtrain.flatten())
-    axes.plot(xtrain[inds,:], ytrain[inds,:], 'ro')
+    inds = np.argsort(Xtrain.flatten())
+    axes.plot(Xtrain[inds,:], Ytrain[inds,:], 'ro')
     plotPredictions(axes, exact_model, 'g', None)
 
     figB, axes = plt.subplots(3,2)
 
     # run sparse model on training data initialized from exact optimal solution.
-    VFEmodel, VFEcb = trainSparseModel(xtrain, ytrain, exact_model, False, xtest, ytest)
-    FITCmodel, FITCcb = trainSparseModel(xtrain, ytrain, exact_model, True, xtest, ytest)
+    VFEmodel, VFEcb = trainSparseModel(Xtrain, Ytrain, exact_model, False, Xtest, Ytest)
+    FITCmodel, FITCcb = trainSparseModel(Xtrain, Ytrain, exact_model, True, Xtest, Ytest)
 
     print("Exact model parameters \n")
     printModelParameters(exact_model)
@@ -183,8 +183,8 @@ def snelsonDemo():
     VFElog_likelihoods = stretch(len(VFEiters), VFEcb.log_likelihoods)
     VFEhold_out_likelihood = stretch(len(VFEiters), VFEcb.hold_out_likelihood)
 
-    plotComparisonFigure(xtrain, VFEmodel, exact_model, axes[0,0], axes[1,0], axes[2,0], VFEiters, VFElog_likelihoods, VFEhold_out_likelihood, "VFE")
-    plotComparisonFigure(xtrain, FITCmodel, exact_model, axes[0,1], axes[1,1], axes[2,1],FITCcb.n_iters, FITCcb.log_likelihoods, FITCcb.hold_out_likelihood , "FITC")
+    plotComparisonFigure(Xtrain, VFEmodel, exact_model, axes[0,0], axes[1,0], axes[2,0], VFEiters, VFElog_likelihoods, VFEhold_out_likelihood, "VFE")
+    plotComparisonFigure(Xtrain, FITCmodel, exact_model, axes[0,1], axes[1,1], axes[2,1],FITCcb.n_iters, FITCcb.log_likelihoods, FITCcb.hold_out_likelihood , "FITC")
 
     axes[0,0].set_title('VFE', loc='center', fontdict = {'fontsize': 22})
     axes[0,1].set_title('FITC', loc='center', fontdict = {'fontsize': 22})

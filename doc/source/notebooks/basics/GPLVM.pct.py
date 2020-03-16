@@ -70,15 +70,15 @@ num_data = Y.shape[0]  # number of data points
 # Initialize via PCA:
 
 # %%
-x_mean_init = tf.convert_to_tensor(ops.pca_reduce(Y, latent_dim), dtype=default_float())
-x_var_init = tf.convert_to_tensor(np.ones((num_data, latent_dim)), dtype=default_float())
+X_mean_init = tf.convert_to_tensor(ops.pca_reduce(Y, latent_dim), dtype=default_float())
+X_var_init = tf.convert_to_tensor(np.ones((num_data, latent_dim)), dtype=default_float())
 
 # %% [markdown]
 # Pick inducing inputs randomly from dataset initialization:
 
 # %%
 np.random.seed(1)  # for reproducibility
-inducing_variable = tf.convert_to_tensor(np.random.permutation(x_mean_init.numpy())[:num_inducing], dtype=default_float())
+inducing_variable = tf.convert_to_tensor(np.random.permutation(X_mean_init.numpy())[:num_inducing], dtype=default_float())
 
 # %% [markdown]
 # We construct a Squared Exponential (SE) kernel operating on the two-dimensional latent space. 
@@ -94,8 +94,8 @@ kernel = gpflow.kernels.RBF(lengthscales=lengthscales)
 
 # %%
 gplvm = gpflow.models.BayesianGPLVM(Y,
-            x_data_mean=x_mean_init,
-            x_data_var=x_var_init,
+            X_data_mean=X_mean_init,
+            X_data_var=X_var_init,
             kernel=kernel,
             inducing_variable=inducing_variable)
 # Instead of passing an inducing_variable directly, we can also set the num_inducing_variables argument to an integer, which will randomly pick from the data.
@@ -132,14 +132,14 @@ print_summary(gplvm)
 # We compare the Bayesian GPLVM's latent space to the deterministic PCA's one.
 
 # %%
-xpca = ops.pca_reduce(Y, latent_dim)
-gplvm_x_mean = gplvm.x_data_mean.numpy()
+X_pca = ops.pca_reduce(Y, latent_dim)
+gplvm_X_mean = gplvm.X_data_mean.numpy()
 
 f, ax = plt.subplots(1, 2, figsize=(10, 6))
 
 for i in np.unique(labels):
-    ax[0].scatter(xpca[labels==i, 0], xpca[labels==i, 1], label=i)
-    ax[1].scatter(gplvm_x_mean[labels==i, 0], gplvm_x_mean[labels==i, 1], label=i)
+    ax[0].scatter(X_pca[labels==i, 0], X_pca[labels==i, 1], label=i)
+    ax[1].scatter(gplvm_X_mean[labels==i, 0], gplvm_X_mean[labels==i, 1], label=i)
     ax[0].set_title('PCA')
     ax[1].set_title('Bayesian GPLVM')
 
