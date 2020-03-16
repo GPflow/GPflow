@@ -17,16 +17,16 @@ import numpy as np
 import tensorflow as tf
 
 from gpflow.kernels import Kernel
-from .model import MeanAndVariance, GPModel, RegressionData
-from .util import inducingpoint_wrapper
 from .. import likelihoods
 from ..config import default_float, default_jitter
 from ..covariances.dispatch import Kuf, Kuu
 from ..inducing_variables import InducingPoints
 from ..mean_functions import Zero, MeanFunction
+from .model import MeanAndVariance, GPModel, RegressionData, BayesianModelWithData
+from .util import inducingpoint_wrapper
 
 
-class SGPRBase(GPModel):
+class SGPRBase(GPModel, BayesianModelWithData):
     """
     Common base class for SGPR and GPRFITC that provides the common __init__
     and upper_bound() methods.
@@ -146,18 +146,16 @@ class SGPR(SGPRBase):
 
     """
 
-    def maximum_likelihood_objective(self, data: Optional[RegressionData] = None):
-        return self.elbo(data)
+    def maximum_likelihood_objective(self):
+        return self.elbo()
 
-    def elbo(self, data: Optional[RegressionData] = None):
+    def elbo(self):
         """
         Construct a tensorflow function to compute the bound on the marginal
         likelihood. For a derivation of the terms in here, see the associated
         SGPR notebook.
         """
-        if data is None:
-            data = self.data
-        x_data, y_data = data
+        x_data, y_data = self.data
 
         num_inducing = len(self.inducing_variable)
         num_data = tf.cast(tf.shape(y_data)[0], default_float())
@@ -278,8 +276,8 @@ class GPRFITC(SGPRBase):
     obviously gradients are automatic in GPflow.
     """
 
-    def common_terms(self, data):
-        x_data, y_data = data
+    def common_terms(self):
+        x_data, y_data = self.data
         num_inducing = len(self.inducing_variable)
         err = y_data - self.mean_function(x_data)  # size [N, R]
         Kdiag = self.kernel(x_data, full=False)
@@ -303,10 +301,10 @@ class GPRFITC(SGPRBase):
 
         return err, nu, Luu, L, alpha, beta, gamma
 
-    def maximum_likelihood_objective(self, data: Optional[RegressionData] = None):
-        return self.fitc_log_marginal_likelihood(data)
+    def maximum_likelihood_objective(self):
+        return self.fitc_log_marginal_likelihood()
 
-    def fitc_log_marginal_likelihood(self, data: Optional[RegressionData] = None):
+    def fitc_log_marginal_likelihood(self):
         """
         Construct a tensorflow function to compute the bound on the marginal
         likelihood.
@@ -330,10 +328,7 @@ class GPRFITC(SGPRBase):
         # and let \alpha = V \beta
         # then Mahalanobis term = -0.5* ( \beta^T err - \alpha^T Solve( I + V \diag( \nu^{-1} ) V^T, alpha ) )
 
-        if data is None:
-            data = self.data
-
-        err, nu, Luu, L, alpha, beta, gamma = self.common_terms(data)
+        err, nu, Luu, L, alpha, beta, gamma = self.common_terms()
 
         mahalanobisTerm = -0.5 * tf.reduce_sum(
             tf.square(err) / tf.expand_dims(nu, 1)

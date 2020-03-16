@@ -43,41 +43,25 @@ class BayesianModel(Module, metaclass=abc.ABCMeta):
         else:
             return tf.convert_to_tensor(0.0, dtype=default_float())
 
-    def log_posterior_density(self, data: Optional[Data] = None) -> tf.Tensor:
+    def log_posterior_density(self, *args, **kwargs) -> tf.Tensor:
         """
         This may be the posterior with respect to the hyperparameters (e.g. for
         GPR) or the posterior with respect to the function (e.g. for GPMC and
         SGPMC). It assumes that maximum_likelihood_objective() is defined
         sensibly.
         """
-        return self._call_maximum_likelihood_objective(data) + self.log_prior_density()
+        return self.maximum_likelihood_objective(*args, **kwargs) + self.log_prior_density()
 
-    def training_loss(self, data: Optional[Data] = None) -> tf.Tensor:
+    def _training_loss(self, *args, **kwargs) -> tf.Tensor:
         """
         Minimization objective for TensorFlow optimizers (including
         gpflow.optimizers.Scipy). Includes the log prior density for maximum
         a-posteriori (MAP) estimation.
         """
-        return -(self._call_maximum_likelihood_objective(data) + self.log_prior_density())
-
-    def training_loss_closure(self, data: Optional[Data] = None) -> Callable[[], tf.Tensor]:
-        def training_loss_closure():
-            return self.training_loss(data)
-
-        return training_loss_closure
-
-    def _call_maximum_likelihood_objective(self, data: Optional[Data] = None) -> tf.Tensor:
-        """
-        Helper function so that a user's model will still work even if they
-        implement maximum_likelihood_objective() without any arguments
-        """
-        if data is None:
-            return self.maximum_likelihood_objective()
-        else:
-            return self.maximum_likelihood_objective(data)
+        return -(self.maximum_likelihood_objective(*args, **kwargs) + self.log_prior_density())
 
     @abc.abstractmethod
-    def maximum_likelihood_objective(self, data: Optional[Data] = None) -> tf.Tensor:
+    def maximum_likelihood_objective(self, *args, **kwargs) -> tf.Tensor:
         """
         Objective for maximum likelihood estimation. Should be maximized. E.g.
         log-marginal likelihood (hyperparameter likelihood) for GPR, or lower
@@ -85,6 +69,21 @@ class BayesianModel(Module, metaclass=abc.ABCMeta):
         GPs.
         """
         raise NotImplementedError
+
+
+class BayesianModelWithData(BayesianModel):
+    def training_loss(self):
+        return self._training_loss()
+
+    def training_loss_closure(self) -> Callable[[], tf.Tensor]:
+        return self.training_loss
+
+class BayesianModelWithoutData(BayesianModel):
+    def training_loss_closure(self, data: Data) -> Callable[[], tf.Tensor]:
+        def training_loss_closure():
+            return self._training_loss(data)
+
+        return training_loss_closure
 
 
 class GPModel(BayesianModel):

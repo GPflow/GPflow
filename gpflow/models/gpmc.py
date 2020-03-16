@@ -24,10 +24,10 @@ from ..kernels import Kernel
 from ..likelihoods import Likelihood
 from ..mean_functions import MeanFunction
 from ..utilities import to_default_float
-from .model import RegressionData, GPModel, MeanAndVariance
+from .model import RegressionData, GPModel, MeanAndVariance, BayesianModelWithData
 
 
-class GPMC(GPModel):
+class GPMC(GPModel, BayesianModelWithData):
     def __init__(
         self,
         data: RegressionData,
@@ -60,16 +60,16 @@ class GPMC(GPModel):
             loc=to_default_float(0.0), scale=to_default_float(1.0)
         )
 
-    def training_loss(self, data: Optional[RegressionData] = None) -> tf.Tensor:
-        return -self.log_posterior_density(data)
+    def training_loss(self) -> tf.Tensor:
+        return -self.log_posterior_density()
 
-    def log_posterior_density(self, data: Optional[RegressionData] = None) -> tf.Tensor:
-        return self.log_likelihood(data) + self.log_prior_density()
+    def log_posterior_density(self) -> tf.Tensor:
+        return self.log_likelihood() + self.log_prior_density()
 
-    def maximum_likelihood_objective(self, data: Optional[RegressionData] = None) -> tf.Tensor:
-        return self.log_likelihood(data)
+    def maximum_likelihood_objective(self) -> tf.Tensor:
+        return self.log_likelihood()
 
-    def log_likelihood(self, data: Optional[RegressionData] = None) -> tf.Tensor:
+    def log_likelihood(self) -> tf.Tensor:
         r"""
         Construct a tf function to compute the likelihood of a general GP
         model.
@@ -77,9 +77,7 @@ class GPMC(GPModel):
             \log p(Y | V, theta).
 
         """
-        if data is None:
-            data = self.data
-        x_data, y_data = data
+        x_data, y_data = self.data
         K = self.kernel(x_data)
         L = tf.linalg.cholesky(
             K + tf.eye(tf.shape(x_data)[0], dtype=default_float()) * default_jitter()
