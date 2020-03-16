@@ -27,12 +27,12 @@ class Periodic(Kernel):
 
     where:
     r is the Euclidean distance between the input points
-    ℓ is the lengthscale parameter,
+    ℓ is the lengthscales parameter,
     σ² is the variance parameter,
     γ is the period parameter.
 
     NOTE: usually we have a factor of 4 instead of 0.5 in front but this
-        is absorbed into the lengthscale hyperparameter.
+        is absorbed into the lengthscales hyperparameter.
     NOTE: periodic kernel uses `active_dims` of a base kernel, therefore
         the constructor doesn't have it as an argument.
     """
@@ -74,7 +74,7 @@ class Periodic(Kernel):
         f2 = tf.expand_dims(X2, 0)  # now [1, M, D]
 
         r = np.pi * (f - f2) / self.period
-        scaled_sine = tf.sin(r) / self.base_kernel.lengthscale
+        scaled_sine = tf.sin(r) / self.base_kernel.lengthscales
         if hasattr(self.base_kernel, "K_r"):
             sine_r = tf.reduce_sum(tf.abs(scaled_sine), -1)
             K = self.base_kernel.K_r(sine_r)

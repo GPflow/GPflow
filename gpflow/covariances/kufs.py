@@ -14,11 +14,11 @@ def Kuf_kernel_inducingpoints(inducing_variable: InducingPoints, kernel: Kernel,
 def Kuf_sqexp_multiscale(inducing_variable: Multiscale, kernel: SquaredExponential, Xnew):
     Xnew, _ = kernel.slice(Xnew, None)
     Zmu, Zlen = kernel.slice(inducing_variable.Z, inducing_variable.scales)
-    idlengthscale = kernel.lengthscale + Zlen
-    d = inducing_variable._cust_square_dist(Xnew, Zmu, idlengthscale)
-    lengthscale = tf.reduce_prod(kernel.lengthscale / idlengthscale, 1)
-    lengthscale = tf.reshape(lengthscale, (1, -1))
-    return tf.transpose(kernel.variance * tf.exp(-0.5 * d) * lengthscale)
+    idlengthscales = kernel.lengthscales + Zlen
+    d = inducing_variable._cust_square_dist(Xnew, Zmu, idlengthscales)
+    lengthscales = tf.reduce_prod(kernel.lengthscales / idlengthscales, 1)
+    lengthscales = tf.reshape(lengthscales, (1, -1))
+    return tf.transpose(kernel.variance * tf.exp(-0.5 * d) * lengthscales)
 
 
 @Kuf.register(InducingPatches, Convolutional, object)

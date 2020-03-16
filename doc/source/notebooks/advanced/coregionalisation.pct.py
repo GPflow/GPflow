@@ -154,7 +154,7 @@ plot(m)
 #
 #  - The first function (blue) has low posterior variance everywhere because there are so many observations, and the noise variance is small. 
 #  - The second function (orange) has higher posterior variance near the data, because the data are more noisy, and very high posterior variance where there are no observations (x > 0.5). 
-#  - The model has done a reasonable job of estimating the noise variance and lengthscales.
+#  - The model has done a reasonable job of estimating the noise variance and lengthscale.
 #  - The model recognises the correlation between the two functions and is able to suggest (with uncertainty) that because x > 0.5 the orange curve should follow the blue curve (which we know to be the truth from the data-generating procedure).
 #  
 # The covariance matrix between outputs is as follows:
