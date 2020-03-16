@@ -52,11 +52,11 @@ def _sample_conditional(
         samples = sample_mvn(
             mean_for_sample, cov, "full", num_samples=num_samples
         )  # [..., (S), P, N]
-        samples = tf.linalg.adjoint(samples)  # [..., (S), P, N]
+        samples = tf.linalg.adjoint(samples)  # [..., (S), N, P]
     else:
         # mean: [..., N, P]
         # cov: [..., N, P] or [..., N, P, P]
         cov_structure = "full" if full_output_cov else "diag"
-        samples = sample_mvn(mean, cov, cov_structure, num_samples=num_samples)  # [..., (S), P, N]
+        samples = sample_mvn(mean, cov, cov_structure, num_samples=num_samples)  # [..., (S), N, P]
 
     return samples, mean, cov
