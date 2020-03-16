@@ -113,7 +113,7 @@ class GPModel(BayesianModel):
     def predict_f_samples(
         self,
         Xnew: DataPoint,
-        num_samples: int = 1,
+        num_samples: Optional[int] = 1,
         full_cov: bool = True,
         full_output_cov: bool = False,
     ) -> tf.Tensor:
@@ -122,12 +122,12 @@ class GPModel(BayesianModel):
 
         :param Xnew: DataPoint
             Input locations at which to draw samples
-        :param num_samples: int
+        :param num_samples:
             Number of samples to draw.
-            If `None` a one sample is drawn and the return shape is [..., N, P],
-            for any other positive integer the return shape contains an extra batch
+            If `None`, a single sample is drawn and the return shape is [..., N, P],
+            for any positive integer the return shape contains an extra batch
             dimension, [..., S, N, P], with S = num_samples.
-        :param full_cov: bool, default to `True`,
+        :param full_cov:
             Draw correlated samples over the inputs. Computes the cholesky over the
             dense covariance matrix of size [num_data, num_data].
         :param full_output_cov: bool, defaults to `False`.
@@ -136,7 +136,7 @@ class GPModel(BayesianModel):
         """
         if full_output_cov:
             raise NotImplementedError(
-                "`full_output_cov` True is currently not supported by `predict_f_samples`"
+                "`full_output_cov=True` is currently not supported by `predict_f_samples`"
             )
 
         mean, cov = self.predict_f(Xnew, full_cov=full_cov)  # [N, P], [P, N, N] or [N, P]
