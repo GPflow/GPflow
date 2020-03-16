@@ -93,7 +93,9 @@ class SGPMC(GPModel):
     def maximum_likelihood_objective(self, data: Optional[RegressionData] = None) -> tf.Tensor:
         return self.log_conditional_likelihood_lower_bound(data)
 
-    def log_conditional_likelihood_lower_bound(self, data: Optional[RegressionData] = None) -> tf.Tensor:
+    def log_conditional_likelihood_lower_bound(
+        self, data: Optional[RegressionData] = None
+    ) -> tf.Tensor:
         """
         This function computes the optimal density for v, q*(v), up to a constant
         """
