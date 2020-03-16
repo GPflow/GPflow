@@ -27,7 +27,7 @@ from ..probability_distributions import DiagonalGaussian
 from ..utilities import positive
 from ..utilities.ops import pca_reduce
 from .gpr import GPR
-from .model import InputData, GPModel, BayesianModelWithData
+from .model import InputData, GPModel, BayesianModelStoringData
 from .util import inducingpoint_wrapper
 
 
@@ -74,7 +74,7 @@ class GPLVM(GPR):
         super().__init__(gpr_data, kernel, mean_function=mean_function)
 
 
-class BayesianGPLVM(GPModel, BayesianModelWithData):
+class BayesianGPLVM(GPModel, BayesianModelStoringData):
     def __init__(
         self,
         data: InputData,

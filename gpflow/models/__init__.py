@@ -17,7 +17,7 @@
 from .gplvm import GPLVM, BayesianGPLVM
 from .gpmc import GPMC
 from .gpr import GPR
-from .model import BayesianModelWithData, BayesianModelWithoutData, GPModel
+from .model import BayesianModelStoringData, BayesianModelNotStoringData, GPModel
 
 # from .gplvm import PCA_reduce
 from .sgpmc import SGPMC

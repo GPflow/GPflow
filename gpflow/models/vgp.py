@@ -27,10 +27,10 @@ from ..kullback_leiblers import gauss_kl
 from ..likelihoods import Likelihood
 from ..mean_functions import MeanFunction, Zero
 from ..utilities import triangular
-from .model import RegressionData, InputData, GPModel, MeanAndVariance, BayesianModelWithData
+from .model import RegressionData, InputData, GPModel, MeanAndVariance, BayesianModelStoringData
 
 
-class VGP(GPModel, BayesianModelWithData):
+class VGP(GPModel, BayesianModelStoringData):
     r"""
     This method approximates the Gaussian process posterior using a multivariate Gaussian.
 
@@ -120,7 +120,7 @@ class VGP(GPModel, BayesianModelWithData):
         return mu + self.mean_function(Xnew), var
 
 
-class VGPOpperArchambeau(GPModel, BayesianModelWithData):
+class VGPOpperArchambeau(GPModel, BayesianModelStoringData):
     r"""
     This method approximates the Gaussian process posterior using a multivariate Gaussian.
     The key reference is:

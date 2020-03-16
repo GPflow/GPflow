@@ -72,7 +72,12 @@ class BayesianModel(Module, metaclass=abc.ABCMeta):
         raise NotImplementedError
 
 
-class BayesianModelWithData(BayesianModel):
+class BayesianModelStoringData(BayesianModel):
+    """
+    Base class for models that encapsulate their data and store it as
+    self.data; training_loss does not take any arguments.
+    """
+
     def training_loss(self):
         return self._training_loss()
 
@@ -80,10 +85,18 @@ class BayesianModelWithData(BayesianModel):
         return self.training_loss
 
 
-class BayesianModelWithoutData(BayesianModel):
+class BayesianModelNotStoringData(BayesianModel):
+    """
+    Base class for models that do not encapsulate the data; training_loss takes
+    data as argument.
+    """
+
+    def training_loss(self, data):
+        return self._training_loss(data)
+
     def training_loss_closure(self, data: Data) -> Callable[[], tf.Tensor]:
         def training_loss_closure():
-            return self._training_loss(data)
+            return self.training_loss(data)
 
         return training_loss_closure
 

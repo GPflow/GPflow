@@ -24,11 +24,11 @@ from ..kernels import Kernel
 from ..likelihoods import Likelihood
 from ..mean_functions import MeanFunction
 from ..utilities import to_default_float
-from .model import RegressionData, GPModel, MeanAndVariance, BayesianModelWithData
+from .model import RegressionData, GPModel, MeanAndVariance, BayesianModelStoringData
 from .util import inducingpoint_wrapper
 
 
-class SGPMC(GPModel, BayesianModelWithData):
+class SGPMC(GPModel, BayesianModelStoringData):
     r"""
     This is the Sparse Variational GP using MCMC (SGPMC). The key reference is
 
