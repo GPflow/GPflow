@@ -159,7 +159,7 @@ plotkernelsample(k4, axes[1, 1])
 # %% [markdown]
 # ## Kernels for higher-dimensional input spaces
 #
-# Kernels generalize to multiple dimensions straightforwardly. Stationary kernels support "Automatic Relevance Determination" (ARD), that is, having a different lengthscales parameter for each input dimension. Simply pass in an array of the same length as the number of input dimensions. **NOTE:** This means that the kernel object is then able to process only inputs of that dimension!
+# Kernels generalize to multiple dimensions straightforwardly. Stationary kernels support "Automatic Relevance Determination" (ARD), that is, having a different lengthscale parameter for each input dimension. Simply pass in an array of the same length as the number of input dimensions. **NOTE:** This means that the kernel object is then able to process only inputs of that dimension!
 
 # %% [markdown]
 # You can also initialize the lengthscales when the object is created:
