@@ -157,11 +157,9 @@ def _E(p, kern1, feat1, kern2, feat2, nghp=None):
     Compute the expectation:
     expectation[n] = <Ka_{Z1, x_n} Kb_{x_n, Z2}>_p(x_n)
         - Ka_{.,.}, Kb_{.,.} :: RBF kernels
-    Ka and Kb as well as Z1 and Z2 can differ from each other, but this is supported
-    only if the Gaussian p is Diagonal (p.cov NxD) and Ka, Kb have disjoint active_dims
-    in which case the joint expectations simplify into a product of expectations
+    Ka and Kb as well as Z1 and Z2 can differ from each other.
 
-    :return: NxMxM
+    :return: [N, dim(Z1), dim(Z2)]
     """
     if kern1.on_separate_dims(kern2) and isinstance(
         p, DiagonalGaussian
@@ -170,51 +168,101 @@ def _E(p, kern1, feat1, kern2, feat2, nghp=None):
         eKxz2 = expectation(p, (kern2, feat2))
         return eKxz1[:, :, None] * eKxz2[:, None, :]
 
-    if feat1 != feat2 or kern1 != kern2:
-        raise NotImplementedError(
-            "The expectation over two kernels has only an "
-            "analytical implementation if both kernels are equal."
-        )
+    Ka, Kb = kern1, kern2
 
-    kernel = kern1
-    inducing_variable = feat1
+    iv1, iv2 = feat1, feat2
 
     # use only active dimensions
-    Xcov = kernel.slice_cov(tf.linalg.diag(p.cov) if isinstance(p, DiagonalGaussian) else p.cov)
-    Z, Xmu = kernel.slice(inducing_variable.Z, p.mu)
+    Xcov = Ka.slice_cov(tf.linalg.diag(p.cov) if isinstance(p, DiagonalGaussian) else p.cov)
+    Z1, Xmu = Ka.slice(iv1.Z, p.mu)
 
     N = tf.shape(Xmu)[0]
     D = tf.shape(Xmu)[1]
 
-    squared_lengthscales = kernel.lengthscales ** 2
-    if not kernel.ard:
-        zero_lengthscales = tf.zeros((D,), dtype=squared_lengthscales.dtype)
-        squared_lengthscales = squared_lengthscales + zero_lengthscales
+    def get_squared_lengthscales(kernel):
+        squared_lengthscales = kernel.lengthscales ** 2
+        if not kernel.ard:
+            # expand scalar lengthscale
+            squared_lengthscales = (
+                tf.ones((D,), dtype=squared_lengthscales.dtype) * squared_lengthscales
+            )
+        return squared_lengthscales
 
-    sqrt_det_L = tf.reduce_prod(0.5 * squared_lengthscales) ** 0.5
-    C = tf.linalg.cholesky(0.5 * tf.linalg.diag(squared_lengthscales) + Xcov)  # NxDxD
-    dets = sqrt_det_L / tf.exp(tf.reduce_sum(tf.math.log(tf.linalg.diag_part(C)), axis=1))  # N
+    if Ka == Kb:
+        La = get_squared_lengthscales(Ka)
+        Lb = La
+        half_mean_L = La * 0.5  # average length scale
+    else:
+        La = get_squared_lengthscales(Ka)
+        Lb = get_squared_lengthscales(Kb)
+        half_mean_L = (La * Lb) / (La + Lb)  # average length scale
 
-    C_inv_mu = tf.linalg.triangular_solve(C, tf.expand_dims(Xmu, 2), lower=True)  # NxDx1
-    C_inv_z = tf.linalg.triangular_solve(
-        C, tf.tile(tf.expand_dims(0.5 * tf.transpose(Z), 0), [N, 1, 1]), lower=True
-    )  # NxDxM
-    mu_CC_inv_mu = tf.expand_dims(tf.reduce_sum(tf.square(C_inv_mu), 1), 2)  # Nx1x1
-    z_CC_inv_z = tf.reduce_sum(tf.square(C_inv_z), 1)  # NxM
-    zm_CC_inv_zn = tf.linalg.matmul(C_inv_z, C_inv_z, transpose_a=True)  # NxMxM
-    two_z_CC_inv_mu = 2 * tf.linalg.matmul(C_inv_z, C_inv_mu, transpose_a=True)[:, :, 0]  # NxM
-    # NxMxM
-    exponent_mahalanobis = (
-        mu_CC_inv_mu
-        + tf.expand_dims(z_CC_inv_z, 1)
-        + tf.expand_dims(z_CC_inv_z, 2)
-        + 2 * zm_CC_inv_zn
-        - tf.expand_dims(two_z_CC_inv_mu, 2)
-        - tf.expand_dims(two_z_CC_inv_mu, 1)
-    )
-    exponent_mahalanobis = tf.exp(-0.5 * exponent_mahalanobis)  # NxMxM
+    sqrt_det_L = tf.reduce_prod(half_mean_L) ** 0.5
+    C = tf.linalg.cholesky(tf.linalg.diag(half_mean_L) + Xcov)  # [N, D, D]
+    dets = sqrt_det_L / tf.exp(tf.reduce_sum(tf.math.log(tf.linalg.diag_part(C)), axis=1))  # [N]
 
-    # Compute sqrt(self(Z)) explicitly to prevent automatic gradient from
-    # being NaN sometimes, see pull request #615
-    kernel_sqrt = tf.exp(-0.25 * square_distance(Z / kernel.lengthscales, None))
-    return kernel.variance ** 2 * kernel_sqrt * tf.reshape(dets, [N, 1, 1]) * exponent_mahalanobis
+    # for Mahalanobis computation we need Zᵀ (CCᵀ)⁻¹ Z  as well as C⁻¹ Z
+    # with Z = Z₁, Z₂  for two squared exponential kernels
+    def get_cholesky_solve_terms(Z, C=C):
+        C_inv_z = tf.linalg.triangular_solve(
+            C, tf.tile(tf.expand_dims(tf.transpose(Z), axis=0), [N, 1, 1]), lower=True
+        )  # [N, D, M]
+        z_CC_inv_z = tf.reduce_sum(tf.square(C_inv_z), axis=1)  # [N, M]
+
+        return C_inv_z, z_CC_inv_z
+
+    C_inv_mu = tf.linalg.triangular_solve(C, tf.expand_dims(Xmu, axis=2), lower=True)  # [N, D, 1]
+    mu_CC_inv_mu = tf.expand_dims(tf.reduce_sum(tf.square(C_inv_mu), axis=1), axis=2)  # [N, 1, 1]
+
+    C_inv_z1, z1_CC_inv_z1 = get_cholesky_solve_terms(Z1 / La * half_mean_L)
+    z1_CC_inv_mu = 2 * tf.matmul(C_inv_z1, C_inv_mu, transpose_a=True)[:, :, 0]  # [N, M1]
+
+    if iv1 == iv2 and Ka == Kb:
+        # in this case Z2==Z1 so we can reuse the Z1 terms
+        C_inv_z2, z2_CC_inv_z2 = C_inv_z1, z1_CC_inv_z1
+        z2_CC_inv_mu = z1_CC_inv_mu  # [N, M]
+        Z2 = Z1
+    else:
+        # compute terms related to Z2
+        Z2, _ = Kb._slice(iv2.Z, p.mu)
+        C_inv_z2, z2_CC_inv_z2 = get_cholesky_solve_terms(Z2 / Lb * half_mean_L)
+        z2_CC_inv_mu = 2 * tf.matmul(C_inv_z2, C_inv_mu, transpose_a=True)[:, :, 0]  # [N, M2]
+
+    z1_CC_inv_z2 = tf.matmul(C_inv_z1, C_inv_z2, transpose_a=True)  # [N, M1, M2]
+
+    # expand dims for broadcasting
+    # along M1
+    z2_CC_inv_mu = tf.expand_dims(z2_CC_inv_mu, axis=1)  # [N, 1, M2]
+    z2_CC_inv_z2 = tf.expand_dims(z2_CC_inv_z2, axis=1)
+
+    # along M2
+    z1_CC_inv_mu = tf.expand_dims(z1_CC_inv_mu, axis=2)  # [N, M1, 1]
+    z1_CC_inv_z1 = tf.expand_dims(z1_CC_inv_z1, axis=2)
+
+    # expanded version of ((Z1 + Z2)-mu) (CCT)-1 ((Z1 + Z2)-mu)
+    mahalanobis = (
+        mu_CC_inv_mu + z2_CC_inv_z2 + z1_CC_inv_z1 + 2 * z1_CC_inv_z2 - z1_CC_inv_mu - z2_CC_inv_mu
+    )  # [N, M1, M2]
+
+    exp_mahalanobis = tf.exp(-0.5 * mahalanobis)  # [N, M1, M2]
+
+    if Z1 == Z2:
+        # CAVEAT : Compute sqrt(self.K(Z)) explicitly
+        # to prevent automatic gradient from
+        # being NaN sometimes, see https://github.com/GPflow/GPflow/pull/615
+        sqrt_exp_dist = tf.exp(-0.25 * Ka.scaled_square_dist(Z1, None))
+    else:
+        # Compute exp( -.5 (Z-Z')^top (L_1+L_2)^{-1} (Z-Z') )
+        lengthscales_rms = tf.sqrt(La + Lb)
+        Z1scaled = Z1 / lengthscales_rms
+        Z1sqr = tf.reduce_sum(tf.square(Z1scaled), axis=1)
+        Z2scaled = Z2 / lengthscales_rms
+        Z2sqr = tf.reduce_sum(tf.square(Z2scaled), axis=1)
+        dist = (
+            -2 * tf.matmul(Z1scaled, Z2scaled, transpose_b=True)
+            + tf.reshape(Z1sqr, (-1, 1))
+            + tf.reshape(Z2sqr, (1, -1))
+        )
+        sqrt_exp_dist = tf.exp(-0.5 * dist)  # [M1, M2]
+
+    return Ka.variance * Kb.variance * sqrt_exp_dist * tf.reshape(dets, [N, 1, 1]) * exp_mahalanobis

@@ -52,7 +52,7 @@ def expectation(p, obj1, obj2=None, nghp=None):
     p, obj1, feat1, obj2, feat2 = _init_expectation(p, obj1, obj2)
     try:
         return dispatch.expectation(p, obj1, feat1, obj2, feat2, nghp=nghp)
-    except NotImplementedError as error:
+    except NotImplementedError:
         return dispatch.quadrature_expectation(p, obj1, feat1, obj2, feat2, nghp=nghp)
 
 
@@ -68,7 +68,6 @@ def quadrature_expectation(p, obj1, obj2=None, nghp=None):
                                          the number of Gauss-Hermite points used
     :return: a 1-D, 2-D, or 3-D tensor containing the expectation
     """
-    print(f"2. p={p}, obj1={obj1}, obj2={obj2}")
     p, obj1, feat1, obj2, feat2 = _init_expectation(p, obj1, obj2)
     return dispatch.quadrature_expectation(p, obj1, feat1, obj2, feat2, nghp=nghp)
 

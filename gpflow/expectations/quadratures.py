@@ -52,11 +52,6 @@ def _quadrature_expectation(p, obj1, inducing_variable1, obj2, inducing_variable
     """
     nghp = 100 if nghp is None else nghp
 
-    # logger.warning(
-    #     "Quadrature is used to calculate the expectation. This means that "
-    #     "an analytical implementations is not available for the given combination."
-    # )
-
     if obj1 is None:
         raise NotImplementedError("First object cannot be None.")
 
@@ -99,11 +94,6 @@ def _quadrature_expectation(p, obj1, inducing_variable1, obj2, inducing_variable
                transpose and then transpose the result of the expectation
     """
     nghp = 40 if nghp is None else nghp
-
-    # logger.warning(
-    #     "Quadrature is used to calculate the expectation. This means that "
-    #     "an analytical implementations is not available for the given combination."
-    # )
 
     if obj2 is None:
 
