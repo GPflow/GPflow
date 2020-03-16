@@ -23,8 +23,8 @@ def make_kernels(num):
 
 
 def make_ip():
-    x = rng.permutation(Datum.X)
-    return gpflow.inducing_variables.InducingPoints(x[: Datum.M, ...])
+    X = rng.permutation(Datum.X)
+    return gpflow.inducing_variables.InducingPoints(X[: Datum.M, ...])
 
 
 def make_ips(num):

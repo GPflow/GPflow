@@ -51,10 +51,10 @@ def _E(p, sqexp_kern, feat1, lin_kern, feat2, nghp=None):
         return value
 
     lin_kern_variances = take_with_ard(lin_kern.variance)
-    sqexp_kern_lengthscale = take_with_ard(sqexp_kern.lengthscale)
+    sqexp_kern_lengthscales = take_with_ard(sqexp_kern.lengthscales)
 
     chol_L_plus_Xcov = tf.linalg.cholesky(
-        tf.linalg.diag(sqexp_kern_lengthscale ** 2) + Xcov
+        tf.linalg.diag(sqexp_kern_lengthscales ** 2) + Xcov
     )  # NxDxD
 
     Z_transpose = tf.transpose(Z)
@@ -65,7 +65,7 @@ def _E(p, sqexp_kern, feat1, lin_kern, feat2, nghp=None):
     exponent_mahalanobis = tf.reduce_sum(tf.square(exponent_mahalanobis), 1)  # NxM
     exponent_mahalanobis = tf.exp(-0.5 * exponent_mahalanobis)  # NxM
 
-    sqrt_det_L = tf.reduce_prod(sqexp_kern_lengthscale)
+    sqrt_det_L = tf.reduce_prod(sqexp_kern_lengthscales)
     sqrt_det_L_plus_Xcov = tf.exp(
         tf.reduce_sum(tf.math.log(tf.linalg.diag_part(chol_L_plus_Xcov)), axis=1)
     )
@@ -76,11 +76,11 @@ def _E(p, sqexp_kern, feat1, lin_kern, feat2, nghp=None):
 
     tiled_Z = tf.tile(tf.expand_dims(Z_transpose, 0), (N, 1, 1))  # NxDxM
     z_L_inv_Xcov = tf.linalg.matmul(
-        tiled_Z, Xcov / sqexp_kern_lengthscale[:, None] ** 2.0, transpose_a=True
+        tiled_Z, Xcov / sqexp_kern_lengthscales[:, None] ** 2.0, transpose_a=True
     )  # NxMxD
 
     cross_eKzxKxz = tf.linalg.cholesky_solve(
-        chol_L_plus_Xcov, (lin_kern_variances * sqexp_kern_lengthscale ** 2.0)[..., None] * tiled_Z
+        chol_L_plus_Xcov, (lin_kern_variances * sqexp_kern_lengthscales ** 2.0)[..., None] * tiled_Z
     )  # NxDxM
 
     cross_eKzxKxz = tf.linalg.matmul(

@@ -67,10 +67,10 @@ def test_conditional_broadcasting(full_cov, white, conditional_type):
 
     if conditional_type == "Z":
         inducing_variable = Data.Z
-        kernel = gpflow.kernels.Matern52(lengthscale=0.5)
+        kernel = gpflow.kernels.Matern52(lengthscales=0.5)
     elif conditional_type == "inducing_points":
         inducing_variable = gpflow.inducing_variables.InducingPoints(Data.Z)
-        kernel = gpflow.kernels.Matern52(lengthscale=0.5)
+        kernel = gpflow.kernels.Matern52(lengthscales=0.5)
     elif conditional_type == "mixing":
         # variational params have different output dim in this case
         q_mu = np.random.randn(Data.M, Data.L)
@@ -79,7 +79,7 @@ def test_conditional_broadcasting(full_cov, white, conditional_type):
             gpflow.inducing_variables.InducingPoints(Data.Z)
         )
         kernel = mk.LinearCoregionalization(
-            kernels=[gpflow.kernels.Matern52(lengthscale=0.5) for _ in range(Data.L)], W=Data.W,
+            kernels=[gpflow.kernels.Matern52(lengthscales=0.5) for _ in range(Data.L)], W=Data.W,
         )
     else:
         raise NotImplementedError

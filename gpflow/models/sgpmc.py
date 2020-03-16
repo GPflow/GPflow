@@ -89,9 +89,9 @@ class SGPMC(GPModel):
         This function computes the optimal density for v, q*(v), up to a constant
         """
         # get the (marginals of) q(f): exactly predicting!
-        x_data, y_data = self.data
-        fmean, fvar = self.predict_f(x_data, full_cov=False)
-        return tf.reduce_sum(self.likelihood.variational_expectations(fmean, fvar, y_data))
+        X_data, Y_data = self.data
+        fmean, fvar = self.predict_f(X_data, full_cov=False)
+        return tf.reduce_sum(self.likelihood.variational_expectations(fmean, fvar, Y_data))
 
     def predict_f(self, X: tf.Tensor, full_cov=False, full_output_cov=False) -> MeanAndVariance:
         """
