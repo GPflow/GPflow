@@ -69,7 +69,7 @@ class C(tf.keras.Model):
 
 def create_kernel():
     kern = gpflow.kernels.SquaredExponential(lengthscales=Data.ls, variance=Data.var)
-    set_trainable(kern.lengthscale, False)
+    set_trainable(kern.lengthscales, False)
     return kern
 
 
