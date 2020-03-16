@@ -20,6 +20,7 @@ import numpy as np
 import tensorflow as tf
 
 from ..base import Module
+from ..conditionals.util import sample_mvn
 from ..config import default_float, default_jitter
 from ..kernels import Kernel
 from ..likelihoods import Likelihood
@@ -118,16 +119,43 @@ class GPModel(BayesianModel):
     ) -> tf.Tensor:
         """
         Produce samples from the posterior latent function(s) at the input points.
+
+        :param Xnew: DataPoint
+            Input locations at which to draw samples
+        :param num_samples: int
+            Number of samples to draw.
+            If `None` a one sample is drawn and the return shape is [..., N, P],
+            for any other positive integer the return shape contains an extra batch
+            dimension, [..., S, N, P], with S = num_samples.
+        :param full_cov: bool, default to `True`,
+            Draw correlated samples over the inputs. Computes the cholesky over the
+            dense covariance matrix of size [num_data, num_data].
+        :param full_output_cov: bool, defaults to `False`.
+            Draw correlated samples over the outputs.
+            The method currently only supports `full_output_cov` equals to `False`.
         """
-        mu, var = self.predict_f(Xnew, full_cov=full_cov)  # [N, P], [P, N, N]
-        num_latent_gps = var.shape[0]
-        num_elems = tf.shape(var)[1]
-        var_jitter = ops.add_to_diagonal(var, default_jitter())
-        L = tf.linalg.cholesky(var_jitter)  # [P, N, N]
-        V = tf.random.normal([num_latent_gps, num_elems, num_samples], dtype=mu.dtype)  # [P, N, S]
-        LV = L @ V  # [P, N, S]
-        mu_t = tf.linalg.adjoint(mu)  # [P, N]
-        return tf.transpose(mu_t[..., np.newaxis] + LV)  # [S, N, P]
+        if full_output_cov:
+            raise NotImplementedError(
+                "`full_output_cov` True is currently not supported by `predict_f_samples`"
+            )
+
+        mean, cov = self.predict_f(Xnew, full_cov=full_cov)  # [N, P], [P, N, N] or [N, P]
+        if full_cov:
+            # mean: [..., N, P]
+            # cov: [..., P, N, N]
+            mean_for_sample = tf.linalg.adjoint(mean)  # [..., P, N]
+            samples = sample_mvn(
+                mean_for_sample, cov, "full", num_samples=num_samples
+            )  # [..., (S), P, N]
+            samples = tf.linalg.adjoint(samples)  # [..., (S), N, P]
+        else:
+            # mean: [..., N, P]
+            # cov: [..., N, P] or [..., N, P, P]
+            cov_structure = "full" if full_output_cov else "diag"
+            samples = sample_mvn(
+                mean, cov, cov_structure, num_samples=num_samples
+            )  # [..., (S), N, P]
+        return samples  # [..., (S), N, P]
 
     def predict_y(
         self, Xnew: DataPoint, full_cov: bool = False, full_output_cov: bool = False
