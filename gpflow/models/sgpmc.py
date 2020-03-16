@@ -88,12 +88,12 @@ class SGPMC(GPModel):
         return -self.log_posterior_density(data)
 
     def log_posterior_density(self, data: Optional[RegressionData] = None) -> tf.Tensor:
-        return self.log_likelihood(data) + self.log_prior_density()
+        return self.log_conditional_likelihood_lower_bound(data) + self.log_prior_density()
 
     def maximum_likelihood_objective(self, data: Optional[RegressionData] = None) -> tf.Tensor:
-        return self.log_likelihood(data)
+        return self.log_conditional_likelihood_lower_bound(data)
 
-    def log_likelihood(self, data: Optional[RegressionData] = None) -> tf.Tensor:
+    def log_conditional_likelihood_lower_bound(self, data: Optional[RegressionData] = None) -> tf.Tensor:
         """
         This function computes the optimal density for v, q*(v), up to a constant
         """
