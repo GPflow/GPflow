@@ -47,6 +47,9 @@ class BayesianModel(Module):
         return self.log_likelihood(*args, **kwargs) + self.log_prior_density()
 
     def log_prior_density(self) -> tf.Tensor:
+        """
+        Sum of the log prior probability densities of all (constrained) variables in this model.
+        """
         if self.trainable_parameters:
             return tf.add_n([p.log_prior_density() for p in self.trainable_parameters])
         else:
