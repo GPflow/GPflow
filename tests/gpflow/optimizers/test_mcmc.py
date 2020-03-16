@@ -23,7 +23,7 @@ def build_data():
 
 def build_model(data):
 
-    kernel = gpflow.kernels.Matern52(lengthscale=0.3)
+    kernel = gpflow.kernels.Matern52(lengthscales=0.3)
 
     meanf = gpflow.mean_functions.Linear(1.0, 0.0)
     model = gpflow.models.GPR(data, kernel, meanf, noise_variance=0.01)

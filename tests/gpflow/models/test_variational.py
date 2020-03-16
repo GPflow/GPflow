@@ -199,7 +199,7 @@ def test_variational_multivariate_prior_KL_full_q(whiten):
 
     q_sqrt = MultiDatum.q_sqrt_full[None, :, :]
     model = gpflow.models.SVGP(
-        kernel=SquaredExponential(variance=MultiDatum.signal_var, lengthscale=MultiDatum.ls),
+        kernel=SquaredExponential(variance=MultiDatum.signal_var, lengthscales=MultiDatum.ls),
         likelihood=Gaussian(MultiDatum.noise_var),
         inducing_variable=MultiDatum.Z,
         num_latent_gps=MultiDatum.num_latent_gps,

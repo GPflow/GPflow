@@ -77,14 +77,14 @@ class GPMC(GPModel, BayesianModelWithData):
             \log p(Y | V, theta).
 
         """
-        x_data, y_data = self.data
-        K = self.kernel(x_data)
+        X_data, Y_data = self.data
+        K = self.kernel(X_data)
         L = tf.linalg.cholesky(
-            K + tf.eye(tf.shape(x_data)[0], dtype=default_float()) * default_jitter()
+            K + tf.eye(tf.shape(X_data)[0], dtype=default_float()) * default_jitter()
         )
-        F = tf.linalg.matmul(L, self.V) + self.mean_function(x_data)
+        F = tf.linalg.matmul(L, self.V) + self.mean_function(X_data)
 
-        return tf.reduce_sum(self.likelihood.log_prob(F, y_data))
+        return tf.reduce_sum(self.likelihood.log_prob(F, Y_data))
 
     def predict_f(self, Xnew: tf.Tensor, full_cov=False, full_output_cov=False) -> MeanAndVariance:
         """
@@ -97,8 +97,8 @@ class GPMC(GPModel, BayesianModelWithData):
         where F* are points on the GP at Xnew, F=LV are points on the GP at X.
 
         """
-        x_data, y_data = self.data
+        X_data, Y_data = self.data
         mu, var = conditional(
-            Xnew, x_data, self.kernel, self.V, full_cov=full_cov, q_sqrt=None, white=True
+            Xnew, X_data, self.kernel, self.V, full_cov=full_cov, q_sqrt=None, white=True
         )
         return mu + self.mean_function(Xnew), var

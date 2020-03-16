@@ -90,7 +90,7 @@ plt.show()
 # Firstly, we build the GPR model.
 
 # %%
-kernel = gpflow.kernels.Matern52(lengthscale=0.3)
+kernel = gpflow.kernels.Matern52(lengthscales=0.3)
 
 meanf = gpflow.mean_functions.Linear(1.0, 0.0)
 model = gpflow.models.GPR(data, kernel, meanf)
@@ -110,7 +110,7 @@ print(f'log marginal likelihood at optimum: {model.log_marginal_likelihood()}')
 
 # %%
 # tfp.distributions dtype is inferred from parameters - so convert to 64-bit
-model.kernel.lengthscale.prior = tfp.distributions.Gamma(f64(1.), f64(1.))
+model.kernel.lengthscales.prior = tfp.distributions.Gamma(f64(1.), f64(1.))
 model.kernel.variance.prior = tfp.distributions.Gamma(f64(1.), f64(1.))
 model.likelihood.variance.prior = tfp.distributions.Gamma(f64(1.), f64(1.))
 model.mean_function.A.prior = tfp.distributions.Normal(f64(0.), f64(10.))
@@ -213,11 +213,11 @@ def plot_joint_marginals(samples, y_axis_label):
     axs[0].set_ylabel('signal_variance')
 
     axs[1].plot(samples[name_to_index['.likelihood.variance']],
-                samples[name_to_index['.kernel.lengthscale']], 'k.', alpha = 0.15)
+                samples[name_to_index['.kernel.lengthscales']], 'k.', alpha = 0.15)
     axs[1].set_xlabel('noise_variance')
     axs[1].set_ylabel('lengthscale')
 
-    axs[2].plot(samples[name_to_index['.kernel.lengthscale']],
+    axs[2].plot(samples[name_to_index['.kernel.lengthscales']],
                 samples[name_to_index['.kernel.variance']], 'k.', alpha = 0.1)
     axs[2].set_xlabel('lengthscale')
     axs[2].set_ylabel('signal_variance')
@@ -269,7 +269,7 @@ plt.show()
 # Generate data by sampling from RBF Kernel, and classifying with the argmax
 C, N = 3, 100
 X = rng.rand(N, 1)
-kernel = gpflow.kernels.RBF(lengthscale=0.1)
+kernel = gpflow.kernels.RBF(lengthscales=0.1)
 K = kernel.K(X) + np.eye(N) * 1e-6
 
 f = rng.multivariate_normal(mean=np.zeros(N), cov=K, size=(C)).T
@@ -299,14 +299,14 @@ plt.show()
 # We then build the SGPMC model.
 
 # %%
-kernel = gpflow.kernels.Matern32(lengthscale=0.1) + gpflow.kernels.White(variance=0.01)
+kernel = gpflow.kernels.Matern32(lengthscales=0.1) + gpflow.kernels.White(variance=0.01)
 
 model = gpflow.models.SGPMC(data, 
                  kernel=kernel,
                  likelihood=gpflow.likelihoods.MultiClass(3),
                  inducing_variable=X[::5].copy(), num_latent_gps=3)
 model.kernel.kernels[0].variance.prior = tfp.distributions.Gamma(f64(1.), f64(1.))
-model.kernel.kernels[0].lengthscale.prior = tfp.distributions.Gamma(f64(2.), f64(2.))
+model.kernel.kernels[0].lengthscales.prior = tfp.distributions.Gamma(f64(2.), f64(2.))
 model.kernel.kernels[1].variance.trainable = False
 
 gpflow.utilities.print_summary(model)
@@ -372,7 +372,7 @@ param_to_name = {param: name for name, param in
                  gpflow.utilities.parameter_dict(model).items()}
 name_to_index = {param_to_name[param]: i for i, param in 
                  enumerate(model.trainable_parameters)}
-hyperparameters = ['.kernel.kernels[0].lengthscale',
+hyperparameters = ['.kernel.kernels[0].lengthscales',
                    '.kernel.kernels[0].variance']
 
 plt.figure(figsize=(8,4))
@@ -430,7 +430,7 @@ model = gpflow.models.GPMC(data, kernel, likelihood)
 # The `V` parameter already has a prior applied. We'll add priors to the parameters also (these are rather arbitrary, for illustration). 
 
 # %%
-model.kernel.kernels[0].lengthscale.prior = tfp.distributions.Gamma(f64(1.), f64(1.))
+model.kernel.kernels[0].lengthscales.prior = tfp.distributions.Gamma(f64(1.), f64(1.))
 model.kernel.kernels[0].variance.prior = tfp.distributions.Gamma(f64(1.), f64(1.))
 model.kernel.kernels[1].variance.prior = tfp.distributions.Gamma(f64(1.), f64(1.))
 
@@ -510,21 +510,21 @@ samples, _ = run_chain_fn()
 # And compute the posterior prediction on a grid for plotting purposes.
 
 # %%
-xtest = np.linspace(-4,4,100)[:,None]
+Xtest = np.linspace(-4,4,100)[:,None]
 f_samples = []
 
 for i in range(num_samples):
     for var, var_samples in zip(hmc_helper.current_state, samples):
         var.assign(var_samples[i])
-    f = model.predict_f_samples(xtest, 5)
+    f = model.predict_f_samples(Xtest, 5)
     f_samples.append(f)
 f_samples = np.vstack(f_samples)
 
 # %%
 rate_samples = np.exp(f_samples[:, :, 0])
 
-line, = plt.plot(xtest, np.mean(rate_samples, 0), lw=2)
-plt.fill_between(xtest[:,0],
+line, = plt.plot(Xtest, np.mean(rate_samples, 0), lw=2)
+plt.fill_between(Xtest[:,0],
                  np.percentile(rate_samples, 5, axis=0),
                  np.percentile(rate_samples, 95, axis=0),
                  color=line.get_color(), alpha = 0.2)
@@ -541,7 +541,7 @@ param_to_name = {param: name for name, param in
                  gpflow.utilities.parameter_dict(model).items()}
 name_to_index = {param_to_name[param]: i for i, param in 
                  enumerate(model.trainable_parameters)}
-hyperparameters = ['.kernel.kernels[0].lengthscale',
+hyperparameters = ['.kernel.kernels[0].lengthscales',
                    '.kernel.kernels[0].variance',
                    '.kernel.kernels[1].variance']
 

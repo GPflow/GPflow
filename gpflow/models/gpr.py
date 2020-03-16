@@ -46,8 +46,8 @@ class GPR(GPModel, BayesianModelWithData):
         noise_variance: float = 1.0,
     ):
         likelihood = gpflow.likelihoods.Gaussian(noise_variance)
-        _, y_data = data
-        super().__init__(kernel, likelihood, mean_function, num_latent_gps=y_data.shape[-1])
+        _, Y_data = data
+        super().__init__(kernel, likelihood, mean_function, num_latent_gps=Y_data.shape[-1])
         self.data = data
 
     def maximum_likelihood_objective(self):
@@ -74,9 +74,7 @@ class GPR(GPModel, BayesianModelWithData):
         log_prob = multivariate_normal(Y, m, L)
         return tf.reduce_sum(log_prob)
 
-    def predict_f(
-        self, predict_at: tf.Tensor, full_cov: bool = False, full_output_cov: bool = False
-    ):
+    def predict_f(self, Xnew: tf.Tensor, full_cov: bool = False, full_output_cov: bool = False):
         r"""
         This method computes predictions at X \in R^{N \x D} input points
 
@@ -85,19 +83,19 @@ class GPR(GPModel, BayesianModelWithData):
 
         where F* are points on the GP at new data points, Y are noisy observations at training data points.
         """
-        x_data, y_data = self.data
-        err = y_data - self.mean_function(x_data)
+        X_data, Y_data = self.data
+        err = Y_data - self.mean_function(X_data)
 
-        kmm = self.kernel(x_data)
-        knn = self.kernel(predict_at, full=full_cov)
-        kmn = self.kernel(x_data, predict_at)
+        kmm = self.kernel(X_data)
+        knn = self.kernel(Xnew, full_cov=full_cov)
+        kmn = self.kernel(X_data, Xnew)
 
-        num_data = x_data.shape[0]
+        num_data = X_data.shape[0]
         s = tf.linalg.diag(tf.fill([num_data], self.likelihood.variance))
 
         conditional = gpflow.conditionals.base_conditional
         f_mean_zero, f_var = conditional(
             kmn, kmm + s, knn, err, full_cov=full_cov, white=False
         )  # [N, P], [N, P] or [P, N, N]
-        f_mean = f_mean_zero + self.mean_function(predict_at)
+        f_mean = f_mean_zero + self.mean_function(Xnew)
         return f_mean, f_var
