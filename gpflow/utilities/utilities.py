@@ -49,13 +49,6 @@ def set_trainable(model: tf.Module, flag: bool):
     """
     Set trainable flag for all `tf.Variable`s and `gpflow.Parameter`s in a module.
     """
-    if not tf.executing_eagerly():
-        tf.print(
-            f"{set_trainable.__name__} may exhibit unexpected behaviour when used outside eager"
-            f" mode",
-            output_stream=logging.warning
-        )
-
     for variable in model.variables:
         variable._trainable = flag
 
