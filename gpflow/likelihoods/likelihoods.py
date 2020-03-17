@@ -510,7 +510,7 @@ class MultiClass(Likelihood):
         For most problems, the stochastic `Softmax` likelihood may be more
         appropriate (note that you then cannot use Scipy optimizer).
         """
-        super().__init__(num_latent_functions=num_classes, num_data_dims=1, **kwargs)
+        super().__init__(num_latent_functions=num_classes, num_data_dims=None, **kwargs)
         self.num_classes = num_classes
 
         if invlink is None:
@@ -780,7 +780,8 @@ class MonteCarloLikelihood(Likelihood):
 
         Here, we implement a default Monte Carlo quadrature routine.
         """
-        return self._mc_quadrature(self.log_prob, Fmu, Fvar, Y=Y, epsilon=epsilon)
+        return tf.reduce_sum(self._mc_quadrature(self.log_prob, Fmu, Fvar, Y=Y, epsilon=epsilon),
+                             axis=-1)
 
 
 class GaussianMC(MonteCarloLikelihood, Gaussian):
@@ -800,7 +801,7 @@ class Softmax(MonteCarloLikelihood):
     """
 
     def __init__(self, num_classes, **kwargs):
-        super().__init__(num_latent_functions=num_classes, num_data_dims=1, **kwargs)
+        super().__init__(num_latent_functions=num_classes, num_data_dims=None, **kwargs)
         self.num_classes = self.num_latent_functions
 
     def _log_prob(self, F, Y):

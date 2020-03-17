@@ -300,7 +300,7 @@ def test_softmax_bernoulli_equivalence(num, dimF, dimY):
 
     ls_ve = softmax_likelihood.variational_expectations(F, Fvar, Ylabel)
     lb_ve = bernoulli_likelihood.variational_expectations(F[:, :1], Fvar[:, :1], Y.numpy())
-    assert_allclose(ls_ve[:, 0, None], lb_ve, rtol=5e-3)
+    assert_allclose(ls_ve, lb_ve, rtol=5e-3)
 
 
 @pytest.mark.parametrize("num_classes, num_points", [[10, 3]])
