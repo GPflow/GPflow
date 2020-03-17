@@ -6,6 +6,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, TypeVar, Union
 import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
+from absl import logging
 from tabulate import tabulate
 
 from ..base import Parameter
@@ -48,6 +49,13 @@ def set_trainable(model: tf.Module, flag: bool):
     """
     Set trainable flag for all `tf.Variable`s and `gpflow.Parameter`s in a module.
     """
+    if not tf.executing_eagerly():
+        tf.print(
+            f"{set_trainable.__name__} may exhibit unexpected behaviour when used outside eager"
+            f" mode",
+            output_stream=logging.warning
+        )
+
     for variable in model.variables:
         variable._trainable = flag
 
