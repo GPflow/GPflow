@@ -21,6 +21,7 @@ from numpy.testing import assert_allclose
 import gpflow
 from gpflow.inducing_variables import InducingPoints
 from gpflow.likelihoods import (
+    ScalarLikelihood,
     Bernoulli,
     Beta,
     Exponential,
@@ -112,6 +113,8 @@ def test_no_missing_likelihoods():
     for likelihood_class in all_likelihood_types:
         if likelihood_class in tested_likelihood_types:
             continue  # already tested
+        if likelihood_class is ScalarLikelihood:
+            continue  # base class
         if likelihood_class is SwitchedLikelihood:
             continue  # tested separately
         if likelihood_class is MonteCarloLikelihood:

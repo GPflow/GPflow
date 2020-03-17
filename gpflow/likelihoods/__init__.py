@@ -14,4 +14,5 @@ from .likelihoods import (
     SwitchedLikelihood,
     StudentT,
     RobustMax,
+    ScalarLikelihood
 )
