@@ -526,7 +526,7 @@ class MultiClass(Likelihood):
         yes = tf.ones(tf.shape(Y), dtype=default_float()) - self.invlink.epsilon
         no = tf.zeros(tf.shape(Y), dtype=default_float()) + self.invlink.eps_k1
         p = tf.where(hits, yes, no)
-        return tf.math.log(p)
+        return tf.reduce_sum(tf.math.log(p), axis=-1)
 
     def _variational_expectations(self, Fmu, Fvar, Y):
         gh_x, gh_w = hermgauss(self.num_gauss_hermite_points)
