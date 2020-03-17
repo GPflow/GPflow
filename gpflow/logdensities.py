@@ -104,6 +104,6 @@ def multivariate_normal(x, mu, L):
         (L, ["D", "D"]),
         (p, ["N"]),
     ]
-    assert_shapes(shape_constraints)
+    assert_shapes(shape_constraints, message="multivariate_normal()")
 
     return p

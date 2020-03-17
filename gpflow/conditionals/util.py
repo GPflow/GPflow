@@ -67,7 +67,10 @@ def base_conditional(
         shape_constraints.append(
             (q_sqrt, (["M", "R"] if q_sqrt.shape.ndims == 2 else ["R", "M", "M"]))
         )
-    assert_shapes(shape_constraints)
+    assert_shapes(
+        shape_constraints,
+        message="base_conditional() arguments [Note that this check verifies the shape of an alternative representation of Kmn. See the docs for the actual expected shape.]",
+    )
 
     leading_dims = tf.shape(Kmn)[:-2]
     Lm = tf.linalg.cholesky(Kmm)  # [M, M]
@@ -124,7 +127,7 @@ def base_conditional(
         (fmean, [..., "N", "R"]),
         (fvar, [..., "R", "N", "N"] if full_cov else [..., "N", "R"]),
     ]
-    assert_shapes(shape_constraints)
+    assert_shapes(shape_constraints, message="base_conditional() return values")
 
     return fmean, fvar
 
@@ -146,7 +149,7 @@ def sample_mvn(mean, cov, cov_structure=None, num_samples=None):
         (mean, [..., "N", "D"]),
         (cov, [..., "N", "D"] if cov_structure == "diag" else [..., "N", "D", "D"]),
     ]
-    assert_shapes(shape_constraints)
+    assert_shapes(shape_constraints, message="sample_mvn() arguments")
 
     mean_shape = tf.shape(mean)
     S = num_samples if num_samples is not None else 1
@@ -174,7 +177,7 @@ def sample_mvn(mean, cov, cov_structure=None, num_samples=None):
         (mean, [..., "N", "D"]),
         (samples, [..., "S", "N", "D"]),
     ]
-    assert_shapes(shape_constraints)
+    assert_shapes(shape_constraints, message="sample_mvn() return values")
 
     if num_samples is None:
         return tf.squeeze(samples, axis=-3)  # [..., N, D]
@@ -230,9 +233,9 @@ def independent_interdomain_conditional(
     M, L, N, P = tf.unstack(tf.shape(Kmn), num=Kmn.shape.ndims, axis=0)
 
     shape_constraints = [
-        (Kmn, "MLNP"),
-        (Kmm, "LMM"),
-        (f, "ML"),
+        (Kmn, ["M", "L", "N", "P"]),
+        (Kmm, ["L", "M", "M"]),
+        (f, ["M", "L"]),
     ]
     if q_sqrt is not None:
         shape_constraints.append((q_sqrt, "ML" if q_sqrt.shape.ndims == 2 else "LMM"))
@@ -247,18 +250,18 @@ def independent_interdomain_conditional(
     # compute the covariance due to the conditioning
     if full_cov and full_output_cov:
         fvar = Knn - tf.tensordot(Ar, Ar, [[0, 1], [0, 1]])  # [N, P, N, P]
-        intended_cov_shape = "NPNP"
+        intended_cov_shape = ["N", "P", "N", "P"]
     elif full_cov and not full_output_cov:
         At = tf.reshape(tf.transpose(Ar), (P, N, M * L))  # [P, N, L]
         fvar = Knn - tf.linalg.matmul(At, At, transpose_b=True)  # [P, N, N]
-        intended_cov_shape = "PNN"
+        intended_cov_shape = ["P", "N", "N"]
     elif not full_cov and full_output_cov:
         At = tf.reshape(tf.transpose(Ar, [2, 3, 1, 0]), (N, P, M * L))  # [N, P, L]
         fvar = Knn - tf.linalg.matmul(At, At, transpose_b=True)  # [N, P, P]
-        intended_cov_shape = "NPP"
+        intended_cov_shape = ["N", "P", "P"]
     elif not full_cov and not full_output_cov:
         fvar = Knn - tf.reshape(tf.reduce_sum(tf.square(A), [0, 1]), (N, P))  # Knn: [N, P]
-        intended_cov_shape = "NP"
+        intended_cov_shape = ["N", "P"]
 
     # another backsubstitution in the unwhitened case
     if not white:
@@ -289,9 +292,9 @@ def independent_interdomain_conditional(
             fvar = fvar + tf.reshape(tf.reduce_sum(tf.square(LTA), (0, 1)), (N, P))
 
     shape_constraints.extend(
-        [(Knn, intended_cov_shape), (fmean, "NP"), (fvar, intended_cov_shape),]
+        [(Knn, intended_cov_shape), (fmean, ["N", "P"]), (fvar, intended_cov_shape),]
     )
-    assert_shapes(shape_constraints)
+    assert_shapes(shape_constraints, message="independent_interdomain_conditional()")
 
     return fmean, fvar
 
@@ -350,12 +353,14 @@ def fully_correlated_conditional_repeat(
     M, N, P = tf.unstack(tf.shape(Kmn), num=Kmn.shape.ndims, axis=0)
 
     shape_constraints = [
-        (Kmn, "MNP"),
-        (Kmm, "MM"),
-        (f, "MR"),
+        (Kmn, ["M", "N", "P"]),
+        (Kmm, ["M", "M"]),
+        (f, ["M", "R"]),
     ]
     if q_sqrt is not None:
-        shape_constraints.append((q_sqrt, "MR" if q_sqrt.shape.ndims == 2 else "RMM"))
+        shape_constraints.append(
+            (q_sqrt, ["M", "R"] if q_sqrt.shape.ndims == 2 else ["R", "M", "M"])
+        )
 
     Lm = tf.linalg.cholesky(Kmm)
 
@@ -369,22 +374,22 @@ def fully_correlated_conditional_repeat(
     if full_cov and full_output_cov:
         # fvar = Knn - tf.linalg.matmul(Ar, Ar, transpose_a=True)  # [P, P], then reshape?
         fvar = Knn - tf.tensordot(Ar, Ar, [[0], [0]])  # [N, P, N, P]
-        intended_cov_shape = "NPNP"
+        intended_cov_shape = ["N", "P", "N", "P"]
     elif full_cov and not full_output_cov:
         At = tf.transpose(Ar)  # [P, N, M]
         fvar = Knn - tf.linalg.matmul(At, At, transpose_b=True)  # [P, N, N]
-        intended_cov_shape = "PNN"
+        intended_cov_shape = ["P", "N", "N"]
     elif not full_cov and full_output_cov:
         # This transpose is annoying
         At = tf.transpose(Ar, [1, 0, 2])  # [N, M, P]
         # fvar = Knn - tf.einsum('mnk,mnl->nkl', Ar, Ar)
         fvar = Knn - tf.linalg.matmul(At, At, transpose_a=True)  # [N, P, P]
-        intended_cov_shape = "NPP"
+        intended_cov_shape = ["N", "P", "P"]
     elif not full_cov and not full_output_cov:
         # Knn: [N, P]
         # Can also do this with a matmul
         fvar = Knn - tf.reshape(tf.reduce_sum(tf.square(A), [0]), (N, P))
-        intended_cov_shape = "NP"
+        intended_cov_shape = ["N", "P"]
 
     # another backsubstitution in the unwhitened case
     if not white:
@@ -422,9 +427,9 @@ def fully_correlated_conditional_repeat(
         fvar = tf.broadcast_to(fvar[None], tf.shape(fmean))
 
     shape_constraints.extend(
-        [(Knn, intended_cov_shape), (fmean, "RNP"), (fvar, "R" + intended_cov_shape),]
+        [(Knn, intended_cov_shape), (fmean, ["R", "N", "P"]), (fvar, ["R"] + intended_cov_shape),]
     )
-    assert_shapes(shape_constraints)
+    assert_shapes(shape_constraints, message="fully_correlated_conditional_repeat()")
 
     return fmean, fvar
 
@@ -456,45 +461,47 @@ def mix_latent_gp(W, g_mean, g_var, full_cov, full_output_cov):
     :return: f_mean and f_var, shape depends on `full_cov` and `full_output_cov`
     """
     shape_constraints = [
-        (W, "PL"),
-        (g_mean, "*NL"),
+        (W, ["P", "L"]),
+        (g_mean, [..., "N", "L"]),
     ]
     if not full_cov:
-        shape_constraints.append((g_var, "*NL"))
+        shape_constraints.append((g_var, [..., "N", "L"]))
+    else:
+        pass  # TODO cannot assert g_var shape here because of the inner "leading" dimensions, see https://github.com/GPflow/GPflow/issues/1296
 
     f_mean = tf.tensordot(g_mean, W, [[-1], [-1]])  # [..., N, P]
 
     if full_cov and full_output_cov:  # g_var is [L, ..., N, N]
         # this branch is practically never taken
         g_var = rollaxis_left(g_var, 1)  # [..., N, N, L]
-        shape_constraints.append((g_var, "*NNL"))
+        shape_constraints.append((g_var, [..., "N", "N", "L"]))
 
         g_var = tf.expand_dims(g_var, axis=-2)  # [..., N, N, 1, L]
         g_var_W = g_var * W  # [..., N, P, L]
         f_var = tf.tensordot(g_var_W, W, [[-1], [-1]])  # [..., N, N, P, P]
         f_var = leading_transpose(f_var, [..., -4, -2, -3, -1])  # [..., N, P, N, P]
-        intended_cov_shape = "NPNP"
+        intended_cov_shape = [..., "N", "P", "N", "P"]
 
     elif full_cov and not full_output_cov:  # g_var is [L, ..., N, N]
         # this branch is practically never taken
         f_var = tf.tensordot(g_var, W ** 2, [[0], [-1]])  # [..., N, N, P]
         f_var = leading_transpose(f_var, [..., -1, -3, -2])  # [..., P, N, N]
-        intended_cov_shape = "PNN"
+        intended_cov_shape = [..., "P", "N", "N"]
 
     elif not full_cov and full_output_cov:  # g_var is [..., N, L]
         g_var = tf.expand_dims(g_var, axis=-2)  # [..., N, 1, L]
         g_var_W = g_var * W  # [..., N, P, L]
         f_var = tf.tensordot(g_var_W, W, [[-1], [-1]])  # [..., N, P, P]
-        intended_cov_shape = "NPP"
+        intended_cov_shape = [..., "N", "P", "P"]
 
     elif not full_cov and not full_output_cov:  # g_var is [..., N, L]
         W_squared = W ** 2  # [P, L]
         f_var = tf.tensordot(g_var, W_squared, [[-1], [-1]])  # [..., N, P]
-        intended_cov_shape = "NP"
+        intended_cov_shape = [..., "N", "P"]
 
     shape_constraints.extend(
-        [(f_mean, "*NP"), (f_var, "*" + intended_cov_shape),]
+        [(f_mean, [..., "N", "P"]), (f_var, intended_cov_shape),]
     )
-    assert_shapes(shape_constraints)
+    assert_shapes(shape_constraints, message="mix_latent_gp()")
 
     return f_mean, f_var

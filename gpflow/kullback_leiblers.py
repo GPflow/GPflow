@@ -82,7 +82,7 @@ def gauss_kl(q_mu, q_sqrt, K=None, *, K_cholesky=None):
             shape_constraints.append(
                 (K_cholesky, (["L", "M", "M"] if len(K_cholesky.shape) == 3 else ["M", "M"]))
             )
-    assert_shapes(shape_constraints)
+    assert_shapes(shape_constraints, message="gauss_kl() arguments")
 
     M, L = tf.shape(q_mu)[0], tf.shape(q_mu)[1]
 
@@ -109,13 +109,8 @@ def gauss_kl(q_mu, q_sqrt, K=None, *, K_cholesky=None):
     # Mahalanobis term: μqᵀ Σp⁻¹ μq
     mahalanobis = tf.reduce_sum(tf.square(alpha))
 
-<<<<<<< HEAD
     # Constant term: - L * M
-    constant = -tf.cast(tf.size(q_mu, out_type=tf.int64), dtype=default_float())
-=======
-    # Constant term: - B * M
     constant = -to_default_float(tf.size(q_mu, out_type=tf.int64))
->>>>>>> d3ca3c90f9e1b644a0b902e6ad9296ea2a7168c4
 
     # Log-determinant of the covariance of q(x):
     logdet_qcov = tf.reduce_sum(tf.math.log(tf.square(Lq_diag)))
@@ -146,14 +141,9 @@ def gauss_kl(q_mu, q_sqrt, K=None, *, K_cholesky=None):
     if not is_white:
         log_sqdiag_Lp = tf.math.log(tf.square(tf.linalg.diag_part(Lp)))
         sum_log_sqdiag_Lp = tf.reduce_sum(log_sqdiag_Lp)
-<<<<<<< HEAD
         # If K is [L, M, M], num_latent_gps is no longer implicit, no need to multiply the single kernel logdet
-        scale = 1.0 if is_batched else tf.cast(L, default_float())
-=======
-        # If K is [B, M, M], num_latent_gps is no longer implicit, no need to multiply the single kernel logdet
-        scale = 1.0 if is_batched else to_default_float(B)
->>>>>>> d3ca3c90f9e1b644a0b902e6ad9296ea2a7168c4
+        scale = 1.0 if is_batched else to_default_float(L)
         twoKL += scale * sum_log_sqdiag_Lp
 
-    assert_shapes([(twoKL, ())])  # returns scalar
+    assert_shapes([(twoKL, ())], message="gauss_kl() return value")  # returns scalar
     return 0.5 * twoKL
