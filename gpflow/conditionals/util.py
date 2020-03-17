@@ -69,7 +69,10 @@ def base_conditional(
         )
     assert_shapes(
         shape_constraints,
-        message="base_conditional() arguments [Note that this check verifies the shape of an alternative representation of Kmn. See the docs for the actual expected shape.]",
+        message="base_conditional() arguments "
+        "[Note that this check verifies the shape of an alternative "
+        "representation of Kmn. See the docs for the actual expected "
+        "shape.]",
     )
 
     leading_dims = tf.shape(Kmn)[:-2]
