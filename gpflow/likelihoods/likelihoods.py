@@ -106,7 +106,8 @@ class Likelihood(Module):
 
     def check_latent_dims(self, F):
         """
-        ensure that a tensor of latent functions matches the expected shape
+        ensure that a tensor of latent functions has
+        num_latent_functions as right most dimension 
         """
         tf.debugging.assert_shapes([(F, (..., self.num_latent_functions))])
 
