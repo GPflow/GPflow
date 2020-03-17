@@ -20,6 +20,7 @@ from numpy.testing import assert_allclose, assert_array_equal, assert_array_less
 
 import gpflow
 from gpflow.config import default_float
+from gpflow import set_trainable
 
 
 @dataclass(frozen=True)
@@ -51,7 +52,7 @@ def test_svgp_fixing_q_sqrt():
         whiten=False,
     )
     default_num_trainable_variables = len(model.trainable_variables)
-    model.q_sqrt.trainable = False
+    set_trainable(model.q_sqrt, False)
     assert len(model.trainable_variables) == default_num_trainable_variables - 1
 
 

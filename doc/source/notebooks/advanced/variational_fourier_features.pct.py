@@ -323,9 +323,9 @@ m = gpflow.models.SVGP(kernel=gpflow.kernels.Matern32(),
                        likelihood=gpflow.likelihoods.Gaussian(variance=noise_scale**2),
                        inducing_variable=FourierFeatures1D(-4.5, 4.5, Mfreq),
                        num_data=len(X), whiten=False)
-gpflow.utilities.set_trainable(m.kernel, False)
-gpflow.utilities.set_trainable(m.likelihood, False)
-gpflow.utilities.set_trainable(m.inducing_variable, True)  # whether to optimize bounds [a, b]
+gpflow.set_trainable(m.kernel, False)
+gpflow.set_trainable(m.likelihood, False)
+gpflow.set_trainable(m.inducing_variable, True)  # whether to optimize bounds [a, b]
 
 @tf.function
 def objective():
@@ -348,9 +348,9 @@ m_ip = gpflow.models.SVGP(kernel=gpflow.kernels.Matern32(),
                           likelihood=gpflow.likelihoods.Gaussian(variance=noise_scale**2),
                           inducing_variable=np.linspace(-2, 2, Mfreq*2-1)[:, None],
                           num_data=len(X), whiten=False)
-gpflow.utilities.set_trainable(m_ip.kernel, False)
-gpflow.utilities.set_trainable(m_ip.likelihood, False)
-gpflow.utilities.set_trainable(m_ip.inducing_variable, True)  # whether to optimize inducing point locations
+gpflow.set_trainable(m_ip.kernel, False)
+gpflow.set_trainable(m_ip.likelihood, False)
+gpflow.set_trainable(m_ip.inducing_variable, True)  # whether to optimize inducing point locations
 
 @tf.function
 def objective_ip():
@@ -368,8 +368,8 @@ gpflow.utilities.print_summary(m_ip, fmt='notebook')
 # %%
 m_ref = gpflow.models.GPR((X.reshape(-1, 1), Y.reshape(-1, 1)), kernel=gpflow.kernels.Matern32())
 m_ref.likelihood.variance = np.array(noise_scale**2).astype(np.float64)
-gpflow.utilities.set_trainable(m_ref.kernel, False)
-gpflow.utilities.set_trainable(m_ref.likelihood, False)
+gpflow.set_trainable(m_ref.kernel, False)
+gpflow.set_trainable(m_ref.likelihood, False)
 
 @tf.function
 def objective_ref():

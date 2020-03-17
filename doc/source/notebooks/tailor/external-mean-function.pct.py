@@ -121,7 +121,7 @@ def build_mean_function():
 # To begin this process, first we create a utility function that takes in a task (X, Y) and a mean function and outputs a GP model.
 
 # %%
-from gpflow.utilities import set_trainable
+from gpflow import set_trainable
 
 def build_model(data, mean_function):
     model = GPR(data, kernel=RBF(), mean_function=mean_function)
