@@ -71,7 +71,8 @@ def inv_probit(x):
 class Likelihood(Module):
     def __init__(self, num_latent_functions: int, num_data_dims:int):
         """
-        A base class for likelihoods, which conect the latent functions ('F') to the data ('Y').
+        A base class for likelihoods, which specifies an observation model 
+        connecting the latent functions ('F') to the data ('Y').
 
         All of the members of this class are expected to obey some shape conventions, as specified
         by num_latent_functions and num_data_dims.
@@ -105,13 +106,14 @@ class Likelihood(Module):
 
     def check_latent_dims(self, F):
         """
-        ensure that a tensor of latent functions matches the expected shape
+        ensure that a tensor of latent functions has
+        num_latent_functions as right most dimension 
         """
         tf.debugging.assert_shapes([(F, (..., self.num_latent_functions))])
 
     def check_data_dims(self, Y):
         """
-        ensure that a tensor of data matches the expected shape
+        ensure that a tensor of data has num_data_dims as right most dimension.
         """
         tf.debugging.assert_shapes([(Y, (..., self.num_data_dims))])
 
@@ -212,6 +214,10 @@ class ScalarLikelihood(Likelihood):
     If there are multiple latent functions, then there must be a corresponding number of data: we
     check for this.
 
+    The `Likelihood` class contains methods to compute marginal statistics of the data ϕ(Y),
+    where the latent processes F are marginalized under a distribution
+    whose pdf q(F) is fully factorized q(F) = 𝚷ₖ q(fₖ).
+    
     Some univariate integrals can be done by quadrature: we implement quadrature routines for 1D
     integrals in this class, though they may be overwritten by inherriting classes where those
     integrals are available in closed form.
