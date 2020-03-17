@@ -758,7 +758,8 @@ class MonteCarloLikelihood(Likelihood):
 
         Here, we implement a default Monte Carlo routine.
         """
-        return self._mc_quadrature(self.log_prob, Fmu, Fvar, Y=Y, logspace=True, epsilon=epsilon)
+        return tf.reduce_sum(self._mc_quadrature(self.log_prob, Fmu, Fvar, Y=Y, logspace=True,
+                                                 epsilon=epsilon), -1)
 
     def _variational_expectations(self, Fmu, Fvar, Y, epsilon=None):
         r"""
