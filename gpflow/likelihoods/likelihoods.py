@@ -326,7 +326,8 @@ class Poisson(Likelihood):
                 Y * Fmu
                 - tf.exp(Fmu + Fvar / 2) * self.binsize
                 - tf.math.lgamma(Y + 1)
-                + Y * tf.math.log(self.binsize), axis=-1
+                + Y * tf.math.log(self.binsize),
+                axis=-1,
             )
         return super().variational_expectations(Fmu, Fvar, Y)
 
@@ -426,7 +427,8 @@ class Gamma(Likelihood):
                 -self.shape * Fmu
                 - tf.math.lgamma(self.shape)
                 + (self.shape - 1.0) * tf.math.log(Y)
-                - Y * tf.exp(-Fmu + Fvar / 2.0), axis=-1
+                - Y * tf.exp(-Fmu + Fvar / 2.0),
+                axis=-1,
             )
         else:
             return super()._variational_expectations(Fmu, Fvar, Y)
@@ -571,7 +573,7 @@ class SwitchedLikelihood(Likelihood):
 
     def check_last_dims_match(self, F, Y):
         super().check_last_dims_match(F, Y)
-        tf.assert_equal(tf.shape(F)[-1], tf.shape(Y)[-1]-1)
+        tf.assert_equal(tf.shape(F)[-1], tf.shape(Y)[-1] - 1)
 
     def _log_prob(self, F, Y):
         return self._partition_and_stitch([F, Y], "log_prob")
@@ -770,7 +772,7 @@ class Softmax(MonteCarloLikelihood):
         self.num_classes = self.num_latent_functions
 
     def _log_prob(self, F, Y):
-            return -tf.nn.sparse_softmax_cross_entropy_with_logits(logits=F, labels=Y[:, 0])
+        return -tf.nn.sparse_softmax_cross_entropy_with_logits(logits=F, labels=Y[:, 0])
 
     def _conditional_mean(self, F):
         return tf.nn.softmax(F)
