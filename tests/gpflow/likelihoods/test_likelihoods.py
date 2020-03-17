@@ -407,7 +407,7 @@ def test_switched_likelihood_log_prob(Y_list, F_list, Fvar_list, Y_label):
     switched_results = switched_likelihood.log_prob(F_sw, Y_sw)
     results = [lik.log_prob(f, y) for lik, y, f in zip(likelihoods, Y_list, F_list)]
 
-    assert_allclose(switched_results, np.concatenate(results)[Y_perm, :])
+    assert_allclose(switched_results, np.concatenate(results)[Y_perm])
 
 
 @pytest.mark.parametrize("Y_list", [[tf.random.normal((i, 2)) for i in range(3, 6)]])

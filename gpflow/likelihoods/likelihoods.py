@@ -546,7 +546,7 @@ class MultiClass(Likelihood):
         return ps, ps - tf.square(ps)
 
     def _predict_density(self, Fmu, Fvar, Y):
-        return tf.math.log(self._predict_non_logged_density(Fmu, Fvar, Y))
+        return tf.reduce_sum(tf.math.log(self._predict_non_logged_density(Fmu, Fvar, Y)), axis=-1)
 
     def _predict_non_logged_density(self, Fmu, Fvar, Y):
         gh_x, gh_w = hermgauss(self.num_gauss_hermite_points)
