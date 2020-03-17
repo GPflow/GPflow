@@ -603,7 +603,6 @@ class SwitchedLikelihood(ScalarLikelihood):
         return results
 
     def check_last_dims_match(self, F, Y):
-        super().check_last_dims_match(F, Y)
         tf.assert_equal(tf.shape(F)[-1], tf.shape(Y)[-1] - 1)
 
     def _scalar_density(self, F, Y):

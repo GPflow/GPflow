@@ -458,7 +458,7 @@ def test__switched_likelihood_variational_expectations(Y_list, F_list, Fvar_list
         lik.variational_expectations(f, fvar, y)
         for lik, y, f, fvar in zip(likelihoods, Y_list, F_list, Fvar_list)
     ]
-    assert_allclose(switched_results, np.concatenate(results)[Y_perm, :])
+    assert_allclose(switched_results, np.concatenate(results)[Y_perm])
 
 
 @pytest.mark.parametrize("num_latent_gps", [1, 2])
