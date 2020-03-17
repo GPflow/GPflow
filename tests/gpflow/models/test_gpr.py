@@ -15,7 +15,7 @@
 import gpflow
 import numpy as np
 import pytest
-from gpflow.utilities import set_trainable
+from gpflow import set_trainable
 
 rng = np.random.RandomState(0)
 
@@ -44,4 +44,4 @@ def test_non_trainable_model_objective():
     set_trainable(model, False)
 
     _ = model.log_marginal_likelihood()
-    assert model.log_prior() == 0.0
+    assert model.log_prior_density() == 0.0

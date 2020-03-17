@@ -48,7 +48,7 @@ def test_log_prior_with_no_prior():
     even if it has a transform to constrain it.
     """
     param = gpflow.Parameter(5.3, transform=gpflow.utilities.positive())
-    assert param.log_prior().numpy() == 0.0
+    assert param.log_prior_density().numpy() == 0.0
 
 
 def test_log_prior_for_uniform_prior():
@@ -59,9 +59,9 @@ def test_log_prior_for_uniform_prior():
 
     uniform_prior = Uniform(low=np.float64(0), high=np.float64(100))
     param = gpflow.Parameter(1.0, transform=gpflow.utilities.positive(), prior=uniform_prior)
-    low_value = param.log_prior().numpy()
+    low_value = param.log_prior_density().numpy()
     param.assign(10.0)
-    high_value = param.log_prior().numpy()
+    high_value = param.log_prior_density().numpy()
 
     assert np.isclose(low_value, high_value)
 
@@ -78,9 +78,9 @@ def test_log_prior_on_unconstrained():
     param = gpflow.Parameter(
         initial_value, transform=Exp(), prior=uniform_prior, prior_on=PriorOn.UNCONSTRAINED,
     )
-    low_value = param.log_prior().numpy()
+    low_value = param.log_prior_density().numpy()
     param.assign(scale_factor * initial_value)
-    high_value = param.log_prior().numpy()
+    high_value = param.log_prior_density().numpy()
 
     assert np.isclose(low_value, high_value + np.log(scale_factor))
 

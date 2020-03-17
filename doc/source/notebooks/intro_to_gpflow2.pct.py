@@ -37,6 +37,7 @@ import tensorflow as tf
 import gpflow
 
 from gpflow.config import default_float
+from gpflow.utilities import to_default_float
 
 import warnings
 
@@ -131,7 +132,7 @@ model = gpflow.models.SVGP(kernel=kernel, likelihood=likelihood, inducing_variab
 # You can set a module (or a particular parameter) to be non-trainable using the auxiliary method ```set_trainable(module, False)```:
 
 # %%
-from gpflow.utilities import set_trainable
+from gpflow import set_trainable
 
 set_trainable(likelihood, False)
 set_trainable(kernel.variance, False)
@@ -222,7 +223,7 @@ simple_training_loop(model, epochs=10, logging_epoch_freq=2)
 # %%
 from intro_to_gpflow2_plotting import plotting_regression, summary_matplotlib_image
 
-samples_input = tf.cast(np.linspace(0, 10, 100).reshape(100, 1), default_float())
+samples_input = to_default_float(np.linspace(0, 10, 100).reshape(100, 1))
 
 def monitored_training_loop(model: gpflow.models.SVGP, logdir: str,
                             epochs: int = 1, logging_epoch_freq: int = 10,

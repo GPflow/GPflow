@@ -2,20 +2,23 @@ import copy
 from typing import List, Optional, Union
 
 import tensorflow as tf
-import tensorflow_probability as tfp
 import numpy as np
+
+
+def cast(
+    value: Union[tf.Tensor, np.ndarray], dtype: tf.DType, name: Optional[str] = None
+) -> tf.Tensor:
+    if not tf.is_tensor(value):
+        # TODO(awav): Release TF2.2 resolves this issue
+        # workaround for https://github.com/tensorflow/tensorflow/issues/35938
+        return tf.convert_to_tensor(value, dtype, name=name)
+    return tf.cast(value, dtype, name=name)
 
 
 def eye(num: int, value: tf.Tensor, dtype: Optional[tf.DType] = None) -> tf.Tensor:
     if dtype is not None:
-        value = tf.cast(value, dtype)
+        value = cast(value, dtype)
     return tf.linalg.diag(tf.fill([num], value))
-
-
-def add_to_diagonal(to_tensor: tf.Tensor, value: tf.Tensor):
-    diag = tf.linalg.diag_part(to_tensor)
-    new_diag = diag + value
-    return tf.linalg.set_diag(to_tensor, new_diag)
 
 
 def leading_transpose(

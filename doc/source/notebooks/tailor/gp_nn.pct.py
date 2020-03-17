@@ -30,7 +30,7 @@ from typing import Dict, Optional, Tuple
 import tensorflow as tf
 import tensorflow_datasets as tfds
 import gpflow
-from gpflow.config import default_float
+from gpflow.utilities import to_default_float
 
 iterations = ci_niter(100)
 
@@ -46,8 +46,8 @@ batch_size = 32
 
 def map_fn(input_slice: Dict[str, tf.Tensor]):
     updated = input_slice
-    image = tf.cast(updated["image"], default_float()) / 255.
-    label = tf.cast(updated["label"], default_float())
+    image = to_default_float(updated["image"]) / 255.
+    label = to_default_float(updated["label"])
     return tf.reshape(image, [-1, image_size]), label
 
 autotune = tf.data.experimental.AUTOTUNE
@@ -84,7 +84,7 @@ class KernelWithConvNN(gpflow.kernels.Kernel):
                 tf.keras.layers.MaxPool2D(pool_size=(2, 2), strides=2),
                 tf.keras.layers.Flatten(),
                 tf.keras.layers.Dense(output_dim, activation="relu"),
-                tf.keras.layers.Lambda(lambda x: tf.cast(x, default_float()))
+                tf.keras.layers.Lambda(to_default_float)
             ])
             
             self.cnn.build()

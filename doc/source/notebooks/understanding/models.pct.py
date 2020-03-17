@@ -131,7 +131,7 @@ print_summary(m, fmt='notebook')
 # Another helpful feature is the ability to fix parameters. To do this, simply set the `trainable` attribute to `False`; this is shown in the **trainable** column of the representation, and the corresponding variable is removed from the free state.
 
 # %%
-m.kernel.kernels[1].variance.trainable = False
+set_trainable(m.kernel.kernels[1].variance, False)
 print_summary(m)
 
 # %%
@@ -141,7 +141,7 @@ m.trainable_parameters
 # To unfix a parameter, just set the `trainable` attribute to `True` again.
 
 # %%
-m.kernel.kernels[1].variance.trainable = True
+set_trainable(m.kernel.kernels[1].variance, True)
 print_summary(m)
 
 # %% [markdown]

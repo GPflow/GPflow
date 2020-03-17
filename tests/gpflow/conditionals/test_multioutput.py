@@ -17,7 +17,7 @@ from gpflow.kernels import SquaredExponential
 from gpflow.likelihoods import Gaussian
 from gpflow.models import SVGP
 from gpflow.config import default_jitter, default_float
-from gpflow.utilities import set_trainable
+from gpflow import set_trainable
 
 float_type = default_float()
 rng = np.random.RandomState(99201)
@@ -417,7 +417,7 @@ def test_shared_independent_mok():
         num_latent_gps=Data.Y.shape[-1],
     )
     set_trainable(model_1, False)
-    model_1.q_sqrt.trainable = True
+    set_trainable(model_1.q_sqrt, True)
 
     @tf.function
     def closure1():
@@ -443,7 +443,7 @@ def test_shared_independent_mok():
         q_sqrt=q_sqrt_2,
     )
     set_trainable(model_2, False)
-    model_2.q_sqrt.trainable = True
+    set_trainable(model_2.q_sqrt, True)
 
     @tf.function
     def closure2():
@@ -471,7 +471,7 @@ def test_shared_independent_mok():
         q_sqrt=q_sqrt_3,
     )
     set_trainable(model_3, False)
-    model_3.q_sqrt.trainable = True
+    set_trainable(model_3.q_sqrt, True)
 
     @tf.function
     def closure3():
@@ -504,8 +504,8 @@ def test_separate_independent_mok():
         kernel_1, Gaussian(), inducing_variable_1, num_latent_gps=1, q_mu=q_mu_1, q_sqrt=q_sqrt_1,
     )
     set_trainable(model_1, False)
-    model_1.q_sqrt.trainable = True
-    model_1.q_mu.trainable = True
+    set_trainable(model_1.q_sqrt, True)
+    set_trainable(model_1.q_mu, True)
 
     @tf.function
     def closure1():
@@ -534,8 +534,8 @@ def test_separate_independent_mok():
         q_sqrt=q_sqrt_2,
     )
     set_trainable(model_2, False)
-    model_2.q_sqrt.trainable = True
-    model_2.q_mu.trainable = True
+    set_trainable(model_2.q_sqrt, True)
+    set_trainable(model_2.q_mu, True)
 
     @tf.function
     def closure2():
@@ -563,8 +563,8 @@ def test_separate_independent_mof():
     inducing_variable_1 = InducingPoints(Data.X[: Data.M, ...])
     model_1 = SVGP(kernel_1, Gaussian(), inducing_variable_1, q_mu=q_mu_1, q_sqrt=q_sqrt_1)
     set_trainable(model_1, False)
-    model_1.q_sqrt.trainable = True
-    model_1.q_mu.trainable = True
+    set_trainable(model_1.q_sqrt, True)
+    set_trainable(model_1.q_mu, True)
 
     @tf.function
     def closure1():
@@ -584,8 +584,8 @@ def test_separate_independent_mof():
     inducing_variable_2 = mf.SeparateIndependentInducingVariables(inducing_variable_list_2)
     model_2 = SVGP(kernel_2, Gaussian(), inducing_variable_2, q_mu=q_mu_2, q_sqrt=q_sqrt_2)
     set_trainable(model_2, False)
-    model_2.q_sqrt.trainable = True
-    model_2.q_mu.trainable = True
+    set_trainable(model_2.q_sqrt, True)
+    set_trainable(model_2.q_mu, True)
 
     @tf.function
     def closure2():
@@ -607,8 +607,8 @@ def test_separate_independent_mof():
     inducing_variable_3 = mf.SeparateIndependentInducingVariables(inducing_variable_list_3)
     model_3 = SVGP(kernel_3, Gaussian(), inducing_variable_3, q_mu=q_mu_3, q_sqrt=q_sqrt_3)
     set_trainable(model_3, False)
-    model_3.q_sqrt.trainable = True
-    model_3.q_mu.trainable = True
+    set_trainable(model_3.q_sqrt, True)
+    set_trainable(model_3.q_mu, True)
 
     @tf.function
     def closure3():
@@ -628,7 +628,7 @@ def test_mixed_mok_with_Id_vs_independent_mok():
     f1 = InducingPoints(data.X[: data.M, ...])
     model_1 = SVGP(k1, Gaussian(), f1, q_mu=data.mu_data_full, q_sqrt=data.sqrt_data_full)
     set_trainable(model_1, False)
-    model_1.q_sqrt.trainable = True
+    set_trainable(model_1.q_sqrt, True)
 
     @tf.function
     def closure1():
@@ -644,7 +644,7 @@ def test_mixed_mok_with_Id_vs_independent_mok():
     f2 = InducingPoints(data.X[: data.M, ...])
     model_2 = SVGP(k2, Gaussian(), f2, q_mu=data.mu_data_full, q_sqrt=data.sqrt_data_full)
     set_trainable(model_2, False)
-    model_2.q_sqrt.trainable = True
+    set_trainable(model_2.q_sqrt, True)
 
     @tf.function
     def closure2():
