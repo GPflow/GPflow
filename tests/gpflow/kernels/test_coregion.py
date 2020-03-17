@@ -69,7 +69,7 @@ def _prepare_models():
     # 2. Coregionalized GPR
     kc = gpflow.kernels.SquaredExponential(active_dims=[0, 1])
     set_trainable(kc.lengthscales, False)
-    set_trainable(kc.variance, False)  # variance is handles by the coregion kernel
+    set_trainable(kc.variance, False)  # variance is handled by the Coregion kernel
     coreg = gpflow.kernels.Coregion(output_dim=2, rank=1, active_dims=[2])
     coreg.W.assign(np.zeros((2, 1)))  # zero correlation between outputs
     set_trainable(coreg.W, False)
