@@ -154,8 +154,8 @@ class Likelihood(Module):
         self.check_latent_dims(Fmu)
         self.check_latent_dims(Fvar)
         mu, var = self._predict_mean_and_var(Fmu, Fvar)
-        self.check_return_shape(mu, Fmu, Fvar)
-        self.check_return_shape(var, Fmu, Fvar)
+        self.check_data_dims(mu)
+        self.check_data_dims(var)
         return mu, var
 
     def _predict_mean_and_var(self, Fmu, Fvar):
@@ -284,10 +284,10 @@ class Gaussian(Likelihood):
         return tf.reduce_sum(logdensities.gaussian(Y, Fmu, Fvar + self.variance), axis=-1)
 
     def _variational_expectations(self, Fmu, Fvar, Y):
-        return (
-            -0.5 * np.log(2 * np.pi)
+        return tf.reduce_sum(
+            - 0.5 * np.log(2 * np.pi)
             - 0.5 * tf.math.log(self.variance)
-            - 0.5 * tf.reduce_sum((Y - Fmu) ** 2 + Fvar, axis=-1) / self.variance
+            - 0.5 * ((Y - Fmu) ** 2 + Fvar) / self.variance, axis=-1
         )
 
 
