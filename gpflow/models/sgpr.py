@@ -24,6 +24,7 @@ from ..config import default_float, default_jitter
 from ..covariances.dispatch import Kuf, Kuu
 from ..inducing_variables import InducingPoints
 from ..mean_functions import Zero, MeanFunction
+from ..utilities import to_default_float
 
 
 class SGPRBase(GPModel):
@@ -92,7 +93,7 @@ class SGPRBase(GPModel):
         which computes each individual element of the trace term.
         """
         X_data, Y_data = self.data
-        num_data = tf.cast(tf.shape(Y_data)[0], default_float())
+        num_data = to_default_float(tf.shape(Y_data)[0])
 
         Kdiag = self.kernel(X_data, full_cov=False)
         kuu = Kuu(self.inducing_variable, self.kernel, jitter=default_jitter())
@@ -155,8 +156,8 @@ class SGPR(SGPRBase):
         X_data, Y_data = self.data
 
         num_inducing = len(self.inducing_variable)
-        num_data = tf.cast(tf.shape(Y_data)[0], default_float())
-        output_dim = tf.cast(tf.shape(Y_data)[1], default_float())
+        num_data = to_default_float(tf.shape(Y_data)[0])
+        output_dim = to_default_float(tf.shape(Y_data)[1])
 
         err = Y_data - self.mean_function(X_data)
         Kdiag = self.kernel(X_data, full_cov=False)

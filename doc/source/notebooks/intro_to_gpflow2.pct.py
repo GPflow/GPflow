@@ -37,6 +37,7 @@ import tensorflow as tf
 import gpflow
 
 from gpflow.config import default_float
+from gpflow.utilities import to_default_float
 
 import warnings
 
@@ -222,7 +223,7 @@ simple_training_loop(model, epochs=10, logging_epoch_freq=2)
 # %%
 from intro_to_gpflow2_plotting import plotting_regression, summary_matplotlib_image
 
-samples_input = tf.cast(np.linspace(0, 10, 100).reshape(100, 1), default_float())
+samples_input = to_default_float(np.linspace(0, 10, 100).reshape(100, 1))
 
 def monitored_training_loop(model: gpflow.models.SVGP, logdir: str,
                             epochs: int = 1, logging_epoch_freq: int = 10,
