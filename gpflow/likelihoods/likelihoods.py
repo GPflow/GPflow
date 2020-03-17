@@ -534,7 +534,7 @@ class MultiClass(Likelihood):
         ve = p * tf.math.log(1.0 - self.invlink.epsilon) + (1.0 - p) * tf.math.log(
             self.invlink.eps_k1
         )
-        return ve
+        return tf.reduce_sum(ve, axis=-1)
 
     def _predict_mean_and_var(self, Fmu, Fvar):
         possible_outputs = [

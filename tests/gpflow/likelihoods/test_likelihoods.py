@@ -336,7 +336,7 @@ def test_robust_max_multiclass_symmetric(num_classes, num_points, tol, epsilon):
     )
     assert_allclose(
         variational_expectations,
-        np.ones((num_points, 1)) * validation_variational_expectation,
+        np.ones((num_points,)) * validation_variational_expectation,
         tol,
         tol,
     )
