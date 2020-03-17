@@ -214,6 +214,10 @@ class ScalarLikelihood(Likelihood):
     If there are multiple latent functions, then there must be a corresponding number of data: we
     check for this.
 
+    The `Likelihood` class contains methods to compute marginal statistics of the data ϕ(Y),
+    where the latent processes F are marginalized under a distribution
+    whose pdf q(F) is fully factorized q(F) = 𝚷ₖ q(fₖ).
+    
     Some univariate integrals can be done by quadrature: we implement quadrature routines for 1D
     integrals in this class, though they may be overwritten by inherriting classes where those
     integrals are available in closed form.
