@@ -84,8 +84,8 @@ class Parameter(tf.Module):
                 unconstrained_value, dtype=dtype, name=name, trainable=trainable
             )
 
-    def log_prior(self):
-        """ Prior probability density of the constrained variable. """
+    def log_prior_density(self):
+        """ Log of the prior probability density of the constrained variable. """
 
         if self.prior is None:
             return tf.convert_to_tensor(0.0, dtype=self.dtype)

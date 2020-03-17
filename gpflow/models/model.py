@@ -25,7 +25,7 @@ from ..config import default_float, default_jitter
 from ..kernels import Kernel
 from ..likelihoods import Likelihood
 from ..mean_functions import MeanFunction, Zero
-from ..utilities import ops
+from ..utilities import ops, to_default_float
 
 Data = TypeVar("Data", Tuple[tf.Tensor, tf.Tensor], tf.Tensor)
 DataPoint = tf.Tensor
@@ -45,14 +45,16 @@ class BayesianModel(Module):
         return -self.log_marginal_likelihood(*args, **kwargs)
 
     def log_marginal_likelihood(self, *args, **kwargs) -> tf.Tensor:
-        return self.log_likelihood(*args, **kwargs) + self.log_prior()
+        return self.log_likelihood(*args, **kwargs) + self.log_prior_density()
 
-    def log_prior(self) -> tf.Tensor:
-        log_priors = [p.log_prior() for p in self.trainable_parameters]
-        if log_priors:
-            return tf.add_n(log_priors)
+    def log_prior_density(self) -> tf.Tensor:
+        """
+        Sum of the log prior probability densities of all (constrained) variables in this model.
+        """
+        if self.trainable_parameters:
+            return tf.add_n([p.log_prior_density() for p in self.trainable_parameters])
         else:
-            return tf.convert_to_tensor(0.0, dtype=default_float())
+            return to_default_float(0.0)
 
     @abc.abstractmethod
     def log_likelihood(self, *args, **kwargs) -> tf.Tensor:
