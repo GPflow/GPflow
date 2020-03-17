@@ -113,7 +113,7 @@ class Likelihood(Module):
 
     def check_data_dims(self, Y):
         """
-        ensure that a tensor of data matches the expected shape
+        ensure that a tensor of data has num_data_dims as right most dimension.
         """
         tf.debugging.assert_shapes([(Y, (..., self.num_data_dims))])
 
