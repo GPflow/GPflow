@@ -16,7 +16,7 @@ def _conditional(
     Xnew: tf.Tensor,
     inducing_variable: InducingVariables,
     kernel: Kernel,
-    function: tf.Tensor,
+    f: tf.Tensor,
     *,
     full_cov=False,
     full_output_cov=False,
@@ -56,9 +56,9 @@ def _conditional(
     """
     Kmm = Kuu(inducing_variable, kernel, jitter=default_jitter())  # [M, M]
     Kmn = Kuf(inducing_variable, kernel, Xnew)  # [M, N]
-    Knn = kernel(Xnew, full=full_cov)
+    Knn = kernel(Xnew, full_cov=full_cov)
     fmean, fvar = base_conditional(
-        Kmn, Kmm, Knn, function, full_cov=full_cov, q_sqrt=q_sqrt, white=white
+        Kmn, Kmm, Knn, f, full_cov=full_cov, q_sqrt=q_sqrt, white=white
     )  # [N, R],  [R, N, N] or [N, R]
     return fmean, expand_independent_outputs(fvar, full_cov, full_output_cov)
 
@@ -68,7 +68,7 @@ def _conditional(
     Xnew: tf.Tensor,
     X: tf.Tensor,
     kernel: Kernel,
-    function: tf.Tensor,
+    f: tf.Tensor,
     *,
     full_cov=False,
     full_output_cov=False,
@@ -109,11 +109,9 @@ def _conditional(
         - mean:     [N, R]
         - variance: [N, R] (full_cov = False), [R, N, N] (full_cov = True)
     """
-    Kmm = kernel(X) + eye(tf.shape(X)[-2], value=default_jitter(), dtype=X.dtype)
-    Kmn = kernel(X, Xnew)
-    Knn = kernel(Xnew, full=full_cov)
-    mean, var = base_conditional(
-        Kmn, Kmm, Knn, function, full_cov=full_cov, q_sqrt=q_sqrt, white=white
-    )
+    Kmm = kernel(X) + eye(tf.shape(X)[-2], value=default_jitter(), dtype=X.dtype)  # [..., M, M]
+    Kmn = kernel(X, Xnew)  # [M, ..., N]
+    Knn = kernel(Xnew, full_cov=full_cov)  # [..., N] (full_cov = False) or [..., N, N] (True)
+    mean, var = base_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov, q_sqrt=q_sqrt, white=white)
 
     return mean, var  # [N, R], [N, R] or [R, N, N]

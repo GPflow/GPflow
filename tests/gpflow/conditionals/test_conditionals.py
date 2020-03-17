@@ -145,3 +145,51 @@ def test_q_sqrt_constraints(Xdata, Xnew, kernel, mu, white):
 
     diff_after_gradient_step = (q_sqrt_constrained - q_sqrt_unconstrained).numpy()
     assert_allclose(diff_after_gradient_step, 0)
+
+
+@pytest.mark.parametrize("full_cov", [True, False])
+@pytest.mark.parametrize("features_inducing_points", [False, True])
+def test_base_conditional_vs_ref(full_cov, features_inducing_points):
+    """
+    Test that conditionals agree with a slow-but-clear numpy implementation
+    """
+    Dy, N, M, Dx = 5, 4, 3, 2
+    X = np.random.randn(N, Dx)
+    Z = np.random.randn(M, Dx)
+    kern = gpflow.kernels.Matern52(lengthscales=0.5)
+    q_mu = np.random.randn(M, Dy)
+    q_sqrt = np.tril(np.random.randn(Dy, M, M), -1)
+
+    def numpy_conditional(X, Z, kern, q_mu, q_sqrt):
+        Kmm = kern(Z, Z) + np.eye(M) * gpflow.config.default_jitter()
+        Kmn = kern(Z, X)
+        Knn = kern(X, X)
+
+        Kmm, Kmn, Knn = [k.numpy() for k in [Kmm, Kmn, Knn]]
+
+        Kmm, Kmn, Knm, Knn = [np.tile(k[None, :, :], [Dy, 1, 1]) for k in [Kmm, Kmn, Kmn.T, Knn]]
+
+        S = q_sqrt @ np.transpose(q_sqrt, [0, 2, 1])
+
+        Kmm_inv = np.linalg.inv(Kmm)
+        mean = np.einsum("dmn,dmM,Md->nd", Kmn, Kmm_inv, q_mu)
+        cov = Knn + Knm @ Kmm_inv @ (S - Kmm) @ Kmm_inv @ Kmn
+        return mean, cov
+
+    mean_np, cov_np = numpy_conditional(X, Z, kern, q_mu, q_sqrt)
+
+    if features_inducing_points:
+        Z = gpflow.inducing_variables.InducingPoints(Z)
+
+    mean_gpflow, cov_gpflow = [
+        v.numpy()
+        for v in gpflow.conditionals.conditional(
+            X, Z, kern, q_mu, q_sqrt=tf.identity(q_sqrt), white=False, full_cov=full_cov
+        )
+    ]
+
+    if not full_cov:
+        cov_np = np.diagonal(cov_np, axis1=-1, axis2=-2).T
+
+    assert_allclose(mean_np, mean_gpflow)
+    assert_allclose(cov_np, cov_gpflow)

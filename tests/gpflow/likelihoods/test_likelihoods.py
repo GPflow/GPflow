@@ -39,6 +39,7 @@ from gpflow.likelihoods import (
 )
 from gpflow.quadrature import ndiagquad
 from gpflow.config import default_float, default_int
+from gpflow.utilities import to_default_float, to_default_int
 
 tf.random.set_seed(99012)
 
@@ -262,10 +263,10 @@ def test_softmax_y_shape_assert(num, dimF, dimY):
 def test_softmax_bernoulli_equivalence(num, dimF, dimY):
     dF = np.vstack((np.random.randn(num - 3, dimF), np.array([[-3.0, 0.0], [3, 0.0], [0.0, 0.0]])))
     dY = np.vstack((np.random.randn(num - 3, dimY), np.ones((3, dimY)))) > 0
-    F = tf.cast(dF, default_float())
+    F = to_default_float(dF)
     Fvar = tf.exp(tf.stack([F[:, 1], -10.0 + tf.zeros(F.shape[0], dtype=F.dtype)], axis=1))
     F = tf.stack([F[:, 0], tf.zeros(F.shape[0], dtype=F.dtype)], axis=1)
-    Y = tf.cast(dY, default_int())
+    Y = to_default_int(dY)
     Ylabel = 1 - Y
 
     softmax_likelihood = Softmax(dimF)
@@ -358,7 +359,7 @@ def test_robust_max_multiclass_predict_density(
     likelihood = MultiClass(num_classes, invlink=MockRobustMax(num_classes, epsilon))
     F = tf.ones((num_points, num_classes))
     rng = np.random.RandomState(1)
-    Y = tf.cast(rng.randint(num_classes, size=(num_points, 1)), dtype=default_int())
+    Y = to_default_int(rng.randint(num_classes, size=(num_points, 1)))
     prediction = likelihood.predict_density(F, F, Y)
 
     assert_allclose(prediction, expected_prediction, tol, tol)
@@ -458,8 +459,8 @@ def test__switched_likelihood_variational_expectations(Y_list, F_list, Fvar_list
     assert_allclose(switched_results, np.concatenate(results)[Y_perm, :])
 
 
-@pytest.mark.parametrize("num_latent", [1, 2])
-def test_switched_likelihood_regression_valid_num_latent(num_latent):
+@pytest.mark.parametrize("num_latent_gps", [1, 2])
+def test_switched_likelihood_regression_valid_num_latent_gps(num_latent_gps):
     """
     A Regression test when using Switched likelihood: the number of latent
     functions in a GP model must be equal to the number of columns in Y minus
@@ -470,16 +471,16 @@ def test_switched_likelihood_regression_valid_num_latent(num_latent):
     y = np.hstack((np.random.randn(100, 1), np.random.randint(0, 3, (100, 1))))
     data = x, y
 
-    Z = InducingPoints(np.random.randn(num_latent, 1))
+    Z = InducingPoints(np.random.randn(num_latent_gps, 1))
     likelihoods = [StudentT()] * 3
     switched_likelihood = SwitchedLikelihood(likelihoods)
     m = gpflow.models.SVGP(
         kernel=gpflow.kernels.Matern12(),
         inducing_variable=Z,
         likelihood=switched_likelihood,
-        num_latent=num_latent,
+        num_latent_gps=num_latent_gps,
     )
-    if num_latent == 1:
+    if num_latent_gps == 1:
         m.log_likelihood(data)
     else:
         with pytest.raises(tf.errors.InvalidArgumentError):

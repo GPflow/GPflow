@@ -15,12 +15,11 @@
 # -*- coding: utf-8 -*-
 
 import tensorflow as tf
-from .config import default_float
-from .utilities import Dispatcher
+from .config import default_float, default_jitter
+from .covariances.kuus import Kuu
 from .inducing_variables import InducingVariables
 from .kernels import Kernel
-from .covariances.kuus import Kuu
-from .config import default_jitter
+from .utilities import Dispatcher, to_default_float
 
 prior_kl = Dispatcher("prior_kl")
 
@@ -97,7 +96,7 @@ def gauss_kl(q_mu, q_sqrt, K=None, *, K_cholesky=None):
     mahalanobis = tf.reduce_sum(tf.square(alpha))
 
     # Constant term: - B * M
-    constant = -tf.cast(tf.size(q_mu, out_type=tf.int64), dtype=default_float())
+    constant = -to_default_float(tf.size(q_mu, out_type=tf.int64))
 
     # Log-determinant of the covariance of q(x):
     logdet_qcov = tf.reduce_sum(tf.math.log(tf.square(Lq_diag)))
@@ -128,8 +127,8 @@ def gauss_kl(q_mu, q_sqrt, K=None, *, K_cholesky=None):
     if not is_white:
         log_sqdiag_Lp = tf.math.log(tf.square(tf.linalg.diag_part(Lp)))
         sum_log_sqdiag_Lp = tf.reduce_sum(log_sqdiag_Lp)
-        # If K is [B, M, M], num_latent is no longer implicit, no need to multiply the single kernel logdet
-        scale = 1.0 if is_batched else tf.cast(B, default_float())
+        # If K is [B, M, M], num_latent_gps is no longer implicit, no need to multiply the single kernel logdet
+        scale = 1.0 if is_batched else to_default_float(B)
         twoKL += scale * sum_log_sqdiag_Lp
 
     return 0.5 * twoKL

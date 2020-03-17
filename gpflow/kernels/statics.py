@@ -16,7 +16,7 @@ class Static(Kernel):
         self.variance = Parameter(variance, transform=positive())
 
     def K_diag(self, X):
-        return tf.fill((tf.shape(X)[0],), tf.squeeze(self.variance))
+        return tf.fill(tf.shape(X)[:-1], tf.squeeze(self.variance))
 
 
 class White(Static):
@@ -32,10 +32,10 @@ class White(Static):
 
     def K(self, X, X2=None):
         if X2 is None:
-            d = tf.fill((tf.shape(X)[0],), tf.squeeze(self.variance))
+            d = tf.fill(tf.shape(X)[:-1], tf.squeeze(self.variance))
             return tf.linalg.diag(d)
         else:
-            shape = [tf.shape(X)[0], tf.shape(X2)[0]]
+            shape = tf.concat([tf.shape(X)[:-1], tf.shape(X2)[:-1]], axis=0)
             return tf.zeros(shape, dtype=X.dtype)
 
 
@@ -52,7 +52,15 @@ class Constant(Static):
 
     def K(self, X, X2=None):
         if X2 is None:
-            shape = [tf.shape(X)[0], tf.shape(X)[0]]
+            shape = tf.concat(
+                [
+                    tf.shape(X)[:-2],
+                    tf.reshape(tf.shape(X)[-2], [1]),
+                    tf.reshape(tf.shape(X)[-2], [1]),
+                ],
+                axis=0,
+            )
         else:
-            shape = [tf.shape(X)[0], tf.shape(X2)[0]]
+            shape = tf.concat([tf.shape(X)[:-1], tf.shape(X2)[:-1]], axis=0)
+
         return tf.fill(shape, tf.squeeze(self.variance))

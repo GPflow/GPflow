@@ -16,6 +16,14 @@ Kernels form a core component of GPflow models and allow prior information to
 be encoded about a latent function of interest. The effect of choosing
 different kernels, and how it is possible to combine multiple kernels is shown
 in the `"Using kernels in GPflow" notebook <notebooks/kernels.html>`_.
+
+Broadcasting over leading dimensions:
+`kernel.K(X1, X2)` returns the kernel evaluated on every pair in X1 and X2.
+E.g. if X1 has shape [S1, N1, D] and X2 has shape [S2, N2, D], kernel.K(X1, X2)
+will return a tensor of shape [S1, N1, S2, N2]. Similarly, kernel.K(X1, X1)
+returns a tensor of shape [S1, N1, S1, N1]. In contrast, the return shape of
+kernel.K(X1) is [S1, N1, N1]. (Without leading dimensions, the behaviour of
+kernel.K(X, None) is identical to kernel.K(X, X).)
 """
 
 import abc
@@ -150,14 +158,14 @@ class Kernel(Module, metaclass=abc.ABCMeta):
     def K_diag(self, X):
         raise NotImplementedError
 
-    def __call__(self, X, X2=None, full=True, presliced=False):
-        if (not full) and (X2 is not None):
-            raise ValueError("Ambiguous inputs: `not full` and `X2` are not compatible.")
+    def __call__(self, X, X2=None, *, full_cov=True, presliced=False):
+        if (not full_cov) and (X2 is not None):
+            raise ValueError("Ambiguous inputs: `not full_cov` and `X2` are not compatible.")
 
         if not presliced:
             X, X2 = self.slice(X, X2)
 
-        if not full:
+        if not full_cov:
             assert X2 is None
             return self.K_diag(X)
 
@@ -224,8 +232,10 @@ class Combination(Kernel):
 
 
 class ReducingCombination(Combination):
-    def __call__(self, X, X2=None, full=True, presliced=False):
-        return self._reduce([k(X, X2, full=full, presliced=presliced) for k in self.kernels])
+    def __call__(self, X, X2=None, *, full_cov=True, presliced=False):
+        return self._reduce(
+            [k(X, X2, full_cov=full_cov, presliced=presliced) for k in self.kernels]
+        )
 
     def K(self, X: tf.Tensor, X2: Optional[tf.Tensor] = None) -> tf.Tensor:
         return self._reduce([k.K(X, X2) for k in self.kernels])

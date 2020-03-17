@@ -98,7 +98,7 @@ def _create_approximate_models():
         inducing_variable=Datum.X.copy(),
         q_diag=False,
         mean_function=gpflow.mean_functions.Constant(),
-        num_latent=Datum.Y.shape[1],
+        num_latent_gps=Datum.Y.shape[1],
     )
     gpflow.utilities.set_trainable(model_2.inducing_variable, False)
     model_3 = gpflow.models.SVGP(
@@ -108,7 +108,7 @@ def _create_approximate_models():
         q_diag=False,
         whiten=True,
         mean_function=gpflow.mean_functions.Constant(),
-        num_latent=Datum.Y.shape[1],
+        num_latent_gps=Datum.Y.shape[1],
     )
     gpflow.utilities.set_trainable(model_3.inducing_variable, False)
     model_4 = gpflow.models.GPRFITC(
@@ -179,7 +179,7 @@ def _create_vgp_model(kernel, likelihood, q_mu=None, q_sqrt=None):
 
 def _create_vgpao_model(kernel, likelihood, q_alpha, q_lambda):
     model_vgpoa = gpflow.models.VGPOpperArchambeau(
-        (DatumVGP.X, DatumVGP.Y), kernel, likelihood, num_latent=DatumVGP.DY
+        (DatumVGP.X, DatumVGP.Y), kernel, likelihood, num_latent_gps=DatumVGP.DY
     )
     model_vgpoa.q_alpha.assign(q_alpha)
     model_vgpoa.q_lambda.assign(q_lambda)
@@ -188,7 +188,12 @@ def _create_vgpao_model(kernel, likelihood, q_alpha, q_lambda):
 
 def _create_svgp_model(kernel, likelihood, q_mu, q_sqrt, whiten):
     model_svgp = gpflow.models.SVGP(
-        kernel, likelihood, DatumVGP.X.copy(), whiten=whiten, q_diag=False, num_latent=DatumVGP.DY,
+        kernel,
+        likelihood,
+        DatumVGP.X.copy(),
+        whiten=whiten,
+        q_diag=False,
+        num_latent_gps=DatumVGP.DY,
     )
     model_svgp.q_mu.assign(q_mu)
     model_svgp.q_sqrt.assign(q_sqrt)
@@ -211,10 +216,10 @@ def test_equivalence(approximate_model):
 
     assert_allclose(gpr_likelihood, approximate_likelihood, rtol=1e-6)
 
-    gpr_kernel_ls = gpr_model.kernel.lengthscale.read_value()
+    gpr_kernel_ls = gpr_model.kernel.lengthscales.read_value()
     gpr_kernel_var = gpr_model.kernel.variance.read_value()
 
-    approximate_kernel_ls = approximate_model.kernel.lengthscale.read_value()
+    approximate_kernel_ls = approximate_model.kernel.lengthscales.read_value()
     approximate_kernel_var = approximate_model.kernel.variance.read_value()
 
     assert_allclose(gpr_kernel_ls, approximate_kernel_ls, 1e-4)
@@ -313,7 +318,7 @@ def test_upper_bound_few_inducing_points():
         kernel=gpflow.kernels.SquaredExponential(),
         mean_function=Constant(),
     )
-    full_gp.kernel.lengthscale.assign(model_vfe.kernel.lengthscale)
+    full_gp.kernel.lengthscales.assign(model_vfe.kernel.lengthscales)
     full_gp.kernel.variance.assign(model_vfe.kernel.variance)
     full_gp.likelihood.variance.assign(model_vfe.likelihood.variance)
     full_gp.mean_function.c.assign(model_vfe.mean_function.c)

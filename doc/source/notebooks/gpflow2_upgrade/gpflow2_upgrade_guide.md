@@ -24,8 +24,8 @@ The `input_dim` parameter has been removed from the `Kernel` class’s initialis
 
 For example:
 
-![kernel_input_dims_1_new](kernel_input_dims_1_new.png)
-![kernel_input_dims_2_new](kernel_input_dims_2_new.png)
+![before: kernel constructor requires input dims](kernel_input_dims_1_new.png)
+![new: kernel without input dims](kernel_input_dims_2_new.png)
 
 **Note**: old code may still run without obvious errors against GPflow, since many kernels take an optional numerical value as their first parameter. You may not get the result you expect though!
 
@@ -44,7 +44,7 @@ References to `params_as_tensors` and `params_as_tensors_for` can simply be remo
 
 In GPflow 2 the semantics of assigning values to parameters has changed. It is now necessary to use the Parameter.assign method rather than assigning values directly to parameters. For example:
 
-![constant](constant.png)
+![Use module.parameter.assign(value) instead of module.parameter = value](constant.png)
 
 In the above example, the old (GPflow 1) code would have assigned the value of `likelihood.scale` to 0.1 (assuming that likelihood is a `Parameterized` object and scale is a `Parameter`), rather than replacing the `scale` attribute with a Python float (which would be the “normal” Python behaviour). This maintains the properties of the parameter. For example, it remains trainable etc.
 
@@ -62,7 +62,7 @@ Usage of GPflow’s Scipy optimizer has changed. It has been renamed from `gpflo
 
 For example:
 
-![scipy_optimizer](scipy_optimizer.png)
+![comparison of how to use Scipy optimizer](scipy_optimizer.png)
 
 Any additional keyword arguments that are passed to the `minimize` method are passed directly through to the [SciPy optimizer's minimize method](https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize.html).
 
@@ -76,8 +76,8 @@ In many cases the initialiser for the model will have changed. Typical changes i
 
 For example, for the `GPR` model:
 
-![model_1](model_1.png)
-![model_2_new](model_2_new.png)
+![before: X, Y separate; kern argument](model_1.png)
+![new: data=(X, Y) tuple; kernel argument](model_2_new.png)
 
 
 ## SVGP Initialiser
@@ -128,7 +128,7 @@ GPflow methods that used the `@autoflow` decorator, like for example `predict_f`
 
 For example:
 
-![numpy_new](numpy_new.png)
+![predict functions return tf.Tensors, need to call .numpy() to obtain NumPy array](numpy_new.png)
 
 
 ## Parameter Values
@@ -137,7 +137,7 @@ GPflow’s `Parameter.value` has changed from a property to a method.
 
 For example:
 
-![param](param.png)
+![Parameters now behave like tensors](param.png)
 
 However, in many cases it is not necessary to call `value` anymore, since `Parameter` just behaves like a TensorFlow tensor.
 
@@ -154,8 +154,8 @@ The base kernel for the `Periodic` kernel must now be specified explicitly. Prev
 
 For example:
 
-![periodic_1](periodic_1.png)
-![periodic_2](periodic_2.png)
+![old Periodic kernel](periodic_1.png)
+![new Periodic kernel: requires base kernel](periodic_2.png)
 
 
 ## Predict Full Covariance
@@ -164,7 +164,7 @@ The `predict_f_full_cov` method has been removed from `GPModel`. Instead, pass `
 
 For example:
 
-![full_cov](full_cov.png)
+![predict f now with full cov argument](full_cov.png)
 
 
 ## Data Types
