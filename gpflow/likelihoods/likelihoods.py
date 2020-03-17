@@ -69,11 +69,96 @@ def inv_probit(x):
 
 
 class Likelihood(Module):
-    def __init__(self):
+    def __init__(self, num_latent_functions=None, num_data_dims=None):
+        """
+        A base class for likelihoods, which conect the latent functions ('F') to the data ('Y').
+
+        All of the members of this class are expected to obey some shape conventions, as specified
+        by num_latent_functions and num_data_dims.
+
+        If we're operating on an array of function values 'F', then the last dimension represents
+        multiple functions (preceeding dimensions could represent different data points, or
+        different random samples, for example). Similarly, the last dimension of Y represents a
+        single data point. We check that the dimensions are as this object expects.
+
+        In the event that both num_latent_functions and num_data_dims are None, we check that they
+        are the same (at run time). This is actually the most common use case.
+
+        The return shapes of all functions in this class is the broadcasted shape of the arguments,
+        up to the last dimensions.
+        """
         super().__init__()
         self.num_gauss_hermite_points = 20
+        self.num_latent_functions = num_latent_functions
+        self.num_data_dims = num_data_dims
+
+    def check_last_dims_match(self, F, Y):
+        """
+        Assert that the dimensions of the latent functions and the data are compatible
+        """
+        if (self.num_latent_functions is None) and (self.num_data_dims is None):
+            tf.debugging.assert_equal(tf.shape(F)[-1], tf.shape(Y)[-1])
+        else:
+            tf.debugging.assert_equal(tf.shape(Y)[-1], self.num_data_dims)
+            tf.debugging.assert_equal(tf.shape(F)[-1], self.num_latent_functions)
+
+    def check_return_shape(self, result, F, Y):
+        """
+        Check that the shape of a computed result is the broadcasted shape from F and Y
+        """
+        expected_shape = tf.broadcast_dynamic_shape(tf.shape(F)[:-1], tf.shape(Y)[:-1])
+        tf.debugging.assert_equal(tf.shape(result), expected_shape)
+
+    def check_latent_dims(self, F):
+        """
+        ensure that a tensor of latent functions matches the expected shape
+        """
+        if self.num_latent_functions is not None:
+            tf.debugging.assert_equal(tf.shape(F)[-1], self.num_latent_functions)
+
+    def check_data_dims(self, Y):
+        """
+        ensure that a tensor of data matches the expected shape
+        """
+        if self.num_data_dims is not None:
+            tf.debugging.assert_equal(tf.shape(Y)[-1], self.num_data_dims)
+
+    def log_prob(self, F, Y):
+        self.check_last_dims_match(F, Y)
+        ret = self._log_prob(F, Y)
+        self.check_return_shape(ret, F, Y)
+        return ret
+
+    def _log_prob(self, F, Y):
+        raise NotImplementedError
+
+    def conditional_mean(self, F):
+        self.check_latent_dims(F)
+        expected_Y = self._conditional_mean(F)
+        self.check_data_dims(expected_Y)
+        return expected_Y
+
+    def _conditional_mean(self, F):
+        raise NotImplementedError
+
+    def conditional_variance(self, F):
+        self.check_latent_dims(F)
+        var_Y = self._conditional_variance(F)
+        self.check_data_dims(var_Y)
+        return var_Y
+
+    def _conditional_variance(self, F):
+        raise NotImplementedError
 
     def predict_mean_and_var(self, Fmu, Fvar):
+        self.check_latent_dims(Fmu)
+        self.check_latent_dims(Fvar)
+        mu, var = self._predict_mean_and_var(Fmu, Fvar)
+        self.check_return_shape(mu, Fmu, Fvar)
+        self.check_return_shape(var, Fmu, Fvar)
+        return mu, var
+
+    def _predict_mean_and_var(self, Fmu, Fvar):
         r"""
         Given a Normal distribution for the latent function,
         return the mean of Y
@@ -121,13 +206,21 @@ class Likelihood(Module):
         then this method computes the predictive density
 
             \log \int p(y=Y|f)q(f) df
+        """
+        tf.debugging.assert_equal(tf.shape(Fmu), tf.shape(Fvar))
+        self.check_last_dims_match(Fmu, Y)
+        ret = self._predict_density(Fmu, Fvar, Y)
+        self.check_return_shape(ret, Fmu, Y)
+        return ret
 
+    def _predict_density(self, Fmu, Fvar, Y):
+        r"""
         Here, we implement a default Gauss-Hermite quadrature routine, but some
         likelihoods (Gaussian, Poisson) will implement specific cases.
         """
         integrand = self.log_prob
         nghp = self.num_gauss_hermite_points
-        return ndiagquad(integrand, nghp, Fmu, Fvar, logspace=True, Y=Y)
+        return tf.reduce_sum(ndiagquad(integrand, nghp, Fmu, Fvar, logspace=True, Y=Y), axis=-1)
 
     def variational_expectations(self, Fmu, Fvar, Y):
         r"""
@@ -144,14 +237,21 @@ class Likelihood(Module):
         then this method computes
 
            \int (\log p(y|f)) q(f) df.
+        """
+        tf.debugging.assert_equal(tf.shape(Fmu), tf.shape(Fvar))
+        self.check_last_dims_match(Fmu, Y)
+        ret = self._variational_expectations(Fmu, Fvar, Y)
+        self.check_return_shape(ret, Fmu, Y)
+        return ret
 
-
+    def _variational_expectations(self, Fmu, Fvar, Y):
+        r"""
         Here, we implement a default Gauss-Hermite quadrature routine, but some
         likelihoods (Gaussian, Poisson) will implement specific cases.
         """
         integrand = self.log_prob
         nghp = self.num_gauss_hermite_points
-        return ndiagquad(integrand, nghp, Fmu, Fvar, Y=Y)
+        return tf.reduce_sum(ndiagquad(integrand, nghp, Fmu, Fvar, Y=Y), axis=-1)
 
 
 class Gaussian(Likelihood):
@@ -168,26 +268,26 @@ class Gaussian(Likelihood):
         super().__init__(**kwargs)
         self.variance = Parameter(variance, transform=positive(lower=variance_lower_bound))
 
-    def log_prob(self, F, Y):
-        return logdensities.gaussian(Y, F, self.variance)
+    def _log_prob(self, F, Y):
+        return tf.reduce_sum(logdensities.gaussian(Y, F, self.variance), axis=-1)
 
-    def conditional_mean(self, F):  # pylint: disable=R0201
+    def _conditional_mean(self, F):  # pylint: disable=R0201
         return tf.identity(F)
 
-    def conditional_variance(self, F):
+    def _conditional_variance(self, F):
         return tf.fill(tf.shape(F), tf.squeeze(self.variance))
 
-    def predict_mean_and_var(self, Fmu, Fvar):
+    def _predict_mean_and_var(self, Fmu, Fvar):
         return tf.identity(Fmu), Fvar + self.variance
 
-    def predict_density(self, Fmu, Fvar, Y):
-        return logdensities.gaussian(Y, Fmu, Fvar + self.variance)
+    def _predict_density(self, Fmu, Fvar, Y):
+        return tf.reduce_sum(logdensities.gaussian(Y, Fmu, Fvar + self.variance), axis=-1)
 
-    def variational_expectations(self, Fmu, Fvar, Y):
+    def _variational_expectations(self, Fmu, Fvar, Y):
         return (
             -0.5 * np.log(2 * np.pi)
             - 0.5 * tf.math.log(self.variance)
-            - 0.5 * ((Y - Fmu) ** 2 + Fvar) / self.variance
+            - 0.5 * tf.reduce_sum((Y - Fmu) ** 2 + Fvar, axis=-1) / self.variance
         )
 
 
@@ -211,24 +311,24 @@ class Poisson(Likelihood):
         self.invlink = invlink
         self.binsize = np.array(binsize, dtype=default_float())
 
-    def log_prob(self, F, Y):
-        return logdensities.poisson(Y, self.invlink(F) * self.binsize)
+    def _log_prob(self, F, Y):
+        return tf.reduce_sum(logdensities.poisson(Y, self.invlink(F) * self.binsize), axis=-1)
 
-    def conditional_variance(self, F):
+    def _conditional_variance(self, F):
         return self.invlink(F) * self.binsize
 
-    def conditional_mean(self, F):
+    def _conditional_mean(self, F):
         return self.invlink(F) * self.binsize
 
-    def variational_expectations(self, Fmu, Fvar, Y):
+    def _variational_expectations(self, Fmu, Fvar, Y):
         if self.invlink is tf.exp:
-            return (
+            return tf.reduce_sum(
                 Y * Fmu
                 - tf.exp(Fmu + Fvar / 2) * self.binsize
                 - tf.math.lgamma(Y + 1)
-                + Y * tf.math.log(self.binsize)
+                + Y * tf.math.log(self.binsize), axis=-1
             )
-        return super(Poisson, self).variational_expectations(Fmu, Fvar, Y)
+        return super().variational_expectations(Fmu, Fvar, Y)
 
 
 class Exponential(Likelihood):
@@ -236,18 +336,18 @@ class Exponential(Likelihood):
         super().__init__(**kwargs)
         self.invlink = invlink
 
-    def log_prob(self, F, Y):
-        return logdensities.exponential(Y, self.invlink(F))
+    def _log_prob(self, F, Y):
+        return tf.reduce_sum(logdensities.exponential(Y, self.invlink(F)), axis=-1)
 
-    def conditional_mean(self, F):
+    def _conditional_mean(self, F):
         return self.invlink(F)
 
-    def conditional_variance(self, F):
+    def _conditional_variance(self, F):
         return tf.square(self.invlink(F))
 
-    def variational_expectations(self, Fmu, Fvar, Y):
+    def _variational_expectations(self, Fmu, Fvar, Y):
         if self.invlink is tf.exp:
-            return -tf.exp(-Fmu + Fvar / 2) * Y - Fmu
+            return tf.reduce_sum(-tf.exp(-Fmu + Fvar / 2) * Y - Fmu, axis=-1)
         return super().variational_expectations(Fmu, Fvar, Y)
 
 
@@ -261,13 +361,13 @@ class StudentT(Likelihood):
         self.df = df
         self.scale = Parameter(scale, transform=positive(), dtype=default_float())
 
-    def log_prob(self, F, Y):
-        return logdensities.student_t(Y, F, self.scale, self.df)
+    def _log_prob(self, F, Y):
+        return tf.reduce_sum(logdensities.student_t(Y, F, self.scale, self.df), axis=-1)
 
-    def conditional_mean(self, F):
+    def _conditional_mean(self, F):
         return F
 
-    def conditional_variance(self, F):
+    def _conditional_variance(self, F):
         var = (self.scale ** 2) * (self.df / (self.df - 2.0))
         return tf.fill(tf.shape(F), tf.squeeze(var))
 
@@ -277,25 +377,25 @@ class Bernoulli(Likelihood):
         super().__init__(**kwargs)
         self.invlink = invlink
 
-    def log_prob(self, F, Y):
+    def _log_prob(self, F, Y):
         return logdensities.bernoulli(Y, self.invlink(F))
 
-    def predict_mean_and_var(self, Fmu, Fvar):
+    def _predict_mean_and_var(self, Fmu, Fvar):
         if self.invlink is inv_probit:
             p = inv_probit(Fmu / tf.sqrt(1 + Fvar))
             return p, p - tf.square(p)
         else:
             # for other invlink, use quadrature
-            return super().predict_mean_and_var(Fmu, Fvar)
+            return super()._predict_mean_and_var(Fmu, Fvar)
 
-    def predict_density(self, Fmu, Fvar, Y):
+    def _predict_density(self, Fmu, Fvar, Y):
         p = self.predict_mean_and_var(Fmu, Fvar)[0]
         return logdensities.bernoulli(Y, p)
 
-    def conditional_mean(self, F):
+    def _conditional_mean(self, F):
         return self.invlink(F)
 
-    def conditional_variance(self, F):
+    def _conditional_variance(self, F):
         p = self.conditional_mean(F)
         return p - (p ** 2)
 
@@ -310,26 +410,26 @@ class Gamma(Likelihood):
         self.invlink = invlink
         self.shape = Parameter(1.0, transform=positive())
 
-    def log_prob(self, F, Y):
-        return logdensities.gamma(Y, self.shape, self.invlink(F))
+    def _log_prob(self, F, Y):
+        return tf.reduce_sum(logdensities.gamma(Y, self.shape, self.invlink(F)), axis=-1)
 
-    def conditional_mean(self, F):
+    def _conditional_mean(self, F):
         return self.shape * self.invlink(F)
 
-    def conditional_variance(self, F):
+    def _conditional_variance(self, F):
         scale = self.invlink(F)
         return self.shape * (scale ** 2)
 
-    def variational_expectations(self, Fmu, Fvar, Y):
+    def _variational_expectations(self, Fmu, Fvar, Y):
         if self.invlink is tf.exp:
-            return (
+            return tf.reduce_sum(
                 -self.shape * Fmu
                 - tf.math.lgamma(self.shape)
                 + (self.shape - 1.0) * tf.math.log(Y)
-                - Y * tf.exp(-Fmu + Fvar / 2.0)
+                - Y * tf.exp(-Fmu + Fvar / 2.0), axis=-1
             )
         else:
-            return super().variational_expectations(Fmu, Fvar, Y)
+            return super()._variational_expectations(Fmu, Fvar, Y)
 
 
 class Beta(Likelihood):
@@ -354,16 +454,16 @@ class Beta(Likelihood):
         self.scale = Parameter(scale, transform=positive())
         self.invlink = invlink
 
-    def log_prob(self, F, Y):
+    def _log_prob(self, F, Y):
         mean = self.invlink(F)
         alpha = mean * self.scale
         beta = self.scale - alpha
-        return logdensities.beta(Y, alpha, beta)
+        return tf.reduce_sum(logdensities.beta(Y, alpha, beta), axis=-1)
 
-    def conditional_mean(self, F):
+    def _conditional_mean(self, F):
         return self.invlink(F)
 
-    def conditional_variance(self, F):
+    def _conditional_variance(self, F):
         mean = self.invlink(F)
         return (mean - tf.square(mean)) / (self.scale + 1.0)
 
@@ -388,7 +488,7 @@ class MultiClass(Likelihood):
 
         self.invlink = invlink
 
-    def log_prob(self, F, Y):
+    def _log_prob(self, F, Y):
         hits = tf.equal(tf.expand_dims(tf.argmax(F, 1), 1), tf.cast(Y, tf.int64))
         yes = tf.ones(tf.shape(Y), dtype=default_float()) - self.invlink.epsilon
         no = tf.zeros(tf.shape(Y), dtype=default_float()) + self.invlink.eps_k1
@@ -412,7 +512,7 @@ class MultiClass(Likelihood):
         ps = tf.transpose(tf.stack([tf.reshape(p, (-1,)) for p in ps]))
         return ps, ps - tf.square(ps)
 
-    def predict_density(self, Fmu, Fvar, Y):
+    def _predict_density(self, Fmu, Fvar, Y):
         return tf.math.log(self._predict_non_logged_density(Fmu, Fvar, Y))
 
     def _predict_non_logged_density(self, Fmu, Fvar, Y):
@@ -421,10 +521,10 @@ class MultiClass(Likelihood):
         den = p * (1.0 - self.invlink.epsilon) + (1.0 - p) * (self.invlink.eps_k1)
         return den
 
-    def conditional_mean(self, F):
+    def _conditional_mean(self, F):
         return self.invlink(F)
 
-    def conditional_variance(self, F):
+    def _conditional_variance(self, F):
         p = self.conditional_mean(F)
         return p - tf.square(p)
 
@@ -451,9 +551,9 @@ class SwitchedLikelihood(Likelihood):
         """
         # get the index from Y
         Y = args[-1]
-        ind = Y[:, -1]
+        ind = Y[..., -1]
         ind = tf.cast(ind, tf.int32)
-        Y = Y[:, :-1]
+        Y = Y[..., :-1]
         args[-1] = Y
 
         # split up the arguments into chunks corresponding to the relevant likelihoods
@@ -469,16 +569,20 @@ class SwitchedLikelihood(Likelihood):
 
         return results
 
-    def log_prob(self, F, Y):
+    def check_last_dims_match(self, F, Y):
+        super().check_last_dims_match(F, Y)
+        tf.assert_equal(tf.shape(F)[-1], tf.shape(Y)[-1]-1)
+
+    def _log_prob(self, F, Y):
         return self._partition_and_stitch([F, Y], "log_prob")
 
-    def predict_density(self, Fmu, Fvar, Y):
+    def _predict_density(self, Fmu, Fvar, Y):
         return self._partition_and_stitch([Fmu, Fvar, Y], "predict_density")
 
-    def variational_expectations(self, Fmu, Fvar, Y):
+    def _variational_expectations(self, Fmu, Fvar, Y):
         return self._partition_and_stitch([Fmu, Fvar, Y], "variational_expectations")
 
-    def predict_mean_and_var(self, Fmu, Fvar):
+    def _predict_mean_and_var(self, Fmu, Fvar):
         mvs = [lik.predict_mean_and_var(Fmu, Fvar) for lik in self.likelihoods]
         mu_list, var_list = zip(*mvs)
         mu = tf.concat(mu_list, 1)
@@ -525,7 +629,7 @@ class Ordinal(Likelihood):
         self.num_bins = bin_edges.size + 1
         self.sigma = Parameter(1.0, transform=positive())
 
-    def log_prob(self, F, Y):
+    def _log_prob(self, F, Y):
         Y = tf.cast(Y, default_int())
         scaled_bins_left = tf.concat([self.bin_edges / self.sigma, np.array([np.inf])], 0)
         scaled_bins_right = tf.concat([np.array([-np.inf]), self.bin_edges / self.sigma], 0)
@@ -552,12 +656,12 @@ class Ordinal(Likelihood):
             scaled_bins_right - tf.reshape(F, (-1, 1)) / self.sigma
         )
 
-    def conditional_mean(self, F):
+    def _conditional_mean(self, F):
         phi = self._make_phi(F)
         Ys = tf.reshape(np.arange(self.num_bins, dtype=default_float()), (-1, 1))
         return tf.reshape(tf.linalg.matmul(phi, Ys), tf.shape(F))
 
-    def conditional_variance(self, F):
+    def _conditional_variance(self, F):
         phi = self._make_phi(F)
         Ys = tf.reshape(np.arange(self.num_bins, dtype=default_float()), (-1, 1))
         E_y = phi @ Ys
@@ -574,7 +678,7 @@ class MonteCarloLikelihood(Likelihood):
     def _mc_quadrature(self, funcs, Fmu, Fvar, logspace: bool = False, epsilon=None, **Ys):
         return ndiag_mc(funcs, self.num_monte_carlo_points, Fmu, Fvar, logspace, epsilon, **Ys)
 
-    def predict_mean_and_var(self, Fmu, Fvar, epsilon=None):
+    def _predict_mean_and_var(self, Fmu, Fvar, epsilon=None):
         r"""
         Given a Normal distribution for the latent function,
         return the mean of Y
@@ -603,7 +707,7 @@ class MonteCarloLikelihood(Likelihood):
         V_y = E_y2 - tf.square(E_y)
         return E_y, V_y  # [N, D]
 
-    def predict_density(self, Fmu, Fvar, Y, epsilon=None):
+    def _predict_density(self, Fmu, Fvar, Y, epsilon=None):
         r"""
         Given a Normal distribution for the latent function, and a datum Y,
         compute the log predictive density of Y.
@@ -623,7 +727,7 @@ class MonteCarloLikelihood(Likelihood):
         """
         return self._mc_quadrature(self.log_prob, Fmu, Fvar, Y=Y, logspace=True, epsilon=epsilon)
 
-    def variational_expectations(self, Fmu, Fvar, Y, epsilon=None):
+    def _variational_expectations(self, Fmu, Fvar, Y, epsilon=None):
         r"""
         Compute the expected log density of the data, given a Gaussian
         distribution for the function values.
@@ -662,20 +766,15 @@ class Softmax(MonteCarloLikelihood):
     """
 
     def __init__(self, num_classes, **kwargs):
-        super().__init__(**kwargs)
-        self.num_classes = num_classes
+        super().__init__(num_latent_functions=num_classes, num_data_dims=1, **kwargs)
+        self.num_classes = self.num_latent_functions
 
-    def log_prob(self, F, Y):
-        with tf.control_dependencies(
-            [tf.assert_equal(Y.shape[1], 1), tf.assert_equal(F.shape[1], self.num_classes)]
-        ):
-            return -tf.nn.sparse_softmax_cross_entropy_with_logits(logits=F, labels=Y[:, 0])[
-                :, None
-            ]
+    def _log_prob(self, F, Y):
+            return -tf.nn.sparse_softmax_cross_entropy_with_logits(logits=F, labels=Y[:, 0])
 
-    def conditional_mean(self, F):
+    def _conditional_mean(self, F):
         return tf.nn.softmax(F)
 
-    def conditional_variance(self, F):
+    def _conditional_variance(self, F):
         p = self.conditional_mean(F)
         return p - p ** 2
