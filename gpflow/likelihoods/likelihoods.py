@@ -71,7 +71,8 @@ def inv_probit(x):
 class Likelihood(Module):
     def __init__(self, num_latent_functions: int, num_data_dims:int):
         """
-        A base class for likelihoods, which conect the latent functions ('F') to the data ('Y').
+        A base class for likelihoods, which specifies an observation model 
+        connecting the latent functions ('F') to the data ('Y').
 
         All of the members of this class are expected to obey some shape conventions, as specified
         by num_latent_functions and num_data_dims.
