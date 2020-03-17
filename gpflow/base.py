@@ -84,8 +84,8 @@ class Parameter(tf.Module):
                 unconstrained_value, dtype=dtype, name=name, trainable=trainable
             )
 
-    def log_prior(self):
-        """ Prior probability density of the constrained variable. """
+    def log_prior_density(self):
+        """ Log of the prior probability density of the constrained variable. """
 
         if self.prior is None:
             return tf.convert_to_tensor(0.0, dtype=self.dtype)
@@ -302,9 +302,12 @@ def _cast_to_dtype(value: VariableData, dtype: Optional[DType] = None) -> tf.Ten
     if dtype is None:
         dtype = default_float()
     if tf.is_tensor(value):
+        # TODO(awav) TF2.2 resolves issue with cast.
+        # From TF2.2, `tf.cast` can be used alone instead of this auxiliary function.
+        # workaround for https://github.com/tensorflow/tensorflow/issues/35938
         return tf.cast(value, dtype)
     else:
-        return tf.convert_to_tensor(value, dtype)
+        return tf.convert_to_tensor(value, dtype=dtype)
 
 
 def _to_constrained(value: VariableData, transform: Transform) -> tf.Tensor:

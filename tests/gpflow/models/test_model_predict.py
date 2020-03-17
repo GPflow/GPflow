@@ -144,6 +144,9 @@ def test_gaussian_full_cov_samples(input_dim, output_dim, N, Ntest, M, num_sampl
     samples = model_gp.predict_f_samples(Xtest, num_samples)
     assert samples.shape == samples_shape
 
+    samples = model_gp.predict_f_samples(Xtest, num_samples, full_cov=False)
+    assert samples.shape == samples_shape
+
 
 @pytest.mark.parametrize("model_setup", model_setups)
 @pytest.mark.parametrize("input_dim", [3])

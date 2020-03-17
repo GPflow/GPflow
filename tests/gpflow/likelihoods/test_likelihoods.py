@@ -40,6 +40,7 @@ from gpflow.likelihoods import (
 )
 from gpflow.quadrature import ndiagquad
 from gpflow.config import default_float, default_int
+from gpflow.utilities import to_default_float, to_default_int
 
 tf.random.set_seed(99012)
 
@@ -265,10 +266,10 @@ def test_softmax_y_shape_assert(num, dimF, dimY):
 def test_softmax_bernoulli_equivalence(num, dimF, dimY):
     dF = np.vstack((np.random.randn(num - 3, dimF), np.array([[-3.0, 0.0], [3, 0.0], [0.0, 0.0]])))
     dY = np.vstack((np.random.randn(num - 3, dimY), np.ones((3, dimY)))) > 0
-    F = tf.cast(dF, default_float())
+    F = to_default_float(dF)
     Fvar = tf.exp(tf.stack([F[:, 1], -10.0 + tf.zeros(F.shape[0], dtype=F.dtype)], axis=1))
     F = tf.stack([F[:, 0], tf.zeros(F.shape[0], dtype=F.dtype)], axis=1)
-    Y = tf.cast(dY, default_int())
+    Y = to_default_int(dY)
     Ylabel = 1 - Y
 
     softmax_likelihood = Softmax(dimF)
@@ -361,7 +362,7 @@ def test_robust_max_multiclass_predict_density(
     likelihood = MultiClass(num_classes, invlink=MockRobustMax(num_classes, epsilon))
     F = tf.ones((num_points, num_classes))
     rng = np.random.RandomState(1)
-    Y = tf.cast(rng.randint(num_classes, size=(num_points, 1)), dtype=default_int())
+    Y = to_default_int(rng.randint(num_classes, size=(num_points, 1)))
     prediction = likelihood.predict_density(F, F, Y)
 
     assert_allclose(prediction, expected_prediction, tol, tol)

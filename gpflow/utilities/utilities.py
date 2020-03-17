@@ -8,6 +8,7 @@ import tensorflow as tf
 import tensorflow_probability as tfp
 from tabulate import tabulate
 
+from .ops import cast
 from ..base import Parameter
 from ..config import default_float, default_int, default_summary_fmt
 
@@ -37,11 +38,11 @@ TraverseUpdateCallable = Callable[[TraverseInput, Path, State], State]
 
 
 def to_default_int(x):
-    return tf.cast(x, dtype=default_int())
+    return cast(x, dtype=default_int())
 
 
 def to_default_float(x):
-    return tf.cast(x, dtype=default_float())
+    return cast(x, dtype=default_float())
 
 
 def set_trainable(model: tf.Module, flag: bool):
