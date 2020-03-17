@@ -1,4 +1,4 @@
-# Copyright 2016 the GPflow authors.
+# cOPYRIGHT 2016 THE gpFLOW AUTHORS.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -86,4 +86,4 @@ def test_methods_predict_log_density(model):
     rng = Datum().rng
     Ys = rng.randn(10, 1)
     d = model.predict_log_density((default_datum.Xs, Ys))
-    assert_array_equal(d.shape, (10, 1))
+    assert_array_equal(d.shape, (10,))
