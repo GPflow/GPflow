@@ -69,7 +69,7 @@ def inv_probit(x):
 
 
 class Likelihood(Module):
-    def __init__(self, num_latent_functions: int, num_data_dims:int):
+    def __init__(self, num_latent_functions: int, num_data_dims: int):
         """
         A base class for likelihoods, which specifies an observation model 
         connecting the latent functions ('F') to the data ('Y').
@@ -222,6 +222,7 @@ class ScalarLikelihood(Likelihood):
     integrals in this class, though they may be overwritten by inherriting classes where those
     integrals are available in closed form.
     """
+
     def __init__(self, **kwargs):
         super().__init__(num_latent_functions=None, num_data_dims=None, **kwargs)
 
@@ -229,7 +230,7 @@ class ScalarLikelihood(Likelihood):
         """
         Assert that the dimensions of the latent functions and the data are compatible
         """
-        tf.debugging.assert_shapes([(F, (..., 'num_latent')), (Y, (..., 'num_latent'))])
+        tf.debugging.assert_shapes([(F, (..., "num_latent")), (Y, (..., "num_latent"))])
 
     def _log_prob(self, F, Y):
         r"""
@@ -255,7 +256,9 @@ class ScalarLikelihood(Likelihood):
         likelihoods (Gaussian, Poisson) will implement specific cases.
         """
         nghp = self.num_gauss_hermite_points
-        return tf.reduce_sum(ndiagquad(self._scalar_density, nghp, Fmu, Fvar, logspace=True, Y=Y), axis=-1)
+        return tf.reduce_sum(
+            ndiagquad(self._scalar_density, nghp, Fmu, Fvar, logspace=True, Y=Y), axis=-1
+        )
 
     def _predict_mean_and_var(self, Fmu, Fvar):
         r"""
@@ -322,9 +325,10 @@ class Gaussian(ScalarLikelihood):
 
     def _variational_expectations(self, Fmu, Fvar, Y):
         return tf.reduce_sum(
-            - 0.5 * np.log(2 * np.pi)
+            -0.5 * np.log(2 * np.pi)
             - 0.5 * tf.math.log(self.variance)
-            - 0.5 * ((Y - Fmu) ** 2 + Fvar) / self.variance, axis=-1
+            - 0.5 * ((Y - Fmu) ** 2 + Fvar) / self.variance,
+            axis=-1,
         )
 
 
@@ -763,8 +767,9 @@ class MonteCarloLikelihood(Likelihood):
 
         Here, we implement a default Monte Carlo routine.
         """
-        return tf.reduce_sum(self._mc_quadrature(self.log_prob, Fmu, Fvar, Y=Y, logspace=True,
-                                                 epsilon=epsilon), -1)
+        return tf.reduce_sum(
+            self._mc_quadrature(self.log_prob, Fmu, Fvar, Y=Y, logspace=True, epsilon=epsilon), -1
+        )
 
     def _variational_expectations(self, Fmu, Fvar, Y, epsilon=None):
         r"""
@@ -785,8 +790,9 @@ class MonteCarloLikelihood(Likelihood):
 
         Here, we implement a default Monte Carlo quadrature routine.
         """
-        return tf.reduce_sum(self._mc_quadrature(self.log_prob, Fmu, Fvar, Y=Y, epsilon=epsilon),
-                             axis=-1)
+        return tf.reduce_sum(
+            self._mc_quadrature(self.log_prob, Fmu, Fvar, Y=Y, epsilon=epsilon), axis=-1
+        )
 
 
 class GaussianMC(MonteCarloLikelihood, Gaussian):

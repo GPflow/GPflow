@@ -24,15 +24,16 @@ rng = np.random.RandomState(0)
 
 class ModelSetup:
     def __init__(
-            self,
-            model_class,
-            kernel=Matern32(),
-            likelihood=gpflow.likelihoods.Gaussian(),
-            whiten=None,
-            q_diag=None,
-            requires_inducing_variables=True,
-            requires_data=False,
-            requires_likelihood=True):
+        self,
+        model_class,
+        kernel=Matern32(),
+        likelihood=gpflow.likelihoods.Gaussian(),
+        whiten=None,
+        q_diag=None,
+        requires_inducing_variables=True,
+        requires_data=False,
+        requires_likelihood=True,
+    ):
 
         self.model_class = model_class
         self.kernel = kernel
