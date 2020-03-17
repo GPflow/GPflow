@@ -137,12 +137,9 @@ class Parameter(tf.Module):
     @property
     def trainable(self):
         """
-        `True` if this instance is trainable, else `False`. Cannot be set directly. Instead use
+        `True` if this instance is trainable, else `False`.
 
-            >>> from gpflow import set_trainable
-            >>> p = Parameter(...)
-            >>> set_trainable(p)
-
+        This attribute cannot be set directly. Use :func:`gpflow.set_trainable`.
         """
         return self._unconstrained.trainable
 

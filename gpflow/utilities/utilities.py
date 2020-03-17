@@ -6,7 +6,6 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, TypeVar, Union
 import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
-from absl import logging
 from tabulate import tabulate
 
 from ..base import Parameter
