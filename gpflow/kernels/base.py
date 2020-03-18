@@ -206,7 +206,7 @@ class Combination(Kernel):
                 kernels_list.extend(k.kernels)
             else:
                 kernels_list.append(k)
-        self._kernels = kernels_list
+        self._kernels = tuple(kernels_list)
 
     @property
     def kernels(self):

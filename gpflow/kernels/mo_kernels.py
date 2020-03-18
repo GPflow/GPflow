@@ -134,7 +134,7 @@ class SeparateIndependent(MultioutputKernel, Combination):
     @property
     def kernels(self):
         """The underlying kernels in the multioutput kernel"""
-        return tuple(self._kernels)
+        return self._kernels
 
     def K(self, X, X2=None, full_output_cov=True):
         if full_output_cov:
@@ -183,7 +183,7 @@ class LinearCoregionalization(IndependentLatent, Combination):
     @property
     def kernels(self):
         """The underlying kernels in the multioutput kernel"""
-        return tuple(self._kernels)
+        return self._kernels
 
     def Kgg(self, X, X2):
         return tf.stack([k.K(X, X2) for k in self.kernels], axis=0)  # [L, N, N2]
