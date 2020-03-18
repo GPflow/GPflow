@@ -56,18 +56,19 @@ def test_no_kernels_missed(kernel_class):
     skipped_kernel_classes = [
         p.values[0] for p in KERNEL_CLASSES if isinstance(p, type(pytest.param()))
     ]
-    if kernel_class in tested_kernels:
-        return  # tested
-    if kernel_class in skipped_kernel_classes:
-        return  # not tested but currently expected to fail
-    if kernel_class in [
+    abstract_base_classes = [
         kernels.Kernel,
         kernels.Combination,
         gpflow.kernels.base.ReducingCombination,
         kernels.Static,
         kernels.Stationary,
-    ]:  # abstract base classes
-        return
+    ]
+    if kernel_class in tested_kernel_classes:
+        return  # tested
+    if kernel_class in skipped_kernel_classes:
+        return  # not tested but currently expected to fail
+    if kernel_class in abstract_base_classes:
+        return  # cannot test abstract base classes
     if issubclass(kernel_class, kernels.MultioutputKernel):
         return  # cannot currently test MultioutputKernels
     assert False, f"no broadcasting test for kernel class {kernel_class}"
