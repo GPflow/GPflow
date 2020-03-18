@@ -38,3 +38,12 @@ def ci_range(n: int, test_n: int = 2):
 
 def ci_list(lst: list, test_n=2):
     return lst[:test_n] if is_continuous_integration() else lst
+
+
+def subclasses(cls):
+    """
+    Generator that returns all (not just direct) subclasses of `cls`
+    """
+    for subclass in cls.__subclasses__():
+        yield from subclasses(subclass)
+        yield subclass
