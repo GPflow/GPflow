@@ -131,11 +131,6 @@ class SeparateIndependent(MultioutputKernel, Combination):
     def num_latent_gps(self):
         return len(self.kernels)
 
-    @property
-    def kernels(self):
-        """The underlying kernels in the multioutput kernel"""
-        return self._kernels
-
     def K(self, X, X2=None, full_output_cov=True):
         if full_output_cov:
             Kxxs = tf.stack([k.K(X, X2) for k in self.kernels], axis=2)  # [N, N2, P]
@@ -179,11 +174,6 @@ class LinearCoregionalization(IndependentLatent, Combination):
     @property
     def num_latent_gps(self):
         return self.W.shape[-1]  # L
-
-    @property
-    def kernels(self):
-        """The underlying kernels in the multioutput kernel"""
-        return self._kernels
 
     def Kgg(self, X, X2):
         return tf.stack([k.K(X, X2) for k in self.kernels], axis=0)  # [L, N, N2]
