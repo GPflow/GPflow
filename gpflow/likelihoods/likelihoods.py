@@ -236,12 +236,17 @@ class Likelihood(Module):
 
            ∫ log(p(y=Y|F))q(F) df.
 
+        This only works if the broadcasting dimension of the statistics of q(F) (mean and variance)
+        are broadcastable with that of the data Y.
+
         :param Fmu: mean function evaluation Tensor, with shape [..., num_latent_functions]
         :param Fvar: variance of function evaluation Tensor, with shape [..., num_latent_functions]
         :param Y: observation Tensor, with shape [..., num_data_dims]:
         :return variational expectations, with shape [...]
         """
         tf.debugging.assert_equal(tf.shape(Fmu), tf.shape(Fvar))
+        # returns an error if Y[:-1] and Fmu[:-1] do not broadcast together
+        _ = tf.broadcast_dynamic_shape(tf.shape(Fmu)[:-1], tf.shape(Y)[:-1])
         self.check_last_dims_valid(Fmu, Y)
         ret = self._variational_expectations(Fmu, Fvar, Y)
         self.check_return_shape(ret, Fmu, Y)
