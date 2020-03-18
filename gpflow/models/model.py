@@ -160,12 +160,13 @@ class GPModel(BayesianModel):
         Produce samples from the posterior latent function(s) at the input points.
 
         :param Xnew: DataPoint
-            Input locations at which to draw samples
+            Input locations at which to draw samples, shape [..., N, D]
+            where N is the number of rows and D is the input dimension of each point.
         :param num_samples:
             Number of samples to draw.
             If `None`, a single sample is drawn and the return shape is [..., N, P],
             for any positive integer the return shape contains an extra batch
-            dimension, [..., S, N, P], with S = num_samples.
+            dimension, [..., S, N, P], with S = num_samples and P is the number of outputs.
         :param full_cov:
             If True, draw correlated samples over the inputs. Computes the Cholesky over the
             dense covariance matrix of size [num_data, num_data].
