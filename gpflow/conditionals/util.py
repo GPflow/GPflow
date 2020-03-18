@@ -1,6 +1,5 @@
 from typing import Optional
 import tensorflow as tf
-from tensorflow.debugging import assert_shapes
 
 from ..config import default_float, default_jitter
 from ..utilities.ops import leading_transpose
@@ -67,7 +66,7 @@ def base_conditional(
         shape_constraints.append(
             (q_sqrt, (["M", "R"] if q_sqrt.shape.ndims == 2 else ["R", "M", "M"]))
         )
-    assert_shapes(
+    tf.debugging.assert_shapes(
         shape_constraints,
         message="base_conditional() arguments "
         "[Note that this check verifies the shape of an alternative "
@@ -130,7 +129,7 @@ def base_conditional(
         (fmean, [..., "N", "R"]),
         (fvar, [..., "R", "N", "N"] if full_cov else [..., "N", "R"]),
     ]
-    assert_shapes(shape_constraints, message="base_conditional() return values")
+    tf.debugging.assert_shapes(shape_constraints, message="base_conditional() return values")
 
     return fmean, fvar
 
@@ -152,7 +151,7 @@ def sample_mvn(mean, cov, cov_structure=None, num_samples=None):
         (mean, [..., "N", "D"]),
         (cov, [..., "N", "D"] if cov_structure == "diag" else [..., "N", "D", "D"]),
     ]
-    assert_shapes(shape_constraints, message="sample_mvn() arguments")
+    tf.debugging.assert_shapes(shape_constraints, message="sample_mvn() arguments")
 
     mean_shape = tf.shape(mean)
     S = num_samples if num_samples is not None else 1
@@ -180,7 +179,7 @@ def sample_mvn(mean, cov, cov_structure=None, num_samples=None):
         (mean, [..., "N", "D"]),
         (samples, [..., "S", "N", "D"]),
     ]
-    assert_shapes(shape_constraints, message="sample_mvn() return values")
+    tf.debugging.assert_shapes(shape_constraints, message="sample_mvn() return values")
 
     if num_samples is None:
         return tf.squeeze(samples, axis=-3)  # [..., N, D]
@@ -297,7 +296,7 @@ def independent_interdomain_conditional(
     shape_constraints.extend(
         [(Knn, intended_cov_shape), (fmean, ["N", "P"]), (fvar, intended_cov_shape),]
     )
-    assert_shapes(shape_constraints, message="independent_interdomain_conditional()")
+    tf.debugging.assert_shapes(shape_constraints, message="independent_interdomain_conditional()")
 
     return fmean, fvar
 
@@ -432,7 +431,7 @@ def fully_correlated_conditional_repeat(
     shape_constraints.extend(
         [(Knn, intended_cov_shape), (fmean, ["R", "N", "P"]), (fvar, ["R"] + intended_cov_shape),]
     )
-    assert_shapes(shape_constraints, message="fully_correlated_conditional_repeat()")
+    tf.debugging.assert_shapes(shape_constraints, message="fully_correlated_conditional_repeat()")
 
     return fmean, fvar
 
@@ -507,6 +506,6 @@ def mix_latent_gp(W, g_mean, g_var, full_cov, full_output_cov):
     shape_constraints.extend(
         [(f_mean, [..., "N", "P"]), (f_var, intended_cov_shape),]
     )
-    assert_shapes(shape_constraints, message="mix_latent_gp()")
+    tf.debugging.assert_shapes(shape_constraints, message="mix_latent_gp()")
 
     return f_mean, f_var

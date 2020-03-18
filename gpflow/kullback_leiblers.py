@@ -15,7 +15,6 @@
 # -*- coding: utf-8 -*-
 
 import tensorflow as tf
-from tensorflow.debugging import assert_shapes
 from .config import default_float, default_jitter
 from .covariances.kuus import Kuu
 from .inducing_variables import InducingVariables
@@ -83,7 +82,7 @@ def gauss_kl(q_mu, q_sqrt, K=None, *, K_cholesky=None):
             shape_constraints.append(
                 (K_cholesky, (["L", "M", "M"] if len(K_cholesky.shape) == 3 else ["M", "M"]))
             )
-    assert_shapes(shape_constraints, message="gauss_kl() arguments")
+    tf.debugging.assert_shapes(shape_constraints, message="gauss_kl() arguments")
 
     M, L = tf.shape(q_mu)[0], tf.shape(q_mu)[1]
 
@@ -146,5 +145,5 @@ def gauss_kl(q_mu, q_sqrt, K=None, *, K_cholesky=None):
         scale = 1.0 if is_batched else to_default_float(L)
         twoKL += scale * sum_log_sqdiag_Lp
 
-    assert_shapes([(twoKL, ())], message="gauss_kl() return value")  # returns scalar
+    tf.debugging.assert_shapes([(twoKL, ())], message="gauss_kl() return value")  # returns scalar
     return 0.5 * twoKL

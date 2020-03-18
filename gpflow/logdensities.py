@@ -14,7 +14,6 @@
 
 import numpy as np
 import tensorflow as tf
-from tensorflow.debugging import assert_shapes
 from .config import default_float
 from .utilities import to_default_float
 
@@ -105,6 +104,6 @@ def multivariate_normal(x, mu, L):
         (L, ["D", "D"]),
         (p, ["N"]),
     ]
-    assert_shapes(shape_constraints, message="multivariate_normal()")
+    tf.debugging.assert_shapes(shape_constraints, message="multivariate_normal()")
 
     return p
