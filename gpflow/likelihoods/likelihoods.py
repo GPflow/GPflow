@@ -78,7 +78,7 @@ class Likelihood(Module):
         by num_latent_functions and num_data_dims.
 
         If we're operating on an array of function values 'F', then the last dimension represents
-        multiple functions (preceeding dimensions could represent different data points, or
+        multiple functions (preceding dimensions could represent different data points, or
         different random samples, for example). Similarly, the last dimension of Y represents a
         single data point. We check that the dimensions are as this object expects.
 
@@ -92,7 +92,7 @@ class Likelihood(Module):
 
     def check_last_dims_valid(self, F, Y):
         """
-        Assert that the dimensions of the latent functions F and the data Y are compatible
+        Assert that the dimensions of the latent functions F and the data Y are compatible.
         :param F: function evaluation Tensor, with shape [..., num_latent_functions]
         :param Y: observation Tensor, with shape [..., num_data_dims]
         """
@@ -102,7 +102,7 @@ class Likelihood(Module):
     def check_return_shape(self, result, F, Y):
         """
         Check that the shape of a computed statistic of the data
-        is the broadcasted shape from F and Y
+        is the broadcasted shape from F and Y.
         :param result: result Tensor, with shape [...]
         :param F: function evaluation Tensor, with shape [..., num_latent_functions]
         :param Y: observation Tensor, with shape [..., num_data_dims]
@@ -112,8 +112,7 @@ class Likelihood(Module):
 
     def check_latent_dims(self, F):
         """
-        Ensure that a tensor of latent functions F has
-        num_latent_functions as right most dimension
+        Ensure that a tensor of latent functions F has num_latent_functions as right most dimension.
         :param F: function evaluation Tensor, with shape [..., num_latent_functions]
         """
         tf.debugging.assert_shapes([(F, (..., self.num_latent_functions))])
@@ -156,7 +155,7 @@ class Likelihood(Module):
 
     def conditional_variance(self, F):
         """
-        The conditional marginal variance of Y|F ( [var(Y_1|f), ..., var(Y_K|f)]
+        The conditional marginal variance of Y|F: [var(Y₁|F), ..., var(Yₖ|F)]
         where K = num_data_dims
         :param F: function evaluation Tensor, with shape [..., num_latent_functions]
         :return variance [..., num_data_dims]
@@ -168,7 +167,7 @@ class Likelihood(Module):
 
     def _conditional_variance(self, F):
         """
-        The conditional marginal variance of Y|F ( [var(Y_1|f), ..., var(Y_K|f)]
+        The conditional marginal variance of Y|F: [var(Y₁|F), ..., var(Yₖ|F)]
         :param F: function evaluation Tensor, with shape [..., num_latent_functions]
         :return variance [..., num_data_dims]
         """
@@ -176,7 +175,7 @@ class Likelihood(Module):
 
     def predict_mean_and_var(self, Fmu, Fvar):
         """
-        The conditional mean and marginal variance of Y|F ( [var(Y_1|f), ..., var(Y_K|f)]
+        The conditional mean and marginal variance of Yₖ|F
         :param Fmu: mean function evaluation Tensor, with shape [..., num_latent_functions]
         :param Fvar: variance of function evaluation Tensor, with shape [..., num_latent_functions]
         :return mean and variance, both with shape [..., num_data_dims]
@@ -197,15 +196,15 @@ class Likelihood(Module):
         compute the log predictive density of Y.
 
         i.e. if
-            q(f) = N(Fmu, Fvar)
+            q(F) = N(Fmu, Fvar)
 
         and this object represents
 
-            p(y|f)
+            p(y|F)
 
         then this method computes the predictive density
 
-            \log \int p(y=Y|f)q(f) df
+            log ∫ p(y=Y|F)q(F) df
 
         :param Fmu: mean function evaluation Tensor, with shape [..., num_latent_functions]
         :param Fvar: variance of function evaluation Tensor, with shape [..., num_latent_functions]
@@ -227,15 +226,15 @@ class Likelihood(Module):
         distribution for the function values.
 
         if
-            q(f) = N(Fmu, Fvar)
+            q(F) = N(Fmu, Fvar)
 
         and this object represents
 
-            p(y|f)
+            p(y|F)
 
         then this method computes
 
-           \int (\log p(y|f)) q(f) df.
+           ∫ log(p(y=Y|F))q(F) df.
 
         :param Fmu: mean function evaluation Tensor, with shape [..., num_latent_functions]
         :param Fvar: variance of function evaluation Tensor, with shape [..., num_latent_functions]
@@ -254,18 +253,21 @@ class Likelihood(Module):
 
 class ScalarLikelihood(Likelihood):
     """
-    A likelihood class that helps with scalar likelihood functions: likelihoods where each latent
-    function is associated with a single observation variable.
+    A likelihood class that helps with scalar likelihood functions: likelihoods where
+    each scalar latent function is associated with a single scalar observation variable.
 
     If there are multiple latent functions, then there must be a corresponding number of data: we
     check for this.
 
-    The `Likelihood` class contains methods to compute marginal statistics of the data ϕ(Y),
-    where the latent processes F are marginalized under a distribution
-    whose pdf q(F) is fully factorized q(F) = 𝚷ₖ q(fₖ).
-    
+    The `Likelihood` class contains methods to compute marginal statistics of functions
+    of the latents and the data ϕ(y,f):
+     * variational_expectations:  ϕ(y,f) = log p(y|f)
+     * predict_density: ϕ(y,f) = p(y|f)
+    Those statistics are computed after having first marginalized the latent processes f
+    under a multivariate normal distribution q(f) that is fully factorized.
+
     Some univariate integrals can be done by quadrature: we implement quadrature routines for 1D
-    integrals in this class, though they may be overwritten by inherriting classes where those
+    integrals in this class, though they may be overwritten by inheriting classes where those
     integrals are available in closed form.
     """
 
@@ -282,7 +284,7 @@ class ScalarLikelihood(Likelihood):
 
     def _log_prob(self, F, Y):
         r"""
-        Compute log p(Y |F), where by convention we sum out the last axis as it represented
+        Compute log p(Y|F), where by convention we sum out the last axis as it represented
         independent latent functions and observations.
         :param F: function evaluation Tensor, with shape [..., num_latent_functions]
         :param Y: observation Tensor, with shape [..., num_latent_functions]
@@ -332,11 +334,11 @@ class ScalarLikelihood(Likelihood):
 
         then this method computes the predictive mean
 
-           \int\int y p(y|f)q(f) df dy
+           ∫∫ y p(y|f)q(f) df dy
 
         and the predictive variance
 
-           \int\int y^2 p(y|f)q(f) df dy  - [ \int\int y^2 p(y|f)q(f) df dy ]^2
+           ∫∫ y² p(y|f)q(f) df dy  - [ ∫∫ y p(y|f)q(f) df dy ]²
 
         Here, we implement a default Gauss-Hermite quadrature routine, but some
         likelihoods (e.g. Gaussian) will implement specific cases.
@@ -400,12 +402,12 @@ class Poisson(ScalarLikelihood):
 
     let g(.) be the inverse-link function, then this likelihood represents
 
-    p(y_i | f_i) = Poisson(y_i | g(f_i) * binsize)
+    p(yᵢ | fᵢ) = Poisson(yᵢ | g(fᵢ) * binsize)
 
     Note:binsize
     For use in a Log Gaussian Cox process (doubly stochastic model) where the
     rate function of an inhomogeneous Poisson process is given by a GP.  The
-    intractable likelihood can be approximated by gridding the space (into bins
+    intractable likelihood can be approximated via a Riemann sum (with bins
     of size 'binsize') and using this Poisson likelihood.
     """
 
@@ -542,16 +544,16 @@ class Beta(ScalarLikelihood):
     This uses a reparameterisation of the Beta density. We have the mean of the
     Beta distribution given by the transformed process:
 
-        m = sigma(f)
+        m = σ(f)
 
-    and a scale parameter. The familiar alpha, beta parameters are given by
+    and a scale parameter. The familiar α, β parameters are given by
 
-        m     = alpha / (alpha + beta)
-        scale = alpha + beta
+        m     = α / (α + β)
+        scale = α + β
 
     so:
-        alpha = scale * m
-        beta  = scale * (1-m)
+        α = scale * m
+        β  = scale * (1-m)
     """
 
     def __init__(self, invlink=inv_probit, scale=1.0, **kwargs):
@@ -698,18 +700,18 @@ class Ordinal(ScalarLikelihood):
     """
     A likelihood for doing ordinal regression.
 
-    The data are integer values from 0 to K, and the user must specify (K-1)
+    The data are integer values from 0 to k, and the user must specify (k-1)
     'bin edges' which define the points at which the labels switch. Let the bin
-    edges be [a_0, a_1, ... a_{K-1}], then the likelihood is
+    edges be [a₀, a₁, ... aₖ₋₁], then the likelihood is
 
-    p(Y=0|F) = phi((a_0 - F) / sigma)
-    p(Y=1|F) = phi((a_1 - F) / sigma) - phi((a_0 - F) / sigma)
-    p(Y=2|F) = phi((a_2 - F) / sigma) - phi((a_1 - F) / sigma)
+    p(Y=0|F) = ɸ((a₀ - F) / σ)
+    p(Y=1|F) = ɸ((a₁ - F) / σ) - ɸ((a₀ - F) / σ)
+    p(Y=2|F) = ɸ((a₂ - F) / σ) - ɸ((a₁ - F) / σ)
     ...
-    p(Y=K|F) = 1 - phi((a_{K-1} - F) / sigma)
+    p(Y=K|F) = 1 - ɸ((aₖ₋₁ - F) / σ)
 
-    where phi is the cumulative density function of a Gaussian (the inverse probit
-    function) and sigma is a parameter to be learned. A reference is:
+    where ɸ is the cumulative density function of a Gaussian (the inverse probit
+    function) and σ is a parameter to be learned. A reference is:
 
     @article{chu2005gaussian,
       title={Gaussian processes for ordinal regression},
@@ -796,11 +798,11 @@ class MonteCarloLikelihood(Likelihood):
 
         then this method computes the predictive mean
 
-           \int\int y p(y|f)q(f) df dy
+           ∫∫ y p(y|f)q(f) df dy
 
         and the predictive variance
 
-           \int\int y^2 p(y|f)q(f) df dy  - [ \int\int y^2 p(y|f)q(f) df dy ]^2
+           ∫∫ y² p(y|f)q(f) df dy  - [ ∫∫ y p(y|f)q(f) df dy ]²
 
         Here, we implement a default Monte Carlo routine.
         """
@@ -825,7 +827,7 @@ class MonteCarloLikelihood(Likelihood):
 
         then this method computes the predictive density
 
-            \log \int p(y=Y|f)q(f) df
+            log ∫ p(y=Y|f)q(f) df
 
         Here, we implement a default Monte Carlo routine.
         """
@@ -847,7 +849,7 @@ class MonteCarloLikelihood(Likelihood):
 
         then this method computes
 
-           \int (\log p(y|f)) q(f) df.
+           ∫ (log p(y|f)) q(f) df.
 
 
         Here, we implement a default Monte Carlo quadrature routine.
