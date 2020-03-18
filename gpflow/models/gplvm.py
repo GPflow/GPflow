@@ -121,7 +121,8 @@ class BayesianGPLVM(GPModel):
 
         if inducing_variable is None:
             # By default we initialize by subset of initial latent points
-            Z = tf.random.shuffle(X_data_mean)[:num_inducing_variables]  # tf.random.shuffle not in place
+            # Note that tf.random.shuffle returns a copy, it does not shuffle in-place
+            Z = tf.random.shuffle(X_data_mean)[:num_inducing_variables]
             inducing_variable = InducingPoints(Z)
 
         self.inducing_variable = inducingpoint_wrapper(inducing_variable)
