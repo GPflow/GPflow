@@ -42,7 +42,7 @@ batch_size = 50
 M = 10
 
 x = np.random.uniform(size=(N, D))
-y = np.sin(10 * x)
+y = np.sin(10 * x[:, :1])
 
 data = (x, y)
 inducing_variable = tf.random.uniform((M, D))
