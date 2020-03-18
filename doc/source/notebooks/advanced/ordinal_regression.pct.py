@@ -26,7 +26,7 @@ import numpy as np
 import matplotlib
 # %matplotlib inline
 matplotlib.rcParams['figure.figsize'] = (12, 6)
-plt = matplotlib.pyplot
+from matplotlib import pyplot as plt
 
 np.random.seed(123)  # for reproducibility
 
@@ -107,7 +107,7 @@ def pred_log_density(m):
         Ytest = np.full_like(Xtest, y)
         # Predict the log density
         densities.append(m.predict_log_density((Xtest, Ytest)))
-    return np.hstack(densities).T
+    return np.vstack(densities)
 
 
 # %%
