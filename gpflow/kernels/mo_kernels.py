@@ -118,7 +118,7 @@ class SharedIndependent(MultioutputKernel):
         return tf.linalg.diag(Ks) if full_output_cov else Ks  # [N, P, P] or [N, P]
 
 
-class SeparateIndependent(MultioutputKernel, Combination):
+class SeparateIndependent(Combination, MultioutputKernel):
     """
     - Separate: we use different kernel for each output latent
     - Independent: Latents are uncorrelated a priori.
@@ -162,7 +162,7 @@ class IndependentLatent(MultioutputKernel):
         raise NotImplementedError
 
 
-class LinearCoregionalization(IndependentLatent, Combination):
+class LinearCoregionalization(Combination, IndependentLatent):
     """
     Linear mixing of the latent GPs to form the output.
     """
