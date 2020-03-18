@@ -15,11 +15,12 @@
 # -*- coding: utf-8 -*-
 
 import tensorflow as tf
+from tensorflow.debugging import assert_shapes
 from .config import default_float, default_jitter
 from .covariances.kuus import Kuu
 from .inducing_variables import InducingVariables
 from .kernels import Kernel
-from .utilities import assert_shapes, Dispatcher, to_default_float
+from .utilities import Dispatcher, to_default_float
 
 prior_kl = Dispatcher("prior_kl")
 

@@ -1,8 +1,8 @@
 from typing import Optional
 import tensorflow as tf
+from tensorflow.debugging import assert_shapes
 
 from ..config import default_float, default_jitter
-from ..utilities import assert_shapes
 from ..utilities.ops import leading_transpose
 
 

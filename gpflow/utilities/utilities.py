@@ -13,8 +13,6 @@ from ..base import Parameter
 from ..config import default_float, default_int, default_summary_fmt
 
 __all__ = [
-    "ShapeError",
-    "assert_shapes",
     "set_trainable",
     "multiple_assign",
     "training_loop",
@@ -45,21 +43,6 @@ def to_default_int(x):
 
 def to_default_float(x):
     return cast(x, dtype=default_float())
-
-
-class ShapeError(AssertionError):
-    pass
-
-
-def assert_shapes(shapes, *args, **kwargs):
-    """
-    Wrapper around tf.debugging.assert_shapes() to replace ValueError with ShapeError
-    """
-    if __debug__:
-        try:
-            tf.debugging.assert_shapes(shapes, *args, **kwargs)
-        except ValueError as e:
-            raise ShapeError(e)
 
 
 def set_trainable(model: tf.Module, flag: bool):

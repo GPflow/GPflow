@@ -12,10 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import tensorflow as tf
 import numpy as np
+import tensorflow as tf
+from tensorflow.debugging import assert_shapes
 from .config import default_float
-from .utilities import assert_shapes, to_default_float
+from .utilities import to_default_float
 
 
 def gaussian(x, mu, var):
