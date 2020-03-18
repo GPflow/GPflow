@@ -132,7 +132,6 @@ class GPModel(BayesianModel):
         else:
             num_latent_gps = output_dim
 
-
         return num_latent_gps
 
     @abc.abstractmethod
