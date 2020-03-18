@@ -115,7 +115,7 @@ class GPModel(BayesianModel):
         return GPModel.calc_num_latent_gps(kernel, likelihood, output_dim)
 
     @staticmethod
-    def calc_num_latent_gps(kernel: likelihood: Likelihood, Kernel, output_dim: int) -> int:
+    def calc_num_latent_gps(kernel: Kernel, likelihood: Likelihood, output_dim: int) -> int:
         """
         Calculates the number of latent GPs required given the number of
         outputs `output_dim` and the type of likelihood and kernel.
