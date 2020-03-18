@@ -132,7 +132,7 @@ model = gpflow.models.SVGP(kernel=kernel, likelihood=likelihood, inducing_variab
 # You can set a module (or a particular parameter) to be non-trainable using the auxiliary method ```set_trainable(module, False)```:
 
 # %%
-from gpflow.utilities import set_trainable
+from gpflow import set_trainable
 
 set_trainable(likelihood, False)
 set_trainable(kernel.variance, False)

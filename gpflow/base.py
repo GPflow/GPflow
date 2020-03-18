@@ -136,11 +136,12 @@ class Parameter(tf.Module):
 
     @property
     def trainable(self):
-        return self._unconstrained.trainable
+        """
+        `True` if this instance is trainable, else `False`.
 
-    @trainable.setter
-    def trainable(self, flag: Union[bool, int]):
-        self._unconstrained._trainable = bool(flag)
+        This attribute cannot be set directly. Use :func:`gpflow.set_trainable`.
+        """
+        return self._unconstrained.trainable
 
     @property
     def initial_value(self):

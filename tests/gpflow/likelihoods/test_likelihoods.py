@@ -12,14 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
 import numpy as np
 import pytest
 import tensorflow as tf
 from numpy.testing import assert_allclose
 
 import gpflow
-from gpflow.inducing_variables import InducingPoints
 from gpflow.likelihoods import (
     ScalarLikelihood,
     Bernoulli,
@@ -117,7 +115,7 @@ def test_no_missing_likelihoods():
         if likelihood_class is ScalarLikelihood:
             continue  # base class
         if likelihood_class is SwitchedLikelihood:
-            continue  # tested separately
+            continue  # tested separately, see test_switched_likelihood.py
         if likelihood_class is MonteCarloLikelihood:
             continue  # abstract base class
         if issubclass(likelihood_class, MonteCarloLikelihood):
