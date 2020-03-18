@@ -197,7 +197,9 @@ class BayesianGPLVM(GPModel):
         bound -= KL
         return bound
 
-    def predict_f(self, Xnew: tf.Tensor, full_cov: bool = False, full_output_cov: bool = False) -> MeanAndVariance:
+    def predict_f(
+        self, Xnew: tf.Tensor, full_cov: bool = False, full_output_cov: bool = False
+    ) -> MeanAndVariance:
         """
         Compute the mean and variance of the latent function at some new points.
         Note that this is very similar to the SGPR prediction, for which
