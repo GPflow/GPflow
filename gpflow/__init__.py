@@ -16,6 +16,7 @@
 
 from .base import Module, Parameter
 from .config import default_int, default_float, default_jitter
+from .utilities import set_trainable
 from . import (
     conditionals,
     config,

@@ -86,6 +86,6 @@ def compare_vs_map(X1, X2, kernel):
     K11_native = kernel(X1)
     assert_allclose(K11_loop.numpy(), K11_native.numpy())
 
-    K1_loop = tf.stack([kernel(x, full=False) for x in X1])
-    K1_native = kernel(X1, full=False)
+    K1_loop = tf.stack([kernel(x, full_cov=False) for x in X1])
+    K1_native = kernel(X1, full_cov=False)
     assert_allclose(K1_loop.numpy(), K1_native.numpy())
