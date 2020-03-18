@@ -37,8 +37,9 @@ class SGPRBase(GPModel):
         self,
         data: Data,
         kernel: Kernel,
+        inducing_variable: InducingPoints,
+        *,
         mean_function: Optional[MeanFunction] = None,
-        inducing_variable: Optional[InducingPoints] = None,
         num_latent_gps: Optional[int] = None,
         noise_variance: float = 1.0,
     ):
