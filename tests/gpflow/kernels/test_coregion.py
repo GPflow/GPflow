@@ -24,9 +24,9 @@ rng = np.random.RandomState(0)
 class Datum:
     N1, N2 = 12, 16
     X = [rng.rand(N1, 2) * 1, rng.rand(N2, 2) * 1]
-    Y = [np.sin(x[:, :1]) + 0.9 * np.cos(x[:, 1:2] * 1.6)
-         + rng.randn(x.shape[0], 1) * 0.8
-         for x in X]
+    Y = [
+        np.sin(x[:, :1]) + 0.9 * np.cos(x[:, 1:2] * 1.6) + rng.randn(x.shape[0], 1) * 0.8 for x in X
+    ]
     label = [np.zeros((N1, 1)), np.ones((N2, 1))]
     X_augmented0 = np.hstack([X[0], label[0]])
     X_augmented1 = np.hstack([X[1], label[1]])
