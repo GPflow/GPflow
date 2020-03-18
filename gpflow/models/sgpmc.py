@@ -76,7 +76,7 @@ class SGPMC(GPModel):
         kernel, likelihood, mean_function are appropriate GPflow objects
         """
         if num_latent_gps is None:
-            num_latent_gps = self.calc_num_latent_gps_from_data(likelihood, kernel, data)
+            num_latent_gps = self.calc_num_latent_gps_from_data(data, kernel, likelihood)
         super().__init__(kernel, likelihood, mean_function, num_latent_gps=num_latent_gps)
         self.data = data
         self.num_data = data[0].shape[0]

@@ -105,13 +105,13 @@ class GPModel(BayesianModel):
         self.likelihood = likelihood
 
     @staticmethod
-    def calc_num_latent_gps_from_data(likelihood: Likelihood, kernel: Kernel, data) -> int:
+    def calc_num_latent_gps_from_data(data, kernel: Kernel, likelihood: Likelihood) -> int:
         _, Y = data
-        output_dim = Y.shape[1]
-        return GPModel.calc_num_latent_gps(likelihood, kernel, output_dim)
+        output_dim = Y.shape[-1]
+        return GPModel.calc_num_latent_gps(kernel, likelihood, output_dim)
 
     @staticmethod
-    def calc_num_latent_gps(likelihood: Likelihood, kernel: Kernel, output_dim: int) -> int:
+    def calc_num_latent_gps(kernel: likelihood: Likelihood, Kernel, output_dim: int) -> int:
         """
         Note: It's not nice for `GPModel` to need to be aware of specific
         likelihoods as here. However, `num_latent_gps` is a bit more broken in
@@ -121,7 +121,7 @@ class GPModel(BayesianModel):
         of mean_function.
         """
         if isinstance(kernel, MultioutputKernel):
-            # MulitoutputKernels already have num_latent_gps attributes
+            # MultioutputKernels already have num_latent_gps attributes
             num_latent_gps = kernel.num_latent_gps
         elif isinstance(likelihood, SwitchedLikelihood):
             # the SwitchedLikelihood partitions/stitches based on the last
