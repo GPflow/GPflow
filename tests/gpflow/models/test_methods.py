@@ -1,4 +1,4 @@
-# cOPYRIGHT 2016 THE gpFLOW AUTHORS.
+# Copyright 2016 the GPflow authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
