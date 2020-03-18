@@ -78,12 +78,16 @@ Y_data = np.hstack([Y, NoiseVar])
 
 # %%
 class HeteroskedasticGaussian(gpflow.likelihoods.Likelihood):
+    def __init__(self, **kwargs):
+        # this likelihood expects a single latent functionF, and two columns in the data matrix Y:
+        super().__init__(num_latent_functions=1, num_data_dims=2, **kwargs)
+
     def log_prob(self, F, Y):
         # log_prob is used by the quadrature fallback of variational_expectations and predict_density.
         # Because variational_expectations is implemented analytically below, this is not actually needed,
         # but is included for pedagogical purposes.
         # Note that currently relying on the quadrature would fail due to https://github.com/GPflow/GPflow/issues/966
-        Y, NoiseVar = Y[:, 0:1], Y[:, 1:2]
+        Y, NoiseVar = Y[:, 0], Y[:, 1]
         return gpflow.logdensities.gaussian(Y, F, NoiseVar)
 
     def conditional_mean(self, F):
@@ -93,7 +97,7 @@ class HeteroskedasticGaussian(gpflow.likelihoods.Likelihood):
         raise NotImplementedError
 
     def variational_expectations(self, Fmu, Fvar, Y):
-        Y, NoiseVar = Y[:, 0:1], Y[:, 1:2]
+        Y, NoiseVar = Y[:, 0], Y[:, 1]
         return -0.5 * np.log(2 * np.pi) - 0.5 * tf.math.log(NoiseVar) \
                - 0.5 * (tf.math.square(Y - Fmu) + Fvar) / NoiseVar
 
