@@ -127,8 +127,8 @@ class GPModel(BayesianModel):
             # the SwitchedLikelihood partitions/stitches based on the last
             # column in Y, but we should not add a separate latent GP for this!
             # hence decrement by 1
-            assert num_latent_gps >= 2
             num_latent_gps = output_dim - 1
+            assert num_latent_gps > 0
         else:
             num_latent_gps = output_dim
 
