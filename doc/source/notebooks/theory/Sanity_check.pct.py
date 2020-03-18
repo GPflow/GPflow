@@ -41,7 +41,7 @@ import tensorflow as tf
 import matplotlib
 import matplotlib.pyplot as plt
 
-from gpflow.utilities import set_trainable
+from gpflow import set_trainable
 from gpflow.config import default_float
 from gpflow.ci_utils import ci_niter
 
@@ -85,6 +85,7 @@ for m in models:
         loss_fn = lambda: - m.log_marginal_likelihood(data)
     else:
         loss_fn = lambda: - m.log_marginal_likelihood()
+    loss_fn = tf.function(loss_fn)
         
     opt.minimize(loss_fn, variables=m.trainable_variables, options=dict(maxiter=ci_niter(1000)))
 
@@ -121,7 +122,7 @@ plot(m6, 'C5', ax[2,1])
 # %%
 for m in models:
     print(m.__class__.__name__)
-    print(f"  kernel lengthscale  = {m.kernel.lengthscale.numpy():.5g}")
+    print(f"  kernel lengthscale  = {m.kernel.lengthscales.numpy():.5g}")
     print(f"  kernel variance     = {m.kernel.variance.numpy():.5}")
     print(f"  likelihood variance = {m.likelihood.variance.numpy():.5}")
 

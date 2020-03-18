@@ -57,7 +57,9 @@ from gpflow.ci_utils import ci_niter
 
 from multiclass_classification import plot_posterior_predictions, colors
 
-np.random.seed(0)  # reproducibility
+# reproducibility:
+np.random.seed(0)
+tf.random.set_seed(123)
 
 # %% [markdown]
 # ## Sampling from the GP multiclass generative model
@@ -70,8 +72,8 @@ np.random.seed(0)  # reproducibility
 C = 3
 N = 100
 
-# RBF kernel lengthscale
-lengthscale = 0.1
+# Lengthscale of the SquaredExponential kernel (isotropic -- change to `[0.1] * C` for ARD)
+lengthscales = 0.1
 
 # Jitter
 jitter_eye = np.eye(N) * 1e-6
@@ -84,7 +86,7 @@ X = np.random.rand(N, 1)
 
 # %%
 # SquaredExponential kernel matrix
-kernel_se = gpflow.kernels.SquaredExponential(lengthscale=lengthscale)
+kernel_se = gpflow.kernels.SquaredExponential(lengthscales=lengthscales)
 K = kernel_se(X) + jitter_eye
 
 # Latents prior sample
@@ -146,7 +148,7 @@ likelihood = gpflow.likelihoods.MultiClass(3, invlink=invlink)  # Multiclass lik
 Z = X[::5].copy()  # inducing inputs
 
 m = gpflow.models.SVGP(kernel=kernel, likelihood=likelihood,
-    inducing_variable=Z, num_latent=C, whiten=True, q_diag=True)
+    inducing_variable=Z, num_latent_gps=C, whiten=True, q_diag=True)
 
 # Only train the variational parameters
 set_trainable(m.kernel.kernels[1].variance, False)
@@ -159,7 +161,7 @@ print_summary(m, fmt='notebook')
 # %%
 opt = gpflow.optimizers.Scipy()
 
-@tf.function(autograph=False)
+@tf.function
 def objective_closure():
     return - m.log_marginal_likelihood(data)
 

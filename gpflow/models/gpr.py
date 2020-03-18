@@ -32,43 +32,48 @@ class GPR(GPModel):
     This is a vanilla implementation of GP regression with a Gaussian
     likelihood.  Multiple columns of Y are treated independently.
 
-    The log likelihood of this models is sometimes referred to as the 'marginal log likelihood',
-    and is given by
+    The log likelihood of this model is sometimes referred to as the 'log
+    marginal likelihood', and is given by
 
     .. math::
        \log p(\mathbf y \,|\, \mathbf f) =
-            \mathcal N\left(\mathbf y\,|\, 0, \mathbf K + \sigma_n \mathbf I\right)
+            \mathcal N(\mathbf{y} \,|\, 0, \mathbf{K} + \sigma_n \mathbf{I})
     """
 
-    def __init__(self, data: Data, kernel: Kernel, mean_function: Optional[MeanFunction] = None,
-                 noise_variance: float = 1.0):
+    def __init__(
+        self,
+        data: Data,
+        kernel: Kernel,
+        mean_function: Optional[MeanFunction] = None,
+        noise_variance: float = 1.0,
+    ):
         likelihood = gpflow.likelihoods.Gaussian(noise_variance)
-        _, y_data = data
-        super().__init__(kernel, likelihood, mean_function, num_latent=y_data.shape[-1])
+        _, Y_data = data
+        super().__init__(kernel, likelihood, mean_function, num_latent_gps=Y_data.shape[-1])
         self.data = data
 
     def log_likelihood(self):
         r"""
-        Computes the log likelihood.
+        Computes the log marginal likelihood.
 
         .. math::
             \log p(Y | \theta).
 
         """
-        x, y = self.data
-        K = self.kernel(x)
-        num_data = x.shape[0]
+        X, Y = self.data
+        K = self.kernel(X)
+        num_data = X.shape[0]
         k_diag = tf.linalg.diag_part(K)
         s_diag = tf.fill([num_data], self.likelihood.variance)
         ks = tf.linalg.set_diag(K, k_diag + s_diag)
         L = tf.linalg.cholesky(ks)
-        m = self.mean_function(x)
+        m = self.mean_function(X)
 
         # [R,] log-likelihoods for each independent dimension of Y
-        log_prob = multivariate_normal(y, m, L)
+        log_prob = multivariate_normal(Y, m, L)
         return tf.reduce_sum(log_prob)
 
-    def predict_f(self, predict_at: tf.Tensor, full_cov: bool = False, full_output_cov: bool = False):
+    def predict_f(self, Xnew: tf.Tensor, full_cov: bool = False, full_output_cov: bool = False):
         r"""
         This method computes predictions at X \in R^{N \x D} input points
 
@@ -77,18 +82,19 @@ class GPR(GPModel):
 
         where F* are points on the GP at new data points, Y are noisy observations at training data points.
         """
-        x_data, y_data = self.data
-        err = y_data - self.mean_function(x_data)
+        X_data, Y_data = self.data
+        err = Y_data - self.mean_function(X_data)
 
-        kmm = self.kernel(x_data)
-        knn = self.kernel(predict_at, full=full_cov)
-        kmn = self.kernel(x_data, predict_at)
+        kmm = self.kernel(X_data)
+        knn = self.kernel(Xnew, full_cov=full_cov)
+        kmn = self.kernel(X_data, Xnew)
 
-        num_data = x_data.shape[0]
+        num_data = X_data.shape[0]
         s = tf.linalg.diag(tf.fill([num_data], self.likelihood.variance))
 
         conditional = gpflow.conditionals.base_conditional
-        f_mean_zero, f_var = conditional(kmn, kmm + s, knn, err, full_cov=full_cov,
-                                         white=False)  # [N, P], [N, P] or [P, N, N]
-        f_mean = f_mean_zero + self.mean_function(predict_at)
+        f_mean_zero, f_var = conditional(
+            kmn, kmm + s, knn, err, full_cov=full_cov, white=False
+        )  # [N, P], [N, P] or [P, N, N]
+        f_mean = f_mean_zero + self.mean_function(Xnew)
         return f_mean, f_var

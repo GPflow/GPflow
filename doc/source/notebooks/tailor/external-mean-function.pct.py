@@ -36,6 +36,9 @@ from gpflow.base import Parameter
 
 from gpflow.ci_utils import ci_niter
 
+# for reproducibility of this notebook:
+np.random.seed(1)  
+tf.random.set_seed(2)
 # %matplotlib inline
 
 # %% [markdown]
@@ -46,7 +49,7 @@ from gpflow.ci_utils import ci_niter
 def generate_data(num_functions=10, N=1000):
     jitter = 1e-6
     Xs = np.linspace(-5.0, 5.0, N)[:, None]
-    kernel = RBF(lengthscale=1.)
+    kernel = RBF(lengthscales=1.)
     cov = kernel(Xs)
     L = np.linalg.cholesky(cov + np.eye(N) * jitter)
     epsilon = np.random.randn(N, num_functions)
@@ -118,7 +121,7 @@ def build_mean_function():
 # To begin this process, first we create a utility function that takes in a task (X, Y) and a mean function and outputs a GP model.
 
 # %%
-from gpflow.utilities import set_trainable
+from gpflow import set_trainable
 
 def build_model(data, mean_function):
     model = GPR(data, kernel=RBF(), mean_function=mean_function)
@@ -131,7 +134,7 @@ def build_model(data, mean_function):
 # %%
 def create_optimization_step(optimizer, model: gpflow.models.GPR):
     
-    @tf.function(autograph=False)
+    @tf.function
     def optimization_step():
         with tf.GradientTape(watch_accessed_variables=False) as tape:
             tape.watch(model.trainable_variables)

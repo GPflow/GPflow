@@ -30,7 +30,7 @@ from typing import Dict, Optional, Tuple
 import tensorflow as tf
 import tensorflow_datasets as tfds
 import gpflow
-from gpflow.config import default_float
+from gpflow.utilities import to_default_float
 
 iterations = ci_niter(100)
 
@@ -46,8 +46,8 @@ batch_size = 32
 
 def map_fn(input_slice: Dict[str, tf.Tensor]):
     updated = input_slice
-    image = tf.cast(updated["image"], default_float()) / 255.
-    label = tf.cast(updated["label"], default_float())
+    image = to_default_float(updated["image"]) / 255.
+    label = to_default_float(updated["label"])
     return tf.reshape(image, [-1, image_size]), label
 
 autotune = tf.data.experimental.AUTOTUNE
@@ -84,7 +84,7 @@ class KernelWithConvNN(gpflow.kernels.Kernel):
                 tf.keras.layers.MaxPool2D(pool_size=(2, 2), strides=2),
                 tf.keras.layers.Flatten(),
                 tf.keras.layers.Dense(output_dim, activation="relu"),
-                tf.keras.layers.Lambda(lambda x: tf.cast(x, default_float()))
+                tf.keras.layers.Lambda(to_default_float)
             ])
             
             self.cnn.build()
@@ -141,7 +141,7 @@ inducing_variable = KernelSpaceInducingPoints(inducing_variable_cnn)
 model = gpflow.models.SVGP(kernel, likelihood,
                            inducing_variable=inducing_variable,
                            num_data=total_num_data,
-                           num_latent=num_mnist_classes)
+                           num_latent_gps=num_mnist_classes)
 
 # %% [markdown]
 # And start optimization:
@@ -151,13 +151,13 @@ data_iterator = iter(dataset)
 adam_opt = tf.optimizers.Adam(0.001)
 
 
-@tf.function(autograph=False)
+@tf.function
 def loss_cb(batch: Tuple[tf.Tensor, tf.Tensor]):
     loss_value = -model.elbo(batch)
     return loss_value
 
 
-@tf.function(autograph=False)
+@tf.function
 def optimization_step():
     batch = next(data_iterator)
     func = lambda: loss_cb(batch)

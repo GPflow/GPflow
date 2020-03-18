@@ -2,23 +2,28 @@ import copy
 from typing import List, Optional, Union
 
 import tensorflow as tf
-import tensorflow_probability as tfp
 import numpy as np
+
+
+def cast(
+    value: Union[tf.Tensor, np.ndarray], dtype: tf.DType, name: Optional[str] = None
+) -> tf.Tensor:
+    if not tf.is_tensor(value):
+        # TODO(awav): Release TF2.2 resolves this issue
+        # workaround for https://github.com/tensorflow/tensorflow/issues/35938
+        return tf.convert_to_tensor(value, dtype, name=name)
+    return tf.cast(value, dtype, name=name)
 
 
 def eye(num: int, value: tf.Tensor, dtype: Optional[tf.DType] = None) -> tf.Tensor:
     if dtype is not None:
-        value = tf.cast(value, dtype)
+        value = cast(value, dtype)
     return tf.linalg.diag(tf.fill([num], value))
 
 
-def add_to_diagonal(to_tensor: tf.Tensor, value: tf.Tensor):
-    diag = tf.linalg.diag_part(to_tensor)
-    new_diag = diag + value
-    return tf.linalg.set_diag(to_tensor, new_diag)
-
-
-def leading_transpose(tensor: tf.Tensor, perm: List[Union[int, type(...)]], leading_dim: int = 0) -> tf.Tensor:
+def leading_transpose(
+    tensor: tf.Tensor, perm: List[Union[int, type(...)]], leading_dim: int = 0
+) -> tf.Tensor:
     """
     Transposes tensors with leading dimensions. Leading dimensions in
     permutation list represented via ellipsis `...`.
@@ -55,7 +60,7 @@ def leading_transpose(tensor: tf.Tensor, perm: List[Union[int, type(...)]], lead
     perm_tf = perm % rank
 
     leading_dims = tf.range(rank - len(perm) + 1)
-    perm = tf.concat([perm_tf[:idx], leading_dims, perm_tf[idx + 1:]], 0)
+    perm = tf.concat([perm_tf[:idx], leading_dims, perm_tf[idx + 1 :]], 0)
     return tf.transpose(tensor, perm)
 
 
@@ -78,6 +83,12 @@ def square_distance(X, X2):
     Due to the implementation and floating-point imprecision, the
     result may actually be very slightly negative for entries very
     close to each other.
+
+    This function can deal with leading dimensions in X and X2. 
+    In the sample case, where X and X2 are both 2 dimensional, 
+    for example, X is [N, D] and X2 is [M, D], then a tensor of shape 
+    [N, M] is returned. If X is [N1, S1, D] and X2 is [N2, S2, D] 
+    then the output will be [N1, S1, N2, S2].
     """
     if X2 is None:
         Xs = tf.reduce_sum(tf.square(X), axis=-1, keepdims=True)
@@ -100,7 +111,7 @@ def pca_reduce(X: tf.Tensor, Q: tf.Tensor) -> tf.Tensor:
     :return: PCA projection array of size N x Q.
     """
     if Q > X.shape[1]:  # pragma: no cover
-        raise ValueError('Cannot have more latent dimensions than observed')
+        raise ValueError("Cannot have more latent dimensions than observed")
     if isinstance(X, tf.Tensor):
         X = X.numpy()
         # TODO why not use tf.linalg.eigh?

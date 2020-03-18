@@ -29,6 +29,8 @@ import gpflow
 import numpy as np
 import matplotlib.pyplot as plt
 
+np.random.seed(123)  # for reproducibility of this notebook
+
 plt.style.use('ggplot')
 # %matplotlib inline
 
@@ -44,8 +46,8 @@ def plotkernelsample(k, ax, xmin=-3, xmax=3, title=None):
 # %%
 np.random.seed(1)
 
-base_k1 = gpflow.kernels.Matern32(lengthscale=0.2)
-base_k2 = gpflow.kernels.Matern32(lengthscale=2.)
+base_k1 = gpflow.kernels.Matern32(lengthscales=0.2)
+base_k2 = gpflow.kernels.Matern32(lengthscales=2.)
 k = gpflow.kernels.ChangePoints([base_k1, base_k2], [0.], steepness=5.)
 
 f, ax = plt.subplots(1, 1, figsize=(10, 3))
@@ -57,7 +59,7 @@ plotkernelsample(k, ax)
 # %%
 np.random.seed(3)
 
-base_k1 = gpflow.kernels.Matern32(lengthscale=0.3)
+base_k1 = gpflow.kernels.Matern32(lengthscales=0.3)
 base_k2 = gpflow.kernels.Constant(1)
 k = gpflow.kernels.ChangePoints([base_k1, base_k2, base_k1], locations=[-1, 1], steepness=10.)
 
@@ -70,7 +72,7 @@ plotkernelsample(k, ax)
 # %%
 np.random.seed(2)
 
-base_k1 = gpflow.kernels.Matern32(lengthscale=0.3)
+base_k1 = gpflow.kernels.Matern32(lengthscales=0.3)
 base_k2 = gpflow.kernels.Constant()
 k = gpflow.kernels.ChangePoints([base_k1, base_k2, base_k1], locations=[-1, 1], steepness=[5., 50.])
 
