@@ -21,7 +21,7 @@ import tensorflow as tf
 
 from ..base import Module
 from ..config import default_float, default_jitter
-from ..kernels import Kernel
+from ..kernels import Kernel, MultioutputKernel
 from ..likelihoods import Likelihood, SwitchedLikelihood
 from ..mean_functions import MeanFunction, Zero
 from ..utilities import ops
@@ -105,13 +105,13 @@ class GPModel(BayesianModel):
         self.likelihood = likelihood
 
     @staticmethod
-    def num_latent_gps_for_likelihood_and_data(likelihood, data) -> int:
+    def calc_num_latent_gps_from_data(likelihood: Likelihood, kernel: Kernel, data) -> int:
         _, Y = data
         output_dim = Y.shape[1]
-        return GPModel.num_latent_gps_for_likelihood_and_output_dim(likelihood, output_dim)
+        return GPModel.calc_num_latent_gps(likelihood, kernel, output_dim)
 
     @staticmethod
-    def num_latent_gps_for_likelihood_and_output_dim(likelihood, output_dim) -> int:
+    def calc_num_latent_gps(likelihood: Likelihood, kernel: Kernel, output_dim: int) -> int:
         """
         Note: It's not nice for `GPModel` to need to be aware of specific
         likelihoods as here. However, `num_latent_gps` is a bit more broken in
@@ -120,13 +120,18 @@ class GPModel(BayesianModel):
         It also has slightly problematic assumptions re the output dimensions
         of mean_function.
         """
-        num_latent_gps = output_dim
-        if isinstance(likelihood, SwitchedLikelihood):
+        if isinstance(kernel, MultioutputKernel):
+            # MulitoutputKernels already have num_latent_gps attributes
+            num_latent_gps = kernel.num_latent_gps
+        elif isinstance(likelihood, SwitchedLikelihood):
             # the SwitchedLikelihood partitions/stitches based on the last
             # column in Y, but we should not add a separate latent GP for this!
             # hence decrement by 1
             assert num_latent_gps >= 2
-            num_latent_gps -= 1
+            num_latent_gps = output_dim - 1
+        else:
+            num_latent_gps = output_dim
+
 
         return num_latent_gps
 
