@@ -106,6 +106,10 @@ class GPModel(BayesianModel):
 
     @staticmethod
     def calc_num_latent_gps_from_data(data, kernel: Kernel, likelihood: Likelihood) -> int:
+        """
+        Calculates the number of latent GPs required based on the data as well
+        as the type of kernel and likelihood.
+        """
         _, Y = data
         output_dim = Y.shape[-1]
         return GPModel.calc_num_latent_gps(kernel, likelihood, output_dim)
@@ -113,12 +117,14 @@ class GPModel(BayesianModel):
     @staticmethod
     def calc_num_latent_gps(kernel: likelihood: Likelihood, Kernel, output_dim: int) -> int:
         """
+        Calculates the number of latent GPs required given the number of
+        outputs `output_dim` and the type of likelihood and kernel.
+
         Note: It's not nice for `GPModel` to need to be aware of specific
         likelihoods as here. However, `num_latent_gps` is a bit more broken in
-        general, specifically regarding multioutput kernels. We should fix this
-        in the future.
-        It also has slightly problematic assumptions re the output dimensions
-        of mean_function.
+        general, we should fix this in the future. There are also some slightly
+        problematic assumptions re the output dimensions of mean_function.
+        See https://github.com/GPflow/GPflow/issues/1343
         """
         if isinstance(kernel, MultioutputKernel):
             # MultioutputKernels already have num_latent_gps attributes
