@@ -52,16 +52,14 @@ KERNEL_CLASSES = [
 
 @pytest.mark.parametrize("kernel_class", gpflow.ci_utils.subclasses(kernels.Kernel))
 def test_no_kernels_missed(kernel_class):
-    if kernel_class in (KERNEL_CLASSES + [kernels.Sum, kernels.Product]):
+    tested_kernel_classes = KERNEL_CLASSES + [kernels.Sum, kernels.Product]
+    skipped_kernel_classes = [
+        p.values[0] for p in KERNEL_CLASSES if isinstance(p, type(pytest.param()))
+    ]
+    if kernel_class in tested_kernels:
         return  # tested
-    if kernel_class in [
-        kernels.ArcCosine,
-        kernels.Coregion,
-        kernels.Periodic,
-        kernels.ChangePoints,
-        kernels.Convolutional,
-    ]:  # not tested but currently expected to fail
-        return
+    if kernel_class in skipped_kernel_classes:
+        return  # not tested but currently expected to fail
     if kernel_class in [
         kernels.Kernel,
         kernels.Combination,
@@ -72,7 +70,7 @@ def test_no_kernels_missed(kernel_class):
         return
     if issubclass(kernel_class, kernels.MultioutputKernel):
         return  # cannot currently test MultioutputKernels
-    assert False, f"no test for kernel class {kernel_class}"
+    assert False, f"no broadcasting test for kernel class {kernel_class}"
 
 
 @pytest.mark.parametrize("kernel_class", KERNEL_CLASSES)
