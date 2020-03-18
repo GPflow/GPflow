@@ -40,4 +40,6 @@ def test_numpy_equivalence(N, D, Q):
 
         for i in range(Q):
             # PCA does not necessarily preserve the overall sign, so also accept it to flip
-            assert np.allclose(tf_result[:, i], np_result[:, i]) or np.allclose(tf_result[:, i], -np_result[:, i])
+            tf_column = tf_result[:, i]
+            np_column = np_result[:, i]
+            assert np.allclose(tf_column, np_column) or np.allclose(tf_column, -np_column)
