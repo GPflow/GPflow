@@ -79,7 +79,7 @@ Y_data = np.hstack([Y, NoiseVar])
 # %%
 class HeteroskedasticGaussian(gpflow.likelihoods.Likelihood):
     def __init__(self, **kwargs):
-        # this likelihood expects a single latent functionF, and two columns in the data matrix Y:
+        # this likelihood expects a single latent function F, and two columns in the data matrix Y:
         super().__init__(num_latent_functions=1, num_data_dims=2, **kwargs)
 
     def log_prob(self, F, Y):
