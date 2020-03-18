@@ -64,7 +64,7 @@ class VGP(GPModel):
 
         """
         if num_latent_gps is None:
-            num_latent_gps = self.calc_num_latent_gps_from_data(likelihood, data)
+            num_latent_gps = self.calc_num_latent_gps_from_data(likelihood, kernel, data)
         super().__init__(kernel, likelihood, mean_function, num_latent_gps)
 
         X_data, Y_data = data
