@@ -69,13 +69,13 @@ def inv_probit(x):
 
 
 class Likelihood(Module):
-    def __init__(self, num_latent_functions: int, num_data_dims: int):
+    def __init__(self, latent_dim: int, observation_dim: int):
         """
         A base class for likelihoods, which specifies an observation model 
         connecting the latent functions ('F') to the data ('Y').
 
         All of the members of this class are expected to obey some shape conventions, as specified
-        by num_latent_functions and num_data_dims.
+        by latent_dim and observation_dim.
 
         If we're operating on an array of function values 'F', then the last dimension represents
         multiple functions (preceding dimensions could represent different data points, or
@@ -84,17 +84,20 @@ class Likelihood(Module):
 
         The return shapes of all functions in this class is the broadcasted shape of the arguments,
         up to the last dimensions.
+
+        :param latent_dim: the dimension of the vector F of latent functions for a single data point
+        :param observation_dim: the dimension of the observation vector Y for a single data point
         """
         super().__init__()
         self.num_gauss_hermite_points = 20
-        self.num_latent_functions = num_latent_functions
-        self.num_data_dims = num_data_dims
+        self.latent_dim = latent_dim
+        self.observation_dim = observation_dim
 
     def check_last_dims_valid(self, F, Y):
         """
         Assert that the dimensions of the latent functions F and the data Y are compatible.
-        :param F: function evaluation Tensor, with shape [..., num_latent_functions]
-        :param Y: observation Tensor, with shape [..., num_data_dims]
+        :param F: function evaluation Tensor, with shape [..., latent_dim]
+        :param Y: observation Tensor, with shape [..., observation_dim]
         """
         self.check_latent_dims(F)
         self.check_data_dims(Y)
@@ -104,31 +107,31 @@ class Likelihood(Module):
         Check that the shape of a computed statistic of the data
         is the broadcasted shape from F and Y.
         :param result: result Tensor, with shape [...]
-        :param F: function evaluation Tensor, with shape [..., num_latent_functions]
-        :param Y: observation Tensor, with shape [..., num_data_dims]
+        :param F: function evaluation Tensor, with shape [..., latent_dim]
+        :param Y: observation Tensor, with shape [..., observation_dim]
         """
         expected_shape = tf.broadcast_dynamic_shape(tf.shape(F)[:-1], tf.shape(Y)[:-1])
         tf.debugging.assert_equal(tf.shape(result), expected_shape)
 
     def check_latent_dims(self, F):
         """
-        Ensure that a tensor of latent functions F has num_latent_functions as right most dimension.
-        :param F: function evaluation Tensor, with shape [..., num_latent_functions]
+        Ensure that a tensor of latent functions F has latent_dim as right most dimension.
+        :param F: function evaluation Tensor, with shape [..., latent_dim]
         """
-        tf.debugging.assert_shapes([(F, (..., self.num_latent_functions))])
+        tf.debugging.assert_shapes([(F, (..., self.latent_dim))])
 
     def check_data_dims(self, Y):
         """
-        Ensure that a tensor of data Y has num_data_dims as right most dimension.
-        :param Y: observation Tensor, with shape [..., num_data_dims]
+        Ensure that a tensor of data Y has observation_dim as right most dimension.
+        :param Y: observation Tensor, with shape [..., observation_dim]
         """
-        tf.debugging.assert_shapes([(Y, (..., self.num_data_dims))])
+        tf.debugging.assert_shapes([(Y, (..., self.observation_dim))])
 
     def log_prob(self, F, Y):
         """
         The log probability density log p(Y|F)
-        :param F: function evaluation Tensor, with shape [..., num_latent_functions]
-        :param Y: observation Tensor, with shape [..., num_data_dims]:
+        :param F: function evaluation Tensor, with shape [..., latent_dim]
+        :param Y: observation Tensor, with shape [..., observation_dim]:
         :return log pdf, with shape [...]
         """
         self.check_last_dims_valid(F, Y)
@@ -142,8 +145,8 @@ class Likelihood(Module):
     def conditional_mean(self, F):
         """
         The conditional mean of Y|F
-        :param F: function evaluation Tensor, with shape [..., num_latent_functions]
-        :return mean [..., num_data_dims]
+        :param F: function evaluation Tensor, with shape [..., latent_dim]
+        :return mean [..., observation_dim]
         """
         self.check_latent_dims(F)
         expected_Y = self._conditional_mean(F)
@@ -156,9 +159,9 @@ class Likelihood(Module):
     def conditional_variance(self, F):
         """
         The conditional marginal variance of Y|F: [var(Y₁|F), ..., var(Yₖ|F)]
-        where K = num_data_dims
-        :param F: function evaluation Tensor, with shape [..., num_latent_functions]
-        :return variance [..., num_data_dims]
+        where K = observation_dim
+        :param F: function evaluation Tensor, with shape [..., latent_dim]
+        :return variance [..., observation_dim]
         """
         self.check_latent_dims(F)
         var_Y = self._conditional_variance(F)
@@ -168,17 +171,17 @@ class Likelihood(Module):
     def _conditional_variance(self, F):
         """
         The conditional marginal variance of Y|F: [var(Y₁|F), ..., var(Yₖ|F)]
-        :param F: function evaluation Tensor, with shape [..., num_latent_functions]
-        :return variance [..., num_data_dims]
+        :param F: function evaluation Tensor, with shape [..., latent_dim]
+        :return variance [..., observation_dim]
         """
         raise NotImplementedError
 
     def predict_mean_and_var(self, Fmu, Fvar):
         """
         The conditional mean and marginal variance of Yₖ|F
-        :param Fmu: mean function evaluation Tensor, with shape [..., num_latent_functions]
-        :param Fvar: variance of function evaluation Tensor, with shape [..., num_latent_functions]
-        :return mean and variance, both with shape [..., num_data_dims]
+        :param Fmu: mean function evaluation Tensor, with shape [..., latent_dim]
+        :param Fvar: variance of function evaluation Tensor, with shape [..., latent_dim]
+        :return mean and variance, both with shape [..., observation_dim]
         """
         self.check_latent_dims(Fmu)
         self.check_latent_dims(Fvar)
@@ -206,9 +209,9 @@ class Likelihood(Module):
 
             log ∫ p(y=Y|F)q(F) df
 
-        :param Fmu: mean function evaluation Tensor, with shape [..., num_latent_functions]
-        :param Fvar: variance of function evaluation Tensor, with shape [..., num_latent_functions]
-        :param Y: observation Tensor, with shape [..., num_data_dims]:
+        :param Fmu: mean function evaluation Tensor, with shape [..., latent_dim]
+        :param Fvar: variance of function evaluation Tensor, with shape [..., latent_dim]
+        :param Y: observation Tensor, with shape [..., observation_dim]:
         :return predicted density, with shape [...]
         """
         tf.debugging.assert_equal(tf.shape(Fmu), tf.shape(Fvar))
@@ -239,9 +242,9 @@ class Likelihood(Module):
         This only works if the broadcasting dimension of the statistics of q(F) (mean and variance)
         are broadcastable with that of the data Y.
 
-        :param Fmu: mean function evaluation Tensor, with shape [..., num_latent_functions]
-        :param Fvar: variance of function evaluation Tensor, with shape [..., num_latent_functions]
-        :param Y: observation Tensor, with shape [..., num_data_dims]:
+        :param Fmu: mean function evaluation Tensor, with shape [..., latent_dim]
+        :param Fvar: variance of function evaluation Tensor, with shape [..., latent_dim]
+        :param Y: observation Tensor, with shape [..., observation_dim]:
         :return variational expectations, with shape [...]
         """
         tf.debugging.assert_equal(tf.shape(Fmu), tf.shape(Fvar))
@@ -277,13 +280,13 @@ class ScalarLikelihood(Likelihood):
     """
 
     def __init__(self, **kwargs):
-        super().__init__(num_latent_functions=None, num_data_dims=None, **kwargs)
+        super().__init__(latent_dim=None, observation_dim=None, **kwargs)
 
     def check_last_dims_valid(self, F, Y):
         """
         Assert that the dimensions of the latent functions and the data are compatible
-        :param F: function evaluation Tensor, with shape [..., num_latent_functions]
-        :param Y: observation Tensor, with shape [..., num_latent_functions]
+        :param F: function evaluation Tensor, with shape [..., latent_dim]
+        :param Y: observation Tensor, with shape [..., latent_dim]
         """
         tf.debugging.assert_shapes([(F, (..., "num_latent")), (Y, (..., "num_latent"))])
 
@@ -291,8 +294,8 @@ class ScalarLikelihood(Likelihood):
         r"""
         Compute log p(Y|F), where by convention we sum out the last axis as it represented
         independent latent functions and observations.
-        :param F: function evaluation Tensor, with shape [..., num_latent_functions]
-        :param Y: observation Tensor, with shape [..., num_latent_functions]
+        :param F: function evaluation Tensor, with shape [..., latent_dim]
+        :param Y: observation Tensor, with shape [..., latent_dim]
         """
         return tf.reduce_sum(self._scalar_density(F, Y), axis=-1)
 
@@ -303,9 +306,9 @@ class ScalarLikelihood(Likelihood):
         r"""
         Here, we implement a default Gauss-Hermite quadrature routine, but some
         likelihoods (Gaussian, Poisson) will implement specific cases.
-        :param Fmu: mean function evaluation Tensor, with shape [..., num_latent_functions]
-        :param Fvar: variance of function evaluation Tensor, with shape [..., num_latent_functions]
-        :param Y: observation Tensor, with shape [..., num_latent_functions]:
+        :param Fmu: mean function evaluation Tensor, with shape [..., latent_dim]
+        :param Fvar: variance of function evaluation Tensor, with shape [..., latent_dim]
+        :param Y: observation Tensor, with shape [..., latent_dim]:
         :return variational expectations, with shape [...]
         """
         nghp = self.num_gauss_hermite_points
@@ -315,9 +318,9 @@ class ScalarLikelihood(Likelihood):
         r"""
         Here, we implement a default Gauss-Hermite quadrature routine, but some
         likelihoods (Gaussian, Poisson) will implement specific cases.
-        :param Fmu: mean function evaluation Tensor, with shape [..., num_latent_functions]
-        :param Fvar: variance of function evaluation Tensor, with shape [..., num_latent_functions]
-        :param Y: observation Tensor, with shape [..., num_latent_functions]:
+        :param Fmu: mean function evaluation Tensor, with shape [..., latent_dim]
+        :param Fvar: variance of function evaluation Tensor, with shape [..., latent_dim]
+        :param Y: observation Tensor, with shape [..., latent_dim]:
         :return predictive density, with shape [...]
         """
         nghp = self.num_gauss_hermite_points
@@ -348,9 +351,9 @@ class ScalarLikelihood(Likelihood):
         Here, we implement a default Gauss-Hermite quadrature routine, but some
         likelihoods (e.g. Gaussian) will implement specific cases.
 
-        :param Fmu: mean function evaluation Tensor, with shape [..., num_latent_functions]
-        :param Fvar: variance of function evaluation Tensor, with shape [..., num_latent_functions]
-        :return mean and variance, both with shape [..., num_data_dims]
+        :param Fmu: mean function evaluation Tensor, with shape [..., latent_dim]
+        :param Fvar: variance of function evaluation Tensor, with shape [..., latent_dim]
+        :return mean and variance, both with shape [..., observation_dim]
         """
 
         def integrand(*X):
@@ -589,7 +592,7 @@ class MultiClass(Likelihood):
         For most problems, the stochastic `Softmax` likelihood may be more
         appropriate (note that you then cannot use Scipy optimizer).
         """
-        super().__init__(num_latent_functions=num_classes, num_data_dims=None, **kwargs)
+        super().__init__(latent_dim=num_classes, observation_dim=None, **kwargs)
         self.num_classes = num_classes
 
         if invlink is None:
@@ -881,8 +884,8 @@ class Softmax(MonteCarloLikelihood):
     """
 
     def __init__(self, num_classes, **kwargs):
-        super().__init__(num_latent_functions=num_classes, num_data_dims=None, **kwargs)
-        self.num_classes = self.num_latent_functions
+        super().__init__(latent_dim=num_classes, observation_dim=None, **kwargs)
+        self.num_classes = self.latent_dim
 
     def _log_prob(self, F, Y):
         return -tf.nn.sparse_softmax_cross_entropy_with_logits(logits=F, labels=Y[:, 0])
