@@ -38,7 +38,7 @@ class VGP(GPModel):
     approximated by a Gaussian, and the KL divergence is minimised between
     the approximation and the posterior.
 
-    This implementation is equivalent to svgp with X=Z, but is more efficient.
+    This implementation is equivalent to SVGP with X=Z, but is more efficient.
     The whitened representation is used to aid optimization.
 
     The posterior approximation is
@@ -58,10 +58,8 @@ class VGP(GPModel):
         num_latent_gps: Optional[int] = None,
     ):
         """
-        X is a data matrix, size [N, D]
-        Y is a data matrix, size [N, R]
+        data = (X, Y) contains the input points [N, D] and the observations [N, P]
         kernel, likelihood, mean_function are appropriate GPflow objects
-
         """
         if num_latent_gps is None:
             num_latent_gps = self.calc_num_latent_gps_from_data(data, kernel, likelihood)
@@ -155,8 +153,7 @@ class VGPOpperArchambeau(GPModel):
         num_latent_gps: Optional[int] = None,
     ):
         """
-        X is a data matrix, size [N, D]
-        Y is a data matrix, size [N, R]
+        data = (X, Y) contains the input points [N, D] and the observations [N, P]
         kernel, likelihood, mean_function are appropriate GPflow objects
         """
         if num_latent_gps is None:
