@@ -265,7 +265,10 @@ def _set_by_name_index(parent: object, value: Any, attr_str: str, index_str: Uni
         index = int(index_str)
         attr = getattr(parent, attr_str)
         attr[index] = value
+        delattr(parent, attr_str)
+        setattr(parent, attr_str, attr)
     else:
+        delattr(parent, attr_str)
         setattr(parent, attr_str, value)
 
 
