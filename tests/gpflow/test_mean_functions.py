@@ -48,7 +48,7 @@ _mean_functions = [
 
 @pytest.mark.parametrize("mean_function_1", _mean_functions)
 @pytest.mark.parametrize("mean_function_2", _mean_functions)
-@pytest.mark.parametrize("operation", ["+", "x"])
+@pytest.mark.parametrize("operation", ["+", "*"])
 def test_mean_functions_output_shape(mean_function_1, mean_function_2, operation):
     """
     Test the output shape for basic and compositional mean functions, also
@@ -62,7 +62,7 @@ def test_mean_functions_output_shape(mean_function_1, mean_function_2, operation
     # composed mean function output shape check
     if operation == "+":
         mean_composed = mean_function_1 + mean_function_2
-    elif operation == "x":
+    elif operation == "*":
         mean_composed = mean_function_1 * mean_function_2
     else:
         raise (NotImplementedError)
@@ -73,12 +73,12 @@ def test_mean_functions_output_shape(mean_function_1, mean_function_2, operation
 
 @pytest.mark.parametrize("mean_function_1", _mean_functions)
 @pytest.mark.parametrize("mean_function_2", _mean_functions)
-@pytest.mark.parametrize("operation", ["+", "x"])
+@pytest.mark.parametrize("operation", ["+", "*"])
 def test_mean_functions_composite_type(mean_function_1, mean_function_2, operation):
     if operation == "+":
         mean_composed = mean_function_1 + mean_function_2
         assert isinstance(mean_composed, Additive)
-    elif operation == "x":
+    elif operation == "*":
         mean_composed = mean_function_1 * mean_function_2
         assert isinstance(mean_composed, Product)
     else:
@@ -94,13 +94,9 @@ _linear_functions = [
 ]
 
 # Append inverse of first Linear mean function in _linear_functions
-_linear_functions.append(
-    Linear(A=-1.0 * _linear_functions[0].A, b=-1.0 * _linear_functions[0].b)
-)
+_linear_functions.append(Linear(A=-1.0 * _linear_functions[0].A, b=-1.0 * _linear_functions[0].b))
 
-_constant_functions = [
-    Constant(c=rng.randn(Datum.output_dim, 1).reshape(-1)) for _ in range(3)
-]
+_constant_functions = [Constant(c=rng.randn(Datum.output_dim, 1).reshape(-1)) for _ in range(3)]
 # Append inverse of first Constant mean function in _constant_functions
 _constant_functions.append(Constant(c=-1.0 * _constant_functions[0].c))
 
@@ -231,7 +227,7 @@ def test_models_with_mean_functions_changes(model_class):
     mutliplication with one does not.
     """
     data = rng.randn(Datum.N, Datum.input_dim), rng.randn(Datum.N, 1)
-    predict_at = rng.randn(Datum.Ntest, Datum.input_dim)
+    Xnew = rng.randn(Datum.Ntest, Datum.input_dim)
     inducing_variable = InducingPoints(Z=rng.randn(Datum.M, Datum.input_dim))
     kernel = gpflow.kernels.Matern32()
     likelihood = gpflow.likelihoods.Gaussian()
@@ -240,9 +236,7 @@ def test_models_with_mean_functions_changes(model_class):
 
     if model_class in [gpflow.models.GPR]:
         model_zero_mean = model_class(data, kernel=kernel, mean_function=zero_mean)
-        model_non_zero_mean = model_class(
-            data, kernel=kernel, mean_function=non_zero_mean
-        )
+        model_non_zero_mean = model_class(data, kernel=kernel, mean_function=non_zero_mean)
     elif model_class in [gpflow.models.VGP]:
         model_zero_mean = model_class(
             data, likelihood=likelihood, kernel=kernel, mean_function=zero_mean
@@ -265,16 +259,10 @@ def test_models_with_mean_functions_changes(model_class):
         )
     elif model_class in [gpflow.models.SGPR, gpflow.models.GPRFITC]:
         model_zero_mean = model_class(
-            data,
-            kernel=kernel,
-            inducing_variable=inducing_variable,
-            mean_function=zero_mean,
+            data, kernel=kernel, inducing_variable=inducing_variable, mean_function=zero_mean,
         )
         model_non_zero_mean = model_class(
-            data,
-            kernel=kernel,
-            inducing_variable=inducing_variable,
-            mean_function=non_zero_mean,
+            data, kernel=kernel, inducing_variable=inducing_variable, mean_function=non_zero_mean,
         )
     elif model_class in [gpflow.models.SGPMC]:
         model_zero_mean = model_class(
@@ -301,8 +289,8 @@ def test_models_with_mean_functions_changes(model_class):
     else:
         raise (NotImplementedError)
 
-    mu_zero, var_zero = model_zero_mean.predict_f(predict_at)
-    mu_non_zero, var_non_zero = model_non_zero_mean.predict_f(predict_at)
+    mu_zero, var_zero = model_zero_mean.predict_f(Xnew)
+    mu_non_zero, var_non_zero = model_non_zero_mean.predict_f(Xnew)
     # predictive variance remains unchanged after modifying mean function
     assert np.all(var_zero.numpy() == var_non_zero.numpy())
     # predictive mean changes after modifying mean function

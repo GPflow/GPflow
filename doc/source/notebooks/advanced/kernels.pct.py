@@ -90,10 +90,10 @@ axes[0,0].set_ylim(-3, 3);
 # %% [markdown]
 # ## First example: create a Matern 3/2 covariance kernel
 #
-# Many kernels have hyperparameters, for example `variance` and `lengthscale`. You can change the value of these parameters from their default value of `1.0`.
+# Many kernels have hyperparameters, for example `variance` and `lengthscales`. You can change the value of these parameters from their default value of `1.0`.
 
 # %%
-k = gpflow.kernels.Matern32(variance=10., lengthscale=2)
+k = gpflow.kernels.Matern32(variance=10., lengthscales=2)
 
 # %% [markdown]
 # **NOTE:** The values specified for the `variance` and `lengthscales` parameters are **floats**.
@@ -112,9 +112,9 @@ print_summary(k)
 # You can access the parameter values and assign new values with the same syntax as for models:
 
 # %%
-print(k.lengthscale)
-k.lengthscale.assign(0.5)
-print(k.lengthscale)
+print(k.lengthscales)
+k.lengthscales.assign(0.5)
+print(k.lengthscales)
 
 # %% [markdown]
 # Finally, you can *call* the kernel object to compute covariance matrices:
@@ -165,7 +165,7 @@ plotkernelsample(k4, axes[1, 1])
 # You can also initialize the lengthscales when the object is created:
 
 # %%
-k = gpflow.kernels.Matern52(lengthscale=[.1, .2, 5.])
+k = gpflow.kernels.Matern52(lengthscales=[.1, .2, 5.])
 print_summary(k)
 
 # %% [markdown]
@@ -184,7 +184,7 @@ k = k1 + k2
 # `active_dims` makes it easy to create additive models. Here we build an additive Matern 5/2 kernel:
 
 # %%
-k = gpflow.kernels.Matern52(active_dims=[0], lengthscale=2) + gpflow.kernels.Matern52(active_dims=[1], lengthscale=2)
+k = gpflow.kernels.Matern52(active_dims=[0], lengthscales=2) + gpflow.kernels.Matern52(active_dims=[1], lengthscales=2)
 
 # %% [markdown]
 # Let's plot this kernel and sample from it:

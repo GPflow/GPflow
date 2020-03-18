@@ -104,7 +104,9 @@ def _E(p, mean1, _, mean2, __, nghp=None):
     """
     N = tf.shape(p.mu)[0]
     e_xxt = p.cov + (p.mu[:, :, None] * p.mu[:, None, :])  # NxDxD
-    e_A_xxt = tf.linalg.matmul(tf.tile(mean1.A[None, ...], (N, 1, 1)), e_xxt, transpose_a=True)  # NxQxD
+    e_A_xxt = tf.linalg.matmul(
+        tf.tile(mean1.A[None, ...], (N, 1, 1)), e_xxt, transpose_a=True
+    )  # NxQxD
     e_b_xt = mean1.b[None, :, None] * p.mu[:, None, :]  # NxQxD
 
     return e_A_xxt + e_b_xt

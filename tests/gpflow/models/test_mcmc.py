@@ -41,11 +41,9 @@ def test_sparse_mcmc_likelihoods_and_gradients():
     )
     model_1.V = tf.convert_to_tensor(v_vals, dtype=default_float())
     model_2.V = tf.convert_to_tensor(v_vals, dtype=default_float())
-    model_1.kernel.lengthscale.assign(0.8)
-    model_2.kernel.lengthscale.assign(0.8)
+    model_1.kernel.lengthscales.assign(0.8)
+    model_2.kernel.lengthscales.assign(0.8)
     model_1.kernel.variance.assign(4.2)
     model_2.kernel.variance.assign(4.2)
 
-    assert_allclose(
-        model_1.log_likelihood(), model_2.log_likelihood(), rtol=1e-5, atol=1e-5
-    )
+    assert_allclose(model_1.log_likelihood(), model_2.log_likelihood(), rtol=1e-5, atol=1e-5)

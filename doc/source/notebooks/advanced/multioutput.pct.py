@@ -147,7 +147,7 @@ iv = gpf.inducing_variables.SharedIndependentInducingVariables(gpf.inducing_vari
 
 # %%
 # create SVGP model as usual and optimize
-m = gpf.models.SVGP(kernel, gpf.likelihoods.Gaussian(), inducing_variable=iv, num_latent=P)
+m = gpf.models.SVGP(kernel, gpf.likelihoods.Gaussian(), inducing_variable=iv, num_latent_gps=P)
 print_summary(m)
 
 
@@ -176,7 +176,7 @@ plot_model(m)
 
 # %%
 print_summary(m.kernel)
-m.kernel.kernel.kernels[0].lengthscale
+m.kernel.kernel.kernels[0].lengthscales
 
 # %% [markdown]
 # ### 2. Separate independent MOK and shared independent inducing variables
@@ -194,7 +194,7 @@ iv = gpf.inducing_variables.SharedIndependentInducingVariables(gpf.inducing_vari
 
 # %%
 # create SVGP model as usual and optimize
-m = gpf.models.SVGP(kernel, gpf.likelihoods.Gaussian(), inducing_variable=iv, num_latent=P)
+m = gpf.models.SVGP(kernel, gpf.likelihoods.Gaussian(), inducing_variable=iv, num_latent_gps=P)
 
 # %%
 optimize_model_with_scipy(m)
@@ -206,7 +206,7 @@ print_summary(m.kernel)
 plot_model(m)
 
 # %%
-[k.kernels[0].lengthscale for k in m.kernel.kernels]
+[k.kernels[0].lengthscales for k in m.kernel.kernels]
 
 # %% [markdown]
 # ### 3. Separate independent kernel and separate independent inducing variables
@@ -229,7 +229,7 @@ iv = gpf.inducing_variables.SeparateIndependentInducingVariables(iv_list)
 
 # %%
 # create SVGP model as usual and optimize
-m = gpf.models.SVGP(kernel, gpf.likelihoods.Gaussian(), inducing_variable=iv, num_latent=P)
+m = gpf.models.SVGP(kernel, gpf.likelihoods.Gaussian(), inducing_variable=iv, num_latent_gps=P)
 
 # %%
 optimize_model_with_scipy(m)

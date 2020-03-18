@@ -36,7 +36,7 @@ class Data:
     "kernel",
     [
         None,  # default kernel: SquaredExponential
-        gpflow.kernels.Periodic(base=gpflow.kernels.SquaredExponential()),
+        gpflow.kernels.Periodic(base_kernel=gpflow.kernels.SquaredExponential()),
     ],
 )
 def test_gplvm_with_kernels(kernel):
@@ -77,11 +77,11 @@ def test_bayesian_gplvm_1d():
 
 def test_bayesian_gplvm_2d():
     Q = 2  # latent dimensions
-    x_data_mean = pca_reduce(Data.Y, Q)
+    X_data_mean = pca_reduce(Data.Y, Q)
     kernel = gpflow.kernels.SquaredExponential()
 
     m = gpflow.models.BayesianGPLVM(
-        Data.Y, x_data_mean, np.ones((Data.N, Q)), kernel, num_inducing_variables=Data.M
+        Data.Y, X_data_mean, np.ones((Data.N, Q)), kernel, num_inducing_variables=Data.M
     )
 
     log_likelihood_initial = m.log_likelihood()
@@ -108,13 +108,13 @@ def test_gplvm_constructor_checks():
     with pytest.raises(ValueError):
         assert Data.X.shape[1] == Data.Q
         latents_wrong_shape = Data.X[:, : Data.Q - 1]
-        gpflow.models.GPLVM(Data.Y, Data.Q, x_data_mean=latents_wrong_shape)
+        gpflow.models.GPLVM(Data.Y, Data.Q, X_data_mean=latents_wrong_shape)
     with pytest.raises(ValueError):
         observations_wrong_shape = Data.Y[:, : Data.Q - 1]
         gpflow.models.GPLVM(observations_wrong_shape, Data.Q)
     with pytest.raises(ValueError):
         observations_wrong_shape = Data.Y[:, : Data.Q - 1]
-        gpflow.models.GPLVM(observations_wrong_shape, Data.Q, x_data_mean=Data.X)
+        gpflow.models.GPLVM(observations_wrong_shape, Data.Q, X_data_mean=Data.X)
 
 
 def test_bayesian_gplvm_constructor_check():

@@ -38,7 +38,7 @@ class MultioutputKernel(Kernel):
 
     @property
     @abc.abstractmethod
-    def num_latents(self):
+    def num_latent_gps(self):
         """The number of latent GPs in the multioutput kernel"""
         raise NotImplementedError
 
@@ -67,10 +67,10 @@ class MultioutputKernel(Kernel):
         """
         raise NotImplementedError
 
-    def __call__(self, X, X2=None, full=False, full_output_cov=True):
-        if not full and X2 is not None:
+    def __call__(self, X, X2=None, *, full_cov=False, full_output_cov=True):
+        if not full_cov and X2 is not None:
             raise ValueError("Ambiguous inputs: `diagonal` and `y` are not compatible.")
-        if not full:
+        if not full_cov:
             return self.K_diag(X, full_output_cov=full_output_cov)
         return self.K(X, X2, full_output_cov=full_output_cov)
 
@@ -82,13 +82,14 @@ class SharedIndependent(MultioutputKernel):
     Note: this class is created only for testing and comparison purposes.
     Use `gpflow.kernels` instead for more efficient code.
     """
+
     def __init__(self, kernel: Kernel, output_dim: int):
         super().__init__()
         self.kernel = kernel
         self.output_dim = output_dim
 
     @property
-    def num_latents(self):
+    def num_latent_gps(self):
         # In this case number of latent GPs (L) == output_dim (P)
         return self.output_dim
 
@@ -111,11 +112,12 @@ class SeparateIndependent(MultioutputKernel, Combination):
     - Separate: we use different kernel for each output latent
     - Independent: Latents are uncorrelated a priori.
     """
+
     def __init__(self, kernels, name=None):
         super().__init__(kernels=kernels, name=name)
 
     @property
-    def num_latents(self):
+    def num_latent_gps(self):
         return len(self.kernels)
 
     def K(self, X, X2=None, full_output_cov=True):
@@ -143,6 +145,7 @@ class IndependentLatent(MultioutputKernel):
     conditional()`. This can be specified by using `Fallback{Separate|Shared}
     IndependentInducingVariables`.
     """
+
     @abc.abstractmethod
     def Kgg(self, X, X2):
         raise NotImplementedError
@@ -152,12 +155,13 @@ class LinearCoregionalization(IndependentLatent, Combination):
     """
     Linear mixing of the latent GPs to form the output.
     """
+
     def __init__(self, kernels, W, name=None):
         Combination.__init__(self, kernels=kernels, name=name)
         self.W = Parameter(W)  # [P, L]
 
     @property
-    def num_latents(self):
+    def num_latent_gps(self):
         return self.W.shape[-1]  # L
 
     def Kgg(self, X, X2):
@@ -180,8 +184,11 @@ class LinearCoregionalization(IndependentLatent, Combination):
             # Can currently not use einsum due to unknown shape from `tf.stack()`
             # return tf.einsum('nl,lk,lq->nkq', K, self.W, self.W)  # [N, P, P]
             Wt = tf.transpose(self.W)  # [L, P]
-            return tf.reduce_sum(K[:, :, None, None] * Wt[None, :, :, None] * Wt[None, :, None, :],
-                                 axis=1)  # [N, P, P]
+            return tf.reduce_sum(
+                K[:, :, None, None] * Wt[None, :, :, None] * Wt[None, :, None, :], axis=1
+            )  # [N, P, P]
         else:
             # return tf.einsum('nl,lk,lk->nkq', K, self.W, self.W)  # [N, P]
-            return tf.linalg.matmul(K, self.W**2.0, transpose_b=True)  # [N, L]  *  [L, P]  ->  [N, P]
+            return tf.linalg.matmul(
+                K, self.W ** 2.0, transpose_b=True
+            )  # [N, L]  *  [L, P]  ->  [N, P]

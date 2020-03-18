@@ -48,28 +48,31 @@ class VGP(GPModel):
        q(\mathbf f) = N(\mathbf f \,|\, \boldsymbol \mu, \boldsymbol \Sigma)
 
     """
-    def __init__(self,
-                 data: Data,
-                 kernel: Kernel,
-                 likelihood: Likelihood,
-                 mean_function: Optional[MeanFunction] = None,
-                 num_latent: Optional[int] = None):
+
+    def __init__(
+        self,
+        data: Data,
+        kernel: Kernel,
+        likelihood: Likelihood,
+        mean_function: Optional[MeanFunction] = None,
+        num_latent_gps: Optional[int] = None,
+    ):
         """
         X is a data matrix, size [N, D]
         Y is a data matrix, size [N, R]
         kernel, likelihood, mean_function are appropriate GPflow objects
 
         """
-        super().__init__(kernel, likelihood, mean_function, num_latent)
+        super().__init__(kernel, likelihood, mean_function, num_latent_gps)
 
-        x_data, y_data = data
-        num_data = x_data.shape[0]
+        X_data, Y_data = data
+        num_data = X_data.shape[0]
         self.num_data = num_data
-        self.num_latent = num_latent or y_data.shape[1]
+        self.num_latent_gps = num_latent_gps or Y_data.shape[1]
         self.data = data
 
-        self.q_mu = Parameter(np.zeros((num_data, self.num_latent)))
-        q_sqrt = np.array([np.eye(num_data) for _ in range(self.num_latent)])
+        self.q_mu = Parameter(np.zeros((num_data, self.num_latent_gps)))
+        q_sqrt = np.array([np.eye(num_data) for _ in range(self.num_latent_gps)])
         self.q_sqrt = Parameter(q_sqrt, transform=triangular())
 
     def log_likelihood(self):
@@ -85,37 +88,34 @@ class VGP(GPModel):
 
         """
 
-        x_data, y_data = self.data
+        X_data, Y_data = self.data
         # Get prior KL.
         KL = gauss_kl(self.q_mu, self.q_sqrt)
 
         # Get conditionals
-        K = self.kernel(x_data) + tf.eye(self.num_data, dtype=default_float()) * default_jitter()
+        K = self.kernel(X_data) + tf.eye(self.num_data, dtype=default_float()) * default_jitter()
         L = tf.linalg.cholesky(K)
-        fmean = tf.linalg.matmul(L, self.q_mu) + self.mean_function(x_data)  # [NN, ND] -> ND
+        fmean = tf.linalg.matmul(L, self.q_mu) + self.mean_function(X_data)  # [NN, ND] -> ND
         q_sqrt_dnn = tf.linalg.band_part(self.q_sqrt, -1, 0)  # [D, N, N]
-        L_tiled = tf.tile(tf.expand_dims(L, 0), tf.stack([self.num_latent, 1, 1]))
+        L_tiled = tf.tile(tf.expand_dims(L, 0), tf.stack([self.num_latent_gps, 1, 1]))
         LTA = tf.linalg.matmul(L_tiled, q_sqrt_dnn)  # [D, N, N]
         fvar = tf.reduce_sum(tf.square(LTA), 2)
 
         fvar = tf.transpose(fvar)
 
         # Get variational expectations.
-        var_exp = self.likelihood.variational_expectations(fmean, fvar, y_data)
+        var_exp = self.likelihood.variational_expectations(fmean, fvar, Y_data)
 
         return tf.reduce_sum(var_exp) - KL
 
-    def predict_f(self, predict_at: DataPoint, full_cov: bool = False,
-                  full_output_cov: bool = False) -> MeanAndVariance:
-        x_data, _y_data = self.data
-        mu, var = conditional(predict_at,
-                              x_data,
-                              self.kernel,
-                              self.q_mu,
-                              q_sqrt=self.q_sqrt,
-                              full_cov=full_cov,
-                              white=True)
-        return mu + self.mean_function(predict_at), var
+    def predict_f(
+        self, Xnew: DataPoint, full_cov: bool = False, full_output_cov: bool = False
+    ) -> MeanAndVariance:
+        X_data, _ = self.data
+        mu, var = conditional(
+            Xnew, X_data, self.kernel, self.q_mu, q_sqrt=self.q_sqrt, full_cov=full_cov, white=True,
+        )
+        return mu + self.mean_function(Xnew), var
 
 
 class VGPOpperArchambeau(GPModel):
@@ -144,12 +144,15 @@ class VGPOpperArchambeau(GPModel):
     but the optimization is non-convex and in practice may cause difficulty.
 
     """
-    def __init__(self,
-                 data: Data,
-                 kernel: Kernel,
-                 likelihood: Likelihood,
-                 mean_function: MeanFunction = None,
-                 num_latent: Optional[int] = None):
+
+    def __init__(
+        self,
+        data: Data,
+        kernel: Kernel,
+        likelihood: Likelihood,
+        mean_function: MeanFunction = None,
+        num_latent_gps: Optional[int] = None,
+    ):
         """
         X is a data matrix, size [N, D]
         Y is a data matrix, size [N, R]
@@ -157,14 +160,16 @@ class VGPOpperArchambeau(GPModel):
         """
         mean_function = Zero() if mean_function is None else mean_function
 
-        super().__init__(kernel, likelihood, mean_function, num_latent)
+        super().__init__(kernel, likelihood, mean_function, num_latent_gps)
 
-        x_data, y_data = data
+        X_data, Y_data = data
         self.data = data
-        self.num_data = x_data.shape[0]
-        self.num_latent = num_latent or y_data.shape[1]
-        self.q_alpha = Parameter(np.zeros((self.num_data, self.num_latent)))
-        self.q_lambda = Parameter(np.ones((self.num_data, self.num_latent)), transform=gpflow.utilities.positive())
+        self.num_data = X_data.shape[0]
+        self.num_latent_gps = num_latent_gps or Y_data.shape[1]
+        self.q_alpha = Parameter(np.zeros((self.num_data, self.num_latent_gps)))
+        self.q_lambda = Parameter(
+            np.ones((self.num_data, self.num_latent_gps)), transform=gpflow.utilities.positive()
+        )
 
     def log_likelihood(self):
         r"""
@@ -175,29 +180,41 @@ class VGPOpperArchambeau(GPModel):
         with
             q(f) = N(f | K alpha + mean, [K^-1 + diag(square(lambda))]^-1) .
         """
-        x_data, y_data = self.data
-        K = self.kernel(x_data)
+        X_data, Y_data = self.data
+        K = self.kernel(X_data)
         K_alpha = tf.linalg.matmul(K, self.q_alpha)
-        f_mean = K_alpha + self.mean_function(x_data)
+        f_mean = K_alpha + self.mean_function(X_data)
 
         # compute the variance for each of the outputs
-        I = tf.tile(tf.eye(self.num_data, dtype=default_float())[None, ...], [self.num_latent, 1, 1])
-        A = I + tf.transpose(self.q_lambda)[:, None, ...] * tf.transpose(self.q_lambda)[:, :, None, ...] * K
+        I = tf.tile(
+            tf.eye(self.num_data, dtype=default_float())[None, ...], [self.num_latent_gps, 1, 1]
+        )
+        A = (
+            I
+            + tf.transpose(self.q_lambda)[:, None, ...]
+            * tf.transpose(self.q_lambda)[:, :, None, ...]
+            * K
+        )
         L = tf.linalg.cholesky(A)
         Li = tf.linalg.triangular_solve(L, I)
         tmp = Li / tf.transpose(self.q_lambda)[:, None, ...]
-        f_var = 1. / tf.square(self.q_lambda) - tf.transpose(tf.reduce_sum(tf.square(tmp), 1))
+        f_var = 1.0 / tf.square(self.q_lambda) - tf.transpose(tf.reduce_sum(tf.square(tmp), 1))
 
         # some statistics about A are used in the KL
         A_logdet = 2.0 * tf.reduce_sum(tf.math.log(tf.linalg.diag_part(L)))
         trAi = tf.reduce_sum(tf.square(Li))
 
-        KL = 0.5 * (A_logdet + trAi - self.num_data * self.num_latent + tf.reduce_sum(K_alpha * self.q_alpha))
+        KL = 0.5 * (
+            A_logdet
+            + trAi
+            - self.num_data * self.num_latent_gps
+            + tf.reduce_sum(K_alpha * self.q_alpha)
+        )
 
-        v_exp = self.likelihood.variational_expectations(f_mean, f_var, y_data)
+        v_exp = self.likelihood.variational_expectations(f_mean, f_var, Y_data)
         return tf.reduce_sum(v_exp) - KL
 
-    def predict_f(self, predict_at: DataPoint, full_cov: bool = False, full_output_cov: bool = False):
+    def predict_f(self, Xnew: DataPoint, full_cov: bool = False, full_output_cov: bool = False):
         r"""
         The posterior variance of F is given by
             q(f) = N(f | K alpha + mean, [K^-1 + diag(lambda**2)]^-1)
@@ -211,21 +228,21 @@ class VGPOpperArchambeau(GPModel):
         if full_output_cov:
             raise NotImplementedError
 
-        x_data, _y_data = self.data
+        X_data, _ = self.data
         # compute kernel things
-        Kx = self.kernel(x_data, predict_at)
-        K = self.kernel(x_data)
+        Kx = self.kernel(X_data, Xnew)
+        K = self.kernel(X_data)
 
         # predictive mean
-        f_mean = tf.linalg.matmul(Kx, self.q_alpha, transpose_a=True) + self.mean_function(predict_at)
+        f_mean = tf.linalg.matmul(Kx, self.q_alpha, transpose_a=True) + self.mean_function(Xnew)
 
         # predictive var
-        A = K + tf.linalg.diag(tf.transpose(1. / tf.square(self.q_lambda)))
+        A = K + tf.linalg.diag(tf.transpose(1.0 / tf.square(self.q_lambda)))
         L = tf.linalg.cholesky(A)
-        Kx_tiled = tf.tile(Kx[None, ...], [self.num_latent, 1, 1])
+        Kx_tiled = tf.tile(Kx[None, ...], [self.num_latent_gps, 1, 1])
         LiKx = tf.linalg.triangular_solve(L, Kx_tiled)
         if full_cov:
-            f_var = self.kernel(predict_at) - tf.linalg.matmul(LiKx, LiKx, transpose_a=True)
+            f_var = self.kernel(Xnew) - tf.linalg.matmul(LiKx, LiKx, transpose_a=True)
         else:
-            f_var = self.kernel(predict_at, full=False) - tf.reduce_sum(tf.square(LiKx), 1)
+            f_var = self.kernel(Xnew, full_cov=False) - tf.reduce_sum(tf.square(LiKx), axis=1)
         return f_mean, tf.transpose(f_var)

@@ -39,8 +39,9 @@ def _E(p, kernel, inducing_variable, _, __, nghp=None):
     return reduce(tf.add, exps)
 
 
-@dispatch.expectation.register(Gaussian, (mfn.Linear, mfn.Identity, mfn.Constant), NoneType, kernels.Sum,
-                               InducingPoints)
+@dispatch.expectation.register(
+    Gaussian, (mfn.Linear, mfn.Identity, mfn.Constant), NoneType, kernels.Sum, InducingPoints
+)
 def _E(p, mean, _, kernel, inducing_variable, nghp=None):
     r"""
     Compute the expectation:
@@ -66,7 +67,9 @@ def _E(p, mean, _, kernel, inducing_variable, nghp=None):
     return reduce(tf.add, exps)
 
 
-@dispatch.expectation.register((Gaussian, DiagonalGaussian), kernels.Sum, InducingPoints, kernels.Sum, InducingPoints)
+@dispatch.expectation.register(
+    (Gaussian, DiagonalGaussian), kernels.Sum, InducingPoints, kernels.Sum, InducingPoints
+)
 def _E(p, kern1, feat1, kern2, feat2, nghp=None):
     r"""
     Compute the expectation:

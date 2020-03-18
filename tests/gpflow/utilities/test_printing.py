@@ -22,6 +22,7 @@ from gpflow.utilities.utilities import (
     leaf_components,
     _merge_leaf_components,
     tabulate_module_summary,
+    set_trainable,
 )
 
 rng = np.random.RandomState(0)
@@ -67,8 +68,8 @@ class C(tf.keras.Model):
 
 
 def create_kernel():
-    kern = gpflow.kernels.SquaredExponential(lengthscale=Data.ls, variance=Data.var)
-    kern.lengthscale.trainable = False
+    kern = gpflow.kernels.SquaredExponential(lengthscales=Data.ls, variance=Data.var)
+    set_trainable(kern.lengthscales, False)
     return kern
 
 
@@ -90,7 +91,7 @@ def create_model():
         inducing_variable=Data.Z,
         q_diag=True,
     )
-    model.q_mu.trainable = False
+    set_trainable(model.q_mu, False)
     return model
 
 
@@ -99,139 +100,87 @@ def create_model():
 # ------------------------------------------
 
 example_tf_module_variable_dict = {
-    "A.var_trainable": {
-        "value": np.zeros((2, 2, 1)),
-        "trainable": True,
-        "shape": (2, 2, 1),
-    },
-    "A.var_fixed": {
-        "value": np.ones((2, 2, 1)),
-        "trainable": False,
-        "shape": (2, 2, 1),
-    },
+    "A.var_trainable": {"value": np.zeros((2, 2, 1)), "trainable": True, "shape": (2, 2, 1),},
+    "A.var_fixed": {"value": np.ones((2, 2, 1)), "trainable": False, "shape": (2, 2, 1),},
 }
 
 example_module_list_variable_dict = {
-    "submodule_list[0].var_trainable": example_tf_module_variable_dict[
-        "A.var_trainable"
-    ],
+    "submodule_list[0].var_trainable": example_tf_module_variable_dict["A.var_trainable"],
     "submodule_list[0].var_fixed": example_tf_module_variable_dict["A.var_fixed"],
-    "submodule_list[1].var_trainable": example_tf_module_variable_dict[
-        "A.var_trainable"
-    ],
+    "submodule_list[1].var_trainable": example_tf_module_variable_dict["A.var_trainable"],
     "submodule_list[1].var_fixed": example_tf_module_variable_dict["A.var_fixed"],
-    "submodule_dict['a'].var_trainable": example_tf_module_variable_dict[
-        "A.var_trainable"
-    ],
+    "submodule_dict['a'].var_trainable": example_tf_module_variable_dict["A.var_trainable"],
     "submodule_dict['a'].var_fixed": example_tf_module_variable_dict["A.var_fixed"],
-    "submodule_dict['b'].var_trainable": example_tf_module_variable_dict[
-        "A.var_trainable"
-    ],
+    "submodule_dict['b'].var_trainable": example_tf_module_variable_dict["A.var_trainable"],
     "submodule_dict['b'].var_fixed": example_tf_module_variable_dict["A.var_fixed"],
     "B.var_trainable": example_tf_module_variable_dict["A.var_trainable"],
     "B.var_fixed": example_tf_module_variable_dict["A.var_fixed"],
 }
 
 kernel_param_dict = {
-    "SquaredExponential.lengthscale": {
-        "value": Data.ls,
-        "trainable": False,
-        "shape": (),
-    },
+    "SquaredExponential.lengthscales": {"value": Data.ls, "trainable": False, "shape": (),},
     "SquaredExponential.variance": {"value": Data.var, "trainable": True, "shape": ()},
 }
 
 compose_kernel_param_dict = {
     "kernels[0].kernels[0].variance": kernel_param_dict["SquaredExponential.variance"],
-    "kernels[0].kernels[0].lengthscale": kernel_param_dict[
-        "SquaredExponential.lengthscale"
-    ],
+    "kernels[0].kernels[0].lengthscales": kernel_param_dict["SquaredExponential.lengthscales"],
     "kernels[0].kernels[1].variance": kernel_param_dict["SquaredExponential.variance"],
-    "kernels[0].kernels[1].lengthscale": kernel_param_dict[
-        "SquaredExponential.lengthscale"
-    ],
+    "kernels[0].kernels[1].lengthscales": kernel_param_dict["SquaredExponential.lengthscales"],
     "kernels[1].kernels[0].variance": kernel_param_dict["SquaredExponential.variance"],
-    "kernels[1].kernels[0].lengthscale": kernel_param_dict[
-        "SquaredExponential.lengthscale"
-    ],
+    "kernels[1].kernels[0].lengthscales": kernel_param_dict["SquaredExponential.lengthscales"],
     "kernels[1].kernels[1].variance": kernel_param_dict["SquaredExponential.variance"],
-    "kernels[1].kernels[1].lengthscale": kernel_param_dict[
-        "SquaredExponential.lengthscale"
-    ],
+    "kernels[1].kernels[1].lengthscales": kernel_param_dict["SquaredExponential.lengthscales"],
 }
 
 model_gp_param_dict = {
-    "kernel.lengthscale": kernel_param_dict["SquaredExponential.lengthscale"],
+    "kernel.lengthscales": kernel_param_dict["SquaredExponential.lengthscales"],
     "kernel.variance": kernel_param_dict["SquaredExponential.variance"],
     "likelihood.variance": {"value": 1.0, "trainable": True, "shape": ()},
-    "inducing_variable.Z": {
-        "value": Data.Z,
-        "trainable": True,
-        "shape": (Data.M, Data.D),
-    },
-    "SVGP.q_mu": {
-        "value": np.zeros((Data.M, 1)),
-        "trainable": False,
-        "shape": (Data.M, 1),
-    },
-    "SVGP.q_sqrt": {
-        "value": np.ones((Data.M, 1)),
-        "trainable": True,
-        "shape": (Data.M, 1),
-    },
+    "inducing_variable.Z": {"value": Data.Z, "trainable": True, "shape": (Data.M, Data.D),},
+    "SVGP.q_mu": {"value": np.zeros((Data.M, 1)), "trainable": False, "shape": (Data.M, 1),},
+    "SVGP.q_sqrt": {"value": np.ones((Data.M, 1)), "trainable": True, "shape": (Data.M, 1),},
 }
 
 example_dag_module_param_dict = {
-    "SVGP.kernel.variance\nSVGP.kernel.lengthscale": kernel_param_dict[
-        "SquaredExponential.lengthscale"
+    "SVGP.kernel.variance\nSVGP.kernel.lengthscales": kernel_param_dict[
+        "SquaredExponential.lengthscales"
     ],
     "SVGP.likelihood.variance": {"value": 1.0, "trainable": True, "shape": ()},
-    "SVGP.inducing_variable.Z": {
-        "value": Data.Z,
-        "trainable": True,
-        "shape": (Data.M, Data.D),
-    },
-    "SVGP.q_mu": {
-        "value": np.zeros((Data.M, 1)),
-        "trainable": False,
-        "shape": (Data.M, 1),
-    },
-    "SVGP.q_sqrt": {
-        "value": np.ones((Data.M, 1)),
-        "trainable": True,
-        "shape": (Data.M, 1),
-    },
+    "SVGP.inducing_variable.Z": {"value": Data.Z, "trainable": True, "shape": (Data.M, Data.D),},
+    "SVGP.q_mu": {"value": np.zeros((Data.M, 1)), "trainable": False, "shape": (Data.M, 1),},
+    "SVGP.q_sqrt": {"value": np.ones((Data.M, 1)), "trainable": True, "shape": (Data.M, 1),},
 }
 
 compose_kernel_param_print_string = """\
-name                                       class      transform    prior    trainable    shape    dtype      value\n\
------------------------------------------  ---------  -----------  -------  -----------  -------  -------  -------\n\
-Product.kernels[0].kernels[0].variance     Parameter  Softplus              True         ()       float64        1\n\
-Product.kernels[0].kernels[0].lengthscale  Parameter  Softplus              False        ()       float64        2\n\
-Product.kernels[0].kernels[1].variance     Parameter  Softplus              True         ()       float64        1\n\
-Product.kernels[0].kernels[1].lengthscale  Parameter  Softplus              False        ()       float64        2\n\
-Product.kernels[1].kernels[0].variance     Parameter  Softplus              True         ()       float64        1\n\
-Product.kernels[1].kernels[0].lengthscale  Parameter  Softplus              False        ()       float64        2\n\
-Product.kernels[1].kernels[1].variance     Parameter  Softplus              True         ()       float64        1\n\
-Product.kernels[1].kernels[1].lengthscale  Parameter  Softplus              False        ()       float64        2"""
+name                                        class      transform    prior    trainable    shape    dtype      value\n\
+------------------------------------------  ---------  -----------  -------  -----------  -------  -------  -------\n\
+Product.kernels[0].kernels[0].variance      Parameter  Softplus              True         ()       float64        1\n\
+Product.kernels[0].kernels[0].lengthscales  Parameter  Softplus              False        ()       float64        2\n\
+Product.kernels[0].kernels[1].variance      Parameter  Softplus              True         ()       float64        1\n\
+Product.kernels[0].kernels[1].lengthscales  Parameter  Softplus              False        ()       float64        2\n\
+Product.kernels[1].kernels[0].variance      Parameter  Softplus              True         ()       float64        1\n\
+Product.kernels[1].kernels[0].lengthscales  Parameter  Softplus              False        ()       float64        2\n\
+Product.kernels[1].kernels[1].variance      Parameter  Softplus              True         ()       float64        1\n\
+Product.kernels[1].kernels[1].lengthscales  Parameter  Softplus              False        ()       float64        2"""
 
 kernel_param_print_string = """\
-name                            class      transform    prior    trainable    shape    dtype      value\n\
-------------------------------  ---------  -----------  -------  -----------  -------  -------  -------\n\
-SquaredExponential.variance     Parameter  Softplus              True         ()       float64        1\n\
-SquaredExponential.lengthscale  Parameter  Softplus              False        ()       float64        2"""
+name                             class      transform    prior    trainable    shape    dtype      value\n\
+-------------------------------  ---------  -----------  -------  -----------  -------  -------  -------\n\
+SquaredExponential.variance      Parameter  Softplus              True         ()       float64        1\n\
+SquaredExponential.lengthscales  Parameter  Softplus              False        ()       float64        2"""
 
 kernel_param_print_string_with_shift = """\
-name                            class      transform         prior    trainable    shape    dtype      value\n\
-------------------------------  ---------  ----------------  -------  -----------  -------  -------  -------\n\
-SquaredExponential.variance     Parameter  Softplus + Shift           True         ()       float64        1\n\
-SquaredExponential.lengthscale  Parameter  Softplus + Shift           False        ()       float64        2"""
+name                             class      transform         prior    trainable    shape    dtype      value\n\
+-------------------------------  ---------  ----------------  -------  -----------  -------  -------  -------\n\
+SquaredExponential.variance      Parameter  Softplus + Shift           True         ()       float64        1\n\
+SquaredExponential.lengthscales  Parameter  Softplus + Shift           False        ()       float64        2"""
 
 model_gp_param_print_string = """\
 name                      class      transform    prior    trainable    shape    dtype    value\n\
 ------------------------  ---------  -----------  -------  -----------  -------  -------  --------\n\
 SVGP.kernel.variance      Parameter  Softplus              True         ()       float64  1.0\n\
-SVGP.kernel.lengthscale   Parameter  Softplus              False        ()       float64  2.0\n\
+SVGP.kernel.lengthscales  Parameter  Softplus              False        ()       float64  2.0\n\
 SVGP.likelihood.variance  Parameter  Softplus              True         ()       float64  1.0\n\
 SVGP.inducing_variable.Z  Parameter                        True         (10, 1)  float64  [[0.5...\n\
 SVGP.q_mu                 Parameter                        False        (10, 1)  float64  [[0....\n\
@@ -282,7 +231,7 @@ def module(request):
 @pytest.fixture
 def dag_module():
     dag = create_model()
-    dag.kernel.variance = dag.kernel.lengthscale
+    dag.kernel.variance = dag.kernel.lengthscales
     return dag
 
 
@@ -293,32 +242,25 @@ def dag_module():
 
 def test_leaf_components_only_returns_parameters_and_variables(module):
     for path, variable in leaf_components(module).items():
-        assert isinstance(variable, tf.Variable) or isinstance(
-            variable, gpflow.Parameter
-        )
+        assert isinstance(variable, tf.Variable) or isinstance(variable, gpflow.Parameter)
 
 
 @pytest.mark.parametrize(
     "module_callable, expected_param_dicts",
     [(create_kernel, kernel_param_dict), (create_model, model_gp_param_dict)],
 )
-def test_leaf_components_registers_variable_properties(
-    module_callable, expected_param_dicts
-):
+def test_leaf_components_registers_variable_properties(module_callable, expected_param_dicts):
     module = module_callable()
     for path, variable in leaf_components(module).items():
         param_name = path.split(".")[-2] + "." + path.split(".")[-1]
         assert isinstance(variable, gpflow.Parameter)
-        np.testing.assert_equal(
-            variable.value().numpy(), expected_param_dicts[param_name]["value"]
-        )
+        np.testing.assert_equal(variable.value().numpy(), expected_param_dicts[param_name]["value"])
         assert variable.trainable == expected_param_dicts[param_name]["trainable"]
         assert variable.shape == expected_param_dicts[param_name]["shape"]
 
 
 @pytest.mark.parametrize(
-    "module_callable, expected_param_dicts",
-    [(create_compose_kernel, compose_kernel_param_dict),],
+    "module_callable, expected_param_dicts", [(create_compose_kernel, compose_kernel_param_dict),],
 )
 def test_leaf_components_registers_compose_kernel_variable_properties(
     module_callable, expected_param_dicts
@@ -330,9 +272,7 @@ def test_leaf_components_registers_compose_kernel_variable_properties(
         path_as_list = path.split(".")
         param_name = path_as_list[-3] + "." + path_as_list[-2] + "." + path_as_list[-1]
         assert isinstance(variable, gpflow.Parameter)
-        np.testing.assert_equal(
-            variable.value().numpy(), expected_param_dicts[param_name]["value"]
-        )
+        np.testing.assert_equal(variable.value().numpy(), expected_param_dicts[param_name]["value"])
         assert variable.trainable == expected_param_dicts[param_name]["trainable"]
         assert variable.shape == expected_param_dicts[param_name]["shape"]
 
@@ -352,9 +292,7 @@ def test_leaf_components_registers_param_properties(module_class, expected_var_d
 
 
 @pytest.mark.parametrize("expected_var_dicts", [example_dag_module_param_dict])
-def test_merge_leaf_components_merges_keys_with_same_values(
-    dag_module, expected_var_dicts
-):
+def test_merge_leaf_components_merges_keys_with_same_values(dag_module, expected_var_dicts):
     leaf_components_dict = leaf_components(dag_module)
     for path, variable in _merge_leaf_components(leaf_components_dict).items():
         assert path in expected_var_dicts
@@ -380,10 +318,8 @@ def test_print_summary_output_string(module_callable, expected_param_print_strin
 
 def test_print_summary_output_string_with_positive_minimum():
     with as_context(Config(positive_minimum=1e-6)):
-        assert (
-            tabulate_module_summary(create_kernel())
-            == kernel_param_print_string_with_shift
-        )
+        print(tabulate_module_summary(create_kernel()))
+        assert tabulate_module_summary(create_kernel()) == kernel_param_print_string_with_shift
 
 
 def test_print_summary_for_keras_model():
@@ -397,9 +333,7 @@ def test_leaf_components_combination_kernel():
     Regression test for kernel compositions - output for printing should not be empty (issue #1066).
     """
     k = gpflow.kernels.SquaredExponential() + gpflow.kernels.SquaredExponential()
-    assert leaf_components(
-        k
-    ), "Combination kernel should have non-empty leaf components"
+    assert leaf_components(k), "Combination kernel should have non-empty leaf components"
 
 
 def test_module_parameters_return_iterators_not_generators():

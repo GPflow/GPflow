@@ -20,6 +20,7 @@ from numpy.testing import assert_allclose, assert_array_equal, assert_array_less
 
 import gpflow
 from gpflow.config import default_float
+from gpflow import set_trainable
 
 
 @dataclass(frozen=True)
@@ -41,17 +42,17 @@ def test_svgp_fixing_q_sqrt():
     """
     In response to bug #46, we need to make sure that the q_sqrt matrix can be fixed
     """
-    num_latent = default_datum_svgp.Y.shape[1]
+    num_latent_gps = default_datum_svgp.Y.shape[1]
     model = gpflow.models.SVGP(
         kernel=gpflow.kernels.SquaredExponential(),
         likelihood=default_datum_svgp.lik,
         q_diag=True,
-        num_latent=num_latent,
+        num_latent_gps=num_latent_gps,
         inducing_variable=default_datum_svgp.Z,
         whiten=False,
     )
     default_num_trainable_variables = len(model.trainable_variables)
-    model.q_sqrt.trainable = False
+    set_trainable(model.q_sqrt, False)
     assert len(model.trainable_variables) == default_num_trainable_variables - 1
 
 
@@ -60,12 +61,12 @@ def test_svgp_white():
     Tests that the SVGP bound on the likelihood is the same when using
     with and without diagonals when whitening.
     """
-    num_latent = default_datum_svgp.Y.shape[1]
+    num_latent_gps = default_datum_svgp.Y.shape[1]
     model_1 = gpflow.models.SVGP(
         kernel=gpflow.kernels.SquaredExponential(),
         likelihood=default_datum_svgp.lik,
         q_diag=True,
-        num_latent=num_latent,
+        num_latent_gps=num_latent_gps,
         inducing_variable=default_datum_svgp.Z,
         whiten=True,
     )
@@ -73,7 +74,7 @@ def test_svgp_white():
         kernel=gpflow.kernels.SquaredExponential(),
         likelihood=default_datum_svgp.lik,
         q_diag=False,
-        num_latent=num_latent,
+        num_latent_gps=num_latent_gps,
         inducing_variable=default_datum_svgp.Z,
         whiten=True,
     )
@@ -81,10 +82,7 @@ def test_svgp_white():
     model_1.q_mu.assign(default_datum_svgp.qmean)
     model_2.q_sqrt.assign(
         np.array(
-            [
-                np.diag(default_datum_svgp.qsqrt[:, 0]),
-                np.diag(default_datum_svgp.qsqrt[:, 1]),
-            ]
+            [np.diag(default_datum_svgp.qsqrt[:, 0]), np.diag(default_datum_svgp.qsqrt[:, 1]),]
         )
     )
     model_2.q_mu.assign(default_datum_svgp.qmean)
@@ -99,12 +97,12 @@ def test_svgp_non_white():
     Tests that the SVGP bound on the likelihood is the same when using
     with and without diagonals when whitening is not used.
     """
-    num_latent = default_datum_svgp.Y.shape[1]
+    num_latent_gps = default_datum_svgp.Y.shape[1]
     model_1 = gpflow.models.SVGP(
         kernel=gpflow.kernels.SquaredExponential(),
         likelihood=default_datum_svgp.lik,
         q_diag=True,
-        num_latent=num_latent,
+        num_latent_gps=num_latent_gps,
         inducing_variable=default_datum_svgp.Z,
         whiten=False,
     )
@@ -112,7 +110,7 @@ def test_svgp_non_white():
         kernel=gpflow.kernels.SquaredExponential(),
         likelihood=default_datum_svgp.lik,
         q_diag=False,
-        num_latent=num_latent,
+        num_latent_gps=num_latent_gps,
         inducing_variable=default_datum_svgp.Z,
         whiten=False,
     )
@@ -120,10 +118,7 @@ def test_svgp_non_white():
     model_1.q_mu.assign(default_datum_svgp.qmean)
     model_2.q_sqrt.assign(
         np.array(
-            [
-                np.diag(default_datum_svgp.qsqrt[:, 0]),
-                np.diag(default_datum_svgp.qsqrt[:, 1]),
-            ]
+            [np.diag(default_datum_svgp.qsqrt[:, 0]), np.diag(default_datum_svgp.qsqrt[:, 1]),]
         )
     )
     model_2.q_mu.assign(default_datum_svgp.qmean)
@@ -141,9 +136,7 @@ def _check_models_close(m1, m2, tolerance=1e-2):
     for key in m1_params:
         p1 = m1_params[key]
         p2 = m2_params[key]
-        if not np.allclose(
-            p1.read_value(), p2.read_value(), rtol=tolerance, atol=tolerance
-        ):
+        if not np.allclose(p1.read_value(), p2.read_value(), rtol=tolerance, atol=tolerance):
             return False
     return True
 

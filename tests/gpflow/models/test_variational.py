@@ -29,11 +29,7 @@ rng = np.random.RandomState(1)
 
 
 def univariate_log_marginal_likelihood(y, K, noise_var):
-    return (
-        -0.5 * y * y / (K + noise_var)
-        - 0.5 * np.log(K + noise_var)
-        - 0.5 * np.log(np.pi * 2.0)
-    )
+    return -0.5 * y * y / (K + noise_var) - 0.5 * np.log(K + noise_var) - 0.5 * np.log(np.pi * 2.0)
 
 
 def univariate_posterior(y, K, noise_var):
@@ -45,11 +41,7 @@ def univariate_posterior(y, K, noise_var):
 def univariate_prior_KL(meanA, meanB, varA, varB):
     # KL[ qA | qB ] = E_{qA} \log [qA / qB] where qA and qB are univariate normal distributions.
     return 0.5 * (
-        np.log(varB)
-        - np.log(varA)
-        - 1.0
-        + varA / varB
-        + (meanB - meanA) * (meanB - meanA) / varB
+        np.log(varB) - np.log(varA) - 1.0 + varA / varB + (meanB - meanA) * (meanB - meanA) / varB
     )
 
 
@@ -81,7 +73,7 @@ def multivariate_prior_KL(meanA, covA, meanB, covB):
 
 
 class Datum:
-    num_latent = 1
+    num_latent_gps = 1
     y_data = 2.0
     X = np.atleast_2d(np.array([0.0]))
     Y = np.atleast_2d(np.array([y_data]))
@@ -89,24 +81,22 @@ class Datum:
     zero_mean = 0.0
     K = 1.0
     noise_var = 0.5
-    posterior_mean, posterior_var = univariate_posterior(
-        y=y_data, K=K, noise_var=noise_var
-    )
+    posterior_mean, posterior_var = univariate_posterior(y=y_data, K=K, noise_var=noise_var)
     posterior_std = np.sqrt(posterior_var)
     data = (X, Y)
 
 
 class MultiDatum:
     dim = 3
-    num_latent = 1
+    num_latent_gps = 1
     Y = rng.randn(dim, 1)
     X = rng.randn(dim, 1)
     Z = X.copy()
     noise_var = 0.5
     signal_var = 1.5
     ls = 1.7
-    q_mean = rng.randn(dim, num_latent)
-    q_sqrt_diag = rng.rand(dim, num_latent)
+    q_mean = rng.randn(dim, num_latent_gps)
+    q_sqrt_diag = rng.rand(dim, num_latent_gps)
     q_sqrt_full = np.tril(rng.rand(dim, dim))
 
 
@@ -130,14 +120,14 @@ def test_variational_univariate_prior_KL(diag, whiten):
     reference_kl = univariate_prior_KL(
         Datum.posterior_mean, Datum.zero_mean, Datum.posterior_var, Datum.K
     )
-    q_mu = np.ones((1, Datum.num_latent)) * Datum.posterior_mean
-    ones = np.ones((1, Datum.num_latent)) if diag else np.ones((1, 1, Datum.num_latent))
+    q_mu = np.ones((1, Datum.num_latent_gps)) * Datum.posterior_mean
+    ones = np.ones((1, Datum.num_latent_gps)) if diag else np.ones((1, 1, Datum.num_latent_gps))
     q_sqrt = ones * Datum.posterior_std
     model = gpflow.models.SVGP(
         kernel=SquaredExponential(variance=Datum.K),
         likelihood=Gaussian(),
         inducing_variable=Datum.Z,
-        num_latent=Datum.num_latent,
+        num_latent_gps=Datum.num_latent_gps,
         q_diag=diag,
         whiten=whiten,
         q_mu=q_mu,
@@ -154,14 +144,14 @@ def test_variational_univariate_log_likelihood(diag, whiten):
     reference_log_marginal_likelihood = univariate_log_marginal_likelihood(
         y=Datum.y_data, K=Datum.K, noise_var=Datum.noise_var
     )
-    q_mu = np.ones((1, Datum.num_latent)) * Datum.posterior_mean
-    ones = np.ones((1, Datum.num_latent)) if diag else np.ones((1, 1, Datum.num_latent))
+    q_mu = np.ones((1, Datum.num_latent_gps)) * Datum.posterior_mean
+    ones = np.ones((1, Datum.num_latent_gps)) if diag else np.ones((1, 1, Datum.num_latent_gps))
     q_sqrt = ones * Datum.posterior_std
     model = gpflow.models.SVGP(
         kernel=SquaredExponential(variance=Datum.K),
         likelihood=Gaussian(),
         inducing_variable=Datum.Z,
-        num_latent=Datum.num_latent,
+        num_latent_gps=Datum.num_latent_gps,
         q_diag=diag,
         whiten=whiten,
         q_mu=q_mu,
@@ -174,14 +164,14 @@ def test_variational_univariate_log_likelihood(diag, whiten):
 @pytest.mark.parametrize("diag", [True, False])
 @pytest.mark.parametrize("whiten", [True, False])
 def test_variational_univariate_conditionals(diag, whiten):
-    q_mu = np.ones((1, Datum.num_latent)) * Datum.posterior_mean
-    ones = np.ones((1, Datum.num_latent)) if diag else np.ones((1, 1, Datum.num_latent))
+    q_mu = np.ones((1, Datum.num_latent_gps)) * Datum.posterior_mean
+    ones = np.ones((1, Datum.num_latent_gps)) if diag else np.ones((1, 1, Datum.num_latent_gps))
     q_sqrt = ones * Datum.posterior_std
     model = gpflow.models.SVGP(
         kernel=SquaredExponential(variance=Datum.K),
         likelihood=Gaussian(),
         inducing_variable=Datum.Z,
-        num_latent=Datum.num_latent,
+        num_latent_gps=Datum.num_latent_gps,
         q_diag=diag,
         whiten=whiten,
         q_mu=q_mu,
@@ -206,18 +196,14 @@ def test_variational_multivariate_prior_KL_full_q(whiten):
         if whiten
         else ref_rbf_kernel(MultiDatum.X, MultiDatum.ls, MultiDatum.signal_var)
     )
-    reference_kl = multivariate_prior_KL(
-        MultiDatum.q_mean, cov_q, mean_prior, cov_prior
-    )
+    reference_kl = multivariate_prior_KL(MultiDatum.q_mean, cov_q, mean_prior, cov_prior)
 
     q_sqrt = MultiDatum.q_sqrt_full[None, :, :]
     model = gpflow.models.SVGP(
-        kernel=SquaredExponential(
-            variance=MultiDatum.signal_var, lengthscale=MultiDatum.ls
-        ),
+        kernel=SquaredExponential(variance=MultiDatum.signal_var, lengthscales=MultiDatum.ls),
         likelihood=Gaussian(MultiDatum.noise_var),
         inducing_variable=MultiDatum.Z,
-        num_latent=MultiDatum.num_latent,
+        num_latent_gps=MultiDatum.num_latent_gps,
         q_diag=False,
         whiten=whiten,
         q_mu=MultiDatum.q_mean,

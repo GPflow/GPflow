@@ -60,33 +60,38 @@ class SGPMC(GPModel):
 
 
     """
-    def __init__(self,
-                 data: Data,
-                 kernel: Kernel,
-                 likelihood: Likelihood,
-                 mean_function: Optional[MeanFunction] = None,
-                 num_latent: int = 1,
-                 inducing_variable: Optional[InducingPoints] = None):
+
+    def __init__(
+        self,
+        data: Data,
+        kernel: Kernel,
+        likelihood: Likelihood,
+        mean_function: Optional[MeanFunction] = None,
+        num_latent_gps: int = 1,
+        inducing_variable: Optional[InducingPoints] = None,
+    ):
         """
         data is a tuple of X, Y with X, a data matrix, size [N, D] and Y, a data matrix, size [N, R]
         Z is a data matrix, of inducing inputs, size [M, D]
         kernel, likelihood, mean_function are appropriate GPflow objects
         """
-        super().__init__(kernel, likelihood, mean_function, num_latent=num_latent)
+        super().__init__(kernel, likelihood, mean_function, num_latent_gps=num_latent_gps)
         self.data = data
         self.num_data = data[0].shape[0]
         self.inducing_variable = inducingpoint_wrapper(inducing_variable)
-        self.V = Parameter(np.zeros((len(self.inducing_variable), self.num_latent)))
-        self.V.prior = tfp.distributions.Normal(loc=to_default_float(0.), scale=to_default_float(1.))
+        self.V = Parameter(np.zeros((len(self.inducing_variable), self.num_latent_gps)))
+        self.V.prior = tfp.distributions.Normal(
+            loc=to_default_float(0.0), scale=to_default_float(1.0)
+        )
 
     def log_likelihood(self, *args, **kwargs) -> tf.Tensor:
         """
         This function computes the optimal density for v, q*(v), up to a constant
         """
         # get the (marginals of) q(f): exactly predicting!
-        x_data, y_data = self.data
-        fmean, fvar = self.predict_f(x_data, full_cov=False)
-        return tf.reduce_sum(self.likelihood.variational_expectations(fmean, fvar, y_data))
+        X_data, Y_data = self.data
+        fmean, fvar = self.predict_f(X_data, full_cov=False)
+        return tf.reduce_sum(self.likelihood.variational_expectations(fmean, fvar, Y_data))
 
     def predict_f(self, X: tf.Tensor, full_cov=False, full_output_cov=False) -> MeanAndVariance:
         """
@@ -99,12 +104,14 @@ class SGPMC(GPModel):
         where F* are points on the GP at Xnew, F=LV are points on the GP at Z,
 
         """
-        mu, var = conditional(X,
-                              self.inducing_variable,
-                              self.kernel,
-                              self.V,
-                              full_cov=full_cov,
-                              q_sqrt=None,
-                              white=True,
-                              full_output_cov=full_output_cov)
+        mu, var = conditional(
+            X,
+            self.inducing_variable,
+            self.kernel,
+            self.V,
+            full_cov=full_cov,
+            q_sqrt=None,
+            white=True,
+            full_output_cov=full_output_cov,
+        )
         return mu + self.mean_function(X), var

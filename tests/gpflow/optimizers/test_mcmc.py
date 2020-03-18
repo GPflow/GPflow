@@ -23,7 +23,7 @@ def build_data():
 
 def build_model(data):
 
-    kernel = gpflow.kernels.Matern52(lengthscale=0.3)
+    kernel = gpflow.kernels.Matern52(lengthscales=0.3)
 
     meanf = gpflow.mean_functions.Linear(1.0, 0.0)
     model = gpflow.models.GPR(data, kernel, meanf)
@@ -44,8 +44,7 @@ def test_mcmc_helper_parameters():
         assert model.trainable_parameters[i] == hmc_helper._parameters[i]
         if isinstance(model.trainable_parameters[i], gpflow.Parameter):
             assert (
-                model.trainable_parameters[i].unconstrained_variable
-                == hmc_helper.current_state[i]
+                model.trainable_parameters[i].unconstrained_variable == hmc_helper.current_state[i]
             )
 
 
@@ -162,9 +161,7 @@ def test_mcmc_sampler_integration():
     )
 
     hmc = tfp.mcmc.HamiltonianMonteCarlo(
-        target_log_prob_fn=hmc_helper.target_log_prob_fn,
-        num_leapfrog_steps=2,
-        step_size=0.01,
+        target_log_prob_fn=hmc_helper.target_log_prob_fn, num_leapfrog_steps=2, step_size=0.01,
     )
 
     adaptive_hmc = tfp.mcmc.SimpleStepSizeAdaptation(

@@ -18,39 +18,40 @@ class Stationary(Kernel):
     dimension, otherwise the kernel is isotropic (has a single lengthscale).
     """
 
-    def __init__(self, variance=1.0, lengthscale=1.0, **kwargs):
+    def __init__(self, variance=1.0, lengthscales=1.0, **kwargs):
         """
         :param variance: the (initial) value for the variance parameter.
-        :param lengthscale: the (initial) value for the lengthscale
+        :param lengthscales: the (initial) value for the lengthscale
             parameter(s), to induce ARD behaviour this must be initialised as
             an array the same length as the the number of active dimensions
-            e.g. [1., 1., 1.]
+            e.g. [1., 1., 1.]. If only a single value is passed, this value
+            is used as the lengthscale of each dimension.
         :param kwargs: accepts `name` and `active_dims`, which is a list or
             slice of indices which controls which columns of X are used (by
             default, all columns are used).
         """
         for kwarg in kwargs:
-            if kwarg not in {'name', 'active_dims'}:
-                raise TypeError('Unknown keyword argument:', kwarg)
+            if kwarg not in {"name", "active_dims"}:
+                raise TypeError("Unknown keyword argument:", kwarg)
 
         super().__init__(**kwargs)
         self.variance = Parameter(variance, transform=positive())
-        self.lengthscale = Parameter(lengthscale, transform=positive())
-        self._validate_ard_active_dims(self.lengthscale)
+        self.lengthscales = Parameter(lengthscales, transform=positive())
+        self._validate_ard_active_dims(self.lengthscales)
 
     @property
     def ard(self) -> bool:
         """
         Whether ARD behaviour is active.
         """
-        return self.lengthscale.shape.ndims > 0
+        return self.lengthscales.shape.ndims > 0
 
     def scaled_squared_euclid_dist(self, X, X2=None):
         """
         Returns ||(X - X2ᵀ) / ℓ||² i.e. squared L2-norm.
         """
-        X_scaled = X / self.lengthscale
-        X2_scaled = X2 / self.lengthscale if X2 is not None else X2
+        X_scaled = X / self.lengthscales
+        X2_scaled = X2 / self.lengthscales if X2 is not None else X2
         return square_distance(X_scaled, X2_scaled)
 
     def K(self, X, X2=None):
@@ -80,7 +81,7 @@ class SquaredExponential(Stationary):
         k(r) = σ² exp{-½ r²}
 
     where:
-    r   is the Euclidean distance between the input points, scaled by the lengthscale parameter ℓ.
+    r   is the Euclidean distance between the input points, scaled by the lengthscales parameter ℓ.
     σ²  is the variance parameter
 
     Functions drawn from a GP with this kernel are infinitely differentiable!
@@ -97,14 +98,14 @@ class RationalQuadratic(Stationary):
     k(r) = σ² (1 + r² / 2αℓ²)^(-α)
 
     σ² : variance
-    ℓ  : lengthscale
+    ℓ  : lengthscales
     α  : alpha, determines relative weighting of small-scale and large-scale fluctuations
 
     For α → ∞, the RQ kernel becomes equivalent to the squared exponential.
     """
 
-    def __init__(self, variance=1.0, lengthscale=1.0, alpha=1.0, active_dims=None):
-        super().__init__(variance=variance, lengthscale=lengthscale, active_dims=active_dims)
+    def __init__(self, variance=1.0, lengthscales=1.0, alpha=1.0, active_dims=None):
+        super().__init__(variance=variance, lengthscales=lengthscales, active_dims=active_dims)
         self.alpha = Parameter(alpha, transform=positive())
 
     def K_r2(self, r2):
@@ -128,7 +129,7 @@ class Matern12(Stationary):
     k(r) = σ² exp{-r}
 
     where:
-    r  is the Euclidean distance between the input points, scaled by the lengthscale parameter ℓ.
+    r  is the Euclidean distance between the input points, scaled by the lengthscales parameter ℓ.
     σ² is the variance parameter
     """
 
@@ -144,13 +145,13 @@ class Matern32(Stationary):
     k(r) = σ² (1 + √3r) exp{-√3 r}
 
     where:
-    r  is the Euclidean distance between the input points, scaled by the lengthscale parameter ℓ,
+    r  is the Euclidean distance between the input points, scaled by the lengthscales parameter ℓ,
     σ² is the variance parameter.
     """
 
     def K_r(self, r):
-        sqrt3 = np.sqrt(3.)
-        return self.variance * (1. + sqrt3 * r) * tf.exp(-sqrt3 * r)
+        sqrt3 = np.sqrt(3.0)
+        return self.variance * (1.0 + sqrt3 * r) * tf.exp(-sqrt3 * r)
 
 
 class Matern52(Stationary):
@@ -161,12 +162,12 @@ class Matern52(Stationary):
     k(r) = σ² (1 + √5r + 5/3r²) exp{-√5 r}
 
     where:
-    r  is the Euclidean distance between the input points, scaled by the lengthscale parameter ℓ,
+    r  is the Euclidean distance between the input points, scaled by the lengthscales parameter ℓ,
     σ² is the variance parameter.
     """
 
     def K_r(self, r):
-        sqrt5 = np.sqrt(5.)
+        sqrt5 = np.sqrt(5.0)
         return self.variance * (1.0 + sqrt5 * r + 5.0 / 3.0 * tf.square(r)) * tf.exp(-sqrt5 * r)
 
 

@@ -46,9 +46,9 @@ def test_svgp(whiten, q_diag):
         q_diag=q_diag,
         whiten=whiten,
         mean_function=gpflow.mean_functions.Constant(),
-        num_latent=Datum.Y.shape[1],
+        num_latent_gps=Datum.Y.shape[1],
     )
-    gpflow.utilities.set_trainable(model.inducing_variable, False)
+    gpflow.set_trainable(model.inducing_variable, False)
 
     # test with explicitly unknown shapes:
     tensor_spec = tf.TensorSpec(shape=None, dtype=default_float())
@@ -62,10 +62,7 @@ def test_svgp(whiten, q_diag):
 
     # simply test whether it runs without erroring...:
     opt.minimize(
-        model_closure,
-        variables=model.trainable_variables,
-        options=dict(maxiter=3),
-        jit=True,
+        model_closure, variables=model.trainable_variables, options=dict(maxiter=3), jit=True,
     )
 
 
@@ -75,9 +72,9 @@ def test_multiclass():
         gpflow.kernels.SquaredExponential(),
         gpflow.likelihoods.MultiClass(num_classes=num_classes),
         inducing_variable=Datum.X.copy(),
-        num_latent=num_classes,
+        num_latent_gps=num_classes,
     )
-    gpflow.utilities.set_trainable(model.inducing_variable, False)
+    gpflow.set_trainable(model.inducing_variable, False)
 
     # test with explicitly unknown shapes:
     tensor_spec = tf.TensorSpec(shape=None, dtype=default_float())
@@ -91,8 +88,5 @@ def test_multiclass():
 
     # simply test whether it runs without erroring...:
     opt.minimize(
-        model_closure,
-        variables=model.trainable_variables,
-        options=dict(maxiter=3),
-        jit=True,
+        model_closure, variables=model.trainable_variables, options=dict(maxiter=3), jit=True,
     )

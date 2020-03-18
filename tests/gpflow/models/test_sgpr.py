@@ -20,6 +20,7 @@ import tensorflow as tf
 
 import gpflow
 from gpflow.config import default_float
+from gpflow.utilities import to_default_float
 
 
 @dataclass(frozen=True)
@@ -35,14 +36,9 @@ class Datum:
 
 def test_sgpr_qu():
     rng = Datum().rng
-    X, Z = (
-        tf.cast(rng.randn(100, 2), default_float()),
-        tf.cast(rng.randn(20, 2), default_float()),
-    )
-    Y = tf.cast(
-        np.sin(X @ np.array([[-1.4], [0.5]])) + 0.5 * np.random.randn(len(X), 1),
-        default_float(),
-    )
+    X = to_default_float(rng.randn(100, 2))
+    Z = to_default_float(rng.randn(20, 2))
+    Y = to_default_float(np.sin(X @ np.array([[-1.4], [0.5]])) + 0.5 * rng.randn(len(X), 1))
     model = gpflow.models.SGPR(
         (X, Y), kernel=gpflow.kernels.SquaredExponential(), inducing_variable=Z
     )
@@ -57,6 +53,4 @@ def test_sgpr_qu():
     f_at_Z_mean, f_at_Z_cov = model.predict_f(model.inducing_variable.Z, full_cov=True)
 
     np.testing.assert_allclose(qu_mean, f_at_Z_mean, rtol=1e-5, atol=1e-5)
-    np.testing.assert_allclose(
-        tf.reshape(qu_cov, (1, 20, 20)), f_at_Z_cov, rtol=1e-5, atol=1e-5
-    )
+    np.testing.assert_allclose(tf.reshape(qu_cov, (1, 20, 20)), f_at_Z_cov, rtol=1e-5, atol=1e-5)

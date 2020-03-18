@@ -18,6 +18,7 @@ from .gplvm import GPLVM, BayesianGPLVM
 from .gpmc import GPMC
 from .gpr import GPR
 from .model import BayesianModel, GPModel
+
 # from .gplvm import PCA_reduce
 from .sgpmc import SGPMC
 from .sgpr import GPRFITC, SGPR
