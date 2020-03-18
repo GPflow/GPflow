@@ -19,30 +19,60 @@ from numpy.testing import assert_allclose
 import pytest
 
 import gpflow
+import gpflow.ci_utils
 from gpflow import kernels
 
 
 KERNEL_CLASSES = [
-    # Static
+    # Static kernels:
     kernels.White,
     kernels.Constant,
-    # Stationary
+    # Stationary kernels:
     kernels.SquaredExponential,
     kernels.RationalQuadratic,
     kernels.Exponential,
     kernels.Matern12,
     kernels.Matern32,
     kernels.Matern52,
+    # other kernels:
     kernels.Cosine,
     kernels.Linear,
     kernels.Polynomial,
-    # Following kernels do not broadcast:
+    # sum and product kernels:
+    lambda: kernels.White() + kernels.Matern12(),
+    lambda: kernels.White() * kernels.Matern12(),
+    # Following kernels do not broadcast: see https://github.com/GPflow/GPflow/issues/1339
     pytest.param(kernels.ArcCosine, marks=pytest.mark.xfail),  # broadcasting not implemented
     pytest.param(kernels.Coregion, marks=pytest.mark.xfail),  # broadcasting not implemented
     pytest.param(kernels.Periodic, marks=pytest.mark.xfail),  # broadcasting not implemented
-    lambda: kernels.White() + kernels.Matern12(),
-    lambda: kernels.White() * kernels.Matern12(),
+    pytest.param(kernels.ChangePoints, marks=pytest.mark.xfail),  # broadcasting not implemented
+    pytest.param(kernels.Convolutional, marks=pytest.mark.xfail),  # broadcasting not implemented
 ]
+
+
+@pytest.mark.parametrize("kernel_class", gpflow.ci_utils.subclasses(kernels.Kernel))
+def test_no_kernels_missed(kernel_class):
+    if kernel_class in (KERNEL_CLASSES + [kernels.Sum, kernels.Product]):
+        return  # tested
+    if kernel_class in [
+        kernels.ArcCosine,
+        kernels.Coregion,
+        kernels.Periodic,
+        kernels.ChangePoints,
+        kernels.Convolutional,
+    ]:  # not tested but currently expected to fail
+        return
+    if kernel_class in [
+        kernels.Kernel,
+        kernels.Combination,
+        gpflow.kernels.base.ReducingCombination,
+        kernels.Static,
+        kernels.Stationary,
+    ]:  # abstract base classes
+        return
+    if issubclass(kernel_class, kernels.MultioutputKernel):
+        return  # cannot currently test MultioutputKernels
+    assert False, f"no test for kernel class {kernel_class}"
 
 
 @pytest.mark.parametrize("kernel_class", KERNEL_CLASSES)
@@ -50,7 +80,7 @@ def test_broadcast_no_active_dims(kernel_class):
     S, N, M, D = 5, 4, 3, 2
     X1 = np.random.randn(S, N, D)
     X2 = np.random.randn(M, D)
-    kernel = kernel_class() + gpflow.kernels.White()
+    kernel = kernel_class()
 
     compare_vs_map(X1, X2, kernel)
 
