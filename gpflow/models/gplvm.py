@@ -27,7 +27,7 @@ from ..probability_distributions import DiagonalGaussian
 from ..utilities import positive, to_default_float
 from ..utilities.ops import pca_reduce
 from .gpr import GPR
-from .model import GPModel
+from .model import GPModel, MeanAndVariance
 from .util import inducingpoint_wrapper
 
 
@@ -141,7 +141,7 @@ class BayesianGPLVM(GPModel):
         assert self.X_prior_var.shape[0] == self.num_data
         assert self.X_prior_var.shape[1] == self.num_latent_gps
 
-    def log_likelihood(self):
+    def log_likelihood(self) -> tf.Tensor:
         """
         Construct a tensorflow function to compute the bound on the marginal
         likelihood.
@@ -197,7 +197,7 @@ class BayesianGPLVM(GPModel):
         bound -= KL
         return bound
 
-    def predict_f(self, Xnew: tf.Tensor, full_cov: bool = False, full_output_cov: bool = False):
+    def predict_f(self, Xnew: tf.Tensor, full_cov: bool = False, full_output_cov: bool = False) -> MeanAndVariance:
         """
         Compute the mean and variance of the latent function at some new points.
         Note that this is very similar to the SGPR prediction, for which

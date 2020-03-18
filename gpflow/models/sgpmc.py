@@ -23,8 +23,8 @@ from ..inducing_variables import InducingPoints
 from ..kernels import Kernel
 from ..likelihoods import Likelihood
 from ..mean_functions import MeanFunction
-from ..models.model import Data, GPModel, MeanAndVariance
 from ..utilities import to_default_float
+from .model import GPModel, InputData, RegressionData, MeanAndVariance
 from .util import inducingpoint_wrapper
 
 
@@ -63,7 +63,7 @@ class SGPMC(GPModel):
 
     def __init__(
         self,
-        data: Data,
+        data: RegressionData,
         kernel: Kernel,
         likelihood: Likelihood,
         mean_function: Optional[MeanFunction] = None,
@@ -95,7 +95,7 @@ class SGPMC(GPModel):
         fmean, fvar = self.predict_f(X_data, full_cov=False)
         return tf.reduce_sum(self.likelihood.variational_expectations(fmean, fvar, Y_data))
 
-    def predict_f(self, X: tf.Tensor, full_cov=False, full_output_cov=False) -> MeanAndVariance:
+    def predict_f(self, X: InputData, full_cov=False, full_output_cov=False) -> MeanAndVariance:
         """
         Xnew is a data matrix, point at which we want to predict
 

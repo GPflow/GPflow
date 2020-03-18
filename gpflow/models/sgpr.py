@@ -17,14 +17,14 @@ import numpy as np
 import tensorflow as tf
 
 from gpflow.kernels import Kernel
-from .model import MeanAndVariance, GPModel, Data
-from .util import inducingpoint_wrapper
 from .. import likelihoods
 from ..config import default_float, default_jitter
 from ..covariances.dispatch import Kuf, Kuu
 from ..inducing_variables import InducingPoints
 from ..mean_functions import Zero, MeanFunction
 from ..utilities import to_default_float
+from .model import GPModel, InputData, RegressionData, MeanAndVariance
+from .util import inducingpoint_wrapper
 
 
 class SGPRBase(GPModel):
@@ -35,7 +35,7 @@ class SGPRBase(GPModel):
 
     def __init__(
         self,
-        data: Data,
+        data: RegressionData,
         kernel: Kernel,
         inducing_variable: InducingPoints,
         *,
@@ -148,7 +148,7 @@ class SGPR(SGPRBase):
 
     """
 
-    def log_likelihood(self):
+    def log_likelihood(self) -> tf.Tensor:
         """
         Construct a tensorflow function to compute the bound on the marginal
         likelihood. For a derivation of the terms in here, see the associated
@@ -186,7 +186,7 @@ class SGPR(SGPRBase):
 
         return bound
 
-    def predict_f(self, X: tf.Tensor, full_cov=False, full_output_cov=False) -> MeanAndVariance:
+    def predict_f(self, X: InputData, full_cov=False, full_output_cov=False) -> MeanAndVariance:
         """
         Compute the mean and variance of the latent function at some new points
         Xnew. For a derivation of the terms in here, see the associated SGPR
@@ -300,7 +300,7 @@ class GPRFITC(SGPRBase):
 
         return err, nu, Luu, L, alpha, beta, gamma
 
-    def log_likelihood(self):
+    def log_likelihood(self) -> tf.Tensor:
         """
         Construct a tensorflow function to compute the bound on the marginal
         likelihood.
@@ -347,7 +347,7 @@ class GPRFITC(SGPRBase):
 
         return mahalanobisTerm + logNormalizingTerm * self.num_latent_gps
 
-    def predict_f(self, X: tf.Tensor, full_cov=False, full_output_cov=False) -> MeanAndVariance:
+    def predict_f(self, X: InputData, full_cov=False, full_output_cov=False) -> MeanAndVariance:
         """
         Compute the mean and variance of the latent function at some new points
         Xnew.
