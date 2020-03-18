@@ -186,7 +186,7 @@ class SGPR(SGPRBase):
 
         return bound
 
-    def predict_f(self, X: InputData, full_cov=False, full_output_cov=False) -> MeanAndVariance:
+    def predict_f(self, Xnew: InputData, full_cov=False, full_output_cov=False) -> MeanAndVariance:
         """
         Compute the mean and variance of the latent function at some new points
         Xnew. For a derivation of the terms in here, see the associated SGPR
@@ -197,7 +197,7 @@ class SGPR(SGPRBase):
         err = Y_data - self.mean_function(X_data)
         kuf = Kuf(self.inducing_variable, self.kernel, X_data)
         kuu = Kuu(self.inducing_variable, self.kernel, jitter=default_jitter())
-        Kus = Kuf(self.inducing_variable, self.kernel, X)
+        Kus = Kuf(self.inducing_variable, self.kernel, Xnew)
         sigma = tf.sqrt(self.likelihood.variance)
         L = tf.linalg.cholesky(kuu)
         A = tf.linalg.triangular_solve(L, kuf, lower=True) / sigma
@@ -210,19 +210,19 @@ class SGPR(SGPRBase):
         mean = tf.linalg.matmul(tmp2, c, transpose_a=True)
         if full_cov:
             var = (
-                self.kernel(X)
+                self.kernel(Xnew)
                 + tf.linalg.matmul(tmp2, tmp2, transpose_a=True)
                 - tf.linalg.matmul(tmp1, tmp1, transpose_a=True)
             )
             var = tf.tile(var[None, ...], [self.num_latent_gps, 1, 1])  # [P, N, N]
         else:
             var = (
-                self.kernel(X, full_cov=False)
+                self.kernel(Xnew, full_cov=False)
                 + tf.reduce_sum(tf.square(tmp2), 0)
                 - tf.reduce_sum(tf.square(tmp1), 0)
             )
             var = tf.tile(var[:, None], [1, self.num_latent_gps])
-        return mean + self.mean_function(X), var
+        return mean + self.mean_function(Xnew), var
 
     def compute_qu(self):
         """
@@ -347,15 +347,15 @@ class GPRFITC(SGPRBase):
 
         return mahalanobisTerm + logNormalizingTerm * self.num_latent_gps
 
-    def predict_f(self, X: InputData, full_cov=False, full_output_cov=False) -> MeanAndVariance:
+    def predict_f(self, Xnew: InputData, full_cov=False, full_output_cov=False) -> MeanAndVariance:
         """
         Compute the mean and variance of the latent function at some new points
         Xnew.
         """
         _, _, Luu, L, _, _, gamma = self.common_terms()
-        Kus = Kuf(self.inducing_variable, self.kernel, X)  # size  [M, X]new
+        Kus = Kuf(self.inducing_variable, self.kernel, Xnew)  # [M, N]
 
-        w = tf.linalg.triangular_solve(Luu, Kus, lower=True)  # size [M, X]new
+        w = tf.linalg.triangular_solve(Luu, Kus, lower=True)  # [M, N]
 
         tmp = tf.linalg.triangular_solve(tf.transpose(L), gamma, lower=False)
         mean = tf.linalg.matmul(w, tmp, transpose_a=True) + self.mean_function(X)
@@ -373,7 +373,7 @@ class GPRFITC(SGPRBase):
                 self.kernel(X, full_cov=False)
                 - tf.reduce_sum(tf.square(w), 0)
                 + tf.reduce_sum(tf.square(intermediateA), 0)
-            )  # size Xnew,
+            )  # [N, P]
             var = tf.tile(var[:, None], [1, self.num_latent_gps])
 
         return mean, var
