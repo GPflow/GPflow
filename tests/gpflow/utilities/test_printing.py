@@ -22,6 +22,7 @@ from gpflow.utilities.utilities import (
     leaf_components,
     _merge_leaf_components,
     tabulate_module_summary,
+    set_trainable,
 )
 
 rng = np.random.RandomState(0)
@@ -67,8 +68,8 @@ class C(tf.keras.Model):
 
 
 def create_kernel():
-    kern = gpflow.kernels.SquaredExponential(lengthscale=Data.ls, variance=Data.var)
-    kern.lengthscale.trainable = False
+    kern = gpflow.kernels.SquaredExponential(lengthscales=Data.ls, variance=Data.var)
+    set_trainable(kern.lengthscales, False)
     return kern
 
 
@@ -90,7 +91,7 @@ def create_model():
         inducing_variable=Data.Z,
         q_diag=True,
     )
-    model.q_mu.trainable = False
+    set_trainable(model.q_mu, False)
     return model
 
 
@@ -117,23 +118,23 @@ example_module_list_variable_dict = {
 }
 
 kernel_param_dict = {
-    "SquaredExponential.lengthscale": {"value": Data.ls, "trainable": False, "shape": (),},
+    "SquaredExponential.lengthscales": {"value": Data.ls, "trainable": False, "shape": (),},
     "SquaredExponential.variance": {"value": Data.var, "trainable": True, "shape": ()},
 }
 
 compose_kernel_param_dict = {
     "kernels[0].kernels[0].variance": kernel_param_dict["SquaredExponential.variance"],
-    "kernels[0].kernels[0].lengthscale": kernel_param_dict["SquaredExponential.lengthscale"],
+    "kernels[0].kernels[0].lengthscales": kernel_param_dict["SquaredExponential.lengthscales"],
     "kernels[0].kernels[1].variance": kernel_param_dict["SquaredExponential.variance"],
-    "kernels[0].kernels[1].lengthscale": kernel_param_dict["SquaredExponential.lengthscale"],
+    "kernels[0].kernels[1].lengthscales": kernel_param_dict["SquaredExponential.lengthscales"],
     "kernels[1].kernels[0].variance": kernel_param_dict["SquaredExponential.variance"],
-    "kernels[1].kernels[0].lengthscale": kernel_param_dict["SquaredExponential.lengthscale"],
+    "kernels[1].kernels[0].lengthscales": kernel_param_dict["SquaredExponential.lengthscales"],
     "kernels[1].kernels[1].variance": kernel_param_dict["SquaredExponential.variance"],
-    "kernels[1].kernels[1].lengthscale": kernel_param_dict["SquaredExponential.lengthscale"],
+    "kernels[1].kernels[1].lengthscales": kernel_param_dict["SquaredExponential.lengthscales"],
 }
 
 model_gp_param_dict = {
-    "kernel.lengthscale": kernel_param_dict["SquaredExponential.lengthscale"],
+    "kernel.lengthscales": kernel_param_dict["SquaredExponential.lengthscales"],
     "kernel.variance": kernel_param_dict["SquaredExponential.variance"],
     "likelihood.variance": {"value": 1.0, "trainable": True, "shape": ()},
     "inducing_variable.Z": {"value": Data.Z, "trainable": True, "shape": (Data.M, Data.D),},
@@ -142,8 +143,8 @@ model_gp_param_dict = {
 }
 
 example_dag_module_param_dict = {
-    "SVGP.kernel.variance\nSVGP.kernel.lengthscale": kernel_param_dict[
-        "SquaredExponential.lengthscale"
+    "SVGP.kernel.variance\nSVGP.kernel.lengthscales": kernel_param_dict[
+        "SquaredExponential.lengthscales"
     ],
     "SVGP.likelihood.variance": {"value": 1.0, "trainable": True, "shape": ()},
     "SVGP.inducing_variable.Z": {"value": Data.Z, "trainable": True, "shape": (Data.M, Data.D),},
@@ -152,34 +153,34 @@ example_dag_module_param_dict = {
 }
 
 compose_kernel_param_print_string = """\
-name                                       class      transform    prior    trainable    shape    dtype      value\n\
------------------------------------------  ---------  -----------  -------  -----------  -------  -------  -------\n\
-Product.kernels[0].kernels[0].variance     Parameter  Softplus              True         ()       float64        1\n\
-Product.kernels[0].kernels[0].lengthscale  Parameter  Softplus              False        ()       float64        2\n\
-Product.kernels[0].kernels[1].variance     Parameter  Softplus              True         ()       float64        1\n\
-Product.kernels[0].kernels[1].lengthscale  Parameter  Softplus              False        ()       float64        2\n\
-Product.kernels[1].kernels[0].variance     Parameter  Softplus              True         ()       float64        1\n\
-Product.kernels[1].kernels[0].lengthscale  Parameter  Softplus              False        ()       float64        2\n\
-Product.kernels[1].kernels[1].variance     Parameter  Softplus              True         ()       float64        1\n\
-Product.kernels[1].kernels[1].lengthscale  Parameter  Softplus              False        ()       float64        2"""
+name                                        class      transform    prior    trainable    shape    dtype      value\n\
+------------------------------------------  ---------  -----------  -------  -----------  -------  -------  -------\n\
+Product.kernels[0].kernels[0].variance      Parameter  Softplus              True         ()       float64        1\n\
+Product.kernels[0].kernels[0].lengthscales  Parameter  Softplus              False        ()       float64        2\n\
+Product.kernels[0].kernels[1].variance      Parameter  Softplus              True         ()       float64        1\n\
+Product.kernels[0].kernels[1].lengthscales  Parameter  Softplus              False        ()       float64        2\n\
+Product.kernels[1].kernels[0].variance      Parameter  Softplus              True         ()       float64        1\n\
+Product.kernels[1].kernels[0].lengthscales  Parameter  Softplus              False        ()       float64        2\n\
+Product.kernels[1].kernels[1].variance      Parameter  Softplus              True         ()       float64        1\n\
+Product.kernels[1].kernels[1].lengthscales  Parameter  Softplus              False        ()       float64        2"""
 
 kernel_param_print_string = """\
-name                            class      transform    prior    trainable    shape    dtype      value\n\
-------------------------------  ---------  -----------  -------  -----------  -------  -------  -------\n\
-SquaredExponential.variance     Parameter  Softplus              True         ()       float64        1\n\
-SquaredExponential.lengthscale  Parameter  Softplus              False        ()       float64        2"""
+name                             class      transform    prior    trainable    shape    dtype      value\n\
+-------------------------------  ---------  -----------  -------  -----------  -------  -------  -------\n\
+SquaredExponential.variance      Parameter  Softplus              True         ()       float64        1\n\
+SquaredExponential.lengthscales  Parameter  Softplus              False        ()       float64        2"""
 
 kernel_param_print_string_with_shift = """\
-name                            class      transform         prior    trainable    shape    dtype      value\n\
-------------------------------  ---------  ----------------  -------  -----------  -------  -------  -------\n\
-SquaredExponential.variance     Parameter  Softplus + Shift           True         ()       float64        1\n\
-SquaredExponential.lengthscale  Parameter  Softplus + Shift           False        ()       float64        2"""
+name                             class      transform         prior    trainable    shape    dtype      value\n\
+-------------------------------  ---------  ----------------  -------  -----------  -------  -------  -------\n\
+SquaredExponential.variance      Parameter  Softplus + Shift           True         ()       float64        1\n\
+SquaredExponential.lengthscales  Parameter  Softplus + Shift           False        ()       float64        2"""
 
 model_gp_param_print_string = """\
 name                      class      transform    prior    trainable    shape    dtype    value\n\
 ------------------------  ---------  -----------  -------  -----------  -------  -------  --------\n\
 SVGP.kernel.variance      Parameter  Softplus              True         ()       float64  1.0\n\
-SVGP.kernel.lengthscale   Parameter  Softplus              False        ()       float64  2.0\n\
+SVGP.kernel.lengthscales  Parameter  Softplus              False        ()       float64  2.0\n\
 SVGP.likelihood.variance  Parameter  Softplus              True         ()       float64  1.0\n\
 SVGP.inducing_variable.Z  Parameter                        True         (10, 1)  float64  [[0.5...\n\
 SVGP.q_mu                 Parameter                        False        (10, 1)  float64  [[0....\n\
@@ -230,7 +231,7 @@ def module(request):
 @pytest.fixture
 def dag_module():
     dag = create_model()
-    dag.kernel.variance = dag.kernel.lengthscale
+    dag.kernel.variance = dag.kernel.lengthscales
     return dag
 
 
@@ -317,6 +318,7 @@ def test_print_summary_output_string(module_callable, expected_param_print_strin
 
 def test_print_summary_output_string_with_positive_minimum():
     with as_context(Config(positive_minimum=1e-6)):
+        print(tabulate_module_summary(create_kernel()))
         assert tabulate_module_summary(create_kernel()) == kernel_param_print_string_with_shift
 
 

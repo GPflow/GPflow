@@ -158,14 +158,14 @@ class Kernel(Module, metaclass=abc.ABCMeta):
     def K_diag(self, X):
         raise NotImplementedError
 
-    def __call__(self, X, X2=None, full=True, presliced=False):
-        if (not full) and (X2 is not None):
-            raise ValueError("Ambiguous inputs: `not full` and `X2` are not compatible.")
+    def __call__(self, X, X2=None, *, full_cov=True, presliced=False):
+        if (not full_cov) and (X2 is not None):
+            raise ValueError("Ambiguous inputs: `not full_cov` and `X2` are not compatible.")
 
         if not presliced:
             X, X2 = self.slice(X, X2)
 
-        if not full:
+        if not full_cov:
             assert X2 is None
             return self.K_diag(X)
 
@@ -236,8 +236,10 @@ class Combination(Kernel):
 
 
 class ReducingCombination(Combination):
-    def __call__(self, X, X2=None, full=True, presliced=False):
-        return self._reduce([k(X, X2, full=full, presliced=presliced) for k in self.kernels])
+    def __call__(self, X, X2=None, *, full_cov=True, presliced=False):
+        return self._reduce(
+            [k(X, X2, full_cov=full_cov, presliced=presliced) for k in self.kernels]
+        )
 
     def K(self, X: tf.Tensor, X2: Optional[tf.Tensor] = None) -> tf.Tensor:
         return self._reduce([k.K(X, X2) for k in self.kernels])

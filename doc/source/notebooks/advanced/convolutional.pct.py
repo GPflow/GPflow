@@ -34,7 +34,7 @@ import gpflow
 import tensorflow as tf
 import tensorflow_probability as tfp
 
-from gpflow.utilities import set_trainable
+from gpflow import set_trainable
 from gpflow.ci_utils import is_continuous_integration
 
 gpflow.config.set_default_float(np.float64)
@@ -131,7 +131,7 @@ max_abs_1 = lambda: tfp.bijectors.AffineScalar(shift=f64(-2.0), scale=f64(4.0))(
 
 patch_shape = [3, 3]
 conv_k = gpflow.kernels.Convolutional(gpflow.kernels.SquaredExponential(), IMAGE_SHAPE, patch_shape)
-conv_k.base_kernel.lengthscale = gpflow.Parameter(1.0, transform=positive_with_min())
+conv_k.base_kernel.lengthscales = gpflow.Parameter(1.0, transform=positive_with_min())
 # Weight scale and variance are non-identifiable. We also need to prevent variance from shooting off crazily.
 conv_k.base_kernel.variance = gpflow.Parameter(1.0, transform=constrained())
 conv_k.weights = gpflow.Parameter(conv_k.weights.numpy(), transform=max_abs_1())

@@ -177,7 +177,7 @@ plot(title="Predictions before training")
 minibatch_size = 100
 
 # We turn off training for inducing point locations
-gpflow.utilities.set_trainable(m.inducing_variable, False)
+gpflow.set_trainable(m.inducing_variable, False)
 
 @tf.function
 def optimization_step(optimizer, model: gpflow.models.SVGP, batch):

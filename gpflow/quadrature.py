@@ -19,6 +19,7 @@ import numpy as np
 import tensorflow as tf
 
 from .config import default_float
+from .utilities import to_default_float
 
 
 def hermgauss(n: int):
@@ -194,7 +195,7 @@ def ndiag_mc(funcs, S: int, Fmu, Fvar, logspace: bool = False, epsilon=None, **Y
         feval = func(mc_Xr, **Ys)
         feval = tf.reshape(feval, (S, N, -1))
         if logspace:
-            log_S = tf.math.log(tf.cast(S, default_float()))
+            log_S = tf.math.log(to_default_float(S))
             return tf.reduce_logsumexp(feval, axis=0) - log_S  # [N, D]
         else:
             return tf.reduce_mean(feval, axis=0)

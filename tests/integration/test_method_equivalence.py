@@ -100,7 +100,7 @@ def _create_approximate_models():
         mean_function=gpflow.mean_functions.Constant(),
         num_latent_gps=Datum.Y.shape[1],
     )
-    gpflow.utilities.set_trainable(model_2.inducing_variable, False)
+    gpflow.set_trainable(model_2.inducing_variable, False)
     model_3 = gpflow.models.SVGP(
         kernel=gpflow.kernels.SquaredExponential(),
         likelihood=gpflow.likelihoods.Gaussian(),
@@ -110,21 +110,21 @@ def _create_approximate_models():
         mean_function=gpflow.mean_functions.Constant(),
         num_latent_gps=Datum.Y.shape[1],
     )
-    gpflow.utilities.set_trainable(model_3.inducing_variable, False)
+    gpflow.set_trainable(model_3.inducing_variable, False)
     model_4 = gpflow.models.GPRFITC(
         (Datum.X, Datum.Y),
         kernel=gpflow.kernels.SquaredExponential(),
         inducing_variable=Datum.X.copy(),
         mean_function=Constant(),
     )
-    gpflow.utilities.set_trainable(model_4.inducing_variable, False)
+    gpflow.set_trainable(model_4.inducing_variable, False)
     model_5 = gpflow.models.SGPR(
         (Datum.X, Datum.Y),
         gpflow.kernels.SquaredExponential(),
         inducing_variable=Datum.X.copy(),
         mean_function=Constant(),
     )
-    gpflow.utilities.set_trainable(model_5.inducing_variable, False)
+    gpflow.set_trainable(model_5.inducing_variable, False)
 
     # Train models
 
@@ -216,10 +216,10 @@ def test_equivalence(approximate_model):
 
     assert_allclose(gpr_likelihood, approximate_likelihood, rtol=1e-6)
 
-    gpr_kernel_ls = gpr_model.kernel.lengthscale.read_value()
+    gpr_kernel_ls = gpr_model.kernel.lengthscales.read_value()
     gpr_kernel_var = gpr_model.kernel.variance.read_value()
 
-    approximate_kernel_ls = approximate_model.kernel.lengthscale.read_value()
+    approximate_kernel_ls = approximate_model.kernel.lengthscales.read_value()
     approximate_kernel_var = approximate_model.kernel.variance.read_value()
 
     assert_allclose(gpr_kernel_ls, approximate_kernel_ls, 1e-4)
@@ -318,7 +318,7 @@ def test_upper_bound_few_inducing_points():
         kernel=gpflow.kernels.SquaredExponential(),
         mean_function=Constant(),
     )
-    full_gp.kernel.lengthscale.assign(model_vfe.kernel.lengthscale)
+    full_gp.kernel.lengthscales.assign(model_vfe.kernel.lengthscales)
     full_gp.kernel.variance.assign(model_vfe.kernel.variance)
     full_gp.likelihood.variance.assign(model_vfe.likelihood.variance)
     full_gp.mean_function.c.assign(model_vfe.mean_function.c)

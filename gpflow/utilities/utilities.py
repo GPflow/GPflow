@@ -8,6 +8,7 @@ import tensorflow as tf
 import tensorflow_probability as tfp
 from tabulate import tabulate
 
+from .ops import cast
 from ..base import Parameter
 from ..config import default_float, default_int, default_summary_fmt
 
@@ -37,11 +38,11 @@ TraverseUpdateCallable = Callable[[TraverseInput, Path, State], State]
 
 
 def to_default_int(x):
-    return tf.cast(x, dtype=default_int())
+    return cast(x, dtype=default_int())
 
 
 def to_default_float(x):
-    return tf.cast(x, dtype=default_float())
+    return cast(x, dtype=default_float())
 
 
 def set_trainable(model: tf.Module, flag: bool):
@@ -322,7 +323,7 @@ def getattr_by_path(target: object, attr_path: str) -> Any:
     Example:
         k = gpflow.kernels.Matern52()
         m = gpflow.models.GPR(..., kernel=kernel)
-        lengthscale = getattr_by_path(m, "kernel.lengthscale")
+        lengthscales = getattr_by_path(m, "kernel.lengthscales")
     """
     try:
         descendant, attr, index = _get_last_attr_spec(target, attr_path)
@@ -341,7 +342,7 @@ def setattr_by_path(target: object, attr_path: str, value: Any):
     Example:
         k = gpflow.kernels.Matern52()
         m = gpflow.models.GPR(..., kernel=kernel)
-        setattr_by_path(m, "kernel.lengthscale", tf.constant(1.0, dtype=...))
+        setattr_by_path(m, "kernel.lengthscales", tf.constant(1.0, dtype=...))
     """
     try:
         descendant, attr, index = _get_last_attr_spec(target, attr_path)

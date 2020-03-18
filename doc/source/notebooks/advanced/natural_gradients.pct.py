@@ -28,6 +28,7 @@ from gpflow.ci_utils import ci_niter, ci_range
 from gpflow.models import VGP, GPR, SGPR, SVGP
 from gpflow.optimizers import NaturalGradient
 from gpflow.optimizers.natgrad import XiSqrtMeanVar
+from gpflow import set_trainable
 
 # %matplotlib inline
 # %precision 4
@@ -106,8 +107,8 @@ vgp.log_likelihood().numpy()
 
 # %%
 # Stop Adam from optimizing the variational parameters
-vgp.q_mu.trainable = False
-vgp.q_sqrt.trainable = False
+set_trainable(vgp.q_mu, False)
+set_trainable(vgp.q_sqrt, False)
 
 adam_opt_for_vgp = tf.optimizers.Adam(adam_learning_rate)
 adam_opt_for_gpr = tf.optimizers.Adam(adam_learning_rate)
@@ -123,10 +124,10 @@ for i in range(iterations):
 # %%
 for i in range(iterations):
     adam_opt_for_vgp.minimize(
-        lambda: - vgp.log_marginal_likelihood(), 
+        lambda: - vgp.log_marginal_likelihood(),
         var_list=vgp.trainable_variables)
     natgrad_opt.minimize(
-        lambda: - vgp.log_marginal_likelihood(), 
+        lambda: - vgp.log_marginal_likelihood(),
         var_list=variational_params)
     likelihood = vgp.log_likelihood()
     tf.print(f'VGP with NaturalGradient and Adam: iteration {i + 1} likelihood {likelihood:.04f}')
@@ -135,8 +136,8 @@ for i in range(iterations):
 # Compare GPR and VGP lengthscales after optimization:
 
 # %%
-print(f'GPR lengthscales = {gpr.kernel.lengthscale.numpy():.04f}')
-print(f'VGP lengthscales = {vgp.kernel.lengthscale.numpy():.04f}')
+print(f'GPR lengthscales = {gpr.kernel.lengthscales.numpy():.04f}')
+print(f'VGP lengthscales = {vgp.kernel.lengthscales.numpy():.04f}')
 
 # %% [markdown]
 # ### Natural gradients also work for the sparse model
@@ -222,8 +223,8 @@ ordinary_adam_opt = tf.optimizers.Adam(adam_learning_rate)
 
 # NatGrads and Adam for SVGP
 # Stop Adam from optimizing the variational parameters
-svgp_natgrad.q_mu.trainable = False
-svgp_natgrad.q_sqrt.trainable = False
+set_trainable(svgp_natgrad.q_mu, False)
+set_trainable(svgp_natgrad.q_sqrt, False)
 
 # Create the optimize_tensors for SVGP
 natgrad_adam_opt = tf.optimizers.Adam(adam_learning_rate)
@@ -289,8 +290,8 @@ adam_opt = tf.optimizers.Adam(adam_learning_rate)
 
 # NatGrads and Adam for VGP with Bernoulli likelihood
 # Stop Adam from optimizing the variational parameters
-vgp_bernoulli_natgrad.q_mu.trainable = False
-vgp_bernoulli_natgrad.q_sqrt.trainable = False
+set_trainable(vgp_bernoulli_natgrad.q_mu, False)
+set_trainable(vgp_bernoulli_natgrad.q_sqrt, False)
 
 # Create the optimize_tensors for VGP with natural gradients
 natgrad_adam_opt = tf.optimizers.Adam(adam_learning_rate)
@@ -333,8 +334,8 @@ vgp_bernoulli_natgrad.log_likelihood().numpy()
 vgp_bernoulli_natgrads_xi = VGP(vgp_data, kernel=gpflow.kernels.Matern52(), likelihood=gpflow.likelihoods.Bernoulli())
 
 # Stop Adam from optimizing the variational parameters
-vgp_bernoulli_natgrads_xi.q_mu.trainable = False
-vgp_bernoulli_natgrads_xi.q_sqrt.trainable = False
+set_trainable(vgp_bernoulli_natgrads_xi.q_mu, False)
+set_trainable(vgp_bernoulli_natgrads_xi.q_sqrt, False)
 
 # Create the optimize_tensors for VGP with Bernoulli likelihood
 adam_opt = tf.optimizers.Adam(adam_learning_rate)
