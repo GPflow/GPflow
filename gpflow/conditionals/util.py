@@ -470,7 +470,9 @@ def mix_latent_gp(W, g_mean, g_var, full_cov, full_output_cov):
     if not full_cov:
         shape_constraints.append((g_var, [..., "N", "L"]))
     else:
-        pass  # TODO cannot assert g_var shape here because of the inner "leading" dimensions, see https://github.com/GPflow/GPflow/issues/1296
+        # TODO cannot assert g_var shape here because of the inner "leading"
+        # dimensions, see https://github.com/GPflow/GPflow/issues/1296
+        pass
 
     f_mean = tf.tensordot(g_mean, W, [[-1], [-1]])  # [..., N, P]
 
