@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import tensorflow as tf
 import numpy as np
+import tensorflow as tf
 from .config import default_float
 from .utilities import to_default_float
 
@@ -98,4 +98,12 @@ def multivariate_normal(x, mu, L):
     p = -0.5 * tf.reduce_sum(tf.square(alpha), 0)
     p -= 0.5 * num_dims * np.log(2 * np.pi)
     p -= tf.reduce_sum(tf.math.log(tf.linalg.diag_part(L)))
+
+    shape_constraints = [
+        (d, ["D", "N"]),
+        (L, ["D", "D"]),
+        (p, ["N"]),
+    ]
+    tf.debugging.assert_shapes(shape_constraints, message="multivariate_normal()")
+
     return p

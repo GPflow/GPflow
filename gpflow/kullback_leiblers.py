@@ -42,8 +42,9 @@ def gauss_kl(q_mu, q_sqrt, K=None, *, K_cholesky=None):
           p(x) = N(0, K)    if K is not None
           p(x) = N(0, I)    if K is None
 
-    We assume N multiple independent distributions, given by the columns of
-    q_mu and the last dimension of q_sqrt. Returns the *sum* of the divergences.
+    We assume L multiple independent distributions, given by the columns of
+    q_mu and the first or last dimension of q_sqrt. Returns the *sum* of the
+    divergences.
 
     q_mu is a matrix ([M, L]), each column contains a mean.
 
@@ -70,32 +71,45 @@ def gauss_kl(q_mu, q_sqrt, K=None, *, K_cholesky=None):
     is_white = (K is None) and (K_cholesky is None)
     is_diag = len(q_sqrt.shape) == 2
 
-    M, B = tf.shape(q_mu)[0], tf.shape(q_mu)[1]
+    shape_constraints = [
+        (q_mu, ["M", "L"]),
+        (q_sqrt, (["M", "L"] if is_diag else ["L", "M", "M"])),
+    ]
+    if not is_white:
+        if K is not None:
+            shape_constraints.append((K, (["L", "M", "M"] if len(K.shape) == 3 else ["M", "M"])))
+        else:
+            shape_constraints.append(
+                (K_cholesky, (["L", "M", "M"] if len(K_cholesky.shape) == 3 else ["M", "M"]))
+            )
+    tf.debugging.assert_shapes(shape_constraints, message="gauss_kl() arguments")
+
+    M, L = tf.shape(q_mu)[0], tf.shape(q_mu)[1]
 
     if is_white:
-        alpha = q_mu  # [M, B]
+        alpha = q_mu  # [M, L]
     else:
         if K is not None:
-            Lp = tf.linalg.cholesky(K)  # [B, M, M] or [M, M]
+            Lp = tf.linalg.cholesky(K)  # [L, M, M] or [M, M]
         elif K_cholesky is not None:
-            Lp = K_cholesky  # [B, M, M] or [M, M]
+            Lp = K_cholesky  # [L, M, M] or [M, M]
 
         is_batched = len(Lp.shape) == 3
 
-        q_mu = tf.transpose(q_mu)[:, :, None] if is_batched else q_mu  # [B, M, 1] or [M, B]
-        alpha = tf.linalg.triangular_solve(Lp, q_mu, lower=True)  # [B, M, 1] or [M, B]
+        q_mu = tf.transpose(q_mu)[:, :, None] if is_batched else q_mu  # [L, M, 1] or [M, L]
+        alpha = tf.linalg.triangular_solve(Lp, q_mu, lower=True)  # [L, M, 1] or [M, L]
 
     if is_diag:
         Lq = Lq_diag = q_sqrt
-        Lq_full = tf.linalg.diag(tf.transpose(q_sqrt))  # [B, M, M]
+        Lq_full = tf.linalg.diag(tf.transpose(q_sqrt))  # [L, M, M]
     else:
-        Lq = Lq_full = tf.linalg.band_part(q_sqrt, -1, 0)  # force lower triangle # [B, M, M]
-        Lq_diag = tf.linalg.diag_part(Lq)  # [M, B]
+        Lq = Lq_full = tf.linalg.band_part(q_sqrt, -1, 0)  # force lower triangle # [L, M, M]
+        Lq_diag = tf.linalg.diag_part(Lq)  # [M, L]
 
     # Mahalanobis term: μqᵀ Σp⁻¹ μq
     mahalanobis = tf.reduce_sum(tf.square(alpha))
 
-    # Constant term: - B * M
+    # Constant term: - L * M
     constant = -to_default_float(tf.size(q_mu, out_type=tf.int64))
 
     # Log-determinant of the covariance of q(x):
@@ -106,7 +120,7 @@ def gauss_kl(q_mu, q_sqrt, K=None, *, K_cholesky=None):
         trace = tf.reduce_sum(tf.square(Lq))
     else:
         if is_diag and not is_batched:
-            # K is [M, M] and q_sqrt is [M, B]: fast specialisation
+            # K is [M, M] and q_sqrt is [M, L]: fast specialisation
             LpT = tf.transpose(Lp)  # [M, M]
             Lp_inv = tf.linalg.triangular_solve(
                 Lp, tf.eye(M, dtype=default_float()), lower=True
@@ -117,7 +131,7 @@ def gauss_kl(q_mu, q_sqrt, K=None, *, K_cholesky=None):
             trace = tf.reduce_sum(K_inv * tf.square(q_sqrt))
         else:
             # TODO: broadcast instead of tile when tf allows -- tf2.1 segfaults
-            Lp_full = Lp if is_batched else tf.tile(tf.expand_dims(Lp, 0), [B, 1, 1])
+            Lp_full = Lp if is_batched else tf.tile(tf.expand_dims(Lp, 0), [L, 1, 1])
             LpiLq = tf.linalg.triangular_solve(Lp_full, Lq_full, lower=True)
             trace = tf.reduce_sum(tf.square(LpiLq))
 
@@ -127,8 +141,9 @@ def gauss_kl(q_mu, q_sqrt, K=None, *, K_cholesky=None):
     if not is_white:
         log_sqdiag_Lp = tf.math.log(tf.square(tf.linalg.diag_part(Lp)))
         sum_log_sqdiag_Lp = tf.reduce_sum(log_sqdiag_Lp)
-        # If K is [B, M, M], num_latent_gps is no longer implicit, no need to multiply the single kernel logdet
-        scale = 1.0 if is_batched else to_default_float(B)
+        # If K is [L, M, M], num_latent_gps is no longer implicit, no need to multiply the single kernel logdet
+        scale = 1.0 if is_batched else to_default_float(L)
         twoKL += scale * sum_log_sqdiag_Lp
 
+    tf.debugging.assert_shapes([(twoKL, ())], message="gauss_kl() return value")  # returns scalar
     return 0.5 * twoKL
