@@ -82,7 +82,7 @@ class HeteroskedasticGaussian(gpflow.likelihoods.Likelihood):
         # this likelihood expects a single latent function F, and two columns in the data matrix Y:
         super().__init__(latent_dim=1, observation_dim=2, **kwargs)
 
-    def log_prob(self, F, Y):
+    def _log_prob(self, F, Y):
         # log_prob is used by the quadrature fallback of variational_expectations and predict_density.
         # Because variational_expectations is implemented analytically below, this is not actually needed,
         # but is included for pedagogical purposes.
