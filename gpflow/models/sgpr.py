@@ -358,19 +358,19 @@ class GPRFITC(SGPRBase):
         w = tf.linalg.triangular_solve(Luu, Kus, lower=True)  # [M, N]
 
         tmp = tf.linalg.triangular_solve(tf.transpose(L), gamma, lower=False)
-        mean = tf.linalg.matmul(w, tmp, transpose_a=True) + self.mean_function(X)
+        mean = tf.linalg.matmul(w, tmp, transpose_a=True) + self.mean_function(Xnew)
         intermediateA = tf.linalg.triangular_solve(L, w, lower=True)
 
         if full_cov:
             var = (
-                self.kernel(X)
+                self.kernel(Xnew)
                 - tf.linalg.matmul(w, w, transpose_a=True)
                 + tf.linalg.matmul(intermediateA, intermediateA, transpose_a=True)
             )
             var = tf.tile(var[None, ...], [self.num_latent_gps, 1, 1])  # [P, N, N]
         else:
             var = (
-                self.kernel(X, full_cov=False)
+                self.kernel(Xnew, full_cov=False)
                 - tf.reduce_sum(tf.square(w), 0)
                 + tf.reduce_sum(tf.square(intermediateA), 0)
             )  # [N, P]
