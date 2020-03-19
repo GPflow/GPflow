@@ -303,7 +303,7 @@ def _cast_to_dtype(value: VariableData, dtype: Optional[DType] = None) -> tf.Ten
     if dtype is None:
         dtype = default_float()
     if tf.is_tensor(value):
-        # TODO(awav) TF2.2 resolves issue with cast.
+        # NOTE(awav) TF2.2 resolves issue with cast.
         # From TF2.2, `tf.cast` can be used alone instead of this auxiliary function.
         # workaround for https://github.com/tensorflow/tensorflow/issues/35938
         return tf.cast(value, dtype)

@@ -116,7 +116,7 @@ def test_no_missing_likelihoods():
         if likelihood_class is MonteCarloLikelihood:
             continue  # abstract base class
         if issubclass(likelihood_class, MonteCarloLikelihood):
-            continue  # TODO
+            continue
         assert False, f"no test for likelihood class {likelihood_class}"
 
 
