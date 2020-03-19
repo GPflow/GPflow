@@ -13,16 +13,14 @@
 # ---
 
 # %% [markdown]
-# import numpy as np
-# import matplotlib.pyplot as plt
+# # Monitoring Optimisation
 #
-# import gpflow
-# from gpflow.utilities.monitor import ModelToTensorBoardTask, ImageToTensorBoardTask, ScalarToTensorBoard, TasksCollection
-# from gpflow.ci_utils import ci_niter
+# In this notebook we cover how to monitor the metrics during optimisation.
 
 # %%
 import numpy as np
 import matplotlib.pyplot as plt
+import tensorflow as tf
 
 import gpflow
 from gpflow.utilities.monitor import ModelToTensorBoardTask, ImageToTensorBoardTask, ScalarToTensorBoard, TasksCollection
@@ -52,7 +50,6 @@ def plot_prediction(fig, ax):
     ax.plot(Xnew.flatten(), np.squeeze(Ypred).T, "C1", alpha=.2)
     ax.plot(X, Y, "o")
 
-
 fig = plt.figure()
 ax = fig.subplots()
 plot_prediction(fig, ax)
@@ -75,7 +72,3 @@ opt = tf.optimizers.Adam()
 for step in range(optimisation_steps):
     opt.minimize(closure, model.trainable_variables)
     monitor_tasks(step)
-
-# %%
-
-# %%

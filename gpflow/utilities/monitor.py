@@ -38,9 +38,9 @@ class TasksCollection:
         """
         self.tasks = tasks
 
-    def __call__(self, step):
+    def __call__(self, step, **kwargs):
         for task in self.tasks:
-            task(step)
+            task(step, **kwargs)
 
 
 class MonitorTask(ABC):
@@ -58,21 +58,26 @@ class MonitorTask(ABC):
         self.current_step = 0
         self.period = period
 
-    def __call__(self, step: int):
+    def __call__(self, step: int, **kwargs):
         """
         It calls the 'run' function and sets the current step.
 
         :param step: current step in the optimisation.
+        :param kwargs: additional key-word arguments that can be passed
+            to the `run` method of the task. This is in particular handy for
+            passing keyword argument to the callback of `ScalarToTensorBoardTask`.
         """
         if step % self.period == 0:
             self.current_step = step
-            self.run()
+            self.run(**kwargs)
 
     @abstractmethod
-    def run(self):
+    def run(self, **kwargs):
         """
         Implements the task to be executed on __call__.
         The current step is available through `self.current_step`.
+
+        :param kwargs: keyword arguments available to the run method.
         """
         raise NotImplementedError
 
@@ -88,13 +93,13 @@ class TensorBoardTask(MonitorTask):
         super().__init__(period)
         self.file_writer = tf.summary.create_file_writer(log_dir)
 
-    def __call__(self, step):
+    def __call__(self, step, **kwargs):
         with self.file_writer.as_default():
-            super().__call__(step)
+            super().__call__(step, **kwargs)
         self.file_writer.flush()
 
     @abstractmethod
-    def run(self):
+    def run(self, **kwargs):
         raise NotImplementedError
 
 
@@ -121,7 +126,7 @@ class ModelToTensorBoardTask(TensorBoardTask):
         self.model = model
         self.max_size = max_size
 
-    def run(self):
+    def run(self, **unused_kwargs):
         for k, v in parameter_dict(self.model).items():
             name = k.lstrip(".")  # keys are prepended with a '.', which we strip
             self._summarize_parameter(name, v.numpy())
@@ -144,7 +149,7 @@ class ModelToTensorBoardTask(TensorBoardTask):
         tf.summary.scalar(name, value, step=self.current_step)
 
 
-class ScalarToTensorBoard(TensorBoardTask):
+class ScalarToTensorBoardTask(TensorBoardTask):
     """ Stores the returns value of a callback in a TensorBoard. """
 
     def __init__(self, log_dir: str, callback: Callable[[], float], name: str, period: int = 1):
@@ -160,8 +165,8 @@ class ScalarToTensorBoard(TensorBoardTask):
         self.name = name
         self.callback = callback
 
-    def run(self):
-        tf.summary.scalar(self.name, self.callback(), step=self.current_step)
+    def run(self, **kwargs):
+        tf.summary.scalar(self.name, self.callback(**kwargs), step=self.current_step)
 
 
 class ImageToTensorBoardTask(TensorBoardTask):
@@ -208,7 +213,7 @@ class ImageToTensorBoardTask(TensorBoardTask):
         except (AttributeError, TypeError):
             self.axes.clear()
 
-    def run(self):
+    def run(self, **unused_kwargs):
         self._clear_axes()
         self.plotting_function(self.fig, self.axes)
         canvas = FigureCanvasAgg(self.fig)

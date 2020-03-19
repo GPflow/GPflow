@@ -8,7 +8,7 @@ import tensorflow as tf
 import gpflow
 from gpflow.utilities.monitor import (
     ModelToTensorBoardTask,
-    ScalarToTensorBoard,
+    ScalarToTensorBoardTask,
     TasksCollection,
     ImageToTensorBoardTask,
 )
@@ -50,7 +50,7 @@ def test_logdir_created(model_and_closure):
     tasks = TasksCollection(
         [
             ModelToTensorBoardTask(Data.log_dir, model),
-            ScalarToTensorBoard(Data.log_dir, elbo_callback, "elbo"),
+            ScalarToTensorBoardTask(Data.log_dir, elbo_callback, "elbo"),
         ]
     )
 
@@ -88,8 +88,30 @@ def test_ScalarToTensorBoardTask():
     def scalar_cb():
         return 0.0
 
-    task = ScalarToTensorBoard(Data.log_dir, scalar_cb, "scalar")
+    task = ScalarToTensorBoardTask(Data.log_dir, scalar_cb, "scalar")
     task(0)
+
+
+def test_ScalarToTensorBoardTask_with_argument():
+    def scalar_cb(x=None):
+        return 2 * x
+
+    task = ScalarToTensorBoardTask(Data.log_dir, scalar_cb, "scalar")
+    task(0, x=1.0)
+
+    tasks = TasksCollection([task])
+    tasks(0, x=1.0)
+
+
+def test_ScalarToTensorBoardTask_with_wrong_kw_argument():
+    def scalar_cb(x=None):
+        return 2 * x
+
+    task = ScalarToTensorBoardTask(Data.log_dir, scalar_cb, "scalar")
+    tasks = TasksCollection([task])
+
+    with pytest.raises(TypeError, match=r".*got an unexpected keyword argument 'y'.*"):
+        tasks(0, y=1.0)
 
 
 def test_ModelToTensboardTask(model_and_closure):
