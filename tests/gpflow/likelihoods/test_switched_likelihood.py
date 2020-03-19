@@ -19,6 +19,7 @@ from numpy.testing import assert_allclose
 
 import gpflow
 from gpflow.likelihoods import Gaussian, StudentT, SwitchedLikelihood
+from gpflow.inducing_variables import InducingPoints
 
 
 @pytest.mark.parametrize("Y_list", [[tf.random.normal((i, 2)) for i in range(3, 6)]])
@@ -43,7 +44,7 @@ def test_switched_likelihood_log_prob(Y_list, F_list, Fvar_list, Y_label):
     switched_results = switched_likelihood.log_prob(F_sw, Y_sw)
     results = [lik.log_prob(f, y) for lik, y, f in zip(likelihoods, Y_list, F_list)]
 
-    assert_allclose(switched_results, np.concatenate(results)[Y_perm, :])
+    assert_allclose(switched_results, np.concatenate(results)[Y_perm])
 
 
 @pytest.mark.parametrize("Y_list", [[tf.random.normal((i, 2)) for i in range(3, 6)]])
@@ -69,7 +70,7 @@ def test_switched_likelihood_predict_density(Y_list, F_list, Fvar_list, Y_label)
         lik.predict_density(f, fvar, y)
         for lik, y, f, fvar in zip(likelihoods, Y_list, F_list, Fvar_list)
     ]
-    assert_allclose(switched_results, np.concatenate(results)[Y_perm, :])
+    assert_allclose(switched_results, np.concatenate(results)[Y_perm])
 
 
 @pytest.mark.parametrize("Y_list", [[tf.random.normal((i, 2)) for i in range(3, 6)]])
@@ -94,38 +95,10 @@ def test_switched_likelihood_variational_expectations(Y_list, F_list, Fvar_list,
         lik.variational_expectations(f, fvar, y)
         for lik, y, f, fvar in zip(likelihoods, Y_list, F_list, Fvar_list)
     ]
-    assert_allclose(switched_results, np.concatenate(results)[Y_perm, :])
+    assert_allclose(switched_results, np.concatenate(results)[Y_perm])
 
 
-@pytest.mark.parametrize("num_latent_gps", [1, 2])
-def test_switched_likelihood_regression_valid_num_latent_gps(num_latent_gps):
-    """
-    A Regression test when using Switched likelihood: the number of latent
-    functions in a GP model must be equal to the number of columns in Y minus
-    one. The final column of Y is used to index the switch. If the number of
-    latent functions does not match, an exception will be raised.
-    """
-    x = np.random.randn(100, 1)
-    y = np.hstack((np.random.randn(100, 1), np.random.randint(0, 3, (100, 1))))
-    data = x, y
-
-    Z = gpflow.inducing_variables.InducingPoints(np.random.randn(num_latent_gps, 1))
-    likelihoods = [StudentT()] * 3
-    switched_likelihood = SwitchedLikelihood(likelihoods)
-    m = gpflow.models.SVGP(
-        kernel=gpflow.kernels.Matern12(),
-        inducing_variable=Z,
-        likelihood=switched_likelihood,
-        num_latent_gps=num_latent_gps,
-    )
-    if num_latent_gps == 1:
-        m.log_likelihood(data)
-    else:
-        with pytest.raises(tf.errors.InvalidArgumentError):
-            m.log_likelihood(data)
-
-
-def test_SwitchedLikelihood_withVGP():
+def test_switched_likelihood_with_vgp():
     """
     Reproduces the bug in https://github.com/GPflow/GPflow/issues/951
     """
@@ -144,3 +117,31 @@ def test_SwitchedLikelihood_withVGP():
     opt.minimize(
         lambda: -model.log_likelihood(), model.trainable_variables, options=dict(maxiter=1)
     )
+
+
+@pytest.mark.parametrize("num_latent_gps", [1, 2])
+def test_switched_likelihood_regression_valid_num_latent_gps(num_latent_gps):
+    """
+    A Regression test when using Switched likelihood: the number of latent
+    functions in a GP model must be equal to the number of columns in Y minus
+    one. The final column of Y is used to index the switch. If the number of
+    latent functions does not match, an exception will be raised.
+    """
+    x = np.random.randn(100, 1)
+    y = np.hstack((np.random.randn(100, 1), np.random.randint(0, 3, (100, 1))))
+    data = x, y
+
+    Z = InducingPoints(np.random.randn(num_latent_gps, 1))
+    likelihoods = [StudentT()] * 3
+    switched_likelihood = SwitchedLikelihood(likelihoods)
+    m = gpflow.models.SVGP(
+        kernel=gpflow.kernels.Matern12(),
+        inducing_variable=Z,
+        likelihood=switched_likelihood,
+        num_latent_gps=num_latent_gps,
+    )
+    if num_latent_gps == 1:
+        m.log_likelihood(data)
+    else:
+        with pytest.raises(tf.errors.InvalidArgumentError):
+            m.log_likelihood(data)
