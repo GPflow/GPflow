@@ -100,14 +100,15 @@ class BayesianGPLVM(GPModel):
         :param X_prior_mean: prior mean used in KL term of bound. By default 0. Same size as X_data_mean.
         :param X_prior_var: prior variance used in KL term of bound. By default 1.
         """
-        super().__init__(kernel, likelihoods.Gaussian())
+        num_data, num_latent_gps = X_data_mean.shape
+        super().__init__(kernel, likelihoods.Gaussian(), num_latent_gps=num_latent_gps)
         self.data = data
         assert X_data_var.ndim == 2
 
         self.X_data_mean = Parameter(X_data_mean)
         self.X_data_var = Parameter(X_data_var, transform=positive())
 
-        self.num_data, self.num_latent_gps = X_data_mean.shape
+        self.num_data = num_data
         self.output_dim = data.shape[-1]
 
         assert np.all(X_data_mean.shape == X_data_var.shape)
