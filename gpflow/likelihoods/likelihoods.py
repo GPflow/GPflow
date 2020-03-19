@@ -306,8 +306,10 @@ class ScalarLikelihood(Likelihood):
         :param Y: observation Tensor, with shape [..., latent_dim]:
         :return variational expectations, with shape [...]
         """
-        return tf.reduce_sum(ndiagquad(
-            self._scalar_log_density, self.num_gauss_hermite_points, Fmu, Fvar, Y=Y), axis=-1)
+        return tf.reduce_sum(
+            ndiagquad(self._scalar_log_density, self.num_gauss_hermite_points, Fmu, Fvar, Y=Y),
+            axis=-1,
+        )
 
     def _predict_density(self, Fmu, Fvar, Y):
         r"""
@@ -319,8 +321,16 @@ class ScalarLikelihood(Likelihood):
         :return predictive density, with shape [...]
         """
         return tf.reduce_sum(
-            ndiagquad(self._scalar_log_density, self.num_gauss_hermite_points,
-                      Fmu, Fvar, logspace=True, Y=Y), axis=-1)
+            ndiagquad(
+                self._scalar_log_density,
+                self.num_gauss_hermite_points,
+                Fmu,
+                Fvar,
+                logspace=True,
+                Y=Y,
+            ),
+            axis=-1,
+        )
 
     def _predict_mean_and_var(self, Fmu, Fvar):
         r"""
@@ -834,7 +844,7 @@ class MonteCarloLikelihood(Likelihood):
         """
         return tf.reduce_sum(
             self._mc_quadrature(self.log_prob, Fmu, Fvar, Y=Y, logspace=True, epsilon=epsilon),
-            axis=-1
+            axis=-1,
         )
 
     def _variational_expectations(self, Fmu, Fvar, Y, epsilon=None):

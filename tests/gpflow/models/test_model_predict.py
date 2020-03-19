@@ -109,7 +109,8 @@ def test_gaussian_log_density(Ntrain, Ntest, D):
     data = Xtest, Ytest
     log_density = model_gp.predict_log_density(data)
     log_density_hand = np.squeeze(
-        -0.5 * np.log(2 * np.pi) - 0.5 * np.log(var_y) - 0.5 * np.square(mu_y - Ytest) / var_y, axis=-1
+        -0.5 * np.log(2 * np.pi) - 0.5 * np.log(var_y) - 0.5 * np.square(mu_y - Ytest) / var_y,
+        axis=-1,
     )
 
     assert np.allclose(log_density_hand, log_density)
