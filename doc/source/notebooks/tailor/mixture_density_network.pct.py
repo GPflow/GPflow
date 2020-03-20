@@ -230,7 +230,7 @@ model = MDN(inner_dims=[100, 100], num_mixtures=5)
 
 # %%
 Scipy().minimize(
-    model.training_loss_closure(data),
+    model.training_loss_closure(data, jit=True),
     variables=model.trainable_parameters,
     options=dict(maxiter=ci_niter(int(10e3)))
 );

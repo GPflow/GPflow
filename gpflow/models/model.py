@@ -67,7 +67,7 @@ class BayesianModel(Module, metaclass=abc.ABCMeta):
         gpflow.optimizers.Scipy). Includes the log prior density for maximum
         a-posteriori (MAP) estimation.
         """
-        return -(self.maximum_likelihood_objective(*args, **kwargs) + self.log_prior_density())
+        return self.maximum_likelihood_objective(*args, **kwargs) + self.log_prior_density()
 
     @abc.abstractmethod
     def maximum_likelihood_objective(self, *args, **kwargs) -> tf.Tensor:
@@ -87,7 +87,7 @@ class ExternalDataBayesianModel(BayesianModel, ExternalDataTrainingInterface):
     """
 
     def training_loss(self, data):
-        return self.maximum_a_posteriori_objective(data)
+        return -self.maximum_a_posteriori_objective(data)
 
 
 class GPModel(BayesianModel):
@@ -256,7 +256,7 @@ class InternalDataGPModel(GPModel, InternalDataTrainingInterface):
     """
 
     def training_loss(self):
-        return self.maximum_a_posteriori_objective()
+        return - self.maximum_a_posteriori_objective()
 
 
 class ExternalDataGPModel(GPModel, ExternalDataTrainingInterface):
@@ -266,4 +266,4 @@ class ExternalDataGPModel(GPModel, ExternalDataTrainingInterface):
     """
 
     def training_loss(self, data):
-        return self.maximum_a_posteriori_objective(data)
+        return - self.maximum_a_posteriori_objective(data)

@@ -57,6 +57,6 @@ class ExternalDataTrainingInterface(TrainingInterface):
 
         def closure():
             batch = next(data) if isinstance(data, collections.abc.Iterator) else data
-            return training_loss(data)
+            return training_loss(batch)
 
         return closure
