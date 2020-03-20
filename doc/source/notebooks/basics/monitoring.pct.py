@@ -31,7 +31,12 @@ from gpflow.ci_utils import ci_niter
 # The monitoring functionality lives in `gpflow.utilities.monitor`. For now, we import `ModelToTensorBoardTask`, `ImageToTensorBoardTask`, `ScalarToTensorBoardTask` monitoring tasks and `TasksCollection`.
 
 # %%
-from gpflow.utilities.monitor import ModelToTensorBoardTask, ImageToTensorBoardTask, ScalarToTensorBoardTask, TasksCollection
+from gpflow.monitor import (
+    ModelToTensorBoardTask,
+    ImageToTensorBoardTask,
+    ScalarToTensorBoardTask,
+    TasksCollection,
+)
 
 # %% [markdown]
 # ## Setup data and model
@@ -62,11 +67,13 @@ model
 # We define a function that plot's the model's prediction (in the form of samples) togheter with the data.
 # Importantly, this function has no other argument than `fig: matplotlib.figure.Figure` and `axes: matplotlib.figure.Axes`.
 
+
 def plot_prediction(fig, ax):
     Xnew = np.linspace(X.min() - 0.5, X.max() + 0.5, 100).reshape(-1, 1)
     Ypred = model.predict_f_samples(Xnew, full_cov=True, num_samples=20).numpy()
-    ax.plot(Xnew.flatten(), np.squeeze(Ypred).T, "C1", alpha=.2)
+    ax.plot(Xnew.flatten(), np.squeeze(Ypred).T, "C1", alpha=0.2)
     ax.plot(X, Y, "o")
+
 
 # Let's check if the function does the desired plotting
 fig = plt.figure()
@@ -99,7 +106,8 @@ monitor_tasks = TasksCollection([model_task, image_task, lml_task])
 # %%
 @tf.function
 def closure():
-    return - model.log_likelihood()
+    return -model.log_likelihood()
+
 
 opt = tf.optimizers.Adam()
 

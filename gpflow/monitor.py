@@ -23,24 +23,8 @@ import tensorflow as tf
 from matplotlib.backends.backend_agg import FigureCanvasAgg
 from matplotlib.figure import Axes, Figure
 
-from ..models import BayesianModel
+from .models import BayesianModel
 from .utilities import parameter_dict
-
-
-class TasksCollection:
-    """
-    Aggregates a list of tasks and allows to run them all with one call to `__call__`.
-    """
-
-    def __init__(self, tasks: List["MonitorTask"]):
-        """
-        :param tasks: a list of `MonitorTasks`s to be ran.
-        """
-        self.tasks = tasks
-
-    def __call__(self, step, **kwargs):
-        for task in self.tasks:
-            task(step, **kwargs)
 
 
 class MonitorTask(ABC):
@@ -65,10 +49,10 @@ class MonitorTask(ABC):
         :param step: current step in the optimisation.
         :param kwargs: additional key-word arguments that can be passed
             to the `run` method of the task. This is in particular handy for
-            passing keyword argument to the callback of `ScalarToTensorBoardTask`.
+            passing keyword argument to the callback of `ScalarToTensorBoard`.
         """
+        self.current_step = tf.cast(step, tf.int64)
         if step % self.period == 0:
-            self.current_step = step
             self.run(**kwargs)
 
     @abstractmethod
@@ -82,7 +66,7 @@ class MonitorTask(ABC):
         raise NotImplementedError
 
 
-class TensorBoardTask(MonitorTask):
+class ToTensorBoard(MonitorTask):
     def __init__(self, log_dir: str, period: int = 1):
         """
         :param log_dir: directory in which to store the tensorboard files.
@@ -98,12 +82,8 @@ class TensorBoardTask(MonitorTask):
             super().__call__(step, **kwargs)
         self.file_writer.flush()
 
-    @abstractmethod
-    def run(self, **kwargs):
-        raise NotImplementedError
 
-
-class ModelToTensorBoardTask(TensorBoardTask):
+class ModelToTensorBoard(ToTensorBoard):
     """
     Monitoring task that creates a sensible TensorBoard for a model.
 
@@ -129,27 +109,54 @@ class ModelToTensorBoardTask(TensorBoardTask):
     def run(self, **unused_kwargs):
         for k, v in parameter_dict(self.model).items():
             name = k.lstrip(".")  # keys are prepended with a '.', which we strip
-            self._summarize_parameter(name, v.numpy())
+            self._summarize_parameter(name, v)
 
     def _summarize_parameter(self, name: str, value: Union[float, np.ndarray]):
         """
         :param name: identifier used in tensorboard
         :param value: value to be stored in tensorboard
         """
-        if isinstance(value, float):
-            self._summarize_scalar_parameter(name, value)
-        elif isinstance(value, np.ndarray) and value.size <= self.max_size:
-            self._summarize_array_parameter(name, value)
+        # tf.summary.scalar("hello", self.model.likelihood.variance, step=self.current_step)
+        # tf.print("hello")
+        # if isinstance(value, float):
+        # print(tf.size(value))
+        # tf.print(tf.size(value))
+        value = tf.reshape(value, (-1,))
+        if tf.size(value) > self.max_size:
+            return
+
+        i = 0
+        for v in value:
+            self._summarize_scalar_parameter(f"{name}[{i}]", v)
+            i += 1
+        # if tf.size(value) == 1:
+        #     print(value)
+        #     tf.print(value)
+        #     self._summarize_scalar_parameter(name, value)
+        # if tf.size(value) <= self.max_size:
+        #     # elif isinstance(value, np.ndarray) and value.size <= self.max_size:
+        #     self._summarize_array_parameter(name, value)
 
     def _summarize_array_parameter(self, name, value):
-        for i, v in enumerate(value.flatten()):
+        value = tf.reshape(value, (-1,))
+        # indices = tf.range(tf.size(value))
+
+        # def fn(tuple):
+        #     i, v = tuple
+        #     self._summarize_scalar_parameter(f"{name}[{i}]", v)
+
+        # tf.map_fn(fn, (indices, value))
+        i = 0
+        for v in value:
+            print(v)
             self._summarize_scalar_parameter(f"{name}[{i}]", v)
+            i += 1
 
     def _summarize_scalar_parameter(self, name, value):
         tf.summary.scalar(name, value, step=self.current_step)
 
 
-class ScalarToTensorBoardTask(TensorBoardTask):
+class ScalarToTensorBoard(ToTensorBoard):
     """ Stores the returns value of a callback in a TensorBoard. """
 
     def __init__(self, log_dir: str, callback: Callable[[], float], name: str, period: int = 1):
@@ -169,7 +176,7 @@ class ScalarToTensorBoardTask(TensorBoardTask):
         tf.summary.scalar(self.name, self.callback(**kwargs), step=self.current_step)
 
 
-class ImageToTensorBoardTask(TensorBoardTask):
+class ImageToTensorBoard(ToTensorBoard):
     def __init__(
         self,
         log_dir: str,
@@ -229,3 +236,20 @@ class ImageToTensorBoardTask(TensorBoardTask):
 
         # Write to TensorBoard
         tf.summary.image(self.name, image_tensor, step=self.current_step)
+
+
+class MonitorCollection:
+    """
+    Aggregates a list of tasks and allows to run them all with one call to `__call__`.
+    """
+
+    def __init__(self, tasks: List[MonitorTask]):
+        """
+        :param tasks: a list of `MonitorTask`s to be ran.
+        """
+        self.tasks = tasks
+
+    def __call__(self, step, **kwargs):
+        for task in self.tasks:
+            task(step, **kwargs)
+
