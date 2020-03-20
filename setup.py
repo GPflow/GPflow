@@ -59,7 +59,7 @@ except (ImportError, DeprecationWarning):
     if not on_rtd:
         # Do not add TF if we are installing GPflow on readthedocs
         requirements.append(tf_cpu)
-        gast_requirement = 'gast==0.2.2' if parse_version(latest_version('tensorflow')) < parse_version('2.2') else 'gast==0.3.3'
+        gast_requirement = 'gast>=0.2.2,<0.3' if parse_version(latest_version('tensorflow')) < parse_version('2.2') else 'gast>=0.3.3'
         requirements.append(gast_requirement)
         
 
