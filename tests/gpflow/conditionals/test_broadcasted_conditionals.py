@@ -22,8 +22,8 @@ import tensorflow as tf
 from numpy.testing import assert_allclose
 
 import gpflow
-import gpflow.inducing_variables.mo_inducing_variables as mf
-import gpflow.kernels.mo_kernels as mk
+import gpflow.inducing_variables.multioutput.inducing_variables as mf
+import gpflow.kernels.multioutput.kernels as mk
 from gpflow.conditionals import sample_conditional
 from gpflow.conditionals.util import mix_latent_gp
 

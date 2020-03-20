@@ -3,10 +3,10 @@
 from .dispatch import conditional, sample_conditional
 
 from . import conditionals
-from . import mo_conditionals
-
 from . import sample_conditionals
-from . import mo_sample_conditionals
+
+from .multioutput import conditionals as mo_conditionals
+from .multioutput import sample_conditionals as mo_sample_conditionals
 
 from .util import base_conditional
 

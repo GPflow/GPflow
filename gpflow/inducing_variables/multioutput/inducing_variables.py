@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from .inducing_variables import InducingVariables
+from ..inducing_variables import InducingVariables
 
 
 class MultioutputInducingVariables(InducingVariables):

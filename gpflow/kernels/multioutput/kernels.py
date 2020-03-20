@@ -16,8 +16,8 @@ import abc
 
 import tensorflow as tf
 
-from ..base import Parameter
-from .base import Combination, Kernel
+from ...base import Parameter
+from ..base import Combination, Kernel
 
 
 class MultioutputKernel(Kernel):

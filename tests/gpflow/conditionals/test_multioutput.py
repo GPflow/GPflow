@@ -4,8 +4,8 @@ import scipy
 import tensorflow as tf
 
 import gpflow
-import gpflow.inducing_variables.mo_inducing_variables as mf
-import gpflow.kernels.mo_kernels as mk
+import gpflow.inducing_variables.multioutput.inducing_variables as mf
+import gpflow.kernels.multioutput.kernels as mk
 from gpflow.conditionals import sample_conditional
 from gpflow.conditionals.util import (
     fully_correlated_conditional,
