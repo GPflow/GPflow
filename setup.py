@@ -10,7 +10,6 @@ from pathlib import Path
 from pkg_resources import parse_version
 from setuptools import find_packages, setup
 
-is_py37 = sys.version_info.major == 3 and sys.version_info.minor == 7
 on_rtd = os.environ.get('READTHEDOCS', None) == 'True'  # copied from the docs
 
 # Dependencies of GPflow
@@ -22,7 +21,8 @@ requirements = [
     'gast==0.2.2',
 ]
 
-if not is_py37:
+if sys.version_info < (3, 7):
+    # became part of stdlib in python 3.7
     requirements.append("dataclasses")
 
 if not on_rtd:
