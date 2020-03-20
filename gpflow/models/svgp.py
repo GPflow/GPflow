@@ -21,11 +21,11 @@ from ..base import Parameter
 from ..conditionals import conditional
 from ..config import default_float
 from ..utilities import positive, triangular
-from .model import GPModel, RegressionData, BayesianModelNotStoringData
+from .model import GPModel, RegressionData, ExternalDataGPModel
 from .util import inducingpoint_wrapper
 
 
-class SVGP(GPModel, BayesianModelNotStoringData):
+class SVGP(ExternalDataGPModel):
     """
     This is the Sparse Variational GP (SVGP). The key reference is
 

@@ -56,7 +56,7 @@ class BayesianModel(Module, metaclass=abc.ABCMeta):
         """
         return self.maximum_likelihood_objective(*args, **kwargs) + self.log_prior_density()
 
-    def _training_loss(self, *args, **kwargs) -> tf.Tensor:
+    def maximum_likelihood_objective_with_priors(self, *args, **kwargs) -> tf.Tensor:
         """
         Minimization objective for TensorFlow optimizers (including
         gpflow.optimizers.Scipy). Includes the log prior density for maximum
@@ -67,7 +67,7 @@ class BayesianModel(Module, metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def training_loss(self, *args, **kwargs) -> tf.Tensor:
         """
-        Overwritten by BayesianModelStoringData and BayesianModelNotStoringData
+        Overwritten by InternalDataGPModel and ExternalDataGPModel
         to specify whether or not a model stores data internally and hence
         whether it should not or should receive data as an argument to the
         training_loss.
@@ -83,55 +83,6 @@ class BayesianModel(Module, metaclass=abc.ABCMeta):
         GPs.
         """
         raise NotImplementedError
-
-
-class BayesianModelStoringData(BayesianModel):
-    """
-    Base class for models that encapsulate their data and store it as
-    self.data; training_loss does not take any arguments.
-    """
-
-    def training_loss(self):
-        return self._training_loss()
-
-    def training_loss_closure(self, jit=True) -> Callable[[], tf.Tensor]:
-        if jit:
-            return tf.function(self.training_loss)
-        else:
-            return self.training_loss
-
-
-class BayesianModelNotStoringData(BayesianModel):
-    """
-    Base class for models that do not encapsulate the data; training_loss takes
-    data as argument.
-    """
-
-    def training_loss(self, data):
-        return self._training_loss(data)
-
-    def training_loss_closure(self, data: Data, jit=True) -> Callable[[], tf.Tensor]:
-        def training_loss_closure():
-            return self.training_loss(data)
-
-        if jit:
-            return tf.function(training_loss_closure)
-        else:
-            return training_loss_closure
-
-    def minibatch_training_loss_closure(
-        self, batch_iterator: iterator_ops.OwnedIterator, jit=True
-    ) -> Callable[[], tf.Tensor]:
-        if jit:
-            training_loss = tf.function(self.training_loss)  # TODO need to add correct input_signature here to allow for differently sized minibatches
-        else:
-            training_loss = self.training_loss
-
-        def minibatch_training_loss_closure():
-            batch = next(batch_iterator)
-            return training_loss(batch)
-
-        return minibatch_training_loss_closure
 
 
 class GPModel(BayesianModel):
@@ -291,3 +242,49 @@ class GPModel(BayesianModel):
         X, Y = data
         f_mean, f_var = self.predict_f(X, full_cov=full_cov, full_output_cov=full_output_cov)
         return self.likelihood.predict_density(f_mean, f_var, Y)
+
+
+class InternalDataGPModel(GPModel):
+    """
+    Base class for models that encapsulate their data and store it as
+    self.data; training_loss does not take any arguments.
+    """
+
+    def training_loss(self):
+        return self.maximum_likelihood_objective_with_priors()
+
+    def training_loss_closure(self, jit=True) -> Callable[[], tf.Tensor]:
+        if jit:
+            return tf.function(self.training_loss)
+        else:
+            return self.training_loss
+
+
+class ExternalDataGPModel(GPModel):
+    """
+    Base class for models that do not encapsulate the data; training_loss takes
+    data as argument.
+    """
+
+    def training_loss(self, data):
+        return self.maximum_likelihood_objective_with_priors(data)
+
+    def training_loss_closure(self, data: Data, jit=True) -> Callable[[], tf.Tensor]:
+        def closure():
+            if jit:
+                return tf.function(self.training_loss(data))
+            else:
+                return self.training_loss(data)
+        return closure
+
+    def minibatch_training_loss_closure(
+        self, batch_iterator: iterator_ops.OwnedIterator, jit=True
+    ) -> Callable[[], tf.Tensor]:
+
+        def closure():
+            batch = next(batch_iterator)
+            if jit:
+                return tf.function(self.training_loss(batch))  # TODO need to add correct input_signature here to allow for differently sized minibatches
+            else:
+                return self.training_loss(batch)
+        return closure

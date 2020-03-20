@@ -24,10 +24,10 @@ from ..kernels import Kernel
 from ..likelihoods import Likelihood
 from ..mean_functions import MeanFunction
 from ..utilities import to_default_float
-from .model import RegressionData, GPModel, MeanAndVariance, BayesianModelStoringData
+from .model import RegressionData, MeanAndVariance, InternalDataGPModel
 
 
-class GPMC(GPModel, BayesianModelStoringData):
+class GPMC(InternalDataGPModel):
     def __init__(
         self,
         data: RegressionData,

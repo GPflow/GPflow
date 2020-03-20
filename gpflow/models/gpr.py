@@ -17,13 +17,13 @@ from typing import Optional, Tuple
 import tensorflow as tf
 
 import gpflow
-from .model import RegressionData, GPModel, BayesianModelStoringData
+from .model import RegressionData, InternalDataGPModel
 from ..kernels import Kernel
 from ..logdensities import multivariate_normal
 from ..mean_functions import MeanFunction
 
 
-class GPR(GPModel, BayesianModelStoringData):
+class GPR(InternalDataGPModel):
     r"""
     Gaussian Process Regression.
 
