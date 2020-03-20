@@ -41,7 +41,7 @@ from gpflow.utilities import to_default_float
 
 import warnings
 
-warnings.filterwarnings('ignore')
+warnings.filterwarnings("ignore")
 
 # %% [markdown]
 # Make `tensorboard` work inside notebook:
@@ -80,6 +80,7 @@ tf.random.set_seed(0)
 def noisy_sin(x):
     return tf.math.sin(x) + 0.1 * tf.random.normal(x.shape, dtype=default_float())
 
+
 num_train_data, num_test_data = 100, 500
 
 X = tf.random.uniform((num_train_data, 1), dtype=default_float()) * 10
@@ -90,7 +91,7 @@ Ytest = noisy_sin(Xtest)
 
 data = (X, Y)
 
-plt.plot(X, Y, 'xk')
+plt.plot(X, Y, "xk")
 plt.show()
 
 # %% [markdown]
@@ -107,10 +108,12 @@ shuffle_buffer_size = num_train_data // 2
 num_batches_per_epoch = num_train_data // batch_size
 
 original_train_dataset = train_dataset
-train_dataset = train_dataset.repeat()\
-                    .prefetch(prefetch_size)\
-                    .shuffle(buffer_size=shuffle_buffer_size)\
-                    .batch(batch_size)
+train_dataset = (
+    train_dataset.repeat()
+    .prefetch(prefetch_size)
+    .shuffle(buffer_size=shuffle_buffer_size)
+    .batch(batch_size)
+)
 
 print(f"prefetch_size={prefetch_size}")
 print(f"shuffle_buffer_size={shuffle_buffer_size}")
@@ -122,11 +125,13 @@ print(f"num_batches_per_epoch={num_batches_per_epoch}")
 # In GPflow 2.0, we use `tf.Module` (or the very thin `gpflow.base.Module` wrapper) to build all our models, as well as their components (kernels, likelihoods, parameters, and so on).
 
 # %%
-kernel = gpflow.kernels.SquaredExponential(variance=2.)
+kernel = gpflow.kernels.SquaredExponential(variance=2.0)
 likelihood = gpflow.likelihoods.Gaussian()
 inducing_variable = np.linspace(0, 10, num_features).reshape(-1, 1)
 
-model = gpflow.models.SVGP(kernel=kernel, likelihood=likelihood, inducing_variable=inducing_variable)
+model = gpflow.models.SVGP(
+    kernel=kernel, likelihood=likelihood, inducing_variable=inducing_variable
+)
 
 # %% [markdown]
 # You can set a module (or a particular parameter) to be non-trainable using the auxiliary method ```set_trainable(module, False)```:
@@ -178,7 +183,7 @@ optimizer = tf.optimizers.Adam()
 
 with tf.GradientTape() as tape:
     tape.watch(model.trainable_variables)
-    obj = - model.elbo(data)
+    obj = -model.elbo(data)
     grads = tape.gradient(obj, model.trainable_variables)
 
 optimizer.apply_gradients(zip(grads, model.trainable_variables))
@@ -191,7 +196,7 @@ optimizer.apply_gradients(zip(grads, model.trainable_variables))
 def optimization_step(model: gpflow.models.SVGP, batch: Tuple[tf.Tensor, tf.Tensor]):
     with tf.GradientTape(watch_accessed_variables=False) as tape:
         tape.watch(model.trainable_variables)
-        obj = - model.elbo(batch)
+        obj = -model.elbo(batch)
         grads = tape.gradient(obj, model.trainable_variables)
     optimizer.apply_gradients(zip(grads, model.trainable_variables))
 
@@ -225,9 +230,14 @@ from intro_to_gpflow2_plotting import plotting_regression, summary_matplotlib_im
 
 samples_input = to_default_float(np.linspace(0, 10, 100).reshape(100, 1))
 
-def monitored_training_loop(model: gpflow.models.SVGP, logdir: str,
-                            epochs: int = 1, logging_epoch_freq: int = 10,
-                            num_samples: int = 10):
+
+def monitored_training_loop(
+    model: gpflow.models.SVGP,
+    logdir: str,
+    epochs: int = 1,
+    logging_epoch_freq: int = 10,
+    num_samples: int = 10,
+):
     summary_writer = tf.summary.create_file_writer(logdir)
     tf_optimization_step = tf.function(optimization_step)
     batches = iter(train_dataset)
@@ -246,14 +256,16 @@ def monitored_training_loop(model: gpflow.models.SVGP, logdir: str,
                 fig = plotting_regression(X, Y, samples_input, mean, var, samples)
 
                 summary_matplotlib_image(dict(model_samples=fig), step=epoch)
-                tf.summary.scalar('elbo', data=model.elbo(data), step=epoch)
-                tf.summary.scalar('likelihood/variance', data=model.likelihood.variance, step=epoch)
-                tf.summary.scalar('kernel/lengthscales', data=model.kernel.lengthscales, step=epoch)
-                tf.summary.scalar('kernel/variance', data=model.kernel.variance, step=epoch)
+                tf.summary.scalar("elbo", data=model.elbo(data), step=epoch)
+                tf.summary.scalar("likelihood/variance", data=model.likelihood.variance, step=epoch)
+                tf.summary.scalar("kernel/lengthscales", data=model.kernel.lengthscales, step=epoch)
+                tf.summary.scalar("kernel/variance", data=model.kernel.variance, step=epoch)
 
 
 # %%
-model = gpflow.models.SVGP(kernel=kernel, likelihood=likelihood, inducing_variable=inducing_variable)
+model = gpflow.models.SVGP(
+    kernel=kernel, likelihood=likelihood, inducing_variable=inducing_variable
+)
 
 output_logdir = enumerated_logdir()
 monitored_training_loop(model, output_logdir, epochs=1000, logging_epoch_freq=100)
@@ -303,15 +315,20 @@ print(f"Value of variable a after restore: {a.numpy():0.3f}")
 # In the example below, we modify a simple training loop to save the model every 100 epochs using the `CheckpointManager`.
 
 # %%
-model = gpflow.models.SVGP(kernel=kernel, likelihood=likelihood, inducing_variable=inducing_variable)
+model = gpflow.models.SVGP(
+    kernel=kernel, likelihood=likelihood, inducing_variable=inducing_variable
+)
 
-def checkpointing_training_loop(model: gpflow.models.SVGP,
-                                batch_size: int,
-                                epochs: int,
-                                manager: tf.train.CheckpointManager,
-                                logging_epoch_freq: int = 100,
-                                epoch_var: Optional[tf.Variable] = None,
-                                step_var: Optional[tf.Variable] = None):
+
+def checkpointing_training_loop(
+    model: gpflow.models.SVGP,
+    batch_size: int,
+    epochs: int,
+    manager: tf.train.CheckpointManager,
+    logging_epoch_freq: int = 100,
+    epoch_var: Optional[tf.Variable] = None,
+    step_var: Optional[tf.Variable] = None,
+):
     tf_optimization_step = tf.function(optimization_step)
     batches = iter(train_dataset)
 
@@ -337,7 +354,14 @@ manager = tf.train.CheckpointManager(ckpt, output_logdir, max_to_keep=5)
 
 print(f"Checkpoint folder path at: {output_logdir}")
 
-checkpointing_training_loop(model, batch_size=batch_size, epochs=1000, manager=manager, epoch_var=epoch_var, step_var=step_var)
+checkpointing_training_loop(
+    model,
+    batch_size=batch_size,
+    epochs=1000,
+    manager=manager,
+    epoch_var=epoch_var,
+    step_var=step_var,
+)
 
 # %% [markdown]
 # After the models have been saved, we can restore them using ```tf.train.Checkpoint.restore``` and assert that their performance corresponds to that logged during training.
@@ -345,7 +369,9 @@ checkpointing_training_loop(model, batch_size=batch_size, epochs=1000, manager=m
 # %%
 for i, recorded_checkpoint in enumerate(manager.checkpoints):
     ckpt.restore(recorded_checkpoint)
-    print(f"{i} restored model from epoch {int(epoch_var)} [step:{int(step_var)}] : ELBO training set {model.elbo(data)}")
+    print(
+        f"{i} restored model from epoch {int(epoch_var)} [step:{int(step_var)}] : ELBO training set {model.elbo(data)}"
+    )
 
 # %% [markdown]
 # ## Copying (hyper)parameter values between models
@@ -385,7 +411,11 @@ frozen_model = gpflow.utilities.freeze(model)
 
 # %%
 module_to_save = tf.Module()
-predict_fn = tf.function(frozen_model.predict_f, input_signature=[tf.TensorSpec(shape=[None, 1], dtype=tf.float64)], autograph=False)
+predict_fn = tf.function(
+    frozen_model.predict_f,
+    input_signature=[tf.TensorSpec(shape=[None, 1], dtype=tf.float64)],
+    autograph=False,
+)
 module_to_save.predict = predict_fn
 
 # %% [markdown]

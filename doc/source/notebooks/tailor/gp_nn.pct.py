@@ -40,24 +40,27 @@ iterations = ci_niter(100)
 # %%
 original_dataset, info = tfds.load(name="mnist", split=tfds.Split.TRAIN, with_info=True)
 total_num_data = info.splits["train"].num_examples
-image_shape = info.features['image'].shape
+image_shape = info.features["image"].shape
 image_size = tf.reduce_prod(image_shape)
 batch_size = 32
 
+
 def map_fn(input_slice: Dict[str, tf.Tensor]):
     updated = input_slice
-    image = to_default_float(updated["image"]) / 255.
+    image = to_default_float(updated["image"]) / 255.0
     label = to_default_float(updated["label"])
     return tf.reshape(image, [-1, image_size]), label
 
+
 autotune = tf.data.experimental.AUTOTUNE
-dataset = original_dataset\
-    .shuffle(1024)\
-    .batch(batch_size, drop_remainder=True)\
-    .map(map_fn, num_parallel_calls=autotune)\
-    .prefetch(autotune)\
+dataset = (
+    original_dataset.shuffle(1024)
+    .batch(batch_size, drop_remainder=True)
+    .map(map_fn, num_parallel_calls=autotune)
+    .prefetch(autotune)
     .repeat()
-    
+)
+
 
 # %% [markdown]
 # Here we'll use the GPflow functionality, but put a non-GPflow model inside the kernel.\
@@ -65,35 +68,44 @@ dataset = original_dataset\
 
 # %%
 class KernelWithConvNN(gpflow.kernels.Kernel):
-    def __init__(self, image_shape: Tuple,
-                 output_dim: int,
-                 base_kernel: gpflow.kernels.Kernel,
-                 batch_size: Optional[int] = None):
+    def __init__(
+        self,
+        image_shape: Tuple,
+        output_dim: int,
+        base_kernel: gpflow.kernels.Kernel,
+        batch_size: Optional[int] = None,
+    ):
         super().__init__()
         with self.name_scope:
             self.base_kernel = base_kernel
             input_size = int(tf.reduce_prod(image_shape))
-            input_shape = (input_size, )
-            
-            self.cnn = tf.keras.Sequential([
-                tf.keras.layers.InputLayer(input_shape=input_shape, batch_size=batch_size),
-                tf.keras.layers.Reshape(image_shape),
-                tf.keras.layers.Conv2D(filters=32, kernel_size=image_shape[:-1], padding="same", activation="relu"),
-                tf.keras.layers.MaxPool2D(pool_size=(2, 2), strides=2),
-                tf.keras.layers.Conv2D(filters=64, kernel_size=(5, 5), padding="same", activation="relu"),
-                tf.keras.layers.MaxPool2D(pool_size=(2, 2), strides=2),
-                tf.keras.layers.Flatten(),
-                tf.keras.layers.Dense(output_dim, activation="relu"),
-                tf.keras.layers.Lambda(to_default_float)
-            ])
-            
+            input_shape = (input_size,)
+
+            self.cnn = tf.keras.Sequential(
+                [
+                    tf.keras.layers.InputLayer(input_shape=input_shape, batch_size=batch_size),
+                    tf.keras.layers.Reshape(image_shape),
+                    tf.keras.layers.Conv2D(
+                        filters=32, kernel_size=image_shape[:-1], padding="same", activation="relu"
+                    ),
+                    tf.keras.layers.MaxPool2D(pool_size=(2, 2), strides=2),
+                    tf.keras.layers.Conv2D(
+                        filters=64, kernel_size=(5, 5), padding="same", activation="relu"
+                    ),
+                    tf.keras.layers.MaxPool2D(pool_size=(2, 2), strides=2),
+                    tf.keras.layers.Flatten(),
+                    tf.keras.layers.Dense(output_dim, activation="relu"),
+                    tf.keras.layers.Lambda(to_default_float),
+                ]
+            )
+
             self.cnn.build()
-    
+
     def K(self, a_input: tf.Tensor, b_input: Optional[tf.Tensor] = None) -> tf.Tensor:
         transformed_a = self.cnn(a_input)
         transformed_b = self.cnn(b_input) if b_input is not None else b_input
         return self.base_kernel.K(transformed_a, transformed_b)
-    
+
     def K_diag(self, a_input: tf.Tensor) -> tf.Tensor:
         transformed_a = self.cnn(a_input)
         return self.base_kernel.K_diag(transformed_a)
@@ -106,10 +118,14 @@ class KernelWithConvNN(gpflow.kernels.Kernel):
 class KernelSpaceInducingPoints(gpflow.inducing_variables.InducingPoints):
     pass
 
+
 @gpflow.covariances.Kuu.register(KernelSpaceInducingPoints, KernelWithConvNN)
 def Kuu(inducing_variable, kernel, jitter=None):
-    func = gpflow.covariances.Kuu.dispatch(gpflow.inducing_variables.InducingPoints, gpflow.kernels.Kernel)
+    func = gpflow.covariances.Kuu.dispatch(
+        gpflow.inducing_variables.InducingPoints, gpflow.kernels.Kernel
+    )
     return func(inducing_variable, kernel.base_kernel, jitter=jitter)
+
 
 @gpflow.covariances.Kuf.register(KernelSpaceInducingPoints, KernelWithConvNN, object)
 def Kuf(inducing_variable, kernel, a_input):
@@ -127,21 +143,23 @@ images_subset, labels_subset = next(iter(dataset.batch(32)))
 images_subset = tf.reshape(images_subset, [-1, image_size])
 labels_subset = tf.reshape(labels_subset, [-1, 1])
 
-kernel = KernelWithConvNN(image_shape,
-                          output_dim,
-                          gpflow.kernels.SquaredExponential(),
-                          batch_size=batch_size)
+kernel = KernelWithConvNN(
+    image_shape, output_dim, gpflow.kernels.SquaredExponential(), batch_size=batch_size
+)
 
 likelihood = gpflow.likelihoods.MultiClass(num_mnist_classes)
 
-inducing_variable_kmeans = kmeans2(images_subset.numpy(), num_inducing_points, minit='points')[0]
+inducing_variable_kmeans = kmeans2(images_subset.numpy(), num_inducing_points, minit="points")[0]
 inducing_variable_cnn = kernel.cnn(inducing_variable_kmeans)
 inducing_variable = KernelSpaceInducingPoints(inducing_variable_cnn)
 
-model = gpflow.models.SVGP(kernel, likelihood,
-                           inducing_variable=inducing_variable,
-                           num_data=total_num_data,
-                           num_latent_gps=num_mnist_classes)
+model = gpflow.models.SVGP(
+    kernel,
+    likelihood,
+    inducing_variable=inducing_variable,
+    num_data=total_num_data,
+    num_latent_gps=num_mnist_classes,
+)
 
 # %% [markdown]
 # And start optimization:
@@ -173,7 +191,7 @@ for _ in range(iterations):
 # %%
 m, v = model.predict_y(images_subset)
 preds = np.argmax(m, 1).reshape(labels_subset.numpy().shape)
-correct = (preds == labels_subset.numpy().astype(int))
-acc = np.average(correct.astype(float)) * 100.
+correct = preds == labels_subset.numpy().astype(int)
+acc = np.average(correct.astype(float)) * 100.0
 
-print('Accuracy is {:.4f}%'.format(acc))
+print("Accuracy is {:.4f}%".format(acc))

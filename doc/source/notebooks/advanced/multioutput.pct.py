@@ -80,7 +80,7 @@ MAXITER = ci_niter(2000)
 # We create a utility function to generate synthetic data. We assume that:
 
 # %%
-N = 100 # number of points
+N = 100  # number of points
 D = 1  # number of input dimensions
 M = 15  # number of inducing points
 L = 2  # number of latent GPs
@@ -90,7 +90,7 @@ P = 3  # number of observations = output dimensions
 # %%
 def generate_data(N=100):
     X = np.random.rand(N)[:, None] * 10 - 5  # Inputs = N x D
-    G = np.hstack((0.5 * np.sin(3 * X) + X, 3.0 * np.cos(X) - X)) # G = N x L
+    G = np.hstack((0.5 * np.sin(3 * X) + X, 3.0 * np.cos(X) - X))  # G = N x L
     W = np.array([[0.5, -0.3, 1.5], [-0.4, 0.43, 0.0]])  # L x P
     F = np.matmul(G, W)  # N x P
     Y = F + np.random.randn(*F.shape) * [0.2, 0.2, 0.2]
@@ -112,17 +112,17 @@ def plot_model(m, lower=-8.0, upper=8.0):
     pY, pYv = m.predict_y(pX)
     if pY.ndim == 3:
         pY = pY[:, 0, :]
-    plt.plot(X, Y, 'x')
+    plt.plot(X, Y, "x")
     plt.gca().set_prop_cycle(None)
     plt.plot(pX, pY)
     for i in range(pY.shape[1]):
         top = pY[:, i] + 2.0 * pYv[:, i] ** 0.5
         bot = pY[:, i] - 2.0 * pYv[:, i] ** 0.5
         plt.fill_between(pX[:, 0], top, bot, alpha=0.3)
-    plt.xlabel('X')
-    plt.ylabel('f')
+    plt.xlabel("X")
+    plt.ylabel("f")
     plt.title(f"lml: {m.log_likelihood(data):.3}")
-    plt.plot(Z, Z * 0.0, 'o')
+    plt.plot(Z, Z * 0.0, "o")
 
 
 # %% [markdown]
@@ -143,7 +143,9 @@ kernel = gpf.kernels.SharedIndependent(gpf.kernels.RBF(1) + gpf.kernels.Linear(1
 # initialization of inducing input locations (M random points from the training inputs)
 Z = Zinit.copy()
 # create multi-output inducing variables from Z
-iv = gpf.inducing_variables.SharedIndependentInducingVariables(gpf.inducing_variables.InducingPoints(Z))
+iv = gpf.inducing_variables.SharedIndependentInducingVariables(
+    gpf.inducing_variables.InducingPoints(Z)
+)
 
 # %%
 # create SVGP model as usual and optimize
@@ -153,17 +155,18 @@ print_summary(m)
 
 # %%
 def optimize_model_with_scipy(model):
-
     @tf.function
     def obj():
         return -model.elbo(data)
 
     optimizer = gpf.optimizers.Scipy()
-    optimizer.minimize(obj,
+    optimizer.minimize(
+        obj,
         variables=model.trainable_variables,
         method="l-bfgs-b",
-        options={"disp": True, "maxiter": MAXITER}
+        options={"disp": True, "maxiter": MAXITER},
     )
+
 
 optimize_model_with_scipy(m)
 
@@ -190,7 +193,9 @@ kernel = gpf.kernels.SeparateIndependent(kern_list)
 # initialization of inducing input locations (M random points from the training inputs)
 Z = Zinit.copy()
 # create multi-output inducing variables from Z
-iv = gpf.inducing_variables.SharedIndependentInducingVariables(gpf.inducing_variables.InducingPoints(Z))
+iv = gpf.inducing_variables.SharedIndependentInducingVariables(
+    gpf.inducing_variables.InducingPoints(Z)
+)
 
 # %%
 # create SVGP model as usual and optimize
@@ -243,10 +248,14 @@ plot_model(m)
 # %%
 for i in range(len(m.inducing_variable.inducing_variable_list)):
     q_mu_unwhitened, q_var_unwhitened = m.predict_f(m.inducing_variable.inducing_variable_list[i].Z)
-    plt.plot(m.inducing_variable.inducing_variable_list[i].Z.numpy(), q_mu_unwhitened[:, i, None].numpy(), "o")
+    plt.plot(
+        m.inducing_variable.inducing_variable_list[i].Z.numpy(),
+        q_mu_unwhitened[:, i, None].numpy(),
+        "o",
+    )
 plt.gca().set_xticks(np.linspace(-6, 6, 20), minor=True)
 plt.gca().set_yticks(np.linspace(-9, 9, 20), minor=True)
-plt.grid(which='minor')
+plt.grid(which="minor")
 
 # %%
 m.inducing_variable.inducing_variable_list
@@ -266,11 +275,15 @@ m.inducing_variable.inducing_variable_list
 # Create list of kernels for each output
 kern_list = [gpf.kernels.RBF(D) + gpf.kernels.Linear(D) for _ in range(L)]
 # Create multi-output kernel from kernel list
-kernel = gpf.kernels.LinearCoregionalization(kern_list, W=np.random.randn(P, L)) # Notice that we initialise the mixing matrix W
+kernel = gpf.kernels.LinearCoregionalization(
+    kern_list, W=np.random.randn(P, L)
+)  # Notice that we initialise the mixing matrix W
 # initialisation of inducing input locations (M random points from the training inputs)
 Z = Zinit.copy()
 # create multi-output inducing variables from Z
-iv = gpf.inducing_variables.SharedIndependentInducingVariables(gpf.inducing_variables.InducingPoints(Z))
+iv = gpf.inducing_variables.SharedIndependentInducingVariables(
+    gpf.inducing_variables.InducingPoints(Z)
+)
 
 # %%
 # initialize mean of variational posterior to be of shape MxL
@@ -279,7 +292,9 @@ q_mu = np.zeros((M, L))
 q_sqrt = np.repeat(np.eye(M)[None, ...], L, axis=0) * 1.0
 
 # create SVGP model as usual and optimize
-m = gpf.models.SVGP(kernel, gpf.likelihoods.Gaussian(), inducing_variable=iv, q_mu=q_mu, q_sqrt=q_sqrt)
+m = gpf.models.SVGP(
+    kernel, gpf.likelihoods.Gaussian(), inducing_variable=iv, q_mu=q_mu, q_sqrt=q_sqrt
+)
 
 # %%
 optimize_model_with_scipy(m)
@@ -371,10 +386,10 @@ def inspect_conditional(inducing_variable_type, kernel_type):
     info = dict(inspect.getmembers(implementation))
     return info["__code__"]
 
+
 # Example:
 inspect_conditional(
-    gpf.inducing_variables.SharedIndependentInducingVariables,
-    gpf.kernels.SharedIndependent
+    gpf.inducing_variables.SharedIndependentInducingVariables, gpf.kernels.SharedIndependent
 )
 
 # %% [markdown]
