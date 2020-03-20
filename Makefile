@@ -21,7 +21,7 @@ package:
 	python setup.py bdist
 
 format:
-	black -t py36 --line-length=100 gpflow tests
+	black -t py36 --line-length=100 gpflow tests doc
 
 test:
 	pytest -v --durations=10 tests/
