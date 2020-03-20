@@ -85,7 +85,7 @@ import tensorflow as tf
 
 # %%
 import gpflow
-from gpflow.models import BayesianModel
+from gpflow.models import ExternalDataBayesianModel
 from gpflow.base import Parameter
 
 # %% [markdown]
@@ -97,7 +97,7 @@ from gpflow.base import Parameter
 # %%
 from typing import Callable, Optional, Tuple
 
-class MDN(BayesianModel):
+class MDN(ExternalDataBayesianModel):
 
     def __init__(
         self,
@@ -179,7 +179,7 @@ from gpflow.optimizers import Scipy
 from gpflow.ci_utils import ci_niter
 
 Scipy().minimize(
-    tf.function(model.training_loss_closure(data)),
+    model.training_loss_closure(data, jit=True),
     variables=model.trainable_parameters,
     options=dict(maxiter=ci_niter(1500))
 );
@@ -230,7 +230,7 @@ model = MDN(inner_dims=[100, 100], num_mixtures=5)
 
 # %%
 Scipy().minimize(
-    tf.function(model.training_loss_closure(data)),
+    model.training_loss_closure(data),
     variables=model.trainable_parameters,
     options=dict(maxiter=ci_niter(int(10e3)))
 );

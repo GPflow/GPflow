@@ -17,7 +17,7 @@
 from .gplvm import GPLVM, BayesianGPLVM
 from .gpmc import GPMC
 from .gpr import GPR
-from .model import ExternalDataGPModel, InternalDataGPModel, GPModel
+from .model import BayesianModel, ExternalDataGPModel, InternalDataGPModel, GPModel
 
 # from .gplvm import PCA_reduce
 from .sgpmc import SGPMC

@@ -20,6 +20,15 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.python.data.ops import iterator_ops
 
+from .training_interface import (
+    InternalDataTrainingInterface,
+    ExternalDataTrainingInterface,
+    InputData,
+    OutputData,
+    RegressionData,
+    Data,
+)
+
 from ..base import Module
 from ..conditionals.util import sample_mvn
 from ..config import default_float, default_jitter
@@ -28,10 +37,6 @@ from ..likelihoods import Likelihood, SwitchedLikelihood
 from ..mean_functions import MeanFunction, Zero
 from ..utilities import ops, to_default_float
 
-InputData = tf.Tensor
-OutputData = tf.Tensor
-RegressionData = Tuple[InputData, OutputData]
-Data = TypeVar("Data", RegressionData, InputData)
 MeanAndVariance = Tuple[tf.Tensor, tf.Tensor]
 
 
@@ -54,25 +59,21 @@ class BayesianModel(Module, metaclass=abc.ABCMeta):
         SGPMC). It assumes that maximum_likelihood_objective() is defined
         sensibly.
         """
-        return self.maximum_likelihood_objective(*args, **kwargs) + self.log_prior_density()
+        return (
+            self.maximum_likelihood_objective(*args, **kwargs)
+            + self.log_prior_density()
+        )
 
-    def maximum_likelihood_objective_with_priors(self, *args, **kwargs) -> tf.Tensor:
+    def maximum_a_posteriori_objective(self, *args, **kwargs) -> tf.Tensor:
         """
         Minimization objective for TensorFlow optimizers (including
         gpflow.optimizers.Scipy). Includes the log prior density for maximum
         a-posteriori (MAP) estimation.
         """
-        return -(self.maximum_likelihood_objective(*args, **kwargs) + self.log_prior_density())
-
-    @abc.abstractmethod
-    def training_loss(self, *args, **kwargs) -> tf.Tensor:
-        """
-        Overwritten by InternalDataGPModel and ExternalDataGPModel
-        to specify whether or not a model stores data internally and hence
-        whether it should not or should receive data as an argument to the
-        training_loss.
-        """
-        raise NotImplementedError
+        return -(
+            self.maximum_likelihood_objective(*args, **kwargs)
+            + self.log_prior_density()
+        )
 
     @abc.abstractmethod
     def maximum_likelihood_objective(self, *args, **kwargs) -> tf.Tensor:
@@ -83,6 +84,16 @@ class BayesianModel(Module, metaclass=abc.ABCMeta):
         GPs.
         """
         raise NotImplementedError
+
+
+class ExternalDataBayesianModel(BayesianModel, ExternalDataTrainingInterface):
+    """
+    Base class for GP models that do not encapsulate the data; training_loss takes
+    data as argument.
+    """
+
+    def training_loss(self, data):
+        return self.maximum_a_posteriori_objective(data)
 
 
 class GPModel(BayesianModel):
@@ -122,7 +133,9 @@ class GPModel(BayesianModel):
         num_latent_gps: int = None,
     ):
         super().__init__()
-        assert num_latent_gps is not None, "GPModel requires specification of num_latent_gps"
+        assert (
+            num_latent_gps is not None
+        ), "GPModel requires specification of num_latent_gps"
         self.num_latent_gps = num_latent_gps
         # TODO(@awav): Why is this here when MeanFunction does not have a __len__ method
         if mean_function is None:
@@ -132,7 +145,9 @@ class GPModel(BayesianModel):
         self.likelihood = likelihood
 
     @staticmethod
-    def calc_num_latent_gps_from_data(data, kernel: Kernel, likelihood: Likelihood) -> int:
+    def calc_num_latent_gps_from_data(
+        data, kernel: Kernel, likelihood: Likelihood
+    ) -> int:
         """
         Calculates the number of latent GPs required based on the data as well
         as the type of kernel and likelihood.
@@ -142,7 +157,9 @@ class GPModel(BayesianModel):
         return GPModel.calc_num_latent_gps(kernel, likelihood, output_dim)
 
     @staticmethod
-    def calc_num_latent_gps(kernel: Kernel, likelihood: Likelihood, output_dim: int) -> int:
+    def calc_num_latent_gps(
+        kernel: Kernel, likelihood: Likelihood, output_dim: int
+    ) -> int:
         """
         Calculates the number of latent GPs required given the number of
         outputs `output_dim` and the type of likelihood and kernel.
@@ -206,7 +223,9 @@ class GPModel(BayesianModel):
             )
 
         # check below for shape info
-        mean, cov = self.predict_f(Xnew, full_cov=full_cov, full_output_cov=full_output_cov)
+        mean, cov = self.predict_f(
+            Xnew, full_cov=full_cov, full_output_cov=full_output_cov
+        )
         if full_cov:
             # mean: [..., N, P]
             # cov: [..., P, N, N]
@@ -230,61 +249,42 @@ class GPModel(BayesianModel):
         """
         Compute the mean and variance of the held-out data at the input points.
         """
-        f_mean, f_var = self.predict_f(Xnew, full_cov=full_cov, full_output_cov=full_output_cov)
+        f_mean, f_var = self.predict_f(
+            Xnew, full_cov=full_cov, full_output_cov=full_output_cov
+        )
         return self.likelihood.predict_mean_and_var(f_mean, f_var)
 
     def predict_log_density(
-        self, data: RegressionData, full_cov: bool = False, full_output_cov: bool = False
+        self,
+        data: RegressionData,
+        full_cov: bool = False,
+        full_output_cov: bool = False,
     ):
         """
         Compute the log density of the data at the new data points.
         """
         X, Y = data
-        f_mean, f_var = self.predict_f(X, full_cov=full_cov, full_output_cov=full_output_cov)
+        f_mean, f_var = self.predict_f(
+            X, full_cov=full_cov, full_output_cov=full_output_cov
+        )
         return self.likelihood.predict_density(f_mean, f_var, Y)
 
 
-class InternalDataGPModel(GPModel):
+class InternalDataGPModel(GPModel, InternalDataTrainingInterface):
     """
     Base class for models that encapsulate their data and store it as
     self.data; training_loss does not take any arguments.
     """
 
     def training_loss(self):
-        return self.maximum_likelihood_objective_with_priors()
-
-    def training_loss_closure(self, jit=True) -> Callable[[], tf.Tensor]:
-        if jit:
-            return tf.function(self.training_loss)
-        else:
-            return self.training_loss
+        return self.maximum_a_posteriori_objective()
 
 
-class ExternalDataGPModel(GPModel):
+class ExternalDataGPModel(GPModel, ExternalDataTrainingInterface):
     """
-    Base class for models that do not encapsulate the data; training_loss takes
+    Base class for GP models that do not encapsulate the data; training_loss takes
     data as argument.
     """
 
     def training_loss(self, data):
-        return self.maximum_likelihood_objective_with_priors(data)
-
-    def training_loss_closure(self, data: Data, jit=True) -> Callable[[], tf.Tensor]:
-        def closure():
-            if jit:
-                return tf.function(self.training_loss(data))
-            else:
-                return self.training_loss(data)
-        return closure
-
-    def minibatch_training_loss_closure(
-        self, batch_iterator: iterator_ops.OwnedIterator, jit=True
-    ) -> Callable[[], tf.Tensor]:
-
-        def closure():
-            batch = next(batch_iterator)
-            if jit:
-                return tf.function(self.training_loss(batch))  # TODO need to add correct input_signature here to allow for differently sized minibatches
-            else:
-                return self.training_loss(batch)
-        return closure
+        return self.maximum_a_posteriori_objective(data)
