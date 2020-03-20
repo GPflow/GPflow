@@ -12,23 +12,7 @@ RegressionData = Tuple[InputData, OutputData]
 Data = TypeVar("Data", RegressionData, InputData)
 
 
-class TrainingInterface:
-    @abc.abstractmethod
-    def training_loss(self, *args, **kwargs) -> tf.Tensor:
-        """
-        Specify a training loss for this model
-        """
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def training_loss_closure(self, *args, **kwargs):
-        """
-        Return a closure with a training loss for this module
-        """
-        raise NotImplementedError
-
-
-class InternalDataTrainingInterface(TrainingInterface):
+class InternalDataTrainingInterface:
     def training_loss(self):
         """
         Specify a training loss for this model
@@ -41,7 +25,7 @@ class InternalDataTrainingInterface(TrainingInterface):
         return self.training_loss
 
 
-class ExternalDataTrainingInterface(TrainingInterface):
+class ExternalDataTrainingInterface:
     def training_loss(self, data):
         """
         Specify a training loss for this model

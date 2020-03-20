@@ -256,7 +256,7 @@ class InternalDataGPModel(GPModel, InternalDataTrainingInterface):
     """
 
     def training_loss(self):
-        return - self.maximum_a_posteriori_objective()
+        return -self.maximum_a_posteriori_objective()
 
 
 class ExternalDataGPModel(GPModel, ExternalDataTrainingInterface):
@@ -266,4 +266,4 @@ class ExternalDataGPModel(GPModel, ExternalDataTrainingInterface):
     """
 
     def training_loss(self, data):
-        return - self.maximum_a_posteriori_objective(data)
+        return -self.maximum_a_posteriori_objective(data)
