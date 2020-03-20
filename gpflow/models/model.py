@@ -59,10 +59,7 @@ class BayesianModel(Module, metaclass=abc.ABCMeta):
         SGPMC). It assumes that maximum_likelihood_objective() is defined
         sensibly.
         """
-        return (
-            self.maximum_likelihood_objective(*args, **kwargs)
-            + self.log_prior_density()
-        )
+        return self.maximum_likelihood_objective(*args, **kwargs) + self.log_prior_density()
 
     def maximum_a_posteriori_objective(self, *args, **kwargs) -> tf.Tensor:
         """
@@ -70,10 +67,7 @@ class BayesianModel(Module, metaclass=abc.ABCMeta):
         gpflow.optimizers.Scipy). Includes the log prior density for maximum
         a-posteriori (MAP) estimation.
         """
-        return -(
-            self.maximum_likelihood_objective(*args, **kwargs)
-            + self.log_prior_density()
-        )
+        return -(self.maximum_likelihood_objective(*args, **kwargs) + self.log_prior_density())
 
     @abc.abstractmethod
     def maximum_likelihood_objective(self, *args, **kwargs) -> tf.Tensor:
@@ -133,9 +127,7 @@ class GPModel(BayesianModel):
         num_latent_gps: int = None,
     ):
         super().__init__()
-        assert (
-            num_latent_gps is not None
-        ), "GPModel requires specification of num_latent_gps"
+        assert num_latent_gps is not None, "GPModel requires specification of num_latent_gps"
         self.num_latent_gps = num_latent_gps
         # TODO(@awav): Why is this here when MeanFunction does not have a __len__ method
         if mean_function is None:
@@ -145,9 +137,7 @@ class GPModel(BayesianModel):
         self.likelihood = likelihood
 
     @staticmethod
-    def calc_num_latent_gps_from_data(
-        data, kernel: Kernel, likelihood: Likelihood
-    ) -> int:
+    def calc_num_latent_gps_from_data(data, kernel: Kernel, likelihood: Likelihood) -> int:
         """
         Calculates the number of latent GPs required based on the data as well
         as the type of kernel and likelihood.
@@ -157,9 +147,7 @@ class GPModel(BayesianModel):
         return GPModel.calc_num_latent_gps(kernel, likelihood, output_dim)
 
     @staticmethod
-    def calc_num_latent_gps(
-        kernel: Kernel, likelihood: Likelihood, output_dim: int
-    ) -> int:
+    def calc_num_latent_gps(kernel: Kernel, likelihood: Likelihood, output_dim: int) -> int:
         """
         Calculates the number of latent GPs required given the number of
         outputs `output_dim` and the type of likelihood and kernel.
@@ -223,9 +211,7 @@ class GPModel(BayesianModel):
             )
 
         # check below for shape info
-        mean, cov = self.predict_f(
-            Xnew, full_cov=full_cov, full_output_cov=full_output_cov
-        )
+        mean, cov = self.predict_f(Xnew, full_cov=full_cov, full_output_cov=full_output_cov)
         if full_cov:
             # mean: [..., N, P]
             # cov: [..., P, N, N]
@@ -249,24 +235,17 @@ class GPModel(BayesianModel):
         """
         Compute the mean and variance of the held-out data at the input points.
         """
-        f_mean, f_var = self.predict_f(
-            Xnew, full_cov=full_cov, full_output_cov=full_output_cov
-        )
+        f_mean, f_var = self.predict_f(Xnew, full_cov=full_cov, full_output_cov=full_output_cov)
         return self.likelihood.predict_mean_and_var(f_mean, f_var)
 
     def predict_log_density(
-        self,
-        data: RegressionData,
-        full_cov: bool = False,
-        full_output_cov: bool = False,
+        self, data: RegressionData, full_cov: bool = False, full_output_cov: bool = False,
     ):
         """
         Compute the log density of the data at the new data points.
         """
         X, Y = data
-        f_mean, f_var = self.predict_f(
-            X, full_cov=full_cov, full_output_cov=full_output_cov
-        )
+        f_mean, f_var = self.predict_f(X, full_cov=full_cov, full_output_cov=full_output_cov)
         return self.likelihood.predict_density(f_mean, f_var, Y)
 
 
