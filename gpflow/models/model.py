@@ -120,16 +120,18 @@ class BayesianModelNotStoringData(BayesianModel):
             return training_loss_closure
 
     def minibatch_training_loss_closure(
-        self, batch_iterator: iterator_ops.OwnedIterator
+        self, batch_iterator: iterator_ops.OwnedIterator, jit=True
     ) -> Callable[[], tf.Tensor]:
+        if jit:
+            training_loss = tf.function(self.training_loss)  # TODO need to add correct input_signature here to allow for differently sized minibatches
+        else:
+            training_loss = self.training_loss
+
         def minibatch_training_loss_closure():
             batch = next(batch_iterator)
-            return self.training_loss(batch)
+            return training_loss(batch)
 
-        if jit:
-            return tf.function(minibatch_training_loss_closure)
-        else:
-            return minibatch_training_loss_closure
+        return minibatch_training_loss_closure
 
 
 class GPModel(BayesianModel):
