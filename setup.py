@@ -12,14 +12,13 @@ from setuptools import find_packages, setup
 
 is_py37 = sys.version_info.major == 3 and sys.version_info.minor == 7
 on_rtd = os.environ.get('READTHEDOCS', None) == 'True'  # copied from the docs
-
+gast_requirement = 'gast==0.2.2'
 # Dependencies of GPflow
 requirements = [
     'numpy>=1.10.0',
     'scipy>=0.18.0',
     'multipledispatch>=0.4.9',
-    'tabulate',
-    'gast==0.2.2',
+    'tabulate'
 ]
 
 if not is_py37:
@@ -47,6 +46,7 @@ except (ImportError, DeprecationWarning):
     if not on_rtd:
         # Do not add TF if we are installing GPflow on readthedocs
         requirements.append(tf_cpu)
+        requirements.append(gast_requirement)
 
 with open(str(Path(".", "VERSION").absolute())) as version_file:
     version = version_file.read().strip()
