@@ -79,7 +79,9 @@ class GPMC(GPModel):
 
         return tf.reduce_sum(self.likelihood.log_prob(F, Y_data))
 
-    def predict_f(self, Xnew: tf.Tensor, *, full_cov=False, full_output_cov=False) -> MeanAndVariance:
+    def predict_f(
+        self, Xnew: tf.Tensor, *, full_cov=False, full_output_cov=False
+    ) -> MeanAndVariance:
         """
         Xnew is a data matrix, point at which we want to predict
 
