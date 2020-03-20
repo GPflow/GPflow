@@ -39,9 +39,10 @@ tf_gpu = 'tensorflow-gpu'
 def latest_version(package_name):
     url = "https://pypi.python.org/pypi/%s/json" % (package_name,)
     data = json.load(request.urlopen(url))
-    versions = [v for v in data["releases"].keys() if not re.search('[a-z]',v)]
+    # filter out rc and b releases and, more in general, any realeses that do not contain exclusively numbers and dots.
+    versions = [v for v in data["releases"].keys() if re.match('[0-9\.]+$',v)]  
     versions.sort(key=StrictVersion)
-    return versions[-1]
+    return versions[-1]  # return latest version
 
 
 # Only detect TF if not installed or outdated. If not, do not do not list as
