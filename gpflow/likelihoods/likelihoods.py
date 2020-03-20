@@ -230,8 +230,7 @@ class Likelihood(Module, metaclass=abc.ABCMeta):
         Deprecated: see `predict_log_density`
         """
         warnings.warn(
-            "predict_density is deprecated, use predict_log_density instead",
-            DeprecationWarning
+            "predict_density is deprecated, use predict_log_density instead", DeprecationWarning
         )
         return self.predict_log_density(Fmu, Fvar, Y)
 
