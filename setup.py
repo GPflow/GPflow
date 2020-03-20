@@ -9,10 +9,14 @@ from pathlib import Path
 
 from pkg_resources import parse_version
 from setuptools import find_packages, setup
+import json
+from urllib import request
+from distutils.version import StrictVersion
+import re
 
 is_py37 = sys.version_info.major == 3 and sys.version_info.minor == 7
 on_rtd = os.environ.get('READTHEDOCS', None) == 'True'  # copied from the docs
-gast_requirement = 'gast==0.2.2'
+
 # Dependencies of GPflow
 requirements = [
     'numpy>=1.10.0',
@@ -31,6 +35,15 @@ min_tf_version = '2.1.0'
 tf_cpu = 'tensorflow'
 tf_gpu = 'tensorflow-gpu'
 
+
+def latest_version(package_name):
+    url = "https://pypi.python.org/pypi/%s/json" % (package_name,)
+    data = json.load(request.urlopen(url))
+    versions = [v for v in data["releases"].keys() if not re.search('[a-z]',v)]
+    versions.sort(key=StrictVersion)
+    return versions[-1]
+
+
 # Only detect TF if not installed or outdated. If not, do not do not list as
 # requirement to avoid installing over e.g. tensorflow-gpu
 # To avoid this, rely on importing rather than the package name (like pip).
@@ -46,7 +59,9 @@ except (ImportError, DeprecationWarning):
     if not on_rtd:
         # Do not add TF if we are installing GPflow on readthedocs
         requirements.append(tf_cpu)
+        gast_requirement = 'gast==0.2.2' if parse_version(latest_version('tensorflow')) < parse_version('2.2') else 'gast==0.3.3'
         requirements.append(gast_requirement)
+        
 
 with open(str(Path(".", "VERSION").absolute())) as version_file:
     version = version_file.read().strip()
