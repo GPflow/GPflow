@@ -34,7 +34,7 @@ class GPMC(GPModel, BayesianModelStoringData):
         kernel: Kernel,
         likelihood: Likelihood,
         mean_function: Optional[MeanFunction] = None,
-        num_latent_gps: int = 1,
+        num_latent_gps: Optional[int] = None,
     ):
         """
         data is a tuple of X, Y with X, a data matrix, size [N, D] and Y, a data matrix, size [N, R]
@@ -52,6 +52,8 @@ class GPMC(GPModel, BayesianModelStoringData):
             L L^T = K
 
         """
+        if num_latent_gps is None:
+            num_latent_gps = self.calc_num_latent_gps_from_data(data, kernel, likelihood)
         super().__init__(kernel, likelihood, mean_function, num_latent_gps)
         self.data = data
         self.num_data = data[0].shape[0]

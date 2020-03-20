@@ -24,7 +24,7 @@ from ..expectations import expectation
 from ..kernels import Kernel
 from ..mean_functions import MeanFunction, Zero
 from ..probability_distributions import DiagonalGaussian
-from ..utilities import positive
+from ..utilities import positive, to_default_float
 from ..utilities.ops import pca_reduce
 from .gpr import GPR
 from .model import InputData, GPModel, BayesianModelStoringData
@@ -99,14 +99,15 @@ class BayesianGPLVM(GPModel, BayesianModelStoringData):
         :param X_prior_mean: prior mean used in KL term of bound. By default 0. Same size as X_data_mean.
         :param X_prior_var: prior variance used in KL term of bound. By default 1.
         """
-        super().__init__(kernel, likelihoods.Gaussian())
+        num_data, num_latent_gps = X_data_mean.shape
+        super().__init__(kernel, likelihoods.Gaussian(), num_latent_gps=num_latent_gps)
         self.data = data
         assert X_data_var.ndim == 2
 
         self.X_data_mean = Parameter(X_data_mean)
         self.X_data_var = Parameter(X_data_var, transform=positive())
 
-        self.num_data, self.num_latent_gps = X_data_mean.shape
+        self.num_data = num_data
         self.output_dim = data.shape[-1]
 
         assert np.all(X_data_mean.shape == X_data_var.shape)
@@ -181,8 +182,8 @@ class BayesianGPLVM(GPModel, BayesianModelStoringData):
             if self.X_data_var.shape.ndims == 2
             else tf.linalg.diag_part(self.X_data_var)
         )
-        NQ = tf.cast(tf.size(self.X_data_mean), default_float())
-        D = tf.cast(tf.shape(Y_data)[1], default_float())
+        NQ = to_default_float(tf.size(self.X_data_mean))
+        D = to_default_float(tf.shape(Y_data)[1])
         KL = -0.5 * tf.reduce_sum(tf.math.log(dX_data_var))
         KL += 0.5 * tf.reduce_sum(tf.math.log(self.X_prior_var))
         KL -= 0.5 * NQ
@@ -191,7 +192,7 @@ class BayesianGPLVM(GPModel, BayesianModelStoringData):
         )
 
         # compute log marginal bound
-        ND = tf.cast(tf.size(Y_data), default_float())
+        ND = to_default_float(tf.size(Y_data))
         bound = -0.5 * ND * tf.math.log(2 * np.pi * sigma2)
         bound += -0.5 * D * log_det_B
         bound += -0.5 * tf.reduce_sum(tf.square(Y_data)) / sigma2

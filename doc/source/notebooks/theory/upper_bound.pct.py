@@ -28,7 +28,8 @@ import numpy as np
 import tensorflow as tf
 
 import gpflow
-from gpflow.utilities import set_trainable, print_summary
+from gpflow import set_trainable
+from gpflow.utilities import print_summary
 from gpflow.ci_utils import ci_niter
 
 import logging

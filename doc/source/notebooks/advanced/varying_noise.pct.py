@@ -33,7 +33,7 @@ import tensorflow as tf
 import gpflow
 from gpflow.ci_utils import ci_niter
 from gpflow.optimizers import NaturalGradient
-from gpflow.utilities import set_trainable
+from gpflow import set_trainable
 import matplotlib
 import matplotlib.pyplot as plt
 # %matplotlib inline

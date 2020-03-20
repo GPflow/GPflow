@@ -63,12 +63,13 @@ class VGP(GPModel, BayesianModelStoringData):
         kernel, likelihood, mean_function are appropriate GPflow objects
 
         """
+        if num_latent_gps is None:
+            num_latent_gps = self.calc_num_latent_gps_from_data(data, kernel, likelihood)
         super().__init__(kernel, likelihood, mean_function, num_latent_gps)
 
         X_data, Y_data = data
         num_data = X_data.shape[0]
         self.num_data = num_data
-        self.num_latent_gps = num_latent_gps or Y_data.shape[1]
         self.data = data
 
         self.q_mu = Parameter(np.zeros((num_data, self.num_latent_gps)))
@@ -152,7 +153,7 @@ class VGPOpperArchambeau(GPModel, BayesianModelStoringData):
         data: RegressionData,
         kernel: Kernel,
         likelihood: Likelihood,
-        mean_function: MeanFunction = None,
+        mean_function: Optional[MeanFunction] = None,
         num_latent_gps: Optional[int] = None,
     ):
         """
@@ -160,14 +161,13 @@ class VGPOpperArchambeau(GPModel, BayesianModelStoringData):
         Y is a data matrix, size [N, R]
         kernel, likelihood, mean_function are appropriate GPflow objects
         """
-        mean_function = Zero() if mean_function is None else mean_function
-
+        if num_latent_gps is None:
+            num_latent_gps = self.calc_num_latent_gps_from_data(data, kernel, likelihood)
         super().__init__(kernel, likelihood, mean_function, num_latent_gps)
 
         X_data, Y_data = data
         self.data = data
         self.num_data = X_data.shape[0]
-        self.num_latent_gps = num_latent_gps or Y_data.shape[1]
         self.q_alpha = Parameter(np.zeros((self.num_data, self.num_latent_gps)))
         self.q_lambda = Parameter(
             np.ones((self.num_data, self.num_latent_gps)), transform=gpflow.utilities.positive()

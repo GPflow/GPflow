@@ -48,7 +48,7 @@ def test_svgp(whiten, q_diag):
         mean_function=gpflow.mean_functions.Constant(),
         num_latent_gps=Datum.Y.shape[1],
     )
-    gpflow.utilities.set_trainable(model.inducing_variable, False)
+    gpflow.set_trainable(model.inducing_variable, False)
 
     # test with explicitly unknown shapes:
     tensor_spec = tf.TensorSpec(shape=None, dtype=default_float())
@@ -74,7 +74,7 @@ def test_multiclass():
         inducing_variable=Datum.X.copy(),
         num_latent_gps=num_classes,
     )
-    gpflow.utilities.set_trainable(model.inducing_variable, False)
+    gpflow.set_trainable(model.inducing_variable, False)
 
     # test with explicitly unknown shapes:
     tensor_spec = tf.TensorSpec(shape=None, dtype=default_float())

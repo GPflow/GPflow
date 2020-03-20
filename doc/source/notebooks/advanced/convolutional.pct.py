@@ -34,7 +34,7 @@ import gpflow
 import tensorflow as tf
 import tensorflow_probability as tfp
 
-from gpflow.utilities import set_trainable
+from gpflow import set_trainable
 from gpflow.ci_utils import is_continuous_integration
 
 gpflow.config.set_default_float(np.float64)
