@@ -64,10 +64,10 @@ def test_switched_likelihood_predict_density(Y_list, F_list, Fvar_list, Y_label)
         lik.variance = np.exp(np.random.randn(1)).squeeze().astype(np.float32)
     switched_likelihood = SwitchedLikelihood(likelihoods)
 
-    switched_results = switched_likelihood.predict_density(F_sw, Fvar_sw, Y_sw)
+    switched_results = switched_likelihood.predict_log_density(F_sw, Fvar_sw, Y_sw)
     # likelihood
     results = [
-        lik.predict_density(f, fvar, y)
+        lik.predict_log_density(f, fvar, y)
         for lik, y, f, fvar in zip(likelihoods, Y_list, F_list, Fvar_list)
     ]
     assert_allclose(switched_results, np.concatenate(results)[Y_perm])

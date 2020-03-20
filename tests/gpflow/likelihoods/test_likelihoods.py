@@ -171,12 +171,12 @@ def test_quadrature_variational_expectation(likelihood_setup, mu, var):
 
 @pytest.mark.parametrize("likelihood_setup", filter_analytic(likelihood_setups, "predict_density"))
 @pytest.mark.parametrize("mu, var", [[Datum.Fmu, Datum.Fvar]])
-def test_quadrature_predict_density(likelihood_setup, mu, var):
+def test_quadrature_predict_log_density(likelihood_setup, mu, var):
     likelihood, y = likelihood_setup.likelihood, likelihood_setup.Y
     if isinstance(likelihood, MultiClass):
         pytest.skip("Test fails due to issue with ndiagquad (github issue #1091)")
-    F1 = likelihood.predict_density(mu, var, y)
-    F2 = Likelihood.predict_density(likelihood, mu, var, y)
+    F1 = likelihood.predict_log_density(mu, var, y)
+    F2 = Likelihood.predict_log_density(likelihood, mu, var, y)
     assert_allclose(F1, F2, rtol=likelihood_setup.rtol, atol=likelihood_setup.atol)
 
 
@@ -220,11 +220,11 @@ def test_montecarlo_variational_expectation(likelihood_var, mu, var, y):
 
 @pytest.mark.parametrize("likelihood_var", [0.3, 0.5, 1.0])
 @pytest.mark.parametrize("mu, var, y", [_make_montecarlo_mu_var_y()])
-def test_montecarlo_predict_density(likelihood_var, mu, var, y):
+def test_montecarlo_predict_log_density(likelihood_var, mu, var, y):
     likelihood_gaussian_mc, likelihood_gaussian = _make_montecarlo_likelihoods(likelihood_var)
     assert_allclose(
-        likelihood_gaussian_mc.predict_density(mu, var, y),
-        likelihood_gaussian.predict_density(mu, var, y),
+        likelihood_gaussian_mc.predict_log_density(mu, var, y),
+        likelihood_gaussian.predict_log_density(mu, var, y),
         rtol=5e-4,
         atol=1e-4,
     )
@@ -318,7 +318,7 @@ def test_robust_max_multiclass_symmetric(num_classes, num_points, tol, epsilon):
     likelihood.invlink.epsilon = tf.convert_to_tensor(epsilon, dtype=default_float())
 
     mu, _ = likelihood.predict_mean_and_var(F, F)
-    pred = likelihood.predict_density(F, F, Y)
+    pred = likelihood.predict_log_density(F, F, Y)
     variational_expectations = likelihood.variational_expectations(F, F, Y)
 
     expected_mu = (p * (1.0 - epsilon) + (1.0 - p) * epsilon / (num_classes - 1)) * np.ones(
@@ -350,7 +350,7 @@ def test_robust_max_multiclass_symmetric(num_classes, num_points, tol, epsilon):
         # log((1 - ε) * 0.73 + (1-0.73) * ε / (num_classes -1))
     ],
 )
-def test_robust_max_multiclass_predict_density(
+def test_robust_max_multiclass_predict_log_density(
     num_classes, num_points, mock_prob, expected_prediction, tol, epsilon
 ):
     class MockRobustMax(gpflow.likelihoods.RobustMax):
@@ -361,7 +361,7 @@ def test_robust_max_multiclass_predict_density(
     F = tf.ones((num_points, num_classes))
     rng = np.random.RandomState(1)
     Y = to_default_int(rng.randint(num_classes, size=(num_points, 1)))
-    prediction = likelihood.predict_density(F, F, Y)
+    prediction = likelihood.predict_log_density(F, F, Y)
 
     assert_allclose(prediction, expected_prediction, tol, tol)
 

@@ -54,6 +54,7 @@ integration is done by sampling (can be more suitable when F is higher dimension
 
 import numpy as np
 import tensorflow as tf
+import abc
 
 from .. import logdensities
 from ..base import Module, Parameter
@@ -68,7 +69,7 @@ def inv_probit(x):
     return 0.5 * (1.0 + tf.math.erf(x / np.sqrt(2.0))) * (1 - 2 * jitter) + jitter
 
 
-class Likelihood(Module):
+class Likelihood(Module, metaclass=abc.ABCMeta):
     def __init__(self, latent_dim: int, observation_dim: int):
         """
         A base class for likelihoods, which specifies an observation model 
@@ -139,6 +140,7 @@ class Likelihood(Module):
         self.check_return_shape(res, F, Y)
         return res
 
+    @abc.abstractmethod
     def _log_prob(self, F, Y):
         raise NotImplementedError
 
@@ -153,6 +155,7 @@ class Likelihood(Module):
         self.check_data_dims(expected_Y)
         return expected_Y
 
+    @abc.abstractmethod
     def _conditional_mean(self, F):
         raise NotImplementedError
 
@@ -168,6 +171,7 @@ class Likelihood(Module):
         self.check_data_dims(var_Y)
         return var_Y
 
+    @abc.abstractmethod
     def _conditional_variance(self, F):
         raise NotImplementedError
 
@@ -185,10 +189,11 @@ class Likelihood(Module):
         self.check_data_dims(var)
         return mu, var
 
+    @abc.abstractmethod
     def _predict_mean_and_var(self, Fmu, Fvar):
         raise NotImplementedError
 
-    def predict_density(self, Fmu, Fvar, Y):
+    def predict_log_density(self, Fmu, Fvar, Y):
         r"""
         Given a Normal distribution for the latent function, and a datum Y,
         compute the log predictive density of Y.
@@ -207,16 +212,40 @@ class Likelihood(Module):
         :param Fmu: mean function evaluation Tensor, with shape [..., latent_dim]
         :param Fvar: variance of function evaluation Tensor, with shape [..., latent_dim]
         :param Y: observation Tensor, with shape [..., observation_dim]:
-        :return predicted density, with shape [...]
+        :return log predicted density, with shape [...]
         """
         tf.debugging.assert_equal(tf.shape(Fmu), tf.shape(Fvar))
         self._check_last_dims_valid(Fmu, Y)
-        res = self._predict_density(Fmu, Fvar, Y)
+        res = self._predict_log_density(Fmu, Fvar, Y)
         self.check_return_shape(res, Fmu, Y)
         return res
 
-    def _predict_density(self, Fmu, Fvar, Y):
+    @abc.abstractmethod
+    def _predict_log_density(self, Fmu, Fvar, Y):
         raise NotImplementedError
+
+    def predict_density(self, Fmu, Fvar, Y):
+        r"""
+        Given a Normal distribution for the latent function, and a datum Y,
+        compute the predictive density of Y.
+
+        i.e. if
+            q(F) = N(Fmu, Fvar)
+
+        and this object represents
+
+            p(y|F)
+
+        then this method computes the predictive density
+
+            ∫ p(y=Y|F)q(F) df
+
+        :param Fmu: mean function evaluation Tensor, with shape [..., latent_dim]
+        :param Fvar: variance of function evaluation Tensor, with shape [..., latent_dim]
+        :param Y: observation Tensor, with shape [..., observation_dim]:
+        :return predicted density, with shape [...]
+        """
+        return tf.exp(self.predict_log_density(Fmu, Fvar, Y))
 
     def variational_expectations(self, Fmu, Fvar, Y):
         r"""
@@ -250,6 +279,7 @@ class Likelihood(Module):
         self.check_return_shape(ret, Fmu, Y)
         return ret
 
+    @abc.abstractmethod
     def _variational_expectations(self, Fmu, Fvar, Y):
         raise NotImplementedError
 
@@ -311,7 +341,7 @@ class ScalarLikelihood(Likelihood):
             axis=-1,
         )
 
-    def _predict_density(self, Fmu, Fvar, Y):
+    def _predict_log_density(self, Fmu, Fvar, Y):
         r"""
         Here, we implement a default Gauss-Hermite quadrature routine, but some
         likelihoods (Gaussian, Poisson) will implement specific cases.
@@ -395,7 +425,7 @@ class Gaussian(ScalarLikelihood):
     def _predict_mean_and_var(self, Fmu, Fvar):
         return tf.identity(Fmu), Fvar + self.variance
 
-    def _predict_density(self, Fmu, Fvar, Y):
+    def _predict_log_density(self, Fmu, Fvar, Y):
         return tf.reduce_sum(logdensities.gaussian(Y, Fmu, Fvar + self.variance), axis=-1)
 
     def _variational_expectations(self, Fmu, Fvar, Y):
@@ -505,7 +535,7 @@ class Bernoulli(ScalarLikelihood):
             # for other invlink, use quadrature
             return super()._predict_mean_and_var(Fmu, Fvar)
 
-    def _predict_density(self, Fmu, Fvar, Y):
+    def _predict_log_density(self, Fmu, Fvar, Y):
         p = self.predict_mean_and_var(Fmu, Fvar)[0]
         return logdensities.bernoulli(Y, p)
 
@@ -630,7 +660,7 @@ class MultiClass(Likelihood):
         ps = tf.transpose(tf.stack([tf.reshape(p, (-1,)) for p in ps]))
         return ps, ps - tf.square(ps)
 
-    def _predict_density(self, Fmu, Fvar, Y):
+    def _predict_log_density(self, Fmu, Fvar, Y):
         return tf.reduce_sum(tf.math.log(self._predict_non_logged_density(Fmu, Fvar, Y)), axis=-1)
 
     def _predict_non_logged_density(self, Fmu, Fvar, Y):
@@ -691,10 +721,10 @@ class SwitchedLikelihood(ScalarLikelihood):
         tf.assert_equal(tf.shape(F)[-1], tf.shape(Y)[-1] - 1)
 
     def _scalar_log_density(self, F, Y):
-        return self._partition_and_stitch([F, Y], "_scalar_density")
+        return self._partition_and_stitch([F, Y], "_scalar_log_density")
 
-    def _predict_density(self, Fmu, Fvar, Y):
-        return self._partition_and_stitch([Fmu, Fvar, Y], "predict_density")
+    def _predict_log_density(self, Fmu, Fvar, Y):
+        return self._partition_and_stitch([Fmu, Fvar, Y], "predict_log_density")
 
     def _variational_expectations(self, Fmu, Fvar, Y):
         return self._partition_and_stitch([Fmu, Fvar, Y], "variational_expectations")
@@ -705,6 +735,12 @@ class SwitchedLikelihood(ScalarLikelihood):
         mu = tf.concat(mu_list, 1)
         var = tf.concat(var_list, 1)
         return mu, var
+
+    def _conditional_mean(self, F):
+        raise NotImplementedError
+
+    def _conditional_variance(self, F):
+        raise NotImplementedError
 
 
 class Ordinal(ScalarLikelihood):
@@ -824,7 +860,7 @@ class MonteCarloLikelihood(Likelihood):
         V_y = E_y2 - tf.square(E_y)
         return E_y, V_y  # [N, D]
 
-    def _predict_density(self, Fmu, Fvar, Y, epsilon=None):
+    def _predict_log_density(self, Fmu, Fvar, Y, epsilon=None):
         r"""
         Given a Normal distribution for the latent function, and a datum Y,
         compute the log predictive density of Y.
