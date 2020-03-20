@@ -245,7 +245,11 @@ class Likelihood(Module, metaclass=abc.ABCMeta):
         :param Y: observation Tensor, with shape [..., observation_dim]:
         :return predicted density, with shape [...]
         """
-        return tf.exp(self.predict_log_density(Fmu, Fvar, Y))
+        warnings.warn(
+            "predict_density is deprecated, use predict_log_density instead",
+            DeprecationWarning
+        )
+        return self.predict_log_density(Fmu, Fvar, Y)
 
     def variational_expectations(self, Fmu, Fvar, Y):
         r"""
