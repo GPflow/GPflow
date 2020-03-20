@@ -185,7 +185,7 @@ class SGPR(SGPRBase):
 
         return bound
 
-    def predict_f(self, X: tf.Tensor, full_cov=False, full_output_cov=False) -> MeanAndVariance:
+    def predict_f(self, X: tf.Tensor, *, full_cov=False, full_output_cov=False) -> MeanAndVariance:
         """
         Compute the mean and variance of the latent function at some new points
         Xnew. For a derivation of the terms in here, see the associated SGPR
@@ -346,7 +346,7 @@ class GPRFITC(SGPRBase):
 
         return mahalanobisTerm + logNormalizingTerm * self.num_latent_gps
 
-    def predict_f(self, X: tf.Tensor, full_cov=False, full_output_cov=False) -> MeanAndVariance:
+    def predict_f(self, X: tf.Tensor, *, full_cov=False, full_output_cov=False) -> MeanAndVariance:
         """
         Compute the mean and variance of the latent function at some new points
         Xnew.

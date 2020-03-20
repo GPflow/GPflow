@@ -73,7 +73,7 @@ class GPR(GPModel):
         log_prob = multivariate_normal(Y, m, L)
         return tf.reduce_sum(log_prob)
 
-    def predict_f(self, Xnew: tf.Tensor, full_cov: bool = False, full_output_cov: bool = False):
+    def predict_f(self, Xnew: tf.Tensor, *, full_cov: bool = False, full_output_cov: bool = False):
         r"""
         This method computes predictions at X \in R^{N \x D} input points
 

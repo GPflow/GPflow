@@ -95,7 +95,7 @@ class SGPMC(GPModel):
         fmean, fvar = self.predict_f(X_data, full_cov=False)
         return tf.reduce_sum(self.likelihood.variational_expectations(fmean, fvar, Y_data))
 
-    def predict_f(self, X: tf.Tensor, full_cov=False, full_output_cov=False) -> MeanAndVariance:
+    def predict_f(self, X: tf.Tensor, *, full_cov=False, full_output_cov=False) -> MeanAndVariance:
         """
         Xnew is a data matrix, point at which we want to predict
 

@@ -145,13 +145,14 @@ class GPModel(BayesianModel):
 
     @abc.abstractmethod
     def predict_f(
-        self, Xnew: DataPoint, full_cov: bool = False, full_output_cov: bool = False
+        self, Xnew: DataPoint, *, full_cov: bool = False, full_output_cov: bool = False
     ) -> MeanAndVariance:
         raise NotImplementedError
 
     def predict_f_samples(
         self,
         Xnew: DataPoint,
+        *,
         num_samples: Optional[int] = None,
         full_cov: bool = True,
         full_output_cov: bool = False,
@@ -201,7 +202,7 @@ class GPModel(BayesianModel):
         return samples  # [..., (S), N, P]
 
     def predict_y(
-        self, Xnew: DataPoint, full_cov: bool = False, full_output_cov: bool = False
+        self, Xnew: DataPoint, *, full_cov: bool = False, full_output_cov: bool = False
     ) -> MeanAndVariance:
         """
         Compute the mean and variance of the held-out data at the input points.
@@ -210,7 +211,7 @@ class GPModel(BayesianModel):
         return self.likelihood.predict_mean_and_var(f_mean, f_var)
 
     def predict_log_density(
-        self, data: Data, full_cov: bool = False, full_output_cov: bool = False
+        self, data: Data, *, full_cov: bool = False, full_output_cov: bool = False
     ):
         """
         Compute the log density of the data at the new data points.

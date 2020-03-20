@@ -155,7 +155,7 @@ class SVGP(GPModel):
         """
         return self.log_marginal_likelihood(data)
 
-    def predict_f(self, Xnew: tf.Tensor, full_cov=False, full_output_cov=False) -> tf.Tensor:
+    def predict_f(self, Xnew: tf.Tensor, *, full_cov=False, full_output_cov=False) -> tf.Tensor:
         q_mu = self.q_mu
         q_sqrt = self.q_sqrt
         mu, var = conditional(
