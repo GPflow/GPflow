@@ -20,7 +20,7 @@ You can use this document to get familiar with GPflow. We've split up the materi
 
 ## GPflow 2
 
-Users of GPflow 1 should check the [upgrade guide to GPflow 2](gpflow2_upgrade/gpflow2_upgrade_guide.ipynb).
+Users of GPflow 1 should check the [upgrade guide to GPflow 2](gpflow2_upgrade_guide.ipynb).
 
 ## Basics
 
