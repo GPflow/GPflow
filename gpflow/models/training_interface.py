@@ -1,4 +1,5 @@
-from collections import abc
+import abc
+import collections
 from typing import Callable, Optional, Tuple, TypeVar
 
 
@@ -55,7 +56,7 @@ class ExternalDataTrainingInterface(TrainingInterface):
             )  # TODO need to add correct input_signature here to allow for differently sized minibatches
 
         def closure():
-            batch = next(data) if isinstance(data, abc.Iterator) else data
+            batch = next(data) if isinstance(data, collections.abc.Iterator) else data
             return training_loss(data)
 
         return closure
