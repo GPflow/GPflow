@@ -95,7 +95,7 @@ def _create_approximate_models():
         mean_function=gpflow.mean_functions.Constant(),
         num_latent_gps=Datum.Y.shape[1],
     )
-    gpflow.utilities.set_trainable(model_2.inducing_variable, False)
+    gpflow.set_trainable(model_2.inducing_variable, False)
     model_3 = gpflow.models.SVGP(
         kernel=gpflow.kernels.SquaredExponential(),
         likelihood=gpflow.likelihoods.Gaussian(),
@@ -105,21 +105,21 @@ def _create_approximate_models():
         mean_function=gpflow.mean_functions.Constant(),
         num_latent_gps=Datum.Y.shape[1],
     )
-    gpflow.utilities.set_trainable(model_3.inducing_variable, False)
+    gpflow.set_trainable(model_3.inducing_variable, False)
     model_4 = gpflow.models.GPRFITC(
         (Datum.X, Datum.Y),
         kernel=gpflow.kernels.SquaredExponential(),
         inducing_variable=Datum.X.copy(),
         mean_function=Constant(),
     )
-    gpflow.utilities.set_trainable(model_4.inducing_variable, False)
+    gpflow.set_trainable(model_4.inducing_variable, False)
     model_5 = gpflow.models.SGPR(
         (Datum.X, Datum.Y),
         gpflow.kernels.SquaredExponential(),
         inducing_variable=Datum.X.copy(),
         mean_function=Constant(),
     )
-    gpflow.utilities.set_trainable(model_5.inducing_variable, False)
+    gpflow.set_trainable(model_5.inducing_variable, False)
 
     # Train models
 

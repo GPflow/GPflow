@@ -27,6 +27,7 @@ import numpy as np
 import gpflow
 from gpflow.inducing_variables import InducingVariables
 from gpflow.base import TensorLike
+from gpflow.utilities import to_default_float
 from gpflow import covariances as cov
 from gpflow import kullback_leiblers as kl
 
@@ -69,7 +70,7 @@ def Kuu_matern12_fourierfeatures1d(inducing_variable, kernel, jitter=None):
 
     # Cosine block:
     lamb = 1. / kernel.lengthscales
-    two_or_four = tf.cast(tf.where(omegas == 0, 2., 4.), gpflow.default_float())
+    two_or_four = to_default_float(tf.where(omegas == 0, 2., 4.))
     d_cos = (b - a) * (tf.square(lamb) + tf.square(omegas)) \
         / lamb / kernel.variance / two_or_four  # eq. (111)
     v_cos = tf.ones_like(d_cos) / tf.sqrt(kernel.variance)  # eq. (110)
@@ -110,7 +111,7 @@ def Kuu_matern32_fourierfeatures1d(inducing_variable, kernel, jitter=None):
 
     # Cosine block: eq. (114)
     lamb = np.sqrt(3.) / kernel.lengthscales
-    four_or_eight = tf.cast(tf.where(omegas == 0, 4., 8.), gpflow.default_float())
+    four_or_eight = to_default_float(tf.where(omegas == 0, 4., 8.))
     d_cos = (b - a) * tf.square(tf.square(lamb) + tf.square(omegas)) \
         / tf.pow(lamb, 3) / kernel.variance / four_or_eight
     v_cos = tf.ones_like(d_cos) / tf.sqrt(kernel.variance)
@@ -191,11 +192,11 @@ def gauss_kl_vff(q_mu, q_sqrt, K):
     mahalanobis_term = tf.squeeze(tf.matmul(q_mu, Kinv_q_mu, transpose_a=True))
 
     # GPflow: q_sqrt is num_latent_gps x N x N
-    num_latent_gps = tf.cast(tf.shape(q_mu)[1], gpflow.default_float())
+    num_latent_gps = to_default_float(tf.shape(q_mu)[1])
     logdet_prior = num_latent_gps * K.log_abs_determinant()
 
     product_of_dimensions__int = tf.reduce_prod(tf.shape(q_sqrt)[:-1])  # dimensions are integers
-    constant_term = tf.cast(product_of_dimensions__int, gpflow.default_float())
+    constant_term = to_default_float(product_of_dimensions__int)
 
     Lq = tf.linalg.band_part(q_sqrt, -1, 0)  # force lower triangle
     logdet_q = tf.reduce_sum(tf.math.log(tf.square(tf.linalg.diag_part(Lq))))
@@ -322,9 +323,9 @@ m = gpflow.models.SVGP(kernel=gpflow.kernels.Matern32(),
                        likelihood=gpflow.likelihoods.Gaussian(variance=noise_scale**2),
                        inducing_variable=FourierFeatures1D(-4.5, 4.5, Mfreq),
                        num_data=len(X), whiten=False)
-gpflow.utilities.set_trainable(m.kernel, False)
-gpflow.utilities.set_trainable(m.likelihood, False)
-gpflow.utilities.set_trainable(m.inducing_variable, True)  # whether to optimize bounds [a, b]
+gpflow.set_trainable(m.kernel, False)
+gpflow.set_trainable(m.likelihood, False)
+gpflow.set_trainable(m.inducing_variable, True)  # whether to optimize bounds [a, b]
 
 
 # %%
@@ -343,9 +344,9 @@ m_ip = gpflow.models.SVGP(kernel=gpflow.kernels.Matern32(),
                           likelihood=gpflow.likelihoods.Gaussian(variance=noise_scale**2),
                           inducing_variable=np.linspace(-2, 2, Mfreq*2-1)[:, None],
                           num_data=len(X), whiten=False)
-gpflow.utilities.set_trainable(m_ip.kernel, False)
-gpflow.utilities.set_trainable(m_ip.likelihood, False)
-gpflow.utilities.set_trainable(m_ip.inducing_variable, True)  # whether to optimize inducing point locations
+gpflow.set_trainable(m_ip.kernel, False)
+gpflow.set_trainable(m_ip.likelihood, False)
+gpflow.set_trainable(m_ip.inducing_variable, True)  # whether to optimize inducing point locations
 
 
 # %%
@@ -359,8 +360,8 @@ gpflow.utilities.print_summary(m_ip, fmt='notebook')
 # %%
 m_ref = gpflow.models.GPR((X.reshape(-1, 1), Y.reshape(-1, 1)), kernel=gpflow.kernels.Matern32())
 m_ref.likelihood.variance = np.array(noise_scale**2).astype(np.float64)
-gpflow.utilities.set_trainable(m_ref.kernel, False)
-gpflow.utilities.set_trainable(m_ref.likelihood, False)
+gpflow.set_trainable(m_ref.kernel, False)
+gpflow.set_trainable(m_ref.likelihood, False)
 
 # Because we fixed the kernel and likelihood hyperparameters, we don't need to optimize anything.
 

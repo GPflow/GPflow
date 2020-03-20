@@ -18,6 +18,7 @@ import pytest
 import tensorflow as tf
 from gpflow import logdensities
 from gpflow import default_float
+from gpflow.utilities import to_default_float
 import scipy.stats
 from scipy.stats import multivariate_normal as mvn
 from numpy.testing import assert_allclose
@@ -71,10 +72,8 @@ def test_gamma(x, shape, scale):
     "x, mean, scale, df", [(0.9, 0.5, 1.3, 1), (0.9, 0.5, 1.3, 2), (0.9, 0.5, 1.3, 3),]
 )
 def test_student_t(x, mean, scale, df):
-    def c(val):
-        return tf.cast(val, default_float())
-
-    gpf = logdensities.student_t(c(x), c(mean), c(scale), df).numpy()
+    cast = to_default_float
+    gpf = logdensities.student_t(cast(x), cast(mean), cast(scale), df).numpy()
     sps = scipy.stats.t(df=df, loc=mean, scale=scale).logpdf(x)
     np.testing.assert_allclose(gpf, sps)
 

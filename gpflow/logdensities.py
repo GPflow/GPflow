@@ -12,9 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import tensorflow as tf
 import numpy as np
+import tensorflow as tf
 from .config import default_float
+from .utilities import to_default_float
 
 
 def gaussian(x, mu, var):
@@ -48,13 +49,12 @@ def gamma(x, shape, scale):
 
 
 def student_t(x, mean, scale, df):
-    df = tf.cast(df, default_float())
+    df = to_default_float(df)
     const = (
         tf.math.lgamma((df + 1.0) * 0.5)
         - tf.math.lgamma(df * 0.5)
         - 0.5 * (tf.math.log(tf.square(scale)) + tf.math.log(df) + np.log(np.pi))
     )
-    const = tf.cast(const, default_float())
     return const - 0.5 * (df + 1.0) * tf.math.log(
         1.0 + (1.0 / df) * (tf.square((x - mean) / scale))
     )
@@ -98,4 +98,12 @@ def multivariate_normal(x, mu, L):
     p = -0.5 * tf.reduce_sum(tf.square(alpha), 0)
     p -= 0.5 * num_dims * np.log(2 * np.pi)
     p -= tf.reduce_sum(tf.math.log(tf.linalg.diag_part(L)))
+
+    shape_constraints = [
+        (d, ["D", "N"]),
+        (L, ["D", "D"]),
+        (p, ["N"]),
+    ]
+    tf.debugging.assert_shapes(shape_constraints, message="multivariate_normal()")
+
     return p

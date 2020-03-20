@@ -22,10 +22,10 @@ import tensorflow as tf
 from ..base import Module
 from ..conditionals.util import sample_mvn
 from ..config import default_float, default_jitter
-from ..kernels import Kernel
-from ..likelihoods import Likelihood
+from ..kernels import Kernel, MultioutputKernel
+from ..likelihoods import Likelihood, SwitchedLikelihood
 from ..mean_functions import MeanFunction, Zero
-from ..utilities import ops
+from ..utilities import ops, to_default_float
 
 InputData = tf.Tensor
 OutputData = tf.Tensor
@@ -38,11 +38,13 @@ class BayesianModel(Module, metaclass=abc.ABCMeta):
     """ Bayesian model. """
 
     def log_prior_density(self) -> tf.Tensor:
-        log_priors = [p.log_prior() for p in self.trainable_parameters]
-        if log_priors:
-            return tf.add_n(log_priors)
+        """
+        Sum of the log prior probability densities of all (constrained) variables in this model.
+        """
+        if self.trainable_parameters:
+            return tf.add_n([p.log_prior_density() for p in self.trainable_parameters])
         else:
-            return tf.convert_to_tensor(0.0, dtype=default_float())
+            return to_default_float(0.0)
 
     def log_posterior_density(self, data: Optional[Data] = None) -> tf.Tensor:
         """
@@ -122,9 +124,10 @@ class GPModel(BayesianModel):
         kernel: Kernel,
         likelihood: Likelihood,
         mean_function: Optional[MeanFunction] = None,
-        num_latent_gps: int = 1,
+        num_latent_gps: int = None,
     ):
         super().__init__()
+        assert num_latent_gps is not None, "GPModel requires specification of num_latent_gps"
         self.num_latent_gps = num_latent_gps
         # TODO(@awav): Why is this here when MeanFunction does not have a __len__ method
         if mean_function is None:
@@ -132,6 +135,42 @@ class GPModel(BayesianModel):
         self.mean_function = mean_function
         self.kernel = kernel
         self.likelihood = likelihood
+
+    @staticmethod
+    def calc_num_latent_gps_from_data(data, kernel: Kernel, likelihood: Likelihood) -> int:
+        """
+        Calculates the number of latent GPs required based on the data as well
+        as the type of kernel and likelihood.
+        """
+        _, Y = data
+        output_dim = Y.shape[-1]
+        return GPModel.calc_num_latent_gps(kernel, likelihood, output_dim)
+
+    @staticmethod
+    def calc_num_latent_gps(kernel: Kernel, likelihood: Likelihood, output_dim: int) -> int:
+        """
+        Calculates the number of latent GPs required given the number of
+        outputs `output_dim` and the type of likelihood and kernel.
+
+        Note: It's not nice for `GPModel` to need to be aware of specific
+        likelihoods as here. However, `num_latent_gps` is a bit more broken in
+        general, we should fix this in the future. There are also some slightly
+        problematic assumptions re the output dimensions of mean_function.
+        See https://github.com/GPflow/GPflow/issues/1343
+        """
+        if isinstance(kernel, MultioutputKernel):
+            # MultioutputKernels already have num_latent_gps attributes
+            num_latent_gps = kernel.num_latent_gps
+        elif isinstance(likelihood, SwitchedLikelihood):
+            # the SwitchedLikelihood partitions/stitches based on the last
+            # column in Y, but we should not add a separate latent GP for this!
+            # hence decrement by 1
+            num_latent_gps = output_dim - 1
+            assert num_latent_gps > 0
+        else:
+            num_latent_gps = output_dim
+
+        return num_latent_gps
 
     @abc.abstractmethod
     def predict_f(
