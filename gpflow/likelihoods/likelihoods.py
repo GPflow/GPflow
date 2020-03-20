@@ -55,6 +55,7 @@ integration is done by sampling (can be more suitable when F is higher dimension
 import numpy as np
 import tensorflow as tf
 import abc
+import warnings
 
 from .. import logdensities
 from ..base import Module, Parameter
@@ -225,25 +226,8 @@ class Likelihood(Module, metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     def predict_density(self, Fmu, Fvar, Y):
-        r"""
-        Given a Normal distribution for the latent function, and a datum Y,
-        compute the predictive density of Y.
-
-        i.e. if
-            q(F) = N(Fmu, Fvar)
-
-        and this object represents
-
-            p(y|F)
-
-        then this method computes the predictive density
-
-            ∫ p(y=Y|F)q(F) df
-
-        :param Fmu: mean function evaluation Tensor, with shape [..., latent_dim]
-        :param Fvar: variance of function evaluation Tensor, with shape [..., latent_dim]
-        :param Y: observation Tensor, with shape [..., observation_dim]:
-        :return predicted density, with shape [...]
+        """
+        Deprecated: see `predict_log_density`
         """
         warnings.warn(
             "predict_density is deprecated, use predict_log_density instead",
