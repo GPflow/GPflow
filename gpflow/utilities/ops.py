@@ -107,7 +107,7 @@ def distance(X, X2):
     """
     Returns Σ_i (X - X2ᵀ)_i
 
-    This funciton can deal with leading dimensions in X and X2.
+    This function can deal with leading dimensions in X and X2.
     """
     if X2 is None:
         X2 = X
