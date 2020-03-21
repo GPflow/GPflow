@@ -71,6 +71,9 @@ def test_freeze():
 
 
 def test_pickle_frozen():
+    """
+    Regression test for the bug described in GPflow/GPflow#1338
+    """
     module = D()
     module_frozen = gpflow.utilities.freeze(module)
 
