@@ -41,7 +41,7 @@ def latest_version(package_name):
     data = json.load(request.urlopen(url))
     # filter out rc and beta releases and, more generally, any releases that
     # do not contain exclusively numbers and dots.
-    versions = [v for v in data["releases"].keys() if re.match('[0-9\.]+$',v)]  
+    versions = [parse_version(v) for v in data["releases"].keys() if re.match("^[0-9.]+$", v)]  
     versions.sort(key=StrictVersion)
     return versions[-1]  # return latest version
 
