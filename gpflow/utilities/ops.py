@@ -103,6 +103,18 @@ def square_distance(X, X2):
     return dist
 
 
+def distance(X, X2):
+    """
+    Returns Σ_i (X - X2ᵀ)_i
+
+    This funciton can deal with leading dimensions in X and X2.
+    """
+    if X2 is None:
+        X2 = X
+    dist = X[..., :, tf.newaxis, :] - X2[..., tf.newaxis, :, :]
+    return tf.reduce_sum(dist, axis=-1)
+
+
 def pca_reduce(X: tf.Tensor, latent_dim: tf.Tensor) -> tf.Tensor:
     """
     A helpful function for linearly reducing the dimensionality of the input

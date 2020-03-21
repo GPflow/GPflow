@@ -3,7 +3,7 @@ import tensorflow as tf
 
 from ..base import Parameter
 from ..utilities import positive
-from ..utilities.ops import square_distance
+from ..utilities.ops import square_distance, distance
 from .base import Kernel
 
 
@@ -11,11 +11,23 @@ class Stationary(Kernel):
     """
     Base class for kernels that are stationary, that is, they only depend on
 
-        r = || x - x' ||
+        d = x - x'
 
     This class handles 'ard' behaviour, which stands for 'Automatic Relevance
     Determination'. This means that the kernel has one lengthscale per
     dimension, otherwise the kernel is isotropic (has a single lengthscale).
+
+    Derived classes should implement one of:
+
+        K_r2(self, r2): Returns the kernel evaluated on r² (r2), which is the
+        squared scaled Euclidean distance Should operate element-wise on r².
+
+        K_r(self, r): Returns the kernel evaluated on r, which is the scaled
+        Euclidean distance Should operate element-wise on r².
+
+        K_d(self, d): Returns the kernel evaluated on d, which is the sum of
+        the per-dimension differences between the input points, scaled by the
+        lengthscale parameter ℓ (i.e. Σ_i [(X - X2ᵀ) / ℓ]_i).
     """
 
     def __init__(self, variance=1.0, lengthscales=1.0, **kwargs):
@@ -46,32 +58,38 @@ class Stationary(Kernel):
         """
         return self.lengthscales.shape.ndims > 0
 
+    def scale(self, X):
+        X_scaled = X / self.lengthscales if X is not None else X
+        return X_scaled
+
     def scaled_squared_euclid_dist(self, X, X2=None):
         """
         Returns ||(X - X2ᵀ) / ℓ||² i.e. squared L2-norm.
         """
-        X_scaled = X / self.lengthscales
-        X2_scaled = X2 / self.lengthscales if X2 is not None else X2
-        return square_distance(X_scaled, X2_scaled)
+        return square_distance(self.scale(X), self.scale(X2))
+
+    def scaled_distance(self, X, X2=None):
+        """
+        Returns Σ_i [(X - X2ᵀ) / ℓ]_i
+        """
+        return distance(self.scale(X), self.scale(X2))
 
     def K(self, X, X2=None):
-        r2 = self.scaled_squared_euclid_dist(X, X2)
-        return self.K_r2(r2)
+        if hasattr(self, "K_r2") or hasattr(self, "K_r"):
+            r2 = self.scaled_squared_euclid_dist(X, X2)
+            if hasattr(self, "K_r2"):
+                return self.K_r2(r2)  # pylint: disable=no-member
+            else:
+                # Clipping around the (single) float precision which is ~1e-45.
+                r = tf.sqrt(tf.maximum(r2, 1e-40))
+                return self.K_r(r)  # pylint: disable=no-member
+        elif hasattr(self, "K_d"):
+            d = self.scaled_distance(X, X2)
+            return self.K_d(d)  # pylint: disable=no-member
+        raise NotImplementedError
 
     def K_diag(self, X):
         return tf.fill(tf.shape(X)[:-1], tf.squeeze(self.variance))
-
-    def K_r2(self, r2):
-        """
-        Returns the kernel evaluated on r² (`r2`), which is the squared scaled Euclidean distance
-        Should operate element-wise on r²
-        """
-        if hasattr(self, "K_r"):
-            # Clipping around the (single) float precision which is ~1e-45.
-            r = tf.sqrt(tf.maximum(r2, 1e-40))
-            return self.K_r(r)  # pylint: disable=no-member
-
-        raise NotImplementedError
 
 
 class SquaredExponential(Stationary):
@@ -176,12 +194,12 @@ class Cosine(Stationary):
     The Cosine kernel. Functions drawn from a GP with this kernel are sinusoids
     (with a random phase).  The kernel equation is
 
-        k(r) = σ² cos{r}
+        k(r) = σ² cos{d}
 
     where:
-    r  is the Euclidean distance between the input points, scaled by the lengthscale parameter ℓ,
+    d  is the sum of the per-dimension differences between the input points, scaled by the lengthscale parameter ℓ (i.e. Σ_i [(X - X2ᵀ) / ℓ]_i),
     σ² is the variance parameter.
     """
 
-    def K_r(self, r):
-        return self.variance * tf.cos(r)
+    def K_d(self, d):
+        return self.variance * tf.cos(d)
