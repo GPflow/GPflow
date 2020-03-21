@@ -194,7 +194,7 @@ class Cosine(Stationary):
     The Cosine kernel. Functions drawn from a GP with this kernel are sinusoids
     (with a random phase).  The kernel equation is
 
-        k(r) = σ² cos{d}
+        k(r) = σ² cos{2πd}
 
     where:
     d  is the sum of the per-dimension differences between the input points, scaled by the lengthscale parameter ℓ (i.e. Σ_i [(X - X2ᵀ) / ℓ]_i),
@@ -202,4 +202,4 @@ class Cosine(Stationary):
     """
 
     def K_d(self, d):
-        return self.variance * tf.cos(d)
+        return self.variance * tf.cos(2 * np.pi * d)
