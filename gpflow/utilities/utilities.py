@@ -274,7 +274,7 @@ def _set_by_name_index(parent: object, value: Any, attr_str: str, index_str: Uni
         delattr(parent, attr_str)
         setattr(parent, attr_str, attr)
     else:
-        delattr(parent, attr_str)
+        delattr(parent, attr_str)  # as above
         setattr(parent, attr_str, value)
 
 
