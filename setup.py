@@ -9,10 +9,6 @@ from pathlib import Path
 
 from pkg_resources import parse_version
 from setuptools import find_packages, setup
-# for latest_version() [see https://github.com/GPflow/GPflow/issues/1348]:
-import json
-from urllib import request
-import re
 
 is_py37 = sys.version_info.major == 3 and sys.version_info.minor == 7
 on_rtd = os.environ.get('READTHEDOCS', None) == 'True'  # copied from the docs
@@ -36,7 +32,12 @@ tf_cpu = 'tensorflow'
 tf_gpu = 'tensorflow-gpu'
 
 
+# for latest_version() [see https://github.com/GPflow/GPflow/issues/1348]:
 def latest_version(package_name):
+    import json
+    from urllib import request
+    import re
+
     url = f"https://pypi.python.org/pypi/{package_name}/json"
     data = json.load(request.urlopen(url))
     # filter out rc and beta releases and, more generally, any releases that
