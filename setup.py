@@ -9,6 +9,7 @@ from pathlib import Path
 
 from pkg_resources import parse_version
 from setuptools import find_packages, setup
+# for latest_version() [see https://github.com/GPflow/GPflow/issues/1348]:
 import json
 from urllib import request
 import re
