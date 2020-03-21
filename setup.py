@@ -14,13 +14,7 @@ is_py37 = sys.version_info.major == 3 and sys.version_info.minor == 7
 on_rtd = os.environ.get("READTHEDOCS", None) == "True"  # copied from the docs
 
 # Dependencies of GPflow
-requirements = [
-    "numpy>=1.10.0",
-    "scipy>=0.18.0",
-    "multipledispatch>=0.4.9",
-    "tabulate",
-    "gast==0.2.2",
-]
+requirements = ["numpy>=1.10.0", "scipy>=0.18.0", "multipledispatch>=0.4.9", "tabulate"]
 
 if not is_py37:
     requirements.append("dataclasses")
@@ -31,6 +25,22 @@ if not on_rtd:
 min_tf_version = "2.1.0"
 tf_cpu = "tensorflow"
 tf_gpu = "tensorflow-gpu"
+
+
+# for latest_version() [see https://github.com/GPflow/GPflow/issues/1348]:
+def latest_version(package_name):
+    import json
+    from urllib import request
+    import re
+
+    url = f"https://pypi.python.org/pypi/{package_name}/json"
+    data = json.load(request.urlopen(url))
+    # filter out rc and beta releases and, more generally, any releases that
+    # do not contain exclusively numbers and dots.
+    versions = [parse_version(v) for v in data["releases"].keys() if re.match("^[0-9.]+$", v)]
+    versions.sort()
+    return versions[-1]  # return latest version
+
 
 # Only detect TF if not installed or outdated. If not, do not do not list as
 # requirement to avoid installing over e.g. tensorflow-gpu
@@ -48,6 +58,13 @@ except (ImportError, DeprecationWarning):
     if not on_rtd:
         # Do not add TF if we are installing GPflow on readthedocs
         requirements.append(tf_cpu)
+        gast_requirement = (
+            "gast>=0.2.2,<0.3"
+            if latest_version("tensorflow") < parse_version("2.2")
+            else "gast>=0.3.3"
+        )
+        requirements.append(gast_requirement)
+
 
 with open(str(Path(".", "VERSION").absolute())) as version_file:
     version = version_file.read().strip()
