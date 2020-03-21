@@ -11,7 +11,6 @@ from pkg_resources import parse_version
 from setuptools import find_packages, setup
 import json
 from urllib import request
-from distutils.version import StrictVersion
 import re
 
 is_py37 = sys.version_info.major == 3 and sys.version_info.minor == 7
