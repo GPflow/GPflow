@@ -61,7 +61,7 @@ data = (X, Y)
 plt.plot(X, Y, "x", alpha=0.2)
 Xt = np.linspace(-1.1, 1.1, 1000)[:, None]
 Yt = func(Xt)
-plt.plot(Xt, Yt, c="k")
+_ = plt.plot(Xt, Yt, c="k")
 
 # %% [markdown]
 # ## Building the model
@@ -221,7 +221,7 @@ maxiter = ci_niter(20000)
 logf = run_adam(m, maxiter)
 plt.plot(np.arange(maxiter)[::10], logf)
 plt.xlabel("iteration")
-plt.ylabel("ELBO")
+_ = plt.ylabel("ELBO")
 
 # %% [markdown]
 # Finally, we plot the model's predictions.

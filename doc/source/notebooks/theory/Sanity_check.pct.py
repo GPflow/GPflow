@@ -53,7 +53,7 @@ np.random.seed(0)
 X = np.random.rand(20, 1) * 10
 Y = np.sin(X) + 0.9 * np.cos(X * 1.6) + np.random.randn(*X.shape) * 0.4
 Xtest = np.random.rand(10, 1) * 10
-plt.plot(X, Y, "kx", mew=2)
+_ = plt.plot(X, Y, "kx", mew=2)
 
 # %%
 data = (

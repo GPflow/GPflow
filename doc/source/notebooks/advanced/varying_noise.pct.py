@@ -165,7 +165,7 @@ plt.errorbar(
     elinewidth=1.0,
     color="C1",
 )
-plt.xlim(-5, 5)
+_ = plt.xlim(-5, 5)
 
 # %% [markdown]
 # ### Questions for the reader
@@ -254,7 +254,7 @@ ax.plot(xx, mu + 2 * np.sqrt(var), "C0", lw=0.5)
 ax.plot(xx, mu - 2 * np.sqrt(var), "C0", lw=0.5)
 
 ax.plot(X, Y, "C1x", mew=2)
-ax.set_xlim(-5, 5)
+_ = ax.set_xlim(-5, 5)
 
 # %% [markdown]
 # ### Optimizing the noise variances
@@ -303,7 +303,7 @@ ax.plot(xx, mu - 2 * np.sqrt(var), "C0", lw=0.5)
 
 ax.plot(X, Y, "C1x", mew=2)
 ax.set_xlim(-5, 5)
-ax.plot(xx, 2.5 * np.sin(6 * xx) + np.cos(3 * xx), "C2--")
+_ = ax.plot(xx, 2.5 * np.sin(6 * xx) + np.cos(3 * xx), "C2--")
 
 # %%
 from gpflow.utilities import print_summary

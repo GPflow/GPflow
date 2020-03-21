@@ -88,7 +88,7 @@ plotkernelsample(gpflow.kernels.Constant(), axes[1, 0])
 plotkernelsample(gpflow.kernels.Linear(), axes[1, 1])
 plotkernelsample(gpflow.kernels.Cosine(), axes[1, 2])
 plotkernelsample(gpflow.kernels.Periodic(gpflow.kernels.SquaredExponential()), axes[1, 3])
-axes[0, 0].set_ylim(-3, 3)
+_ = axes[0, 0].set_ylim(-3, 3)
 
 # %% [markdown]
 # ## First example: create a Matern 3/2 covariance kernel
@@ -132,7 +132,7 @@ K22 = k(X2)  # equivalent to k(X2, X2) (but more efficient): matrix with shape [
 
 # plotting
 plt.figure()
-plt.plot(X2, K21)
+_ = plt.plot(X2, K21)
 
 # %% [markdown]
 # ## Combine kernels
@@ -217,7 +217,7 @@ Z = np.random.multivariate_normal(np.zeros(n_grid ** 2), K, 2)
 axes[1].imshow(Z[0, :].reshape(n_grid, n_grid), extent=[-10, 10, -10, 10])
 axes[1].set_title("GP sample 1")
 axes[2].imshow(Z[1, :].reshape(n_grid, n_grid), extent=[-10, 10, -10, 10])
-axes[2].set_title("GP sample 2")
+_ = axes[2].set_title("GP sample 2")
 
 # %% [markdown]
 # ## Define new covariance functions

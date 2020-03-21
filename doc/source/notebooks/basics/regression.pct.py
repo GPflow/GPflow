@@ -49,7 +49,7 @@ data = np.genfromtxt("data/regression_1D.csv", delimiter=",")
 X = data[:, 0].reshape(-1, 1)
 Y = data[:, 1].reshape(-1, 1)
 
-plt.plot(X, Y, "kx", mew=2)
+_ = plt.plot(X, Y, "kx", mew=2)
 
 # %% [markdown]
 # We will consider the following probabilistic model:
@@ -175,7 +175,7 @@ plt.fill_between(
 )
 
 plt.plot(xx, samples[:, :, 0].numpy().T, "C0", linewidth=0.5)
-plt.xlim(-0.1, 1.1)
+_ = plt.xlim(-0.1, 1.1)
 
 
 # %% [markdown]

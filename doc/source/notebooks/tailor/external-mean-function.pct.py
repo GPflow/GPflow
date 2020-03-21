@@ -64,7 +64,7 @@ def generate_data(num_functions=10, N=1000):
 Xs, F = generate_data(10)
 
 # %%
-plt.plot(Xs, F)
+_ = plt.plot(Xs, F)
 
 
 # %% [markdown]

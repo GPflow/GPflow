@@ -101,7 +101,7 @@ plt.plot(Ms, vupper_lml, label="upper")
 plt.axhline(full_lml, label="full", alpha=0.3)
 plt.xlabel("Number of inducing points")
 plt.ylabel("LML estimate")
-plt.legend()
+_ = plt.legend()
 
 # %% [markdown]
 # We see that the lower bound increases as more inducing points are added. Note that the upper bound does _not_ monotonically decrease! This is because as we train the sparse model, we also get better estimates of the hyperparameters. The upper bound will be different for this different setting of the hyperparameters, and is sometimes looser. The upper bound also converges to the true lml slower than the lower bound.
@@ -147,7 +147,7 @@ plt.plot(fMs, fvupper_lml, label="upper")
 plt.axhline(full_lml, label="full", alpha=0.3)
 plt.xlabel("Number of inducing points")
 plt.ylabel("LML estimate")
-plt.legend()
+_ = plt.legend()
 
 # %%
 assert np.all(np.array(fvupper_lml) - np.array(fvfe_lml) > 0.0)

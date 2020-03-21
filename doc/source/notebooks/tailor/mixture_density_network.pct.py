@@ -52,7 +52,7 @@ X, Y = data = sinusoidal_data(N, NOISE_STD)
 
 plt.plot(X, Y, "ro", alpha=0.3)
 plt.xlabel("$x$")
-plt.ylabel("$y$")
+_ = plt.ylabel("$y$")
 
 # %% [markdown]
 # At first sight, this dataset doesn't seem overly complex. Both input and output have a single dimension, and the data has a clear sinusoidal pattern. However, notice that a single input $x$ can correspond to multiple output values $y$, so for example $x=0$ can yield any of the values $\{-1.5, -3/4, 0, 0.8, 1.5\}$. Typical regression algorithms such as Linear Regression, Gaussian Process regression and Multilayer Perceptrons (MLPs) struggle as they can only predict one output value for every input.
@@ -223,7 +223,7 @@ def moon_data(N, noise):
 X, Y = data = moon_data(N, NOISE_STD)
 plt.plot(X, Y, "ro", alpha=0.3)
 plt.xlabel("$x$")
-plt.ylabel("$y$")
+_ = plt.ylabel("$y$")
 
 # %% [markdown]
 # The only difference in the MDN's setup is that we lower the number of mixture components.
