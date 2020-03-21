@@ -42,7 +42,7 @@ def latest_version(package_name):
     # filter out rc and beta releases and, more generally, any releases that
     # do not contain exclusively numbers and dots.
     versions = [parse_version(v) for v in data["releases"].keys() if re.match("^[0-9.]+$", v)]  
-    versions.sort(key=StrictVersion)
+    versions.sort()
     return versions[-1]  # return latest version
 
 
