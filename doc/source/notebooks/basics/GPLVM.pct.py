@@ -39,22 +39,22 @@ set_default_summary_fmt("notebook")
 # We are using the "three phase oil flow" dataset used initially for demonstrating the Generative Topographic mapping from **[3]**.
 
 # %%
-data = np.load('./data/three_phase_oil_flow.npz')
+data = np.load("./data/three_phase_oil_flow.npz")
 
 # %% [markdown]
 # Following the GPflow notation we assume this dataset has a shape of `[num_data, output_dim]`
 
 # %%
-Y = tf.convert_to_tensor(data['Y'], dtype=default_float())
+Y = tf.convert_to_tensor(data["Y"], dtype=default_float())
 
 # %% [markdown]
 # Integer in $[0, 2]$ indicating to which class the data point belongs (shape `[num_data,]`). Not used for model fitting, only for plotting afterwards.
 
 # %%
-labels = tf.convert_to_tensor(data['labels'])
+labels = tf.convert_to_tensor(data["labels"])
 
 # %%
-print('Number of points: {} and Number of dimensions: {}'.format(Y.shape[0], Y.shape[1]))
+print("Number of points: {} and Number of dimensions: {}".format(Y.shape[0], Y.shape[1]))
 
 # %% [markdown]
 # ## Model construction
@@ -78,10 +78,12 @@ X_var_init = tf.convert_to_tensor(np.ones((num_data, latent_dim)), dtype=default
 
 # %%
 np.random.seed(1)  # for reproducibility
-inducing_variable = tf.convert_to_tensor(np.random.permutation(X_mean_init.numpy())[:num_inducing], dtype=default_float())
+inducing_variable = tf.convert_to_tensor(
+    np.random.permutation(X_mean_init.numpy())[:num_inducing], dtype=default_float()
+)
 
 # %% [markdown]
-# We construct a Squared Exponential (SE) kernel operating on the two-dimensional latent space. 
+# We construct a Squared Exponential (SE) kernel operating on the two-dimensional latent space.
 # The `ARD` parameter stands for Automatic Relevance Determination, which in practice means that
 # we learn a different lengthscale for each of the input dimensions. See [Manipulating kernels](../advanced/kernels.ipynb) for more information.
 
@@ -93,11 +95,13 @@ kernel = gpflow.kernels.RBF(lengthscales=lengthscales)
 # We have all the necessary ingredients to construct the model. GPflow contains an implementation of the Bayesian GPLVM:
 
 # %%
-gplvm = gpflow.models.BayesianGPLVM(Y,
-            X_data_mean=X_mean_init,
-            X_data_var=X_var_init,
-            kernel=kernel,
-            inducing_variable=inducing_variable)
+gplvm = gpflow.models.BayesianGPLVM(
+    Y,
+    X_data_mean=X_mean_init,
+    X_data_var=X_var_init,
+    kernel=kernel,
+    inducing_variable=inducing_variable,
+)
 # Instead of passing an inducing_variable directly, we can also set the num_inducing_variables argument to an integer, which will randomly pick from the data.
 
 # %% [markdown]
@@ -113,11 +117,18 @@ gplvm.likelihood.variance.assign(0.01)
 opt = gpflow.optimizers.Scipy()
 maxiter = ci_niter(1000)
 
+
 @tf.function
 def optimization_step():
-    return - gplvm.log_marginal_likelihood()
+    return -gplvm.log_marginal_likelihood()
 
-_ = opt.minimize(optimization_step, method="bfgs", variables=gplvm.trainable_variables, options=dict(maxiter=maxiter))
+
+_ = opt.minimize(
+    optimization_step,
+    method="bfgs",
+    variables=gplvm.trainable_variables,
+    options=dict(maxiter=maxiter),
+)
 
 # %% [markdown]
 # ## Model analysis
@@ -138,10 +149,10 @@ gplvm_X_mean = gplvm.X_data_mean.numpy()
 f, ax = plt.subplots(1, 2, figsize=(10, 6))
 
 for i in np.unique(labels):
-    ax[0].scatter(X_pca[labels==i, 0], X_pca[labels==i, 1], label=i)
-    ax[1].scatter(gplvm_X_mean[labels==i, 0], gplvm_X_mean[labels==i, 1], label=i)
-    ax[0].set_title('PCA')
-    ax[1].set_title('Bayesian GPLVM')
+    ax[0].scatter(X_pca[labels == i, 0], X_pca[labels == i, 1], label=i)
+    ax[1].scatter(gplvm_X_mean[labels == i, 0], gplvm_X_mean[labels == i, 1], label=i)
+    ax[0].set_title("PCA")
+    ax[1].set_title("Bayesian GPLVM")
 
 # %%
 

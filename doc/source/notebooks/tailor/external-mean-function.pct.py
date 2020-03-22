@@ -37,7 +37,7 @@ from gpflow.base import Parameter
 from gpflow.ci_utils import ci_niter
 
 # for reproducibility of this notebook:
-np.random.seed(1)  
+np.random.seed(1)
 tf.random.set_seed(2)
 # %matplotlib inline
 
@@ -49,7 +49,7 @@ tf.random.set_seed(2)
 def generate_data(num_functions=10, N=1000):
     jitter = 1e-6
     Xs = np.linspace(-5.0, 5.0, N)[:, None]
-    kernel = RBF(lengthscales=1.)
+    kernel = RBF(lengthscales=1.0)
     cov = kernel(Xs)
     L = np.linalg.cholesky(cov + np.eye(N) * jitter)
     epsilon = np.random.randn(N, num_functions)
@@ -64,7 +64,7 @@ def generate_data(num_functions=10, N=1000):
 Xs, F = generate_data(10)
 
 # %%
-plt.plot(Xs, F);
+_ = plt.plot(Xs, F)
 
 
 # %% [markdown]
@@ -74,7 +74,7 @@ plt.plot(Xs, F);
 def generate_meta_and_test_tasks(num_datapoints, num_meta, num_test):
     N = 1000
     Xs, F = generate_data(num_functions=num_meta + num_test, N=N)
-    meta_indices = [np.random.permutation(N)[:num_datapoints] for _ in range(num_meta)] 
+    meta_indices = [np.random.permutation(N)[:num_datapoints] for _ in range(num_meta)]
     test_indices = [np.random.permutation(N)[:num_datapoints] for _ in range(num_test)]
     meta = []
     for i, mi in enumerate(meta_indices):
@@ -101,8 +101,9 @@ meta, test = generate_meta_and_test_tasks(num_datapoints, num_meta_tasks, num_te
 from tensorflow.python.keras import backend as K
 from gpflow.config import default_float
 
-K.set_floatx('float64')
+K.set_floatx("float64")
 assert default_float() == np.float64
+
 
 def build_mean_function():
     inputs = tf.keras.layers.Input(shape=(1,))
@@ -123,6 +124,7 @@ def build_mean_function():
 # %%
 from gpflow import set_trainable
 
+
 def build_model(data, mean_function):
     model = GPR(data, kernel=RBF(), mean_function=mean_function)
     set_trainable(model.kernel, False)
@@ -133,16 +135,17 @@ def build_model(data, mean_function):
 
 # %%
 def create_optimization_step(optimizer, model: gpflow.models.GPR):
-    
     @tf.function
     def optimization_step():
         with tf.GradientTape(watch_accessed_variables=False) as tape:
             tape.watch(model.trainable_variables)
-            objective = - model.log_marginal_likelihood()
+            objective = -model.log_marginal_likelihood()
             grads = tape.gradient(objective, model.trainable_variables)
         optimizer.apply_gradients(zip(grads, model.trainable_variables))
         return objective
+
     return optimization_step
+
 
 def run_adam(model, iterations):
     """
@@ -169,6 +172,7 @@ def run_adam(model, iterations):
 # %%
 import time
 
+
 def train_loop(meta_tasks, num_iter=5):
     """
     Metalearning training loop
@@ -191,6 +195,7 @@ def train_loop(meta_tasks, num_iter=5):
 
         print(">>>> iteration took {} ms".format(time.time() - ts))
     return mean_function
+
 
 mean_function_optimal = train_loop(meta)
 
@@ -216,8 +221,8 @@ for i, test_task in enumerate(test):
     (_, _), (Xs, F) = test_task
     pred = test_models[i].predict_f(Xs)
     plt.figure()
-    plt.plot(Xs, pred[0], label='Predictions')
-    plt.plot(Xs, F, label='Ground Truth')
+    plt.plot(Xs, pred[0], label="Predictions")
+    plt.plot(Xs, F, label="Ground Truth")
     mse = mean_squared_error(F, pred[0])
     mean_squared_errors.append(mse)
     plt.title(f"Test Task {i + 1} | MSE = {mse}")

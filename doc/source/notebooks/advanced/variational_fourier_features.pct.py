@@ -40,6 +40,7 @@ LowRank = tf.linalg.LinearOperatorLowRankUpdate
 
 # %%
 import matplotlib.pyplot as plt
+
 # %matplotlib notebook
 
 # %% [markdown]
@@ -53,7 +54,7 @@ class FourierFeatures1D(InducingVariables):
         self.b = gpflow.Parameter(b, dtype=gpflow.default_float())
         # integer array defining the frequencies, ω_m = 2π (b - a)/m:
         self.ms = np.arange(M)
-    
+
     def __len__(self):
         """ number of inducing variables (defines dimensionality of q(u)) """
         return 2 * len(self.ms) - 1  # M cosine and M-1 sine components
@@ -66,89 +67,104 @@ class FourierFeatures1D(InducingVariables):
 @cov.Kuu.register(FourierFeatures1D, gpflow.kernels.Matern12)
 def Kuu_matern12_fourierfeatures1d(inducing_variable, kernel, jitter=None):
     a, b, ms = (lambda u: (u.a, u.b, u.ms))(inducing_variable)
-    omegas = 2. * np.pi * ms / (b - a)
+    omegas = 2.0 * np.pi * ms / (b - a)
 
     # Cosine block:
-    lamb = 1. / kernel.lengthscales
-    two_or_four = to_default_float(tf.where(omegas == 0, 2., 4.))
-    d_cos = (b - a) * (tf.square(lamb) + tf.square(omegas)) \
-        / lamb / kernel.variance / two_or_four  # eq. (111)
+    lamb = 1.0 / kernel.lengthscales
+    two_or_four = to_default_float(tf.where(omegas == 0, 2.0, 4.0))
+    d_cos = (
+        (b - a) * (tf.square(lamb) + tf.square(omegas)) / lamb / kernel.variance / two_or_four
+    )  # eq. (111)
     v_cos = tf.ones_like(d_cos) / tf.sqrt(kernel.variance)  # eq. (110)
     cosine_block = LowRank(Diag(d_cos), v_cos[:, None])
 
     # Sine block:
     omegas = omegas[tf.not_equal(omegas, 0)]  # the sine block does not include omega=0
-    d_sin = (b - a) * (tf.square(lamb) + tf.square(omegas)) \
-        / lamb / kernel.variance / 4.  # eq. (113)
+    d_sin = (
+        (b - a) * (tf.square(lamb) + tf.square(omegas)) / lamb / kernel.variance / 4.0
+    )  # eq. (113)
     sine_block = Diag(d_sin)
 
     return BlockDiag([cosine_block, sine_block])
+
 
 @cov.Kuf.register(FourierFeatures1D, gpflow.kernels.Matern12, TensorLike)
 def Kuf_matern12_fourierfeatures1d(inducing_variable, kernel, X):
     X = tf.squeeze(X, axis=1)
     a, b, ms = (lambda u: (u.a, u.b, u.ms))(inducing_variable)
 
-    omegas = 2. * np.pi * ms / (b - a)
+    omegas = 2.0 * np.pi * ms / (b - a)
     Kuf_cos = tf.cos(omegas[:, None] * (X[None, :] - a))
     omegas_sin = omegas[tf.not_equal(omegas, 0)]  # don't compute zero frequency
     Kuf_sin = tf.sin(omegas_sin[:, None] * (X[None, :] - a))
 
     # correct Kuf outside [a, b] -- see Table 1
     Kuf_sin = tf.where((X < a) | (X > b), tf.zeros_like(Kuf_sin), Kuf_sin)  # just zero
-    
-    left_tail = tf.exp(- tf.abs(X - a) / kernel.lengthscales)[None, :]
-    right_tail = tf.exp(- tf.abs(X - b) / kernel.lengthscales)[None, :]
+
+    left_tail = tf.exp(-tf.abs(X - a) / kernel.lengthscales)[None, :]
+    right_tail = tf.exp(-tf.abs(X - b) / kernel.lengthscales)[None, :]
     Kuf_cos = tf.where(X < a, left_tail, Kuf_cos)  # replace with left tail
     Kuf_cos = tf.where(X > b, right_tail, Kuf_cos)  # replace with right tail
 
     return tf.concat([Kuf_cos, Kuf_sin], axis=0)
 
+
 @cov.Kuu.register(FourierFeatures1D, gpflow.kernels.Matern32)
 def Kuu_matern32_fourierfeatures1d(inducing_variable, kernel, jitter=None):
     a, b, ms = (lambda u: (u.a, u.b, u.ms))(inducing_variable)
-    omegas = 2. * np.pi * ms / (b - a)
+    omegas = 2.0 * np.pi * ms / (b - a)
 
     # Cosine block: eq. (114)
-    lamb = np.sqrt(3.) / kernel.lengthscales
-    four_or_eight = to_default_float(tf.where(omegas == 0, 4., 8.))
-    d_cos = (b - a) * tf.square(tf.square(lamb) + tf.square(omegas)) \
-        / tf.pow(lamb, 3) / kernel.variance / four_or_eight
+    lamb = np.sqrt(3.0) / kernel.lengthscales
+    four_or_eight = to_default_float(tf.where(omegas == 0, 4.0, 8.0))
+    d_cos = (
+        (b - a)
+        * tf.square(tf.square(lamb) + tf.square(omegas))
+        / tf.pow(lamb, 3)
+        / kernel.variance
+        / four_or_eight
+    )
     v_cos = tf.ones_like(d_cos) / tf.sqrt(kernel.variance)
     cosine_block = LowRank(Diag(d_cos), v_cos[:, None])
 
     # Sine block: eq. (115)
     omegas = omegas[tf.not_equal(omegas, 0)]  # don't compute omega=0
-    d_sin = (b-a) * tf.square(tf.square(lamb) + tf.square(omegas)) \
-        / tf.pow(lamb, 3) / kernel.variance / 8.
+    d_sin = (
+        (b - a)
+        * tf.square(tf.square(lamb) + tf.square(omegas))
+        / tf.pow(lamb, 3)
+        / kernel.variance
+        / 8.0
+    )
     v_sin = omegas / lamb / tf.sqrt(kernel.variance)
     sine_block = LowRank(Diag(d_sin), v_sin[:, None])
 
     return BlockDiag([cosine_block, sine_block])  # eq. (116)
 
+
 @cov.Kuf.register(FourierFeatures1D, gpflow.kernels.Matern32, TensorLike)
 def Kuf_matern32_fourierfeatures1d(inducing_variable, kernel, X):
     X = tf.squeeze(X, axis=1)
     a, b, ms = (lambda u: (u.a, u.b, u.ms))(inducing_variable)
-    omegas = 2. * np.pi * ms / (b - a)
-    
+    omegas = 2.0 * np.pi * ms / (b - a)
+
     Kuf_cos = tf.cos(omegas[:, None] * (X[None, :] - a))
     omegas_sin = omegas[tf.not_equal(omegas, 0)]  # don't compute zeros freq.
     Kuf_sin = tf.sin(omegas_sin[:, None] * (X[None, :] - a))
 
     # correct Kuf outside [a, b] -- see Table 1
-    
+
     def tail_cos(delta_X):
         arg = np.sqrt(3) * tf.abs(delta_X) / kernel.lengthscales
-        return (1 + arg) * tf.exp(- arg)[None, :]
-    
+        return (1 + arg) * tf.exp(-arg)[None, :]
+
     Kuf_cos = tf.where(X < a, tail_cos(X - a), Kuf_cos)
     Kuf_cos = tf.where(X > b, tail_cos(X - b), Kuf_cos)
 
     def tail_sin(delta_X):
         arg = np.sqrt(3) * tf.abs(delta_X) / kernel.lengthscales
-        return delta_X[None, :] * tf.exp(- arg) * omegas_sin[:, None]
-    
+        return delta_X[None, :] * tf.exp(-arg) * omegas_sin[:, None]
+
     Kuf_sin = tf.where(X < a, tail_sin(X - a), Kuf_sin)
     Kuf_sin = tf.where(X > b, tail_sin(X - b), Kuf_sin)
 
@@ -165,6 +181,7 @@ def prior_kl_vff(inducing_variable, kernel, q_mu, q_sqrt, whiten=False):
         raise NotImplementedError
     K = cov.Kuu(inducing_variable, kernel)
     return gauss_kl_vff(q_mu, q_sqrt, K)
+
 
 def gauss_kl_vff(q_mu, q_sqrt, K):
     """
@@ -188,7 +205,7 @@ def gauss_kl_vff(q_mu, q_sqrt, K):
     #     ½ [tr(K⁻¹ q_sqrt q_sqrtᵀA + q_muᵀ K⁻¹ q_mu - k + logdet(K) - logdet(q_sqrt q_sqrtᵀ)]
     # k = number of dimensions, if q_sqrt is m x m this is m²
     Kinv_q_mu = K.solve(q_mu)
-    
+
     mahalanobis_term = tf.squeeze(tf.matmul(q_mu, Kinv_q_mu, transpose_a=True))
 
     # GPflow: q_sqrt is num_latent_gps x N x N
@@ -203,16 +220,29 @@ def gauss_kl_vff(q_mu, q_sqrt, K):
 
     # S = tf.matmul(q_sqrt, q_sqrt, transpose_b=True)
     # trace_term = tf.trace(K.solve(S))
-    trace_term = tf.squeeze(tf.reduce_sum(Lq * K.solve(Lq), axis=[-1, -2]))  # [O(N²) instead of O(N³)
+    trace_term = tf.squeeze(
+        tf.reduce_sum(Lq * K.solve(Lq), axis=[-1, -2])
+    )  # [O(N²) instead of O(N³)
 
     twoKL = trace_term + mahalanobis_term - constant_term + logdet_prior - logdet_q
     return 0.5 * twoKL
 
 
 # %%
-@gpflow.conditionals.conditional.register(TensorLike, FourierFeatures1D, gpflow.kernels.Kernel, TensorLike)
-def conditional_vff(Xnew, inducing_variable, kernel, f, *,
-                    full_cov=False, full_output_cov=False, q_sqrt=None, white=False):
+@gpflow.conditionals.conditional.register(
+    TensorLike, FourierFeatures1D, gpflow.kernels.Kernel, TensorLike
+)
+def conditional_vff(
+    Xnew,
+    inducing_variable,
+    kernel,
+    f,
+    *,
+    full_cov=False,
+    full_output_cov=False,
+    q_sqrt=None,
+    white=False,
+):
     """
      - Xnew are the points of the data or minibatch, size N x D (tf.array, 2d)
      - feat is an instance of features.InducingFeature that provides `Kuu` and `Kuf` methods
@@ -250,7 +280,9 @@ def conditional_vff(Xnew, inducing_variable, kernel, f, *,
         KufT_KuuInv_Kuf_diag = tf.reduce_sum(Kuf * KuuInv_Kuf, axis=-2)
         fvar = kernel(Xnew, full_cov=False) - KufT_KuuInv_Kuf_diag
         shape = (num_func, 1)
-    fvar = tf.expand_dims(fvar, 0) * tf.ones(shape, dtype=gpflow.default_float())  # K x N x N or K x N
+    fvar = tf.expand_dims(fvar, 0) * tf.ones(
+        shape, dtype=gpflow.default_float()
+    )  # K x N x N or K x N
 
     # another backsubstitution in the unwhitened case
     if white:
@@ -278,8 +310,7 @@ def conditional_vff(Xnew, inducing_variable, kernel, f, *,
             # LTA = (A.T @ DenseMatrix(q_sqrt[:,:,0])).T.get()[None, :, :]
             ATL = tf.matmul(A, q_sqrt, transpose_a=True)
         else:
-            raise ValueError("Bad dimension for q_sqrt: %s" %
-                             str(q_sqrt.get_shape().ndims))
+            raise ValueError("Bad dimension for q_sqrt: %s" % str(q_sqrt.get_shape().ndims))
         if full_cov:
             # fvar = fvar + tf.matmul(LTA, LTA, transpose_a=True)  # K x N x N
             fvar = fvar + tf.matmul(ATL, ATL, transpose_b=True)  # K x N x N
@@ -297,20 +328,24 @@ def conditional_vff(Xnew, inducing_variable, kernel, f, *,
 # %%
 X = np.linspace(-2, 2, 510)
 Xnew = np.linspace(-4, 4, 501)
+
+
 def f(x):
-    return np.cos(2*np.pi * x / 4 * 2)
+    return np.cos(2 * np.pi * x / 4 * 2)
+
+
 F = f(X)
 Fnew = f(Xnew)
 noise_scale = 0.1
 np.random.seed(1)
 Y = F + np.random.randn(*F.shape) * noise_scale
 
-data = (X.reshape(-1,1), Y.reshape(-1,1))
+data = (X.reshape(-1, 1), Y.reshape(-1, 1))
 
 # %%
 plt.figure()
-plt.plot(X, F, label='f(x)')
-plt.plot(X, Y, '.', label='observations')
+plt.plot(X, F, label="f(x)")
+plt.plot(X, Y, ".", label="observations")
 plt.legend()
 plt.show()
 
@@ -319,61 +354,71 @@ plt.show()
 
 # %%
 Mfreq = 9
-m = gpflow.models.SVGP(kernel=gpflow.kernels.Matern32(),
-                       likelihood=gpflow.likelihoods.Gaussian(variance=noise_scale**2),
-                       inducing_variable=FourierFeatures1D(-4.5, 4.5, Mfreq),
-                       num_data=len(X), whiten=False)
+m = gpflow.models.SVGP(
+    kernel=gpflow.kernels.Matern32(),
+    likelihood=gpflow.likelihoods.Gaussian(variance=noise_scale ** 2),
+    inducing_variable=FourierFeatures1D(-4.5, 4.5, Mfreq),
+    num_data=len(X),
+    whiten=False,
+)
 gpflow.set_trainable(m.kernel, False)
 gpflow.set_trainable(m.likelihood, False)
 gpflow.set_trainable(m.inducing_variable, True)  # whether to optimize bounds [a, b]
 
+
 @tf.function
 def objective():
-    return - m.log_marginal_likelihood(data)
+    return -m.log_marginal_likelihood(data)
 
 
 # %%
 opt = gpflow.optimizers.Scipy()
-opt.minimize(objective,
-             variables=m.trainable_variables,
-             options=dict(maxiter=5000), method='L-BFGS-B')  # TODO: make work with BFGS
+opt.minimize(
+    objective, variables=m.trainable_variables, options=dict(maxiter=5000), method="L-BFGS-B"
+)  # TODO: make work with BFGS
 
-gpflow.utilities.print_summary(m, fmt='notebook')
+gpflow.utilities.print_summary(m, fmt="notebook")
 
 # %% [markdown]
 # For comparison we also construct an SVGP model using inducing points and an exact GPR model:
 
 # %%
-m_ip = gpflow.models.SVGP(kernel=gpflow.kernels.Matern32(),
-                          likelihood=gpflow.likelihoods.Gaussian(variance=noise_scale**2),
-                          inducing_variable=np.linspace(-2, 2, Mfreq*2-1)[:, None],
-                          num_data=len(X), whiten=False)
+m_ip = gpflow.models.SVGP(
+    kernel=gpflow.kernels.Matern32(),
+    likelihood=gpflow.likelihoods.Gaussian(variance=noise_scale ** 2),
+    inducing_variable=np.linspace(-2, 2, Mfreq * 2 - 1)[:, None],
+    num_data=len(X),
+    whiten=False,
+)
 gpflow.set_trainable(m_ip.kernel, False)
 gpflow.set_trainable(m_ip.likelihood, False)
 gpflow.set_trainable(m_ip.inducing_variable, True)  # whether to optimize inducing point locations
 
+
 @tf.function
 def objective_ip():
-    return - m_ip.log_marginal_likelihood(data)
+    return -m_ip.log_marginal_likelihood(data)
 
 
 # %%
 opt = gpflow.optimizers.Scipy()
-opt.minimize(objective_ip,
-             variables=m_ip.trainable_variables,
-             options=dict(maxiter=2500), method='L-BFGS-B')  # TODO: make work with BFGS
+opt.minimize(
+    objective_ip, variables=m_ip.trainable_variables, options=dict(maxiter=2500), method="L-BFGS-B"
+)  # TODO: make work with BFGS
 
-gpflow.utilities.print_summary(m_ip, fmt='notebook')
+gpflow.utilities.print_summary(m_ip, fmt="notebook")
 
 # %%
 m_ref = gpflow.models.GPR((X.reshape(-1, 1), Y.reshape(-1, 1)), kernel=gpflow.kernels.Matern32())
-m_ref.likelihood.variance = np.array(noise_scale**2).astype(np.float64)
+m_ref.likelihood.variance = np.array(noise_scale ** 2).astype(np.float64)
 gpflow.set_trainable(m_ref.kernel, False)
 gpflow.set_trainable(m_ref.likelihood, False)
 
+
 @tf.function
 def objective_ref():
-    return - m_ref.log_marginal_likelihood()
+    return -m_ref.log_marginal_likelihood()
+
 
 # Because we fixed the kernel and likelihood hyperparameters, we don't need to optimize anything.
 
@@ -386,32 +431,33 @@ def objective_ref():
 
 
 # %%
-print("LML (exact GPR) =", - objective_ref().numpy().item())
-print("ELBO (SVGP, inducing points) =", - objective_ip().numpy().item())
-print("ELBO (SVGP, Fourier features) =", - objective().numpy().item())
+print("LML (exact GPR) =", -objective_ref().numpy().item())
+print("ELBO (SVGP, inducing points) =", -objective_ip().numpy().item())
+print("ELBO (SVGP, Fourier features) =", -objective().numpy().item())
 
 
 # %%
-def plot_gp(m, Xnew, name=''):
+def plot_gp(m, Xnew, name=""):
     Fmean, Fvar = m.predict_f(Xnew[:, None])
     Fmean = Fmean.numpy().squeeze()
     Fvar = Fvar.numpy().squeeze()
-    p, = plt.plot(Xnew, Fmean, label=name)
-    plt.fill_between(Xnew, Fmean - 2 * np.sqrt(Fvar), Fmean + 2 * np.sqrt(Fvar),
-                     alpha=0.3, color=p.get_color())
+    (p,) = plt.plot(Xnew, Fmean, label=name)
+    plt.fill_between(
+        Xnew, Fmean - 2 * np.sqrt(Fvar), Fmean + 2 * np.sqrt(Fvar), alpha=0.3, color=p.get_color()
+    )
 
 
 def plot_data():
-    plt.plot(Xnew, Fnew, label='f(x)')
-    plt.plot(X, Y, '.', label='observations')
-    
-    
-plt.figure(figsize=(15,10))
+    plt.plot(Xnew, Fnew, label="f(x)")
+    plt.plot(X, Y, ".", label="observations")
+
+
+plt.figure(figsize=(15, 10))
 plot_data()
-plot_gp(m, Xnew, 'VFF [ELBO={:.3}]'.format(-objective().numpy().item()))
-plot_gp(m_ip, Xnew, 'inducing points [ELBO={:.3}]'.format(-objective_ip().numpy().item()))
-plot_gp(m_ref, Xnew, 'exact [LML={:.3}]'.format(-objective_ref().numpy().item()))
-plt.legend(loc='best')
+plot_gp(m, Xnew, "VFF [ELBO={:.3}]".format(-objective().numpy().item()))
+plot_gp(m_ip, Xnew, "inducing points [ELBO={:.3}]".format(-objective_ip().numpy().item()))
+plot_gp(m_ref, Xnew, "exact [LML={:.3}]".format(-objective_ref().numpy().item()))
+plt.legend(loc="best")
 plt.show()
 
 # %%

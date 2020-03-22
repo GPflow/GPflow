@@ -25,7 +25,7 @@
 #  - how to apply priors to parameters
 #  - how to optimize models
 #
-# Then we'll show how to build a simple logistic regression model, demonstrating the ease of the parameter framework. 
+# Then we'll show how to build a simple logistic regression model, demonstrating the ease of the parameter framework.
 #
 # GPy users should feel right at home, but there are some small differences.
 #
@@ -44,7 +44,7 @@ from gpflow.utilities import print_summary, set_trainable, to_default_float
 # generate toy data
 np.random.seed(1)
 X = np.random.rand(20, 1)
-Y = np.sin(12 * X) + 0.66 * np.cos(25 * X) + np.random.randn(20,1) * 0.01
+Y = np.sin(12 * X) + 0.66 * np.cos(25 * X) + np.random.randn(20, 1) * 0.01
 
 m = gpflow.models.GPR((X, Y), kernel=gpflow.kernels.Matern32() + gpflow.kernels.Linear())
 
@@ -59,7 +59,7 @@ print_summary(m, fmt="notebook")
 gpflow.config.set_default_summary_fmt("notebook")
 
 # %% [markdown]
-# This model has four parameters. The kernel is made of the sum of two parts. The first (counting from zero) is a Matern32 kernel that has a variance parameter and a lengthscales parameter; the second is a linear kernel that has only a variance parameter. There is also a parameter that controls the variance of the noise, as part of the likelihood. 
+# This model has four parameters. The kernel is made of the sum of two parts. The first (counting from zero) is a Matern32 kernel that has a variance parameter and a lengthscales parameter; the second is a linear kernel that has only a variance parameter. There is also a parameter that controls the variance of the noise, as part of the likelihood.
 #
 # All the model variables have been initialized at `1.0`. You can access individual parameters in the same way that you display the state of the model in a terminal; for example, to see all the parameters that are part of the likelihood, run:
 
@@ -75,7 +75,7 @@ print_summary(m.likelihood)
 # %%
 m.kernel.kernels[0].lengthscales.assign(0.5)
 m.likelihood.variance.assign(0.01)
-print_summary(m, fmt='notebook')
+print_summary(m, fmt="notebook")
 
 # %% [markdown]
 # ## Constraints and trainable variables
@@ -103,11 +103,13 @@ p.transform.inverse(p)
 
 # %%
 old_parameter = m.kernel.kernels[0].lengthscales
-new_parameter = gpflow.Parameter(old_parameter,
-                                 trainable=old_parameter.trainable,
-                                 prior=old_parameter.prior,
-                                 name=old_parameter.name.split(':')[0],  # tensorflow is weird and adds ':0' to the name
-                                 transform=tfp.bijectors.Exp())
+new_parameter = gpflow.Parameter(
+    old_parameter,
+    trainable=old_parameter.trainable,
+    prior=old_parameter.prior,
+    name=old_parameter.name.split(":")[0],  # tensorflow is weird and adds ':0' to the name
+    transform=tfp.bijectors.Exp(),
+)
 m.kernel.kernels[0].lengthscales = new_parameter
 
 # %% [markdown]
@@ -123,7 +125,7 @@ p.transform.inverse(p)
 m.kernel.kernels[0].variance.transform = tfp.bijectors.Exp()
 
 # %%
-print_summary(m, fmt='notebook')
+print_summary(m, fmt="notebook")
 
 # %% [markdown]
 # ## Changing whether a parameter will be trained in optimization
@@ -150,10 +152,10 @@ print_summary(m)
 # A module (e.g. a model, kernel, likelihood, ... instance) does not have a `trainable` attribute:
 
 # %%
-try: 
+try:
     m.kernel.trainable
 except AttributeError:
-    print(f'{m.kernel.__class__.__name__} does not have a trainable attribute')
+    print(f"{m.kernel.__class__.__name__} does not have a trainable attribute")
 
 # %%
 set_trainable(m.kernel, False)
@@ -166,14 +168,14 @@ print_summary(m)
 
 # %%
 k = gpflow.kernels.Matern32()
-k.variance.prior = tfp.distributions.Gamma(
-    to_default_float(2), to_default_float(3))
+k.variance.prior = tfp.distributions.Gamma(to_default_float(2), to_default_float(3))
 
 print_summary(k)
 
 # %%
 m.kernel.kernels[0].variance.prior = tfp.distributions.Gamma(
-    to_default_float(2), to_default_float(3))
+    to_default_float(2), to_default_float(3)
+)
 print_summary(m)
 
 
@@ -183,8 +185,9 @@ print_summary(m)
 # To optimize your model, first create an instance of an optimizer (in this case, `gpflow.optimizers.Scipy`), which has optional arguments that are passed to `scipy.optimize.minimize` (we minimize the negative log likelihood). Then, call the `minimize` method of that optimizer, with your model as the optimization target. Variables that have priors are maximum a priori (MAP) estimated, that is, we add the log prior to the log likelihood, and otherwise use Maximum Likelihood.
 
 # %%
-def closure(): 
-    return - m.log_marginal_likelihood()
+def closure():
+    return -m.log_marginal_likelihood()
+
 
 opt = gpflow.optimizers.Scipy()
 opt.minimize(closure, variables=m.trainable_variables)
@@ -192,7 +195,7 @@ opt.minimize(closure, variables=m.trainable_variables)
 # %% [markdown]
 # ## Building new models
 #
-# To build new models, you'll need to inherit from `gpflow.models.BayesianModel`. Parameters are instantiated with `gpflow.Parameter`. You might also be interested in `tf.Module`, which acts as a 'container' for `Parameter`s (for example, kernels are `tf.Module`s). 
+# To build new models, you'll need to inherit from `gpflow.models.BayesianModel`. Parameters are instantiated with `gpflow.Parameter`. You might also be interested in `tf.Module`, which acts as a 'container' for `Parameter`s (for example, kernels are `tf.Module`s).
 #
 # In this very simple demo, we'll implement linear multiclass classification.
 #
@@ -202,28 +205,31 @@ opt.minimize(closure, variables=m.trainable_variables)
 # %%
 import tensorflow as tf
 
+
 class LinearMulticlass(gpflow.models.BayesianModel):
     def __init__(self, X, Y, name=None):
-        super().__init__(name=name) # always call the parent constructor
-        
-        self.X = X.copy() # X is a NumPy array of inputs
-        self.Y = Y.copy() # Y is a 1-of-k (one-hot) representation of the labels
-        
+        super().__init__(name=name)  # always call the parent constructor
+
+        self.X = X.copy()  # X is a NumPy array of inputs
+        self.Y = Y.copy()  # Y is a 1-of-k (one-hot) representation of the labels
+
         self.num_data, self.input_dim = X.shape
         _, self.num_classes = Y.shape
-        
+
         # make some parameters
         self.W = gpflow.Parameter(np.random.randn(self.input_dim, self.num_classes))
         self.b = gpflow.Parameter(np.random.randn(self.num_classes))
-       
+
         # ^^ You must make the parameters attributes of the class for
         # them to be picked up by the model. i.e. this won't work:
         #
         # W = gpflow.Param(...    <-- must be self.W
-    
-    def log_likelihood(self): # takes no arguments
-        p = tf.nn.softmax(tf.matmul(self.X, self.W) + self.b) # Param variables are used as tensorflow arrays. 
-        return tf.reduce_sum(tf.math.log(p) * self.Y) # be sure to return a scalar
+
+    def log_likelihood(self):  # takes no arguments
+        p = tf.nn.softmax(
+            tf.matmul(self.X, self.W) + self.b
+        )  # Param variables are used as tensorflow arrays.
+        return tf.reduce_sum(tf.math.log(p) * self.Y)  # be sure to return a scalar
 
 
 # %% [markdown]
@@ -231,17 +237,23 @@ class LinearMulticlass(gpflow.models.BayesianModel):
 
 # %%
 np.random.seed(123)
-X = np.vstack([np.random.randn(10,2) + [2,2],
-               np.random.randn(10,2) + [-2,2],
-               np.random.randn(10,2) + [2,-2]])
+X = np.vstack(
+    [
+        np.random.randn(10, 2) + [2, 2],
+        np.random.randn(10, 2) + [-2, 2],
+        np.random.randn(10, 2) + [2, -2],
+    ]
+)
 Y = np.repeat(np.eye(3), 10, 0)
 
 from matplotlib import pyplot as plt
-plt.style.use('ggplot')
+
+plt.style.use("ggplot")
 # %matplotlib inline
 import matplotlib
-matplotlib.rcParams['figure.figsize'] = (12,6)
-plt.scatter(X[:,0], X[:,1], 100, np.argmax(Y, 1), lw=2, cmap=plt.cm.viridis);
+
+matplotlib.rcParams["figure.figsize"] = (12, 6)
+_ = plt.scatter(X[:, 0], X[:, 1], 100, np.argmax(Y, 1), lw=2, cmap=plt.cm.viridis)
 
 # %%
 m = LinearMulticlass(X, Y)
@@ -249,8 +261,9 @@ m
 
 
 # %%
-def closure(): 
-    return - m.log_marginal_likelihood()
+def closure():
+    return -m.log_marginal_likelihood()
+
 
 opt = gpflow.optimizers.Scipy()
 opt.minimize(closure, variables=m.trainable_variables)
@@ -260,13 +273,13 @@ xx, yy = np.mgrid[-4:4:200j, -4:4:200j]
 X_test = np.vstack([xx.flatten(), yy.flatten()]).T
 f_test = np.dot(X_test, m.W.read_value()) + m.b.read_value()
 p_test = np.exp(f_test)
-p_test /= p_test.sum(1)[:,None]
+p_test /= p_test.sum(1)[:, None]
 
 # %%
 plt.figure(figsize=(12, 6))
 for i in range(3):
-    plt.contour(xx, yy, p_test[:,i].reshape(200,200), [0.5], colors='k', linewidths=1)
-plt.scatter(X[:,0], X[:,1], 100, np.argmax(Y, 1), lw=2, cmap=plt.cm.viridis);
+    plt.contour(xx, yy, p_test[:, i].reshape(200, 200), [0.5], colors="k", linewidths=1)
+_ = plt.scatter(X[:, 0], X[:, 1], 100, np.argmax(Y, 1), lw=2, cmap=plt.cm.viridis)
 
 # %% [markdown]
 # That concludes the new model example and this notebook. You might want to see for yourself that the `LinearMulticlass` model and its parameters have all the functionality demonstrated here. You could also add some priors and run Hamiltonian Monte Carlo using the HMC optimizer `gpflow.train.HMC` and its `sample` method. See [Markov Chain Monte Carlo (MCMC)](../advanced/mcmc.ipynb) for more information on running the sampler.

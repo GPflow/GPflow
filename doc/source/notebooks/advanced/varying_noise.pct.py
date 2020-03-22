@@ -24,7 +24,7 @@
 #
 # We'll demonstrate two methods. In the first demonstration, we'll assume that the noise variance is known for every data point. We'll incorporate the known noise variances $\sigma^2_i$ into the data matrix $\mathbf Y$, make a likelihood that can deal with this structure, and implement inference using variational GPs with natural gradients.
 #
-# In the second demonstration, we'll assume that the noise variance is not known, but we'd like to estimate it for different groups of data. We'll show how to construct an appropriate likelihood for this task and set up inference similarly to the first demonstration, with optimization over the noise variances. 
+# In the second demonstration, we'll assume that the noise variance is not known, but we'd like to estimate it for different groups of data. We'll show how to construct an appropriate likelihood for this task and set up inference similarly to the first demonstration, with optimization over the noise variances.
 #
 
 # %%
@@ -36,6 +36,7 @@ from gpflow.optimizers import NaturalGradient
 from gpflow import set_trainable
 import matplotlib
 import matplotlib.pyplot as plt
+
 # %matplotlib inline
 
 # %% [markdown]
@@ -46,12 +47,14 @@ import matplotlib.pyplot as plt
 # %%
 np.random.seed(1)  # for reproducibility
 
+
 def generate_data(N=80):
     X = np.random.rand(N)[:, None] * 10 - 5  # Inputs, shape N x 1
     F = 2.5 * np.sin(6 * X) + np.cos(3 * X)  # Mean function values
-    NoiseVar = 2 * np.exp(-(X - 2)**2 / 4) + 0.3  # Noise variances
+    NoiseVar = 2 * np.exp(-((X - 2) ** 2) / 4) + 0.3  # Noise variances
     Y = F + np.random.randn(N, 1) * np.sqrt(NoiseVar)  # Noisy data
     return X, Y, NoiseVar
+
 
 X, Y, NoiseVar = generate_data()
 
@@ -60,8 +63,15 @@ X, Y, NoiseVar = generate_data()
 
 # %%
 fig, ax = plt.subplots(1, 1, figsize=(12, 6))
-_ = ax.errorbar(X.squeeze(), Y.squeeze(), yerr=2*(np.sqrt(NoiseVar)).squeeze(),
-                marker='x', lw=0, elinewidth=1., color='C1')
+_ = ax.errorbar(
+    X.squeeze(),
+    Y.squeeze(),
+    yerr=2 * (np.sqrt(NoiseVar)).squeeze(),
+    marker="x",
+    lw=0,
+    elinewidth=1.0,
+    color="C1",
+)
 
 # %% [markdown]
 # ### Make a Y matrix that includes the variances
@@ -74,7 +84,7 @@ Y_data = np.hstack([Y, NoiseVar])
 # %% [markdown]
 # ### Make a new likelihood
 #
-# To cope with this data structure, we'll build a new likelihood. Note how the code extracts the observations `Y` and the variances `NoiseVar` from the data. For more information on creating new likelihoods, see [Likelihood design](../tailor/likelihood_design.ipynb). Here, we're implementing the `log_prob` function (which computes the log-probability of the data given the latent function) and `variational_expectations`, which computes the expected log-probability under a Gaussian distribution on the function, and is needed in the evaluation of the evidence lower bound (ELBO). Check out the docstring for the `Likelihood` object for more information on what these functions do. 
+# To cope with this data structure, we'll build a new likelihood. Note how the code extracts the observations `Y` and the variances `NoiseVar` from the data. For more information on creating new likelihoods, see [Likelihood design](../tailor/likelihood_design.ipynb). Here, we're implementing the `log_prob` function (which computes the log-probability of the data given the latent function) and `variational_expectations`, which computes the expected log-probability under a Gaussian distribution on the function, and is needed in the evaluation of the evidence lower bound (ELBO). Check out the docstring for the `Likelihood` object for more information on what these functions do.
 
 # %%
 class HeteroskedasticGaussian(gpflow.likelihoods.Likelihood):
@@ -94,20 +104,23 @@ class HeteroskedasticGaussian(gpflow.likelihoods.Likelihood):
 
     def variational_expectations(self, Fmu, Fvar, Y):
         Y, NoiseVar = Y[:, 0:1], Y[:, 1:2]
-        return -0.5 * np.log(2 * np.pi) - 0.5 * tf.math.log(NoiseVar) \
-               - 0.5 * (tf.math.square(Y - Fmu) + Fvar) / NoiseVar
+        return (
+            -0.5 * np.log(2 * np.pi)
+            - 0.5 * tf.math.log(NoiseVar)
+            - 0.5 * (tf.math.square(Y - Fmu) + Fvar) / NoiseVar
+        )
 
 
 # %% [markdown]
 # ### Put it together with Variational Gaussian Process (VGP)
 # Here we'll build a variational GP model with the previous likelihood on the dataset that we generated. We'll use the natural gradient optimizer (see [Natural gradients](natural_gradients.ipynb) for more information).
 #
-# The variational GP object is capable of variational inference with any GPflow-derived likelihood. Usually, the inference is an inexact (but pretty good) approximation, but in the special case considered here, where the noise is Gaussian, it will achieve exact inference. Optimizing over the variational parameters is easy using the natural gradients method, which provably converges in a single step. 
+# The variational GP object is capable of variational inference with any GPflow-derived likelihood. Usually, the inference is an inexact (but pretty good) approximation, but in the special case considered here, where the noise is Gaussian, it will achieve exact inference. Optimizing over the variational parameters is easy using the natural gradients method, which provably converges in a single step.
 #
 # Note: We mark the variational parameters as not trainable so that they are not included in the `model.trainable_variables` when we optimize using the Adam optimizer. We train the variational parameters separately using the natural gradient method.
 
 # %%
-# model construction 
+# model construction
 likelihood = HeteroskedasticGaussian()
 kernel = gpflow.kernels.Matern52(lengthscales=0.5)
 model = gpflow.models.VGP((X, Y_data), kernel=kernel, likelihood=likelihood, num_latent_gps=1)
@@ -119,7 +132,8 @@ model = gpflow.models.VGP((X, Y_data), kernel=kernel, likelihood=likelihood, num
 # %%
 @tf.function
 def objective_closure():
-    return - model.log_marginal_likelihood()
+    return -model.log_marginal_likelihood()
+
 
 natgrad = NaturalGradient(gamma=1.0)
 adam = tf.optimizers.Adam()
@@ -138,13 +152,20 @@ xx = np.linspace(-5, 5, 200)[:, None]
 mu, var = model.predict_f(xx)
 
 plt.figure(figsize=(12, 6))
-plt.plot(xx, mu, 'C0')
-plt.plot(xx, mu + 2*np.sqrt(var), 'C0', lw=0.5)
-plt.plot(xx, mu - 2*np.sqrt(var), 'C0', lw=0.5)
+plt.plot(xx, mu, "C0")
+plt.plot(xx, mu + 2 * np.sqrt(var), "C0", lw=0.5)
+plt.plot(xx, mu - 2 * np.sqrt(var), "C0", lw=0.5)
 
-plt.errorbar(X.squeeze(), Y.squeeze(), yerr=2*(np.sqrt(NoiseVar)).squeeze(),
-             marker='x', lw=0, elinewidth=1., color='C1')
-plt.xlim(-5, 5);
+plt.errorbar(
+    X.squeeze(),
+    Y.squeeze(),
+    yerr=2 * (np.sqrt(NoiseVar)).squeeze(),
+    marker="x",
+    lw=0,
+    elinewidth=1.0,
+    color="C1",
+)
+_ = plt.xlim(-5, 5)
 
 # %% [markdown]
 # ### Questions for the reader
@@ -157,9 +178,9 @@ plt.xlim(-5, 5);
 # %% [markdown]
 # ## Demo 2: grouped noise variances
 #
-# In this demo, we won't assume that the noise variances are known, but we will assume that they're known in two groups. This example represents a case where we might know that an instrument has varying fidelity for different regions, but we do not know what those fidelities are. 
+# In this demo, we won't assume that the noise variances are known, but we will assume that they're known in two groups. This example represents a case where we might know that an instrument has varying fidelity for different regions, but we do not know what those fidelities are.
 #
-# Of course it would be straightforward to add more groups, or even one group per data point. We'll stick with two for simplicity. 
+# Of course it would be straightforward to add more groups, or even one group per data point. We'll stick with two for simplicity.
 
 # %%
 np.random.seed(1)  # for reproducibility and to make it independent from demo 1
@@ -172,17 +193,18 @@ np.random.seed(1)  # for reproducibility and to make it independent from demo 1
 def generate_data(N=100):
     X = np.random.rand(N)[:, None] * 10 - 5  # Inputs, shape N x 1
     F = 2.5 * np.sin(6 * X) + np.cos(3 * X)  # Mean function values
-    groups = np.where(X>0, 0, 1)  
+    groups = np.where(X > 0, 0, 1)
     NoiseVar = np.array([0.02, 0.5])[groups]  # Different variances for the two groups
     Y = F + np.random.randn(N, 1) * np.sqrt(NoiseVar)  # Noisy data
     return X, Y, groups
+
 
 X, Y, groups = generate_data()
 
 # %%
 # here's a plot of the raw data.
 fig, ax = plt.subplots(1, 1, figsize=(12, 6))
-_ = ax.plot(X, Y, 'kx')
+_ = ax.plot(X, Y, "kx")
 
 # %% [markdown]
 # ### Data structure
@@ -195,11 +217,12 @@ Y_data = np.hstack([Y, groups])
 # %% [markdown]
 # ### Build a likelihood
 #
-# This time, we'll use a builtin likelihood, `SwitchedLikelihood`, which is a container for other likelihoods, and applies them to the first `Y_data` column depending on the index in the second. We're able to access and optimize the parameters of those likelihoods. Here, we'll (incorrectly) initialize the variances of our likelihoods to 1, to demonstrate how we can recover reasonable values for these through maximum-likelihood estimation. 
+# This time, we'll use a builtin likelihood, `SwitchedLikelihood`, which is a container for other likelihoods, and applies them to the first `Y_data` column depending on the index in the second. We're able to access and optimize the parameters of those likelihoods. Here, we'll (incorrectly) initialize the variances of our likelihoods to 1, to demonstrate how we can recover reasonable values for these through maximum-likelihood estimation.
 
 # %%
-likelihood = gpflow.likelihoods.SwitchedLikelihood([gpflow.likelihoods.Gaussian(variance=1.0),
-                                                    gpflow.likelihoods.Gaussian(variance=1.0)])
+likelihood = gpflow.likelihoods.SwitchedLikelihood(
+    [gpflow.likelihoods.Gaussian(variance=1.0), gpflow.likelihoods.Gaussian(variance=1.0)]
+)
 
 # %%
 # model construction (notice that num_latent_gps is 1)
@@ -210,13 +233,14 @@ model = gpflow.models.VGP((X, Y_data), kernel=kernel, likelihood=likelihood, num
 # %%
 @tf.function
 def objective_closure():
-    return - model.log_marginal_likelihood()
+    return -model.log_marginal_likelihood()
+
 
 for _ in range(ci_niter(1000)):
     natgrad.minimize(objective_closure, [(model.q_mu, model.q_sqrt)])
 
 # %% [markdown]
-# We've now fitted the VGP model to the data, but without optimizing over the hyperparameters. Plotting the data, we see that the fit is not terrible, but hasn't made use of our knowledge of the varying noise. 
+# We've now fitted the VGP model to the data, but without optimizing over the hyperparameters. Plotting the data, we see that the fit is not terrible, but hasn't made use of our knowledge of the varying noise.
 
 # %%
 # let's do some plotting!
@@ -225,12 +249,12 @@ xx = np.linspace(-5, 5, 200)[:, None]
 mu, var = model.predict_f(xx)
 
 fig, ax = plt.subplots(1, 1, figsize=(12, 6))
-ax.plot(xx, mu, 'C0')
-ax.plot(xx, mu + 2*np.sqrt(var), 'C0', lw=0.5)
-ax.plot(xx, mu - 2*np.sqrt(var), 'C0', lw=0.5)
+ax.plot(xx, mu, "C0")
+ax.plot(xx, mu + 2 * np.sqrt(var), "C0", lw=0.5)
+ax.plot(xx, mu - 2 * np.sqrt(var), "C0", lw=0.5)
 
-ax.plot(X, Y, 'C1x', mew=2)
-ax.set_xlim(-5, 5);
+ax.plot(X, Y, "C1x", mew=2)
+_ = ax.set_xlim(-5, 5)
 
 # %% [markdown]
 # ### Optimizing the noise variances
@@ -239,14 +263,17 @@ ax.set_xlim(-5, 5);
 # As before, we mark the variational parameters as not trainable, in order to train them separately with the natural gradient method.
 
 # %%
-likelihood = gpflow.likelihoods.SwitchedLikelihood([gpflow.likelihoods.Gaussian(variance=1.0),
-                                                    gpflow.likelihoods.Gaussian(variance=1.0)])
+likelihood = gpflow.likelihoods.SwitchedLikelihood(
+    [gpflow.likelihoods.Gaussian(variance=1.0), gpflow.likelihoods.Gaussian(variance=1.0)]
+)
 kernel = gpflow.kernels.Matern52(lengthscales=0.5)
 model = gpflow.models.VGP((X, Y_data), kernel=kernel, likelihood=likelihood, num_latent_gps=1)
 
+
 @tf.function
 def objective_closure():
-    return - model.log_marginal_likelihood()
+    return -model.log_marginal_likelihood()
+
 
 set_trainable(model.q_mu, False)
 set_trainable(model.q_sqrt, False)
@@ -270,14 +297,15 @@ xx = np.linspace(-5, 5, 200)[:, None]
 mu, var = model.predict_f(xx)
 
 fig, ax = plt.subplots(1, 1, figsize=(12, 6))
-ax.plot(xx, mu, 'C0')
-ax.plot(xx, mu + 2*np.sqrt(var), 'C0', lw=0.5)
-ax.plot(xx, mu - 2*np.sqrt(var), 'C0', lw=0.5)
+ax.plot(xx, mu, "C0")
+ax.plot(xx, mu + 2 * np.sqrt(var), "C0", lw=0.5)
+ax.plot(xx, mu - 2 * np.sqrt(var), "C0", lw=0.5)
 
-ax.plot(X, Y, 'C1x', mew=2)
+ax.plot(X, Y, "C1x", mew=2)
 ax.set_xlim(-5, 5)
-ax.plot(xx, 2.5 * np.sin(6 * xx) + np.cos(3 * xx), 'C2--');
+_ = ax.plot(xx, 2.5 * np.sin(6 * xx) + np.cos(3 * xx), "C2--")
 
 # %%
 from gpflow.utilities import print_summary
-print_summary(model, fmt='notebook')
+
+print_summary(model, fmt="notebook")

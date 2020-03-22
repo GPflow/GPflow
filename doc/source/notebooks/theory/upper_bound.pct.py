@@ -20,8 +20,9 @@
 
 # %%
 import matplotlib
+
 # %matplotlib inline
-matplotlib.rcParams['figure.figsize'] = (12, 6)
+matplotlib.rcParams["figure.figsize"] = (12, 6)
 plt = matplotlib.pyplot
 
 import numpy as np
@@ -33,6 +34,7 @@ from gpflow.utilities import print_summary
 from gpflow.ci_utils import ci_niter
 
 import logging
+
 logging.disable(logging.WARNING)
 
 np.random.seed(1)
@@ -47,11 +49,11 @@ X, Y, Xt, Yt = getTrainingTestData()
 def plot_model(m, name=""):
     pX = np.linspace(-3, 9, 100)[:, None]
     pY, pYv = m.predict_y(pX)
-    plt.plot(X, Y, 'x')
+    plt.plot(X, Y, "x")
     plt.plot(pX, pY)
     if not isinstance(m, gpflow.models.GPR):
         Z = m.inducing_variable.Z.numpy()
-        plt.plot(Z, np.zeros_like(Z), 'o')
+        plt.plot(Z, np.zeros_like(Z), "o")
     two_sigma = (2.0 * pYv ** 0.5)[:, 0]
     plt.fill_between(pX[:, 0], pY[:, 0] - two_sigma, pY[:, 0] + two_sigma, alpha=0.15)
     lml = m.log_likelihood().numpy()
@@ -64,8 +66,10 @@ def plot_model(m, name=""):
 
 # %%
 f = gpflow.models.GPR((X, Y), gpflow.kernels.SquaredExponential())
-objective = tf.function(lambda: - f.log_marginal_likelihood())
-gpflow.optimizers.Scipy().minimize(objective, f.trainable_variables, options=dict(maxiter=ci_niter(1000)))
+objective = tf.function(lambda: -f.log_marginal_likelihood())
+gpflow.optimizers.Scipy().minimize(
+    objective, f.trainable_variables, options=dict(maxiter=ci_niter(1000))
+)
 full_lml = plot_model(f)
 
 # %% [markdown]
@@ -80,9 +84,10 @@ vfe_hyps = []
 for M in Ms:
     Zinit = X[:M, :].copy()
     vfe = gpflow.models.SGPR((X, Y), gpflow.kernels.SquaredExponential(), inducing_variable=Zinit)
-    objective = tf.function(lambda: - vfe.log_marginal_likelihood())
-    gpflow.optimizers.Scipy().minimize(objective, vfe.trainable_variables,
-                                       options=dict(disp=False, maxiter=ci_niter(1000)))
+    objective = tf.function(lambda: -vfe.log_marginal_likelihood())
+    gpflow.optimizers.Scipy().minimize(
+        objective, vfe.trainable_variables, options=dict(disp=False, maxiter=ci_niter(1000))
+    )
 
     vfe_lml.append(vfe.log_likelihood().numpy())
     vupper_lml.append(vfe.upper_bound().numpy())
@@ -96,7 +101,7 @@ plt.plot(Ms, vupper_lml, label="upper")
 plt.axhline(full_lml, label="full", alpha=0.3)
 plt.xlabel("Number of inducing points")
 plt.ylabel("LML estimate")
-plt.legend();
+_ = plt.legend()
 
 # %% [markdown]
 # We see that the lower bound increases as more inducing points are added. Note that the upper bound does _not_ monotonically decrease! This is because as we train the sparse model, we also get better estimates of the hyperparameters. The upper bound will be different for this different setting of the hyperparameters, and is sometimes looser. The upper bound also converges to the true lml slower than the lower bound.
@@ -113,11 +118,11 @@ fvupper_lml = []  # Fixed upper lml
 init_params = gpflow.utilities.parameter_dict(vfe)
 
 # cannot copy this due to shape mismatch with different numbers of inducing points between models:
-del init_params['.inducing_variable.Z']
+del init_params[".inducing_variable.Z"]
 
 for M in fMs:
     Zinit = vfe.inducing_variable.Z.numpy()[:M, :]
-    Zinit = np.vstack((Zinit, X[np.random.permutation(len(X))[:(M - len(Zinit))], :].copy()))
+    Zinit = np.vstack((Zinit, X[np.random.permutation(len(X))[: (M - len(Zinit))], :].copy()))
 
     vfe = gpflow.models.SGPR((X, Y), gpflow.kernels.SquaredExponential(), inducing_variable=Zinit)
 
@@ -127,9 +132,10 @@ for M in fMs:
     set_trainable(vfe.kernel, False)
     set_trainable(vfe.likelihood, False)
 
-    objective = tf.function(lambda: - vfe.log_marginal_likelihood())
-    gpflow.optimizers.Scipy().minimize(objective, vfe.trainable_variables,
-                                       options=dict(disp=False, maxiter=ci_niter(1000)))
+    objective = tf.function(lambda: -vfe.log_marginal_likelihood())
+    gpflow.optimizers.Scipy().minimize(
+        objective, vfe.trainable_variables, options=dict(disp=False, maxiter=ci_niter(1000))
+    )
 
     fvfe_lml.append(vfe.log_likelihood().numpy())
     fvupper_lml.append(vfe.upper_bound().numpy())
@@ -141,7 +147,7 @@ plt.plot(fMs, fvupper_lml, label="upper")
 plt.axhline(full_lml, label="full", alpha=0.3)
 plt.xlabel("Number of inducing points")
 plt.ylabel("LML estimate")
-plt.legend();
+_ = plt.legend()
 
 # %%
 assert np.all(np.array(fvupper_lml) - np.array(fvfe_lml) > 0.0)
@@ -154,10 +160,13 @@ assert np.all(np.array(fvupper_lml) - np.array(fvfe_lml) > 0.0)
 
 # %%
 single_inducing_point = X[:1, :].copy()
-vfe = gpflow.models.SGPR((X, Y), gpflow.kernels.SquaredExponential(), inducing_variable=single_inducing_point)
-objective = tf.function(lambda: - vfe.log_marginal_likelihood())
-gpflow.optimizers.Scipy().minimize(objective, vfe.trainable_variables,
-                                   options=dict(maxiter=ci_niter(1000)), jit=False)
+vfe = gpflow.models.SGPR(
+    (X, Y), gpflow.kernels.SquaredExponential(), inducing_variable=single_inducing_point
+)
+objective = tf.function(lambda: -vfe.log_marginal_likelihood())
+gpflow.optimizers.Scipy().minimize(
+    objective, vfe.trainable_variables, options=dict(maxiter=ci_niter(1000)), jit=False
+)
 # Note that we need to set jit=False here due to a discrepancy in tf.function jitting
 # see https://github.com/GPflow/GPflow/issues/1260
 
@@ -171,7 +180,7 @@ print("Upper bound: %f" % vfe.upper_bound().numpy())
 plot_model(vfe)
 
 # %%
-print_summary(vfe, fmt='notebook')
+print_summary(vfe, fmt="notebook")
 
 # %% [markdown]
 # This can be diagnosed by showing that there are other hyperparameter settings with higher upper bounds. This indicates that there might be better hyperparameter settings, but we cannot identify them due to the lack of inducing points. An example of this can be seen in the previous section.
