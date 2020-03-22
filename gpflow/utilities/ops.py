@@ -85,10 +85,10 @@ def square_distance(X, X2):
     result may actually be very slightly negative for entries very
     close to each other.
 
-    This function can deal with leading dimensions in X and X2. 
-    In the sample case, where X and X2 are both 2 dimensional, 
-    for example, X is [N, D] and X2 is [M, D], then a tensor of shape 
-    [N, M] is returned. If X is [N1, S1, D] and X2 is [N2, S2, D] 
+    This function can deal with leading dimensions in X and X2.
+    In the sample case, where X and X2 are both 2 dimensional,
+    for example, X is [N, D] and X2 is [M, D], then a tensor of shape
+    [N, M] is returned. If X is [N1, S1, D] and X2 is [N2, S2, D]
     then the output will be [N1, S1, N2, S2].
     """
     if X2 is None:
@@ -105,14 +105,13 @@ def square_distance(X, X2):
 
 def distance(X, X2):
     """
-    Returns Σ_i (X - X2ᵀ)_i
+    Returns (X - X2ᵀ)
 
     This function can deal with leading dimensions in X and X2.
     """
     if X2 is None:
         X2 = X
-    dist = X[..., :, tf.newaxis, :] - X2[..., tf.newaxis, :, :]
-    return tf.reduce_sum(dist, axis=-1)
+    return X[..., :, tf.newaxis, :] - X2[..., tf.newaxis, :, :]
 
 
 def pca_reduce(X: tf.Tensor, latent_dim: tf.Tensor) -> tf.Tensor:

@@ -5,8 +5,9 @@ import tensorflow as tf
 
 from ..base import Parameter
 from ..utilities import positive
+from ..utilities.ops import distance
 from .base import Kernel
-from .stationaries import Stationary
+from .stationaries import Stationary, IsotropicStationary
 
 
 class Periodic(Kernel):
@@ -65,20 +66,15 @@ class Periodic(Kernel):
         return self.base_kernel.K_diag(X)
 
     def K(self, X: tf.Tensor, X2: Optional[tf.Tensor] = None) -> tf.Tensor:
-        if X2 is None:
-            X2 = X
-
-        # Introduce dummy dimension so we can use broadcasting
-        # TODO: does not support kernel broadcasting
-        f = tf.expand_dims(X, 1)  # now [N, 1, D]
-        f2 = tf.expand_dims(X2, 0)  # now [1, M, D]
-
-        r = np.pi * (f - f2) / self.period
+        r = np.pi * (distance(X, X2)) / self.period
         scaled_sine = tf.sin(r) / self.base_kernel.lengthscales
-        if hasattr(self.base_kernel, "K_r"):
-            sine_r = tf.reduce_sum(tf.abs(scaled_sine), -1)
-            K = self.base_kernel.K_r(sine_r)
+        if isinstance(self.base_kernel, IsotropicStationary):
+            if hasattr(self.base_kernel, "K_r"):
+                sine_r = tf.reduce_sum(tf.abs(scaled_sine), -1)
+                K = self.base_kernel.K_r(sine_r)
+            else:
+                sine_r2 = tf.reduce_sum(tf.square(scaled_sine), -1)
+                K = self.base_kernel.K_r2(sine_r2)
         else:
-            sine_r2 = tf.reduce_sum(tf.square(scaled_sine), -1)
-            K = self.base_kernel.K_r2(sine_r2)
+            K = self.base_kernel.K_d(scaled_sine)
         return K

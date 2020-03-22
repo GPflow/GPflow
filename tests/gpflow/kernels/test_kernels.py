@@ -172,7 +172,11 @@ def test_periodic_bad_ard_period():
         gpflow.kernels.Periodic(base_kernel, period=[1.0, 1.0, 1.0])
 
 
-kernel_setups = [kernel() for kernel in gpflow.kernels.Stationary.__subclasses__()] + [
+kernel_setups = [
+    kernel()
+    for stationary in gpflow.kernels.Stationary.__subclasses__()
+    for kernel in stationary.__subclasses__()
+] + [
     gpflow.kernels.Constant(),
     gpflow.kernels.Linear(),
     gpflow.kernels.Polynomial(),
@@ -297,11 +301,11 @@ def test_white(N, D):
     assert not np.allclose(Kff_sym, Kff_asym)
 
 
-_kernel_classes_slice = [kernel for kernel in gpflow.kernels.Stationary.__subclasses__()] + [
-    gpflow.kernels.Constant,
-    gpflow.kernels.Linear,
-    gpflow.kernels.Polynomial,
-]
+_kernel_classes_slice = [
+    kernel
+    for stationary in gpflow.kernels.Stationary.__subclasses__()
+    for kernel in stationary.__subclasses__()
+] + [gpflow.kernels.Constant, gpflow.kernels.Linear, gpflow.kernels.Polynomial,]
 
 _kernel_triples_slice = [
     (k1(active_dims=[0]), k2(active_dims=[1]), k3(active_dims=slice(0, 1)))
