@@ -227,8 +227,6 @@ simple_training_loop(model, epochs=10, logging_epoch_freq=2)
 # For a more detailed tutorial see [GPflow monitoring notebook](./basics/monitoring.ipynb).
 
 # %%
-from intro_to_gpflow2_plotting import plotting_regression
-
 from gpflow.monitor import (
     ImageToTensorBoard,
     ModelToTensorBoard,

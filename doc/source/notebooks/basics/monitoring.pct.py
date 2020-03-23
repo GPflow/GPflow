@@ -101,7 +101,7 @@ lml_task = ScalarToTensorBoard(log_dir, lambda: model.log_likelihood().numpy(), 
 # Finally, we collect all these tasks in a `TasksCollection` object. This simple wrapper will call each task sequentially.
 
 # %%
-monitor_tasks = MonitorCollection([model_task, image_task, lml_task])
+monitor = MonitorCollection([model_task, image_task, lml_task])
 
 
 # %%
@@ -114,7 +114,29 @@ opt = tf.optimizers.Adam()
 
 for step in range(optimisation_steps):
     opt.minimize(closure, model.trainable_variables)
-    monitor_tasks(step)  # <-- run the monitoring
+    monitor(step)  # <-- run the monitoring
 
 # %% [markdown]
 # TensorBoard is accessable through the browser, after lauching the servers `tensorboard --logdir ${logdir}`. See [TF docs](https://www.tensorflow.org/tensorboard/get_started) for more info.
+
+
+# %% [markdown]
+# For optimal performance, we can also wrap the monitor call inside `tf.function`.
+
+# %%
+opt = tf.optimizers.Adam()
+
+model_task = ModelToTensorBoard(log_dir, model)
+lml_task = ScalarToTensorBoard(log_dir, lambda: model.log_likelihood(), "lml")
+# Note that the `ImageToTensorBoard` task can not be compiled, and is omitted from the collection
+monitor = MonitorCollection([model_task, lml_task])
+
+
+@tf.function
+def step(i):
+    opt.minimize(lambda: -1.0 * model.log_likelihood(), model.trainable_variables)
+    monitor(i)
+
+
+for i in tf.range(optimisation_steps):
+    step(i)
