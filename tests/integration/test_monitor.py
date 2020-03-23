@@ -109,7 +109,6 @@ def test_ScalarToTensorBoard(tmp_path, capfd):
 
     task(0)
     compiled_task(0)
-    
 
 
 def test_ScalarToTensorBoard_with_argument(tmp_path):

@@ -138,9 +138,7 @@ class ModelToTensorBoard(ToTensorBoard):
 class ScalarToTensorBoard(ToTensorBoard):
     """ Stores the returns value of a callback in a TensorBoard. """
 
-    def __init__(
-        self, log_dir: str, callback: Callable[[], float], name: str, period: int = 1
-    ):
+    def __init__(self, log_dir: str, callback: Callable[[], float], name: str, period: int = 1):
         """
         :param log_dir: directory in which to store the tensorboard files.
             Can be a nested: for example, './logs/my_run/'.

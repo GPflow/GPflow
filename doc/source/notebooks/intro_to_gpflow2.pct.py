@@ -260,9 +260,7 @@ def plot_model(fig, ax):
 output_logdir = enumerated_logdir()
 model_task = ModelToTensorBoard(output_logdir, model)
 image_task = ImageToTensorBoard(output_logdir, plot_model, "samples_image")
-elbo_task = ScalarToTensorBoard(
-    output_logdir, lambda data=None: model.elbo(data).numpy(), "elbo"
-)
+elbo_task = ScalarToTensorBoard(output_logdir, lambda data=None: model.elbo(data).numpy(), "elbo")
 monitor = MonitorCollection([model_task, image_task, elbo_task])
 
 
