@@ -18,15 +18,13 @@ configuration.
     interpreter to modify the configuration.
 
 Full set of environment variables and available options:
-    ```
-    GPFLOW_INT: "int16", "int32", or "int64"
-    GPFLOW_FLOAT: "float16", "float32", or "float64"
-    GPFLOW_POSITIVE_BIJECTOR: "exp" or "softplus"
-    GPFLOW_POSITIVE_MINIMUM: Any positive float number
-    GPFLOW_SUMMARY_FMT: "notebook" or any other format that
-        :mod:`tabulate` can handle.
-    GPFLOW_JITTER: Any positive float number
-    ```
+
+* ``GPFLOW_INT``: "int16", "int32", or "int64"
+* ``GPFLOW_FLOAT``: "float16", "float32", or "float64"
+* ``GPFLOW_POSITIVE_BIJECTOR``: "exp" or "softplus"
+* ``GPFLOW_POSITIVE_MINIMUM``: Any positive float number
+* ``GPFLOW_SUMMARY_FMT``: "notebook" or any other format that :mod:`tabulate` can handle.
+* ``GPFLOW_JITTER``: Any positive float number
 
 The user can also change the GPflow configuration temporarily with a context
 manager :func:`as_context`:
