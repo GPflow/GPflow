@@ -173,7 +173,11 @@ def test_periodic_bad_ard_period():
         gpflow.kernels.Periodic(base_kernel, period=[1.0, 1.0, 1.0])
 
 
-kernel_setups = [kernel() for kernel in gpflow.ci_utils.subclasses(gpflow.kernels.Stationary)] + [
+kernel_setups = [
+    kernel()
+    for kernel in gpflow.ci_utils.subclasses(gpflow.kernels.Stationary)
+    if kernel not in (gpflow.kernels.IsotropicStationary, gpflow.kernels.AnisotropicStationary)
+] + [
     gpflow.kernels.Constant(),
     gpflow.kernels.Linear(),
     gpflow.kernels.Polynomial(),
@@ -299,7 +303,9 @@ def test_white(N, D):
 
 
 _kernel_classes_slice = [
-    kernel for kernel in gpflow.ci_utils.subclasses(gpflow.kernels.Stationary)
+    kernel
+    for kernel in gpflow.ci_utils.subclasses(gpflow.kernels.Stationary)
+    if kernel not in (gpflow.kernels.IsotropicStationary, gpflow.kernels.AnisotropicStationary)
 ] + [gpflow.kernels.Constant, gpflow.kernels.Linear, gpflow.kernels.Polynomial,]
 
 _kernel_triples_slice = [
