@@ -80,9 +80,19 @@ class BayesianModel(Module, metaclass=abc.ABCMeta):
         raise NotImplementedError
 
 
+class InternalDataBayesianModel(BayesianModel, ExternalDataTrainingInterface):
+    """
+    Base class for models that encapsulate their data and store it as
+    self.data; training_loss does not take any arguments.
+    """
+
+    def training_loss(self):
+        return -self.maximum_a_posteriori_objective()
+
+
 class ExternalDataBayesianModel(BayesianModel, ExternalDataTrainingInterface):
     """
-    Base class for GP models that do not encapsulate the data; training_loss takes
+    Base class for models that do not encapsulate the data; training_loss takes
     data as argument.
     """
 
@@ -249,21 +259,15 @@ class GPModel(BayesianModel):
         return self.likelihood.predict_density(f_mean, f_var, Y)
 
 
-class InternalDataGPModel(GPModel, InternalDataTrainingInterface):
+class InternalDataGPModel(GPModel, InternalDataBayesianModel):
     """
-    Base class for models that encapsulate their data and store it as
+    Base class for GP models that encapsulate their data and store it as
     self.data; training_loss does not take any arguments.
     """
 
-    def training_loss(self):
-        return -self.maximum_a_posteriori_objective()
 
-
-class ExternalDataGPModel(GPModel, ExternalDataTrainingInterface):
+class ExternalDataGPModel(GPModel, ExternalDataBayesianModel):
     """
     Base class for GP models that do not encapsulate the data; training_loss takes
     data as argument.
     """
-
-    def training_loss(self, data):
-        return -self.maximum_a_posteriori_objective(data)

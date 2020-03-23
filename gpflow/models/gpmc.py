@@ -24,10 +24,10 @@ from ..kernels import Kernel
 from ..likelihoods import Likelihood
 from ..mean_functions import MeanFunction
 from ..utilities import to_default_float
-from .model import RegressionData, MeanAndVariance, GPModel
+from .model import RegressionData, MeanAndVariance, InternalDataGPModel
 
 
-class GPMC(GPModel):
+class GPMC(InternalDataGPModel):
     def __init__(
         self,
         data: RegressionData,
@@ -61,6 +61,9 @@ class GPMC(GPModel):
         self.V.prior = tfp.distributions.Normal(
             loc=to_default_float(0.0), scale=to_default_float(1.0)
         )
+
+    def training_loss(self) -> tf.Tensor:
+        return -self.log_posterior_density()
 
     def log_posterior_density(self) -> tf.Tensor:
         return self.log_likelihood() + self.log_prior_density()

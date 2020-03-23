@@ -24,11 +24,11 @@ from ..kernels import Kernel
 from ..likelihoods import Likelihood
 from ..mean_functions import MeanFunction
 from ..utilities import to_default_float
-from .model import RegressionData, MeanAndVariance, GPModel
+from .model import RegressionData, MeanAndVariance, InternalDataGPModel
 from .util import inducingpoint_wrapper
 
 
-class SGPMC(GPModel):
+class SGPMC(InternalDataGPModel):
     r"""
     This is the Sparse Variational GP using MCMC (SGPMC). The key reference is
 
@@ -85,6 +85,9 @@ class SGPMC(GPModel):
         self.V.prior = tfp.distributions.Normal(
             loc=to_default_float(0.0), scale=to_default_float(1.0)
         )
+
+    def training_loss(self) -> tf.Tensor:
+        return -self.log_posterior_density()
 
     def log_posterior_density(self) -> tf.Tensor:
         return self.log_conditional_likelihood_lower_bound() + self.log_prior_density()

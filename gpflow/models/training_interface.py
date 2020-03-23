@@ -12,7 +12,8 @@ RegressionData = Tuple[InputData, OutputData]
 Data = TypeVar("Data", RegressionData, InputData)
 
 
-class InternalDataTrainingInterface:
+class InternalDataTrainingInterface(metaclass=abc.ABCMeta):
+    @abc.abstractmethod
     def training_loss(self):
         """
         Specify a training loss for this model
@@ -26,6 +27,7 @@ class InternalDataTrainingInterface:
 
 
 class ExternalDataTrainingInterface:
+    @abc.abstractmethod
     def training_loss(self, data):
         """
         Specify a training loss for this model
