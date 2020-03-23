@@ -3,7 +3,7 @@ import tensorflow as tf
 
 from ..base import Parameter
 from ..utilities import positive
-from ..utilities.ops import square_distance, distance
+from ..utilities.ops import square_distance, difference_matrix
 from .base import Kernel
 
 
@@ -59,15 +59,15 @@ class IsotropicStationary(Stationary):
     Base class for isotropic stationary kernels, i.e. kernels that only
     depend on
 
-        d = ‖x - x'‖
+        r = ‖x - x'‖
 
     Derived classes should implement one of:
 
         K_r2(self, r2): Returns the kernel evaluated on r² (r2), which is the
-        squared scaled Euclidean distance Should operate element-wise on r².
+        squared scaled Euclidean distance Should operate element-wise on r2.
 
         K_r(self, r): Returns the kernel evaluated on r, which is the scaled
-        Euclidean distance Should operate element-wise on r².
+        Euclidean distance. Should operate element-wise on r.
     """
 
     def K(self, X, X2=None):
@@ -78,12 +78,12 @@ class IsotropicStationary(Stationary):
         if hasattr(self, "K_r"):
             # Clipping around the (single) float precision which is ~1e-45.
             r = tf.sqrt(tf.maximum(r2, 1e-40))
-            return self.K_r(r)
+            return self.K_r(r)  # pylint: disable=no-member
         raise NotImplementedError
 
     def scaled_squared_euclid_dist(self, X, X2=None):
         """
-        Returns ||(X - X2ᵀ) / ℓ||² i.e. squared L2-norm.
+        Returns ‖(X - X2ᵀ) / ℓ‖², i.e. the squared L₂-norm.
         """
         return square_distance(self.scale(X), self.scale(X2))
 
@@ -96,19 +96,20 @@ class AnisotropicStationary(Stationary):
         d = x - x'
 
     Derived classes should implement K_d(self, d): Returns the kernel evaluated
-    on d, which is pairwise difference matrix, scaled by the lengthscale
-    parameter ℓ (i.e. Σ_i [(X - X2ᵀ) / ℓ]_i). The last axis corresponds to
+    on d, which is the pairwise difference matrix, scaled by the lengthscale
+    parameter ℓ (i.e. [(X - X2ᵀ) / ℓ]). The last axis corresponds to the
     input dimension.
     """
 
     def K(self, X, X2=None):
-        return self.K_d(self.scaled_distance(X, X2))
+        return self.K_d(self.scaled_difference_matrix(X, X2))
 
-    def scaled_distance(self, X, X2=None):
+    def scaled_difference_matrix(self, X, X2=None):
         """
-        Returns [(X - X2ᵀ) / ℓ]
+        Returns [(X - X2ᵀ) / ℓ]. If X has shape [..., N, D] and
+        X2 has shape [..., M, D], the output will have shape [..., N, M, D].
         """
-        return distance(self.scale(X), self.scale(X2))
+        return difference_matrix(self.scale(X), self.scale(X2))
 
     def K_d(self, d):
         raise NotImplementedError
@@ -219,7 +220,8 @@ class Cosine(AnisotropicStationary):
         k(r) = σ² cos{2πd}
 
     where:
-    d  is the sum of the per-dimension differences between the input points, scaled by the lengthscale parameter ℓ (i.e. Σ_i [(X - X2ᵀ) / ℓ]_i),
+    d  is the sum of the per-dimension differences between the input points, scaled by the
+    lengthscale parameter ℓ (i.e. Σᵢ [(X - X2ᵀ) / ℓ]ᵢ),
     σ² is the variance parameter.
     """
 

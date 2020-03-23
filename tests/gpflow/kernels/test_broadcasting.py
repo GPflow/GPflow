@@ -44,10 +44,17 @@ KERNEL_CLASSES = [
     # Following kernels do not broadcast: see https://github.com/GPflow/GPflow/issues/1339
     pytest.param(kernels.ArcCosine, marks=pytest.mark.xfail),  # broadcasting not implemented
     pytest.param(kernels.Coregion, marks=pytest.mark.xfail),  # broadcasting not implemented
-    pytest.param(kernels.Periodic, marks=pytest.mark.xfail),  # broadcasting not implemented
     pytest.param(kernels.ChangePoints, marks=pytest.mark.xfail),  # broadcasting not implemented
     pytest.param(kernels.Convolutional, marks=pytest.mark.xfail),  # broadcasting not implemented
 ]
+
+
+def broadcast_no_no_active_dims(kernel):
+    S, N, M, D = 5, 4, 3, 2
+    X1 = np.random.randn(S, N, D)
+    X2 = np.random.randn(M, D)
+
+    compare_vs_map(X1, X2, kernel)
 
 
 @pytest.mark.parametrize("kernel_class", gpflow.ci_utils.subclasses(kernels.Kernel))
@@ -62,13 +69,18 @@ def test_no_kernels_missed(kernel_class):
         gpflow.kernels.base.ReducingCombination,
         kernels.Static,
         kernels.Stationary,
+        kernels.IsotropicStationary,
+        kernels.AnisotropicStationary,
     ]
+    needs_constructor_parameters = [kernels.Periodic]
     if kernel_class in tested_kernel_classes:
         return  # tested
     if kernel_class in skipped_kernel_classes:
         return  # not tested but currently expected to fail
     if kernel_class in abstract_base_classes:
         return  # cannot test abstract base classes
+    if kernel_class in needs_constructor_parameters:
+        return  # this has a separate test
     if issubclass(kernel_class, kernels.MultioutputKernel):
         return  # TODO: cannot currently test MultioutputKernels - see https://github.com/GPflow/GPflow/issues/1339
     assert False, f"no broadcasting test for kernel class {kernel_class}"
@@ -76,12 +88,20 @@ def test_no_kernels_missed(kernel_class):
 
 @pytest.mark.parametrize("kernel_class", KERNEL_CLASSES)
 def test_broadcast_no_active_dims(kernel_class):
-    S, N, M, D = 5, 4, 3, 2
-    X1 = np.random.randn(S, N, D)
-    X2 = np.random.randn(M, D)
-    kernel = kernel_class()
+    broadcast_no_no_active_dims(kernel_class())
 
-    compare_vs_map(X1, X2, kernel)
+
+@pytest.mark.parametrize(
+    "base_class",
+    [
+        kernel
+        for kernel in gpflow.ci_utils.subclasses(kernels.Stationary)
+        if kernel not in (kernels.IsotropicStationary, kernels.AnisotropicStationary)
+    ],
+)
+def test_broadcast_no_active_dims_periodc(base_class):
+    kernel = gpflow.kernels.Periodic(base_class())
+    broadcast_no_no_active_dims(kernel)
 
 
 @pytest.mark.parametrize("kernel_class", [gpflow.kernels.SquaredExponential])

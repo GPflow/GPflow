@@ -20,6 +20,7 @@ from numpy.testing import assert_allclose
 import gpflow
 from gpflow.config import default_float
 from gpflow.kernels import SquaredExponential, ArcCosine, Linear
+import gpflow.ci_utils
 from tests.gpflow.kernels.reference import (
     ref_rbf_kernel,
     ref_arccosine_kernel,
@@ -172,11 +173,7 @@ def test_periodic_bad_ard_period():
         gpflow.kernels.Periodic(base_kernel, period=[1.0, 1.0, 1.0])
 
 
-kernel_setups = [
-    kernel()
-    for stationary in gpflow.kernels.Stationary.__subclasses__()
-    for kernel in stationary.__subclasses__()
-] + [
+kernel_setups = [kernel() for kernel in gpflow.ci_utils.subclasses(gpflow.kernels.Stationary)] + [
     gpflow.kernels.Constant(),
     gpflow.kernels.Linear(),
     gpflow.kernels.Polynomial(),
@@ -302,9 +299,7 @@ def test_white(N, D):
 
 
 _kernel_classes_slice = [
-    kernel
-    for stationary in gpflow.kernels.Stationary.__subclasses__()
-    for kernel in stationary.__subclasses__()
+    kernel for kernel in gpflow.ci_utils.subclasses(gpflow.kernels.Stationary)
 ] + [gpflow.kernels.Constant, gpflow.kernels.Linear, gpflow.kernels.Polynomial,]
 
 _kernel_triples_slice = [

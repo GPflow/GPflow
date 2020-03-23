@@ -103,15 +103,21 @@ def square_distance(X, X2):
     return dist
 
 
-def distance(X, X2):
+def difference_matrix(X, X2):
     """
     Returns (X - X2ᵀ)
 
     This function can deal with leading dimensions in X and X2.
+    If X has shape [..., N, D] and X2 has shape [..., M, D], the
+    output will have shape [..., N, M, D].
     """
     if X2 is None:
         X2 = X
-    return X[..., :, tf.newaxis, :] - X2[..., tf.newaxis, :, :]
+    diff = X[..., :, tf.newaxis, :] - X2[..., tf.newaxis, :, :]
+    tf.debugging.assert_shapes(
+        [(diff, [..., "M", "N", "D"]), (X, [..., "M", "D"]), (X2, [..., "N", "D"])]
+    )
+    return diff
 
 
 def pca_reduce(X: tf.Tensor, latent_dim: tf.Tensor) -> tf.Tensor:

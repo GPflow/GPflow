@@ -18,32 +18,28 @@ import tensorflow as tf
 from numpy.testing import assert_array_less
 
 from gpflow import kernels
+import gpflow.ci_utils
 
 KERNEL_CLASSES = [
-    # Static
-    kernels.White,
-    kernels.Constant,
-    # Stationary
-    kernels.SquaredExponential,
-    kernels.RationalQuadratic,
-    kernels.Exponential,
-    kernels.Matern12,
-    kernels.Matern32,
-    kernels.Matern52,
-    kernels.Cosine,
-    kernels.Linear,
-    kernels.Polynomial,
-]
+    kernel
+    for cls in (kernels.Static, kernels.Stationary, kernels.Linear)
+    for kernel in gpflow.ci_utils.subclasses(cls)
+    if kernel not in (kernels.IsotropicStationary, kernels.AnisotropicStationary)
+] + [kernels.ArcCosine]
 
 rng = np.random.RandomState(42)
 
 
-@pytest.mark.parametrize("kernel", KERNEL_CLASSES)
-def test_positive_semidefinite(kernel):
+@pytest.mark.parametrize("kernel_class", KERNEL_CLASSES)
+def test_positive_semidefinite(kernel_class):
+    """
+    A valid kernel is positive semidefinite. Some kernels are only valid for
+    particular input shapes, see https://github.com/GPflow/GPflow/issues/1328
+    """
     N, D = 100, 5
     X = rng.randn(N, D)
-    kern = kernel()
+    kernel = kernel_class()
 
-    cov = kern(X)
+    cov = kernel(X)
     eig = tf.linalg.eigvalsh(cov).numpy()
-    assert_array_less(-np.finfo(eig.dtype).eps * 1e4, eig)
+    assert_array_less(-1e-12, eig)

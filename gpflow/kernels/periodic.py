@@ -5,7 +5,7 @@ import tensorflow as tf
 
 from ..base import Parameter
 from ..utilities import positive
-from ..utilities.ops import distance
+from ..utilities.ops import difference_matrix
 from .base import Kernel
 from .stationaries import Stationary, IsotropicStationary
 
@@ -66,7 +66,7 @@ class Periodic(Kernel):
         return self.base_kernel.K_diag(X)
 
     def K(self, X: tf.Tensor, X2: Optional[tf.Tensor] = None) -> tf.Tensor:
-        r = np.pi * (distance(X, X2)) / self.period
+        r = np.pi * (difference_matrix(X, X2)) / self.period
         scaled_sine = tf.sin(r) / self.base_kernel.lengthscales
         if isinstance(self.base_kernel, IsotropicStationary):
             if hasattr(self.base_kernel, "K_r"):
