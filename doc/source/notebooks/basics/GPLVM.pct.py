@@ -70,8 +70,8 @@ num_data = Y.shape[0]  # number of data points
 # Initialize via PCA:
 
 # %%
-X_mean_init = tf.convert_to_tensor(ops.pca_reduce(Y, latent_dim), dtype=default_float())
-X_var_init = tf.convert_to_tensor(np.ones((num_data, latent_dim)), dtype=default_float())
+X_mean_init = ops.pca_reduce(Y, latent_dim)
+X_var_init = tf.ones((num_data, latent_dim), dtype=default_float())
 
 # %% [markdown]
 # Pick inducing inputs randomly from dataset initialization:
@@ -143,7 +143,7 @@ print_summary(gplvm)
 # We compare the Bayesian GPLVM's latent space to the deterministic PCA's one.
 
 # %%
-X_pca = ops.pca_reduce(Y, latent_dim)
+X_pca = ops.pca_reduce(Y, latent_dim).numpy()
 gplvm_X_mean = gplvm.X_data_mean.numpy()
 
 f, ax = plt.subplots(1, 2, figsize=(10, 6))

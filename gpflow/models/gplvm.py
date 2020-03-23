@@ -21,6 +21,7 @@ from .. import covariances, kernels, likelihoods
 from ..base import Parameter
 from ..config import default_float, default_jitter
 from ..expectations import expectation
+from ..inducing_variables import InducingPoints
 from ..kernels import Kernel
 from ..mean_functions import MeanFunction, Zero
 from ..probability_distributions import DiagonalGaussian
@@ -121,7 +122,9 @@ class BayesianGPLVM(GPModel):
 
         if inducing_variable is None:
             # By default we initialize by subset of initial latent points
-            inducing_variable = np.random.permutation(X_data_mean.copy())[:num_inducing_variables]
+            # Note that tf.random.shuffle returns a copy, it does not shuffle in-place
+            Z = tf.random.shuffle(X_data_mean)[:num_inducing_variables]
+            inducing_variable = InducingPoints(Z)
 
         self.inducing_variable = inducingpoint_wrapper(inducing_variable)
 
