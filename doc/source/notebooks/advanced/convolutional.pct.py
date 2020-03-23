@@ -46,7 +46,9 @@ np.random.seed(123)
 tf.random.set_seed(42)
 
 MAXITER = 2 if is_continuous_integration() else 100
-NUM_TRAIN_DATA = 5 if is_continuous_integration() else 100  # This is less than in the original rectangles dataset
+NUM_TRAIN_DATA = (
+    5 if is_continuous_integration() else 100
+)  # This is less than in the original rectangles dataset
 NUM_TEST_DATA = 7 if is_continuous_integration() else 300
 H = W = 14  # width and height. In the original paper this is 28
 IMAGE_SHAPE = [H, W]
@@ -57,8 +59,9 @@ def make_rectangle(arr, x0, y0, x1, y1):
     arr[y0:y1, x0] = 1
     arr[y0:y1, x1] = 1
     arr[y0, x0:x1] = 1
-    arr[y1, x0:x1+1] = 1
-    
+    arr[y1, x0 : x1 + 1] = 1
+
+
 def make_random_rectangle(arr):
     x0 = np.random.randint(1, arr.shape[1] - 3)
     y0 = np.random.randint(1, arr.shape[0] - 3)
@@ -66,7 +69,8 @@ def make_random_rectangle(arr):
     y1 = np.random.randint(y0 + 2, arr.shape[0] - 1)
     make_rectangle(arr, x0, y0, x1, y1)
     return x0, y0, x1, y1
-    
+
+
 def make_rectangles_dataset(num, w, h):
     d, Y = np.zeros((num, h, w)), np.zeros((num, 1))
     for i, img in enumerate(d):
@@ -78,7 +82,10 @@ def make_rectangles_dataset(num, w, h):
                 continue
             Y[i, 0] = rw > rh
             break
-    return d.reshape(num, w * h).astype(gpflow.config.default_float()), Y.astype(gpflow.config.default_float())
+    return (
+        d.reshape(num, w * h).astype(gpflow.config.default_float()),
+        Y.astype(gpflow.config.default_float()),
+    )
 
 
 # %%
@@ -96,8 +103,11 @@ for i in range(4):
 # ## Squared Exponential kernel
 
 # %%
-rbf_m = gpflow.models.SVGP(gpflow.kernels.SquaredExponential(), gpflow.likelihoods.Bernoulli(),
-                           gpflow.inducing_variables.InducingPoints(X.copy()))
+rbf_m = gpflow.models.SVGP(
+    gpflow.kernels.SquaredExponential(),
+    gpflow.likelihoods.Bernoulli(),
+    gpflow.inducing_variables.InducingPoints(X.copy()),
+)
 
 # %%
 rbf_m_log_likelihood = rbf_m.log_likelihood
@@ -111,12 +121,13 @@ res = gpflow.optimizers.Scipy().minimize(
     lambda: -rbf_m_log_likelihood(data),
     variables=rbf_m.trainable_variables,
     method="l-bfgs-b",
-    options={"disp": True, "maxiter": MAXITER})
+    options={"disp": True, "maxiter": MAXITER},
+)
 print(f"{res.nfev / (time.time() - start_time):.3f} iter/s")
 
 # %%
-train_err = np.mean((rbf_m.predict_y(X)[0] > 0.5).numpy().astype('float') == Y)
-test_err = np.mean((rbf_m.predict_y(Xt)[0] > 0.5).numpy().astype('float') == Yt)
+train_err = np.mean((rbf_m.predict_y(X)[0] > 0.5).numpy().astype("float") == Y)
+test_err = np.mean((rbf_m.predict_y(Xt)[0] > 0.5).numpy().astype("float") == Yt)
 print(f"Train acc: {train_err * 100}%\nTest acc : {test_err*100}%")
 print("RBF elbo after training: %.4e" % rbf_m_log_likelihood(data))
 
@@ -126,8 +137,12 @@ print("RBF elbo after training: %.4e" % rbf_m_log_likelihood(data))
 # %%
 f64 = lambda x: np.array(x, dtype=np.float64)
 positive_with_min = lambda: tfp.bijectors.AffineScalar(shift=f64(1e-4))(tfp.bijectors.Softplus())
-constrained = lambda: tfp.bijectors.AffineScalar(shift=f64(1e-4), scale=f64(100.0))(tfp.bijectors.Sigmoid())
-max_abs_1 = lambda: tfp.bijectors.AffineScalar(shift=f64(-2.0), scale=f64(4.0))(tfp.bijectors.Sigmoid())
+constrained = lambda: tfp.bijectors.AffineScalar(shift=f64(1e-4), scale=f64(100.0))(
+    tfp.bijectors.Sigmoid()
+)
+max_abs_1 = lambda: tfp.bijectors.AffineScalar(shift=f64(-2.0), scale=f64(4.0))(
+    tfp.bijectors.Sigmoid()
+)
 
 patch_shape = [3, 3]
 conv_k = gpflow.kernels.Convolutional(gpflow.kernels.SquaredExponential(), IMAGE_SHAPE, patch_shape)
@@ -135,7 +150,9 @@ conv_k.base_kernel.lengthscales = gpflow.Parameter(1.0, transform=positive_with_
 # Weight scale and variance are non-identifiable. We also need to prevent variance from shooting off crazily.
 conv_k.base_kernel.variance = gpflow.Parameter(1.0, transform=constrained())
 conv_k.weights = gpflow.Parameter(conv_k.weights.numpy(), transform=max_abs_1())
-conv_f = gpflow.inducing_variables.InducingPatches(np.unique(conv_k.get_patches(X).numpy().reshape(-1, 9), axis=0))
+conv_f = gpflow.inducing_variables.InducingPatches(
+    np.unique(conv_k.get_patches(X).numpy().reshape(-1, 9), axis=0)
+)
 
 # %%
 conv_m = gpflow.models.SVGP(conv_k, gpflow.likelihoods.Bernoulli(), conv_f)
@@ -156,7 +173,8 @@ res = gpflow.optimizers.Scipy().minimize(
     lambda: -conv_m_log_likelihood(data),
     variables=conv_m.trainable_variables,
     method="l-bfgs-b",
-    options={"disp": True, "maxiter": MAXITER / 10})
+    options={"disp": True, "maxiter": MAXITER / 10},
+)
 print(f"{res.nfev / (time.time() - start_time):.3f} iter/s")
 
 # %%
@@ -165,9 +183,10 @@ res = gpflow.optimizers.Scipy().minimize(
     lambda: -conv_m.log_likelihood(data),
     variables=conv_m.trainable_variables,
     method="l-bfgs-b",
-    options={"disp": True, "maxiter": MAXITER})
-train_err = np.mean((conv_m.predict_y(X)[0] > 0.5).numpy().astype('float') == Y)
-test_err = np.mean((conv_m.predict_y(Xt)[0] > 0.5).numpy().astype('float') == Yt)
+    options={"disp": True, "maxiter": MAXITER},
+)
+train_err = np.mean((conv_m.predict_y(X)[0] > 0.5).numpy().astype("float") == Y)
+test_err = np.mean((conv_m.predict_y(Xt)[0] > 0.5).numpy().astype("float") == Yt)
 print(f"Train acc: {train_err * 100}%\nTest acc : {test_err*100}%")
 print("conv elbo after training: %.4e" % conv_m_log_likelihood(data))
 
@@ -176,9 +195,10 @@ res = gpflow.optimizers.Scipy().minimize(
     lambda: -conv_m.log_likelihood(data),
     variables=conv_m.trainable_variables,
     method="l-bfgs-b",
-    options={"disp": True, "maxiter": MAXITER})
-train_err = np.mean((conv_m.predict_y(X)[0] > 0.5).numpy().astype('float') == Y)
-test_err = np.mean((conv_m.predict_y(Xt)[0] > 0.5).numpy().astype('float') == Yt)
+    options={"disp": True, "maxiter": MAXITER},
+)
+train_err = np.mean((conv_m.predict_y(X)[0] > 0.5).numpy().astype("float") == Y)
+test_err = np.mean((conv_m.predict_y(Xt)[0] > 0.5).numpy().astype("float") == Yt)
 print(f"Train acc: {train_err * 100}%\nTest acc : {test_err*100}%")
 print("conv elbo after training: %.4e" % conv_m_log_likelihood(data))
 
@@ -188,9 +208,10 @@ res = gpflow.optimizers.Scipy().minimize(
     lambda: -conv_m.log_likelihood(data),
     variables=conv_m.trainable_variables,
     method="l-bfgs-b",
-    options={"disp": True, "maxiter": MAXITER})
-train_err = np.mean((conv_m.predict_y(X)[0] > 0.5).numpy().astype('float') == Y)
-test_err = np.mean((conv_m.predict_y(Xt)[0] > 0.5).numpy().astype('float') == Yt)
+    options={"disp": True, "maxiter": MAXITER},
+)
+train_err = np.mean((conv_m.predict_y(X)[0] > 0.5).numpy().astype("float") == Y)
+test_err = np.mean((conv_m.predict_y(Xt)[0] > 0.5).numpy().astype("float") == Yt)
 print(f"Train acc: {train_err * 100}%\nTest acc : {test_err*100}%")
 print("conv elbo after training: %.4e" % conv_m_log_likelihood(data))
 

@@ -117,7 +117,7 @@ def test_map_invariance_to_transform():
 def get_gpmc_model_params():
     kernel = gpflow.kernels.Matern32()
     likelihood = gpflow.likelihoods.Gaussian()
-    data = [np.arange(5), np.arange(5)]
+    data = [np.random.randn(5, 1), np.random.randn(5, 1)]
     return data, kernel, likelihood
 
 

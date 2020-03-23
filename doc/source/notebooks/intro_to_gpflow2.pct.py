@@ -243,7 +243,18 @@ def plot_model(fig, ax):
     mean, var = model.predict_f(samples_input)
     num_samples = 10
     samples = model.predict_f_samples(samples_input, num_samples)
-    plotting_regression(X, Y, samples_input, mean, var, samples, ax=ax, fig=fig)
+    ax.plot(samples_input, mean, "C0", lw=2)
+    ax.fill_between(
+        samples_input[:, 0],
+        mean[:, 0] - 1.96 * np.sqrt(var[:, 0]),
+        mean[:, 0] + 1.96 * np.sqrt(var[:, 0]),
+        color="C0",
+        alpha=0.2,
+    )
+    ax.plot(X, Y, "kx")
+    ax.plot(samples_input, samples[:, :, 0].numpy().T, "C0", linewidth=0.5)
+    ax.set_ylim(-2.0, +2.0)
+    ax.set_xlim(0, 10)
 
 
 output_logdir = enumerated_logdir()

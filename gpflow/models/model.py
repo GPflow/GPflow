@@ -22,13 +22,14 @@ import tensorflow as tf
 from ..base import Module
 from ..conditionals.util import sample_mvn
 from ..config import default_float, default_jitter
-from ..kernels import Kernel
-from ..likelihoods import Likelihood
+from ..kernels import Kernel, MultioutputKernel
+from ..likelihoods import Likelihood, SwitchedLikelihood
 from ..mean_functions import MeanFunction, Zero
 from ..utilities import ops, to_default_float
 
-Data = TypeVar("Data", Tuple[tf.Tensor, tf.Tensor], tf.Tensor)
-DataPoint = tf.Tensor
+InputData = tf.Tensor
+OutputData = tf.Tensor
+RegressionData = Tuple[InputData, OutputData]
 MeanAndVariance = Tuple[tf.Tensor, tf.Tensor]
 
 
@@ -95,9 +96,10 @@ class GPModel(BayesianModel):
         kernel: Kernel,
         likelihood: Likelihood,
         mean_function: Optional[MeanFunction] = None,
-        num_latent_gps: int = 1,
+        num_latent_gps: int = None,
     ):
         super().__init__()
+        assert num_latent_gps is not None, "GPModel requires specification of num_latent_gps"
         self.num_latent_gps = num_latent_gps
         # TODO(@awav): Why is this here when MeanFunction does not have a __len__ method
         if mean_function is None:
@@ -106,15 +108,51 @@ class GPModel(BayesianModel):
         self.kernel = kernel
         self.likelihood = likelihood
 
+    @staticmethod
+    def calc_num_latent_gps_from_data(data, kernel: Kernel, likelihood: Likelihood) -> int:
+        """
+        Calculates the number of latent GPs required based on the data as well
+        as the type of kernel and likelihood.
+        """
+        _, Y = data
+        output_dim = Y.shape[-1]
+        return GPModel.calc_num_latent_gps(kernel, likelihood, output_dim)
+
+    @staticmethod
+    def calc_num_latent_gps(kernel: Kernel, likelihood: Likelihood, output_dim: int) -> int:
+        """
+        Calculates the number of latent GPs required given the number of
+        outputs `output_dim` and the type of likelihood and kernel.
+
+        Note: It's not nice for `GPModel` to need to be aware of specific
+        likelihoods as here. However, `num_latent_gps` is a bit more broken in
+        general, we should fix this in the future. There are also some slightly
+        problematic assumptions re the output dimensions of mean_function.
+        See https://github.com/GPflow/GPflow/issues/1343
+        """
+        if isinstance(kernel, MultioutputKernel):
+            # MultioutputKernels already have num_latent_gps attributes
+            num_latent_gps = kernel.num_latent_gps
+        elif isinstance(likelihood, SwitchedLikelihood):
+            # the SwitchedLikelihood partitions/stitches based on the last
+            # column in Y, but we should not add a separate latent GP for this!
+            # hence decrement by 1
+            num_latent_gps = output_dim - 1
+            assert num_latent_gps > 0
+        else:
+            num_latent_gps = output_dim
+
+        return num_latent_gps
+
     @abc.abstractmethod
     def predict_f(
-        self, Xnew: DataPoint, full_cov: bool = False, full_output_cov: bool = False
+        self, Xnew: InputData, full_cov: bool = False, full_output_cov: bool = False
     ) -> MeanAndVariance:
         raise NotImplementedError
 
     def predict_f_samples(
         self,
-        Xnew: DataPoint,
+        Xnew: InputData,
         num_samples: Optional[int] = None,
         full_cov: bool = True,
         full_output_cov: bool = False,
@@ -122,13 +160,14 @@ class GPModel(BayesianModel):
         """
         Produce samples from the posterior latent function(s) at the input points.
 
-        :param Xnew: DataPoint
-            Input locations at which to draw samples
+        :param Xnew: InputData
+            Input locations at which to draw samples, shape [..., N, D]
+            where N is the number of rows and D is the input dimension of each point.
         :param num_samples:
             Number of samples to draw.
             If `None`, a single sample is drawn and the return shape is [..., N, P],
             for any positive integer the return shape contains an extra batch
-            dimension, [..., S, N, P], with S = num_samples.
+            dimension, [..., S, N, P], with S = num_samples and P is the number of outputs.
         :param full_cov:
             If True, draw correlated samples over the inputs. Computes the Cholesky over the
             dense covariance matrix of size [num_data, num_data].
@@ -164,7 +203,7 @@ class GPModel(BayesianModel):
         return samples  # [..., (S), N, P]
 
     def predict_y(
-        self, Xnew: DataPoint, full_cov: bool = False, full_output_cov: bool = False
+        self, Xnew: InputData, full_cov: bool = False, full_output_cov: bool = False
     ) -> MeanAndVariance:
         """
         Compute the mean and variance of the held-out data at the input points.
@@ -173,7 +212,7 @@ class GPModel(BayesianModel):
         return self.likelihood.predict_mean_and_var(f_mean, f_var)
 
     def predict_log_density(
-        self, data: Data, full_cov: bool = False, full_output_cov: bool = False
+        self, data: RegressionData, full_cov: bool = False, full_output_cov: bool = False
     ):
         """
         Compute the log density of the data at the new data points.

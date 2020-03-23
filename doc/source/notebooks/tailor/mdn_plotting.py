@@ -26,9 +26,9 @@ def plot(model, X, Y, axes, cmap, N_plot=100):
     plot_x, plot_y = make_grid(xx, yy)
     axes[0].set_title("Posterior density and trainings data")
     axes[0].contourf(plot_x, plot_y, np.log(probs), 500, cmap=cmap, vmin=-5, vmax=5)
-    axes[0].plot(X, Y, 'ro', alpha=0.2, ms=3, label="data")
+    axes[0].plot(X, Y, "ro", alpha=0.2, ms=3, label="data")
     axes[0].legend(loc=4)
     axes[1].set_title(r"$\mu_m(x)$ and their relative contribution shown by size")
-    axes[1].scatter(np.repeat(xx.flatten(), repeats=mus.shape[1]),
-                    mus.flatten(),
-                    s=pis.flatten()*20)
+    axes[1].scatter(
+        np.repeat(xx.flatten(), repeats=mus.shape[1]), mus.flatten(), s=pis.flatten() * 20
+    )
