@@ -106,7 +106,7 @@ def test_ScalarToTensorBoard(tmp_path, capfd):
         return 0.0
 
     task = ScalarToTensorBoard(tmp_path, scalar_cb, "scalar")
-    compiled_task = tf.function(task.__call__)
+    compiled_task = tf.function(task)
 
     task(0)
     compiled_task(0)
@@ -120,12 +120,12 @@ def test_ScalarToTensorBoard_with_argument(tmp_path):
         return 2 * x
 
     task = ScalarToTensorBoard(tmp_path, scalar_cb, "scalar")
-    compiled_task = tf.function(task.__call__)
+    compiled_task = tf.function(task)
     task(0, x=1.0)
     compiled_task(0, x=1.0)
 
     tasks = MonitorCollection([task])
-    compiled_tasks = tf.function(tasks.__call__)
+    compiled_tasks = tf.function(tasks)
     tasks(0, x=1.0)
     compiled_tasks(0, x=1.0)
 
@@ -138,7 +138,7 @@ def test_ScalarToTensorBoard_with_wrong_kw_argument(tmp_path):
 
     task = ScalarToTensorBoard(tmp_path, scalar_cb, "scalar")
     tasks = MonitorCollection([task])
-    compiled_tasks = tf.function(tasks.__call__)
+    compiled_tasks = tf.function(tasks)
 
     with pytest.raises(TypeError, match=r".*got an unexpected keyword argument 'y'.*"):
         tasks(0, y=1.0)
@@ -151,6 +151,6 @@ def test_ModelToTensorboard(model, tmp_path):
     """ Smoke test `ModelToTensorBoard` in Eager and Compiled mode """
     tmp_path = str(tmp_path)
     task = ModelToTensorBoard(tmp_path, model)
-    compiled_task = tf.function(task.__call__)
+    compiled_task = tf.function(task)
     task(0)
     compiled_task(0)

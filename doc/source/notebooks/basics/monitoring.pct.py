@@ -135,10 +135,12 @@ monitor = MonitorCollection([model_task, lml_task])
 # %% [markdown]
 # In the optimisation loop below we use `tf.range` (rather than Python's built-in range) to avoid re-tracing the `step` function each time.
 
+
 @tf.function
 def step(i):
     opt.minimize(lambda: -1.0 * model.log_likelihood(), model.trainable_variables)
     monitor(i)
+
 
 for i in tf.range(optimisation_steps):
     step(i)

@@ -88,19 +88,21 @@ class ModelToTensorBoard(ToTensorBoard):
     """
     Monitoring task that creates a sensible TensorBoard for a model.
 
-    By default, it writes to the TensorBoard all model parameters that are scalars,
-    for parameter arrays (e.g. kernel.lengthscales) the values are sent to the TensorBoard
-    if the array has no more than `max_size` (default: 3) elements.
-    This behaviour can be adjusted using `max_size`.
+    Monitors all the model's parameters for which their name matches with `keywords_to_monitor`.
+    By default, "kernel" and "likelihood" are elements of `keywords_to_monitor`.
+    Example:
+        keyword = "kernel", parameter = "kernel.lengthscale" => match
+        keyword = "variational", parameter = "kernel.lengthscale" => no match
     """
 
     def __init__(
         self,
         log_dir: str,
         model: BayesianModel,
+        *,
         max_size: int = 3,
         period: int = 1,
-        extra_keywords: List[str] = [],
+        keywords_to_monitor: List[str] = ["kernel", "likelihood"],
     ):
         """
         :param log_dir: directory in which to store the tensorboard files.
@@ -110,15 +112,15 @@ class ModelToTensorBoard(ToTensorBoard):
             element of the array independently as a scalar in the TensorBoard.
         :param period: defines how often to run the task; it will execute every `period`th step.
             For large values of `period` the task will be less frequently run.
-        :param extra_keywords: pass additional keywords to be monitored.
-            If the parameter's name includes any of the extra keywords specified it
-            will be monitored as well. By default, parameters that match the `kernel` or
+        :param keyword_to_monitor: specifies keywords to be monitored.
+            If the parameter's name includes any of the keywords specified it
+            will be monitored. By default, parameters that match the `kernel` or
             `likelihood` keyword are monitored.
         """
         super().__init__(log_dir, period)
         self.model = model
         self.max_size = max_size
-        self.keywords_to_monitor = ["kernel", "likelihood"] + extra_keywords
+        self.keywords_to_monitor = keywords_to_monitor
 
     def run(self, **unused_kwargs):
         for name, parameter in parameter_dict(self.model).items():
@@ -133,8 +135,12 @@ class ModelToTensorBoard(ToTensorBoard):
         :param value: value to be stored in tensorboard
         """
         value = tf.reshape(value, (-1,))
-        for i in tf.range(tf.minimum(tf.size(value), self.max_size)):
-            tf.summary.scalar(f"{name}[{i}]", value[i], step=self.current_step)
+
+        if tf.size(value) == 1:
+            tf.summary.scalar(name, value[0], step=self.current_step)
+        else:
+            for i in tf.range(tf.minimum(tf.size(value), self.max_size)):
+                tf.summary.scalar(f"{name}[{i}]", value[i], step=self.current_step)
 
 
 class ScalarToTensorBoard(ToTensorBoard):

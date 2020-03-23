@@ -279,6 +279,11 @@ def monitored_training_loop(
             monitor(epoch, data=batch)
 
 
+# %% [markdown]
+# NOTE: for optimal performance it is recommended to wrap the monitoring inside `tf.function`.
+# This is detailed in the [monitoring notebook](./basics/monitoring.ipynb).
+
+
 # %%
 model = gpflow.models.SVGP(
     kernel=kernel, likelihood=likelihood, inducing_variable=inducing_variable
