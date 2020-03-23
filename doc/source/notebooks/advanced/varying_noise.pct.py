@@ -102,8 +102,11 @@ class HeteroskedasticGaussian(gpflow.likelihoods.Likelihood):
 
     def _variational_expectations(self, Fmu, Fvar, Y):
         Y, NoiseVar = Y[:, 0], Y[:, 1]
-        return -0.5 * np.log(2 * np.pi) - 0.5 * tf.math.log(NoiseVar) \
-               - 0.5 * (tf.math.square(Y - Fmu) + Fvar) / NoiseVar
+        return (
+            -0.5 * np.log(2 * np.pi)
+            - 0.5 * tf.math.log(NoiseVar)
+            - 0.5 * (tf.math.square(Y - Fmu) + Fvar) / NoiseVar
+        )
 
     def _predict_log_density(self, Fmu, Fvar, Y):
         raise NotImplementedError
@@ -116,6 +119,7 @@ class HeteroskedasticGaussian(gpflow.likelihoods.Likelihood):
 
     def _conditional_variance(self, F):
         raise NotImplementedError
+
 
 # %% [markdown]
 # ### Put it together with Variational Gaussian Process (VGP)
