@@ -16,22 +16,22 @@
 # %% [markdown]
 # ## Sanity checking when model behaviours should overlap
 #
-# Many of the model classes in GPflow have overlapping behaviour in special cases. In this notebook, we fit some approximations to a model with a Gaussian likelihood, and make sure they're all the same. 
+# Many of the model classes in GPflow have overlapping behaviour in special cases. In this notebook, we fit some approximations to a model with a Gaussian likelihood, and make sure they're all the same.
 #
 # The models are:
 #  - `GPR`: Full Gaussian process regression.
-#  
+#
 #  - `VGP`: A Gaussian approximation with Variational Bayes.
 #    Approximating a Gaussian posterior with a Gaussian should be exact.
-#    
-#  - `SVGP`: a sparse GP, with a Gaussian approximation. The inducing points are set to be at the data points, so again, should be exact. 
-#  
+#
+#  - `SVGP`: a sparse GP, with a Gaussian approximation. The inducing points are set to be at the data points, so again, should be exact.
+#
 #  - `SVGP` (with whitened representation): As above, but with a rotation applied to whiten the representation of the process.
-#  
-#  - `SGPR`: A sparse GP with a *collapsed* posterior (Titsias 2009). Again, the inducing points are fixed to the data points. 
-#  
+#
+#  - `SGPR`: A sparse GP with a *collapsed* posterior (Titsias 2009). Again, the inducing points are fixed to the data points.
+#
 #  - `GPRFITC`: The FITC approximation. Again, the inducing points are fixed to the data points.
-#  
+#
 # In all cases the parameters are estimated by the method of maximum likelihood (or approximate maximum likelihood, as appropriate). The parameter estimates should all be the same.
 
 # %%
@@ -46,31 +46,51 @@ from gpflow.config import default_float
 from gpflow.ci_utils import ci_niter
 
 # %matplotlib inline
-matplotlib.rcParams['figure.figsize'] = (12, 6)
+matplotlib.rcParams["figure.figsize"] = (12, 6)
 
 # %%
 np.random.seed(0)
-X = np.random.rand(20,1)*10
-Y = np.sin(X) + 0.9 * np.cos(X*1.6) + np.random.randn(*X.shape)* 0.4
-Xtest = np.random.rand(10,1)*10
-plt.plot(X, Y, 'kx', mew=2);
+X = np.random.rand(20, 1) * 10
+Y = np.sin(X) + 0.9 * np.cos(X * 1.6) + np.random.randn(*X.shape) * 0.4
+Xtest = np.random.rand(10, 1) * 10
+_ = plt.plot(X, Y, "kx", mew=2)
 
 # %%
-data = (tf.convert_to_tensor(X, dtype=default_float()), tf.convert_to_tensor(Y, dtype=default_float()))
+data = (
+    tf.convert_to_tensor(X, dtype=default_float()),
+    tf.convert_to_tensor(Y, dtype=default_float()),
+)
 inducing_variable = tf.convert_to_tensor(X, dtype=default_float())
 
 m1 = gpflow.models.GPR(data, kernel=gpflow.kernels.SquaredExponential())
-m2 = gpflow.models.VGP(data, kernel=gpflow.kernels.SquaredExponential(), likelihood=gpflow.likelihoods.Gaussian())
-m3 = gpflow.models.SVGP(gpflow.kernels.SquaredExponential(), gpflow.likelihoods.Gaussian(), inducing_variable, q_diag=False)
+m2 = gpflow.models.VGP(
+    data, kernel=gpflow.kernels.SquaredExponential(), likelihood=gpflow.likelihoods.Gaussian()
+)
+m3 = gpflow.models.SVGP(
+    gpflow.kernels.SquaredExponential(),
+    gpflow.likelihoods.Gaussian(),
+    inducing_variable,
+    q_diag=False,
+)
 set_trainable(m3.inducing_variable, False)
 
-m4 = gpflow.models.SVGP(gpflow.kernels.SquaredExponential(), gpflow.likelihoods.Gaussian(), inducing_variable, q_diag=False, whiten=True)
+m4 = gpflow.models.SVGP(
+    gpflow.kernels.SquaredExponential(),
+    gpflow.likelihoods.Gaussian(),
+    inducing_variable,
+    q_diag=False,
+    whiten=True,
+)
 set_trainable(m4.inducing_variable, False)
 
-m5 = gpflow.models.SGPR(data, kernel=gpflow.kernels.SquaredExponential(), inducing_variable=inducing_variable)
+m5 = gpflow.models.SGPR(
+    data, kernel=gpflow.kernels.SquaredExponential(), inducing_variable=inducing_variable
+)
 set_trainable(m5.inducing_variable, False)
 
-m6 = gpflow.models.GPRFITC(data, kernel=gpflow.kernels.SquaredExponential(), inducing_variable=inducing_variable)
+m6 = gpflow.models.GPRFITC(
+    data, kernel=gpflow.kernels.SquaredExponential(), inducing_variable=inducing_variable
+)
 set_trainable(m6.inducing_variable, False)
 
 models = [m1, m2, m3, m4, m5, m6]
@@ -82,11 +102,11 @@ models = [m1, m2, m3, m4, m5, m6]
 for m in models:
     opt = gpflow.optimizers.Scipy()
     if isinstance(m, gpflow.models.SVGP):
-        loss_fn = lambda: - m.log_marginal_likelihood(data)
+        loss_fn = lambda: -m.log_marginal_likelihood(data)
     else:
-        loss_fn = lambda: - m.log_marginal_likelihood()
+        loss_fn = lambda: -m.log_marginal_likelihood()
     loss_fn = tf.function(loss_fn)
-        
+
     opt.minimize(loss_fn, variables=m.trainable_variables, options=dict(maxiter=ci_niter(1000)))
 
 
@@ -96,25 +116,32 @@ for m in models:
 #  - prediction functions
 #  - log (marginal) likelihood
 #  - kernel parameters
-#  
-# For the variational models, where we use a ELBO in place of the likelihood, the ELBO should be tight to the likelihood in the cases studied here. 
+#
+# For the variational models, where we use a ELBO in place of the likelihood, the ELBO should be tight to the likelihood in the cases studied here.
 
 # %%
 def plot(m, color, ax):
-    xx = np.linspace(-1, 11, 100)[:,None]
+    xx = np.linspace(-1, 11, 100)[:, None]
     mu, var = m.predict_y(xx)
     ax.plot(xx, mu, color, lw=2)
-    ax.fill_between(xx[:,0], mu[:,0] -  2*np.sqrt(var[:,0]), mu[:,0] +  2*np.sqrt(var[:,0]), color=color, alpha=0.2)
-    ax.plot(X, Y, 'kx', mew=2)
+    ax.fill_between(
+        xx[:, 0],
+        mu[:, 0] - 2 * np.sqrt(var[:, 0]),
+        mu[:, 0] + 2 * np.sqrt(var[:, 0]),
+        color=color,
+        alpha=0.2,
+    )
+    ax.plot(X, Y, "kx", mew=2)
     ax.set_xlim(-1, 11)
 
-f, ax = plt.subplots(3,2,sharex=True, sharey=True, figsize=(12,9))
-plot(m1, 'C0', ax[0,0])
-plot(m2, 'C1', ax[1,0])
-plot(m3, 'C2', ax[0,1])
-plot(m4, 'C3', ax[1,1])
-plot(m5, 'C4', ax[2,0])
-plot(m6, 'C5', ax[2,1])
+
+f, ax = plt.subplots(3, 2, sharex=True, sharey=True, figsize=(12, 9))
+plot(m1, "C0", ax[0, 0])
+plot(m2, "C1", ax[1, 0])
+plot(m3, "C2", ax[0, 1])
+plot(m4, "C3", ax[1, 1])
+plot(m5, "C4", ax[2, 0])
+plot(m6, "C5", ax[2, 1])
 
 # %% [markdown]
 # Here are the kernels and likelihoods, which show the fitted kernel parameters and noise variance:

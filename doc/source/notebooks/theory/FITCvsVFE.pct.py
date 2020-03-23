@@ -23,13 +23,21 @@ import gpflow
 import tensorflow as tf
 from gpflow.ci_utils import ci_niter  # to speed up automated testing of this notebook
 import matplotlib.pyplot as plt
+
 # %matplotlib inline
 
-from FITCvsVFE import (getTrainingTestData, printModelParameters, plotPredictions,
-                       repeatMinimization, stretch, plotComparisonFigure)
+from FITCvsVFE import (
+    getTrainingTestData,
+    printModelParameters,
+    plotPredictions,
+    repeatMinimization,
+    stretch,
+    plotComparisonFigure,
+)
 
 import logging
-#logging.disable(logging.WARN)  # do not clutter up the notebook with optimization warnings
+
+# logging.disable(logging.WARN)  # do not clutter up the notebook with optimization warnings
 
 # %% [markdown]
 # First, we load the training data and plot it together with the exact GP solution (using the `GPR` model):
@@ -38,27 +46,35 @@ import logging
 # Load the training data:
 Xtrain, Ytrain, Xtest, Ytest = getTrainingTestData()
 
+
 def getKernel():
     return gpflow.kernels.SquaredExponential()
+
 
 # Run exact inference on training data:
 exact_model = gpflow.models.GPR((Xtrain, Ytrain), kernel=getKernel())
 
+
 @tf.function
 def objective_closure():
-    return - exact_model.log_marginal_likelihood()
+    return -exact_model.log_marginal_likelihood()
+
 
 opt = gpflow.optimizers.Scipy()
-opt.minimize(objective_closure, exact_model.trainable_variables,
-             method='L-BFGS-B',
-             options=dict(maxiter=ci_niter(20000)), tol=1e-11)
+opt.minimize(
+    objective_closure,
+    exact_model.trainable_variables,
+    method="L-BFGS-B",
+    options=dict(maxiter=ci_niter(20000)),
+    tol=1e-11,
+)
 
 print("Exact model parameters:")
 printModelParameters(exact_model)
 
-figA, ax = plt.subplots(1,1)
-ax.plot(Xtrain, Ytrain, 'ro')
-plotPredictions(ax, exact_model, color='g')
+figA, ax = plt.subplots(1, 1)
+ax.plot(Xtrain, Ytrain, "ro")
+plotPredictions(ax, exact_model, color="g")
 
 
 # %%
@@ -73,8 +89,7 @@ def initializeHyperparametersFromExactSolution(sparse_model):
 
 # %%
 # Train VFE model initialized from the perfect solution.
-VFEmodel = gpflow.models.SGPR((Xtrain, Ytrain), kernel=getKernel(),
-                              inducing_variable=Xtrain.copy())
+VFEmodel = gpflow.models.SGPR((Xtrain, Ytrain), kernel=getKernel(), inducing_variable=Xtrain.copy())
 
 initializeHyperparametersFromExactSolution(VFEmodel)
 
@@ -84,8 +99,9 @@ printModelParameters(VFEmodel)
 
 # %%
 # Train FITC model initialized from the perfect solution.
-FITCmodel = gpflow.models.GPRFITC((Xtrain, Ytrain), kernel=getKernel(),
-                                  inducing_variable=Xtrain.copy())
+FITCmodel = gpflow.models.GPRFITC(
+    (Xtrain, Ytrain), kernel=getKernel(), inducing_variable=Xtrain.copy()
+)
 
 initializeHyperparametersFromExactSolution(FITCmodel)
 
@@ -105,13 +121,31 @@ VFEiters = FITCcb.n_iters
 VFElog_likelihoods = stretch(len(VFEiters), VFEcb.log_likelihoods)
 VFEhold_out_likelihood = stretch(len(VFEiters), VFEcb.hold_out_likelihood)
 
-axes[0,0].set_title('VFE', loc='center', fontdict = {'fontsize': 22})
-plotComparisonFigure(Xtrain, VFEmodel, exact_model, axes[0,0], axes[1,0], axes[2,0],
-                     VFEiters, VFElog_likelihoods, VFEhold_out_likelihood)
+axes[0, 0].set_title("VFE", loc="center", fontdict={"fontsize": 22})
+plotComparisonFigure(
+    Xtrain,
+    VFEmodel,
+    exact_model,
+    axes[0, 0],
+    axes[1, 0],
+    axes[2, 0],
+    VFEiters,
+    VFElog_likelihoods,
+    VFEhold_out_likelihood,
+)
 
-axes[0,1].set_title('FITC', loc='center', fontdict = {'fontsize': 22})
-plotComparisonFigure(Xtrain, FITCmodel, exact_model, axes[0,1], axes[1,1], axes[2,1],
-                     FITCcb.n_iters, FITCcb.log_likelihoods, FITCcb.hold_out_likelihood)
+axes[0, 1].set_title("FITC", loc="center", fontdict={"fontsize": 22})
+plotComparisonFigure(
+    Xtrain,
+    FITCmodel,
+    exact_model,
+    axes[0, 1],
+    axes[1, 1],
+    axes[2, 1],
+    FITCcb.n_iters,
+    FITCcb.log_likelihoods,
+    FITCcb.hold_out_likelihood,
+)
 
 # %% [markdown]
 # A more detailed discussion of the comparison between these sparse approximations can be found in [Understanding Probabilistic Sparse Gaussian Process Approximations](http://papers.nips.cc/paper/6477-understanding-probabilistic-sparse-gaussian-process-approximations) by Bauer, van der Wilk, and Rasmussen (2017).

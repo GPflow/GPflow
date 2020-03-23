@@ -107,9 +107,8 @@ def get_likelihood(likelihood_setup):
 
 
 def test_no_missing_likelihoods():
-    all_likelihood_types = Likelihood.__subclasses__()
     tested_likelihood_types = [get_likelihood(l).__class__ for l in likelihood_setups]
-    for likelihood_class in all_likelihood_types:
+    for likelihood_class in gpflow.ci_utils.subclasses(Likelihood):
         if likelihood_class in tested_likelihood_types:
             continue  # already tested
         if likelihood_class is ScalarLikelihood:
@@ -119,7 +118,10 @@ def test_no_missing_likelihoods():
         if likelihood_class is MonteCarloLikelihood:
             continue  # abstract base class
         if issubclass(likelihood_class, MonteCarloLikelihood):
-            continue  # TODO
+            if likelihood_class is GaussianMC:
+                continue  # tested explicitly by test_montecarlo_*
+            if likelihood_class is Softmax:
+                continue  # tested explicitly by test_softmax_{y_shape_assert,bernoulli_equivalence}
         assert False, f"no test for likelihood class {likelihood_class}"
 
 
