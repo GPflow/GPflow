@@ -24,13 +24,13 @@ from ..kernels import Kernel
 from ..likelihoods import Likelihood
 from ..mean_functions import MeanFunction
 from ..utilities import to_default_float
-from .model import Data, GPModel, MeanAndVariance
+from .model import InputData, RegressionData, GPModel, MeanAndVariance
 
 
 class GPMC(GPModel):
     def __init__(
         self,
-        data: Data,
+        data: RegressionData,
         kernel: Kernel,
         likelihood: Likelihood,
         mean_function: Optional[MeanFunction] = None,
@@ -79,7 +79,7 @@ class GPMC(GPModel):
 
         return tf.reduce_sum(self.likelihood.log_prob(F, Y_data))
 
-    def predict_f(self, Xnew: tf.Tensor, full_cov=False, full_output_cov=False) -> MeanAndVariance:
+    def predict_f(self, Xnew: InputData, full_cov=False, full_output_cov=False) -> MeanAndVariance:
         """
         Xnew is a data matrix, point at which we want to predict
 

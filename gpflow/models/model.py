@@ -27,8 +27,9 @@ from ..likelihoods import Likelihood, SwitchedLikelihood
 from ..mean_functions import MeanFunction, Zero
 from ..utilities import ops, to_default_float
 
-Data = TypeVar("Data", Tuple[tf.Tensor, tf.Tensor], tf.Tensor)
-DataPoint = tf.Tensor
+InputData = tf.Tensor
+OutputData = tf.Tensor
+RegressionData = Tuple[InputData, OutputData]
 MeanAndVariance = Tuple[tf.Tensor, tf.Tensor]
 
 
@@ -145,13 +146,13 @@ class GPModel(BayesianModel):
 
     @abc.abstractmethod
     def predict_f(
-        self, Xnew: DataPoint, full_cov: bool = False, full_output_cov: bool = False
+        self, Xnew: InputData, full_cov: bool = False, full_output_cov: bool = False
     ) -> MeanAndVariance:
         raise NotImplementedError
 
     def predict_f_samples(
         self,
-        Xnew: DataPoint,
+        Xnew: InputData,
         num_samples: Optional[int] = None,
         full_cov: bool = True,
         full_output_cov: bool = False,
@@ -159,13 +160,14 @@ class GPModel(BayesianModel):
         """
         Produce samples from the posterior latent function(s) at the input points.
 
-        :param Xnew: DataPoint
-            Input locations at which to draw samples
+        :param Xnew: InputData
+            Input locations at which to draw samples, shape [..., N, D]
+            where N is the number of rows and D is the input dimension of each point.
         :param num_samples:
             Number of samples to draw.
             If `None`, a single sample is drawn and the return shape is [..., N, P],
             for any positive integer the return shape contains an extra batch
-            dimension, [..., S, N, P], with S = num_samples.
+            dimension, [..., S, N, P], with S = num_samples and P is the number of outputs.
         :param full_cov:
             If True, draw correlated samples over the inputs. Computes the Cholesky over the
             dense covariance matrix of size [num_data, num_data].
@@ -201,7 +203,7 @@ class GPModel(BayesianModel):
         return samples  # [..., (S), N, P]
 
     def predict_y(
-        self, Xnew: DataPoint, full_cov: bool = False, full_output_cov: bool = False
+        self, Xnew: InputData, full_cov: bool = False, full_output_cov: bool = False
     ) -> MeanAndVariance:
         """
         Compute the mean and variance of the held-out data at the input points.
@@ -210,7 +212,7 @@ class GPModel(BayesianModel):
         return self.likelihood.predict_mean_and_var(f_mean, f_var)
 
     def predict_log_density(
-        self, data: Data, full_cov: bool = False, full_output_cov: bool = False
+        self, data: RegressionData, full_cov: bool = False, full_output_cov: bool = False
     ):
         """
         Compute the log density of the data at the new data points.
