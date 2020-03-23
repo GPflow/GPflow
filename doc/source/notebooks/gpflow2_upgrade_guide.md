@@ -161,16 +161,15 @@ For example:
 
 ## Parameter Values
 
-GPflow’s `Parameter.value` has changed from a property to a method.
+In GPflow 1, `Parameter.value` was a property that returned the numpy (`np.ndarray`) representation of the value of the Parameter.
+
+In GPflow 2, `Parameter` behaves similar to TensorFlow's `tf.Variable`: `Parameter.value()` is a method that returns a constant tf.Tensor with the current (constrained) value of the Parameter. To obtain the *numpy* representation, use the `Parameter.numpy()` method:
 
 For example:
 ```diff
 -std_dev = np.sqrt(model.likelihood.variance.value)
-+std_dev = np.sqrt(model.likelihood.variance.value())
++std_dev = np.sqrt(model.likelihood.variance.numpy())
 ```
-
-However, in many cases it is not necessary to call `value` anymore, since `Parameter` just behaves like a TensorFlow tensor.
-
 
 
 ## Model Class
