@@ -80,6 +80,7 @@ def test_compile_monitor(model, tmp_path):
 
 
 def test_ImageToTensorBoard(tmp_path):
+    """ Smoke test `ImageToTensorBoard` in Eager and Compiled mode """
     tmp_path = str(tmp_path)
 
     def plotting_cb(fig, axes):
@@ -147,6 +148,7 @@ def test_ScalarToTensorBoard_with_wrong_kw_argument(tmp_path):
 
 
 def test_ModelToTensboard(model, tmp_path):
+    """ Smoke test `ModelToTensorBoard` in Eager and Compiled mode """
     tmp_path = str(tmp_path)
     task = ModelToTensorBoard(tmp_path, model)
     compiled_task = tf.function(task.__call__)

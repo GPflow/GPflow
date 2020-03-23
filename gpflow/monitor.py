@@ -37,7 +37,8 @@ class MonitorTask(ABC):
 
     def __init__(self, period: int = 1):
         """
-        :param period: Interval between triggering the task.
+        :param period: defines how often to run the task; it will execute every `period`th step.
+            For large values of `period` the task will be less frequently run.
         """
         self.current_step = 0
         self.period = period
@@ -71,8 +72,8 @@ class ToTensorBoard(MonitorTask):
         """
         :param log_dir: directory in which to store the tensorboard files.
             Can be a nested. E.g. ./logs/my_run/
-        :param period: interval at which to run the task.
-            For large values of`period` the task will be less frequently ran.
+        :param period: defines how often to run the task; it will execute every `period`th step.
+            For large values of `period` the task will be less frequently run.
         """
         super().__init__(period)
         self.file_writer = tf.summary.create_file_writer(log_dir)
@@ -89,7 +90,8 @@ class ModelToTensorBoard(ToTensorBoard):
 
     By default, it writes to the TensorBoard all model parameters that are scalars,
     for parameter arrays (e.g. kernel.lengthscales) the values are sent to the TensorBoard
-    if the array is smaller than 3. This behaviour can be adjusted using `max_size`.
+    if the array has no more than `max_size` (default: 3) elements.
+    This behaviour can be adjusted using `max_size`.
     """
 
     def __init__(
@@ -106,8 +108,8 @@ class ModelToTensorBoard(ToTensorBoard):
         :param model: model to be monitord.
         :param max_size: maximum size of arrays (incl.) to store each
             element of the array independently as a scalar in the TensorBoard.
-        :param period: interval at which to run the task.
-            For large values of`period` the task will be less frequently ran.
+        :param period: defines how often to run the task; it will execute every `period`th step.
+            For large values of `period` the task will be less frequently run.
         :param extra_keywords: pass additional keywords to be monitored.
             If the parameter's name includes any of the extra keywords specified it
             will be monitored as well. By default, parameters that match the `kernel` or
@@ -141,11 +143,21 @@ class ScalarToTensorBoard(ToTensorBoard):
     def __init__(self, log_dir: str, callback: Callable[[], float], name: str, period: int = 1):
         """
         :param log_dir: directory in which to store the tensorboard files.
-            Can be a nested: for example, './logs/my_run/'.
+            For example, './logs/my_run/'.
         :param callback: callback to be executed and result written to TensorBoard.
+            A callback can have arguments (e.g. data) passed to the function using
+            keyword arguments.
+            For example:
+            ```
+            lambda cb(x=None): 2 * x
+            task = ScalarToTensorBoard(logdir, cb, "callback")
+
+            # specify the argument of the function using kwargs, the names need to match.
+            task(step, x=1)
+            ```
         :param name: name used in TensorBoard.
-        :param period: interval at which to run the task.
-            For large values of`period` the task will be less frequently ran.
+        :param period: defines how often to run the task; it will execute every `period`th step.
+            For large values of `period` the task will be less frequently run.
         """
         super().__init__(log_dir, period)
         self.name = name
@@ -171,8 +183,8 @@ class ImageToTensorBoard(ToTensorBoard):
             Can be a nested: for example, './logs/my_run/'.
         :param plotting_function: function performing the plotting.
         :param name: name used in TensorBoard.
-        :param period: interval at which to run the task.
-            For large values of`period` the task will be less frequently ran.
+        :param period: defines how often to run the task; it will execute every `period`th step.
+            For large values of `period` the task will be less frequently run.
         :params fig_kw: Keywords to be passed to Figure constructor, such as `figsize`.
         :params subplots_kw: Keywords to be passed to figure.subplots constructor, such as
             `nrows`, `ncols`, `sharex`, `sharey`. By default the default values 
