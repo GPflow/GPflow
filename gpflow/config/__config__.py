@@ -214,8 +214,8 @@ def set_config(new_config: Config):
 
 def set_default_int(value_type):
     """
-    Sets default integer type. Available options are np.int16, np.int32,
-    or np.int64.
+    Sets default integer type. Available options are ``np.int16``, ``np.int32``,
+    or ``np.int64``.
     """
     try:
         tf_dtype = tf.as_dtype(value_type)  # Test that it's a tensorflow-valid dtype
