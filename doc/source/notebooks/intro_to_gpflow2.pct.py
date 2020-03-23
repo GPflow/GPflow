@@ -223,8 +223,8 @@ simple_training_loop(model, epochs=10, logging_epoch_freq=2)
 # %% [markdown]
 # ## Monitoring
 #
-# We can monitor the training procedure using gpflow monitoring utilities.
-# For a more detailed tutorial see [GPflow monitoring notebook](./basics/monitoring.ipynb).
+# `gpflow.monitor` provides a thin wrapper on top of tf.summary that makes it easy to monitor the training procedure.
+# For a more detailed tutorial see the [monitoring notebook](./basics/monitoring.ipynb).
 
 # %%
 from gpflow.monitor import (

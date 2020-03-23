@@ -40,7 +40,7 @@ from gpflow.monitor import (
 )
 
 # %% [markdown]
-# ## Setup data and model
+# ## Set up data and model
 
 # %%
 # Define some configuration constants.
@@ -57,7 +57,7 @@ Y = np.sin(X) + 0.5 * np.cos(X) + np.random.randn(*X.shape) * noise_std  # [N, 1
 plt.plot(X, Y, "o")
 
 # %%
-# Setup model and print
+# Set up model and print
 
 kernel = gpflow.kernels.SquaredExponential(lengthscales=[1.0, 2.0]) + gpflow.kernels.Linear()
 model = gpflow.models.GPR((X, Y), kernel, noise_variance=noise_std ** 2)
@@ -65,7 +65,7 @@ model
 
 
 # %%
-# We define a function that plot's the model's prediction (in the form of samples) togheter with the data.
+# We define a function that plots the model's prediction (in the form of samples) together with the data.
 # Importantly, this function has no other argument than `fig: matplotlib.figure.Figure` and `axes: matplotlib.figure.Axes`.
 
 
@@ -83,22 +83,22 @@ plot_prediction(fig, ax)
 plt.show()
 
 # %% [markdown]
-# ## Setup monitoring tasks
+# ## Set up monitoring tasks
 #
-# We now define the `gpflow.utilities.monitor.MonitorTask`s that will be executed during the optimisation.
+# We now define the `MonitorTask`s that will be executed during the optimisation.
 # For this tutorial we set up three tasks:
 # - `ModelToTensorBoard`: writes the models hyper-parameters such as `likelihood.variance` and `kernel.lengthscales` to a TensorBoard.
 # - `ImageToTensorBoard`: writes custom matplotlib images to a TensorBoard.
-# - `ScalarToTensorBoard`: writes any scalar value to a TensorBoard. Here, we use it to write the model's `objective`.
+# - `ScalarToTensorBoard`: writes any scalar value to a TensorBoard. Here, we use it to write the model's training objective.
 
 # %%
 log_dir = "logs"  # Directory where TensorBoard files will be written.
 model_task = ModelToTensorBoard(log_dir, model)
 image_task = ImageToTensorBoard(log_dir, plot_prediction, "image_samples")
-lml_task = ScalarToTensorBoard(log_dir, lambda: model.log_likelihood().numpy(), "lml")
+lml_task = ScalarToTensorBoard(log_dir, lambda: model.log_likelihood(), "lml")
 
 # %% [markdown]
-# Finally, we collect all these tasks in a `TasksCollection` object. This simple wrapper will call each task sequentially.
+# Finally, we collect all these tasks in a `MonitorCollection` object. This simple wrapper will call each task sequentially.
 
 # %%
 monitor = MonitorCollection([model_task, image_task, lml_task])
@@ -117,18 +117,18 @@ for step in range(optimisation_steps):
     monitor(step)  # <-- run the monitoring
 
 # %% [markdown]
-# TensorBoard is accessable through the browser, after lauching the servers `tensorboard --logdir ${logdir}`. See [TF docs](https://www.tensorflow.org/tensorboard/get_started) for more info.
+# TensorBoard is accessible through the browser, after launching the server by running `tensorboard --logdir ${logdir}`. See the [TensorFlow documentation on TensorBoard](https://www.tensorflow.org/tensorboard/get_started) for more information.
 
 
 # %% [markdown]
-# For optimal performance, we can also wrap the monitor call inside `tf.function`.
+# For optimal performance, we can also wrap the monitor call inside `tf.function`:
 
 # %%
 opt = tf.optimizers.Adam()
 
 model_task = ModelToTensorBoard(log_dir, model)
 lml_task = ScalarToTensorBoard(log_dir, lambda: model.log_likelihood(), "lml")
-# Note that the `ImageToTensorBoard` task can not be compiled, and is omitted from the collection
+# Note that the `ImageToTensorBoard` task cannot be compiled, and is omitted from the collection
 monitor = MonitorCollection([model_task, lml_task])
 
 

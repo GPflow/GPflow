@@ -48,7 +48,7 @@ class MonitorTask(ABC):
         It calls the 'run' function and sets the current step.
 
         :param step: current step in the optimisation.
-        :param kwargs: additional key-word arguments that can be passed
+        :param kwargs: additional keyword arguments that can be passed
             to the `run` method of the task. This is in particular handy for
             passing keyword argument to the callback of `ScalarToTensorBoard`.
         """
@@ -71,7 +71,7 @@ class ToTensorBoard(MonitorTask):
     def __init__(self, log_dir: str, period: int = 1):
         """
         :param log_dir: directory in which to store the tensorboard files.
-            Can be a nested. E.g. ./logs/my_run/
+            Can be nested, e.g. ./logs/my_run/
         :param period: defines how often to run the task; it will execute every `period`th step.
             For large values of `period` the task will be less frequently run.
         """
@@ -138,7 +138,7 @@ class ModelToTensorBoard(ToTensorBoard):
 
 
 class ScalarToTensorBoard(ToTensorBoard):
-    """ Stores the returns value of a callback in a TensorBoard. """
+    """ Stores the return value of a callback in a TensorBoard. """
 
     def __init__(self, log_dir: str, callback: Callable[[], float], name: str, period: int = 1):
         """
@@ -173,8 +173,8 @@ class ImageToTensorBoard(ToTensorBoard):
         log_dir: str,
         plotting_function: Callable[[Figure, Axes], Figure],
         name: Optional[str] = None,
-        period: int = 1,
         *,
+        period: int = 1,
         fig_kw: Optional[Dict[str, Any]] = None,
         subplots_kw: Optional[Dict[str, Any]] = None,
     ):
@@ -205,10 +205,10 @@ class ImageToTensorBoard(ToTensorBoard):
             self.axes = self.fig.add_subplot(111)
 
     def _clear_axes(self):
-        try:
+        if isinstance(self.axes, np.ndarray):
             for ax in self.axes.flatten():
                 ax.clear()
-        except (AttributeError, TypeError):
+        else:
             self.axes.clear()
 
     def run(self, **unused_kwargs):
