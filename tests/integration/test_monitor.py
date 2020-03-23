@@ -63,7 +63,7 @@ def test_logdir_created(model, tmp_path):
     assert size_after > size_before
 
 
-def test_monitor_inside_tf_function(model, tmp_path):
+def test_compile_monitor(model, tmp_path):
     tmp_path = str(tmp_path)
     monitor = MonitorCollection([ModelToTensorBoard(tmp_path, model)])
 
@@ -97,27 +97,37 @@ def test_ImageToTensorBoard(tmp_path):
     task(0)
 
 
-def test_ScalarToTensorBoard(tmp_path):
+def test_ScalarToTensorBoard(tmp_path, capfd):
+    """ Smoke test `ScalarToTensorBoard` in Eager and Compiled mode """
     tmp_path = str(tmp_path)
 
     def scalar_cb():
         return 0.0
 
     task = ScalarToTensorBoard(tmp_path, scalar_cb, "scalar")
+    compiled_task = tf.function(task.__call__)
+
     task(0)
+    compiled_task(i)
+    
 
 
 def test_ScalarToTensorBoard_with_argument(tmp_path):
+    """ Smoke test `ScalarToTensorBoard` in Eager and Compiled mode """
     tmp_path = str(tmp_path)
 
     def scalar_cb(x=None):
         return 2 * x
 
     task = ScalarToTensorBoard(tmp_path, scalar_cb, "scalar")
+    compiled_task = tf.function(task.__call__)
     task(0, x=1.0)
+    compiled_task(0, x=1.0)
 
     tasks = MonitorCollection([task])
+    compiled_tasks = tf.function(tasks.__call__)
     tasks(0, x=1.0)
+    compiled_tasks(0, x=1.0)
 
 
 def test_ScalarToTensorBoard_with_wrong_kw_argument(tmp_path):
@@ -128,12 +138,18 @@ def test_ScalarToTensorBoard_with_wrong_kw_argument(tmp_path):
 
     task = ScalarToTensorBoard(tmp_path, scalar_cb, "scalar")
     tasks = MonitorCollection([task])
+    compiled_tasks = tf.function(tasks.__call__)
 
     with pytest.raises(TypeError, match=r".*got an unexpected keyword argument 'y'.*"):
         tasks(0, y=1.0)
+
+    with pytest.raises(TypeError, match=r".*got an unexpected keyword argument 'y'.*"):
+        compiled_tasks(0, y=1.0)
 
 
 def test_ModelToTensboard(model, tmp_path):
     tmp_path = str(tmp_path)
     task = ModelToTensorBoard(tmp_path, model)
+    compiled_task = tf.function(task.__call__)
     task(0)
+    compiled_task(0)

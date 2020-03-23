@@ -116,44 +116,9 @@ class ModelToTensorBoard(ToTensorBoard):
         :param name: identifier used in tensorboard
         :param value: value to be stored in tensorboard
         """
-        # tf.summary.scalar("hello", self.model.likelihood.variance, step=self.current_step)
-        # tf.print("hello")
-        # if isinstance(value, float):
-        # print(tf.size(value))
-        # tf.print(tf.size(value))
         value = tf.reshape(value, (-1,))
-        if tf.size(value) > self.max_size:
-            return
-
-        i = 0
-        for v in value:
-            self._summarize_scalar_parameter(f"{name}[{i}]", v)
-            i += 1
-        # if tf.size(value) == 1:
-        #     print(value)
-        #     tf.print(value)
-        #     self._summarize_scalar_parameter(name, value)
-        # if tf.size(value) <= self.max_size:
-        #     # elif isinstance(value, np.ndarray) and value.size <= self.max_size:
-        #     self._summarize_array_parameter(name, value)
-
-    def _summarize_array_parameter(self, name, value):
-        value = tf.reshape(value, (-1,))
-        # indices = tf.range(tf.size(value))
-
-        # def fn(tuple):
-        #     i, v = tuple
-        #     self._summarize_scalar_parameter(f"{name}[{i}]", v)
-
-        # tf.map_fn(fn, (indices, value))
-        i = 0
-        for v in value:
-            print(v)
-            self._summarize_scalar_parameter(f"{name}[{i}]", v)
-            i += 1
-
-    def _summarize_scalar_parameter(self, name, value):
-        tf.summary.scalar(name, value, step=self.current_step)
+        for i in tf.range(tf.minimum(tf.size(value), self.max_size)):
+            tf.summary.scalar(f"{name}[{i}]", value[i], step=self.current_step)
 
 
 class ScalarToTensorBoard(ToTensorBoard):
@@ -173,6 +138,7 @@ class ScalarToTensorBoard(ToTensorBoard):
         self.callback = callback
 
     def run(self, **kwargs):
+        print("run")
         tf.summary.scalar(self.name, self.callback(**kwargs), step=self.current_step)
 
 
