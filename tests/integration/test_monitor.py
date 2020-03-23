@@ -84,10 +84,10 @@ def test_ImageToTensorBoard(tmp_path):
     tmp_path = str(tmp_path)
 
     def plotting_cb(fig, axes):
-        axes[0, 0].plot(np.random.randn(100), np.random.randn(100), ".")
-        axes[1, 0].plot(np.random.randn(100), np.random.randn(100), ".")
-        axes[0, 1].plot(np.random.randn(100), np.random.randn(100), ".")
-        axes[1, 1].plot(np.random.randn(100), np.random.randn(100), ".")
+        axes[0, 0].plot(np.random.randn(2), np.random.randn(2), ".")
+        axes[1, 0].plot(np.random.randn(2), np.random.randn(2), ".")
+        axes[0, 1].plot(np.random.randn(2), np.random.randn(2), ".")
+        axes[1, 1].plot(np.random.randn(2), np.random.randn(2), ".")
 
     fig_kwargs = dict(figsize=(10, 10))
     subplots_kwargs = dict(sharex=True, nrows=2, ncols=2)
@@ -147,7 +147,7 @@ def test_ScalarToTensorBoard_with_wrong_kw_argument(tmp_path):
         compiled_tasks(0, y=1.0)
 
 
-def test_ModelToTensboard(model, tmp_path):
+def test_ModelToTensorboard(model, tmp_path):
     """ Smoke test `ModelToTensorBoard` in Eager and Compiled mode """
     tmp_path = str(tmp_path)
     task = ModelToTensorBoard(tmp_path, model)
