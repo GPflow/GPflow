@@ -106,9 +106,8 @@ def get_likelihood(likelihood_setup):
 
 
 def test_no_missing_likelihoods():
-    all_likelihood_types = Likelihood.__subclasses__()
     tested_likelihood_types = [get_likelihood(l).__class__ for l in likelihood_setups]
-    for likelihood_class in all_likelihood_types:
+    for likelihood_class in gpflow.ci_utils.subclasses(Likelihood):
         if likelihood_class in tested_likelihood_types:
             continue  # tested by parametrized tests
         if likelihood_class is SwitchedLikelihood:
