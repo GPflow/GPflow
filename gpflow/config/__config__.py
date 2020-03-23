@@ -2,14 +2,15 @@
 This is a private module that manages GPflow configuration.
 
 The module provides functions to modify default settings of GPflow, such as:
-the standard float precision and integer type, the positive transformation
-type, a value for a minimum shift from zero for the positive transformation,
-an output format for the summary printing.
+- the standard float precision and integer type
+- the type of positive transformation
+- a value for a minimum shift from zero for the positive transformation
+- an output format for `gpflow.utilities.print_summary`
 
 The module holds global configuration :class:`Config` variable that stores all
 setting values.
 
-The environment variables is an alternative way for changing default GPflow
+Environment variables are an alternative way for changing the default GPflow
 configuration.
 
 .. warning::
@@ -27,7 +28,7 @@ Full set of environment variables and available options:
     GPFLOW_JITTER: Any positive float number
     ```
 
-The user also can change GPflow configuration temporarily with a context
+The user can also change the GPflow configuration temporarily with a context
 manager :func:`as_context`:
 
 >>> config = Config(jitter=1e-5)
@@ -183,9 +184,9 @@ def default_float():
 
 def default_jitter():
     """
-    The jitter is a constant that GPflow adds to diagonals of matrices
-    to achieve numerical stability of the system when conditional number of
-    matrices is large and therefore matrix is nearly singular.
+    The jitter is a constant that GPflow adds to the diagonal of matrices
+    to achieve numerical stability of the system when the condition number 
+    of the associated matrices is large, and therefore the matrices nearly singular.
     """
     return config().jitter
 
@@ -201,7 +202,7 @@ def default_positive_minimum():
 
 
 def default_summary_fmt():
-    """Summary printing format."""
+    """Summary printing format as understood by :mod:`tabulate` or a special case "notebook"."""
     return config().summary_fmt
 
 
@@ -229,8 +230,8 @@ def set_default_int(value_type):
 
 def set_default_float(value_type):
     """
-    Sets default float type. Available options are np.float16, np.float32,
-    or np.float64.
+    Sets default float type. Available options are `np.float16`, `np.float32`,
+    or `np.float64`.
     """
     try:
         tf_dtype = tf.as_dtype(value_type)  # Test that it's a tensorflow-valid dtype
@@ -246,9 +247,9 @@ def set_default_float(value_type):
 def set_default_jitter(value: float):
     """
     Sets constant jitter value.
-    The jitter is a constant that GPflow adds to diagonals of matrices
-    to achieve numerical stability of the system when conditional number of
-    matrices is large and therefore matrix is nearly singular.
+    The jitter is a constant that GPflow adds to the diagonal of matrices
+    to achieve numerical stability of the system when the condition number 
+    of the associated matrices is large, and therefore the matrices nearly singular.
     """
     if not (
         isinstance(value, (tf.Tensor, np.ndarray)) and len(value.shape) == 0
@@ -264,7 +265,7 @@ def set_default_jitter(value: float):
 def set_default_positive_bijector(value: str):
     """
     Sets positive bijector type.
-    There two options: "exp" and "softplus".
+    There are currently two options implemented: "exp" and "softplus".
     """
     type_map = positive_bijector_type_map()
     if isinstance(value, str):
