@@ -373,9 +373,7 @@ def objective():
 
 # %%
 opt = gpflow.optimizers.Scipy()
-opt.minimize(
-    objective, variables=m.trainable_variables, options=dict(maxiter=5000)
-)
+opt.minimize(objective, variables=m.trainable_variables, options=dict(maxiter=5000))
 
 gpflow.utilities.print_summary(m, fmt="notebook")
 
@@ -402,9 +400,7 @@ def objective_ip():
 
 # %%
 opt = gpflow.optimizers.Scipy()
-opt.minimize(
-    objective_ip, variables=m_ip.trainable_variables, options=dict(maxiter=2500)
-)
+opt.minimize(objective_ip, variables=m_ip.trainable_variables, options=dict(maxiter=2500))
 
 gpflow.utilities.print_summary(m_ip, fmt="notebook")
 

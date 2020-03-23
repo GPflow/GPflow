@@ -203,9 +203,7 @@ def objective():
     return -m.log_marginal_likelihood()
 
 
-opt.minimize(
-    objective, variables=m.trainable_variables, options=dict(maxiter=25)
-)
+opt.minimize(objective, variables=m.trainable_variables, options=dict(maxiter=25))
 # in practice, the optimization needs around 250 iterations to converge
 
 # %% [markdown]
