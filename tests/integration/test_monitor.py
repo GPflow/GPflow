@@ -108,7 +108,7 @@ def test_ScalarToTensorBoard(tmp_path, capfd):
     compiled_task = tf.function(task.__call__)
 
     task(0)
-    compiled_task(i)
+    compiled_task(0)
     
 
 

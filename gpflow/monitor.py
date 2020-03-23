@@ -92,7 +92,14 @@ class ModelToTensorBoard(ToTensorBoard):
     if the array is smaller than 3. This behaviour can be adjusted using `max_size`.
     """
 
-    def __init__(self, log_dir: str, model: BayesianModel, max_size: int = 3, period: int = 1):
+    def __init__(
+        self,
+        log_dir: str,
+        model: BayesianModel,
+        max_size: int = 3,
+        period: int = 1,
+        extra_keywords: List[str] = [],
+    ):
         """
         :param log_dir: directory in which to store the tensorboard files.
             Can be a nested: for example, './logs/my_run/'.
@@ -101,15 +108,22 @@ class ModelToTensorBoard(ToTensorBoard):
             element of the array independently as a scalar in the TensorBoard.
         :param period: interval at which to run the task.
             For large values of`period` the task will be less frequently ran.
+        :param extra_keywords: pass additional keywords to be monitored.
+            If the parameter's name includes any of the extra keywords specified it
+            will be monitored as well. By default, parameters that match the `kernel` or
+            `likelihood` keyword are monitored.
         """
         super().__init__(log_dir, period)
         self.model = model
         self.max_size = max_size
+        self.keywords_to_monitor = ["kernel", "likelihood"] + extra_keywords
 
     def run(self, **unused_kwargs):
-        for k, v in parameter_dict(self.model).items():
-            name = k.lstrip(".")  # keys are prepended with a '.', which we strip
-            self._summarize_parameter(name, v)
+        for name, parameter in parameter_dict(self.model).items():
+            # check if the parameter name matches any of the specified keywords
+            if any(keyword in name for keyword in self.keywords_to_monitor):
+                name = name.lstrip(".")  # keys are prepended with a '.', which we strip
+                self._summarize_parameter(name, parameter)
 
     def _summarize_parameter(self, name: str, value: Union[float, np.ndarray]):
         """
@@ -124,7 +138,9 @@ class ModelToTensorBoard(ToTensorBoard):
 class ScalarToTensorBoard(ToTensorBoard):
     """ Stores the returns value of a callback in a TensorBoard. """
 
-    def __init__(self, log_dir: str, callback: Callable[[], float], name: str, period: int = 1):
+    def __init__(
+        self, log_dir: str, callback: Callable[[], float], name: str, period: int = 1
+    ):
         """
         :param log_dir: directory in which to store the tensorboard files.
             Can be a nested: for example, './logs/my_run/'.
@@ -138,7 +154,6 @@ class ScalarToTensorBoard(ToTensorBoard):
         self.callback = callback
 
     def run(self, **kwargs):
-        print("run")
         tf.summary.scalar(self.name, self.callback(**kwargs), step=self.current_step)
 
 
@@ -218,4 +233,3 @@ class MonitorCollection:
     def __call__(self, step, **kwargs):
         for task in self.tasks:
             task(step, **kwargs)
-

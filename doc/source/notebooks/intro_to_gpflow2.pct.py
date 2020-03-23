@@ -229,11 +229,11 @@ simple_training_loop(model, epochs=10, logging_epoch_freq=2)
 # %%
 from intro_to_gpflow2_plotting import plotting_regression
 
-from gpflow.utilities.monitor import (
-    ImageToTensorBoardTask,
-    ModelToTensorBoardTask,
-    ScalarToTensorBoardTask,
-    TasksCollection,
+from gpflow.monitor import (
+    ImageToTensorBoard,
+    ModelToTensorBoard,
+    ScalarToTensorBoard,
+    MonitorCollection,
 )
 
 samples_input = np.linspace(0, 10, 100).reshape(-1, 1)
@@ -247,12 +247,12 @@ def plot_model(fig, ax):
 
 
 output_logdir = enumerated_logdir()
-model_task = ModelToTensorBoardTask(output_logdir, model)
-image_task = ImageToTensorBoardTask(output_logdir, plot_model, "samples_image")
-elbo_task = ScalarToTensorBoardTask(
+model_task = ModelToTensorBoard(output_logdir, model)
+image_task = ImageToTensorBoard(output_logdir, plot_model, "samples_image")
+elbo_task = ScalarToTensorBoard(
     output_logdir, lambda data=None: model.elbo(data).numpy(), "elbo"
 )
-monitor = TasksCollection([model_task, image_task, elbo_task])
+monitor = MonitorCollection([model_task, image_task, elbo_task])
 
 
 def monitored_training_loop(

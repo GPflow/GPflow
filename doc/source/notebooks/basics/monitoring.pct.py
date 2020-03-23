@@ -28,14 +28,15 @@ import gpflow
 from gpflow.ci_utils import ci_niter
 
 # %% [markdown]
-# The monitoring functionality lives in `gpflow.utilities.monitor`. For now, we import `ModelToTensorBoardTask`, `ImageToTensorBoardTask`, `ScalarToTensorBoardTask` monitoring tasks and `TasksCollection`.
+# The monitoring functionality lives in `gpflow.monitor`.
+# For now, we import `ModelToTensorBoard`, `ImageToTensorBoard`, `ScalarToTensorBoard` monitoring tasks and `MonitorCollection`.
 
 # %%
 from gpflow.monitor import (
-    ModelToTensorBoardTask,
-    ImageToTensorBoardTask,
-    ScalarToTensorBoardTask,
-    TasksCollection,
+    ModelToTensorBoard,
+    ImageToTensorBoard,
+    ScalarToTensorBoard,
+    MonitorCollection,
 )
 
 # %% [markdown]
@@ -86,21 +87,21 @@ plt.show()
 #
 # We now define the `gpflow.utilities.monitor.MonitorTask`s that will be executed during the optimisation.
 # For this tutorial we set up three tasks:
-# - `ModelToTensorBoardTask`: writes the models hyper-parameters such as `likelihood.variance` and `kernel.lengthscales` to a TensorBoard.
-# - `ImageToTensorBoardTask`: writes custom matplotlib images to a TensorBoard.
-# - `ScalarToTensorBoardTask`: writes any scalar value to a TensorBoard. Here, we use it to write the model's `objective`.
+# - `ModelToTensorBoard`: writes the models hyper-parameters such as `likelihood.variance` and `kernel.lengthscales` to a TensorBoard.
+# - `ImageToTensorBoard`: writes custom matplotlib images to a TensorBoard.
+# - `ScalarToTensorBoard`: writes any scalar value to a TensorBoard. Here, we use it to write the model's `objective`.
 
 # %%
 log_dir = "logs"  # Directory where TensorBoard files will be written.
-model_task = ModelToTensorBoardTask(log_dir, model)
-image_task = ImageToTensorBoardTask(log_dir, plot_prediction, "image_samples")
-lml_task = ScalarToTensorBoardTask(log_dir, lambda: model.log_likelihood().numpy(), "lml")
+model_task = ModelToTensorBoard(log_dir, model)
+image_task = ImageToTensorBoard(log_dir, plot_prediction, "image_samples")
+lml_task = ScalarToTensorBoard(log_dir, lambda: model.log_likelihood().numpy(), "lml")
 
 # %% [markdown]
 # Finally, we collect all these tasks in a `TasksCollection` object. This simple wrapper will call each task sequentially.
 
 # %%
-monitor_tasks = TasksCollection([model_task, image_task, lml_task])
+monitor_tasks = MonitorCollection([model_task, image_task, lml_task])
 
 
 # %%
