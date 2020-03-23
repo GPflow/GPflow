@@ -70,7 +70,7 @@ def test_no_kernels_missed(kernel_class):
     if kernel_class in abstract_base_classes:
         return  # cannot test abstract base classes
     if issubclass(kernel_class, kernels.MultioutputKernel):
-        return  # cannot currently test MultioutputKernels
+        return  # TODO: cannot currently test MultioutputKernels - see https://github.com/GPflow/GPflow/issues/1339
     assert False, f"no broadcasting test for kernel class {kernel_class}"
 
 
