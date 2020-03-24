@@ -29,7 +29,7 @@ from .mixins import MCMCTrainingLossMixin
 from .util import inducingpoint_wrapper
 
 
-class SGPMC(GPModel):
+class SGPMC(GPModel, MCMCTrainingLossMixin):
     r"""
     This is the Sparse Variational GP using MCMC (SGPMC). The key reference is
 
