@@ -23,13 +23,13 @@
 # - extensible, by allowing new interdomain variables and kernels to be specified while reusing exising code where possible,
 # - efficient, by allowing the most efficient custom code path to be specified where desired.
 #
-# Getting to grips with the maths and code can be a bit daunting, so to accompany the documentation there is an in-depth review on [arXiv](https://arxiv.org/abs/2003.01115), which provides a unified mathematical framework, together with a high-level description of software design choices in GPflow.
+# Getting to grips with the maths and code can be a bit daunting, so to accompany the documentation there is an [in-depth review on arXiv](https://arxiv.org/abs/2003.01115), which provides a unified mathematical framework, together with a high-level description of software design choices in GPflow.
 #
 # This notebook shows the various design choices that can be made, to show the reader the flexibility of the framework. This is done in the hope that an example is provided that can be easily adapted to the special case that the reader wants to implement.
 #
 # A reader who just wants to use a multioutput kernel should simply choose the most efficient set of inducing variables.
 #
-# To cite this framework, please reference our [arXiv](https://arxiv.org/abs/2003.01115) paper.
+# To cite this framework, please reference our [arXiv paper](https://arxiv.org/abs/2003.01115).
 # ```
 # @article{GPflow2020multioutput,
 #   author = {{van der Wilk}, Mark and Dutordoir, Vincent and John, ST and

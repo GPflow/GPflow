@@ -145,7 +145,7 @@ To cite GPflow, please reference the [JMLR paper](http://www.jmlr.org/papers/vol
 ```
 
 Since the publication of the GPflow paper, the software has been significantly extended
-with the framework for interdomain approximations and multiouput priors. We review the
+with the framework for interdomain approximations and multioutput priors. We review the
 framework and describe the design in an [arXiv paper](https://arxiv.org/abs/2003.01115),
 which can be cited by users.
 

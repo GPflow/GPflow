@@ -71,8 +71,8 @@ Interdomain variables can greatly improve the effectiveness of a variational app
 `convolutional GPs <notebooks/advanced/convolutional.html>`_. In particular, they are crucial for defining sensible sparse
 approximations for `multioutput GPs <notebooks/advanced/multioutput.html>`_.
 
-GPflow has a unifying design for using multitoutput GPs and specifying interdomain approximations. A review of the
-mathematical background and the resulting software design is described in a paper on `arxiv <https://arxiv.org/abs/2003.01115>`_ [9].
+GPflow has a unifying design for using multioutput GPs and specifying interdomain approximations. A review of the
+mathematical background and the resulting software design is described in a `paper on arXiv <https://arxiv.org/abs/2003.01115>`_ [9].
 
 GPLVM
 """""
@@ -103,7 +103,7 @@ To cite GPflow, please reference the `JMLR paper <http://www.jmlr.org/papers/vol
     }
 
 Since the publication of the GPflow paper, the software has been significantly extended
-with the framework for interdomain approximations and multiouput priors. We review the
+with the framework for interdomain approximations and multioutput priors. We review the
 framework and describe the design in an `arXiv paper <https://arxiv.org/abs/2003.01115>`_
 which can be cited by users.
 
