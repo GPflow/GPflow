@@ -181,7 +181,7 @@ class Likelihood(Module, metaclass=abc.ABCMeta):
         The conditional mean and marginal variance of Yₖ|F
         :param Fmu: mean function evaluation Tensor, with shape [..., latent_dim]
         :param Fvar: variance of function evaluation Tensor, with shape [..., latent_dim]
-        :return mean and variance, both with shape [..., observation_dim]
+        :returns: mean and variance, both with shape [..., observation_dim]
         """
         self.check_latent_dims(Fmu)
         self.check_latent_dims(Fvar)
