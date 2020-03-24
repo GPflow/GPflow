@@ -39,6 +39,7 @@ from gpflow.likelihoods import (
 from gpflow.quadrature import ndiagquad
 from gpflow.config import default_float, default_int
 from gpflow.utilities import to_default_float, to_default_int
+import gpflow.ci_utils
 
 tf.random.set_seed(99012)
 

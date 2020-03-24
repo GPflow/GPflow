@@ -621,6 +621,7 @@ class MultiClass(Likelihood):
         """
         super().__init__(latent_dim=num_classes, observation_dim=None, **kwargs)
         self.num_classes = num_classes
+        self.num_gauss_hermite_points = 20
 
         if invlink is None:
             invlink = RobustMax(self.num_classes)
@@ -820,7 +821,6 @@ class MonteCarloLikelihood(Likelihood):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.num_monte_carlo_points = 100
-        del self.num_gauss_hermite_points
 
     def _mc_quadrature(self, funcs, Fmu, Fvar, logspace: bool = False, epsilon=None, **Ys):
         return ndiag_mc(funcs, self.num_monte_carlo_points, Fmu, Fvar, logspace, epsilon, **Ys)
