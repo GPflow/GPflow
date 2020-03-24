@@ -86,7 +86,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'GPflow'
-copyright = u'2016-2019, James Hensman, Alexander G. de G. Matthews and the GPflow contributors'
+copyright = u'2016-2020, James Hensman, Alexander G. de G. Matthews and the GPflow contributors'
 author = u'James Hensman and Alexander G. de G. Matthews and others'
 
 # The version info for the project you're documenting, acts as replacement for
