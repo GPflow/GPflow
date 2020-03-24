@@ -109,7 +109,7 @@ def pred_log_density(m):
         Ytest = np.full_like(Xtest, y)
         # Predict the log density
         densities.append(m.predict_log_density((Xtest, Ytest)))
-    return np.hstack(densities).T
+    return np.vstack(densities)
 
 
 # %%
@@ -130,7 +130,7 @@ plt.plot(X, Y, "kx", mew=2, scalex=False, scaley=False)
 x_new = 0.5
 Y_new = np.arange(np.max(Y_data + 1)).reshape([-1, 1])
 X_new = np.full_like(Y_new, x_new)
-# for predict_density x and y need to have the same number of rows
+# for predict_log_density x and y need to have the same number of rows
 dens_new = np.exp(m.predict_log_density((X_new, Y_new)))
 fig = plt.figure(figsize=(8, 4))
 plt.bar(x=Y_new.flatten(), height=dens_new.flatten())
