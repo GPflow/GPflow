@@ -97,6 +97,7 @@ class Likelihood(Module, metaclass=abc.ABCMeta):
     def _check_last_dims_valid(self, F, Y):
         """
         Assert that the dimensions of the latent functions F and the data Y are compatible.
+
         :param F: function evaluation Tensor, with shape [..., latent_dim]
         :param Y: observation Tensor, with shape [..., observation_dim]
         """
@@ -107,6 +108,7 @@ class Likelihood(Module, metaclass=abc.ABCMeta):
         """
         Check that the shape of a computed statistic of the data
         is the broadcasted shape from F and Y.
+
         :param result: result Tensor, with shape [...]
         :param F: function evaluation Tensor, with shape [..., latent_dim]
         :param Y: observation Tensor, with shape [..., observation_dim]
@@ -116,14 +118,16 @@ class Likelihood(Module, metaclass=abc.ABCMeta):
 
     def _check_latent_dims(self, F):
         """
-        Ensure that a tensor of latent functions F has latent_dim as right most dimension.
+        Ensure that a tensor of latent functions F has latent_dim as right-most dimension.
+
         :param F: function evaluation Tensor, with shape [..., latent_dim]
         """
         tf.debugging.assert_shapes([(F, (..., self.latent_dim))])
 
     def _check_data_dims(self, Y):
         """
-        Ensure that a tensor of data Y has observation_dim as right most dimension.
+        Ensure that a tensor of data Y has observation_dim as right-most dimension.
+
         :param Y: observation Tensor, with shape [..., observation_dim]
         """
         tf.debugging.assert_shapes([(Y, (..., self.observation_dim))])
@@ -131,6 +135,7 @@ class Likelihood(Module, metaclass=abc.ABCMeta):
     def log_prob(self, F, Y):
         """
         The log probability density log p(Y|F)
+
         :param F: function evaluation Tensor, with shape [..., latent_dim]
         :param Y: observation Tensor, with shape [..., observation_dim]:
         :returns: log pdf, with shape [...]
@@ -147,6 +152,8 @@ class Likelihood(Module, metaclass=abc.ABCMeta):
     def conditional_mean(self, F):
         """
         The conditional mean of Y|F: [E[Y₁|F], ..., E[Yₖ|F]]
+        where K = observation_dim
+
         :param F: function evaluation Tensor, with shape [..., latent_dim]
         :returns: mean [..., observation_dim]
         """
@@ -162,6 +169,7 @@ class Likelihood(Module, metaclass=abc.ABCMeta):
         """
         The conditional marginal variance of Y|F: [var(Y₁|F), ..., var(Yₖ|F)]
         where K = observation_dim
+
         :param F: function evaluation Tensor, with shape [..., latent_dim]
         :returns: variance [..., observation_dim]
         """
@@ -175,7 +183,25 @@ class Likelihood(Module, metaclass=abc.ABCMeta):
 
     def predict_mean_and_var(self, Fmu, Fvar):
         """
-        The conditional mean and marginal variance of Yₖ|F
+        Given a Normal distribution for the latent function,
+        return the mean and marginal variance of Y,
+
+        i.e. if
+            q(f) = N(Fmu, Fvar)
+
+        and this object represents
+
+            p(y|f)
+
+        then this method computes the predictive mean
+
+           ∫∫ y p(y|f)q(f) df dy
+
+        and the predictive variance
+
+           ∫∫ y² p(y|f)q(f) df dy  - [ ∫∫ y p(y|f)q(f) df dy ]²
+
+
         :param Fmu: mean function evaluation Tensor, with shape [..., latent_dim]
         :param Fvar: variance of function evaluation Tensor, with shape [..., latent_dim]
         :returns: mean and variance, both with shape [..., observation_dim]
@@ -194,7 +220,7 @@ class Likelihood(Module, metaclass=abc.ABCMeta):
     def predict_log_density(self, Fmu, Fvar, Y):
         r"""
         Given a Normal distribution for the latent function, and a datum Y,
-        compute the log predictive density of Y.
+        compute the log predictive density of Y,
 
         i.e. if
             q(F) = N(Fmu, Fvar)
@@ -235,20 +261,20 @@ class Likelihood(Module, metaclass=abc.ABCMeta):
     def variational_expectations(self, Fmu, Fvar, Y):
         r"""
         Compute the expected log density of the data, given a Gaussian
-        distribution for the function values.
+        distribution for the function values,
 
-        if
-            q(F) = N(Fmu, Fvar)
+        i.e. if
+            q(f) = N(Fmu, Fvar)
 
         and this object represents
 
-            p(y|F)
+            p(y|f)
 
         then this method computes
 
-           ∫ log(p(y=Y|F))q(F) df.
+           ∫ log(p(y=Y|f)) q(f) df.
 
-        This only works if the broadcasting dimension of the statistics of q(F) (mean and variance)
+        This only works if the broadcasting dimension of the statistics of q(f) (mean and variance)
         are broadcastable with that of the data Y.
 
         :param Fmu: mean function evaluation Tensor, with shape [..., latent_dim]
@@ -280,7 +306,7 @@ class ScalarLikelihood(Likelihood):
     The `Likelihood` class contains methods to compute marginal statistics of functions
     of the latents and the data ϕ(y,f):
      * variational_expectations:  ϕ(y,f) = log p(y|f)
-     * predict_density: ϕ(y,f) = p(y|f)
+     * predict_log_density: ϕ(y,f) = p(y|f)
     Those statistics are computed after having first marginalized the latent processes f
     under a multivariate normal distribution q(f) that is fully factorized.
 
@@ -350,24 +376,6 @@ class ScalarLikelihood(Likelihood):
 
     def _predict_mean_and_var(self, Fmu, Fvar):
         r"""
-        Given a Normal distribution for the latent function,
-        return the mean of Y
-
-        if
-            q(f) = N(Fmu, Fvar)
-
-        and this object represents
-
-            p(y|f)
-
-        then this method computes the predictive mean
-
-           ∫∫ y p(y|f)q(f) df dy
-
-        and the predictive variance
-
-           ∫∫ y² p(y|f)q(f) df dy  - [ ∫∫ y p(y|f)q(f) df dy ]²
-
         Here, we implement a default Gauss-Hermite quadrature routine, but some
         likelihoods (e.g. Gaussian) will implement specific cases.
 
