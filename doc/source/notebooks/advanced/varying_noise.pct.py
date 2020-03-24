@@ -108,6 +108,8 @@ class HeteroskedasticGaussian(gpflow.likelihoods.Likelihood):
             - 0.5 * (tf.math.square(Y - Fmu) + Fvar) / NoiseVar
         )
 
+    # The following 4 methods are abstract in the base class.
+    # They need to be implemented even if not used.
     def _predict_log_density(self, Fmu, Fvar, Y):
         raise NotImplementedError
 
