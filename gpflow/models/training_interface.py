@@ -12,12 +12,12 @@ RegressionData = Tuple[InputData, OutputData]
 Data = TypeVar("Data", RegressionData, InputData)
 
 
-class InternalDataTrainingInterface:
+class InternalDataTrainingLossMixin:
     def training_loss(self):
         """
         Specify a training loss for this model
         """
-        raise NotImplementedError
+        return -self.maximum_a_posteriori_objective(data)
 
     def training_loss_closure(self, jit=True) -> Callable[[], tf.Tensor]:
         if jit:
@@ -25,12 +25,12 @@ class InternalDataTrainingInterface:
         return self.training_loss
 
 
-class ExternalDataTrainingInterface:
+class ExternalDataTrainingLossMixin:
     def training_loss(self, data):
         """
         Specify a training loss for this model
         """
-        raise NotImplementedError
+        return -self.maximum_a_posteriori_objective(data)
 
     def training_loss_closure(self, data: Data, jit=True) -> Callable[[], tf.Tensor]:
         training_loss = self.training_loss

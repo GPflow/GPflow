@@ -21,8 +21,8 @@ import tensorflow as tf
 from tensorflow.python.data.ops import iterator_ops
 
 from .training_interface import (
-    InternalDataTrainingInterface,
-    ExternalDataTrainingInterface,
+    InternaDataTrainingLossMixin,
+    ExternalDataTrainingLossMixin,
     InputData,
     OutputData,
     RegressionData,
@@ -80,14 +80,18 @@ class BayesianModel(Module, metaclass=abc.ABCMeta):
         raise NotImplementedError
 
 
-class ExternalDataBayesianModel(BayesianModel, ExternalDataTrainingInterface):
+class ExternalDataBayesianModel(BayesianModel, ExternalDataTrainingLossMixin):
     """
     Base class for GP models that do not encapsulate the data; training_loss takes
     data as argument.
     """
 
-    def training_loss(self, data):
-        return -self.maximum_a_posteriori_objective(data)
+
+class InternalDataBayesianModel(BayesianModel, InternalDataTrainingLossMixin):
+    """
+    Base class for GP models that do not encapsulate the data; training_loss takes
+    data as argument.
+    """
 
 
 class GPModel(BayesianModel):
@@ -249,21 +253,15 @@ class GPModel(BayesianModel):
         return self.likelihood.predict_density(f_mean, f_var, Y)
 
 
-class InternalDataGPModel(GPModel, InternalDataTrainingInterface):
+class InternalDataGPModel(GPModel, InternalDataTrainingLossMixin):
     """
     Base class for models that encapsulate their data and store it as
     self.data; training_loss does not take any arguments.
     """
 
-    def training_loss(self):
-        return -self.maximum_a_posteriori_objective()
 
-
-class ExternalDataGPModel(GPModel, ExternalDataTrainingInterface):
+class ExternalDataGPModel(GPModel, ExternalDataTrainingLossMixin):
     """
     Base class for GP models that do not encapsulate the data; training_loss takes
     data as argument.
     """
-
-    def training_loss(self, data):
-        return -self.maximum_a_posteriori_objective(data)
