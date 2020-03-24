@@ -10,7 +10,7 @@ from pathlib import Path
 from pkg_resources import parse_version
 from setuptools import find_packages, setup
 
-on_rtd = os.environ.get('READTHEDOCS', None) == 'True'  # copied from the docs
+on_rtd = os.environ.get("READTHEDOCS", None) == "True"  # copied from the docs
 
 # Dependencies of GPflow
 requirements = ["numpy>=1.10.0", "scipy>=0.18.0", "multipledispatch>=0.4.9", "tabulate"]
