@@ -256,7 +256,7 @@ class Likelihood(Module, metaclass=abc.ABCMeta):
         :param Fmu: mean function evaluation Tensor, with shape [..., latent_dim]
         :param Fvar: variance of function evaluation Tensor, with shape [..., latent_dim]
         :param Y: observation Tensor, with shape [..., observation_dim]:
-        :return variational expectations, with shape [...]
+        :returns: expected log density of the data given q(F), with shape [...]
         """
         tf.debugging.assert_equal(tf.shape(Fmu), tf.shape(Fvar))
         # returns an error if Y[:-1] and Fmu[:-1] do not broadcast together
