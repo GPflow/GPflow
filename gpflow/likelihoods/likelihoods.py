@@ -147,7 +147,7 @@ class Likelihood(Module, metaclass=abc.ABCMeta):
 
     def conditional_mean(self, F):
         """
-        The conditional mean of Y|F
+        The conditional mean of Y|F: [E[Y₁|F], ..., E[Yₖ|F]]
         :param F: function evaluation Tensor, with shape [..., latent_dim]
         :returns: mean [..., observation_dim]
         """
