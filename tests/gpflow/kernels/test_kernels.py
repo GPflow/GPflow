@@ -161,7 +161,7 @@ def test_periodic_diag(base_class):
 
 
 def test_periodic_non_stationary_base_kernel():
-    error_msg = r"Periodic requires a Stationary kernel as the `base_kernel`"
+    error_msg = r"Periodic requires an IsotropicStationary kernel as the `base_kernel`"
     with pytest.raises(TypeError, match=error_msg):
         gpflow.kernels.Periodic(gpflow.kernels.Linear())
 

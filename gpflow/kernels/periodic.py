@@ -38,7 +38,7 @@ class Periodic(Kernel):
         the constructor doesn't have it as an argument.
     """
 
-    def __init__(self, base_kernel: Stationary, period: Union[float, List[float]] = 1.0):
+    def __init__(self, base_kernel: IsotropicStationary, period: Union[float, List[float]] = 1.0):
         """
         :param base_kernel: the base kernel to make periodic; must inherit from Stationary
             Note that `active_dims` should be specified in the base kernel.
@@ -46,8 +46,8 @@ class Periodic(Kernel):
             this must be initialized with an array the same length as the number
             of active dimensions e.g. [1., 1., 1.]
         """
-        if not isinstance(base_kernel, Stationary):
-            raise TypeError("Periodic requires a Stationary kernel as the `base_kernel`")
+        if not isinstance(base_kernel, IsotropicStationary):
+            raise TypeError("Periodic requires an IsotropicStationary kernel as the `base_kernel`")
 
         super().__init__()
         self.base_kernel = base_kernel
@@ -68,13 +68,10 @@ class Periodic(Kernel):
     def K(self, X: tf.Tensor, X2: Optional[tf.Tensor] = None) -> tf.Tensor:
         r = np.pi * (difference_matrix(X, X2)) / self.period
         scaled_sine = tf.sin(r) / self.base_kernel.lengthscales
-        if isinstance(self.base_kernel, IsotropicStationary):
-            if hasattr(self.base_kernel, "K_r"):
-                sine_r = tf.reduce_sum(tf.abs(scaled_sine), -1)
-                K = self.base_kernel.K_r(sine_r)
-            else:
-                sine_r2 = tf.reduce_sum(tf.square(scaled_sine), -1)
-                K = self.base_kernel.K_r2(sine_r2)
+        if hasattr(self.base_kernel, "K_r"):
+            sine_r = tf.reduce_sum(tf.abs(scaled_sine), -1)
+            K = self.base_kernel.K_r(sine_r)
         else:
-            K = self.base_kernel.K_d(scaled_sine)
+            sine_r2 = tf.reduce_sum(tf.square(scaled_sine), -1)
+            K = self.base_kernel.K_r2(sine_r2)
         return K

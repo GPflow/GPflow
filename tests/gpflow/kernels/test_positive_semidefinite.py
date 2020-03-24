@@ -30,16 +30,32 @@ KERNEL_CLASSES = [
 rng = np.random.RandomState(42)
 
 
+def pos_semidefinite(kernel):
+    N, D = 100, 5
+    X = rng.randn(N, D)
+
+    cov = kernel(X)
+    eig = tf.linalg.eigvalsh(cov).numpy()
+    assert_array_less(-1e-12, eig)
+
+
 @pytest.mark.parametrize("kernel_class", KERNEL_CLASSES)
 def test_positive_semidefinite(kernel_class):
     """
     A valid kernel is positive semidefinite. Some kernels are only valid for
     particular input shapes, see https://github.com/GPflow/GPflow/issues/1328
     """
-    N, D = 100, 5
-    X = rng.randn(N, D)
     kernel = kernel_class()
+    pos_semidefinite(kernel)
 
-    cov = kernel(X)
-    eig = tf.linalg.eigvalsh(cov).numpy()
-    assert_array_less(-1e-12, eig)
+
+@pytest.mark.parametrize(
+    "base_class", [kernel for kernel in gpflow.ci_utils.subclasses(kernels.IsotropicStationary)]
+)
+def test_positive_semidefinite_periodic(base_class):
+    """
+    A valid kernel is positive semidefinite. Some kernels are only valid for
+    particular input shapes, see https://github.com/GPflow/GPflow/issues/1328
+    """
+    kernel = kernels.Periodic(base_class())
+    pos_semidefinite(kernel)

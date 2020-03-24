@@ -92,14 +92,9 @@ def test_broadcast_no_active_dims(kernel_class):
 
 
 @pytest.mark.parametrize(
-    "base_class",
-    [
-        kernel
-        for kernel in gpflow.ci_utils.subclasses(kernels.Stationary)
-        if kernel not in (kernels.IsotropicStationary, kernels.AnisotropicStationary)
-    ],
+    "base_class", [kernel for kernel in gpflow.ci_utils.subclasses(kernels.IsotropicStationary)],
 )
-def test_broadcast_no_active_dims_periodc(base_class):
+def test_broadcast_no_active_dims_periodic(base_class):
     kernel = gpflow.kernels.Periodic(base_class())
     broadcast_no_no_active_dims(kernel)
 
