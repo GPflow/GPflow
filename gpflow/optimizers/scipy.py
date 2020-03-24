@@ -10,7 +10,7 @@ __all__ = ["Scipy"]
 Loss = tf.Tensor
 Variables = Iterable[tf.Variable]
 StepCallback = Callable[[int, Variables, List[tf.Tensor]], None]
-LossClosure = Callable[..., tf.Tensor]
+LossClosure = Callable[[], tf.Tensor]
 
 
 class Scipy:
