@@ -165,7 +165,7 @@ class Likelihood(Module, metaclass=abc.ABCMeta):
         The conditional marginal variance of Y|F: [var(Y₁|F), ..., var(Yₖ|F)]
         where K = observation_dim
         :param F: function evaluation Tensor, with shape [..., latent_dim]
-        :return variance [..., observation_dim]
+        :returns: variance [..., observation_dim]
         """
         self.check_latent_dims(F)
         var_Y = self._conditional_variance(F)
