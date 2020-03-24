@@ -21,7 +21,7 @@ import tensorflow as tf
 from tensorflow.python.data.ops import iterator_ops
 
 from .training_interface import (
-    InternaDataTrainingLossMixin,
+    InternalDataTrainingLossMixin,
     ExternalDataTrainingLossMixin,
     InputData,
     OutputData,
@@ -85,14 +85,14 @@ class ExternalDataBayesianModel(BayesianModel, ExternalDataTrainingLossMixin):
     Base class for GP models that do not encapsulate the data; training_loss takes
     data as argument.
     """
-
+    pass
 
 class InternalDataBayesianModel(BayesianModel, InternalDataTrainingLossMixin):
     """
     Base class for GP models that do not encapsulate the data; training_loss takes
     data as argument.
     """
-
+    pass
 
 class GPModel(BayesianModel):
     r"""
@@ -258,6 +258,7 @@ class InternalDataGPModel(GPModel, InternalDataTrainingLossMixin):
     Base class for models that encapsulate their data and store it as
     self.data; training_loss does not take any arguments.
     """
+    pass
 
 
 class ExternalDataGPModel(GPModel, ExternalDataTrainingLossMixin):
@@ -265,3 +266,4 @@ class ExternalDataGPModel(GPModel, ExternalDataTrainingLossMixin):
     Base class for GP models that do not encapsulate the data; training_loss takes
     data as argument.
     """
+    pass
