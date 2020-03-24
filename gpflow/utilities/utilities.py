@@ -271,6 +271,7 @@ def _set_by_name_index(parent: object, value: Any, attr_str: str, index_str: Uni
         # internal references to the trackable object after reassignment, which can lead
         # to various problems, for example https://github.com/GPflow/GPflow/pull/1338
         # By calling delattr first, we are forcing tensorflow to remove its internal reference.
+        # This is a tensorflow bug, see https://github.com/tensorflow/tensorflow/issues/37806
         delattr(parent, attr_str)
         setattr(parent, attr_str, attr)
     else:
