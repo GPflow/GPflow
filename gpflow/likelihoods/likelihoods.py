@@ -134,7 +134,7 @@ class Likelihood(Module, metaclass=abc.ABCMeta):
         The log probability density log p(Y|F)
         :param F: function evaluation Tensor, with shape [..., latent_dim]
         :param Y: observation Tensor, with shape [..., observation_dim]:
-        :return log pdf, with shape [...]
+        :returns: log pdf, with shape [...]
         """
         self._check_last_dims_valid(F, Y)
         res = self._log_prob(F, Y)
