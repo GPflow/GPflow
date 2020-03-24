@@ -93,7 +93,7 @@ class HeteroskedasticGaussian(gpflow.likelihoods.Likelihood):
         super().__init__(latent_dim=1, observation_dim=2, **kwargs)
 
     def _log_prob(self, F, Y):
-        # log_prob is used by the quadrature fallback of variational_expectations and predict_density.
+        # log_prob is used by the quadrature fallback of variational_expectations and predict_log_density.
         # Because variational_expectations is implemented analytically below, this is not actually needed,
         # but is included for pedagogical purposes.
         # Note that currently relying on the quadrature would fail due to https://github.com/GPflow/GPflow/issues/966

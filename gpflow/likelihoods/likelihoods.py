@@ -134,7 +134,7 @@ class Likelihood(Module, metaclass=abc.ABCMeta):
         The log probability density log p(Y|F)
         :param F: function evaluation Tensor, with shape [..., latent_dim]
         :param Y: observation Tensor, with shape [..., observation_dim]:
-        :return log pdf, with shape [...]
+        :returns: log pdf, with shape [...]
         """
         self._check_last_dims_valid(F, Y)
         res = self._log_prob(F, Y)
@@ -147,9 +147,9 @@ class Likelihood(Module, metaclass=abc.ABCMeta):
 
     def conditional_mean(self, F):
         """
-        The conditional mean of Y|F
+        The conditional mean of Y|F: [E[Y₁|F], ..., E[Yₖ|F]]
         :param F: function evaluation Tensor, with shape [..., latent_dim]
-        :return mean [..., observation_dim]
+        :returns: mean [..., observation_dim]
         """
         self._check_latent_dims(F)
         expected_Y = self._conditional_mean(F)
@@ -165,7 +165,7 @@ class Likelihood(Module, metaclass=abc.ABCMeta):
         The conditional marginal variance of Y|F: [var(Y₁|F), ..., var(Yₖ|F)]
         where K = observation_dim
         :param F: function evaluation Tensor, with shape [..., latent_dim]
-        :return variance [..., observation_dim]
+        :returns: variance [..., observation_dim]
         """
         self._check_latent_dims(F)
         var_Y = self._conditional_variance(F)
@@ -181,7 +181,7 @@ class Likelihood(Module, metaclass=abc.ABCMeta):
         The conditional mean and marginal variance of Yₖ|F
         :param Fmu: mean function evaluation Tensor, with shape [..., latent_dim]
         :param Fvar: variance of function evaluation Tensor, with shape [..., latent_dim]
-        :return mean and variance, both with shape [..., observation_dim]
+        :returns: mean and variance, both with shape [..., observation_dim]
         """
         self._check_latent_dims(Fmu)
         self._check_latent_dims(Fvar)
@@ -213,7 +213,7 @@ class Likelihood(Module, metaclass=abc.ABCMeta):
         :param Fmu: mean function evaluation Tensor, with shape [..., latent_dim]
         :param Fvar: variance of function evaluation Tensor, with shape [..., latent_dim]
         :param Y: observation Tensor, with shape [..., observation_dim]:
-        :return log predicted density, with shape [...]
+        :returns: log predictive density, with shape [...]
         """
         tf.debugging.assert_equal(tf.shape(Fmu), tf.shape(Fvar))
         self._check_last_dims_valid(Fmu, Y)
@@ -230,7 +230,7 @@ class Likelihood(Module, metaclass=abc.ABCMeta):
         Deprecated: see `predict_log_density`
         """
         warnings.warn(
-            "predict_density is deprecated, use predict_log_density instead", DeprecationWarning
+            "predict_density is deprecated and will be removed in GPflow 2.1, use predict_log_density instead", DeprecationWarning
         )
         return self.predict_log_density(Fmu, Fvar, Y)
 
@@ -256,7 +256,7 @@ class Likelihood(Module, metaclass=abc.ABCMeta):
         :param Fmu: mean function evaluation Tensor, with shape [..., latent_dim]
         :param Fvar: variance of function evaluation Tensor, with shape [..., latent_dim]
         :param Y: observation Tensor, with shape [..., observation_dim]:
-        :return variational expectations, with shape [...]
+        :returns: expected log density of the data given q(F), with shape [...]
         """
         tf.debugging.assert_equal(tf.shape(Fmu), tf.shape(Fvar))
         # returns an error if Y[:-1] and Fmu[:-1] do not broadcast together
@@ -321,7 +321,7 @@ class ScalarLikelihood(Likelihood):
         :param Fmu: mean function evaluation Tensor, with shape [..., latent_dim]
         :param Fvar: variance of function evaluation Tensor, with shape [..., latent_dim]
         :param Y: observation Tensor, with shape [..., latent_dim]:
-        :return variational expectations, with shape [...]
+        :returns: variational expectations, with shape [...]
         """
         return tf.reduce_sum(
             ndiagquad(self._scalar_log_density, self.num_gauss_hermite_points, Fmu, Fvar, Y=Y),
@@ -335,7 +335,7 @@ class ScalarLikelihood(Likelihood):
         :param Fmu: mean function evaluation Tensor, with shape [..., latent_dim]
         :param Fvar: variance of function evaluation Tensor, with shape [..., latent_dim]
         :param Y: observation Tensor, with shape [..., latent_dim]:
-        :return predictive density, with shape [...]
+        :returns: log predictive density, with shape [...]
         """
         return tf.reduce_sum(
             ndiagquad(
@@ -374,7 +374,7 @@ class ScalarLikelihood(Likelihood):
 
         :param Fmu: mean function evaluation Tensor, with shape [..., latent_dim]
         :param Fvar: variance of function evaluation Tensor, with shape [..., latent_dim]
-        :return mean and variance, both with shape [..., observation_dim]
+        :returns: mean and variance, both with shape [..., observation_dim]
         """
 
         def integrand(*X):
