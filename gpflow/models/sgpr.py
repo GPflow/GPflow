@@ -23,11 +23,12 @@ from ..covariances.dispatch import Kuf, Kuu
 from ..inducing_variables import InducingPoints
 from ..mean_functions import Zero, MeanFunction
 from ..utilities import to_default_float
-from .model import MeanAndVariance, RegressionData, InternalDataGPModel
+from .model import MeanAndVariance, RegressionData, GPModel
+from .mixins import InternalDataTrainingLossMixin
 from .util import inducingpoint_wrapper
 
 
-class SGPRBase(InternalDataGPModel):
+class SGPRBase(GPModel, InternalDataTrainingLossMixin):
     """
     Common base class for SGPR and GPRFITC that provides the common __init__
     and upper_bound() methods.

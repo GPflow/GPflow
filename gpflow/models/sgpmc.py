@@ -25,6 +25,7 @@ from ..likelihoods import Likelihood
 from ..mean_functions import MeanFunction
 from ..utilities import to_default_float
 from .model import RegressionData, MeanAndVariance, GPModel
+from .mixins import MCMCTrainingLossMixin
 from .util import inducingpoint_wrapper
 
 

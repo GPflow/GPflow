@@ -17,7 +17,7 @@ class InternalDataTrainingLossMixin:
         """
         Specify a training loss for this model
         """
-        return -self.maximum_a_posteriori_objective(data)
+        return -self.maximum_a_posteriori_objective()
 
     def training_loss_closure(self, jit=True) -> Callable[[], tf.Tensor]:
         if jit:
@@ -44,3 +44,11 @@ class ExternalDataTrainingLossMixin:
             return training_loss(batch)
 
         return closure
+
+
+class MCMCTrainingLossMixin(InternalDataTrainingLossMixin):
+    def training_loss(self):
+        """
+        Specify a training loss for this model
+        """
+        return -self.log_posterior_density()

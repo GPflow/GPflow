@@ -27,10 +27,11 @@ from ..kullback_leiblers import gauss_kl
 from ..likelihoods import Likelihood
 from ..mean_functions import MeanFunction, Zero
 from ..utilities import triangular
-from .model import RegressionData, InputData, MeanAndVariance, InternalDataGPModel
+from .model import RegressionData, InputData, MeanAndVariance, GPModel
+from .mixins import InternalDataTrainingLossMixin
 
 
-class VGP(InternalDataGPModel):
+class VGP(GPModel, InternalDataTrainingLossMixin):
     r"""
     This method approximates the Gaussian process posterior using a multivariate Gaussian.
 
@@ -121,7 +122,7 @@ class VGP(InternalDataGPModel):
         return mu + self.mean_function(Xnew), var
 
 
-class VGPOpperArchambeau(InternalDataGPModel):
+class VGPOpperArchambeau(GPModel, InternalDataTrainingLossMixin):
     r"""
     This method approximates the Gaussian process posterior using a multivariate Gaussian.
     The key reference is:

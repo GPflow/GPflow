@@ -25,9 +25,10 @@ from ..likelihoods import Likelihood
 from ..mean_functions import MeanFunction
 from ..utilities import to_default_float
 from .model import RegressionData, MeanAndVariance, GPModel
+from .mixins import MCMCTrainingLossMixin
 
 
-class GPMC(GPModel):
+class GPMC(GPModel, MCMCTrainingLossMixin):
     def __init__(
         self,
         data: RegressionData,

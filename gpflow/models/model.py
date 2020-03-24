@@ -80,20 +80,6 @@ class BayesianModel(Module, metaclass=abc.ABCMeta):
         raise NotImplementedError
 
 
-class ExternalDataBayesianModel(BayesianModel, ExternalDataTrainingLossMixin):
-    """
-    Base class for GP models that do not encapsulate the data; training_loss takes
-    data as argument.
-    """
-    pass
-
-class InternalDataBayesianModel(BayesianModel, InternalDataTrainingLossMixin):
-    """
-    Base class for GP models that do not encapsulate the data; training_loss takes
-    data as argument.
-    """
-    pass
-
 class GPModel(BayesianModel):
     r"""
     A stateless base class for Gaussian process models, that is, those of the
@@ -251,19 +237,3 @@ class GPModel(BayesianModel):
         X, Y = data
         f_mean, f_var = self.predict_f(X, full_cov=full_cov, full_output_cov=full_output_cov)
         return self.likelihood.predict_density(f_mean, f_var, Y)
-
-
-class InternalDataGPModel(GPModel, InternalDataTrainingLossMixin):
-    """
-    Base class for models that encapsulate their data and store it as
-    self.data; training_loss does not take any arguments.
-    """
-    pass
-
-
-class ExternalDataGPModel(GPModel, ExternalDataTrainingLossMixin):
-    """
-    Base class for GP models that do not encapsulate the data; training_loss takes
-    data as argument.
-    """
-    pass
