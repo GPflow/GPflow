@@ -149,7 +149,7 @@ class Likelihood(Module, metaclass=abc.ABCMeta):
         """
         The conditional mean of Y|F
         :param F: function evaluation Tensor, with shape [..., latent_dim]
-        :return mean [..., observation_dim]
+        :returns: mean [..., observation_dim]
         """
         self.check_latent_dims(F)
         expected_Y = self._conditional_mean(F)
