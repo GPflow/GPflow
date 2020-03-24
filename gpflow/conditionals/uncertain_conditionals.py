@@ -43,10 +43,9 @@ def uncertain_conditional(
         raise NotImplementedError
 
     if full_cov:
-        # TODO(VD): ``full_cov`` True would return a ``fvar`` of shape [N, N, D, D],
-        # encoding the covariance between input datapoints as well.
-        # This is not implemented as this inducing_variable is only used for plotting purposes.
-        raise NotImplementedError
+        raise NotImplementedError(
+            "The method `uncertain_conditional` currently does not support `full_cov=True`"
+        )
 
     pXnew = Gaussian(Xnew_mu, Xnew_var)
 
