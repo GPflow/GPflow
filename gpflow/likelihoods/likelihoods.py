@@ -155,7 +155,6 @@ class Likelihood(Module, metaclass=abc.ABCMeta):
         self._check_data_dims(expected_Y)
         return expected_Y
 
-    @abc.abstractmethod
     def _conditional_mean(self, F):
         raise NotImplementedError
 
@@ -171,7 +170,6 @@ class Likelihood(Module, metaclass=abc.ABCMeta):
         self._check_data_dims(var_Y)
         return var_Y
 
-    @abc.abstractmethod
     def _conditional_variance(self, F):
         raise NotImplementedError
 
