@@ -1,3 +1,39 @@
+"""
+This is a private module that manages GPflow configuration.
+
+The module provides functions to modify default settings of GPflow, such as:
+- the standard float precision and integer type
+- the type of positive transformation
+- a value for a minimum shift from zero for the positive transformation
+- an output format for `gpflow.utilities.print_summary`
+
+The module holds global configuration :class:`Config` variable that stores all
+setting values.
+
+Environment variables are an alternative way for changing the default GPflow
+configuration.
+
+.. warning::
+    The user has to set environment variables before running python
+    interpreter to modify the configuration.
+
+Full set of environment variables and available options:
+
+* ``GPFLOW_INT``: "int16", "int32", or "int64"
+* ``GPFLOW_FLOAT``: "float16", "float32", or "float64"
+* ``GPFLOW_POSITIVE_BIJECTOR``: "exp" or "softplus"
+* ``GPFLOW_POSITIVE_MINIMUM``: Any positive float number
+* ``GPFLOW_SUMMARY_FMT``: "notebook" or any other format that :mod:`tabulate` can handle.
+* ``GPFLOW_JITTER``: Any positive float number
+
+The user can also change the GPflow configuration temporarily with a context
+manager :func:`as_context`:
+
+>>> config = Config(jitter=1e-5)
+>>> with as_context(config):
+>>>     # ...code here sees new config
+"""
+
 import contextlib
 import enum
 import os
@@ -135,36 +171,50 @@ def config() -> Config:
 
 
 def default_int():
+    """Returns default integer type"""
     return config().int
 
 
 def default_float():
+    """Returns default float type"""
     return config().float
 
 
 def default_jitter():
+    """
+    The jitter is a constant that GPflow adds to the diagonal of matrices
+    to achieve numerical stability of the system when the condition number 
+    of the associated matrices is large, and therefore the matrices nearly singular.
+    """
     return config().jitter
 
 
 def default_positive_bijector():
+    """Type of bijector used for positive constraints: exp or softplus."""
     return config().positive_bijector
 
 
 def default_positive_minimum():
+    """Shift constant that GPflow adds to all positive constraints."""
     return config().positive_minimum
 
 
 def default_summary_fmt():
+    """Summary printing format as understood by :mod:`tabulate` or a special case "notebook"."""
     return config().summary_fmt
 
 
 def set_config(new_config: Config):
-    """Update GPflow config"""
+    """Update GPflow config with new settings from `new_config`."""
     global __config
     __config = new_config
 
 
 def set_default_int(value_type):
+    """
+    Sets default integer type. Available options are ``np.int16``, ``np.int32``,
+    or ``np.int64``.
+    """
     try:
         tf_dtype = tf.as_dtype(value_type)  # Test that it's a tensorflow-valid dtype
     except TypeError:
@@ -177,6 +227,10 @@ def set_default_int(value_type):
 
 
 def set_default_float(value_type):
+    """
+    Sets default float type. Available options are `np.float16`, `np.float32`,
+    or `np.float64`.
+    """
     try:
         tf_dtype = tf.as_dtype(value_type)  # Test that it's a tensorflow-valid dtype
     except TypeError:
@@ -189,6 +243,12 @@ def set_default_float(value_type):
 
 
 def set_default_jitter(value: float):
+    """
+    Sets constant jitter value.
+    The jitter is a constant that GPflow adds to the diagonal of matrices
+    to achieve numerical stability of the system when the condition number 
+    of the associated matrices is large, and therefore the matrices nearly singular.
+    """
     if not (
         isinstance(value, (tf.Tensor, np.ndarray)) and len(value.shape) == 0
     ) and not isinstance(value, float):
@@ -201,6 +261,10 @@ def set_default_jitter(value: float):
 
 
 def set_default_positive_bijector(value: str):
+    """
+    Sets positive bijector type.
+    There are currently two options implemented: "exp" and "softplus".
+    """
     type_map = positive_bijector_type_map()
     if isinstance(value, str):
         value = value.lower()
@@ -211,6 +275,7 @@ def set_default_positive_bijector(value: str):
 
 
 def set_default_positive_minimum(value: float):
+    """Sets shift constant for postive transformation."""
     if not (
         isinstance(value, (tf.Tensor, np.ndarray)) and len(value.shape) == 0
     ) and not isinstance(value, float):

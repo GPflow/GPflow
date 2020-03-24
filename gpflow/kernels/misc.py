@@ -18,8 +18,7 @@ import numpy as np
 import tensorflow as tf
 
 from ..base import Parameter
-from ..config import default_float
-from ..utilities import positive
+from ..utilities import positive, to_default_float
 from .base import Kernel, ActiveDims
 
 
@@ -126,7 +125,7 @@ class ArcCosine(Kernel):
 
     def K_diag(self, X):
         X_product = self._weighted_product(X)
-        const = tf.cast((1.0 / np.pi) * self._J(0.0), default_float())
+        const = (1.0 / np.pi) * self._J(to_default_float(0.0))
         return self.variance * const * X_product ** self.order
 
 

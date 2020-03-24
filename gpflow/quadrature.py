@@ -19,6 +19,7 @@ import numpy as np
 import tensorflow as tf
 
 from .config import default_float
+from .utilities import to_default_float
 
 
 def hermgauss(n: int):
@@ -100,6 +101,9 @@ def ndiagquad(funcs, H: int, Fmu, Fvar, logspace: bool = False, **Ys):
     """
     Computes N Gaussian expectation integrals of one or more functions
     using Gauss-Hermite quadrature. The Gaussians must be independent.
+
+    The means and variances of the Gaussians are specified by Fmu and Fvar.
+    The N-integrals are assumed to be taken wrt the last dimensions of Fmu, Fvar.
 
     :param funcs: the integrand(s):
         Callable or Iterable of Callables that operates elementwise
@@ -194,7 +198,7 @@ def ndiag_mc(funcs, S: int, Fmu, Fvar, logspace: bool = False, epsilon=None, **Y
         feval = func(mc_Xr, **Ys)
         feval = tf.reshape(feval, (S, N, -1))
         if logspace:
-            log_S = tf.math.log(tf.cast(S, default_float()))
+            log_S = tf.math.log(to_default_float(S))
             return tf.reduce_logsumexp(feval, axis=0) - log_S  # [N, D]
         else:
             return tf.reduce_mean(feval, axis=0)

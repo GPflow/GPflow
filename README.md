@@ -69,6 +69,8 @@ GPflow leaves installing tensorflow to the user so that you can choose whether y
 
 There is an ["Intro to GPflow 2.0"](https://github.com/GPflow/GPflow/blob/develop/doc/source/notebooks/intro_to_gpflow2.ipynb) Jupyter notebook; check it out for details. To convert your code from GPflow 1 check the [GPflow 2 upgrade guide](https://github.com/GPflow/GPflow/blob/develop/doc/source/notebooks/gpflow_2_upgrade/gpflow2_upgrade_guide.ipynb).
 
+
+
 - **GPflow 1.0**
 
   *We have stopped development and support for GPflow based on TensorFlow 1.0. We now accept only bug fixes to GPflow 1.0 in the **develop-1.0** branch. The latest available release is [v1.5.1](https://github.com/GPflow/GPflow/releases/tag/v1.5.1). [Documentation](https://gpflow.readthedocs.io/en/v1.5.1-docs/) and [tutorials](https://nbviewer.jupyter.org/github/GPflow/GPflow/blob/develop/doc/source/notebooks/intro.ipynb) will remain available.*
@@ -128,7 +130,7 @@ To cite GPflow, please reference the [JMLR paper](http://www.jmlr.org/papers/vol
 
 ```
 @ARTICLE{GPflow2017,
-   author = {Matthews, Alexander G. de G. and {van der Wilk}, Mark and Nickson, Tom and
+  author = {Matthews, Alexander G. de G. and {van der Wilk}, Mark and Nickson, Tom and
 	Fujii, Keisuke. and {Boukouvalas}, Alexis and {Le{\'o}n-Villagr{\'a}}, Pablo and
 	Ghahramani, Zoubin and Hensman, James},
     title = "{{GP}flow: A {G}aussian process library using {T}ensor{F}low}",
@@ -139,5 +141,21 @@ To cite GPflow, please reference the [JMLR paper](http://www.jmlr.org/papers/vol
   number  = {40},
   pages   = {1-6},
   url     = {http://jmlr.org/papers/v18/16-537.html}
+}
+```
+
+Since the publication of the GPflow paper, the software has been significantly extended
+with the framework for interdomain approximations and multioutput priors. We review the
+framework and describe the design in an [arXiv paper](https://arxiv.org/abs/2003.01115),
+which can be cited by users.
+
+```
+@article{GPflow2020multioutput,
+  author = {{van der Wilk}, Mark and Dutordoir, Vincent and John, ST and
+            Artemev, Artem and Adam, Vincent and Hensman, James},
+  title = {A Framework for Interdomain and Multioutput {G}aussian Processes},
+  year = {2020},
+  journal = {arXiv:2003.01115},
+  url = {https://arxiv.org/abs/2003.01115}
 }
 ```

@@ -72,7 +72,7 @@ Variable names: scalars and vectors start lowercase, but following the notation 
 GPflow uses [black](https://github.com/psf/black) for formatting in the following way:
 
 ```bash
-black -t py36 -l 100 gpflow tests
+black -t py36 -l 100 gpflow tests doc setup.py
 ```
 
 ## Pull requests and the master branch

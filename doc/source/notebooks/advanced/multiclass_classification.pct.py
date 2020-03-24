@@ -21,12 +21,12 @@
 #
 # Labels are encoded in a one-hot fashion, that is if $C=4$ and $y=2$, we note $\bar{y} = [0,1,0,0]$.
 #
-# The generative model for this problem consists of: 
+# The generative model for this problem consists of:
 #  * $C$ latent functions $\mathbf{f} = [f_1,...,f_C]$ with an independent Gaussian Process prior
-#  * a deterministic function that builds a discrete distribution $\pi(\mathbf{f}) = [\pi_1(f_1),...,\pi_C(f_C)]$ from the latents such that $\sum_c \pi_c(f_c) = 1$ 
+#  * a deterministic function that builds a discrete distribution $\pi(\mathbf{f}) = [\pi_1(f_1),...,\pi_C(f_C)]$ from the latents such that $\sum_c \pi_c(f_c) = 1$
 #  * a discrete likelihood $p(y|\mathbf{f}) = Discrete(y;\pi(\mathbf{f})) = \prod_c \pi_c(f_c)^{\bar{y}_c}$
 #
-# A typical example of $\pi$ is the softmax function: 
+# A typical example of $\pi$ is the softmax function:
 #
 # $$ \pi_c (f_c) \propto \exp( f_c)$$
 #
@@ -45,9 +45,11 @@ import numpy as np
 import tensorflow as tf
 
 import warnings
-warnings.filterwarnings('ignore')  # ignore DeprecationWarnings from tensorflow
+
+warnings.filterwarnings("ignore")  # ignore DeprecationWarnings from tensorflow
 
 import matplotlib.pyplot as plt
+
 # %matplotlib inline
 
 import gpflow
@@ -108,15 +110,15 @@ data = (X, Y)
 plt.figure(figsize=(12, 6))
 order = np.argsort(X.reshape(-1,))
 
-for c in range(C):  
-    plt.plot(X[order], f[order, c], '.', color=colors[c], label=str(c))
-    plt.plot(X[order], Y_hot[order, c], '-', color=colors[c])
+for c in range(C):
+    plt.plot(X[order], f[order, c], ".", color=colors[c], label=str(c))
+    plt.plot(X[order], Y_hot[order, c], "-", color=colors[c])
 
 
 plt.legend()
-plt.xlabel('$X$')
-plt.ylabel('Latent (dots) and one-hot labels (lines)')
-plt.title('Sample from the joint $p(Y, \mathbf{f})$')
+plt.xlabel("$X$")
+plt.ylabel("Latent (dots) and one-hot labels (lines)")
+plt.title("Sample from the joint $p(Y, \mathbf{f})$")
 plt.grid()
 plt.show()
 
@@ -147,13 +149,19 @@ invlink = gpflow.likelihoods.RobustMax(C)  # Robustmax inverse link function
 likelihood = gpflow.likelihoods.MultiClass(3, invlink=invlink)  # Multiclass likelihood
 Z = X[::5].copy()  # inducing inputs
 
-m = gpflow.models.SVGP(kernel=kernel, likelihood=likelihood,
-    inducing_variable=Z, num_latent_gps=C, whiten=True, q_diag=True)
+m = gpflow.models.SVGP(
+    kernel=kernel,
+    likelihood=likelihood,
+    inducing_variable=Z,
+    num_latent_gps=C,
+    whiten=True,
+    q_diag=True,
+)
 
 # Only train the variational parameters
 set_trainable(m.kernel.kernels[1].variance, False)
 set_trainable(m.inducing_variable, False)
-print_summary(m, fmt='notebook')
+print_summary(m, fmt="notebook")
 
 # %% [markdown]
 # #### Running inference
@@ -161,14 +169,16 @@ print_summary(m, fmt='notebook')
 # %%
 opt = gpflow.optimizers.Scipy()
 
+
 @tf.function
 def objective_closure():
-    return - m.log_marginal_likelihood(data)
+    return -m.log_marginal_likelihood(data)
 
-opt_logs = opt.minimize(objective_closure,
-                        m.trainable_variables,
-                        options=dict(maxiter=ci_niter(1000)))
-print_summary(m, fmt='notebook')
+
+opt_logs = opt.minimize(
+    objective_closure, m.trainable_variables, options=dict(maxiter=ci_niter(1000))
+)
+print_summary(m, fmt="notebook")
 
 # %%
 plot_posterior_predictions(m, X, Y)

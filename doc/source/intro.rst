@@ -39,7 +39,7 @@ GPflow has a slew of kernels that can be combined in a straightforward way. See 
 
 Regression
 """"""""""
-For GP regression with Gaussian noise, it's possible to marginalize the function values exactly: you'll find this in `gpflow.models.GPR`. You can do maximum likelihood or MCMC for the covariance function parameters  (`notebook <notebooks/regression.html>`_).
+For GP regression with Gaussian noise, it's possible to marginalize the function values exactly: you'll find this in `gpflow.models.GPR`. You can do maximum likelihood or MCMC for the covariance function parameters  (`notebook <notebooks/basics/regression.html>`_).
 
 It's also possible to do Sparse GP regression using the :class:`gpflow.models.SGPR` class. This is based on work by `Michalis Titsias <http://www.jmlr.org/proceedings/papers/v5/titsias09a.html>`_ [4].
 
@@ -64,10 +64,20 @@ The following table summarizes the model options in GPflow.
 
 A unified view of many of the relevant references, along with some extensions, and an early discussion of GPflow itself, is given in the PhD thesis of `Matthews <http://mlg.eng.cam.ac.uk/matthews/thesis.pdf>`_ [8].
 
+Interdomain inference and multioutput GPs
+"""""""""""""""""""""""""""""""""""""""""
+GPflow has an extensive and flexible framework for specifying interdomain inducing variables for variational approximations.
+Interdomain variables can greatly improve the effectiveness of a variational approximation, and are used in e.g.
+`convolutional GPs <notebooks/advanced/convolutional.html>`_. In particular, they are crucial for defining sensible sparse
+approximations for `multioutput GPs <notebooks/advanced/multioutput.html>`_.
+
+GPflow has a unifying design for using multioutput GPs and specifying interdomain approximations. A review of the
+mathematical background and the resulting software design is described in a `paper on arXiv <https://arxiv.org/abs/2003.01115>`_ [9].
+
 GPLVM
 """""
 For visualisation, the GPLVM [6] and Bayesian GPLVM [7] models are implemented
-in GPflow (`notebook <notebooks/GPLVM.html>`_).
+in GPflow (`notebook <notebooks/advanced/GPLVM.html>`_).
 
 Contributing
 ------------
@@ -91,6 +101,24 @@ To cite GPflow, please reference the `JMLR paper <http://www.jmlr.org/papers/vol
         pages   = {1-6},
         url     = {http://jmlr.org/papers/v18/16-537.html}
     }
+
+Since the publication of the GPflow paper, the software has been significantly extended
+with the framework for interdomain approximations and multioutput priors. We review the
+framework and describe the design in an `arXiv paper <https://arxiv.org/abs/2003.01115>`_
+which can be cited by users.
+
+.. code-block:: bst
+
+    @article{GPflow2020multioutput,
+      author = {{van der Wilk}, Mark and Dutordoir, Vincent and John, ST and
+                Artemev, Artem and Adam, Vincent and Hensman, James},
+      title = {A Framework for Interdomain and Multioutput {G}aussian Processes},
+      year = {2020},
+      journal = {arXiv:2003.01115},
+      url = {https://arxiv.org/abs/2003.01115}
+    }
+
+
 
 
 References
@@ -126,6 +154,10 @@ Proceedings of AISTATS, 2010.
 [8] Scalable Gaussian process inference using variational methods.
 Alexander G. de G. Matthews.
 PhD Thesis. University of Cambridge, 2016.
+
+[9] A Framework for Interdomain and Multioutput Gaussian Processes.
+Mark van der Wilk, Vincent Dutordoir, ST John, Artem Artemev, Vincent Adam, James Hensman.
+arXiv. 2020.
 
 
 Acknowledgements
