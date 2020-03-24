@@ -6,16 +6,20 @@ import tensorflow_probability as tfp
 import numpy as np
 
 
+def cast(
+    value: Union[tf.Tensor, np.ndarray], dtype: tf.DType, name: Optional[str] = None
+) -> tf.Tensor:
+    if not tf.is_tensor(value):
+        # TODO(awav): Release TF2.2 resolves this issue
+        # workaround for https://github.com/tensorflow/tensorflow/issues/35938
+        return tf.convert_to_tensor(value, dtype, name=name)
+    return tf.cast(value, dtype, name=name)
+
+
 def eye(num: int, value: tf.Tensor, dtype: Optional[tf.DType] = None) -> tf.Tensor:
     if dtype is not None:
-        value = tf.cast(value, dtype)
+        value = cast(value, dtype)
     return tf.linalg.diag(tf.fill([num], value))
-
-
-def add_to_diagonal(to_tensor: tf.Tensor, value: tf.Tensor):
-    diag = tf.linalg.diag_part(to_tensor)
-    new_diag = diag + value
-    return tf.linalg.set_diag(to_tensor, new_diag)
 
 
 def leading_transpose(
@@ -99,34 +103,18 @@ def square_distance(X, X2):
     return dist
 
 
-def pca_reduce(X: tf.Tensor, Q: tf.Tensor) -> tf.Tensor:
+def pca_reduce(X: tf.Tensor, latent_dim: tf.Tensor) -> tf.Tensor:
     """
-    A helpful function for linearly reducing the dimensionality of the data X
-    to Q.
+    A helpful function for linearly reducing the dimensionality of the input
+    points X to `latent_dim` dimensions.
+
     :param X: data array of size N (number of points) x D (dimensions)
-    :param Q: Number of latent dimensions, Q < D
-    :return: PCA projection array of size N x Q.
+    :param latent_dim: Number of latent dimensions Q < D
+    :return: PCA projection array of size [N, Q].
     """
-    if Q > X.shape[1]:  # pragma: no cover
+    if latent_dim > X.shape[1]:  # pragma: no cover
         raise ValueError("Cannot have more latent dimensions than observed")
-    if isinstance(X, tf.Tensor):
-        X = X.numpy()
-        # TODO why not use tf.linalg.eigh?
-    evals, evecs = np.linalg.eigh(np.cov(X.T))
-    W = evecs[:, -Q:]
-    return (X - X.mean(0)).dot(W)
-
-
-# def pca_reduce(data: tf.Tensor, latent_dim: tf.Tensor) -> tf.Tensor:
-#     """
-#     A helpful function for linearly reducing the dimensionality of the data X
-#     to Q.
-#     :param X: data array of size N (number of points) x D (dimensions)
-#     :param Q: Number of latent dimensions, Q < D
-#     :return: PCA projection array of size [N, Q].
-#     """
-#     assert latent_dim <= data.shape[1], 'Cannot have more latent dimensions than observed'
-#     x_cov = tfp.stats.covariance(data)
-#     evals, evecs = tf.linalg.eigh(x_cov)
-#     W = evecs[:, -latent_dim:]
-#     return (data - tf.reduce_mean(data, axis=0, keepdims=True)) @ W
+    X_cov = tfp.stats.covariance(X)
+    evals, evecs = tf.linalg.eigh(X_cov)
+    W = evecs[:, -latent_dim:]
+    return (X - tf.reduce_mean(X, axis=0, keepdims=True)) @ W

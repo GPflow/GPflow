@@ -20,14 +20,16 @@ import numpy as np
 import tensorflow as tf
 
 from ..base import Module
+from ..conditionals.util import sample_mvn
 from ..config import default_float, default_jitter
-from ..kernels import Kernel
-from ..likelihoods import Likelihood
+from ..kernels import Kernel, MultioutputKernel
+from ..likelihoods import Likelihood, SwitchedLikelihood
 from ..mean_functions import MeanFunction, Zero
-from ..utilities import ops
+from ..utilities import ops, to_default_float
 
-Data = TypeVar("Data", Tuple[tf.Tensor, tf.Tensor], tf.Tensor)
-DataPoint = tf.Tensor
+InputData = tf.Tensor
+OutputData = tf.Tensor
+RegressionData = Tuple[InputData, OutputData]
 MeanAndVariance = Tuple[tf.Tensor, tf.Tensor]
 
 
@@ -44,14 +46,16 @@ class BayesianModel(Module):
         return -self.log_marginal_likelihood(*args, **kwargs)
 
     def log_marginal_likelihood(self, *args, **kwargs) -> tf.Tensor:
-        return self.log_likelihood(*args, **kwargs) + self.log_prior()
+        return self.log_likelihood(*args, **kwargs) + self.log_prior_density()
 
-    def log_prior(self) -> tf.Tensor:
-        log_priors = [p.log_prior() for p in self.trainable_parameters]
-        if log_priors:
-            return tf.add_n(log_priors)
+    def log_prior_density(self) -> tf.Tensor:
+        """
+        Sum of the log prior probability densities of all (constrained) variables in this model.
+        """
+        if self.trainable_parameters:
+            return tf.add_n([p.log_prior_density() for p in self.trainable_parameters])
         else:
-            return tf.convert_to_tensor(0.0, dtype=default_float())
+            return to_default_float(0.0)
 
     @abc.abstractmethod
     def log_likelihood(self, *args, **kwargs) -> tf.Tensor:
@@ -92,9 +96,10 @@ class GPModel(BayesianModel):
         kernel: Kernel,
         likelihood: Likelihood,
         mean_function: Optional[MeanFunction] = None,
-        num_latent_gps: int = 1,
+        num_latent_gps: int = None,
     ):
         super().__init__()
+        assert num_latent_gps is not None, "GPModel requires specification of num_latent_gps"
         self.num_latent_gps = num_latent_gps
         # TODO(@awav): Why is this here when MeanFunction does not have a __len__ method
         if mean_function is None:
@@ -103,34 +108,102 @@ class GPModel(BayesianModel):
         self.kernel = kernel
         self.likelihood = likelihood
 
+    @staticmethod
+    def calc_num_latent_gps_from_data(data, kernel: Kernel, likelihood: Likelihood) -> int:
+        """
+        Calculates the number of latent GPs required based on the data as well
+        as the type of kernel and likelihood.
+        """
+        _, Y = data
+        output_dim = Y.shape[-1]
+        return GPModel.calc_num_latent_gps(kernel, likelihood, output_dim)
+
+    @staticmethod
+    def calc_num_latent_gps(kernel: Kernel, likelihood: Likelihood, output_dim: int) -> int:
+        """
+        Calculates the number of latent GPs required given the number of
+        outputs `output_dim` and the type of likelihood and kernel.
+
+        Note: It's not nice for `GPModel` to need to be aware of specific
+        likelihoods as here. However, `num_latent_gps` is a bit more broken in
+        general, we should fix this in the future. There are also some slightly
+        problematic assumptions re the output dimensions of mean_function.
+        See https://github.com/GPflow/GPflow/issues/1343
+        """
+        if isinstance(kernel, MultioutputKernel):
+            # MultioutputKernels already have num_latent_gps attributes
+            num_latent_gps = kernel.num_latent_gps
+        elif isinstance(likelihood, SwitchedLikelihood):
+            # the SwitchedLikelihood partitions/stitches based on the last
+            # column in Y, but we should not add a separate latent GP for this!
+            # hence decrement by 1
+            num_latent_gps = output_dim - 1
+            assert num_latent_gps > 0
+        else:
+            num_latent_gps = output_dim
+
+        return num_latent_gps
+
     @abc.abstractmethod
     def predict_f(
-        self, Xnew: DataPoint, full_cov: bool = False, full_output_cov: bool = False
+        self, Xnew: InputData, full_cov: bool = False, full_output_cov: bool = False
     ) -> MeanAndVariance:
         raise NotImplementedError
 
     def predict_f_samples(
         self,
-        Xnew: DataPoint,
-        num_samples: int = 1,
+        Xnew: InputData,
+        num_samples: Optional[int] = None,
         full_cov: bool = True,
         full_output_cov: bool = False,
     ) -> tf.Tensor:
         """
         Produce samples from the posterior latent function(s) at the input points.
+
+        :param Xnew: InputData
+            Input locations at which to draw samples, shape [..., N, D]
+            where N is the number of rows and D is the input dimension of each point.
+        :param num_samples:
+            Number of samples to draw.
+            If `None`, a single sample is drawn and the return shape is [..., N, P],
+            for any positive integer the return shape contains an extra batch
+            dimension, [..., S, N, P], with S = num_samples and P is the number of outputs.
+        :param full_cov:
+            If True, draw correlated samples over the inputs. Computes the Cholesky over the
+            dense covariance matrix of size [num_data, num_data].
+            If False, draw samples that are uncorrelated over the inputs.
+        :param full_output_cov:
+            If True, draw correlated samples over the outputs.
+            If False, draw samples that are uncorrelated over the outputs.
+
+        Currently, the method does not support `full_output_cov=True` and `full_cov=True`.
         """
-        mu, var = self.predict_f(Xnew, full_cov=full_cov)  # [N, P], [P, N, N]
-        num_latent_gps = var.shape[0]
-        num_elems = tf.shape(var)[1]
-        var_jitter = ops.add_to_diagonal(var, default_jitter())
-        L = tf.linalg.cholesky(var_jitter)  # [P, N, N]
-        V = tf.random.normal([num_latent_gps, num_elems, num_samples], dtype=mu.dtype)  # [P, N, S]
-        LV = L @ V  # [P, N, S]
-        mu_t = tf.linalg.adjoint(mu)  # [P, N]
-        return tf.transpose(mu_t[..., np.newaxis] + LV)  # [S, N, P]
+        if full_cov and full_output_cov:
+            raise NotImplementedError(
+                "The combination of both `full_cov` and `full_output_cov` is not supported."
+            )
+
+        # check below for shape info
+        mean, cov = self.predict_f(Xnew, full_cov=full_cov, full_output_cov=full_output_cov)
+        if full_cov:
+            # mean: [..., N, P]
+            # cov: [..., P, N, N]
+            mean_for_sample = tf.linalg.adjoint(mean)  # [..., P, N]
+            samples = sample_mvn(
+                mean_for_sample, cov, "full", num_samples=num_samples
+            )  # [..., (S), P, N]
+            samples = tf.linalg.adjoint(samples)  # [..., (S), N, P]
+        else:
+            # mean: [..., N, P]
+            # cov: [..., N, P] or [..., N, P, P]
+            cov_structure = "full" if full_output_cov else "diag"
+            samples = sample_mvn(
+                mean, cov, cov_structure, num_samples=num_samples
+            )  # [..., (S), N, P]
+        return samples  # [..., (S), N, P]
 
     def predict_y(
-        self, Xnew: DataPoint, full_cov: bool = False, full_output_cov: bool = False
+        self, Xnew: InputData, full_cov: bool = False, full_output_cov: bool = False
     ) -> MeanAndVariance:
         """
         Compute the mean and variance of the held-out data at the input points.
@@ -139,11 +212,11 @@ class GPModel(BayesianModel):
         return self.likelihood.predict_mean_and_var(f_mean, f_var)
 
     def predict_log_density(
-        self, data: Data, full_cov: bool = False, full_output_cov: bool = False
+        self, data: RegressionData, full_cov: bool = False, full_output_cov: bool = False
     ):
         """
         Compute the log density of the data at the new data points.
         """
         X, Y = data
         f_mean, f_var = self.predict_f(X, full_cov=full_cov, full_output_cov=full_output_cov)
-        return self.likelihood.predict_density(f_mean, f_var, Y)
+        return self.likelihood.predict_log_density(f_mean, f_var, Y)
