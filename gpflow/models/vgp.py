@@ -26,8 +26,8 @@ from ..kernels import Kernel
 from ..kullback_leiblers import gauss_kl
 from ..likelihoods import Likelihood
 from ..mean_functions import MeanFunction, Zero
-from ..models.model import Data, DataPoint, GPModel, MeanAndVariance
 from ..utilities import triangular
+from .model import GPModel, InputData, RegressionData, MeanAndVariance
 
 
 class VGP(GPModel):
@@ -38,7 +38,7 @@ class VGP(GPModel):
     approximated by a Gaussian, and the KL divergence is minimised between
     the approximation and the posterior.
 
-    This implementation is equivalent to svgp with X=Z, but is more efficient.
+    This implementation is equivalent to SVGP with X=Z, but is more efficient.
     The whitened representation is used to aid optimization.
 
     The posterior approximation is
@@ -51,17 +51,15 @@ class VGP(GPModel):
 
     def __init__(
         self,
-        data: Data,
+        data: RegressionData,
         kernel: Kernel,
         likelihood: Likelihood,
         mean_function: Optional[MeanFunction] = None,
         num_latent_gps: Optional[int] = None,
     ):
         """
-        X is a data matrix, size [N, D]
-        Y is a data matrix, size [N, R]
+        data = (X, Y) contains the input points [N, D] and the observations [N, P]
         kernel, likelihood, mean_function are appropriate GPflow objects
-
         """
         if num_latent_gps is None:
             num_latent_gps = self.calc_num_latent_gps_from_data(data, kernel, likelihood)
@@ -76,7 +74,7 @@ class VGP(GPModel):
         q_sqrt = np.array([np.eye(num_data) for _ in range(self.num_latent_gps)])
         self.q_sqrt = Parameter(q_sqrt, transform=triangular())
 
-    def log_likelihood(self):
+    def log_likelihood(self) -> tf.Tensor:
         r"""
         This method computes the variational lower bound on the likelihood,
         which is:
@@ -110,7 +108,7 @@ class VGP(GPModel):
         return tf.reduce_sum(var_exp) - KL
 
     def predict_f(
-        self, Xnew: DataPoint, full_cov: bool = False, full_output_cov: bool = False
+        self, Xnew: InputData, full_cov: bool = False, full_output_cov: bool = False
     ) -> MeanAndVariance:
         X_data, _ = self.data
         mu, var = conditional(
@@ -148,15 +146,14 @@ class VGPOpperArchambeau(GPModel):
 
     def __init__(
         self,
-        data: Data,
+        data: RegressionData,
         kernel: Kernel,
         likelihood: Likelihood,
         mean_function: Optional[MeanFunction] = None,
         num_latent_gps: Optional[int] = None,
     ):
         """
-        X is a data matrix, size [N, D]
-        Y is a data matrix, size [N, R]
+        data = (X, Y) contains the input points [N, D] and the observations [N, P]
         kernel, likelihood, mean_function are appropriate GPflow objects
         """
         if num_latent_gps is None:
@@ -171,7 +168,7 @@ class VGPOpperArchambeau(GPModel):
             np.ones((self.num_data, self.num_latent_gps)), transform=gpflow.utilities.positive()
         )
 
-    def log_likelihood(self):
+    def log_likelihood(self) -> tf.Tensor:
         r"""
         q_alpha, q_lambda are variational parameters, size [N, R]
         This method computes the variational lower bound on the likelihood,
@@ -214,7 +211,9 @@ class VGPOpperArchambeau(GPModel):
         v_exp = self.likelihood.variational_expectations(f_mean, f_var, Y_data)
         return tf.reduce_sum(v_exp) - KL
 
-    def predict_f(self, Xnew: DataPoint, full_cov: bool = False, full_output_cov: bool = False):
+    def predict_f(
+        self, Xnew: InputData, full_cov: bool = False, full_output_cov: bool = False
+    ) -> MeanAndVariance:
         r"""
         The posterior variance of F is given by
             q(f) = N(f | K alpha + mean, [K^-1 + diag(lambda**2)]^-1)

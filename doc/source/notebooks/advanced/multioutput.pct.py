@@ -7,7 +7,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.3.3
+#       jupytext_version: 1.4.1
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -18,23 +18,30 @@
 # # Multi-output Gaussian processes in GPflow
 
 # %% [markdown]
-# This notebook shows how to construct a multi-output GP model using GPflow. We will consider a regression problem for functions $f: \mathbb{R}^D \rightarrow \mathbb{R}^P$. We assume that the dataset is of the form $(X, f_1), \dots, (X, f_P)$, that is, we observe all the outputs for a particular input location (for cases where there are **not** fully observed outputs for each input, see [A simple demonstration of coregionalization](./coregionalisation.ipynb)).
+# This notebook shows how to construct a multi-output GP model using GPflow, together with different interdomain inducing variables which lead to different approximation properties. GPflow provides a framework for specifying multioutput GP priors, and interdomain approximations which is
+# - modular, by providing a consistent interface for the user of the resulting `SVGP` model,
+# - extensible, by allowing new interdomain variables and kernels to be specified while reusing exising code where possible,
+# - efficient, by allowing the most efficient custom code path to be specified where desired.
 #
-# Here we assume a model of the form:
-# $$f(x) = W g(x),$$
-# where $g(x) \in \mathbb{R}^L$, $f(x) \in \mathbb{R}^P$ and $W \in \mathbb{R}^{P \times L}$. We assume that the outputs of $g$ are uncorrelated, and that by *mixing* them with $W$ they become correlated. In this notebook, we show how to build this model using Sparse Variational Gaussian Process (SVGP) for $g$, which scales well with the numbers of data points and outputs.
+# Getting to grips with the maths and code can be a bit daunting, so to accompany the documentation there is an [in-depth review on arXiv](https://arxiv.org/abs/2003.01115), which provides a unified mathematical framework, together with a high-level description of software design choices in GPflow.
 #
-# Here we have two options for $g$:
-# 1. The output dimensions of $g$ share the same kernel.
-# 2. Each output of $g$ has a separate kernel.
+# This notebook shows the various design choices that can be made, to show the reader the flexibility of the framework. This is done in the hope that an example is provided that can be easily adapted to the special case that the reader wants to implement.
 #
+# A reader who just wants to use a multioutput kernel should simply choose the most efficient set of inducing variables.
 #
-# In addition, we have two further suboptions for the inducing inputs of $g$:
-# 1. The instances of $g$ share the same inducing inputs.
-# 2. Each output of $g$ has its own set of inducing inputs.
+# To cite this framework, please reference our [arXiv paper](https://arxiv.org/abs/2003.01115).
+# ```
+# @article{GPflow2020multioutput,
+#   author = {{van der Wilk}, Mark and Dutordoir, Vincent and John, ST and
+#             Artemev, Artem and Adam, Vincent and Hensman, James},
+#   title = {A Framework for Interdomain and Multioutput {G}aussian Processes},
+#   year = {2020},
+#   journal = {arXiv:2003.01115},
+#   url = {https://arxiv.org/abs/2003.01115}
+# }
+# ```
 #
-# The notation is as follows:
-# $$
+# \begin{equation}
 # \newcommand{\GP}{\mathcal{GP}}
 # \newcommand{\NN}{\mathcal{N}}
 # \newcommand{\LL}{\mathcal{L}}
@@ -52,7 +59,29 @@
 # \newcommand{\vX}{\mathbf{X}}
 # \newcommand{\vY}{\mathbf{Y}}
 # \newcommand{\identity}{\mathbb{I}}
-# $$
+# \end{equation}
+#
+#
+#
+# ## Task
+# We will consider a regression problem for functions $f: \mathbb{R}^D \rightarrow \mathbb{R}^P$. We assume that the dataset is of the form $(X, f_1), \dots, (X, f_P)$, that is, we observe all the outputs for a particular input location (for cases where there are **not** fully observed outputs for each input, see [A simple demonstration of coregionalization](./coregionalisation.ipynb)).
+#
+# Here we assume a model of the form:
+# \begin{equation}
+# f(x) = W g(x),
+# \end{equation}
+# where $g(x) \in \mathbb{R}^L$, $f(x) \in \mathbb{R}^P$ and $W \in \mathbb{R}^{P \times L}$. We assume that the outputs of $g$ are uncorrelated, and that by *mixing* them with $W$ they become correlated. In this notebook, we show how to build this model using Sparse Variational Gaussian Process (SVGP) for $g$, which scales well with the numbers of data points and outputs.
+#
+# Here we have two options for $g$:
+# 1. The output dimensions of $g$ share the same kernel.
+# 1. Each output of $g$ has a separate kernel.
+#
+#
+# In addition, we have two further suboptions for the inducing inputs of $g$:
+# 1. The instances of $g$ share the same inducing inputs.
+# 1. Each output of $g$ has its own set of inducing inputs.
+#
+# The notation is as follows:
 # - $X \in \mathbb{R}^{N \times D}$ denotes the input
 # - $Y \in \RR^{N \times P}$ denotes the output
 # - $k_{1..L}$, $L$ are kernels on $\RR^{N \times D}$
@@ -80,7 +109,7 @@ MAXITER = ci_niter(2000)
 # We create a utility function to generate synthetic data. We assume that:
 
 # %%
-N = 100 # number of points
+N = 100  # number of points
 D = 1  # number of input dimensions
 M = 15  # number of inducing points
 L = 2  # number of latent GPs
@@ -90,7 +119,7 @@ P = 3  # number of observations = output dimensions
 # %%
 def generate_data(N=100):
     X = np.random.rand(N)[:, None] * 10 - 5  # Inputs = N x D
-    G = np.hstack((0.5 * np.sin(3 * X) + X, 3.0 * np.cos(X) - X)) # G = N x L
+    G = np.hstack((0.5 * np.sin(3 * X) + X, 3.0 * np.cos(X) - X))  # G = N x L
     W = np.array([[0.5, -0.3, 1.5], [-0.4, 0.43, 0.0]])  # L x P
     F = np.matmul(G, W)  # N x P
     Y = F + np.random.randn(*F.shape) * [0.2, 0.2, 0.2]
@@ -112,25 +141,25 @@ def plot_model(m, lower=-8.0, upper=8.0):
     pY, pYv = m.predict_y(pX)
     if pY.ndim == 3:
         pY = pY[:, 0, :]
-    plt.plot(X, Y, 'x')
+    plt.plot(X, Y, "x")
     plt.gca().set_prop_cycle(None)
     plt.plot(pX, pY)
     for i in range(pY.shape[1]):
         top = pY[:, i] + 2.0 * pYv[:, i] ** 0.5
         bot = pY[:, i] - 2.0 * pYv[:, i] ** 0.5
         plt.fill_between(pX[:, 0], top, bot, alpha=0.3)
-    plt.xlabel('X')
-    plt.ylabel('f')
+    plt.xlabel("X")
+    plt.ylabel("f")
     plt.title(f"lml: {m.log_likelihood(data):.3}")
-    plt.plot(Z, Z * 0.0, 'o')
+    plt.plot(Z, Z * 0.0, "o")
 
 
 # %% [markdown]
 # ## Model the outputs of $f(x)$ directly
 # The three following examples show how to model the outputs of the model $f(x)$ directly. Mathematically, this case is equivalent to having:
-# $$
+# \begin{equation}
 # f(x) = I g(x),
-# $$
+# \end{equation}
 # i.e. $W = I$ and $P = L$.
 
 # %% [markdown]
@@ -143,7 +172,9 @@ kernel = gpf.kernels.SharedIndependent(gpf.kernels.RBF(1) + gpf.kernels.Linear(1
 # initialization of inducing input locations (M random points from the training inputs)
 Z = Zinit.copy()
 # create multi-output inducing variables from Z
-iv = gpf.inducing_variables.SharedIndependentInducingVariables(gpf.inducing_variables.InducingPoints(Z))
+iv = gpf.inducing_variables.SharedIndependentInducingVariables(
+    gpf.inducing_variables.InducingPoints(Z)
+)
 
 # %%
 # create SVGP model as usual and optimize
@@ -153,17 +184,18 @@ print_summary(m)
 
 # %%
 def optimize_model_with_scipy(model):
-
     @tf.function
     def obj():
         return -model.elbo(data)
 
     optimizer = gpf.optimizers.Scipy()
-    optimizer.minimize(obj,
+    optimizer.minimize(
+        obj,
         variables=model.trainable_variables,
         method="l-bfgs-b",
-        options={"disp": True, "maxiter": MAXITER}
+        options={"disp": True, "maxiter": MAXITER},
     )
+
 
 optimize_model_with_scipy(m)
 
@@ -190,7 +222,9 @@ kernel = gpf.kernels.SeparateIndependent(kern_list)
 # initialization of inducing input locations (M random points from the training inputs)
 Z = Zinit.copy()
 # create multi-output inducing variables from Z
-iv = gpf.inducing_variables.SharedIndependentInducingVariables(gpf.inducing_variables.InducingPoints(Z))
+iv = gpf.inducing_variables.SharedIndependentInducingVariables(
+    gpf.inducing_variables.InducingPoints(Z)
+)
 
 # %%
 # create SVGP model as usual and optimize
@@ -243,10 +277,14 @@ plot_model(m)
 # %%
 for i in range(len(m.inducing_variable.inducing_variable_list)):
     q_mu_unwhitened, q_var_unwhitened = m.predict_f(m.inducing_variable.inducing_variable_list[i].Z)
-    plt.plot(m.inducing_variable.inducing_variable_list[i].Z.numpy(), q_mu_unwhitened[:, i, None].numpy(), "o")
+    plt.plot(
+        m.inducing_variable.inducing_variable_list[i].Z.numpy(),
+        q_mu_unwhitened[:, i, None].numpy(),
+        "o",
+    )
 plt.gca().set_xticks(np.linspace(-6, 6, 20), minor=True)
 plt.gca().set_yticks(np.linspace(-9, 9, 20), minor=True)
-plt.grid(which='minor')
+plt.grid(which="minor")
 
 # %%
 m.inducing_variable.inducing_variable_list
@@ -259,18 +297,22 @@ m.inducing_variable.inducing_variable_list
 # We assume that the outputs of $g$ are uncorrelated, and by *mixing* them with $W$ they become correlated.
 # With this setup we perform the optimal routine to calculate the conditional. Namely, calculate the conditional of the uncorrelated latent $g$ and afterwards project the mean and variance using the mixing matrix: $\mu_f = W \mu_g$ and $\Sigma_f = W\Sigma_g W^\top$
 #
-# - $ K_{uu} = L \times M \times M $
-# - $ K_{uf} = L \times M \times N $
+# - $K_{uu} = L \times M \times M$
+# - $K_{uf} = L \times M \times N$
 
 # %%
 # Create list of kernels for each output
 kern_list = [gpf.kernels.RBF(D) + gpf.kernels.Linear(D) for _ in range(L)]
 # Create multi-output kernel from kernel list
-kernel = gpf.kernels.LinearCoregionalization(kern_list, W=np.random.randn(P, L)) # Notice that we initialise the mixing matrix W
+kernel = gpf.kernels.LinearCoregionalization(
+    kern_list, W=np.random.randn(P, L)
+)  # Notice that we initialise the mixing matrix W
 # initialisation of inducing input locations (M random points from the training inputs)
 Z = Zinit.copy()
 # create multi-output inducing variables from Z
-iv = gpf.inducing_variables.SharedIndependentInducingVariables(gpf.inducing_variables.InducingPoints(Z))
+iv = gpf.inducing_variables.SharedIndependentInducingVariables(
+    gpf.inducing_variables.InducingPoints(Z)
+)
 
 # %%
 # initialize mean of variational posterior to be of shape MxL
@@ -279,7 +321,9 @@ q_mu = np.zeros((M, L))
 q_sqrt = np.repeat(np.eye(M)[None, ...], L, axis=0) * 1.0
 
 # create SVGP model as usual and optimize
-m = gpf.models.SVGP(kernel, gpf.likelihoods.Gaussian(), inducing_variable=iv, q_mu=q_mu, q_sqrt=q_sqrt)
+m = gpf.models.SVGP(
+    kernel, gpf.likelihoods.Gaussian(), inducing_variable=iv, q_mu=q_mu, q_sqrt=q_sqrt
+)
 
 # %%
 optimize_model_with_scipy(m)
@@ -371,12 +415,14 @@ def inspect_conditional(inducing_variable_type, kernel_type):
     info = dict(inspect.getmembers(implementation))
     return info["__code__"]
 
+
 # Example:
 inspect_conditional(
-    gpf.inducing_variables.SharedIndependentInducingVariables,
-    gpf.kernels.SharedIndependent
+    gpf.inducing_variables.SharedIndependentInducingVariables, gpf.kernels.SharedIndependent
 )
 
 # %% [markdown]
 # ## Further Reading:
 # - [A simple demonstration of coregionalization](./coregionalisation.ipynb), which details other GPflow features for multi-output prediction without fully observed outputs.
+
+# %%

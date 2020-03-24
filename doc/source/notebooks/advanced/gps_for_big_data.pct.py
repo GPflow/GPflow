@@ -17,7 +17,7 @@
 # # Stochastic Variational Inference for scalability with SVGP
 
 # %% [markdown]
-# One of the main criticisms of Gaussian processes is their scalability to large datasets. In this notebook, we illustrate how to use the state-of-the-art Stochastic Variational Gaussian Process (SVGP) (*Hensman, et. al. 2013*) to overcome this problem. 
+# One of the main criticisms of Gaussian processes is their scalability to large datasets. In this notebook, we illustrate how to use the state-of-the-art Stochastic Variational Gaussian Process (SVGP) (*Hensman, et. al. 2013*) to overcome this problem.
 
 # %%
 # %matplotlib inline
@@ -29,7 +29,8 @@ import tensorflow as tf
 import matplotlib
 import matplotlib.pyplot as plt
 from gpflow.ci_utils import ci_niter
-plt.style.use('ggplot')
+
+plt.style.use("ggplot")
 
 # for reproducibility of this notebook:
 rng = np.random.RandomState(123)
@@ -46,6 +47,7 @@ tf.random.set_seed(42)
 def func(x):
     return np.sin(x * 3 * 3.14) + 0.3 * np.cos(x * 9 * 3.14) + 0.5 * np.sin(x * 7 * 3.14)
 
+
 N = 10000  # Number of training observations
 
 X = rng.rand(N, 1) * 2 - 1  # X values
@@ -56,10 +58,10 @@ data = (X, Y)
 # We plot the data along with the noiseless generating function:
 
 # %%
-plt.plot(X, Y, 'x', alpha=0.2)
+plt.plot(X, Y, "x", alpha=0.2)
 Xt = np.linspace(-1.1, 1.1, 1000)[:, None]
 Yt = func(Xt)
-plt.plot(Xt, Yt, c='k');
+_ = plt.plot(Xt, Yt, c="k")
 
 # %% [markdown]
 # ## Building the model
@@ -90,9 +92,7 @@ log_likelihood(data)
 # %%
 minibatch_size = 100
 
-train_dataset = tf.data.Dataset.from_tensor_slices((X, Y)) \
-    .repeat() \
-    .shuffle(N)
+train_dataset = tf.data.Dataset.from_tensor_slices((X, Y)).repeat().shuffle(N)
 
 train_it = iter(train_dataset.batch(minibatch_size))
 
@@ -107,17 +107,15 @@ log_likelihood(next(train_it))
 # The minibatch estimate should be an unbiased estimator of the `ground_truth`. Here we show a histogram of the value from different evaluations, together with its mean and the ground truth. The small difference between the mean of the minibatch estimations and the ground truth shows that the minibatch estimator is working as expected.
 
 # %%
-evals = [log_likelihood(minibatch).numpy()
-         for minibatch in itertools.islice(train_it, 100)]
+evals = [log_likelihood(minibatch).numpy() for minibatch in itertools.islice(train_it, 100)]
 
 # %%
-plt.hist(evals, label='Minibatch estimations')
-plt.axvline(ground_truth, c='k', label='Ground truth')
-plt.axvline(np.mean(evals), c='g', ls='--', label='Minibatch mean')
+plt.hist(evals, label="Minibatch estimations")
+plt.axvline(ground_truth, c="k", label="Ground truth")
+plt.axvline(np.mean(evals), c="g", ls="--", label="Minibatch mean")
 plt.legend()
-plt.title('Histogram of ELBO evaluations using minibatches')
-print("Discrepancy between ground truth and minibatch estimate:",
-      ground_truth - np.mean(evals))
+plt.title("Histogram of ELBO evaluations using minibatches")
+print("Discrepancy between ground truth and minibatch estimate:", ground_truth - np.mean(evals))
 
 # %% [markdown]
 # ### Minibatches speed up computation
@@ -132,17 +130,16 @@ for mbp in minibatch_proportions:
     batchsize = int(N * mbp)
     train_it = iter(train_dataset.batch(batchsize))
     start_time = time.time()
-    objs.append([log_likelihood(minibatch)
-                 for minibatch in itertools.islice(train_it, 20)])
+    objs.append([log_likelihood(minibatch) for minibatch in itertools.islice(train_it, 20)])
     times.append(time.time() - start_time)
 
 # %%
 f, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 6))
-ax1.plot(minibatch_proportions, times, 'x-')
+ax1.plot(minibatch_proportions, times, "x-")
 ax1.set_xlabel("Minibatch proportion")
 ax1.set_ylabel("Time taken")
 
-ax2.plot(minibatch_proportions, np.array(objs), 'kx')
+ax2.plot(minibatch_proportions, np.array(objs), "kx")
 ax2.set_xlabel("Minibatch proportion")
 ax2.set_ylabel("ELBO estimates")
 
@@ -154,19 +151,26 @@ ax2.set_ylabel("ELBO estimates")
 # First we create a utility function that plots the model's predictions:
 
 # %%
-def plot(title=''):
+def plot(title=""):
     plt.figure(figsize=(12, 4))
     plt.title(title)
     pX = np.linspace(-1, 1, 100)[:, None]  # Test locations
     pY, pYv = m.predict_y(pX)  # Predict Y values at test locations
-    plt.plot(X, Y, 'x', label='Training points', alpha=0.2)
-    line, = plt.plot(pX, pY, lw=1.5, label='Mean of predictive posterior')
+    plt.plot(X, Y, "x", label="Training points", alpha=0.2)
+    (line,) = plt.plot(pX, pY, lw=1.5, label="Mean of predictive posterior")
     col = line.get_color()
-    plt.fill_between(pX[:, 0], (pY-2*pYv**0.5)[:, 0], (pY+2*pYv**0.5)[:, 0], 
-                     color=col, alpha=0.6, lw=1.5)
+    plt.fill_between(
+        pX[:, 0],
+        (pY - 2 * pYv ** 0.5)[:, 0],
+        (pY + 2 * pYv ** 0.5)[:, 0],
+        color=col,
+        alpha=0.6,
+        lw=1.5,
+    )
     Z = m.inducing_variable.Z.numpy()
-    plt.plot(Z, np.zeros_like(Z), 'k|', mew=2, label='Inducing locations')
-    plt.legend(loc='lower right')
+    plt.plot(Z, np.zeros_like(Z), "k|", mew=2, label="Inducing locations")
+    plt.legend(loc="lower right")
+
 
 plot(title="Predictions before training")
 
@@ -179,14 +183,16 @@ minibatch_size = 100
 # We turn off training for inducing point locations
 gpflow.set_trainable(m.inducing_variable, False)
 
+
 @tf.function
 def optimization_step(optimizer, model: gpflow.models.SVGP, batch):
     with tf.GradientTape(watch_accessed_variables=False) as tape:
         tape.watch(model.trainable_variables)
-        objective = - model.elbo(batch)
+        objective = -model.elbo(batch)
         grads = tape.gradient(objective, model.trainable_variables)
     optimizer.apply_gradients(zip(grads, model.trainable_variables))
     return objective
+
 
 def run_adam(model, iterations):
     """
@@ -200,7 +206,7 @@ def run_adam(model, iterations):
     train_it = iter(train_dataset.batch(minibatch_size))
     adam = tf.optimizers.Adam()
     for step in range(iterations):
-        elbo = - optimization_step(adam, model, next(train_it))
+        elbo = -optimization_step(adam, model, next(train_it))
         if step % 10 == 0:
             logf.append(elbo.numpy())
     return logf
@@ -214,8 +220,8 @@ maxiter = ci_niter(20000)
 
 logf = run_adam(m, maxiter)
 plt.plot(np.arange(maxiter)[::10], logf)
-plt.xlabel('iteration')
-plt.ylabel('ELBO');
+plt.xlabel("iteration")
+_ = plt.ylabel("ELBO")
 
 # %% [markdown]
 # Finally, we plot the model's predictions.
