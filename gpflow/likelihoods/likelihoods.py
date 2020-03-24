@@ -91,7 +91,6 @@ class Likelihood(Module, metaclass=abc.ABCMeta):
         :param observation_dim: the dimension of the observation vector Y for a single data point
         """
         super().__init__()
-        self.num_gauss_hermite_points = 20
         self.latent_dim = latent_dim
         self.observation_dim = observation_dim
 
@@ -294,6 +293,7 @@ class ScalarLikelihood(Likelihood):
 
     def __init__(self, **kwargs):
         super().__init__(latent_dim=None, observation_dim=None, **kwargs)
+        self.num_gauss_hermite_points = 20
 
     def _check_last_dims_valid(self, F, Y):
         """
