@@ -41,24 +41,7 @@
 # }
 # ```
 #
-# ## Task
-# We will consider a regression problem for functions $f: \mathbb{R}^D \rightarrow \mathbb{R}^P$. We assume that the dataset is of the form $(X, f_1), \dots, (X, f_P)$, that is, we observe all the outputs for a particular input location (for cases where there are **not** fully observed outputs for each input, see [A simple demonstration of coregionalization](./coregionalisation.ipynb)).
-#
-# Here we assume a model of the form:
-# $$f(x) = W g(x),$$
-# where $g(x) \in \mathbb{R}^L$, $f(x) \in \mathbb{R}^P$ and $W \in \mathbb{R}^{P \times L}$. We assume that the outputs of $g$ are uncorrelated, and that by *mixing* them with $W$ they become correlated. In this notebook, we show how to build this model using Sparse Variational Gaussian Process (SVGP) for $g$, which scales well with the numbers of data points and outputs.
-#
-# Here we have two options for $g$:
-# 1. The output dimensions of $g$ share the same kernel.
-# 2. Each output of $g$ has a separate kernel.
-#
-#
-# In addition, we have two further suboptions for the inducing inputs of $g$:
-# 1. The instances of $g$ share the same inducing inputs.
-# 2. Each output of $g$ has its own set of inducing inputs.
-#
-# The notation is as follows:
-# $$
+# \begin{equation}
 # \newcommand{\GP}{\mathcal{GP}}
 # \newcommand{\NN}{\mathcal{N}}
 # \newcommand{\LL}{\mathcal{L}}
@@ -76,7 +59,29 @@
 # \newcommand{\vX}{\mathbf{X}}
 # \newcommand{\vY}{\mathbf{Y}}
 # \newcommand{\identity}{\mathbb{I}}
-# $$
+# \end{equation}
+#
+#
+#
+# ## Task
+# We will consider a regression problem for functions $f: \mathbb{R}^D \rightarrow \mathbb{R}^P$. We assume that the dataset is of the form $(X, f_1), \dots, (X, f_P)$, that is, we observe all the outputs for a particular input location (for cases where there are **not** fully observed outputs for each input, see [A simple demonstration of coregionalization](./coregionalisation.ipynb)).
+#
+# Here we assume a model of the form:
+# \begin{equation}
+# f(x) = W g(x),
+# \end{equation}
+# where $g(x) \in \mathbb{R}^L$, $f(x) \in \mathbb{R}^P$ and $W \in \mathbb{R}^{P \times L}$. We assume that the outputs of $g$ are uncorrelated, and that by *mixing* them with $W$ they become correlated. In this notebook, we show how to build this model using Sparse Variational Gaussian Process (SVGP) for $g$, which scales well with the numbers of data points and outputs.
+#
+# Here we have two options for $g$:
+# 1. The output dimensions of $g$ share the same kernel.
+# 1. Each output of $g$ has a separate kernel.
+#
+#
+# In addition, we have two further suboptions for the inducing inputs of $g$:
+# 1. The instances of $g$ share the same inducing inputs.
+# 1. Each output of $g$ has its own set of inducing inputs.
+#
+# The notation is as follows:
 # - $X \in \mathbb{R}^{N \times D}$ denotes the input
 # - $Y \in \RR^{N \times P}$ denotes the output
 # - $k_{1..L}$, $L$ are kernels on $\RR^{N \times D}$
@@ -152,9 +157,9 @@ def plot_model(m, lower=-8.0, upper=8.0):
 # %% [markdown]
 # ## Model the outputs of $f(x)$ directly
 # The three following examples show how to model the outputs of the model $f(x)$ directly. Mathematically, this case is equivalent to having:
-# $$
+# \begin{equation}
 # f(x) = I g(x),
-# $$
+# \end{equation}
 # i.e. $W = I$ and $P = L$.
 
 # %% [markdown]
@@ -292,8 +297,8 @@ m.inducing_variable.inducing_variable_list
 # We assume that the outputs of $g$ are uncorrelated, and by *mixing* them with $W$ they become correlated.
 # With this setup we perform the optimal routine to calculate the conditional. Namely, calculate the conditional of the uncorrelated latent $g$ and afterwards project the mean and variance using the mixing matrix: $\mu_f = W \mu_g$ and $\Sigma_f = W\Sigma_g W^\top$
 #
-# - $ K_{uu} = L \times M \times M $
-# - $ K_{uf} = L \times M \times N $
+# - $K_{uu} = L \times M \times M$
+# - $K_{uf} = L \times M \times N$
 
 # %%
 # Create list of kernels for each output
