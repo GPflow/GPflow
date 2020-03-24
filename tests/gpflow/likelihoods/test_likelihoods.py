@@ -171,7 +171,7 @@ def test_quadrature_variational_expectation(likelihood_setup, mu, var):
     assert_allclose(F1, F2, rtol=likelihood_setup.rtol, atol=likelihood_setup.atol)
 
 
-@pytest.mark.parametrize("likelihood_setup", filter_analytic(likelihood_setups, "predict_density"))
+@pytest.mark.parametrize("likelihood_setup", filter_analytic(likelihood_setups, "predict_log_density"))
 @pytest.mark.parametrize("mu, var", [[Datum.Fmu, Datum.Fvar]])
 def test_quadrature_predict_log_density(likelihood_setup, mu, var):
     likelihood, y = likelihood_setup.likelihood, likelihood_setup.Y

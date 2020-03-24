@@ -101,10 +101,10 @@ class Likelihood(Module, metaclass=abc.ABCMeta):
         :param F: function evaluation Tensor, with shape [..., latent_dim]
         :param Y: observation Tensor, with shape [..., observation_dim]
         """
-        self.check_latent_dims(F)
-        self.check_data_dims(Y)
+        self._check_latent_dims(F)
+        self._check_data_dims(Y)
 
-    def check_return_shape(self, result, F, Y):
+    def _check_return_shape(self, result, F, Y):
         """
         Check that the shape of a computed statistic of the data
         is the broadcasted shape from F and Y.
@@ -115,14 +115,14 @@ class Likelihood(Module, metaclass=abc.ABCMeta):
         expected_shape = tf.broadcast_dynamic_shape(tf.shape(F)[:-1], tf.shape(Y)[:-1])
         tf.debugging.assert_equal(tf.shape(result), expected_shape)
 
-    def check_latent_dims(self, F):
+    def _check_latent_dims(self, F):
         """
         Ensure that a tensor of latent functions F has latent_dim as right most dimension.
         :param F: function evaluation Tensor, with shape [..., latent_dim]
         """
         tf.debugging.assert_shapes([(F, (..., self.latent_dim))])
 
-    def check_data_dims(self, Y):
+    def _check_data_dims(self, Y):
         """
         Ensure that a tensor of data Y has observation_dim as right most dimension.
         :param Y: observation Tensor, with shape [..., observation_dim]
@@ -138,7 +138,7 @@ class Likelihood(Module, metaclass=abc.ABCMeta):
         """
         self._check_last_dims_valid(F, Y)
         res = self._log_prob(F, Y)
-        self.check_return_shape(res, F, Y)
+        self._check_return_shape(res, F, Y)
         return res
 
     @abc.abstractmethod
@@ -151,9 +151,9 @@ class Likelihood(Module, metaclass=abc.ABCMeta):
         :param F: function evaluation Tensor, with shape [..., latent_dim]
         :return mean [..., observation_dim]
         """
-        self.check_latent_dims(F)
+        self._check_latent_dims(F)
         expected_Y = self._conditional_mean(F)
-        self.check_data_dims(expected_Y)
+        self._check_data_dims(expected_Y)
         return expected_Y
 
     @abc.abstractmethod
@@ -167,9 +167,9 @@ class Likelihood(Module, metaclass=abc.ABCMeta):
         :param F: function evaluation Tensor, with shape [..., latent_dim]
         :return variance [..., observation_dim]
         """
-        self.check_latent_dims(F)
+        self._check_latent_dims(F)
         var_Y = self._conditional_variance(F)
-        self.check_data_dims(var_Y)
+        self._check_data_dims(var_Y)
         return var_Y
 
     @abc.abstractmethod
@@ -183,11 +183,11 @@ class Likelihood(Module, metaclass=abc.ABCMeta):
         :param Fvar: variance of function evaluation Tensor, with shape [..., latent_dim]
         :return mean and variance, both with shape [..., observation_dim]
         """
-        self.check_latent_dims(Fmu)
-        self.check_latent_dims(Fvar)
+        self._check_latent_dims(Fmu)
+        self._check_latent_dims(Fvar)
         mu, var = self._predict_mean_and_var(Fmu, Fvar)
-        self.check_data_dims(mu)
-        self.check_data_dims(var)
+        self._check_data_dims(mu)
+        self._check_data_dims(var)
         return mu, var
 
     @abc.abstractmethod
@@ -218,7 +218,7 @@ class Likelihood(Module, metaclass=abc.ABCMeta):
         tf.debugging.assert_equal(tf.shape(Fmu), tf.shape(Fvar))
         self._check_last_dims_valid(Fmu, Y)
         res = self._predict_log_density(Fmu, Fvar, Y)
-        self.check_return_shape(res, Fmu, Y)
+        self._check_return_shape(res, Fmu, Y)
         return res
 
     @abc.abstractmethod
@@ -263,7 +263,7 @@ class Likelihood(Module, metaclass=abc.ABCMeta):
         _ = tf.broadcast_dynamic_shape(tf.shape(Fmu)[:-1], tf.shape(Y)[:-1])
         self._check_last_dims_valid(Fmu, Y)
         ret = self._variational_expectations(Fmu, Fvar, Y)
-        self.check_return_shape(ret, Fmu, Y)
+        self._check_return_shape(ret, Fmu, Y)
         return ret
 
     @abc.abstractmethod

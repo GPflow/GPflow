@@ -51,7 +51,7 @@ def test_switched_likelihood_log_prob(Y_list, F_list, Fvar_list, Y_label):
 @pytest.mark.parametrize("F_list", [[tf.random.normal((i, 2)) for i in range(3, 6)]])
 @pytest.mark.parametrize("Fvar_list", [[tf.exp(tf.random.normal((i, 2))) for i in range(3, 6)]])
 @pytest.mark.parametrize("Y_label", [[tf.ones((i, 2)) * (i - 3.0) for i in range(3, 6)]])
-def test_switched_likelihood_predict_density(Y_list, F_list, Fvar_list, Y_label):
+def test_switched_likelihood_predict_log_density(Y_list, F_list, Fvar_list, Y_label):
     Y_perm = list(range(3 + 4 + 5))
     np.random.shuffle(Y_perm)
     # shuffle the original data
