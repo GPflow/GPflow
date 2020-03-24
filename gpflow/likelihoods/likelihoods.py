@@ -213,7 +213,7 @@ class Likelihood(Module, metaclass=abc.ABCMeta):
         :param Fmu: mean function evaluation Tensor, with shape [..., latent_dim]
         :param Fvar: variance of function evaluation Tensor, with shape [..., latent_dim]
         :param Y: observation Tensor, with shape [..., observation_dim]:
-        :return log predicted density, with shape [...]
+        :returns: log predictive density, with shape [...]
         """
         tf.debugging.assert_equal(tf.shape(Fmu), tf.shape(Fvar))
         self._check_last_dims_valid(Fmu, Y)
