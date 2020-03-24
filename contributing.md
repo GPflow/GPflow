@@ -25,15 +25,15 @@ Due to limited scope we may not be able to review and merge every feature, howev
 
 ### ...but it won't work without changes to GPflow core?
 
-We aim to have the GPflow core infrastructure be sufficiently extensible and modular to enable a wide range of third-party extensions without having to touch the core of GPflow. The `features` module is an example of this, to enable multiscale inducing features, Fourier features, etc. If your feature/extension does not work outside of GPflow-core because something is hard-coded, please open an issue to discuss this with us!
+We aim to have the GPflow core infrastructure be sufficiently extensible and modular to enable a wide range of third-party extensions without having to touch the core of GPflow. The `inducing_variables` module is an example of this to enable interdomain approximations (multiscale inducing features, Fourier features, etc.). If your feature/extension does not work outside of GPflow-core because something is hard-coded, please open an issue to discuss this with us!
 
 ## Code quality requirements
 
-- Code must be covered by tests. We strongly encourage you to use the [pytest](https://docs.pytest.org/) framework. Even when you see your tests as a part of the old-fashioned GPflow [test cases](https://docs.python.org/3/library/unittest.html) it is still recommended to write a new test or modify the old one to use `pytest`.
+- Code must be covered by tests. We strongly encourage you to use the [pytest](https://docs.pytest.org/) framework.
 - The code must be documented. We use *reST* in docstrings. *reST* is a [standard way of documenting](http://docs.python-guide.org/en/latest/writing/documentation/) in python.\
 If the code which you are working on does not yet have any documentation, we would be very grateful if you could amend the deficiency. Missing documentation leads to ambiguities and difficulties in understanding future contributions and use cases.
 - Use [type annotations](https://docs.python.org/3/library/typing.html). Type hints make code cleaner and _safer_ to some extent.
-- Python code should follow the *PEP8* style. Use `pylint` and `mypy` for formatting and _type checking_. GPflow project has `.pylintrc` with some relaxed naming conventions.
+- Python code should generally follow the *PEP8* style. We use some custom naming conventions (see below) to have our notation follow the Gaussian process literature. Use `pylint` and `mypy` for formatting and _type checking_. GPflow project has a `.pylintrc` with some relaxed naming conventions.
 - Practise writing good code as far as is reasonable. Simpler is usually better. Reading the existing GPflow code should give a good idea of the expected style.
 
 Example:
