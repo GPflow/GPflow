@@ -335,7 +335,7 @@ class ScalarLikelihood(Likelihood):
         :param Fmu: mean function evaluation Tensor, with shape [..., latent_dim]
         :param Fvar: variance of function evaluation Tensor, with shape [..., latent_dim]
         :param Y: observation Tensor, with shape [..., latent_dim]:
-        :return predictive density, with shape [...]
+        :returns: log predictive density, with shape [...]
         """
         return tf.reduce_sum(
             ndiagquad(
