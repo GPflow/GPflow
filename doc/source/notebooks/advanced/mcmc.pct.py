@@ -335,7 +335,7 @@ optimizer = gpflow.optimizers.Scipy()
 optimizer.minimize(
     model.training_loss, variables=model.trainable_variables, options={"maxiter": 20}
 )
-print(f"log likelihood at optimum: {model.log_likelihood()}")
+print(f"log posterior density at optimum: {model.log_posterior_density()}")
 
 # %% [markdown]
 # Sampling starts with a 'burn in' period.
