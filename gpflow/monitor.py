@@ -35,14 +35,6 @@ class MonitorTask(ABC):
     A descendant class must implement the `run` method, which is the body of the monitoring task.
     """
 
-    def __init__(self, period: int = 1):
-        """
-        :param period: defines how often to run the task; it will execute every `period`th step.
-            For large values of `period` the task will be less frequently run.
-        """
-        self.current_step = 0
-        self.period = period
-
     def __call__(self, step: int, **kwargs):
         """
         It calls the 'run' function and sets the current step.
@@ -53,8 +45,7 @@ class MonitorTask(ABC):
             passing keyword argument to the callback of `ScalarToTensorBoard`.
         """
         self.current_step = tf.cast(step, tf.int64)
-        if step % self.period == 0:
-            self.run(**kwargs)
+        self.run(**kwargs)
 
     @abstractmethod
     def run(self, **kwargs):
@@ -67,15 +58,29 @@ class MonitorTask(ABC):
         raise NotImplementedError
 
 
+class ExecuteCallback(MonitorTask):
+    """ Executes a callback as task """
+
+    def __init__(self, callback: Callable[..., None]):
+        """
+        :param callback: callable to be executed during the task.
+            Arguments can be passed using keyword arguments.
+        """
+        super().__init__()
+        self.callback = callback
+
+    def run(self, **kwargs):
+        self.callback(**kwargs)
+
+
+# pylint: disable=abstract-method
 class ToTensorBoard(MonitorTask):
-    def __init__(self, log_dir: str, period: int = 1):
+    def __init__(self, log_dir: str):
         """
         :param log_dir: directory in which to store the tensorboard files.
             Can be nested, e.g. ./logs/my_run/
-        :param period: defines how often to run the task; it will execute every `period`th step.
-            For large values of `period` the task will be less frequently run.
         """
-        super().__init__(period)
+        super().__init__()
         self.file_writer = tf.summary.create_file_writer(log_dir)
 
     def __call__(self, step, **kwargs):
@@ -101,7 +106,6 @@ class ModelToTensorBoard(ToTensorBoard):
         model: BayesianModel,
         *,
         max_size: int = 3,
-        period: int = 1,
         keywords_to_monitor: List[str] = ["kernel", "likelihood"],
     ):
         """
@@ -110,14 +114,12 @@ class ModelToTensorBoard(ToTensorBoard):
         :param model: model to be monitord.
         :param max_size: maximum size of arrays (incl.) to store each
             element of the array independently as a scalar in the TensorBoard.
-        :param period: defines how often to run the task; it will execute every `period`th step.
-            For large values of `period` the task will be less frequently run.
         :param keyword_to_monitor: specifies keywords to be monitored.
             If the parameter's name includes any of the keywords specified it
             will be monitored. By default, parameters that match the `kernel` or
             `likelihood` keyword are monitored.
         """
-        super().__init__(log_dir, period)
+        super().__init__(log_dir)
         self.model = model
         self.max_size = max_size
         self.keywords_to_monitor = keywords_to_monitor
@@ -146,7 +148,7 @@ class ModelToTensorBoard(ToTensorBoard):
 class ScalarToTensorBoard(ToTensorBoard):
     """ Stores the return value of a callback in a TensorBoard. """
 
-    def __init__(self, log_dir: str, callback: Callable[[], float], name: str, period: int = 1):
+    def __init__(self, log_dir: str, callback: Callable[[], float], name: str):
         """
         :param log_dir: directory in which to store the tensorboard files.
             For example, './logs/my_run/'.
@@ -162,10 +164,8 @@ class ScalarToTensorBoard(ToTensorBoard):
             task(step, x=1)
             ```
         :param name: name used in TensorBoard.
-        :param period: defines how often to run the task; it will execute every `period`th step.
-            For large values of `period` the task will be less frequently run.
         """
-        super().__init__(log_dir, period)
+        super().__init__(log_dir)
         self.name = name
         self.callback = callback
 
@@ -180,7 +180,6 @@ class ImageToTensorBoard(ToTensorBoard):
         plotting_function: Callable[[Figure, Axes], Figure],
         name: Optional[str] = None,
         *,
-        period: int = 1,
         fig_kw: Optional[Dict[str, Any]] = None,
         subplots_kw: Optional[Dict[str, Any]] = None,
     ):
@@ -189,14 +188,12 @@ class ImageToTensorBoard(ToTensorBoard):
             Can be a nested: for example, './logs/my_run/'.
         :param plotting_function: function performing the plotting.
         :param name: name used in TensorBoard.
-        :param period: defines how often to run the task; it will execute every `period`th step.
-            For large values of `period` the task will be less frequently run.
         :params fig_kw: Keywords to be passed to Figure constructor, such as `figsize`.
         :params subplots_kw: Keywords to be passed to figure.subplots constructor, such as
             `nrows`, `ncols`, `sharex`, `sharey`. By default the default values 
             from matplotlib.pyplot as used.
         """
-        super().__init__(log_dir, period)
+        super().__init__(log_dir)
         self.plotting_function = plotting_function
         self.name = name
         self.file_writer = tf.summary.create_file_writer(log_dir)
@@ -235,17 +232,59 @@ class ImageToTensorBoard(ToTensorBoard):
         tf.summary.image(self.name, image_tensor, step=self.current_step)
 
 
-class MonitorCollection:
+class MonitorTaskGroup:
     """
+    Class for grouping `MonitorTask` instances. A group defines
+    all the tasks that are run at the same frequency, given by `period`.
+
+    A `MonitorTaskGroup` can exist of a single instance or a list of
+    `MonitorTask` instances.
+    """
+
+    def __init__(self, task_or_tasks: Union[List[MonitorTask], MonitorTask], period: int = 1):
+        """
+        :param task_or_tasks: a single instance or a list of `MonitorTask` instances.
+            Each `MonitorTask` in the list will be run with the given `period`.
+        :param period: defines how often to run the tasks; they will execute every `period`th step.
+            For large values of `period` the tasks will be less frequently run. Defaults to
+            running at every step (`period = 1`).
+        """
+        self.tasks = task_or_tasks
+        self.period = period
+
+    @property
+    def tasks(self) -> List[MonitorTask]:
+        return self._tasks
+
+    @tasks.setter
+    def tasks(self, task_or_tasks: Union[List[MonitorTask], MonitorTask]) -> None:
+        """ Ensures the tasks are stored as a list. Even if there is only a single task. """
+        if not isinstance(task_or_tasks, List):
+            self._tasks = [task_or_tasks]
+        else:
+            self._tasks = task_or_tasks
+
+    def __call__(self, step, **kwargs):
+        """ Call each task in the group """
+        for task in self.tasks:
+            task(step, **kwargs)
+
+
+class Monitor:
+    """
+    TODO: update
+    Accepts any number of 
     Aggregates a list of tasks and allows to run them all with one call to `__call__`.
     """
 
-    def __init__(self, tasks: List[MonitorTask]):
+    def __init__(self, *task_groups: MonitorTaskGroup):
         """
+        TODO: update
         :param tasks: a list of `MonitorTask`s to be ran.
         """
-        self.tasks = tasks
+        self.task_groups = task_groups
 
     def __call__(self, step, **kwargs):
-        for task in self.tasks:
-            task(step, **kwargs)
+        for group in self.task_groups:
+            if step % group.period == 0:
+                group(step, **kwargs)
