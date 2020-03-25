@@ -279,10 +279,10 @@ plt.show()
 # We first build a multiclass classification dataset.
 
 # %%
-# Generate data by sampling from RBF Kernel, and classifying with the argmax
+# Generate data by sampling from SquaredExponential kernel, and classifying with the argmax
 C, N = 3, 100
 X = rng.rand(N, 1)
-kernel = gpflow.kernels.RBF(lengthscales=0.1)
+kernel = gpflow.kernels.SquaredExponential(lengthscales=0.1)
 K = kernel.K(X) + np.eye(N) * 1e-6
 
 f = rng.multivariate_normal(mean=np.zeros(N), cov=K, size=(C)).T
@@ -450,39 +450,18 @@ gpflow.utilities.print_summary(model)
 
 
 # %% [markdown]
-# Running HMC is pretty similar to optimizing a model. GPflow has only HMC sampling for the moment, and it's a relatively vanilla implementation (no NUTS, for example). There are two things to tune, the step size (epsilon) and the number of steps $[L_{min}, L_{max}]$. Each proposal takes a random number of steps between $L_{min}$ and $L_{max}$, each of length $\epsilon$.
+# Running HMC is pretty similar to optimizing a model. GPflow builds on top of [tensorflow_probability's mcmc module](https://www.tensorflow.org/probability/api_docs/python/tfp/mcmc) and provides a SamplingHelper class to make interfacing easier.
 
 # %% [markdown]
-# We initialize HMC at the maximum a posteriori parameter value.
+# We initialize HMC at the maximum a posteriori parameter values of the model.
 
 # %%
-@tf.function
-def optimization_step(optimizer, model):
-    with tf.GradientTape(watch_accessed_variables=False) as tape:
-        tape.watch(model.trainable_variables)
-        objective = -model.log_posterior_density()
-        grads = tape.gradient(objective, model.trainable_variables)
-    optimizer.apply_gradients(zip(grads, model.trainable_variables))
-    return -objective
-
-
-def run_adam(model, iterations):
-    logf = []
-    adam = tf.optimizers.Adam()
-    for step in range(iterations):
-        elbo = optimization_step(adam, model)
-        if step % 10 == 0:
-            logf.append(elbo.numpy())
-    return logf
-
-
+optimizer = gpflow.optimizers.Scipy()
 maxiter = ci_niter(3000)
-logf = run_adam(model, maxiter)  # start near Maximum a posteriori (MAP)
-
-plt.plot(np.arange(maxiter)[::10], logf)
-plt.xlabel("iteration")
-_ = plt.ylabel("log likelihood")
-
+_ = optimizer.minimize(
+    model.training_loss, model.trainable_variables, options=dict(maxiter=maxiter)
+)
+# We can now start HMC near maximum a posteriori (MAP)
 
 # %% [markdown]
 # We then run the sampler,
@@ -490,6 +469,7 @@ _ = plt.ylabel("log likelihood")
 # %%
 num_samples = 500
 
+# Note that here we need `trainable_parameters`, not `trainable_variables`: only parameters can have priors!
 hmc_helper = gpflow.optimizers.SamplingHelper(
     model.log_posterior_density, model.trainable_parameters
 )
