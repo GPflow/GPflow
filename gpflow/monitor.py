@@ -23,6 +23,7 @@ import tensorflow as tf
 from matplotlib.backends.backend_agg import FigureCanvasAgg
 from matplotlib.figure import Axes, Figure
 
+from .base import Parameter
 from .models import BayesianModel
 from .utilities import parameter_dict
 
@@ -114,7 +115,7 @@ class ModelToTensorBoard(ToTensorBoard):
         :param model: model to be monitord.
         :param max_size: maximum size of arrays (incl.) to store each
             element of the array independently as a scalar in the TensorBoard.
-        :param keyword_to_monitor: specifies keywords to be monitored.
+        :param keywords_to_monitor: specifies keywords to be monitored.
             If the parameter's name includes any of the keywords specified it
             will be monitored. By default, parameters that match the `kernel` or
             `likelihood` keyword are monitored.
@@ -131,18 +132,28 @@ class ModelToTensorBoard(ToTensorBoard):
                 name = name.lstrip(".")  # keys are prepended with a '.', which we strip
                 self._summarize_parameter(name, parameter)
 
-    def _summarize_parameter(self, name: str, value: Union[float, np.ndarray]):
+    # @tf.function(autograph=False)
+    def _summarize_parameter(self, name: str, param: Union[Parameter, tf.Variable]):
         """
         :param name: identifier used in tensorboard
         :param value: value to be stored in tensorboard
         """
-        value = tf.reshape(value, (-1,))
+        param = tf.reshape(param, (-1,))
+        size = param.shape[0]
 
-        if tf.size(value) == 1:
-            tf.summary.scalar(name, value[0], step=self.current_step)
+        if not isinstance(size, int):
+            raise ValueError(
+                f"The monitoring can not be autographed as the size of a parameter {param} "
+                "is unknown at compile time. If compiling the monitor task is important, "
+                "make sure the shape of all parameters is known beforehand. Otherwise, "
+                "run the monitor outside the `tf.function`."
+            )
+
+        if size == 1:
+            tf.summary.scalar(name, param[0], step=self.current_step)
         else:
-            for i in tf.range(tf.minimum(tf.size(value), self.max_size)):
-                tf.summary.scalar(f"{name}[{i}]", value[i], step=self.current_step)
+            for i in range(min(size, self.max_size)):
+                tf.summary.scalar(f"{name}[{i}]", param[i], step=self.current_step)
 
 
 class ScalarToTensorBoard(ToTensorBoard):
@@ -271,16 +282,33 @@ class MonitorTaskGroup:
 
 
 class Monitor:
-    """
-    TODO: update
-    Accepts any number of 
-    Aggregates a list of tasks and allows to run them all with one call to `__call__`.
+    r"""
+    Accepts any number of of `MonitorTaskGroup` instances, and runs them
+    according to their specified periodicity.
+
+    Example use-case:
+        ```
+        # Create some monitor tasks
+        log_dir = "logs"
+        model_task = ModelToTensorBoard(log_dir, model)
+        image_task = ImageToTensorBoard(log_dir, plot_prediction, "image_samples")
+        lml_task = ScalarToTensorBoard(log_dir, lambda: model.log_likelihood(), "lml")
+
+        # Plotting tasks can be quite slow, so we want to run them less frequently.
+        # We group them in a `MonitorTaskGroup` and set the period to 5.
+        slow_tasks = MonitorTaskGroup(image_task, period=5)
+
+        # The other tasks are fast. We run them at each iteration of the optimisation.
+        fast_tasks = MonitorTaskGroup([model_task, lml_task], period=1)
+
+        # We pass both groups to the `Monitor`
+        monitor = Monitor(fast_tasks, slow_tasks)
+        ```
     """
 
     def __init__(self, *task_groups: MonitorTaskGroup):
         """
-        TODO: update
-        :param tasks: a list of `MonitorTask`s to be ran.
+        :param task_groups: a list of `MonitorTaskGroup`s to be executed.
         """
         self.task_groups = task_groups
 

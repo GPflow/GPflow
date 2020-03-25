@@ -27,6 +27,8 @@ import tensorflow as tf
 import gpflow
 from gpflow.ci_utils import ci_niter
 
+np.random.seed(0)
+
 # %% [markdown]
 # The monitoring functionality lives in `gpflow.monitor`.
 # For now, we import `ModelToTensorBoard`, `ImageToTensorBoard`, `ScalarToTensorBoard` monitoring tasks and `MonitorTaskGroup` and `Monitor`.
@@ -67,12 +69,12 @@ model
 
 # %%
 # We define a function that plots the model's prediction (in the form of samples) together with the data.
-# Importantly, this function has no other argument than `fig: matplotlib.figure.Figure` and `axes: matplotlib.figure.Axes`.
+# Importantly, this function has no other argument than `fig: matplotlib.figure.Figure` and `ax: matplotlib.figure.Axes`.
 
 
 def plot_prediction(fig, ax):
     Xnew = np.linspace(X.min() - 0.5, X.max() + 0.5, 100).reshape(-1, 1)
-    Ypred = model.predict_f_samples(Xnew, full_cov=True, num_samples=20).numpy()
+    Ypred = model.predict_f_samples(Xnew, full_cov=True, num_samples=20)
     ax.plot(Xnew.flatten(), np.squeeze(Ypred).T, "C1", alpha=0.2)
     ax.plot(X, Y, "o")
 
@@ -99,10 +101,20 @@ image_task = ImageToTensorBoard(log_dir, plot_prediction, "image_samples")
 lml_task = ScalarToTensorBoard(log_dir, lambda: model.log_likelihood(), "lml")
 
 # %% [markdown]
-# Finally, we collect all these tasks in a `MonitorCollection` object. This simple wrapper will call each task sequentially.
+# We now group the tasks in a set of fast and slow tasks and pass them to the monitor.
+# This allows us to execute the groups at a different frequency.
 
 # %%
-monitor = MonitorCollection([model_task, image_task, lml_task])
+# Plotting tasks can be quite slow. We want to run them less frequently.
+# We group them in a `MonitorTaskGroup` and set the period to 5.
+slow_tasks = MonitorTaskGroup(image_task, period=5)
+
+# The other tasks are fast. We run them at each iteration of the optimisation.
+fast_tasks = MonitorTaskGroup([model_task, lml_task], period=1)
+
+# Both groups are passed to the monitor.
+# `slow_tasks` will be run five times less frequently than `fast_tasks`.
+monitor = Monitor(fast_tasks, slow_tasks)
 
 
 # %%
@@ -127,10 +139,11 @@ for step in range(optimisation_steps):
 # %%
 opt = tf.optimizers.Adam()
 
+log_dir = f"{log_dir}/compiled"
 model_task = ModelToTensorBoard(log_dir, model)
 lml_task = ScalarToTensorBoard(log_dir, lambda: model.log_likelihood(), "lml")
-# Note that the `ImageToTensorBoard` task cannot be compiled, and is omitted from the collection
-monitor = MonitorCollection([model_task, lml_task])
+# Note that the `ImageToTensorBoard` task cannot be compiled, and is omitted from the monitoring
+monitor = Monitor(MonitorTaskGroup([model_task, lml_task]))
 
 
 # %% [markdown]
@@ -143,5 +156,6 @@ def step(i):
     monitor(i)
 
 
+# Notice the tf.range
 for i in tf.range(optimisation_steps):
     step(i)

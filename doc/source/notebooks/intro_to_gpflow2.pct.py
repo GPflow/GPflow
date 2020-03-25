@@ -224,20 +224,23 @@ simple_training_loop(model, epochs=10, logging_epoch_freq=2)
 # ## Monitoring
 #
 # `gpflow.monitor` provides a thin wrapper on top of tf.summary that makes it easy to monitor the training procedure.
-# For a more detailed tutorial see the [monitoring notebook](./basics/monitoring.ipynb).
+# For a more detailed tutorial see the [monitoring notebook](./basics/monitoring.pct.py).
 
 # %%
 from gpflow.monitor import (
     ImageToTensorBoard,
     ModelToTensorBoard,
+    ExecuteCallback,
+    Monitor,
+    MonitorTaskGroup,
     ScalarToTensorBoard,
-    MonitorCollection,
 )
 
 samples_input = np.linspace(0, 10, 100).reshape(-1, 1)
 
 
 def plot_model(fig, ax):
+    tf.print("Plotting...")
     mean, var = model.predict_f(samples_input)
     num_samples = 10
     samples = model.predict_f_samples(samples_input, num_samples)
@@ -255,16 +258,32 @@ def plot_model(fig, ax):
     ax.set_xlim(0, 10)
 
 
+def print_cb(epoch_id=None, data=None):
+    tf.print(f"Epoch {epoch_id}: ELBO (train)", model.elbo(data))
+
+def elbo_cb(data=None, **_):
+    return model.elbo(data)
+
+
 output_logdir = enumerated_logdir()
+
 model_task = ModelToTensorBoard(output_logdir, model)
+elbo_task = ScalarToTensorBoard(output_logdir, elbo_cb, "elbo")
+print_task = ExecuteCallback(callback=print_cb)
+
+# We group these tasks and specify a period of `100` steps for them
+fast_tasks = MonitorTaskGroup([model_task, elbo_task, print_task], period=100)
+
+# We also want to see the model's fit during the optimisation
 image_task = ImageToTensorBoard(output_logdir, plot_model, "samples_image")
-elbo_task = ScalarToTensorBoard(output_logdir, lambda data: model.elbo(data), "elbo")
-monitor = MonitorCollection([model_task, image_task, elbo_task])
+
+# We typically don't want to plot too frequently during optimisation,
+# which is why we specify a larger period for this task.
+slow_taks = MonitorTaskGroup(image_task, period=500)
+monitor = Monitor(fast_tasks, slow_taks)
 
 
-def monitored_training_loop(
-    epochs: int = 1, logging_epoch_freq: int = 10,
-):
+def monitored_training_loop(epochs: int):
     tf_optimization_step = tf.function(optimization_step)
     batches = iter(train_dataset)
 
@@ -274,9 +293,7 @@ def monitored_training_loop(
             tf_optimization_step(model, batch)
 
         epoch_id = epoch + 1
-        if epoch_id % logging_epoch_freq == 0:
-            tf.print(f"Epoch {epoch_id}: ELBO (train) {model.elbo(data)}")
-            monitor(epoch, data=batch)
+        monitor(epoch, epoch_id=epoch_id, data=data)
 
 
 # %% [markdown]
@@ -289,7 +306,7 @@ model = gpflow.models.SVGP(
     kernel=kernel, likelihood=likelihood, inducing_variable=inducing_variable
 )
 
-monitored_training_loop(epochs=1000, logging_epoch_freq=100)
+monitored_training_loop(epochs=1000)
 
 # %% [markdown]
 # Then, we can use TensorBoard to examine the training procedure in more detail
