@@ -34,11 +34,13 @@ class ExternalDataTrainingLossMixin:
         """
         return -self.maximum_a_posteriori_objective(data)
 
-    def training_loss_closure(self, data: Union[Data, collections.abc.Iterator], jit=True) -> Callable[[], tf.Tensor]:
+    def training_loss_closure(
+        self, data: Union[Data, collections.abc.Iterator], jit=True
+    ) -> Callable[[], tf.Tensor]:
         training_loss = self.training_loss
         if jit:
             training_loss = tf.function(
-               training_loss
+                training_loss
             )  # TODO need to add correct input_signature here to allow for differently sized minibatches
 
         def closure():
