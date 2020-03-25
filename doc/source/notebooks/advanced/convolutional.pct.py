@@ -110,7 +110,7 @@ rbf_m = gpflow.models.SVGP(
 )
 
 # %%
-rbf_training_loss_closure = tf.function(rbf_m.training_loss_closure(data))
+rbf_training_loss_closure = rbf_m.training_loss_closure(data, jit=True)
 rbf_elbo = lambda: -rbf_training_loss_closure().numpy()
 print("RBF elbo before training: %.4e" % rbf_elbo())
 
@@ -163,7 +163,7 @@ set_trainable(conv_m.kernel.base_kernel.variance, False)
 set_trainable(conv_m.kernel.weights, False)
 
 # %%
-conv_training_loss_closure = tf.function(conv_m.training_loss_closure(data))
+conv_training_loss_closure = conv_m.training_loss_closure(data, jit=True)
 conv_elbo = lambda: -conv_training_loss_closure().numpy()
 print("conv elbo before training: %.4e" % conv_elbo())
 
