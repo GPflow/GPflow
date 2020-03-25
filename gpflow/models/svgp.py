@@ -21,7 +21,7 @@ from ..base import Parameter
 from ..conditionals import conditional
 from ..config import default_float
 from ..utilities import positive, triangular
-from .model import GPModel, RegressionData, ExternalDataGPModel
+from .model import GPModel, InputData, RegressionData, MeanAndVariance
 from .mixins import ExternalDataTrainingLossMixin
 from .util import inducingpoint_wrapper
 
@@ -154,7 +154,7 @@ class SVGP(GPModel, ExternalDataTrainingLossMixin):
             scale = tf.cast(1.0, kl.dtype)
         return tf.reduce_sum(var_exp) * scale - kl
 
-    def predict_f(self, Xnew: tf.Tensor, full_cov=False, full_output_cov=False) -> tf.Tensor:
+    def predict_f(self, Xnew: InputData, full_cov=False, full_output_cov=False) -> MeanAndVariance:
         q_mu = self.q_mu
         q_sqrt = self.q_sqrt
         mu, var = conditional(

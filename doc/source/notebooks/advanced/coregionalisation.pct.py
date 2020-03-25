@@ -67,7 +67,7 @@ Y2 = np.sin(6 * X2 + 0.7) + np.random.randn(*X2.shape) * 0.1
 
 plt.figure(figsize=(8, 4))
 plt.plot(X1, Y1, "x", mew=2)
-plt.plot(X2, Y2, "x", mew=2)
+_ = plt.plot(X2, Y2, "x", mew=2)
 
 # %% [markdown]
 # ## Data formatting for the coregionalized model
@@ -164,7 +164,7 @@ plot(m)
 # %%
 B = coreg.output_covariance().numpy()
 print("B =", B)
-plt.imshow(B)
+_ = plt.imshow(B)
 
 # %% [markdown]
 # ## References

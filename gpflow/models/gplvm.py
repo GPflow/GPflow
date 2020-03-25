@@ -21,13 +21,14 @@ from .. import covariances, kernels, likelihoods
 from ..base import Parameter
 from ..config import default_float, default_jitter
 from ..expectations import expectation
+from ..inducing_variables import InducingPoints
 from ..kernels import Kernel
 from ..mean_functions import MeanFunction, Zero
 from ..probability_distributions import DiagonalGaussian
 from ..utilities import positive, to_default_float
 from ..utilities.ops import pca_reduce
 from .gpr import GPR
-from .model import InputData, GPModel
+from .model import InputData, GPModel, MeanAndVariance
 from .mixins import InternalDataTrainingLossMixin
 from .util import inducingpoint_wrapper
 
@@ -122,7 +123,9 @@ class BayesianGPLVM(GPModel, InternalDataTrainingLossMixin):
 
         if inducing_variable is None:
             # By default we initialize by subset of initial latent points
-            inducing_variable = np.random.permutation(X_data_mean.copy())[:num_inducing_variables]
+            # Note that tf.random.shuffle returns a copy, it does not shuffle in-place
+            Z = tf.random.shuffle(X_data_mean)[:num_inducing_variables]
+            inducing_variable = InducingPoints(Z)
 
         self.inducing_variable = inducingpoint_wrapper(inducing_variable)
 
@@ -142,15 +145,15 @@ class BayesianGPLVM(GPModel, InternalDataTrainingLossMixin):
         assert self.X_prior_var.shape[0] == self.num_data
         assert self.X_prior_var.shape[1] == self.num_latent_gps
 
-    def maximum_likelihood_objective(self, data: Optional[InputData] = None):
-        return self.elbo(data)
+    def maximum_likelihood_objective(self):
+        return self.elbo()
 
-    def elbo(self, data: Optional[InputData] = None):
+    def elbo(self):
         """
         Construct a tensorflow function to compute the bound on the marginal
         likelihood.
         """
-        Y_data = data if data is not None else self.data
+        Y_data = self.data
 
         pX = DiagonalGaussian(self.X_data_mean, self.X_data_var)
 
@@ -202,7 +205,9 @@ class BayesianGPLVM(GPModel, InternalDataTrainingLossMixin):
         bound -= KL
         return bound
 
-    def predict_f(self, Xnew: tf.Tensor, full_cov: bool = False, full_output_cov: bool = False):
+    def predict_f(
+        self, Xnew: tf.Tensor, full_cov: bool = False, full_output_cov: bool = False
+    ) -> MeanAndVariance:
         """
         Compute the mean and variance of the latent function at some new points.
         Note that this is very similar to the SGPR prediction, for which

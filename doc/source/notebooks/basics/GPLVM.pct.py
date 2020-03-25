@@ -70,8 +70,8 @@ num_data = Y.shape[0]  # number of data points
 # Initialize via PCA:
 
 # %%
-X_mean_init = tf.convert_to_tensor(ops.pca_reduce(Y, latent_dim), dtype=default_float())
-X_var_init = tf.convert_to_tensor(np.ones((num_data, latent_dim)), dtype=default_float())
+X_mean_init = ops.pca_reduce(Y, latent_dim)
+X_var_init = tf.ones((num_data, latent_dim), dtype=default_float())
 
 # %% [markdown]
 # Pick inducing inputs randomly from dataset initialization:
@@ -111,14 +111,14 @@ gplvm = gpflow.models.BayesianGPLVM(
 gplvm.likelihood.variance.assign(0.01)
 
 # %% [markdown]
-# Next we optimize the created model. Given that this model has a deterministic evidence lower bound (ELBO), we can use SciPy's L-BFGS-B optimizer.
+# Next we optimize the created model. Given that this model has a deterministic evidence lower bound (ELBO), we can use SciPy's BFGS optimizer.
 
 # %%
 opt = gpflow.optimizers.Scipy()
 maxiter = ci_niter(1000)
 _ = opt.minimize(
     gplvm.training_loss,
-    method="bfgs",
+    method="BFGS",
     variables=gplvm.trainable_variables,
     options=dict(maxiter=maxiter),
 )
@@ -136,7 +136,7 @@ print_summary(gplvm)
 # We compare the Bayesian GPLVM's latent space to the deterministic PCA's one.
 
 # %%
-X_pca = ops.pca_reduce(Y, latent_dim)
+X_pca = ops.pca_reduce(Y, latent_dim).numpy()
 gplvm_X_mean = gplvm.X_data_mean.numpy()
 
 f, ax = plt.subplots(1, 2, figsize=(10, 6))

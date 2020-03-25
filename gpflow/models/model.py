@@ -176,13 +176,14 @@ class GPModel(BayesianModel):
         """
         Produce samples from the posterior latent function(s) at the input points.
 
-        :param Xnew: DataPoint
-            Input locations at which to draw samples
+        :param Xnew: InputData
+            Input locations at which to draw samples, shape [..., N, D]
+            where N is the number of rows and D is the input dimension of each point.
         :param num_samples:
             Number of samples to draw.
             If `None`, a single sample is drawn and the return shape is [..., N, P],
             for any positive integer the return shape contains an extra batch
-            dimension, [..., S, N, P], with S = num_samples.
+            dimension, [..., S, N, P], with S = num_samples and P is the number of outputs.
         :param full_cov:
             If True, draw correlated samples over the inputs. Computes the Cholesky over the
             dense covariance matrix of size [num_data, num_data].
@@ -227,11 +228,11 @@ class GPModel(BayesianModel):
         return self.likelihood.predict_mean_and_var(f_mean, f_var)
 
     def predict_log_density(
-        self, data: RegressionData, full_cov: bool = False, full_output_cov: bool = False,
+        self, data: RegressionData, full_cov: bool = False, full_output_cov: bool = False
     ):
         """
         Compute the log density of the data at the new data points.
         """
         X, Y = data
         f_mean, f_var = self.predict_f(X, full_cov=full_cov, full_output_cov=full_output_cov)
-        return self.likelihood.predict_density(f_mean, f_var, Y)
+        return self.likelihood.predict_log_density(f_mean, f_var, Y)

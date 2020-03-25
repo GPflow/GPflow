@@ -392,7 +392,7 @@ for hp in hyperparameters:
     plt.plot(samples[name_to_index[hp]], label=hp)
 plt.legend(bbox_to_anchor=(1.0, 1.0))
 plt.xlabel("hmc iteration")
-plt.ylabel("hyper-parameter value")
+_ = plt.ylabel("hyper-parameter value")
 
 
 # %% [markdown]
@@ -481,7 +481,7 @@ logf = run_adam(model, maxiter)  # start near Maximum a posteriori (MAP)
 
 plt.plot(np.arange(maxiter)[::10], logf)
 plt.xlabel("iteration")
-plt.ylabel("log likelihood")
+_ = plt.ylabel("log likelihood")
 
 
 # %% [markdown]
@@ -543,7 +543,7 @@ plt.fill_between(
 )
 
 plt.plot(X, Y, "kx", mew=2)
-plt.ylim(-0.1, np.max(np.percentile(rate_samples, 95, axis=0)))
+_ = plt.ylim(-0.1, np.max(np.percentile(rate_samples, 95, axis=0)))
 
 # %% [markdown]
 # You can also display the sequence of sampled hyperparameters.
@@ -564,7 +564,7 @@ for hp in hyperparameters:
     plt.plot(parameter_samples[name_to_index[hp]], label=hp)
 plt.legend(bbox_to_anchor=(1.0, 1.0))
 plt.xlabel("hmc iteration")
-plt.ylabel("hyper-parameter value")
+_ = plt.ylabel("hyper-parameter value")
 
 
 # %% [markdown]

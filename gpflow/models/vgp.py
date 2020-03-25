@@ -39,7 +39,7 @@ class VGP(GPModel, InternalDataTrainingLossMixin):
     approximated by a Gaussian, and the KL divergence is minimised between
     the approximation and the posterior.
 
-    This implementation is equivalent to svgp with X=Z, but is more efficient.
+    This implementation is equivalent to SVGP with X=Z, but is more efficient.
     The whitened representation is used to aid optimization.
 
     The posterior approximation is
@@ -59,10 +59,8 @@ class VGP(GPModel, InternalDataTrainingLossMixin):
         num_latent_gps: Optional[int] = None,
     ):
         """
-        X is a data matrix, size [N, D]
-        Y is a data matrix, size [N, R]
+        data = (X, Y) contains the input points [N, D] and the observations [N, P]
         kernel, likelihood, mean_function are appropriate GPflow objects
-
         """
         if num_latent_gps is None:
             num_latent_gps = self.calc_num_latent_gps_from_data(data, kernel, likelihood)
@@ -80,7 +78,7 @@ class VGP(GPModel, InternalDataTrainingLossMixin):
     def maximum_likelihood_objective(self) -> tf.Tensor:
         return self.elbo()
 
-    def elbo(self):
+    def elbo(self) -> tf.Tensor:
         r"""
         This method computes the variational lower bound on the likelihood,
         which is:
@@ -158,8 +156,7 @@ class VGPOpperArchambeau(GPModel, InternalDataTrainingLossMixin):
         num_latent_gps: Optional[int] = None,
     ):
         """
-        X is a data matrix, size [N, D]
-        Y is a data matrix, size [N, R]
+        data = (X, Y) contains the input points [N, D] and the observations [N, P]
         kernel, likelihood, mean_function are appropriate GPflow objects
         """
         if num_latent_gps is None:
@@ -177,7 +174,7 @@ class VGPOpperArchambeau(GPModel, InternalDataTrainingLossMixin):
     def maximum_likelihood_objective(self) -> tf.Tensor:
         return self.elbo()
 
-    def elbo(self):
+    def elbo(self) -> tf.Tensor:
         r"""
         q_alpha, q_lambda are variational parameters, size [N, R]
         This method computes the variational lower bound on the likelihood,
@@ -221,7 +218,9 @@ class VGPOpperArchambeau(GPModel, InternalDataTrainingLossMixin):
         v_exp = self.likelihood.variational_expectations(f_mean, f_var, Y_data)
         return tf.reduce_sum(v_exp) - KL
 
-    def predict_f(self, Xnew: InputData, full_cov: bool = False, full_output_cov: bool = False):
+    def predict_f(
+        self, Xnew: InputData, full_cov: bool = False, full_output_cov: bool = False
+    ) -> MeanAndVariance:
         r"""
         The posterior variance of F is given by
             q(f) = N(f | K alpha + mean, [K^-1 + diag(lambda**2)]^-1)

@@ -6,7 +6,7 @@ jupyter:
       extension: .md
       format_name: markdown
       format_version: '1.2'
-      jupytext_version: 1.3.3
+      jupytext_version: 1.4.0
   kernelspec:
     display_name: Python 3
     language: python
@@ -24,8 +24,10 @@ The `input_dim` parameter has been removed from the `Kernel` class’s initialis
 
 For example:
 
-![before: kernel constructor requires input dims](kernel_input_dims_1_new.png)
-![new: kernel without input dims](kernel_input_dims_2_new.png)
+```diff
+-gpflow.kernels.SquaredExponential(1, variance=1.0, lengthscales=0.5)
++gpflow.kernels.SquaredExponential(variance=1.0, lengthscales=0.5)
+```
 
 **Note**: old code may still run without obvious errors against GPflow, since many kernels take an optional numerical value as their first parameter. You may not get the result you expect though!
 
@@ -44,13 +46,26 @@ References to `params_as_tensors` and `params_as_tensors_for` can simply be remo
 
 In GPflow 2 the semantics of assigning values to parameters has changed. It is now necessary to use the Parameter.assign method rather than assigning values directly to parameters. For example:
 
-![Use module.parameter.assign(value) instead of module.parameter = value](constant.png)
+```diff
+ # Initializations:
+-likelihood.scale = 0.1
++likelihood.scale.assign(0.1)
+```
 
 In the above example, the old (GPflow 1) code would have assigned the value of `likelihood.scale` to 0.1 (assuming that likelihood is a `Parameterized` object and scale is a `Parameter`), rather than replacing the `scale` attribute with a Python float (which would be the “normal” Python behaviour). This maintains the properties of the parameter. For example, it remains trainable etc.
 
 In GPflow 2, it is necessary to use the `Parameter.assign` method explicitly to maintain the same behaviour, otherwise the parameter attribute will be replaced by an (untrainable) constant value.
 
 To change other properties of the parameter (for example, to change transforms etc) you may need to replace the entire parameter object. See [this notebook](../understanding/models.ipynb#Constraints-and-trainable-variables) for further details.
+
+
+## Parameter trainable status
+
+A parameter's `trainable` attribute cannot be set. Instead, use `gpflow.set_trainable()`. E.g.:
+```diff
+-likelihood.trainable = False
++gpflow.set_trainable(likelihood, False)
+```
 
 
 ## SciPy Optimizer
@@ -61,8 +76,16 @@ Usage of GPflow’s Scipy optimizer has changed. It has been renamed from `gpflo
  * The options (`disp`, `maxiter`) must now be passed in a dictionary.
 
 For example:
-
-![comparison of how to use Scipy optimizer](scipy_optimizer.png)
+```diff
+-optimizer = gpflow.train.ScipyOptimizer()
+-optimizer.minimize(model, disp=True, maxiter=100)
++optimizer = gpflow.optimizers.Scipy()
++optimizer.minimize(
++    lambda: -model.log_marginal_likelihood(),
++    variables=model.trainable_variables,
++    options=dict(disp=True, maxiter=100),
++)
+```
 
 Any additional keyword arguments that are passed to the `minimize` method are passed directly through to the [SciPy optimizer's minimize method](https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize.html).
 
@@ -75,9 +98,10 @@ In many cases the initialiser for the model will have changed. Typical changes i
  * The `kern` parameter has been renamed to `kernel`.
 
 For example, for the `GPR` model:
-
-![before: X, Y separate; kern argument](model_1.png)
-![new: data=(X, Y) tuple; kernel argument](model_2_new.png)
+```diff
+-model = GPR(X, Y, kern=kernel)
++model = GPR(data=(X, Y), kernel=kernel)
+```
 
 
 ## SVGP Initialiser
@@ -127,20 +151,25 @@ The `defer_build` context manager has been removed. References to it can simply 
 GPflow methods that used the `@autoflow` decorator, like for example `predict_f` and `predict_y`, will previously have returned NumPy Arrays. These now return TensorFlow tensors. In many cases these can be used like NumPy arrays (they can be passed directly to many of NumPy’s functions and even be plotted by matplotlib), but to actually turn them into numpy arrays you will need to call `.numpy()` on them.
 
 For example:
-
-![predict functions return tf.Tensors, need to call .numpy() to obtain NumPy array](numpy_new.png)
+```diff
+ def _predict(self, features: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+     mean, variance = self._model.predict_f(features)
+-    return mean, variance
++    return mean.numpy(), variance.numpy()
+```
 
 
 ## Parameter Values
 
-GPflow’s `Parameter.value` has changed from a property to a method.
+In GPflow 1, `Parameter.value` was a property that returned the numpy (`np.ndarray`) representation of the value of the Parameter.
+
+In GPflow 2, `Parameter` behaves similar to TensorFlow's `tf.Variable`: `Parameter.value()` is a method that returns a constant tf.Tensor with the current (constrained) value of the Parameter. To obtain the *numpy* representation, use the `Parameter.numpy()` method:
 
 For example:
-
-![Parameters now behave like tensors](param.png)
-
-However, in many cases it is not necessary to call `value` anymore, since `Parameter` just behaves like a TensorFlow tensor.
-
+```diff
+-std_dev = np.sqrt(model.likelihood.variance.value)
++std_dev = np.sqrt(model.likelihood.variance.numpy())
+```
 
 
 ## Model Class
@@ -153,9 +182,10 @@ The `Model` class has been removed. A suitable replacement, for those models tha
 The base kernel for the `Periodic` kernel must now be specified explicitly. Previously the default was  `SquaredExponential`, so to maintain the same behaviour as before this must be passed-in to the `Periodic` kernel’s initialiser (note that `active_dims` is specified in the base kernel).
 
 For example:
-
-![old Periodic kernel](periodic_1.png)
-![new Periodic kernel: requires base kernel](periodic_2.png)
+```diff
+-Periodic(1, active_dims=[2])
++Periodic(SquaredExponential(active_dims=[2]))
+```
 
 
 ## Predict Full Covariance
@@ -163,18 +193,21 @@ For example:
 The `predict_f_full_cov` method has been removed from `GPModel`. Instead, pass `full_cov=True` to the `predict_f` method.
 
 For example:
+```diff
+-f_mean, f_cov = model.predict_f_full_cov(X)
++f_mean, f_cov = model.predict_f(X, full_cov=True)
+```
 
-![predict f now with full cov argument](full_cov.png)
-
-
+<!-- #region -->
 ## Data Types
 
 In some cases TensorFlow will try to figure out an appropriate data type for certain variables. If Python floats have been used, TensorFlow may default these variables to `float32`, which can cause incompatibilities with GPflow, which defaults to using `float64`.
 
-To resolve this you can use `tf.constant` instead of a Python float, and explicitly specify the data type. For example:
-
-![constant](constant.png)
-
+To resolve this you can use `tf.constant` instead of a Python float, and explicitly specify the data type, e.g.
+```python
+tf.constant(0.1, dtype=gpflow.default_float())
+```
+<!-- #endregion -->
 
 ## Float and Int Types
 

@@ -23,23 +23,28 @@ rng = np.random.RandomState(0)
 
 
 class Datum:
-    N1, N2 = 6, 12
+    N1, N2 = 6, 16
     X = [rng.rand(N1, 2) * 1, rng.rand(N2, 2) * 1]
     Y = [
         np.sin(x[:, :1]) + 0.9 * np.cos(x[:, 1:2] * 1.6) + rng.randn(x.shape[0], 1) * 0.8 for x in X
     ]
     label = [np.zeros((N1, 1)), np.ones((N2, 1))]
-    perm = list(range(30))
-    rng.shuffle(perm)
-    Xtest = rng.rand(10, 2) * 10
-    X_augumented = np.hstack([np.concatenate(X), np.concatenate(label)])
-    Y_augumented = np.hstack([np.concatenate(Y), np.concatenate(label)])
+    X_augmented0 = np.hstack([X[0], label[0]])
+    X_augmented1 = np.hstack([X[1], label[1]])
+    X_augmented = np.vstack([X_augmented0, X_augmented1])
+
+    Y_augmented0 = np.hstack([Y[0], label[0]])
+    Y_augmented1 = np.hstack([Y[1], label[1]])
+    Y_augmented = np.vstack([Y_augmented0, Y_augmented1])
+
     # For predict tests
-    X_augumented0 = np.hstack([Xtest, np.zeros((Xtest.shape[0], 1))])
-    X_augumented1 = np.hstack([Xtest, np.ones((Xtest.shape[0], 1))])
-    Ytest = [np.sin(x) + 0.9 * np.cos(x * 1.6) for x in Xtest]
-    Y_augumented0 = np.hstack([Ytest, np.zeros((Xtest.shape[0], 1))])
-    Y_augumented1 = np.hstack([Ytest, np.ones((Xtest.shape[0], 1))])
+    N = 10
+    Xtest = rng.rand(N, 2) * N
+    Xtest_augmented0 = np.hstack([Xtest, np.zeros((N, 1))])
+    Xtest_augmented1 = np.hstack([Xtest, np.ones((N, 1))])
+    Ytest = np.sin(Xtest[:, :1]) + 0.9 * np.cos(Xtest[:, 1:2] * 1.6)
+    Ytest_augmented0 = np.hstack([Ytest, np.zeros((N, 1))])
+    Ytest_augmented1 = np.hstack([Ytest, np.ones((N, 1))])
 
 
 def _prepare_models():
@@ -66,7 +71,7 @@ def _prepare_models():
         likelihood=gpflow.likelihoods.Gaussian(),
         num_latent_gps=1,
     )
-    # 2. Coregionalized GPR
+    # 2. Coregionalized VGP
     kc = gpflow.kernels.SquaredExponential(active_dims=[0, 1])
     set_trainable(kc.lengthscales, False)
     set_trainable(kc.variance, False)  # variance is handled by the Coregion kernel
@@ -80,7 +85,7 @@ def _prepare_models():
         [gpflow.mean_functions.Constant(), gpflow.mean_functions.Constant()]
     )
     cvgp = gpflow.models.VGP(
-        (Datum.X_augumented, Datum.Y_augumented),
+        (Datum.X_augmented, Datum.Y_augmented),
         kernel=kc * coreg,
         mean_function=mean_c,
         likelihood=lik,
@@ -163,17 +168,17 @@ def test_predict_f():
     vgp0, vgp1, cvgp = _prepare_models()
 
     pred_f0 = vgp0.predict_f(Datum.Xtest)
-    pred_fc0 = cvgp.predict_f(Datum.X_augumented0)
+    pred_fc0 = cvgp.predict_f(Datum.Xtest_augmented0)
     assert_allclose(pred_f0, pred_fc0, atol=1.0e-4)
     pred_f1 = vgp1.predict_f(Datum.Xtest)
-    pred_fc1 = cvgp.predict_f(Datum.X_augumented1)
+    pred_fc1 = cvgp.predict_f(Datum.Xtest_augmented1)
     assert_allclose(pred_f1, pred_fc1, atol=1.0e-4)
 
     # check predict_f_full_cov
     vgp0.predict_f(Datum.Xtest, full_cov=True)
-    cvgp.predict_f(Datum.X_augumented0, full_cov=True)
+    cvgp.predict_f(Datum.Xtest_augmented0, full_cov=True)
     vgp1.predict_f(Datum.Xtest, full_cov=True)
-    cvgp.predict_f(Datum.X_augumented1, full_cov=True)
+    cvgp.predict_f(Datum.Xtest_augmented1, full_cov=True)
 
 
 def test_predict_y():
@@ -197,15 +202,15 @@ def test_predict_log_density():
     vgp0, vgp1, cvgp = _prepare_models()
 
     pred_ydensity0 = vgp0.predict_log_density((Datum.Xtest, Datum.Ytest))
-    pred_ydensity_c0 = cvgp.predict_log_density((Datum.X_augumented0, Datum.Y_augumented0))
+    pred_ydensity_c0 = cvgp.predict_log_density((Datum.Xtest_augmented0, Datum.Ytest_augmented0))
     assert_allclose(pred_ydensity0, pred_ydensity_c0, atol=1e-2)
     pred_ydensity1 = vgp1.predict_log_density((Datum.Xtest, Datum.Ytest))
-    pred_ydensity_c1 = cvgp.predict_log_density((Datum.X_augumented1, Datum.Y_augumented1))
+    pred_ydensity_c1 = cvgp.predict_log_density((Datum.Xtest_augmented1, Datum.Ytest_augmented1))
     assert_allclose(pred_ydensity1, pred_ydensity_c1, atol=1e-2)
 
 
 def test_predict_f_samples():
     vgp0, vgp1, cvgp = _prepare_models()
     # just check predict_f_samples(self) works
-    cvgp.predict_f_samples(Datum.X_augumented0, 1)
-    cvgp.predict_f_samples(Datum.X_augumented1, 1)
+    cvgp.predict_f_samples(Datum.X_augmented0, 1)
+    cvgp.predict_f_samples(Datum.X_augmented1, 1)

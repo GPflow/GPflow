@@ -365,7 +365,6 @@ gpflow.set_trainable(m.kernel, False)
 gpflow.set_trainable(m.likelihood, False)
 gpflow.set_trainable(m.inducing_variable, True)  # whether to optimize bounds [a, b]
 
-
 # %%
 opt = gpflow.optimizers.Scipy()
 opt.minimize(
@@ -373,7 +372,7 @@ opt.minimize(
     variables=m.trainable_variables,
     options=dict(maxiter=5000),
     method="L-BFGS-B",
-)  # TODO: make work with BFGS
+)
 
 gpflow.utilities.print_summary(m, fmt="notebook")
 
@@ -392,7 +391,6 @@ gpflow.set_trainable(m_ip.kernel, False)
 gpflow.set_trainable(m_ip.likelihood, False)
 gpflow.set_trainable(m_ip.inducing_variable, True)  # whether to optimize inducing point locations
 
-
 # %%
 opt = gpflow.optimizers.Scipy()
 opt.minimize(
@@ -400,7 +398,7 @@ opt.minimize(
     variables=m_ip.trainable_variables,
     options=dict(maxiter=2500),
     method="L-BFGS-B",
-)  # TODO: make work with BFGS
+)
 
 gpflow.utilities.print_summary(m_ip, fmt="notebook")
 
@@ -415,7 +413,7 @@ gpflow.set_trainable(m_ref.likelihood, False)
 # opt = gpflow.optimizers.Scipy()
 # opt.minimize(m_ref.training_loss,
 #              variables=m_ref.trainable_variables,
-#              options=dict(maxiter=2500), method='L-BFGS-B')  # TODO: make work with BFGS
+#              options=dict(maxiter=2500))
 
 # gpflow.utilities.print_summary(m_ref, fmt='notebook')
 

@@ -53,7 +53,7 @@ np.random.seed(0)
 X = np.random.rand(20, 1) * 10
 Y = np.sin(X) + 0.9 * np.cos(X * 1.6) + np.random.randn(*X.shape) * 0.4
 Xtest = np.random.rand(10, 1) * 10
-plt.plot(X, Y, "kx", mew=2)
+_ = plt.plot(X, Y, "kx", mew=2)
 
 # %%
 data = (
@@ -101,10 +101,15 @@ models = [m1, m2, m3, m4, m5, m6]
 # %%
 for m in models:
     opt = gpflow.optimizers.Scipy()
+    if isinstance(m, gpflow.models.ExternalDataTrainingLossMixin):
+        objective = m.training_loss_closure(data)
+    else:
+        objective = m.training_loss()
     opt.minimize(
-        m.training_loss_closure(data),
+        objective,
         variables=m.trainable_variables,
         options=dict(maxiter=ci_niter(1000)),
+        jit=True
     )
 
 

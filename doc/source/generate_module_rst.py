@@ -23,28 +23,28 @@ from types import ModuleType
 
 import gpflow
 
-RST_PATH = 'source/'
-RST_LEVEL_SYMBOLS = ['=', '-', '~', '"', "'", '^']
+RST_PATH = "source/"
+RST_LEVEL_SYMBOLS = ["=", "-", "~", '"', "'", "^"]
 
-SPHINX_CLASS_STRING = '''
+SPHINX_CLASS_STRING = """
 {object_name}
 {level}
 
 .. autoclass:: {object_name}
    :show-inheritance:
    :members:
-'''
+"""
 
-SPHINX_MULTIDISPATCH_STRING = '''
+SPHINX_MULTIDISPATCH_STRING = """
 {object_name}
 {level}
 
 This function uses multiple dispatch, which will depend on the type of argument passed in:
 
 {content}
-'''
+"""
 
-SPHINX_MULTIDISPATCH_COMPONENT_STRING = '''
+SPHINX_MULTIDISPATCH_COMPONENT_STRING = """
 .. code-block:: python
 
     {dispatch_name}( {args} )
@@ -52,25 +52,25 @@ SPHINX_MULTIDISPATCH_COMPONENT_STRING = '''
 
 
 .. autofunction:: {true_name}
-'''
+"""
 
-SPHINX_FUNC_STRING = '''
+SPHINX_FUNC_STRING = """
 {object_name}
 {level}
 
 .. autofunction:: {object_name}
-'''
+"""
 
-SPHINX_INCLUDE_MODULE_STRING = '''
+SPHINX_INCLUDE_MODULE_STRING = """
 {name}
 {level}
 .. toctree::
    :maxdepth: 1
 
    {module}/index
-'''
+"""
 
-SPHINX_FILE_STRING = '''==========
+SPHINX_FILE_STRING = """==========
 {title}
 ========
 
@@ -80,37 +80,39 @@ SPHINX_FILE_STRING = '''==========
 
 
 {content}
-'''
+"""
 
 
 IGNORE_MODULES = {
-    'gpflow.covariances.dispatch',
-    'gpflow.conditionals.dispatch',
-    'gpflow.expectations.dispatch',
-    'gpflow.kullback_leiblers.dispatch',
-    'gpflow.versions',
+    "gpflow.covariances.dispatch",
+    "gpflow.conditionals.dispatch",
+    "gpflow.expectations.dispatch",
+    "gpflow.kullback_leiblers.dispatch",
+    "gpflow.versions",
 }
 
 DATE_STRING = datetime.strftime(datetime.now(), "%d/%m/%y")
+
 
 def set_global_path(path):
     global RST_PATH
     RST_PATH = path
 
+
 def is_documentable_module(m: Any) -> bool:
     """Return `True` if m is module to be documented automatically, `False` otherwise.
     """
-    return inspect.ismodule(m) and 'gpflow' in m.__name__ and m.__name__ not in IGNORE_MODULES
+    return inspect.ismodule(m) and "gpflow" in m.__name__ and m.__name__ not in IGNORE_MODULES
 
 
 def is_documentable_component(m: Any) -> bool:
     """Return `True` if a function or class to be documented automatically, `False` otherwise.
     """
     if inspect.isfunction(m):
-        return 'gpflow' in m.__module__ and m.__module__ not in IGNORE_MODULES
+        return "gpflow" in m.__module__ and m.__module__ not in IGNORE_MODULES
     elif inspect.isclass(m):
-        return 'gpflow' in m.__module__ and m.__module__ not in IGNORE_MODULES
-    elif type(m).__name__ == 'Dispatcher':
+        return "gpflow" in m.__module__ and m.__module__ not in IGNORE_MODULES
+    elif type(m).__name__ == "Dispatcher":
         return True
 
     return False
@@ -129,22 +131,25 @@ def get_component_rst_string(module: ModuleType, component: Callable, level: int
     :param component: the component (class or function)
     :param level: the level in nested directory structure
     """
-    object_name = f'{module.__name__}.{component.__name__}'
+    object_name = f"{module.__name__}.{component.__name__}"
 
-    rst_documentation = ''
-    level_underline = RST_LEVEL_SYMBOLS[level]*6
+    rst_documentation = ""
+    level_underline = RST_LEVEL_SYMBOLS[level] * 6
     if inspect.isclass(component):
         rst_documentation = SPHINX_CLASS_STRING.format(
-            object_name=object_name, var=component.__name__, level=level_underline)
+            object_name=object_name, var=component.__name__, level=level_underline
+        )
     elif inspect.isfunction(component):
         rst_documentation = SPHINX_FUNC_STRING.format(
-            object_name=object_name, var=component.__name__, level=level_underline)
-    elif type(component).__name__ == 'Dispatcher':
-        rst_documentation = get_multidispatch_string(component, module,  level_underline)
+            object_name=object_name, var=component.__name__, level=level_underline
+        )
+    elif type(component).__name__ == "Dispatcher":
+        rst_documentation = get_multidispatch_string(component, module, level_underline)
 
     return rst_documentation
 
-def get_multidispatch_string(md_component: Callable, module: ModuleType, level: int)-> str:
+
+def get_multidispatch_string(md_component: Callable, module: ModuleType, level: int) -> str:
     """Get the string for a multiple dispatch component. This involves iterating through the
     possible functions and arguments and creating strings for each of these items.
 
@@ -153,19 +158,20 @@ def get_multidispatch_string(md_component: Callable, module: ModuleType, level: 
     :param level: the level in nested directory structure
     """
     content_list = []
-    dispatch_name = f'{module.__name__}.{md_component.name}'
+    dispatch_name = f"{module.__name__}.{md_component.name}"
     for args, fname in md_component.funcs.items():
 
-        arg_names = ', '.join([a.__name__ for a in args])
-        alias_name = f'{fname.__module__}.{fname.__name__}'
+        arg_names = ", ".join([a.__name__ for a in args])
+        alias_name = f"{fname.__module__}.{fname.__name__}"
 
         string = SPHINX_MULTIDISPATCH_COMPONENT_STRING.format(
-            dispatch_name=dispatch_name,
-            args=arg_names,
-            true_name=alias_name)
+            dispatch_name=dispatch_name, args=arg_names, true_name=alias_name
+        )
         content_list.append(string)
-    content = '\n'.join(content_list)
-    return SPHINX_MULTIDISPATCH_STRING.format(object_name=dispatch_name,level=level, content=content )
+    content = "\n".join(content_list)
+    return SPHINX_MULTIDISPATCH_STRING.format(
+        object_name=dispatch_name, level=level, content=content
+    )
 
 
 def get_module_rst_string(module: ModuleType, level: int) -> str:
@@ -174,15 +180,16 @@ def get_module_rst_string(module: ModuleType, level: int) -> str:
     :param module: the module containing the component
     :param level: the level in nested directory structure
     """
-    level_underline = RST_LEVEL_SYMBOLS[level]*6
+    level_underline = RST_LEVEL_SYMBOLS[level] * 6
     return SPHINX_INCLUDE_MODULE_STRING.format(
-        name=module.__name__, module=module.__name__.split('.')[-1], level=level_underline)
+        name=module.__name__, module=module.__name__.split(".")[-1], level=level_underline
+    )
 
 
 def get_public_attributes(node: Any) -> Any:
     """Get the public attributes ('children') of the current node, accessible from this node.
     """
-    return [getattr(node, a) for a in dir(node) if not a.startswith('_')]
+    return [getattr(node, a) for a in dir(node) if not a.startswith("_")]
 
 
 def write_to_rst_file(node_name: str, rst_content: List[str]) -> None:
@@ -196,10 +203,11 @@ def write_to_rst_file(node_name: str, rst_content: List[str]) -> None:
         os.makedirs(path)
 
     rst_file = SPHINX_FILE_STRING.format(
-        title=node_name, content=''.join(rst_content), date=DATE_STRING)
+        title=node_name, content="".join(rst_content), date=DATE_STRING
+    )
 
-    path_to_file = path + '/index.rst'
-    with open(path_to_file, 'w') as f:
+    path_to_file = path + "/index.rst"
+    with open(path_to_file, "w") as f:
         f.write(rst_file)
 
 
@@ -214,8 +222,11 @@ def do_visit_module(module: ModuleType, enqueued_items: Set[int]) -> bool:
         if is_documentable_module(child) and id(child) not in enqueued_items:
             # There is a module we have not visited
             return True
-        elif is_documentable_component(child) and id(child) not in enqueued_items and \
-                ('__init__' in child.__module__ or module.__name__ in child.__module__):
+        elif (
+            is_documentable_component(child)
+            and id(child) not in enqueued_items
+            and ("__init__" in child.__module__ or module.__name__ in child.__module__)
+        ):
             # There is a class or function (or alias of them) we have not visited
             return True
     return False
@@ -237,7 +248,7 @@ def traverse_module_bfs(queue: List[Tuple[Any, int]], enqueued_items: Set[int]):
     while queue:
         node, level = queue.pop(0)  # currently using a list as a queue (not great)
 
-        if not hasattr(node, '__name__'):
+        if not hasattr(node, "__name__"):
             continue
 
         if is_documentable_module(node):
@@ -255,14 +266,14 @@ def traverse_module_bfs(queue: List[Tuple[Any, int]], enqueued_items: Set[int]):
                 elif is_documentable_module(child):
                     if do_visit_module(child, enqueued_items):
                         rst_modules.append(get_module_rst_string(child, level))
-                        queue.append((child, level+1))
+                        queue.append((child, level + 1))
                         enqueued_items.add(id(child))
 
-            rst_content = '\n'.join(rst_components + rst_modules)
+            rst_content = "\n".join(rst_components + rst_modules)
             if rst_content:
                 write_to_rst_file(node.__name__, rst_content)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     set_global_path(os.path.dirname(os.path.realpath(__file__)))
     traverse_module_bfs([(gpflow, 0)], set([id(gpflow)]))

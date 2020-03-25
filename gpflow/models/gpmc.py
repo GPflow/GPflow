@@ -24,7 +24,7 @@ from ..kernels import Kernel
 from ..likelihoods import Likelihood
 from ..mean_functions import MeanFunction
 from ..utilities import to_default_float
-from .model import RegressionData, MeanAndVariance, GPModel
+from .model import InputData, RegressionData, MeanAndVariance, GPModel
 from .mixins import MCMCTrainingLossMixin
 
 
@@ -86,7 +86,7 @@ class GPMC(GPModel, MCMCTrainingLossMixin):
 
         return tf.reduce_sum(self.likelihood.log_prob(F, Y_data))
 
-    def predict_f(self, Xnew: tf.Tensor, full_cov=False, full_output_cov=False) -> MeanAndVariance:
+    def predict_f(self, Xnew: InputData, full_cov=False, full_output_cov=False) -> MeanAndVariance:
         """
         Xnew is a data matrix, point at which we want to predict
 

@@ -24,7 +24,7 @@ from ..kernels import Kernel
 from ..likelihoods import Likelihood
 from ..mean_functions import MeanFunction
 from ..utilities import to_default_float
-from .model import RegressionData, MeanAndVariance, GPModel
+from .model import GPModel, InputData, RegressionData, MeanAndVariance
 from .mixins import MCMCTrainingLossMixin
 from .util import inducingpoint_wrapper
 
@@ -102,9 +102,9 @@ class SGPMC(GPModel, MCMCTrainingLossMixin):
         fmean, fvar = self.predict_f(X_data, full_cov=False)
         return tf.reduce_sum(self.likelihood.variational_expectations(fmean, fvar, Y_data))
 
-    def predict_f(self, X: tf.Tensor, full_cov=False, full_output_cov=False) -> MeanAndVariance:
+    def predict_f(self, Xnew: InputData, full_cov=False, full_output_cov=False) -> MeanAndVariance:
         """
-        Xnew is a data matrix, point at which we want to predict
+        Xnew is a data matrix of the points at which we want to predict
 
         This method computes
 
@@ -114,7 +114,7 @@ class SGPMC(GPModel, MCMCTrainingLossMixin):
 
         """
         mu, var = conditional(
-            X,
+            Xnew,
             self.inducing_variable,
             self.kernel,
             self.V,
@@ -123,4 +123,4 @@ class SGPMC(GPModel, MCMCTrainingLossMixin):
             white=True,
             full_output_cov=full_output_cov,
         )
-        return mu + self.mean_function(X), var
+        return mu + self.mean_function(Xnew), var

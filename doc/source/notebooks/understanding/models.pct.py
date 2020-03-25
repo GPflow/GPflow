@@ -261,7 +261,7 @@ plt.style.use("ggplot")
 import matplotlib
 
 matplotlib.rcParams["figure.figsize"] = (12, 6)
-plt.scatter(X[:, 0], X[:, 1], 100, np.argmax(Y, 1), lw=2, cmap=plt.cm.viridis)
+_ = plt.scatter(X[:, 0], X[:, 1], 100, np.argmax(Y, 1), lw=2, cmap=plt.cm.viridis)
 
 # %%
 m = LinearMulticlass(X, Y)
@@ -283,7 +283,7 @@ p_test /= p_test.sum(1)[:, None]
 plt.figure(figsize=(12, 6))
 for i in range(3):
     plt.contour(xx, yy, p_test[:, i].reshape(200, 200), [0.5], colors="k", linewidths=1)
-plt.scatter(X[:, 0], X[:, 1], 100, np.argmax(Y, 1), lw=2, cmap=plt.cm.viridis)
+_ = plt.scatter(X[:, 0], X[:, 1], 100, np.argmax(Y, 1), lw=2, cmap=plt.cm.viridis)
 
 # %% [markdown]
 # That concludes the new model example and this notebook. You might want to see for yourself that the `LinearMulticlass` model and its parameters have all the functionality demonstrated here. You could also add some priors and run Hamiltonian Monte Carlo using the HMC optimizer `gpflow.train.HMC` and its `sample` method. See [Markov Chain Monte Carlo (MCMC)](../advanced/mcmc.ipynb) for more information on running the sampler.

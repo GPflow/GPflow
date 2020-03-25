@@ -84,7 +84,7 @@ for M in Ms:
     Zinit = X[:M, :].copy()
     vfe = gpflow.models.SGPR((X, Y), gpflow.kernels.SquaredExponential(), inducing_variable=Zinit)
     gpflow.optimizers.Scipy().minimize(
-        vfe.training_loss, vfe.trainable_variables, options=dict(disp=False, maxiter=ci_niter(1000))
+        vfe.training_loss, vfe.trainable_variables, options=dict(disp=False, maxiter=ci_niter(1000), jit=True)
     )
 
     vfe_lml.append(vfe.elbo().numpy())
@@ -99,7 +99,7 @@ plt.plot(Ms, vupper_lml, label="upper")
 plt.axhline(full_lml, label="full", alpha=0.3)
 plt.xlabel("Number of inducing points")
 plt.ylabel("LML estimate")
-plt.legend()
+_ = plt.legend()
 
 # %% [markdown]
 # We see that the lower bound increases as more inducing points are added. Note that the upper bound does _not_ monotonically decrease! This is because as we train the sparse model, we also get better estimates of the hyperparameters. The upper bound will be different for this different setting of the hyperparameters, and is sometimes looser. The upper bound also converges to the true lml slower than the lower bound.
@@ -131,8 +131,7 @@ for M in fMs:
     set_trainable(vfe.likelihood, False)
 
     gpflow.optimizers.Scipy().minimize(
-        vfe.training_loss, vfe.trainable_variables, options=dict(disp=False, maxiter=ci_niter(1000))
-    )
+        vfe.training_loss, vfe.trainable_variables, options=dict(disp=False, maxiter=ci_niter(1000), jit=True)
 
     fvfe_lml.append(vfe.elbo().numpy())
     fvupper_lml.append(vfe.upper_bound().numpy())
@@ -144,7 +143,7 @@ plt.plot(fMs, fvupper_lml, label="upper")
 plt.axhline(full_lml, label="full", alpha=0.3)
 plt.xlabel("Number of inducing points")
 plt.ylabel("LML estimate")
-plt.legend()
+_ = plt.legend()
 
 # %%
 assert np.all(np.array(fvupper_lml) - np.array(fvfe_lml) > 0.0)
@@ -160,8 +159,9 @@ single_inducing_point = X[:1, :].copy()
 vfe = gpflow.models.SGPR(
     (X, Y), gpflow.kernels.SquaredExponential(), inducing_variable=single_inducing_point
 )
+objective = tf.function(vfe.training_loss)
 gpflow.optimizers.Scipy().minimize(
-    vfe.training_loss, vfe.trainable_variables, options=dict(maxiter=ci_niter(1000)), jit=False
+    objective, vfe.trainable_variables, options=dict(maxiter=ci_niter(1000)), jit=False
 )
 # Note that we need to set jit=False here due to a discrepancy in tf.function jitting
 # see https://github.com/GPflow/GPflow/issues/1260
