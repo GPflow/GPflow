@@ -134,5 +134,3 @@ X_new = np.full_like(Y_new, x_new)
 dens_new = np.exp(m.predict_log_density((X_new, Y_new)))
 fig = plt.figure(figsize=(8, 4))
 plt.bar(x=Y_new.flatten(), height=dens_new.flatten())
-
-# %%

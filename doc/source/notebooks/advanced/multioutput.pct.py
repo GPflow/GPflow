@@ -424,5 +424,3 @@ inspect_conditional(
 # %% [markdown]
 # ## Further Reading:
 # - [A simple demonstration of coregionalization](./coregionalisation.ipynb), which details other GPflow features for multi-output prediction without fully observed outputs.
-
-# %%
