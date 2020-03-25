@@ -67,7 +67,7 @@ GPflow leaves installing tensorflow to the user so that you can choose whether y
 
 *Note that GPflow 2.0 has not yet had an official release and interfaces, function signatures, variable names etc. may still change. We welcome and are open to suggestions for how to improve the design of gpflow2!*
 
-There is an ["Intro to GPflow 2.0"](https://github.com/GPflow/GPflow/blob/develop/doc/source/notebooks/intro_to_gpflow2.pct.py) Jupyter notebook; check it out for details. To convert your code from GPflow 1 check the [GPflow 2 upgrade guide](https://github.com/GPflow/GPflow/blob/develop/doc/source/notebooks/gpflow2_upgrade_guide.md).
+There is an ["Intro to GPflow 2.0"](https://gpflow.readthedocs.io/en/master/notebooks/intro_to_gpflow2.html) Jupyter notebook; check it out for details. To convert your code from GPflow 1 check the [GPflow 2 upgrade guide](https://gpflow.readthedocs.io/en/master/notebooks/gpflow2_upgrade/gpflow2_upgrade_guide.html).
 
 
 
