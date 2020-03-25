@@ -28,8 +28,8 @@ from ..probability_distributions import DiagonalGaussian
 from ..utilities import positive, to_default_float
 from ..utilities.ops import pca_reduce
 from .gpr import GPR
-from .model import InputData, GPModel, MeanAndVariance
-from .mixins import InternalDataTrainingLossMixin
+from .model import InputData, OutputData, GPModel, MeanAndVariance
+from .training_mixins import InternalDataTrainingLossMixin
 from .util import inducingpoint_wrapper
 
 
@@ -40,7 +40,7 @@ class GPLVM(GPR):
 
     def __init__(
         self,
-        data: InputData,
+        data: OutputData,
         latent_dim: int,
         X_data_mean: Optional[tf.Tensor] = None,
         kernel: Optional[Kernel] = None,
@@ -79,7 +79,7 @@ class GPLVM(GPR):
 class BayesianGPLVM(GPModel, InternalDataTrainingLossMixin):
     def __init__(
         self,
-        data: InputData,
+        data: OutputData,
         X_data_mean: tf.Tensor,
         X_data_var: tf.Tensor,
         kernel: Kernel,
@@ -145,10 +145,10 @@ class BayesianGPLVM(GPModel, InternalDataTrainingLossMixin):
         assert self.X_prior_var.shape[0] == self.num_data
         assert self.X_prior_var.shape[1] == self.num_latent_gps
 
-    def maximum_likelihood_objective(self):
+    def maximum_likelihood_objective(self) -> tf.Tensor:
         return self.elbo()
 
-    def elbo(self):
+    def elbo(self) -> tf.Tensor:
         """
         Construct a tensorflow function to compute the bound on the marginal
         likelihood.
@@ -206,7 +206,7 @@ class BayesianGPLVM(GPModel, InternalDataTrainingLossMixin):
         return bound
 
     def predict_f(
-        self, Xnew: tf.Tensor, full_cov: bool = False, full_output_cov: bool = False
+        self, Xnew: InputData, full_cov: bool = False, full_output_cov: bool = False
     ) -> MeanAndVariance:
         """
         Compute the mean and variance of the latent function at some new points.
@@ -264,5 +264,5 @@ class BayesianGPLVM(GPModel, InternalDataTrainingLossMixin):
             var = tf.tile(tf.expand_dims(var, 1), shape)
         return mean + self.mean_function(Xnew), var
 
-    def predict_log_density(self, data: InputData):
+    def predict_log_density(self, data: OutputData) -> tf.Tensor:
         raise NotImplementedError

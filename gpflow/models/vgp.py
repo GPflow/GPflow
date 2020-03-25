@@ -28,7 +28,7 @@ from ..likelihoods import Likelihood
 from ..mean_functions import MeanFunction, Zero
 from ..utilities import triangular
 from .model import RegressionData, InputData, MeanAndVariance, GPModel
-from .mixins import InternalDataTrainingLossMixin
+from .training_mixins import InternalDataTrainingLossMixin
 
 
 class VGP(GPModel, InternalDataTrainingLossMixin):

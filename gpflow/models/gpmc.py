@@ -25,7 +25,7 @@ from ..likelihoods import Likelihood
 from ..mean_functions import MeanFunction
 from ..utilities import to_default_float
 from .model import InputData, RegressionData, MeanAndVariance, GPModel
-from .mixins import MCMCTrainingLossMixin
+from .training_mixins import MCMCTrainingLossMixin
 
 
 class GPMC(GPModel, MCMCTrainingLossMixin):

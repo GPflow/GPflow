@@ -9,11 +9,11 @@ import numpy as np
 InputData = tf.Tensor
 OutputData = tf.Tensor
 RegressionData = Tuple[InputData, OutputData]
-Data = TypeVar("Data", RegressionData, InputData)
+Data = TypeVar("Data", RegressionData, InputData, OutputData)
 
 
 class InternalDataTrainingLossMixin:
-    def training_loss(self):
+    def training_loss(self) -> tf.Tensor:
         """
         Training loss for models that encapsulate their data.
         """
@@ -26,7 +26,7 @@ class InternalDataTrainingLossMixin:
 
 
 class ExternalDataTrainingLossMixin:
-    def training_loss(self, data):
+    def training_loss(self, data: RegressionData) -> tf.Tensor:
         """
         Training loss for models that do not encapsulate the data.
         
@@ -51,7 +51,7 @@ class ExternalDataTrainingLossMixin:
 
 
 class MCMCTrainingLossMixin(InternalDataTrainingLossMixin):
-    def training_loss(self):
+    def training_loss(self) -> tf.Tensor:
         """
         Training loss for gradient-based relaxation of MCMC models.
         """

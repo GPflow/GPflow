@@ -11,7 +11,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from typing import Optional
+
+from typing import Optional, Tuple
 
 import numpy as np
 import tensorflow as tf
@@ -24,7 +25,7 @@ from ..inducing_variables import InducingPoints
 from ..mean_functions import Zero, MeanFunction
 from ..utilities import to_default_float
 from .model import GPModel, InputData, RegressionData, MeanAndVariance
-from .mixins import InternalDataTrainingLossMixin
+from .training_mixins import InternalDataTrainingLossMixin
 from .util import inducingpoint_wrapper
 
 
@@ -64,7 +65,7 @@ class SGPRBase(GPModel, InternalDataTrainingLossMixin):
 
         self.inducing_variable = inducingpoint_wrapper(inducing_variable)
 
-    def upper_bound(self):
+    def upper_bound(self) -> tf.Tensor:
         """
         Upper bound for the sparse GP regression marginal likelihood.  Note that
         the same inducing points are used for calculating the upper bound, as are
@@ -228,7 +229,7 @@ class SGPR(SGPRBase):
             var = tf.tile(var[:, None], [1, self.num_latent_gps])
         return mean + self.mean_function(Xnew), var
 
-    def compute_qu(self):
+    def compute_qu(self) -> Tuple[tf.Tensor, tf.Tensor]:
         """
         Computes the mean and variance of q(u) = N(mu, cov), the variational distribution on
         inducing outputs. SVGP with this q(u) should predict identically to

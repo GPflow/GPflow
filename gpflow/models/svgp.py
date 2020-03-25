@@ -22,7 +22,7 @@ from ..conditionals import conditional
 from ..config import default_float
 from ..utilities import positive, triangular
 from .model import GPModel, InputData, RegressionData, MeanAndVariance
-from .mixins import ExternalDataTrainingLossMixin
+from .training_mixins import ExternalDataTrainingLossMixin
 from .util import inducingpoint_wrapper
 
 
@@ -129,7 +129,7 @@ class SVGP(GPModel, ExternalDataTrainingLossMixin):
                 num_inducing = q_sqrt.shape[1]
                 self.q_sqrt = Parameter(q_sqrt, transform=triangular())  # [L|P, M, M]
 
-    def prior_kl(self):
+    def prior_kl(self) -> tf.Tensor:
         return kullback_leiblers.prior_kl(
             self.inducing_variable, self.kernel, self.q_mu, self.q_sqrt, whiten=self.whiten
         )

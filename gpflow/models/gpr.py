@@ -21,7 +21,7 @@ from ..kernels import Kernel
 from ..logdensities import multivariate_normal
 from ..mean_functions import MeanFunction
 from .model import GPModel, InputData, RegressionData, MeanAndVariance
-from .mixins import InternalDataTrainingLossMixin
+from .training_mixins import InternalDataTrainingLossMixin
 
 
 class GPR(GPModel, InternalDataTrainingLossMixin):

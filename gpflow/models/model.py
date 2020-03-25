@@ -19,7 +19,7 @@ from typing import Callable, Optional, Tuple, TypeVar
 import numpy as np
 import tensorflow as tf
 
-from .training_interface import (
+from .training_mixin import (
     InternalDataTrainingLossMixin,
     ExternalDataTrainingLossMixin,
     MCMCTrainingLossMixin,
@@ -229,7 +229,7 @@ class GPModel(BayesianModel):
 
     def predict_log_density(
         self, data: RegressionData, full_cov: bool = False, full_output_cov: bool = False
-    ):
+    ) -> tf.Tensor:
         """
         Compute the log density of the data at the new data points.
         """
