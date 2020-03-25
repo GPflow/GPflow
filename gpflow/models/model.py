@@ -19,7 +19,7 @@ from typing import Callable, Optional, Tuple, TypeVar
 import numpy as np
 import tensorflow as tf
 
-from .training_mixin import (
+from .training_mixins import (
     InternalDataTrainingLossMixin,
     ExternalDataTrainingLossMixin,
     MCMCTrainingLossMixin,

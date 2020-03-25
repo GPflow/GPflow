@@ -1,6 +1,6 @@
 import abc
 import collections
-from typing import Callable, Optional, Tuple, TypeVar
+from typing import Callable, Optional, Tuple, TypeVar, Union
 
 
 import tensorflow as tf
