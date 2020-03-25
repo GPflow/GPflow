@@ -42,6 +42,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 
 from gpflow import set_trainable
+from gpflow.models import model_maximum_likelihood_objective
 from gpflow.config import default_float
 from gpflow.ci_utils import ci_niter
 
@@ -104,7 +105,7 @@ for m in models:
     if isinstance(m, gpflow.models.ExternalDataTrainingLossMixin):
         objective = m.training_loss_closure(data)
     else:
-        objective = m.training_loss()
+        objective = m.training_loss
     opt.minimize(
         objective, variables=m.trainable_variables, options=dict(maxiter=ci_niter(1000)), jit=True
     )
@@ -158,4 +159,4 @@ for m in models:
 
 # %%
 for m in models:
-    print(f"{m.__class__.__name__:30}  {m.maximum_likelihood_objective(data)}")
+    print(f"{m.__class__.__name__:30}  {model_maximum_likelihood_objective(m, data)}")
