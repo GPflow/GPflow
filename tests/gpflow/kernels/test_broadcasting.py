@@ -49,7 +49,7 @@ KERNEL_CLASSES = [
 ]
 
 
-def broadcast_no_no_active_dims(kernel):
+def check_broadcasting(kernel):
     S, N, M, D = 5, 4, 3, 2
     X1 = np.random.randn(S, N, D)
     X2 = np.random.randn(M, D)
@@ -74,13 +74,13 @@ def test_no_kernels_missed(kernel_class):
     ]
     needs_constructor_parameters = [kernels.Periodic]
     if kernel_class in tested_kernel_classes:
-        return  # tested
+        return  # tested by test_broadcast_no_active_dims
     if kernel_class in skipped_kernel_classes:
         return  # not tested but currently expected to fail
     if kernel_class in abstract_base_classes:
         return  # cannot test abstract base classes
     if kernel_class in needs_constructor_parameters:
-        return  # this has a separate test
+        return  # this has a separate test, see test_broadcast_no_active_dims_periodic
     if issubclass(kernel_class, kernels.MultioutputKernel):
         return  # TODO: cannot currently test MultioutputKernels - see https://github.com/GPflow/GPflow/issues/1339
     assert False, f"no broadcasting test for kernel class {kernel_class}"
@@ -88,7 +88,7 @@ def test_no_kernels_missed(kernel_class):
 
 @pytest.mark.parametrize("kernel_class", KERNEL_CLASSES)
 def test_broadcast_no_active_dims(kernel_class):
-    broadcast_no_no_active_dims(kernel_class())
+    check_broadcasting(kernel_class())
 
 
 @pytest.mark.parametrize(
@@ -96,7 +96,7 @@ def test_broadcast_no_active_dims(kernel_class):
 )
 def test_broadcast_no_active_dims_periodic(base_class):
     kernel = gpflow.kernels.Periodic(base_class())
-    broadcast_no_no_active_dims(kernel)
+    check_broadcasting(kernel)
 
 
 @pytest.mark.parametrize("kernel_class", [gpflow.kernels.SquaredExponential])
