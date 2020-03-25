@@ -182,7 +182,7 @@ from gpflow.ci_utils import ci_niter
 
 Scipy().minimize(
     model.training_loss_closure(data, jit=True),
-    variables=model.trainable_parameters,
+    variables=model.trainable_variables,
     options=dict(maxiter=ci_niter(1500)),
 )
 
@@ -234,7 +234,7 @@ model = MDN(inner_dims=[100, 100], num_mixtures=5)
 # %%
 Scipy().minimize(
     model.training_loss_closure(data, jit=True),
-    variables=model.trainable_parameters,
+    variables=model.trainable_variables,
     options=dict(maxiter=ci_niter(int(10e3))),
 )
 
