@@ -18,6 +18,11 @@ from .gplvm import GPLVM, BayesianGPLVM
 from .gpmc import GPMC
 from .gpr import GPR
 from .model import BayesianModel, GPModel
+from .mixins import (
+    ExternalDataTrainingLossMixin,
+    InternalDataTrainingLossMixin,
+    MCMCTrainingLossMixin,
+)
 
 # from .gplvm import PCA_reduce
 from .sgpmc import SGPMC

@@ -21,11 +21,12 @@ from ..base import Parameter
 from ..conditionals import conditional
 from ..config import default_float
 from ..utilities import positive, triangular
-from .model import GPModel, RegressionData
+from .model import GPModel, RegressionData, ExternalDataGPModel
+from .mixins import ExternalDataTrainingLossMixin
 from .util import inducingpoint_wrapper
 
 
-class SVGP(GPModel):
+class SVGP(GPModel, ExternalDataTrainingLossMixin):
     """
     This is the Sparse Variational GP (SVGP). The key reference is
 

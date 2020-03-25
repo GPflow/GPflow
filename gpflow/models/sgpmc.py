@@ -23,12 +23,13 @@ from ..inducing_variables import InducingPoints
 from ..kernels import Kernel
 from ..likelihoods import Likelihood
 from ..mean_functions import MeanFunction
-from ..models.model import RegressionData, GPModel, MeanAndVariance
 from ..utilities import to_default_float
+from .model import RegressionData, MeanAndVariance, GPModel
+from .mixins import MCMCTrainingLossMixin
 from .util import inducingpoint_wrapper
 
 
-class SGPMC(GPModel):
+class SGPMC(GPModel, MCMCTrainingLossMixin):
     r"""
     This is the Sparse Variational GP using MCMC (SGPMC). The key reference is
 
@@ -86,25 +87,18 @@ class SGPMC(GPModel):
             loc=to_default_float(0.0), scale=to_default_float(1.0)
         )
 
-    def training_loss(self, data: Optional[RegressionData] = None) -> tf.Tensor:
-        return -self.log_posterior_density(data)
+    def log_posterior_density(self) -> tf.Tensor:
+        return self.log_conditional_likelihood_lower_bound() + self.log_prior_density()
 
-    def log_posterior_density(self, data: Optional[RegressionData] = None) -> tf.Tensor:
-        return self.log_conditional_likelihood_lower_bound(data) + self.log_prior_density()
+    def maximum_likelihood_objective(self) -> tf.Tensor:
+        return self.log_conditional_likelihood_lower_bound()
 
-    def maximum_likelihood_objective(self, data: Optional[RegressionData] = None) -> tf.Tensor:
-        return self.log_conditional_likelihood_lower_bound(data)
-
-    def log_conditional_likelihood_lower_bound(
-        self, data: Optional[RegressionData] = None
-    ) -> tf.Tensor:
+    def log_conditional_likelihood_lower_bound(self) -> tf.Tensor:
         """
         This function computes the optimal density for v, q*(v), up to a constant
         """
         # get the (marginals of) q(f): exactly predicting!
-        if data is None:
-            data = self.data
-        X_data, Y_data = data
+        X_data, Y_data = self.data
         fmean, fvar = self.predict_f(X_data, full_cov=False)
         return tf.reduce_sum(self.likelihood.variational_expectations(fmean, fvar, Y_data))
 

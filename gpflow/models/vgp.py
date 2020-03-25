@@ -27,10 +27,11 @@ from ..kullback_leiblers import gauss_kl
 from ..likelihoods import Likelihood
 from ..mean_functions import MeanFunction, Zero
 from ..utilities import triangular
-from .model import RegressionData, InputData, GPModel, MeanAndVariance
+from .model import RegressionData, InputData, MeanAndVariance, GPModel
+from .mixins import InternalDataTrainingLossMixin
 
 
-class VGP(GPModel):
+class VGP(GPModel, InternalDataTrainingLossMixin):
     r"""
     This method approximates the Gaussian process posterior using a multivariate Gaussian.
 
@@ -76,10 +77,10 @@ class VGP(GPModel):
         q_sqrt = np.array([np.eye(num_data) for _ in range(self.num_latent_gps)])
         self.q_sqrt = Parameter(q_sqrt, transform=triangular())
 
-    def maximum_likelihood_objective(self, data: Optional[RegressionData] = None) -> tf.Tensor:
-        return self.elbo(data)
+    def maximum_likelihood_objective(self) -> tf.Tensor:
+        return self.elbo()
 
-    def elbo(self, data: Optional[RegressionData] = None):
+    def elbo(self):
         r"""
         This method computes the variational lower bound on the likelihood,
         which is:
@@ -91,10 +92,7 @@ class VGP(GPModel):
             q(\mathbf f) = N(\mathbf f \,|\, \boldsymbol \mu, \boldsymbol \Sigma)
 
         """
-        if data is None:
-            data = self.data
-
-        X_data, Y_data = data
+        X_data, Y_data = self.data
         # Get prior KL.
         KL = gauss_kl(self.q_mu, self.q_sqrt)
 
@@ -124,7 +122,7 @@ class VGP(GPModel):
         return mu + self.mean_function(Xnew), var
 
 
-class VGPOpperArchambeau(GPModel):
+class VGPOpperArchambeau(GPModel, InternalDataTrainingLossMixin):
     r"""
     This method approximates the Gaussian process posterior using a multivariate Gaussian.
     The key reference is:
@@ -176,10 +174,10 @@ class VGPOpperArchambeau(GPModel):
             np.ones((self.num_data, self.num_latent_gps)), transform=gpflow.utilities.positive()
         )
 
-    def maximum_likelihood_objective(self, data: Optional[RegressionData] = None) -> tf.Tensor:
-        return self.elbo(data)
+    def maximum_likelihood_objective(self) -> tf.Tensor:
+        return self.elbo()
 
-    def elbo(self, data: Optional[RegressionData] = None):
+    def elbo(self):
         r"""
         q_alpha, q_lambda are variational parameters, size [N, R]
         This method computes the variational lower bound on the likelihood,
@@ -188,9 +186,7 @@ class VGPOpperArchambeau(GPModel):
         with
             q(f) = N(f | K alpha + mean, [K^-1 + diag(square(lambda))]^-1) .
         """
-        if data is None:
-            data = self.data
-        X_data, Y_data = data
+        X_data, Y_data = self.data
 
         K = self.kernel(X_data)
         K_alpha = tf.linalg.matmul(K, self.q_alpha)

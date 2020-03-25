@@ -19,6 +19,16 @@ from typing import Callable, Optional, Tuple, TypeVar
 import numpy as np
 import tensorflow as tf
 
+from .training_interface import (
+    InternalDataTrainingLossMixin,
+    ExternalDataTrainingLossMixin,
+    MCMCTrainingLossMixin,
+    InputData,
+    OutputData,
+    RegressionData,
+    Data,
+)
+
 from ..base import Module
 from ..conditionals.util import sample_mvn
 from ..config import default_float, default_jitter
@@ -27,10 +37,6 @@ from ..likelihoods import Likelihood, SwitchedLikelihood
 from ..mean_functions import MeanFunction, Zero
 from ..utilities import ops, to_default_float
 
-InputData = tf.Tensor
-OutputData = tf.Tensor
-RegressionData = Tuple[InputData, OutputData]
-Data = TypeVar("Data", RegressionData, InputData)
 MeanAndVariance = Tuple[tf.Tensor, tf.Tensor]
 
 
@@ -46,41 +52,23 @@ class BayesianModel(Module, metaclass=abc.ABCMeta):
         else:
             return to_default_float(0.0)
 
-    def log_posterior_density(self, data: Optional[Data] = None) -> tf.Tensor:
+    def log_posterior_density(self, *args, **kwargs) -> tf.Tensor:
         """
         This may be the posterior with respect to the hyperparameters (e.g. for
         GPR) or the posterior with respect to the function (e.g. for GPMC and
         SGPMC). It assumes that maximum_likelihood_objective() is defined
         sensibly.
         """
-        return self._call_maximum_likelihood_objective(data) + self.log_prior_density()
+        return self.maximum_likelihood_objective(*args, **kwargs) + self.log_prior_density()
 
-    def training_loss(self, data: Optional[Data] = None) -> tf.Tensor:
+    def maximum_a_posteriori_objective(self, *args, **kwargs) -> tf.Tensor:
         """
-        Minimization objective for TensorFlow optimizers (including
-        gpflow.optimizers.Scipy). Includes the log prior density for maximum
-        a-posteriori (MAP) estimation.
+        Maximum a-posteriori objective. Assumes that maximum_likelihood_objective() is the log marginal likelihood and adds the log density of all priors.
         """
-        return -(self._call_maximum_likelihood_objective(data) + self.log_prior_density())
-
-    def training_loss_closure(self, data: Optional[Data] = None) -> Callable[[], tf.Tensor]:
-        def training_loss_closure():
-            return self.training_loss(data)
-
-        return training_loss_closure
-
-    def _call_maximum_likelihood_objective(self, data: Optional[Data] = None) -> tf.Tensor:
-        """
-        Helper function so that a user's model will still work even if they
-        implement maximum_likelihood_objective() without any arguments
-        """
-        if data is None:
-            return self.maximum_likelihood_objective()
-        else:
-            return self.maximum_likelihood_objective(data)
+        return self.maximum_likelihood_objective(*args, **kwargs) + self.log_prior_density()
 
     @abc.abstractmethod
-    def maximum_likelihood_objective(self, data: Optional[Data] = None) -> tf.Tensor:
+    def maximum_likelihood_objective(self, *args, **kwargs) -> tf.Tensor:
         """
         Objective for maximum likelihood estimation. Should be maximized. E.g.
         log-marginal likelihood (hyperparameter likelihood) for GPR, or lower
@@ -239,7 +227,7 @@ class GPModel(BayesianModel):
         return self.likelihood.predict_mean_and_var(f_mean, f_var)
 
     def predict_log_density(
-        self, data: RegressionData, full_cov: bool = False, full_output_cov: bool = False
+        self, data: RegressionData, full_cov: bool = False, full_output_cov: bool = False,
     ):
         """
         Compute the log density of the data at the new data points.
