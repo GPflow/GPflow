@@ -214,7 +214,10 @@ opt.minimize(m.training_loss, variables=m.trainable_variables)
 import tensorflow as tf
 
 
-class LinearMulticlass(gpflow.models.BayesianModel):
+class LinearMulticlass(gpflow.models.BayesianModel, gpflow.models.InternalDataTrainingLossMixin):
+    # The InternalDataTrainingLossMixin provides the training_loss method.
+    # (There is also an ExternalDataTrainingLossMixin for models that do not encapsulate data.)
+
     def __init__(self, X, Y, name=None):
         super().__init__(name=name)  # always call the parent constructor
 
