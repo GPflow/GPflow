@@ -29,14 +29,15 @@ from gpflow.ci_utils import ci_niter
 
 # %% [markdown]
 # The monitoring functionality lives in `gpflow.monitor`.
-# For now, we import `ModelToTensorBoard`, `ImageToTensorBoard`, `ScalarToTensorBoard` monitoring tasks and `MonitorCollection`.
+# For now, we import `ModelToTensorBoard`, `ImageToTensorBoard`, `ScalarToTensorBoard` monitoring tasks and `MonitorTaskGroup` and `Monitor`.
 
 # %%
 from gpflow.monitor import (
-    ModelToTensorBoard,
     ImageToTensorBoard,
+    ModelToTensorBoard,
+    Monitor,
+    MonitorTaskGroup,
     ScalarToTensorBoard,
-    MonitorCollection,
 )
 
 # %% [markdown]
