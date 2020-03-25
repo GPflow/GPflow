@@ -34,7 +34,7 @@ class ExternalDataTrainingLossMixin:
         """
         return -self.maximum_a_posteriori_objective(data)
 
-    def training_loss_closure(self, data: Data, jit=True) -> Callable[[], tf.Tensor]:
+    def training_loss_closure(self, data: Union[Data, collections.abc.Iterator], jit=True) -> Callable[[], tf.Tensor]:
         training_loss = self.training_loss
         if jit:
             training_loss = tf.function(
