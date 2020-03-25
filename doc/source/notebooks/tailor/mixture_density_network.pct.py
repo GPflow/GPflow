@@ -85,7 +85,7 @@ import tensorflow as tf
 
 # %%
 import gpflow
-from gpflow.models import ExternalDataBayesianModel
+from gpflow.models import BayesianModel, ExternalDataTrainingLossMixin
 from gpflow.base import Parameter
 
 # %% [markdown]
@@ -97,7 +97,7 @@ from gpflow.base import Parameter
 # %%
 from typing import Callable, Optional, Tuple
 
-class MDN(ExternalDataBayesianModel):
+class MDN(BayesianModel, ExternalDataTrainingLossMixin):
 
     def __init__(
         self,

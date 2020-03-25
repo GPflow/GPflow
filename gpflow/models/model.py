@@ -18,11 +18,11 @@ from typing import Callable, Optional, Tuple, TypeVar
 
 import numpy as np
 import tensorflow as tf
-from tensorflow.python.data.ops import iterator_ops
 
 from .training_interface import (
     InternalDataTrainingLossMixin,
     ExternalDataTrainingLossMixin,
+    MCMCTrainingLossMixin,
     InputData,
     OutputData,
     RegressionData,
@@ -63,9 +63,7 @@ class BayesianModel(Module, metaclass=abc.ABCMeta):
 
     def maximum_a_posteriori_objective(self, *args, **kwargs) -> tf.Tensor:
         """
-        Minimization objective for TensorFlow optimizers (including
-        gpflow.optimizers.Scipy). Includes the log prior density for maximum
-        a-posteriori (MAP) estimation.
+        Maximum a-posteriori objective. Assumes that maximum_likelihood_objective() is the log marginal likelihood and adds the log density of all priors.
         """
         return self.maximum_likelihood_objective(*args, **kwargs) + self.log_prior_density()
 

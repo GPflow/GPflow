@@ -15,7 +15,7 @@ Data = TypeVar("Data", RegressionData, InputData)
 class InternalDataTrainingLossMixin:
     def training_loss(self):
         """
-        Specify a training loss for this model
+        Training loss for models that encapsulate their data.
         """
         return -self.maximum_a_posteriori_objective()
 
@@ -28,7 +28,9 @@ class InternalDataTrainingLossMixin:
 class ExternalDataTrainingLossMixin:
     def training_loss(self, data):
         """
-        Specify a training loss for this model
+        Training loss for models that do not encapsulate the data.
+        
+        :param data: the data to be used for computing the model objective.
         """
         return -self.maximum_a_posteriori_objective(data)
 
@@ -36,7 +38,7 @@ class ExternalDataTrainingLossMixin:
         training_loss = self.training_loss
         if jit:
             training_loss = tf.function(
-                self.training_loss
+               training_loss
             )  # TODO need to add correct input_signature here to allow for differently sized minibatches
 
         def closure():
@@ -49,6 +51,6 @@ class ExternalDataTrainingLossMixin:
 class MCMCTrainingLossMixin(InternalDataTrainingLossMixin):
     def training_loss(self):
         """
-        Specify a training loss for this model
+        Training loss for gradient-based relaxation of MCMC models.
         """
         return -self.log_posterior_density()
