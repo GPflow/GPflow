@@ -108,15 +108,19 @@ def difference_matrix(X, X2):
     Returns (X - X2ᵀ)
 
     This function can deal with leading dimensions in X and X2.
-    If X has shape [..., N, D] and X2 has shape [..., M, D], the
-    output will have shape [..., N, M, D].
+    For example, If X has shape [M, D] and X2 has shape [N, D],
+    the output will have shape [N, M, D]. If X has shape [I, J, M, D]
+    and X2 has shape [K, L, N, D], the output will have shape
+    [I, J, M, K,L, N, D].
     """
     if X2 is None:
         X2 = X
-    diff = X[..., :, tf.newaxis, :] - X2[..., tf.newaxis, :, :]
-    tf.debugging.assert_shapes(
-        [(diff, [..., "M", "N", "D"]), (X, [..., "M", "D"]), (X2, [..., "N", "D"])]
-    )
+    Xshape = X.shape
+    X2shape = X2.shape
+    X = tf.reshape(X, (-1, Xshape[-1]))
+    X2 = tf.reshape(X2, (-1, X2shape[-1]))
+    diff = X[:, tf.newaxis, :] - X2[tf.newaxis, :, :]
+    diff = tf.reshape(diff, tf.concat((Xshape[:-1], X2shape[:-1], [Xshape[-1]]), 0))
     return diff
 
 
