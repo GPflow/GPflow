@@ -250,9 +250,7 @@ svgp_natgrad_objective = svgp_natgrad.training_loss_closure(data_minibatch_it)
 
 
 for _ in range(ci_niter(100)):
-    ordinary_adam_opt.minimize(
-        svgp_ordinary_objective, var_list=svgp_ordinary.trainable_variables
-    )
+    ordinary_adam_opt.minimize(svgp_ordinary_objective, var_list=svgp_ordinary.trainable_variables)
 
 
 for _ in range(ci_niter(100)):

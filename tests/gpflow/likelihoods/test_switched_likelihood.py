@@ -116,6 +116,7 @@ def test_switched_likelihood_with_vgp():
     opt = gpflow.optimizers.Scipy()
     opt.minimize(model.training_loss, model.trainable_variables, options=dict(maxiter=1))
 
+
 @pytest.mark.parametrize("num_latent_gps", [1, 2])
 def test_switched_likelihood_regression_valid_num_latent_gps(num_latent_gps):
     """
@@ -142,4 +143,3 @@ def test_switched_likelihood_regression_valid_num_latent_gps(num_latent_gps):
     else:
         with pytest.raises(tf.errors.InvalidArgumentError):
             _ = m.training_loss(data)
-

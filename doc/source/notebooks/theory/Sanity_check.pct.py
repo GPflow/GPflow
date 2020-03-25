@@ -106,10 +106,7 @@ for m in models:
     else:
         objective = m.training_loss()
     opt.minimize(
-        objective,
-        variables=m.trainable_variables,
-        options=dict(maxiter=ci_niter(1000)),
-        jit=True
+        objective, variables=m.trainable_variables, options=dict(maxiter=ci_niter(1000)), jit=True
     )
 
 

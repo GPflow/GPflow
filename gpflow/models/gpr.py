@@ -23,6 +23,7 @@ from ..mean_functions import MeanFunction
 from .model import GPModel, InputData, RegressionData, MeanAndVariance
 from .mixins import InternalDataTrainingLossMixin
 
+
 class GPR(GPModel, InternalDataTrainingLossMixin):
     r"""
     Gaussian Process Regression.

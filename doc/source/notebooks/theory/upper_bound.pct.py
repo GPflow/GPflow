@@ -84,7 +84,9 @@ for M in Ms:
     Zinit = X[:M, :].copy()
     vfe = gpflow.models.SGPR((X, Y), gpflow.kernels.SquaredExponential(), inducing_variable=Zinit)
     gpflow.optimizers.Scipy().minimize(
-        vfe.training_loss, vfe.trainable_variables, options=dict(disp=False, maxiter=ci_niter(1000), jit=True)
+        vfe.training_loss,
+        vfe.trainable_variables,
+        options=dict(disp=False, maxiter=ci_niter(1000), jit=True),
     )
 
     vfe_lml.append(vfe.elbo().numpy())
@@ -131,7 +133,11 @@ for M in fMs:
     set_trainable(vfe.likelihood, False)
 
     gpflow.optimizers.Scipy().minimize(
-        vfe.training_loss, vfe.trainable_variables, options=dict(disp=False, maxiter=ci_niter(1000), jit=True)
+        vfe.training_loss,
+        vfe.trainable_variables,
+        options=dict(disp=False, maxiter=ci_niter(1000)),
+        jit=True,
+    )
 
     fvfe_lml.append(vfe.elbo().numpy())
     fvupper_lml.append(vfe.upper_bound().numpy())
