@@ -30,6 +30,7 @@ $$
 $$
 
 We follow their advice in reparameterizing the mean as:
+
 $$
 \mathbf m = \mathbf K \boldsymbol \alpha
 $$
@@ -54,17 +55,11 @@ Given the above form for $q(\mathbf f)$, what is a quick and stable way to compu
 
 Let $\boldsymbol \Lambda = \textrm{diag}(\boldsymbol \lambda)$ and $\boldsymbol \Sigma$ be the covariance in question:  $\boldsymbol \Sigma = [\mathbf K^{-1} + \boldsymbol \Lambda^2]^{-1}$. By the matrix inversion lemma we have:
 
-$$
-\boldsymbol \Sigma = [\mathbf K^{-1} + \boldsymbol \Lambda^2]^{-1}
-$$
-
-$$
-= \boldsymbol \Lambda^{-2} - \boldsymbol \Lambda^{-2}[\mathbf K + \boldsymbol \Lambda^{-2}]^{-1}\boldsymbol \Lambda^{-2}
-$$
-
-$$
-= \boldsymbol \Lambda^{-2} - \boldsymbol \Lambda^{-1}\mathbf A^{-1}\boldsymbol \Lambda^{-1}
-$$
+\begin{align}
+\boldsymbol \Sigma &= [\mathbf K^{-1} + \boldsymbol \Lambda^2]^{-1} \\
+&= \boldsymbol \Lambda^{-2} - \boldsymbol \Lambda^{-2}[\mathbf K + \boldsymbol \Lambda^{-2}]^{-1}\boldsymbol \Lambda^{-2} \\
+&= \boldsymbol \Lambda^{-2} - \boldsymbol \Lambda^{-1}\mathbf A^{-1}\boldsymbol \Lambda^{-1}
+\end{align}
 
 where $\mathbf A = \boldsymbol \Lambda\mathbf K \boldsymbol \Lambda + \mathbf I\,.$
 
@@ -95,14 +90,18 @@ This expression is not ideal because we have to compute the diagonal elements of
 
 ## Prediction
 To make predictions with the Gaussian approximation, we need to integrate:
+
 $$
 q(f^\star \,|\,\mathbf y) = \int p(f^\star \,|\, \mathbf f)q(\mathbf f)\,\textrm d \mathbf f
 $$
+
 The integral is a Gaussian. We can substitute the equations for these quantities:
-$$
-q(f^\star \,|\,\mathbf y) = \int \mathcal N(f^\star \,|\, \mathbf K_{\star \mathbf f}\mathbf K^{-1}\mathbf f,\, \mathbf K_{\star \star} - \mathbf K_{\star \mathbf f}\mathbf K^{-1}\mathbf K_{\mathbf f \star})\mathcal N (\mathbf f\,|\, \mathbf K \boldsymbol\alpha, \boldsymbol \Sigma)\,\textrm d \mathbf f
-q(f^\star \,|\,\mathbf y) = \mathcal N\left(f^\star \,|\, \mathbf K_{\star \mathbf f}\boldsymbol \alpha,\, \mathbf K_{\star \star} - \mathbf K_{\star \mathbf f}(\mathbf K^{-1} - \mathbf K^{-1}\boldsymbol \Sigma\mathbf K^{-1})\mathbf K_{\mathbf f \star}\right)
-$$
+
+\begin{align}
+q(f^\star \,|\,\mathbf y) &= \int \mathcal N(f^\star \,|\, \mathbf K_{\star \mathbf f}\mathbf K^{-1}\mathbf f,\, \mathbf K_{\star \star} - \mathbf K_{\star \mathbf f}\mathbf K^{-1}\mathbf K_{\mathbf f \star})\mathcal N (\mathbf f\,|\, \mathbf K \boldsymbol\alpha, \boldsymbol \Sigma)\,\textrm d \mathbf f
+q(f^\star \,|\,\mathbf y) \\
+&= \mathcal N\left(f^\star \,|\, \mathbf K_{\star \mathbf f}\boldsymbol \alpha,\, \mathbf K_{\star \star} - \mathbf K_{\star \mathbf f}(\mathbf K^{-1} - \mathbf K^{-1}\boldsymbol \Sigma\mathbf K^{-1})\mathbf K_{\mathbf f \star}\right)
+\end{align}
 
 where the notation $\mathbf K_{\star \mathbf f}$ means the covariance between the prediction points and the data points, and the matrix $\mathbf K$ is shorthand for $\mathbf K_{\mathbf{ff}}$.
 
@@ -117,6 +116,7 @@ and simplified by recognising the form of the matrix inverse lemma:
 $$
 \mathbf K^{-1} - \mathbf K^{-1}\boldsymbol \Sigma\mathbf K^{-1} = [\mathbf K +  \boldsymbol\Lambda^2]^{-1}\,
 $$
+
 This leads to the final expression for the prediction:
 
 $$

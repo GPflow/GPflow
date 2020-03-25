@@ -150,10 +150,10 @@ class MDN(BayesianModel):
 # %% [markdown]
 # ### Notes
 # - Given we are dealing with a MoG, the neural net output must comply with the following restrictions:
-# $$
-# \sum_{m=1}^{M} \pi_{m}(x) = 1, \pi_m \ge 0\ \text{and}\ \sigma_m\ \forall\ m
-# $$
-# We achieve this by applying the `softmax` operator to the $\pi$'s and by taking the `exp` to the $\sigma$'s.
+#   \begin{equation}
+#   \sum_{m=1}^{M} \pi_{m}(x) = 1, \pi_m \ge 0\ \text{and}\ \sigma_m\ \forall\ m
+#   \end{equation}
+#   We achieve this by applying the `softmax` operator to the $\pi$'s and by taking the `exp` to the $\sigma$'s.
 #
 # - We use the "Xavier" initialization for the neural net's weights. (Glorot and Bengio, 2010).
 #

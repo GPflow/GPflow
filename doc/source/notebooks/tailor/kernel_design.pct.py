@@ -17,9 +17,9 @@
 # # Kernel Design
 #
 # It's easy to make new kernels in GPflow. To demonstrate, we'll have a look at the Brownian motion kernel, whose function is
-# $$
+# \begin{equation}
 # k(x, x') = \sigma^2 \text{min}(x, x')
-# $$
+# \end{equation}
 # where $\sigma^2$ is a variance parameter.
 
 # %%
