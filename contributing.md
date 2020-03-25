@@ -25,15 +25,15 @@ Due to limited scope we may not be able to review and merge every feature, howev
 
 ### ...but it won't work without changes to GPflow core?
 
-We aim to have the GPflow core infrastructure be sufficiently extensible and modular to enable a wide range of third-party extensions without having to touch the core of GPflow. The `features` module is an example of this, to enable multiscale inducing features, Fourier features, etc. If your feature/extension does not work outside of GPflow-core because something is hard-coded, please open an issue to discuss this with us!
+We aim to have the GPflow core infrastructure be sufficiently extensible and modular to enable a wide range of third-party extensions without having to touch the core of GPflow. The `inducing_variables` module is an example of this to enable interdomain approximations (multiscale inducing features, Fourier features, etc.). If your feature/extension does not work outside of GPflow-core because something is hard-coded, please open an issue to discuss this with us!
 
 ## Code quality requirements
 
-- Code must be covered by tests. We strongly encourage you to use the [pytest](https://docs.pytest.org/) framework. Even when you see your tests as a part of the old-fashioned GPflow [test cases](https://docs.python.org/3/library/unittest.html) it is still recommended to write a new test or modify the old one to use `pytest`.
+- Code must be covered by tests. We strongly encourage you to use the [pytest](https://docs.pytest.org/) framework.
 - The code must be documented. We use *reST* in docstrings. *reST* is a [standard way of documenting](http://docs.python-guide.org/en/latest/writing/documentation/) in python.\
 If the code which you are working on does not yet have any documentation, we would be very grateful if you could amend the deficiency. Missing documentation leads to ambiguities and difficulties in understanding future contributions and use cases.
 - Use [type annotations](https://docs.python.org/3/library/typing.html). Type hints make code cleaner and _safer_ to some extent.
-- Python code should follow the *PEP8* style. Use `pylint` and `mypy` for formatting and _type checking_. GPflow project has `.pylintrc` with some relaxed naming conventions.
+- Python code should generally follow the *PEP8* style. We use some custom naming conventions (see below) to have our notation follow the Gaussian process literature. Use `pylint` and `mypy` for formatting and _type checking_. GPflow project has a `.pylintrc` with some relaxed naming conventions.
 - Practise writing good code as far as is reasonable. Simpler is usually better. Reading the existing GPflow code should give a good idea of the expected style.
 
 Example:
@@ -63,6 +63,10 @@ class Foo:
         return session.run(incr_tensor)
 ```
 
+### Naming conventions
+
+Variable names: scalars and vectors start lowercase, but following the notation used in Gaussian process papers, all matrices are denoted with upper case. For example, `lengthscales` denotes a vector (i.e., rank 1, for example a tensor with shape [D]), whereas `Xnew` denotes a matrix (i.e., rank 2, for example a tensor with shape [N, D]; note that a [N, 1] tensor is a matrix, not a vector).
+
 ### Formatting
 
 GPflow uses [black](https://github.com/psf/black) for formatting in the following way:
@@ -77,14 +81,13 @@ If you think that your contribution falls within the project scope (see above) p
 
 - Only fixes one issue or adds one feature.
 - Makes the minimal amount of changes to the existing codebase.
-- Minimises the amount of changes to IPython notebooks (i.e. please do not commit notebooks which are simply re-run).
 
-All code that is destined for the master branch of GPflow goes through a PR. Only a small number of people can merge PRs onto the master branch (currently [Artem Artemev](https://github.com/awav), [James Hensman](https://github.com/jameshensman), [Alex Matthews](https://github.com/alexggmatthews), [Mark van der Wilk](https://github.com/markvdw) and [Alexis Boukouvalas](https://github.com/alexisboukouvalas)).
+All code goes through a PR; there are no direct commits to the master and develop branches.
 
 
 ## Tests and continuous integration
 
-GPflow is ~99% covered by the testing suite. We expect changes to code to pass these tests, and for new code to be covered by new tests. Currently, tests are run by travis and coverage is reported by codecov.
+GPflow is ~97% covered by the testing suite. We expect changes to code to pass these tests, and for new code to be covered by new tests. Currently, tests are run by CircleCI and coverage is reported by codecov. Pull requests should aim to have >97% *patch* coverage (i.e., all the lines that are *changing* should be covered by tests).
 
 ## Documentation
 
@@ -98,16 +101,13 @@ We use the [semantic versioning scheme](https://semver.org/). The semver implies
 
 When incrementing the version number, the following tasks are required:
 
-- Update the version in `gpflow/_version.py`
-- Update the version in the `doc/source/conf.py`
+- Update the version in `./VERSION`
+- Update the version in `./doc/source/conf.py`
 - Add a note to `RELEASE.md`
 
 ### Keeping up with TensorFlow
 
 GPflow tries to keep up with API changes in TensorFlow as far as is reasonable, so that the latest GPflow will work with the latest stable TensorFlow release. Changing the version of TensorFlow that we're compatible with requires a few tasks:
 
-- Update version used on travis via `travis.yml`
-- Update version used on codeship (requires codeship login)
 - Update `README.md`
-- Update version used by readthedocs.org via `docsrequire.txt`
-- Increment the GPflow version (see below).
+- Increment the GPflow version (see above).
