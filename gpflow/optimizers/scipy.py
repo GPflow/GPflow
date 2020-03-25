@@ -1,4 +1,4 @@
-from typing import Callable, Iterable, List, Tuple, Optional
+from typing import Callable, Iterable, List, Tuple, Optional, TypeVar
 
 import numpy as np
 import scipy.optimize
@@ -131,9 +131,10 @@ class Scipy:
             tensor.assign(tensor_vector)
 
 
-def _compute_loss_and_gradients(
-    loss_cb: LossClosure, variables: Variables
-) -> Tuple[tf.Tensor, tf.Tensor]:
+V = TypeVar("V", bound=Variables)
+
+
+def _compute_loss_and_gradients(loss_cb: LossClosure, variables: V) -> Tuple[tf.Tensor, V]:
     with tf.GradientTape() as tape:
         loss = loss_cb()
     grads = tape.gradient(loss, variables)
