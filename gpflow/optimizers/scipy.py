@@ -126,8 +126,9 @@ class Scipy:
             tensor.assign(tensor_vector)
 
 
-def _compute_loss_and_gradients(loss_cb: LossClosure, variables: Variables):
-    with tf.GradientTape() as tape:
-        loss = loss_cb()
-    grads = tape.gradient(loss, variables)
+def _compute_loss_and_gradients(loss_closure: LossClosure, variables: Variables):
+    with tf.GradientTape(watch_accessed_variables=False) as tape:
+        tape.watch(variables)
+        loss = loss_closure()
+        grads = tape.gradient(loss, variables)
     return loss, grads
