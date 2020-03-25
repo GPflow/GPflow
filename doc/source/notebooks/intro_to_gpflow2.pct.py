@@ -261,6 +261,7 @@ def plot_model(fig, ax):
 def print_cb(epoch_id=None, data=None):
     tf.print(f"Epoch {epoch_id}: ELBO (train)", model.elbo(data))
 
+
 def elbo_cb(data=None, **_):
     return model.elbo(data)
 
