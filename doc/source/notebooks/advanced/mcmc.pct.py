@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.3.3
+#       jupytext_version: 1.3.0
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -25,6 +25,7 @@ import matplotlib.pyplot as plt
 import matplotlib
 import tensorflow as tf
 import tensorflow_probability as tfp
+from tensorflow_probability import distributions as tfd
 
 import gpflow
 from gpflow.ci_utils import ci_niter, is_continuous_integration
@@ -71,9 +72,15 @@ tf.random.set_seed(123)
 rng = np.random.RandomState(42)
 
 N = 30
-X = rng.rand(N, 1)
-Y = np.sin(12 * X) + 0.66 * np.cos(25 * X) + rng.randn(N, 1) * 0.1 + 3
-data = (X, Y)
+
+
+def synthetic_data(num: int, rng: np.random.RandomState):
+    X = rng.rand(num, 1)
+    Y = np.sin(12 * X) + 0.66 * np.cos(25 * X) + rng.randn(num, 1) * 0.1 + 3
+    return X, Y
+
+
+data = (X, Y) = synthetic_data(N, rng)
 
 plt.figure(figsize=(12, 6))
 plt.plot(X, Y, "kx", mew=2)
@@ -118,11 +125,11 @@ print(f"log likelihood at optimum: {model.log_likelihood()}")
 
 # %%
 # tfp.distributions dtype is inferred from parameters - so convert to 64-bit
-model.kernel.lengthscales.prior = tfp.distributions.Gamma(f64(1.0), f64(1.0))
-model.kernel.variance.prior = tfp.distributions.Gamma(f64(1.0), f64(1.0))
-model.likelihood.variance.prior = tfp.distributions.Gamma(f64(1.0), f64(1.0))
-model.mean_function.A.prior = tfp.distributions.Normal(f64(0.0), f64(10.0))
-model.mean_function.b.prior = tfp.distributions.Normal(f64(0.0), f64(10.0))
+model.kernel.lengthscales.prior = tfd.Gamma(f64(1.0), f64(1.0))
+model.kernel.variance.prior = tfd.Gamma(f64(1.0), f64(1.0))
+model.likelihood.variance.prior = tfd.Gamma(f64(1.0), f64(1.0))
+model.mean_function.A.prior = tfd.Normal(f64(0.0), f64(10.0))
+model.mean_function.b.prior = tfd.Normal(f64(0.0), f64(10.0))
 
 gpflow.utilities.print_summary(model)
 
@@ -158,6 +165,7 @@ def run_chain_fn():
 samples, traces = run_chain_fn()
 parameter_samples = hmc_helper.convert_constrained_values(samples)
 
+
 # %% [markdown]
 # **NOTE:** All the Hamiltonian MCMC sampling takes place in an unconstrained space (where constrained parameters have been mapped via a bijector to an unconstrained space). This makes the optimization, as required in the gradient step, much easier.
 #
@@ -165,11 +173,8 @@ parameter_samples = hmc_helper.convert_constrained_values(samples)
 #
 
 # %%
-param_to_name = {param: name for name, param in gpflow.utilities.parameter_dict(model).items()}
-
-
-def plot_samples(samples, y_axis_label):
-
+def plot_samples(samples, model, y_axis_label):
+    param_to_name = {param: name for name, param in gpflow.utilities.parameter_dict(model).items()}
     plt.figure(figsize=(8, 4))
     for val, param in zip(samples, model.parameters):
         plt.plot(tf.squeeze(val), label=param_to_name[param])
@@ -178,8 +183,8 @@ def plot_samples(samples, y_axis_label):
     plt.ylabel(y_axis_label)
 
 
-plot_samples(samples, "unconstrained_variables_values")
-plot_samples(parameter_samples, "parameter_values")
+plot_samples(samples, model, "unconstrained_variables_values")
+plot_samples(parameter_samples, model, "parameter_values")
 
 
 # %% [markdown]
@@ -328,8 +333,8 @@ model = gpflow.models.SGPMC(
     inducing_variable=X[::5].copy(),
     num_latent_gps=3,
 )
-model.kernel.kernels[0].variance.prior = tfp.distributions.Gamma(f64(1.0), f64(1.0))
-model.kernel.kernels[0].lengthscales.prior = tfp.distributions.Gamma(f64(2.0), f64(2.0))
+model.kernel.kernels[0].variance.prior = tfd.Gamma(f64(1.0), f64(1.0))
+model.kernel.kernels[0].lengthscales.prior = tfd.Gamma(f64(2.0), f64(2.0))
 set_trainable(model.kernel.kernels[1].variance, False)
 
 gpflow.utilities.print_summary(model)
@@ -454,9 +459,9 @@ model = gpflow.models.GPMC(data, kernel, likelihood)
 # The `V` parameter already has a prior applied. We'll add priors to the parameters also (these are rather arbitrary, for illustration).
 
 # %%
-model.kernel.kernels[0].lengthscales.prior = tfp.distributions.Gamma(f64(1.0), f64(1.0))
-model.kernel.kernels[0].variance.prior = tfp.distributions.Gamma(f64(1.0), f64(1.0))
-model.kernel.kernels[1].variance.prior = tfp.distributions.Gamma(f64(1.0), f64(1.0))
+model.kernel.kernels[0].lengthscales.prior = tfd.Gamma(f64(1.0), f64(1.0))
+model.kernel.kernels[0].variance.prior = tfd.Gamma(f64(1.0), f64(1.0))
+model.kernel.kernels[1].variance.prior = tfd.Gamma(f64(1.0), f64(1.0))
 
 gpflow.utilities.print_summary(model)
 
@@ -586,6 +591,87 @@ _ = plt.ylabel("hyper-parameter value")
 fig, axarr = plt.subplots(1, len(hyperparameters), sharex=True, figsize=(12, 4))
 for i, hyp in enumerate(hyperparameters):
     ax = axarr[i]
-    ax.hist(parameter_samples[name_to_index[hyp]], bins=20)
+    ax.hist(parameter_samplses[name_to_index[hyp]], bins=20)
     ax.set_title(hyp)
 plt.tight_layout()
+
+# %% [markdown]
+# ## Prior on constraint and unconstrained parameters
+
+# %% [markdown]
+# GPflow `Parameter` class provides options for setting a prior. `Parameter` wraps a constrained tensors and provides a computation of a gradient with respect to uncosntrained transformation of that tensor. The user can set a prior either in **constrained** space or **unconstrained** space.
+
+# %% [markdown]
+# By default prior for the `Parameter` is set for _constrained_ space. To set a prior do the following:
+
+# %%
+prior_distribution = tfd.Normal(f64(0.0), f64(1.0))
+_ = gpflow.Parameter(1.0, prior_on="unconstrained", prior=prior_distribution)
+_ = gpflow.Parameter(1.0, prior_on="constrained", prior=prior_distribution)
+
+# %% [markdown]
+# When a prior is set in *constrained* space, the `gpflow.optimizers.SamplingHelper` compensates the prior density with a Jacobian of the transformation used by the parameter. For priors in the `unconstrained` space the `gpflow.optimizers.SamplingHelper` will not apply adjustments to the prior density.
+
+# %%
+gpflow.config.set_default_positive_bijector("exp")
+gpflow.config.set_default_positive_minimum(1e-6)
+
+rng = np.random.RandomState(42)
+data = synthetic_data(30, rng)
+
+kernel = gpflow.kernels.Matern52(lengthscales=0.3)
+meanf = gpflow.mean_functions.Linear(1.0, 0.0)
+model = gpflow.models.GPR(data, kernel, meanf)
+model.likelihood.variance.assign(0.01)
+
+model.kernel.lengthscales.prior = tfd.Gamma(f64(1.0), f64(1.0))
+model.kernel.variance.prior = tfd.Gamma(f64(1.0), f64(1.0))
+model.likelihood.variance.prior = tfd.Gamma(f64(1.0), f64(1.0))
+model.mean_function.A.prior = tfd.Normal(f64(0.0), f64(10.0))
+model.mean_function.b.prior = tfd.Normal(f64(0.0), f64(10.0))
+
+# model.kernel.lengthscales.prior_on = "unconstrained"
+# model.kernel.lengthscales.prior = tfd.LogNormal(f64(0.0), f64(np.log(10.0)))
+model.kernel.variance.prior_on = "unconstrained"
+model.kernel.variance.prior = tfd.LogNormal(f64(0.0), f64(np.log(10.0)))
+# model.likelihood.variance.prior_on = "unconstrained"
+# model.likelihood.variance.prior = tfd.Gamma(f64(1.0), f64(0.0))
+# model.mean_function.A.prior_on = "unconstrained"
+# model.mean_function.A.prior = tfd.LogNormal(f64(0.0), f64(np.log(10.0)))
+# model.mean_function.b.prior_on = "unconstrained"
+# model.mean_function.b.prior = tfd.LogNormal(f64(0.0), f64(np.log(10.0)))
+
+# %% [markdown]
+# Let's
+
+# %%
+hmc_helper = gpflow.optimizers.SamplingHelper(
+    model.log_marginal_likelihood, model.trainable_parameters
+)
+
+hmc = tfp.mcmc.HamiltonianMonteCarlo(
+    target_log_prob_fn=hmc_helper.target_log_prob_fn, num_leapfrog_steps=10, step_size=0.01
+)
+adaptive_hmc = tfp.mcmc.SimpleStepSizeAdaptation(
+    hmc, num_adaptation_steps=10, target_accept_prob=f64(0.75), adaptation_rate=0.1
+)
+
+num_samples = 500
+
+
+@tf.function
+def run_chain_fn_unconstrained():
+    return tfp.mcmc.sample_chain(
+        num_results=num_samples,
+        num_burnin_steps=300,
+        current_state=hmc_helper.current_state,
+        kernel=adaptive_hmc,
+        trace_fn=lambda _, pkr: pkr.inner_results.is_accepted,
+    )
+
+
+samples, traces = run_chain_fn_unconstrained()
+parameter_samples = hmc_helper.convert_constrained_values(samples)
+
+plot_samples(samples, model, "unconstrained_variables_values")
+plot_samples(parameter_samples, model, "parameter_values")
