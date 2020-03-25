@@ -72,7 +72,7 @@ A parameter's `trainable` attribute cannot be set. Instead, use `gpflow.set_trai
 
 Usage of GPflow’s Scipy optimizer has changed. It has been renamed from `gpflow.train.ScipyOptimizer` to `gpflow.optimizers.Scipy` and its `minimize` method has changed in the following ways:
 
- * Instead of a GPflow model the method now takes a zero-argument function that returns the loss to be minimised (for example, the negative log marginal likelihood), as well as the variables to be optimised (typically `model.trainable_variables`).
+ * Instead of a GPflow model, the method now takes a zero-argument function that returns the loss to be minimised (most GPflow models provide a `model.training_loss` method for this use-case; gpflow.models.SVGP does not encapsulate data and provides a `model.training_loss_closure(data)` closure generating method instead), as well as the variables to be optimised (typically `model.trainable_variables`).
  * The options (`disp`, `maxiter`) must now be passed in a dictionary.
 
 For example:
@@ -81,7 +81,7 @@ For example:
 -optimizer.minimize(model, disp=True, maxiter=100)
 +optimizer = gpflow.optimizers.Scipy()
 +optimizer.minimize(
-+    lambda: -model.log_marginal_likelihood(),
++    model.training_loss,
 +    variables=model.trainable_variables,
 +    options=dict(disp=True, maxiter=100),
 +)
