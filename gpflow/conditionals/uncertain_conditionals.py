@@ -44,7 +44,7 @@ def uncertain_conditional(
 
     if full_cov:
         raise NotImplementedError(
-            "The method `uncertain_conditional` currently does not support `full_cov=True`"
+            "uncertain_conditional() currently does not support full_cov=True"
         )
 
     pXnew = Gaussian(Xnew_mu, Xnew_var)
