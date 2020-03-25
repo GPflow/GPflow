@@ -61,7 +61,7 @@ This section explains the more complex models and features that are available in
   - [Natural gradients](advanced/natural_gradients.pct.py): how to optimize the variational approximate posterior's parameters.
 <!--  - [optimizers](advanced/optimisation.pct.py)  **[TODO]** -->
 <!--  - [Settings and GPflow configuration](advanced/settings.ipynb): how to adjust jitter (for inversion or Cholesky errors), floating point precision, parallelism, and more.-->
-<!--  - [Monitoring optimization](advanced/monitoring.ipynb): how to send things to TensorBoard, store or restore checkpoints, and more.-->
+<!--  - [Monitoring optimization](basics/monitoring.pct.py): how to send things to TensorBoard, store or restore checkpoints, and more.-->
 
 ## Tailored models
 
