@@ -41,11 +41,10 @@ def test_mcmc_helper_parameters():
 
     for i in range(len(model.trainable_parameters)):
         assert model.trainable_parameters[i].shape == hmc_helper.current_state[i].shape
-        assert model.trainable_parameters[i] == hmc_helper._parameters[i]
-        if isinstance(model.trainable_parameters[i], gpflow.Parameter):
-            assert (
-                model.trainable_parameters[i].unconstrained_variable == hmc_helper.current_state[i]
-            )
+        assert model.trainable_parameters[i] == hmc_helper._model_parameters[i]
+        assert (
+            model.trainable_parameters[i].unconstrained_variable == hmc_helper.current_state[i]
+        )
 
 
 def test_mcmc_helper_target_function_constrained():
@@ -192,4 +191,4 @@ def test_mcmc_sampler_integration():
     for i in range(len(model.trainable_parameters)):
         assert len(samples[i]) == num_samples
         assert hmc_helper.current_state[i].numpy() == samples[i][-1]
-        assert hmc_helper._parameters[i].numpy() == parameter_samples[i][-1]
+        assert hmc_helper._model_parameters[i].numpy() == parameter_samples[i][-1]
