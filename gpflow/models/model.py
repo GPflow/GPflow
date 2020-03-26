@@ -96,10 +96,10 @@ class GPModel(BayesianModel):
         kernel: Kernel,
         likelihood: Likelihood,
         mean_function: Optional[MeanFunction] = None,
-        num_latent_gps: int = None,
+        *,
+        num_latent_gps: int,
     ):
         super().__init__()
-        assert num_latent_gps is not None, "GPModel requires specification of num_latent_gps"
         self.num_latent_gps = num_latent_gps
         # TODO(@awav): Why is this here when MeanFunction does not have a __len__ method
         if mean_function is None:
