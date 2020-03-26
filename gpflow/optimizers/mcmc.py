@@ -53,7 +53,10 @@ class SamplingHelper:
     def __init__(
         self, target_log_prob_fn: Callable[[], tf.Tensor], model_parameters: Sequence[Parameter]
     ):
-        assert all(isinstance(p, Parameter) for p in model_parameters)
+        if not all(isinstance(p, Parameter) for p in model_parameters):
+            raise TypeError(
+                "SamplingHelper only accepts `gpflow.Parameter`s (wrap tf.Variable if required)"
+            )
 
         self._model_parameters = model_parameters
         self._target_log_prob_fn = target_log_prob_fn
