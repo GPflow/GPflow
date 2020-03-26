@@ -117,8 +117,8 @@ def difference_matrix(X, X2):
         X2 = X
         diff = X[..., :, tf.newaxis, :] - X2[..., tf.newaxis, :, :]
         return diff
-    Xshape = X.shape
-    X2shape = X2.shape
+    Xshape = tf.shape(X)
+    X2shape = tf.shape(X2)
     X = tf.reshape(X, (-1, Xshape[-1]))
     X2 = tf.reshape(X2, (-1, X2shape[-1]))
     diff = X[:, tf.newaxis, :] - X2[tf.newaxis, :, :]
