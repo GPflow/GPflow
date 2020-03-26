@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Callable, Sequence, Optional, TypeVar
+from typing import Callable, Sequence, Optional
 
 import tensorflow as tf
 
@@ -21,13 +21,10 @@ from gpflow.base import Parameter
 __all__ = ["SamplingHelper"]
 
 
-ModelParameters = Sequence[TypeVar("ModelParameter", tf.Variable, Parameter)]
-LogProbabilityFunction = Callable[[ModelParameters], tf.Tensor]
-
-
 class SamplingHelper:
     """
-    Helper reads from variables being set with a prior and writes values back to the same variables.
+    This helper makes it easy to read from variables being set with a prior and
+    writes values back to the same variables.
 
     Example:
         model = <Create GPflow model>
@@ -47,25 +44,21 @@ class SamplingHelper:
         parameter_samples = hmc_helper.convert_samples_to_parameter_values(hmc_samples)
 
     Args:
-        target_log_prob_fn: Python callable which represents log-density under the target distribution.
-        model_parameters: List of `tensorflow.Variable`s or `gpflow.Parameter`s used as a state of the Markov chain.
+        target_log_prob_fn: a callable which returns the log-density of the
+            model under the target distribution.
+        model_parameters: List of `gpflow.Parameter`s used as a state of the
+            Markov chain.
     """
 
     def __init__(
-        self, target_log_prob_fn: LogProbabilityFunction, model_parameters: ModelParameters
+        self, target_log_prob_fn: Callable[[], tf.Tensor], model_parameters: Sequence[Parameter]
     ):
-        assert all([isinstance(p, (Parameter, tf.Variable)) for p in model_parameters])
+        assert all(isinstance(p, Parameter) for p in model_parameters)
 
         self._model_parameters = model_parameters
         self._target_log_prob_fn = target_log_prob_fn
 
-        self._parameters = []
-        self._unconstrained_variables = []
-        for p in self._model_parameters:
-            self._unconstrained_variables.append(
-                p.unconstrained_variable if isinstance(p, Parameter) else p
-            )
-            self._parameters.append(p)
+        self._unconstrained_variables = [p.unconstrained_variable for p in self._model_parameters]
 
     @property
     def current_state(self):
@@ -75,7 +68,8 @@ class SamplingHelper:
 
     @property
     def target_log_prob_fn(self):
-        """ The target log probability, adjusted to allow for optimisation to occur on the tracked
+        """
+        The target log probability, adjusted to allow for optimisation to occur on the tracked
         unconstrained underlying variables.
         """
         variables_list = self.current_state
@@ -91,7 +85,7 @@ class SamplingHelper:
                 # Now need to correct for the fact that the prob fn is evaluated on the
                 # constrained space while we wish to evaluate it in the unconstrained space
                 for param in self._model_parameters:
-                    if isinstance(param, Parameter) and param.transform is not None:
+                    if param.transform is not None:
                         x = param.unconstrained_variable
                         log_det_jacobian = param.transform.forward_log_det_jacobian(
                             x, x.shape.ndims
@@ -109,13 +103,14 @@ class SamplingHelper:
 
     def convert_constrained_values(self, hmc_samples):
         """
-        Converts list of `unconstrained_values` to constrained versions. Each value in the list correspond to an entry in
-        `self.parameters`; in case that object is a `gpflow.Parameter`, the `forward` method of its transform
-        will be applied first.
+        Converts list of unconstrained values in `hmc_samples` to constrained
+        versions. Each value in the list correspond to an entry in
+        `self._model_parameters`; in case that gpflow.Parameter object has a
+        transform, its `forward` method will be applied.
         """
         values = []
-        for hmc_variable, param in zip(hmc_samples, self._parameters):
-            if isinstance(param, Parameter) and param.transform is not None:
+        for hmc_variable, param in zip(hmc_samples, self._model_parameters):
+            if param.transform is not None:
                 value = param.transform.forward(hmc_variable)
             else:
                 value = hmc_variable
