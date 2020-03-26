@@ -132,7 +132,6 @@ class ModelToTensorBoard(ToTensorBoard):
                 name = name.lstrip(".")  # keys are prepended with a '.', which we strip
                 self._summarize_parameter(name, parameter)
 
-    # @tf.function(autograph=False)
     def _summarize_parameter(self, name: str, param: Union[Parameter, tf.Variable]):
         """
         :param name: identifier used in tensorboard
