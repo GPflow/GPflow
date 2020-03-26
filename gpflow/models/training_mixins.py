@@ -20,10 +20,10 @@ for an MCMC model.
 """
 
 import abc
-import collections
-from typing import Callable, Optional, Tuple, TypeVar, Union
+from typing import Callable, Iterator, Optional, Tuple, TypeVar, Union
 
 import tensorflow as tf
+from tensorflow.python.data.ops.iterator_ops import OwnedIterator as DatasetOwnedIterator
 import numpy as np
 
 
@@ -62,7 +62,7 @@ class ExternalDataTrainingLossMixin:
         return -self.maximum_a_posteriori_objective(data)
 
     def training_loss_closure(
-        self, data: Union[Data, collections.abc.Iterator], jit=True
+        self, data: Union[Data, Iterator[Data]], jit=True, input_signature=None,
     ) -> Callable[[], tf.Tensor]:
         """
         Returns a closure that computes the training loss, which by default is
@@ -73,15 +73,22 @@ class ExternalDataTrainingLossMixin:
             `iter(dataset.batch(batch_size))`, where dataset is an instance of
             tf.data.Dataset)
         :param jit: whether to wrap training loss in tf.function()
+        :param input_signature: to be passed to tf.function() when jit=True;
+            will be inferred from the iterator if `data` is an iterator on a
+            tf.data.Dataset.
         """
         training_loss = self.training_loss
         if jit:
-            training_loss = tf.function(
-                training_loss
-            )  # TODO need to add correct input_signature here to allow for differently sized minibatches
+            if isinstance(data, DatasetOwnedIterator):
+                tensor_specs = [
+                    tf.TensorSpec(shape, dtype)
+                    for shape, dtype in zip(data.output_shapes, data.output_types)
+                ]
+                input_signature = [tuple(tensor_specs)]
+            training_loss = tf.function(training_loss, input_signature=input_signature)
 
         def closure():
-            batch = next(data) if isinstance(data, collections.abc.Iterator) else data
+            batch = next(data) if isinstance(data, Iterator) else data
             return training_loss(batch)
 
         return closure
