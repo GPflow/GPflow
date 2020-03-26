@@ -612,6 +612,9 @@ _ = gpflow.Parameter(1.0, prior_on="constrained", prior=prior_distribution)
 # %% [markdown]
 # When a prior is set in *constrained* space, the `gpflow.optimizers.SamplingHelper` compensates the prior density with a Jacobian of the transformation used by the parameter. For priors in the `unconstrained` space the `gpflow.optimizers.SamplingHelper` will not apply adjustments to the prior density.
 
+# %% [markdown]
+# Below we repeat the same experiment that we ran in the beginning, but with some priors in `unconstrained` space:
+
 # %%
 gpflow.config.set_default_positive_bijector("exp")
 gpflow.config.set_default_positive_minimum(1e-6)
@@ -624,25 +627,26 @@ meanf = gpflow.mean_functions.Linear(1.0, 0.0)
 model = gpflow.models.GPR(data, kernel, meanf)
 model.likelihood.variance.assign(0.01)
 
-model.kernel.lengthscales.prior = tfd.Gamma(f64(1.0), f64(1.0))
-model.kernel.variance.prior = tfd.Gamma(f64(1.0), f64(1.0))
-model.likelihood.variance.prior = tfd.Gamma(f64(1.0), f64(1.0))
-model.mean_function.A.prior = tfd.Normal(f64(0.0), f64(10.0))
-model.mean_function.b.prior = tfd.Normal(f64(0.0), f64(10.0))
+mu = f64(0.0)
+std = f64(10.0)
+one = f64(1.0)
 
-# model.kernel.lengthscales.prior_on = "unconstrained"
-# model.kernel.lengthscales.prior = tfd.LogNormal(f64(0.0), f64(np.log(10.0)))
+model.kernel.lengthscales.prior_on = "unconstrained"
+model.kernel.lengthscales.prior = tfd.Normal(mu, std)
 model.kernel.variance.prior_on = "unconstrained"
-model.kernel.variance.prior = tfd.LogNormal(f64(0.0), f64(np.log(10.0)))
-# model.likelihood.variance.prior_on = "unconstrained"
-# model.likelihood.variance.prior = tfd.Gamma(f64(1.0), f64(0.0))
-# model.mean_function.A.prior_on = "unconstrained"
-# model.mean_function.A.prior = tfd.LogNormal(f64(0.0), f64(np.log(10.0)))
-# model.mean_function.b.prior_on = "unconstrained"
-# model.mean_function.b.prior = tfd.LogNormal(f64(0.0), f64(np.log(10.0)))
+model.kernel.variance.prior = tfd.Normal(mu, std)
+model.likelihood.variance.prior_on = "unconstrained"
+model.likelihood.variance.prior = tfd.Normal(mu, std)
+
+model.mean_function.A.prior_on = "constrained"
+model.mean_function.A.prior = tfd.Normal(mu, std)
+model.mean_function.b.prior_on = "constrained"
+model.mean_function.b.prior = tfd.Normal(mu, std)
+
+model.kernel.lengthscales.prior_on
 
 # %% [markdown]
-# Let's
+# Let's run HMC and plot chain traces:
 
 # %%
 hmc_helper = gpflow.optimizers.SamplingHelper(
