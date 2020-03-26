@@ -7,7 +7,6 @@ from scipy.optimize import OptimizeResult
 
 __all__ = ["Scipy"]
 
-Loss = tf.Tensor
 Variables = Iterable[tf.Variable]
 StepCallback = Callable[[int, Variables, List[tf.Tensor]], None]
 LossClosure = Callable[[], tf.Tensor]
