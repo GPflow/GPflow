@@ -9,7 +9,7 @@ from gpflow.base import PriorOn
 from gpflow.config import set_default_float
 from gpflow.utilities import to_default_float
 from tensorflow_probability.python.bijectors import Exp
-from tensorflow_probability.python.distributions import Uniform
+from tensorflow_probability.python.distributions import Uniform, Gamma
 
 np.random.seed(1)
 
@@ -28,6 +28,10 @@ def build_model(data):
     meanf = gpflow.mean_functions.Linear(1.0, 0.0)
     model = gpflow.models.GPR(data, kernel, meanf)
     model.likelihood.variance.assign(0.01)
+
+    for p in model.parameters:
+        p.prior = Gamma(to_default_float(1.0), to_default_float(1.0))
+
     return model
 
 
