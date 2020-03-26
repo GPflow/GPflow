@@ -194,6 +194,7 @@ plot_samples(parameter_samples, model, "parameter_values")
 
 param_to_name = {param: name for name, param in gpflow.utilities.parameter_dict(model).items()}
 
+
 def marginal_samples(samples, y_axis_label):
     fig, axarr = plt.subplots(1, len(param_to_name), figsize=(15, 3), constrained_layout=True)
     for i, param in enumerate(model.trainable_parameters):
