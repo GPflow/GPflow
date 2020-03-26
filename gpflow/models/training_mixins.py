@@ -41,6 +41,12 @@ class InternalDataTrainingLossMixin:
         return -self.maximum_a_posteriori_objective()
 
     def training_loss_closure(self, jit=True) -> Callable[[], tf.Tensor]:
+        """
+        Returns a closure that computes the training loss, which by default is
+        wrapped in tf.function(). This can be disabled by passing `jit=False`.
+
+        :param jit: whether to wrap training loss in tf.function()
+        """
         if jit:
             return tf.function(self.training_loss)
         return self.training_loss
@@ -58,6 +64,16 @@ class ExternalDataTrainingLossMixin:
     def training_loss_closure(
         self, data: Union[Data, collections.abc.Iterator], jit=True
     ) -> Callable[[], tf.Tensor]:
+        """
+        Returns a closure that computes the training loss, which by default is
+        wrapped in tf.function(). This can be disabled by passing `jit=False`.
+        
+        :param data: the data to be used by the closure for computing the model
+            objective. Can be the full dataset or an iterator (e.g.
+            `iter(dataset.batch(batch_size))`, where dataset is an instance of
+            tf.data.Dataset)
+        :param jit: whether to wrap training loss in tf.function()
+        """
         training_loss = self.training_loss
         if jit:
             training_loss = tf.function(
