@@ -108,6 +108,7 @@ class ModelToTensorBoard(ToTensorBoard):
         *,
         max_size: int = 3,
         keywords_to_monitor: List[str] = ["kernel", "likelihood"],
+        left_strip_character: str = ".",
     ):
         """
         :param log_dir: directory in which to store the tensorboard files.
@@ -115,28 +116,38 @@ class ModelToTensorBoard(ToTensorBoard):
         :param model: model to be monitord.
         :param max_size: maximum size of arrays (incl.) to store each
             element of the array independently as a scalar in the TensorBoard.
+            Setting max_size to -1 will write all values. Use with care.
         :param keywords_to_monitor: specifies keywords to be monitored.
             If the parameter's name includes any of the keywords specified it
             will be monitored. By default, parameters that match the `kernel` or
             `likelihood` keyword are monitored.
+            Adding a "*" to the list will match with all parameters,
+            i.e. no parameters or variables will be filtered out.
+        :param left_strip_character: certain frameworks prepend their variables with
+            a character. GPflow adds a '.' and Keras add a '_', for example.
+            When a `left_strip_character` is specified it will be stripped from the
+            parameter's name. By default the '.' is left stripped, for example:
+            ".likelihood.variance" becomes "likelihood.variance".
         """
         super().__init__(log_dir)
         self.model = model
         self.max_size = max_size
         self.keywords_to_monitor = keywords_to_monitor
+        self.summarize_all = "*" in self.keywords_to_monitor
+        self.left_strip_character = left_strip_character
 
     def run(self, **unused_kwargs):
         for name, parameter in parameter_dict(self.model).items():
             # check if the parameter name matches any of the specified keywords
-            if any(keyword in name for keyword in self.keywords_to_monitor):
-                name = name.lstrip(".")  # keys are prepended with a '.', which we strip
+            if self.summarize_all or any(keyword in name for keyword in self.keywords_to_monitor):
+                # keys are sometimes prepended with a character, which we strip
+                name = name.lstrip(self.left_strip_character)
                 self._summarize_parameter(name, parameter)
 
-    # @tf.function(autograph=False)
     def _summarize_parameter(self, name: str, param: Union[Parameter, tf.Variable]):
         """
         :param name: identifier used in tensorboard
-        :param value: value to be stored in tensorboard
+        :param param: parameter to be stored in tensorboard
         """
         param = tf.reshape(param, (-1,))
         size = param.shape[0]
@@ -261,7 +272,7 @@ class MonitorTaskGroup:
             running at every step (`period = 1`).
         """
         self.tasks = task_or_tasks
-        self.period = period
+        self._period = period
 
     @property
     def tasks(self) -> List[MonitorTask]:
@@ -277,8 +288,9 @@ class MonitorTaskGroup:
 
     def __call__(self, step, **kwargs):
         """ Call each task in the group """
-        for task in self.tasks:
-            task(step, **kwargs)
+        if step % self._period == 0:
+            for task in self.tasks:
+                task(step, **kwargs)
 
 
 class Monitor:
@@ -314,5 +326,4 @@ class Monitor:
 
     def __call__(self, step, **kwargs):
         for group in self.task_groups:
-            if step % group.period == 0:
-                group(step, **kwargs)
+            group(step, **kwargs)

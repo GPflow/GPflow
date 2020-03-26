@@ -29,6 +29,7 @@ from . import (
     logdensities,
     mean_functions,
     models,
+    monitor,
     optimizers,
     probability_distributions,
     quadrature,
