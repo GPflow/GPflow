@@ -60,8 +60,8 @@ This section explains the more complex models and features that are available in
 ### Features
   - [Natural gradients](advanced/natural_gradients.ipynb): how to optimize the variational approximate posterior's parameters.
 <!--  - [optimizers](advanced/optimisation.ipynb)  **[TODO]** -->
-  - [Settings and GPflow configuration](advanced/settings.ipynb): how to adjust jitter (for inversion or Cholesky errors), floating point precision, parallelism, and more.
-  - [Monitoring optimization](advanced/monitoring.ipynb): how to send things to TensorBoard, store or restore checkpoints, and more.
+<!--  - [Settings and GPflow configuration](advanced/settings.ipynb): how to adjust jitter (for inversion or Cholesky errors), floating point precision, parallelism, and more.-->
+<!--  - [Monitoring optimization](basics/monitoring.ipynb): how to send things to TensorBoard, store or restore checkpoints, and more.-->
 
 ## Tailored models
 
