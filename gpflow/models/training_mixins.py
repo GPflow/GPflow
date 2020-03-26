@@ -1,10 +1,31 @@
+"""
+This module provides mixin classes to be used in conjunction with inheriting
+from gpflow.models.BayesianModel (or its subclass gpflow.models.GPModel).
+
+They provide a unified interface to obtain closures that return the training
+loss, to be passed as the first argument to the minimize() method of the
+optimizers defined in TensorFlow and GPflow.
+
+All TrainingLossMixin classes assume that self.maximum_a_posteriori_objective()
+(which is provided by the BayesianModel base class), will be available. Note
+that new models only need to implement the maximum_likelihood_objective method
+that is defined as abstract in BayesianModel.
+
+There are different mixins depending on whether the model already contains the
+training data (InternalDataTrainingLossMixin), or requires it to be passed in
+to the objective function (ExternalDataTrainingLossMixin).
+MCMCTrainingLossMixin, a subclass of InternalDataTrainingLossMixin, is provided
+for further clarity on what the objective for gradient-based optimization is
+for an MCMC model.
+"""
+
 import abc
 import collections
 from typing import Callable, Optional, Tuple, TypeVar, Union
 
-
 import tensorflow as tf
 import numpy as np
+
 
 InputData = tf.Tensor
 OutputData = tf.Tensor
@@ -26,7 +47,7 @@ class InternalDataTrainingLossMixin:
 
 
 class ExternalDataTrainingLossMixin:
-    def training_loss(self, data: RegressionData) -> tf.Tensor:
+    def training_loss(self, data: Data) -> tf.Tensor:
         """
         Training loss for models that do not encapsulate the data.
         
