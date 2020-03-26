@@ -168,7 +168,7 @@ class ModelToTensorBoard(ToTensorBoard):
 
 
 class ScalarToTensorBoard(ToTensorBoard):
-    """ Stores the return value of a callback in a TensorBoard. """
+    """Stores the return value of a callback in a TensorBoard."""
 
     def __init__(self, log_dir: str, callback: Callable[[], float], name: str):
         """
@@ -280,14 +280,14 @@ class MonitorTaskGroup:
 
     @tasks.setter
     def tasks(self, task_or_tasks: Union[List[MonitorTask], MonitorTask]) -> None:
-        """ Ensures the tasks are stored as a list. Even if there is only a single task. """
+        """Ensures the tasks are stored as a list. Even if there is only a single task."""
         if not isinstance(task_or_tasks, List):
             self._tasks = [task_or_tasks]
         else:
             self._tasks = task_or_tasks
 
     def __call__(self, step, **kwargs):
-        """ Call each task in the group """
+        """Call each task in the group."""
         if step % self._period == 0:
             for task in self.tasks:
                 task(step, **kwargs)

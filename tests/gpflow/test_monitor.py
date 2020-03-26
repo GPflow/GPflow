@@ -54,7 +54,7 @@ def monitor(model, tmp_path):
 
 
 def _get_size_directory(dir):
-    """ Calculating the size of a directory (in Bytes) """
+    """Calculating the size of a directory (in Bytes)."""
     return sum(d.stat().st_size for d in os.scandir(dir) if d.is_file())
 
 
@@ -73,7 +73,7 @@ def test_ExecuteCallback():
 
 
 def test_ImageToTensorBoard(tmp_path):
-    """ Smoke test `ImageToTensorBoard` in Eager and Compiled mode """
+    """Smoke test `ImageToTensorBoard` in Eager and Compiled mode."""
     tmp_path = str(tmp_path)
 
     def plotting_cb(fig, axes):
@@ -94,7 +94,7 @@ def test_ImageToTensorBoard(tmp_path):
 
 
 def test_ScalarToTensorBoard(tmp_path):
-    """ Smoke test `ScalarToTensorBoard` in Eager and Compiled mode """
+    """Smoke test `ScalarToTensorBoard` in Eager and Compiled mode."""
     tmp_path = str(tmp_path)
 
     def scalar_cb():
@@ -107,7 +107,7 @@ def test_ScalarToTensorBoard(tmp_path):
 
 
 def test_ScalarToTensorBoard_with_argument(tmp_path):
-    """ Smoke test `ScalarToTensorBoard` in Eager and Compiled mode """
+    """Smoke test `ScalarToTensorBoard` in Eager and Compiled mode."""
     tmp_path = str(tmp_path)
 
     def scalar_cb(x=None):
@@ -136,7 +136,7 @@ def test_ScalarToTensorBoard_with_wrong_kw_argument(tmp_path):
 
 
 def test_ModelToTensorboard(model, tmp_path):
-    """ Smoke test `ModelToTensorBoard` in Eager and Compiled mode """
+    """Smoke test `ModelToTensorBoard` in Eager and Compiled mode."""
     tmp_path = str(tmp_path)
     task = ModelToTensorBoard(tmp_path, model)
     task(0)
@@ -233,7 +233,7 @@ def test_compiled_execute_callable(capsys):
 
 
 def test_periodicity_group(capsys):
-    """ Test that groups are called at different periods """
+    """Test that groups are called at different periods."""
 
     task_a = ExecuteCallback(lambda: print("a", end=" "))
     task_b = ExecuteCallback(lambda: print("b", end=" "))
