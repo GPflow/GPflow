@@ -111,7 +111,7 @@ def difference_matrix(X, X2):
     For example, If X has shape [M, D] and X2 has shape [N, D],
     the output will have shape [M, N, D]. If X has shape [I, J, M, D]
     and X2 has shape [K, L, N, D], the output will have shape
-    [I, J, M, K,L, N, D].
+    [I, J, M, K, L, N, D].
     """
     if X2 is None:
         X2 = X
