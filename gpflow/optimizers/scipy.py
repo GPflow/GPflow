@@ -134,7 +134,7 @@ class Scipy:
 V = TypeVar("V", bound=Variables)
 
 
-def _compute_loss_and_gradients(loss_cb: LossClosure, variables: V) -> Tuple[tf.Tensor, V]:
+def _compute_loss_and_gradients(loss_closure: LossClosure, variables: V) -> Tuple[tf.Tensor, V]:
     with tf.GradientTape(watch_accessed_variables=False) as tape:
         tape.watch(variables)
         loss = loss_closure()
