@@ -34,18 +34,32 @@ Data = TypeVar("Data", RegressionData, InputData, OutputData)
 
 
 class InternalDataTrainingLossMixin:
+    """
+    Mixin utility for training loss methods for models that own their own data. It provides
+
+      - a uniform API for the training loss :meth:`training_loss`
+      - a convenience method :meth:`training_loss_closure` for constructing the closure expected by
+        various optimizers, namely :class:`gpflow.optimizers.Scipy` and subclasses of
+        `tf.optimizers.Optimizer`.
+
+    See :class:`ExternalDataTrainingLossMixin` for an equivalent mixin for models that do **not**
+    own their own data.
+    """
+
     def training_loss(self) -> tf.Tensor:
         """
-        Training loss for models that encapsulate their data.
+        Returns the training loss for this model.
         """
         return -self.maximum_a_posteriori_objective()
 
     def training_loss_closure(self, jit=True) -> Callable[[], tf.Tensor]:
         """
-        Returns a closure that computes the training loss, which by default is
-        wrapped in tf.function(). This can be disabled by passing `jit=False`.
+        Convenience method. Returns a closure which itself returns the training loss. This closure
+        can be passed to the minimize methods on :class:`gpflow.optimizers.Scipy` and subclasses of
+        `tf.optimizers.Optimizer`.
 
-        :param jit: whether to wrap training loss in tf.function()
+        :param jit: If `True` (default), compile the training loss function in a TensorFlow graph
+            by wrapping it in tf.function()
         """
         if jit:
             return tf.function(self.training_loss)
@@ -53,9 +67,22 @@ class InternalDataTrainingLossMixin:
 
 
 class ExternalDataTrainingLossMixin:
+    """
+    Mixin utility for training loss methods for models that do **not** own their own data.
+    It provides
+
+      - a uniform API for the training loss :meth:`training_loss`
+      - a convenience method :meth:`training_loss_closure` for constructing the closure expected by
+        various optimizers, namely :class:`gpflow.optimizers.Scipy` and subclasses of
+        `tf.optimizers.Optimizer`.
+
+    See :class:`InternalDataTrainingLossMixin` for an equivalent mixin for models that **do** own
+    their own data.
+    """
+
     def training_loss(self, data: Data) -> tf.Tensor:
         """
-        Training loss for models that do not encapsulate the data.
+        Returns the training loss for this model.
         
         :param data: the data to be used for computing the model objective.
         """
