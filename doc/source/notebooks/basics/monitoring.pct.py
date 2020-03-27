@@ -124,7 +124,7 @@ training_loss = model.training_loss_closure(
 opt = tf.optimizers.Adam()
 
 for step in range(optimisation_steps):
-    opt.minimize(closure, model.trainable_variables)
+    opt.minimize(training_loss, model.trainable_variables)
     monitor(step)  # <-- run the monitoring
 
 # %% [markdown]
