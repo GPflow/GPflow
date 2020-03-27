@@ -2,20 +2,20 @@ from typing import Union
 
 import tensorflow as tf
 
-from ..inducing_variables import (
+from ...inducing_variables import (
     InducingPoints,
     FallbackSharedIndependentInducingVariables,
     FallbackSeparateIndependentInducingVariables,
     SharedIndependentInducingVariables,
 )
-from ..kernels import (
+from ...kernels import (
     MultioutputKernel,
     SeparateIndependent,
     LinearCoregionalization,
     SharedIndependent,
     IndependentLatent,
 )
-from .dispatch import Kuu
+from ..dispatch import Kuu
 
 
 @Kuu.register(InducingPoints, MultioutputKernel)

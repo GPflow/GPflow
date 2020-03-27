@@ -12,9 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import abc
-
-from .inducing_variables import InducingVariables
+from ..inducing_variables import InducingVariables
 
 
 class MultioutputInducingVariables(InducingVariables):
@@ -48,7 +46,7 @@ class FallbackSharedIndependentInducingVariables(MultioutputInducingVariables):
     only requiring the following covariances:
      - Kuu: [L, M, M],
      - Kuf: [L, M, N, P].
-    In `mo_conditionals.py` we define a conditional() implementation for this
+    In `gpflow/conditionals/multioutput/conditionals.py` we define a conditional() implementation for this
     combination. We specify this code path for all kernels which inherit from
     `IndependentLatentBase`. This set-up allows inference with any such kernel
     to be implemented by specifying only `Kuu()` and `Kuf()`.
@@ -89,7 +87,7 @@ class FallbackSeparateIndependentInducingVariables(MultioutputInducingVariables)
     only requiring the following covariances:
      - Kuu: [L, M, M],
      - Kuf: [L, M, N, P].
-    In `mo_conditionals.py` we define a conditional() implementation for this
+    In `gpflow/multioutput/conditionals.py` we define a conditional() implementation for this
     combination. We specify this code path for all kernels which inherit from
     `IndependentLatentBase`. This set-up allows inference with any such kernel
     to be implemented by specifying only `Kuu()` and `Kuf()`.
