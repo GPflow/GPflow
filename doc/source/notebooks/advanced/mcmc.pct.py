@@ -603,12 +603,13 @@ plt.tight_layout()
 # ## Prior on constraint and unconstrained parameters
 
 # %% [markdown]
-# GPflow's :class:`Parameter` class provides options for setting a prior. :class:`Parameter` wraps a constrained tensors and
+# GPflow's :class:`Parameter` class provides options for setting a prior. :class:`Parameter` wraps a constrained tensor and
 # provides computation of the gradient with respect to unconstrained transformation of that tensor.
 # The user can set a prior either in **constrained** space or **unconstrained** space.
 
 # %% [markdown]
-# By default prior for the `Parameter` is set for _constrained_ space. To set a prior do the following:
+# By default, the prior for the `Parameter` is set for the _constrained_ space.
+# To explicitly set the space on which the prior is defined, use the `prior_on` keyword argument:
 
 # %%
 prior_distribution = tfd.Normal(f64(0.0), f64(1.0))
@@ -616,10 +617,12 @@ _ = gpflow.Parameter(1.0, prior_on="unconstrained", prior=prior_distribution)
 _ = gpflow.Parameter(1.0, prior_on="constrained", prior=prior_distribution)
 
 # %% [markdown]
-# When a prior is set in *constrained* space, the `gpflow.optimizers.SamplingHelper` compensates the prior density with a Jacobian of the transformation used by the parameter. For priors in the *unconstrained* space the `gpflow.optimizers.SamplingHelper` will not apply adjustments to the prior density.
+# `gpflow.optimizers.SamplingHelper` makes sure that the prior density correctly reflects the space in which the prior is defined.
 
 # %% [markdown]
-# Below we repeat the same experiment as before, but with some priors defined in the `unconstrained` space. Since we are using an "exp" transform, a Log-normal prior on a constrained parameter corresponds to a Normal prior on the unconstrained space:
+# Below we repeat the same experiment as before, but with some priors defined in the `unconstrained` space.
+# We are using the exponential transform to ensure positivity of the kernel parameters (`set_default_positive_bijector("exp")`),
+# so a log-normal prior on a constrained parameter corresponds to a normal prior on the unconstrained space:
 
 # %%
 gpflow.config.set_default_positive_bijector("exp")
@@ -638,8 +641,7 @@ std = f64(4.0)
 one = f64(1.0)
 
 model.kernel.lengthscales.prior_on = "unconstrained"
-default_prior = tfd.Normal(mu, std)
-model.kernel.lengthscales.prior = default_prior
+model.kernel.lengthscales.prior = tfd.Normal(mu, std)
 model.kernel.variance.prior_on = "unconstrained"
 model.kernel.variance.prior = tfd.Normal(mu, std)
 model.likelihood.variance.prior_on = "unconstrained"
@@ -686,6 +688,3 @@ parameter_samples = hmc_helper.convert_constrained_values(samples)
 
 plot_samples(samples, model, "unconstrained_variables_values")
 plot_samples(parameter_samples, model, "parameter_values")
-
-# %%
-model.log_marginal_likelihood()
