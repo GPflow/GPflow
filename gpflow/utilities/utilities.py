@@ -28,7 +28,6 @@ __all__ = [
     "getattr_by_path",
     "setattr_by_path",
     "reset_cache_bijectors",
-    "select_parameters_with_prior",
     "select_dict_parameters_with_prior",
 ]
 
@@ -450,11 +449,8 @@ def _str_tensor_value(value: np.ndarray):
     return out
 
 
-def select_parameters_with_prior(parameters: Sequence[Parameter]) -> Sequence[Parameter]:
-    return [p for p in parameters if p.prior is not None]
-
-
 def select_dict_parameters_with_prior(model: tf.Module) -> Dict[str, Parameter]:
+    """Collects parameters with prior into a dictionary."""
     return {
         k: p
         for k, p in parameter_dict(model).items()
