@@ -42,6 +42,12 @@ class MultioutputKernel(Kernel):
         """The number of latent GPs in the multioutput kernel"""
         raise NotImplementedError
 
+    @property
+    @abc.abstractmethod
+    def latent_kernels(self):
+        """The underlying kernels in the multioutput kernel"""
+        raise NotImplementedError
+
     @abc.abstractmethod
     def K(self, X, X2=None, full_output_cov=True):
         """
@@ -93,6 +99,11 @@ class SharedIndependent(MultioutputKernel):
         # In this case number of latent GPs (L) == output_dim (P)
         return self.output_dim
 
+    @property
+    def latent_kernels(self):
+        """The underlying kernels in the multioutput kernel"""
+        return (self.kernel,)
+
     def K(self, X, X2=None, full_output_cov=True):
         K = self.kernel.K(X, X2)  # [N, N2]
         if full_output_cov:
@@ -119,6 +130,11 @@ class SeparateIndependent(MultioutputKernel, Combination):
     @property
     def num_latent_gps(self):
         return len(self.kernels)
+
+    @property
+    def latent_kernels(self):
+        """The underlying kernels in the multioutput kernel"""
+        return tuple(self.kernels)
 
     def K(self, X, X2=None, full_output_cov=True):
         if full_output_cov:
@@ -163,6 +179,11 @@ class LinearCoregionalization(IndependentLatent, Combination):
     @property
     def num_latent_gps(self):
         return self.W.shape[-1]  # L
+
+    @property
+    def latent_kernels(self):
+        """The underlying kernels in the multioutput kernel"""
+        return tuple(self.kernels)
 
     def Kgg(self, X, X2):
         return tf.stack([k.K(X, X2) for k in self.kernels], axis=0)  # [L, N, N2]

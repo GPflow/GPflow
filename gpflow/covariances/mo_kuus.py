@@ -33,7 +33,7 @@ def _Kuu(
     *,
     jitter=0.0,
 ):
-    Kmm = Kuu(inducing_variable.inducing_variable_shared, kernel.kernel)  # [M, M]
+    Kmm = Kuu(inducing_variable.inducing_variable, kernel.kernel)  # [M, M]
     jittermat = tf.eye(len(inducing_variable), dtype=Kmm.dtype) * jitter
     return Kmm + jittermat
 
@@ -46,7 +46,7 @@ def _Kuu(
     jitter=0.0,
 ):
     Kmm = tf.stack(
-        [Kuu(inducing_variable.inducing_variable_shared, k) for k in kernel.kernels], axis=0
+        [Kuu(inducing_variable.inducing_variable, k) for k in kernel.kernels], axis=0
     )  # [L, M, M]
     jittermat = tf.eye(len(inducing_variable), dtype=Kmm.dtype)[None, :, :] * jitter
     return Kmm + jittermat

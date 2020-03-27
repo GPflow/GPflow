@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import abc
+
 from .inducing_variables import InducingVariables
 
 
@@ -26,7 +28,9 @@ class MultioutputInducingVariables(InducingVariables):
     LinearCoregionalization).
     """
 
-    pass
+    @property
+    def inducing_variables(self):
+        raise NotImplementedError
 
 
 class FallbackSharedIndependentInducingVariables(MultioutputInducingVariables):
@@ -60,10 +64,14 @@ class FallbackSharedIndependentInducingVariables(MultioutputInducingVariables):
 
     def __init__(self, inducing_variable):
         super().__init__()
-        self.inducing_variable_shared = inducing_variable
+        self.inducing_variable = inducing_variable
 
     def __len__(self):
-        return len(self.inducing_variable_shared)
+        return len(self.inducing_variable)
+
+    @property
+    def inducing_variables(self):
+        return (self.inducing_variable,)
 
 
 class FallbackSeparateIndependentInducingVariables(MultioutputInducingVariables):
@@ -101,6 +109,10 @@ class FallbackSeparateIndependentInducingVariables(MultioutputInducingVariables)
 
     def __len__(self):
         return len(self.inducing_variable_list[0])
+
+    @property
+    def inducing_variables(self):
+        return tuple(self.inducing_variable_list)
 
 
 class SharedIndependentInducingVariables(FallbackSharedIndependentInducingVariables):

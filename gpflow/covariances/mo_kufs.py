@@ -29,7 +29,7 @@ def _Kuf(
     kernel: SharedIndependent,
     Xnew: tf.Tensor,
 ):
-    return Kuf(inducing_variable.inducing_variable_shared, kernel.kernel, Xnew)  # [M, N]
+    return Kuf(inducing_variable.inducing_variable, kernel.kernel, Xnew)  # [M, N]
 
 
 @Kuf.register(SeparateIndependentInducingVariables, SharedIndependent, object)
@@ -50,7 +50,7 @@ def _Kuf(
     Xnew: tf.Tensor,
 ):
     return tf.stack(
-        [Kuf(inducing_variable.inducing_variable_shared, k, Xnew) for k in kernel.kernels], axis=0
+        [Kuf(inducing_variable.inducing_variable, k, Xnew) for k in kernel.kernels], axis=0
     )  # [L, M, N]
 
 
@@ -90,7 +90,7 @@ def _Kuf(
     Xnew: tf.Tensor,
 ):
     return tf.stack(
-        [Kuf(inducing_variable.inducing_variable_shared, k, Xnew) for k in kernel.kernels], axis=0
+        [Kuf(inducing_variable.inducing_variable, k, Xnew) for k in kernel.kernels], axis=0
     )  # [L, M, N]
 
 
