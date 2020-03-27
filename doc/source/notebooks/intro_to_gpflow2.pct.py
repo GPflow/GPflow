@@ -175,33 +175,83 @@ print_summary(model)  # same as print_summary(model, fmt="notebook")
 model
 
 # %% [markdown]
-# ## Training using Gradient Tapes
+# ## Training using training_loss and training_loss_closure
 #
-# In TensorFlow 2, we can optimize (trainable) model parameters with TensorFlow optimizers using `tf.GradientTape`. In this simple example, we perform one gradient update of the Adam optimizer to minimize the negative marginal log likelihood (or ELBO) of our model.
+# GPflow models come with training_loss and training_loss_closure methods to make it easy to train your models.
+# There is a slight difference between models that own their own data (most of them, e.g. GPR, VGP, ...) and models that do not own the data (SVGP).
+#
+# ### Model-internal data
+# For models that own their own data (inheriting from InternalDataTrainingLossMixin), data is provided at model construction time.
+# In this case, model.training_loss does not take any arguments, and can be directly passed to an optimizer's `minimize()` method:
+
+# %%
+gpr_model = gpflow.models.VGP(data, kernel, likelihood)
+optimizer = tf.optimizers.Adam()
+optimizer.minimize(
+    gpr_model.training_loss, gpr_model.trainable_variables
+)  # Note: this does a single step
+# In practice, you will need to call minimize() many times, this will be further discussed below.
+
+# %% [markdown]
+# This also works for the Scipy optimizer, though it will do the full optimization on a single call to minimize():
+
+# %%
+optimizer = gpflow.optimizers.Scipy()
+optimizer.minimize(
+    gpr_model.training_loss, gpr_model.trainable_variables, options=dict(maxiter=ci_niter(1000))
+)
+
+# %% [markdown]
+# You can obtain a compiled version using training_loss_closure, whose `jit` argument is True by default:
+
+# %%
+gpr_model.training_loss_closure()  # compiled
+gpr_model.training_loss_closure(jit=True)  # compiled
+gpr_model.training_loss_closure(jit=False)  # uncompiled, same as gpr_model.training_loss
+
+# %% [markdown]
+# The SVGP model inherits from ExternalDataTrainingLossMixin and expects the data to be passed to training_loss():
+
+# %%
+assert isinstance(model, gpflow.models.SVGP)
+model.training_loss(data)
+
+# %% [markdown]
+# To make optimizing it easy, it has a `training_loss_closure()` method, that takes the data and returns a closure that computes the training loss on this data:
 
 # %%
 optimizer = tf.optimizers.Adam()
-
-with tf.GradientTape() as tape:
-    tape.watch(model.trainable_variables)
-    obj = -model.elbo(data)
-    grads = tape.gradient(obj, model.trainable_variables)
-
-optimizer.apply_gradients(zip(grads, model.trainable_variables))
-
+optimizer.minimize(model.training_loss_closure(data), model.trainable_variables)
 
 # %% [markdown]
+# SVGP can handle mini-batching, and an iterator from a batched tf.data.Dataset can be passed:
+
+# %%
+batch_size = 5
+batched_dataset = tf.data.Dataset.from_tensor_slices(data).batch(batch_size)
+optimizer.minimize(model.training_loss_closure(iter(batched_dataset)), model.trainable_variables)
+
+# %% [markdown]
+# As previously, training_loss_closure takes an optional `jit` argument for tf.function compilation (True by default).
+
+# %% [markdown]
+# ## Training using Gradient Tapes
+#
 # For a more elaborate example of a gradient update we can define an ```optimization_step``` that explicitly computes and applies gradients to the model.
+# In TensorFlow 2, we can optimize (trainable) model parameters with TensorFlow optimizers using `tf.GradientTape`. In this simple example, we perform one gradient update of the Adam optimizer to minimize the training_loss (in this case the negative ELBO) of our model.
 # The `optimization_step` can (and should) be wrapped in `tf.function` to be compiled to a graph if executing it many times.
 
 # %%
 def optimization_step(model: gpflow.models.SVGP, batch: Tuple[tf.Tensor, tf.Tensor]):
     with tf.GradientTape(watch_accessed_variables=False) as tape:
         tape.watch(model.trainable_variables)
-        objective = -model.elbo(batch)
+        objective = model.training_loss(batch)
         grads = tape.gradient(objective, model.trainable_variables)
     optimizer.apply_gradients(zip(grads, model.trainable_variables))
+    return objective
 
+
+tf_optimization_step = tf.function(optimization_step)
 
 # %% [markdown]
 # We can use the functionality of TensorFlow Datasets to define a simple training loop that iterates over batches of the training dataset:
@@ -209,7 +259,6 @@ def optimization_step(model: gpflow.models.SVGP, batch: Tuple[tf.Tensor, tf.Tens
 # %%
 def simple_training_loop(model: gpflow.models.SVGP, epochs: int = 1, logging_epoch_freq: int = 10):
     batches = iter(train_dataset)
-    tf_optimization_step = tf.function(optimization_step)
     for epoch in range(epochs):
         for _ in range(ci_niter(num_batches_per_epoch)):
             tf_optimization_step(model, next(batches))
@@ -287,7 +336,6 @@ monitor = Monitor(fast_tasks, slow_taks)
 
 
 def monitored_training_loop(epochs: int):
-    tf_optimization_step = tf.function(optimization_step)
     batches = iter(train_dataset)
 
     for epoch in range(epochs):
@@ -370,7 +418,6 @@ def checkpointing_training_loop(
     epoch_var: Optional[tf.Variable] = None,
     step_var: Optional[tf.Variable] = None,
 ):
-    tf_optimization_step = tf.function(optimization_step)
     batches = iter(train_dataset)
 
     for epoch in range(epochs):
