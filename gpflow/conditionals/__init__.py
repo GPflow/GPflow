@@ -5,8 +5,8 @@ from .dispatch import conditional, sample_conditional
 from . import conditionals
 from . import sample_conditionals
 
-from .multioutput import conditionals as mo_conditionals
-from .multioutput import sample_conditionals as mo_sample_conditionals
+from . import multioutput
+
 
 from .util import base_conditional
 
