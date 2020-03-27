@@ -41,12 +41,14 @@ class SamplingHelper:
 
         @tf.function
         def run_chain_fn():
-            return mcmc.sample_chain(num_samples, num_burnin_steps, current_state, kernel=adaptive_hmc)
+            return mcmc.sample_chain(
+                num_samples, num_burnin_steps, current_state, kernel=adaptive_hmc)
 
         hmc_samples = run_chain_fn()
         parameter_samples = hmc_helper.convert_samples_to_parameter_values(hmc_samples)
 
-    :param target_log_prob_fn: a callable which represents log-density under the target distribution.
+    :param target_log_prob_fn: a callable which represents log-density under
+        the target distribution.
     :param parameters: List of ``gpflow.Parameter`` used as a state of the Markov chain.
     """
 
@@ -65,7 +67,8 @@ class SamplingHelper:
 
     @property
     def target_log_prob_fn(self):
-        """ The target log probability, adjusted to allow for optimisation to occur on the tracked
+        """
+        The target log probability, adjusted to allow for optimisation to occur on the tracked
         unconstrained underlying variables.
         """
         variables_list = self.current_state
