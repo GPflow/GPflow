@@ -50,7 +50,7 @@ class SamplingHelper:
     ):
         """
         :param target_log_prob_fn: a callable which returns the log-density of the model
-            under the target distribution.
+            under the target distribution; needs to implicitly depend on the `parameters`.
         :param parameters: List of :class:`gpflow.Parameter` used as a state of the Markov chain.
         """
         if not all(isinstance(p, Parameter) and p.prior is not None for p in parameters):
