@@ -198,5 +198,5 @@ def test_mcmc_sampler_integration():
 
 def test_helper_with_variables_fails():
     variable = tf.Variable(0.1)
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match=r"Expected only parameters with priors"):
         gpflow.optimizers.SamplingHelper(lambda: variable ** 2, (variable,))
