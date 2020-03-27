@@ -595,7 +595,7 @@ _ = plt.ylabel("hyper-parameter value")
 fig, axarr = plt.subplots(1, len(hyperparameters), sharex=True, figsize=(12, 4))
 for i, hyp in enumerate(hyperparameters):
     ax = axarr[i]
-    ax.hist(parameter_samplses[name_to_index[hyp]], bins=20)
+    ax.hist(parameter_samples[name_to_index[hyp]], bins=20)
     ax.set_title(hyp)
 plt.tight_layout()
 
@@ -684,3 +684,6 @@ parameter_samples = hmc_helper.convert_constrained_values(samples)
 
 plot_samples(samples, model, "unconstrained_variables_values")
 plot_samples(parameter_samples, model, "parameter_values")
+
+# %%
+model.log_marginal_likelihood()
