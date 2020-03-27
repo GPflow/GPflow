@@ -5,15 +5,15 @@
 
 import tensorflow as tf
 
-from .. import covariances
-from ..inducing_variables import (
+from ... import covariances
+from ...inducing_variables import (
     InducingPoints,
     FallbackSharedIndependentInducingVariables,
     FallbackSeparateIndependentInducingVariables,
     SharedIndependentInducingVariables,
     SeparateIndependentInducingVariables,
 )
-from ..kernels import (
+from ...kernels import (
     Combination,
     MultioutputKernel,
     SeparateIndependent,
@@ -21,9 +21,9 @@ from ..kernels import (
     IndependentLatent,
     LinearCoregionalization,
 )
-from ..config import default_float, default_jitter
-from .dispatch import conditional
-from .util import (
+from ...config import default_float, default_jitter
+from ..dispatch import conditional
+from ..util import (
     base_conditional,
     expand_independent_outputs,
     fully_correlated_conditional,

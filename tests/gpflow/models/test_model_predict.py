@@ -34,6 +34,7 @@ class ModelSetup:
         requires_data=False,
         requires_likelihood=True,
     ):
+
         self.model_class = model_class
         self.kernel = kernel
         self.likelihood = likelihood
@@ -107,8 +108,9 @@ def test_gaussian_log_density(Ntrain, Ntest, D):
     mu_y, var_y = model_gp.predict_y(Xtest)
     data = Xtest, Ytest
     log_density = model_gp.predict_log_density(data)
-    log_density_hand = (
-        -0.5 * np.log(2 * np.pi) - 0.5 * np.log(var_y) - 0.5 * np.square(mu_y - Ytest) / var_y
+    log_density_hand = np.squeeze(
+        -0.5 * np.log(2 * np.pi) - 0.5 * np.log(var_y) - 0.5 * np.square(mu_y - Ytest) / var_y,
+        axis=-1,
     )
 
     assert np.allclose(log_density_hand, log_density)
@@ -132,7 +134,6 @@ def test_gaussian_full_cov(input_dim, output_dim, N, Ntest, M):
         assert np.allclose(var[:, i], np.diag(covar[i, :, :]))
 
 
-@pytest.mark.skip(reason="GPR model is not ready")
 @pytest.mark.parametrize("input_dim, output_dim, N, Ntest, M, num_samples", [[3, 2, 20, 30, 5, 5]])
 def test_gaussian_full_cov_samples(input_dim, output_dim, N, Ntest, M, num_samples):
     samples_shape = (num_samples, Ntest, output_dim)

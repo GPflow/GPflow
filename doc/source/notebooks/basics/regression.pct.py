@@ -38,18 +38,18 @@ from gpflow.utilities import print_summary
 
 # The lines below are specific to the notebook format
 # %matplotlib inline
-matplotlib.rcParams['figure.figsize'] = (12, 6)
+matplotlib.rcParams["figure.figsize"] = (12, 6)
 plt = matplotlib.pyplot
 
 # %% [markdown]
 # `X` and `Y` denote the input and output values. **NOTE:** `X` and `Y` must be two-dimensional NumPy arrays, $N \times 1$ or $N \times D$, where $D$ is the number of input dimensions/features, with the same number of rows as $N$ (one for each data point):
 
 # %%
-data = np.genfromtxt('data/regression_1D.csv', delimiter=',')
+data = np.genfromtxt("data/regression_1D.csv", delimiter=",")
 X = data[:, 0].reshape(-1, 1)
 Y = data[:, 1].reshape(-1, 1)
 
-plt.plot(X, Y, 'kx', mew=2);
+_ = plt.plot(X, Y, "kx", mew=2)
 
 # %% [markdown]
 # We will consider the following probabilistic model:
@@ -121,11 +121,10 @@ opt = gpflow.optimizers.Scipy()
 
 # %%
 def objective_closure():
-    return - m.log_marginal_likelihood()
+    return -m.log_marginal_likelihood()
 
-opt_logs = opt.minimize(objective_closure,
-                        m.trainable_variables,
-                        options=dict(maxiter=100))
+
+opt_logs = opt.minimize(objective_closure, m.trainable_variables, options=dict(maxiter=100))
 print_summary(m)
 
 # %% [markdown]
@@ -165,15 +164,18 @@ samples = m.predict_f_samples(xx, 10)  # shape (10, 100, 1)
 
 ## plot
 plt.figure(figsize=(12, 6))
-plt.plot(X, Y, 'kx', mew=2)
-plt.plot(xx, mean, 'C0', lw=2)
-plt.fill_between(xx[:,0],
-                 mean[:,0] - 1.96 * np.sqrt(var[:,0]),
-                 mean[:,0] + 1.96 * np.sqrt(var[:,0]),
-                 color='C0', alpha=0.2)
+plt.plot(X, Y, "kx", mew=2)
+plt.plot(xx, mean, "C0", lw=2)
+plt.fill_between(
+    xx[:, 0],
+    mean[:, 0] - 1.96 * np.sqrt(var[:, 0]),
+    mean[:, 0] + 1.96 * np.sqrt(var[:, 0]),
+    color="C0",
+    alpha=0.2,
+)
 
-plt.plot(xx, samples[:, :, 0].numpy().T, 'C0', linewidth=.5)
-plt.xlim(-0.1, 1.1);
+plt.plot(xx, samples[:, :, 0].numpy().T, "C0", linewidth=0.5)
+_ = plt.xlim(-0.1, 1.1)
 
 
 # %% [markdown]

@@ -130,6 +130,9 @@ def gauss_kl(q_mu, q_sqrt, K=None, *, K_cholesky=None):
             ]  # [M, M] -> [M, 1]
             trace = tf.reduce_sum(K_inv * tf.square(q_sqrt))
         else:
+            # TODO: broadcast instead of tile when tf allows -- tf2.1 segfaults
+            # (https://github.com/tensorflow/tensorflow/issues/37584).
+            # See # https://github.com/GPflow/GPflow/issues/1321
             Lp_full = Lp if is_batched else tf.tile(tf.expand_dims(Lp, 0), [L, 1, 1])
             LpiLq = tf.linalg.triangular_solve(Lp_full, Lq_full, lower=True)
             trace = tf.reduce_sum(tf.square(LpiLq))

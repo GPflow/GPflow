@@ -23,8 +23,10 @@
 import gpflow
 import numpy as np
 import matplotlib.pyplot as plt
-plt.style.use('ggplot')
+
+plt.style.use("ggplot")
 import tensorflow as tf
+
 # %matplotlib inline
 
 # %% [markdown]
@@ -57,35 +59,36 @@ import tensorflow as tf
 #  * `gpflow.kernels.Cosine`
 #
 #  * `gpflow.kernels.Periodic`
-#  
+#
 # Other kernels that are implemented in core GPflow include:
-#     
+#
 #  * `gpflow.kernels.Polynomial`
 #
 #  * `gpflow.kernels.ArcCosine` ("neural network kernel")
 #
 #  * `gpflow.kernels.Coregion`
-#  
+#
 # Let's define some plotting utils functions and have a look at samples from the prior for some of them:
 
 # %%
 def plotkernelsample(k, ax, xmin=-3, xmax=3):
-    xx = np.linspace(xmin, xmax, 100)[:,None]
+    xx = np.linspace(xmin, xmax, 100)[:, None]
     K = k(xx)
     ax.plot(xx, np.random.multivariate_normal(np.zeros(100), K, 3).T)
     ax.set_title(k.__class__.__name__)
-    
+
+
 np.random.seed(27)
 f, axes = plt.subplots(2, 4, figsize=(12, 6), sharex=True, sharey=True)
-plotkernelsample(gpflow.kernels.Matern12(), axes[0,0])
-plotkernelsample(gpflow.kernels.Matern32(), axes[0,1])
-plotkernelsample(gpflow.kernels.Matern52(), axes[0,2])
-plotkernelsample(gpflow.kernels.RBF(), axes[0,3])
-plotkernelsample(gpflow.kernels.Constant(), axes[1,0])
-plotkernelsample(gpflow.kernels.Linear(), axes[1,1])
-plotkernelsample(gpflow.kernels.Cosine(), axes[1,2])
-plotkernelsample(gpflow.kernels.Periodic(gpflow.kernels.SquaredExponential()), axes[1,3])
-axes[0,0].set_ylim(-3, 3);
+plotkernelsample(gpflow.kernels.Matern12(), axes[0, 0])
+plotkernelsample(gpflow.kernels.Matern32(), axes[0, 1])
+plotkernelsample(gpflow.kernels.Matern52(), axes[0, 2])
+plotkernelsample(gpflow.kernels.RBF(), axes[0, 3])
+plotkernelsample(gpflow.kernels.Constant(), axes[1, 0])
+plotkernelsample(gpflow.kernels.Linear(), axes[1, 1])
+plotkernelsample(gpflow.kernels.Cosine(), axes[1, 2])
+plotkernelsample(gpflow.kernels.Periodic(gpflow.kernels.SquaredExponential()), axes[1, 3])
+_ = axes[0, 0].set_ylim(-3, 3)
 
 # %% [markdown]
 # ## First example: create a Matern 3/2 covariance kernel
@@ -93,7 +96,7 @@ axes[0,0].set_ylim(-3, 3);
 # Many kernels have hyperparameters, for example `variance` and `lengthscales`. You can change the value of these parameters from their default value of `1.0`.
 
 # %%
-k = gpflow.kernels.Matern32(variance=10., lengthscales=2)
+k = gpflow.kernels.Matern32(variance=10.0, lengthscales=2)
 
 # %% [markdown]
 # **NOTE:** The values specified for the `variance` and `lengthscales` parameters are **floats**.
@@ -102,6 +105,7 @@ k = gpflow.kernels.Matern32(variance=10., lengthscales=2)
 
 # %%
 from gpflow.utilities import print_summary
+
 print_summary(k)
 print_summary(k, fmt="notebook")
 # You can change the default format as follows:
@@ -120,15 +124,15 @@ print(k.lengthscales)
 # Finally, you can *call* the kernel object to compute covariance matrices:
 
 # %%
-X1 = np.array([[0.]])
+X1 = np.array([[0.0]])
 X2 = np.linspace(-2, 2, 101).reshape(-1, 1)
 
 K21 = k(X2, X1)  # cov(f(X2), f(X1)): matrix with shape [101, 1]
-K22 = k(X2)      # equivalent to k(X2, X2) (but more efficient): matrix with shape [101, 101]
+K22 = k(X2)  # equivalent to k(X2, X2) (but more efficient): matrix with shape [101, 101]
 
 # plotting
 plt.figure()
-plt.plot(X2, K21);
+_ = plt.plot(X2, K21)
 
 # %% [markdown]
 # ## Combine kernels
@@ -145,14 +149,16 @@ k4 = k1 * k2
 print_summary(k3)
 print_summary(k4)
 
+
 def plotkernelfunction(k, ax, xmin=-3, xmax=3, other=0):
-    xx = np.linspace(xmin, xmax, 200)[:,None]
-    ax.plot(xx, k(xx, np.zeros((1,1)) + other))
-    ax.set_title(k.__class__.__name__ + ' k(x, %f)'%other)
+    xx = np.linspace(xmin, xmax, 200)[:, None]
+    ax.plot(xx, k(xx, np.zeros((1, 1)) + other))
+    ax.set_title(k.__class__.__name__ + " k(x, %f)" % other)
+
 
 f, axes = plt.subplots(2, 2, figsize=(12, 6), sharex=True)
-plotkernelfunction(k3, axes[0, 0], other=1.)
-plotkernelfunction(k4, axes[0, 1], other=1.)
+plotkernelfunction(k3, axes[0, 0], other=1.0)
+plotkernelfunction(k4, axes[0, 1], other=1.0)
 plotkernelsample(k3, axes[1, 0])
 plotkernelsample(k4, axes[1, 1])
 
@@ -165,7 +171,7 @@ plotkernelsample(k4, axes[1, 1])
 # You can also initialize the lengthscales when the object is created:
 
 # %%
-k = gpflow.kernels.Matern52(lengthscales=[.1, .2, 5.])
+k = gpflow.kernels.Matern52(lengthscales=[0.1, 0.2, 5.0])
 print_summary(k)
 
 # %% [markdown]
@@ -184,7 +190,9 @@ k = k1 + k2
 # `active_dims` makes it easy to create additive models. Here we build an additive Matern 5/2 kernel:
 
 # %%
-k = gpflow.kernels.Matern52(active_dims=[0], lengthscales=2) + gpflow.kernels.Matern52(active_dims=[1], lengthscales=2)
+k = gpflow.kernels.Matern52(active_dims=[0], lengthscales=2) + gpflow.kernels.Matern52(
+    active_dims=[1], lengthscales=2
+)
 
 # %% [markdown]
 # Let's plot this kernel and sample from it:
@@ -200,16 +208,16 @@ x0 = np.array([[2.0, 2.0]])
 KxX = k(X, x0).numpy().reshape(n_grid, n_grid)
 
 fig, axes = plt.subplots(1, 3, figsize=(15, 5))
-axes[0].imshow(KxX, extent=[-10,10,-10,10])
-axes[0].set_title(f'$k((7, 5), (x1, x2))$')
+axes[0].imshow(KxX, extent=[-10, 10, -10, 10])
+axes[0].set_title(f"$k((7, 5), (x1, x2))$")
 
 # plot a GP sample
 K = k(X).numpy()
-Z = np.random.multivariate_normal(np.zeros(n_grid**2), K, 2)
-axes[1].imshow(Z[0, :].reshape(n_grid, n_grid), extent=[-10,10,-10,10])
-axes[1].set_title('GP sample 1')
-axes[2].imshow(Z[1, :].reshape(n_grid, n_grid), extent=[-10,10,-10,10])
-axes[2].set_title('GP sample 2');
+Z = np.random.multivariate_normal(np.zeros(n_grid ** 2), K, 2)
+axes[1].imshow(Z[0, :].reshape(n_grid, n_grid), extent=[-10, 10, -10, 10])
+axes[1].set_title("GP sample 1")
+axes[2].imshow(Z[1, :].reshape(n_grid, n_grid), extent=[-10, 10, -10, 10])
+_ = axes[2].set_title("GP sample 2")
 
 # %% [markdown]
 # ## Define new covariance functions

@@ -17,12 +17,10 @@ from typing import Optional, Tuple
 import tensorflow as tf
 
 import gpflow
-from .model import GPModel
 from ..kernels import Kernel
 from ..logdensities import multivariate_normal
 from ..mean_functions import MeanFunction
-
-Data = Tuple[tf.Tensor, tf.Tensor]
+from .model import GPModel, InputData, RegressionData, MeanAndVariance
 
 
 class GPR(GPModel):
@@ -42,7 +40,7 @@ class GPR(GPModel):
 
     def __init__(
         self,
-        data: Data,
+        data: RegressionData,
         kernel: Kernel,
         mean_function: Optional[MeanFunction] = None,
         noise_variance: float = 1.0,
@@ -52,7 +50,7 @@ class GPR(GPModel):
         super().__init__(kernel, likelihood, mean_function, num_latent_gps=Y_data.shape[-1])
         self.data = data
 
-    def log_likelihood(self):
+    def log_likelihood(self) -> tf.Tensor:
         r"""
         Computes the log marginal likelihood.
 
@@ -73,7 +71,9 @@ class GPR(GPModel):
         log_prob = multivariate_normal(Y, m, L)
         return tf.reduce_sum(log_prob)
 
-    def predict_f(self, Xnew: tf.Tensor, full_cov: bool = False, full_output_cov: bool = False):
+    def predict_f(
+        self, Xnew: InputData, full_cov: bool = False, full_output_cov: bool = False
+    ) -> MeanAndVariance:
         r"""
         This method computes predictions at X \in R^{N \x D} input points
 
