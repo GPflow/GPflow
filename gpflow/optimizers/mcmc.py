@@ -101,7 +101,7 @@ class SamplingHelper:
 
         return _target_log_prob_fn_closure
 
-    def convert_constrained_values(self, hmc_samples):
+    def convert_to_constrained_values(self, hmc_samples):
         """
         Converts list of `unconstrained_values` to constrained versions. Each value in the
         list corresponds to an entry in parameters passed to the constructor; in case that object

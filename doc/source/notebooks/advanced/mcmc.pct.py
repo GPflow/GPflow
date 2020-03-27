@@ -163,7 +163,7 @@ def run_chain_fn():
 
 
 samples, traces = run_chain_fn()
-parameter_samples = hmc_helper.convert_constrained_values(samples)
+parameter_samples = hmc_helper.convert_to_constrained_values(samples)
 
 
 # %% [markdown]
@@ -390,12 +390,13 @@ def run_chain_fn():
 
 
 samples, _ = run_chain_fn()
+constrained_samples = hmc_helper.convert_to_constrained_values(samples)
 
 # %% [markdown]
 # Statistics of the posterior samples can now be reported.
 
 # %%
-plot_from_samples(model, X, Y, parameters, samples, burn, thin)
+plot_from_samples(model, X, Y, parameters, constrained_samples, burn, thin)
 
 # %% [markdown]
 # You can also display the sequence of sampled hyperparameters.
@@ -567,7 +568,7 @@ _ = plt.ylim(-0.1, np.max(np.percentile(rate_samples, 95, axis=0)))
 # You can also display the sequence of sampled hyperparameters.
 
 # %%
-parameter_samples = hmc_helper.convert_constrained_values(samples)
+parameter_samples = hmc_helper.convert_to_constrained_values(samples)
 param_to_name = {param: name for name, param in parameters_dict.items()}
 name_to_index = {param_to_name[param]: i for i, param in enumerate(param_to_name)}
 hyperparameters = [
@@ -681,7 +682,7 @@ def run_chain_fn_unconstrained():
 
 
 samples, traces = run_chain_fn_unconstrained()
-parameter_samples = hmc_helper.convert_constrained_values(samples)
+parameter_samples = hmc_helper.convert_to_constrained_values(samples)
 
 plot_samples(samples, parameters_dict, "unconstrained_variables_values")
 plot_samples(parameter_samples, parameters_dict, "parameter_values")

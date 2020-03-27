@@ -190,7 +190,7 @@ def test_mcmc_sampler_integration():
     samples, _ = run_chain_fn()
 
     assert len(samples) == len(model.trainable_parameters)
-    parameter_samples = hmc_helper.convert_constrained_values(samples)
+    parameter_samples = hmc_helper.convert_to_constrained_values(samples)
     assert len(parameter_samples) == len(samples)
 
     for i in range(len(model.trainable_parameters)):
