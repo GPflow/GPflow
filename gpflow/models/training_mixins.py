@@ -107,11 +107,7 @@ class ExternalDataTrainingLossMixin:
         training_loss = self.training_loss
         if jit:
             if isinstance(data, DatasetOwnedIterator):
-                tensor_specs = [
-                    tf.TensorSpec(shape, dtype)
-                    for shape, dtype in zip(data.output_shapes, data.output_types)
-                ]
-                input_signature = [tuple(tensor_specs)]
+                input_signature = [data.element_spec]
             training_loss = tf.function(training_loss, input_signature=input_signature)
 
         def closure():
