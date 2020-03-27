@@ -45,7 +45,7 @@ def test_mcmc_helper_parameters():
 
     for i in range(len(model.trainable_parameters)):
         assert model.trainable_parameters[i].shape == hmc_helper.current_state[i].shape
-        assert model.trainable_parameters[i] == hmc_helper._model_parameters[i]
+        assert model.trainable_parameters[i] == hmc_helper._parameters[i]
         assert model.trainable_parameters[i].unconstrained_variable == hmc_helper.current_state[i]
 
 
