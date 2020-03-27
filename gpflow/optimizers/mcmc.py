@@ -30,7 +30,7 @@ class SamplingHelper:
     Helper reads from variables being set with a prior and writes values back to the same variables.
 
     Example:
-        model = ... # Create a GPflow model
+        model = ...  # Create a GPflow model
         hmc_helper = SamplingHelper(model.log_marginal_likelihood, m.trainable_parameters)
 
         target_log_prob_fn = hmc_helper.target_log_prob_fn
@@ -49,7 +49,7 @@ class SamplingHelper:
 
     :param target_log_prob_fn: a callable which represents log-density under
         the target distribution.
-    :param parameters: List of ``gpflow.Parameter`` used as a state of the Markov chain.
+    :param parameters: List of :class:`gpflow.Parameter` used as a state of the Markov chain.
     """
 
     def __init__(self, target_log_prob_fn: LogProbabilityFunction, parameters: Parameters):
@@ -103,7 +103,7 @@ class SamplingHelper:
     def convert_constrained_values(self, hmc_samples):
         """
         Converts list of `unconstrained_values` to constrained versions. Each value in the
-        list correspond to an entry in `self.parameters`; in case that object is a
+        list corresponds to an entry in `self.parameters`; in case that object is a
         `gpflow.Parameter`, the `forward` method of its transform will be applied first.
         """
         values = []
