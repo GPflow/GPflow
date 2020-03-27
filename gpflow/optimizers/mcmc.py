@@ -22,7 +22,7 @@ __all__ = ["SamplingHelper"]
 
 
 Parameters = Sequence[Parameter]
-LogProbabilityFunction = Callable[[], tf.Tensor]  # implicitly a function of ModelParameters
+LogProbabilityFunction = Callable[[], tf.Tensor]
 
 
 class SamplingHelper:
