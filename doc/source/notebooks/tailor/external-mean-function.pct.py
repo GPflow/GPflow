@@ -46,7 +46,14 @@ tf.random.set_seed(2)
 # To generate the meta and test tasks, we sample from a Gaussian process with an Squared Exponential covariance function and a sinusoidal mean function. Each task is a realization of this process.
 
 # %%
-def generate_data(num_functions=10, N=1000):
+def generate_data(num_functions=10, N=50):
+    """
+    For each function, sample the value at 50 equally spaced
+    points in the [−5, 5] interval (Fortuin and Rätsch, 2019).
+
+    Returns:
+        Tuple of np.arrays of size (N, 1) and (N, num_functions).
+    """
     jitter = 1e-6
     Xs = np.linspace(-5.0, 5.0, N)[:, None]
     kernel = RBF(lengthscales=1.0)
@@ -71,27 +78,55 @@ _ = plt.plot(Xs, F)
 # We generate the meta and test tasks.
 
 # %%
-def generate_meta_and_test_tasks(num_datapoints, num_meta, num_test):
-    N = 1000
+def generate_meta_and_test_tasks(num_datapoints, num_meta=1000, num_test=200, 
+                                 N=50):
+    """Generates meta-task datasets {D_i} = {x_i, y_i} and target task training
+    and test data {\tilde{x}, \tilde{y}} (Fortuin and Rätsch, 2019).
+
+    Args:
+        num_datapoints: The number of training points, \tilde{n} in Table S1.
+        num_meta: The number of meta-tasks ("sampled functions").
+        num_test: The number of test tasks ("unseen functions").
+        N: Number of sampled data points per function.
+
+    Returns:
+        A tuple (meta, test) where
+        - meta: List of num_meta pairs of arrays (X, Y) of size (n, 1) each.
+        - test: List of num_test pairs of pairs of arrays of sizes
+                (((num_datapoints, 1), (num_datapoints, 1)), 
+                 ((N - num_datapoints, 1), (N - num_datapoints, 1))).
+    """
     Xs, F = generate_data(num_functions=num_meta + num_test, N=N)
-    meta_indices = [np.random.permutation(N)[:num_datapoints] for _ in range(num_meta)]
-    test_indices = [np.random.permutation(N)[:num_datapoints] for _ in range(num_test)]
     meta = []
-    for i, mi in enumerate(meta_indices):
-        Y = F[mi, i][:, None] + 1e-1 * np.random.randn(num_datapoints, 1)
-        meta.append((Xs[mi], Y))
+    sd = 1e-1  # Standard deviation for normally-distributed observation noise.
+    for i in range(num_meta):
+        # We always use all data points of the curve to train the mean function,
+        # i.e. n_i = N.
+        noise = sd * np.random.randn(N, 1)
+        Y = F[:, i][:,None] + noise
+        meta.append((Xs, Y))
     test = []
-    for i, ti in enumerate(test_indices):
-        Y = F[ti, num_meta + i][:, None] + 1e-1 * np.random.randn(num_datapoints, 1)
-        test.append(((Xs[ti], Y), (Xs, F[:, num_meta + i][:, None])))
+    rand_indices = np.random.permutation(N)
+    train_i = rand_indices[:num_datapoints]
+    test_i = rand_indices[num_datapoints:]
+    for i in range(num_test):
+        # Form target training set, \tilde{D}_{train} (see Figure 1).
+        noise = sd * np.random.randn(num_datapoints, 1)
+        train_X = Xs[train_i]
+        train_Y = F[train_i, num_meta + i][:,None] + noise
+        # Form target test set, \tilde{D}_{test}, which is disjoint from the 
+        # target traininig set as it is in the original implementation.
+        test_X = Xs[test_i]
+        test_Y = F[test_i, num_meta + i][:,None]
+        # Form target tasks' datasets \tilde{D} as a pair of pairs, 
+        # (\tilde{X}, \tilde{Y}) and (\tilde{X}*, \tilde{Y}*).
+        test.append(((train_X, train_Y), (test_X, test_Y)))
     return meta, test
 
 
 # %%
-num_meta_tasks = 20
-num_test_tasks = 5
 num_datapoints = 5
-meta, test = generate_meta_and_test_tasks(num_datapoints, num_meta_tasks, num_test_tasks)
+meta, test = generate_meta_and_test_tasks(num_datapoints)
 
 # %% [markdown]
 # ## Create the mean function
@@ -159,10 +194,10 @@ def run_adam(model, iterations):
     adam = tf.optimizers.Adam()
     optimization_step = create_optimization_step(adam, model)
     for step in range(iterations):
-        elbo = optimization_step()
+        loss = optimization_step()
         if step % 10 == 0:
             # print("num variables", len(model.trainable_variables))
-            logf.append(elbo.numpy())
+            logf.append(loss.numpy())
     return logf
 
 
@@ -175,7 +210,7 @@ import time
 
 def train_loop(meta_tasks, num_iter=5):
     """
-    Metalearning training loop
+    Metalearning training loop. Trained for 100 epochs in original experiment.
     
     :param meta_tasks: list of metatasks.
     :param num_iter: number of iterations of tasks set
@@ -186,14 +221,14 @@ def train_loop(meta_tasks, num_iter=5):
     # Iterate for several passes over the tasks set
     for iteration in range(num_iter):
         ts = time.time()
-        print("Currently in meta-iteration {}".format(iteration))
+        print("Currently in meta-iteration/epoch {}".format(iteration))
         # Iterate over tasks
         for i, task in enumerate(meta_tasks):
             data = task  # (X, Y)
             model = build_model(data, mean_function=mean_function)
             run_adam(model, ci_niter(100))
 
-        print(">>>> iteration took {} ms".format(time.time() - ts))
+        print(">>>> iteration took {:.2f} s".format(time.time() - ts))
     return mean_function
 
 
