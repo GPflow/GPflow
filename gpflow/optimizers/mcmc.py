@@ -104,8 +104,8 @@ class SamplingHelper:
     def convert_constrained_values(self, hmc_samples):
         """
         Converts list of `unconstrained_values` to constrained versions. Each value in the
-        list corresponds to an entry in `self.parameters`; in case that object is a
-        `gpflow.Parameter`, the `forward` method of its transform will be applied first.
+        list corresponds to an entry in parameters passed to the constructor; in case that object
+        is a `gpflow.Parameter`, the `forward` method of its transform will be applied first.
         """
         values = []
         for hmc_variable, param in zip(hmc_samples, self._parameters):
