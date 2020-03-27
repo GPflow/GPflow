@@ -65,11 +65,11 @@ def plot_model(m, name=""):
 # ## Full model
 
 # %%
-f = gpflow.models.GPR((X, Y), gpflow.kernels.SquaredExponential())
+gpr = gpflow.models.GPR((X, Y), gpflow.kernels.SquaredExponential())
 gpflow.optimizers.Scipy().minimize(
-    f.training_loss, f.trainable_variables, options=dict(maxiter=ci_niter(1000))
+    gpr.training_loss, gpr.trainable_variables, options=dict(maxiter=ci_niter(1000))
 )
-full_lml = plot_model(f)
+full_lml = plot_model(gpr)
 
 # %% [markdown]
 # ## Upper bounds for sparse variational models

@@ -237,7 +237,7 @@ optimizer.minimize(model.training_loss_closure(iter(batched_dataset)), model.tra
 # %% [markdown]
 # ## Training using Gradient Tapes
 #
-# For a more elaborate example of a gradient update we can define an ```optimization_step``` that explicitly computes and applies gradients to the model.
+# For a more elaborate example of a gradient update we can define an `optimization_step` that explicitly computes and applies gradients to the model.
 # In TensorFlow 2, we can optimize (trainable) model parameters with TensorFlow optimizers using `tf.GradientTape`. In this simple example, we perform one gradient update of the Adam optimizer to minimize the training_loss (in this case the negative ELBO) of our model.
 # The `optimization_step` can (and should) be wrapped in `tf.function` to be compiled to a graph if executing it many times.
 
