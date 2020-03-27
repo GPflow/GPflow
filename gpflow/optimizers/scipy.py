@@ -1,4 +1,4 @@
-from typing import Callable, Iterator, List, Tuple, Union, Optional
+from typing import Callable, Iterable, List, Tuple, Optional, TypeVar
 
 import numpy as np
 import scipy.optimize
@@ -8,9 +8,9 @@ from scipy.optimize import OptimizeResult
 __all__ = ["Scipy"]
 
 Loss = tf.Tensor
-Variables = Tuple[tf.Variable]
+Variables = Iterable[tf.Variable]
 StepCallback = Callable[[int, Variables, List[tf.Tensor]], None]
-LossClosure = Callable[..., tf.Tensor]
+LossClosure = Callable[[], tf.Tensor]
 
 
 class Scipy:
@@ -53,6 +53,7 @@ class Scipy:
         """
         if not callable(closure):
             raise TypeError("Callable object expected.")  # pragma: no cover
+        variables = tuple(variables)
         initial_params = self.initial_parameters(variables)
 
         func = self.eval_func(closure, variables, jit=jit)
@@ -68,11 +69,13 @@ class Scipy:
         )
 
     @classmethod
-    def initial_parameters(cls, variables):
+    def initial_parameters(cls, variables: Variables) -> tf.Tensor:
         return cls.pack_tensors(variables)
 
     @classmethod
-    def eval_func(cls, closure: LossClosure, variables: Variables, jit: bool = True):
+    def eval_func(
+        cls, closure: LossClosure, variables: Variables, jit: bool = True
+    ) -> Callable[[np.ndarray], Tuple[np.ndarray, np.ndarray]]:
         def _tf_eval(x: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor]:
             values = cls.unpack_tensors(variables, x)
             cls.assign_tensors(variables, values)
@@ -83,17 +86,19 @@ class Scipy:
         if jit:
             _tf_eval = tf.function(_tf_eval)
 
-        def _eval(x):
+        def _eval(x: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
             loss, grad = _tf_eval(tf.convert_to_tensor(x))
             return loss.numpy().astype(np.float64), grad.numpy().astype(np.float64)
 
         return _eval
 
     @classmethod
-    def callback_func(cls, variables: Variables, step_callback: StepCallback):
+    def callback_func(
+        cls, variables: Variables, step_callback: StepCallback
+    ) -> Callable[[np.ndarray], None]:
         step = 0  # type: int
 
-        def _callback(x):
+        def _callback(x: np.ndarray) -> None:
             nonlocal step
             values = cls.unpack_tensors(variables, x)
             step_callback(step=step, variables=variables, values=values)
@@ -102,13 +107,13 @@ class Scipy:
         return _callback
 
     @staticmethod
-    def pack_tensors(tensors: Iterator[tf.Tensor]) -> tf.Tensor:
+    def pack_tensors(tensors: Iterable[tf.Tensor]) -> tf.Tensor:
         flats = [tf.reshape(tensor, (-1,)) for tensor in tensors]
         tensors_vector = tf.concat(flats, axis=0)
         return tensors_vector
 
     @staticmethod
-    def unpack_tensors(to_tensors: Iterator[tf.Tensor], from_vector: tf.Tensor) -> List[tf.Tensor]:
+    def unpack_tensors(to_tensors: Iterable[tf.Tensor], from_vector: tf.Tensor) -> List[tf.Tensor]:
         s = 0
         values = []
         for tensor in to_tensors:
@@ -121,12 +126,15 @@ class Scipy:
         return values
 
     @staticmethod
-    def assign_tensors(to_tensors: Iterator[tf.Variable], values: Iterator[tf.Tensor]):
+    def assign_tensors(to_tensors: Iterable[tf.Variable], values: Iterable[tf.Tensor]) -> None:
         for tensor, tensor_vector in zip(to_tensors, values):
             tensor.assign(tensor_vector)
 
 
-def _compute_loss_and_gradients(loss_cb: LossClosure, variables: Variables):
+V = TypeVar("V", bound=Variables)
+
+
+def _compute_loss_and_gradients(loss_cb: LossClosure, variables: V) -> Tuple[tf.Tensor, V]:
     with tf.GradientTape() as tape:
         loss = loss_cb()
     grads = tape.gradient(loss, variables)
