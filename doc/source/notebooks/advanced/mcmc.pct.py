@@ -625,7 +625,9 @@ model.kernel.lengthscales.prior_on
 # Let's run HMC and plot chain traces:
 
 # %%
-hmc_helper = gpflow.optimizers.SamplingHelper(model.log_posterior_density, model.trainable_parameters)
+hmc_helper = gpflow.optimizers.SamplingHelper(
+    model.log_posterior_density, model.trainable_parameters
+)
 
 hmc = tfp.mcmc.HamiltonianMonteCarlo(
     target_log_prob_fn=hmc_helper.target_log_prob_fn, num_leapfrog_steps=10, step_size=0.01
