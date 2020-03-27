@@ -118,7 +118,9 @@ monitor = Monitor(fast_tasks, slow_tasks)
 
 
 # %%
-training_loss = model.training_loss_closure(jit=True)  # jit=True (default): compiles using tf.function
+training_loss = model.training_loss_closure(
+    jit=True
+)  # jit=True (default): compiles using tf.function
 opt = tf.optimizers.Adam()
 
 for step in range(optimisation_steps):
