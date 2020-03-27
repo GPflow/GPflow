@@ -617,7 +617,7 @@ _ = gpflow.Parameter(1.0, prior_on="constrained", prior=prior_distribution)
 # When a prior is set in *constrained* space, the `gpflow.optimizers.SamplingHelper` compensates the prior density with a Jacobian of the transformation used by the parameter. For priors in the `unconstrained` space the `gpflow.optimizers.SamplingHelper` will not apply adjustments to the prior density.
 
 # %% [markdown]
-# Below we repeat the same experiment that we ran in the beginning, but with some priors in `unconstrained` space:
+# Below we repeat the same experiment that we ran in the beginning, but with some priors in defined in the `unconstrained` space. Since we are using an Exp transform, a lognormal prior on a constrained parameter corresponds to a Normal prior on the unconstrained space:
 
 # %%
 gpflow.config.set_default_positive_bijector("exp")
@@ -632,11 +632,12 @@ model = gpflow.models.GPR(data, kernel, meanf)
 model.likelihood.variance.assign(0.01)
 
 mu = f64(0.0)
-std = f64(10.0)
+std = f64(4.0)
 one = f64(1.0)
 
 model.kernel.lengthscales.prior_on = "unconstrained"
-model.kernel.lengthscales.prior = tfd.Normal(mu, std)
+default_prior = tfd.Normal(mu, std)
+model.kernel.lengthscales.prior = default_prior
 model.kernel.variance.prior_on = "unconstrained"
 model.kernel.variance.prior = tfd.Normal(mu, std)
 model.likelihood.variance.prior_on = "unconstrained"
