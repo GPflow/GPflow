@@ -67,7 +67,7 @@ class ChangePoints(Combination):
 
     def _set_kernels(self, kernels: List[Kernel]):
         # it is not clear how to flatten out nested change-points
-        self.kernels = list(kernels)
+        self._kernels = tuple(kernels)
 
     def K(self, X: tf.Tensor, X2: Optional[tf.Tensor] = None) -> tf.Tensor:
         sig_X = self._sigmoids(X)  # N x 1 x Ncp
