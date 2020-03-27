@@ -20,8 +20,8 @@ from .. import kullback_leiblers
 from ..base import Parameter
 from ..conditionals import conditional
 from ..config import default_float
-from ..models.model import GPModel
 from ..utilities import positive, triangular
+from .model import GPModel, InputData, RegressionData, MeanAndVariance
 from .util import inducingpoint_wrapper
 
 
@@ -133,7 +133,7 @@ class SVGP(GPModel):
             self.inducing_variable, self.kernel, self.q_mu, self.q_sqrt, whiten=self.whiten
         )
 
-    def log_likelihood(self, data: Tuple[tf.Tensor, tf.Tensor]) -> tf.Tensor:
+    def log_likelihood(self, data: RegressionData) -> tf.Tensor:
         """
         This gives a variational bound on the model likelihood.
         """
@@ -149,13 +149,13 @@ class SVGP(GPModel):
             scale = tf.cast(1.0, kl.dtype)
         return tf.reduce_sum(var_exp) * scale - kl
 
-    def elbo(self, data: Tuple[tf.Tensor, tf.Tensor]) -> tf.Tensor:
+    def elbo(self, data: RegressionData) -> tf.Tensor:
         """
         This returns the evidence lower bound (ELBO) of the log marginal likelihood.
         """
         return self.log_marginal_likelihood(data)
 
-    def predict_f(self, Xnew: tf.Tensor, full_cov=False, full_output_cov=False) -> tf.Tensor:
+    def predict_f(self, Xnew: InputData, full_cov=False, full_output_cov=False) -> MeanAndVariance:
         q_mu = self.q_mu
         q_sqrt = self.q_sqrt
         mu, var = conditional(

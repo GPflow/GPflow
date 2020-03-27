@@ -28,15 +28,17 @@
 # %%
 import numpy as np
 import matplotlib.pyplot as plt
+
 # %matplotlib inline
 
 np.random.seed(1)  # for reproducibility of this notebook
 
-CMAP = plt.get_cmap('Blues')
+CMAP = plt.get_cmap("Blues")
 
 # %%
 N = 200
 NOISE_STD = 5.0e-2
+
 
 def sinusoidal_data(N, noise):
     Y = np.linspace(-2, 2, N)[:, None]
@@ -45,11 +47,12 @@ def sinusoidal_data(N, noise):
     Y += np.random.randn(N, 1) * noise
     return X, Y
 
+
 X, Y = data = sinusoidal_data(N, NOISE_STD)
 
-plt.plot(X, Y,'ro', alpha=0.3);
-plt.xlabel("$x$");
-plt.ylabel("$y$");
+plt.plot(X, Y, "ro", alpha=0.3)
+plt.xlabel("$x$")
+_ = plt.ylabel("$y$")
 
 # %% [markdown]
 # At first sight, this dataset doesn't seem overly complex. Both input and output have a single dimension, and the data has a clear sinusoidal pattern. However, notice that a single input $x$ can correspond to multiple output values $y$, so for example $x=0$ can yield any of the values $\{-1.5, -3/4, 0, 0.8, 1.5\}$. Typical regression algorithms such as Linear Regression, Gaussian Process regression and Multilayer Perceptrons (MLPs) struggle as they can only predict one output value for every input.
@@ -97,13 +100,13 @@ from gpflow.base import Parameter
 # %%
 from typing import Callable, Optional, Tuple
 
-class MDN(BayesianModel):
 
+class MDN(BayesianModel):
     def __init__(
         self,
         num_mixtures: Optional[int] = 5,
         inner_dims: Optional[list] = [10, 10,],
-        activation: Optional[Callable[[tf.Tensor], tf.Tensor]] = tf.keras.activations.relu
+        activation: Optional[Callable[[tf.Tensor], tf.Tensor]] = tf.keras.activations.relu,
     ):
         super().__init__()
 
@@ -111,7 +114,7 @@ class MDN(BayesianModel):
         # The number of output dims `self.dims[-1]` equals `num_mixtures` means +
         # `num _mixtures` variances + `num_mixtures` weights, a total of
         # 3 times `num_mixtures` variables.
-        self.dims = [1, ] + list(inner_dims) + [3 * num_mixtures]
+        self.dims = [1,] + list(inner_dims) + [3 * num_mixtures]
         self.activation = activation
         self._create_network()
 
@@ -120,28 +123,26 @@ class MDN(BayesianModel):
 
         for dim_in, dim_out in zip(self.dims[:-1], self.dims[1:]):
             init_xavier_std = (2.0 / (dim_in + dim_out)) ** 0.5
-            self.Ws.append(
-                Parameter(np.random.randn(dim_in, dim_out) * init_xavier_std))
-            self.bs.append(
-                Parameter(np.zeros(dim_out)))
+            self.Ws.append(Parameter(np.random.randn(dim_in, dim_out) * init_xavier_std))
+            self.bs.append(Parameter(np.zeros(dim_out)))
 
     def eval_network(self, X):
-        for i, (W, b) in enumerate(zip(self.Ws,self.bs)):
+        for i, (W, b) in enumerate(zip(self.Ws, self.bs)):
             X = tf.matmul(X, W) + b
             if i < len(self.bs) - 1:
                 X = self.activation(X)
 
         pis, mus, sigmas = tf.split(X, 3, axis=1)
         pis = tf.nn.softmax(pis)  # make sure they normalize to 1
-        sigmas = tf.exp(sigmas)   # make sure std. dev. are positive
+        sigmas = tf.exp(sigmas)  # make sure std. dev. are positive
 
         return pis, mus, sigmas
 
     def log_marginal_likelihood(self, data: Tuple[tf.Tensor, tf.Tensor]):
         x, y = data
         pis, mus, sigmas = self.eval_network(x)
-        Z = (2 * np.pi)**0.5 * sigmas
-        log_probs_mog = (-0.5 * (mus - y)**2 / sigmas**2) - tf.math.log(Z) + tf.math.log(pis)
+        Z = (2 * np.pi) ** 0.5 * sigmas
+        log_probs_mog = (-0.5 * (mus - y) ** 2 / sigmas ** 2) - tf.math.log(Z) + tf.math.log(pis)
         log_probs = tf.reduce_logsumexp(log_probs_mog, axis=1)
         return tf.reduce_sum(log_probs)
 
@@ -167,6 +168,7 @@ class MDN(BayesianModel):
 model = MDN(inner_dims=[100, 100], num_mixtures=5)
 
 from gpflow.utilities import print_summary
+
 print_summary(model)
 
 # %% [markdown]
@@ -179,10 +181,10 @@ from gpflow.optimizers import Scipy
 from gpflow.ci_utils import ci_niter
 
 Scipy().minimize(
-    tf.function(lambda: - model.log_marginal_likelihood(data)),
+    tf.function(lambda: -model.log_marginal_likelihood(data)),
     variables=model.trainable_parameters,
-    options=dict(maxiter=ci_niter(1500))
-);
+    options=dict(maxiter=ci_niter(1500)),
+)
 
 print("Final Likelihood", model.log_marginal_likelihood(data).numpy())
 
@@ -196,7 +198,7 @@ except:
     # VS CODE's root directory is GPflow's top-level directory
     from doc.source.notebooks.tailor.mdn_plotting import plot
 
-fig, axes = plt.subplots(1, 2, figsize=(12,6))
+fig, axes = plt.subplots(1, 2, figsize=(12, 6))
 for a in axes:
     a.set_xlim(-4, 4)
     a.set_ylim(-3, 3)
@@ -210,6 +212,7 @@ plot(model, X, Y, axes, cmap=CMAP)
 # %%
 from sklearn.datasets import make_moons
 
+
 def moon_data(N, noise):
     data, _ = make_moons(n_samples=N, shuffle=True, noise=noise)
     X, Y = data[:, 0].reshape(-1, 1), data[:, 1].reshape(-1, 1)
@@ -218,9 +221,9 @@ def moon_data(N, noise):
 
 # %%
 X, Y = data = moon_data(N, NOISE_STD)
-plt.plot(X, Y, 'ro', alpha=0.3);
-plt.xlabel("$x$");
-plt.ylabel("$y$");
+plt.plot(X, Y, "ro", alpha=0.3)
+plt.xlabel("$x$")
+_ = plt.ylabel("$y$")
 
 # %% [markdown]
 # The only difference in the MDN's setup is that we lower the number of mixture components.
@@ -230,15 +233,15 @@ model = MDN(inner_dims=[100, 100], num_mixtures=5)
 
 # %%
 Scipy().minimize(
-    tf.function(lambda: - model.log_marginal_likelihood(data)),
+    tf.function(lambda: -model.log_marginal_likelihood(data)),
     variables=model.trainable_parameters,
-    options=dict(maxiter=ci_niter(int(10e3)))
-);
+    options=dict(maxiter=ci_niter(int(10e3))),
+)
 
 print("Final Likelihood", model.log_marginal_likelihood(data).numpy())
 
 # %%
-fig, axes = plt.subplots(1, 2, figsize=(12,6))
+fig, axes = plt.subplots(1, 2, figsize=(12, 6))
 for a in axes:
     a.set_xlim(-2, 3)
     a.set_ylim(-1.5, 2)

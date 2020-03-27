@@ -12,15 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
 import numpy as np
 import pytest
 import tensorflow as tf
 from numpy.testing import assert_allclose
 
 import gpflow
-from gpflow.inducing_variables import InducingPoints
 from gpflow.likelihoods import (
+    ScalarLikelihood,
     Bernoulli,
     Beta,
     Exponential,
@@ -40,6 +39,7 @@ from gpflow.likelihoods import (
 from gpflow.quadrature import ndiagquad
 from gpflow.config import default_float, default_int
 from gpflow.utilities import to_default_float, to_default_int
+import gpflow.ci_utils
 
 tf.random.set_seed(99012)
 
@@ -108,17 +108,21 @@ def get_likelihood(likelihood_setup):
 
 
 def test_no_missing_likelihoods():
-    all_likelihood_types = Likelihood.__subclasses__()
     tested_likelihood_types = [get_likelihood(l).__class__ for l in likelihood_setups]
-    for likelihood_class in all_likelihood_types:
+    for likelihood_class in gpflow.ci_utils.subclasses(Likelihood):
         if likelihood_class in tested_likelihood_types:
-            continue  # already tested
+            continue  # tested by parametrized tests
+        if likelihood_class is ScalarLikelihood:
+            continue  # base class
         if likelihood_class is SwitchedLikelihood:
-            continue  # tested separately
+            continue  # tested separately, see test_switched_likelihood.py
         if likelihood_class is MonteCarloLikelihood:
             continue  # abstract base class
         if issubclass(likelihood_class, MonteCarloLikelihood):
-            continue  # TODO
+            if likelihood_class is GaussianMC:
+                continue  # tested explicitly by test_montecarlo_*
+            if likelihood_class is Softmax:
+                continue  # tested explicitly by test_softmax_{y_shape_assert,bernoulli_equivalence}
         assert False, f"no test for likelihood class {likelihood_class}"
 
 
@@ -168,14 +172,16 @@ def test_quadrature_variational_expectation(likelihood_setup, mu, var):
     assert_allclose(F1, F2, rtol=likelihood_setup.rtol, atol=likelihood_setup.atol)
 
 
-@pytest.mark.parametrize("likelihood_setup", filter_analytic(likelihood_setups, "predict_density"))
+@pytest.mark.parametrize(
+    "likelihood_setup", filter_analytic(likelihood_setups, "predict_log_density")
+)
 @pytest.mark.parametrize("mu, var", [[Datum.Fmu, Datum.Fvar]])
-def test_quadrature_predict_density(likelihood_setup, mu, var):
+def test_quadrature_predict_log_density(likelihood_setup, mu, var):
     likelihood, y = likelihood_setup.likelihood, likelihood_setup.Y
     if isinstance(likelihood, MultiClass):
         pytest.skip("Test fails due to issue with ndiagquad (github issue #1091)")
-    F1 = likelihood.predict_density(mu, var, y)
-    F2 = Likelihood.predict_density(likelihood, mu, var, y)
+    F1 = likelihood.predict_log_density(mu, var, y)
+    F2 = Likelihood.predict_log_density(likelihood, mu, var, y)
     assert_allclose(F1, F2, rtol=likelihood_setup.rtol, atol=likelihood_setup.atol)
 
 
@@ -219,11 +225,11 @@ def test_montecarlo_variational_expectation(likelihood_var, mu, var, y):
 
 @pytest.mark.parametrize("likelihood_var", [0.3, 0.5, 1.0])
 @pytest.mark.parametrize("mu, var, y", [_make_montecarlo_mu_var_y()])
-def test_montecarlo_predict_density(likelihood_var, mu, var, y):
+def test_montecarlo_predict_log_density(likelihood_var, mu, var, y):
     likelihood_gaussian_mc, likelihood_gaussian = _make_montecarlo_likelihoods(likelihood_var)
     assert_allclose(
-        likelihood_gaussian_mc.predict_density(mu, var, y),
-        likelihood_gaussian.predict_density(mu, var, y),
+        likelihood_gaussian_mc.predict_log_density(mu, var, y),
+        likelihood_gaussian.predict_log_density(mu, var, y),
         rtol=5e-4,
         atol=1e-4,
     )
@@ -298,7 +304,7 @@ def test_softmax_bernoulli_equivalence(num, dimF, dimY):
 
     ls_ve = softmax_likelihood.variational_expectations(F, Fvar, Ylabel)
     lb_ve = bernoulli_likelihood.variational_expectations(F[:, :1], Fvar[:, :1], Y.numpy())
-    assert_allclose(ls_ve[:, 0, None], lb_ve, rtol=5e-3)
+    assert_allclose(ls_ve, lb_ve, rtol=5e-3)
 
 
 @pytest.mark.parametrize("num_classes, num_points", [[10, 3]])
@@ -317,7 +323,7 @@ def test_robust_max_multiclass_symmetric(num_classes, num_points, tol, epsilon):
     likelihood.invlink.epsilon = tf.convert_to_tensor(epsilon, dtype=default_float())
 
     mu, _ = likelihood.predict_mean_and_var(F, F)
-    pred = likelihood.predict_density(F, F, Y)
+    pred = likelihood.predict_log_density(F, F, Y)
     variational_expectations = likelihood.variational_expectations(F, F, Y)
 
     expected_mu = (p * (1.0 - epsilon) + (1.0 - p) * epsilon / (num_classes - 1)) * np.ones(
@@ -334,7 +340,7 @@ def test_robust_max_multiclass_symmetric(num_classes, num_points, tol, epsilon):
     )
     assert_allclose(
         variational_expectations,
-        np.ones((num_points, 1)) * validation_variational_expectation,
+        np.ones((num_points,)) * validation_variational_expectation,
         tol,
         tol,
     )
@@ -349,7 +355,7 @@ def test_robust_max_multiclass_symmetric(num_classes, num_points, tol, epsilon):
         # log((1 - ε) * 0.73 + (1-0.73) * ε / (num_classes -1))
     ],
 )
-def test_robust_max_multiclass_predict_density(
+def test_robust_max_multiclass_predict_log_density(
     num_classes, num_points, mock_prob, expected_prediction, tol, epsilon
 ):
     class MockRobustMax(gpflow.likelihoods.RobustMax):
@@ -360,7 +366,7 @@ def test_robust_max_multiclass_predict_density(
     F = tf.ones((num_points, num_classes))
     rng = np.random.RandomState(1)
     Y = to_default_int(rng.randint(num_classes, size=(num_points, 1)))
-    prediction = likelihood.predict_density(F, F, Y)
+    prediction = likelihood.predict_log_density(F, F, Y)
 
     assert_allclose(prediction, expected_prediction, tol, tol)
 
@@ -381,107 +387,3 @@ def test_robust_max_multiclass_eps_k1_changes(num_classes, initial_epsilon, new_
     expected_eps_k2 = new_epsilon / (num_classes - 1.0)
     actual_eps_k2 = likelihood.eps_k1
     assert_allclose(expected_eps_k2, actual_eps_k2)
-
-
-@pytest.mark.parametrize("Y_list", [[tf.random.normal((i, 2)) for i in range(3, 6)]])
-@pytest.mark.parametrize("F_list", [[tf.random.normal((i, 2)) for i in range(3, 6)]])
-@pytest.mark.parametrize("Fvar_list", [[tf.exp(tf.random.normal((i, 2))) for i in range(3, 6)]])
-@pytest.mark.parametrize("Y_label", [[tf.ones((i, 2)) * (i - 3.0) for i in range(3, 6)]])
-def test_switched_likelihood_log_prob(Y_list, F_list, Fvar_list, Y_label):
-    """
-    SwitchedLikelihood is separately tested here.
-    Here, we make sure the partition-stitch works fine.
-    """
-    Y_perm = list(range(3 + 4 + 5))
-    np.random.shuffle(Y_perm)
-    # shuffle the original data
-    Y_sw = np.hstack([np.concatenate(Y_list), np.concatenate(Y_label)])[Y_perm, :3]
-    F_sw = np.concatenate(F_list)[Y_perm, :]
-    likelihoods = [Gaussian()] * 3
-    for lik in likelihoods:
-        lik.variance = np.exp(np.random.randn(1)).squeeze().astype(np.float32)
-    switched_likelihood = SwitchedLikelihood(likelihoods)
-
-    switched_results = switched_likelihood.log_prob(F_sw, Y_sw)
-    results = [lik.log_prob(f, y) for lik, y, f in zip(likelihoods, Y_list, F_list)]
-
-    assert_allclose(switched_results, np.concatenate(results)[Y_perm, :])
-
-
-@pytest.mark.parametrize("Y_list", [[tf.random.normal((i, 2)) for i in range(3, 6)]])
-@pytest.mark.parametrize("F_list", [[tf.random.normal((i, 2)) for i in range(3, 6)]])
-@pytest.mark.parametrize("Fvar_list", [[tf.exp(tf.random.normal((i, 2))) for i in range(3, 6)]])
-@pytest.mark.parametrize("Y_label", [[tf.ones((i, 2)) * (i - 3.0) for i in range(3, 6)]])
-def test_switched_likelihood_predict_density(Y_list, F_list, Fvar_list, Y_label):
-    Y_perm = list(range(3 + 4 + 5))
-    np.random.shuffle(Y_perm)
-    # shuffle the original data
-    Y_sw = np.hstack([np.concatenate(Y_list), np.concatenate(Y_label)])[Y_perm, :3]
-    F_sw = np.concatenate(F_list)[Y_perm, :]
-    Fvar_sw = np.concatenate(Fvar_list)[Y_perm, :]
-
-    likelihoods = [Gaussian()] * 3
-    for lik in likelihoods:
-        lik.variance = np.exp(np.random.randn(1)).squeeze().astype(np.float32)
-    switched_likelihood = SwitchedLikelihood(likelihoods)
-
-    switched_results = switched_likelihood.predict_density(F_sw, Fvar_sw, Y_sw)
-    # likelihood
-    results = [
-        lik.predict_density(f, fvar, y)
-        for lik, y, f, fvar in zip(likelihoods, Y_list, F_list, Fvar_list)
-    ]
-    assert_allclose(switched_results, np.concatenate(results)[Y_perm, :])
-
-
-@pytest.mark.parametrize("Y_list", [[tf.random.normal((i, 2)) for i in range(3, 6)]])
-@pytest.mark.parametrize("F_list", [[tf.random.normal((i, 2)) for i in range(3, 6)]])
-@pytest.mark.parametrize("Fvar_list", [[tf.exp(tf.random.normal((i, 2))) for i in range(3, 6)]])
-@pytest.mark.parametrize("Y_label", [[tf.ones((i, 2)) * (i - 3.0) for i in range(3, 6)]])
-def test__switched_likelihood_variational_expectations(Y_list, F_list, Fvar_list, Y_label):
-    Y_perm = list(range(3 + 4 + 5))
-    np.random.shuffle(Y_perm)
-    # shuffle the original data
-    Y_sw = np.hstack([np.concatenate(Y_list), np.concatenate(Y_label)])[Y_perm, :3]
-    F_sw = np.concatenate(F_list)[Y_perm, :]
-    Fvar_sw = np.concatenate(Fvar_list)[Y_perm, :]
-
-    likelihoods = [Gaussian()] * 3
-    for lik in likelihoods:
-        lik.variance = np.exp(np.random.randn(1)).squeeze().astype(np.float32)
-    switched_likelihood = SwitchedLikelihood(likelihoods)
-
-    switched_results = switched_likelihood.variational_expectations(F_sw, Fvar_sw, Y_sw)
-    results = [
-        lik.variational_expectations(f, fvar, y)
-        for lik, y, f, fvar in zip(likelihoods, Y_list, F_list, Fvar_list)
-    ]
-    assert_allclose(switched_results, np.concatenate(results)[Y_perm, :])
-
-
-@pytest.mark.parametrize("num_latent_gps", [1, 2])
-def test_switched_likelihood_regression_valid_num_latent_gps(num_latent_gps):
-    """
-    A Regression test when using Switched likelihood: the number of latent
-    functions in a GP model must be equal to the number of columns in Y minus
-    one. The final column of Y is used to index the switch. If the number of
-    latent functions does not match, an exception will be raised.
-    """
-    x = np.random.randn(100, 1)
-    y = np.hstack((np.random.randn(100, 1), np.random.randint(0, 3, (100, 1))))
-    data = x, y
-
-    Z = InducingPoints(np.random.randn(num_latent_gps, 1))
-    likelihoods = [StudentT()] * 3
-    switched_likelihood = SwitchedLikelihood(likelihoods)
-    m = gpflow.models.SVGP(
-        kernel=gpflow.kernels.Matern12(),
-        inducing_variable=Z,
-        likelihood=switched_likelihood,
-        num_latent_gps=num_latent_gps,
-    )
-    if num_latent_gps == 1:
-        m.log_likelihood(data)
-    else:
-        with pytest.raises(tf.errors.InvalidArgumentError):
-            m.log_likelihood(data)
