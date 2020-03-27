@@ -42,7 +42,7 @@ pip install -e .
 ```
 in a check-out of the `develop` branch of the GPflow github repository.
 
-- Alternatively, Using `pip`:
+Alternatively, you can use `pip`:
 
 Latest GitHub `develop` version:
 ```bash
