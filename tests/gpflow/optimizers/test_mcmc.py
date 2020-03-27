@@ -197,3 +197,9 @@ def test_mcmc_sampler_integration():
         assert len(samples[i]) == num_samples
         assert hmc_helper.current_state[i].numpy() == samples[i][-1]
         assert hmc_helper._parameters[i].numpy() == parameter_samples[i][-1]
+
+
+@pytest.mark.xfail(raises=ValueError)
+def test_helper_with_variables_fails():
+    variable = tf.Variable(0.1)
+    gpflow.optimizers.SamplingHelper(lambda: variable ** 2, (variable,))
