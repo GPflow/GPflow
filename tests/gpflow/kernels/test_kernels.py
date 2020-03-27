@@ -526,12 +526,13 @@ def test_periodic_active_dims_matches():
 
 
 def test_latent_kernels():
+    kernel_list = [SquaredExponential(), White(), White() + Linear()]
+
     multioutput_kernel_list = [
         SharedIndependent(SquaredExponential(), 3),
-        SeparateIndependent([SquaredExponential(), White(), White() + Linear()]),
-        LinearCoregionalization(
-            [SquaredExponential(), White(), White() + Linear()], np.random.random((5, 3))
-        ),
+        SeparateIndependent(kernel_list),
+        LinearCoregionalization(kernel_list, np.random.random((5, 3))),
     ]
-    for m in multioutput_kernel_list:
-        assert len(m.latent_kernels) == 3
+    assert len(multioutput_kernel_list[0].latent_kernels) == 1
+    assert multioutput_kernel_list[1].latent_kernels == tuple(kernel_list)
+    assert multioutput_kernel_list[2].latent_kernels == tuple(kernel_list)
