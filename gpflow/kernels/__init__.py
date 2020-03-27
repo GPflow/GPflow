@@ -3,7 +3,9 @@ from .convolutional import Convolutional
 from .changepoints import ChangePoints
 from .linears import Linear, Polynomial
 from .misc import ArcCosine, Coregion
-from .mo_kernels import (
+from . import multioutput
+
+from .multioutput import (
     MultioutputKernel,
     SeparateIndependent,
     SharedIndependent,
