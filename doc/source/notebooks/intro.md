@@ -20,7 +20,7 @@ You can use this document to get familiar with GPflow. We've split up the materi
 
 ## GPflow 2
 
-Users of GPflow 1 should check the [upgrade guide to GPflow 2](gpflow2_upgrade/gpflow2_upgrade_guide.ipynb).
+Users of GPflow 1 should check the [upgrade guide to GPflow 2](gpflow2_upgrade_guide.ipynb).
 
 ## Basics
 
@@ -59,9 +59,9 @@ This section explains the more complex models and features that are available in
 
 ### Features
   - [Natural gradients](advanced/natural_gradients.ipynb): how to optimize the variational approximate posterior's parameters.
+  - [Monitoring optimisation](basics/monitoring.ipynb): how to monitor the model during optimisation: running custom callbacks and writing images and model parameters to TensorBoards.
 <!--  - [optimizers](advanced/optimisation.ipynb)  **[TODO]** -->
-  - [Settings and GPflow configuration](advanced/settings.ipynb): how to adjust jitter (for inversion or Cholesky errors), floating point precision, parallelism, and more.
-  - [Monitoring optimization](advanced/monitoring.ipynb): how to send things to TensorBoard, store or restore checkpoints, and more.
+<!--  - [Settings and GPflow configuration](advanced/settings.ipynb): how to adjust jitter (for inversion or Cholesky errors), floating point precision, parallelism, and more.-->
 
 ## Tailored models
 
