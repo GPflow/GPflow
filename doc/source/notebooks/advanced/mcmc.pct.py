@@ -616,7 +616,7 @@ _ = gpflow.Parameter(1.0, prior_on="unconstrained", prior=prior_distribution)
 _ = gpflow.Parameter(1.0, prior_on="constrained", prior=prior_distribution)
 
 # %% [markdown]
-# When a prior is set in *constrained* space, the `gpflow.optimizers.SamplingHelper` compensates the prior density with a Jacobian of the transformation used by the parameter. For priors in the `unconstrained` space the `gpflow.optimizers.SamplingHelper` will not apply adjustments to the prior density.
+# When a prior is set in *constrained* space, the `gpflow.optimizers.SamplingHelper` compensates the prior density with a Jacobian of the transformation used by the parameter. For priors in the *unconstrained* space the `gpflow.optimizers.SamplingHelper` will not apply adjustments to the prior density.
 
 # %% [markdown]
 # Below we repeat the same experiment that we ran in the beginning, but with some priors in defined in the `unconstrained` space. Since we are using an Exp transform, a lognormal prior on a constrained parameter corresponds to a Normal prior on the unconstrained space:
