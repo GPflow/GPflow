@@ -150,7 +150,7 @@ class SGPR(SGPRBase):
 
     """
 
-    def maximum_likelihood_objective(self) -> tf.Tensor:
+    def maximum_log_likelihood_objective(self) -> tf.Tensor:
         return self.elbo()
 
     def elbo(self) -> tf.Tensor:
@@ -305,7 +305,7 @@ class GPRFITC(SGPRBase):
 
         return err, nu, Luu, L, alpha, beta, gamma
 
-    def maximum_likelihood_objective(self) -> tf.Tensor:
+    def maximum_log_likelihood_objective(self) -> tf.Tensor:
         return self.fitc_log_marginal_likelihood()
 
     def fitc_log_marginal_likelihood(self) -> tf.Tensor:

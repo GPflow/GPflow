@@ -29,4 +29,4 @@ from .sgpmc import SGPMC
 from .sgpr import GPRFITC, SGPR
 from .svgp import SVGP
 from .vgp import VGP, VGPOpperArchambeau
-from .util import model_training_loss, model_maximum_likelihood_objective
+from .util import model_training_loss, model_maximum_log_likelihood_objective

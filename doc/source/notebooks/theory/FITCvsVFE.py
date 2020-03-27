@@ -163,7 +163,7 @@ class Callback:
                 var.assign(val)
 
             self.n_iters.append(self.counter)
-            self.log_likelihoods.append(self.model.maximum_likelihood_objective().numpy())
+            self.log_likelihoods.append(self.model.maximum_log_likelihood_objective().numpy())
 
             predictive_mean, predictive_variance = self.model.predict_y(self.Xtest)
             test_log_likelihood = tf.reduce_mean(

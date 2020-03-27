@@ -42,7 +42,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 
 from gpflow import set_trainable
-from gpflow.models import model_maximum_likelihood_objective
+from gpflow.models import model_maximum_log_likelihood_objective
 from gpflow.config import default_float
 from gpflow.ci_utils import ci_niter
 
@@ -159,4 +159,4 @@ for m in models:
 
 # %%
 for m in models:
-    print(f"{m.__class__.__name__:30}  {model_maximum_likelihood_objective(m, data)}")
+    print(f"{m.__class__.__name__:30}  {model_maximum_log_likelihood_objective(m, data)}")

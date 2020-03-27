@@ -56,7 +56,7 @@ def plot_model(m, name=""):
         plt.plot(Z, np.zeros_like(Z), "o")
     two_sigma = (2.0 * pYv ** 0.5)[:, 0]
     plt.fill_between(pX[:, 0], pY[:, 0] - two_sigma, pY[:, 0] + two_sigma, alpha=0.15)
-    lml = m.maximum_likelihood_objective().numpy()
+    lml = m.maximum_log_likelihood_objective().numpy()
     plt.title("%s (lml = %f)" % (name, lml))
     return lml
 

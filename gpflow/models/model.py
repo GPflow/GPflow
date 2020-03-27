@@ -56,19 +56,20 @@ class BayesianModel(Module, metaclass=abc.ABCMeta):
         """
         This may be the posterior with respect to the hyperparameters (e.g. for
         GPR) or the posterior with respect to the function (e.g. for GPMC and
-        SGPMC). It assumes that maximum_likelihood_objective() is defined
+        SGPMC). It assumes that maximum_log_likelihood_objective() is defined
         sensibly.
         """
-        return self.maximum_likelihood_objective(*args, **kwargs) + self.log_prior_density()
+        return self.maximum_log_likelihood_objective(*args, **kwargs) + self.log_prior_density()
 
-    def maximum_a_posteriori_objective(self, *args, **kwargs) -> tf.Tensor:
+    def _training_loss(self, *args, **kwargs) -> tf.Tensor:
         """
-        Maximum a-posteriori objective. Assumes that maximum_likelihood_objective() is the log marginal likelihood and adds the log density of all priors.
+        Training loss definition. To allow MAP (maximum a-posteriori) estimation,
+        adds the log density of all priors to maximum_log_likelihood_objective().
         """
-        return self.maximum_likelihood_objective(*args, **kwargs) + self.log_prior_density()
+        return -(self.maximum_log_likelihood_objective(*args, **kwargs) + self.log_prior_density())
 
     @abc.abstractmethod
-    def maximum_likelihood_objective(self, *args, **kwargs) -> tf.Tensor:
+    def maximum_log_likelihood_objective(self, *args, **kwargs) -> tf.Tensor:
         """
         Objective for maximum likelihood estimation. Should be maximized. E.g.
         log-marginal likelihood (hyperparameter likelihood) for GPR, or lower

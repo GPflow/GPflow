@@ -134,7 +134,7 @@ class SVGP(GPModel, ExternalDataTrainingLossMixin):
             self.inducing_variable, self.kernel, self.q_mu, self.q_sqrt, whiten=self.whiten
         )
 
-    def maximum_likelihood_objective(self, data: RegressionData) -> tf.Tensor:
+    def maximum_log_likelihood_objective(self, data: RegressionData) -> tf.Tensor:
         return self.elbo(data)
 
     def elbo(self, data: RegressionData) -> tf.Tensor:

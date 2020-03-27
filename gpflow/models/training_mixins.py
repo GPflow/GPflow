@@ -6,10 +6,10 @@ They provide a unified interface to obtain closures that return the training
 loss, to be passed as the first argument to the minimize() method of the
 optimizers defined in TensorFlow and GPflow.
 
-All TrainingLossMixin classes assume that self.maximum_a_posteriori_objective()
+All TrainingLossMixin classes assume that self._training_loss()
 (which is provided by the BayesianModel base class), will be available. Note
-that new models only need to implement the maximum_likelihood_objective method
-that is defined as abstract in BayesianModel.
+that new models only need to implement the maximum_log_likelihood_objective
+method that is defined as abstract in BayesianModel.
 
 There are different mixins depending on whether the model already contains the
 training data (InternalDataTrainingLossMixin), or requires it to be passed in
@@ -50,7 +50,7 @@ class InternalDataTrainingLossMixin:
         """
         Returns the training loss for this model.
         """
-        return -self.maximum_a_posteriori_objective()
+        return self._training_loss()
 
     def training_loss_closure(self, jit=True) -> Callable[[], tf.Tensor]:
         """
@@ -86,7 +86,7 @@ class ExternalDataTrainingLossMixin:
         
         :param data: the data to be used for computing the model objective.
         """
-        return -self.maximum_a_posteriori_objective(data)
+        return self._training_loss(data)
 
     def training_loss_closure(
         self, data: Union[Data, Iterator[Data]], jit=True, input_signature=None,

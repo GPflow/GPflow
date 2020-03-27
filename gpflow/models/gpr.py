@@ -51,7 +51,7 @@ class GPR(GPModel, InternalDataTrainingLossMixin):
         super().__init__(kernel, likelihood, mean_function, num_latent_gps=Y_data.shape[-1])
         self.data = data
 
-    def maximum_likelihood_objective(self) -> tf.Tensor:
+    def maximum_log_likelihood_objective(self) -> tf.Tensor:
         return self.log_marginal_likelihood()
 
     def log_marginal_likelihood(self) -> tf.Tensor:

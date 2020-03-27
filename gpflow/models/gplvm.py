@@ -145,7 +145,7 @@ class BayesianGPLVM(GPModel, InternalDataTrainingLossMixin):
         assert self.X_prior_var.shape[0] == self.num_data
         assert self.X_prior_var.shape[1] == self.num_latent_gps
 
-    def maximum_likelihood_objective(self) -> tf.Tensor:
+    def maximum_log_likelihood_objective(self) -> tf.Tensor:
         return self.elbo()
 
     def elbo(self) -> tf.Tensor:

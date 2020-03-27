@@ -75,7 +75,7 @@ class VGP(GPModel, InternalDataTrainingLossMixin):
         q_sqrt = np.array([np.eye(num_data) for _ in range(self.num_latent_gps)])
         self.q_sqrt = Parameter(q_sqrt, transform=triangular())
 
-    def maximum_likelihood_objective(self) -> tf.Tensor:
+    def maximum_log_likelihood_objective(self) -> tf.Tensor:
         return self.elbo()
 
     def elbo(self) -> tf.Tensor:
@@ -171,7 +171,7 @@ class VGPOpperArchambeau(GPModel, InternalDataTrainingLossMixin):
             np.ones((self.num_data, self.num_latent_gps)), transform=gpflow.utilities.positive()
         )
 
-    def maximum_likelihood_objective(self) -> tf.Tensor:
+    def maximum_log_likelihood_objective(self) -> tf.Tensor:
         return self.elbo()
 
     def elbo(self) -> tf.Tensor:

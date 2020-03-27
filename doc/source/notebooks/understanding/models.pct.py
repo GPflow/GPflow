@@ -201,9 +201,9 @@ opt.minimize(m.training_loss, variables=m.trainable_variables)
 # The training objective depends on the type of model; it may be possible to
 # implement the exact (log)marginal likelihood, or only a lower bound to the
 # log marginal likelihood (ELBO). You need to implement this as the
-# `maximum_likelihood_objective` method.  The `BayesianModel` parent class
+# `maximum_log_likelihood_objective` method.  The `BayesianModel` parent class
 # provides a `log_posterior_density` method that returns  the
-# `maximum_likelihood_objective` plus the sum of the log-density of any priors
+# `maximum_log_likelihood_objective` plus the sum of the log-density of any priors
 # on hyperparameters, which can be used for MCMC, and a `training_loss` method
 # that returns the negative of (maximum likelihood objective + log prior
 # density) for MLE/MAP estimation to be passed to optimizer's `minimize`
@@ -236,7 +236,7 @@ class LinearMulticlass(gpflow.models.BayesianModel, gpflow.models.InternalDataTr
         #
         # W = gpflow.Parameter(...    <-- must be self.W
 
-    def maximum_likelihood_objective(self):
+    def maximum_log_likelihood_objective(self):
         p = tf.nn.softmax(
             tf.matmul(self.X, self.W) + self.b
         )  # Parameters can be used like a tf.Tensor

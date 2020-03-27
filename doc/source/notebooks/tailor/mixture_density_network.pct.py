@@ -138,7 +138,7 @@ class MDN(BayesianModel, ExternalDataTrainingLossMixin):
 
         return pis, mus, sigmas
 
-    def maximum_likelihood_objective(self, data: Tuple[tf.Tensor, tf.Tensor]):
+    def maximum_log_likelihood_objective(self, data: Tuple[tf.Tensor, tf.Tensor]):
         x, y = data
         pis, mus, sigmas = self.eval_network(x)
         Z = (2 * np.pi) ** 0.5 * sigmas
@@ -172,7 +172,7 @@ from gpflow.utilities import print_summary
 print_summary(model)
 
 # %% [markdown]
-# The objective function for MDN instances is the `maximum_likelihood_objective`, which we use for optimization of the parameters. GPflow ensures that only the variables stored in `Parameter` objects are optimized. For the MDN, the only parameters are the weights and the biases of the neural net.
+# The objective function for MDN instances is the `maximum_log_likelihood_objective`, which we use for optimization of the parameters. GPflow ensures that only the variables stored in `Parameter` objects are optimized. For the MDN, the only parameters are the weights and the biases of the neural net.
 #
 # We use the `Scipy` optimizer, which is a wrapper around SciPy's L-BFGS optimization algorithm. Note that GPflow supports other TensorFlow optimizers such as `Adam`, `Adagrad`, and `Adadelta` as well.
 
@@ -186,7 +186,7 @@ Scipy().minimize(
     options=dict(maxiter=ci_niter(1500)),
 )
 
-print("Final Likelihood", model.maximum_likelihood_objective(data).numpy())
+print("Final Likelihood", model.maximum_log_likelihood_objective(data).numpy())
 
 # %% [markdown]
 # To evaluate the validity of our model, we draw the posterior density. We also plot $\mu(x)$ of the optimized neural net. Remember that for every $x$ the neural net outputs $M$ means $\mu_m(x)$. These determine the location of the Gaussians. We plot all $M$ means and use their corresponding mixture weight $\pi_m(X)$ to determine their size. Larger dots will have more impact in the Gaussian ensemble.
@@ -238,7 +238,7 @@ Scipy().minimize(
     options=dict(maxiter=ci_niter(int(10e3))),
 )
 
-print("Final Likelihood", model.maximum_likelihood_objective(data).numpy())
+print("Final Likelihood", model.maximum_log_likelihood_objective(data).numpy())
 
 # %%
 fig, axes = plt.subplots(1, 2, figsize=(12, 6))

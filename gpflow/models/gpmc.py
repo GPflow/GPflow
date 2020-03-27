@@ -66,7 +66,7 @@ class GPMC(GPModel, MCMCTrainingLossMixin):
     def log_posterior_density(self) -> tf.Tensor:
         return self.log_likelihood() + self.log_prior_density()
 
-    def maximum_likelihood_objective(self) -> tf.Tensor:
+    def maximum_log_likelihood_objective(self) -> tf.Tensor:
         return self.log_likelihood()
 
     def log_likelihood(self) -> tf.Tensor:

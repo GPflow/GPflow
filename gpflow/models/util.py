@@ -31,9 +31,9 @@ def model_training_loss(model: BayesianModel, data: Data) -> tf.Tensor:
         return model.training_loss()
 
 
-def model_maximum_likelihood_objective(model: BayesianModel, data: Data) -> tf.Tensor:
+def model_maximum_log_likelihood_objective(model: BayesianModel, data: Data) -> tf.Tensor:
     if isinstance(model, ExternalDataTrainingLossMixin):
-        return model.maximum_likelihood_objective(data)
+        return model.maximum_log_likelihood_objective(data)
     else:
         _assert_equal_data(model.data, data)
-        return model.maximum_likelihood_objective()
+        return model.maximum_log_likelihood_objective()
