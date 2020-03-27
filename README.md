@@ -36,6 +36,8 @@ pip install gpflow
 
 #### Latest source from GitHub
 
+(Be aware that this changes regularly and new commits on the `develop` branch may break your code.)
+
 With the release of _TensorFlow_ 2.1 and _Tensorflow Probability_ 0.9, you should only need to run
 ```bash
 pip install -e .
