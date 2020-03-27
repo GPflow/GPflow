@@ -108,6 +108,7 @@ class SamplingHelper:
         passed to the constructor; for parameters that have a transform, the
         constrained representation is returned.
         """
+        values = []
         for hmc_variable, param in zip(hmc_samples, self._parameters):
             if param.transform is not None:
                 value = param.transform.forward(hmc_variable)
