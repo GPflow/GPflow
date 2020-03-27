@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from .inducing_variables import InducingVariables
+from ..inducing_variables import InducingVariables
 
 
 class MultioutputInducingVariables(InducingVariables):
@@ -26,7 +26,9 @@ class MultioutputInducingVariables(InducingVariables):
     LinearCoregionalization).
     """
 
-    pass
+    @property
+    def inducing_variables(self):
+        raise NotImplementedError
 
 
 class FallbackSharedIndependentInducingVariables(MultioutputInducingVariables):
@@ -44,7 +46,7 @@ class FallbackSharedIndependentInducingVariables(MultioutputInducingVariables):
     only requiring the following covariances:
      - Kuu: [L, M, M],
      - Kuf: [L, M, N, P].
-    In `mo_conditionals.py` we define a conditional() implementation for this
+    In `gpflow/conditionals/multioutput/conditionals.py` we define a conditional() implementation for this
     combination. We specify this code path for all kernels which inherit from
     `IndependentLatentBase`. This set-up allows inference with any such kernel
     to be implemented by specifying only `Kuu()` and `Kuf()`.
@@ -60,10 +62,14 @@ class FallbackSharedIndependentInducingVariables(MultioutputInducingVariables):
 
     def __init__(self, inducing_variable):
         super().__init__()
-        self.inducing_variable_shared = inducing_variable
+        self.inducing_variable = inducing_variable
 
     def __len__(self):
-        return len(self.inducing_variable_shared)
+        return len(self.inducing_variable)
+
+    @property
+    def inducing_variables(self):
+        return (self.inducing_variable,)
 
 
 class FallbackSeparateIndependentInducingVariables(MultioutputInducingVariables):
@@ -81,7 +87,7 @@ class FallbackSeparateIndependentInducingVariables(MultioutputInducingVariables)
     only requiring the following covariances:
      - Kuu: [L, M, M],
      - Kuf: [L, M, N, P].
-    In `mo_conditionals.py` we define a conditional() implementation for this
+    In `gpflow/multioutput/conditionals.py` we define a conditional() implementation for this
     combination. We specify this code path for all kernels which inherit from
     `IndependentLatentBase`. This set-up allows inference with any such kernel
     to be implemented by specifying only `Kuu()` and `Kuf()`.
@@ -101,6 +107,10 @@ class FallbackSeparateIndependentInducingVariables(MultioutputInducingVariables)
 
     def __len__(self):
         return len(self.inducing_variable_list[0])
+
+    @property
+    def inducing_variables(self):
+        return tuple(self.inducing_variable_list)
 
 
 class SharedIndependentInducingVariables(FallbackSharedIndependentInducingVariables):

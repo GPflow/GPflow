@@ -74,7 +74,7 @@ class Parameter(tf.Module):
 
         self._transform = transform
         self.prior = prior
-        self.prior_on = PriorOn(prior_on)
+        self.prior_on = prior_on
 
         if isinstance(value, tf.Variable):
             self._unconstrained = value
@@ -107,6 +107,14 @@ class Parameter(tf.Module):
                 log_p += tf.reduce_sum(log_det_jacobian)
 
             return log_p
+
+    @property
+    def prior_on(self):
+        return self._prior_on
+
+    @prior_on.setter
+    def prior_on(self, value: Union[str, PriorOn]):
+        self._prior_on = PriorOn(value)
 
     def value(self):
         return _to_constrained(self._unconstrained.value(), self.transform)

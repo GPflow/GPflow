@@ -33,8 +33,8 @@ plt.style.use("ggplot")
 # %matplotlib inline
 
 # %% [markdown]
-# To make this new kernel class, we inherit from the base class `gpflow.kernels.Kernel` and implement the three functions below. **NOTE:** Depending on the kernel to be implemented, other classes can be more adequate. For example, if the kernel to be implemented is stationary, you can immediately subclass `gpflow.kernels.Stationary` (at which point you
-# only have to override `K_r` or `K_r2`; see the `Stationary` class docstring).
+# To make this new kernel class, we inherit from the base class `gpflow.kernels.Kernel` and implement the three functions below. **NOTE:** Depending on the kernel to be implemented, other classes can be more adequate. For example, if the kernel to be implemented is isotropic stationary, you can immediately subclass `gpflow.kernels.IsotropicStationary` (at which point you
+# only have to override `K_r` or `K_r2`; see the `IsotropicStationary` class docstring). Stationary but anisotropic kernels should subclass `gpflow.kernels.AnisotropicStationary` and override `K_d`.
 #
 # #### `__init__`
 # In this simple example, the constructor takes no argument (though it could, if that was convenient, for example to pass in an initial value for `variance`). It *must* call the constructor of the superclass with appropriate arguments. Brownian motion is only defined in one dimension, and we'll assume that the `active_dims` are `[0]`, for simplicity.

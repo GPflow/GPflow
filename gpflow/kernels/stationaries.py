@@ -3,7 +3,7 @@ import tensorflow as tf
 
 from ..base import Parameter
 from ..utilities import positive
-from ..utilities.ops import square_distance
+from ..utilities.ops import square_distance, difference_matrix
 from .base import Kernel
 
 
@@ -11,7 +11,7 @@ class Stationary(Kernel):
     """
     Base class for kernels that are stationary, that is, they only depend on
 
-        r = || x - x' ||
+        d = x - x'
 
     This class handles 'ard' behaviour, which stands for 'Automatic Relevance
     Determination'. This means that the kernel has one lengthscale per
@@ -46,35 +46,76 @@ class Stationary(Kernel):
         """
         return self.lengthscales.shape.ndims > 0
 
-    def scaled_squared_euclid_dist(self, X, X2=None):
-        """
-        Returns ||(X - X2ᵀ) / ℓ||² i.e. squared L2-norm.
-        """
-        X_scaled = X / self.lengthscales
-        X2_scaled = X2 / self.lengthscales if X2 is not None else X2
-        return square_distance(X_scaled, X2_scaled)
+    def scale(self, X):
+        X_scaled = X / self.lengthscales if X is not None else X
+        return X_scaled
+
+    def K_diag(self, X):
+        return tf.fill(tf.shape(X)[:-1], tf.squeeze(self.variance))
+
+
+class IsotropicStationary(Stationary):
+    """
+    Base class for isotropic stationary kernels, i.e. kernels that only
+    depend on
+
+        r = ‖x - x'‖
+
+    Derived classes should implement one of:
+
+        K_r2(self, r2): Returns the kernel evaluated on r² (r2), which is the
+        squared scaled Euclidean distance Should operate element-wise on r2.
+
+        K_r(self, r): Returns the kernel evaluated on r, which is the scaled
+        Euclidean distance. Should operate element-wise on r.
+    """
 
     def K(self, X, X2=None):
         r2 = self.scaled_squared_euclid_dist(X, X2)
         return self.K_r2(r2)
 
-    def K_diag(self, X):
-        return tf.fill(tf.shape(X)[:-1], tf.squeeze(self.variance))
-
     def K_r2(self, r2):
-        """
-        Returns the kernel evaluated on r² (`r2`), which is the squared scaled Euclidean distance
-        Should operate element-wise on r²
-        """
         if hasattr(self, "K_r"):
             # Clipping around the (single) float precision which is ~1e-45.
             r = tf.sqrt(tf.maximum(r2, 1e-40))
             return self.K_r(r)  # pylint: disable=no-member
+        raise NotImplementedError
 
+    def scaled_squared_euclid_dist(self, X, X2=None):
+        """
+        Returns ‖(X - X2ᵀ) / ℓ‖², i.e. the squared L₂-norm.
+        """
+        return square_distance(self.scale(X), self.scale(X2))
+
+
+class AnisotropicStationary(Stationary):
+    """
+    Base class for anisotropic stationary kernels, i.e. kernels that only
+    depend on
+
+        d = x - x'
+
+    Derived classes should implement K_d(self, d): Returns the kernel evaluated
+    on d, which is the pairwise difference matrix, scaled by the lengthscale
+    parameter ℓ (i.e. [(X - X2ᵀ) / ℓ]). The last axis corresponds to the
+    input dimension.
+    """
+
+    def K(self, X, X2=None):
+        return self.K_d(self.scaled_difference_matrix(X, X2))
+
+    def scaled_difference_matrix(self, X, X2=None):
+        """
+        Returns [(X - X2ᵀ) / ℓ]. If X has shape [..., N, D] and
+        X2 has shape [..., M, D], the output will have shape [..., N, M, D].
+        """
+        return difference_matrix(self.scale(X), self.scale(X2))
+
+    def K_d(self, d):
         raise NotImplementedError
 
 
-class SquaredExponential(Stationary):
+class SquaredExponential(IsotropicStationary):
     """
     The radial basis function (RBF) or squared exponential kernel. The kernel equation is
 
@@ -91,7 +132,7 @@ class SquaredExponential(Stationary):
         return self.variance * tf.exp(-0.5 * r2)
 
 
-class RationalQuadratic(Stationary):
+class RationalQuadratic(IsotropicStationary):
     """
     Rational Quadratic kernel,
 
@@ -112,7 +153,7 @@ class RationalQuadratic(Stationary):
         return self.variance * (1 + 0.5 * r2 / self.alpha) ** (-self.alpha)
 
 
-class Exponential(Stationary):
+class Exponential(IsotropicStationary):
     """
     The Exponential kernel. It is equivalent to a Matern12 kernel with doubled lengthscales.
     """
@@ -121,7 +162,7 @@ class Exponential(Stationary):
         return self.variance * tf.exp(-0.5 * r)
 
 
-class Matern12(Stationary):
+class Matern12(IsotropicStationary):
     """
     The Matern 1/2 kernel. Functions drawn from a GP with this kernel are not
     differentiable anywhere. The kernel equation is
@@ -137,7 +178,7 @@ class Matern12(Stationary):
         return self.variance * tf.exp(-r)
 
 
-class Matern32(Stationary):
+class Matern32(IsotropicStationary):
     """
     The Matern 3/2 kernel. Functions drawn from a GP with this kernel are once
     differentiable. The kernel equation is
@@ -154,7 +195,7 @@ class Matern32(Stationary):
         return self.variance * (1.0 + sqrt3 * r) * tf.exp(-sqrt3 * r)
 
 
-class Matern52(Stationary):
+class Matern52(IsotropicStationary):
     """
     The Matern 5/2 kernel. Functions drawn from a GP with this kernel are twice
     differentiable. The kernel equation is
@@ -171,17 +212,19 @@ class Matern52(Stationary):
         return self.variance * (1.0 + sqrt5 * r + 5.0 / 3.0 * tf.square(r)) * tf.exp(-sqrt5 * r)
 
 
-class Cosine(Stationary):
+class Cosine(AnisotropicStationary):
     """
     The Cosine kernel. Functions drawn from a GP with this kernel are sinusoids
     (with a random phase).  The kernel equation is
 
-        k(r) = σ² cos{r}
+        k(r) = σ² cos{2πd}
 
     where:
-    r  is the Euclidean distance between the input points, scaled by the lengthscale parameter ℓ,
+    d  is the sum of the per-dimension differences between the input points, scaled by the
+    lengthscale parameter ℓ (i.e. Σᵢ [(X - X2ᵀ) / ℓ]ᵢ),
     σ² is the variance parameter.
     """
 
-    def K_r(self, r):
-        return self.variance * tf.cos(r)
+    def K_d(self, d):
+        d = tf.reduce_sum(d, axis=-1)
+        return self.variance * tf.cos(2 * np.pi * d)
