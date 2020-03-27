@@ -251,13 +251,13 @@ def optimization_step(model: gpflow.models.SVGP, batch: Tuple[tf.Tensor, tf.Tens
     return objective
 
 
-tf_optimization_step = tf.function(optimization_step)
-
 # %% [markdown]
 # We can use the functionality of TensorFlow Datasets to define a simple training loop that iterates over batches of the training dataset:
 
 # %%
 def simple_training_loop(model: gpflow.models.SVGP, epochs: int = 1, logging_epoch_freq: int = 10):
+    tf_optimization_step = tf.function(optimization_step)
+
     batches = iter(train_dataset)
     for epoch in range(epochs):
         for _ in range(ci_niter(num_batches_per_epoch)):
@@ -336,6 +336,8 @@ monitor = Monitor(fast_tasks, slow_taks)
 
 
 def monitored_training_loop(epochs: int):
+    tf_optimization_step = tf.function(optimization_step)
+
     batches = iter(train_dataset)
 
     for epoch in range(epochs):
@@ -418,6 +420,8 @@ def checkpointing_training_loop(
     epoch_var: Optional[tf.Variable] = None,
     step_var: Optional[tf.Variable] = None,
 ):
+    tf_optimization_step = tf.function(optimization_step)
+
     batches = iter(train_dataset)
 
     for epoch in range(epochs):
