@@ -13,8 +13,8 @@
 [Documentation (v1.5)](https://gpflow.readthedocs.io/en/v1.5.1-docs/) |
 [Glossary](GLOSSARY.md)
 
-GPflow is a package for building Gaussian process models in Python, using [TensorFlow](http://www.tensorflow.org). It was originally created by [James Hensman](http://jameshensman.github.io/) and [Alexander G. de G. Matthews](https://github.com/alexggmatthews). It is now actively maintained by (in alphabetical order) [Alexis Boukouvalas](https://github.com/alexisboukouvalas), [Artem Artemev](http://github.com/awav/), [Eric Hambro](erichambro.com), [Joel Berekely](https://github.com/joelberkeley), [James Hensman](http://jameshensman.github.io/), [Mark van der Wilk](https://markvdw.github.io/), [ST John](https://github.com/st--) and [Vincent Dutordoir](https://vdutor.github.io/).
-GPflow would not be the same without the community, the full list of contributers can be found [here](http://github.com/GPflow/GPflow/graphs/contributors) (in alphabetical order).
+GPflow is a package for building Gaussian process models in Python, using [TensorFlow](http://www.tensorflow.org). It was originally created by [James Hensman](http://jameshensman.github.io/) and [Alexander G. de G. Matthews](https://github.com/alexggmatthews). It is now actively maintained by (in alphabetical order) [Alexis Boukouvalas](https://github.com/alexisboukouvalas), [Artem Artemev](http://github.com/awav/), [Eric Hambro](erichambro.com), [Joel Berkeley](https://github.com/joelberkeley), [James Hensman](http://jameshensman.github.io/), [Mark van der Wilk](https://markvdw.github.io/), [ST John](https://github.com/st--) and [Vincent Dutordoir](https://vdutor.github.io/).
+GPflow would not be the same without the community. We are grateful to [all contributors](http://github.com/GPflow/GPflow/graphs/contributors) who have helped shape GPflow.
  
  *GPflow is an open source project. If you have relevant skills and are interested in contributing then please do contact us (see ["The GPflow community" section](#the-gpflow-community) below).*
 
