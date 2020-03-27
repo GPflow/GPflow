@@ -5,15 +5,16 @@
 [![CircleCI](https://circleci.com/gh/GPflow/GPflow/tree/develop.svg?style=svg)](https://circleci.com/gh/GPflow/GPflow/tree/develop)
 [![Coverage Status](http://codecov.io/github/GPflow/GPflow/coverage.svg?branch=master)](http://codecov.io/github/GPflow/GPflow?branch=master)
 [![Documentation Status](https://readthedocs.org/projects/gpflow/badge/?version=master)](http://gpflow.readthedocs.io/en/master/?badge=master)
+[![Slack Status](https://img.shields.io/badge/slack-gpflow-green.svg?logo=Slack)](https://join.slack.com/t/gpflow/shared_invite/enQtOTE5MDA0Nzg5NjA2LTYwZWI3MzhjYjNlZWI1MWExYzZjMGNhOWIwZWMzMGY0YjVkYzAyYjQ4NjgzNDUyZTgyNzcwYjAyY2QzMWRmYjE)
+
 
 [Website](https://gpflow.org) |
 [Documentation (develop/v2.0)](https://gpflow.readthedocs.io/en/develop/) |
 [Documentation (v1.5)](https://gpflow.readthedocs.io/en/v1.5.1-docs/) |
 [Glossary](GLOSSARY.md)
 
-GPflow is a package for building Gaussian process models in python, using [TensorFlow](http://www.tensorflow.org). It was originally created and is now managed by [James Hensman](http://jameshensman.github.io/) and [Alexander G. de G. Matthews](http://mlg.eng.cam.ac.uk/?portfolio=alex-matthews).
-The full list of [contributors](http://github.com/GPflow/GPflow/graphs/contributors) (in alphabetical order) is
-Alessandro Davide Ialongo, Alexander G. de G. Matthews, Alexis Boukouvalas, [Artem Artemev](http://github.com/awav/), Daniel Marthaler, David J. Harris, Eric Hambro, Hugh Salimbeni, Ivo Couckuyt, James Hensman, Keisuke Fujii, Mark van der Wilk, Mikhail Beck, Pablo Leon-Villagra, Rasmus Bonnevie, Sergio Pascual-Diaz, ST John, Tom Nickson, Valentine Svensson, Vincent Dutordoir, Zoubin Ghahramani.
+GPflow is a package for building Gaussian process models in Python, using [TensorFlow](http://www.tensorflow.org). It was originally created by [James Hensman](http://jameshensman.github.io/) and [Alexander G. de G. Matthews](https://github.com/alexggmatthews). It is now actively maintained by (in alphabetical order) [Alexis Boukouvalas](https://github.com/alexisboukouvalas), [Artem Artemev](http://github.com/awav/), [Eric Hambro](erichambro.com), [Joel Berekely](https://github.com/joelberkeley), [James Hensman](http://jameshensman.github.io/), [Mark van der Wilk](https://markvdw.github.io/), [ST John](https://github.com/st--) and [Vincent Dutordoir](https://vdutor.github.io/).
+GPflow would not be the same without the community, the full list of contributers can be found [here](http://github.com/GPflow/GPflow/graphs/contributors) (in alphabetical order).
  
  *GPflow is an open source project. If you have relevant skills and are interested in contributing then please do contact us (see ["The GPflow community" section](#the-gpflow-community) below).*
 
@@ -27,32 +28,28 @@ GPflow 2.0 uses [TensorFlow 2.0](http://www.tensorflow.org) for running computat
 
 ### Install GPflow 2
 
-- From source
+#### Latest release from PyPI
 
-  With the release of _TensorFlow_ 2.1 and _Tensorflow Probability_ 0.9, you should
-  only need to run
+```bash
+pip install gpflow
+```
 
-  ```bash
-  pip install -e .
-  ```
+#### Latest source from GitHub
 
-  in a check-out of the `develop` branch of the GPflow github repository.
+With the release of _TensorFlow_ 2.1 and _Tensorflow Probability_ 0.9, you should only need to run
+```bash
+pip install -e .
+```
+in a check-out of the `develop` branch of the GPflow github repository.
 
-- Using `pip`:
+- Alternatively, Using `pip`:
 
-  - latest GitHub `develop` version:
-    ```bash
-    pip install git+https://github.com/GPflow/GPflow.git@develop#egg=gpflow
-    ```
-    This will automatically install all required dependencies. (Note: as of January 2020, PyPI only has tensorflow 2.x for python 3.6 and 3.7, not for python 3.8, which is the latest release and the Anaconda default.)
+Latest GitHub `develop` version:
+```bash
+pip install git+https://github.com/GPflow/GPflow.git@develop#egg=gpflow
+```
+This will automatically install all required dependencies. (Note: as of January 2020, PyPI only has tensorflow 2.x for python 3.6 and 3.7, not for python 3.8, which is the latest release and the Anaconda default.)
 
-  - latest GPflow PyPI package: currently not recommended
-    (the latest version released on PyPI is 2.0.0rc1; this release candidate is missing several bugfixes and improvements, and does not support _TensorFlow_ 2.1)
-    but you can install it as follows:
-    ```bash
-    pip install gpflow==2.0.0rc1 tensorflow==2.0 tensorflow_probability==0.8
-    ```
-    (replace `tensorflow==2.0` with `tensorflow-gpu==2.0` for the GPU version)
 
 ### Install GPflow 1.5.1 (last official release)
 
@@ -64,8 +61,6 @@ GPflow leaves installing tensorflow to the user so that you can choose whether y
 
 
 ## Getting Started with GPflow 2.0
-
-*Note that GPflow 2.0 has not yet had an official release and interfaces, function signatures, variable names etc. may still change. We welcome and are open to suggestions for how to improve the design of gpflow2!*
 
 There is an ["Intro to GPflow 2.0"](https://gpflow.readthedocs.io/en/develop/notebooks/intro_to_gpflow2.html) Jupyter notebook; check it out for details. To convert your code from GPflow 1 check the [GPflow 2 upgrade guide](https://gpflow.readthedocs.io/en/develop/notebooks/gpflow2_upgrade_guide.html).
 
