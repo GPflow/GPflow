@@ -106,7 +106,7 @@ For example, for the `GPR` model:
 
 ## SVGP Initialiser
 
-The SVGP model’s initialiser no longer accepts X and Y data. Instead this data must be passed to the various computation methods of the model (`elbo`, `log_likelihood` etc).
+The SVGP model’s initialiser no longer accepts X and Y data. Instead this data must be passed to the various computation methods of the model (`elbo`, `training_loss` etc).
 
 In the [Introduction to GPflow 2 notebook](../intro_to_gpflow2.ipynb) there is an example of how to use SVGP with optimisation using mini-batches of data.
 
