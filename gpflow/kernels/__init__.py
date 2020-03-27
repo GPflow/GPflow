@@ -21,6 +21,8 @@ from .stationaries import (
     Matern52,
     RationalQuadratic,
     Stationary,
+    IsotropicStationary,
+    AnisotropicStationary,
 )
 
 Bias = Constant

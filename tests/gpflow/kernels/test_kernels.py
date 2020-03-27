@@ -20,6 +20,7 @@ from numpy.testing import assert_allclose
 import gpflow
 from gpflow.config import default_float
 from gpflow.kernels import SquaredExponential, ArcCosine, Linear
+import gpflow.ci_utils
 from tests.gpflow.kernels.reference import (
     ref_rbf_kernel,
     ref_arccosine_kernel,
@@ -160,7 +161,7 @@ def test_periodic_diag(base_class):
 
 
 def test_periodic_non_stationary_base_kernel():
-    error_msg = r"Periodic requires a Stationary kernel as the `base_kernel`"
+    error_msg = r"Periodic requires an IsotropicStationary kernel as the `base_kernel`"
     with pytest.raises(TypeError, match=error_msg):
         gpflow.kernels.Periodic(gpflow.kernels.Linear())
 
@@ -172,7 +173,11 @@ def test_periodic_bad_ard_period():
         gpflow.kernels.Periodic(base_kernel, period=[1.0, 1.0, 1.0])
 
 
-kernel_setups = [kernel() for kernel in gpflow.kernels.Stationary.__subclasses__()] + [
+kernel_setups = [
+    kernel()
+    for kernel in gpflow.ci_utils.subclasses(gpflow.kernels.Stationary)
+    if kernel not in (gpflow.kernels.IsotropicStationary, gpflow.kernels.AnisotropicStationary)
+] + [
     gpflow.kernels.Constant(),
     gpflow.kernels.Linear(),
     gpflow.kernels.Polynomial(),
@@ -297,11 +302,11 @@ def test_white(N, D):
     assert not np.allclose(Kff_sym, Kff_asym)
 
 
-_kernel_classes_slice = [kernel for kernel in gpflow.kernels.Stationary.__subclasses__()] + [
-    gpflow.kernels.Constant,
-    gpflow.kernels.Linear,
-    gpflow.kernels.Polynomial,
-]
+_kernel_classes_slice = [
+    kernel
+    for kernel in gpflow.ci_utils.subclasses(gpflow.kernels.Stationary)
+    if kernel not in (gpflow.kernels.IsotropicStationary, gpflow.kernels.AnisotropicStationary)
+] + [gpflow.kernels.Constant, gpflow.kernels.Linear, gpflow.kernels.Polynomial,]
 
 _kernel_triples_slice = [
     (k1(active_dims=[0]), k2(active_dims=[1]), k3(active_dims=slice(0, 1)))
