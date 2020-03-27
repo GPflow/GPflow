@@ -19,7 +19,15 @@ from numpy.testing import assert_allclose
 
 import gpflow
 from gpflow.config import default_float
-from gpflow.kernels import SquaredExponential, ArcCosine, Linear
+from gpflow.kernels import (
+    SquaredExponential,
+    ArcCosine,
+    Linear,
+    White,
+    SeparateIndependent,
+    SharedIndependent,
+    LinearCoregionalization,
+)
 from tests.gpflow.kernels.reference import (
     ref_rbf_kernel,
     ref_arccosine_kernel,
@@ -515,3 +523,15 @@ def test_periodic_active_dims_matches():
 
     base_kernel.active_dims = [3]
     assert kernel.active_dims == base_kernel.active_dims
+
+
+def test_latent_kernels():
+    multioutput_kernel_list = [
+        SharedIndependent(SquaredExponential(), 3),
+        SeparateIndependent([SquaredExponential(), White(), White() + Linear()]),
+        LinearCoregionalization(
+            [SquaredExponential(), White(), White() + Linear()], np.random.random((5, 3))
+        ),
+    ]
+    for m in multioutput_kernel_list:
+        assert len(m.latent_kernels) == 3
