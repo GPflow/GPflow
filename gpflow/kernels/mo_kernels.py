@@ -44,7 +44,7 @@ class MultioutputKernel(Kernel):
 
     @property
     @abc.abstractmethod
-    def kernels(self):
+    def latent_kernels(self):
         """The underlying kernels in the multioutput kernel"""
         raise NotImplementedError
 
@@ -100,9 +100,9 @@ class SharedIndependent(MultioutputKernel):
         return self.output_dim
 
     @property
-    def kernels(self):
+    def latent_kernels(self):
         """The underlying kernels in the multioutput kernel"""
-        return (self.kernel,)
+        return [self.kernel,]
 
     def K(self, X, X2=None, full_output_cov=True):
         K = self.kernel.K(X, X2)  # [N, N2]
@@ -130,6 +130,11 @@ class SeparateIndependent(Combination, MultioutputKernel):
     @property
     def num_latent_gps(self):
         return len(self.kernels)
+
+    @property
+    def latent_kernels(self):
+        """The underlying kernels in the multioutput kernel"""
+        return self.kernels
 
     def K(self, X, X2=None, full_output_cov=True):
         if full_output_cov:
@@ -174,6 +179,11 @@ class LinearCoregionalization(Combination, IndependentLatent):
     @property
     def num_latent_gps(self):
         return self.W.shape[-1]  # L
+
+    @property
+    def latent_kernels(self):
+        """The underlying kernels in the multioutput kernel"""
+        return self.kernels
 
     def Kgg(self, X, X2):
         return tf.stack([k.K(X, X2) for k in self.kernels], axis=0)  # [L, N, N2]
