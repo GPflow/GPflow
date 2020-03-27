@@ -107,7 +107,10 @@ for m in models:
     else:
         loss_closure = m.training_loss
     opt.minimize(
-        loss_closure, variables=m.trainable_variables, options=dict(maxiter=ci_niter(1000)), jit=True
+        loss_closure,
+        variables=m.trainable_variables,
+        options=dict(maxiter=ci_niter(1000)),
+        jit=True,
     )
 
 
