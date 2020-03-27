@@ -603,7 +603,9 @@ plt.tight_layout()
 # ## Prior on constraint and unconstrained parameters
 
 # %% [markdown]
-# GPflow `Parameter` class provides options for setting a prior. `Parameter` wraps a constrained tensors and provides a computation of a gradient with respect to uncosntrained transformation of that tensor. The user can set a prior either in **constrained** space or **unconstrained** space.
+# GPflow's :class:`Parameter` class provides options for setting a prior. :class:`Parameter` wraps a constrained tensors and
+# provides computation of the gradient with respect to unconstrained transformation of that tensor.
+# The user can set a prior either in **constrained** space or **unconstrained** space.
 
 # %% [markdown]
 # By default prior for the `Parameter` is set for _constrained_ space. To set a prior do the following:
