@@ -3,8 +3,8 @@ import pytest
 import tensorflow as tf
 
 import gpflow
-import gpflow.inducing_variables.multioutput.inducing_variables as mf
-import gpflow.kernels.multioutput.kernels as mk
+import gpflow.inducing_variables.multioutput as mf
+import gpflow.kernels.multioutput as mk
 from gpflow.covariances.multioutput import kufs as mo_kufs, kuus as mo_kuus
 
 rng = np.random.RandomState(9911)

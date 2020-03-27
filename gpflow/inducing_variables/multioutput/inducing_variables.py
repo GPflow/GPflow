@@ -81,7 +81,7 @@ class FallbackSeparateIndependentInducingVariables(MultioutputInducingVariables)
     only requiring the following covariances:
      - Kuu: [L, M, M],
      - Kuf: [L, M, N, P].
-    In `multioutput/conditionals.py` we define a conditional() implementation for this
+    In `gpflow/multioutput/conditionals.py` we define a conditional() implementation for this
     combination. We specify this code path for all kernels which inherit from
     `IndependentLatentBase`. This set-up allows inference with any such kernel
     to be implemented by specifying only `Kuu()` and `Kuf()`.
