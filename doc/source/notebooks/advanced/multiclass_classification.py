@@ -52,7 +52,7 @@ def plot_posterior_predictions(m, X, Y):
     plt.show()
 
 
-def plot_from_samples(m, X, Y, samples, burn, thin):
+def plot_from_samples(m, X, Y, variables, samples, burn, thin):
 
     f = plt.figure(figsize=(12, 6))
     a1 = f.add_axes([0.05, 0.05, 0.9, 0.6])
@@ -64,8 +64,9 @@ def plot_from_samples(m, X, Y, samples, burn, thin):
     Fpred, Ypred = [], []
     num_samples = len(samples[0])
     for i in range(burn, num_samples, thin):
-        for var, var_samples in zip(m.trainable_variables, samples):
-            var.assign(var_samples[i])
+        for var, var_samples in zip(variables, samples):
+            v = var_samples[i]
+            var.unconstrained_variable.assign(v)
         Ypred.append(m.predict_y(xx)[0])
         Fpred.append(np.squeeze(m.predict_f_samples(xx, 1)))
 

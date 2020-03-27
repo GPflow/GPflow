@@ -1,7 +1,7 @@
 import copy
 import re
 from functools import lru_cache
-from typing import Any, Callable, Dict, List, Optional, Tuple, TypeVar, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, TypeVar, Union, Sequence
 
 import numpy as np
 import tensorflow as tf
@@ -9,7 +9,7 @@ import tensorflow_probability as tfp
 from tabulate import tabulate
 
 from .ops import cast
-from ..base import Parameter
+from ..base import Parameter, Module
 from ..config import default_float, default_int, default_summary_fmt
 
 __all__ = [
@@ -28,6 +28,8 @@ __all__ = [
     "getattr_by_path",
     "setattr_by_path",
     "reset_cache_bijectors",
+    "select_parameters_with_prior",
+    "select_dict_parameters_with_prior",
 ]
 
 TraverseInput = TypeVar("TraverseInput", tf.Variable, tf.Module, Parameter)
@@ -446,3 +448,15 @@ def _str_tensor_value(value: np.ndarray):
         out = f"{brackets}{out}..."
 
     return out
+
+
+def select_parameters_with_prior(parameters: Sequence[Parameter]) -> Sequence[Parameter]:
+    return [p for p in parameters if p.prior is not None]
+
+
+def select_dict_parameters_with_prior(model: tf.Module) -> Dict[str, Parameter]:
+    return {
+        k: p
+        for k, p in parameter_dict(model).items()
+        if hasattr(p, "prior") and p.prior is not None
+    }

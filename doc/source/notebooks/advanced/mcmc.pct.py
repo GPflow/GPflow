@@ -137,9 +137,9 @@ gpflow.utilities.print_summary(model)
 # We now sample from the posterior using HMC.
 
 # %%
-hmc_helper = gpflow.optimizers.SamplingHelper(
-    model.log_marginal_likelihood, model.trainable_parameters
-)
+parameters_dict = gpflow.utilities.select_dict_parameters_with_prior(model)
+parameters = tuple(parameters_dict.values())
+hmc_helper = gpflow.optimizers.SamplingHelper(model.log_marginal_likelihood, parameters)
 
 hmc = tfp.mcmc.HamiltonianMonteCarlo(
     target_log_prob_fn=hmc_helper.target_log_prob_fn, num_leapfrog_steps=10, step_size=0.01
@@ -173,8 +173,8 @@ parameter_samples = hmc_helper.convert_constrained_values(samples)
 #
 
 # %%
-def plot_samples(samples, model, y_axis_label):
-    param_to_name = {param: name for name, param in gpflow.utilities.parameter_dict(model).items()}
+def plot_samples(samples, parameters_dict, y_axis_label):
+    param_to_name = {param: name for name, param in parameters_dict.items()}
     plt.figure(figsize=(8, 4))
     for val, param in zip(samples, model.parameters):
         plt.plot(tf.squeeze(val), label=param_to_name[param])
@@ -183,19 +183,16 @@ def plot_samples(samples, model, y_axis_label):
     plt.ylabel(y_axis_label)
 
 
-plot_samples(samples, model, "unconstrained_variables_values")
-plot_samples(parameter_samples, model, "parameter_values")
+plot_samples(samples, parameters_dict, "unconstrained_variables_values")
+plot_samples(parameter_samples, parameters_dict, "parameter_values")
 
 
 # %% [markdown]
 # You can also inspect the marginal distribution of samples.
 
 # %%
-
-param_to_name = {param: name for name, param in gpflow.utilities.parameter_dict(model).items()}
-
-
-def marginal_samples(samples, y_axis_label):
+def marginal_samples(samples, parameters_dict, y_axis_label):
+    param_to_name = {param: name for name, param in parameters_dict.items()}
     fig, axarr = plt.subplots(1, len(param_to_name), figsize=(15, 3), constrained_layout=True)
     for i, param in enumerate(model.trainable_parameters):
         ax = axarr[i]
@@ -205,8 +202,9 @@ def marginal_samples(samples, y_axis_label):
     plt.show()
 
 
-marginal_samples(samples, "unconstrained variable samples")
-marginal_samples(parameter_samples, "parameter_samples")
+marginal_samples(samples, parameters_dict, "unconstrained variable samples")
+marginal_samples(parameter_samples, parameters_dict, "parameter_samples")
+
 
 # %% [markdown]
 #
@@ -217,10 +215,9 @@ marginal_samples(parameter_samples, "parameter_samples")
 #
 
 # %%
-name_to_index = {param_to_name[param]: i for i, param in enumerate(model.trainable_parameters)}
-
-
-def plot_joint_marginals(samples, y_axis_label):
+def plot_joint_marginals(samples, parameters_dict, y_axis_label):
+    param_to_name = {param: name for name, param in parameters_dict.items()}
+    name_to_index = {param_to_name[param]: i for i, param in enumerate(param_to_name)}
     f, axs = plt.subplots(1, 3, figsize=(12, 4), constrained_layout=True)
 
     axs[0].plot(
@@ -253,8 +250,8 @@ def plot_joint_marginals(samples, y_axis_label):
     plt.show()
 
 
-plot_joint_marginals(samples, "unconstrained variable samples")
-plot_joint_marginals(parameter_samples, "parameter samples")
+plot_joint_marginals(samples, parameters_dict, "unconstrained variable samples")
+plot_joint_marginals(parameter_samples, parameters_dict, "parameter samples")
 
 
 # %% [markdown]
@@ -368,9 +365,9 @@ thin = ci_niter(10)
 # %%
 num_samples = 500
 
-hmc_helper = gpflow.optimizers.SamplingHelper(
-    model.log_marginal_likelihood, model.trainable_parameters
-)
+parameters_dict = gpflow.utilities.select_dict_parameters_with_prior(model)
+parameters = tuple(parameters_dict.values())
+hmc_helper = gpflow.optimizers.SamplingHelper(model.log_marginal_likelihood, parameters)
 
 hmc = tfp.mcmc.HamiltonianMonteCarlo(
     target_log_prob_fn=hmc_helper.target_log_prob_fn, num_leapfrog_steps=10, step_size=0.01
@@ -398,14 +395,14 @@ samples, _ = run_chain_fn()
 # Statistics of the posterior samples can now be reported.
 
 # %%
-plot_from_samples(model, X, Y, samples, burn, thin)
+plot_from_samples(model, X, Y, parameters, samples, burn, thin)
 
 # %% [markdown]
 # You can also display the sequence of sampled hyperparameters.
 
 # %%
-param_to_name = {param: name for name, param in gpflow.utilities.parameter_dict(model).items()}
-name_to_index = {param_to_name[param]: i for i, param in enumerate(model.trainable_parameters)}
+param_to_name = {param: name for name, param in parameters_dict.items()}
+name_to_index = {param_to_name[param]: i for i, param in enumerate(param_to_name)}
 hyperparameters = [".kernel.kernels[0].lengthscales", ".kernel.kernels[0].variance"]
 
 plt.figure(figsize=(8, 4))
@@ -511,9 +508,9 @@ _ = plt.ylabel("neg_log_marginal_likelihood")
 # %%
 num_samples = 500
 
-hmc_helper = gpflow.optimizers.SamplingHelper(
-    model.log_marginal_likelihood, model.trainable_parameters
-)
+parameters_dict = gpflow.utilities.select_dict_parameters_with_prior(model)
+parameters = tuple(parameters_dict.values())
+hmc_helper = gpflow.optimizers.SamplingHelper(model.log_marginal_likelihood, parameters)
 
 hmc = tfp.mcmc.HamiltonianMonteCarlo(
     target_log_prob_fn=hmc_helper.target_log_prob_fn, num_leapfrog_steps=10, step_size=0.01
@@ -571,8 +568,8 @@ _ = plt.ylim(-0.1, np.max(np.percentile(rate_samples, 95, axis=0)))
 
 # %%
 parameter_samples = hmc_helper.convert_constrained_values(samples)
-param_to_name = {param: name for name, param in gpflow.utilities.parameter_dict(model).items()}
-name_to_index = {param_to_name[param]: i for i, param in enumerate(model.trainable_parameters)}
+param_to_name = {param: name for name, param in parameters_dict.items()}
+name_to_index = {param_to_name[param]: i for i, param in enumerate(param_to_name)}
 hyperparameters = [
     ".kernel.kernels[0].lengthscales",
     ".kernel.kernels[0].variance",
@@ -658,9 +655,9 @@ model.kernel.lengthscales.prior_on
 # Let's run HMC and plot chain traces:
 
 # %%
-hmc_helper = gpflow.optimizers.SamplingHelper(
-    model.log_marginal_likelihood, model.trainable_parameters
-)
+parameters_dict = gpflow.utilities.select_dict_parameters_with_prior(model)
+parameters = tuple(parameters_dict.values())
+hmc_helper = gpflow.optimizers.SamplingHelper(model.log_marginal_likelihood, parameters)
 
 hmc = tfp.mcmc.HamiltonianMonteCarlo(
     target_log_prob_fn=hmc_helper.target_log_prob_fn, num_leapfrog_steps=10, step_size=0.01
@@ -686,5 +683,5 @@ def run_chain_fn_unconstrained():
 samples, traces = run_chain_fn_unconstrained()
 parameter_samples = hmc_helper.convert_constrained_values(samples)
 
-plot_samples(samples, model, "unconstrained_variables_values")
-plot_samples(parameter_samples, model, "parameter_values")
+plot_samples(samples, parameters_dict, "unconstrained_variables_values")
+plot_samples(parameter_samples, parameters_dict, "parameter_values")

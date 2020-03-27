@@ -53,7 +53,8 @@ class SamplingHelper:
     """
 
     def __init__(self, target_log_prob_fn: LogProbabilityFunction, parameters: Parameters):
-        assert all([isinstance(p, Parameter) for p in parameters])
+        if not all([isinstance(p, Parameter) and p.prior is not None for p in parameters]):
+            raise ValueError(f"Expected only parameters with priors")
 
         self._parameters = parameters
         self._target_log_prob_fn = target_log_prob_fn
