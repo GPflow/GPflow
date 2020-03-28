@@ -39,11 +39,13 @@ from gpflow.ci_utils import ci_niter
 # for reproducibility of this notebook:
 np.random.seed(1)
 tf.random.set_seed(2)
+
 # %matplotlib inline
 
 # %% [markdown]
 # ## Generate the tasks
 # To generate the meta and test tasks, we sample from a Gaussian process with an Squared Exponential covariance function and a sinusoidal mean function. Each task is a realization of this process.
+
 
 # %%
 def generate_data(num_functions=10, N=50):
@@ -73,13 +75,12 @@ Xs, F = generate_data(10)
 # %%
 _ = plt.plot(Xs, F)
 
-
 # %% [markdown]
 # We generate the meta and test tasks.
 
+
 # %%
-def generate_meta_and_test_tasks(num_datapoints, num_meta=1000, num_test=200, 
-                                 N=50):
+def generate_meta_and_test_tasks(num_datapoints, num_meta=1000, num_test=200, N=50):
     """Generates meta-task datasets {D_i} = {x_i, y_i} and target task training
     and test data {\tilde{x}, \tilde{y}} (Fortuin and Rätsch, 2019).
 
@@ -103,7 +104,7 @@ def generate_meta_and_test_tasks(num_datapoints, num_meta=1000, num_test=200,
         # We always use all data points of the curve to train the mean function,
         # i.e. n_i = N.
         noise = sd * np.random.randn(N, 1)
-        Y = F[:, i][:,None] + noise
+        Y = F[:, i][:, None] + noise
         meta.append((Xs, Y))
     test = []
     rand_indices = np.random.permutation(N)
@@ -113,12 +114,12 @@ def generate_meta_and_test_tasks(num_datapoints, num_meta=1000, num_test=200,
         # Form target training set, \tilde{D}_{train} (see Figure 1).
         noise = sd * np.random.randn(num_datapoints, 1)
         train_X = Xs[train_i]
-        train_Y = F[train_i, num_meta + i][:,None] + noise
-        # Form target test set, \tilde{D}_{test}, which is disjoint from the 
+        train_Y = F[train_i, num_meta + i][:, None] + noise
+        # Form target test set, \tilde{D}_{test}, which is disjoint from the
         # target traininig set as it is in the original implementation.
         test_X = Xs[test_i]
-        test_Y = F[test_i, num_meta + i][:,None]
-        # Form target tasks' datasets \tilde{D} as a pair of pairs, 
+        test_Y = F[test_i, num_meta + i][:, None]
+        # Form target tasks' datasets \tilde{D} as a pair of pairs,
         # (\tilde{X}, \tilde{Y}) and (\tilde{X}*, \tilde{Y}*).
         test.append(((train_X, train_Y), (test_X, test_Y)))
     return meta, test
@@ -126,7 +127,12 @@ def generate_meta_and_test_tasks(num_datapoints, num_meta=1000, num_test=200,
 
 # %%
 num_datapoints = 5
-meta, test = generate_meta_and_test_tasks(num_datapoints)
+# Although the original experiment uses (1000, 200, 50) for the following
+# parameters, we will use (100, 10, 250) for computational reasons.
+num_meta_tasks = 100
+num_test_tasks = 10
+N = 250
+meta, test = generate_meta_and_test_tasks(num_datapoints, num_meta_tasks, num_test_tasks, N)
 
 # %% [markdown]
 # ## Create the mean function
@@ -240,10 +246,10 @@ mean_function_optimal = train_loop(meta)
 # %%
 test_models = [build_model(data, mean_function_optimal) for (data, _) in test]
 
-
 # %% [markdown]
 # ## Assess the model
 # We assess the performance of this procedure on the test tasks. For this, we use the mean squared error as a performance metric.
+
 
 # %%
 def mean_squared_error(y, y_pred):
@@ -262,6 +268,7 @@ for i, test_task in enumerate(test):
     mean_squared_errors.append(mse)
     plt.title(f"Test Task {i + 1} | MSE = {mse}")
     plt.legend()
+    plt.show()
 
 # %%
 mean_mse = np.mean(mean_squared_errors)
