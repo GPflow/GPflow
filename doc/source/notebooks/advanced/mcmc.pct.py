@@ -28,7 +28,7 @@ import tensorflow_probability as tfp
 from tensorflow_probability import distributions as tfd
 
 import gpflow
-from gpflow.ci_utils import ci_niter, is_continuous_integration
+from gpflow.ci_utils import ci_niter
 from gpflow import set_trainable
 from multiclass_classification import plot_from_samples, colors
 
@@ -135,9 +135,11 @@ gpflow.utilities.print_summary(model)
 # We now sample from the posterior using HMC.
 
 # %%
-parameters_dict = gpflow.utilities.select_dict_parameters_with_prior(model)
-parameters = tuple(parameters_dict.values())
-hmc_helper = gpflow.optimizers.SamplingHelper(model.log_marginal_likelihood, parameters)
+num_burnin_steps = ci_niter(300)
+num_samples = ci_niter(500)
+
+
+hmc_helper = gpflow.optimizers.SamplingHelper(model.log_marginal_likelihood, model.trainable_parameters)
 
 hmc = tfp.mcmc.HamiltonianMonteCarlo(
     target_log_prob_fn=hmc_helper.target_log_prob_fn, num_leapfrog_steps=10, step_size=0.01
@@ -146,14 +148,12 @@ adaptive_hmc = tfp.mcmc.SimpleStepSizeAdaptation(
     hmc, num_adaptation_steps=10, target_accept_prob=f64(0.75), adaptation_rate=0.1
 )
 
-num_samples = 500
-
 
 @tf.function
 def run_chain_fn():
     return tfp.mcmc.sample_chain(
         num_results=num_samples,
-        num_burnin_steps=300,
+        num_burnin_steps=num_burnin_steps,
         current_state=hmc_helper.current_state,
         kernel=adaptive_hmc,
         trace_fn=lambda _, pkr: pkr.inner_results.is_accepted,
@@ -163,6 +163,8 @@ def run_chain_fn():
 samples, traces = run_chain_fn()
 parameter_samples = hmc_helper.convert_to_constrained_values(samples)
 
+param_to_name = {param: name for name, param in gpflow.utilities.parameter_dict(model).items()}
+
 
 # %% [markdown]
 # **NOTE:** All the Hamiltonian MCMC sampling takes place in an unconstrained space (where constrained parameters have been mapped via a bijector to an unconstrained space). This makes the optimization, as required in the gradient step, much easier.
@@ -171,37 +173,35 @@ parameter_samples = hmc_helper.convert_to_constrained_values(samples)
 #
 
 # %%
-def plot_samples(samples, parameters_dict, y_axis_label):
-    param_to_name = {param: name for name, param in parameters_dict.items()}
+def plot_samples(samples, parameters, y_axis_label):
     plt.figure(figsize=(8, 4))
-    for val, param in zip(samples, model.parameters):
+    for val, param in zip(samples, parameters):
         plt.plot(tf.squeeze(val), label=param_to_name[param])
     plt.legend(bbox_to_anchor=(1.0, 1.0))
-    plt.xlabel("hmc iteration")
+    plt.xlabel("HMC iteration")
     plt.ylabel(y_axis_label)
 
 
-plot_samples(samples, parameters_dict, "unconstrained variables")
-plot_samples(parameter_samples, parameters_dict, "constrained parameter values")
+plot_samples(samples, model.trainable_parameters, "unconstrained values")
+plot_samples(parameter_samples, model.trainable_parameters, "constrained parameter values")
 
 
 # %% [markdown]
 # You can also inspect the marginal distribution of samples.
 
 # %%
-def marginal_samples(samples, parameters_dict, y_axis_label):
-    param_to_name = {param: name for name, param in parameters_dict.items()}
-    fig, axarr = plt.subplots(1, len(param_to_name), figsize=(15, 3), constrained_layout=True)
-    for i, param in enumerate(model.trainable_parameters):
-        ax = axarr[i]
-        ax.hist(np.stack(samples[i]).reshape(-1, 1), bins=20)
+def marginal_samples(samples, parameters, y_axis_label):
+    fig, axes = plt.subplots(1, len(param_to_name), figsize=(15, 3), constrained_layout=True)
+    for ax, val, param in zip(axes, samples, parameters):
+        ax.hist(np.stack(val).flatten(), bins=20)
         ax.set_title(param_to_name[param])
     fig.suptitle(y_axis_label)
     plt.show()
 
 
-marginal_samples(samples, parameters_dict, "unconstrained variable samples")
-marginal_samples(parameter_samples, parameters_dict, "constrained parameter samples")
+marginal_samples(samples, model.trainable_parameters, "unconstrained variable samples")
+marginal_samples(parameter_samples, model.trainable_parameters, "constrained parameter samples")
+
 
 # %% [markdown]
 #
@@ -212,9 +212,8 @@ marginal_samples(parameter_samples, parameters_dict, "constrained parameter samp
 #
 
 # %%
-def plot_joint_marginals(samples, parameters_dict, y_axis_label):
-    param_to_name = {param: name for name, param in parameters_dict.items()}
-    name_to_index = {param_to_name[param]: i for i, param in enumerate(param_to_name)}
+def plot_joint_marginals(samples, parameters, y_axis_label):
+    name_to_index = {param_to_name[param]: i for i, param in enumerate(parameters)}
     f, axs = plt.subplots(1, 3, figsize=(12, 4), constrained_layout=True)
 
     axs[0].plot(
@@ -247,8 +246,8 @@ def plot_joint_marginals(samples, parameters_dict, y_axis_label):
     plt.show()
 
 
-plot_joint_marginals(samples, parameters_dict, "unconstrained variable samples")
-plot_joint_marginals(parameter_samples, parameters_dict, "parameter samples")
+plot_joint_marginals(samples, model.trainable_parameters, "unconstrained variable samples")
+plot_joint_marginals(parameter_samples, model.trainable_parameters, "parameter samples")
 
 
 # %% [markdown]
@@ -289,10 +288,12 @@ plt.show()
 # We first build a multiclass classification dataset.
 
 # %%
-# Generate data by sampling from RBF Kernel, and classifying with the argmax
+# Generate data by sampling from SquaredExponential kernel, and classifying with the argmax
+rng = np.random.RandomState(42)
+
 C, N = 3, 100
 X = rng.rand(N, 1)
-kernel = gpflow.kernels.RBF(lengthscales=0.1)
+kernel = gpflow.kernels.SquaredExponential(lengthscales=0.1)
 K = kernel.K(X) + np.eye(N) * 1e-6
 
 f = rng.multivariate_normal(mean=np.zeros(N), cov=K, size=(C)).T
@@ -337,6 +338,10 @@ set_trainable(model.kernel.kernels[1].variance, False)
 
 gpflow.utilities.print_summary(model)
 
+# %%
+# TODO confirm whether we should allow MCMC on a parameter without prior, add a prior, or set to non-trainable.
+set_trainable(model.inducing_variable, False)
+
 # %% [markdown]
 # The chain of samples for $\mathbf{u}_c, \theta$ is initialized at the value maximizing  $p(Y|\mathbf{u}_c, \theta)$.
 
@@ -356,15 +361,11 @@ print(f"log likelihood at optimum: {model.log_likelihood()}")
 # Sampling starts with a 'burn in' period.
 
 # %%
-burn = ci_niter(100)
-thin = ci_niter(10)
+num_burnin_steps = ci_niter(100)
+num_samples = ci_niter(500)
 
 # %%
-num_samples = 500
-
-parameters_dict = gpflow.utilities.select_dict_parameters_with_prior(model)
-parameters = tuple(parameters_dict.values())
-hmc_helper = gpflow.optimizers.SamplingHelper(model.log_marginal_likelihood, parameters)
+hmc_helper = gpflow.optimizers.SamplingHelper(model.log_marginal_likelihood, model.trainable_parameters)
 
 hmc = tfp.mcmc.HamiltonianMonteCarlo(
     target_log_prob_fn=hmc_helper.target_log_prob_fn, num_leapfrog_steps=10, step_size=0.01
@@ -379,7 +380,7 @@ adaptive_hmc = tfp.mcmc.SimpleStepSizeAdaptation(
 def run_chain_fn():
     return tfp.mcmc.sample_chain(
         num_results=num_samples,
-        num_burnin_steps=100,
+        num_burnin_steps=num_burnin_steps,
         current_state=hmc_helper.current_state,
         kernel=adaptive_hmc,
         trace_fn=lambda _, pkr: pkr.inner_results.is_accepted,
@@ -393,22 +394,22 @@ constrained_samples = hmc_helper.convert_to_constrained_values(samples)
 # Statistics of the posterior samples can now be reported.
 
 # %%
-plot_from_samples(model, X, Y, parameters, constrained_samples, burn, thin)
+plot_from_samples(model, X, Y, model.trainable_parameters, constrained_samples, thin=10)
 
 # %% [markdown]
 # You can also display the sequence of sampled hyperparameters.
 
 # %%
-param_to_name = {param: name for name, param in parameters_dict.items()}
-name_to_index = {param_to_name[param]: i for i, param in enumerate(param_to_name)}
+param_to_name = {param: name for name, param in gpflow.utilities.parameter_dict(model).items()}
+name_to_index = {param_to_name[param]: i for i, param in enumerate(model.trainable_parameters)}
 hyperparameters = [".kernel.kernels[0].lengthscales", ".kernel.kernels[0].variance"]
 
 plt.figure(figsize=(8, 4))
-for hp in hyperparameters:
-    plt.plot(samples[name_to_index[hp]], label=hp)
+for param_name in hyperparameters:
+    plt.plot(constrained_samples[name_to_index[param_name]], label=param_name)
 plt.legend(bbox_to_anchor=(1.0, 1.0))
-plt.xlabel("hmc iteration")
-_ = plt.ylabel("hyper-parameter value")
+plt.xlabel("HMC iteration")
+_ = plt.ylabel("hyperparameter value")
 
 
 # %% [markdown]
@@ -434,6 +435,8 @@ _ = plt.ylabel("hyper-parameter value")
 # We'll use MCMC to deal with both the kernel parameters $\theta$ and the latent function values $f$. Firstly, generate a data set.
 
 # %%
+rng = np.random.RandomState(14)
+
 X = np.linspace(-3, 3, 20)
 Y = rng.exponential(np.sin(X) ** 2)
 
@@ -450,7 +453,7 @@ data = (X[:, None], Y[:, None])
 # GPflow's model for fully-Bayesian MCMC is called GPMC. It's constructed like any other model, but contains a parameter `V` which represents the centered values of the function.
 
 # %%
-kernel = gpflow.kernels.Matern32() + gpflow.kernels.Bias()
+kernel = gpflow.kernels.Matern32() + gpflow.kernels.Constant()
 likelihood = gpflow.likelihoods.Exponential()
 model = gpflow.models.GPMC(data, kernel, likelihood)
 
@@ -466,10 +469,10 @@ gpflow.utilities.print_summary(model)
 
 
 # %% [markdown]
-# Running HMC is pretty similar to optimizing a model. GPflow has only HMC sampling for the moment, and it's a relatively vanilla implementation (no NUTS, for example). There are two things to tune, the step size (epsilon) and the number of steps $[L_{min}, L_{max}]$. Each proposal takes a random number of steps between $L_{min}$ and $L_{max}$, each of length $\epsilon$.
+# Running HMC is pretty similar to optimizing a model. GPflow builds on top of [tensorflow_probability's mcmc module](https://www.tensorflow.org/probability/api_docs/python/tfp/mcmc) and provides a SamplingHelper class to make interfacing easier.
 
 # %% [markdown]
-# We initialize HMC at the maximum a posteriori parameter value.
+# We initialize HMC at the maximum a posteriori parameter values of the model.
 
 # %%
 @tf.function
@@ -504,11 +507,10 @@ _ = plt.ylabel("neg_log_marginal_likelihood")
 # We then run the sampler,
 
 # %%
-num_samples = 500
+num_burnin_steps = ci_niter(300)
+num_samples = ci_niter(500)
 
-parameters_dict = gpflow.utilities.select_dict_parameters_with_prior(model)
-parameters = tuple(parameters_dict.values())
-hmc_helper = gpflow.optimizers.SamplingHelper(model.log_marginal_likelihood, parameters)
+hmc_helper = gpflow.optimizers.SamplingHelper(model.log_marginal_likelihood, model.trainable_parameters)
 
 hmc = tfp.mcmc.HamiltonianMonteCarlo(
     target_log_prob_fn=hmc_helper.target_log_prob_fn, num_leapfrog_steps=10, step_size=0.01
@@ -523,7 +525,7 @@ adaptive_hmc = tfp.mcmc.SimpleStepSizeAdaptation(
 def run_chain_fn():
     return tfp.mcmc.sample_chain(
         num_results=num_samples,
-        num_burnin_steps=300,
+        num_burnin_steps=num_burnin_steps,
         current_state=hmc_helper.current_state,
         kernel=adaptive_hmc,
         trace_fn=lambda _, pkr: pkr.inner_results.is_accepted,
@@ -540,6 +542,7 @@ Xtest = np.linspace(-4, 4, 100)[:, None]
 f_samples = []
 
 for i in range(num_samples):
+    # Note that hmc_helper.current_state contains the unconstrained variables
     for var, var_samples in zip(hmc_helper.current_state, samples):
         var.assign(var_samples[i])
     f = model.predict_f_samples(Xtest, 5)
@@ -566,8 +569,8 @@ _ = plt.ylim(-0.1, np.max(np.percentile(rate_samples, 95, axis=0)))
 
 # %%
 parameter_samples = hmc_helper.convert_to_constrained_values(samples)
-param_to_name = {param: name for name, param in parameters_dict.items()}
-name_to_index = {param_to_name[param]: i for i, param in enumerate(param_to_name)}
+param_to_name = {param: name for name, param in gpflow.utilities.parameter_dict(model).items()}
+name_to_index = {param_to_name[param]: i for i, param in enumerate(model.trainable_parameters)}
 hyperparameters = [
     ".kernel.kernels[0].lengthscales",
     ".kernel.kernels[0].variance",
@@ -576,34 +579,33 @@ hyperparameters = [
 
 
 plt.figure(figsize=(8, 4))
-for hp in hyperparameters:
-    plt.plot(parameter_samples[name_to_index[hp]], label=hp)
+for param_name in hyperparameters:
+    plt.plot(parameter_samples[name_to_index[param_name]], label=param_name)
 plt.legend(bbox_to_anchor=(1.0, 1.0))
-plt.xlabel("hmc iteration")
-_ = plt.ylabel("hyper-parameter value")
+plt.xlabel("HMC iteration")
+_ = plt.ylabel("hyperparameter value")
 
 
 # %% [markdown]
 # You can also inspect the marginal of the posterior samples.
 
 # %%
-fig, axarr = plt.subplots(1, len(hyperparameters), sharex=True, figsize=(12, 4))
-for i, hyp in enumerate(hyperparameters):
-    ax = axarr[i]
-    ax.hist(parameter_samples[name_to_index[hyp]], bins=20)
-    ax.set_title(hyp)
+fig, axes = plt.subplots(1, len(hyperparameters), sharex=True, figsize=(12, 4))
+for ax, param_name in zip(axes, hyperparameters):
+    ax.hist(parameter_samples[name_to_index[param_name]], bins=20)
+    ax.set_title(param_name)
 plt.tight_layout()
 
 # %% [markdown]
-# ## Prior on constraint and unconstrained parameters
+# ## Prior on constrained and unconstrained parameters
 
 # %% [markdown]
-# GPflow's :class:`Parameter` class provides options for setting a prior. :class:`Parameter` wraps a constrained tensor and
+# GPflow's `Parameter` class provides options for setting a prior. `Parameter` wraps a constrained tensor and
 # provides computation of the gradient with respect to unconstrained transformation of that tensor.
 # The user can set a prior either in **constrained** space or **unconstrained** space.
 
 # %% [markdown]
-# By default, the prior for the `Parameter` is set for the _constrained_ space.
+# By default, the prior for the `Parameter` is set on the _constrained_ space.
 # To explicitly set the space on which the prior is defined, use the `prior_on` keyword argument:
 
 # %%
@@ -653,9 +655,10 @@ model.kernel.lengthscales.prior_on
 # Let's run HMC and plot chain traces:
 
 # %%
-parameters_dict = gpflow.utilities.select_dict_parameters_with_prior(model)
-parameters = tuple(parameters_dict.values())
-hmc_helper = gpflow.optimizers.SamplingHelper(model.log_marginal_likelihood, parameters)
+num_burnin_steps = ci_niter(300)
+num_samples = ci_niter(500)
+
+hmc_helper = gpflow.optimizers.SamplingHelper(model.log_marginal_likelihood, model.trainable_parameters)
 
 hmc = tfp.mcmc.HamiltonianMonteCarlo(
     target_log_prob_fn=hmc_helper.target_log_prob_fn, num_leapfrog_steps=10, step_size=0.01
@@ -664,14 +667,12 @@ adaptive_hmc = tfp.mcmc.SimpleStepSizeAdaptation(
     hmc, num_adaptation_steps=10, target_accept_prob=f64(0.75), adaptation_rate=0.1
 )
 
-num_samples = 500
-
 
 @tf.function
 def run_chain_fn_unconstrained():
     return tfp.mcmc.sample_chain(
         num_results=num_samples,
-        num_burnin_steps=300,
+        num_burnin_steps=num_burnin_steps,
         current_state=hmc_helper.current_state,
         kernel=adaptive_hmc,
         trace_fn=lambda _, pkr: pkr.inner_results.is_accepted,
@@ -681,5 +682,6 @@ def run_chain_fn_unconstrained():
 samples, traces = run_chain_fn_unconstrained()
 parameter_samples = hmc_helper.convert_to_constrained_values(samples)
 
-plot_samples(samples, parameters_dict, "unconstrained_variables_values")
-plot_samples(parameter_samples, parameters_dict, "parameter_values")
+param_to_name = {param: name for name, param in gpflow.utilities.parameter_dict(model).items()}
+marginal_samples(samples, model.trainable_parameters, "unconstrained variable samples")
+marginal_samples(parameter_samples, model.trainable_parameters, "constrained parameter samples")
