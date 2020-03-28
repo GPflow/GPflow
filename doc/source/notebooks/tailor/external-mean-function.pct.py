@@ -128,10 +128,10 @@ def generate_meta_and_test_tasks(num_datapoints, num_meta=1000, num_test=200, N=
 # %%
 num_datapoints = 5
 # Although the original experiment uses (1000, 200, 50) for the following
-# parameters, we will use (100, 10, 250) for computational reasons.
-num_meta_tasks = 100
+# parameters, we will use (50, 10, 500) for computational reasons.
+num_meta_tasks = 50
 num_test_tasks = 10
-N = 250
+N = 500
 meta, test = generate_meta_and_test_tasks(num_datapoints, num_meta_tasks, num_test_tasks, N)
 
 # %% [markdown]
@@ -278,7 +278,7 @@ print(f"The mean MSE over all {num_test_tasks} test tasks is {mean_mse:.2f} +/- 
 # %% [markdown]
 # We achieve comparable results to those reported in the paper.
 #
-# **NOTE:** We use  only 20 metatasks and 5 test tasks for scalability, whereas the paper uses 1,000 and 200 respectively. Hence, there might be some discrepancies in the results.
+# **NOTE:** We use only 50 metatasks and 10 test tasks over 5 epochs for scalability, whereas the paper uses 1,000 and 200 respectively over 100 epochs. To compensate, we sample 500 points per curve, whereas the paper samples only 50 points. Hence, there might be some discrepancies in the results.
 
 # %% [markdown]
 # ## References
