@@ -109,10 +109,10 @@ class SamplingHelper:
         constrained representation is returned.
         """
         values = []
-        for hmc_variable, param in zip(hmc_samples, self._parameters):
+        for hmc_value, param in zip(hmc_samples, self._parameters):
             if param.transform is not None:
-                value = param.transform.forward(hmc_variable)
+                value = param.transform.forward(hmc_value)
             else:
-                value = hmc_variable
-            values.append(value.numpy())
+                value = hmc_value
+            values.append(value)
         return values
