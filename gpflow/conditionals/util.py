@@ -469,7 +469,7 @@ def mix_latent_gp(W, g_mean, g_var, full_cov, full_output_cov):
     if not full_cov:
         shape_constraints.append((g_var, [..., "N", "L"]))
     else:
-        # TODO cannot assert g_var shape here because of the inner "leading"
+        # NOTE(awav) cannot assert g_var shape here because of the inner "leading"
         # dimensions, see https://github.com/GPflow/GPflow/issues/1296
         pass
 

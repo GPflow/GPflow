@@ -30,6 +30,7 @@ from gpflow.base import TensorLike
 from gpflow.utilities import to_default_float
 from gpflow import covariances as cov
 from gpflow import kullback_leiblers as kl
+from gpflow.ci_utils import ci_niter
 
 # %%
 # VFF give structured covariance matrices that are computationally efficient.
@@ -373,7 +374,7 @@ def objective():
 
 # %%
 opt = gpflow.optimizers.Scipy()
-opt.minimize(objective, variables=m.trainable_variables, options=dict(maxiter=5000))
+opt.minimize(objective, variables=m.trainable_variables, options=dict(maxiter=ci_niter(5000)))
 
 gpflow.utilities.print_summary(m, fmt="notebook")
 
@@ -400,7 +401,7 @@ def objective_ip():
 
 # %%
 opt = gpflow.optimizers.Scipy()
-opt.minimize(objective_ip, variables=m_ip.trainable_variables, options=dict(maxiter=2500))
+opt.minimize(objective_ip, variables=m_ip.trainable_variables, options=dict(maxiter=ci_niter(5000)))
 
 gpflow.utilities.print_summary(m_ip, fmt="notebook")
 
@@ -411,19 +412,13 @@ gpflow.set_trainable(m_ref.kernel, False)
 gpflow.set_trainable(m_ref.likelihood, False)
 
 
-@tf.function
 def objective_ref():
     return -m_ref.log_marginal_likelihood()
 
 
 # Because we fixed the kernel and likelihood hyperparameters, we don't need to optimize anything.
 
-# opt = gpflow.optimizers.Scipy()
-# opt.minimize(objective_ref,
-#              variables=m_ref.trainable_variables,
-#              options=dict(maxiter=2500))
-
-# gpflow.utilities.print_summary(m_ref, fmt='notebook')
+gpflow.utilities.print_summary(m_ref, fmt="notebook")
 
 
 # %%

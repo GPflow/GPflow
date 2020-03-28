@@ -204,7 +204,6 @@ def test_bug_277_regression():
     assert not model1.b.numpy() == model2.b.numpy()
 
 
-# TODO: (@sergio.pasc) finish tests below once GP models are ready for TF2.0
 _model_classes = [
     gpflow.models.GPR,
     gpflow.models.SGPR,
