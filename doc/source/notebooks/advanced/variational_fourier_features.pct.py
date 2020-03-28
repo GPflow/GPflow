@@ -30,6 +30,7 @@ from gpflow.base import TensorLike
 from gpflow.utilities import to_default_float
 from gpflow import covariances as cov
 from gpflow import kullback_leiblers as kl
+from gpflow.ci_utils import ci_niter
 
 # %%
 # VFF give structured covariance matrices that are computationally efficient.
@@ -369,9 +370,8 @@ gpflow.set_trainable(m.inducing_variable, True)  # whether to optimize bounds [a
 opt = gpflow.optimizers.Scipy()
 opt.minimize(
     m.training_loss_closure(data),
-    variables=m.trainable_variables,
-    options=dict(maxiter=5000),
-    method="L-BFGS-B",
+    m.trainable_variables,
+    options=dict(maxiter=ci_niter(5000)),
 )
 
 gpflow.utilities.print_summary(m, fmt="notebook")
@@ -395,9 +395,8 @@ gpflow.set_trainable(m_ip.inducing_variable, True)  # whether to optimize induci
 opt = gpflow.optimizers.Scipy()
 opt.minimize(
     m_ip.training_loss_closure(data),
-    variables=m_ip.trainable_variables,
-    options=dict(maxiter=2500),
-    method="L-BFGS-B",
+    m_ip.trainable_variables,
+    options=dict(maxiter=ci_niter(5000)),
 )
 
 gpflow.utilities.print_summary(m_ip, fmt="notebook")
@@ -410,13 +409,7 @@ gpflow.set_trainable(m_ref.likelihood, False)
 
 # Because we fixed the kernel and likelihood hyperparameters, we don't need to optimize anything.
 
-# opt = gpflow.optimizers.Scipy()
-# opt.minimize(m_ref.training_loss,
-#              variables=m_ref.trainable_variables,
-#              options=dict(maxiter=2500))
-
-# gpflow.utilities.print_summary(m_ref, fmt='notebook')
-
+gpflow.utilities.print_summary(m_ref, fmt="notebook")
 
 # %%
 exact_gpr_lml = m_ref.log_marginal_likelihood().numpy().item()
@@ -425,7 +418,6 @@ ip_svgp_elbo = m_ip.elbo(data).numpy().item()
 print("ELBO (SVGP, inducing points) =", ip_svgp_elbo)
 vff_svgp_elbo = m.elbo(data).numpy().item()
 print("ELBO (SVGP, Fourier features) =", vff_svgp_elbo)
-
 
 # %%
 def plot_gp(m, Xnew, name=""):
@@ -450,5 +442,3 @@ plot_gp(m_ip, Xnew, "inducing points [ELBO={:.3}]".format(ip_svgp_elbo))
 plot_gp(m_ref, Xnew, "exact [LML={:.3}]".format(exact_gpr_lml))
 plt.legend(loc="best")
 plt.show()
-
-# %%
