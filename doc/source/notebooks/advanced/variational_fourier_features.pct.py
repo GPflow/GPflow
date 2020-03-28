@@ -418,7 +418,7 @@ def objective_ref():
 
 # Because we fixed the kernel and likelihood hyperparameters, we don't need to optimize anything.
 
-gpflow.utilities.print_summary(m_ref, fmt='notebook')
+gpflow.utilities.print_summary(m_ref, fmt="notebook")
 
 
 # %%
