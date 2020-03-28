@@ -57,7 +57,9 @@ class SamplingHelper:
             Note that each parameter must have been given a prior.
         """
         if not all(isinstance(p, Parameter) and p.prior is not None for p in parameters):
-            raise ValueError("`parameters` should only contain gpflow.Parameter objects with priors")
+            raise ValueError(
+                "`parameters` should only contain gpflow.Parameter objects with priors"
+            )
 
         self._parameters = parameters
         self._target_log_prob_fn = target_log_prob_fn
