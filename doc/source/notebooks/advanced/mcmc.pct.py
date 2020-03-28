@@ -341,7 +341,7 @@ set_trainable(model.kernel.kernels[1].variance, False)
 gpflow.utilities.print_summary(model)
 
 # %%
-# TODO confirm whether we should allow MCMC on a parameter without prior, add a prior, or set to non-trainable.
+# The inducing point locations Z should not be included in the MCMC (see [Hensman et al. (2015)](https://papers.nips.cc/paper/5875-mcmc-for-variationally-sparse-gaussian-processes), hence we set them to non-trainable.
 set_trainable(model.inducing_variable, False)
 
 # %% [markdown]
