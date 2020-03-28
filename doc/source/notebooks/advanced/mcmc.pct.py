@@ -138,7 +138,7 @@ gpflow.utilities.print_summary(model)
 num_burnin_steps = ci_niter(300)
 num_samples = ci_niter(500)
 
-
+# Note that here we need model.trainable_parameters, not trainable_variables - only parameters can have priors!
 hmc_helper = gpflow.optimizers.SamplingHelper(model.log_marginal_likelihood, model.trainable_parameters)
 
 hmc = tfp.mcmc.HamiltonianMonteCarlo(
@@ -365,6 +365,7 @@ num_burnin_steps = ci_niter(100)
 num_samples = ci_niter(500)
 
 # %%
+# Note that here we need model.trainable_parameters, not trainable_variables - only parameters can have priors!
 hmc_helper = gpflow.optimizers.SamplingHelper(model.log_marginal_likelihood, model.trainable_parameters)
 
 hmc = tfp.mcmc.HamiltonianMonteCarlo(
@@ -510,6 +511,7 @@ _ = plt.ylabel("neg_log_marginal_likelihood")
 num_burnin_steps = ci_niter(300)
 num_samples = ci_niter(500)
 
+# Note that here we need model.trainable_parameters, not trainable_variables - only parameters can have priors!
 hmc_helper = gpflow.optimizers.SamplingHelper(model.log_marginal_likelihood, model.trainable_parameters)
 
 hmc = tfp.mcmc.HamiltonianMonteCarlo(
