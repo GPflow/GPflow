@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.3.0
+#       jupytext_version: 1.4.0
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -99,10 +99,8 @@ plt.show()
 
 # %%
 kernel = gpflow.kernels.Matern52(lengthscales=0.3)
-
-meanf = gpflow.mean_functions.Linear(1.0, 0.0)
-model = gpflow.models.GPR(data, kernel, meanf)
-model.likelihood.variance.assign(0.01)
+mean_function = gpflow.mean_functions.Linear(1.0, 0.0)
+model = gpflow.models.GPR(data, kernel, mean_function, noise_variance=0.01)
 
 # %% [markdown]
 # Secondly, we initialize the model to the maximum likelihood solution.
@@ -116,7 +114,7 @@ def objective():
     return -model.log_marginal_likelihood()
 
 
-optimizer.minimize(objective, variables=model.trainable_variables)
+optimizer.minimize(objective, model.trainable_variables)
 
 print(f"log likelihood at optimum: {model.log_likelihood()}")
 
@@ -183,8 +181,8 @@ def plot_samples(samples, parameters_dict, y_axis_label):
     plt.ylabel(y_axis_label)
 
 
-plot_samples(samples, parameters_dict, "unconstrained_variables_values")
-plot_samples(parameter_samples, parameters_dict, "parameter_values")
+plot_samples(samples, parameters_dict, "unconstrained variables")
+plot_samples(parameter_samples, parameters_dict, "constrained parameter values")
 
 
 # %% [markdown]
@@ -203,8 +201,7 @@ def marginal_samples(samples, parameters_dict, y_axis_label):
 
 
 marginal_samples(samples, parameters_dict, "unconstrained variable samples")
-marginal_samples(parameter_samples, parameters_dict, "parameter_samples")
-
+marginal_samples(parameter_samples, parameters_dict, "constrained parameter samples")
 
 # %% [markdown]
 #
@@ -352,7 +349,7 @@ def objective():
     return -model.log_marginal_likelihood()
 
 
-optimizer.minimize(objective, variables=model.trainable_variables, options={"maxiter": 20})
+optimizer.minimize(objective, model.trainable_variables, options={"maxiter": 20})
 print(f"log likelihood at optimum: {model.log_likelihood()}")
 
 # %% [markdown]
