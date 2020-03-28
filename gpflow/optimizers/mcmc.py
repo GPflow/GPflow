@@ -28,7 +28,7 @@ class SamplingHelper:
 
     Example:
         model = ...  # Create a GPflow model
-        hmc_helper = SamplingHelper(model.log_marginal_likelihood, m.trainable_parameters)
+        hmc_helper = SamplingHelper(model.log_marginal_likelihood, model.trainable_parameters)
 
         target_log_prob_fn = hmc_helper.target_log_prob_fn
         current_state = hmc_helper.current_state
@@ -42,7 +42,7 @@ class SamplingHelper:
                 num_samples, num_burnin_steps, current_state, kernel=adaptive_hmc)
 
         hmc_samples = run_chain_fn()
-        parameter_samples = hmc_helper.convert_samples_to_parameter_values(hmc_samples)
+        parameter_samples = hmc_helper.convert_to_constrained_values(hmc_samples)
     """
 
     def __init__(
@@ -51,10 +51,13 @@ class SamplingHelper:
         """
         :param target_log_prob_fn: a callable which returns the log-density of the model
             under the target distribution; needs to implicitly depend on the `parameters`.
+            E.g. `model.log_posterior_density`.
         :param parameters: List of :class:`gpflow.Parameter` used as a state of the Markov chain.
+            E.g. `model.trainable_parameters`
+            Note that each parameter must have been given a prior.
         """
         if not all(isinstance(p, Parameter) and p.prior is not None for p in parameters):
-            raise ValueError("Expected only parameters with priors")
+            raise ValueError("`parameters` should only contain gpflow.Parameter objects with priors")
 
         self._parameters = parameters
         self._target_log_prob_fn = target_log_prob_fn
