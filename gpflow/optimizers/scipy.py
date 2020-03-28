@@ -55,7 +55,9 @@ class Scipy:
             raise TypeError("`closure` is expected to be a callable object.")  # pragma: no cover
         variables = tuple(variables)
         if not all(isinstance(v, tf.Variable) for v in variables):
-            raise TypeError("`variables` is expected to only contain tf.Variable instances (use model.trainable_variables, not model.trainable_parameters)")
+            raise TypeError(
+                "`variables` is expected to only contain tf.Variable instances (use model.trainable_variables, not model.trainable_parameters)"
+            )
         initial_params = self.initial_parameters(variables)
 
         func = self.eval_func(closure, variables, jit=jit)
