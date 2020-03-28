@@ -109,7 +109,7 @@ model.likelihood.variance.assign(0.01)
 
 # %%
 optimizer = gpflow.optimizers.Scipy()
-optimizer.minimize(model.training_loss, variables=model.trainable_variables)
+optimizer.minimize(model.training_loss, model.trainable_variables)
 
 print(f"log posterior density at optimum: {model.log_posterior_density()}")
 
@@ -130,9 +130,9 @@ gpflow.utilities.print_summary(model)
 # We now sample from the posterior using HMC.
 
 # %%
-hmc_helper = gpflow.optimizers.SamplingHelper(
-    model.log_posterior_density, model.trainable_parameters
-)
+parameters_dict = gpflow.utilities.select_dict_parameters_with_prior(model)
+parameters = tuple(parameters_dict.values())
+hmc_helper = gpflow.optimizers.SamplingHelper(model.log_posterior_density, parameters)
 
 hmc = tfp.mcmc.HamiltonianMonteCarlo(
     target_log_prob_fn=hmc_helper.target_log_prob_fn, num_leapfrog_steps=10, step_size=0.01
@@ -157,7 +157,6 @@ def run_chain_fn():
 
 samples, traces = run_chain_fn()
 parameter_samples = hmc_helper.convert_to_constrained_values(samples)
-parameters_dict = gpflow.utilities.parameter_dict(model)
 
 
 # %% [markdown]
@@ -339,9 +338,7 @@ gpflow.utilities.print_summary(model)
 
 # %%
 optimizer = gpflow.optimizers.Scipy()
-optimizer.minimize(
-    model.training_loss, variables=model.trainable_variables, options={"maxiter": 20}
-)
+optimizer.minimize(model.training_loss, model.trainable_variables, options={"maxiter": 20})
 print(f"log posterior density at optimum: {model.log_posterior_density()}")
 
 # %% [markdown]
@@ -354,9 +351,9 @@ thin = ci_niter(10)
 # %%
 num_samples = 500
 
-hmc_helper = gpflow.optimizers.SamplingHelper(
-    model.log_posterior_density, model.trainable_parameters
-)
+parameters_dict = gpflow.utilities.select_dict_parameters_with_prior(model)
+parameters = tuple(parameters_dict.values())
+hmc_helper = gpflow.optimizers.SamplingHelper(model.log_posterior_density, parameters)
 
 hmc = tfp.mcmc.HamiltonianMonteCarlo(
     target_log_prob_fn=hmc_helper.target_log_prob_fn, num_leapfrog_steps=10, step_size=0.01
@@ -391,7 +388,7 @@ plot_from_samples(model, X, Y, parameters, constrained_samples, burn, thin)
 # You can also display the sequence of sampled hyperparameters.
 
 # %%
-param_to_name = {param: name for name, param in gpflow.utilities.parameter_dict(model).items()}
+param_to_name = {param: name for name, param in parameters_dict.items()}
 name_to_index = {param_to_name[param]: i for i, param in enumerate(param_to_name)}
 hyperparameters = [".kernel.kernels[0].lengthscales", ".kernel.kernels[0].variance"]
 
@@ -477,10 +474,9 @@ _ = optimizer.minimize(
 # %%
 num_samples = 500
 
-# Note that here we need `trainable_parameters`, not `trainable_variables`: only parameters can have priors!
-hmc_helper = gpflow.optimizers.SamplingHelper(
-    model.log_posterior_density, model.trainable_parameters
-)
+parameters_dict = gpflow.utilities.select_dict_parameters_with_prior(model)
+parameters = tuple(parameters_dict.values())
+hmc_helper = gpflow.optimizers.SamplingHelper(model.log_posterior_density, parameters)
 
 hmc = tfp.mcmc.HamiltonianMonteCarlo(
     target_log_prob_fn=hmc_helper.target_log_prob_fn, num_leapfrog_steps=10, step_size=0.01
@@ -538,7 +534,7 @@ _ = plt.ylim(-0.1, np.max(np.percentile(rate_samples, 95, axis=0)))
 
 # %%
 parameter_samples = hmc_helper.convert_to_constrained_values(samples)
-param_to_name = {param: name for name, param in gpflow.utilities.parameter_dict(model).items()}
+param_to_name = {param: name for name, param in parameters_dict.items()}
 name_to_index = {param_to_name[param]: i for i, param in enumerate(param_to_name)}
 hyperparameters = [
     ".kernel.kernels[0].lengthscales",
@@ -625,9 +621,9 @@ model.kernel.lengthscales.prior_on
 # Let's run HMC and plot chain traces:
 
 # %%
-hmc_helper = gpflow.optimizers.SamplingHelper(
-    model.log_posterior_density, model.trainable_parameters
-)
+parameters_dict = gpflow.utilities.select_dict_parameters_with_prior(model)
+parameters = tuple(parameters_dict.values())
+hmc_helper = gpflow.optimizers.SamplingHelper(model.log_posterior_density, parameters)
 
 hmc = tfp.mcmc.HamiltonianMonteCarlo(
     target_log_prob_fn=hmc_helper.target_log_prob_fn, num_leapfrog_steps=10, step_size=0.01
