@@ -259,9 +259,10 @@ def mean_squared_error(y, y_pred):
 # %%
 mean_squared_errors = []
 for i, test_task in enumerate(test):
-    (_, _), (Xs, F) = test_task
+    (train_X, train_Y), (Xs, F) = test_task
     pred = test_models[i].predict_f(Xs)
     plt.figure()
+    plt.scatter(train_X, train_Y, label="Training Points")
     plt.plot(Xs, pred[0], label="Predictions")
     plt.plot(Xs, F, label="Ground Truth")
     mse = mean_squared_error(F, pred[0])
