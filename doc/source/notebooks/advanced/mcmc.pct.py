@@ -139,7 +139,9 @@ num_burnin_steps = ci_niter(300)
 num_samples = ci_niter(500)
 
 # Note that here we need model.trainable_parameters, not trainable_variables - only parameters can have priors!
-hmc_helper = gpflow.optimizers.SamplingHelper(model.log_marginal_likelihood, model.trainable_parameters)
+hmc_helper = gpflow.optimizers.SamplingHelper(
+    model.log_marginal_likelihood, model.trainable_parameters
+)
 
 hmc = tfp.mcmc.HamiltonianMonteCarlo(
     target_log_prob_fn=hmc_helper.target_log_prob_fn, num_leapfrog_steps=10, step_size=0.01
@@ -366,7 +368,9 @@ num_samples = ci_niter(500)
 
 # %%
 # Note that here we need model.trainable_parameters, not trainable_variables - only parameters can have priors!
-hmc_helper = gpflow.optimizers.SamplingHelper(model.log_marginal_likelihood, model.trainable_parameters)
+hmc_helper = gpflow.optimizers.SamplingHelper(
+    model.log_marginal_likelihood, model.trainable_parameters
+)
 
 hmc = tfp.mcmc.HamiltonianMonteCarlo(
     target_log_prob_fn=hmc_helper.target_log_prob_fn, num_leapfrog_steps=10, step_size=0.01
@@ -512,7 +516,9 @@ num_burnin_steps = ci_niter(300)
 num_samples = ci_niter(500)
 
 # Note that here we need model.trainable_parameters, not trainable_variables - only parameters can have priors!
-hmc_helper = gpflow.optimizers.SamplingHelper(model.log_marginal_likelihood, model.trainable_parameters)
+hmc_helper = gpflow.optimizers.SamplingHelper(
+    model.log_marginal_likelihood, model.trainable_parameters
+)
 
 hmc = tfp.mcmc.HamiltonianMonteCarlo(
     target_log_prob_fn=hmc_helper.target_log_prob_fn, num_leapfrog_steps=10, step_size=0.01
@@ -660,7 +666,9 @@ model.kernel.lengthscales.prior_on
 num_burnin_steps = ci_niter(300)
 num_samples = ci_niter(500)
 
-hmc_helper = gpflow.optimizers.SamplingHelper(model.log_marginal_likelihood, model.trainable_parameters)
+hmc_helper = gpflow.optimizers.SamplingHelper(
+    model.log_marginal_likelihood, model.trainable_parameters
+)
 
 hmc = tfp.mcmc.HamiltonianMonteCarlo(
     target_log_prob_fn=hmc_helper.target_log_prob_fn, num_leapfrog_steps=10, step_size=0.01
