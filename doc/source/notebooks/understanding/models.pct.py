@@ -212,7 +212,7 @@ opt.minimize(m.training_loss, variables=m.trainable_variables)
 # density) for MLE/MAP estimation to be passed to optimizer's `minimize`
 # method. Models that derive from `InternalDataTrainingLossMixin` are expected to store the data internally, and their `training_loss` does not take any arguments and can be passed directly to `minimize`.
 # Models that take data as an argument to their `maximum_log_likelihood_objective` method derive from `ExternalDataTrainingLossMixin`, which provides a `training_loss_closure` to take the data and return the appropriate closure for `optimizer.minimize`.
-#
+# This is also discussed in the [GPflow with TensorFlow 2 notebook](../intro_to_gpflow2.ipynb).
 
 # %%
 import tensorflow as tf
