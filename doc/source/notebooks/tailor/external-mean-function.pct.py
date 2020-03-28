@@ -108,8 +108,8 @@ def generate_meta_and_test_tasks(num_datapoints, num_meta=1000, num_test=200, N=
         meta.append((Xs, Y))
     test = []
     rand_indices = np.random.permutation(N)
-    train_i = rand_indices[:num_datapoints]
-    test_i = rand_indices[num_datapoints:]
+    train_i = sorted(rand_indices[:num_datapoints])
+    test_i = sorted(rand_indices[num_datapoints:])
     for i in range(num_test):
         # Form target training set, \tilde{D}_{train} (see Figure 1).
         noise = sd * np.random.randn(num_datapoints, 1)
@@ -273,7 +273,7 @@ for i, test_task in enumerate(test):
 # %%
 mean_mse = np.mean(mean_squared_errors)
 std_mse = np.std(mean_squared_errors) / np.sqrt(num_test_tasks)
-print(f"The mean MSE over all {num_test_tasks} test tasks is {mean_mse} +/- {std_mse}")
+print(f"The mean MSE over all {num_test_tasks} test tasks is {mean_mse:.2f} +/- {std_mse:.2f}")
 
 # %% [markdown]
 # We achieve comparable results to those reported in the paper.
