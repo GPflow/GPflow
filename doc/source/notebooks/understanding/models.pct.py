@@ -191,7 +191,9 @@ opt.minimize(m.training_loss, variables=m.trainable_variables)
 # %% [markdown]
 # ## Building new models
 #
-# To build new models, you'll need to inherit from `gpflow.models.BayesianModel`. Parameters are instantiated with `gpflow.Parameter`. You might also be interested in `tf.Module`, which acts as a 'container' for `Parameter`s (for example, kernels are `tf.Module`s).
+# To build new models, you'll need to inherit from `gpflow.models.BayesianModel`.
+# Parameters are instantiated with `gpflow.Parameter`.
+# You might also be interested in `gpflow.Module` (a subclass of `tf.Module`), which acts as a 'container' for `Parameter`s (for example, kernels are `gpflow.Module`s).
 #
 # In this very simple demo, we'll implement linear multiclass classification.
 #
@@ -201,13 +203,15 @@ opt.minimize(m.training_loss, variables=m.trainable_variables)
 # The training objective depends on the type of model; it may be possible to
 # implement the exact (log)marginal likelihood, or only a lower bound to the
 # log marginal likelihood (ELBO). You need to implement this as the
-# `maximum_log_likelihood_objective` method.  The `BayesianModel` parent class
-# provides a `log_posterior_density` method that returns  the
+# `maximum_log_likelihood_objective` method. The `BayesianModel` parent class
+# provides a `log_posterior_density` method that returns the
 # `maximum_log_likelihood_objective` plus the sum of the log-density of any priors
-# on hyperparameters, which can be used for MCMC, and a `training_loss` method
+# on hyperparameters, which can be used for MCMC.
+# GPflow provides mixin classes that define a `training_loss` method
 # that returns the negative of (maximum likelihood objective + log prior
 # density) for MLE/MAP estimation to be passed to optimizer's `minimize`
-# method.
+# method. Models that derive from `InternalDataTrainingLossMixin` are expected to store the data internally, and their `training_loss` does not take any arguments and can be passed directly to `minimize`.
+# Models that take data as an argument to their `maximum_log_likelihood_objective` method derive from `ExternalDataTrainingLossMixin`, which provides a `training_loss_closure` to take the data and return the appropriate closure for `optimizer.minimize`.
 #
 
 # %%
