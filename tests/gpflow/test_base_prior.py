@@ -111,7 +111,7 @@ def test_map_invariance_to_transform():
     m2 = DummyModel(with_transform=False)
     assert np.allclose(
         m1.log_posterior_density().numpy(), m2.log_posterior_density().numpy()
-    ), "MAP objective should not be affected by a transform"
+    ), "log posterior density should not be affected by a transform"
 
 
 def get_gpmc_model_params():
