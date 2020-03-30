@@ -119,7 +119,7 @@ def test_ScalarToTensorBoard_with_argument(tmp_path):
     compiled_task(0, x=1.0)
 
 
-def test_ScalarToTensorBoard_with_wrong_kw_argument(tmp_path):
+def test_ScalarToTensorBoard_with_wrong_keyword_argument(tmp_path):
     tmp_path = str(tmp_path)
 
     def scalar_cb(x=None):
@@ -128,10 +128,10 @@ def test_ScalarToTensorBoard_with_wrong_kw_argument(tmp_path):
     task = ScalarToTensorBoard(tmp_path, scalar_cb, "scalar")
     compiled_task = tf.function(task)
 
-    with pytest.raises(TypeError, match=r".*got an unexpected keyword argument 'y'.*"):
+    with pytest.raises(TypeError, match=r"got an unexpected keyword argument 'y'"):
         task(0, y=1.0)
 
-    with pytest.raises(TypeError, match=r".*got an unexpected keyword argument 'y'.*"):
+    with pytest.raises(TypeError, match=r"got an unexpected keyword argument 'y'"):
         compiled_task(0, y=1.0)
 
 
