@@ -185,10 +185,10 @@ model
 # In this case, model.training_loss does not take any arguments, and can be directly passed to an optimizer's `minimize()` method:
 
 # %%
-gpr_model = gpflow.models.VGP(data, kernel, likelihood)
+vgp_model = gpflow.models.VGP(data, kernel, likelihood)
 optimizer = tf.optimizers.Adam()
 optimizer.minimize(
-    gpr_model.training_loss, gpr_model.trainable_variables
+    vgp_model.training_loss, vgp_model.trainable_variables
 )  # Note: this does a single step
 # In practice, you will need to call minimize() many times, this will be further discussed below.
 
@@ -198,19 +198,20 @@ optimizer.minimize(
 # %%
 optimizer = gpflow.optimizers.Scipy()
 optimizer.minimize(
-    gpr_model.training_loss, gpr_model.trainable_variables, options=dict(maxiter=ci_niter(1000))
+    vgp_model.training_loss, vgp_model.trainable_variables, options=dict(maxiter=ci_niter(1000))
 )
 
 # %% [markdown]
 # You can obtain a compiled version using training_loss_closure, whose `jit` argument is True by default:
 
 # %%
-gpr_model.training_loss_closure()  # compiled
-gpr_model.training_loss_closure(jit=True)  # compiled
-gpr_model.training_loss_closure(jit=False)  # uncompiled, same as gpr_model.training_loss
+vgp_model.training_loss_closure()  # compiled
+vgp_model.training_loss_closure(jit=True)  # compiled
+vgp_model.training_loss_closure(jit=False)  # uncompiled, same as vgp_model.training_loss
 
 # %% [markdown]
-# The SVGP model inherits from ExternalDataTrainingLossMixin and expects the data to be passed to training_loss():
+# The SVGP model inherits from ExternalDataTrainingLossMixin and expects the data to be passed to training_loss().
+# For SVGP as for the other regression models, `data` is a two-tuple of `(X, Y)`, where `X` is an array/tensor with shape `(num_data, input_dim)` and `Y` is an array/tensor with shape `(num_data, output_dim)`:
 
 # %%
 assert isinstance(model, gpflow.models.SVGP)
@@ -221,15 +222,17 @@ model.training_loss(data)
 
 # %%
 optimizer = tf.optimizers.Adam()
-optimizer.minimize(model.training_loss_closure(data), model.trainable_variables)
+training_loss = model.training_loss_closure(data)  # We save the compiled closure in a variable so as not to re-compile it each step
+optimizer.minimize(training_loss, model.trainable_variables)  # Note that this does a single step
 
 # %% [markdown]
-# SVGP can handle mini-batching, and an iterator from a batched tf.data.Dataset can be passed:
+# SVGP can handle mini-batching, and an iterator from a batched tf.data.Dataset can be passed to the model's training_loss_closure():
 
 # %%
 batch_size = 5
 batched_dataset = tf.data.Dataset.from_tensor_slices(data).batch(batch_size)
 training_loss = model.training_loss_closure(iter(batched_dataset))
+
 optimizer.minimize(training_loss, model.trainable_variables)  # Note that this does a single step
 
 # %% [markdown]
