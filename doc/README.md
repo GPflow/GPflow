@@ -46,4 +46,5 @@ which triggers a CircleCI build on the [GPflow/docs repository](https://github.c
 This clones the latest GPflow develop branch and compiles all notebooks from jupytext to .ipynb
 (setting the `DOCS` environment variable so that notebook optimisations are run to convergence)
 and runs the `generate_module_rst.py` script as above to generate the .rst files for API documentation.
+(This script is run on CircleCI, instead of ReadTheDocs, as it requires gpflow and hence `tensorflow` and `tensorflow_probability` to be installed, but TensorFlow is too large to be installed inside the ReadTheDocs docker images.)
 ReadTheDocs then pulls in these auto-generated files as well as all other files within this doc/ directory to actually build the documentation using Sphinx.
