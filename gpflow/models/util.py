@@ -1,3 +1,4 @@
+from typing import Callable, Union
 import numpy as np
 import tensorflow as tf
 
@@ -5,7 +6,9 @@ from ..inducing_variables import InducingVariables, InducingPoints
 from .model import Data, BayesianModel, ExternalDataTrainingLossMixin
 
 
-def inducingpoint_wrapper(inducing_variable):
+def inducingpoint_wrapper(
+    inducing_variable: Union[InducingVariables, tf.Tensor, np.ndarray]
+) -> InducingVariables:
     """
     This wrapper allows transparently passing either an InducingVariables
     object or an array specifying InducingPoints positions.
