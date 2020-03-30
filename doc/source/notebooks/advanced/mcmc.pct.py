@@ -95,7 +95,9 @@ plt.show()
 # ### MCMC for hyperparameters $\theta$
 #
 # We now want to sample from the posterior over $\theta$:
-# $$p(\theta|\mathbf{y}) \propto p(\mathbf{y}|\theta)p(\theta)$$
+# \begin{equation}
+# p(\theta|\mathbf{y}) \propto p(\mathbf{y}|\theta)p(\theta)
+# \end{equation}
 #
 # Firstly, we build the GPR model.
 

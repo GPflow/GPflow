@@ -20,13 +20,17 @@
 #
 # For this problem, we model $f$ as a *coregionalized* Gaussian process, which assumes a kernel of the form:
 #
-# $$\textrm{cov}(f_i(X), f_j(X^\prime)) = k(X, X^\prime) \cdot B[i, j].$$
+# \begin{equation}
+# \textrm{cov}(f_i(X), f_j(X^\prime)) = k(X, X^\prime) \cdot B[i, j].
+# \end{equation}
 #
 # The covariance of the $i$th function at $X$ and the $j$th function at $X^\prime$ is a kernel applied at $X$ and $X^\prime$, times the $(i, j)$th entry of a positive definite $P \times P$ matrix $B$. This is known as the **intrinsic model of coregionalization (ICM)** (Bonilla and Williams, 2008).
 #
 # To make sure that B is positive-definite, we parameterize it as:
 #
-# $$B = W W^\top + \textrm{diag}(\kappa).$$
+# \begin{equation}
+# B = W W^\top + \textrm{diag}(\kappa).
+# \end{equation}
 #
 # To build such a model in GPflow, we need to perform the following two steps:
 #
@@ -50,12 +54,12 @@ np.random.seed(123)
 # %% [markdown]
 # ## Data preparation
 # We start by generating some training data to fit the model with. For this example, we choose the following two correlated functions for our outputs:
-# $$
+#
 # \begin{align}
 # y_1 &= \sin(6x) + \epsilon_1, \qquad \epsilon_1 \sim \mathcal{N}(0, 0.009) \\
 # y_2 &= \sin(6x + 0.7) + \epsilon_2, \qquad \epsilon_2 \sim \mathcal{N}(0, 0.01) \\
 # \end{align}
-# $$
+#
 
 # %%
 # make a dataset with two outputs, correlated, heavy-tail noise. One has more noise than the other.

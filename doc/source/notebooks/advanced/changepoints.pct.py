@@ -20,7 +20,9 @@
 #
 # This notebook demonstrates the use of the `ChangePoints` kernel, which can be used to describe one-dimensional functions that contain a number of change-points, or regime changes. The kernel makes use of sigmoids ($\sigma$) to blend smoothly between different kernels. For example, a single change-point kernel is defined by:
 #
-# $$\textrm{cov}(f(x), f(y)) = k_1(x, y)\cdot\bar{\sigma}(x, y) + k_2(x, y)\cdot\sigma(x, y)$$
+# \begin{equation}
+# \textrm{cov}(f(x), f(y)) = k_1(x, y)\cdot\bar{\sigma}(x, y) + k_2(x, y)\cdot\sigma(x, y)
+# \end{equation}
 #
 # where $\sigma(x, y) = \sigma(x)\cdot\sigma(y)$ and $\bar{\sigma}(x, y) = (1 - \sigma(x))\cdot(1 - \sigma(y))$. The sigmoid ($\sigma$) is parameterized by a location ($l$) and a width ($w$).
 
