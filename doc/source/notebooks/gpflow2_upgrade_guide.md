@@ -215,7 +215,6 @@ See the `gpflow.config` API documentation for more details.
 
 
 <!-- #region -->
-
 ## Data Types
 
 In some cases TensorFlow will try to figure out an appropriate data type for certain variables. If Python floats have been used, TensorFlow may default these variables to `float32`, which can cause incompatibilities with GPflow, which defaults to using `float64`.
