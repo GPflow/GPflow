@@ -202,7 +202,7 @@ For example:
 ```
 
 
-## Settings -> Configuration
+## Settings / Configuration
 
 In GPflow 2, the `gpflow.settings` module and the `gpflowrc` file have been removed. Instead, there is `gpflow.config`.
 
