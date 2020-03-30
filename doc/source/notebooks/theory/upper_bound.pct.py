@@ -184,5 +184,3 @@ print_summary(vfe, fmt="notebook")
 
 # %% [markdown]
 # This can be diagnosed by showing that there are other hyperparameter settings with higher upper bounds. This indicates that there might be better hyperparameter settings, but we cannot identify them due to the lack of inducing points. An example of this can be seen in the previous section.
-
-# %%

@@ -56,7 +56,7 @@ In the above example, the old (GPflow 1) code would have assigned the value of `
 
 In GPflow 2, it is necessary to use the `Parameter.assign` method explicitly to maintain the same behaviour, otherwise the parameter attribute will be replaced by an (untrainable) constant value.
 
-To change other properties of the parameter (for example, to change transforms etc) you may need to replace the entire parameter object. See [this notebook](../understanding/models.ipynb#Constraints-and-trainable-variables) for further details.
+To change other properties of the parameter (for example, to change transforms etc) you may need to replace the entire parameter object. See [this notebook](understanding/models.ipynb#Constraints-and-trainable-variables) for further details.
 
 
 ## Parameter trainable status
@@ -108,7 +108,7 @@ For example, for the `GPR` model:
 
 The SVGP model’s initialiser no longer accepts X and Y data. Instead this data must be passed to the various computation methods of the model (`elbo`, `log_likelihood` etc).
 
-In the [Introduction to GPflow 2 notebook](../intro_to_gpflow2.ipynb) there is an example of how to use SVGP with optimisation using mini-batches of data.
+In the [Introduction to GPflow 2 notebook](intro_to_gpflow2.ipynb) there is an example of how to use SVGP with optimisation using mini-batches of data.
 
 In addition, SVGP’s `Z` parameter has been removed. To pass-in inducing points use the `inducing_variable` parameter. Also `SVGP`'s `feature` attribute has been renamed to `inducing_variable`.
 

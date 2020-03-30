@@ -58,7 +58,9 @@ tf.random.set_seed(123)
 # We first consider the GP regression (with Gaussian noise) for which the marginal likelihood $p(\mathbf y\,|\,\theta)$ can be computed exactly.
 #
 # The GPR model parameterized by $\theta = [\tau]$ is given by
-# $$ Y_i = f(X_i) + \varepsilon_i$$
+# \begin{equation}
+# Y_i = f(X_i) + \varepsilon_i
+# \end{equation}
 # where $f \sim \mathcal{GP}(\mu(.), k(., .))$, and $\varepsilon \sim \mathcal{N}(0, \tau^2 I)$.
 #
 # See the [Basic (Gaussian likelihood) GP regression model](../basics/regression.ipynb) for more details on GPR and for a treatment of the direct likelihood maximization.
@@ -93,7 +95,9 @@ plt.show()
 # ### MCMC for hyperparameters $\theta$
 #
 # We now want to sample from the posterior over $\theta$:
-# $$p(\theta|\mathbf{y}) \propto p(\mathbf{y}|\theta)p(\theta)$$
+# \begin{equation}
+# p(\theta|\mathbf{y}) \propto p(\mathbf{y}|\theta)p(\theta)
+# \end{equation}
 #
 # Firstly, we build the GPR model.
 
@@ -420,19 +424,34 @@ _ = plt.ylabel("hyper-parameter value")
 
 # %% [markdown]
 # You can construct very flexible models with Gaussian processes by combining them with different likelihoods (sometimes called 'families' in the GLM literature). This makes inference of the GP intractable because the likelihoods are not generally conjugate to the Gaussian process. The general form of the model is
-# $$\theta \sim p(\theta)\\f \sim \mathcal {GP}(m(x; \theta),\, k(x, x'; \theta))\\y_i \sim p(y | g(f(x_i))\,.$$
+# \begin{align}
+# \theta &\sim p(\theta) \\
+# f &\sim \mathcal {GP}(m(x; \theta),\, k(x, x'; \theta)) \\
+# y_i &\sim p(y | g(f(x_i))\,.
+# \end{align}
 #
 #
 # To perform inference in this model, we'll run MCMC using Hamiltonian Monte Carlo (HMC) over the function values and the parameters $\theta$ jointly. The key to an effective scheme is rotation of the field using the Cholesky decomposition. We write:
 #
-# $$\theta \sim p(\theta)\\v \sim \mathcal {N}(0,\, I)\\LL^\top = K\\f = m + Lv\\y_i \sim p(y | g(f(x_i))\,.$$
+# \begin{align}
+# \theta &\sim p(\theta) \\
+# v &\sim \mathcal {N}(0,\, I) \\
+# LL^\top &= K \\
+# f &= m + Lv \\
+# y_i &\sim p(y | g(f(x_i))\,.
+# \end{align}
 #
 # Joint HMC over $v$ and the function values is not widely adopted in the literature because of the difficulty in differentiating $LL^\top=K$. We've made this derivative available in TensorFlow, and so application of HMC is relatively straightforward.
 
 # %% [markdown]
 # ### Exponential Regression
 # We consider an exponential regression model:
-# $$\theta \sim p(\theta)\\f \sim \mathcal {GP}(0, k(x, x'; \theta))\\f_i = f(x_i)\\y_i \sim \mathcal {Exp} (e^{f_i})$$
+# \begin{align}
+# \theta &\sim p(\theta) \\
+# f &\sim \mathcal {GP}(0, k(x, x'; \theta)) \\
+# f_i &= f(x_i) \\
+# y_i &\sim \mathcal {Exp} (e^{f_i})
+# \end{align}
 #
 # We'll use MCMC to deal with both the kernel parameters $\theta$ and the latent function values $f$. Firstly, generate a data set.
 

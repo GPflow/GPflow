@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.3.3
+#       jupytext_version: 1.4.0
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -53,7 +53,9 @@ _ = plt.plot(X, Y, "kx", mew=2)
 
 # %% [markdown]
 # We will consider the following probabilistic model:
-# $$ Y_i = f(X_i) + \varepsilon_i , $$
+# \begin{equation}
+# Y_i = f(X_i) + \varepsilon_i\,,
+# \end{equation}
 # where $f \sim \mathcal{GP}(\mu(\cdot), k(\cdot, \cdot'))$, and $\varepsilon \sim \mathcal{N}(0, \tau^2 I)$.
 
 # %% [markdown]

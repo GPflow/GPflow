@@ -39,9 +39,9 @@ tf.random.set_seed(42)
 # %% [markdown]
 # ## Generating data
 # For this notebook example, we generate 10,000 noisy observations from a test function:
-# $$
+# \begin{equation}
 # f(x) = \sin(3\pi x) + 0.3\cos(9\pi x) + \frac{\sin(7 \pi x)}{2}
-# $$
+# \end{equation}
 
 # %%
 def func(x):

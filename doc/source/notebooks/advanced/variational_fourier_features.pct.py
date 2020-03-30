@@ -450,5 +450,3 @@ plot_gp(m_ip, Xnew, "inducing points [ELBO={:.3}]".format(-objective_ip().numpy(
 plot_gp(m_ref, Xnew, "exact [LML={:.3}]".format(-objective_ref().numpy().item()))
 plt.legend(loc="best")
 plt.show()
-
-# %%
