@@ -64,6 +64,7 @@ SPHINX_FUNC_STRING = """
 SPHINX_INCLUDE_MODULE_STRING = """
 {name}
 {level}
+.. automodule:: {name}
 .. toctree::
    :maxdepth: 1
 
