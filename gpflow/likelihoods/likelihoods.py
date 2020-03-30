@@ -365,12 +365,7 @@ class ScalarLikelihood(Likelihood):
         """
         return tf.reduce_sum(
             ndiagquad(
-                self._scalar_log_prob,
-                self.num_gauss_hermite_points,
-                Fmu,
-                Fvar,
-                logspace=True,
-                Y=Y,
+                self._scalar_log_prob, self.num_gauss_hermite_points, Fmu, Fvar, logspace=True, Y=Y,
             ),
             axis=-1,
         )
