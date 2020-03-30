@@ -10,7 +10,12 @@ from pathlib import Path
 from pkg_resources import parse_version
 from setuptools import find_packages, setup
 
-on_rtd = os.environ.get("READTHEDOCS", None) == "True"  # copied from the docs
+
+# We do not want to install tensorflow in the readthedocs environment, where we
+# use autodoc_mock_imports instead. Hence we use this flag to decide whether or
+# not to append tensorflow and tensorflow_probability to the requirements:
+on_readthedocs = os.environ.get("READTHEDOCS", None) == "True"
+
 
 # Dependencies of GPflow
 requirements = ["numpy>=1.10.0", "scipy>=0.18.0", "multipledispatch>=0.6", "tabulate"]
@@ -19,7 +24,7 @@ if sys.version_info < (3, 7):
     # became part of stdlib in python 3.7
     requirements.append("dataclasses")
 
-if not on_rtd:
+if not on_readthedocs:
     requirements.append("tensorflow-probability>=0.9")
 
 min_tf_version = "2.1.0"
@@ -55,7 +60,7 @@ try:
         raise DeprecationWarning("TensorFlow version below minimum requirement")
 except (ImportError, DeprecationWarning):
     # Add TensorFlow to dependencies to trigger installation/update
-    if not on_rtd:
+    if not on_readthedocs:
         # Do not add TF if we are installing GPflow on readthedocs
         requirements.append(tf_cpu)
         gast_requirement = (
