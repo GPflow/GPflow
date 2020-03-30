@@ -162,7 +162,7 @@ class NaturalGradient(tf.optimizers.Optimizer):
                         [xi1_nat, xi2_nat], [nat1, nat2], output_gradients=dummy_tensors
                     )
 
-        # 1) the oridinary gpflow gradient
+        # 1) the ordinary gpflow gradient
         dL_dmean, dL_dvarsqrt = tape.gradient(loss, [q_mu, q_sqrt])
         dL_dvarsqrt = q_sqrt.transform.forward(dL_dvarsqrt)
 
@@ -178,7 +178,7 @@ class NaturalGradient(tf.optimizers.Optimizer):
         else:
             nat_dL_xi1, nat_dL_xi2 = dL_deta1, dL_deta2
 
-        del tape  # Remove "persitent" tape
+        del tape  # Remove "persistent" tape
 
         xi1, xi2 = xi_transform.meanvarsqrt_to_xi(q_mu, q_sqrt)
         xi1_new = xi1 - self.gamma * nat_dL_xi1

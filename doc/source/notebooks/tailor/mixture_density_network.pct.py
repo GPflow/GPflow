@@ -63,16 +63,16 @@ _ = plt.ylabel("$y$")
 # ## Mixture Density Network models
 #
 # Mixture Density Networks (MDNs) are a parametric class of models that allow for conditional density estimation. They consist of two parts: a neural net and a Mixture of Gaussians (MoG). The neural net is responsible for producing the characteristics of the MoG. In practice, given that the MoG consists of $M$ Gaussians, the neural net will output a collection of $M$ means, variances and weights $\{\mu_m, \sigma_m^2, \pi_m\}_{m=1}^M$. These means, variances and weights are used to define the conditional probability distribution function:
-# $$
+# \begin{equation}
 # p(Y = y\,|\,X = x) = \sum_{m=1}^{M} \pi_{m}(x)\,\mathcal{N}\big(y\, \left|\,\mu_{m}(x), \sigma_{m}^2(x)\big)\right.
-# $$
+# \end{equation}
 #
 # Each of the parameters  $\pi_{m}(x), \mu_{m}(x), \sigma_{m}(x)$ of the distribution are determined by the neural net, as a function of the input $x$.
 #
 # We train the MDN's neural net by optimizing the model's likelihood:
-# $$
+# \begin{equation}
 # \mathcal{L} \triangleq \text{argmax}_{\Theta} \prod_{n=1}^N p(Y = y_n | X = x_n)
-# $$
+# \end{equation}
 #
 # where $\Theta$ collects the neural net's weights and biases and $\{x_n, y_n\}_{n=1}^N$ represents our training dataset.
 
@@ -150,10 +150,10 @@ class MDN(BayesianModel, ExternalDataTrainingLossMixin):
 # %% [markdown]
 # ### Notes
 # - Given we are dealing with a MoG, the neural net output must comply with the following restrictions:
-# $$
-# \sum_{m=1}^{M} \pi_{m}(x) = 1, \pi_m \ge 0\ \text{and}\ \sigma_m\ \forall\ m
-# $$
-# We achieve this by applying the `softmax` operator to the $\pi$'s and by taking the `exp` to the $\sigma$'s.
+#   \begin{equation}
+#   \sum_{m=1}^{M} \pi_{m}(x) = 1, \pi_m \ge 0\ \text{and}\ \sigma_m\ \forall\ m
+#   \end{equation}
+#   We achieve this by applying the `softmax` operator to the $\pi$'s and by taking the `exp` to the $\sigma$'s.
 #
 # - We use the "Xavier" initialization for the neural net's weights. (Glorot and Bengio, 2010).
 #
@@ -182,7 +182,7 @@ from gpflow.ci_utils import ci_niter
 
 Scipy().minimize(
     model.training_loss_closure(data, jit=True),
-    variables=model.trainable_variables,
+    model.trainable_variables,
     options=dict(maxiter=ci_niter(1500)),
 )
 
@@ -234,7 +234,7 @@ model = MDN(inner_dims=[100, 100], num_mixtures=5)
 # %%
 Scipy().minimize(
     model.training_loss_closure(data, jit=True),
-    variables=model.trainable_variables,
+    model.trainable_variables,
     options=dict(maxiter=ci_niter(int(10e3))),
 )
 

@@ -52,7 +52,7 @@ def plot_posterior_predictions(m, X, Y):
     plt.show()
 
 
-def plot_from_samples(m, X, Y, parameters, samples, burn, thin):
+def plot_from_samples(m, X, Y, parameters, parameter_samples, thin):
 
     f = plt.figure(figsize=(12, 6))
     a1 = f.add_axes([0.05, 0.05, 0.9, 0.6])
@@ -62,9 +62,9 @@ def plot_from_samples(m, X, Y, parameters, samples, burn, thin):
     xx = np.linspace(X.min(), X.max(), 200).reshape(-1, 1)
 
     Fpred, Ypred = [], []
-    num_samples = len(samples[0])
-    for i in range(burn, num_samples, thin):
-        for parameter, var_samples in zip(parameters, samples):
+    num_samples = len(parameter_samples[0])
+    for i in range(0, num_samples, thin):
+        for parameter, var_samples in zip(parameters, parameter_samples):
             parameter.assign(var_samples[i])
         Ypred.append(m.predict_y(xx)[0])
         Fpred.append(np.squeeze(m.predict_f_samples(xx, 1)))

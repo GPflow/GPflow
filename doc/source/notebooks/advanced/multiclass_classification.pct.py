@@ -22,19 +22,22 @@
 # Labels are encoded in a one-hot fashion, that is if $C=4$ and $y=2$, we note $\bar{y} = [0,1,0,0]$.
 #
 # The generative model for this problem consists of:
-#  * $C$ latent functions $\mathbf{f} = [f_1,...,f_C]$ with an independent Gaussian Process prior
-#  * a deterministic function that builds a discrete distribution $\pi(\mathbf{f}) = [\pi_1(f_1),...,\pi_C(f_C)]$ from the latents such that $\sum_c \pi_c(f_c) = 1$
-#  * a discrete likelihood $p(y|\mathbf{f}) = Discrete(y;\pi(\mathbf{f})) = \prod_c \pi_c(f_c)^{\bar{y}_c}$
+#
+# * $C$ latent functions $\mathbf{f} = [f_1,...,f_C]$ with an independent Gaussian Process prior
+# * a deterministic function that builds a discrete distribution $\pi(\mathbf{f}) = [\pi_1(f_1),...,\pi_C(f_C)]$ from the latents such that $\sum_c \pi_c(f_c) = 1$
+# * a discrete likelihood $p(y|\mathbf{f}) = Discrete(y;\pi(\mathbf{f})) = \prod_c \pi_c(f_c)^{\bar{y}_c}$
 #
 # A typical example of $\pi$ is the softmax function:
 #
-# $$ \pi_c (f_c) \propto \exp( f_c)$$
+# \begin{equation}
+# \pi_c (f_c) \propto \exp( f_c)
+# \end{equation}
 #
 # Another convenient one is the robust max:
-# $$
+# \begin{equation}
 # \pi_c(\mathbf{f}) = \begin{cases} 1 - \epsilon, & \mbox{if } c = \arg \max_c f_c \\
 #  \epsilon /(C-1), & \mbox{ otherwise} \end{cases}
-# $$
+# \end{equation}
 #
 #
 #

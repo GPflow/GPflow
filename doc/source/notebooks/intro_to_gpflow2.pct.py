@@ -229,7 +229,8 @@ optimizer.minimize(model.training_loss_closure(data), model.trainable_variables)
 # %%
 batch_size = 5
 batched_dataset = tf.data.Dataset.from_tensor_slices(data).batch(batch_size)
-optimizer.minimize(model.training_loss_closure(iter(batched_dataset)), model.trainable_variables)
+training_loss = model.training_loss_closure(iter(batched_dataset))
+optimizer.minimize(training_loss, model.trainable_variables)  # Note that this does a single step
 
 # %% [markdown]
 # As previously, training_loss_closure takes an optional `jit` argument for tf.function compilation (True by default).
@@ -245,8 +246,8 @@ optimizer.minimize(model.training_loss_closure(iter(batched_dataset)), model.tra
 def optimization_step(model: gpflow.models.SVGP, batch: Tuple[tf.Tensor, tf.Tensor]):
     with tf.GradientTape(watch_accessed_variables=False) as tape:
         tape.watch(model.trainable_variables)
-        objective = model.training_loss(batch)
-        grads = tape.gradient(objective, model.trainable_variables)
+        loss = model.training_loss(batch)
+    grads = tape.gradient(loss, model.trainable_variables)
     optimizer.apply_gradients(zip(grads, model.trainable_variables))
     return objective
 

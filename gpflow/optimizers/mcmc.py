@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Callable, Sequence, Optional, TypeVar
+from typing import Callable, Sequence, Optional
 
 import tensorflow as tf
 
@@ -21,17 +21,14 @@ from gpflow.base import Parameter
 __all__ = ["SamplingHelper"]
 
 
-Parameters = Sequence[Parameter]
-LogProbabilityFunction = Callable[[], tf.Tensor]
-
-
 class SamplingHelper:
     """
-    Helper reads from variables being set with a prior and writes values back to the same variables.
+    This helper makes it easy to read from variables being set with a prior and
+    writes values back to the same variables.
 
     Example:
         model = ...  # Create a GPflow model
-        hmc_helper = SamplingHelper(model.log_posterior_density, m.trainable_parameters)
+        hmc_helper = SamplingHelper(model.log_posterior_density, model.trainable_parameters)
 
         target_log_prob_fn = hmc_helper.target_log_prob_fn
         current_state = hmc_helper.current_state
@@ -45,16 +42,24 @@ class SamplingHelper:
                 num_samples, num_burnin_steps, current_state, kernel=adaptive_hmc)
 
         hmc_samples = run_chain_fn()
-        parameter_samples = hmc_helper.convert_samples_to_parameter_values(hmc_samples)
-
-    :param target_log_prob_fn: a callable which represents log-density under
-        the target distribution.
-    :param parameters: List of :class:`gpflow.Parameter` used as a state of the Markov chain.
+        parameter_samples = hmc_helper.convert_to_constrained_values(hmc_samples)
     """
 
-    def __init__(self, target_log_prob_fn: LogProbabilityFunction, parameters: Parameters):
-        if not all([isinstance(p, Parameter) and p.prior is not None for p in parameters]):
-            raise ValueError(f"Expected only parameters with priors")
+    def __init__(
+        self, target_log_prob_fn: Callable[[], tf.Tensor], parameters: Sequence[Parameter]
+    ):
+        """
+        :param target_log_prob_fn: a callable which returns the log-density of the model
+            under the target distribution; needs to implicitly depend on the `parameters`.
+            E.g. `model.log_posterior_density`.
+        :param parameters: List of :class:`gpflow.Parameter` used as a state of the Markov chain.
+            E.g. `model.trainable_parameters`
+            Note that each parameter must have been given a prior.
+        """
+        if not all(isinstance(p, Parameter) and p.prior is not None for p in parameters):
+            raise ValueError(
+                "`parameters` should only contain gpflow.Parameter objects with priors"
+            )
 
         self._parameters = parameters
         self._target_log_prob_fn = target_log_prob_fn
@@ -103,15 +108,16 @@ class SamplingHelper:
 
     def convert_to_constrained_values(self, hmc_samples):
         """
-        Converts list of `unconstrained_values` to constrained versions. Each value in the
-        list corresponds to an entry in parameters passed to the constructor; in case that object
-        is a `gpflow.Parameter`, the `forward` method of its transform will be applied first.
+        Converts list of unconstrained values in `hmc_samples` to constrained
+        versions. Each value in the list corresponds to an entry in parameters
+        passed to the constructor; for parameters that have a transform, the
+        constrained representation is returned.
         """
         values = []
-        for hmc_variable, param in zip(hmc_samples, self._parameters):
+        for hmc_value, param in zip(hmc_samples, self._parameters):
             if param.transform is not None:
-                value = param.transform.forward(hmc_variable)
+                value = param.transform.forward(hmc_value)
             else:
-                value = hmc_variable
-            values.append(value.numpy())
+                value = hmc_value
+            values.append(value)
         return values

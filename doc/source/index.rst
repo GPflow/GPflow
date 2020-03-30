@@ -13,7 +13,7 @@ GPflow Documentation
    intro
    notebooks/intro
    notebooks/intro_to_gpflow2
-   notebooks/gpflow2_upgrade/gpflow2_upgrade_guide
+   notebooks/gpflow2_upgrade_guide
 
 .. toctree::
    :maxdepth: 1

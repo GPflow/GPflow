@@ -19,8 +19,10 @@
 # %% [markdown]
 # This notebook shows how to construct a Gaussian process model where different noise is assumed for different data points. The model is:
 #
-# $$f(\cdot) \sim \mathcal{GP}\big(0, k(\cdot, \cdot)\big)$$
-# $$y_i | f, x_i \sim \mathcal N\big(y_i; f(x_i), \sigma^2_i\big)$$
+# \begin{align}
+# f(\cdot) &\sim \mathcal{GP}\big(0, k(\cdot, \cdot)\big) \\
+# y_i | f, x_i &\sim \mathcal N\big(y_i; f(x_i), \sigma^2_i\big)
+# \end{align}
 #
 # We'll demonstrate two methods. In the first demonstration, we'll assume that the noise variance is known for every data point. We'll incorporate the known noise variances $\sigma^2_i$ into the data matrix $\mathbf Y$, make a likelihood that can deal with this structure, and implement inference using variational GPs with natural gradients.
 #
