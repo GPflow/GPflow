@@ -98,7 +98,7 @@ def parameter_dict(module: tf.Module) -> Dict[str, Union[Parameter, tf.Variable]
 
 
 def training_loop(
-    closure: Callable[..., tf.Tensor],
+    closure: Callable[[], tf.Tensor],
     optimizer: Optional[tf.optimizers.Optimizer] = None,
     var_list: List[tf.Variable] = None,
     maxiter=1e3,
@@ -119,7 +119,7 @@ def training_loop(
     optimizer = tf.optimizers.Adam() if optimizer is None else optimizer
 
     def optimization_step():
-        with tf.GradientTape() as tape:
+        with tf.GradientTape(watch_accessed_variables=False) as tape:
             tape.watch(var_list)
             loss = closure()
         grads = tape.gradient(loss, var_list)

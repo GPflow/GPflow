@@ -177,7 +177,7 @@ def test_stochastic_gradients(indices_1, indices_2, num_data1, num_data2, max_it
         for _ in range(max_iter):
             with tf.GradientTape() as tape:
                 loss = model.log_likelihood(data)
-                grads = tape.gradient(loss, model.trainable_variables)
+            grads = tape.gradient(loss, model.trainable_variables)
             opt.apply_gradients(zip(grads, model.trainable_variables))
         return model
 

@@ -142,5 +142,5 @@ def _compute_loss_and_gradients(loss_closure: LossClosure, variables: V) -> Tupl
     with tf.GradientTape(watch_accessed_variables=False) as tape:
         tape.watch(variables)
         loss = loss_closure()
-        grads = tape.gradient(loss, variables)
+    grads = tape.gradient(loss, variables)
     return loss, grads
