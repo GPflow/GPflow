@@ -151,6 +151,7 @@ monitor = Monitor(MonitorTaskGroup([model_task, lml_task]))
 # In the optimisation loop below we use `tf.range` (rather than Python's built-in range) to avoid re-tracing the `step` function each time.
 
 
+# %%
 @tf.function
 def step(i):
     opt.minimize(lambda: -1.0 * model.log_likelihood(), model.trainable_variables)
@@ -160,3 +161,6 @@ def step(i):
 # Notice the tf.range
 for i in tf.range(optimisation_steps):
     step(i)
+
+# %% [markdown]
+# When opening TensorBoard, you may need to use the command `tensorboard --logdir . --reload_multifile=true`, as multiple `FileWriter` objects are used.
