@@ -214,6 +214,8 @@ These default settings can be changed using environment variables (`GPFLOW_FLOAT
 See the `gpflow.config` API documentation for more details.
 
 
+<!-- #region -->
+
 ## Data Types
 
 In some cases TensorFlow will try to figure out an appropriate data type for certain variables. If Python floats have been used, TensorFlow may default these variables to `float32`, which can cause incompatibilities with GPflow, which defaults to using `float64`.
@@ -222,6 +224,7 @@ To resolve this you can use `tf.constant` instead of a Python float, and explici
 ```python
 tf.constant(0.1, dtype=gpflow.default_float())
 ```
+<!-- #endregion -->
 
 
 ## Transforms
