@@ -165,9 +165,9 @@ vfe = gpflow.models.SGPR(
 )
 objective = tf.function(lambda: -vfe.log_marginal_likelihood())
 gpflow.optimizers.Scipy().minimize(
-    objective, vfe.trainable_variables, options=dict(maxiter=ci_niter(1000)), jit=False
+    objective, vfe.trainable_variables, options=dict(maxiter=ci_niter(1000)), compile=False
 )
-# Note that we need to set jit=False here due to a discrepancy in tf.function jitting
+# Note that we need to set compile=False here due to a discrepancy in compiling with tf.function
 # see https://github.com/GPflow/GPflow/issues/1260
 
 print("Lower bound: %f" % vfe.log_likelihood().numpy())
