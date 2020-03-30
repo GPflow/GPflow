@@ -231,7 +231,12 @@ These have been removed in favour of the tools in `tensorflow_probability.biject
 GPflow 2 still provides the `gpflow.utilities.triangular` alias for `tfp.bijectors.FillTriangular`.
 
 To constrain parameters to be positive, there is `gpflow.utilities.positive` which is configurable to be either softplus or exp, with an optional shift to ensure a lower bound that is larger than zero.
-Note that the default lower bound used to be `1e-6`; by default, the lower bound if not specified explicitly is now `0.0`.
+Note that the default lower bound used to be `1e-6`; by default, the lower bound if not specified explicitly is now `0.0`. Revert the previous behaviour using `gpflow.config.set_default_positive_minimum(1e-6)`.
+
+
+## Priors
+
+Priors used to be defined on the *unconstrained* variable. The default has changed to the prior to be defined on the *constrained* parameter value; this can be changed by passing the `prior_on` argument to `gpflow.Parameter()`. See the [MCMC notebook](advanced/mcmc.ipynb) for more details.
 
 
 ## Name Scoping
