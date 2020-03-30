@@ -8,8 +8,9 @@
 #       format_version: '1.3'
 #       jupytext_version: 1.4.0
 #   kernelspec:
-#     display_name: 'Python 3.7.4 64-bit (''gpflow2'': conda)'
-#     name: python37464bitgpflow2conda97d7f93b14fc49f496551bb0d0f2e18e
+#     display_name: Python 3
+#     language: python
+#     name: python3
 # ---
 
 # %% [markdown]
