@@ -222,7 +222,9 @@ model.training_loss(data)
 
 # %%
 optimizer = tf.optimizers.Adam()
-training_loss = model.training_loss_closure(data)  # We save the compiled closure in a variable so as not to re-compile it each step
+training_loss = model.training_loss_closure(
+    data
+)  # We save the compiled closure in a variable so as not to re-compile it each step
 optimizer.minimize(training_loss, model.trainable_variables)  # Note that this does a single step
 
 # %% [markdown]
