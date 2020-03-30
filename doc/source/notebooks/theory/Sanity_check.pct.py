@@ -42,7 +42,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 
 from gpflow import set_trainable
-from gpflow.models import model_maximum_log_likelihood_objective
+from gpflow.models import maximum_log_likelihood_objective, training_loss_closure
 from gpflow.config import default_float
 from gpflow.ci_utils import ci_niter
 
@@ -102,7 +102,7 @@ models = [m1, m2, m3, m4, m5, m6]
 # %%
 for m in models:
     opt = gpflow.optimizers.Scipy()
-    loss_closure = gpflow.model_training_loss_closure(m, data)
+    loss_closure = training_loss_closure(m, data)
     opt.minimize(
         loss_closure,
         variables=m.trainable_variables,
@@ -159,4 +159,4 @@ for m in models:
 
 # %%
 for m in models:
-    print(f"{m.__class__.__name__:30}  {model_maximum_log_likelihood_objective(m, data)}")
+    print(f"{m.__class__.__name__:30}  {maximum_log_likelihood_objective(m, data)}")

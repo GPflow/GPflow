@@ -26,7 +26,7 @@ def _assert_equal_data(data1, data2):
             tf.debugging.assert_equal(v1, v2)
 
 
-def model_training_loss_closure(
+def training_loss_closure(
     model: BayesianModel, data: Data, **closure_kwargs
 ) -> Callable[[], tf.Tensor]:
     if isinstance(model, ExternalDataTrainingLossMixin):
@@ -36,7 +36,7 @@ def model_training_loss_closure(
         return model.training_loss_closure(**closure_kwargs)
 
 
-def model_training_loss(model: BayesianModel, data: Data) -> tf.Tensor:
+def training_loss(model: BayesianModel, data: Data) -> tf.Tensor:
     if isinstance(model, ExternalDataTrainingLossMixin):
         return model.training_loss(data)
     else:
@@ -44,7 +44,7 @@ def model_training_loss(model: BayesianModel, data: Data) -> tf.Tensor:
         return model.training_loss()
 
 
-def model_maximum_log_likelihood_objective(model: BayesianModel, data: Data) -> tf.Tensor:
+def maximum_log_likelihood_objective(model: BayesianModel, data: Data) -> tf.Tensor:
     if isinstance(model, ExternalDataTrainingLossMixin):
         return model.maximum_log_likelihood_objective(data)
     else:

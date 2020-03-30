@@ -29,7 +29,7 @@ from .sgpr import GPRFITC, SGPR
 from .svgp import SVGP
 from .vgp import VGP, VGPOpperArchambeau
 from .util import (
-    model_training_loss,
-    model_training_loss_closure,
-    model_maximum_log_likelihood_objective,
+    training_loss,
+    training_loss_closure,
+    maximum_log_likelihood_objective,
 )

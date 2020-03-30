@@ -20,7 +20,7 @@ from numpy.testing import assert_allclose
 import gpflow
 from gpflow.config import default_jitter
 from gpflow.mean_functions import Constant
-from gpflow.models import model_maximum_log_likelihood_objective
+from gpflow.models import maximum_log_likelihood_objective
 
 rng = np.random.RandomState(0)
 
@@ -190,7 +190,7 @@ def test_equivalence(approximate_model):
     """
     gpr_model = _create_full_gp_model()
     gpr_likelihood = gpr_model.log_marginal_likelihood()
-    approximate_likelihood = model_maximum_log_likelihood_objective(approximate_model, Datum.data)
+    approximate_likelihood = maximum_log_likelihood_objective(approximate_model, Datum.data)
     assert_allclose(approximate_likelihood, gpr_likelihood, rtol=1e-6)
 
     gpr_kernel_ls = gpr_model.kernel.lengthscales.read_value()
