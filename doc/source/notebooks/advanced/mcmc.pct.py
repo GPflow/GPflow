@@ -45,13 +45,13 @@ tf.random.set_seed(123)
 
 # %% [markdown]
 #
-# In this notebook, we provide three examples
-# * [Example 1](#example_1): Sampling hyperparameters in Gaussian process regression
-# * [Example 2](#example_2): Sparse Variational MC applied to the multiclass classification problem
-# * [Example 3](#example_3): Full Bayesian inference for Gaussian process models
+# In this notebook, we provide three examples:
+#
+# * [Example 1](#Example-1-GP-regression): Sampling hyperparameters in Gaussian process regression
+# * [Example 2](#Example-2-Sparse-MC-for-multiclass-classification): Sparse Variational MC applied to the multiclass classification problem
+# * [Example 3](#Example-3-Fully-Bayesian-inference-for-generalized-GP-models-with-HMC): Full Bayesian inference for Gaussian process models
 
 # %% [markdown]
-# <a id='example_1'></a>
 # ## Example 1: GP regression
 
 # %% [markdown]
@@ -273,7 +273,6 @@ plt.title("Posterior GP samples")
 plt.show()
 
 # %% [markdown]
-# <a id='example_2'></a>
 # ## Example 2: Sparse MC for multiclass classification
 
 # %% [markdown]
@@ -407,7 +406,6 @@ _ = plt.ylabel("hyperparameter value")
 
 
 # %% [markdown]
-# <a id='example_3'></a>
 # ## Example 3: Fully Bayesian inference for generalized GP models with HMC
 
 # %% [markdown]
