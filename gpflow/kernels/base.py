@@ -98,7 +98,6 @@ class Kernel(Module, metaclass=abc.ABCMeta):
             if X2 is not None:
                 X2 = X2[..., dims]
         elif dims is not None:
-            # TODO(@awav): Convert when TF2.0 will support proper slicing.
             X = tf.gather(X, dims, axis=-1)
             if X2 is not None:
                 X2 = tf.gather(X2, dims, axis=-1)

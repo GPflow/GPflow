@@ -2,8 +2,10 @@ import numpy as np
 import pytest
 import tensorflow_probability as tfp
 
+import gpflow
 from gpflow.config import Config, as_context
 from gpflow.utilities import positive, triangular
+from gpflow.utilities.ops import difference_matrix
 
 
 @pytest.mark.parametrize(
@@ -48,3 +50,26 @@ def test_positive_calculation_order():
 
 def test_triangular():
     assert isinstance(triangular(), tfp.bijectors.FillTriangular)
+
+
+def test_select_parameters_with_prior():
+    kernel = gpflow.kernels.SquaredExponential()
+    params = gpflow.utilities.select_dict_parameters_with_prior(kernel)
+    assert params == {}
+
+    kernel.variance.prior = tfp.distributions.Gamma(1.0, 1.0)
+    params = gpflow.utilities.select_dict_parameters_with_prior(kernel)
+    assert len(params) == 1
+
+
+def test_difference_matrix_broadcasting_symmetric():
+    X = np.random.randn(5, 4, 3, 2)
+    d = difference_matrix(X, None)
+    assert d.shape == (5, 4, 3, 3, 2)
+
+
+def test_difference_matrix_broadcasting_cross():
+    X = np.random.randn(2, 3, 4, 5)
+    X2 = np.random.randn(8, 7, 6, 5)
+    d = difference_matrix(X, X2)
+    assert d.shape == (2, 3, 4, 8, 7, 6, 5)

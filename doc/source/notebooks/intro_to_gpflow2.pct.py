@@ -223,43 +223,83 @@ simple_training_loop(model, epochs=10, logging_epoch_freq=2)
 # %% [markdown]
 # ## Monitoring
 #
-# We can monitor the training procedure using `tf.summary`. First we create a summary writer object through which we can write scalars and images.
+# `gpflow.monitor` provides a thin wrapper on top of tf.summary that makes it easy to monitor the training procedure.
+# For a more detailed tutorial see the [monitoring notebook](./basics/monitoring.pct.py).
 
 # %%
-from intro_to_gpflow2_plotting import plotting_regression, summary_matplotlib_image
+from gpflow.monitor import (
+    ImageToTensorBoard,
+    ModelToTensorBoard,
+    ExecuteCallback,
+    Monitor,
+    MonitorTaskGroup,
+    ScalarToTensorBoard,
+)
 
-samples_input = to_default_float(np.linspace(0, 10, 100).reshape(100, 1))
+samples_input = np.linspace(0, 10, 100).reshape(-1, 1)
 
 
-def monitored_training_loop(
-    model: gpflow.models.SVGP,
-    logdir: str,
-    epochs: int = 1,
-    logging_epoch_freq: int = 10,
-    num_samples: int = 10,
-):
-    summary_writer = tf.summary.create_file_writer(logdir)
+def plot_model(fig, ax):
+    tf.print("Plotting...")
+    mean, var = model.predict_f(samples_input)
+    num_samples = 10
+    samples = model.predict_f_samples(samples_input, num_samples)
+    ax.plot(samples_input, mean, "C0", lw=2)
+    ax.fill_between(
+        samples_input[:, 0],
+        mean[:, 0] - 1.96 * np.sqrt(var[:, 0]),
+        mean[:, 0] + 1.96 * np.sqrt(var[:, 0]),
+        color="C0",
+        alpha=0.2,
+    )
+    ax.plot(X, Y, "kx")
+    ax.plot(samples_input, samples[:, :, 0].numpy().T, "C0", linewidth=0.5)
+    ax.set_ylim(-2.0, +2.0)
+    ax.set_xlim(0, 10)
+
+
+def print_cb(epoch_id=None, data=None):
+    tf.print(f"Epoch {epoch_id}: ELBO (train)", model.elbo(data))
+
+
+def elbo_cb(data=None, **_):
+    return model.elbo(data)
+
+
+output_logdir = enumerated_logdir()
+
+model_task = ModelToTensorBoard(output_logdir, model)
+elbo_task = ScalarToTensorBoard(output_logdir, elbo_cb, "elbo")
+print_task = ExecuteCallback(callback=print_cb)
+
+# We group these tasks and specify a period of `100` steps for them
+fast_tasks = MonitorTaskGroup([model_task, elbo_task, print_task], period=100)
+
+# We also want to see the model's fit during the optimisation
+image_task = ImageToTensorBoard(output_logdir, plot_model, "samples_image")
+
+# We typically don't want to plot too frequently during optimisation,
+# which is why we specify a larger period for this task.
+slow_taks = MonitorTaskGroup(image_task, period=500)
+monitor = Monitor(fast_tasks, slow_taks)
+
+
+def monitored_training_loop(epochs: int):
     tf_optimization_step = tf.function(optimization_step)
     batches = iter(train_dataset)
 
-    with summary_writer.as_default():
-        for epoch in range(epochs):
-            for _ in range(num_batches_per_epoch):
-                tf_optimization_step(model, next(batches))
+    for epoch in range(epochs):
+        for _ in range(num_batches_per_epoch):
+            batch = next(batches)
+            tf_optimization_step(model, batch)
 
-            epoch_id = epoch + 1
-            if epoch_id % logging_epoch_freq == 0:
-                tf.print(f"Epoch {epoch_id}: ELBO (train) {model.elbo(data)}")
+        epoch_id = epoch + 1
+        monitor(epoch, epoch_id=epoch_id, data=data)
 
-                mean, var = model.predict_f(samples_input)
-                samples = model.predict_f_samples(samples_input, num_samples)
-                fig = plotting_regression(X, Y, samples_input, mean, var, samples)
 
-                summary_matplotlib_image(dict(model_samples=fig), step=epoch)
-                tf.summary.scalar("elbo", data=model.elbo(data), step=epoch)
-                tf.summary.scalar("likelihood/variance", data=model.likelihood.variance, step=epoch)
-                tf.summary.scalar("kernel/lengthscales", data=model.kernel.lengthscales, step=epoch)
-                tf.summary.scalar("kernel/variance", data=model.kernel.variance, step=epoch)
+# %% [markdown]
+# NOTE: for optimal performance it is recommended to wrap the monitoring inside `tf.function`.
+# This is detailed in the [monitoring notebook](./basics/monitoring.ipynb).
 
 
 # %%
@@ -267,8 +307,7 @@ model = gpflow.models.SVGP(
     kernel=kernel, likelihood=likelihood, inducing_variable=inducing_variable
 )
 
-output_logdir = enumerated_logdir()
-monitored_training_loop(model, output_logdir, epochs=1000, logging_epoch_freq=100)
+monitored_training_loop(epochs=1000)
 
 # %% [markdown]
 # Then, we can use TensorBoard to examine the training procedure in more detail

@@ -5,8 +5,9 @@ import tensorflow as tf
 
 from ..base import Parameter
 from ..utilities import positive
+from ..utilities.ops import difference_matrix
 from .base import Kernel
-from .stationaries import Stationary
+from .stationaries import Stationary, IsotropicStationary
 
 
 class Periodic(Kernel):
@@ -37,7 +38,7 @@ class Periodic(Kernel):
         the constructor doesn't have it as an argument.
     """
 
-    def __init__(self, base_kernel: Stationary, period: Union[float, List[float]] = 1.0):
+    def __init__(self, base_kernel: IsotropicStationary, period: Union[float, List[float]] = 1.0):
         """
         :param base_kernel: the base kernel to make periodic; must inherit from Stationary
             Note that `active_dims` should be specified in the base kernel.
@@ -45,8 +46,8 @@ class Periodic(Kernel):
             this must be initialized with an array the same length as the number
             of active dimensions e.g. [1., 1., 1.]
         """
-        if not isinstance(base_kernel, Stationary):
-            raise TypeError("Periodic requires a Stationary kernel as the `base_kernel`")
+        if not isinstance(base_kernel, IsotropicStationary):
+            raise TypeError("Periodic requires an IsotropicStationary kernel as the `base_kernel`")
 
         super().__init__()
         self.base_kernel = base_kernel
@@ -65,15 +66,7 @@ class Periodic(Kernel):
         return self.base_kernel.K_diag(X)
 
     def K(self, X: tf.Tensor, X2: Optional[tf.Tensor] = None) -> tf.Tensor:
-        if X2 is None:
-            X2 = X
-
-        # Introduce dummy dimension so we can use broadcasting
-        # TODO: does not support kernel broadcasting
-        f = tf.expand_dims(X, 1)  # now [N, 1, D]
-        f2 = tf.expand_dims(X2, 0)  # now [1, M, D]
-
-        r = np.pi * (f - f2) / self.period
+        r = np.pi * (difference_matrix(X, X2)) / self.period
         scaled_sine = tf.sin(r) / self.base_kernel.lengthscales
         if hasattr(self.base_kernel, "K_r"):
             sine_r = tf.reduce_sum(tf.abs(scaled_sine), -1)
