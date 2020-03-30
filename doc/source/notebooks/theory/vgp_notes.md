@@ -31,9 +31,9 @@ $$
 
 We follow their advice in reparameterizing the mean as:
 
-$$
+\begin{equation}
 \mathbf m = \mathbf K \boldsymbol \alpha
-$$
+\end{equation}
 
 Additionally, to avoid having to constrain the parameter $\lambda$ to be positive, we take the square. The approximation then becomes:
 
