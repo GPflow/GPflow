@@ -266,7 +266,17 @@ def _set_by_name_index(parent: object, value: Any, attr_str: str, index_str: Uni
         index = int(index_str)
         attr = getattr(parent, attr_str)
         attr[index] = value
+        # NOTE: tensorflow's __setattr__ override does not contain a check for the case where
+        # an attribute holding a trackable object (e.g. a Variable) is being reassigned
+        # a non-trackable object (e.g. a constant). Therefore, tensorflow still stores
+        # internal references to the trackable object after reassignment, which can lead
+        # to various problems, for example https://github.com/GPflow/GPflow/pull/1338
+        # By calling delattr first, we are forcing tensorflow to remove its internal reference.
+        # This is a tensorflow bug, see https://github.com/tensorflow/tensorflow/issues/37806
+        delattr(parent, attr_str)
+        setattr(parent, attr_str, attr)
     else:
+        delattr(parent, attr_str)  # as above
         setattr(parent, attr_str, value)
 
 
