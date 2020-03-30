@@ -54,7 +54,7 @@ _ = plt.plot(X, Y, "kx", mew=2)
 # %% [markdown]
 # We will consider the following probabilistic model:
 # \begin{equation}
-# Y_i = f(X_i) + \varepsilon_i ,
+# Y_i = f(X_i) + \varepsilon_i\,,
 # \end{equation}
 # where $f \sim \mathcal{GP}(\mu(\cdot), k(\cdot, \cdot'))$, and $\varepsilon \sim \mathcal{N}(0, \tau^2 I)$.
 
