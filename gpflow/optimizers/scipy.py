@@ -52,7 +52,9 @@ class Scipy:
             object. See the Scipy documentation for description of attributes.
         """
         if not callable(closure):
-            raise TypeError("The 'closure' argument is expected to be a callable object.")  # pragma: no cover
+            raise TypeError(
+                "The 'closure' argument is expected to be a callable object."
+            )  # pragma: no cover
         variables = tuple(variables)
         if not all(isinstance(v, tf.Variable) for v in variables):
             raise TypeError(
