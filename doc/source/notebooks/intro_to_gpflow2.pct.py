@@ -254,7 +254,7 @@ def optimization_step(model: gpflow.models.SVGP, batch: Tuple[tf.Tensor, tf.Tens
         loss = model.training_loss(batch)
     grads = tape.gradient(loss, model.trainable_variables)
     optimizer.apply_gradients(zip(grads, model.trainable_variables))
-    return objective
+    return loss
 
 
 # %% [markdown]
