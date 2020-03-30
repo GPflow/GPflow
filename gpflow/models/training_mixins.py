@@ -14,9 +14,6 @@ method that is defined as abstract in BayesianModel.
 There are different mixins depending on whether the model already contains the
 training data (InternalDataTrainingLossMixin), or requires it to be passed in
 to the objective function (ExternalDataTrainingLossMixin).
-MCMCTrainingLossMixin, a subclass of InternalDataTrainingLossMixin, is provided
-for further clarity on what the objective for gradient-based optimization is
-for an MCMC model.
 """
 
 import abc
@@ -121,11 +118,3 @@ class ExternalDataTrainingLossMixin:
                 closure = tf.function(closure)
 
         return closure
-
-
-class MCMCTrainingLossMixin(InternalDataTrainingLossMixin):
-    def training_loss(self) -> tf.Tensor:
-        """
-        Training loss for gradient-based relaxation of MCMC models.
-        """
-        return -self.log_posterior_density()

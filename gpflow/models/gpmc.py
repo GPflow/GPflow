@@ -25,10 +25,10 @@ from ..likelihoods import Likelihood
 from ..mean_functions import MeanFunction
 from ..utilities import to_default_float
 from .model import InputData, RegressionData, MeanAndVariance, GPModel
-from .training_mixins import MCMCTrainingLossMixin
+from .training_mixins import InternalDataTrainingLossMixin
 
 
-class GPMC(GPModel, MCMCTrainingLossMixin):
+class GPMC(GPModel, InternalDataTrainingLossMixin):
     def __init__(
         self,
         data: RegressionData,
@@ -65,6 +65,9 @@ class GPMC(GPModel, MCMCTrainingLossMixin):
 
     def log_posterior_density(self) -> tf.Tensor:
         return self.log_likelihood() + self.log_prior_density()
+
+    def _training_loss(self) -> tf.Tensor:
+        return -self.log_posterior_density()
 
     def maximum_log_likelihood_objective(self) -> tf.Tensor:
         return self.log_likelihood()

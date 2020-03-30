@@ -22,7 +22,6 @@ import tensorflow as tf
 from .training_mixins import (
     InternalDataTrainingLossMixin,
     ExternalDataTrainingLossMixin,
-    MCMCTrainingLossMixin,
     InputData,
     OutputData,
     RegressionData,

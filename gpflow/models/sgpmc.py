@@ -25,11 +25,11 @@ from ..likelihoods import Likelihood
 from ..mean_functions import MeanFunction
 from ..utilities import to_default_float
 from .model import GPModel, InputData, RegressionData, MeanAndVariance
-from .training_mixins import MCMCTrainingLossMixin
+from .training_mixins import InternalDataTrainingLossMixin
 from .util import inducingpoint_wrapper
 
 
-class SGPMC(GPModel, MCMCTrainingLossMixin):
+class SGPMC(GPModel, InternalDataTrainingLossMixin):
     r"""
     This is the Sparse Variational GP using MCMC (SGPMC). The key reference is
 
@@ -89,6 +89,9 @@ class SGPMC(GPModel, MCMCTrainingLossMixin):
 
     def log_posterior_density(self) -> tf.Tensor:
         return self.log_conditional_likelihood_lower_bound() + self.log_prior_density()
+
+    def _training_loss(self) -> tf.Tensor:
+        return -self.log_posterior_density()
 
     def maximum_log_likelihood_objective(self) -> tf.Tensor:
         return self.log_conditional_likelihood_lower_bound()

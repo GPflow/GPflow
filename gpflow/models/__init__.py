@@ -21,7 +21,6 @@ from .model import BayesianModel, GPModel
 from .training_mixins import (
     ExternalDataTrainingLossMixin,
     InternalDataTrainingLossMixin,
-    MCMCTrainingLossMixin,
 )
 
 # from .gplvm import PCA_reduce
