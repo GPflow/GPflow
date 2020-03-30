@@ -334,9 +334,10 @@ class ScalarLikelihood(Likelihood):
         :param F: function evaluation Tensor, with shape [..., latent_dim]
         :param Y: observation Tensor, with shape [..., latent_dim]
         """
-        return tf.reduce_sum(self._scalar_log_density(F, Y), axis=-1)
+        return tf.reduce_sum(self._scalar_log_prob(F, Y), axis=-1)
 
-    def _scalar_log_density(self, F, Y):
+    @abc.abstractmethod
+    def _scalar_log_prob(self, F, Y):
         raise NotImplementedError
 
     def _variational_expectations(self, Fmu, Fvar, Y):
@@ -349,7 +350,7 @@ class ScalarLikelihood(Likelihood):
         :returns: variational expectations, with shape [...]
         """
         return tf.reduce_sum(
-            ndiagquad(self._scalar_log_density, self.num_gauss_hermite_points, Fmu, Fvar, Y=Y),
+            ndiagquad(self._scalar_log_prob, self.num_gauss_hermite_points, Fmu, Fvar, Y=Y),
             axis=-1,
         )
 
@@ -364,7 +365,7 @@ class ScalarLikelihood(Likelihood):
         """
         return tf.reduce_sum(
             ndiagquad(
-                self._scalar_log_density,
+                self._scalar_log_prob,
                 self.num_gauss_hermite_points,
                 Fmu,
                 Fvar,
@@ -407,7 +408,7 @@ class Gaussian(ScalarLikelihood):
         super().__init__(**kwargs)
         self.variance = Parameter(variance, transform=positive(lower=variance_lower_bound))
 
-    def _scalar_log_density(self, F, Y):
+    def _scalar_log_prob(self, F, Y):
         return logdensities.gaussian(Y, F, self.variance)
 
     def _conditional_mean(self, F):  # pylint: disable=R0201
@@ -451,7 +452,7 @@ class Poisson(ScalarLikelihood):
         self.invlink = invlink
         self.binsize = np.array(binsize, dtype=default_float())
 
-    def _scalar_log_density(self, F, Y):
+    def _scalar_log_prob(self, F, Y):
         return logdensities.poisson(Y, self.invlink(F) * self.binsize)
 
     def _conditional_variance(self, F):
@@ -477,7 +478,7 @@ class Exponential(ScalarLikelihood):
         super().__init__(**kwargs)
         self.invlink = invlink
 
-    def _scalar_log_density(self, F, Y):
+    def _scalar_log_prob(self, F, Y):
         return logdensities.exponential(Y, self.invlink(F))
 
     def _conditional_mean(self, F):
@@ -502,7 +503,7 @@ class StudentT(ScalarLikelihood):
         self.df = df
         self.scale = Parameter(scale, transform=positive())
 
-    def _scalar_log_density(self, F, Y):
+    def _scalar_log_prob(self, F, Y):
         return logdensities.student_t(Y, F, self.scale, self.df)
 
     def _conditional_mean(self, F):
@@ -518,7 +519,7 @@ class Bernoulli(ScalarLikelihood):
         super().__init__(**kwargs)
         self.invlink = invlink
 
-    def _scalar_log_density(self, F, Y):
+    def _scalar_log_prob(self, F, Y):
         return logdensities.bernoulli(Y, self.invlink(F))
 
     def _predict_mean_and_var(self, Fmu, Fvar):
@@ -551,7 +552,7 @@ class Gamma(ScalarLikelihood):
         self.invlink = invlink
         self.shape = Parameter(1.0, transform=positive())
 
-    def _scalar_log_density(self, F, Y):
+    def _scalar_log_prob(self, F, Y):
         return logdensities.gamma(Y, self.shape, self.invlink(F))
 
     def _conditional_mean(self, F):
@@ -596,7 +597,7 @@ class Beta(ScalarLikelihood):
         self.scale = Parameter(scale, transform=positive())
         self.invlink = invlink
 
-    def _scalar_log_density(self, F, Y):
+    def _scalar_log_prob(self, F, Y):
         mean = self.invlink(F)
         alpha = mean * self.scale
         beta = self.scale - alpha
@@ -715,8 +716,8 @@ class SwitchedLikelihood(ScalarLikelihood):
     def _check_last_dims_valid(self, F, Y):
         tf.assert_equal(tf.shape(F)[-1], tf.shape(Y)[-1] - 1)
 
-    def _scalar_log_density(self, F, Y):
-        return self._partition_and_stitch([F, Y], "_scalar_log_density")
+    def _scalar_log_prob(self, F, Y):
+        return self._partition_and_stitch([F, Y], "_scalar_log_prob")
 
     def _predict_log_density(self, Fmu, Fvar, Y):
         return self._partition_and_stitch([Fmu, Fvar, Y], "predict_log_density")
@@ -777,7 +778,7 @@ class Ordinal(ScalarLikelihood):
         self.num_bins = bin_edges.size + 1
         self.sigma = Parameter(1.0, transform=positive())
 
-    def _scalar_log_density(self, F, Y):
+    def _scalar_log_prob(self, F, Y):
         Y = to_default_int(Y)
         scaled_bins_left = tf.concat([self.bin_edges / self.sigma, np.array([np.inf])], 0)
         scaled_bins_right = tf.concat([np.array([-np.inf]), self.bin_edges / self.sigma], 0)
