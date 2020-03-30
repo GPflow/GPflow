@@ -102,10 +102,7 @@ models = [m1, m2, m3, m4, m5, m6]
 # %%
 for m in models:
     opt = gpflow.optimizers.Scipy()
-    if isinstance(m, gpflow.models.ExternalDataTrainingLossMixin):
-        loss_closure = m.training_loss_closure(data)
-    else:
-        loss_closure = m.training_loss
+    loss_closure = gpflow.model_training_loss_closure(m, data)
     opt.minimize(
         loss_closure,
         variables=m.trainable_variables,
