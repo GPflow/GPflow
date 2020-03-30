@@ -181,10 +181,10 @@ model
 # %%
 optimizer = tf.optimizers.Adam()
 
-with tf.GradientTape() as tape:
+with tf.GradientTape(watch_accessed_variables=False) as tape:
     tape.watch(model.trainable_variables)
     obj = -model.elbo(data)
-    grads = tape.gradient(obj, model.trainable_variables)
+grads = tape.gradient(obj, model.trainable_variables)
 
 optimizer.apply_gradients(zip(grads, model.trainable_variables))
 
@@ -197,7 +197,7 @@ def optimization_step(model: gpflow.models.SVGP, batch: Tuple[tf.Tensor, tf.Tens
     with tf.GradientTape(watch_accessed_variables=False) as tape:
         tape.watch(model.trainable_variables)
         obj = -model.elbo(batch)
-        grads = tape.gradient(obj, model.trainable_variables)
+    grads = tape.gradient(obj, model.trainable_variables)
     optimizer.apply_gradients(zip(grads, model.trainable_variables))
 
 

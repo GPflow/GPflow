@@ -182,7 +182,7 @@ from gpflow.ci_utils import ci_niter
 
 Scipy().minimize(
     tf.function(lambda: -model.log_marginal_likelihood(data)),
-    variables=model.trainable_parameters,
+    model.trainable_variables,
     options=dict(maxiter=ci_niter(1500)),
 )
 
@@ -234,7 +234,7 @@ model = MDN(inner_dims=[100, 100], num_mixtures=5)
 # %%
 Scipy().minimize(
     tf.function(lambda: -model.log_marginal_likelihood(data)),
-    variables=model.trainable_parameters,
+    model.trainable_variables,
     options=dict(maxiter=ci_niter(int(10e3))),
 )
 

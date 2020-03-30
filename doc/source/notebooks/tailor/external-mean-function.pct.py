@@ -140,7 +140,7 @@ def create_optimization_step(optimizer, model: gpflow.models.GPR):
         with tf.GradientTape(watch_accessed_variables=False) as tape:
             tape.watch(model.trainable_variables)
             objective = -model.log_marginal_likelihood()
-            grads = tape.gradient(objective, model.trainable_variables)
+        grads = tape.gradient(objective, model.trainable_variables)
         optimizer.apply_gradients(zip(grads, model.trainable_variables))
         return objective
 

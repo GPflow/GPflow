@@ -50,7 +50,7 @@ def test_kernel_euclidean_distance(kernel):
     X_as_param = tf.Variable(Datum.X)
     with tf.GradientTape() as tape:
         K_value = kernel(X_as_param, X_as_param)
-        dK = tape.gradient(K_value, X_as_param)[0]
+    dK = tape.gradient(K_value, X_as_param)[0]
 
     assert not np.isnan(dK).any(), "NaNs in the gradient of the " + kernel.__name__ + " kernel."
     assert np.isfinite(dK).all(), "Infs in the output of the " + kernel.__name__ + " kernel."

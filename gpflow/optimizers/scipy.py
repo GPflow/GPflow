@@ -52,8 +52,14 @@ class Scipy:
             object. See the Scipy documentation for description of attributes.
         """
         if not callable(closure):
-            raise TypeError("Callable object expected.")  # pragma: no cover
+            raise TypeError(
+                "The 'closure' argument is expected to be a callable object."
+            )  # pragma: no cover
         variables = tuple(variables)
+        if not all(isinstance(v, tf.Variable) for v in variables):
+            raise TypeError(
+                "The 'variables' argument is expected to only contain tf.Variable instances (use model.trainable_variables, not model.trainable_parameters)"
+            )  # pragma: no cover
         initial_params = self.initial_parameters(variables)
 
         func = self.eval_func(closure, variables, jit=jit)
@@ -134,8 +140,9 @@ class Scipy:
 V = TypeVar("V", bound=Variables)
 
 
-def _compute_loss_and_gradients(loss_cb: LossClosure, variables: V) -> Tuple[tf.Tensor, V]:
-    with tf.GradientTape() as tape:
-        loss = loss_cb()
+def _compute_loss_and_gradients(loss_closure: LossClosure, variables: V) -> Tuple[tf.Tensor, V]:
+    with tf.GradientTape(watch_accessed_variables=False) as tape:
+        tape.watch(variables)
+        loss = loss_closure()
     grads = tape.gradient(loss, variables)
     return loss, grads

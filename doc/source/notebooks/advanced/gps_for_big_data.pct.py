@@ -189,7 +189,7 @@ def optimization_step(optimizer, model: gpflow.models.SVGP, batch):
     with tf.GradientTape(watch_accessed_variables=False) as tape:
         tape.watch(model.trainable_variables)
         objective = -model.elbo(batch)
-        grads = tape.gradient(objective, model.trainable_variables)
+    grads = tape.gradient(objective, model.trainable_variables)
     optimizer.apply_gradients(zip(grads, model.trainable_variables))
     return objective
 
