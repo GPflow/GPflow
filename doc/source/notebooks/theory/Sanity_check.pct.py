@@ -107,7 +107,7 @@ for m in models:
         loss_closure,
         variables=m.trainable_variables,
         options=dict(maxiter=ci_niter(1000)),
-        jit=True,
+        compile=True,
     )
 
 

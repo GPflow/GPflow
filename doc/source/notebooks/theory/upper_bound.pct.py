@@ -86,7 +86,7 @@ for M in Ms:
     gpflow.optimizers.Scipy().minimize(
         vfe.training_loss,
         vfe.trainable_variables,
-        options=dict(disp=False, maxiter=ci_niter(1000), jit=True),
+        options=dict(disp=False, maxiter=ci_niter(1000), compile=True),
     )
 
     vfe_lml.append(vfe.elbo().numpy())
@@ -136,7 +136,7 @@ for M in fMs:
         vfe.training_loss,
         vfe.trainable_variables,
         options=dict(disp=False, maxiter=ci_niter(1000)),
-        jit=True,
+        compile=True,
     )
 
     fvfe_lml.append(vfe.elbo().numpy())

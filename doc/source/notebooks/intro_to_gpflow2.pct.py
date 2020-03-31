@@ -206,8 +206,8 @@ optimizer.minimize(
 
 # %%
 vgp_model.training_loss_closure()  # compiled
-vgp_model.training_loss_closure(jit=True)  # compiled
-vgp_model.training_loss_closure(jit=False)  # uncompiled, same as vgp_model.training_loss
+vgp_model.training_loss_closure(compile=True)  # compiled
+vgp_model.training_loss_closure(compile=False)  # uncompiled, same as vgp_model.training_loss
 
 # %% [markdown]
 # The SVGP model inherits from ExternalDataTrainingLossMixin and expects the data to be passed to training_loss().

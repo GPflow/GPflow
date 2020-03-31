@@ -424,7 +424,7 @@ def test_shared_independent_mok():
         variables=model_1.trainable_variables,
         options=dict(maxiter=500),
         method="BFGS",
-        jit=True,
+        compile=True,
     )
 
     # Model 2
@@ -450,7 +450,7 @@ def test_shared_independent_mok():
         variables=model_2.trainable_variables,
         options=dict(maxiter=500),
         method="BFGS",
-        jit=True,
+        compile=True,
     )
 
     # Model 3
@@ -478,7 +478,7 @@ def test_shared_independent_mok():
         variables=model_3.trainable_variables,
         options=dict(maxiter=500),
         method="BFGS",
-        jit=True,
+        compile=True,
     )
 
     check_equality_predictions(Data.data, [model_1, model_2, model_3])
@@ -511,7 +511,7 @@ def test_separate_independent_mok():
         model_1.training_loss_closure(Data.data),
         variables=model_1.trainable_variables,
         method="BFGS",
-        jit=True,
+        compile=True,
     )
 
     # Model 2 (efficient)
@@ -540,7 +540,7 @@ def test_separate_independent_mok():
         model_2.training_loss_closure(Data.data),
         variables=model_2.trainable_variables,
         method="BFGS",
-        jit=True,
+        compile=True,
     )
 
     check_equality_predictions(Data.data, [model_1, model_2])
@@ -568,7 +568,7 @@ def test_separate_independent_mof():
         model_1.training_loss_closure(Data.data),
         variables=model_1.trainable_variables,
         method="BFGS",
-        jit=True,
+        compile=True,
     )
 
     # Model 2 (efficient)
@@ -588,7 +588,7 @@ def test_separate_independent_mof():
         model_2.training_loss_closure(Data.data),
         variables=model_2.trainable_variables,
         method="BFGS",
-        jit=True,
+        compile=True,
     )
 
     # Model 3 (Inefficient): an idenitical inducing variable is used P times,
@@ -610,7 +610,7 @@ def test_separate_independent_mof():
         model_3.training_loss_closure(Data.data),
         variables=model_3.trainable_variables,
         method="BFGS",
-        jit=True,
+        compile=True,
     )
 
     check_equality_predictions(Data.data, [model_1, model_2, model_3])
@@ -629,7 +629,7 @@ def test_mixed_mok_with_Id_vs_independent_mok():
         model_1.training_loss_closure(Data.data),
         variables=model_1.trainable_variables,
         method="BFGS",
-        jit=True,
+        compile=True,
     )
 
     # Mixed Model
@@ -644,7 +644,7 @@ def test_mixed_mok_with_Id_vs_independent_mok():
         model_2.training_loss_closure(Data.data),
         variables=model_2.trainable_variables,
         method="BFGS",
-        jit=True,
+        compile=True,
     )
 
     check_equality_predictions(Data.data, [model_1, model_2])

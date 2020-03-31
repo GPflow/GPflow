@@ -154,7 +154,7 @@ def test_no_uncertainty(white, mean):
         optimizer=tf.optimizers.Adam(),
         var_list=model.trainable_variables,
         maxiter=100,
-        jit=True,
+        compile=True,
     )
 
     mean1, var1 = model.predict_f(Data.Xnew_mu)
@@ -187,7 +187,7 @@ def test_monte_carlo_1_din(white, mean):
         optimizer=tf.optimizers.Adam(),
         var_list=model.trainable_variables,
         maxiter=200,
-        jit=True,
+        compile=True,
     )
 
     mean1, var1 = model.uncertain_predict_f_moment_matching(
@@ -222,7 +222,7 @@ def test_monte_carlo_2_din(white, mean):
         optimizer=tf.optimizers.Adam(),
         var_list=model.trainable_variables,
         maxiter=100,
-        jit=True,
+        compile=True,
     )
 
     mean1, var1 = model.uncertain_predict_f_moment_matching(
