@@ -96,7 +96,7 @@ def repeatMinimization(model, Xtest, Ytest):
             tol=1e-11,
             options=dict(disp=False, maxiter=ci_niter(2000)),
             step_callback=callback,
-            jit=True,
+            compile=True,
         )
     return callback
 

@@ -19,11 +19,11 @@ def test_training_loss_closure_with_minibatch():
 
     model = DummyModel()
 
-    training_loss_full_data = model.training_loss_closure(data, jit=True)
+    training_loss_full_data = model.training_loss_closure(data, compile=True)
     loss_full = training_loss_full_data()
 
     it = iter(dataset.batch(B))
-    training_loss_minibatch = model.training_loss_closure(it, jit=True)
+    training_loss_minibatch = model.training_loss_closure(it, compile=True)
     batch_losses = [training_loss_minibatch() for _ in range(num_batches)]
 
     np.testing.assert_allclose(loss_full, np.sum(batch_losses))

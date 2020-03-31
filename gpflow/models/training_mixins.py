@@ -49,16 +49,16 @@ class InternalDataTrainingLossMixin:
         """
         return self._training_loss()
 
-    def training_loss_closure(self, *, jit=True) -> Callable[[], tf.Tensor]:
+    def training_loss_closure(self, *, compile=True) -> Callable[[], tf.Tensor]:
         """
         Convenience method. Returns a closure which itself returns the training loss. This closure
         can be passed to the minimize methods on :class:`gpflow.optimizers.Scipy` and subclasses of
         `tf.optimizers.Optimizer`.
 
-        :param jit: If `True` (default), compile the training loss function in a TensorFlow graph
+        :param compile: If `True` (default), compile the training loss function in a TensorFlow graph
             by wrapping it in tf.function()
         """
-        if jit:
+        if compile:
             return tf.function(self.training_loss)
         return self.training_loss
 
@@ -86,22 +86,22 @@ class ExternalDataTrainingLossMixin:
         return self._training_loss(data)
 
     def training_loss_closure(
-        self, data: Union[Data, DatasetOwnedIterator], *, jit=True,
+        self, data: Union[Data, DatasetOwnedIterator], *, compile=True,
     ) -> Callable[[], tf.Tensor]:
         """
         Returns a closure that computes the training loss, which by default is
-        wrapped in tf.function(). This can be disabled by passing `jit=False`.
+        wrapped in tf.function(). This can be disabled by passing `compile=False`.
         
         :param data: the data to be used by the closure for computing the model
             objective. Can be the full dataset or an iterator, e.g.
             `iter(dataset.batch(batch_size))`, where dataset is an instance of
             tf.data.Dataset.
-        :param jit: if True, wrap training loss in tf.function()
+        :param compile: if True, wrap training loss in tf.function()
         """
         training_loss = self.training_loss
 
         if isinstance(data, DatasetOwnedIterator):
-            if jit:
+            if compile:
                 input_signature = [data.element_spec]
                 training_loss = tf.function(training_loss, input_signature=input_signature)
 
@@ -114,7 +114,7 @@ class ExternalDataTrainingLossMixin:
             def closure():
                 return training_loss(data)
 
-            if jit:
+            if compile:
                 closure = tf.function(closure)
 
         return closure

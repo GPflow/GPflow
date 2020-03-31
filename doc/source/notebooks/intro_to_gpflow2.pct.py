@@ -158,7 +158,7 @@ kernel.lengthscales.assign(0.5)
 # %%
 from gpflow.utilities import print_summary
 
-print_summary(model)  # same as print_summary(model, fmt="simple")
+print_summary(model)  # same as print_summary(model, fmt="fancy_table")
 
 # %% [markdown]
 # We can change default printing so that it will look nicer in our notebook:
@@ -202,12 +202,12 @@ optimizer.minimize(
 )
 
 # %% [markdown]
-# You can obtain a compiled version using training_loss_closure, whose `jit` argument is True by default:
+# You can obtain a compiled version using training_loss_closure, whose `compile` argument is True by default:
 
 # %%
 vgp_model.training_loss_closure()  # compiled
-vgp_model.training_loss_closure(jit=True)  # compiled
-vgp_model.training_loss_closure(jit=False)  # uncompiled, same as vgp_model.training_loss
+vgp_model.training_loss_closure(compile=True)  # compiled
+vgp_model.training_loss_closure(compile=False)  # uncompiled, same as vgp_model.training_loss
 
 # %% [markdown]
 # The SVGP model inherits from ExternalDataTrainingLossMixin and expects the data to be passed to training_loss().
@@ -238,7 +238,7 @@ training_loss = model.training_loss_closure(iter(batched_dataset))
 optimizer.minimize(training_loss, model.trainable_variables)  # Note that this does a single step
 
 # %% [markdown]
-# As previously, training_loss_closure takes an optional `jit` argument for tf.function compilation (True by default).
+# As previously, training_loss_closure takes an optional `compile` argument for tf.function compilation (True by default).
 
 # %% [markdown]
 # ## Training using Gradient Tapes
@@ -536,3 +536,31 @@ loaded_model = tf.saved_model.load(save_dir)
 loaded_result = loaded_model.predict(samples_input)
 
 np.testing.assert_array_equal(loaded_result, original_result)
+
+# %% [markdown]
+# ## User config update
+#
+# In this notebook, we used a lot `gpflow.config` methods for setting and getting default attributes from global configuration. However, GPflow provides a way for local config modification without updating values in global. As you can see below, using `gpflow.config.as_context` replaces temporarily global config with your instance. At creation time, custom config instance uses standard values from the global config:
+
+# %%
+user_config = gpflow.config.Config(float=tf.float32, positive_bijector="exp")
+
+user_str = "User config\t"
+global_str = "Global config\t"
+
+with gpflow.config.as_context(user_config):
+    print(f"{user_str} gpflow.config.default_float = {gpflow.config.default_float()}")
+    print(
+        f"{user_str} gpflow.config.positive_bijector = {gpflow.config.default_positive_bijector()}"
+    )
+
+print(f"{global_str} gpflow.config.default_float = {gpflow.config.default_float()}")
+print(f"{global_str} gpflow.config.positive_bijector = {gpflow.config.default_positive_bijector()}")
+
+# %%
+with gpflow.config.as_context(user_config):
+    p = gpflow.Parameter(1.1, transform=gpflow.utilities.positive())
+    print(f"{user_str}{p}")
+
+p = gpflow.Parameter(1.1, transform=gpflow.utilities.positive())
+print(f"{global_str}{p}")

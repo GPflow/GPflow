@@ -86,7 +86,7 @@ for M in Ms:
     gpflow.optimizers.Scipy().minimize(
         vfe.training_loss,
         vfe.trainable_variables,
-        options=dict(disp=False, maxiter=ci_niter(1000), jit=True),
+        options=dict(disp=False, maxiter=ci_niter(1000), compile=True),
     )
 
     vfe_lml.append(vfe.elbo().numpy())
@@ -136,7 +136,7 @@ for M in fMs:
         vfe.training_loss,
         vfe.trainable_variables,
         options=dict(disp=False, maxiter=ci_niter(1000)),
-        jit=True,
+        compile=True,
     )
 
     fvfe_lml.append(vfe.elbo().numpy())
@@ -167,9 +167,9 @@ vfe = gpflow.models.SGPR(
 )
 objective = tf.function(vfe.training_loss)
 gpflow.optimizers.Scipy().minimize(
-    objective, vfe.trainable_variables, options=dict(maxiter=ci_niter(1000)), jit=False
+    objective, vfe.trainable_variables, options=dict(maxiter=ci_niter(1000)), compile=False
 )
-# Note that we need to set jit=False here due to a discrepancy in tf.function jitting
+# Note that we need to set compile=False here due to a discrepancy in compiling with tf.function
 # see https://github.com/GPflow/GPflow/issues/1260
 
 print("Lower bound: %f" % vfe.elbo().numpy())

@@ -19,7 +19,7 @@ class Scipy:
         variables: Variables,
         method: Optional[str] = "L-BFGS-B",
         step_callback: Optional[StepCallback] = None,
-        jit: bool = True,
+        compile: bool = True,
         **scipy_kwargs,
     ) -> OptimizeResult:
         """
@@ -40,7 +40,7 @@ class Scipy:
                 above, and `values` is the corresponding list of tensors of
                 matching shape that contains their value at this optimisation
                 step.
-            jit: If True, wraps the evaluation function (the passed `closure` as
+            compile: If True, wraps the evaluation function (the passed `closure` as
                 well as its gradient computation) inside a `tf.function()`,
                 which will improve optimization speed in most cases.
 
@@ -61,7 +61,7 @@ class Scipy:
             )  # pragma: no cover
         initial_params = self.initial_parameters(variables)
 
-        func = self.eval_func(closure, variables, jit=jit)
+        func = self.eval_func(closure, variables, compile=compile)
         if step_callback is not None:
             if "callback" in scipy_kwargs:
                 raise ValueError("Callback passed both via `step_callback` and `callback`")
@@ -79,7 +79,7 @@ class Scipy:
 
     @classmethod
     def eval_func(
-        cls, closure: LossClosure, variables: Variables, jit: bool = True
+        cls, closure: LossClosure, variables: Variables, compile: bool = True
     ) -> Callable[[np.ndarray], Tuple[np.ndarray, np.ndarray]]:
         def _tf_eval(x: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor]:
             values = cls.unpack_tensors(variables, x)
@@ -88,7 +88,7 @@ class Scipy:
             loss, grads = _compute_loss_and_gradients(closure, variables)
             return loss, cls.pack_tensors(grads)
 
-        if jit:
+        if compile:
             _tf_eval = tf.function(_tf_eval)
 
         def _eval(x: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:

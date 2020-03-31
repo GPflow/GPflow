@@ -199,7 +199,7 @@ def run_adam(model, iterations):
     # Create an Adam Optimizer action
     logf = []
     train_iter = iter(train_dataset.batch(minibatch_size))
-    training_loss = model.training_loss_closure(train_iter, jit=True)
+    training_loss = model.training_loss_closure(train_iter, compile=True)
     optimizer = tf.optimizers.Adam()
 
     @tf.function
