@@ -22,20 +22,20 @@ jobs:
   unit-test:
     <<: *runtest
     docker:
-      - image: awav/tensorflow:2.0-preview
+      - image: awav/tensorflow:2.1
         environment:
           PYTEST_FILTER: not notebooks
 
   notebook-test:
     <<: *runtest
     docker:
-      - image: awav/tensorflow:2.0-preview
+      - image: awav/tensorflow:2.1
         environment:
           PYTEST_FILTER: notebooks
 
   format-checker:
     docker:
-      - image: awav/tensorflow:2.0-preview
+      - image: awav/tensorflow:2.1
 
     steps:
       - checkout
@@ -50,7 +50,7 @@ jobs:
 
   trigger-docs-generation:
     docker:
-      - image: awav/tensorflow:2.0-preview
+      - image: awav/tensorflow:2.1
         environment:
             ORGANIZATION: GPflow
             PROJECT: docs
@@ -68,7 +68,7 @@ jobs:
 
   deploy:
     docker:
-      - image: awav/tensorflow:2.0-preview
+      - image: awav/tensorflow:2.1
     steps:
       - checkout
       - run:
