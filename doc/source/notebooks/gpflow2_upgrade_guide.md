@@ -16,6 +16,7 @@ jupyter:
 # GPflow 2 Upgrade Guide
 
 This is a basic guide for people who have GPflow 1 code that needs to be upgraded to GPflow 2.
+Also see the [Intro to GPflow with TensorFlow 2 notebook](intro_to_gpflow2.ipynb).
 
 
 ## Kernel Input Dims
@@ -36,7 +37,7 @@ For example:
 
 The `Parameter` class in GPflow 1 was a separate class from `tf.Variable`. The `params_as_tensors` decorator or the `params_as_tensors_for` context manager were required to turn them into a tensor that could be consumed by TensorFlow operations.
 
-In GPflow 2, `Parameter` is a subclass of `tf.Module` that wraps a `tf.Variable`, and can directly be used in place of a tensor, so no such conversion is necessary.
+In GPflow 2, `Parameter` inherits from `gpflow.Module` (a `tf.Module` subclass) that wraps a `tf.Variable`, and can directly be used in place of a tensor, so no such conversion is necessary.
 
 References to `params_as_tensors` and `params_as_tensors_for` can simply be removed.
 
@@ -102,6 +103,8 @@ For example, for the `GPR` model:
 -model = GPR(X, Y, kern=kernel)
 +model = GPR(data=(X, Y), kernel=kernel)
 ```
+
+Models that do not take a `likelihood` argument because they hard-code a Gaussian likelihood (GPR, SGPR) now take a `noise_variance` argument that sets the initial value of the likelihood variance.
 
 
 ## SVGP Initialiser
@@ -198,6 +201,19 @@ For example:
 +f_mean, f_cov = model.predict_f(X, full_cov=True)
 ```
 
+
+## Settings / Configuration
+
+In GPflow 2, the `gpflow.settings` module and the `gpflowrc` file have been removed. Instead, there is `gpflow.config`.
+
+`gpflow.settings.float_type` has changed to `gpflow.default_float()` and `gpflow.settings.int_type` has changed to `gpflow.default_int()`.
+`gpflow.settings.jitter`/`gpflow.settings.numerics.jitter_level` has changed to `gpflow.default_jitter()`.
+
+These default settings can be changed using environment variables (`GPFLOW_FLOAT`, `GPFLOW_INT`, `GPFLOW_JITTER`, etc.) or function calls (`gpflow.config.set_default_float()` etc.). There is also a `gpflow.config.as_context()` context manager for temporarily changing settings for only part of the code.
+
+See the `gpflow.config` API documentation for more details.
+
+
 <!-- #region -->
 ## Data Types
 
@@ -209,16 +225,20 @@ tf.constant(0.1, dtype=gpflow.default_float())
 ```
 <!-- #endregion -->
 
-## Float and Int Types
-
-In GPflow 2 `gpflow.settings.float_type` has changed to `gpflow.default_float()` and `gpflow.settings.int_type` has changed to `gpflow.default_int()`.
-
 
 ## Transforms
 
 These have been removed in favour of the tools in `tensorflow_probability.bijectors`. See for example [this Stackoverflow post](https://stackoverflow.com/q/58903446/5986907).
 
-GPflow 2 still provides the `gpflow.utilities.triangular` alias for `tfp.bijectors.FillTriangular`, and `gpflow.utilities.positive` which is configurable to be either softplus or exp, with an optional shift to ensure a lower bound that is larger than zero.
+GPflow 2 still provides the `gpflow.utilities.triangular` alias for `tfp.bijectors.FillTriangular`.
+
+To constrain parameters to be positive, there is `gpflow.utilities.positive` which is configurable to be either softplus or exp, with an optional shift to ensure a lower bound that is larger than zero.
+Note that the default lower bound used to be `1e-6`; by default, the lower bound if not specified explicitly is now `0.0`. Revert the previous behaviour using `gpflow.config.set_default_positive_minimum(1e-6)`.
+
+
+## Priors
+
+Priors used to be defined on the *unconstrained* variable. The default has changed to the prior to be defined on the *constrained* parameter value; this can be changed by passing the `prior_on` argument to `gpflow.Parameter()`. See the [MCMC notebook](advanced/mcmc.ipynb) for more details.
 
 
 ## Name Scoping
@@ -230,4 +250,6 @@ The `name_scope` decorator does not exist in GPflow 2 anymore. Use TensorFlow’
 
 Model persistence with `gpflow.saver` has been removed in GPflow 2, in favour of TensorFlow 2’s [checkpointing](https://www.tensorflow.org/guide/checkpoint) and [model persistence using the SavedModel format](https://www.tensorflow.org/guide/saved_model).
 
-There is currently a bug in saving GPflow models with TensorFlow's model persistence (SavedModels). See https://github.com/GPflow/GPflow/issues/1127 for more details. However, checkpointing works fine.
+There is currently a bug in saving GPflow models with TensorFlow's model persistence (SavedModels). See https://github.com/GPflow/GPflow/issues/1127 for more details; a workaround is to replace all trainable parameters with constants using `gpflow.utilities.freeze(model)`.
+
+Checkpointing works fine.

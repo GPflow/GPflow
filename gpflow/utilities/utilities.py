@@ -102,7 +102,7 @@ def training_loop(
     optimizer: Optional[tf.optimizers.Optimizer] = None,
     var_list: List[tf.Variable] = None,
     maxiter=1e3,
-    jit=False,
+    compile=False,
 ):
     """
     Simple generic training loop. At each iteration uses a GradientTape to compute
@@ -125,7 +125,7 @@ def training_loop(
         grads = tape.gradient(loss, var_list)
         optimizer.apply_gradients(zip(grads, var_list))
 
-    if jit:
+    if compile:
         optimization_step = tf.function(optimization_step)
 
     for _ in range(int(maxiter)):

@@ -77,7 +77,7 @@ class IsotropicStationary(Stationary):
     def K_r2(self, r2):
         if hasattr(self, "K_r"):
             # Clipping around the (single) float precision which is ~1e-45.
-            r = tf.sqrt(tf.maximum(r2, 1e-40))
+            r = tf.sqrt(tf.maximum(r2, 1e-36))
             return self.K_r(r)  # pylint: disable=no-member
         raise NotImplementedError
 
