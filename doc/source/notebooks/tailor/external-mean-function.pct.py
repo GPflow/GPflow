@@ -259,15 +259,23 @@ def mean_squared_error(y, y_pred):
 # %%
 mean_squared_errors = []
 for i, test_task in enumerate(test):
+    plt.figure(figsize=(8, 4))
     (train_X, train_Y), (Xs, F) = test_task
-    pred = test_models[i].predict_f(Xs)
-    plt.figure()
-    plt.scatter(train_X, train_Y, label="Training Points")
-    plt.plot(Xs, pred[0], label="Predictions")
-    plt.plot(Xs, F, label="Ground Truth")
-    mse = mean_squared_error(F, pred[0])
+    pred_mean, pred_var = test_models[i].predict_f(Xs)
+    plt.plot(Xs, pred_mean, label="Prediction mean", color="blue", linewidth=2)
+    plt.fill_between(
+        Xs.squeeze(1),
+        tf.squeeze(pred_mean - pred_var),
+        tf.squeeze(pred_mean + pred_var),
+        alpha=0.25,
+        facecolor="blue",
+        label="Prediction variance",
+    )
+    plt.plot(train_X, train_Y, "ko", label="Training points")
+    plt.plot(Xs, F, "ko", label="Ground truth", linewidth=2, markersize=1)
+    mse = mean_squared_error(F, pred_mean)
     mean_squared_errors.append(mse)
-    plt.title(f"Test Task {i + 1} | MSE = {mse}")
+    plt.title(f"Test Task {i + 1} | MSE = {mse:.2f}")
     plt.legend()
     plt.show()
 
