@@ -202,7 +202,7 @@ optimizer.minimize(
 )
 
 # %% [markdown]
-# You can obtain a compiled version using training_loss_closure, whose `jit` argument is True by default:
+# You can obtain a compiled version using training_loss_closure, whose `compile` argument is True by default:
 
 # %%
 vgp_model.training_loss_closure()  # compiled
@@ -238,7 +238,7 @@ training_loss = model.training_loss_closure(iter(batched_dataset))
 optimizer.minimize(training_loss, model.trainable_variables)  # Note that this does a single step
 
 # %% [markdown]
-# As previously, training_loss_closure takes an optional `jit` argument for tf.function compilation (True by default).
+# As previously, training_loss_closure takes an optional `compile` argument for tf.function compilation (True by default).
 
 # %% [markdown]
 # ## Training using Gradient Tapes

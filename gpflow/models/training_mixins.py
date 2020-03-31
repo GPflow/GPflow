@@ -55,10 +55,10 @@ class InternalDataTrainingLossMixin:
         can be passed to the minimize methods on :class:`gpflow.optimizers.Scipy` and subclasses of
         `tf.optimizers.Optimizer`.
 
-        :param jit: If `True` (default), compile the training loss function in a TensorFlow graph
+        :param compile: If `True` (default), compile the training loss function in a TensorFlow graph
             by wrapping it in tf.function()
         """
-        if jit:
+        if compile:
             return tf.function(self.training_loss)
         return self.training_loss
 
@@ -96,12 +96,12 @@ class ExternalDataTrainingLossMixin:
             objective. Can be the full dataset or an iterator, e.g.
             `iter(dataset.batch(batch_size))`, where dataset is an instance of
             tf.data.Dataset.
-        :param jit: if True, wrap training loss in tf.function()
+        :param compile: if True, wrap training loss in tf.function()
         """
         training_loss = self.training_loss
 
         if isinstance(data, DatasetOwnedIterator):
-            if jit:
+            if compile:
                 input_signature = [data.element_spec]
                 training_loss = tf.function(training_loss, input_signature=input_signature)
 
@@ -114,7 +114,7 @@ class ExternalDataTrainingLossMixin:
             def closure():
                 return training_loss(data)
 
-            if jit:
+            if compile:
                 closure = tf.function(closure)
 
         return closure
