@@ -18,6 +18,7 @@ import tensorflow as tf
 from numpy.testing import assert_allclose
 
 import gpflow
+from gpflow.inducing_variables import InducingPoints
 from gpflow.likelihoods import Gaussian, StudentT, SwitchedLikelihood
 from gpflow.inducing_variables import InducingPoints
 
@@ -111,12 +112,9 @@ def test_switched_likelihood_with_vgp():
     kernel = gpflow.kernels.Matern32()
     likelihood = gpflow.likelihoods.SwitchedLikelihood([StudentT(), StudentT()])
     model = gpflow.models.VGP((X, Y_aug), kernel=kernel, likelihood=likelihood)
-    ## optimization errors out
+    # without bugfix, optimization errors out
     opt = gpflow.optimizers.Scipy()
-    # TODO fix following line once training_loss PR is merged
-    opt.minimize(
-        lambda: -model.log_likelihood(), model.trainable_variables, options=dict(maxiter=1)
-    )
+    opt.minimize(model.training_loss, model.trainable_variables, options=dict(maxiter=1))
 
 
 @pytest.mark.parametrize("num_latent_gps", [1, 2])
@@ -141,7 +139,7 @@ def test_switched_likelihood_regression_valid_num_latent_gps(num_latent_gps):
         num_latent_gps=num_latent_gps,
     )
     if num_latent_gps == 1:
-        m.log_likelihood(data)
+        _ = m.training_loss(data)
     else:
         with pytest.raises(tf.errors.InvalidArgumentError):
-            m.log_likelihood(data)
+            _ = m.training_loss(data)

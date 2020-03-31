@@ -58,7 +58,7 @@ def check_equality_predictions(data, models, decimal=3):
     Executes a couple of checks to compare the equality of predictions
     of different models. The models should be configured with the same
     training data (X, Y). The following checks are done:
-    - check if log_likelihood is (almost) equal for all models
+    - check if elbo is (almost) equal for all models
     - check if predicted mean is (almost) equal
     - check if predicted variance is (almost) equal.
       All possible variances over the inputs and outputs are calculated
@@ -67,10 +67,10 @@ def check_equality_predictions(data, models, decimal=3):
       matrices should overlap, and this is tested.
     """
 
-    log_likelihoods = [m.log_likelihood(data) for m in models]
+    elbos = [m.elbo(data) for m in models]
 
     # Check equality of log likelihood
-    assert_all_array_elements_almost_equal(log_likelihoods, decimal=5)
+    assert_all_array_elements_almost_equal(elbos, decimal=5)
 
     # Predict: full_cov = True and full_output_cov = True
     means_tt, vars_tt = predict_all(models, Data.Xs, full_cov=True, full_output_cov=True)
@@ -419,12 +419,12 @@ def test_shared_independent_mok():
     set_trainable(model_1, False)
     set_trainable(model_1.q_sqrt, True)
 
-    @tf.function
-    def closure1():
-        return -model_1.log_marginal_likelihood(Data.data)
-
     gpflow.optimizers.Scipy().minimize(
-        closure1, variables=model_1.trainable_variables, options=dict(maxiter=500), method="BFGS",
+        model_1.training_loss_closure(Data.data),
+        variables=model_1.trainable_variables,
+        options=dict(maxiter=500),
+        method="BFGS",
+        compile=True,
     )
 
     # Model 2
@@ -445,12 +445,12 @@ def test_shared_independent_mok():
     set_trainable(model_2, False)
     set_trainable(model_2.q_sqrt, True)
 
-    @tf.function
-    def closure2():
-        return -model_2.log_marginal_likelihood(Data.data)
-
     gpflow.optimizers.Scipy().minimize(
-        closure2, variables=model_2.trainable_variables, options=dict(maxiter=500), method="BFGS",
+        model_2.training_loss_closure(Data.data),
+        variables=model_2.trainable_variables,
+        options=dict(maxiter=500),
+        method="BFGS",
+        compile=True,
     )
 
     # Model 3
@@ -473,12 +473,12 @@ def test_shared_independent_mok():
     set_trainable(model_3, False)
     set_trainable(model_3.q_sqrt, True)
 
-    @tf.function
-    def closure3():
-        return -model_3.log_marginal_likelihood(Data.data)
-
     gpflow.optimizers.Scipy().minimize(
-        closure3, variables=model_3.trainable_variables, options=dict(maxiter=500), method="BFGS",
+        model_3.training_loss_closure(Data.data),
+        variables=model_3.trainable_variables,
+        options=dict(maxiter=500),
+        method="BFGS",
+        compile=True,
     )
 
     check_equality_predictions(Data.data, [model_1, model_2, model_3])
@@ -507,12 +507,11 @@ def test_separate_independent_mok():
     set_trainable(model_1.q_sqrt, True)
     set_trainable(model_1.q_mu, True)
 
-    @tf.function
-    def closure1():
-        return -model_1.log_marginal_likelihood(Data.data)
-
     gpflow.optimizers.Scipy().minimize(
-        closure1, variables=model_1.trainable_variables, method="BFGS"
+        model_1.training_loss_closure(Data.data),
+        variables=model_1.trainable_variables,
+        method="BFGS",
+        compile=True,
     )
 
     # Model 2 (efficient)
@@ -537,12 +536,11 @@ def test_separate_independent_mok():
     set_trainable(model_2.q_sqrt, True)
     set_trainable(model_2.q_mu, True)
 
-    @tf.function
-    def closure2():
-        return -model_2.log_marginal_likelihood(Data.data)
-
     gpflow.optimizers.Scipy().minimize(
-        closure2, variables=model_2.trainable_variables, method="BFGS"
+        model_2.training_loss_closure(Data.data),
+        variables=model_2.trainable_variables,
+        method="BFGS",
+        compile=True,
     )
 
     check_equality_predictions(Data.data, [model_1, model_2])
@@ -566,12 +564,11 @@ def test_separate_independent_mof():
     set_trainable(model_1.q_sqrt, True)
     set_trainable(model_1.q_mu, True)
 
-    @tf.function
-    def closure1():
-        return -model_1.log_marginal_likelihood(Data.data)
-
     gpflow.optimizers.Scipy().minimize(
-        closure1, variables=model_1.trainable_variables, method="BFGS"
+        model_1.training_loss_closure(Data.data),
+        variables=model_1.trainable_variables,
+        method="BFGS",
+        compile=True,
     )
 
     # Model 2 (efficient)
@@ -587,12 +584,11 @@ def test_separate_independent_mof():
     set_trainable(model_2.q_sqrt, True)
     set_trainable(model_2.q_mu, True)
 
-    @tf.function
-    def closure2():
-        return -model_2.log_marginal_likelihood(Data.data)
-
     gpflow.optimizers.Scipy().minimize(
-        closure2, variables=model_2.trainable_variables, method="BFGS"
+        model_2.training_loss_closure(Data.data),
+        variables=model_2.trainable_variables,
+        method="BFGS",
+        compile=True,
     )
 
     # Model 3 (Inefficient): an idenitical inducing variable is used P times,
@@ -610,12 +606,11 @@ def test_separate_independent_mof():
     set_trainable(model_3.q_sqrt, True)
     set_trainable(model_3.q_mu, True)
 
-    @tf.function
-    def closure3():
-        return -model_3.log_marginal_likelihood(Data.data)
-
     gpflow.optimizers.Scipy().minimize(
-        closure3, variables=model_3.trainable_variables, method="BFGS"
+        model_3.training_loss_closure(Data.data),
+        variables=model_3.trainable_variables,
+        method="BFGS",
+        compile=True,
     )
 
     check_equality_predictions(Data.data, [model_1, model_2, model_3])
@@ -630,12 +625,11 @@ def test_mixed_mok_with_Id_vs_independent_mok():
     set_trainable(model_1, False)
     set_trainable(model_1.q_sqrt, True)
 
-    @tf.function
-    def closure1():
-        return -model_1.log_marginal_likelihood(Data.data)
-
     gpflow.optimizers.Scipy().minimize(
-        closure1, variables=model_1.trainable_variables, method="BFGS"
+        model_1.training_loss_closure(Data.data),
+        variables=model_1.trainable_variables,
+        method="BFGS",
+        compile=True,
     )
 
     # Mixed Model
@@ -646,12 +640,11 @@ def test_mixed_mok_with_Id_vs_independent_mok():
     set_trainable(model_2, False)
     set_trainable(model_2.q_sqrt, True)
 
-    @tf.function
-    def closure2():
-        return -model_2.log_marginal_likelihood(Data.data)
-
     gpflow.optimizers.Scipy().minimize(
-        closure2, variables=model_2.trainable_variables, method="BFGS"
+        model_2.training_loss_closure(Data.data),
+        variables=model_2.trainable_variables,
+        method="BFGS",
+        compile=True,
     )
 
     check_equality_predictions(Data.data, [model_1, model_2])

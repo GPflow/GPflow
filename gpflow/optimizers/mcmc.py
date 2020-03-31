@@ -28,7 +28,7 @@ class SamplingHelper:
 
     Example:
         model = ...  # Create a GPflow model
-        hmc_helper = SamplingHelper(model.log_marginal_likelihood, model.trainable_parameters)
+        hmc_helper = SamplingHelper(model.log_posterior_density, model.trainable_parameters)
 
         target_log_prob_fn = hmc_helper.target_log_prob_fn
         current_state = hmc_helper.current_state

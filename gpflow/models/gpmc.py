@@ -24,10 +24,11 @@ from ..kernels import Kernel
 from ..likelihoods import Likelihood
 from ..mean_functions import MeanFunction
 from ..utilities import to_default_float
-from .model import InputData, RegressionData, GPModel, MeanAndVariance
+from .model import InputData, RegressionData, MeanAndVariance, GPModel
+from .training_mixins import InternalDataTrainingLossMixin
 
 
-class GPMC(GPModel):
+class GPMC(GPModel, InternalDataTrainingLossMixin):
     def __init__(
         self,
         data: RegressionData,
@@ -62,7 +63,16 @@ class GPMC(GPModel):
             loc=to_default_float(0.0), scale=to_default_float(1.0)
         )
 
-    def log_likelihood(self, *args, **kwargs) -> tf.Tensor:
+    def log_posterior_density(self) -> tf.Tensor:
+        return self.log_likelihood() + self.log_prior_density()
+
+    def _training_loss(self) -> tf.Tensor:
+        return -self.log_posterior_density()
+
+    def maximum_log_likelihood_objective(self) -> tf.Tensor:
+        return self.log_likelihood()
+
+    def log_likelihood(self) -> tf.Tensor:
         r"""
         Construct a tf function to compute the likelihood of a general GP
         model.

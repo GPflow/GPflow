@@ -99,7 +99,7 @@ plt.show()
 log_dir = "logs"  # Directory where TensorBoard files will be written.
 model_task = ModelToTensorBoard(log_dir, model)
 image_task = ImageToTensorBoard(log_dir, plot_prediction, "image_samples")
-lml_task = ScalarToTensorBoard(log_dir, lambda: model.log_likelihood(), "lml")
+lml_task = ScalarToTensorBoard(log_dir, lambda: model.training_loss(), "training_objective")
 
 # %% [markdown]
 # We now group the tasks in a set of fast and slow tasks and pass them to the monitor.
@@ -119,19 +119,18 @@ monitor = Monitor(fast_tasks, slow_tasks)
 
 
 # %%
-@tf.function
-def closure():
-    return -model.log_likelihood()
-
-
+training_loss = model.training_loss_closure(
+    compile=True
+)  # compile=True (default): compiles using tf.function
 opt = tf.optimizers.Adam()
 
 for step in range(optimisation_steps):
-    opt.minimize(closure, model.trainable_variables)
+    opt.minimize(training_loss, model.trainable_variables)
     monitor(step)  # <-- run the monitoring
 
 # %% [markdown]
-# TensorBoard is accessible through the browser, after launching the server by running `tensorboard --logdir ${logdir}`. See the [TensorFlow documentation on TensorBoard](https://www.tensorflow.org/tensorboard/get_started) for more information.
+# TensorBoard is accessible through the browser, after launching the server by running `tensorboard --logdir ${logdir}`.
+# See the [TensorFlow documentation on TensorBoard](https://www.tensorflow.org/tensorboard/get_started) for more information.
 
 
 # %% [markdown]
@@ -142,7 +141,7 @@ opt = tf.optimizers.Adam()
 
 log_dir = f"{log_dir}/compiled"
 model_task = ModelToTensorBoard(log_dir, model)
-lml_task = ScalarToTensorBoard(log_dir, lambda: model.log_likelihood(), "lml")
+lml_task = ScalarToTensorBoard(log_dir, lambda: model.training_loss(), "training_objective")
 # Note that the `ImageToTensorBoard` task cannot be compiled, and is omitted from the monitoring
 monitor = Monitor(MonitorTaskGroup([model_task, lml_task]))
 
@@ -154,7 +153,7 @@ monitor = Monitor(MonitorTaskGroup([model_task, lml_task]))
 # %%
 @tf.function
 def step(i):
-    opt.minimize(lambda: -1.0 * model.log_likelihood(), model.trainable_variables)
+    opt.minimize(model.training_loss, model.trainable_variables)
     monitor(i)
 
 

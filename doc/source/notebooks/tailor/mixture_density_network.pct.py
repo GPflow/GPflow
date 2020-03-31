@@ -88,7 +88,7 @@ import tensorflow as tf
 
 # %%
 import gpflow
-from gpflow.models import BayesianModel
+from gpflow.models import BayesianModel, ExternalDataTrainingLossMixin
 from gpflow.base import Parameter
 
 # %% [markdown]
@@ -101,7 +101,7 @@ from gpflow.base import Parameter
 from typing import Callable, Optional, Tuple
 
 
-class MDN(BayesianModel):
+class MDN(BayesianModel, ExternalDataTrainingLossMixin):
     def __init__(
         self,
         num_mixtures: Optional[int] = 5,
@@ -138,7 +138,7 @@ class MDN(BayesianModel):
 
         return pis, mus, sigmas
 
-    def log_marginal_likelihood(self, data: Tuple[tf.Tensor, tf.Tensor]):
+    def maximum_log_likelihood_objective(self, data: Tuple[tf.Tensor, tf.Tensor]):
         x, y = data
         pis, mus, sigmas = self.eval_network(x)
         Z = (2 * np.pi) ** 0.5 * sigmas
@@ -172,7 +172,7 @@ from gpflow.utilities import print_summary
 print_summary(model)
 
 # %% [markdown]
-# The objective function for MDN instances is the `log_marginal_likelihood`, which we use for optimization of the parameters. GPflow ensures that only the variables stored in `Parameter` objects are optimized. For the MDN, the only parameters are the weights and the biases of the neural net.
+# The objective function for MDN instances is the `maximum_log_likelihood_objective`, which we use for optimization of the parameters. GPflow ensures that only the variables stored in `Parameter` objects are optimized. For the MDN, the only parameters are the weights and the biases of the neural net.
 #
 # We use the `Scipy` optimizer, which is a wrapper around SciPy's L-BFGS optimization algorithm. Note that GPflow supports other TensorFlow optimizers such as `Adam`, `Adagrad`, and `Adadelta` as well.
 
@@ -181,12 +181,12 @@ from gpflow.optimizers import Scipy
 from gpflow.ci_utils import ci_niter
 
 Scipy().minimize(
-    tf.function(lambda: -model.log_marginal_likelihood(data)),
+    model.training_loss_closure(data, compile=True),
     model.trainable_variables,
     options=dict(maxiter=ci_niter(1500)),
 )
 
-print("Final Likelihood", model.log_marginal_likelihood(data).numpy())
+print("Final Likelihood", model.maximum_log_likelihood_objective(data).numpy())
 
 # %% [markdown]
 # To evaluate the validity of our model, we draw the posterior density. We also plot $\mu(x)$ of the optimized neural net. Remember that for every $x$ the neural net outputs $M$ means $\mu_m(x)$. These determine the location of the Gaussians. We plot all $M$ means and use their corresponding mixture weight $\pi_m(X)$ to determine their size. Larger dots will have more impact in the Gaussian ensemble.
@@ -233,12 +233,12 @@ model = MDN(inner_dims=[100, 100], num_mixtures=5)
 
 # %%
 Scipy().minimize(
-    tf.function(lambda: -model.log_marginal_likelihood(data)),
+    model.training_loss_closure(data, compile=True),
     model.trainable_variables,
     options=dict(maxiter=ci_niter(int(10e3))),
 )
 
-print("Final Likelihood", model.log_marginal_likelihood(data).numpy())
+print("Final Likelihood", model.maximum_log_likelihood_objective(data).numpy())
 
 # %%
 fig, axes = plt.subplots(1, 2, figsize=(12, 6))

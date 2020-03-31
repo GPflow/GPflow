@@ -111,21 +111,14 @@ gplvm = gpflow.models.BayesianGPLVM(
 gplvm.likelihood.variance.assign(0.01)
 
 # %% [markdown]
-# Next we optimize the created model. Given that this model has a deterministic evidence lower bound (ELBO), we can use SciPy's L-BFGS-B optimizer.
+# Next we optimize the created model. Given that this model has a deterministic evidence lower bound (ELBO), we can use SciPy's BFGS optimizer.
 
 # %%
 opt = gpflow.optimizers.Scipy()
 maxiter = ci_niter(1000)
-
-
-@tf.function
-def optimization_step():
-    return -gplvm.log_marginal_likelihood()
-
-
 _ = opt.minimize(
-    optimization_step,
-    method="bfgs",
+    gplvm.training_loss,
+    method="BFGS",
     variables=gplvm.trainable_variables,
     options=dict(maxiter=maxiter),
 )

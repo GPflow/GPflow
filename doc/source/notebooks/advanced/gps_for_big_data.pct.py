@@ -80,11 +80,16 @@ m = gpflow.models.SVGP(kernel, gpflow.likelihoods.Gaussian(), Z, num_data=N)
 # First we showcase the model's performance using the whole dataset to compute the ELBO.
 
 # %%
-log_likelihood = tf.function(m.log_likelihood)
+elbo = tf.function(m.elbo)
+
+# %%
+# TensorFlow re-traces & compiles a `tf.function`-wrapped method at *every* call if the arguments are numpy arrays instead of tf.Tensors. Hence:
+tensor_data = tuple(map(tf.convert_to_tensor, data))
+elbo(tensor_data)  # run it once to trace & compile
 
 # %%
 # %%timeit
-log_likelihood(data)
+elbo(tensor_data)
 
 # %% [markdown]
 # We can speed up this calculation by using minibatches of the data. For this example, we use minibatches of size 100.
@@ -94,20 +99,20 @@ minibatch_size = 100
 
 train_dataset = tf.data.Dataset.from_tensor_slices((X, Y)).repeat().shuffle(N)
 
-train_it = iter(train_dataset.batch(minibatch_size))
+train_iter = iter(train_dataset.batch(minibatch_size))
 
-ground_truth = m.log_likelihood(data).numpy()
+ground_truth = elbo(tensor_data).numpy()
 
 # %%
 # %%timeit
-log_likelihood(next(train_it))
+elbo(next(train_iter))
 
 # %% [markdown]
 # ### Stochastical estimation of ELBO
 # The minibatch estimate should be an unbiased estimator of the `ground_truth`. Here we show a histogram of the value from different evaluations, together with its mean and the ground truth. The small difference between the mean of the minibatch estimations and the ground truth shows that the minibatch estimator is working as expected.
 
 # %%
-evals = [log_likelihood(minibatch).numpy() for minibatch in itertools.islice(train_it, 100)]
+evals = [elbo(minibatch).numpy() for minibatch in itertools.islice(train_iter, 100)]
 
 # %%
 plt.hist(evals, label="Minibatch estimations")
@@ -128,9 +133,9 @@ times = []
 objs = []
 for mbp in minibatch_proportions:
     batchsize = int(N * mbp)
-    train_it = iter(train_dataset.batch(batchsize))
+    train_iter = iter(train_dataset.batch(batchsize))
     start_time = time.time()
-    objs.append([log_likelihood(minibatch) for minibatch in itertools.islice(train_it, 20)])
+    objs.append([elbo(minibatch) for minibatch in itertools.islice(train_iter, 20)])
     times.append(time.time() - start_time)
 
 # %%
@@ -184,16 +189,6 @@ minibatch_size = 100
 gpflow.set_trainable(m.inducing_variable, False)
 
 
-@tf.function
-def optimization_step(optimizer, model: gpflow.models.SVGP, batch):
-    with tf.GradientTape(watch_accessed_variables=False) as tape:
-        tape.watch(model.trainable_variables)
-        objective = -model.elbo(batch)
-    grads = tape.gradient(objective, model.trainable_variables)
-    optimizer.apply_gradients(zip(grads, model.trainable_variables))
-    return objective
-
-
 def run_adam(model, iterations):
     """
     Utility function running the Adam optimizer
@@ -203,17 +198,24 @@ def run_adam(model, iterations):
     """
     # Create an Adam Optimizer action
     logf = []
-    train_it = iter(train_dataset.batch(minibatch_size))
-    adam = tf.optimizers.Adam()
+    train_iter = iter(train_dataset.batch(minibatch_size))
+    training_loss = model.training_loss_closure(train_iter, compile=True)
+    optimizer = tf.optimizers.Adam()
+
+    @tf.function
+    def optimization_step():
+        optimizer.minimize(training_loss, model.trainable_variables)
+
     for step in range(iterations):
-        elbo = -optimization_step(adam, model, next(train_it))
+        optimization_step()
         if step % 10 == 0:
-            logf.append(elbo.numpy())
+            elbo = -training_loss().numpy()
+            logf.append(elbo)
     return logf
 
 
 # %% [markdown]
-# Now we run the optimization loop for 10,000 iterations.
+# Now we run the optimization loop for 20,000 iterations.
 
 # %%
 maxiter = ci_niter(20000)

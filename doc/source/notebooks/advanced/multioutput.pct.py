@@ -150,7 +150,7 @@ def plot_model(m, lower=-8.0, upper=8.0):
         plt.fill_between(pX[:, 0], top, bot, alpha=0.3)
     plt.xlabel("X")
     plt.ylabel("f")
-    plt.title(f"lml: {m.log_likelihood(data):.3}")
+    plt.title(f"ELBO: {m.elbo(data):.3}")
     plt.plot(Z, Z * 0.0, "o")
 
 
@@ -184,13 +184,9 @@ print_summary(m)
 
 # %%
 def optimize_model_with_scipy(model):
-    @tf.function
-    def obj():
-        return -model.elbo(data)
-
     optimizer = gpf.optimizers.Scipy()
     optimizer.minimize(
-        obj,
+        model.training_loss_closure(data),
         variables=model.trainable_variables,
         method="l-bfgs-b",
         options={"disp": True, "maxiter": MAXITER},

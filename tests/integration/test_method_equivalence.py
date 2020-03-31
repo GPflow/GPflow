@@ -20,6 +20,7 @@ from numpy.testing import assert_allclose
 import gpflow
 from gpflow.config import default_jitter
 from gpflow.mean_functions import Constant
+from gpflow.models import maximum_log_likelihood_objective
 
 rng = np.random.RandomState(0)
 
@@ -62,13 +63,8 @@ def _create_full_gp_model():
     )
 
     opt = gpflow.optimizers.Scipy()
-
-    @tf.function
-    def full_gp_model_closure():
-        return -full_gp_model.log_marginal_likelihood()
-
     opt.minimize(
-        full_gp_model_closure,
+        full_gp_model.training_loss,
         variables=full_gp_model.trainable_variables,
         options=dict(maxiter=300),
     )
@@ -130,40 +126,24 @@ def _create_approximate_models():
 
     opt = gpflow.optimizers.Scipy()
 
-    @tf.function
-    def model_1_closure():
-        return -model_1.log_marginal_likelihood()
-
-    @tf.function
-    def model_2_closure():
-        return -model_2.elbo(Datum.data)
-
-    @tf.function
-    def model_3_closure():
-        return -model_3.elbo(Datum.data)
-
-    @tf.function
-    def model_4_closure():
-        return -model_4.log_marginal_likelihood()
-
-    @tf.function
-    def model_5_closure():
-        return -model_5.log_marginal_likelihood()
-
     opt.minimize(
-        model_1_closure, variables=model_1.trainable_variables, options=dict(maxiter=300),
+        model_1.training_loss, variables=model_1.trainable_variables, options=dict(maxiter=300),
     )
     opt.minimize(
-        model_2_closure, variables=model_2.trainable_variables, options=dict(maxiter=300),
+        model_2.training_loss_closure(Datum.data),
+        variables=model_2.trainable_variables,
+        options=dict(maxiter=300),
     )
     opt.minimize(
-        model_3_closure, variables=model_3.trainable_variables, options=dict(maxiter=300),
+        model_3.training_loss_closure(Datum.data),
+        variables=model_3.trainable_variables,
+        options=dict(maxiter=300),
     )
     opt.minimize(
-        model_4_closure, variables=model_4.trainable_variables, options=dict(maxiter=300),
+        model_4.training_loss, variables=model_4.trainable_variables, options=dict(maxiter=300),
     )
     opt.minimize(
-        model_5_closure, variables=model_5.trainable_variables, options=dict(maxiter=300),
+        model_5.training_loss, variables=model_5.trainable_variables, options=dict(maxiter=300),
     )
 
     return model_1, model_2, model_3, model_4, model_5
@@ -183,6 +163,7 @@ def _create_vgpao_model(kernel, likelihood, q_alpha, q_lambda):
     )
     model_vgpoa.q_alpha.assign(q_alpha)
     model_vgpoa.q_lambda.assign(q_lambda)
+
     return model_vgpoa
 
 
@@ -208,13 +189,9 @@ def test_equivalence(approximate_model):
     subject to some optimization).
     """
     gpr_model = _create_full_gp_model()
-    gpr_likelihood = -gpr_model.log_likelihood()
-    if isinstance(approximate_model, gpflow.models.SVGP):
-        approximate_likelihood = -approximate_model.log_likelihood(Datum.data)
-    else:
-        approximate_likelihood = -approximate_model.log_likelihood()
-
-    assert_allclose(gpr_likelihood, approximate_likelihood, rtol=1e-6)
+    gpr_likelihood = gpr_model.log_marginal_likelihood()
+    approximate_likelihood = maximum_log_likelihood_objective(approximate_model, Datum.data)
+    assert_allclose(approximate_likelihood, gpr_likelihood, rtol=1e-6)
 
     gpr_kernel_ls = gpr_model.kernel.lengthscales.read_value()
     gpr_kernel_var = gpr_model.kernel.variance.read_value()
@@ -239,8 +216,8 @@ def test_equivalence_vgp_and_svgp():
     svgp_model = _create_svgp_model(kernel, likelihood, DatumVGP.q_mu, DatumVGP.q_sqrt, whiten=True)
     vgp_model = _create_vgp_model(kernel, likelihood, DatumVGP.q_mu, DatumVGP.q_sqrt)
 
-    likelihood_svgp = svgp_model.log_likelihood(DatumVGP.data)
-    likelihood_vgp = vgp_model.log_likelihood()
+    likelihood_svgp = svgp_model.elbo(DatumVGP.data)
+    likelihood_vgp = vgp_model.elbo()
     assert_allclose(likelihood_svgp, likelihood_vgp, rtol=1e-2)
 
     svgp_mu, svgp_var = svgp_model.predict_f(DatumVGP.Xs)
@@ -276,9 +253,9 @@ def test_equivalence_vgp_and_opper_archambeau():
 
     vgp_model = _create_vgp_model(kernel, likelihood, mean_white_nd, q_sqrt_nnd)
 
-    likelihood_vgp = vgp_model.log_likelihood()
-    likelihood_vgp_oa = vgp_oa_model.log_likelihood()
-    likelihood_svgp_unwhitened = svgp_model_unwhitened.log_likelihood(DatumVGP.data)
+    likelihood_vgp = vgp_model.elbo()
+    likelihood_vgp_oa = vgp_oa_model.elbo()
+    likelihood_svgp_unwhitened = svgp_model_unwhitened.elbo(DatumVGP.data)
 
     assert_allclose(likelihood_vgp, likelihood_vgp_oa, rtol=1e-2)
     assert_allclose(likelihood_vgp, likelihood_svgp_unwhitened, rtol=1e-2)
@@ -305,12 +282,8 @@ def test_upper_bound_few_inducing_points():
     )
     opt = gpflow.optimizers.Scipy()
 
-    @tf.function
-    def model_vfe_closure():
-        return -model_vfe.log_marginal_likelihood()
-
     opt.minimize(
-        model_vfe_closure, variables=model_vfe.trainable_variables, options=dict(maxiter=500),
+        model_vfe.training_loss, variables=model_vfe.trainable_variables, options=dict(maxiter=500),
     )
 
     full_gp = gpflow.models.GPR(
@@ -324,7 +297,7 @@ def test_upper_bound_few_inducing_points():
     full_gp.mean_function.c.assign(model_vfe.mean_function.c)
 
     lml_upper = model_vfe.upper_bound()
-    lml_vfe = model_vfe.log_marginal_likelihood()
+    lml_vfe = model_vfe.elbo()
     lml_full_gp = full_gp.log_marginal_likelihood()
 
     assert lml_vfe < lml_full_gp

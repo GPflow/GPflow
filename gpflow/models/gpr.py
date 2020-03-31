@@ -21,9 +21,10 @@ from ..kernels import Kernel
 from ..logdensities import multivariate_normal
 from ..mean_functions import MeanFunction
 from .model import GPModel, InputData, RegressionData, MeanAndVariance
+from .training_mixins import InternalDataTrainingLossMixin
 
 
-class GPR(GPModel):
+class GPR(GPModel, InternalDataTrainingLossMixin):
     r"""
     Gaussian Process Regression.
 
@@ -50,7 +51,10 @@ class GPR(GPModel):
         super().__init__(kernel, likelihood, mean_function, num_latent_gps=Y_data.shape[-1])
         self.data = data
 
-    def log_likelihood(self) -> tf.Tensor:
+    def maximum_log_likelihood_objective(self) -> tf.Tensor:
+        return self.log_marginal_likelihood()
+
+    def log_marginal_likelihood(self) -> tf.Tensor:
         r"""
         Computes the log marginal likelihood.
 

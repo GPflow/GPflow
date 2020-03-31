@@ -27,10 +27,11 @@ from ..kullback_leiblers import gauss_kl
 from ..likelihoods import Likelihood
 from ..mean_functions import MeanFunction, Zero
 from ..utilities import triangular
-from .model import GPModel, InputData, RegressionData, MeanAndVariance
+from .model import RegressionData, InputData, MeanAndVariance, GPModel
+from .training_mixins import InternalDataTrainingLossMixin
 
 
-class VGP(GPModel):
+class VGP(GPModel, InternalDataTrainingLossMixin):
     r"""
     This method approximates the Gaussian process posterior using a multivariate Gaussian.
 
@@ -74,7 +75,10 @@ class VGP(GPModel):
         q_sqrt = np.array([np.eye(num_data) for _ in range(self.num_latent_gps)])
         self.q_sqrt = Parameter(q_sqrt, transform=triangular())
 
-    def log_likelihood(self) -> tf.Tensor:
+    def maximum_log_likelihood_objective(self) -> tf.Tensor:
+        return self.elbo()
+
+    def elbo(self) -> tf.Tensor:
         r"""
         This method computes the variational lower bound on the likelihood,
         which is:
@@ -86,7 +90,6 @@ class VGP(GPModel):
             q(\mathbf f) = N(\mathbf f \,|\, \boldsymbol \mu, \boldsymbol \Sigma)
 
         """
-
         X_data, Y_data = self.data
         # Get prior KL.
         KL = gauss_kl(self.q_mu, self.q_sqrt)
@@ -117,7 +120,7 @@ class VGP(GPModel):
         return mu + self.mean_function(Xnew), var
 
 
-class VGPOpperArchambeau(GPModel):
+class VGPOpperArchambeau(GPModel, InternalDataTrainingLossMixin):
     r"""
     This method approximates the Gaussian process posterior using a multivariate Gaussian.
     The key reference is:
@@ -168,7 +171,10 @@ class VGPOpperArchambeau(GPModel):
             np.ones((self.num_data, self.num_latent_gps)), transform=gpflow.utilities.positive()
         )
 
-    def log_likelihood(self) -> tf.Tensor:
+    def maximum_log_likelihood_objective(self) -> tf.Tensor:
+        return self.elbo()
+
+    def elbo(self) -> tf.Tensor:
         r"""
         q_alpha, q_lambda are variational parameters, size [N, R]
         This method computes the variational lower bound on the likelihood,
@@ -178,6 +184,7 @@ class VGPOpperArchambeau(GPModel):
             q(f) = N(f | K alpha + mean, [K^-1 + diag(square(lambda))]^-1) .
         """
         X_data, Y_data = self.data
+
         K = self.kernel(X_data)
         K_alpha = tf.linalg.matmul(K, self.q_alpha)
         f_mean = K_alpha + self.mean_function(X_data)

@@ -56,7 +56,7 @@ def plot_model(m, name=""):
         plt.plot(Z, np.zeros_like(Z), "o")
     two_sigma = (2.0 * pYv ** 0.5)[:, 0]
     plt.fill_between(pX[:, 0], pY[:, 0] - two_sigma, pY[:, 0] + two_sigma, alpha=0.15)
-    lml = m.log_likelihood().numpy()
+    lml = m.maximum_log_likelihood_objective().numpy()
     plt.title("%s (lml = %f)" % (name, lml))
     return lml
 
@@ -65,12 +65,11 @@ def plot_model(m, name=""):
 # ## Full model
 
 # %%
-f = gpflow.models.GPR((X, Y), gpflow.kernels.SquaredExponential())
-objective = tf.function(lambda: -f.log_marginal_likelihood())
+gpr = gpflow.models.GPR((X, Y), gpflow.kernels.SquaredExponential())
 gpflow.optimizers.Scipy().minimize(
-    objective, f.trainable_variables, options=dict(maxiter=ci_niter(1000))
+    gpr.training_loss, gpr.trainable_variables, options=dict(maxiter=ci_niter(1000))
 )
-full_lml = plot_model(f)
+full_lml = plot_model(gpr)
 
 # %% [markdown]
 # ## Upper bounds for sparse variational models
@@ -84,12 +83,13 @@ vfe_hyps = []
 for M in Ms:
     Zinit = X[:M, :].copy()
     vfe = gpflow.models.SGPR((X, Y), gpflow.kernels.SquaredExponential(), inducing_variable=Zinit)
-    objective = tf.function(lambda: -vfe.log_marginal_likelihood())
     gpflow.optimizers.Scipy().minimize(
-        objective, vfe.trainable_variables, options=dict(disp=False, maxiter=ci_niter(1000))
+        vfe.training_loss,
+        vfe.trainable_variables,
+        options=dict(disp=False, maxiter=ci_niter(1000), compile=True),
     )
 
-    vfe_lml.append(vfe.log_likelihood().numpy())
+    vfe_lml.append(vfe.elbo().numpy())
     vupper_lml.append(vfe.upper_bound().numpy())
     vfe_hyps.append([(p.name, p.numpy()) for p in vfe.trainable_parameters])
     print("%i" % M, end=" ")
@@ -132,12 +132,14 @@ for M in fMs:
     set_trainable(vfe.kernel, False)
     set_trainable(vfe.likelihood, False)
 
-    objective = tf.function(lambda: -vfe.log_marginal_likelihood())
     gpflow.optimizers.Scipy().minimize(
-        objective, vfe.trainable_variables, options=dict(disp=False, maxiter=ci_niter(1000))
+        vfe.training_loss,
+        vfe.trainable_variables,
+        options=dict(disp=False, maxiter=ci_niter(1000)),
+        compile=True,
     )
 
-    fvfe_lml.append(vfe.log_likelihood().numpy())
+    fvfe_lml.append(vfe.elbo().numpy())
     fvupper_lml.append(vfe.upper_bound().numpy())
     print("%i" % M, end=" ")
 
@@ -163,14 +165,14 @@ single_inducing_point = X[:1, :].copy()
 vfe = gpflow.models.SGPR(
     (X, Y), gpflow.kernels.SquaredExponential(), inducing_variable=single_inducing_point
 )
-objective = tf.function(lambda: -vfe.log_marginal_likelihood())
+objective = tf.function(vfe.training_loss)
 gpflow.optimizers.Scipy().minimize(
     objective, vfe.trainable_variables, options=dict(maxiter=ci_niter(1000)), compile=False
 )
 # Note that we need to set compile=False here due to a discrepancy in compiling with tf.function
 # see https://github.com/GPflow/GPflow/issues/1260
 
-print("Lower bound: %f" % vfe.log_likelihood().numpy())
+print("Lower bound: %f" % vfe.elbo().numpy())
 print("Upper bound: %f" % vfe.upper_bound().numpy())
 
 # %% [markdown]

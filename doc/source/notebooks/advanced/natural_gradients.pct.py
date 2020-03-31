@@ -63,10 +63,10 @@ iterations = ci_niter(5)
 gpr = GPR(data, kernel=gpflow.kernels.Matern52())
 
 # %% [markdown]
-# The likelihood of the exact GP model is:
+# The log marginal likelihood of the exact GP model is:
 
 # %%
-gpr.log_likelihood().numpy()
+gpr.log_marginal_likelihood().numpy()
 
 # %% [markdown]
 # Now we will create an approximate model which approximates the true posterior via a variational Gaussian distribution.<br>We initialize the distribution to be zero mean and unit variance.
@@ -75,10 +75,10 @@ gpr.log_likelihood().numpy()
 vgp = VGP(data, kernel=gpflow.kernels.Matern52(), likelihood=gpflow.likelihoods.Gaussian())
 
 # %% [markdown]
-# The likelihood of the approximate GP model is:
+# The log marginal likelihood lower bound (evidence lower bound or ELBO) of the approximate GP model is:
 
 # %%
-vgp.log_likelihood().numpy()
+vgp.elbo().numpy()
 
 # %% [markdown]
 # Obviously, our initial guess for the variational distribution is not correct, which results in a lower bound to the likelihood of the exact GPR model. We can optimize the variational parameters in order to get a tighter bound.
@@ -89,13 +89,13 @@ vgp.log_likelihood().numpy()
 # %%
 natgrad_opt = NaturalGradient(gamma=1.0)
 variational_params = [(vgp.q_mu, vgp.q_sqrt)]
-natgrad_opt.minimize(lambda: -vgp.log_marginal_likelihood(), var_list=variational_params)
+natgrad_opt.minimize(vgp.training_loss, var_list=variational_params)
 
 # %% [markdown]
-# The likelihood of the approximate GP model after a single NatGrad step:
+# The ELBO of the approximate GP model after a single NatGrad step:
 
 # %%
-vgp.log_likelihood().numpy()
+vgp.elbo().numpy()
 
 # %% [markdown]
 # ### Optimize both variational parameters and kernel hyperparameters together
@@ -115,19 +115,15 @@ adam_opt_for_gpr = tf.optimizers.Adam(adam_learning_rate)
 
 # %%
 for i in range(iterations):
-    adam_opt_for_gpr.minimize(
-        lambda: -gpr.log_marginal_likelihood(), var_list=gpr.trainable_variables
-    )
-    likelihood = gpr.log_likelihood()
+    adam_opt_for_gpr.minimize(gpr.training_loss, var_list=gpr.trainable_variables)
+    likelihood = gpr.log_marginal_likelihood()
     tf.print(f"GPR with Adam: iteration {i + 1} likelihood {likelihood:.04f}")
 
 # %%
 for i in range(iterations):
-    adam_opt_for_vgp.minimize(
-        lambda: -vgp.log_marginal_likelihood(), var_list=vgp.trainable_variables
-    )
-    natgrad_opt.minimize(lambda: -vgp.log_marginal_likelihood(), var_list=variational_params)
-    likelihood = vgp.log_likelihood()
+    natgrad_opt.minimize(vgp.training_loss, var_list=variational_params)
+    adam_opt_for_vgp.minimize(vgp.training_loss, var_list=vgp.trainable_variables)
+    likelihood = vgp.elbo()
     tf.print(f"VGP with NaturalGradient and Adam: iteration {i + 1} likelihood {likelihood:.04f}")
 
 # %% [markdown]
@@ -155,33 +151,28 @@ for model in svgp, sgpr:
     model.likelihood.variance.assign(0.1)
 
 # %% [markdown]
-# Analytically optimal sparse model likelihood:
+# Analytically optimal sparse model ELBO:
 
 # %%
-sgpr.log_likelihood().numpy()
+sgpr.elbo().numpy()
 
 # %% [markdown]
-# SVGP likelihood before natural gradient step:
+# SVGP ELBO before natural gradient step:
 
 # %%
-svgp.log_likelihood(data).numpy()
+svgp.elbo(data).numpy()
 
 # %%
 variational_params = [(svgp.q_mu, svgp.q_sqrt)]
 
-
-def svgp_loss_cb():
-    return -svgp.log_marginal_likelihood(data)
-
-
 natgrad_opt = NaturalGradient(gamma=1.0)
-natgrad_opt.minimize(svgp_loss_cb, var_list=variational_params)
+natgrad_opt.minimize(svgp.training_loss_closure(data), var_list=variational_params)
 
 # %% [markdown]
-# SVGP likelihood after a single natural gradient step:
+# SVGP ELBO after a single natural gradient step:
 
 # %%
-svgp.log_likelihood(data).numpy()
+svgp.elbo(data).numpy()
 
 # %% [markdown]
 # ### Minibatches
@@ -197,19 +188,15 @@ data_minibatch = (
 data_minibatch_it = iter(data_minibatch)
 
 
-def svgp_stochastic_loss_cb() -> tf.Tensor:
-    batch = next(data_minibatch_it)
-    return -svgp.log_marginal_likelihood(batch)
-
-
+svgp_objective = svgp.training_loss_closure(data_minibatch_it)
 for _ in range(ci_niter(100)):
-    natgrad_opt.minimize(svgp_stochastic_loss_cb, var_list=variational_params)
+    natgrad_opt.minimize(svgp_objective, var_list=variational_params)
 
 # %% [markdown]
-# Minibatch SVGP likelihood after NatGrad optimization:
+# Minibatch SVGP ELBO after NatGrad optimization:
 
 # %%
-np.average([svgp.log_likelihood(next(data_minibatch_it)) for _ in ci_range(100)])
+np.average([svgp.elbo(next(data_minibatch_it)) for _ in ci_range(100)])
 
 # %% [markdown]
 # ### Comparison with ordinary gradients in the conjugate case
@@ -258,35 +245,29 @@ data_minibatch = (
 data_minibatch_it = iter(data_minibatch)
 
 
-def svgp_ordinary_loss_cb() -> tf.Tensor:
-    batch = next(data_minibatch_it)
-    return -svgp_ordinary.log_marginal_likelihood(batch)
-
-
-def svgp_natgrad_loss_cb() -> tf.Tensor:
-    batch = next(data_minibatch_it)
-    return -svgp_natgrad.log_marginal_likelihood(batch)
+svgp_ordinary_loss = svgp_ordinary.training_loss_closure(data_minibatch_it)
+svgp_natgrad_loss = svgp_natgrad.training_loss_closure(data_minibatch_it)
 
 
 for _ in range(ci_niter(100)):
-    ordinary_adam_opt.minimize(svgp_ordinary_loss_cb, var_list=svgp_ordinary.trainable_variables)
+    ordinary_adam_opt.minimize(svgp_ordinary_loss, var_list=svgp_ordinary.trainable_variables)
 
 
 for _ in range(ci_niter(100)):
-    natgrad_adam_opt.minimize(svgp_natgrad_loss_cb, var_list=svgp_natgrad.trainable_variables)
-    natgrad_opt.minimize(svgp_natgrad_loss_cb, var_list=variational_params)
+    natgrad_adam_opt.minimize(svgp_natgrad_loss, var_list=svgp_natgrad.trainable_variables)
+    natgrad_opt.minimize(svgp_natgrad_loss, var_list=variational_params)
 
 # %% [markdown]
-# SVGP likelihood after ordinary `Adam` optimization:
+# SVGP ELBO after ordinary `Adam` optimization:
 
 # %%
-np.average([svgp_ordinary.log_likelihood(next(data_minibatch_it)) for _ in ci_range(100)])
+np.average([svgp_ordinary.elbo(next(data_minibatch_it)) for _ in ci_range(100)])
 
 # %% [markdown]
-# SVGP likelihood after `NaturalGradient` and `Adam` optimization:
+# SVGP ELBO after `NaturalGradient` and `Adam` optimization:
 
 # %%
-np.average([svgp_natgrad.log_likelihood(next(data_minibatch_it)) for _ in ci_range(100)])
+np.average([svgp_natgrad.elbo(next(data_minibatch_it)) for _ in ci_range(100)])
 
 # %% [markdown]
 # ### Comparison with ordinary gradients in the non-conjugate case
@@ -323,31 +304,26 @@ variational_params = [(vgp_bernoulli_natgrad.q_mu, vgp_bernoulli_natgrad.q_sqrt)
 # %%
 # Optimize vgp_bernoulli
 for _ in range(ci_niter(100)):
-    adam_opt.minimize(
-        lambda: -vgp_bernoulli.log_marginal_likelihood(), var_list=vgp_bernoulli.trainable_variables
-    )
+    adam_opt.minimize(vgp_bernoulli.training_loss, var_list=vgp_bernoulli.trainable_variables)
 
 # Optimize vgp_bernoulli_natgrad
 for _ in range(ci_niter(100)):
     adam_opt.minimize(
-        lambda: -vgp_bernoulli_natgrad.log_marginal_likelihood(),
-        var_list=vgp_bernoulli_natgrad.trainable_variables,
+        vgp_bernoulli_natgrad.training_loss, var_list=vgp_bernoulli_natgrad.trainable_variables
     )
-    natgrad_opt.minimize(
-        lambda: -vgp_bernoulli_natgrad.log_marginal_likelihood(), var_list=variational_params
-    )
+    natgrad_opt.minimize(vgp_bernoulli_natgrad.training_loss, var_list=variational_params)
 
 # %% [markdown]
-# VGP likelihood after ordinary `Adam` optimization:
+# VGP ELBO after ordinary `Adam` optimization:
 
 # %%
-vgp_bernoulli.log_likelihood().numpy()
+vgp_bernoulli.elbo().numpy()
 
 # %% [markdown]
-# VGP likelihood after `NaturalGradient` + `Adam` optimization:
+# VGP ELBO after `NaturalGradient` + `Adam` optimization:
 
 # %%
-vgp_bernoulli_natgrad.log_likelihood().numpy()
+vgp_bernoulli_natgrad.elbo().numpy()
 
 # %% [markdown]
 # We can also choose to run natural gradients in another parameterization.<br>
@@ -374,19 +350,17 @@ variational_params = [
 # Optimize vgp_bernoulli_natgrads_xi
 for _ in range(ci_niter(100)):
     adam_opt.minimize(
-        lambda: -vgp_bernoulli_natgrads_xi.log_marginal_likelihood(),
+        vgp_bernoulli_natgrads_xi.training_loss,
         var_list=vgp_bernoulli_natgrads_xi.trainable_variables,
     )
 
-    natgrad_opt.minimize(
-        lambda: -vgp_bernoulli_natgrads_xi.log_marginal_likelihood(), var_list=variational_params
-    )
+    natgrad_opt.minimize(vgp_bernoulli_natgrads_xi.training_loss, var_list=variational_params)
 
 # %% [markdown]
-# VGP likelihood after `NaturalGradient` with `XiSqrtMeanVar` + `Adam` optimization:
+# VGP ELBO after `NaturalGradient` with `XiSqrtMeanVar` + `Adam` optimization:
 
 # %%
-vgp_bernoulli_natgrads_xi.log_likelihood().numpy()
+vgp_bernoulli_natgrads_xi.elbo().numpy()
 
 # %% [markdown]
 # With sufficiently small steps, it shouldn't make a difference which transform is used, but for large

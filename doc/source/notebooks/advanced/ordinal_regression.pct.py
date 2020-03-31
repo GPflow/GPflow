@@ -78,13 +78,8 @@ likelihood = gpflow.likelihoods.Ordinal(bin_edges)
 m = gpflow.models.VGP(data=(X, Y), kernel=gpflow.kernels.Matern32(), likelihood=likelihood)
 
 # fit the model
-# @tf.function
-def objective_closure():
-    return -m.log_marginal_likelihood()
-
-
 opt = gpflow.optimizers.Scipy()
-opt.minimize(objective_closure, m.trainable_variables, options=dict(maxiter=100))
+opt.minimize(m.training_loss, m.trainable_variables, options=dict(maxiter=100))
 
 # %%
 # here we'll plot the expected value of Y +- 2 std deviations, as if the distribution were Gaussian

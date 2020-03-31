@@ -35,8 +35,8 @@ def model():
 def monitor(model, tmp_path):
     tmp_path = str(tmp_path)
 
-    def elbo_callback():
-        return model.log_likelihood()
+    def lml_callback():
+        return model.log_marginal_likelihood()
 
     def print_callback():
         print("foo")
@@ -45,11 +45,11 @@ def monitor(model, tmp_path):
         MonitorTaskGroup(
             [
                 ModelToTensorBoard(tmp_path, model),
-                ScalarToTensorBoard(tmp_path, elbo_callback, "elbo"),
+                ScalarToTensorBoard(tmp_path, lml_callback, "lml"),
             ],
             period=2,
         ),
-        MonitorTaskGroup(ExecuteCallback(print_callback), period=1,),
+        MonitorTaskGroup(ExecuteCallback(print_callback), period=1),
     )
 
 
@@ -270,13 +270,9 @@ def test_logdir_created(monitor, model, tmp_path):
     size_before = _get_size_directory(tmp_path)
     assert size_before > 0
 
-    @tf.function
-    def closure():
-        return -1.0 * model.log_likelihood()
-
     opt = tf.optimizers.Adam()
     for step in range(Data.num_steps):
-        opt.minimize(closure, model.trainable_variables)
+        opt.minimize(model.training_loss, model.trainable_variables)
         monitor(step)
 
     size_after = _get_size_directory(tmp_path)
@@ -288,8 +284,7 @@ def test_compile_monitor(monitor, model):
 
     @tf.function
     def tf_func(step):
-        closure = lambda: -1.0 * model.log_likelihood()
-        opt.minimize(closure, model.trainable_variables)
+        opt.minimize(model.training_loss, model.trainable_variables)
         monitor(step)
 
     for step in tf.range(100):

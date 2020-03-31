@@ -111,7 +111,7 @@ def test_reference_implementation_consistency():
         q_mean.reshape(-1), p_mean.reshape(-1), q_cov.reshape(-1), p_cov.reshape(-1)
     )
 
-    assert_allclose(univariate_KL - multivariate_KL, 0, atol=4)
+    assert_allclose(univariate_KL.squeeze(), multivariate_KL.squeeze(), atol=4)
 
 
 @pytest.mark.parametrize("diag", [True, False])
@@ -133,8 +133,7 @@ def test_variational_univariate_prior_KL(diag, whiten):
         q_mu=q_mu,
         q_sqrt=q_sqrt,
     )
-    test_prior_KL = model.prior_kl()
-    assert_allclose(reference_kl - test_prior_KL, 0, atol=4)
+    assert_allclose(model.prior_kl(), reference_kl, atol=4)
 
 
 @pytest.mark.parametrize("diag", [True, False])
@@ -157,8 +156,8 @@ def test_variational_univariate_log_likelihood(diag, whiten):
         q_mu=q_mu,
         q_sqrt=q_sqrt,
     )
-    model_likelihood = model.log_likelihood(Datum.data).numpy()
-    assert_allclose(model_likelihood - reference_log_marginal_likelihood, 0, atol=4)
+    model_likelihood = model.elbo(Datum.data).numpy()
+    assert_allclose(model_likelihood, reference_log_marginal_likelihood, atol=4)
 
 
 @pytest.mark.parametrize("diag", [True, False])
@@ -183,8 +182,8 @@ def test_variational_univariate_conditionals(diag, whiten):
     )
     mean_value, var_value = fmean_func[0, 0], fvar_func[0, 0]
 
-    assert_allclose(mean_value - Datum.posterior_mean, 0, atol=4)
-    assert_allclose(var_value - Datum.posterior_var, 0, atol=4)
+    assert_allclose(mean_value, Datum.posterior_mean, atol=4)
+    assert_allclose(var_value, Datum.posterior_var, atol=4)
 
 
 @pytest.mark.parametrize("whiten", [True, False])
@@ -210,5 +209,4 @@ def test_variational_multivariate_prior_KL_full_q(whiten):
         q_sqrt=q_sqrt,
     )
 
-    test_prior_kl = model.prior_kl()
-    assert_allclose(reference_kl - test_prior_kl, 0, atol=4)
+    assert_allclose(model.prior_kl(), reference_kl, atol=4)

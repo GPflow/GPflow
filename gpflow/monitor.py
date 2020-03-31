@@ -304,7 +304,7 @@ class Monitor:
         log_dir = "logs"
         model_task = ModelToTensorBoard(log_dir, model)
         image_task = ImageToTensorBoard(log_dir, plot_prediction, "image_samples")
-        lml_task = ScalarToTensorBoard(log_dir, lambda: model.log_likelihood(), "lml")
+        lml_task = ScalarToTensorBoard(log_dir, lambda: model.log_marginal_likelihood(), "lml")
 
         # Plotting tasks can be quite slow, so we want to run them less frequently.
         # We group them in a `MonitorTaskGroup` and set the period to 5.

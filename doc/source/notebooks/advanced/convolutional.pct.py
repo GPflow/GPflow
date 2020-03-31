@@ -110,15 +110,15 @@ rbf_m = gpflow.models.SVGP(
 )
 
 # %%
-rbf_m_log_likelihood = rbf_m.log_likelihood
-print("RBF elbo before training: %.4e" % rbf_m_log_likelihood(data))
-rbf_m_log_likelihood = tf.function(rbf_m_log_likelihood)
+rbf_training_loss_closure = rbf_m.training_loss_closure(data, compile=True)
+rbf_elbo = lambda: -rbf_training_loss_closure().numpy()
+print("RBF elbo before training: %.4e" % rbf_elbo())
 
 # %%
 set_trainable(rbf_m.inducing_variable, False)
 start_time = time.time()
 res = gpflow.optimizers.Scipy().minimize(
-    lambda: -rbf_m_log_likelihood(data),
+    rbf_training_loss_closure,
     variables=rbf_m.trainable_variables,
     method="l-bfgs-b",
     options={"disp": True, "maxiter": MAXITER},
@@ -129,7 +129,7 @@ print(f"{res.nfev / (time.time() - start_time):.3f} iter/s")
 train_err = np.mean((rbf_m.predict_y(X)[0] > 0.5).numpy().astype("float") == Y)
 test_err = np.mean((rbf_m.predict_y(Xt)[0] > 0.5).numpy().astype("float") == Yt)
 print(f"Train acc: {train_err * 100}%\nTest acc : {test_err*100}%")
-print("RBF elbo after training: %.4e" % rbf_m_log_likelihood(data))
+print("RBF elbo after training: %.4e" % rbf_elbo())
 
 # %% [markdown]
 # ## Convolutional kernel
@@ -163,14 +163,14 @@ set_trainable(conv_m.kernel.base_kernel.variance, False)
 set_trainable(conv_m.kernel.weights, False)
 
 # %%
-conv_m_log_likelihood = conv_m.log_likelihood
-print("conv elbo before training: %.4e" % conv_m_log_likelihood(data))
-conv_m_log_likelihood = tf.function(conv_m_log_likelihood)
+conv_training_loss_closure = conv_m.training_loss_closure(data, compile=True)
+conv_elbo = lambda: -conv_training_loss_closure().numpy()
+print("conv elbo before training: %.4e" % conv_elbo())
 
 # %%
 start_time = time.time()
 res = gpflow.optimizers.Scipy().minimize(
-    lambda: -conv_m_log_likelihood(data),
+    conv_training_loss_closure,
     variables=conv_m.trainable_variables,
     method="l-bfgs-b",
     options={"disp": True, "maxiter": MAXITER / 10},
@@ -180,7 +180,7 @@ print(f"{res.nfev / (time.time() - start_time):.3f} iter/s")
 # %%
 set_trainable(conv_m.kernel.base_kernel.variance, True)
 res = gpflow.optimizers.Scipy().minimize(
-    lambda: -conv_m.log_likelihood(data),
+    conv_training_loss_closure,
     variables=conv_m.trainable_variables,
     method="l-bfgs-b",
     options={"disp": True, "maxiter": MAXITER},
@@ -188,11 +188,11 @@ res = gpflow.optimizers.Scipy().minimize(
 train_err = np.mean((conv_m.predict_y(X)[0] > 0.5).numpy().astype("float") == Y)
 test_err = np.mean((conv_m.predict_y(Xt)[0] > 0.5).numpy().astype("float") == Yt)
 print(f"Train acc: {train_err * 100}%\nTest acc : {test_err*100}%")
-print("conv elbo after training: %.4e" % conv_m_log_likelihood(data))
+print("conv elbo after training: %.4e" % conv_elbo())
 
 # %%
 res = gpflow.optimizers.Scipy().minimize(
-    lambda: -conv_m.log_likelihood(data),
+    conv_training_loss_closure,
     variables=conv_m.trainable_variables,
     method="l-bfgs-b",
     options={"disp": True, "maxiter": MAXITER},
@@ -200,12 +200,12 @@ res = gpflow.optimizers.Scipy().minimize(
 train_err = np.mean((conv_m.predict_y(X)[0] > 0.5).numpy().astype("float") == Y)
 test_err = np.mean((conv_m.predict_y(Xt)[0] > 0.5).numpy().astype("float") == Yt)
 print(f"Train acc: {train_err * 100}%\nTest acc : {test_err*100}%")
-print("conv elbo after training: %.4e" % conv_m_log_likelihood(data))
+print("conv elbo after training: %.4e" % conv_elbo())
 
 # %%
 set_trainable(conv_m.kernel.weights, True)
 res = gpflow.optimizers.Scipy().minimize(
-    lambda: -conv_m.log_likelihood(data),
+    conv_training_loss_closure,
     variables=conv_m.trainable_variables,
     method="l-bfgs-b",
     options={"disp": True, "maxiter": MAXITER},
@@ -213,7 +213,7 @@ res = gpflow.optimizers.Scipy().minimize(
 train_err = np.mean((conv_m.predict_y(X)[0] > 0.5).numpy().astype("float") == Y)
 test_err = np.mean((conv_m.predict_y(Xt)[0] > 0.5).numpy().astype("float") == Yt)
 print(f"Train acc: {train_err * 100}%\nTest acc : {test_err*100}%")
-print("conv elbo after training: %.4e" % conv_m_log_likelihood(data))
+print("conv elbo after training: %.4e" % conv_elbo())
 
 # %%
 gpflow.utilities.print_summary(rbf_m)

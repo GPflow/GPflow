@@ -14,10 +14,19 @@
 
 import abc
 import warnings
-from typing import Optional, Tuple, TypeVar
+from typing import Callable, Optional, Tuple, TypeVar
 
 import numpy as np
 import tensorflow as tf
+
+from .training_mixins import (
+    InternalDataTrainingLossMixin,
+    ExternalDataTrainingLossMixin,
+    InputData,
+    OutputData,
+    RegressionData,
+    Data,
+)
 
 from ..base import Module
 from ..conditionals.util import sample_mvn
@@ -27,26 +36,11 @@ from ..likelihoods import Likelihood, SwitchedLikelihood
 from ..mean_functions import MeanFunction, Zero
 from ..utilities import ops, to_default_float
 
-InputData = tf.Tensor
-OutputData = tf.Tensor
-RegressionData = Tuple[InputData, OutputData]
 MeanAndVariance = Tuple[tf.Tensor, tf.Tensor]
 
 
-class BayesianModel(Module):
+class BayesianModel(Module, metaclass=abc.ABCMeta):
     """ Bayesian model. """
-
-    def neg_log_marginal_likelihood(self, *args, **kwargs) -> tf.Tensor:
-        msg = (
-            "`BayesianModel.neg_log_marginal_likelihood` is deprecated and "
-            " and will be removed in a future release. Please update your code "
-            " to use `BayesianModel.log_marginal_likelihood`."
-        )
-        warnings.warn(msg, category=DeprecationWarning)
-        return -self.log_marginal_likelihood(*args, **kwargs)
-
-    def log_marginal_likelihood(self, *args, **kwargs) -> tf.Tensor:
-        return self.log_likelihood(*args, **kwargs) + self.log_prior_density()
 
     def log_prior_density(self) -> tf.Tensor:
         """
@@ -57,8 +51,30 @@ class BayesianModel(Module):
         else:
             return to_default_float(0.0)
 
+    def log_posterior_density(self, *args, **kwargs) -> tf.Tensor:
+        """
+        This may be the posterior with respect to the hyperparameters (e.g. for
+        GPR) or the posterior with respect to the function (e.g. for GPMC and
+        SGPMC). It assumes that maximum_log_likelihood_objective() is defined
+        sensibly.
+        """
+        return self.maximum_log_likelihood_objective(*args, **kwargs) + self.log_prior_density()
+
+    def _training_loss(self, *args, **kwargs) -> tf.Tensor:
+        """
+        Training loss definition. To allow MAP (maximum a-posteriori) estimation,
+        adds the log density of all priors to maximum_log_likelihood_objective().
+        """
+        return -(self.maximum_log_likelihood_objective(*args, **kwargs) + self.log_prior_density())
+
     @abc.abstractmethod
-    def log_likelihood(self, *args, **kwargs) -> tf.Tensor:
+    def maximum_log_likelihood_objective(self, *args, **kwargs) -> tf.Tensor:
+        """
+        Objective for maximum likelihood estimation. Should be maximized. E.g.
+        log-marginal likelihood (hyperparameter likelihood) for GPR, or lower
+        bound to the log-marginal likelihood (ELBO) for sparse and variational
+        GPs.
+        """
         raise NotImplementedError
 
 
@@ -212,7 +228,7 @@ class GPModel(BayesianModel):
 
     def predict_log_density(
         self, data: RegressionData, full_cov: bool = False, full_output_cov: bool = False
-    ):
+    ) -> tf.Tensor:
         """
         Compute the log density of the data at the new data points.
         """

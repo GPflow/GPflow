@@ -57,7 +57,7 @@ np.random.seed(123)
 #
 # \begin{align}
 # y_1 &= \sin(6x) + \epsilon_1, \qquad \epsilon_1 \sim \mathcal{N}(0, 0.009) \\
-# y_2 &= \sin(6x + 0.7) + \epsilon_2, \qquad \epsilon_2 \sim \mathcal{N}(0, 0.01) \\
+# y_2 &= \sin(6x + 0.7) + \epsilon_2, \qquad \epsilon_2 \sim \mathcal{N}(0, 0.01)
 # \end{align}
 #
 
@@ -117,16 +117,10 @@ lik = gpflow.likelihoods.SwitchedLikelihood(
 # now build the GP model as normal
 m = gpflow.models.VGP((X_augmented, Y_augmented), kernel=kern, likelihood=lik)
 
-# closure
-@tf.function
-def objective_closure():
-    return -m.log_marginal_likelihood()
-
-
 # fit the covariance function parameters
 maxiter = ci_niter(10000)
 gpflow.optimizers.Scipy().minimize(
-    objective_closure, m.trainable_variables, options=dict(maxiter=maxiter), method="L-BFGS-B"
+    m.training_loss, m.trainable_variables, options=dict(maxiter=maxiter), method="L-BFGS-B"
 )
 
 

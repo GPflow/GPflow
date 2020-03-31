@@ -95,27 +95,23 @@ def _prepare_models():
     # Train them for a small number of iterations
 
     opt = gpflow.optimizers.Scipy()
-
-    @tf.function
-    def vgp0_closure():
-        return -vgp0.log_marginal_likelihood()
-
-    @tf.function
-    def vgp1_closure():
-        return -vgp1.log_marginal_likelihood()
-
-    @tf.function
-    def cvgp_closure():
-        return -cvgp.log_marginal_likelihood()
-
     opt.minimize(
-        vgp0_closure, variables=vgp0.trainable_variables, options=dict(maxiter=1000), method="BFGS",
+        vgp0.training_loss,
+        variables=vgp0.trainable_variables,
+        options=dict(maxiter=1000),
+        method="BFGS",
     )
     opt.minimize(
-        vgp1_closure, variables=vgp1.trainable_variables, options=dict(maxiter=1000), method="BFGS",
+        vgp1.training_loss,
+        variables=vgp1.trainable_variables,
+        options=dict(maxiter=1000),
+        method="BFGS",
     )
     opt.minimize(
-        cvgp_closure, variables=cvgp.trainable_variables, options=dict(maxiter=1000), method="BFGS",
+        cvgp.training_loss,
+        variables=cvgp.trainable_variables,
+        options=dict(maxiter=1000),
+        method="BFGS",
     )
 
     return vgp0, vgp1, cvgp

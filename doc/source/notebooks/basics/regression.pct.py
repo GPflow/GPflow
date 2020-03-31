@@ -119,14 +119,14 @@ opt = gpflow.optimizers.Scipy()
 
 
 # %% [markdown]
-# In order to minimize the negative log marginal likelihood, we create a closure to be passed to the optimizer. We also need to specify the variables to train with `m.trainable_variables`, and the number of iterations.
+# In order to train the model, we need to maximize the log marginal likelihood.
+# GPflow models define a `training_loss` that can be passed to the `minimize`
+# method of an optimizer; in this case it is simply the negative log marginal
+# likelihood. We also need to specify the variables to train with
+# `m.trainable_variables`, and the number of iterations.
 
 # %%
-def objective_closure():
-    return -m.log_marginal_likelihood()
-
-
-opt_logs = opt.minimize(objective_closure, m.trainable_variables, options=dict(maxiter=100))
+opt_logs = opt.minimize(m.training_loss, m.trainable_variables, options=dict(maxiter=100))
 print_summary(m)
 
 # %% [markdown]

@@ -139,11 +139,6 @@ model = gpflow.models.VGP((X, Y_data), kernel=kernel, likelihood=likelihood, num
 # Notice that we specify num_latent_gps=1, as the VGP model would normally infer this from the shape of Y_data, but we handle the second column manually in the HeteroskedasticGaussian likelihood.
 
 # %%
-@tf.function
-def objective_closure():
-    return -model.log_marginal_likelihood()
-
-
 natgrad = NaturalGradient(gamma=1.0)
 adam = tf.optimizers.Adam()
 
@@ -151,8 +146,8 @@ set_trainable(model.q_mu, False)
 set_trainable(model.q_sqrt, False)
 
 for _ in range(ci_niter(1000)):
-    natgrad.minimize(objective_closure, [(model.q_mu, model.q_sqrt)])
-    adam.minimize(objective_closure, model.trainable_variables)
+    natgrad.minimize(model.training_loss, [(model.q_mu, model.q_sqrt)])
+    adam.minimize(model.training_loss, model.trainable_variables)
 
 # %%
 # let's do some plotting!
@@ -240,13 +235,8 @@ model = gpflow.models.VGP((X, Y_data), kernel=kernel, likelihood=likelihood, num
 
 
 # %%
-@tf.function
-def objective_closure():
-    return -model.log_marginal_likelihood()
-
-
 for _ in range(ci_niter(1000)):
-    natgrad.minimize(objective_closure, [(model.q_mu, model.q_sqrt)])
+    natgrad.minimize(model.training_loss, [(model.q_mu, model.q_sqrt)])
 
 # %% [markdown]
 # We've now fitted the VGP model to the data, but without optimizing over the hyperparameters. Plotting the data, we see that the fit is not terrible, but hasn't made use of our knowledge of the varying noise.
@@ -278,18 +268,12 @@ likelihood = gpflow.likelihoods.SwitchedLikelihood(
 kernel = gpflow.kernels.Matern52(lengthscales=0.5)
 model = gpflow.models.VGP((X, Y_data), kernel=kernel, likelihood=likelihood, num_latent_gps=1)
 
-
-@tf.function
-def objective_closure():
-    return -model.log_marginal_likelihood()
-
-
 set_trainable(model.q_mu, False)
 set_trainable(model.q_sqrt, False)
 
 for _ in range(ci_niter(1000)):
-    natgrad.minimize(objective_closure, [(model.q_mu, model.q_sqrt)])
-    adam.minimize(objective_closure, model.trainable_variables)
+    natgrad.minimize(model.training_loss, [(model.q_mu, model.q_sqrt)])
+    adam.minimize(model.training_loss, model.trainable_variables)
 
 # %% [markdown]
 # ### Plotting the fitted model

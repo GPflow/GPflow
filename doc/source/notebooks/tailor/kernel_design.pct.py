@@ -114,14 +114,8 @@ k = k1 + k2
 m = gpflow.models.GPR((X, Y), kernel=k)
 # m.likelihood.variance.assign(1e-6)
 
-
-@tf.function
-def objective():
-    return -m.log_marginal_likelihood()
-
-
 opt = gpflow.optimizers.Scipy()
-opt.minimize(objective, variables=m.trainable_variables)
+opt.minimize(m.training_loss, variables=m.trainable_variables)
 print_summary(m, fmt="notebook")
 
 xx = np.linspace(0, 1.1, 100).reshape(100, 1)

@@ -366,15 +366,11 @@ gpflow.set_trainable(m.kernel, False)
 gpflow.set_trainable(m.likelihood, False)
 gpflow.set_trainable(m.inducing_variable, True)  # whether to optimize bounds [a, b]
 
-
-@tf.function
-def objective():
-    return -m.log_marginal_likelihood(data)
-
-
 # %%
 opt = gpflow.optimizers.Scipy()
-opt.minimize(objective, variables=m.trainable_variables, options=dict(maxiter=ci_niter(5000)))
+opt.minimize(
+    m.training_loss_closure(data), m.trainable_variables, options=dict(maxiter=ci_niter(5000)),
+)
 
 gpflow.utilities.print_summary(m, fmt="notebook")
 
@@ -393,15 +389,13 @@ gpflow.set_trainable(m_ip.kernel, False)
 gpflow.set_trainable(m_ip.likelihood, False)
 gpflow.set_trainable(m_ip.inducing_variable, True)  # whether to optimize inducing point locations
 
-
-@tf.function
-def objective_ip():
-    return -m_ip.log_marginal_likelihood(data)
-
-
 # %%
 opt = gpflow.optimizers.Scipy()
-opt.minimize(objective_ip, variables=m_ip.trainable_variables, options=dict(maxiter=ci_niter(5000)))
+opt.minimize(
+    m_ip.training_loss_closure(data),
+    m_ip.trainable_variables,
+    options=dict(maxiter=ci_niter(5000)),
+)
 
 gpflow.utilities.print_summary(m_ip, fmt="notebook")
 
@@ -411,21 +405,17 @@ m_ref.likelihood.variance = np.array(noise_scale ** 2).astype(np.float64)
 gpflow.set_trainable(m_ref.kernel, False)
 gpflow.set_trainable(m_ref.likelihood, False)
 
-
-def objective_ref():
-    return -m_ref.log_marginal_likelihood()
-
-
 # Because we fixed the kernel and likelihood hyperparameters, we don't need to optimize anything.
 
 gpflow.utilities.print_summary(m_ref, fmt="notebook")
 
-
 # %%
-print("LML (exact GPR) =", -objective_ref().numpy().item())
-print("ELBO (SVGP, inducing points) =", -objective_ip().numpy().item())
-print("ELBO (SVGP, Fourier features) =", -objective().numpy().item())
-
+exact_gpr_lml = m_ref.log_marginal_likelihood().numpy().item()
+print("LML (exact GPR) =", exact_gpr_lml)
+ip_svgp_elbo = m_ip.elbo(data).numpy().item()
+print("ELBO (SVGP, inducing points) =", ip_svgp_elbo)
+vff_svgp_elbo = m.elbo(data).numpy().item()
+print("ELBO (SVGP, Fourier features) =", vff_svgp_elbo)
 
 # %%
 def plot_gp(m, Xnew, name=""):
@@ -445,8 +435,8 @@ def plot_data():
 
 plt.figure(figsize=(15, 10))
 plot_data()
-plot_gp(m, Xnew, "VFF [ELBO={:.3}]".format(-objective().numpy().item()))
-plot_gp(m_ip, Xnew, "inducing points [ELBO={:.3}]".format(-objective_ip().numpy().item()))
-plot_gp(m_ref, Xnew, "exact [LML={:.3}]".format(-objective_ref().numpy().item()))
+plot_gp(m, Xnew, "VFF [ELBO={:.3}]".format(vff_svgp_elbo))
+plot_gp(m_ip, Xnew, "inducing points [ELBO={:.3}]".format(ip_svgp_elbo))
+plot_gp(m_ref, Xnew, "exact [LML={:.3}]".format(exact_gpr_lml))
 plt.legend(loc="best")
 plt.show()

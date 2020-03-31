@@ -45,13 +45,13 @@ tf.random.set_seed(123)
 
 # %% [markdown]
 #
-# In this notebook, we provide three examples
-# * [Example 1](#example_1): Sampling hyperparameters in Gaussian process regression
-# * [Example 2](#example_2): Sparse Variational MC applied to the multiclass classification problem
-# * [Example 3](#example_3): Full Bayesian inference for Gaussian process models
+# In this notebook, we provide three examples:
+#
+# * [Example 1](#Example-1-GP-regression): Sampling hyperparameters in Gaussian process regression
+# * [Example 2](#Example-2-Sparse-MC-for-multiclass-classification): Sparse Variational MC applied to the multiclass classification problem
+# * [Example 3](#Example-3-Fully-Bayesian-inference-for-generalized-GP-models-with-HMC): Full Bayesian inference for Gaussian process models
 
 # %% [markdown]
-# <a id='example_1'></a>
 # ## Example 1: GP regression
 
 # %% [markdown]
@@ -111,16 +111,9 @@ model = gpflow.models.GPR(data, kernel, mean_function, noise_variance=0.01)
 
 # %%
 optimizer = gpflow.optimizers.Scipy()
+optimizer.minimize(model.training_loss, model.trainable_variables)
 
-
-@tf.function
-def objective():
-    return -model.log_marginal_likelihood()
-
-
-optimizer.minimize(objective, model.trainable_variables)
-
-print(f"log likelihood at optimum: {model.log_likelihood()}")
+print(f"log posterior density at optimum: {model.log_posterior_density()}")
 
 # %% [markdown]
 # Thirdly, we add priors to the hyperparameters.
@@ -144,7 +137,7 @@ num_samples = ci_niter(500)
 
 # Note that here we need model.trainable_parameters, not trainable_variables - only parameters can have priors!
 hmc_helper = gpflow.optimizers.SamplingHelper(
-    model.log_marginal_likelihood, model.trainable_parameters
+    model.log_posterior_density, model.trainable_parameters
 )
 
 hmc = tfp.mcmc.HamiltonianMonteCarlo(
@@ -280,7 +273,6 @@ plt.title("Posterior GP samples")
 plt.show()
 
 # %% [markdown]
-# <a id='example_2'></a>
 # ## Example 2: Sparse MC for multiclass classification
 
 # %% [markdown]
@@ -353,15 +345,8 @@ set_trainable(model.inducing_variable, False)
 
 # %%
 optimizer = gpflow.optimizers.Scipy()
-
-
-@tf.function
-def objective():
-    return -model.log_marginal_likelihood()
-
-
-optimizer.minimize(objective, model.trainable_variables, options={"maxiter": 20})
-print(f"log likelihood at optimum: {model.log_likelihood()}")
+optimizer.minimize(model.training_loss, model.trainable_variables, options={"maxiter": 20})
+print(f"log posterior density at optimum: {model.log_posterior_density()}")
 
 # %% [markdown]
 # Sampling starts with a 'burn in' period.
@@ -370,10 +355,9 @@ print(f"log likelihood at optimum: {model.log_likelihood()}")
 num_burnin_steps = ci_niter(100)
 num_samples = ci_niter(500)
 
-# %%
 # Note that here we need model.trainable_parameters, not trainable_variables - only parameters can have priors!
 hmc_helper = gpflow.optimizers.SamplingHelper(
-    model.log_marginal_likelihood, model.trainable_parameters
+    model.log_posterior_density, model.trainable_parameters
 )
 
 hmc = tfp.mcmc.HamiltonianMonteCarlo(
@@ -422,7 +406,6 @@ _ = plt.ylabel("hyperparameter value")
 
 
 # %% [markdown]
-# <a id='example_3'></a>
 # ## Example 3: Fully Bayesian inference for generalized GP models with HMC
 
 # %% [markdown]
@@ -499,33 +482,12 @@ gpflow.utilities.print_summary(model)
 # We initialize HMC at the maximum a posteriori parameter values of the model.
 
 # %%
-@tf.function
-def optimization_step(optimizer, model):
-    with tf.GradientTape(watch_accessed_variables=False) as tape:
-        tape.watch(model.trainable_variables)
-        objective = -model.log_marginal_likelihood()
-        grads = tape.gradient(objective, model.trainable_variables)
-    optimizer.apply_gradients(zip(grads, model.trainable_variables))
-    return -objective
-
-
-def run_adam(model, iterations):
-    logf = []
-    adam = tf.optimizers.Adam()
-    for step in range(iterations):
-        elbo = optimization_step(adam, model)
-        if step % 10 == 0:
-            logf.append(elbo.numpy())
-    return logf
-
-
+optimizer = gpflow.optimizers.Scipy()
 maxiter = ci_niter(3000)
-logf = run_adam(model, maxiter)  # start near Maximum a posteriori (MAP)
-
-plt.plot(np.arange(maxiter)[::10], logf)
-plt.xlabel("iteration")
-_ = plt.ylabel("neg_log_marginal_likelihood")
-
+_ = optimizer.minimize(
+    model.training_loss, model.trainable_variables, options=dict(maxiter=maxiter)
+)
+# We can now start HMC near maximum a posteriori (MAP)
 
 # %% [markdown]
 # We then run the sampler,
@@ -536,7 +498,7 @@ num_samples = ci_niter(500)
 
 # Note that here we need model.trainable_parameters, not trainable_variables - only parameters can have priors!
 hmc_helper = gpflow.optimizers.SamplingHelper(
-    model.log_marginal_likelihood, model.trainable_parameters
+    model.log_posterior_density, model.trainable_parameters
 )
 
 hmc = tfp.mcmc.HamiltonianMonteCarlo(
@@ -686,7 +648,7 @@ num_burnin_steps = ci_niter(300)
 num_samples = ci_niter(500)
 
 hmc_helper = gpflow.optimizers.SamplingHelper(
-    model.log_marginal_likelihood, model.trainable_parameters
+    model.log_posterior_density, model.trainable_parameters
 )
 
 hmc = tfp.mcmc.HamiltonianMonteCarlo(

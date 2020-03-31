@@ -117,15 +117,8 @@ m = gpflow.models.VGP(
     (X, Y), likelihood=gpflow.likelihoods.Bernoulli(), kernel=gpflow.kernels.Matern52()
 )
 
-o = gpflow.optimizers.Scipy()
-
-
-@tf.function
-def objective():
-    return -m.log_marginal_likelihood()
-
-
-o.minimize(objective, variables=m.trainable_variables)
+opt = gpflow.optimizers.Scipy()
+opt.minimize(m.training_loss, variables=m.trainable_variables)
 
 # %% [markdown]
 # We can now inspect the result of the optimization with `gpflow.utilities.print_summary(m)`:
@@ -196,14 +189,9 @@ m = gpflow.models.VGP(
 )
 
 opt = gpflow.optimizers.Scipy()
-
-
-@tf.function
-def objective():
-    return -m.log_marginal_likelihood()
-
-
-opt.minimize(objective, variables=m.trainable_variables, options=dict(maxiter=25))
+opt.minimize(
+    m.training_loss, variables=m.trainable_variables, options=dict(maxiter=25), method="L-BFGS-B"
+)
 # in practice, the optimization needs around 250 iterations to converge
 
 # %% [markdown]
@@ -219,7 +207,7 @@ Xplot = np.vstack((xx.flatten(), yy.flatten())).T
 p, _ = m.predict_y(Xplot)  # here we only care about the mean
 plt.figure(figsize=(7, 7))
 plt.plot(X[mask, 0], X[mask, 1], "oC0", mew=0, alpha=0.5)
-_ = plt.plot(X[np.logical_not(mask), 0], X[np.logical_not(mask), 1], "oC1", mew=0, alpha=0.5)
+plt.plot(X[np.logical_not(mask), 0], X[np.logical_not(mask), 1], "oC1", mew=0, alpha=0.5)
 
 _ = plt.contour(
     xx,

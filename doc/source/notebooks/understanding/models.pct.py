@@ -185,28 +185,43 @@ print_summary(m)
 # To optimize your model, first create an instance of an optimizer (in this case, `gpflow.optimizers.Scipy`), which has optional arguments that are passed to `scipy.optimize.minimize` (we minimize the negative log likelihood). Then, call the `minimize` method of that optimizer, with your model as the optimization target. Variables that have priors are maximum a priori (MAP) estimated, that is, we add the log prior to the log likelihood, and otherwise use Maximum Likelihood.
 
 # %%
-def closure():
-    return -m.log_marginal_likelihood()
-
-
 opt = gpflow.optimizers.Scipy()
-opt.minimize(closure, variables=m.trainable_variables)
+opt.minimize(m.training_loss, variables=m.trainable_variables)
 
 # %% [markdown]
 # ## Building new models
 #
-# To build new models, you'll need to inherit from `gpflow.models.BayesianModel`. Parameters are instantiated with `gpflow.Parameter`. You might also be interested in `tf.Module`, which acts as a 'container' for `Parameter`s (for example, kernels are `tf.Module`s).
+# To build new models, you'll need to inherit from `gpflow.models.BayesianModel`.
+# Parameters are instantiated with `gpflow.Parameter`.
+# You might also be interested in `gpflow.Module` (a subclass of `tf.Module`), which acts as a 'container' for `Parameter`s (for example, kernels are `gpflow.Module`s).
 #
 # In this very simple demo, we'll implement linear multiclass classification.
 #
-# There are two parameters: a weight matrix and a bias (offset). The key thing to implement the `log_likelihood` method, which returns a TensorFlow scalar that represents the (log) likelihood. You can use parameter objects inside `log_likelihood`.
+# There are two parameters: a weight matrix and a bias (offset). You can use
+# Parameter objects directly, like any TensorFlow tensor.
 #
+# The training objective depends on the type of model; it may be possible to
+# implement the exact (log)marginal likelihood, or only a lower bound to the
+# log marginal likelihood (ELBO). You need to implement this as the
+# `maximum_log_likelihood_objective` method. The `BayesianModel` parent class
+# provides a `log_posterior_density` method that returns the
+# `maximum_log_likelihood_objective` plus the sum of the log-density of any priors
+# on hyperparameters, which can be used for MCMC.
+# GPflow provides mixin classes that define a `training_loss` method
+# that returns the negative of (maximum likelihood objective + log prior
+# density) for MLE/MAP estimation to be passed to optimizer's `minimize`
+# method. Models that derive from `InternalDataTrainingLossMixin` are expected to store the data internally, and their `training_loss` does not take any arguments and can be passed directly to `minimize`.
+# Models that take data as an argument to their `maximum_log_likelihood_objective` method derive from `ExternalDataTrainingLossMixin`, which provides a `training_loss_closure` to take the data and return the appropriate closure for `optimizer.minimize`.
+# This is also discussed in the [GPflow with TensorFlow 2 notebook](../intro_to_gpflow2.ipynb).
 
 # %%
 import tensorflow as tf
 
 
-class LinearMulticlass(gpflow.models.BayesianModel):
+class LinearMulticlass(gpflow.models.BayesianModel, gpflow.models.InternalDataTrainingLossMixin):
+    # The InternalDataTrainingLossMixin provides the training_loss method.
+    # (There is also an ExternalDataTrainingLossMixin for models that do not encapsulate data.)
+
     def __init__(self, X, Y, name=None):
         super().__init__(name=name)  # always call the parent constructor
 
@@ -223,12 +238,12 @@ class LinearMulticlass(gpflow.models.BayesianModel):
         # ^^ You must make the parameters attributes of the class for
         # them to be picked up by the model. i.e. this won't work:
         #
-        # W = gpflow.Param(...    <-- must be self.W
+        # W = gpflow.Parameter(...    <-- must be self.W
 
-    def log_likelihood(self):  # takes no arguments
+    def maximum_log_likelihood_objective(self):
         p = tf.nn.softmax(
             tf.matmul(self.X, self.W) + self.b
-        )  # Param variables are used as tensorflow arrays.
+        )  # Parameters can be used like a tf.Tensor
         return tf.reduce_sum(tf.math.log(p) * self.Y)  # be sure to return a scalar
 
 
@@ -261,12 +276,8 @@ m
 
 
 # %%
-def closure():
-    return -m.log_marginal_likelihood()
-
-
 opt = gpflow.optimizers.Scipy()
-opt.minimize(closure, variables=m.trainable_variables)
+opt.minimize(m.training_loss, variables=m.trainable_variables)
 
 # %%
 xx, yy = np.mgrid[-4:4:200j, -4:4:200j]

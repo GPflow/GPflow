@@ -59,23 +59,25 @@ def sgpr_and_svgp(data, inducing_variable, kernel, likelihood):
     return sgpr, svgp
 
 
+def assert_different(value1, value2, rtol=0.1):
+    """ assert relative difference > rtol """
+    relative_difference = (value1 - value2) / (value1 + value2)
+    assert np.abs(relative_difference) > rtol
+
+
 def assert_gpr_vs_vgp(
-    m1: tf.Module,
-    m2: tf.Module,
+    m1: gpflow.models.BayesianModel,
+    m2: gpflow.models.BayesianModel,
     gamma: float = 1.0,
     maxiter: int = 1,
     xi_transform: Optional[gpflow.optimizers.natgrad.XiTransform] = None,
 ):
     assert maxiter >= 1
 
-    m2_ll_before = m2.log_likelihood()
-    m1_ll_before = m1.log_likelihood()
+    m1_ll_before = m1.training_loss()
+    m2_ll_before = m2.training_loss()
 
-    assert m2_ll_before != m1_ll_before
-
-    @tf.function
-    def loss_cb() -> tf.Tensor:
-        return -m2.log_marginal_likelihood()
+    assert_different(m2_ll_before, m1_ll_before)
 
     params = (m2.q_mu, m2.q_sqrt)
     if xi_transform is not None:
@@ -85,35 +87,33 @@ def assert_gpr_vs_vgp(
 
     @tf.function
     def minimize_step():
-        opt.minimize(loss_cb, var_list=[params])
+        opt.minimize(m2.training_loss, var_list=[params])
 
     for _ in range(maxiter):
         minimize_step()
 
-    m2_ll_after = m2.log_likelihood()
-    m1_ll_after = m1.log_likelihood()
+    m1_ll_after = m1.training_loss()
+    m2_ll_after = m2.training_loss()
 
     np.testing.assert_allclose(m1_ll_after, m2_ll_after, atol=1e-4)
 
 
-def assert_sgpr_vs_svgp(m1: tf.Module, m2: tf.Module):
+def assert_sgpr_vs_svgp(
+    m1: gpflow.models.BayesianModel, m2: gpflow.models.BayesianModel,
+):
     data = m1.data
 
-    m1_ll_before = m1.log_likelihood()
-    m2_ll_before = m2.log_likelihood(data)
+    m1_ll_before = m1.training_loss()
+    m2_ll_before = m2.training_loss(data)
 
-    assert m2_ll_before != m1_ll_before
-
-    @tf.function
-    def loss_cb() -> tf.Tensor:
-        return -m2.log_marginal_likelihood(data)
+    assert_different(m2_ll_before, m1_ll_before)
 
     params = [(m2.q_mu, m2.q_sqrt)]
     opt = NaturalGradient(1.0)
-    opt.minimize(loss_cb, var_list=params)
+    opt.minimize(m2.training_loss_closure(data), var_list=params)
 
-    m1_ll_after = m1.log_likelihood()
-    m2_ll_after = m2.log_likelihood(data)
+    m1_ll_after = m1.training_loss()
+    m2_ll_after = m2.training_loss(data)
 
     np.testing.assert_allclose(m1_ll_after, m2_ll_after, atol=1e-4)
 
