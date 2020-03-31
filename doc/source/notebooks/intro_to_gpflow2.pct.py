@@ -479,7 +479,7 @@ loaded_result = loaded_model.predict(samples_input)
 np.testing.assert_array_equal(loaded_result, original_result)
 
 # %% [markdown]
-# ## Config update
+# ## User config update
 #
 # In this notebook, we used a lot `gpflow.config` methods for setting and getting default attributes from global configuration. However, GPflow provides a way for local config modification without updating values in global. As you can see below, using `gpflow.config.as_context` replaces temporarily global config with your instance. At creation time, custom config instance uses standard values from the global config:
 
