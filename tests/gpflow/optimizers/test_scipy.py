@@ -51,10 +51,10 @@ def test_scipy_jit():
     opt2 = gpflow.optimizers.Scipy()
 
     opt1.minimize(
-        m1.training_loss, variables=m1.trainable_variables, options=dict(maxiter=50), jit=False,
+        m1.training_loss, variables=m1.trainable_variables, options=dict(maxiter=50), compile=False,
     )
     opt2.minimize(
-        m2.training_loss, variables=m2.trainable_variables, options=dict(maxiter=50), jit=True,
+        m2.training_loss, variables=m2.trainable_variables, options=dict(maxiter=50), compile=True,
     )
 
     def get_values(model):
@@ -63,4 +63,4 @@ def test_scipy_jit():
     # The tolerance of the following test had to be loosened slightly from atol=1e-15
     # due to the changes introduced by PR #1213, which removed some implicit casts
     # to float32.
-    np.testing.assert_allclose(get_values(m1), get_values(m2), rtol=1e-14, atol=1e-14)
+    np.testing.assert_allclose(get_values(m1), get_values(m2), rtol=1e-13, atol=1e-14)
