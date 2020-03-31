@@ -490,15 +490,13 @@ user_str = "User config\t"
 global_str = "Global config\t"
 
 with gpflow.config.as_context(user_config):
-    print(f"{user_str}gpflow.config.default_float = {gpflow.config.default_float()}")
-    print(f"{user_str}gpflow.config.positive_bijector = {gpflow.config.default_positive_bijector()}")
+    print(f"{user_str} gpflow.config.default_float = {gpflow.config.default_float()}")
+    print(f"{user_str} gpflow.config.positive_bijector = {gpflow.config.default_positive_bijector()}")
 
-print(f"{global_str}gpflow.config.default_float = {gpflow.config.default_float()}")
-print(f"{global_str}gpflow.config.positive_bijector = {gpflow.config.default_positive_bijector()}")
+print(f"{global_str} gpflow.config.default_float = {gpflow.config.default_float()}")
+print(f"{global_str} gpflow.config.positive_bijector = {gpflow.config.default_positive_bijector()}")
 
 # %%
-user_config = gpflow.config.Config(float=tf.float32, positive_bijector="exp")
-
 with gpflow.config.as_context(user_config):
     p = gpflow.Parameter(1.1, transform=gpflow.utilities.positive())
     print(f"{user_str}{p}")
