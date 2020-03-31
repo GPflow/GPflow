@@ -18,7 +18,20 @@ import os
 
 
 def is_continuous_integration():
-    return os.environ.get('CI', None) is not None
+    """
+    Determines whether we are running on the Continuous Integration system for
+    notebook integration tests. This is used to speed up notebook integration
+    tests (built on every pull request commit) by capping all expensive loops
+    at a small number, rather than running until convergence. When building the
+    docs (indicated by the presence of the `DOCS` environment variable), we
+    need to run notebooks to completion, and this function returns `False`.
+    Whether we are running on CI is determined by the presence of the `CI`
+    environment variable.
+    """
+    if "DOCS" in os.environ:
+        return False
+
+    return "CI" in os.environ
 
 
 def ci_niter(n: int, test_n: int = 2):
@@ -31,3 +44,12 @@ def ci_range(n: int, test_n: int = 2):
 
 def ci_list(lst: list, test_n=2):
     return lst[:test_n] if is_continuous_integration() else lst
+
+
+def subclasses(cls):
+    """
+    Generator that returns all (not just direct) subclasses of `cls`
+    """
+    for subclass in cls.__subclasses__():
+        yield from subclasses(subclass)
+        yield subclass

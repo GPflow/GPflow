@@ -14,10 +14,27 @@
 
 # flake8: noqa
 
-from . import (conditionals, config, expectations, inducing_variables, kernels, likelihoods, logdensities, models,
-               optimizers, probability_distributions, utilities)
-from .base import Parameter
-from .config import default_float, default_jitter
+from .base import Module, Parameter
+from .config import default_int, default_float, default_jitter
+from .utilities import set_trainable
+from . import (
+    conditionals,
+    config,
+    covariances,
+    expectations,
+    inducing_variables,
+    kernels,
+    kullback_leiblers,
+    likelihoods,
+    logdensities,
+    mean_functions,
+    models,
+    monitor,
+    optimizers,
+    probability_distributions,
+    quadrature,
+    utilities,
+)
 from .versions import __version__
 
 __all__ = [export for export in dir()]

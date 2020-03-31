@@ -1,4 +1,5 @@
 import functools
+from enum import Enum
 from typing import List, Optional, Tuple, Union
 
 import numpy as np
@@ -10,7 +11,9 @@ from .config import default_float
 
 DType = Union[np.dtype, tf.DType]
 VariableData = Union[List, Tuple, np.ndarray, int, float]
-TensorLike = object  # Union[tf.Tensor, tf.Variable, np.ndarray], but doesn't work with multipledispatch
+TensorLike = (
+    object  # Union[tf.Tensor, tf.Variable, np.ndarray], but doesn't work with multipledispatch
+)
 Transform = tfp.bijectors.Bijector
 Prior = tfp.distributions.Distribution
 
@@ -20,7 +23,7 @@ def _IS_PARAMETER(o):
 
 
 def _IS_TRAINABLE_PARAMETER(o):
-    return (_IS_PARAMETER(o) and o.trainable)
+    return _IS_PARAMETER(o) and o.trainable
 
 
 class Module(tf.Module):
@@ -32,47 +35,86 @@ class Module(tf.Module):
     def trainable_parameters(self):
         return tuple(self._flatten(predicate=_IS_TRAINABLE_PARAMETER))
 
+    def _repr_html_(self):
+        from .utilities import tabulate_module_summary
+
+        return tabulate_module_summary(self, tablefmt="html")
+
+    def _repr_pretty_(self, p, cycle):
+        from .utilities import tabulate_module_summary
+
+        p.text(tabulate_module_summary(self, tablefmt=""))
+
+
+class PriorOn(Enum):
+    CONSTRAINED = "constrained"
+    UNCONSTRAINED = "unconstrained"
+
 
 class Parameter(tf.Module):
-    def __init__(self,
-                 value,
-                 *,
-                 transform: Optional[Transform] = None,
-                 prior: Optional[Prior] = None,
-                 trainable: bool = True,
-                 dtype: Optional[DType] = None,
-                 name: Optional[str] = None):
+    def __init__(
+        self,
+        value,
+        *,
+        transform: Optional[Transform] = None,
+        prior: Optional[Prior] = None,
+        prior_on: Union[str, PriorOn] = PriorOn.CONSTRAINED,
+        trainable: bool = True,
+        dtype: Optional[DType] = None,
+        name: Optional[str] = None,
+    ):
         """
-        Unconstrained parameter representation.
-        According to standard terminology `y` is always transformed representation or,
-        in other words, it is constrained version of the parameter. Normally, it is hard
-        to operate with unconstrained parameters. For e.g. `variance` cannot be negative,
-        therefore we need positive constraint and it is natural to use constrained values.
+        A parameter retains both constrained and unconstrained
+        representations. If no transform is provided, these two values will be the same.
+        It is often challenging to operate with unconstrained parameters. For example, a variance cannot be negative,
+        therefore we need a positive constraint and it is natural to use constrained values.
+        A prior can be imposed either on the constrained version (default) or on the unconstrained version of the parameter.
         """
         super().__init__()
 
-        value = _verified_value(value, dtype)
+        self._transform = transform
+        self.prior = prior
+        self.prior_on = prior_on
+
         if isinstance(value, tf.Variable):
             self._unconstrained = value
         else:
-            value = _to_unconstrained(value, transform)
-            self._unconstrained = tf.Variable(value, dtype=dtype, name=name, trainable=trainable)
+            unconstrained_value = self.validate_unconstrained_value(value, dtype)
+            self._unconstrained = tf.Variable(
+                unconstrained_value, dtype=dtype, name=name, trainable=trainable
+            )
 
-        self.prior = prior
-        self._transform = transform
+    def log_prior_density(self):
+        """ Log of the prior probability density of the constrained variable. """
 
-    def log_prior(self):
-        x = self.read_value()
-        y = self._unconstrained
+        if self.prior is None:
+            return tf.convert_to_tensor(0.0, dtype=self.dtype)
 
-        if self.prior is not None:
-            out = tf.reduce_sum(self.prior.log_prob(x))
-            if self.transform is not None:
-                log_det_jacobian = self.transform.forward_log_det_jacobian(y, y.shape.ndims)
-                out += tf.reduce_sum(log_det_jacobian)
-            return out
+        y = self.read_value()
+
+        if self.prior_on == PriorOn.CONSTRAINED:
+            # evaluation is in same space as prior
+            return tf.reduce_sum(self.prior.log_prob(y))
+
         else:
-            return tf.convert_to_tensor(0., dtype=self.dtype)
+            # prior on unconstrained, but evaluating log-prior in constrained space
+            x = self._unconstrained
+            log_p = tf.reduce_sum(self.prior.log_prob(x))
+
+            if self.transform is not None:
+                # need to include log|Jacobian| to account for coordinate transform
+                log_det_jacobian = self.transform.inverse_log_det_jacobian(y, y.shape.ndims)
+                log_p += tf.reduce_sum(log_det_jacobian)
+
+            return log_p
+
+    @property
+    def prior_on(self):
+        return self._prior_on
+
+    @prior_on.setter
+    def prior_on(self, value: Union[str, PriorOn]):
+        self._prior_on = PriorOn(value)
 
     def value(self):
         return _to_constrained(self._unconstrained.value(), self.transform)
@@ -102,22 +144,61 @@ class Parameter(tf.Module):
 
     @property
     def trainable(self):
-        return self._unconstrained.trainable
+        """
+        `True` if this instance is trainable, else `False`.
 
-    @trainable.setter
-    def trainable(self, flag: Union[bool, int]):
-        self._unconstrained._trainable = bool(flag)
+        This attribute cannot be set directly. Use :func:`gpflow.set_trainable`.
+        """
+        return self._unconstrained.trainable
 
     @property
     def initial_value(self):
         return self._unconstrained.initial_value
 
-    def assign(self, value, use_locking=False, name=None, read_value=True):
-        # TODO(sergio.pasc): Find proper solution for casting / Discuss solution
-        value = _verified_value(value, self.dtype)
+    def validate_unconstrained_value(self, value: tf.Tensor, dtype: DType) -> tf.Tensor:
+        value = _cast_to_dtype(value, dtype)
         unconstrained_value = _to_unconstrained(value, self.transform)
+        message = (
+            "gpflow.Parameter: unconstrained value of passed value "
+            "has NaN or Inf and cannot be assigned."
+        )
+        return tf.debugging.assert_all_finite(unconstrained_value, message=message)
 
-        self._unconstrained.assign(unconstrained_value, read_value=read_value, use_locking=use_locking)
+    def assign(
+        self, value: tf.Tensor, use_locking=False, name=None, read_value=True
+    ) -> tf.Variable:
+        """
+        Assigns constrained `value` to the unconstrained parameter's variable.
+        It passes constrained value through parameter's transform first.
+
+        Example:
+            ```
+            a = Parameter(2.0, transform=tfp.bijectors.Softplus())
+            b = Parameter(3.0)
+
+            a.assign(4.0)               # `a` parameter to `2.0` value.
+            a.assign(tf.constant(5.0))  # `a` parameter to `5.0` value.
+            a.assign(b)                 # `a` parameter to constrained value of `b`.
+            ```
+
+        :param value: Constrained tensor-like value.
+        :param use_locking: If `True`, use locking during the assignment.
+        :param name: The name of the operation to be created.
+        :param read_value: if True, will return something which evaluates to the new
+            value of the variable; if False will return the assign op.
+        """
+        unconstrained_value = self.validate_unconstrained_value(value, self.dtype)
+        return self._unconstrained.assign(
+            unconstrained_value, use_locking=use_locking, name=name, read_value=read_value
+        )
+
+    @property
+    def is_tensor_like(self):
+        """
+        This method means that TensorFlow's `tensor_util.is_tensor` function
+        will return `True`
+        """
+        return True
 
     @property
     def name(self):
@@ -152,14 +233,34 @@ class Parameter(tf.Module):
         return self.shape
 
     def _should_act_as_resource_variable(self):
-        pass
+        # needed so that Parameters are correctly identified by TensorFlow's
+        # is_resource_variable() in resource_variable_ops.py
+        pass  # only checked by TensorFlow using hasattr()
 
     @property
     def handle(self):
         return self._unconstrained.handle
 
     def __repr__(self):
-        return self.read_value().__repr__()
+        unconstrained = self.unconstrained_variable
+        constrained = self.read_value()
+        if tf.executing_eagerly():
+            info = (
+                f"unconstrained-shape={unconstrained.shape} "
+                f"unconstrained-value={unconstrained.numpy()} "
+                f"constrained-shape={constrained.shape} "
+                f"constrained-value={constrained.numpy()}"
+            )
+        else:
+            if unconstrained.shape == constrained.shape:
+                info = f"shape={constrained.shape}"
+            else:
+                info = (
+                    f"unconstrained-shape={unconstrained.shape} "
+                    f"constrained-shape={constrained.shape}"
+                )
+
+        return f"<gpflow.Parameter {self.name!r} dtype={self.dtype.name} {info}>"
 
     # Below
     # TensorFlow copy-paste code to make variable-like object to work
@@ -206,12 +307,16 @@ Parameter._OverloadAllOperators()
 tf.register_tensor_conversion_function(Parameter, lambda x, *args, **kwds: x.read_value())
 
 
-def _verified_value(value: VariableData, dtype: Optional[DType] = None) -> np.ndarray:
-    if isinstance(value, tf.Variable):
-        return value
+def _cast_to_dtype(value: VariableData, dtype: Optional[DType] = None) -> tf.Tensor:
     if dtype is None:
         dtype = default_float()
-    return tf.cast(value, dtype)
+    if tf.is_tensor(value):
+        # NOTE(awav) TF2.2 resolves issue with cast.
+        # From TF2.2, `tf.cast` can be used alone instead of this auxiliary function.
+        # workaround for https://github.com/tensorflow/tensorflow/issues/35938
+        return tf.cast(value, dtype)
+    else:
+        return tf.convert_to_tensor(value, dtype=dtype)
 
 
 def _to_constrained(value: VariableData, transform: Transform) -> tf.Tensor:
