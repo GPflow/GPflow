@@ -491,7 +491,9 @@ global_str = "Global config\t"
 
 with gpflow.config.as_context(user_config):
     print(f"{user_str} gpflow.config.default_float = {gpflow.config.default_float()}")
-    print(f"{user_str} gpflow.config.positive_bijector = {gpflow.config.default_positive_bijector()}")
+    print(
+        f"{user_str} gpflow.config.positive_bijector = {gpflow.config.default_positive_bijector()}"
+    )
 
 print(f"{global_str} gpflow.config.default_float = {gpflow.config.default_float()}")
 print(f"{global_str} gpflow.config.positive_bijector = {gpflow.config.default_positive_bijector()}")
