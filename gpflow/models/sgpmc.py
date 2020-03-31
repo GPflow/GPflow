@@ -88,15 +88,15 @@ class SGPMC(GPModel, InternalDataTrainingLossMixin):
         )
 
     def log_posterior_density(self) -> tf.Tensor:
-        return self.log_conditional_likelihood_lower_bound() + self.log_prior_density()
+        return self.log_likelihood_lower_bound() + self.log_prior_density()
 
     def _training_loss(self) -> tf.Tensor:
         return -self.log_posterior_density()
 
     def maximum_log_likelihood_objective(self) -> tf.Tensor:
-        return self.log_conditional_likelihood_lower_bound()
+        return self.log_likelihood_lower_bound()
 
-    def log_conditional_likelihood_lower_bound(self) -> tf.Tensor:
+    def log_likelihood_lower_bound(self) -> tf.Tensor:
         """
         This function computes the optimal density for v, q*(v), up to a constant
         """
