@@ -19,8 +19,14 @@ import os
 
 def is_continuous_integration():
     """
-    If the environment variable `DOCS` is set, always returns False.
-    Otherwise, returns `True` if notebooks are executed on CI, else `False`.
+    Determines whether we are running on the Continuous Integration system for
+    notebook integration tests. This is used to speed up notebook integration
+    tests (built on every pull request commit) by capping all expensive loops
+    at a small number, rather than running until convergence. When building the
+    docs (indicated by the presence of the `DOCS` environment variable), we
+    need to run notebooks to completion, and this function returns `False`.
+    Whether we are running on CI is determined by the presence of the `CI`
+    environment variable.
     """
     if "DOCS" in os.environ:
         return False
