@@ -17,15 +17,15 @@ to the objective function (ExternalDataTrainingLossMixin).
 """
 
 import abc
-from typing import Callable, Iterator, Optional, Tuple, TypeVar, Union
+from typing import Callable, Iterator, Optional, Tuple, TypeVar, Union, Type
 
 import tensorflow as tf
 from tensorflow.python.data.ops.iterator_ops import OwnedIterator as DatasetOwnedIterator
 import numpy as np
 
 
-InputData = tf.Tensor
-OutputData = tf.Tensor
+InputData = Type[tf.Tensor]
+OutputData = Type[tf.Tensor]
 RegressionData = Tuple[InputData, OutputData]
 Data = TypeVar("Data", RegressionData, InputData, OutputData)
 
