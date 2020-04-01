@@ -1,6 +1,6 @@
 import functools
 from enum import Enum
-from typing import List, Optional, Tuple, Union, Type
+from typing import List, Optional, Tuple, Union
 
 import numpy as np
 import tensorflow as tf
@@ -14,8 +14,8 @@ VariableData = Union[List, Tuple, np.ndarray, int, float]
 TensorLike = (
     object  # Union[tf.Tensor, tf.Variable, np.ndarray], but doesn't work with multipledispatch
 )
-Transform = Type[tfp.bijectors.Bijector]
-Prior = Type[tfp.distributions.Distribution]
+Transform = Union[tfp.bijectors.Bijector]
+Prior = Union[tfp.distributions.Distribution]
 
 
 def _IS_PARAMETER(o):
