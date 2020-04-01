@@ -15,9 +15,13 @@ class HeteroskedasticLikelihood(Likelihood):
         super().__init__(latent_dim=latent_dim, observation_dim=observation_dim)
         self.num_gauss_hermite_points = 20
 
+    def _split_f(self, F):
+        F1 = F[..., 0:1]
+        F2 = F[..., 1:2]
+        return (F1, F2)
+
     def _log_prob(self, F, Y):
-        F1 = F[..., 0]
-        F2 = F[..., 1]
+        F1, F2 = self._split_f(F)
         return self._scalar_log_prob(F1, F2, Y)
 
     @abc.abstractmethod
@@ -39,8 +43,8 @@ class HeteroskedasticLikelihood(Likelihood):
         :param Y: observation Tensor, with shape [..., latent_dim]:
         :returns: variational expectations, with shape [...]
         """
-        Fmu_tuple = (Fmu[..., 0], Fmu[..., 1])
-        Fvar_tuple = (Fvar[..., 0], Fvar[..., 1])
+        Fmu_tuple = self._split_f(Fmu)
+        Fvar_tuple = self._split_f(Fvar)
         return ndiagquad(
             self._scalar_log_prob, self.num_gauss_hermite_points, Fmu_tuple, Fvar_tuple, Y=Y
         )
@@ -54,8 +58,8 @@ class HeteroskedasticLikelihood(Likelihood):
         :param Y: observation Tensor, with shape [..., latent_dim]:
         :returns: log predictive density, with shape [...]
         """
-        Fmu_tuple = (Fmu[..., 0], Fmu[..., 1])
-        Fvar_tuple = (Fvar[..., 0], Fvar[..., 1])
+        Fmu_tuple = self._split_f(Fmu)
+        Fvar_tuple = self._split_f(Fvar)
         return ndiagquad(
             self._scalar_log_prob,
             self.num_gauss_hermite_points,
@@ -74,13 +78,13 @@ class HeteroskedasticLikelihood(Likelihood):
         :param Fvar: variance of function evaluation Tensor, with shape [..., latent_dim]
         :returns: mean and variance, both with shape [..., observation_dim]
         """
-        Fmu_tuple = (Fmu[..., 0], Fmu[..., 1])
-        Fvar_tuple = (Fvar[..., 0], Fvar[..., 1])
+        Fmu_tuple = self._split_f(Fmu)
+        Fvar_tuple = self._split_f(Fvar)
 
         def integrand(*X):
-            return self.conditional_variance(*X) + self.conditional_mean(*X) ** 2
+            return self._scalar_conditional_mean(*X) + self._scalar_conditional_variance(*X) ** 2
 
-        integrands = [self.conditional_mean, integrand]
+        integrands = [self._scalar_conditional_mean, integrand]
         E_y, E_y2 = ndiagquad(integrands, self.num_gauss_hermite_points, Fmu_tuple, Fvar_tuple)
         V_y = E_y2 - E_y ** 2
         return E_y, V_y
