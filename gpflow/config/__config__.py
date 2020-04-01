@@ -157,11 +157,11 @@ class Config:
         summary_fmt: Summary format for module printing.
     """
 
-    int: type = field(default_factory=_default_int_factory)
     jitter: float = field(default_factory=_default_jitter_factory)
     positive_bijector: str = field(default_factory=_default_positive_bijector_factory)
     positive_minimum: float = field(default_factory=_default_positive_minimum_factory)
     summary_fmt: str = field(default_factory=_default_summary_fmt_factory)
+    int: type = field(default_factory=_default_int_factory)
     float: type = field(default_factory=_default_float_factory)
 
 
