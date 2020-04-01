@@ -16,7 +16,7 @@
 # %% [markdown]
 # # A simple demonstration of coregionalization
 #
-# This notebook shows how to construct a multi-output GP model using GPflow. We will consider a regression problem for functions $f: \mathbb{R}^D \rightarrow \mathbb{R}^P$. We assume that the dataset is of the form $(X_1, f_1), \dots, (X_P, f_P)$, that is, we do not necessarily observe all the outputs for a particular input location (for cases where there are fully observed outputs for each input, see [Multi-output Gaussian processes in GPflow](./multioutput.ipynb) for a more efficient implementation). We allow each $f_i$ to have a different noise distribution by assigning a different likelihood to each. 
+# This notebook shows how to construct a multi-output GP model using GPflow. We will consider a regression problem for functions $f: \mathbb{R}^D \rightarrow \mathbb{R}^P$. We assume that the dataset is of the form $(X_1, f_1), \dots, (X_P, f_P)$, that is, we do not necessarily observe all the outputs for a particular input location (for cases where there are fully observed outputs for each input, see [Multi-output Gaussian processes in GPflow](./multioutput.ipynb) for a more efficient implementation). We allow each $f_i$ to have a different noise distribution by assigning a different likelihood to each.
 #
 # For this problem, we model $f$ as a *coregionalized* Gaussian process, which assumes a kernel of the form:
 #
@@ -122,7 +122,7 @@ m = gpflow.models.VGP((X_augmented, Y_augmented), kernel=kern, likelihood=lik)
 # fit the covariance function parameters
 maxiter = ci_niter(10000)
 gpflow.optimizers.Scipy().minimize(
-    m.training_loss, m.trainable_variables, options=dict(maxiter=maxiter), method="L-BFGS-B"
+    m.training_loss, m.trainable_variables, options=dict(maxiter=maxiter), method="L-BFGS-B",
 )
 
 
