@@ -391,15 +391,23 @@ class ScalarLikelihood(Likelihood):
 
 class Gaussian(ScalarLikelihood):
     r"""
-    The Gaussian likelihood is appropriate where uncertainties associated with the data are
-    believed to follow a normal distribution, with constant variance.
+    The Gaussian likelihood is appropriate where uncertainties associated with
+    the data are believed to follow a normal distribution, with constant
+    variance.
 
     Very small uncertainties can lead to numerical instability during the
-    optimization process. A lower bound of 1e-6 is therefore imposed on the likelihood variance
-    by default.
+    optimization process. A lower bound of 1e-6 is therefore imposed on the
+    likelihood variance by default.
     """
 
     def __init__(self, variance=1.0, variance_lower_bound=1e-6, **kwargs):
+        """
+        :param variance: The noise variance; must be greater than
+            ``variance_lower_bound``.
+        :param variance_lower_bound: The lower (exclusive) bound of ``variance``.
+        :param kwargs: Keyword arguments forwarded to :class:`ScalarLikelihood`.
+        :raise InvalidArgumentError: If ``variance <= variance_lower_bound``.
+        """
         super().__init__(**kwargs)
         self.variance = Parameter(variance, transform=positive(lower=variance_lower_bound))
 
