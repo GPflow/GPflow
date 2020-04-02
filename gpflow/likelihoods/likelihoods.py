@@ -406,9 +406,14 @@ class Gaussian(ScalarLikelihood):
             ``variance_lower_bound``.
         :param variance_lower_bound: The lower (exclusive) bound of ``variance``.
         :param kwargs: Keyword arguments forwarded to :class:`ScalarLikelihood`.
-        :raise InvalidArgumentError: If ``variance <= variance_lower_bound``.
         """
         super().__init__(**kwargs)
+
+        if variance <= variance_lower_bound:
+            raise ValueError(
+                f"The variance of the Gaussian likelihood must be strictly greater than {variance_lower_bound}"
+            )
+
         self.variance = Parameter(variance, transform=positive(lower=variance_lower_bound))
 
     def _scalar_log_prob(self, F, Y):
