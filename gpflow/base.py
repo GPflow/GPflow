@@ -159,8 +159,9 @@ class Parameter(tf.Module):
         value = _cast_to_dtype(value, dtype)
         unconstrained_value = _to_unconstrained(value, self.transform)
         message = (
-            "gpflow.Parameter: unconstrained value of passed value "
-            "has NaN or Inf and cannot be assigned."
+            "gpflow.Parameter: the value to be assigned is incompatible with this parameter's "
+            "transform (the corresponding unconstrained value has NaN or Inf) and hence cannot be "
+            "assigned."
         )
         return tf.debugging.assert_all_finite(unconstrained_value, message=message)
 
