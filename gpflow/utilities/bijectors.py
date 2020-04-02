@@ -13,14 +13,14 @@ def positive(lower: Optional[float] = None, base: Optional[str] = None) -> tfp.b
     """
     Returns a positive bijector (a reversible transformation from real to positive numbers).
 
-    :param lower: lower bound override (defaults to config.default_positive_minimum())
-    :param base: overrides base positive bijector (defaults to config.default_positive_bijector())
+    :param lower: overrides default lower bound
+        (if None, defaults to gpflow.config.default_positive_minimum())
+    :param base: overrides base positive bijector
+        (if None, defaults to gpflow.config.default_positive_bijector())
     :returns: a bijector instance
     """
-    if isinstance(base, str):
-        base = base.lower()
     bijector = base if base is not None else config.default_positive_bijector()
-    bijector = config.positive_bijector_type_map()[bijector]()
+    bijector = config.positive_bijector_type_map()[bijector.lower()]()
     if lower is None:
         lower = config.default_positive_minimum()
     if lower is not None:
