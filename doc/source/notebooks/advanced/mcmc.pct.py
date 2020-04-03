@@ -47,9 +47,9 @@ tf.random.set_seed(123)
 #
 # In this notebook, we provide three examples:
 #
-# * [Example 1](#Example-1-GP-regression): Sampling hyperparameters in Gaussian process regression
-# * [Example 2](#Example-2-Sparse-MC-for-multiclass-classification): Sparse Variational MC applied to the multiclass classification problem
-# * [Example 3](#Example-3-Fully-Bayesian-inference-for-generalized-GP-models-with-HMC): Full Bayesian inference for Gaussian process models
+# * [Example 1](#Example-1:-GP-regression): Sampling hyperparameters in Gaussian process regression
+# * [Example 2](#Example-2:-Sparse-MC-for-multiclass-classification): Sparse Variational MC applied to the multiclass classification problem
+# * [Example 3](#Example-3:-Fully-Bayesian-inference-for-generalized-GP-models-with-HMC): Full Bayesian inference for Gaussian process models
 
 # %% [markdown]
 # ## Example 1: GP regression
@@ -493,8 +493,8 @@ _ = optimizer.minimize(
 # We then run the sampler,
 
 # %%
-num_burnin_steps = ci_niter(300)
-num_samples = ci_niter(500)
+num_burnin_steps = ci_niter(600)
+num_samples = ci_niter(1000)
 
 # Note that here we need model.trainable_parameters, not trainable_variables - only parameters can have priors!
 hmc_helper = gpflow.optimizers.SamplingHelper(
