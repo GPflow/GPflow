@@ -66,9 +66,6 @@ from ..utilities.bijectors import _concrete_positive_lower_bound
 from .robustmax import RobustMax
 
 
-GAUSSIAN_DEFAULT_VARIANCE_LOWER_BOUND = 1e-6
-
-
 def inv_probit(x):
     jitter = 1e-3  # ensures output is strictly between 0 and 1
     return 0.5 * (1.0 + tf.math.erf(x / np.sqrt(2.0))) * (1 - 2 * jitter) + jitter
@@ -404,7 +401,9 @@ class Gaussian(ScalarLikelihood):
     likelihood variance by default.
     """
 
-    def __init__(self, variance=1.0, variance_lower_bound=GAUSSIAN_DEFAULT_VARIANCE_LOWER_BOUND, **kwargs):
+    DEFAULT_VARIANCE_LOWER_BOUND = 1e-6
+
+    def __init__(self, variance=1.0, variance_lower_bound=DEFAULT_VARIANCE_LOWER_BOUND, **kwargs):
         """
         :param variance: The noise variance; must be greater than
             ``variance_lower_bound``.
