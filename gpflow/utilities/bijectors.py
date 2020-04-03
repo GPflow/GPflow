@@ -9,6 +9,14 @@ from .utilities import to_default_float
 __all__ = ["positive", "triangular"]
 
 
+def _concrete_positive_lower_bound(lower: Optional[float] = None) -> float:
+    if lower is None:
+        lower = config.default_positive_minimum()
+    if lower is None:
+        lower = 0.0
+    return lower
+
+
 def positive(lower: Optional[float] = None, base: Optional[str] = None) -> tfp.bijectors.Bijector:
     """
     Returns a positive bijector (a reversible transformation from real to positive numbers).
@@ -21,12 +29,11 @@ def positive(lower: Optional[float] = None, base: Optional[str] = None) -> tfp.b
     """
     bijector = base if base is not None else config.default_positive_bijector()
     bijector = config.positive_bijector_type_map()[bijector.lower()]()
-    if lower is None:
-        lower = config.default_positive_minimum()
-    if lower is not None:
+    lower_bound = _concrete_positive_lower_bound(lower)
+    if lower_bound != 0.0:
         # Chain applies transformations in reverse order, so shift will be applied last
-        shift = tfp.bijectors.Shift(to_default_float(lower))
-        bijector = tfp.bijectors.Chain([shift, bijector])
+        shift = tfp.bijectors.Shift(to_default_float(lower_bound))
+        bijector = tfp.bijectors.Chain([shift, bijector])  # from unconstrained to constrained
     return bijector
 
 

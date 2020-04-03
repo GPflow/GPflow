@@ -62,6 +62,7 @@ from ..base import Module, Parameter
 from ..config import default_float, default_positive_minimum
 from ..quadrature import hermgauss, ndiag_mc, ndiagquad
 from ..utilities import positive, to_default_int
+from ..utilities.bijectors import _concrete_positive_lower_bound
 from .robustmax import RobustMax
 
 
@@ -409,10 +410,7 @@ class Gaussian(ScalarLikelihood):
         """
         super().__init__(**kwargs)
 
-        if variance_lower_bound is None:
-            variance_lower_bound = default_positive_minimum()
-        if variance_lower_bound is None:
-            variance_lower_bound = 0.0
+        variance_lower_bound = _concrete_positive_lower_bound(variance_lower_bound)
         if variance <= variance_lower_bound:
             raise ValueError(
                 f"The variance of the Gaussian likelihood must be strictly greater than {variance_lower_bound}"
