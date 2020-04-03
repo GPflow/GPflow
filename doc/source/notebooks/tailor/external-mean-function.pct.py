@@ -48,7 +48,7 @@ tf.random.set_seed(2)
 
 
 # %%
-def generate_data(num_functions=10, N=50):
+def generate_data(num_functions=10, N=500):
     """
     For each function, sample the value at 50 equally spaced
     points in the [−5, 5] interval (Fortuin and Rätsch, 2019).
@@ -131,8 +131,10 @@ num_datapoints = 5
 # parameters, we will use (50, 10, 500) for computational reasons.
 num_meta_tasks = 50
 num_test_tasks = 10
-N = 500
-meta, test = generate_meta_and_test_tasks(num_datapoints, num_meta_tasks, num_test_tasks, N)
+num_data_per_task = 500
+meta, test = generate_meta_and_test_tasks(
+    num_datapoints, num_meta_tasks, num_test_tasks, num_data_per_task
+)
 
 # %% [markdown]
 # ## Create the mean function
