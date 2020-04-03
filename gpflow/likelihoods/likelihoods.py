@@ -59,7 +59,7 @@ import warnings
 
 from .. import logdensities
 from ..base import Module, Parameter
-from ..config import default_float, default_positive_minimum
+from ..config import default_float
 from ..quadrature import hermgauss, ndiag_mc, ndiagquad
 from ..utilities import positive, to_default_int
 from ..utilities.bijectors import _concrete_positive_lower_bound
