@@ -493,8 +493,8 @@ _ = optimizer.minimize(
 # We then run the sampler,
 
 # %%
-num_burnin_steps = ci_niter(300)
-num_samples = ci_niter(500)
+num_burnin_steps = ci_niter(600)
+num_samples = ci_niter(1000)
 
 # Note that here we need model.trainable_parameters, not trainable_variables - only parameters can have priors!
 hmc_helper = gpflow.optimizers.SamplingHelper(
