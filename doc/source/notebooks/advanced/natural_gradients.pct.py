@@ -49,6 +49,7 @@ data = (x, y)
 inducing_variable = tf.random.uniform((M, D))
 adam_learning_rate = 0.01
 iterations = ci_niter(5)
+autotune = tf.data.experimental.AUTOTUNE
 
 # %% [markdown]
 # ### VGP is a GPR
@@ -183,7 +184,11 @@ svgp.elbo(data).numpy()
 natgrad_opt = NaturalGradient(gamma=0.1)
 
 data_minibatch = (
-    tf.data.Dataset.from_tensor_slices(data).prefetch(N).repeat().shuffle(N).batch(batch_size)
+    tf.data.Dataset.from_tensor_slices(data)
+    .prefetch(autotune)
+    .repeat()
+    .shuffle(N)
+    .batch(batch_size)
 )
 data_minibatch_it = iter(data_minibatch)
 
@@ -240,7 +245,11 @@ variational_params = [(svgp_natgrad.q_mu, svgp_natgrad.q_sqrt)]
 
 # %%
 data_minibatch = (
-    tf.data.Dataset.from_tensor_slices(data).prefetch(N).repeat().shuffle(N).batch(batch_size)
+    tf.data.Dataset.from_tensor_slices(data)
+    .prefetch(autotune)
+    .repeat()
+    .shuffle(N)
+    .batch(batch_size)
 )
 data_minibatch_it = iter(data_minibatch)
 
