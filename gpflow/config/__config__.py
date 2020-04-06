@@ -153,7 +153,7 @@ class Config:
             Default value is `1e-6`.
         positive_bijector: Method for positive bijector, either "softplus" or "exp".
             Default is "softplus".
-        positive_minimum: Lower level for the positive transformation.
+        positive_minimum: Lower bound for the positive transformation.
         summary_fmt: Summary format for module printing.
     """
 
