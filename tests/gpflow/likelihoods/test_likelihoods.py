@@ -91,7 +91,11 @@ likelihood_setups = scalar_likelihood_setups + [
 
 
 def filter_analytic_scalar_likelihood(method_name):
-    assert method_name in ("_variational_expectations", "_predict_log_density", "_predict_mean_and_var")
+    assert method_name in (
+        "_variational_expectations",
+        "_predict_log_density",
+        "_predict_mean_and_var",
+    )
 
     def is_analytic(likelihood):
         assert not isinstance(likelihood, MonteCarloLikelihood)
