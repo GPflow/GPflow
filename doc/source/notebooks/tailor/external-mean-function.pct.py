@@ -50,7 +50,7 @@ tf.random.set_seed(2)
 # %%
 def generate_data(num_functions=10, N=500):
     """
-    For each function, sample the value at 50 equally spaced
+    For each function, sample the value at `N` equally spaced
     points in the [−5, 5] interval (Fortuin and Rätsch, 2019).
 
     Returns:
@@ -80,7 +80,7 @@ _ = plt.plot(Xs, F)
 
 
 # %%
-def generate_meta_and_test_tasks(num_datapoints, num_meta=1000, num_test=200, N=50):
+def generate_meta_and_test_tasks(num_datapoints, num_meta, num_test, N):
     """Generates meta-task datasets {D_i} = {x_i, y_i} and target task training
     and test data {\tilde{x}, \tilde{y}} (Fortuin and Rätsch, 2019).
 
