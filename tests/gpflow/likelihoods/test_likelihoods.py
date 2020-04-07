@@ -40,16 +40,6 @@ import gpflow.ci_utils
 tf.random.set_seed(99012)
 
 
-def filter_analytic(likelihood_setups, method_name):
-    def is_analytic(likelihood):
-        assert not isinstance(likelihood, gpflow.likelihoods.MonteCarloLikelihood)
-        quadrature_fallback = getattr(Likelihood, method_name)
-        actual_method = getattr(likelihood.__class__, method_name)
-        return actual_method is not quadrature_fallback
-
-    return [l for l in likelihood_setups if is_analytic(get_likelihood(l))]
-
-
 class Datum:
     tolerance = 1e-06
     Yshape = (10, 3)
@@ -72,7 +62,7 @@ class LikelihoodSetup(object):
         return f"{name}-rtol={self.rtol}-atol={self.atol}"
 
 
-likelihood_setups = [
+scalar_likelihood_setups = [
     LikelihoodSetup(Gaussian()),
     LikelihoodSetup(StudentT()),
     LikelihoodSetup(Beta(), Y=tf.random.uniform(Datum.Yshape, dtype=default_float())),
@@ -91,10 +81,26 @@ likelihood_setups = [
     LikelihoodSetup(
         Bernoulli(invlink=tf.sigmoid), Y=tf.random.uniform(Datum.Yshape, dtype=default_float()),
     ),
+]
+
+likelihood_setups = scalar_likelihood_setups + [
     LikelihoodSetup(
         MultiClass(3), Y=tf.argmax(Datum.Y, 1).numpy().reshape(-1, 1), rtol=1e-3, atol=1e-3,
     ),
 ]
+
+
+def filter_analytic_scalar_likelihood(method_name):
+    assert method_name in ("_variational_expectations", "_predict_log_density", "_predict_mean_and_var")
+
+    def is_analytic(likelihood):
+        assert not isinstance(likelihood, MonteCarloLikelihood)
+        assert isinstance(likelihood, ScalarLikelihood)
+        quadrature_fallback = getattr(ScalarLikelihood, method_name)
+        actual_method = getattr(likelihood.__class__, method_name)
+        return actual_method is not quadrature_fallback
+
+    return [l for l in scalar_likelihood_setups if is_analytic(get_likelihood(l))]
 
 
 def get_likelihood(likelihood_setup):
@@ -152,7 +158,7 @@ def test_variational_expectations(likelihood_setup):
 
 
 @pytest.mark.parametrize(
-    "likelihood_setup", filter_analytic(likelihood_setups, "variational_expectations")
+    "likelihood_setup", filter_analytic_scalar_likelihood("_variational_expectations")
 )
 @pytest.mark.parametrize("mu, var", [[Datum.Fmu, Datum.Fvar]])
 def test_quadrature_variational_expectation(likelihood_setup, mu, var):
@@ -161,36 +167,30 @@ def test_quadrature_variational_expectation(likelihood_setup, mu, var):
     does something close to the quadrature.
     """
     likelihood, y = likelihood_setup.likelihood, likelihood_setup.Y
-    if isinstance(likelihood, MultiClass):
-        pytest.skip("Test fails due to issue with ndiagquad (github issue #1091)")
     F1 = likelihood.variational_expectations(mu, var, y)
-    F2 = ndiagquad(likelihood.log_prob, likelihood.num_gauss_hermite_points, mu, var, Y=y)
+    F2 = ScalarLikelihood.variational_expectations(likelihood, mu, var, y)
     assert_allclose(F1, F2, rtol=likelihood_setup.rtol, atol=likelihood_setup.atol)
 
 
 @pytest.mark.parametrize(
-    "likelihood_setup", filter_analytic(likelihood_setups, "predict_log_density")
+    "likelihood_setup", filter_analytic_scalar_likelihood("_predict_log_density")
 )
 @pytest.mark.parametrize("mu, var", [[Datum.Fmu, Datum.Fvar]])
 def test_quadrature_predict_log_density(likelihood_setup, mu, var):
     likelihood, y = likelihood_setup.likelihood, likelihood_setup.Y
-    if isinstance(likelihood, MultiClass):
-        pytest.skip("Test fails due to issue with ndiagquad (github issue #1091)")
     F1 = likelihood.predict_log_density(mu, var, y)
-    F2 = Likelihood.predict_log_density(likelihood, mu, var, y)
+    F2 = ScalarLikelihood.predict_log_density(likelihood, mu, var, y)
     assert_allclose(F1, F2, rtol=likelihood_setup.rtol, atol=likelihood_setup.atol)
 
 
 @pytest.mark.parametrize(
-    "likelihood_setup", filter_analytic(likelihood_setups, "predict_mean_and_var")
+    "likelihood_setup", filter_analytic_scalar_likelihood("_predict_mean_and_var")
 )
 @pytest.mark.parametrize("mu, var", [[Datum.Fmu, Datum.Fvar]])
 def test_quadrature_mean_and_var(likelihood_setup, mu, var):
     likelihood = likelihood_setup.likelihood
-    if isinstance(likelihood, MultiClass):
-        pytest.skip("Test fails due to issue with ndiagquad (github issue #1091)")
     F1m, F1v = likelihood.predict_mean_and_var(mu, var)
-    F2m, F2v = Likelihood.predict_mean_and_var(likelihood, mu, var)
+    F2m, F2v = ScalarLikelihood.predict_mean_and_var(likelihood, mu, var)
     assert_allclose(F1m, F2m, rtol=likelihood_setup.rtol, atol=likelihood_setup.atol)
     assert_allclose(F1v, F2v, rtol=likelihood_setup.rtol, atol=likelihood_setup.atol)
 
