@@ -57,12 +57,8 @@ import tensorflow as tf
 import abc
 import warnings
 
-from .. import logdensities
-from ..base import Module, Parameter
-from ..config import default_float
+from ..base import Module
 from ..quadrature import hermgauss, ndiag_mc, ndiagquad
-from ..utilities import positive, to_default_int
-from .robustmax import RobustMax
 
 
 class Likelihood(Module, metaclass=abc.ABCMeta):

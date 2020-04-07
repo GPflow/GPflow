@@ -3,8 +3,10 @@ import tensorflow as tf
 import tensorflow_probability as tfp
 
 from ..base import Module, Parameter
-from ..config import default_int
+from ..config import default_float
 from ..utilities import to_default_float, to_default_int
+from ..quadrature import hermgauss
+from .base import Likelihood, MonteCarloLikelihood
 
 
 class Softmax(MonteCarloLikelihood):

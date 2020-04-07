@@ -1,3 +1,11 @@
+import numpy as np
+import tensorflow as tf
+
+from .. import logdensities
+from ..base import Parameter
+from ..utilities import positive
+from .base import ScalarLikelihood
+
 
 class Gaussian(ScalarLikelihood):
     r"""
@@ -145,5 +153,3 @@ class Beta(ScalarLikelihood):
     def _conditional_variance(self, F):
         mean = self.invlink(F)
         return (mean - tf.square(mean)) / (self.scale + 1.0)
-
-

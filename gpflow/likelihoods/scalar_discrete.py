@@ -1,3 +1,12 @@
+import numpy as np
+import tensorflow as tf
+
+from .. import logdensities
+from ..base import Parameter
+from ..config import default_float
+from ..utilities import positive, to_default_int
+from .base import ScalarLikelihood
+
 
 class Poisson(ScalarLikelihood):
     r"""
@@ -145,5 +154,3 @@ class Ordinal(ScalarLikelihood):
         E_y = phi @ Ys
         E_y2 = phi @ (Ys ** 2)
         return tf.reshape(E_y2 - E_y ** 2, tf.shape(F))
-
-
