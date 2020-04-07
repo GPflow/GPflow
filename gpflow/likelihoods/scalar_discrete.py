@@ -68,7 +68,7 @@ class Bernoulli(ScalarLikelihood):
 
     def _predict_log_density(self, Fmu, Fvar, Y):
         p = self.predict_mean_and_var(Fmu, Fvar)[0]
-        return logdensities.bernoulli(Y, p)
+        return tf.reduce_sum(logdensities.bernoulli(Y, p), axis=-1)
 
     def _conditional_mean(self, F):
         return self.invlink(F)
