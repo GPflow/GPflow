@@ -172,3 +172,24 @@ def test_robust_max_multiclass_eps_k1_changes(num_classes, initial_epsilon, new_
     expected_eps_k2 = new_epsilon / (num_classes - 1.0)
     actual_eps_k2 = likelihood.eps_k1
     assert_allclose(expected_eps_k2, actual_eps_k2)
+
+
+@pytest.mark.skip(
+    "ndiagquad cannot handle MultiClass (see https://github.com/GPflow/GPflow/issues/1091"
+)
+def test_multiclass_quadrature_variational_expectations():
+    pass
+
+
+@pytest.mark.skip(
+    "ndiagquad cannot handle MultiClass (see https://github.com/GPflow/GPflow/issues/1091"
+)
+def test_multiclass_quadrature_predict_log_density():
+    pass
+
+
+@pytest.mark.skip(
+    "ndiagquad cannot handle MultiClass (see https://github.com/GPflow/GPflow/issues/1091"
+)
+def test_multiclass_quadrature_predict_mean_and_var():
+    pass

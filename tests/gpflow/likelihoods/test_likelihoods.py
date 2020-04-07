@@ -116,19 +116,24 @@ def get_likelihood(likelihood_setup):
 def test_no_missing_likelihoods():
     tested_likelihood_types = [get_likelihood(l).__class__ for l in likelihood_setups]
     for likelihood_class in gpflow.ci_utils.subclasses(Likelihood):
+        if likelihood_class in (ScalarLikelihood, MonteCarloLikelihood):
+            # abstract base classes that cannot be tested
+            continue
+
         if likelihood_class in tested_likelihood_types:
-            continue  # tested by parametrized tests
-        if likelihood_class is ScalarLikelihood:
-            continue  # base class
+            # tested by parametrized tests (see test_multiclass.py for MultiClass quadrature)
+            continue
+
         if likelihood_class is gpflow.likelihoods.SwitchedLikelihood:
-            continue  # tested separately, see test_switched_likelihood.py
-        if likelihood_class is MonteCarloLikelihood:
-            continue  # abstract base class
+            # tested separately, see test_switched_likelihood.py
+            continue
+
         if issubclass(likelihood_class, MonteCarloLikelihood):
             if likelihood_class is GaussianMC:
                 continue  # tested explicitly by test_montecarlo_*
             if likelihood_class is gpflow.likelihoods.Softmax:
-                continue  # tested explicitly by test_softmax_{y_shape_assert,bernoulli_equivalence}
+                continue  # tested explicitly by test_softmax_{y_shape_assert,bernoulli_equivalence}, see test_multiclass.py
+
         assert False, f"no test for likelihood class {likelihood_class}"
 
 
@@ -165,7 +170,7 @@ def test_variational_expectations(likelihood_setup):
     "likelihood_setup", filter_analytic_scalar_likelihood("_variational_expectations")
 )
 @pytest.mark.parametrize("mu, var", [[Datum.Fmu, Datum.Fvar]])
-def test_quadrature_variational_expectation(likelihood_setup, mu, var):
+def test_scalar_likelihood_quadrature_variational_expectation(likelihood_setup, mu, var):
     """
     Where quadrature methods have been overwritten, make sure the new code
     does something close to the quadrature.
@@ -180,7 +185,7 @@ def test_quadrature_variational_expectation(likelihood_setup, mu, var):
     "likelihood_setup", filter_analytic_scalar_likelihood("_predict_log_density")
 )
 @pytest.mark.parametrize("mu, var", [[Datum.Fmu, Datum.Fvar]])
-def test_quadrature_predict_log_density(likelihood_setup, mu, var):
+def test_scalar_likelihood_quadrature_predict_log_density(likelihood_setup, mu, var):
     likelihood, y = likelihood_setup.likelihood, likelihood_setup.Y
     F1 = likelihood.predict_log_density(mu, var, y)
     F2 = ScalarLikelihood.predict_log_density(likelihood, mu, var, y)
@@ -191,7 +196,7 @@ def test_quadrature_predict_log_density(likelihood_setup, mu, var):
     "likelihood_setup", filter_analytic_scalar_likelihood("_predict_mean_and_var")
 )
 @pytest.mark.parametrize("mu, var", [[Datum.Fmu, Datum.Fvar]])
-def test_quadrature_mean_and_var(likelihood_setup, mu, var):
+def test_scalar_likelihood_quadrature_predict_mean_and_var(likelihood_setup, mu, var):
     likelihood = likelihood_setup.likelihood
     F1m, F1v = likelihood.predict_mean_and_var(mu, var)
     F2m, F2v = ScalarLikelihood.predict_mean_and_var(likelihood, mu, var)
