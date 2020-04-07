@@ -7,6 +7,29 @@ from ..config import default_int
 from ..utilities import to_default_float, to_default_int
 
 
+class Softmax(MonteCarloLikelihood):
+    """
+    The soft-max multi-class likelihood.  It can only provide a stochastic
+    Monte-Carlo estimate of the variational expectations term, but this
+    added variance tends to be small compared to that due to mini-batching
+    (when using the SVGP model).
+    """
+
+    def __init__(self, num_classes, **kwargs):
+        super().__init__(latent_dim=num_classes, observation_dim=None, **kwargs)
+        self.num_classes = self.latent_dim
+
+    def _log_prob(self, F, Y):
+        return -tf.nn.sparse_softmax_cross_entropy_with_logits(logits=F, labels=Y[:, 0])
+
+    def _conditional_mean(self, F):
+        return tf.nn.softmax(F)
+
+    def _conditional_variance(self, F):
+        p = self.conditional_mean(F)
+        return p - p ** 2
+
+
 class RobustMax(Module):
     """
     This class represent a multi-class inverse-link function. Given a vector
@@ -78,3 +101,65 @@ class RobustMax(Module):
 
         # take the product over the latent functions, and the sum over the GH grid.
         return tf.reduce_prod(cdfs, axis=[1]) @ tf.reshape(gh_w / np.sqrt(np.pi), (-1, 1))
+
+
+class MultiClass(Likelihood):
+    def __init__(self, num_classes, invlink=None, **kwargs):
+        """
+        A likelihood for multi-way classification.  Currently the only valid
+        choice of inverse-link function (invlink) is an instance of RobustMax.
+
+        For most problems, the stochastic `Softmax` likelihood may be more
+        appropriate (note that you then cannot use Scipy optimizer).
+        """
+        super().__init__(latent_dim=num_classes, observation_dim=None, **kwargs)
+        self.num_classes = num_classes
+        self.num_gauss_hermite_points = 20
+
+        if invlink is None:
+            invlink = RobustMax(self.num_classes)
+
+        if not isinstance(invlink, RobustMax):
+            raise NotImplementedError
+
+        self.invlink = invlink
+
+    def _log_prob(self, F, Y):
+        hits = tf.equal(tf.expand_dims(tf.argmax(F, 1), 1), tf.cast(Y, tf.int64))
+        yes = tf.ones(tf.shape(Y), dtype=default_float()) - self.invlink.epsilon
+        no = tf.zeros(tf.shape(Y), dtype=default_float()) + self.invlink.eps_k1
+        p = tf.where(hits, yes, no)
+        return tf.reduce_sum(tf.math.log(p), axis=-1)
+
+    def _variational_expectations(self, Fmu, Fvar, Y):
+        gh_x, gh_w = hermgauss(self.num_gauss_hermite_points)
+        p = self.invlink.prob_is_largest(Y, Fmu, Fvar, gh_x, gh_w)
+        ve = p * tf.math.log(1.0 - self.invlink.epsilon) + (1.0 - p) * tf.math.log(
+            self.invlink.eps_k1
+        )
+        return tf.reduce_sum(ve, axis=-1)
+
+    def _predict_mean_and_var(self, Fmu, Fvar):
+        possible_outputs = [
+            tf.fill(tf.stack([tf.shape(Fmu)[0], 1]), np.array(i, dtype=np.int64))
+            for i in range(self.num_classes)
+        ]
+        ps = [self._predict_non_logged_density(Fmu, Fvar, po) for po in possible_outputs]
+        ps = tf.transpose(tf.stack([tf.reshape(p, (-1,)) for p in ps]))
+        return ps, ps - tf.square(ps)
+
+    def _predict_log_density(self, Fmu, Fvar, Y):
+        return tf.reduce_sum(tf.math.log(self._predict_non_logged_density(Fmu, Fvar, Y)), axis=-1)
+
+    def _predict_non_logged_density(self, Fmu, Fvar, Y):
+        gh_x, gh_w = hermgauss(self.num_gauss_hermite_points)
+        p = self.invlink.prob_is_largest(Y, Fmu, Fvar, gh_x, gh_w)
+        den = p * (1.0 - self.invlink.epsilon) + (1.0 - p) * (self.invlink.eps_k1)
+        return den
+
+    def _conditional_mean(self, F):
+        return self.invlink(F)
+
+    def _conditional_variance(self, F):
+        p = self.conditional_mean(F)
+        return p - tf.square(p)
