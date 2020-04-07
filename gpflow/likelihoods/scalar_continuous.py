@@ -5,6 +5,7 @@ from .. import logdensities
 from ..base import Parameter
 from ..utilities import positive
 from .base import ScalarLikelihood
+from .utils import inv_probit
 
 
 class Gaussian(ScalarLikelihood):

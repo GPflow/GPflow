@@ -6,6 +6,7 @@ from ..base import Parameter
 from ..config import default_float
 from ..utilities import positive, to_default_int
 from .base import ScalarLikelihood
+from .utils import inv_probit
 
 
 class Poisson(ScalarLikelihood):
