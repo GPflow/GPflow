@@ -38,7 +38,7 @@ import contextlib
 import enum
 import os
 from dataclasses import dataclass, field, replace
-from typing import Dict, Optional, Union
+from typing import Dict, Optional, Union, Type, Any
 
 import numpy as np
 import tabulate
@@ -65,8 +65,6 @@ __all__ = [
     "positive_bijector_type_map",
 ]
 
-__config = None
-
 
 class _Values(enum.Enum):
     """Setting's names collection with default values. The `name` method returns name
@@ -81,16 +79,19 @@ class _Values(enum.Enum):
     JITTER = 1e-6
 
     @property
-    def name(self):
+    def name(self) -> str:
         return f"GPFLOW_{super().name}"
 
 
-def _default(value: _Values):
+# todo str should be typing.AnyStr to account for other encodings?
+def _default(value: _Values) -> Union[str, Type[Any], float]:
     """Checks if value is set in the environment."""
     return os.getenv(value.name, default=value.value)
 
 
-def _default_numeric_type_factory(valid_types, enum_key, type_name):
+def _default_numeric_type_factory(
+        valid_types: Dict[str, str], enum_key: _Values, type_name: str
+) -> str:
     value = _default(enum_key)
     if value in valid_types.values():
         return value
@@ -168,6 +169,9 @@ class Config:
     positive_bijector: str = field(default_factory=_default_positive_bijector_factory)
     positive_minimum: Float = field(default_factory=_default_positive_minimum_factory)
     summary_fmt: str = field(default_factory=_default_summary_fmt_factory)
+
+
+__config = Optional[Config]
 
 
 def config() -> Config:
