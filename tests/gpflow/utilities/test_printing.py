@@ -87,7 +87,7 @@ def create_model():
     kernel = create_kernel()
     model = gpflow.models.SVGP(
         kernel=kernel,
-        likelihood=gpflow.likelihoods.Gaussian(variance_lower_bound=None),
+        likelihood=gpflow.likelihoods.Gaussian(variance_lower_bound=0.0),
         inducing_variable=Data.Z,
         q_diag=True,
     )
@@ -312,13 +312,12 @@ def test_merge_leaf_components_merges_keys_with_same_values(dag_module, expected
     ],
 )
 def test_print_summary_output_string(module_callable, expected_param_print_string):
-    with as_context(Config(positive_minimum=None)):
+    with as_context(Config(positive_minimum=0.0)):
         assert tabulate_module_summary(module_callable()) == expected_param_print_string
 
 
 def test_print_summary_output_string_with_positive_minimum():
     with as_context(Config(positive_minimum=1e-6)):
-        print(tabulate_module_summary(create_kernel()))
         assert tabulate_module_summary(create_kernel()) == kernel_param_print_string_with_shift
 
 

@@ -12,7 +12,7 @@ from gpflow.utilities.ops import difference_matrix
     "env_lower, override_lower",
     [
         (0.1, None),  # ensure default from config is applied
-        (None, 0.2),  # ensure override is applied
+        (0.0, 0.2),  # ensure override is applied
         (0.3, 0.4),  # ensure local overrides config
     ],
 )
@@ -34,7 +34,7 @@ def test_positive_lower(env_lower, override_lower):
     ],
 )
 def test_positive_bijector(env_bijector, override_bijector, expected_class):
-    with as_context(Config(positive_bijector=env_bijector, positive_minimum=None)):
+    with as_context(Config(positive_bijector=env_bijector, positive_minimum=0.0)):
         bijector = positive(base=override_bijector)
         assert isinstance(bijector, expected_class)
 
