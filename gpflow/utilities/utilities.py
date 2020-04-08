@@ -46,12 +46,13 @@ def to_default_float(x):
     return cast(x, dtype=default_float())
 
 
-def set_trainable(model: tf.Module, flag: bool):
+def set_trainable(module: tf.Module, flag: bool):
     """
     Set trainable flag for all `tf.Variable`s and `gpflow.Parameter`s in a module.
     """
-    for variable in model.variables:
+    for variable in module.variables:
         variable._trainable = flag
+    return module
 
 
 def multiple_assign(module: tf.Module, parameters: Dict[str, tf.Tensor]):
