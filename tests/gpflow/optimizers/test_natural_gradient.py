@@ -12,19 +12,23 @@ from gpflow import set_trainable
 class Setup:
     N, M, D = 4, 3, 2
     likelihood_variance = 0.1
+    rng = np.random.RandomState(42)
+    X = rng.randn(N, D)
+    Y = rng.randn(N, 1)
+    Z = rng.randn(M, D)
 
 
 @pytest.fixture
 def data():
-    N, D = Setup.N, Setup.D
-    X = tf.random.normal((N, D), dtype=default_float())
-    Y = tf.random.normal((N, 1), dtype=default_float())
+    X = tf.convert_to_tensor(Setup.X, dtype=default_float())
+    Y = tf.convert_to_tensor(Setup.Y, dtype=default_float())
     return (X, Y)
 
 
 @pytest.fixture
 def inducing_variable():
-    return tf.random.normal((Setup.M, Setup.D), dtype=default_float())
+    Z = tf.convert_to_tensor(Setup.Z, dtype=default_float())
+    return Z
 
 
 @pytest.fixture
@@ -59,7 +63,7 @@ def sgpr_and_svgp(data, inducing_variable, kernel, likelihood):
     return sgpr, svgp
 
 
-def assert_different(value1, value2, rtol=0.1):
+def assert_different(value1, value2, rtol=0.07):
     """ assert relative difference > rtol """
     relative_difference = (value1 - value2) / (value1 + value2)
     assert np.abs(relative_difference) > rtol

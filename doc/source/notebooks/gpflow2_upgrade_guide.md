@@ -202,6 +202,11 @@ For example:
 ```
 
 
+## Predictive (log)density
+
+The `predict_density` method of GPModels and Likelihoods has been renamed to `predict_log_density`. (It always returned the predictive *log*-density, so no change in behaviour.)
+
+
 ## Settings / Configuration
 
 In GPflow 2, the `gpflow.settings` module and the `gpflowrc` file have been removed. Instead, there is `gpflow.config`.
@@ -236,6 +241,20 @@ To constrain parameters to be positive, there is `gpflow.utilities.positive` whi
 Note that the default lower bound used to be `1e-6`; by default, the lower bound if not specified explicitly is now `0.0`. Revert the previous behaviour using `gpflow.config.set_default_positive_minimum(1e-6)`.
 
 
+## Stationary kernel subclasses
+
+Most stationary kernels are actually *isotropic*-stationary kernels, and should now subclass from `gpflow.kernels.IsotropicStationary` instead of `gpflow.kernels.Stationary`. (The `Cosine` kernel is an example of a non-isotropic stationary kernel that depends on the direction, not just the norm, of $\mathbf{x} - \mathbf{x}'$.)
+
+
+## Likelihoods
+
+We cleaned up the likelihood API. Likelihoods now explicitly define the expected number of outputs (`observation_dim`) and latent functions (`latent_dim`), and shape-checking is in place by default.
+
+Most of the likelihoods simply broadcasted over outputs; these have now been grouped to subclass from `gpflow.likelihoods.ScalarLikelihood`, and implementations have been moved to leading-underscore functions. `ScalarLikelihood` subclasses need to implement at least `_scalar_log_prob` (previously `logp`), `_conditional_mean`, and `_conditional_variance`.
+
+The likelihood `log_prob`, `predict_log_density`, and `variational_expectations` methods now return a single value per data row; for `ScalarLikelihood` subclasses this means these methods effectively sum over the observation dimension (multiple outputs for the same input).
+
+
 ## Priors
 
 Priors used to be defined on the *unconstrained* variable. The default has changed to the prior to be defined on the *constrained* parameter value; this can be changed by passing the `prior_on` argument to `gpflow.Parameter()`. See the [MCMC notebook](advanced/mcmc.ipynb) for more details.
@@ -243,7 +262,7 @@ Priors used to be defined on the *unconstrained* variable. The default has chang
 
 ## Name Scoping
 
-The `name_scope` decorator does not exist in GPflow 2 anymore. Use TensorFlow’s [name_scope](https://www.tensorflow.org/api_docs/python/tf/name_scope?version=stable) context manager instead.
+The `name_scope` decorator does not exist in GPflow 2 anymore. Use TensorFlow’s [`name_scope`](https://www.tensorflow.org/api_docs/python/tf/name_scope?version=stable) context manager instead.
 
 
 ## Model Persistence

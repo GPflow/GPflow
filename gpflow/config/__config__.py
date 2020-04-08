@@ -38,7 +38,7 @@ import contextlib
 import enum
 import os
 from dataclasses import dataclass, field, replace
-from typing import Dict, Optional
+from typing import Dict, Optional, Union
 
 import numpy as np
 import tabulate
@@ -141,6 +141,11 @@ def _default_summary_fmt_factory():
     return _default(_Values.SUMMARY_FMT)
 
 
+# The following type alias is for the Config class, to help a static analyser distinguish
+# between the built-in 'float' type and the 'float' type defined in the that class.
+Float = Union[float]
+
+
 @dataclass(frozen=True)
 class Config:
     """
@@ -159,9 +164,9 @@ class Config:
 
     int: type = field(default_factory=_default_int_factory)
     float: type = field(default_factory=_default_float_factory)
-    jitter: float = field(default_factory=_default_jitter_factory)
+    jitter: Float = field(default_factory=_default_jitter_factory)
     positive_bijector: str = field(default_factory=_default_positive_bijector_factory)
-    positive_minimum: float = field(default_factory=_default_positive_minimum_factory)
+    positive_minimum: Float = field(default_factory=_default_positive_minimum_factory)
     summary_fmt: str = field(default_factory=_default_summary_fmt_factory)
 
 

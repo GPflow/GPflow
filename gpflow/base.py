@@ -14,8 +14,8 @@ VariableData = Union[List, Tuple, np.ndarray, int, float]
 TensorLike = (
     object  # Union[tf.Tensor, tf.Variable, np.ndarray], but doesn't work with multipledispatch
 )
-Transform = tfp.bijectors.Bijector
-Prior = tfp.distributions.Distribution
+Transform = Union[tfp.bijectors.Bijector]
+Prior = Union[tfp.distributions.Distribution]
 
 
 def _IS_PARAMETER(o):
