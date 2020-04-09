@@ -15,9 +15,10 @@
 # pylint: skip-file
 
 import os
+from typing import Sequence, Type, Any, List, Iterable, TypeVar
 
 
-def is_continuous_integration():
+def is_continuous_integration() -> bool:
     """
     Determines whether we are running on the Continuous Integration system for
     notebook integration tests. This is used to speed up notebook integration
@@ -34,19 +35,22 @@ def is_continuous_integration():
     return "CI" in os.environ
 
 
-def ci_niter(n: int, test_n: int = 2):
+def ci_niter(n: int, test_n: int = 2) -> int:
     return test_n if is_continuous_integration() else n
 
 
-def ci_range(n: int, test_n: int = 2):
+def ci_range(n: int, test_n: int = 2) -> Sequence[int]:
     return range(ci_niter(n, test_n))
 
 
-def ci_list(lst: list, test_n=2):
+T = TypeVar("T")
+
+
+def ci_list(lst: List[T], test_n: int = 2) -> List[T]:
     return lst[:test_n] if is_continuous_integration() else lst
 
 
-def subclasses(cls):
+def subclasses(cls: Type[Any]) -> Iterable[Type[Any]]:
     """
     Generator that returns all (not just direct) subclasses of `cls`
     """
