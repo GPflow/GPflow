@@ -76,13 +76,17 @@ class ExecuteCallback(MonitorTask):
 
 # pylint: disable=abstract-method
 class ToTensorBoard(MonitorTask):
+    writers = {}
+
     def __init__(self, log_dir: str):
         """
         :param log_dir: directory in which to store the tensorboard files.
             Can be nested, e.g. ./logs/my_run/
         """
         super().__init__()
-        self.file_writer = tf.summary.create_file_writer(log_dir)
+        if log_dir not in self.writers.keys():
+            self.writers[log_dir] = tf.summary.create_file_writer(log_dir)
+        self.file_writer = self.writers[log_dir]
 
     def __call__(self, step, **kwargs):
         with self.file_writer.as_default():
@@ -217,8 +221,6 @@ class ImageToTensorBoard(ToTensorBoard):
         """
         super().__init__(log_dir)
         self.plotting_function = plotting_function
-        self.name = name
-        self.file_writer = tf.summary.create_file_writer(log_dir)
         self.name = name
         self.fig_kw = fig_kw or {}
         self.subplots_kw = subplots_kw or {}
