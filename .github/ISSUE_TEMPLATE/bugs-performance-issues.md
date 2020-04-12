@@ -13,6 +13,7 @@ labels: bug
 ## To reproduce
 
 **Minimal, reproducible example**
+<!-- We need to be able to reproduce the bug by simply copy&pasting your code -->
 ```python
 # This is the place for your code that reproduces the bug.
 # Please make sure it does not depend on external libraries, specific datasets, etc., and the smaller, the better :)
@@ -30,9 +31,11 @@ labels: bug
 
 ## System information:
 
-* TensorFlow version: <!-- run `import tensorflow; print(tensorflow.__version__)` inside python -->
 * GPflow version: <!-- run `import gpflow; print(gpflow.__version__)` inside python -->
-* GPflow installed from: <!-- e.g. with "pip install gpflow" or from a GitHub clone on the develop branch -->
+* GPflow installed from: <!-- e.g. with "pip install gpflow" or from a GitHub clone on the develop branch; if working from a git clone, please include the git commit (SHA hash): run `git rev-parse HEAD` on the command line -->
+* TensorFlow version: <!-- run `import tensorflow; print(tensorflow.__version__)` inside python -->
+* Python version
+* Operating system
 
 ## Additional context
 
