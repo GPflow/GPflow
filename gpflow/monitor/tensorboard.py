@@ -27,13 +27,17 @@ __all__ = ["ToTensorBoard", "ModelToTensorBoard", "ScalarToTensorBoard"]
 
 
 class ToTensorBoard(MonitorTask):
+    writers = {}
+
     def __init__(self, log_dir: str):
         """
         :param log_dir: directory in which to store the tensorboard files.
             Can be nested, e.g. ./logs/my_run/
         """
         super().__init__()
-        self.file_writer = tf.summary.create_file_writer(log_dir)
+        if log_dir not in self.writers:
+            self.writers[log_dir] = tf.summary.create_file_writer(log_dir)
+        self.file_writer = self.writers[log_dir]
 
     def __call__(self, step, **kwargs):
         with self.file_writer.as_default():

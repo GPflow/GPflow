@@ -52,8 +52,6 @@ class ImageToTensorBoard(ToTensorBoard):
         super().__init__(log_dir)
         self.plotting_function = plotting_function
         self.name = name
-        self.file_writer = tf.summary.create_file_writer(log_dir)
-        self.name = name
         self.fig_kw = fig_kw or {}
         self.subplots_kw = subplots_kw or {}
 

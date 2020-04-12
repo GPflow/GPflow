@@ -16,7 +16,7 @@
 # %% [markdown]
 # # A simple demonstration of coregionalization
 #
-# This notebook shows how to construct a multi-output GP model using GPflow. We will consider a regression problem for functions $f: \mathbb{R}^D \rightarrow \mathbb{R}^P$. We assume that the dataset is of the form $(X_1, f_1), \dots, (X_P, f_P)$, that is, we do not necessarily observe all the outputs for a particular input location (for cases where there are fully observed outputs for each input, see [Multi-output Gaussian processes in GPflow](./multioutput.ipynb) for a more efficient implementation).
+# This notebook shows how to construct a multi-output GP model using GPflow. We will consider a regression problem for functions $f: \mathbb{R}^D \rightarrow \mathbb{R}^P$. We assume that the dataset is of the form $(X_1, f_1), \dots, (X_P, f_P)$, that is, we do not necessarily observe all the outputs for a particular input location (for cases where there are fully observed outputs for each input, see [Multi-output Gaussian processes in GPflow](./multioutput.ipynb) for a more efficient implementation). We allow each $f_i$ to have a different noise distribution by assigning a different likelihood to each.
 #
 # For this problem, we model $f$ as a *coregionalized* Gaussian process, which assumes a kernel of the form:
 #
@@ -36,6 +36,8 @@
 #
 #  * Create the kernel function defined previously, using the `Coregion` kernel class.
 #  * Augment the training data X with an extra column that contains an integer index to indicate which output an observation is associated with. This is essential to make the data work with the `Coregion` kernel.
+#  * Create a likelihood for each output using the `SwitchedLikelihood` class, which is a container for other likelihoods.
+#  * Augment the training data Y with an extra column that contains an integer index to indicate which likelihood an observation is associated with.
 
 # %%
 import gpflow
@@ -81,7 +83,7 @@ _ = plt.plot(X2, Y2, "x", mew=2)
 # Augment the input with ones or zeros to indicate the required output dimension
 X_augmented = np.vstack((np.hstack((X1, np.zeros_like(X1))), np.hstack((X2, np.ones_like(X2)))))
 
-# Augment the Y data
+# Augment the Y data with ones or zeros that specify a likelihood from the list of likelihoods
 Y_augmented = np.vstack((np.hstack((Y1, np.zeros_like(Y1))), np.hstack((Y2, np.ones_like(Y2)))))
 
 # %% [markdown]
@@ -120,7 +122,7 @@ m = gpflow.models.VGP((X_augmented, Y_augmented), kernel=kern, likelihood=lik)
 # fit the covariance function parameters
 maxiter = ci_niter(10000)
 gpflow.optimizers.Scipy().minimize(
-    m.training_loss, m.trainable_variables, options=dict(maxiter=maxiter), method="L-BFGS-B"
+    m.training_loss, m.trainable_variables, options=dict(maxiter=maxiter), method="L-BFGS-B",
 )
 
 

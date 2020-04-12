@@ -14,8 +14,8 @@ VariableData = Union[List, Tuple, np.ndarray, int, float]
 TensorLike = (
     object  # Union[tf.Tensor, tf.Variable, np.ndarray], but doesn't work with multipledispatch
 )
-Transform = tfp.bijectors.Bijector
-Prior = tfp.distributions.Distribution
+Transform = Union[tfp.bijectors.Bijector]
+Prior = Union[tfp.distributions.Distribution]
 
 
 def _IS_PARAMETER(o):
@@ -159,8 +159,9 @@ class Parameter(tf.Module):
         value = _cast_to_dtype(value, dtype)
         unconstrained_value = _to_unconstrained(value, self.transform)
         message = (
-            "gpflow.Parameter: unconstrained value of passed value "
-            "has NaN or Inf and cannot be assigned."
+            "gpflow.Parameter: the value to be assigned is incompatible with this parameter's "
+            "transform (the corresponding unconstrained value has NaN or Inf) and hence cannot be "
+            "assigned."
         )
         return tf.debugging.assert_all_finite(unconstrained_value, message=message)
 

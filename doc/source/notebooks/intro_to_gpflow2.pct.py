@@ -96,7 +96,7 @@ plt.plot(X, Y, "xk")
 plt.show()
 
 # %% [markdown]
-# Working with TensorFlow Datasets is an efficient way to rapidly shuffle, iterate, and batch from data.
+# Working with TensorFlow Datasets is an efficient way to rapidly shuffle, iterate, and batch from data. For `prefetch` size we use `tf.data.experimental.AUTOTUNE` as recommended by TensorFlow [guidelines](https://www.tensorflow.org/guide/data_performance).
 
 # %%
 train_dataset = tf.data.Dataset.from_tensor_slices((X, Y))
@@ -104,7 +104,7 @@ test_dataset = tf.data.Dataset.from_tensor_slices((Xtest, Ytest))
 
 batch_size = 32
 num_features = 10
-prefetch_size = num_train_data // 2
+prefetch_size = tf.data.experimental.AUTOTUNE
 shuffle_buffer_size = num_train_data // 2
 num_batches_per_epoch = num_train_data // batch_size
 

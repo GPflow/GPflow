@@ -38,7 +38,7 @@ import contextlib
 import enum
 import os
 from dataclasses import dataclass, field, replace
-from typing import Dict, Optional
+from typing import Dict, Optional, Union
 
 import numpy as np
 import tabulate
@@ -76,7 +76,7 @@ class _Values(enum.Enum):
     INT = np.int32
     FLOAT = np.float64
     POSITIVE_BIJECTOR = "softplus"
-    POSITIVE_MINIMUM = None
+    POSITIVE_MINIMUM = 0.0
     SUMMARY_FMT = "fancy_grid"
     JITTER = 1e-6
 
@@ -110,8 +110,9 @@ def _default_float_factory():
 
 
 def _default_jitter_factory():
+    value = _default(_Values.JITTER)
     try:
-        value = float(_default(_Values.JITTER))
+        value = float(value)
     except ValueError:
         raise TypeError("Config cannot set the jitter value with non float type.")
     return value
@@ -128,10 +129,9 @@ def _default_positive_bijector_factory():
 
 
 def _default_positive_minimum_factory():
+    value = _default(_Values.POSITIVE_MINIMUM)
     try:
-        value = _default(_Values.POSITIVE_MINIMUM)
-        if value is not None:
-            value = float(value)
+        value = float(value)
     except ValueError:
         raise TypeError("Config cannot set the positive_minimum value with non float type.")
     return value
@@ -139,6 +139,11 @@ def _default_positive_minimum_factory():
 
 def _default_summary_fmt_factory():
     return _default(_Values.SUMMARY_FMT)
+
+
+# The following type alias is for the Config class, to help a static analyser distinguish
+# between the built-in 'float' type and the 'float' type defined in the that class.
+Float = Union[float]
 
 
 @dataclass(frozen=True)
@@ -153,15 +158,15 @@ class Config:
             Default value is `1e-6`.
         positive_bijector: Method for positive bijector, either "softplus" or "exp".
             Default is "softplus".
-        positive_minimum: Lower level for the positive transformation.
+        positive_minimum: Lower bound for the positive transformation.
         summary_fmt: Summary format for module printing.
     """
 
     int: type = field(default_factory=_default_int_factory)
     float: type = field(default_factory=_default_float_factory)
-    jitter: float = field(default_factory=_default_jitter_factory)
+    jitter: Float = field(default_factory=_default_jitter_factory)
     positive_bijector: str = field(default_factory=_default_positive_bijector_factory)
-    positive_minimum: float = field(default_factory=_default_positive_minimum_factory)
+    positive_minimum: Float = field(default_factory=_default_positive_minimum_factory)
     summary_fmt: str = field(default_factory=_default_summary_fmt_factory)
 
 
@@ -275,14 +280,14 @@ def set_default_positive_bijector(value: str):
 
 
 def set_default_positive_minimum(value: float):
-    """Sets shift constant for postive transformation."""
+    """Sets shift constant for positive transformation."""
     if not (
         isinstance(value, (tf.Tensor, np.ndarray)) and len(value.shape) == 0
     ) and not isinstance(value, float):
         raise TypeError("Expected float32 or float64 scalar value")
 
     if value < 0:
-        raise ValueError("Value must be non-negative")
+        raise ValueError("Positive minimum must be non-negative")
 
     set_config(replace(config(), positive_minimum=value))
 
