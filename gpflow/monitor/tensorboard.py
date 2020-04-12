@@ -13,8 +13,10 @@
 # limitations under the License.
 """ Tasks that write to TensorBoard """
 
-from typing import Callable, List, Union
+from io import BytesIO
+from typing import Any, Callable, Dict, List, Optional, Union
 
+import numpy as np
 import tensorflow as tf
 
 from ..base import Parameter
@@ -23,7 +25,7 @@ from ..utilities import parameter_dict
 from .base import MonitorTask
 
 
-__all__ = ["ToTensorBoard", "ModelToTensorBoard", "ScalarToTensorBoard"]
+__all__ = ["ToTensorBoard", "ModelToTensorBoard", "ScalarToTensorBoard", "ImageToTensorBoard"]
 
 
 class ToTensorBoard(MonitorTask):
@@ -148,3 +150,69 @@ class ScalarToTensorBoard(ToTensorBoard):
 
     def run(self, **kwargs):
         tf.summary.scalar(self.name, self.callback(**kwargs), step=self.current_step)
+
+
+class ImageToTensorBoard(ToTensorBoard):
+    def __init__(
+        self,
+        log_dir: str,
+        plotting_function: Callable[
+            ["matplotlib.figure.Figure", "matplotlib.figure.Axes"], "matplotlib.figure.Figure"
+        ],
+        name: Optional[str] = None,
+        *,
+        fig_kw: Optional[Dict[str, Any]] = None,
+        subplots_kw: Optional[Dict[str, Any]] = None,
+    ):
+        """
+        :param log_dir: directory in which to store the tensorboard files.
+            Can be nested: for example, './logs/my_run/'.
+        :param plotting_function: function performing the plotting.
+        :param name: name used in TensorBoard.
+        :params fig_kw: keyword arguments to be passed to Figure constructor, e.g. `figsize`.
+        :params subplots_kw: keyword arguments to be passed to figure.subplots constructor, e.g.
+            `nrows`, `ncols`, `sharex`, `sharey`. By default the default values
+            from matplotlib.pyplot are used.
+        """
+        super().__init__(log_dir)
+        self.plotting_function = plotting_function
+        self.name = name
+        self.fig_kw = fig_kw or {}
+        self.subplots_kw = subplots_kw or {}
+
+        try:
+            from matplotlib.figure import Figure
+        except ImportError:
+            raise RuntimeError("ImageToTensorBoard requires the matplotlib package to be installed")
+
+        self.fig = Figure(**self.fig_kw)
+        if self.subplots_kw != {}:
+            self.axes = self.fig.subplots(**self.subplots_kw)
+        else:
+            self.axes = self.fig.add_subplot(111)
+
+    def _clear_axes(self):
+        if isinstance(self.axes, np.ndarray):
+            for ax in self.axes.flatten():
+                ax.clear()
+        else:
+            self.axes.clear()
+
+    def run(self, **unused_kwargs):
+        from matplotlib.backends.backend_agg import FigureCanvasAgg
+
+        self._clear_axes()
+        self.plotting_function(self.fig, self.axes)
+        canvas = FigureCanvasAgg(self.fig)
+        canvas.draw()
+
+        # get PNG data from the figure
+        png_buffer = BytesIO()
+        canvas.print_png(png_buffer)
+        png_encoded = png_buffer.getvalue()
+        png_buffer.close()
+
+        image_tensor = tf.io.decode_png(png_encoded)[None]
+
+        # Write to TensorBoard
+        tf.summary.image(self.name, image_tensor, step=self.current_step)

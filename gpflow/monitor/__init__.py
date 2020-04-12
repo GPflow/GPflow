@@ -15,11 +15,3 @@
 
 from .base import *
 from .tensorboard import *
-
-try:
-    from .image_to_tensorboard import ImageToTensorBoard
-except ImportError:
-
-    class ImageToTensorBoard(ToTensorBoard):
-        def __init__(self, *args, **kwargs):
-            raise NotImplementedError("ImageToTensorBoard requires matplotlib to be installed")
