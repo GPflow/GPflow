@@ -14,7 +14,7 @@ labels: enhancement
 
 **Is your feature request related to a problem?**
 <!-- A clear and concise description of the problem. For example: I'm always frustrated when [...] -->
-<!-- Are there relevant issues or other PRs? Please add links! -->
+<!-- Are there relevant issues or other PRs? Please add links -->
 <!-- Who will benefit from this feature? -->
 
 ## Proposal
