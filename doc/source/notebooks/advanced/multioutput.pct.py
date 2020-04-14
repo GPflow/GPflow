@@ -169,7 +169,7 @@ def plot_model(m, lower=-8.0, upper=8.0):
 # %%
 # create multi-output kernel
 kernel = gpf.kernels.SharedIndependent(
-    gpf.kernels.SquaredExponential(lengthscales=np.ones(D)) + gpf.kernels.Linear(), output_dim=P
+    gpf.kernels.SquaredExponential() + gpf.kernels.Linear(), output_dim=P
 )
 # initialization of inducing input locations (M random points from the training inputs)
 Z = Zinit.copy()
@@ -215,7 +215,7 @@ m.kernel.kernel.kernels[0].lengthscales
 # %%
 # Create list of kernels for each output
 kern_list = [
-    gpf.kernels.SquaredExponential(lengthscales=np.ones(D)) + gpf.kernels.Linear() for _ in range(P)
+    gpf.kernels.SquaredExponential() + gpf.kernels.Linear() for _ in range(P)
 ]
 # Create multi-output kernel from kernel list
 kernel = gpf.kernels.SeparateIndependent(kern_list)
@@ -249,7 +249,7 @@ plot_model(m)
 # %%
 # Create list of kernels for each output
 kern_list = [
-    gpf.kernels.SquaredExponential(lengthscales=np.ones(D)) + gpf.kernels.Linear() for _ in range(P)
+    gpf.kernels.SquaredExponential() + gpf.kernels.Linear() for _ in range(P)
 ]
 # Create multi-output kernel from kernel list
 kernel = gpf.kernels.SeparateIndependent(kern_list)
@@ -305,7 +305,7 @@ m.inducing_variable.inducing_variable_list
 # %%
 # Create list of kernels for each output
 kern_list = [
-    gpf.kernels.SquaredExponential(lengthscales=np.ones(D)) + gpf.kernels.Linear() for _ in range(L)
+    gpf.kernels.SquaredExponential() + gpf.kernels.Linear() for _ in range(L)
 ]
 # Create multi-output kernel from kernel list
 kernel = gpf.kernels.LinearCoregionalization(
