@@ -18,7 +18,7 @@ Version history is documented `here <https://github.com/GPflow/GPflow/blob/maste
 
 Getting Started
 ---------------
-Get started with our `examples and tutorials <https://nbviewer.jupyter.org/github/GPflow/GPflow/blob/develop/doc/source/notebooks/intro.ipynb?flush_cache=true>`_.
+Get started with our `examples and tutorials <notebooks/intro.html>`_.
 
 
 What's the difference between GPy and GPflow?
