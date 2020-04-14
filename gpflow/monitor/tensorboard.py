@@ -11,70 +11,23 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-""" Provides basic functionality to monitor optimisation runs """
+""" Tasks that write to TensorBoard """
 
-
-from abc import ABC, abstractmethod
 from io import BytesIO
 from typing import Any, Callable, Dict, List, Optional, Union
 
 import numpy as np
 import tensorflow as tf
-from matplotlib.backends.backend_agg import FigureCanvasAgg
-from matplotlib.figure import Axes, Figure
 
-from .base import Parameter
-from .models import BayesianModel
-from .utilities import parameter_dict
-
-
-class MonitorTask(ABC):
-    """
-    A base class for a monitoring task.
-
-    All monitoring tasks are callable objects.
-    A descendant class must implement the `run` method, which is the body of the monitoring task.
-    """
-
-    def __call__(self, step: int, **kwargs):
-        """
-        It calls the 'run' function and sets the current step.
-
-        :param step: current step in the optimisation.
-        :param kwargs: additional keyword arguments that can be passed
-            to the `run` method of the task. This is in particular handy for
-            passing keyword argument to the callback of `ScalarToTensorBoard`.
-        """
-        self.current_step = tf.cast(step, tf.int64)
-        self.run(**kwargs)
-
-    @abstractmethod
-    def run(self, **kwargs):
-        """
-        Implements the task to be executed on __call__.
-        The current step is available through `self.current_step`.
-
-        :param kwargs: keyword arguments available to the run method.
-        """
-        raise NotImplementedError
+from ..base import Parameter
+from ..models import BayesianModel
+from ..utilities import parameter_dict
+from .base import MonitorTask
 
 
-class ExecuteCallback(MonitorTask):
-    """ Executes a callback as task """
-
-    def __init__(self, callback: Callable[..., None]):
-        """
-        :param callback: callable to be executed during the task.
-            Arguments can be passed using keyword arguments.
-        """
-        super().__init__()
-        self.callback = callback
-
-    def run(self, **kwargs):
-        self.callback(**kwargs)
+__all__ = ["ToTensorBoard", "ModelToTensorBoard", "ScalarToTensorBoard", "ImageToTensorBoard"]
 
 
-# pylint: disable=abstract-method
 class ToTensorBoard(MonitorTask):
     writers = {}
 
@@ -84,7 +37,7 @@ class ToTensorBoard(MonitorTask):
             Can be nested, e.g. ./logs/my_run/
         """
         super().__init__()
-        if log_dir not in self.writers.keys():
+        if log_dir not in self.writers:
             self.writers[log_dir] = tf.summary.create_file_writer(log_dir)
         self.file_writer = self.writers[log_dir]
 
@@ -203,7 +156,9 @@ class ImageToTensorBoard(ToTensorBoard):
     def __init__(
         self,
         log_dir: str,
-        plotting_function: Callable[[Figure, Axes], Figure],
+        plotting_function: Callable[
+            ["matplotlib.figure.Figure", "matplotlib.figure.Axes"], "matplotlib.figure.Figure"
+        ],
         name: Optional[str] = None,
         *,
         fig_kw: Optional[Dict[str, Any]] = None,
@@ -211,19 +166,24 @@ class ImageToTensorBoard(ToTensorBoard):
     ):
         """
         :param log_dir: directory in which to store the tensorboard files.
-            Can be a nested: for example, './logs/my_run/'.
+            Can be nested: for example, './logs/my_run/'.
         :param plotting_function: function performing the plotting.
         :param name: name used in TensorBoard.
-        :params fig_kw: Keywords to be passed to Figure constructor, such as `figsize`.
-        :params subplots_kw: Keywords to be passed to figure.subplots constructor, such as
-            `nrows`, `ncols`, `sharex`, `sharey`. By default the default values 
-            from matplotlib.pyplot as used.
+        :params fig_kw: keyword arguments to be passed to Figure constructor, e.g. `figsize`.
+        :params subplots_kw: keyword arguments to be passed to figure.subplots constructor, e.g.
+            `nrows`, `ncols`, `sharex`, `sharey`. By default the default values
+            from matplotlib.pyplot are used.
         """
         super().__init__(log_dir)
         self.plotting_function = plotting_function
         self.name = name
         self.fig_kw = fig_kw or {}
         self.subplots_kw = subplots_kw or {}
+
+        try:
+            from matplotlib.figure import Figure
+        except ImportError:
+            raise RuntimeError("ImageToTensorBoard requires the matplotlib package to be installed")
 
         self.fig = Figure(**self.fig_kw)
         if self.subplots_kw != {}:
@@ -239,6 +199,8 @@ class ImageToTensorBoard(ToTensorBoard):
             self.axes.clear()
 
     def run(self, **unused_kwargs):
+        from matplotlib.backends.backend_agg import FigureCanvasAgg
+
         self._clear_axes()
         self.plotting_function(self.fig, self.axes)
         canvas = FigureCanvasAgg(self.fig)
@@ -254,78 +216,3 @@ class ImageToTensorBoard(ToTensorBoard):
 
         # Write to TensorBoard
         tf.summary.image(self.name, image_tensor, step=self.current_step)
-
-
-class MonitorTaskGroup:
-    """
-    Class for grouping `MonitorTask` instances. A group defines
-    all the tasks that are run at the same frequency, given by `period`.
-
-    A `MonitorTaskGroup` can exist of a single instance or a list of
-    `MonitorTask` instances.
-    """
-
-    def __init__(self, task_or_tasks: Union[List[MonitorTask], MonitorTask], period: int = 1):
-        """
-        :param task_or_tasks: a single instance or a list of `MonitorTask` instances.
-            Each `MonitorTask` in the list will be run with the given `period`.
-        :param period: defines how often to run the tasks; they will execute every `period`th step.
-            For large values of `period` the tasks will be less frequently run. Defaults to
-            running at every step (`period = 1`).
-        """
-        self.tasks = task_or_tasks
-        self._period = period
-
-    @property
-    def tasks(self) -> List[MonitorTask]:
-        return self._tasks
-
-    @tasks.setter
-    def tasks(self, task_or_tasks: Union[List[MonitorTask], MonitorTask]) -> None:
-        """Ensures the tasks are stored as a list. Even if there is only a single task."""
-        if not isinstance(task_or_tasks, List):
-            self._tasks = [task_or_tasks]
-        else:
-            self._tasks = task_or_tasks
-
-    def __call__(self, step, **kwargs):
-        """Call each task in the group."""
-        if step % self._period == 0:
-            for task in self.tasks:
-                task(step, **kwargs)
-
-
-class Monitor:
-    r"""
-    Accepts any number of of `MonitorTaskGroup` instances, and runs them
-    according to their specified periodicity.
-
-    Example use-case:
-        ```
-        # Create some monitor tasks
-        log_dir = "logs"
-        model_task = ModelToTensorBoard(log_dir, model)
-        image_task = ImageToTensorBoard(log_dir, plot_prediction, "image_samples")
-        lml_task = ScalarToTensorBoard(log_dir, lambda: model.log_marginal_likelihood(), "lml")
-
-        # Plotting tasks can be quite slow, so we want to run them less frequently.
-        # We group them in a `MonitorTaskGroup` and set the period to 5.
-        slow_tasks = MonitorTaskGroup(image_task, period=5)
-
-        # The other tasks are fast. We run them at each iteration of the optimisation.
-        fast_tasks = MonitorTaskGroup([model_task, lml_task], period=1)
-
-        # We pass both groups to the `Monitor`
-        monitor = Monitor(fast_tasks, slow_tasks)
-        ```
-    """
-
-    def __init__(self, *task_groups: MonitorTaskGroup):
-        """
-        :param task_groups: a list of `MonitorTaskGroup`s to be executed.
-        """
-        self.task_groups = task_groups
-
-    def __call__(self, step, **kwargs):
-        for group in self.task_groups:
-            group(step, **kwargs)

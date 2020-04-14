@@ -88,7 +88,7 @@ setup(
     packages=packages,
     include_package_data=True,
     install_requires=requirements,
-    extras_require={"Tensorflow with GPU": [tf_gpu]},
+    extras_require={"Tensorflow with GPU": [tf_gpu], "ImageToTensorBoard": ["matplotlib"]},
     python_requires=">=3.6",
     classifiers=[
         "License :: OSI Approved :: Apache Software License",
