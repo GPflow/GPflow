@@ -16,7 +16,7 @@ labels: bug
 <!-- We need to be able to reproduce the bug by simply copy and pasting your code -->
 ```python
 # This is the place for your code that reproduces the bug.
-# Please make sure it does not depend on external libraries (beyond GPflow's own requirements), specific datasets, etc., and the smaller, the better :)
+# Please make sure it does not depend on external libraries (beyond GPflow's own requirements) or specific datasets, and the smaller, the better :)
 # For help on how to write a good bug report, see https://stackoverflow.com/help/minimal-reproducible-example
 ```
 
