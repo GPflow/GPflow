@@ -1,13 +1,9 @@
-import numpy as np
 import tensorflow as tf
 
-from .. import Parameter
+from ..base import TensorLikeTypes
 from ..inducing_variables import InducingPoints, Multiscale, InducingPatches
 from ..kernels import Kernel, SquaredExponential, Convolutional
 from .dispatch import Kuf
-
-
-TensorLikeTypes = (tf.Tensor, tf.Variable, np.ndarray, Parameter)
 
 
 @Kuf.register(InducingPoints, Kernel, TensorLikeTypes)

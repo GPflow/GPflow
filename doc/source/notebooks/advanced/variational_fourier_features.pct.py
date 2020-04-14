@@ -26,7 +26,7 @@ import tensorflow as tf
 import numpy as np
 import gpflow
 from gpflow.inducing_variables import InducingVariables
-from gpflow.covariances.kufs import TensorLikeTypes
+from gpflow.base import TensorLikeTypes
 from gpflow.utilities import to_default_float
 from gpflow import covariances as cov
 from gpflow import kullback_leiblers as kl

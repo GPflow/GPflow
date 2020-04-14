@@ -328,3 +328,6 @@ def _to_unconstrained(value: VariableData, transform: Transform) -> tf.Tensor:
     if transform is not None:
         return transform.inverse(value)
     return value
+
+
+TensorLikeTypes = (tf.Tensor, tf.Variable, np.ndarray, Parameter)
