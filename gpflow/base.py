@@ -11,7 +11,6 @@ from .config import default_float
 
 DType = Union[np.dtype, tf.DType]
 VariableData = Union[List, Tuple, np.ndarray, int, float]
-TensorLike = Union[np.ndarray, tf.Tensor, tf.Variable]
 Transform = Union[tfp.bijectors.Bijector]
 Prior = Union[tfp.distributions.Distribution]
 
@@ -305,6 +304,9 @@ class Parameter(tf.Module):
 Parameter._OverloadAllOperators()
 tf.register_tensor_conversion_function(Parameter, lambda x, *args, **kwds: x.read_value())
 
+TensorLike = Union[np.ndarray, tf.Tensor, tf.Variable, Parameter]
+TensorLikeTypes = (tf.Tensor, tf.Variable, np.ndarray, Parameter)
+
 
 def _cast_to_dtype(value: VariableData, dtype: Optional[DType] = None) -> tf.Tensor:
     if dtype is None:
@@ -328,6 +330,3 @@ def _to_unconstrained(value: VariableData, transform: Transform) -> tf.Tensor:
     if transform is not None:
         return transform.inverse(value)
     return value
-
-
-TensorLikeTypes = (tf.Tensor, tf.Variable, np.ndarray, Parameter)
