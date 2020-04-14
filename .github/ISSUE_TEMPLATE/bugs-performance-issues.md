@@ -29,7 +29,7 @@ labels: bug
 
 <!-- A clear and concise description of what you expected to happen. -->
 
-## System information:
+## System information
 
 * GPflow version: <!-- run `import gpflow; print(gpflow.__version__)` inside python -->
 * GPflow installed from: <!-- e.g. with "pip install gpflow" or from a GitHub clone on the develop branch; if working from a git clone, please include the git commit (SHA hash): run `git rev-parse HEAD` on the command line -->
