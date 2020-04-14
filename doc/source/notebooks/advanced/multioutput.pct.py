@@ -214,9 +214,7 @@ m.kernel.kernel.kernels[0].lengthscales
 
 # %%
 # Create list of kernels for each output
-kern_list = [
-    gpf.kernels.SquaredExponential() + gpf.kernels.Linear() for _ in range(P)
-]
+kern_list = [gpf.kernels.SquaredExponential() + gpf.kernels.Linear() for _ in range(P)]
 # Create multi-output kernel from kernel list
 kernel = gpf.kernels.SeparateIndependent(kern_list)
 # initialization of inducing input locations (M random points from the training inputs)
@@ -248,9 +246,7 @@ plot_model(m)
 
 # %%
 # Create list of kernels for each output
-kern_list = [
-    gpf.kernels.SquaredExponential() + gpf.kernels.Linear() for _ in range(P)
-]
+kern_list = [gpf.kernels.SquaredExponential() + gpf.kernels.Linear() for _ in range(P)]
 # Create multi-output kernel from kernel list
 kernel = gpf.kernels.SeparateIndependent(kern_list)
 # initialization of inducing input locations, one set of locations per output
@@ -304,9 +300,7 @@ m.inducing_variable.inducing_variable_list
 
 # %%
 # Create list of kernels for each output
-kern_list = [
-    gpf.kernels.SquaredExponential() + gpf.kernels.Linear() for _ in range(L)
-]
+kern_list = [gpf.kernels.SquaredExponential() + gpf.kernels.Linear() for _ in range(L)]
 # Create multi-output kernel from kernel list
 kernel = gpf.kernels.LinearCoregionalization(
     kern_list, W=np.random.randn(P, L)
