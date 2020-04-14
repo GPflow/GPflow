@@ -308,7 +308,8 @@ TensorLike = Union[np.ndarray, tf.Tensor, tf.Variable, Parameter]
 """
 Type alias for tensor-like types that are supported by most TensorFlow, NumPy and GPflow operations.
 
-NOTE: Does not work with multipledispatch dispatchers. See `TensorLikeTypes`.
+NOTE: Union types like this do not work with the `register` method of multipledispatch's
+`Dispatcher` class. Instead use `TensorLikeTypes` for dispatching on tensor-like types.
 """
 
 # We've left this as object until we've tested the performance consequences of using the full set
