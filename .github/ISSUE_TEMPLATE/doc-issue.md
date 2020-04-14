@@ -1,5 +1,5 @@
 ---
-name: Documentation/tutorial notebooks
+name: Documentation or notebooks
 about: Let us know what would make the GPflow documentation better
 ---
 
