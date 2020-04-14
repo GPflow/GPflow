@@ -26,7 +26,6 @@ import numpy as np
 import time
 import gpflow
 import tensorflow as tf
-import matplotlib
 import matplotlib.pyplot as plt
 from gpflow.ci_utils import ci_niter
 

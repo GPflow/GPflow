@@ -38,7 +38,6 @@
 import gpflow
 import numpy as np
 import tensorflow as tf
-import matplotlib
 import matplotlib.pyplot as plt
 
 from gpflow import set_trainable
@@ -47,7 +46,7 @@ from gpflow.config import default_float
 from gpflow.ci_utils import ci_niter
 
 # %matplotlib inline
-matplotlib.rcParams["figure.figsize"] = (12, 6)
+plt.rcParams["figure.figsize"] = (12, 6)
 
 # %%
 np.random.seed(0)
