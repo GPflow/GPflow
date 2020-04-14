@@ -63,7 +63,7 @@ plotkernelsample(k, ax)
 np.random.seed(3)
 
 base_k1 = gpflow.kernels.Matern32(lengthscales=0.3)
-base_k2 = gpflow.kernels.Constant(1)
+base_k2 = gpflow.kernels.Constant()
 k = gpflow.kernels.ChangePoints([base_k1, base_k2, base_k1], locations=[-1, 1], steepness=10.0)
 
 f, ax = plt.subplots(1, 1, figsize=(10, 3))
