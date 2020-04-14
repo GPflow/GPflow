@@ -12,7 +12,6 @@ from .config import default_float
 DType = Union[np.dtype, tf.DType]
 VariableData = Union[List, Tuple, np.ndarray, int, float]
 TensorLike = Union[np.ndarray, tf.Tensor, tf.Variable]
-TensorLikeTypes = (tf.Tensor, tf.Variable, np.ndarray)
 Transform = Union[tfp.bijectors.Bijector]
 Prior = Union[tfp.distributions.Distribution]
 
