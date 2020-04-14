@@ -305,7 +305,14 @@ Parameter._OverloadAllOperators()
 tf.register_tensor_conversion_function(Parameter, lambda x, *args, **kwds: x.read_value())
 
 TensorLike = Union[np.ndarray, tf.Tensor, tf.Variable, Parameter]
+"""
+Type alias for tensor-like types that are supported by most TensorFlow, NumPy and GPflow operations.
+
+NOTE: Does not work with multipledispatch dispatchers. See `TensorLikeTypes`.
+"""
+
 TensorLikeTypes = (tf.Tensor, tf.Variable, np.ndarray, Parameter)
+""" Collection of tensor-like types for use with multipledispatch dispatchers.  """
 
 
 def _cast_to_dtype(value: VariableData, dtype: Optional[DType] = None) -> tf.Tensor:
