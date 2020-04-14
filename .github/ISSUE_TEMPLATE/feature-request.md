@@ -1,7 +1,10 @@
 ---
 name: Feature request
 about: Suggest an idea for GPflow
+title: ''
 labels: enhancement
+assignees: ''
+
 ---
 
 <!-- Lines like this are comments and will be invisible -->

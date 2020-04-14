@@ -1,7 +1,10 @@
 ---
 name: Bug report (including performance and build issues)
 about: Help us find mistakes in the GPflow code base
+title: ''
 labels: bug
+assignees: ''
+
 ---
 
 <!-- Lines like this are comments and will be invisible -->

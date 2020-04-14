@@ -1,6 +1,10 @@
 ---
 name: Documentation or notebooks
 about: Let us know what would make the GPflow documentation better
+title: ''
+labels: ''
+assignees: ''
+
 ---
 
 # Documentation/tutorial notebooks
