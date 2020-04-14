@@ -311,7 +311,9 @@ Type alias for tensor-like types that are supported by most TensorFlow, NumPy an
 NOTE: Does not work with multipledispatch dispatchers. See `TensorLikeTypes`.
 """
 
-TensorLikeTypes = (np.ndarray, tf.Tensor, tf.Variable, Parameter)
+# We've left this as object until we've tested the performance consequences of using the full set
+# see github issue #1434
+TensorLikeTypes = (object,)  # (np.ndarray, tf.Tensor, tf.Variable, Parameter)
 """ Collection of tensor-like types for use with multipledispatch dispatchers.  """
 
 
