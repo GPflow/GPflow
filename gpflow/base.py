@@ -188,7 +188,7 @@ class Parameter(tf.Module):
         """
         unconstrained_value = self.validate_unconstrained_value(value, self.dtype)
         return self._unconstrained.assign(
-            unconstrained_value, use_locking=use_locking, name=name, read_value=read_value,
+            unconstrained_value, use_locking=use_locking, name=name, read_value=read_value
         )
 
     @property
