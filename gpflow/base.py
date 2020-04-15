@@ -101,7 +101,9 @@ class Parameter(tf.Module):
 
             if self.transform is not None:
                 # need to include log|Jacobian| to account for coordinate transform
-                log_det_jacobian = self.transform.inverse_log_det_jacobian(y, y.shape.ndims)
+                log_det_jacobian = self.transform.inverse_log_det_jacobian(
+                    y, y.shape.ndims
+                )
                 log_p += tf.reduce_sum(log_det_jacobian)
 
             return log_p
@@ -188,7 +190,10 @@ class Parameter(tf.Module):
         """
         unconstrained_value = self.validate_unconstrained_value(value, self.dtype)
         return self._unconstrained.assign(
-            unconstrained_value, use_locking=use_locking, name=name, read_value=read_value
+            unconstrained_value,
+            use_locking=use_locking,
+            name=name,
+            read_value=read_value,
         )
 
     @property
@@ -303,7 +308,9 @@ class Parameter(tf.Module):
 
 
 Parameter._OverloadAllOperators()
-tf.register_tensor_conversion_function(Parameter, lambda x, *args, **kwds: x.read_value())
+tf.register_tensor_conversion_function(
+    Parameter, lambda x, *args, **kwds: x.read_value()
+)
 
 
 TensorLike = Union[np.ndarray, tf.Tensor, tf.Variable, Parameter]
@@ -316,8 +323,8 @@ NOTE: Union types like this do not work with the `register` method of multipledi
 
 
 # We've left this as object until we've tested the performance consequences of using the full set
-# see github issue https://github.com/GPflow/GPflow/issues/1434
-TensorLikeTypes: Final[Sequence[type]] = (object,)  # (np.ndarray, tf.Tensor, tf.Variable, Parameter)
+# (np.ndarray, tf.Tensor, tf.Variable, Parameter), see https://github.com/GPflow/GPflow/issues/1434
+TensorLikeTypes: Final[Sequence[type]] = (object,)
 """
 :var TensorLikeTypes: Collection of tensor-like types for registering implementations with
     `multipledispatch` dispatchers.
