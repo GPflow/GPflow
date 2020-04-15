@@ -71,8 +71,13 @@ except (ImportError, DeprecationWarning):
         requirements.append(gast_requirement)
 
 
-with open(str(Path(".", "VERSION").absolute())) as version_file:
-    version = version_file.read().strip()
+def read_file(filename):
+    with open(str(Path(".", filename).absolute())) as f:
+        return f.read().strip()
+
+
+version = read_file("VERSION")
+readme = read_file("README.md")
 
 packages = find_packages(".", exclude=["tests"])
 
@@ -82,9 +87,15 @@ setup(
     author="James Hensman, Alex Matthews",
     author_email="james.hensman@gmail.com",
     description="Gaussian process methods in TensorFlow",
+    long_description=readme,
+    long_description_content_type="text/markdown",
     license="Apache License 2.0",
     keywords="machine-learning gaussian-processes kernels tensorflow",
-    url="http://github.com/GPflow/GPflow",
+    url="https://www.gpflow.org",
+    project_urls={
+        "Source on GitHub": "https://github.com/GPflow/GPflow",
+        "Documentation": "https://gpflow.readthedocs.io",
+    },
     packages=packages,
     include_package_data=True,
     install_requires=requirements,
