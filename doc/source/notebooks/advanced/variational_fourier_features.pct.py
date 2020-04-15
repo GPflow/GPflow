@@ -26,7 +26,7 @@ import tensorflow as tf
 import numpy as np
 import gpflow
 from gpflow.inducing_variables import InducingVariables
-from gpflow.base import TensorLikeTypes
+from gpflow.base import TensorLike
 from gpflow.utilities import to_default_float
 from gpflow import covariances as cov
 from gpflow import kullback_leiblers as kl
@@ -89,7 +89,7 @@ def Kuu_matern12_fourierfeatures1d(inducing_variable, kernel, jitter=None):
     return BlockDiag([cosine_block, sine_block])
 
 
-@cov.Kuf.register(FourierFeatures1D, gpflow.kernels.Matern12, TensorLikeTypes)
+@cov.Kuf.register(FourierFeatures1D, gpflow.kernels.Matern12, TensorLike)
 def Kuf_matern12_fourierfeatures1d(inducing_variable, kernel, X):
     X = tf.squeeze(X, axis=1)
     a, b, ms = (lambda u: (u.a, u.b, u.ms))(inducing_variable)
@@ -143,7 +143,7 @@ def Kuu_matern32_fourierfeatures1d(inducing_variable, kernel, jitter=None):
     return BlockDiag([cosine_block, sine_block])  # eq. (116)
 
 
-@cov.Kuf.register(FourierFeatures1D, gpflow.kernels.Matern32, TensorLikeTypes)
+@cov.Kuf.register(FourierFeatures1D, gpflow.kernels.Matern32, TensorLike)
 def Kuf_matern32_fourierfeatures1d(inducing_variable, kernel, X):
     X = tf.squeeze(X, axis=1)
     a, b, ms = (lambda u: (u.a, u.b, u.ms))(inducing_variable)
@@ -176,7 +176,7 @@ def Kuf_matern32_fourierfeatures1d(inducing_variable, kernel, X):
 # In principle, this is all we need; however, to be able to take advantage of the structure of `Kuu`, we need to also implement new versions of the KL divergence from the prior to the approximate posterior (`prior_kl`) and the `conditional` computation:
 
 # %%
-@kl.prior_kl.register(FourierFeatures1D, gpflow.kernels.Kernel, TensorLikeTypes, TensorLikeTypes)
+@kl.prior_kl.register(FourierFeatures1D, gpflow.kernels.Kernel, TensorLike, TensorLike)
 def prior_kl_vff(inducing_variable, kernel, q_mu, q_sqrt, whiten=False):
     if whiten:
         raise NotImplementedError
@@ -231,7 +231,7 @@ def gauss_kl_vff(q_mu, q_sqrt, K):
 
 # %%
 @gpflow.conditionals.conditional.register(
-    TensorLikeTypes, FourierFeatures1D, gpflow.kernels.Kernel, TensorLikeTypes
+    TensorLike, FourierFeatures1D, gpflow.kernels.Kernel, TensorLike
 )
 def conditional_vff(
     Xnew,

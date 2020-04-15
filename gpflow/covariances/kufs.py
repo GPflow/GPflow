@@ -1,17 +1,17 @@
 import tensorflow as tf
 
-from ..base import TensorLikeTypes
+from ..base import TensorLike
 from ..inducing_variables import InducingPoints, Multiscale, InducingPatches
 from ..kernels import Kernel, SquaredExponential, Convolutional
 from .dispatch import Kuf
 
 
-@Kuf.register(InducingPoints, Kernel, TensorLikeTypes)
+@Kuf.register(InducingPoints, Kernel, TensorLike)
 def Kuf_kernel_inducingpoints(inducing_variable: InducingPoints, kernel: Kernel, Xnew):
     return kernel(inducing_variable.Z, Xnew)
 
 
-@Kuf.register(Multiscale, SquaredExponential, TensorLikeTypes)
+@Kuf.register(Multiscale, SquaredExponential, TensorLike)
 def Kuf_sqexp_multiscale(inducing_variable: Multiscale, kernel: SquaredExponential, Xnew):
     Xnew, _ = kernel.slice(Xnew, None)
     Zmu, Zlen = kernel.slice(inducing_variable.Z, inducing_variable.scales)

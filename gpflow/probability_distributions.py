@@ -15,7 +15,7 @@
 # Eventually, it would be nice to not have to have our own classes for
 # proability distributions. The TensorFlow "distributions" framework would
 # be a good replacement.
-from .base import TensorLike
+from .base import TensorType
 
 
 class ProbabilityDistribution:
@@ -26,13 +26,13 @@ class ProbabilityDistribution:
 
 
 class Gaussian(ProbabilityDistribution):
-    def __init__(self, mu: TensorLike, cov: TensorLike):
+    def __init__(self, mu: TensorType, cov: TensorType):
         self.mu = mu  # [N, D]
         self.cov = cov  # [N, D, D]
 
 
 class DiagonalGaussian(ProbabilityDistribution):
-    def __init__(self, mu: TensorLike, cov: TensorLike):
+    def __init__(self, mu: TensorType, cov: TensorType):
         self.mu = mu  # [N, D]
         self.cov = cov  # [N, D]
 
@@ -47,6 +47,6 @@ class MarkovGaussian(ProbabilityDistribution):
     Cov[x_t, x_{t+1}] = cov[t, :, :] * cov[t+1, :, :]
     """
 
-    def __init__(self, mu: TensorLike, cov: TensorLike):
+    def __init__(self, mu: TensorType, cov: TensorType):
         self.mu = mu  # N+[1, D]
         self.cov = cov  # 2 x (N+1)[, D, D]
