@@ -1,11 +1,12 @@
 import functools
 from enum import Enum
-from typing import List, Optional, Tuple, Union
+from typing import List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
 from tensorflow.python.ops import array_ops
+from typing_extensions import Final
 
 from .config import default_float
 
@@ -304,6 +305,7 @@ class Parameter(tf.Module):
 Parameter._OverloadAllOperators()
 tf.register_tensor_conversion_function(Parameter, lambda x, *args, **kwds: x.read_value())
 
+
 TensorLike = Union[np.ndarray, tf.Tensor, tf.Variable, Parameter]
 """
 Type alias for tensor-like types that are supported by most TensorFlow, NumPy and GPflow operations.
@@ -312,10 +314,14 @@ NOTE: Union types like this do not work with the `register` method of multipledi
 `Dispatcher` class. Instead use `TensorLikeTypes` for dispatching on tensor-like types.
 """
 
+
 # We've left this as object until we've tested the performance consequences of using the full set
-# see github issue #1434
-TensorLikeTypes = (object,)  # (np.ndarray, tf.Tensor, tf.Variable, Parameter)
-""" Collection of tensor-like types for use with multipledispatch dispatchers.  """
+# see github issue https://github.com/GPflow/GPflow/issues/1434
+TensorLikeTypes: Final[Sequence[type]] = (object,)  # (np.ndarray, tf.Tensor, tf.Variable, Parameter)
+"""
+:var TensorLikeTypes: Collection of tensor-like types for registering implementations with
+    `multipledispatch` dispatchers.
+"""
 
 
 def _cast_to_dtype(value: VariableData, dtype: Optional[DType] = None) -> tf.Tensor:
