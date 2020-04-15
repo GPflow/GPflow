@@ -1,6 +1,6 @@
 import functools
 from enum import Enum
-from typing import List, Optional, Sequence, Tuple, Union
+from typing import List, Optional, Tuple, Union
 
 import numpy as np
 import tensorflow as tf
