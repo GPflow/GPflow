@@ -16,7 +16,7 @@ labels: bug
 <!-- We need to be able to reproduce the bug by simply copy and pasting your code -->
 ```python
 # This is the place for your code that reproduces the bug.
-# Please make sure it does not depend on external libraries (beyond GPflow's own requirements), specific datasets, etc., and the smaller, the better :)
+# Please make sure it does not depend on external libraries (beyond GPflow's own requirements) or specific datasets, and the smaller, the better :)
 # For help on how to write a good bug report, see https://stackoverflow.com/help/minimal-reproducible-example
 ```
 
@@ -29,7 +29,7 @@ labels: bug
 
 <!-- A clear and concise description of what you expected to happen. -->
 
-## System information:
+## System information
 
 * GPflow version: <!-- run `import gpflow; print(gpflow.__version__)` inside python -->
 * GPflow installed from: <!-- e.g. with "pip install gpflow" or from a GitHub clone on the develop branch; if working from a git clone, please include the git commit (SHA hash): run `git rev-parse HEAD` on the command line -->
