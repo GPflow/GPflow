@@ -27,11 +27,10 @@ import gpflow
 import tensorflow as tf
 
 import matplotlib.pyplot as plt
-import matplotlib
 
 # %matplotlib inline
 
-matplotlib.rcParams["figure.figsize"] = (8, 4)
+plt.rcParams["figure.figsize"] = (8, 4)
 
 # %% [markdown]
 # ## One-dimensional example

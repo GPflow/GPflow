@@ -23,11 +23,10 @@ import gpflow
 
 import tensorflow as tf
 import numpy as np
-import matplotlib
+import matplotlib.pyplot as plt
 
 # %matplotlib inline
-matplotlib.rcParams["figure.figsize"] = (12, 6)
-plt = matplotlib.pyplot
+plt.rcParams["figure.figsize"] = (12, 6)
 
 np.random.seed(123)  # for reproducibility
 

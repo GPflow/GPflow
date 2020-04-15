@@ -32,14 +32,13 @@
 # %%
 import gpflow
 import numpy as np
-import matplotlib
+import matplotlib.pyplot as plt
 import tensorflow as tf
 from gpflow.utilities import print_summary
 
 # The lines below are specific to the notebook format
 # %matplotlib inline
-matplotlib.rcParams["figure.figsize"] = (12, 6)
-plt = matplotlib.pyplot
+plt.rcParams["figure.figsize"] = (12, 6)
 
 # %% [markdown]
 # `X` and `Y` denote the input and output values. **NOTE:** `X` and `Y` must be two-dimensional NumPy arrays, $N \times 1$ or $N \times D$, where $D$ is the number of input dimensions/features, with the same number of rows as $N$ (one for each data point):
