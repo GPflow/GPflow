@@ -72,12 +72,12 @@ except (ImportError, DeprecationWarning):
 
 
 def read_file(filename):
-    with open(str(Path(".", filename).absolute())) as f:
+    with open(filename, encoding="utf-8") as f:
         return f.read().strip()
 
 
 version = read_file("VERSION")
-readme = read_file("README.md")
+readme_text = read_file("README.md")
 
 packages = find_packages(".", exclude=["tests"])
 
@@ -87,7 +87,7 @@ setup(
     author="James Hensman, Alex Matthews",
     author_email="james.hensman@gmail.com",
     description="Gaussian process methods in TensorFlow",
-    long_description=readme,
+    long_description=readme_text,
     long_description_content_type="text/markdown",
     license="Apache License 2.0",
     keywords="machine-learning gaussian-processes kernels tensorflow",
