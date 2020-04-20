@@ -311,7 +311,7 @@ TensorType = Union[np.ndarray, tf.Tensor, tf.Variable, Parameter]
 Type alias for tensor-like types that are supported by most TensorFlow, NumPy and GPflow operations.
 
 NOTE: Union types like this do not work with the `register` method of multipledispatch's
-`Dispatcher` class. Instead use `TensorLikeTypes` for dispatching on tensor-like types.
+`Dispatcher` class. Instead use `TensorLike` for dispatching on tensor-like types.
 """
 
 

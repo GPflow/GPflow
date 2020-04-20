@@ -23,7 +23,7 @@ requirements = [
     "scipy>=0.18.0",
     "multipledispatch>=0.6",
     "tabulate",
-    "typing_extensions",
+    "typing_extensions",  # for python 3.6 compatibility
 ]
 
 if sys.version_info < (3, 7):
