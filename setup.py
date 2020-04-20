@@ -18,7 +18,13 @@ on_readthedocs = os.environ.get("READTHEDOCS", None) == "True"
 
 
 # Dependencies of GPflow
-requirements = ["numpy>=1.10.0", "scipy>=0.18.0", "multipledispatch>=0.6", "tabulate"]
+requirements = [
+    "numpy>=1.10.0",
+    "scipy>=0.18.0",
+    "multipledispatch>=0.6",
+    "tabulate",
+    "typing_extensions",  # for python 3.6 compatibility
+]
 
 if sys.version_info < (3, 7):
     # became part of stdlib in python 3.7

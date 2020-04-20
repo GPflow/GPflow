@@ -6,14 +6,12 @@ import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
 from tensorflow.python.ops import array_ops
+from typing_extensions import Final
 
 from .config import default_float
 
 DType = Union[np.dtype, tf.DType]
 VariableData = Union[List, Tuple, np.ndarray, int, float]
-TensorLike = (
-    object  # Union[tf.Tensor, tf.Variable, np.ndarray], but doesn't work with multipledispatch
-)
 Transform = Union[tfp.bijectors.Bijector]
 Prior = Union[tfp.distributions.Distribution]
 
@@ -306,6 +304,24 @@ class Parameter(tf.Module):
 
 Parameter._OverloadAllOperators()
 tf.register_tensor_conversion_function(Parameter, lambda x, *args, **kwds: x.read_value())
+
+
+TensorType = Union[np.ndarray, tf.Tensor, tf.Variable, Parameter]
+"""
+Type alias for tensor-like types that are supported by most TensorFlow, NumPy and GPflow operations.
+
+NOTE: Union types like this do not work with the `register` method of multipledispatch's
+`Dispatcher` class. Instead use `TensorLike` for dispatching on tensor-like types.
+"""
+
+
+# We've left this as object until we've tested the performance consequences of using the full set
+# (np.ndarray, tf.Tensor, tf.Variable, Parameter), see https://github.com/GPflow/GPflow/issues/1434
+TensorLike: Final[Tuple[type, ...]] = (object,)
+"""
+:var TensorLike: Collection of tensor-like types for registering implementations with
+    `multipledispatch` dispatchers.
+"""
 
 
 def _cast_to_dtype(value: VariableData, dtype: Optional[DType] = None) -> tf.Tensor:

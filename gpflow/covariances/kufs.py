@@ -1,4 +1,5 @@
 import tensorflow as tf
+
 from ..base import TensorLike
 from ..inducing_variables import InducingPoints, Multiscale, InducingPatches
 from ..kernels import Kernel, SquaredExponential, Convolutional
