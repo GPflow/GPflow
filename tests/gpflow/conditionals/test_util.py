@@ -61,7 +61,7 @@ def test_leading_transpose_with_tf_function_wrapper(caplog):
     # When Autograph cannot compile a function it sends a WARNING message to the
     # logs.
     log_message_levels = [record.levelname for record in caplog.records]
-    assert 'WARNING' not in log_message_levels
+    assert "WARNING" not in log_message_levels
 
 
 # rollaxis
