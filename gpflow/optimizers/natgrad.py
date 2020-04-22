@@ -47,8 +47,8 @@ class XiTransform(metaclass=abc.ABCMeta):
     the parameters pairs are always of shape (N, D) and (D, N, N).
     """
 
-    @abc.abstractmethod
     @staticmethod
+    @abc.abstractmethod
     def meanvarsqrt_to_xi(mean, varsqrt):
         """
         Transforms the parameter `mean` and `varsqrt` to `xi1`, `xi2`
@@ -58,8 +58,8 @@ class XiTransform(metaclass=abc.ABCMeta):
         :return: tuple (xi1, xi2), the xi parameters (N, D), (D, N, N)
         """
 
-    @abc.abstractmethod
     @staticmethod
+    @abc.abstractmethod
     def xi_to_meanvarsqrt(xi1, xi2):
         """
         Transforms the parameter `xi1`, `xi2` to `mean`, `varsqrt`
@@ -69,8 +69,8 @@ class XiTransform(metaclass=abc.ABCMeta):
         :return: tuple (mean, varsqrt), the meanvarsqrt parameters
         """
 
-    @abc.abstractmethod
     @staticmethod
+    @abc.abstractmethod
     def naturals_to_xi(nat1, nat2):
         """
         Applies the transform so that `nat1`, `nat2` is mapped to `xi1`, `xi2`
