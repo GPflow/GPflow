@@ -33,6 +33,12 @@ __all__ = [
 ]
 
 
+#
+# Xi transformations necessary for natural gradient optimizer.
+# Abstract class and two implementations: XiNat and XiSqrtMeanVar.
+#
+
+
 class XiTransform(metaclass=abc.ABCMeta):
     """
     XiTransform is the base class that implements three transformations necessary
@@ -70,6 +76,39 @@ class XiTransform(metaclass=abc.ABCMeta):
         :param nat2: the θ₂ parameter
         :return: tuple `xi1`, `xi2`
         """
+
+
+class XiNat(XiTransform):
+    """
+    This is the default transform. Using the natural directly saves the forward mode
+    gradient, and also gives the analytic optimal solution for gamma=1 in the case
+    of Gaussian likelihood.
+    """
+
+    def meanvarsqrt_to_xi(self, mean, varsqrt):
+        return meanvarsqrt_to_natural(mean, varsqrt)
+
+    def xi_to_meanvarsqrt(self, xi1, xi2):
+        return natural_to_meanvarsqrt(xi1, xi2)
+
+    def naturals_to_xi(self, nat1, nat2):
+        return nat1, nat2
+
+
+class XiSqrtMeanVar(XiTransform):
+    """
+    This transformation will perform natural gradient descent on the model parameters,
+    so saves the conversion to and from Xi.
+    """
+
+    def meanvarsqrt_to_xi(self, mean, varsqrt):
+        return mean, varsqrt
+
+    def xi_to_meanvarsqrt(self, xi1, xi2):
+        return xi1, xi2
+
+    def naturals_to_xi(self, nat1, nat2):
+        return natural_to_meanvarsqrt(nat1, nat2)
 
 
 class NaturalGradient(tf.optimizers.Optimizer):
@@ -240,45 +279,6 @@ class NaturalGradient(tf.optimizers.Optimizer):
         config = super().get_config()
         config.update({"gamma": self._serialize_hyperparameter("gamma")})
         return config
-
-
-#
-# Xi transformations necessary for natural gradient optimizer.
-# Abstract class and two implementations: XiNat and XiSqrtMeanVar.
-#
-
-
-class XiNat(XiTransform):
-    """
-    This is the default transform. Using the natural directly saves the forward mode
-     gradient, and also gives the analytic optimal solution for gamma=1 in the case
-     of Gaussian likelihood.
-    """
-
-    def meanvarsqrt_to_xi(self, mean, varsqrt):
-        return meanvarsqrt_to_natural(mean, varsqrt)
-
-    def xi_to_meanvarsqrt(self, xi1, xi2):
-        return natural_to_meanvarsqrt(xi1, xi2)
-
-    def naturals_to_xi(self, nat1, nat2):
-        return nat1, nat2
-
-
-class XiSqrtMeanVar(XiTransform):
-    """
-    This transformation will perform natural gradient descent on the model parameters,
-    so saves the conversion to and from Xi.
-    """
-
-    def meanvarsqrt_to_xi(self, mean, varsqrt):
-        return mean, varsqrt
-
-    def xi_to_meanvarsqrt(self, xi1, xi2):
-        return xi1, xi2
-
-    def naturals_to_xi(self, nat1, nat2):
-        return natural_to_meanvarsqrt(nat1, nat2)
 
 
 #
