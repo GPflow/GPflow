@@ -161,6 +161,11 @@ class NaturalGradient(tf.optimizers.Optimizer):
     def _natgrad_steps(
         self, loss_fn: LossClosure, parameters: Sequence[Tuple[Parameter, Parameter, XiTransform]]
     ):
+        """
+        Computes gradients of loss_fn() w.r.t. q_mu and q_sqrt, and updates
+        these parameters using the natgrad backwards step, for all sets of
+        variational parameters.
+        """
         q_mus, q_sqrts, xis = zip(*parameters)
         unconstrained_variables = [
             p.unconstrained_variable for params in (q_mus, q_sqrts) for p in params
@@ -177,24 +182,6 @@ class NaturalGradient(tf.optimizers.Optimizer):
                 q_mu_grads, q_sqrt_grads, q_mus, q_sqrts, xis
             ):
                 self._natgrad_apply_gradients(q_mu_grad, q_sqrt_grad, q_mu, q_sqrt, xi_transform)
-
-    def _natgrad_step(
-        self,
-        loss_fn: LossClosure,
-        q_mu: Parameter,
-        q_sqrt: Parameter,
-        xi_transform: Optional[XiTransform] = None,
-    ):
-        """
-        Computes gradients of loss_fn() w.r.t. q_mu and q_sqrt, and updates
-        these parameters using the natgrad backwards step.
-        """
-        with tf.GradientTape(watch_accessed_variables=False) as tape:
-            tape.watch([q_mu.unconstrained_variable, q_sqrt.unconstrained_variable])
-            loss = loss_fn()
-        q_mu_grad, q_sqrt_grad = tape.gradient(loss, [q_mu, q_sqrt])
-
-        self._natgrad_apply_gradients(q_mu_grad, q_sqrt_grad, q_mu, q_sqrt, xi_transform)
 
     def _natgrad_apply_gradients(
         self,
