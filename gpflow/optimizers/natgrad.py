@@ -1,4 +1,4 @@
-# Copyright 2018 Hugh Salimbeni, Artem Artemev @awav
+# Copyright 2018-2020 Hugh Salimbeni, Artem Artemev @awav, ST John @st--
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import tensorflow as tf
 from ..base import Parameter
 
 Scalar = Union[float, tf.Tensor, np.ndarray]
+LossClosure = Callable[[], tf.Tensor]
 
 __all__ = [
     "NaturalGradient",
@@ -48,7 +49,6 @@ class XiTransform(metaclass=abc.ABCMeta):
         :param varsqrt: the varsqrt parameter (D, N, N)
         :return: tuple (xi1, xi2), the xi parameters (N, D), (D, N, N)
         """
-        pass  # pragma: no cover
 
     @abc.abstractmethod
     def xi_to_meanvarsqrt(self, xi1, xi2):
@@ -59,7 +59,6 @@ class XiTransform(metaclass=abc.ABCMeta):
         :param xi2: the ξ₂ parameter
         :return: tuple (mean, varsqrt), the meanvarsqrt parameters
         """
-        pass  # pragma: no cover
 
     @abc.abstractmethod
     def naturals_to_xi(self, nat1, nat2):
@@ -70,18 +69,22 @@ class XiTransform(metaclass=abc.ABCMeta):
         :param nat2: the θ₂ parameter
         :return: tuple `xi1`, `xi2`
         """
-        pass  # pragma: no cover
 
 
 class NaturalGradient(tf.optimizers.Optimizer):
-    def __init__(self, gamma: Scalar, name=None):
+    def __init__(self, gamma: Scalar, xi_transform: XiTransform = XiNat(), name=None):
+        """
+        :param gamma: natgrad step length
+        :param xi_transform: default ξ transform
+        """
         name = self.__class__.__name__ if name is None else name
         super().__init__(name)
         self.gamma = gamma
+        self.xi_transform = xi_transform
 
     def minimize(
         self,
-        loss_fn: Callable,
+        loss_fn: LossClosure,
         var_list: List[
             Union[Tuple[Parameter, Parameter], Tuple[Parameter, Parameter, XiTransform]]
         ],
@@ -92,37 +95,80 @@ class NaturalGradient(tf.optimizers.Optimizer):
         There are two supported ways of transformation for parameters:
             - XiNat
             - XiSqrtMeanVar
-        Custom transformations are also possible, they should implement
+        Custom transformations are also possible, they should implement the
         `XiTransform` interface.
 
-            :param loss_fn: Loss function.
-            :param var_list: List of pair tuples of variational parameters or
-                triplet tuple with variational parameters and ξ transformation.
-                By default, all parameters goes through XiNat() transformation.
-                For example your `var_list` can look as,
-                ```
-                var_list = [
-                    (q_mu1, q_sqrt1),
-                    (q_mu2, q_sqrt2, XiSqrtMeanVar())
-                ]
-                ```
+        :param loss_fn: Loss function.
+        :param var_list: List of pair tuples of variational parameters or
+            triplet tuple with variational parameters and ξ transformation.
+            If ξ is not specified, will use self.xi_transform.
+            For example, `var_list` could be
+            ```
+            var_list = [
+                (q_mu1, q_sqrt1),
+                (q_mu2, q_sqrt2, XiSqrtMeanVar())
+            ]
+            ```
         """
-        parameters = [(v[0], v[1], v[2] if len(v) > 2 else XiNat()) for v in var_list]
+        parameters = [(v[0], v[1], (v[2] if len(v) > 2 else None)) for v in var_list]
         self._natgrad_steps(loss_fn, parameters)
 
     def _natgrad_steps(
-        self, loss_fn: Callable, parameters: List[Tuple[Parameter, Parameter, XiTransform]]
+        self, loss_fn: LossClosure, parameters: List[Tuple[Parameter, Parameter, XiTransform]]
     ):
-        def natural_gradient_step(q_mu, q_sqrt, xi_transform):
-            self._natgrad_step(loss_fn, q_mu, q_sqrt, xi_transform)
+        q_mus, q_sqrts, xis = zip(*parameters)
+        unconstrained_variables = [
+            p.unconstrained_variable for params in (q_mus, q_sqrts) for p in params
+        ]
+
+        with tf.GradientTape(watch_accessed_variables=False) as tape:
+            tape.watch(unconstrained_variables)
+            loss = loss_fn()
+
+        q_mu_grads, q_sqrt_grads = tape.gradient(loss, [q_mus, q_sqrts])
 
         with tf.name_scope(f"{self._name}/natural_gradient_steps"):
-            list(map(natural_gradient_step, *zip(*parameters)))
+            for q_mu_grad, q_sqrt_grad, q_mu, q_sqrt, xi_transform in zip(
+                q_mu_grads, q_sqrt_grads, q_mus, q_sqrts, xis
+            ):
+                self._natgrad_apply_gradients(q_mu_grad, q_sqrt_grad, q_mu, q_sqrt, xi_transform)
 
     def _natgrad_step(
-        self, loss_fn: Callable, q_mu: Parameter, q_sqrt: Parameter, xi_transform: XiTransform
+        self,
+        loss_fn: LossClosure,
+        q_mu: Parameter,
+        q_sqrt: Parameter,
+        xi_transform: Optional[XiTransform] = None,
     ):
         """
+        Computes gradients of loss_fn() w.r.t. q_mu and q_sqrt, and updates
+        these parameters using the natgrad backwards step.
+        """
+        with tf.GradientTape(watch_accessed_variables=False) as tape:
+            tape.watch([q_mu.unconstrained_variable, q_sqrt.unconstrained_variable])
+
+            loss = loss_fn()
+
+        q_mu_grad, q_sqrt_grad = tape.gradient(loss, [q_mu, q_sqrt])
+        self._natgrad_apply_gradients(q_mu_grad, q_sqrt_grad, q_mu, q_sqrt, xi_transform)
+
+    def _natgrad_apply_gradients(
+        self,
+        q_mu_grad: tf.Tensor,
+        q_sqrt_grad: tf.Tensor,
+        q_mu: Parameter,
+        q_sqrt: Parameter,
+        xi_transform: Optional[XiTransform] = None,
+    ):
+        """
+        This function does the backward step on the q_mu and q_sqrt parameters,
+        given the gradients of the loss function with respect to them. I.e.,
+        it expects the arguments to come from
+
+            with tf.GradientTape() as tape:
+                loss = loss_function()
+            q_mu_grad, q_mu_sqrt = tape.gradient(loss, [q_mu, q_sqrt])
+
         Implements equation [10] from
 
         @inproceedings{salimbeni18,
@@ -132,21 +178,29 @@ class NaturalGradient(tf.optimizers.Optimizer):
             year={2018}
 
         In addition, for convenience with the rest of GPflow, this code computes ∂L/∂η using
-        the chain rule:
+        the chain rule (the following assumes a numerator layout where the gradient is a row
+        vector; note that TensorFlow actually returns a column vector), where L is the loss:
 
-        ∂L/∂η = (∂L / ∂[q_μ, q_sqrt])(∂[q_μ, q_sqrt] / ∂η)
+        ∂L/∂η = (∂L / ∂[q_mu, q_sqrt])(∂[q_mu, q_sqrt] / ∂η)
 
         In total there are three derivative calculations:
-        natgrad L w.r.t ξ  = (∂ξ / ∂θ) [(∂L / ∂[q_μ, q_sqrt]) (∂[q_μ, q_sqrt] / ∂η)]^T
+        natgrad of L w.r.t ξ  = (∂ξ / ∂θ) [(∂L / ∂[q_mu, q_sqrt]) (∂[q_mu, q_sqrt] / ∂η)]ᵀ
 
-        Note that if ξ = θ or [q_μ, q_sqrt] some of these calculations are the identity.
+        Note that if ξ = θ (i.e. [q_mu, q_sqrt]) some of these calculations are the identity.
         In the code η = eta, ξ = xi, θ = nat.
         """
+        if xi_transform is None:
+            xi_transform = self.xi_transform
+
+        # 1) the ordinary gpflow gradient
+        dL_dmean = q_mu_grad
+        dL_dvarsqrt = q_sqrt.transform.forward(
+            q_sqrt_grad
+        )  # TODO should this be handled outside this function?
 
         with tf.GradientTape(persistent=True, watch_accessed_variables=False) as tape:
             tape.watch([q_mu.unconstrained_variable, q_sqrt.unconstrained_variable])
 
-            loss = loss_fn()
             # the three parameterizations as functions of [q_mu, q_sqrt]
             eta1, eta2 = meanvarsqrt_to_expectation(q_mu, q_sqrt)
             # we need these to calculate the relevant gradients
@@ -161,10 +215,6 @@ class NaturalGradient(tf.optimizers.Optimizer):
                     dummy_gradients = tape.gradient(
                         [xi1_nat, xi2_nat], [nat1, nat2], output_gradients=dummy_tensors
                     )
-
-        # 1) the ordinary gpflow gradient
-        dL_dmean, dL_dvarsqrt = tape.gradient(loss, [q_mu, q_sqrt])
-        dL_dvarsqrt = q_sqrt.transform.forward(dL_dvarsqrt)
 
         # 2) the chain rule to get ∂L/∂η, where η (eta) are the expectation parameters
         dL_deta1, dL_deta2 = tape.gradient(
@@ -184,7 +234,7 @@ class NaturalGradient(tf.optimizers.Optimizer):
         xi1_new = xi1 - self.gamma * nat_dL_xi1
         xi2_new = xi2 - self.gamma * nat_dL_xi2
 
-        # Transform back to the model parameters [q_μ, q_sqrt]
+        # Transform back to the model parameters [q_mu, q_sqrt]
         mean_new, varsqrt_new = xi_transform.xi_to_meanvarsqrt(xi1_new, xi2_new)
 
         q_mu.assign(mean_new)
@@ -192,9 +242,7 @@ class NaturalGradient(tf.optimizers.Optimizer):
 
     def get_config(self):
         config = super().get_config()
-        config.update(
-            {"gamma": self._serialize_hyperparameter("gamma"),}
-        )
+        config.update({"gamma": self._serialize_hyperparameter("gamma")})
         return config
 
 
