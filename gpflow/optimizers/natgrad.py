@@ -48,7 +48,8 @@ class XiTransform(metaclass=abc.ABCMeta):
     """
 
     @abc.abstractmethod
-    def meanvarsqrt_to_xi(self, mean, varsqrt):
+    @staticmethod
+    def meanvarsqrt_to_xi(mean, varsqrt):
         """
         Transforms the parameter `mean` and `varsqrt` to `xi1`, `xi2`
 
@@ -58,7 +59,8 @@ class XiTransform(metaclass=abc.ABCMeta):
         """
 
     @abc.abstractmethod
-    def xi_to_meanvarsqrt(self, xi1, xi2):
+    @staticmethod
+    def xi_to_meanvarsqrt(xi1, xi2):
         """
         Transforms the parameter `xi1`, `xi2` to `mean`, `varsqrt`
 
@@ -68,7 +70,8 @@ class XiTransform(metaclass=abc.ABCMeta):
         """
 
     @abc.abstractmethod
-    def naturals_to_xi(self, nat1, nat2):
+    @staticmethod
+    def naturals_to_xi(nat1, nat2):
         """
         Applies the transform so that `nat1`, `nat2` is mapped to `xi1`, `xi2`
 
@@ -85,13 +88,16 @@ class XiNat(XiTransform):
     of Gaussian likelihood.
     """
 
-    def meanvarsqrt_to_xi(self, mean, varsqrt):
+    @staticmethod
+    def meanvarsqrt_to_xi(mean, varsqrt):
         return meanvarsqrt_to_natural(mean, varsqrt)
 
-    def xi_to_meanvarsqrt(self, xi1, xi2):
+    @staticmethod
+    def xi_to_meanvarsqrt(xi1, xi2):
         return natural_to_meanvarsqrt(xi1, xi2)
 
-    def naturals_to_xi(self, nat1, nat2):
+    @staticmethod
+    def naturals_to_xi(nat1, nat2):
         return nat1, nat2
 
 
@@ -101,13 +107,16 @@ class XiSqrtMeanVar(XiTransform):
     so saves the conversion to and from Xi.
     """
 
-    def meanvarsqrt_to_xi(self, mean, varsqrt):
+    @staticmethod
+    def meanvarsqrt_to_xi(mean, varsqrt):
         return mean, varsqrt
 
-    def xi_to_meanvarsqrt(self, xi1, xi2):
+    @staticmethod
+    def xi_to_meanvarsqrt(xi1, xi2):
         return xi1, xi2
 
-    def naturals_to_xi(self, nat1, nat2):
+    @staticmethod
+    def naturals_to_xi(nat1, nat2):
         return natural_to_meanvarsqrt(nat1, nat2)
 
 
