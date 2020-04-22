@@ -14,7 +14,7 @@
 
 import abc
 import functools
-from typing import Callable, Sequence, Tuple, Union
+from typing import Callable, Optional, Sequence, Tuple, Union
 
 import numpy as np
 import tensorflow as tf
