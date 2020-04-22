@@ -14,7 +14,7 @@
 
 import abc
 import functools
-from typing import Callable, List, Union, Tuple
+from typing import Callable, Sequence, Tuple, Union
 
 import numpy as np
 import tensorflow as tf
@@ -23,6 +23,7 @@ from ..base import Parameter
 
 Scalar = Union[float, tf.Tensor, np.ndarray]
 LossClosure = Callable[[], tf.Tensor]
+NatGradParameters = Union[Tuple[Parameter, Parameter], Tuple[Parameter, Parameter, "XiTransform"]]
 
 __all__ = [
     "NaturalGradient",
@@ -83,11 +84,7 @@ class NaturalGradient(tf.optimizers.Optimizer):
         self.xi_transform = xi_transform
 
     def minimize(
-        self,
-        loss_fn: LossClosure,
-        var_list: List[
-            Union[Tuple[Parameter, Parameter], Tuple[Parameter, Parameter, XiTransform]]
-        ],
+        self, loss_fn: LossClosure, var_list: Sequence[NatGradParameters],
     ):
         """
         Minimizes objective function of the model.
@@ -114,7 +111,7 @@ class NaturalGradient(tf.optimizers.Optimizer):
         self._natgrad_steps(loss_fn, parameters)
 
     def _natgrad_steps(
-        self, loss_fn: LossClosure, parameters: List[Tuple[Parameter, Parameter, XiTransform]]
+        self, loss_fn: LossClosure, parameters: Sequence[Tuple[Parameter, Parameter, XiTransform]]
     ):
         q_mus, q_sqrts, xis = zip(*parameters)
         unconstrained_variables = [
@@ -146,10 +143,9 @@ class NaturalGradient(tf.optimizers.Optimizer):
         """
         with tf.GradientTape(watch_accessed_variables=False) as tape:
             tape.watch([q_mu.unconstrained_variable, q_sqrt.unconstrained_variable])
-
             loss = loss_fn()
-
         q_mu_grad, q_sqrt_grad = tape.gradient(loss, [q_mu, q_sqrt])
+
         self._natgrad_apply_gradients(q_mu_grad, q_sqrt_grad, q_mu, q_sqrt, xi_transform)
 
     def _natgrad_apply_gradients(
