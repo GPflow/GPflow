@@ -19,7 +19,7 @@ from typing import Callable, Optional, Sequence, Tuple, Union
 import numpy as np
 import tensorflow as tf
 
-from ..base import Parameter
+from ..base import Parameter, _to_constrained
 
 Scalar = Union[float, tf.Tensor, np.ndarray]
 LossClosure = Callable[[], tf.Tensor]
@@ -179,12 +179,15 @@ class NaturalGradient(tf.optimizers.Optimizer):
         self._natgrad_steps(loss_fn, parameters)
 
     def _natgrad_steps(
-        self, loss_fn: LossClosure, parameters: Sequence[Tuple[Parameter, Parameter, XiTransform]]
+        self, loss_fn: LossClosure, parameters: Sequence[Tuple[Parameter, Parameter, Optional[XiTransform]]]
     ):
         """
         Computes gradients of loss_fn() w.r.t. q_mu and q_sqrt, and updates
         these parameters using the natgrad backwards step, for all sets of
-        variational parameters.
+        variational parameters passed in.
+
+        :param loss_fn: Loss function.
+        :param parameters: List of tuples (q_mu, q_sqrt, xi_transform)
         """
         q_mus, q_sqrts, xis = zip(*parameters)
         unconstrained_variables = [
@@ -196,6 +199,7 @@ class NaturalGradient(tf.optimizers.Optimizer):
             loss = loss_fn()
 
         q_mu_grads, q_sqrt_grads = tape.gradient(loss, [q_mus, q_sqrts])
+        # NOTE that these are the gradients in *unconstrained* space
 
         with tf.name_scope(f"{self._name}/natural_gradient_steps"):
             for q_mu_grad, q_sqrt_grad, q_mu, q_sqrt, xi_transform in zip(
@@ -213,12 +217,14 @@ class NaturalGradient(tf.optimizers.Optimizer):
     ):
         """
         This function does the backward step on the q_mu and q_sqrt parameters,
-        given the gradients of the loss function with respect to them. I.e.,
-        it expects the arguments to come from
+        given the gradients of the loss function with respect to their unconstrained
+        variables. I.e., it expects the arguments to come from
 
             with tf.GradientTape() as tape:
                 loss = loss_function()
             q_mu_grad, q_mu_sqrt = tape.gradient(loss, [q_mu, q_sqrt])
+
+        (Note that tape.gradient() returns the gradients in *unconstrained* space!)
 
         Implements equation [10] from
 
@@ -239,13 +245,19 @@ class NaturalGradient(tf.optimizers.Optimizer):
 
         Note that if ξ = θ (i.e. [q_mu, q_sqrt]) some of these calculations are the identity.
         In the code η = eta, ξ = xi, θ = nat.
+
+        :param q_mu_grad: gradient of loss w.r.t. q_mu (in unconstrained space)
+        :param q_sqrt_grad: gradient of loss w.r.t. q_sqrt (in unconstrained space)
+        :param q_mu: parameter for the mean of q(u)
+        :param q_sqrt: parameter for the square root of the covariance of q(u)
+        :param xi_transform: the ξ transform to use (self.xi_transform if not specified)
         """
         if xi_transform is None:
             xi_transform = self.xi_transform
 
         # 1) the ordinary gpflow gradient
-        dL_dmean = q_mu_grad
-        dL_dvarsqrt = q_sqrt.transform.forward(q_sqrt_grad)
+        dL_dmean = _to_constrained(q_mu_grad, q_mu.transform)
+        dL_dvarsqrt = _to_constrained(q_sqrt_grad, q_sqrt.transform)
 
         with tf.GradientTape(persistent=True, watch_accessed_variables=False) as tape:
             tape.watch([q_mu.unconstrained_variable, q_sqrt.unconstrained_variable])
