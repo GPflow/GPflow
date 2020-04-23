@@ -28,8 +28,8 @@ NatGradParameters = Union[Tuple[Parameter, Parameter], Tuple[Parameter, Paramete
 __all__ = [
     "NaturalGradient",
     "XiTransform",
-    "XiSqrtMeanVar",
     "XiNat",
+    "XiSqrtMeanVar",
 ]
 
 
@@ -121,10 +121,31 @@ class XiSqrtMeanVar(XiTransform):
 
 
 class NaturalGradient(tf.optimizers.Optimizer):
-    def __init__(self, gamma: Scalar, xi_transform: XiTransform = XiNat(), name=None):
+    """
+    Implements a natural gradient descent optimizer for variational models
+    that are based on a distribution q(u) = N(q_mu, q_sqrt q_sqrtᵀ) that is
+    parameterized by mean q_mu and lower-triangular Cholesky factor q_sqrt
+    of the covariance.
+
+    Note that this optimizer does not implement the standard API of
+    tf.optimizers.Optimizer. Its only public method is minimize(), which has
+    a custom signature (var_list needs to be a list of (q_mu, q_sqrt) tuples,
+    where q_mu and q_sqrt are gpflow.Parameter instances, not tf.Variable).
+
+    When using in your work, please cite
+
+        @inproceedings{salimbeni18,
+            title={Natural Gradients in Practice: Non-Conjugate Variational Inference in Gaussian Process Models},
+            author={Salimbeni, Hugh and Eleftheriadis, Stefanos and Hensman, James},
+            booktitle={AISTATS},
+            year={2018}
+    """
+
+    def __init__(self, gamma: Scalar, xi_transform: Type[XiTransform] = XiNat, name=None):
         """
         :param gamma: natgrad step length
-        :param xi_transform: default ξ transform
+        :param xi_transform: default ξ transform (can be overridden in the call to minimize())
+            The XiNat default choice works well in general.
         """
         name = self.__class__.__name__ if name is None else name
         super().__init__(name)
@@ -203,7 +224,7 @@ class NaturalGradient(tf.optimizers.Optimizer):
         Implements equation [10] from
 
         @inproceedings{salimbeni18,
-            title={Natural Gradients in Practice: Non-Conjugate  Variational Inference in Gaussian Process Models},
+            title={Natural Gradients in Practice: Non-Conjugate Variational Inference in Gaussian Process Models},
             author={Salimbeni, Hugh and Eleftheriadis, Stefanos and Hensman, James},
             booktitle={AISTATS},
             year={2018}
