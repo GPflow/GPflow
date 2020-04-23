@@ -245,9 +245,7 @@ class NaturalGradient(tf.optimizers.Optimizer):
 
         # 1) the ordinary gpflow gradient
         dL_dmean = q_mu_grad
-        dL_dvarsqrt = q_sqrt.transform.forward(
-            q_sqrt_grad
-        )
+        dL_dvarsqrt = q_sqrt.transform.forward(q_sqrt_grad)
 
         with tf.GradientTape(persistent=True, watch_accessed_variables=False) as tape:
             tape.watch([q_mu.unconstrained_variable, q_sqrt.unconstrained_variable])
