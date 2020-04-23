@@ -179,7 +179,9 @@ class NaturalGradient(tf.optimizers.Optimizer):
         self._natgrad_steps(loss_fn, parameters)
 
     def _natgrad_steps(
-        self, loss_fn: LossClosure, parameters: Sequence[Tuple[Parameter, Parameter, Optional[XiTransform]]]
+        self,
+        loss_fn: LossClosure,
+        parameters: Sequence[Tuple[Parameter, Parameter, Optional[XiTransform]]],
     ):
         """
         Computes gradients of loss_fn() w.r.t. q_mu and q_sqrt, and updates
