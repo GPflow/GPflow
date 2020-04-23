@@ -141,7 +141,7 @@ class NaturalGradient(tf.optimizers.Optimizer):
             year={2018}
     """
 
-    def __init__(self, gamma: Scalar, xi_transform: Type[XiTransform] = XiNat, name=None):
+    def __init__(self, gamma: Scalar, xi_transform: XiTransform = XiNat(), name=None):
         """
         :param gamma: natgrad step length
         :param xi_transform: default ξ transform (can be overridden in the call to minimize())
@@ -158,11 +158,6 @@ class NaturalGradient(tf.optimizers.Optimizer):
         """
         Minimizes objective function of the model.
         Natural Gradient optimizer works with variational parameters only.
-        There are two supported ways of transformation for parameters:
-            - XiNat
-            - XiSqrtMeanVar
-        Custom transformations are also possible, they should implement the
-        `XiTransform` interface.
 
         :param loss_fn: Loss function.
         :param var_list: List of pair tuples of variational parameters or
@@ -175,6 +170,10 @@ class NaturalGradient(tf.optimizers.Optimizer):
                 (q_mu2, q_sqrt2, XiSqrtMeanVar())
             ]
             ```
+
+        GPflow implements the `XiNat` (default) and `XiSqrtMeanVar` transformations
+        for parameters. Custom transformations that implement the `XiTransform`
+        interface are also possible.
         """
         parameters = [(v[0], v[1], (v[2] if len(v) > 2 else None)) for v in var_list]
         self._natgrad_steps(loss_fn, parameters)
@@ -248,7 +247,7 @@ class NaturalGradient(tf.optimizers.Optimizer):
         dL_dmean = q_mu_grad
         dL_dvarsqrt = q_sqrt.transform.forward(
             q_sqrt_grad
-        )  # TODO should this be handled outside this function?
+        )
 
         with tf.GradientTape(persistent=True, watch_accessed_variables=False) as tape:
             tape.watch([q_mu.unconstrained_variable, q_sqrt.unconstrained_variable])
