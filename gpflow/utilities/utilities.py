@@ -51,7 +51,8 @@ def set_trainable(model: tf.Module, flag: bool):
     Set trainable flag for all `tf.Variable`s and `gpflow.Parameter`s in a module.
     """
     for variable in model.variables:
-        variable._trainable = flag
+        if "jitter" not in variable.name:
+            variable._trainable = flag
 
 
 def multiple_assign(module: tf.Module, parameters: Dict[str, tf.Tensor]):

@@ -22,11 +22,12 @@ from .model import GPModel, InputData, RegressionData, MeanAndVariance
 from .training_mixins import InternalDataTrainingLossMixin
 from .util import inducingpoint_wrapper
 from .. import likelihoods
+from ..base import Parameter
 from ..config import default_float, default_jitter
 from ..covariances.dispatch import Kuf, Kuu
 from ..inducing_variables import InducingPoints
 from ..mean_functions import MeanFunction
-from ..utilities import to_default_float
+from ..utilities import to_default_float, positive
 
 
 class SGPRBase(GPModel, InternalDataTrainingLossMixin):
@@ -64,6 +65,9 @@ class SGPRBase(GPModel, InternalDataTrainingLossMixin):
         self.num_data = X_data.shape[0]
 
         self.inducing_variable = inducingpoint_wrapper(inducing_variable)
+        self.jitter_variance = Parameter(
+            default_jitter(), transform=positive(0.0), trainable=False, name="jitter"
+        )
 
     def upper_bound(self) -> tf.Tensor:
         """
