@@ -103,7 +103,7 @@ class SGPRBase(GPModel, InternalDataTrainingLossMixin):
         num_data = to_default_float(tf.shape(Y_data)[0])
 
         Kdiag = self.kernel(X_data, full_cov=False)
-        kuu = Kuu(self.inducing_variable, self.kernel, jitter=default_jitter())
+        kuu = Kuu(self.inducing_variable, self.kernel, jitter=self.jitter_variance)
         kuf = Kuf(self.inducing_variable, self.kernel, X_data)
 
         I = tf.eye(tf.shape(kuu)[0], dtype=default_float())
@@ -172,7 +172,7 @@ class SGPR(SGPRBase):
         err = Y_data - self.mean_function(X_data)
         Kdiag = self.kernel(X_data, full_cov=False)
         kuf = Kuf(self.inducing_variable, self.kernel, X_data)
-        kuu = Kuu(self.inducing_variable, self.kernel, jitter=default_jitter())
+        kuu = Kuu(self.inducing_variable, self.kernel, jitter=self.jitter_variance)
         L = tf.linalg.cholesky(kuu)
         sigma = tf.sqrt(self.likelihood.variance)
 
@@ -205,7 +205,7 @@ class SGPR(SGPRBase):
         num_inducing = len(self.inducing_variable)
         err = Y_data - self.mean_function(X_data)
         kuf = Kuf(self.inducing_variable, self.kernel, X_data)
-        kuu = Kuu(self.inducing_variable, self.kernel, jitter=default_jitter())
+        kuu = Kuu(self.inducing_variable, self.kernel, jitter=self.jitter_variance)
         Kus = Kuf(self.inducing_variable, self.kernel, Xnew)
         sigma = tf.sqrt(self.likelihood.variance)
         L = tf.linalg.cholesky(kuu)
@@ -243,7 +243,7 @@ class SGPR(SGPRBase):
         X_data, Y_data = self.data
 
         kuf = Kuf(self.inducing_variable, self.kernel, X_data)
-        kuu = Kuu(self.inducing_variable, self.kernel, jitter=default_jitter())
+        kuu = Kuu(self.inducing_variable, self.kernel, jitter=self.jitter_variance)
 
         sig = kuu + (self.likelihood.variance ** -1) * tf.matmul(kuf, kuf, transpose_b=True)
         sig_sqrt = tf.linalg.cholesky(sig)
@@ -290,7 +290,7 @@ class GPRFITC(SGPRBase):
         err = Y_data - self.mean_function(X_data)  # size [N, R]
         Kdiag = self.kernel(X_data, full_cov=False)
         kuf = Kuf(self.inducing_variable, self.kernel, X_data)
-        kuu = Kuu(self.inducing_variable, self.kernel, jitter=default_jitter())
+        kuu = Kuu(self.inducing_variable, self.kernel, jitter=self.jitter_variance)
 
         Luu = tf.linalg.cholesky(kuu)  # => Luu Luu^T = kuu
         V = tf.linalg.triangular_solve(Luu, kuf)  # => V^T V = Qff = kuf^T kuu^-1 kuf
