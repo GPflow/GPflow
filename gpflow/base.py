@@ -305,7 +305,6 @@ class Parameter(tf.Module):
 Parameter._OverloadAllOperators()
 tf.register_tensor_conversion_function(Parameter, lambda x, *args, **kwds: x.read_value())
 
-
 TensorType = Union[np.ndarray, tf.Tensor, tf.Variable, Parameter]
 """
 Type alias for tensor-like types that are supported by most TensorFlow, NumPy and GPflow operations.
@@ -313,7 +312,6 @@ Type alias for tensor-like types that are supported by most TensorFlow, NumPy an
 NOTE: Union types like this do not work with the `register` method of multipledispatch's
 `Dispatcher` class. Instead use `TensorLike` for dispatching on tensor-like types.
 """
-
 
 # We've left this as object until we've tested the performance consequences of using the full set
 # (np.ndarray, tf.Tensor, tf.Variable, Parameter), see https://github.com/GPflow/GPflow/issues/1434

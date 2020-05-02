@@ -17,6 +17,10 @@ from typing import Optional
 import numpy as np
 import tensorflow as tf
 
+from .gpr import GPR
+from .model import GPModel, MeanAndVariance
+from .training_mixins import InputData, OutputData, InternalDataTrainingLossMixin
+from .util import inducingpoint_wrapper
 from .. import covariances, kernels, likelihoods
 from ..base import Parameter
 from ..config import default_float, default_jitter
@@ -27,10 +31,6 @@ from ..mean_functions import MeanFunction, Zero
 from ..probability_distributions import DiagonalGaussian
 from ..utilities import positive, to_default_float
 from ..utilities.ops import pca_reduce
-from .gpr import GPR
-from .model import InputData, OutputData, GPModel, MeanAndVariance
-from .training_mixins import InternalDataTrainingLossMixin
-from .util import inducingpoint_wrapper
 
 
 class GPLVM(GPR):
