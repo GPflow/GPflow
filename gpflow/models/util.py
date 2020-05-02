@@ -1,9 +1,11 @@
 from typing import Callable, Union
+
 import numpy as np
 import tensorflow as tf
 
+from .model import BayesianModel
+from .training_mixins import Data, ExternalDataTrainingLossMixin
 from ..inducing_variables import InducingVariables, InducingPoints
-from .model import Data, BayesianModel, ExternalDataTrainingLossMixin
 
 
 def inducingpoint_wrapper(
