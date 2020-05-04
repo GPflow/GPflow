@@ -4,9 +4,10 @@ from typing import Callable, Union
 import numpy as np
 import tensorflow as tf
 
-from ..inducing_variables import InducingPoints, InducingVariables
 from ..config import default_float
-from .model import BayesianModel, Data, ExternalDataTrainingLossMixin
+from ..inducing_variables import InducingPoints, InducingVariables
+from .model import BayesianModel
+from .training_mixins import Data, ExternalDataTrainingLossMixin
 
 
 def inducingpoint_wrapper(

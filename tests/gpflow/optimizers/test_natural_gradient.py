@@ -152,13 +152,16 @@ def test_svgp_vs_sgpr(sgpr_and_svgp):
 
 
 class XiEta(gpflow.optimizers.XiTransform):
-    def meanvarsqrt_to_xi(self, mean: tf.Tensor, varsqrt: tf.Tensor) -> tf.Tensor:
+    @staticmethod
+    def meanvarsqrt_to_xi(mean: tf.Tensor, varsqrt: tf.Tensor) -> tf.Tensor:
         return gpflow.optimizers.natgrad.meanvarsqrt_to_expectation(mean, varsqrt)
 
-    def xi_to_meanvarsqrt(self, xi1: tf.Tensor, xi2: tf.Tensor) -> tf.Tensor:
+    @staticmethod
+    def xi_to_meanvarsqrt(xi1: tf.Tensor, xi2: tf.Tensor) -> tf.Tensor:
         return gpflow.optimizers.natgrad.expectation_to_meanvarsqrt(xi1, xi2)
 
-    def naturals_to_xi(self, nat1: tf.Tensor, nat2: tf.Tensor) -> tf.Tensor:
+    @staticmethod
+    def naturals_to_xi(nat1: tf.Tensor, nat2: tf.Tensor) -> tf.Tensor:
         return gpflow.optimizers.natgrad.natural_to_expectation(nat1, nat2)
 
 

@@ -28,8 +28,8 @@ from ..probability_distributions import DiagonalGaussian
 from ..utilities import positive, to_default_float
 from ..utilities.ops import pca_reduce
 from .gpr import GPR
-from .model import GPModel, InputData, MeanAndVariance, OutputData
-from .training_mixins import InternalDataTrainingLossMixin
+from .model import GPModel, MeanAndVariance
+from .training_mixins import InputData, InternalDataTrainingLossMixin, OutputData
 from .util import data_input_to_tensor, inducingpoint_wrapper
 
 
