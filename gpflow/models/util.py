@@ -5,7 +5,7 @@ import numpy as np
 import tensorflow as tf
 
 from ..inducing_variables import InducingPoints, InducingVariables
-from ..utilities import default_float
+from ..config import default_float
 from .model import BayesianModel, Data, ExternalDataTrainingLossMixin
 
 
