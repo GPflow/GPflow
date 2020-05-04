@@ -371,11 +371,12 @@ class ScalarLikelihood(Likelihood):
         :returns: mean and variance, both with shape [..., observation_dim]
         """
 
-        def integrand(*X):
+        def conditional_y_squared(*X):
             return self.conditional_variance(*X) + self.conditional_mean(*X) ** 2
 
-        integrands = [self.conditional_mean, integrand]
-        E_y, E_y2 = ndiagquad(integrands, self.num_gauss_hermite_points, Fmu, Fvar)
+        E_y, E_y2 = ndiagquad(
+            [self.conditional_mean, conditional_y_squared], self.num_gauss_hermite_points, Fmu, Fvar
+        )
         V_y = E_y2 - E_y ** 2
         return E_y, V_y
 
