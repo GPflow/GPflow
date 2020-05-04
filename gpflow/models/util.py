@@ -63,7 +63,7 @@ def data_input_to_tensor(structure):
     """
 
     def convert_to_tensor(elem):
-        if not (tf.is_tensor(elem) or isinstance(elem, Iterator)):
+        if tf.is_tensor(elem) or isinstance(elem, Iterator):
             return elem
         return tf.convert_to_tensor(elem, dtype=default_float())
 
