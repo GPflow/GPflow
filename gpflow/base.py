@@ -35,6 +35,7 @@ class Module(tf.Module):
 
     def _representation_table(self, object_name, tablefmt):
         from .utilities import leaf_components, tabulate_module_summary
+
         repr_components = [object_name]
         if leaf_components(self):
             repr_components.append(tabulate_module_summary(self, tablefmt=tablefmt))
@@ -43,6 +44,7 @@ class Module(tf.Module):
     def _repr_html_(self):
         """ Nice representation of GPflow objects in IPython/Jupyter notebooks """
         from html import escape
+
         return self._representation_table(escape(repr(self)), "html")
 
     def _repr_pretty_(self, p, cycle):
