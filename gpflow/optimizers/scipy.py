@@ -1,4 +1,4 @@
-from typing import Callable, Iterable, List, Tuple, Optional, TypeVar
+from typing import Callable, Iterable, List, Optional, Tuple, TypeVar, Union
 
 import numpy as np
 import scipy.optimize
