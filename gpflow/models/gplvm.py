@@ -28,9 +28,9 @@ from ..probability_distributions import DiagonalGaussian
 from ..utilities import positive, to_default_float
 from ..utilities.ops import pca_reduce
 from .gpr import GPR
-from .model import InputData, OutputData, GPModel, MeanAndVariance
+from .model import GPModel, InputData, MeanAndVariance, OutputData
 from .training_mixins import InternalDataTrainingLossMixin
-from .util import inducingpoint_wrapper
+from .util import data_input_to_tensor, inducingpoint_wrapper
 
 
 class GPLVM(GPR):
@@ -72,7 +72,7 @@ class GPLVM(GPR):
         if data.shape[1] < num_latent_gps:
             raise ValueError("More latent dimensions than observed.")
 
-        gpr_data = (Parameter(X_data_mean), data)
+        gpr_data = (Parameter(X_data_mean), data_input_to_tensor(data))
         super().__init__(gpr_data, kernel, mean_function=mean_function)
 
 
@@ -103,18 +103,18 @@ class BayesianGPLVM(GPModel, InternalDataTrainingLossMixin):
         """
         num_data, num_latent_gps = X_data_mean.shape
         super().__init__(kernel, likelihoods.Gaussian(), num_latent_gps=num_latent_gps)
-        self.data = data
+        self.data = data_input_to_tensor(data)
         assert X_data_var.ndim == 2
 
         self.X_data_mean = Parameter(X_data_mean)
         self.X_data_var = Parameter(X_data_var, transform=positive())
 
         self.num_data = num_data
-        self.output_dim = data.shape[-1]
+        self.output_dim = self.data.shape[-1]
 
         assert np.all(X_data_mean.shape == X_data_var.shape)
-        assert X_data_mean.shape[0] == data.shape[0], "X mean and Y must be same size."
-        assert X_data_var.shape[0] == data.shape[0], "X var and Y must be same size."
+        assert X_data_mean.shape[0] == self.data.shape[0], "X mean and Y must be same size."
+        assert X_data_var.shape[0] == self.data.shape[0], "X var and Y must be same size."
 
         if (inducing_variable is None) == (num_inducing_variables is None):
             raise ValueError(

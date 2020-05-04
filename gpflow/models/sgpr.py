@@ -18,15 +18,16 @@ import numpy as np
 import tensorflow as tf
 
 from gpflow.kernels import Kernel
+
 from .. import likelihoods
 from ..config import default_float, default_jitter
 from ..covariances.dispatch import Kuf, Kuu
 from ..inducing_variables import InducingPoints
-from ..mean_functions import Zero, MeanFunction
+from ..mean_functions import MeanFunction, Zero
 from ..utilities import to_default_float
-from .model import GPModel, InputData, RegressionData, MeanAndVariance
+from .model import GPModel, InputData, MeanAndVariance, RegressionData
 from .training_mixins import InternalDataTrainingLossMixin
-from .util import inducingpoint_wrapper
+from .util import data_input_to_tensor, inducingpoint_wrapper
 
 
 class SGPRBase(GPModel, InternalDataTrainingLossMixin):
@@ -56,11 +57,11 @@ class SGPRBase(GPModel, InternalDataTrainingLossMixin):
         initialized to `noise_variance`.
         """
         likelihood = likelihoods.Gaussian(noise_variance)
-        X_data, Y_data = data
+        X_data, Y_data = data_input_to_tensor(data)
         num_latent_gps = Y_data.shape[-1] if num_latent_gps is None else num_latent_gps
         super().__init__(kernel, likelihood, mean_function, num_latent_gps=num_latent_gps)
 
-        self.data = data
+        self.data = X_data, Y_data
         self.num_data = X_data.shape[0]
 
         self.inducing_variable = inducingpoint_wrapper(inducing_variable)

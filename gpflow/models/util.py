@@ -1,9 +1,12 @@
+from collections import Iterator
 from typing import Callable, Union
+
 import numpy as np
 import tensorflow as tf
 
-from ..inducing_variables import InducingVariables, InducingPoints
-from .model import Data, BayesianModel, ExternalDataTrainingLossMixin
+from ..inducing_variables import InducingPoints, InducingVariables
+from ..utilities import default_float
+from .model import BayesianModel, Data, ExternalDataTrainingLossMixin
 
 
 def inducingpoint_wrapper(
@@ -50,3 +53,18 @@ def maximum_log_likelihood_objective(model: BayesianModel, data: Data) -> tf.Ten
     else:
         _assert_equal_data(model.data, data)
         return model.maximum_log_likelihood_objective()
+
+
+def data_input_to_tensor(structure):
+    """
+    Converts non-tensor elements of a structure to TensorFlow tensors retaining the structure itself.
+    The function doesn't keep original element's dtype and forcefully converts
+    them to GPflow's default float type.
+    """
+
+    def convert_to_tensor(elem):
+        if not (tf.is_tensor(elem) or isinstance(elem, Iterator)):
+            return elem
+        return tf.convert_to_tensor(elem, dtype=default_float())
+
+    return tf.nest.map_structure(convert_to_tensor, structure)
