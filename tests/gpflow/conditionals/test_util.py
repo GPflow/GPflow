@@ -47,6 +47,23 @@ def test_leading_transpose_fails():
         leading_transpose(a, [-1, -2])
 
 
+def test_leading_transpose_with_tf_function_wrapper(caplog):
+    """ Check that no warnings are thrown when compiling `leading_transpose` """
+    dims = [1, 2, 3, 4]
+    a = tf.zeros(dims)
+
+    @tf.function
+    def compiled_wrapper():
+        return leading_transpose(a, [..., -1, -2])
+
+    compiled_wrapper()
+
+    # When Autograph cannot compile a function it sends a WARNING message to the
+    # logs.
+    log_message_levels = [record.levelname for record in caplog.records]
+    assert "WARNING" not in log_message_levels
+
+
 # rollaxis
 @pytest.mark.parametrize("rolls", [1, 2])
 @pytest.mark.parametrize("direction", ["left", "right"])

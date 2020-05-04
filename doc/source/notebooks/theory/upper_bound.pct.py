@@ -19,11 +19,10 @@
 # See the [`gp_upper` repository](https://github.com/markvdw/gp_upper) by Mark van der Wilk for code to tighten the upper bound through optimization, and a more comprehensive discussion.
 
 # %%
-import matplotlib
+import matplotlib.pyplot as plt
 
 # %matplotlib inline
-matplotlib.rcParams["figure.figsize"] = (12, 6)
-plt = matplotlib.pyplot
+plt.rcParams["figure.figsize"] = (12, 6)
 
 import numpy as np
 import tensorflow as tf

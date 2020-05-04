@@ -261,13 +261,12 @@ X = np.vstack(
 )
 Y = np.repeat(np.eye(3), 10, 0)
 
-from matplotlib import pyplot as plt
+import matplotlib.pyplot as plt
 
 plt.style.use("ggplot")
 # %matplotlib inline
-import matplotlib
 
-matplotlib.rcParams["figure.figsize"] = (12, 6)
+plt.rcParams["figure.figsize"] = (12, 6)
 _ = plt.scatter(X[:, 0], X[:, 1], 100, np.argmax(Y, 1), lw=2, cmap=plt.cm.viridis)
 
 # %%

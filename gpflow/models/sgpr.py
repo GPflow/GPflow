@@ -18,15 +18,15 @@ import numpy as np
 import tensorflow as tf
 
 from gpflow.kernels import Kernel
+from .model import GPModel, InputData, RegressionData, MeanAndVariance
+from .training_mixins import InternalDataTrainingLossMixin
+from .util import inducingpoint_wrapper
 from .. import likelihoods
 from ..config import default_float, default_jitter
 from ..covariances.dispatch import Kuf, Kuu
 from ..inducing_variables import InducingPoints
-from ..mean_functions import Zero, MeanFunction
+from ..mean_functions import MeanFunction
 from ..utilities import to_default_float
-from .model import GPModel, InputData, RegressionData, MeanAndVariance
-from .training_mixins import InternalDataTrainingLossMixin
-from .util import inducingpoint_wrapper
 
 
 class SGPRBase(GPModel, InternalDataTrainingLossMixin):
