@@ -82,6 +82,26 @@ class Parameter(tf.Module):
                 unconstrained_value, dtype=dtype, name=name, trainable=trainable
             )
 
+    @property
+    def _constraint(self):
+        # Duck Taping TF Variables
+        return self._unconstrained._constraint
+
+    @property
+    def aggregation(self):
+        # Duck Taping TF Variables
+        return self._unconstrained.aggregation
+
+    @property
+    def synchronization(self):
+        # Duck Taping TF Variables
+        return self._unconstrained.synchronization
+
+    @property
+    def _shared_name(self):
+        # Duck Taping TF Variables
+        return 'Variable'
+
     def log_prior_density(self):
         """ Log of the prior probability density of the constrained variable. """
 
