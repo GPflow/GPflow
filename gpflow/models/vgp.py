@@ -27,8 +27,9 @@ from ..kullback_leiblers import gauss_kl
 from ..likelihoods import Likelihood
 from ..mean_functions import MeanFunction, Zero
 from ..utilities import triangular
-from .model import RegressionData, InputData, MeanAndVariance, GPModel
+from .model import GPModel, InputData, MeanAndVariance, RegressionData
 from .training_mixins import InternalDataTrainingLossMixin
+from .util import data_input_to_tensor, inducingpoint_wrapper
 
 
 class VGP(GPModel, InternalDataTrainingLossMixin):
@@ -66,10 +67,10 @@ class VGP(GPModel, InternalDataTrainingLossMixin):
             num_latent_gps = self.calc_num_latent_gps_from_data(data, kernel, likelihood)
         super().__init__(kernel, likelihood, mean_function, num_latent_gps)
 
-        X_data, Y_data = data
+        self.data = data_input_to_tensor(data)
+        X_data, Y_data = self.data
         num_data = X_data.shape[0]
         self.num_data = num_data
-        self.data = data
 
         self.q_mu = Parameter(np.zeros((num_data, self.num_latent_gps)))
         q_sqrt = np.array([np.eye(num_data) for _ in range(self.num_latent_gps)])
@@ -163,8 +164,8 @@ class VGPOpperArchambeau(GPModel, InternalDataTrainingLossMixin):
             num_latent_gps = self.calc_num_latent_gps_from_data(data, kernel, likelihood)
         super().__init__(kernel, likelihood, mean_function, num_latent_gps)
 
-        X_data, Y_data = data
-        self.data = data
+        self.data = data_input_to_tensor(data)
+        X_data, Y_data = self.data
         self.num_data = X_data.shape[0]
         self.q_alpha = Parameter(np.zeros((self.num_data, self.num_latent_gps)))
         self.q_lambda = Parameter(
