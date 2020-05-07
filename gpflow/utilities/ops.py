@@ -6,6 +6,9 @@ import tensorflow_probability as tfp
 import numpy as np
 
 
+EllipsisType = type(...)
+
+
 def cast(
     value: Union[tf.Tensor, np.ndarray], dtype: tf.DType, name: Optional[str] = None
 ) -> tf.Tensor:
@@ -23,7 +26,7 @@ def eye(num: int, value: tf.Tensor, dtype: Optional[tf.DType] = None) -> tf.Tens
 
 
 def leading_transpose(
-    tensor: tf.Tensor, perm: List[Union[int, type(...)]], leading_dim: int = 0
+    tensor: tf.Tensor, perm: List[Union[int, EllipsisType]], leading_dim: int = 0
 ) -> tf.Tensor:
     """
     Transposes tensors with leading dimensions. Leading dimensions in

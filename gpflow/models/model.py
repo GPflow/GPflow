@@ -13,28 +13,17 @@
 # limitations under the License.
 
 import abc
-import warnings
-from typing import Callable, Optional, Tuple, TypeVar
+from typing import Optional, Tuple
 
-import numpy as np
 import tensorflow as tf
 
-from .training_mixins import (
-    InternalDataTrainingLossMixin,
-    ExternalDataTrainingLossMixin,
-    InputData,
-    OutputData,
-    RegressionData,
-    Data,
-)
-
+from .training_mixins import InputData, RegressionData
 from ..base import Module
 from ..conditionals.util import sample_mvn
-from ..config import default_float, default_jitter
 from ..kernels import Kernel, MultioutputKernel
 from ..likelihoods import Likelihood, SwitchedLikelihood
 from ..mean_functions import MeanFunction, Zero
-from ..utilities import ops, to_default_float
+from ..utilities import to_default_float
 
 MeanAndVariance = Tuple[tf.Tensor, tf.Tensor]
 
@@ -205,15 +194,14 @@ class GPModel(BayesianModel):
             # cov: [..., P, N, N]
             mean_for_sample = tf.linalg.adjoint(mean)  # [..., P, N]
             samples = sample_mvn(
-                mean_for_sample, cov, "full", num_samples=num_samples
+                mean_for_sample, cov, full_cov, num_samples=num_samples
             )  # [..., (S), P, N]
             samples = tf.linalg.adjoint(samples)  # [..., (S), N, P]
         else:
             # mean: [..., N, P]
             # cov: [..., N, P] or [..., N, P, P]
-            cov_structure = "full" if full_output_cov else "diag"
             samples = sample_mvn(
-                mean, cov, cov_structure, num_samples=num_samples
+                mean, cov, full_output_cov, num_samples=num_samples
             )  # [..., (S), N, P]
         return samples  # [..., (S), N, P]
 

@@ -1,9 +1,11 @@
 import numpy as np
 import pytest
+import tensorflow as tf
 import tensorflow_probability as tfp
 
 import gpflow
 from gpflow.config import Config, as_context
+from gpflow.models.util import data_input_to_tensor
 from gpflow.utilities import positive, triangular
 from gpflow.utilities.ops import difference_matrix
 
@@ -73,3 +75,21 @@ def test_difference_matrix_broadcasting_cross():
     X2 = np.random.randn(8, 7, 6, 5)
     d = difference_matrix(X, X2)
     assert d.shape == (2, 3, 4, 8, 7, 6, 5)
+
+
+def test_data_input_to_tensor():
+    input1 = (1.0, (2.0,))
+    output1 = data_input_to_tensor(input1)
+    assert output1[0].dtype == tf.float64
+    assert output1[1][0].dtype == tf.float64
+
+    input2 = (1.0, [2.0])
+    output2 = data_input_to_tensor(input2)
+    assert output2[0].dtype == tf.float64
+    assert output2[1][0].dtype == tf.float64
+
+    input3 = (1.0, (np.arange(3, dtype=np.float16),) * 2)
+    output3 = data_input_to_tensor(input3)
+    assert output3[0].dtype == tf.float64
+    assert output3[1][0].dtype == tf.float16
+    assert output3[1][1].dtype == tf.float16

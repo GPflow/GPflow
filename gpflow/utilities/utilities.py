@@ -1,7 +1,7 @@
 import copy
 import re
 from functools import lru_cache
-from typing import Any, Callable, Dict, List, Optional, Tuple, TypeVar, Union, Sequence
+from typing import Any, Callable, Dict, List, Optional, Tuple, TypeVar, Union
 
 import numpy as np
 import tensorflow as tf
@@ -9,7 +9,7 @@ import tensorflow_probability as tfp
 from tabulate import tabulate
 
 from .ops import cast
-from ..base import Parameter, Module
+from ..base import Parameter
 from ..config import default_float, default_int, default_summary_fmt
 
 __all__ = [
@@ -188,7 +188,6 @@ def leaf_components(input: tf.Module):
 def _merge_leaf_components(
     input: Dict[str, Union[tf.Variable, tf.Tensor, Parameter]]
 ) -> Dict[str, Union[tf.Variable, tf.Tensor, Parameter]]:
-
     input_values = set([value.experimental_ref() for value in input.values()])
     if len(input_values) == len(input):
         return input
