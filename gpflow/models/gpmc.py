@@ -26,6 +26,7 @@ from ..mean_functions import MeanFunction
 from ..utilities import to_default_float
 from .model import InputData, RegressionData, MeanAndVariance, GPModel
 from .training_mixins import InternalDataTrainingLossMixin
+from .util import data_input_to_tensor
 
 
 class GPMC(GPModel, InternalDataTrainingLossMixin):
@@ -56,8 +57,8 @@ class GPMC(GPModel, InternalDataTrainingLossMixin):
         if num_latent_gps is None:
             num_latent_gps = self.calc_num_latent_gps_from_data(data, kernel, likelihood)
         super().__init__(kernel, likelihood, mean_function, num_latent_gps)
-        self.data = data
-        self.num_data = data[0].shape[0]
+        self.data = data_input_to_tensor(data)
+        self.num_data = self.data[0].shape[0]
         self.V = Parameter(np.zeros((self.num_data, self.num_latent_gps)))
         self.V.prior = tfp.distributions.Normal(
             loc=to_default_float(0.0), scale=to_default_float(1.0)
