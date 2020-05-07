@@ -197,8 +197,8 @@ class DataMixedKernel(Data):
 # ------------------------------------------
 
 
-@pytest.mark.parametrize("cov_structure", ["full", "diag"])
-def test_sample_mvn(cov_structure):
+@pytest.mark.parametrize("full_cov", [True, False])
+def test_sample_mvn(full_cov):
     """
     Draws 10,000 samples from a distribution
     with known mean and covariance. The test checks
@@ -207,14 +207,12 @@ def test_sample_mvn(cov_structure):
     """
     N, D = 10000, 2
     means = tf.ones((N, D), dtype=float_type)
-    if cov_structure == "full":
+    if full_cov:
         covs = tf.eye(D, batch_shape=[N], dtype=float_type)
-    elif cov_structure == "diag":
-        covs = tf.ones((N, D), dtype=float_type)
     else:
-        raise (NotImplementedError)
+        covs = tf.ones((N, D), dtype=float_type)
 
-    samples = sample_mvn(means, covs, cov_structure)
+    samples = sample_mvn(means, covs, full_cov)
     samples_mean = np.mean(samples, axis=0)
     samples_cov = np.cov(samples, rowvar=False)
 
