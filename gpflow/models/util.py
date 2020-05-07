@@ -1,4 +1,3 @@
-from collections import Iterator
 from typing import Callable, Union
 
 import numpy as np
@@ -64,8 +63,10 @@ def data_input_to_tensor(structure):
     """
 
     def convert_to_tensor(elem):
-        if tf.is_tensor(elem) or isinstance(elem, Iterator):
+        if tf.is_tensor(elem):
             return elem
+        elif isinstance(elem, np.ndarray):
+            return tf.convert_to_tensor(elem)
         return tf.convert_to_tensor(elem, dtype=default_float())
 
     return tf.nest.map_structure(convert_to_tensor, structure)
