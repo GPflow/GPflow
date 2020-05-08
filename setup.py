@@ -5,16 +5,8 @@
 
 import os
 import sys
-from pathlib import Path
 
-from pkg_resources import parse_version
 from setuptools import find_packages, setup
-
-
-# We do not want to install tensorflow in the readthedocs environment, where we
-# use autodoc_mock_imports instead. Hence we use this flag to decide whether or
-# not to append tensorflow and tensorflow_probability to the requirements:
-on_readthedocs = os.environ.get("READTHEDOCS", None) == "True"
 
 
 # Dependencies of GPflow
@@ -30,7 +22,10 @@ if sys.version_info < (3, 7):
     # became part of stdlib in python 3.7
     requirements.append("dataclasses")
 
-if not on_readthedocs:
+# We do not want to install tensorflow in the readthedocs environment, where we
+# use autodoc_mock_imports instead. Hence we use this flag to decide whether or
+# not to append tensorflow and tensorflow_probability to the requirements:
+if os.environ.get("READTHEDOCS") != "True":
     requirements.extend(["tensorflow>=2.1.0", "tensorflow-probability>=0.9"])
 
 
