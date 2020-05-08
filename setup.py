@@ -31,9 +31,7 @@ if sys.version_info < (3, 7):
     requirements.append("dataclasses")
 
 if not on_readthedocs:
-    requirements.extend(
-        ["tensorflow>=2.1.0", "tensorflow-probability>=0.9"]
-    )
+    requirements.extend(["tensorflow>=2.1.0", "tensorflow-probability>=0.9"])
 
 
 def read_file(filename):
