@@ -132,7 +132,7 @@ class HeteroskedasticTFPConditional(HeteroskedasticTFPBase):
     def __init__(
         self,
         latent_dim: int,
-        conditional_distribution: Callable[Tuple[tf.Tensor, ...], tfp.distributions.Distribution],
+        conditional_distribution: Callable[..., tfp.distributions.Distribution],
         **kwargs,
     ):
         """

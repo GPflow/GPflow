@@ -17,3 +17,9 @@ from .multiclass import (
     Softmax,
     RobustMax,
 )
+
+from .heteroskedastic import (
+    HeteroskedasticTFPBase,
+    HeteroskedasticTFPConditional,
+    HeteroskedasticTFPDistribution
+)
