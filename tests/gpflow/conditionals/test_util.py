@@ -16,9 +16,10 @@
 import numpy as np
 import pytest
 import tensorflow as tf
-from numpy.testing import assert_allclose
+from numpy.testing import assert_allclose, assert_equal
 
-from gpflow.conditionals.util import leading_transpose, rollaxis_left, rollaxis_right
+from gpflow import default_float
+from gpflow.conditionals.util import leading_transpose, rollaxis_left, rollaxis_right, sample_mvn
 
 
 def test_leading_transpose():
@@ -99,3 +100,30 @@ def test_rollaxis_idempotent(rolls):
 
     assert_allclose(A, A_left_right)
     assert_allclose(A, A_right_left)
+
+
+@pytest.mark.parametrize("leading_dims", [tuple(), (1,), (5,)])
+@pytest.mark.parametrize("n", [1, 5])
+@pytest.mark.parametrize("d", [1, 5])
+@pytest.mark.parametrize("num_samples", [None, 1, 5])
+@pytest.mark.parametrize("full_cov", [True, False])
+def test_sample_mvn_shapes(leading_dims, n, d, num_samples, full_cov):
+    mean_shape = leading_dims + (n, d)
+    means = tf.zeros(mean_shape, dtype=default_float())
+
+    if full_cov:
+        covariance_shape = leading_dims + (n, d, d)
+        sqrt_cov = tf.random.normal(covariance_shape, dtype=default_float())
+        covariances = tf.matmul(sqrt_cov, sqrt_cov, transpose_b=True)
+    else:
+        covariance_shape = leading_dims + (n, d)
+        covariances = tf.random.normal(covariance_shape, dtype=default_float())
+
+    samples = sample_mvn(means, covariances, full_cov, num_samples)
+
+    if num_samples:
+        expected_shape = leading_dims + (num_samples, n, d)
+    else:
+        expected_shape = leading_dims + (n, d)
+
+    assert_equal(samples.shape, expected_shape)
