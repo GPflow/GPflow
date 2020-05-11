@@ -83,7 +83,7 @@ opt.minimize(m.training_loss, m.trainable_variables, options=dict(maxiter=100))
 # %%
 # here we'll plot the expected value of Y +- 2 std deviations, as if the distribution were Gaussian
 plt.figure(figsize=(11, 6))
-X_data, Y_data = m.data
+X_data, Y_data = (m.data[0].numpy(), m.data[1].numpy())
 Xtest = np.linspace(X_data.min(), X_data.max(), 100).reshape(-1, 1)
 mu, var = m.predict_y(Xtest)
 (line,) = plt.plot(Xtest, mu, lw=2)

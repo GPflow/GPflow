@@ -8,7 +8,7 @@ import tensorflow_probability as tfp
 from tensorflow.python.ops import array_ops
 from typing_extensions import Final
 
-from .config import default_float
+from .config import default_float, default_summary_fmt
 
 DType = Union[np.dtype, tf.DType]
 VariableData = Union[List, Tuple, np.ndarray, int, float]
@@ -33,15 +33,24 @@ class Module(tf.Module):
     def trainable_parameters(self):
         return tuple(self._flatten(predicate=_IS_TRAINABLE_PARAMETER))
 
-    def _repr_html_(self):
-        from .utilities import tabulate_module_summary
+    def _representation_table(self, object_name, tablefmt):
+        from .utilities import leaf_components, tabulate_module_summary
 
-        return tabulate_module_summary(self, tablefmt="html")
+        repr_components = [object_name]
+        if leaf_components(self):
+            repr_components.append(tabulate_module_summary(self, tablefmt=tablefmt))
+        return "\n".join(repr_components)
+
+    def _repr_html_(self):
+        """ Nice representation of GPflow objects in IPython/Jupyter notebooks """
+        from html import escape
+
+        return self._representation_table(escape(repr(self)), "html")
 
     def _repr_pretty_(self, p, cycle):
-        from .utilities import tabulate_module_summary
-
-        p.text(tabulate_module_summary(self, tablefmt=""))
+        """ Nice representation of GPflow objects in the IPython shell """
+        repr_str = self._representation_table(repr(self), default_summary_fmt())
+        p.text(repr_str)
 
 
 class PriorOn(Enum):
