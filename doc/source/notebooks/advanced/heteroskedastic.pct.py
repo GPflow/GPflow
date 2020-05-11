@@ -22,7 +22,7 @@
 #
 #
 # ## Heteroskedastic Regression
-# This notebooks shows how to construct a model which uses multiple (2) GP latent functions to learn both the location and the scale and of the Gaussian likelihood distribution. It does so by connecting a **Multi-Output Kernel**, which generates multiple GP latent functions, to a **Heteroskedastic Likelihood**, which maps the latent GPs into a single likelihood. 
+# This notebooks shows how to construct a model which uses multiple (2) GP latent functions to learn both the location and the scale and of the Gaussian likelihood distribution. It does so by connecting a **Multi-Output Kernel**, which generates multiple GP latent functions, to a **Heteroskedastic Likelihood**, which maps the latent GPs into a single likelihood.
 #
 # The generative model is described as:
 #
@@ -60,7 +60,7 @@ np.random.seed(0)
 tf.random.set_seed(0)
 
 # Build inputs X
-X = np.linspace(0, 4*np.pi, N)[:, None] # X must be of shape [N, 1]
+X = np.linspace(0, 4 * np.pi, N)[:, None]  # X must be of shape [N, 1]
 
 # Deterministic functions in place of latent ones
 f1 = np.sin
@@ -82,15 +82,15 @@ Y = np.random.normal(loc, scale)
 
 # %%
 plt.figure(figsize=(15, 5))
-for k in (1,2):
+for k in (1, 2):
     x = X.squeeze()
-    lb = (loc - k*scale).squeeze()
-    ub = (loc + k*scale).squeeze()
-    plt.fill_between(x, lb, ub, color='silver', alpha=1 - .05*k**3)
-plt.plot(x, lb, color='silver')
-plt.plot(x, ub, color='silver')
-plt.plot(X, loc, color='black')
-plt.scatter(X, Y, color='gray', alpha=.8)
+    lb = (loc - k * scale).squeeze()
+    ub = (loc + k * scale).squeeze()
+    plt.fill_between(x, lb, ub, color="silver", alpha=1 - 0.05 * k ** 3)
+plt.plot(x, lb, color="silver")
+plt.plot(x, ub, color="silver")
+plt.plot(X, loc, color="black")
+plt.scatter(X, Y, color="gray", alpha=0.8)
 plt.show()
 plt.close()
 
@@ -99,7 +99,7 @@ plt.close()
 # # Build Model
 
 # %% [markdown]
-# ## Likelihood 
+# ## Likelihood
 # This implements the following part of the generative model:
 # $$ \text{loc}(x) = f_1(x) $$
 # $$ \text{scale}(x) = \text{transform}(f_2(x)) $$
@@ -107,8 +107,8 @@ plt.close()
 
 # %%
 likelihood = gpf.likelihoods.heteroskedastic.HeteroskedasticTFPDistribution(
-    distribution_class=tfp.distributions.Normal, # Gaussian Likelihood
-    transform=tfp.bijectors.Exp() # Exponential Transform
+    distribution_class=tfp.distributions.Normal,  # Gaussian Likelihood
+    transform=tfp.bijectors.Exp(),  # Exponential Transform
 )
 
 print(f"Likelihood's expected latent_dim: {likelihood.latent_dim}")
@@ -121,10 +121,12 @@ print(f"Likelihood's expected latent_dim: {likelihood.latent_dim}")
 # with both kernels being modeled as separated and independent $\text{RBF}$ kernels.
 
 # %%
-kernel = gpf.kernels.SeparateIndependent([
-    gpf.kernels.RBF(), # This is k1, the kernel of f1
-    gpf.kernels.RBF()  # this is k2, the kernel of f2
-])
+kernel = gpf.kernels.SeparateIndependent(
+    [
+        gpf.kernels.RBF(),  # This is k1, the kernel of f1
+        gpf.kernels.RBF(),  # this is k2, the kernel of f2
+    ]
+)
 # The list contained in gpf.kernels.SeparateIndependent must be the same size of likelihood.latent_dim
 
 # %% [markdown]
@@ -135,15 +137,17 @@ kernel = gpf.kernels.SeparateIndependent([
 #
 
 # %%
-M = 20 # Number of inducing variables for each f_i
+M = 20  # Number of inducing variables for each f_i
 
 # Initial inducing points position Z
-Z = np.linspace(X.min(), X.max(), M)[:, None] # Z must be of shape [M, 1]
+Z = np.linspace(X.min(), X.max(), M)[:, None]  # Z must be of shape [M, 1]
 
-inducing_variable = gpf.inducing_variables.SeparateIndependentInducingVariables([
-    gpf.inducing_variables.InducingPoints(Z), # This is U1 = f1(Z1)
-    gpf.inducing_variables.InducingPoints(Z)  # This is U2 = f2(Z2)
-])
+inducing_variable = gpf.inducing_variables.SeparateIndependentInducingVariables(
+    [
+        gpf.inducing_variables.InducingPoints(Z),  # This is U1 = f1(Z1)
+        gpf.inducing_variables.InducingPoints(Z),  # This is U2 = f2(Z2)
+    ]
+)
 # The list contained in gpf.kernels.SeparateIndependent must be the same size of likelihood.latent_dim
 
 # %% [markdown]
@@ -157,7 +161,7 @@ model = gpf.models.SVGP(
     kernel=kernel,
     likelihood=likelihood,
     inducing_variable=inducing_variable,
-    num_latent_gps=likelihood.latent_dim
+    num_latent_gps=likelihood.latent_dim,
 )
 
 display(model)
@@ -173,10 +177,10 @@ gpf.utilities.set_trainable(model.q_mu, False)
 gpf.utilities.set_trainable(model.q_sqrt, False)
 
 variational_vars = [(model.q_mu, model.q_sqrt)]
-natgrad_opt = gpf.optimizers.NaturalGradient(gamma=.01)
+natgrad_opt = gpf.optimizers.NaturalGradient(gamma=0.01)
 
 adam_vars = model.trainable_variables
-adam_opt = tf.optimizers.Adam(.01)
+adam_opt = tf.optimizers.Adam(0.01)
 
 # %% [markdown]
 # # Run Optimization Loop
@@ -191,19 +195,19 @@ for epoch in range(epochs + 1):
 
     # For every 'log_freq' epochs, print the epoch and plot the predictions against the data
     if epoch % log_freq == 0 and epoch > 0:
-        print(f'Epoch {epoch} - Loss: {loss_fn().numpy() : .4f}')
+        print(f"Epoch {epoch} - Loss: {loss_fn().numpy() : .4f}")
         Ymean, Yvar = model.predict_y(X)
         Ymean = Ymean.numpy().squeeze()
         Ystd = tf.sqrt(Yvar).numpy().squeeze()
         plt.figure(figsize=(15, 5))
-        for k in (1,2):
+        for k in (1, 2):
             x = X.squeeze()
-            lb = (Ymean - k*Ystd).squeeze()
-            ub = (Ymean + k*Ystd).squeeze()
-            plt.fill_between(x, lb, ub, color='silver', alpha=1 - .05*k**3)
-        plt.plot(x, lb, color='silver')
-        plt.plot(x, ub, color='silver')
-        plt.plot(X, Ymean, color='black')
-        plt.scatter(X, Y, color='gray', alpha=.8)
+            lb = (Ymean - k * Ystd).squeeze()
+            ub = (Ymean + k * Ystd).squeeze()
+            plt.fill_between(x, lb, ub, color="silver", alpha=1 - 0.05 * k ** 3)
+        plt.plot(x, lb, color="silver")
+        plt.plot(x, ub, color="silver")
+        plt.plot(X, Ymean, color="black")
+        plt.scatter(X, Y, color="gray", alpha=0.8)
         plt.show()
         plt.close()

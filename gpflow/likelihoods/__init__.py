@@ -21,5 +21,5 @@ from .multiclass import (
 from .heteroskedastic import (
     HeteroskedasticTFPBase,
     HeteroskedasticTFPConditional,
-    HeteroskedasticTFPDistribution
+    HeteroskedasticTFPDistribution,
 )
