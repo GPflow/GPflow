@@ -93,7 +93,7 @@ class Heteroskedastic(Likelihood):
             Fvar_tuple,
         )
         V_y = E_y2 - E_y ** 2
-        return E_y, V_y
+        return tf.expand_dims(E_y, -1), tf.expand_dims(V_y, -1)
 
 
 class HeteroskedasticTFPBase(Heteroskedastic):
@@ -132,7 +132,7 @@ class HeteroskedasticTFPConditional(HeteroskedasticTFPBase):
     def __init__(
         self,
         latent_dim: int,
-        conditional_distribution: Callable[Tuple[tf.Tensor, ...], tfp.distributions.Distribution],
+        conditional_distribution: Callable[..., tfp.distributions.Distribution],
         **kwargs,
     ):
         """
@@ -186,7 +186,7 @@ class HeteroskedasticTFPDistribution(HeteroskedasticTFPBase):
         :param Y: [..., 1]
         :return: log pdf vector [...]
         """
-        dists = self._get_conditional_distributions(F1, F2)
+        dists = self._get_conditional_distribution(F1, F2)
         return dists.log_prob(Y)  # [..., 1]
 
     def _scalar_conditional_mean(self, F1, F2):
