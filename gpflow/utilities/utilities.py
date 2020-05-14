@@ -246,6 +246,8 @@ def reset_cache_bijectors(input_module: tf.Module) -> tf.Module:
         if isinstance(bijector, tfp.bijectors.Chain):
             for m in bijector.submodules:
                 clear_cache(m)
+        elif isinstance(bijector, tfp.bijectors.Invert):
+            clear_cache(bijector.bijector)
         return state
 
     _ = traverse_module(input_module, accumulator, clear_bijector, target_types)
