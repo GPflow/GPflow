@@ -24,9 +24,9 @@ from ..kernels import Kernel
 from ..likelihoods import Likelihood
 from ..mean_functions import MeanFunction
 from ..utilities import to_default_float
-from .model import GPModel, InputData, RegressionData, MeanAndVariance
+from .model import GPModel, InputData, MeanAndVariance, RegressionData
 from .training_mixins import InternalDataTrainingLossMixin
-from .util import inducingpoint_wrapper
+from .util import data_input_to_tensor, inducingpoint_wrapper
 
 
 class SGPMC(GPModel, InternalDataTrainingLossMixin):
@@ -79,7 +79,7 @@ class SGPMC(GPModel, InternalDataTrainingLossMixin):
         if num_latent_gps is None:
             num_latent_gps = self.calc_num_latent_gps_from_data(data, kernel, likelihood)
         super().__init__(kernel, likelihood, mean_function, num_latent_gps=num_latent_gps)
-        self.data = data
+        self.data = data_input_to_tensor(data)
         self.num_data = data[0].shape[0]
         self.inducing_variable = inducingpoint_wrapper(inducing_variable)
         self.V = Parameter(np.zeros((len(self.inducing_variable), self.num_latent_gps)))

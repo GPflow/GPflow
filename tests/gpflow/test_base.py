@@ -18,7 +18,6 @@ import numpy as np
 import pytest
 import tensorflow as tf
 from gpflow.utilities import positive
-from gpflow.base import _cast_to_dtype
 
 
 def test_parameter_assign_validation():
