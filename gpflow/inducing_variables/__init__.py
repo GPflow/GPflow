@@ -1,6 +1,7 @@
 from .inducing_variables import InducingVariables, InducingPoints, Multiscale
 from .inducing_patch import InducingPatches
-from .mo_inducing_variables import (
+from . import multioutput
+from .multioutput import (
     MultioutputInducingVariables,
     FallbackSharedIndependentInducingVariables,
     FallbackSeparateIndependentInducingVariables,

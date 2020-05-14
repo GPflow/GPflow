@@ -7,7 +7,6 @@ from scipy.optimize import OptimizeResult
 
 __all__ = ["Scipy"]
 
-Loss = tf.Tensor
 Variables = Iterable[tf.Variable]
 StepCallback = Callable[[int, Variables, List[tf.Tensor]], None]
 LossClosure = Callable[[], tf.Tensor]
@@ -20,7 +19,7 @@ class Scipy:
         variables: Variables,
         method: Optional[str] = "L-BFGS-B",
         step_callback: Optional[StepCallback] = None,
-        jit: bool = True,
+        compile: bool = True,
         **scipy_kwargs,
     ) -> OptimizeResult:
         """
@@ -41,7 +40,7 @@ class Scipy:
                 above, and `values` is the corresponding list of tensors of
                 matching shape that contains their value at this optimisation
                 step.
-            jit: If True, wraps the evaluation function (the passed `closure` as
+            compile: If True, wraps the evaluation function (the passed `closure` as
                 well as its gradient computation) inside a `tf.function()`,
                 which will improve optimization speed in most cases.
 
@@ -52,11 +51,17 @@ class Scipy:
             object. See the Scipy documentation for description of attributes.
         """
         if not callable(closure):
-            raise TypeError("Callable object expected.")  # pragma: no cover
+            raise TypeError(
+                "The 'closure' argument is expected to be a callable object."
+            )  # pragma: no cover
         variables = tuple(variables)
+        if not all(isinstance(v, tf.Variable) for v in variables):
+            raise TypeError(
+                "The 'variables' argument is expected to only contain tf.Variable instances (use model.trainable_variables, not model.trainable_parameters)"
+            )  # pragma: no cover
         initial_params = self.initial_parameters(variables)
 
-        func = self.eval_func(closure, variables, jit=jit)
+        func = self.eval_func(closure, variables, compile=compile)
         if step_callback is not None:
             if "callback" in scipy_kwargs:
                 raise ValueError("Callback passed both via `step_callback` and `callback`")
@@ -74,7 +79,7 @@ class Scipy:
 
     @classmethod
     def eval_func(
-        cls, closure: LossClosure, variables: Variables, jit: bool = True
+        cls, closure: LossClosure, variables: Variables, compile: bool = True
     ) -> Callable[[np.ndarray], Tuple[np.ndarray, np.ndarray]]:
         def _tf_eval(x: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor]:
             values = cls.unpack_tensors(variables, x)
@@ -83,7 +88,7 @@ class Scipy:
             loss, grads = _compute_loss_and_gradients(closure, variables)
             return loss, cls.pack_tensors(grads)
 
-        if jit:
+        if compile:
             _tf_eval = tf.function(_tf_eval)
 
         def _eval(x: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
@@ -134,8 +139,9 @@ class Scipy:
 V = TypeVar("V", bound=Variables)
 
 
-def _compute_loss_and_gradients(loss_cb: LossClosure, variables: V) -> Tuple[tf.Tensor, V]:
-    with tf.GradientTape() as tape:
-        loss = loss_cb()
+def _compute_loss_and_gradients(loss_closure: LossClosure, variables: V) -> Tuple[tf.Tensor, V]:
+    with tf.GradientTape(watch_accessed_variables=False) as tape:
+        tape.watch(variables)
+        loss = loss_closure()
     grads = tape.gradient(loss, variables)
     return loss, grads

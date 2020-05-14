@@ -50,15 +50,12 @@ def test_scipy_jit():
     opt1 = gpflow.optimizers.Scipy()
     opt2 = gpflow.optimizers.Scipy()
 
-    def closure1():
-        return -m1.log_marginal_likelihood()
-
-    @tf.function
-    def closure2():
-        return -m2.log_marginal_likelihood()
-
-    opt1.minimize(closure1, variables=m1.trainable_variables, options=dict(maxiter=50), jit=False)
-    opt2.minimize(closure2, variables=m2.trainable_variables, options=dict(maxiter=50), jit=True)
+    opt1.minimize(
+        m1.training_loss, variables=m1.trainable_variables, options=dict(maxiter=50), compile=False,
+    )
+    opt2.minimize(
+        m2.training_loss, variables=m2.trainable_variables, options=dict(maxiter=50), compile=True,
+    )
 
     def get_values(model):
         return np.array([var.value().numpy().squeeze() for var in model.trainable_variables])

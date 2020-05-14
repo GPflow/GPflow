@@ -29,7 +29,8 @@ from ..utilities import positive, to_default_float
 from ..utilities.ops import pca_reduce
 from .gpr import GPR
 from .model import GPModel, MeanAndVariance
-from .util import inducingpoint_wrapper
+from .training_mixins import InputData, InternalDataTrainingLossMixin, OutputData
+from .util import data_input_to_tensor, inducingpoint_wrapper
 
 
 class GPLVM(GPR):
@@ -39,7 +40,7 @@ class GPLVM(GPR):
 
     def __init__(
         self,
-        data: tf.Tensor,
+        data: OutputData,
         latent_dim: int,
         X_data_mean: Optional[tf.Tensor] = None,
         kernel: Optional[Kernel] = None,
@@ -71,14 +72,14 @@ class GPLVM(GPR):
         if data.shape[1] < num_latent_gps:
             raise ValueError("More latent dimensions than observed.")
 
-        gpr_data = (Parameter(X_data_mean), data)
+        gpr_data = (Parameter(X_data_mean), data_input_to_tensor(data))
         super().__init__(gpr_data, kernel, mean_function=mean_function)
 
 
-class BayesianGPLVM(GPModel):
+class BayesianGPLVM(GPModel, InternalDataTrainingLossMixin):
     def __init__(
         self,
-        data: tf.Tensor,
+        data: OutputData,
         X_data_mean: tf.Tensor,
         X_data_var: tf.Tensor,
         kernel: Kernel,
@@ -102,18 +103,18 @@ class BayesianGPLVM(GPModel):
         """
         num_data, num_latent_gps = X_data_mean.shape
         super().__init__(kernel, likelihoods.Gaussian(), num_latent_gps=num_latent_gps)
-        self.data = data
+        self.data = data_input_to_tensor(data)
         assert X_data_var.ndim == 2
 
         self.X_data_mean = Parameter(X_data_mean)
         self.X_data_var = Parameter(X_data_var, transform=positive())
 
         self.num_data = num_data
-        self.output_dim = data.shape[-1]
+        self.output_dim = self.data.shape[-1]
 
         assert np.all(X_data_mean.shape == X_data_var.shape)
-        assert X_data_mean.shape[0] == data.shape[0], "X mean and Y must be same size."
-        assert X_data_var.shape[0] == data.shape[0], "X var and Y must be same size."
+        assert X_data_mean.shape[0] == self.data.shape[0], "X mean and Y must be same size."
+        assert X_data_var.shape[0] == self.data.shape[0], "X var and Y must be same size."
 
         if (inducing_variable is None) == (num_inducing_variables is None):
             raise ValueError(
@@ -144,14 +145,18 @@ class BayesianGPLVM(GPModel):
         assert self.X_prior_var.shape[0] == self.num_data
         assert self.X_prior_var.shape[1] == self.num_latent_gps
 
-    def log_likelihood(self) -> tf.Tensor:
+    def maximum_log_likelihood_objective(self) -> tf.Tensor:
+        return self.elbo()
+
+    def elbo(self) -> tf.Tensor:
         """
         Construct a tensorflow function to compute the bound on the marginal
         likelihood.
         """
+        Y_data = self.data
+
         pX = DiagonalGaussian(self.X_data_mean, self.X_data_var)
 
-        Y_data = self.data
         num_inducing = len(self.inducing_variable)
         psi0 = tf.reduce_sum(expectation(pX, self.kernel))
         psi1 = expectation(pX, (self.kernel, self.inducing_variable))
@@ -201,7 +206,7 @@ class BayesianGPLVM(GPModel):
         return bound
 
     def predict_f(
-        self, Xnew: tf.Tensor, full_cov: bool = False, full_output_cov: bool = False
+        self, Xnew: InputData, full_cov: bool = False, full_output_cov: bool = False
     ) -> MeanAndVariance:
         """
         Compute the mean and variance of the latent function at some new points.
@@ -259,5 +264,5 @@ class BayesianGPLVM(GPModel):
             var = tf.tile(tf.expand_dims(var, 1), shape)
         return mean + self.mean_function(Xnew), var
 
-    def predict_log_density(self, data: tf.Tensor):
+    def predict_log_density(self, data: OutputData) -> tf.Tensor:
         raise NotImplementedError

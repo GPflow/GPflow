@@ -12,19 +12,23 @@ from gpflow import set_trainable
 class Setup:
     N, M, D = 4, 3, 2
     likelihood_variance = 0.1
+    rng = np.random.RandomState(42)
+    X = rng.randn(N, D)
+    Y = rng.randn(N, 1)
+    Z = rng.randn(M, D)
 
 
 @pytest.fixture
 def data():
-    N, D = Setup.N, Setup.D
-    X = tf.random.normal((N, D), dtype=default_float())
-    Y = tf.random.normal((N, 1), dtype=default_float())
+    X = tf.convert_to_tensor(Setup.X, dtype=default_float())
+    Y = tf.convert_to_tensor(Setup.Y, dtype=default_float())
     return (X, Y)
 
 
 @pytest.fixture
 def inducing_variable():
-    return tf.random.normal((Setup.M, Setup.D), dtype=default_float())
+    Z = tf.convert_to_tensor(Setup.Z, dtype=default_float())
+    return Z
 
 
 @pytest.fixture
@@ -59,23 +63,25 @@ def sgpr_and_svgp(data, inducing_variable, kernel, likelihood):
     return sgpr, svgp
 
 
+def assert_different(value1, value2, rtol=0.07):
+    """ assert relative difference > rtol """
+    relative_difference = (value1 - value2) / (value1 + value2)
+    assert np.abs(relative_difference) > rtol
+
+
 def assert_gpr_vs_vgp(
-    m1: tf.Module,
-    m2: tf.Module,
+    m1: gpflow.models.BayesianModel,
+    m2: gpflow.models.BayesianModel,
     gamma: float = 1.0,
     maxiter: int = 1,
     xi_transform: Optional[gpflow.optimizers.natgrad.XiTransform] = None,
 ):
     assert maxiter >= 1
 
-    m2_ll_before = m2.log_likelihood()
-    m1_ll_before = m1.log_likelihood()
+    m1_ll_before = m1.training_loss()
+    m2_ll_before = m2.training_loss()
 
-    assert m2_ll_before != m1_ll_before
-
-    @tf.function
-    def loss_cb() -> tf.Tensor:
-        return -m2.log_marginal_likelihood()
+    assert_different(m2_ll_before, m1_ll_before)
 
     params = (m2.q_mu, m2.q_sqrt)
     if xi_transform is not None:
@@ -85,35 +91,33 @@ def assert_gpr_vs_vgp(
 
     @tf.function
     def minimize_step():
-        opt.minimize(loss_cb, var_list=[params])
+        opt.minimize(m2.training_loss, var_list=[params])
 
     for _ in range(maxiter):
         minimize_step()
 
-    m2_ll_after = m2.log_likelihood()
-    m1_ll_after = m1.log_likelihood()
+    m1_ll_after = m1.training_loss()
+    m2_ll_after = m2.training_loss()
 
     np.testing.assert_allclose(m1_ll_after, m2_ll_after, atol=1e-4)
 
 
-def assert_sgpr_vs_svgp(m1: tf.Module, m2: tf.Module):
+def assert_sgpr_vs_svgp(
+    m1: gpflow.models.BayesianModel, m2: gpflow.models.BayesianModel,
+):
     data = m1.data
 
-    m1_ll_before = m1.log_likelihood()
-    m2_ll_before = m2.log_likelihood(data)
+    m1_ll_before = m1.training_loss()
+    m2_ll_before = m2.training_loss(data)
 
-    assert m2_ll_before != m1_ll_before
-
-    @tf.function
-    def loss_cb() -> tf.Tensor:
-        return -m2.log_marginal_likelihood(data)
+    assert_different(m2_ll_before, m1_ll_before)
 
     params = [(m2.q_mu, m2.q_sqrt)]
     opt = NaturalGradient(1.0)
-    opt.minimize(loss_cb, var_list=params)
+    opt.minimize(m2.training_loss_closure(data), var_list=params)
 
-    m1_ll_after = m1.log_likelihood()
-    m2_ll_after = m2.log_likelihood(data)
+    m1_ll_after = m1.training_loss()
+    m2_ll_after = m2.training_loss(data)
 
     np.testing.assert_allclose(m1_ll_after, m2_ll_after, atol=1e-4)
 
@@ -148,13 +152,16 @@ def test_svgp_vs_sgpr(sgpr_and_svgp):
 
 
 class XiEta(gpflow.optimizers.XiTransform):
-    def meanvarsqrt_to_xi(self, mean: tf.Tensor, varsqrt: tf.Tensor) -> tf.Tensor:
+    @staticmethod
+    def meanvarsqrt_to_xi(mean: tf.Tensor, varsqrt: tf.Tensor) -> tf.Tensor:
         return gpflow.optimizers.natgrad.meanvarsqrt_to_expectation(mean, varsqrt)
 
-    def xi_to_meanvarsqrt(self, xi1: tf.Tensor, xi2: tf.Tensor) -> tf.Tensor:
+    @staticmethod
+    def xi_to_meanvarsqrt(xi1: tf.Tensor, xi2: tf.Tensor) -> tf.Tensor:
         return gpflow.optimizers.natgrad.expectation_to_meanvarsqrt(xi1, xi2)
 
-    def naturals_to_xi(self, nat1: tf.Tensor, nat2: tf.Tensor) -> tf.Tensor:
+    @staticmethod
+    def naturals_to_xi(nat1: tf.Tensor, nat2: tf.Tensor) -> tf.Tensor:
         return gpflow.optimizers.natgrad.natural_to_expectation(nat1, nat2)
 
 

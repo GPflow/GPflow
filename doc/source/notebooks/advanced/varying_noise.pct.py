@@ -19,8 +19,10 @@
 # %% [markdown]
 # This notebook shows how to construct a Gaussian process model where different noise is assumed for different data points. The model is:
 #
-# $$f(\cdot) \sim \mathcal{GP}\big(0, k(\cdot, \cdot)\big)$$
-# $$y_i | f, x_i \sim \mathcal N\big(y_i; f(x_i), \sigma^2_i\big)$$
+# \begin{align}
+# f(\cdot) &\sim \mathcal{GP}\big(0, k(\cdot, \cdot)\big) \\
+# y_i | f, x_i &\sim \mathcal N\big(y_i; f(x_i), \sigma^2_i\big)
+# \end{align}
 #
 # We'll demonstrate two methods. In the first demonstration, we'll assume that the noise variance is known for every data point. We'll incorporate the known noise variances $\sigma^2_i$ into the data matrix $\mathbf Y$, make a likelihood that can deal with this structure, and implement inference using variational GPs with natural gradients.
 #
@@ -34,7 +36,6 @@ import gpflow
 from gpflow.ci_utils import ci_niter
 from gpflow.optimizers import NaturalGradient
 from gpflow import set_trainable
-import matplotlib
 import matplotlib.pyplot as plt
 
 # %matplotlib inline
@@ -137,11 +138,6 @@ model = gpflow.models.VGP((X, Y_data), kernel=kernel, likelihood=likelihood, num
 # Notice that we specify num_latent_gps=1, as the VGP model would normally infer this from the shape of Y_data, but we handle the second column manually in the HeteroskedasticGaussian likelihood.
 
 # %%
-@tf.function
-def objective_closure():
-    return -model.log_marginal_likelihood()
-
-
 natgrad = NaturalGradient(gamma=1.0)
 adam = tf.optimizers.Adam()
 
@@ -149,8 +145,8 @@ set_trainable(model.q_mu, False)
 set_trainable(model.q_sqrt, False)
 
 for _ in range(ci_niter(1000)):
-    natgrad.minimize(objective_closure, [(model.q_mu, model.q_sqrt)])
-    adam.minimize(objective_closure, model.trainable_variables)
+    natgrad.minimize(model.training_loss, [(model.q_mu, model.q_sqrt)])
+    adam.minimize(model.training_loss, model.trainable_variables)
 
 # %%
 # let's do some plotting!
@@ -238,13 +234,8 @@ model = gpflow.models.VGP((X, Y_data), kernel=kernel, likelihood=likelihood, num
 
 
 # %%
-@tf.function
-def objective_closure():
-    return -model.log_marginal_likelihood()
-
-
 for _ in range(ci_niter(1000)):
-    natgrad.minimize(objective_closure, [(model.q_mu, model.q_sqrt)])
+    natgrad.minimize(model.training_loss, [(model.q_mu, model.q_sqrt)])
 
 # %% [markdown]
 # We've now fitted the VGP model to the data, but without optimizing over the hyperparameters. Plotting the data, we see that the fit is not terrible, but hasn't made use of our knowledge of the varying noise.
@@ -276,18 +267,12 @@ likelihood = gpflow.likelihoods.SwitchedLikelihood(
 kernel = gpflow.kernels.Matern52(lengthscales=0.5)
 model = gpflow.models.VGP((X, Y_data), kernel=kernel, likelihood=likelihood, num_latent_gps=1)
 
-
-@tf.function
-def objective_closure():
-    return -model.log_marginal_likelihood()
-
-
 set_trainable(model.q_mu, False)
 set_trainable(model.q_sqrt, False)
 
 for _ in range(ci_niter(1000)):
-    natgrad.minimize(objective_closure, [(model.q_mu, model.q_sqrt)])
-    adam.minimize(objective_closure, model.trainable_variables)
+    natgrad.minimize(model.training_loss, [(model.q_mu, model.q_sqrt)])
+    adam.minimize(model.training_loss, model.trainable_variables)
 
 # %% [markdown]
 # ### Plotting the fitted model

@@ -6,16 +6,14 @@ import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
 from tensorflow.python.ops import array_ops
+from typing_extensions import Final
 
-from .config import default_float
+from .config import default_float, default_summary_fmt
 
 DType = Union[np.dtype, tf.DType]
 VariableData = Union[List, Tuple, np.ndarray, int, float]
-TensorLike = (
-    object  # Union[tf.Tensor, tf.Variable, np.ndarray], but doesn't work with multipledispatch
-)
-Transform = tfp.bijectors.Bijector
-Prior = tfp.distributions.Distribution
+Transform = Union[tfp.bijectors.Bijector]
+Prior = Union[tfp.distributions.Distribution]
 
 
 def _IS_PARAMETER(o):
@@ -35,15 +33,24 @@ class Module(tf.Module):
     def trainable_parameters(self):
         return tuple(self._flatten(predicate=_IS_TRAINABLE_PARAMETER))
 
-    def _repr_html_(self):
-        from .utilities import tabulate_module_summary
+    def _representation_table(self, object_name, tablefmt):
+        from .utilities import leaf_components, tabulate_module_summary
 
-        return tabulate_module_summary(self, tablefmt="html")
+        repr_components = [object_name]
+        if leaf_components(self):
+            repr_components.append(tabulate_module_summary(self, tablefmt=tablefmt))
+        return "\n".join(repr_components)
+
+    def _repr_html_(self):
+        """ Nice representation of GPflow objects in IPython/Jupyter notebooks """
+        from html import escape
+
+        return self._representation_table(escape(repr(self)), "html")
 
     def _repr_pretty_(self, p, cycle):
-        from .utilities import tabulate_module_summary
-
-        p.text(tabulate_module_summary(self, tablefmt=""))
+        """ Nice representation of GPflow objects in the IPython shell """
+        repr_str = self._representation_table(repr(self), default_summary_fmt())
+        p.text(repr_str)
 
 
 class PriorOn(Enum):
@@ -74,7 +81,7 @@ class Parameter(tf.Module):
 
         self._transform = transform
         self.prior = prior
-        self.prior_on = PriorOn(prior_on)
+        self.prior_on = prior_on
 
         if isinstance(value, tf.Variable):
             self._unconstrained = value
@@ -107,6 +114,14 @@ class Parameter(tf.Module):
                 log_p += tf.reduce_sum(log_det_jacobian)
 
             return log_p
+
+    @property
+    def prior_on(self):
+        return self._prior_on
+
+    @prior_on.setter
+    def prior_on(self, value: Union[str, PriorOn]):
+        self._prior_on = PriorOn(value)
 
     def value(self):
         return _to_constrained(self._unconstrained.value(), self.transform)
@@ -151,8 +166,9 @@ class Parameter(tf.Module):
         value = _cast_to_dtype(value, dtype)
         unconstrained_value = _to_unconstrained(value, self.transform)
         message = (
-            "gpflow.Parameter: unconstrained value of passed value "
-            "has NaN or Inf and cannot be assigned."
+            "gpflow.Parameter: the value to be assigned is incompatible with this parameter's "
+            "transform (the corresponding unconstrained value has NaN or Inf) and hence cannot be "
+            "assigned."
         )
         return tf.debugging.assert_all_finite(unconstrained_value, message=message)
 
@@ -298,12 +314,28 @@ class Parameter(tf.Module):
 Parameter._OverloadAllOperators()
 tf.register_tensor_conversion_function(Parameter, lambda x, *args, **kwds: x.read_value())
 
+TensorType = Union[np.ndarray, tf.Tensor, tf.Variable, Parameter]
+"""
+Type alias for tensor-like types that are supported by most TensorFlow, NumPy and GPflow operations.
+
+NOTE: Union types like this do not work with the `register` method of multipledispatch's
+`Dispatcher` class. Instead use `TensorLike` for dispatching on tensor-like types.
+"""
+
+# We've left this as object until we've tested the performance consequences of using the full set
+# (np.ndarray, tf.Tensor, tf.Variable, Parameter), see https://github.com/GPflow/GPflow/issues/1434
+TensorLike: Final[Tuple[type, ...]] = (object,)
+"""
+:var TensorLike: Collection of tensor-like types for registering implementations with
+    `multipledispatch` dispatchers.
+"""
+
 
 def _cast_to_dtype(value: VariableData, dtype: Optional[DType] = None) -> tf.Tensor:
     if dtype is None:
         dtype = default_float()
     if tf.is_tensor(value):
-        # TODO(awav) TF2.2 resolves issue with cast.
+        # NOTE(awav) TF2.2 resolves issue with cast.
         # From TF2.2, `tf.cast` can be used alone instead of this auxiliary function.
         # workaround for https://github.com/tensorflow/tensorflow/issues/35938
         return tf.cast(value, dtype)

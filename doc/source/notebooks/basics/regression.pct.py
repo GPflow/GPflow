@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.3.3
+#       jupytext_version: 1.4.0
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -32,14 +32,13 @@
 # %%
 import gpflow
 import numpy as np
-import matplotlib
+import matplotlib.pyplot as plt
 import tensorflow as tf
 from gpflow.utilities import print_summary
 
 # The lines below are specific to the notebook format
 # %matplotlib inline
-matplotlib.rcParams["figure.figsize"] = (12, 6)
-plt = matplotlib.pyplot
+plt.rcParams["figure.figsize"] = (12, 6)
 
 # %% [markdown]
 # `X` and `Y` denote the input and output values. **NOTE:** `X` and `Y` must be two-dimensional NumPy arrays, $N \times 1$ or $N \times D$, where $D$ is the number of input dimensions/features, with the same number of rows as $N$ (one for each data point):
@@ -53,7 +52,9 @@ _ = plt.plot(X, Y, "kx", mew=2)
 
 # %% [markdown]
 # We will consider the following probabilistic model:
-# $$ Y_i = f(X_i) + \varepsilon_i , $$
+# \begin{equation}
+# Y_i = f(X_i) + \varepsilon_i\,,
+# \end{equation}
 # where $f \sim \mathcal{GP}(\mu(\cdot), k(\cdot, \cdot'))$, and $\varepsilon \sim \mathcal{N}(0, \tau^2 I)$.
 
 # %% [markdown]
@@ -117,14 +118,14 @@ opt = gpflow.optimizers.Scipy()
 
 
 # %% [markdown]
-# In order to minimize the negative log marginal likelihood, we create a closure to be passed to the optimizer. We also need to specify the variables to train with `m.trainable_variables`, and the number of iterations.
+# In order to train the model, we need to maximize the log marginal likelihood.
+# GPflow models define a `training_loss` that can be passed to the `minimize`
+# method of an optimizer; in this case it is simply the negative log marginal
+# likelihood. We also need to specify the variables to train with
+# `m.trainable_variables`, and the number of iterations.
 
 # %%
-def objective_closure():
-    return -m.log_marginal_likelihood()
-
-
-opt_logs = opt.minimize(objective_closure, m.trainable_variables, options=dict(maxiter=100))
+opt_logs = opt.minimize(m.training_loss, m.trainable_variables, options=dict(maxiter=100))
 print_summary(m)
 
 # %% [markdown]

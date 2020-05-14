@@ -16,6 +16,7 @@ jupyter:
 # GPflow 2 Upgrade Guide
 
 This is a basic guide for people who have GPflow 1 code that needs to be upgraded to GPflow 2.
+Also see the [Intro to GPflow with TensorFlow 2 notebook](intro_to_gpflow2.ipynb).
 
 
 ## Kernel Input Dims
@@ -36,7 +37,7 @@ For example:
 
 The `Parameter` class in GPflow 1 was a separate class from `tf.Variable`. The `params_as_tensors` decorator or the `params_as_tensors_for` context manager were required to turn them into a tensor that could be consumed by TensorFlow operations.
 
-In GPflow 2, `Parameter` is a subclass of `tf.Module` that wraps a `tf.Variable`, and can directly be used in place of a tensor, so no such conversion is necessary.
+In GPflow 2, `Parameter` inherits from `gpflow.Module` (a `tf.Module` subclass) that wraps a `tf.Variable`, and can directly be used in place of a tensor, so no such conversion is necessary.
 
 References to `params_as_tensors` and `params_as_tensors_for` can simply be removed.
 
@@ -56,7 +57,7 @@ In the above example, the old (GPflow 1) code would have assigned the value of `
 
 In GPflow 2, it is necessary to use the `Parameter.assign` method explicitly to maintain the same behaviour, otherwise the parameter attribute will be replaced by an (untrainable) constant value.
 
-To change other properties of the parameter (for example, to change transforms etc) you may need to replace the entire parameter object. See [this notebook](../understanding/models.ipynb#Constraints-and-trainable-variables) for further details.
+To change other properties of the parameter (for example, to change transforms etc) you may need to replace the entire parameter object. See [this notebook](understanding/models.ipynb#Constraints-and-trainable-variables) for further details.
 
 
 ## Parameter trainable status
@@ -72,7 +73,7 @@ A parameter's `trainable` attribute cannot be set. Instead, use `gpflow.set_trai
 
 Usage of GPflow’s Scipy optimizer has changed. It has been renamed from `gpflow.train.ScipyOptimizer` to `gpflow.optimizers.Scipy` and its `minimize` method has changed in the following ways:
 
- * Instead of a GPflow model the method now takes a zero-argument function that returns the loss to be minimised (for example, the negative log marginal likelihood), as well as the variables to be optimised (typically `model.trainable_variables`).
+ * Instead of a GPflow model, the method now takes a zero-argument function that returns the loss to be minimised (most GPflow models provide a `model.training_loss` method for this use-case; gpflow.models.SVGP does not encapsulate data and provides a `model.training_loss_closure(data)` closure generating method instead), as well as the variables to be optimised (typically `model.trainable_variables`).
  * The options (`disp`, `maxiter`) must now be passed in a dictionary.
 
 For example:
@@ -81,7 +82,7 @@ For example:
 -optimizer.minimize(model, disp=True, maxiter=100)
 +optimizer = gpflow.optimizers.Scipy()
 +optimizer.minimize(
-+    lambda: -model.log_marginal_likelihood(),
++    model.training_loss,
 +    variables=model.trainable_variables,
 +    options=dict(disp=True, maxiter=100),
 +)
@@ -103,12 +104,14 @@ For example, for the `GPR` model:
 +model = GPR(data=(X, Y), kernel=kernel)
 ```
 
+Models that do not take a `likelihood` argument because they hard-code a Gaussian likelihood (GPR, SGPR) now take a `noise_variance` argument that sets the initial value of the likelihood variance.
+
 
 ## SVGP Initialiser
 
-The SVGP model’s initialiser no longer accepts X and Y data. Instead this data must be passed to the various computation methods of the model (`elbo`, `log_likelihood` etc).
+The SVGP model’s initialiser no longer accepts X and Y data. Instead this data must be passed to the various computation methods of the model (`elbo`, `training_loss` etc).
 
-In the [Introduction to GPflow 2 notebook](../intro_to_gpflow2.ipynb) there is an example of how to use SVGP with optimisation using mini-batches of data.
+In the [Introduction to GPflow 2 notebook](intro_to_gpflow2.ipynb) there is an example of how to use SVGP with optimisation using mini-batches of data.
 
 In addition, SVGP’s `Z` parameter has been removed. To pass-in inducing points use the `inducing_variable` parameter. Also `SVGP`'s `feature` attribute has been renamed to `inducing_variable`.
 
@@ -198,6 +201,24 @@ For example:
 +f_mean, f_cov = model.predict_f(X, full_cov=True)
 ```
 
+
+## Predictive (log)density
+
+The `predict_density` method of GPModels and Likelihoods has been renamed to `predict_log_density`. (It always returned the predictive *log*-density, so no change in behaviour.)
+
+
+## Settings / Configuration
+
+In GPflow 2, the `gpflow.settings` module and the `gpflowrc` file have been removed. Instead, there is `gpflow.config`.
+
+`gpflow.settings.float_type` has changed to `gpflow.default_float()` and `gpflow.settings.int_type` has changed to `gpflow.default_int()`.
+`gpflow.settings.jitter`/`gpflow.settings.numerics.jitter_level` has changed to `gpflow.default_jitter()`.
+
+These default settings can be changed using environment variables (`GPFLOW_FLOAT`, `GPFLOW_INT`, `GPFLOW_JITTER`, etc.) or function calls (`gpflow.config.set_default_float()` etc.). There is also a `gpflow.config.as_context()` context manager for temporarily changing settings for only part of the code.
+
+See the `gpflow.config` API documentation for more details.
+
+
 <!-- #region -->
 ## Data Types
 
@@ -209,25 +230,45 @@ tf.constant(0.1, dtype=gpflow.default_float())
 ```
 <!-- #endregion -->
 
-## Float and Int Types
-
-In GPflow 2 `gpflow.settings.float_type` has changed to `gpflow.default_float()` and `gpflow.settings.int_type` has changed to `gpflow.default_int()`.
-
 
 ## Transforms
 
 These have been removed in favour of the tools in `tensorflow_probability.bijectors`. See for example [this Stackoverflow post](https://stackoverflow.com/q/58903446/5986907).
 
-GPflow 2 still provides the `gpflow.utilities.triangular` alias for `tfp.bijectors.FillTriangular`, and `gpflow.utilities.positive` which is configurable to be either softplus or exp, with an optional shift to ensure a lower bound that is larger than zero.
+GPflow 2 still provides the `gpflow.utilities.triangular` alias for `tfp.bijectors.FillTriangular`.
+
+To constrain parameters to be positive, there is `gpflow.utilities.positive` which is configurable to be either softplus or exp, with an optional shift to ensure a lower bound that is larger than zero.
+Note that the default lower bound used to be `1e-6`; by default, the lower bound if not specified explicitly is now `0.0`. Revert the previous behaviour using `gpflow.config.set_default_positive_minimum(1e-6)`.
+
+
+## Stationary kernel subclasses
+
+Most stationary kernels are actually *isotropic*-stationary kernels, and should now subclass from `gpflow.kernels.IsotropicStationary` instead of `gpflow.kernels.Stationary`. (The `Cosine` kernel is an example of a non-isotropic stationary kernel that depends on the direction, not just the norm, of $\mathbf{x} - \mathbf{x}'$.)
+
+
+## Likelihoods
+
+We cleaned up the likelihood API. Likelihoods now explicitly define the expected number of outputs (`observation_dim`) and latent functions (`latent_dim`), and shape-checking is in place by default.
+
+Most of the likelihoods simply broadcasted over outputs; these have now been grouped to subclass from `gpflow.likelihoods.ScalarLikelihood`, and implementations have been moved to leading-underscore functions. `ScalarLikelihood` subclasses need to implement at least `_scalar_log_prob` (previously `logp`), `_conditional_mean`, and `_conditional_variance`.
+
+The likelihood `log_prob`, `predict_log_density`, and `variational_expectations` methods now return a single value per data row; for `ScalarLikelihood` subclasses this means these methods effectively sum over the observation dimension (multiple outputs for the same input).
+
+
+## Priors
+
+Priors used to be defined on the *unconstrained* variable. The default has changed to the prior to be defined on the *constrained* parameter value; this can be changed by passing the `prior_on` argument to `gpflow.Parameter()`. See the [MCMC notebook](advanced/mcmc.ipynb) for more details.
 
 
 ## Name Scoping
 
-The `name_scope` decorator does not exist in GPflow 2 anymore. Use TensorFlow’s [name_scope](https://www.tensorflow.org/api_docs/python/tf/name_scope?version=stable) context manager instead.
+The `name_scope` decorator does not exist in GPflow 2 anymore. Use TensorFlow’s [`name_scope`](https://www.tensorflow.org/api_docs/python/tf/name_scope?version=stable) context manager instead.
 
 
 ## Model Persistence
 
 Model persistence with `gpflow.saver` has been removed in GPflow 2, in favour of TensorFlow 2’s [checkpointing](https://www.tensorflow.org/guide/checkpoint) and [model persistence using the SavedModel format](https://www.tensorflow.org/guide/saved_model).
 
-There is currently a bug in saving GPflow models with TensorFlow's model persistence (SavedModels). See https://github.com/GPflow/GPflow/issues/1127 for more details. However, checkpointing works fine.
+There is currently a bug in saving GPflow models with TensorFlow's model persistence (SavedModels). See https://github.com/GPflow/GPflow/issues/1127 for more details; a workaround is to replace all trainable parameters with constants using `gpflow.utilities.freeze(model)`.
+
+Checkpointing works fine.

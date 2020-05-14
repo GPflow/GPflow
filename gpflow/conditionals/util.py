@@ -134,22 +134,19 @@ def base_conditional(
     return fmean, fvar
 
 
-def sample_mvn(mean, cov, cov_structure=None, num_samples=None):
+def sample_mvn(mean, cov, full_cov, num_samples=None):
     """
     Returns a sample from a D-dimensional Multivariate Normal distribution
     :param mean: [..., N, D]
     :param cov: [..., N, D] or [..., N, D, D]
-    :param cov_structure: "diag" or "full"
-    - "diag": cov holds the diagonal elements of the covariance matrix
+    :param full_cov: if `True` return a "full" covariance matrix, otherwise a "diag":
     - "full": cov holds the full covariance matrix (without jitter)
+    - "diag": cov holds the diagonal elements of the covariance matrix
     :return: sample from the MVN of shape [..., (S), N, D], S = num_samples
     """
-    if cov_structure not in ("diag", "full"):
-        raise ValueError("cov_structure must be 'diag' or 'full'")
-
     shape_constraints = [
         (mean, [..., "N", "D"]),
-        (cov, [..., "N", "D"] if cov_structure == "diag" else [..., "N", "D", "D"]),
+        (cov, [..., "N", "D", "D"] if full_cov else [..., "N", "D"]),
     ]
     tf.debugging.assert_shapes(shape_constraints, message="sample_mvn() arguments")
 
@@ -158,13 +155,13 @@ def sample_mvn(mean, cov, cov_structure=None, num_samples=None):
     D = mean_shape[-1]
     leading_dims = mean_shape[:-2]
 
-    if cov_structure == "diag":
+    if not full_cov:
         # mean: [..., N, D] and cov [..., N, D]
         eps_shape = tf.concat([leading_dims, [S], mean_shape[-2:]], 0)
         eps = tf.random.normal(eps_shape, dtype=default_float())  # [..., S, N, D]
         samples = mean[..., None, :, :] + tf.sqrt(cov)[..., None, :, :] * eps  # [..., S, N, D]
 
-    elif cov_structure == "full":
+    else:
         # mean: [..., N, D] and cov [..., N, D, D]
         jittermat = (
             tf.eye(D, batch_shape=mean_shape[:-1], dtype=default_float()) * default_jitter()
@@ -469,7 +466,7 @@ def mix_latent_gp(W, g_mean, g_var, full_cov, full_output_cov):
     if not full_cov:
         shape_constraints.append((g_var, [..., "N", "L"]))
     else:
-        # TODO cannot assert g_var shape here because of the inner "leading"
+        # NOTE(awav) cannot assert g_var shape here because of the inner "leading"
         # dimensions, see https://github.com/GPflow/GPflow/issues/1296
         pass
 

@@ -117,15 +117,16 @@ def ndiagquad(funcs, H: int, Fmu, Fvar, logspace: bool = False, **Ys):
     Fmu, Fvar, Ys should all have same shape, with overall size `N`
     :return: shape is the same as that of the first Fmu
     """
-
-    def unify(f_list):
-        """
-        Stack a list of means/vars into a full block
-        """
-        return tf.reshape(tf.concat([tf.reshape(f, (-1, 1)) for f in f_list], axis=1), (-1, 1, Din))
-
     if isinstance(Fmu, (tuple, list)):
         Din = len(Fmu)
+
+        def unify(f_list):
+            """Stack a list of means/vars into a full block."""
+            return tf.reshape(
+                tensor=tf.concat([tf.reshape(f, shape=(-1, 1)) for f in f_list], axis=1),
+                shape=(-1, 1, Din),
+            )
+
         shape = tf.shape(Fmu[0])
         Fmu, Fvar = map(unify, [Fmu, Fvar])  # both [N, 1, Din]
     else:

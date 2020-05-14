@@ -214,8 +214,8 @@ def test_RBF_eKzxKxz_gradient_notNaN():
 
     with tf.GradientTape() as tape:
         ekz = expectation(p, (kernel, z), (kernel, z))
-        grad = tape.gradient(ekz, kernel.lengthscales)
-        assert grad is not None and not np.isnan(grad)
+    grad = tape.gradient(ekz, kernel.lengthscales)
+    assert grad is not None and not np.isnan(grad)
 
 
 @pytest.mark.parametrize("distribution", distrs("gauss_diag"))

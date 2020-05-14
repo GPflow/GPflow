@@ -23,11 +23,10 @@ import gpflow
 
 import tensorflow as tf
 import numpy as np
-import matplotlib
+import matplotlib.pyplot as plt
 
 # %matplotlib inline
-matplotlib.rcParams["figure.figsize"] = (12, 6)
-plt = matplotlib.pyplot
+plt.rcParams["figure.figsize"] = (12, 6)
 
 np.random.seed(123)  # for reproducibility
 
@@ -78,18 +77,13 @@ likelihood = gpflow.likelihoods.Ordinal(bin_edges)
 m = gpflow.models.VGP(data=(X, Y), kernel=gpflow.kernels.Matern32(), likelihood=likelihood)
 
 # fit the model
-# @tf.function
-def objective_closure():
-    return -m.log_marginal_likelihood()
-
-
 opt = gpflow.optimizers.Scipy()
-opt.minimize(objective_closure, m.trainable_variables, options=dict(maxiter=100))
+opt.minimize(m.training_loss, m.trainable_variables, options=dict(maxiter=100))
 
 # %%
 # here we'll plot the expected value of Y +- 2 std deviations, as if the distribution were Gaussian
 plt.figure(figsize=(11, 6))
-X_data, Y_data = m.data
+X_data, Y_data = (m.data[0].numpy(), m.data[1].numpy())
 Xtest = np.linspace(X_data.min(), X_data.max(), 100).reshape(-1, 1)
 mu, var = m.predict_y(Xtest)
 (line,) = plt.plot(Xtest, mu, lw=2)
@@ -134,5 +128,3 @@ X_new = np.full_like(Y_new, x_new)
 dens_new = np.exp(m.predict_log_density((X_new, Y_new)))
 fig = plt.figure(figsize=(8, 4))
 plt.bar(x=Y_new.flatten(), height=dens_new.flatten())
-
-# %%

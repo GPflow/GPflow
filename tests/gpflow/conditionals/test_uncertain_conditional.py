@@ -149,12 +149,12 @@ def test_no_uncertainty(white, mean):
     )
     model.full_output_cov = False
 
-    @tf.function
-    def closure():
-        return -model.log_marginal_likelihood(Data.data)
-
     training_loop(
-        closure, optimizer=tf.optimizers.Adam(), var_list=model.trainable_variables, maxiter=100,
+        model.training_loss_closure(Data.data),
+        optimizer=tf.optimizers.Adam(),
+        var_list=model.trainable_variables,
+        maxiter=100,
+        compile=True,
     )
 
     mean1, var1 = model.predict_f(Data.Xnew_mu)
@@ -182,12 +182,12 @@ def test_monte_carlo_1_din(white, mean):
     )
     model.full_output_cov = True
 
-    @tf.function
-    def closure():
-        return -model.log_marginal_likelihood(DataMC1.data)
-
     training_loop(
-        closure, optimizer=tf.optimizers.Adam(), var_list=model.trainable_variables, maxiter=200,
+        model.training_loss_closure(DataMC1.data),
+        optimizer=tf.optimizers.Adam(),
+        var_list=model.trainable_variables,
+        maxiter=200,
+        compile=True,
     )
 
     mean1, var1 = model.uncertain_predict_f_moment_matching(
@@ -217,12 +217,12 @@ def test_monte_carlo_2_din(white, mean):
     )
     model.full_output_cov = True
 
-    @tf.function
-    def closure():
-        return -model.log_marginal_likelihood(DataMC2.data)
-
     training_loop(
-        closure, optimizer=tf.optimizers.Adam(), var_list=model.trainable_variables, maxiter=100,
+        model.training_loss_closure(DataMC2.data),
+        optimizer=tf.optimizers.Adam(),
+        var_list=model.trainable_variables,
+        maxiter=100,
+        compile=True,
     )
 
     mean1, var1 = model.uncertain_predict_f_moment_matching(

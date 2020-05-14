@@ -1,12 +1,12 @@
 import tensorflow as tf
 
-from ..inducing_variables import (
+from ...inducing_variables import (
     SeparateIndependentInducingVariables,
     SharedIndependentInducingVariables,
 )
-from ..kernels import SeparateIndependent, LinearCoregionalization
-from .dispatch import conditional, sample_conditional
-from .util import sample_mvn, mix_latent_gp
+from ...kernels import SeparateIndependent, LinearCoregionalization
+from ..dispatch import conditional, sample_conditional
+from ..util import sample_mvn, mix_latent_gp
 
 
 @sample_conditional.register(
@@ -43,7 +43,7 @@ def _sample_conditional(
     g_mu, g_var = ind_conditional(
         Xnew, inducing_variable, kernel, f, white=white, q_sqrt=q_sqrt
     )  # [..., N, L], [..., N, L]
-    g_sample = sample_mvn(g_mu, g_var, "diag", num_samples=num_samples)  # [..., (S), N, L]
+    g_sample = sample_mvn(g_mu, g_var, full_cov, num_samples=num_samples)  # [..., (S), N, L]
     f_mu, f_var = mix_latent_gp(kernel.W, g_mu, g_var, full_cov, full_output_cov)
     f_sample = tf.tensordot(g_sample, kernel.W, [[-1], [-1]])  # [..., N, P]
     return f_sample, f_mu, f_var

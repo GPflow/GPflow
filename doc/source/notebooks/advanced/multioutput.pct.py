@@ -150,7 +150,7 @@ def plot_model(m, lower=-8.0, upper=8.0):
         plt.fill_between(pX[:, 0], top, bot, alpha=0.3)
     plt.xlabel("X")
     plt.ylabel("f")
-    plt.title(f"lml: {m.log_likelihood(data):.3}")
+    plt.title(f"ELBO: {m.elbo(data):.3}")
     plt.plot(Z, Z * 0.0, "o")
 
 
@@ -168,7 +168,9 @@ def plot_model(m, lower=-8.0, upper=8.0):
 
 # %%
 # create multi-output kernel
-kernel = gpf.kernels.SharedIndependent(gpf.kernels.RBF(1) + gpf.kernels.Linear(1), output_dim=P)
+kernel = gpf.kernels.SharedIndependent(
+    gpf.kernels.SquaredExponential() + gpf.kernels.Linear(), output_dim=P
+)
 # initialization of inducing input locations (M random points from the training inputs)
 Z = Zinit.copy()
 # create multi-output inducing variables from Z
@@ -184,13 +186,9 @@ print_summary(m)
 
 # %%
 def optimize_model_with_scipy(model):
-    @tf.function
-    def obj():
-        return -model.elbo(data)
-
     optimizer = gpf.optimizers.Scipy()
     optimizer.minimize(
-        obj,
+        model.training_loss_closure(data),
         variables=model.trainable_variables,
         method="l-bfgs-b",
         options={"disp": True, "maxiter": MAXITER},
@@ -216,7 +214,7 @@ m.kernel.kernel.kernels[0].lengthscales
 
 # %%
 # Create list of kernels for each output
-kern_list = [gpf.kernels.RBF(D) + gpf.kernels.Linear(1) for _ in range(P)]
+kern_list = [gpf.kernels.SquaredExponential() + gpf.kernels.Linear() for _ in range(P)]
 # Create multi-output kernel from kernel list
 kernel = gpf.kernels.SeparateIndependent(kern_list)
 # initialization of inducing input locations (M random points from the training inputs)
@@ -248,7 +246,7 @@ plot_model(m)
 
 # %%
 # Create list of kernels for each output
-kern_list = [gpf.kernels.RBF(D) + gpf.kernels.Linear(1) for _ in range(P)]
+kern_list = [gpf.kernels.SquaredExponential() + gpf.kernels.Linear() for _ in range(P)]
 # Create multi-output kernel from kernel list
 kernel = gpf.kernels.SeparateIndependent(kern_list)
 # initialization of inducing input locations, one set of locations per output
@@ -302,7 +300,7 @@ m.inducing_variable.inducing_variable_list
 
 # %%
 # Create list of kernels for each output
-kern_list = [gpf.kernels.RBF(D) + gpf.kernels.Linear(D) for _ in range(L)]
+kern_list = [gpf.kernels.SquaredExponential() + gpf.kernels.Linear() for _ in range(L)]
 # Create multi-output kernel from kernel list
 kernel = gpf.kernels.LinearCoregionalization(
     kern_list, W=np.random.randn(P, L)
@@ -424,5 +422,3 @@ inspect_conditional(
 # %% [markdown]
 # ## Further Reading:
 # - [A simple demonstration of coregionalization](./coregionalisation.ipynb), which details other GPflow features for multi-output prediction without fully observed outputs.
-
-# %%

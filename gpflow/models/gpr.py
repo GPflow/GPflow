@@ -17,13 +17,16 @@ from typing import Optional, Tuple
 import tensorflow as tf
 
 import gpflow
+
 from ..kernels import Kernel
 from ..logdensities import multivariate_normal
 from ..mean_functions import MeanFunction
-from .model import GPModel, InputData, RegressionData, MeanAndVariance
+from .model import GPModel, InputData, MeanAndVariance, RegressionData
+from .training_mixins import InternalDataTrainingLossMixin
+from .util import data_input_to_tensor
 
 
-class GPR(GPModel):
+class GPR(GPModel, InternalDataTrainingLossMixin):
     r"""
     Gaussian Process Regression.
 
@@ -48,9 +51,12 @@ class GPR(GPModel):
         likelihood = gpflow.likelihoods.Gaussian(noise_variance)
         _, Y_data = data
         super().__init__(kernel, likelihood, mean_function, num_latent_gps=Y_data.shape[-1])
-        self.data = data
+        self.data = data_input_to_tensor(data)
 
-    def log_likelihood(self) -> tf.Tensor:
+    def maximum_log_likelihood_objective(self) -> tf.Tensor:
+        return self.log_marginal_likelihood()
+
+    def log_marginal_likelihood(self) -> tf.Tensor:
         r"""
         Computes the log marginal likelihood.
 

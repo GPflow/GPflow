@@ -168,18 +168,12 @@ model = gpflow.models.SVGP(
 data_iterator = iter(dataset)
 adam_opt = tf.optimizers.Adam(0.001)
 
-
-@tf.function
-def loss_cb(batch: Tuple[tf.Tensor, tf.Tensor]):
-    loss_value = -model.elbo(batch)
-    return loss_value
+training_loss = model.training_loss_closure(data_iterator)
 
 
 @tf.function
 def optimization_step():
-    batch = next(data_iterator)
-    func = lambda: loss_cb(batch)
-    adam_opt.minimize(func, var_list=model.trainable_variables)
+    adam_opt.minimize(training_loss, var_list=model.trainable_variables)
 
 
 for _ in range(iterations):

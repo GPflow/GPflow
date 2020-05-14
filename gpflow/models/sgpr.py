@@ -11,23 +11,26 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from typing import Optional
+
+from typing import Optional, Tuple
 
 import numpy as np
 import tensorflow as tf
 
 from gpflow.kernels import Kernel
+
 from .. import likelihoods
 from ..config import default_float, default_jitter
 from ..covariances.dispatch import Kuf, Kuu
 from ..inducing_variables import InducingPoints
-from ..mean_functions import Zero, MeanFunction
+from ..mean_functions import MeanFunction
 from ..utilities import to_default_float
-from .model import GPModel, InputData, RegressionData, MeanAndVariance
-from .util import inducingpoint_wrapper
+from .model import GPModel, MeanAndVariance
+from .training_mixins import InputData, InternalDataTrainingLossMixin, RegressionData
+from .util import data_input_to_tensor, inducingpoint_wrapper
 
 
-class SGPRBase(GPModel):
+class SGPRBase(GPModel, InternalDataTrainingLossMixin):
     """
     Common base class for SGPR and GPRFITC that provides the common __init__
     and upper_bound() methods.
@@ -54,16 +57,16 @@ class SGPRBase(GPModel):
         initialized to `noise_variance`.
         """
         likelihood = likelihoods.Gaussian(noise_variance)
-        X_data, Y_data = data
+        X_data, Y_data = data_input_to_tensor(data)
         num_latent_gps = Y_data.shape[-1] if num_latent_gps is None else num_latent_gps
         super().__init__(kernel, likelihood, mean_function, num_latent_gps=num_latent_gps)
 
-        self.data = data
+        self.data = X_data, Y_data
         self.num_data = X_data.shape[0]
 
         self.inducing_variable = inducingpoint_wrapper(inducing_variable)
 
-    def upper_bound(self):
+    def upper_bound(self) -> tf.Tensor:
         """
         Upper bound for the sparse GP regression marginal likelihood.  Note that
         the same inducing points are used for calculating the upper bound, as are
@@ -148,7 +151,10 @@ class SGPR(SGPRBase):
 
     """
 
-    def log_likelihood(self) -> tf.Tensor:
+    def maximum_log_likelihood_objective(self) -> tf.Tensor:
+        return self.elbo()
+
+    def elbo(self) -> tf.Tensor:
         """
         Construct a tensorflow function to compute the bound on the marginal
         likelihood. For a derivation of the terms in here, see the associated
@@ -224,7 +230,7 @@ class SGPR(SGPRBase):
             var = tf.tile(var[:, None], [1, self.num_latent_gps])
         return mean + self.mean_function(Xnew), var
 
-    def compute_qu(self):
+    def compute_qu(self) -> Tuple[tf.Tensor, tf.Tensor]:
         """
         Computes the mean and variance of q(u) = N(mu, cov), the variational distribution on
         inducing outputs. SVGP with this q(u) should predict identically to
@@ -300,7 +306,10 @@ class GPRFITC(SGPRBase):
 
         return err, nu, Luu, L, alpha, beta, gamma
 
-    def log_likelihood(self) -> tf.Tensor:
+    def maximum_log_likelihood_objective(self) -> tf.Tensor:
+        return self.fitc_log_marginal_likelihood()
+
+    def fitc_log_marginal_likelihood(self) -> tf.Tensor:
         """
         Construct a tensorflow function to compute the bound on the marginal
         likelihood.

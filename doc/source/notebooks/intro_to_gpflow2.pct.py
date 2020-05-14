@@ -37,6 +37,7 @@ import tensorflow as tf
 import gpflow
 
 from gpflow.config import default_float
+from gpflow.ci_utils import ci_niter
 from gpflow.utilities import to_default_float
 
 import warnings
@@ -95,7 +96,7 @@ plt.plot(X, Y, "xk")
 plt.show()
 
 # %% [markdown]
-# Working with TensorFlow Datasets is an efficient way to rapidly shuffle, iterate, and batch from data.
+# Working with TensorFlow Datasets is an efficient way to rapidly shuffle, iterate, and batch from data. For `prefetch` size we use `tf.data.experimental.AUTOTUNE` as recommended by TensorFlow [guidelines](https://www.tensorflow.org/guide/data_performance).
 
 # %%
 train_dataset = tf.data.Dataset.from_tensor_slices((X, Y))
@@ -103,7 +104,7 @@ test_dataset = tf.data.Dataset.from_tensor_slices((Xtest, Ytest))
 
 batch_size = 32
 num_features = 10
-prefetch_size = num_train_data // 2
+prefetch_size = tf.data.experimental.AUTOTUNE
 shuffle_buffer_size = num_train_data // 2
 num_batches_per_epoch = num_train_data // batch_size
 
@@ -157,7 +158,7 @@ kernel.lengthscales.assign(0.5)
 # %%
 from gpflow.utilities import print_summary
 
-print_summary(model)  # same as print_summary(model, fmt="simple")
+print_summary(model)  # same as print_summary(model, fmt="fancy_table")
 
 # %% [markdown]
 # We can change default printing so that it will look nicer in our notebook:
@@ -174,31 +175,86 @@ print_summary(model)  # same as print_summary(model, fmt="notebook")
 model
 
 # %% [markdown]
-# ## Training using Gradient Tapes
+# ## Training using training_loss and training_loss_closure
 #
-# In TensorFlow 2, we can optimize (trainable) model parameters with TensorFlow optimizers using `tf.GradientTape`. In this simple example, we perform one gradient update of the Adam optimizer to minimize the negative marginal log likelihood (or ELBO) of our model.
+# GPflow models come with training_loss and training_loss_closure methods to make it easy to train your models.
+# There is a slight difference between models that own their own data (most of them, e.g. GPR, VGP, ...) and models that do not own the data (SVGP).
+#
+# ### Model-internal data
+# For models that own their own data (inheriting from InternalDataTrainingLossMixin), data is provided at model construction time.
+# In this case, model.training_loss does not take any arguments, and can be directly passed to an optimizer's `minimize()` method:
+
+# %%
+vgp_model = gpflow.models.VGP(data, kernel, likelihood)
+optimizer = tf.optimizers.Adam()
+optimizer.minimize(
+    vgp_model.training_loss, vgp_model.trainable_variables
+)  # Note: this does a single step
+# In practice, you will need to call minimize() many times, this will be further discussed below.
+
+# %% [markdown]
+# This also works for the Scipy optimizer, though it will do the full optimization on a single call to minimize():
+
+# %%
+optimizer = gpflow.optimizers.Scipy()
+optimizer.minimize(
+    vgp_model.training_loss, vgp_model.trainable_variables, options=dict(maxiter=ci_niter(1000))
+)
+
+# %% [markdown]
+# You can obtain a compiled version using training_loss_closure, whose `compile` argument is True by default:
+
+# %%
+vgp_model.training_loss_closure()  # compiled
+vgp_model.training_loss_closure(compile=True)  # compiled
+vgp_model.training_loss_closure(compile=False)  # uncompiled, same as vgp_model.training_loss
+
+# %% [markdown]
+# The SVGP model inherits from ExternalDataTrainingLossMixin and expects the data to be passed to training_loss().
+# For SVGP as for the other regression models, `data` is a two-tuple of `(X, Y)`, where `X` is an array/tensor with shape `(num_data, input_dim)` and `Y` is an array/tensor with shape `(num_data, output_dim)`:
+
+# %%
+assert isinstance(model, gpflow.models.SVGP)
+model.training_loss(data)
+
+# %% [markdown]
+# To make optimizing it easy, it has a `training_loss_closure()` method, that takes the data and returns a closure that computes the training loss on this data:
 
 # %%
 optimizer = tf.optimizers.Adam()
-
-with tf.GradientTape() as tape:
-    tape.watch(model.trainable_variables)
-    obj = -model.elbo(data)
-    grads = tape.gradient(obj, model.trainable_variables)
-
-optimizer.apply_gradients(zip(grads, model.trainable_variables))
-
+training_loss = model.training_loss_closure(
+    data
+)  # We save the compiled closure in a variable so as not to re-compile it each step
+optimizer.minimize(training_loss, model.trainable_variables)  # Note that this does a single step
 
 # %% [markdown]
-# For a more elaborate example of a gradient update we can define an ```optimization_step``` that uses the decorator ```tf.function``` on a closure. A closure is a callable that returns the model objective evaluated at a given dataset when called.
+# SVGP can handle mini-batching, and an iterator from a batched tf.data.Dataset can be passed to the model's training_loss_closure():
+
+# %%
+batch_size = 5
+batched_dataset = tf.data.Dataset.from_tensor_slices(data).batch(batch_size)
+training_loss = model.training_loss_closure(iter(batched_dataset))
+
+optimizer.minimize(training_loss, model.trainable_variables)  # Note that this does a single step
+
+# %% [markdown]
+# As previously, training_loss_closure takes an optional `compile` argument for tf.function compilation (True by default).
+
+# %% [markdown]
+# ## Training using Gradient Tapes
+#
+# For a more elaborate example of a gradient update we can define an `optimization_step` that explicitly computes and applies gradients to the model.
+# In TensorFlow 2, we can optimize (trainable) model parameters with TensorFlow optimizers using `tf.GradientTape`. In this simple example, we perform one gradient update of the Adam optimizer to minimize the training_loss (in this case the negative ELBO) of our model.
+# The `optimization_step` can (and should) be wrapped in `tf.function` to be compiled to a graph if executing it many times.
 
 # %%
 def optimization_step(model: gpflow.models.SVGP, batch: Tuple[tf.Tensor, tf.Tensor]):
     with tf.GradientTape(watch_accessed_variables=False) as tape:
         tape.watch(model.trainable_variables)
-        obj = -model.elbo(batch)
-        grads = tape.gradient(obj, model.trainable_variables)
+        loss = model.training_loss(batch)
+    grads = tape.gradient(loss, model.trainable_variables)
     optimizer.apply_gradients(zip(grads, model.trainable_variables))
+    return loss
 
 
 # %% [markdown]
@@ -206,10 +262,11 @@ def optimization_step(model: gpflow.models.SVGP, batch: Tuple[tf.Tensor, tf.Tens
 
 # %%
 def simple_training_loop(model: gpflow.models.SVGP, epochs: int = 1, logging_epoch_freq: int = 10):
-    batches = iter(train_dataset)
     tf_optimization_step = tf.function(optimization_step)
+
+    batches = iter(train_dataset)
     for epoch in range(epochs):
-        for _ in range(num_batches_per_epoch):
+        for _ in range(ci_niter(num_batches_per_epoch)):
             tf_optimization_step(model, next(batches))
 
         epoch_id = epoch + 1
@@ -223,43 +280,84 @@ simple_training_loop(model, epochs=10, logging_epoch_freq=2)
 # %% [markdown]
 # ## Monitoring
 #
-# We can monitor the training procedure using `tf.summary`. First we create a summary writer object through which we can write scalars and images.
+# `gpflow.monitor` provides a thin wrapper on top of tf.summary that makes it easy to monitor the training procedure.
+# For a more detailed tutorial see the [monitoring notebook](./basics/monitoring.pct.py).
 
 # %%
-from intro_to_gpflow2_plotting import plotting_regression, summary_matplotlib_image
+from gpflow.monitor import (
+    ImageToTensorBoard,
+    ModelToTensorBoard,
+    ExecuteCallback,
+    Monitor,
+    MonitorTaskGroup,
+    ScalarToTensorBoard,
+)
 
-samples_input = to_default_float(np.linspace(0, 10, 100).reshape(100, 1))
+samples_input = np.linspace(0, 10, 100).reshape(-1, 1)
 
 
-def monitored_training_loop(
-    model: gpflow.models.SVGP,
-    logdir: str,
-    epochs: int = 1,
-    logging_epoch_freq: int = 10,
-    num_samples: int = 10,
-):
-    summary_writer = tf.summary.create_file_writer(logdir)
+def plot_model(fig, ax):
+    tf.print("Plotting...")
+    mean, var = model.predict_f(samples_input)
+    num_samples = 10
+    samples = model.predict_f_samples(samples_input, num_samples)
+    ax.plot(samples_input, mean, "C0", lw=2)
+    ax.fill_between(
+        samples_input[:, 0],
+        mean[:, 0] - 1.96 * np.sqrt(var[:, 0]),
+        mean[:, 0] + 1.96 * np.sqrt(var[:, 0]),
+        color="C0",
+        alpha=0.2,
+    )
+    ax.plot(X, Y, "kx")
+    ax.plot(samples_input, samples[:, :, 0].numpy().T, "C0", linewidth=0.5)
+    ax.set_ylim(-2.0, +2.0)
+    ax.set_xlim(0, 10)
+
+
+def print_cb(epoch_id=None, data=None):
+    tf.print(f"Epoch {epoch_id}: ELBO (train)", model.elbo(data))
+
+
+def elbo_cb(data=None, **_):
+    return model.elbo(data)
+
+
+output_logdir = enumerated_logdir()
+
+model_task = ModelToTensorBoard(output_logdir, model)
+elbo_task = ScalarToTensorBoard(output_logdir, elbo_cb, "elbo")
+print_task = ExecuteCallback(callback=print_cb)
+
+# We group these tasks and specify a period of `100` steps for them
+fast_tasks = MonitorTaskGroup([model_task, elbo_task, print_task], period=100)
+
+# We also want to see the model's fit during the optimisation
+image_task = ImageToTensorBoard(output_logdir, plot_model, "samples_image")
+
+# We typically don't want to plot too frequently during optimisation,
+# which is why we specify a larger period for this task.
+slow_taks = MonitorTaskGroup(image_task, period=500)
+monitor = Monitor(fast_tasks, slow_taks)
+
+
+def monitored_training_loop(epochs: int):
     tf_optimization_step = tf.function(optimization_step)
+
     batches = iter(train_dataset)
 
-    with summary_writer.as_default():
-        for epoch in range(epochs):
-            for _ in range(num_batches_per_epoch):
-                tf_optimization_step(model, next(batches))
+    for epoch in range(epochs):
+        for _ in range(ci_niter(num_batches_per_epoch)):
+            batch = next(batches)
+            tf_optimization_step(model, batch)
 
-            epoch_id = epoch + 1
-            if epoch_id % logging_epoch_freq == 0:
-                tf.print(f"Epoch {epoch_id}: ELBO (train) {model.elbo(data)}")
+        epoch_id = epoch + 1
+        monitor(epoch, epoch_id=epoch_id, data=data)
 
-                mean, var = model.predict_f(samples_input)
-                samples = model.predict_f_samples(samples_input, num_samples)
-                fig = plotting_regression(X, Y, samples_input, mean, var, samples)
 
-                summary_matplotlib_image(dict(model_samples=fig), step=epoch)
-                tf.summary.scalar("elbo", data=model.elbo(data), step=epoch)
-                tf.summary.scalar("likelihood/variance", data=model.likelihood.variance, step=epoch)
-                tf.summary.scalar("kernel/lengthscales", data=model.kernel.lengthscales, step=epoch)
-                tf.summary.scalar("kernel/variance", data=model.kernel.variance, step=epoch)
+# %% [markdown]
+# NOTE: for optimal performance it is recommended to wrap the monitoring inside `tf.function`.
+# This is detailed in the [monitoring notebook](./basics/monitoring.ipynb).
 
 
 # %%
@@ -267,8 +365,7 @@ model = gpflow.models.SVGP(
     kernel=kernel, likelihood=likelihood, inducing_variable=inducing_variable
 )
 
-output_logdir = enumerated_logdir()
-monitored_training_loop(model, output_logdir, epochs=1000, logging_epoch_freq=100)
+monitored_training_loop(epochs=1000)
 
 # %% [markdown]
 # Then, we can use TensorBoard to examine the training procedure in more detail
@@ -330,10 +427,11 @@ def checkpointing_training_loop(
     step_var: Optional[tf.Variable] = None,
 ):
     tf_optimization_step = tf.function(optimization_step)
+
     batches = iter(train_dataset)
 
     for epoch in range(epochs):
-        for step in range(num_batches_per_epoch):
+        for step in range(ci_niter(num_batches_per_epoch)):
             tf_optimization_step(model, next(batches))
             if step_var is not None:
                 step_var.assign(epoch * num_batches_per_epoch + step + 1)
@@ -438,3 +536,31 @@ loaded_model = tf.saved_model.load(save_dir)
 loaded_result = loaded_model.predict(samples_input)
 
 np.testing.assert_array_equal(loaded_result, original_result)
+
+# %% [markdown]
+# ## User config update
+#
+# In this notebook, we used a lot `gpflow.config` methods for setting and getting default attributes from global configuration. However, GPflow provides a way for local config modification without updating values in global. As you can see below, using `gpflow.config.as_context` replaces temporarily global config with your instance. At creation time, custom config instance uses standard values from the global config:
+
+# %%
+user_config = gpflow.config.Config(float=tf.float32, positive_bijector="exp")
+
+user_str = "User config\t"
+global_str = "Global config\t"
+
+with gpflow.config.as_context(user_config):
+    print(f"{user_str} gpflow.config.default_float = {gpflow.config.default_float()}")
+    print(
+        f"{user_str} gpflow.config.positive_bijector = {gpflow.config.default_positive_bijector()}"
+    )
+
+print(f"{global_str} gpflow.config.default_float = {gpflow.config.default_float()}")
+print(f"{global_str} gpflow.config.positive_bijector = {gpflow.config.default_positive_bijector()}")
+
+# %%
+with gpflow.config.as_context(user_config):
+    p = gpflow.Parameter(1.1, transform=gpflow.utilities.positive())
+    print(f"{user_str}{p}")
+
+p = gpflow.Parameter(1.1, transform=gpflow.utilities.positive())
+print(f"{global_str}{p}")

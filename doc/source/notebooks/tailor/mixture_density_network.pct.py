@@ -63,16 +63,16 @@ _ = plt.ylabel("$y$")
 # ## Mixture Density Network models
 #
 # Mixture Density Networks (MDNs) are a parametric class of models that allow for conditional density estimation. They consist of two parts: a neural net and a Mixture of Gaussians (MoG). The neural net is responsible for producing the characteristics of the MoG. In practice, given that the MoG consists of $M$ Gaussians, the neural net will output a collection of $M$ means, variances and weights $\{\mu_m, \sigma_m^2, \pi_m\}_{m=1}^M$. These means, variances and weights are used to define the conditional probability distribution function:
-# $$
+# \begin{equation}
 # p(Y = y\,|\,X = x) = \sum_{m=1}^{M} \pi_{m}(x)\,\mathcal{N}\big(y\, \left|\,\mu_{m}(x), \sigma_{m}^2(x)\big)\right.
-# $$
+# \end{equation}
 #
 # Each of the parameters  $\pi_{m}(x), \mu_{m}(x), \sigma_{m}(x)$ of the distribution are determined by the neural net, as a function of the input $x$.
 #
 # We train the MDN's neural net by optimizing the model's likelihood:
-# $$
+# \begin{equation}
 # \mathcal{L} \triangleq \text{argmax}_{\Theta} \prod_{n=1}^N p(Y = y_n | X = x_n)
-# $$
+# \end{equation}
 #
 # where $\Theta$ collects the neural net's weights and biases and $\{x_n, y_n\}_{n=1}^N$ represents our training dataset.
 
@@ -88,7 +88,7 @@ import tensorflow as tf
 
 # %%
 import gpflow
-from gpflow.models import BayesianModel
+from gpflow.models import BayesianModel, ExternalDataTrainingLossMixin
 from gpflow.base import Parameter
 
 # %% [markdown]
@@ -101,7 +101,7 @@ from gpflow.base import Parameter
 from typing import Callable, Optional, Tuple
 
 
-class MDN(BayesianModel):
+class MDN(BayesianModel, ExternalDataTrainingLossMixin):
     def __init__(
         self,
         num_mixtures: Optional[int] = 5,
@@ -138,7 +138,7 @@ class MDN(BayesianModel):
 
         return pis, mus, sigmas
 
-    def log_marginal_likelihood(self, data: Tuple[tf.Tensor, tf.Tensor]):
+    def maximum_log_likelihood_objective(self, data: Tuple[tf.Tensor, tf.Tensor]):
         x, y = data
         pis, mus, sigmas = self.eval_network(x)
         Z = (2 * np.pi) ** 0.5 * sigmas
@@ -150,10 +150,10 @@ class MDN(BayesianModel):
 # %% [markdown]
 # ### Notes
 # - Given we are dealing with a MoG, the neural net output must comply with the following restrictions:
-# $$
-# \sum_{m=1}^{M} \pi_{m}(x) = 1, \pi_m \ge 0\ \text{and}\ \sigma_m\ \forall\ m
-# $$
-# We achieve this by applying the `softmax` operator to the $\pi$'s and by taking the `exp` to the $\sigma$'s.
+#   \begin{equation}
+#   \sum_{m=1}^{M} \pi_{m}(x) = 1, \pi_m \ge 0\ \text{and}\ \sigma_m\ \forall\ m
+#   \end{equation}
+#   We achieve this by applying the `softmax` operator to the $\pi$'s and by taking the `exp` to the $\sigma$'s.
 #
 # - We use the "Xavier" initialization for the neural net's weights. (Glorot and Bengio, 2010).
 #
@@ -172,7 +172,7 @@ from gpflow.utilities import print_summary
 print_summary(model)
 
 # %% [markdown]
-# The objective function for MDN instances is the `log_marginal_likelihood`, which we use for optimization of the parameters. GPflow ensures that only the variables stored in `Parameter` objects are optimized. For the MDN, the only parameters are the weights and the biases of the neural net.
+# The objective function for MDN instances is the `maximum_log_likelihood_objective`, which we use for optimization of the parameters. GPflow ensures that only the variables stored in `Parameter` objects are optimized. For the MDN, the only parameters are the weights and the biases of the neural net.
 #
 # We use the `Scipy` optimizer, which is a wrapper around SciPy's L-BFGS optimization algorithm. Note that GPflow supports other TensorFlow optimizers such as `Adam`, `Adagrad`, and `Adadelta` as well.
 
@@ -181,12 +181,12 @@ from gpflow.optimizers import Scipy
 from gpflow.ci_utils import ci_niter
 
 Scipy().minimize(
-    tf.function(lambda: -model.log_marginal_likelihood(data)),
-    variables=model.trainable_parameters,
+    model.training_loss_closure(data, compile=True),
+    model.trainable_variables,
     options=dict(maxiter=ci_niter(1500)),
 )
 
-print("Final Likelihood", model.log_marginal_likelihood(data).numpy())
+print("Final Likelihood", model.maximum_log_likelihood_objective(data).numpy())
 
 # %% [markdown]
 # To evaluate the validity of our model, we draw the posterior density. We also plot $\mu(x)$ of the optimized neural net. Remember that for every $x$ the neural net outputs $M$ means $\mu_m(x)$. These determine the location of the Gaussians. We plot all $M$ means and use their corresponding mixture weight $\pi_m(X)$ to determine their size. Larger dots will have more impact in the Gaussian ensemble.
@@ -233,12 +233,12 @@ model = MDN(inner_dims=[100, 100], num_mixtures=5)
 
 # %%
 Scipy().minimize(
-    tf.function(lambda: -model.log_marginal_likelihood(data)),
-    variables=model.trainable_parameters,
+    model.training_loss_closure(data, compile=True),
+    model.trainable_variables,
     options=dict(maxiter=ci_niter(int(10e3))),
 )
 
-print("Final Likelihood", model.log_marginal_likelihood(data).numpy())
+print("Final Likelihood", model.maximum_log_likelihood_objective(data).numpy())
 
 # %%
 fig, axes = plt.subplots(1, 2, figsize=(12, 6))

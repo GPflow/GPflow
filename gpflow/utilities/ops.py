@@ -6,6 +6,9 @@ import tensorflow_probability as tfp
 import numpy as np
 
 
+EllipsisType = type(...)
+
+
 def cast(
     value: Union[tf.Tensor, np.ndarray], dtype: tf.DType, name: Optional[str] = None
 ) -> tf.Tensor:
@@ -23,7 +26,7 @@ def eye(num: int, value: tf.Tensor, dtype: Optional[tf.DType] = None) -> tf.Tens
 
 
 def leading_transpose(
-    tensor: tf.Tensor, perm: List[Union[int, type(...)]], leading_dim: int = 0
+    tensor: tf.Tensor, perm: List[Union[int, EllipsisType]], leading_dim: int = 0
 ) -> tf.Tensor:
     """
     Transposes tensors with leading dimensions. Leading dimensions in
@@ -85,10 +88,10 @@ def square_distance(X, X2):
     result may actually be very slightly negative for entries very
     close to each other.
 
-    This function can deal with leading dimensions in X and X2. 
-    In the sample case, where X and X2 are both 2 dimensional, 
-    for example, X is [N, D] and X2 is [M, D], then a tensor of shape 
-    [N, M] is returned. If X is [N1, S1, D] and X2 is [N2, S2, D] 
+    This function can deal with leading dimensions in X and X2.
+    In the sample case, where X and X2 are both 2 dimensional,
+    for example, X is [N, D] and X2 is [M, D], then a tensor of shape
+    [N, M] is returned. If X is [N1, S1, D] and X2 is [N2, S2, D]
     then the output will be [N1, S1, N2, S2].
     """
     if X2 is None:
@@ -101,6 +104,29 @@ def square_distance(X, X2):
     dist = -2 * tf.tensordot(X, X2, [[-1], [-1]])
     dist += broadcasting_elementwise(tf.add, Xs, X2s)
     return dist
+
+
+def difference_matrix(X, X2):
+    """
+    Returns (X - X2ᵀ)
+
+    This function can deal with leading dimensions in X and X2.
+    For example, If X has shape [M, D] and X2 has shape [N, D],
+    the output will have shape [M, N, D]. If X has shape [I, J, M, D]
+    and X2 has shape [K, L, N, D], the output will have shape
+    [I, J, M, K, L, N, D].
+    """
+    if X2 is None:
+        X2 = X
+        diff = X[..., :, tf.newaxis, :] - X2[..., tf.newaxis, :, :]
+        return diff
+    Xshape = tf.shape(X)
+    X2shape = tf.shape(X2)
+    X = tf.reshape(X, (-1, Xshape[-1]))
+    X2 = tf.reshape(X2, (-1, X2shape[-1]))
+    diff = X[:, tf.newaxis, :] - X2[tf.newaxis, :, :]
+    diff = tf.reshape(diff, tf.concat((Xshape[:-1], X2shape[:-1], [Xshape[-1]]), 0))
+    return diff
 
 
 def pca_reduce(X: tf.Tensor, latent_dim: tf.Tensor) -> tf.Tensor:

@@ -17,9 +17,9 @@
 # # Kernel Design
 #
 # It's easy to make new kernels in GPflow. To demonstrate, we'll have a look at the Brownian motion kernel, whose function is
-# $$
+# \begin{equation}
 # k(x, x') = \sigma^2 \text{min}(x, x')
-# $$
+# \end{equation}
 # where $\sigma^2$ is a variance parameter.
 
 # %%
@@ -33,8 +33,8 @@ plt.style.use("ggplot")
 # %matplotlib inline
 
 # %% [markdown]
-# To make this new kernel class, we inherit from the base class `gpflow.kernels.Kernel` and implement the three functions below. **NOTE:** Depending on the kernel to be implemented, other classes can be more adequate. For example, if the kernel to be implemented is stationary, you can immediately subclass `gpflow.kernels.Stationary` (at which point you
-# only have to override `K_r` or `K_r2`; see the `Stationary` class docstring).
+# To make this new kernel class, we inherit from the base class `gpflow.kernels.Kernel` and implement the three functions below. **NOTE:** Depending on the kernel to be implemented, other classes can be more adequate. For example, if the kernel to be implemented is isotropic stationary, you can immediately subclass `gpflow.kernels.IsotropicStationary` (at which point you
+# only have to override `K_r` or `K_r2`; see the `IsotropicStationary` class docstring). Stationary but anisotropic kernels should subclass `gpflow.kernels.AnisotropicStationary` and override `K_d`.
 #
 # #### `__init__`
 # In this simple example, the constructor takes no argument (though it could, if that was convenient, for example to pass in an initial value for `variance`). It *must* call the constructor of the superclass with appropriate arguments. Brownian motion is only defined in one dimension, and we'll assume that the `active_dims` are `[0]`, for simplicity.
@@ -114,14 +114,8 @@ k = k1 + k2
 m = gpflow.models.GPR((X, Y), kernel=k)
 # m.likelihood.variance.assign(1e-6)
 
-
-@tf.function
-def objective():
-    return -m.log_marginal_likelihood()
-
-
 opt = gpflow.optimizers.Scipy()
-opt.minimize(objective, variables=m.trainable_variables)
+opt.minimize(m.training_loss, variables=m.trainable_variables)
 print_summary(m, fmt="notebook")
 
 xx = np.linspace(0, 1.1, 100).reshape(100, 1)
