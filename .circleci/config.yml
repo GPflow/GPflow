@@ -19,6 +19,21 @@ runtest: &runtest
 version: 2.1
 
 jobs:
+  type-check:
+    docker:
+      - image: awav/tensorflow:2.1
+
+    steps:
+      - checkout
+      - run:
+          name: Install mypy
+          command: |
+            pip install mypy
+      - run:
+          name: Run type checker
+          command: |
+            mypy .
+
   unit-test:
     <<: *runtest
     docker:
