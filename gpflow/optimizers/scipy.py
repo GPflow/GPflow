@@ -16,7 +16,7 @@ class Scipy:
     def minimize(
         self,
         closure: LossClosure,
-        variables: Iterable[tf.Variable],
+        variables: Sequence[tf.Variable],
         method: Optional[str] = "L-BFGS-B",
         step_callback: Optional[StepCallback] = None,
         compile: bool = True,
@@ -136,9 +136,11 @@ class Scipy:
         return values
 
     @staticmethod
-    def assign_tensors(to_tensors: Iterable[tf.Variable], values: Iterable[tf.Tensor]) -> None:
-        for tensor, tensor_vector in zip(to_tensors, values):
-            tensor.assign(tensor_vector)
+    def assign_tensors(to_tensors: Sequence[tf.Variable], values: Sequence[tf.Tensor]) -> None:
+        if len(to_tensors) != len(values):
+            raise ValueError("to_tensors and values should have same length")
+        for target, value in zip(to_tensors, values):
+            target.assign(value)
 
 
 def _compute_loss_and_gradients(
