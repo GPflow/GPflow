@@ -31,7 +31,7 @@ if sys.version_info < (3, 7):
     requirements.append("dataclasses")
 
 if not on_readthedocs:
-    requirements.append("tensorflow-probability>=0.9")
+    requirements.append("tensorflow-probability==0.9")
 
 min_tf_version = "2.1.0"
 tf_cpu = "tensorflow"
