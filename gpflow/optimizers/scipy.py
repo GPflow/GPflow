@@ -76,12 +76,12 @@ class Scipy:
         )
 
     @classmethod
-    def initial_parameters(cls, variables: Iterable[tf.Variable]) -> tf.Tensor:
+    def initial_parameters(cls, variables: Sequence[tf.Variable]) -> tf.Tensor:
         return cls.pack_tensors(variables)
 
     @classmethod
     def eval_func(
-        cls, closure: LossClosure, variables: Tuple[tf.Variable], compile: bool = True
+        cls, closure: LossClosure, variables: Sequence[tf.Variable], compile: bool = True
     ) -> Callable[[np.ndarray], Tuple[np.ndarray, np.ndarray]]:
         def _tf_eval(x: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor]:
             values = cls.unpack_tensors(variables, x)
@@ -101,7 +101,7 @@ class Scipy:
 
     @classmethod
     def callback_func(
-        cls, variables: Tuple[tf.Variable], step_callback: StepCallback
+        cls, variables: Sequence[tf.Variable], step_callback: StepCallback
     ) -> Callable[[np.ndarray], None]:
         step = 0  # type: int
 
@@ -114,14 +114,14 @@ class Scipy:
         return _callback
 
     @staticmethod
-    def pack_tensors(tensors: Iterable[Union[tf.Tensor, tf.Variable]]) -> tf.Tensor:
+    def pack_tensors(tensors: Sequence[Union[tf.Tensor, tf.Variable]]) -> tf.Tensor:
         flats = [tf.reshape(tensor, (-1,)) for tensor in tensors]
         tensors_vector = tf.concat(flats, axis=0)
         return tensors_vector
 
     @staticmethod
     def unpack_tensors(
-        to_tensors: Iterable[Union[tf.Tensor, tf.Variable]], from_vector: tf.Tensor
+        to_tensors: Sequence[Union[tf.Tensor, tf.Variable]], from_vector: tf.Tensor
     ) -> List[tf.Tensor]:
         s = 0
         values = []
@@ -142,8 +142,8 @@ class Scipy:
 
 
 def _compute_loss_and_gradients(
-    loss_closure: LossClosure, variables: Tuple[tf.Variable]
-) -> Tuple[tf.Tensor, Tuple[tf.Tensor]]:
+    loss_closure: LossClosure, variables: Tuple[tf.Variable, ...]
+) -> Tuple[tf.Tensor, Tuple[tf.Tensor, ...]]:
     with tf.GradientTape(watch_accessed_variables=False) as tape:
         tape.watch(variables)
         loss = loss_closure()
