@@ -37,10 +37,11 @@ def test_notebook_dir_exists():
     assert os.path.isdir(_nbpath())
 
 
-# To blacklist a notebook, add its full base name (including .ipynb extension,
-# but without any directory component). If there are several notebooks in
-# different directories with the same base name, they will all get blacklisted
-# (change the blacklisting check to something else in that case, if need be!)
+# To blacklist a notebook, add its full base name (including .pct.py or .md
+# extension, but without any directory component). NOTE that if there are
+# several notebooks in different directories with the same base name, they will
+# all get blacklisted (change the blacklisting check to something else in that
+# case, if need be!)
 BLACKLISTED_NOTEBOOKS = []
 
 
