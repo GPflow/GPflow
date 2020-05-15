@@ -1,4 +1,4 @@
-from typing import Callable, Iterable, List, Optional, Tuple, TypeVar, Union
+from typing import Callable, Iterable, List, Optional, Sequence, Tuple, TypeVar, Union
 
 import numpy as np
 import scipy.optimize
@@ -7,7 +7,8 @@ from scipy.optimize import OptimizeResult
 
 __all__ = ["Scipy"]
 
-StepCallback = Callable[[int, List[tf.Variable], List[tf.Tensor]], None]
+Variables = Iterable[tf.Variable]  # deprecated
+StepCallback = Callable[[int, Sequence[tf.Variable], Sequence[tf.Tensor]], None]
 LossClosure = Callable[[], tf.Tensor]
 
 
@@ -55,7 +56,7 @@ class Scipy:
             raise TypeError(
                 "The 'closure' argument is expected to be a callable object."
             )  # pragma: no cover
-        variables = list(variables)
+        variables = tuple(variables)
         if not all(isinstance(v, tf.Variable) for v in variables):
             raise TypeError(
                 "The 'variables' argument is expected to only contain tf.Variable instances (use model.trainable_variables, not model.trainable_parameters)"
@@ -80,7 +81,7 @@ class Scipy:
 
     @classmethod
     def eval_func(
-        cls, closure: LossClosure, variables: List[tf.Variable], compile: bool = True
+        cls, closure: LossClosure, variables: Tuple[tf.Variable], compile: bool = True
     ) -> Callable[[np.ndarray], Tuple[np.ndarray, np.ndarray]]:
         def _tf_eval(x: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor]:
             values = cls.unpack_tensors(variables, x)
@@ -100,7 +101,7 @@ class Scipy:
 
     @classmethod
     def callback_func(
-        cls, variables: List[tf.Variable], step_callback: StepCallback
+        cls, variables: Tuple[tf.Variable], step_callback: StepCallback
     ) -> Callable[[np.ndarray], None]:
         step = 0  # type: int
 
@@ -141,8 +142,8 @@ class Scipy:
 
 
 def _compute_loss_and_gradients(
-    loss_closure: LossClosure, variables: List[tf.Variable]
-) -> Tuple[tf.Tensor, List[tf.Tensor]]:
+    loss_closure: LossClosure, variables: Tuple[tf.Variable]
+) -> Tuple[tf.Tensor, Tuple[tf.Tensor]]:
     with tf.GradientTape(watch_accessed_variables=False) as tape:
         tape.watch(variables)
         loss = loss_closure()
