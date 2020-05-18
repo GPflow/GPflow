@@ -25,8 +25,6 @@ __all__ = [
     "read_values",
     "to_default_float",
     "to_default_int",
-    "getattr_by_path",
-    "setattr_by_path",
     "reset_cache_bijectors",
     "select_dict_parameters_with_prior",
 ]
@@ -321,44 +319,6 @@ def _get_last_attr_spec(parent: object, attr_path: str) -> Tuple[object, str, st
 
     attr_token, index_token = parse(tokens[-1])
     return curr, attr_token, index_token
-
-
-def getattr_by_path(target: object, attr_path: str) -> Any:
-    """Get a value of nested attribute by a string path.
-
-    :param target: Root object that contains nested attribute
-    :param attr_path: String type value that represents path to an attribute.
-    :return: Object stored at `attr_path`.
-
-    Example:
-        k = gpflow.kernels.Matern52()
-        m = gpflow.models.GPR(..., kernel=kernel)
-        lengthscales = getattr_by_path(m, "kernel.lengthscales")
-    """
-    try:
-        descendant, attr, index = _get_last_attr_spec(target, attr_path)
-        return _get_by_name_index(descendant, attr, index)
-    except (ValueError, TypeError, AttributeError) as error:
-        raise ValueError(f"Cannot get value at path '{attr_path}'") from error
-
-
-def setattr_by_path(target: object, attr_path: str, value: Any):
-    """Set `value` by a given path to a nested attribute.
-
-    :param target: Root object that contains a nested attribute.
-    :param attr_path: String type value that represents path to the attribute.
-    :param value: Value to assign to the attribute.
-
-    Example:
-        k = gpflow.kernels.Matern52()
-        m = gpflow.models.GPR(..., kernel=kernel)
-        setattr_by_path(m, "kernel.lengthscales", tf.constant(1.0, dtype=...))
-    """
-    try:
-        descendant, attr, index = _get_last_attr_spec(target, attr_path)
-        _set_by_name_index(descendant, value, attr, index)
-    except (AttributeError, IndexError, TypeError, ValueError) as error:
-        raise ValueError(f"Cannot assign value at path '{attr_path}'") from error
 
 
 M = TypeVar("M", bound=tf.Module)

@@ -83,32 +83,3 @@ def test_pickle_frozen():
     assert loaded.var == module_frozen.var
     assert loaded.var2 == module_frozen.var2
     assert loaded.c.var == module_frozen.c.var
-
-
-@pytest.mark.parametrize("path", ["kernel[wrong_index]", "kernel.non_existing_attr", "kernel[100]"])
-def test_failures_getset_by_path(path):
-    d = (tf.random.normal((10, 1)), tf.random.normal((10, 1)))
-    k = gpflow.kernels.RBF() * gpflow.kernels.RBF()
-    m = gpflow.models.GPR(d, kernel=k)
-
-    with pytest.raises((ValueError, TypeError)):
-        gpflow.utilities.getattr_by_path(m, path)
-
-    if all([c in path for c in "[]"]):
-        with pytest.raises((ValueError, TypeError)):
-            gpflow.utilities.setattr_by_path(m, path, None)
-
-
-@pytest.mark.parametrize(
-    "path", ["kernel.kernels[0]", "kernel.kernels[0].variance", "kernel.kernels[0].lengthscales"]
-)
-def test_getset_by_path(path):
-    d = (
-        tf.random.normal((10, 1), dtype=gpflow.default_float()),
-        tf.random.normal((10, 1), dtype=gpflow.default_float()),
-    )
-    k = gpflow.kernels.RBF() * gpflow.kernels.RBF()
-    m = gpflow.models.GPR(d, kernel=k)
-
-    gpflow.utilities.getattr_by_path(m, path)
-    gpflow.utilities.setattr_by_path(m, path, None)
