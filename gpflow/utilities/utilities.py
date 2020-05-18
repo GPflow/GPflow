@@ -330,7 +330,7 @@ def deepcopy(input_module: M, memo: Optional[Dict[int, Any]] = None) -> M:
     tfp.bijectors.Bijector to allow the deepcopy of the tf.Module.
 
     :param input_module: tf.Module including keras.Model, keras.layers.Layer and gpflow.Module.
-    :param memo: Check details for func:`copy.deepcopy` `memo` argument.
+    :param memo: passed through to func:`copy.deepcopy` (see https://docs.python.org/3/library/copy.html).
     :return: Returns a deepcopy of an input object.
     """
     return copy.deepcopy(reset_cache_bijectors(input_module), memo)
@@ -344,7 +344,7 @@ def freeze(input_module: M) -> M:
     :return: Returns a frozen deepcopy of an input object.
     """
     objects_to_freeze = _get_leaf_components(input_module)
-    memo_tensors = {id(v): tf.constant(tf.convert_to_tensor(v)) for v in objects_to_freeze.values()}
+    memo_tensors = {id(v): tf.convert_to_tensor(v) for v in objects_to_freeze.values()}
     module_copy = deepcopy(input_module, memo_tensors)
     return module_copy
 
@@ -379,13 +379,13 @@ def traverse_module(
             new_state = traverse_module(subterm, new_acc, update_cb, target_types)
     elif isinstance(m, tf.Module):
         for name, submodule in vars(m).items():
-            ignore = m._TF_MODULE_IGNORED_PROPERTIES
+            ignored_attributes = m._TF_MODULE_IGNORED_PROPERTIES
             # NOTE(awav): since tfp version 0.10.0, tfp.bijectors.Bijector instances have
-            # `_parameters` dictionary with `self` references that cause
+            # `_parameters` dictionary with "self" references that cause
             # infinite recursive loop.
             if isinstance(m, tfp.bijectors.Bijector):
-                ignore = ignore.union(["_parameters"])
-            if name in ignore:
+                ignored_attributes = ignored_attributes.union({"_parameters"})
+            if name in ignored_attributes:
                 continue
             new_acc = (f"{path}.{name}", new_state)
             new_state = traverse_module(submodule, new_acc, update_cb, target_types)
