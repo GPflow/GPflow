@@ -424,7 +424,7 @@ def traverse_module(
             # `_parameters` dictionary with `self` references that cause
             # infinite recursive loop.
             if isinstance(m, tfp.bijectors.Bijector):
-                ignore = ignore.union("_parameters")
+                ignore = ignore.union(["_parameters"])
             if name in ignore:
                 continue
             new_acc = (f"{path}.{name}", new_state)
