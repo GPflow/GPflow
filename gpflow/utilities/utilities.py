@@ -419,13 +419,13 @@ def traverse_module(
             new_state = traverse_module(subterm, new_acc, update_cb, target_types)
     elif isinstance(m, tf.Module):
         for name, submodule in vars(m).items():
-            ignore = m._TF_MODULE_IGNORED_PROPERTIES
+            ignored_attributes = m._TF_MODULE_IGNORED_PROPERTIES
             # NOTE(awav): since tfp version 0.10.0, tfp.bijectors.Bijector instances have
-            # `_parameters` dictionary with `self` references that cause
+            # `_parameters` dictionary with "self" references that cause
             # infinite recursive loop.
             if isinstance(m, tfp.bijectors.Bijector):
-                ignore = ignore.union(["_parameters"])
-            if name in ignore:
+                ignored_attributes = ignored_attributes.union({"_parameters"})
+            if name in ignored_attributes:
                 continue
             new_acc = (f"{path}.{name}", new_state)
             new_state = traverse_module(submodule, new_acc, update_cb, target_types)
