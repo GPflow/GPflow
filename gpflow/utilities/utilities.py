@@ -370,7 +370,7 @@ def deepcopy(input_module: M, memo: Optional[Dict[int, Any]] = None) -> M:
     tfp.bijectors.Bijector to allow the deepcopy of the tf.Module.
 
     :param input_module: tf.Module including keras.Model, keras.layers.Layer and gpflow.Module.
-    :param memo: Check details for func:`copy.deepcopy` `memo` argument.
+    :param memo: passed through to func:`copy.deepcopy` (see https://docs.python.org/3/library/copy.html).
     :return: Returns a deepcopy of an input object.
     """
     return copy.deepcopy(reset_cache_bijectors(input_module), memo)
