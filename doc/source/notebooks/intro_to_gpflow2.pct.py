@@ -293,6 +293,7 @@ from gpflow.monitor import (
     ScalarToTensorBoard,
 )
 
+
 samples_input = np.linspace(0, 10, 100).reshape(-1, 1)
 
 
@@ -515,11 +516,11 @@ predict_fn = tf.function(
 module_to_save.predict = predict_fn
 
 # %% [markdown]
-# Save original result for futher comparison
+# Save original result for futher comparison. We also convert `samples_input` to a tensor. For a tensor input a `tf.function` will compile a single graph.
 
 # %%
-sample_input_tensor = tf.convert_to_tensor(samples_input, dtype=default_float())
-original_result = module_to_save.predict(sample_input_tensor)
+samples_input = tf.convert_to_tensor(samples_input, dtype=default_float())
+original_result = module_to_save.predict(samples_input)
 
 # %% [markdown]
 # Let's save the module
