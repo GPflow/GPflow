@@ -364,15 +364,16 @@ def setattr_by_path(target: object, attr_path: str, value: Any):
 M = TypeVar("M", bound=tf.Module)
 
 
-def deepcopy(input_module: M) -> M:
+def deepcopy(input_module: M, memo: Optional[Dict[int, Any]] = None) -> M:
     """
     Returns a deepcopy of the input tf.Module. To do that first resets the caches stored inside each
     tfp.bijectors.Bijector to allow the deepcopy of the tf.Module.
 
     :param input_module: tf.Module including keras.Model, keras.layers.Layer and gpflow.Module.
+    :param memo: Check details for func:`copy.deepcopy` `memo` argument.
     :return: Returns a deepcopy of an input object.
     """
-    return copy.deepcopy(reset_cache_bijectors(input_module))
+    return copy.deepcopy(reset_cache_bijectors(input_module), memo)
 
 
 def freeze(input_module: M) -> M:
@@ -382,12 +383,8 @@ def freeze(input_module: M) -> M:
     :param input_module: tf.Module or gpflow.Module.
     :return: Returns a frozen deepcopy of an input object.
     """
-    module_copy = deepcopy(input_module)
-    for name, value in parameter_dict(module_copy).items():
-        tensor = tf.convert_to_tensor(value, dtype=value.dtype)
-        const_value = tf.constant(tensor)
-        attr_path = name.lstrip(".")
-        setattr_by_path(module_copy, attr_path, const_value)
+    memo_tensors = {id(v): tf.convert_to_tensor(v) for v in input_module.variables}
+    module_copy = deepcopy(input_module, memo_tensors)
     return module_copy
 
 
@@ -421,7 +418,13 @@ def traverse_module(
             new_state = traverse_module(subterm, new_acc, update_cb, target_types)
     elif isinstance(m, tf.Module):
         for name, submodule in vars(m).items():
-            if name in tf.Module._TF_MODULE_IGNORED_PROPERTIES:
+            ignore = m._TF_MODULE_IGNORED_PROPERTIES
+            # NOTE(awav): since tfp version 0.10.0, tfp.bijectors.Bijector instances have
+            # `_parameters` dictionary with `self` references that cause
+            # infinite recursive loop.
+            if isinstance(m, tfp.bijectors.Bijector):
+                ignore = ignore.union("_parameters")
+            if name in ignore:
                 continue
             new_acc = (f"{path}.{name}", new_state)
             new_state = traverse_module(submodule, new_acc, update_cb, target_types)
