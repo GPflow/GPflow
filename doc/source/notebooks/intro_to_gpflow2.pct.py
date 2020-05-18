@@ -510,8 +510,7 @@ frozen_model = gpflow.utilities.freeze(model)
 # %%
 module_to_save = tf.Module()
 predict_fn = tf.function(
-    frozen_model.predict_f,
-    input_signature=[tf.TensorSpec(shape=[None, 1], dtype=tf.float64)]
+    frozen_model.predict_f, input_signature=[tf.TensorSpec(shape=[None, 1], dtype=tf.float64)]
 )
 module_to_save.predict = predict_fn
 
