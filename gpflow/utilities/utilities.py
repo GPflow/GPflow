@@ -383,7 +383,8 @@ def freeze(input_module: M) -> M:
     :param input_module: tf.Module or gpflow.Module.
     :return: Returns a frozen deepcopy of an input object.
     """
-    memo_tensors = {id(v): tf.convert_to_tensor(v) for v in input_module.variables}
+    objects_to_freeze = _get_leaf_components(input_module)
+    memo_tensors = {id(v): tf.constant(tf.convert_to_tensor(v)) for v in objects_to_freeze.values()}
     module_copy = deepcopy(input_module, memo_tensors)
     return module_copy
 

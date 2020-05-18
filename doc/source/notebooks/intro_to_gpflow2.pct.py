@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.3.0
+#       jupytext_version: 1.4.2
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -511,8 +511,7 @@ frozen_model = gpflow.utilities.freeze(model)
 module_to_save = tf.Module()
 predict_fn = tf.function(
     frozen_model.predict_f,
-    input_signature=[tf.TensorSpec(shape=[None, 1], dtype=tf.float64)],
-    autograph=False,
+    input_signature=[tf.TensorSpec(shape=[None, 1], dtype=tf.float64)]
 )
 module_to_save.predict = predict_fn
 
@@ -520,7 +519,8 @@ module_to_save.predict = predict_fn
 # Save original result for futher comparison
 
 # %%
-original_result = module_to_save.predict(samples_input)
+sample_input_tensor = tf.convert_to_tensor(samples_input, dtype=default_float())
+original_result = module_to_save.predict(sample_input_tensor)
 
 # %% [markdown]
 # Let's save the module
@@ -564,3 +564,7 @@ with gpflow.config.as_context(user_config):
 
 p = gpflow.Parameter(1.1, transform=gpflow.utilities.positive())
 print(f"{global_str}{p}")
+
+# %%
+
+# %%
