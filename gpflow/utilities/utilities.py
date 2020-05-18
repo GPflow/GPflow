@@ -420,12 +420,10 @@ def traverse_module(
             new_acc = (f"{path}['{term_idx}']", new_state)
             new_state = traverse_module(subterm, new_acc, update_cb, target_types)
     elif isinstance(m, tf.Module):
-        items = vars(m)
-        if isinstance(m, tfp.bijectors.Bijector) and "_parameters" in items:
-            assert items["_parameters"]["self"] is m
-            del items["_parameters"]["self"]  # avoid infinite recursion
-            del items["_parameters"]  # fix other bug
-        for name, submodule in vars(m).items():
+        module_vars = vars(m)
+        if isinstance(m, tfp.bijectors.Bijector):
+            module_vars = {name: module_vars[name] for name in module_vars if name != "_parameters"}
+        for name, submodule in module_vars.items():
             if name in tf.Module._TF_MODULE_IGNORED_PROPERTIES:
                 continue
             new_acc = (f"{path}.{name}", new_state)
