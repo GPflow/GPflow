@@ -563,7 +563,3 @@ with gpflow.config.as_context(user_config):
 
 p = gpflow.Parameter(1.1, transform=gpflow.utilities.positive())
 print(f"{global_str}{p}")
-
-# %%
-
-# %%
