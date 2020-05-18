@@ -406,19 +406,17 @@ def traverse_module(
     """
     path, state = acc
 
-    new_state = state
-
     if isinstance(m, target_types):
         return update_cb(m, path, state)
 
     if isinstance(m, (list, tuple)):
         for term_idx, subterm in enumerate(m):
-            new_acc = (f"{path}[{term_idx}]", new_state)
-            new_state = traverse_module(subterm, new_acc, update_cb, target_types)
+            new_acc = (f"{path}[{term_idx}]", state)
+            state = traverse_module(subterm, new_acc, update_cb, target_types)
     elif isinstance(m, dict):
         for term_idx, subterm in m.items():
-            new_acc = (f"{path}['{term_idx}']", new_state)
-            new_state = traverse_module(subterm, new_acc, update_cb, target_types)
+            new_acc = (f"{path}['{term_idx}']", state)
+            state = traverse_module(subterm, new_acc, update_cb, target_types)
     elif isinstance(m, tf.Module):
         module_vars = vars(m)
         if isinstance(m, tfp.bijectors.Bijector):
@@ -432,8 +430,8 @@ def traverse_module(
             if name in tf.Module._TF_MODULE_IGNORED_PROPERTIES:
                 continue
             new_acc = (f"{path}.{name}", new_state)
-            new_state = traverse_module(submodule, new_acc, update_cb, target_types)
-    return new_state
+            state = traverse_module(submodule, new_acc, update_cb, target_types)
+    return state
 
 
 @lru_cache()
