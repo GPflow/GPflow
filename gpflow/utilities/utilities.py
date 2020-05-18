@@ -422,6 +422,11 @@ def traverse_module(
     elif isinstance(m, tf.Module):
         module_vars = vars(m)
         if isinstance(m, tfp.bijectors.Bijector):
+            # NOTE: tensorflow_probability 0.10 introduced a `_parameters`
+            # attribute that contains all arguments to a bijector, including
+            # "self", which naively leads to infinite recursion. We ignore the
+            # entire `_parameters` attribute, as they are also stored as
+            # explicit attributes in the bijector.
             module_vars = {name: module_vars[name] for name in module_vars if name != "_parameters"}
         for name, submodule in module_vars.items():
             if name in tf.Module._TF_MODULE_IGNORED_PROPERTIES:
