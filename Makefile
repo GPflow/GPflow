@@ -23,5 +23,8 @@ package:
 format:
 	black -t py36 -l 100 gpflow tests doc setup.py
 
+type-check:
+    mypy .
+
 test:
 	pytest -v --durations=10 tests/

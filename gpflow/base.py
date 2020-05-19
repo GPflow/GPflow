@@ -107,7 +107,7 @@ class Parameter(tf.Module):
 
         self._transform = transform
         self.prior = prior
-        self.prior_on = prior_on
+        self.prior_on = prior_on  # type: ignore  # see https://github.com/python/mypy/issues/3004
 
         if isinstance(value, tf.Variable):
             self._unconstrained = value
