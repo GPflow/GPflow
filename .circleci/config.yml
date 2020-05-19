@@ -27,12 +27,10 @@ jobs:
       - checkout
       - run:
           name: Install type checker
-          command: |
-            pip install mypy
+          command: pip install mypy
       - run:
           name: Run type checker
-          command: |
-            mypy .
+          command: mypy .
 
   unit-test:
     <<: *runtest
@@ -118,6 +116,10 @@ workflows:
   version: 2.1
   build_test_and_deploy:
     jobs:
+      - type-check:
+          filters:
+            tags:
+              only: /^v[0-9]+(\.[0-9]+)*(-rc[0-9]+)?/
       - format-checker:
           filters:
             tags:
