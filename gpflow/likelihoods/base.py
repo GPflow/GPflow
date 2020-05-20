@@ -1,5 +1,4 @@
-# Copyright 2016 Valentine Svensson, James Hensman, alexggmatthews, Alexis Boukouvalas
-# Copyright 2017 Artem Artemev @awav
+# Copyright 2016-2020 The GPflow Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 """
 Likelihoods are another core component of GPflow. This describes how likely the
 data is under the assumptions made about the underlying latent functions

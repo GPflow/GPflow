@@ -1,4 +1,4 @@
-# Copyright 2017 the GPflow authors.
+# Copyright 2017-2020 The GPflow Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,8 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+
 # Eventually, it would be nice to not have to have our own classes for
-# proability distributions. The TensorFlow "distributions" framework would
+# probability distributions. The TensorFlow "distributions" framework would
 # be a good replacement.
 from .base import TensorType
 

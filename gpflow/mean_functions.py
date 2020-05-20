@@ -1,4 +1,4 @@
-# Copyright 2016 James Hensman, alexggmatthews, PabloLeon, Valentine Svensson
+# Copyright 2016-2020 The GPflow Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 """
 Throughout GPflow, by default, latent functions being modelled with Gaussian
 processes are assumed to have zero mean, f ~ GP(0, k(x,x')).
