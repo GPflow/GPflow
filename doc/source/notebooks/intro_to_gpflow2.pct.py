@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.3.0
+#       jupytext_version: 1.4.2
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -293,6 +293,7 @@ from gpflow.monitor import (
     ScalarToTensorBoard,
 )
 
+
 samples_input = np.linspace(0, 10, 100).reshape(-1, 1)
 
 
@@ -510,16 +511,15 @@ frozen_model = gpflow.utilities.freeze(model)
 # %%
 module_to_save = tf.Module()
 predict_fn = tf.function(
-    frozen_model.predict_f,
-    input_signature=[tf.TensorSpec(shape=[None, 1], dtype=tf.float64)],
-    autograph=False,
+    frozen_model.predict_f, input_signature=[tf.TensorSpec(shape=[None, 1], dtype=tf.float64)]
 )
 module_to_save.predict = predict_fn
 
 # %% [markdown]
-# Save original result for futher comparison
+# Save original result for futher comparison. We also convert `samples_input` to a tensor. For a tensor input a `tf.function` will compile a single graph.
 
 # %%
+samples_input = tf.convert_to_tensor(samples_input, dtype=default_float())
 original_result = module_to_save.predict(samples_input)
 
 # %% [markdown]
