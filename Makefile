@@ -1,3 +1,6 @@
+BLACK_CONFIG=-t py36 -l 100
+BLACK_TARGETS=gpflow tests doc setup.py
+
 .PHONY: help clean dev-install install package format test
 
 help:
@@ -21,10 +24,15 @@ package:
 	python setup.py bdist
 
 format:
-	black -t py36 -l 100 gpflow tests doc setup.py
+	black $(BLACK_CONFIG) $(BLACK_TARGETS)
+
+format-check:
+	black --check $(BLACK_CONFIG) $(BLACK_TARGETS)
 
 type-check:
-    mypy .
+	mypy .
 
-test:
+pytest:
 	pytest -v --durations=10 tests/
+
+test: format-check type-check pytest
