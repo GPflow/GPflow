@@ -19,11 +19,8 @@
 import os
 import sys
 import types
-
-# When we install GPflow on readthedocs we omit installing Tensorflow
-# and Tensorflow Probability. We make up for it by mocking them here.
-autodoc_mock_imports = ["tensorflow", "tensorflow_probability"]
-
+# Point to root source dir for API doc, relative to this file:
+sys.path.insert(0, os.path.abspath('../../gpflow'))
 
 # on_rtd is whether we are on readthedocs.org, this line of code grabbed from docs.readthedocs.org
 on_rtd = os.environ.get("READTHEDOCS", None) == "True"
@@ -46,28 +43,78 @@ if not on_rtd:  # only import and set the theme if we're building docs locally
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    # builtin extansions
-    "sphinx.ext.autodoc",
-    "sphinx.ext.autosummary",
-    "sphinx.ext.todo",
-    "sphinx.ext.mathjax",
-    "sphinx.ext.viewcode",
-    "numpydoc",
-    "nbsphinx",
-    "sphinx_autodoc_typehints",
-    "IPython.sphinxext.ipython_console_highlighting",
+    'sphinx.ext.autodoc',  # Core Sphinx library for auto html doc generation from docstrings
+    'sphinx.ext.autosummary',  # Create neat summary tables for modules/classes/methods etc
+    'sphinx_autopackagesummary',  # Automatically search packages instead of hard-naming modules
+    'sphinx.ext.intersphinx',  # Link to other project's documentation (see mapping below)
+    'sphinx.ext.mathjax',  # Render math via Javascript
+    'sphinx.ext.viewcode',  # Add a link to the Python source code for classes, functions etc.
+    'sphinx_autodoc_typehints', # Automatically document param types (less noise in class signature)
+    'sphinx.ext.todo', # Support for to-do items
+    'nbsphinx',  # Integrate Jupyter Notebooks and Sphinx
+    'IPython.sphinxext.ipython_console_highlighting'
 ]
 
-set_type_checking_flag = True
-typehints_fully_qualified = False
-always_document_param_types = True
-# autoclass_content = 'both'
+# Mappings for sphinx.ext.intersphinx. Projects have to have Sphinx-generated doc (.inv file)
+intersphinx_mapping = {
+    "numpy": ("https://numpy.org/doc/stable/", None),
+    "python": ("https://docs.python.org/3/", None),
+    # Unfort. doesn't work yet: https://github.com/mr-ubik/tensorflow-intersphinx/issues/1
+    "tensorflow": (
+        "https://www.tensorflow.org/api_docs/python",
+        "https://raw.githubusercontent.com/mr-ubik/tensorflow-intersphinx/master/tf2_py_objects.inv"
+    ),
+}
 
-# numpydoc_show_class_members = True
-numpydoc_class_members_toctree = False
+autosummary_generate = True  # Turn on sphinx.ext.autosummary
+autoclass_content = 'both'  # Add __init__ doc (ie. params) to class summaries
+html_show_sourcelink = False  # Remove 'view source code' from top of page (for html, not python)
+autodoc_inherit_docstrings = False  # If no class summary, *don't* inherit base class summary
+set_type_checking_flag = True # Enable 'expensive' imports for sphinx_autodoc_typehints
+nbsphinx_allow_errors = True  # Continue through Jupyter errors
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
+
+# Exclusions
+# To exclude a module, use autodoc_mock_imports. Note this may increase build time, a lot.
+# (Also, when installing on readthedocs.org, we omit installing Tensorflow and
+# Tensorflow Probability so mock them here instead.)
+autodoc_mock_imports = [
+    # 'tensorflow',
+    # 'tensorflow_probability',
+    # 'gpflow.expectations.dispatch', # Mocking .dispatch modules causes Sphinx to fall over
+    'gpflow.expectations.products',
+    'gpflow.expectations.variationals',
+    'gpflow.expectations.sums',
+    'gpflow.expectations.squared_exponentials',
+    'gpflow.expectations.misc',
+    'gpflow.expectations.mean_functions',
+    'gpflow.expectations.linears',
+    'gpflow.expectations.cross_kernels',
+    'gpflow.versions',
+    'gpflow.ci_utils',
+]
+# To exclude a class, function, method or attribute, use autodoc-skip-member. (Note this can also
+# be used in reverse, ie. to re-include a particular member that has been excluded.)
+# 'Private' and 'special' members (_ and __) are excluded using the Jinja2 templates; from the main
+# doc by the absence of specific autoclass directives (ie. :private-members:), and from summary
+# tables by explicit 'if-not' statements. Re-inclusion is effective for the main doc though not for
+# the summary tables.
+# def autodoc_skip_member_callback(app, what, name, obj, skip, options):
+#     # This would exclude the Matern12 class and to_default_float function:
+#     exclusions = ('Matern12', 'to_default_float')
+#     # This would re-include __call__ methods in main doc, previously excluded by templates:
+#     inclusions = ('__call__')
+#     if name in exclusions:
+#         return True
+#     elif name in inclusions:
+#         return False
+#     else:
+#         return skip
+# def setup(app):
+#     # Entry point to autodoc-skip-member
+#     app.connect("autodoc-skip-member", autodoc_skip_member_callback)
 
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:
@@ -377,19 +424,3 @@ texinfo_documents = [
 # If true, do not generate a @detailmenu in the "Top" node's menu.
 #
 # texinfo_no_detailmenu = False
-
-
-def setup(app):
-    """ Entry point to sphinx build customisation. """
-    app.connect("autodoc-skip-member", autodoc_skip_member_callback)
-
-
-def autodoc_skip_member_callback(app, what, name, obj, skip, options):
-    """
-    Only skip special methods and functions, including `__init__`, if they have no docstring.
-    """
-    if isinstance(obj, (types.FunctionType, types.MethodType)):
-        if getattr(obj, "__doc__", None) is not None:
-            return False  # never skip methods containing a docstring
-
-    return skip

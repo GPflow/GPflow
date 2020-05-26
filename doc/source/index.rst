@@ -24,8 +24,7 @@ GPflow Documentation
    derivations
 
 .. toctree::
-   :maxdepth: 3
-   :glob:
-   :caption: API:
+   :caption: API reference
+   :hidden:
 
-   gpflow/index
+   gpflow <api>
