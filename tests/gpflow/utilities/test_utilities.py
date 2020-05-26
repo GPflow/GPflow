@@ -15,8 +15,8 @@ def _module() -> tf.Module:
     class _Mod(tf.Module):
         def __init__(self):
             super().__init__()
-            self.var = tf.Variable(0.)
-            self.param = Parameter(0.)
+            self.var = tf.Variable(0.0)
+            self.param = Parameter(0.0)
 
     assert len(_Mod().trainable_variables) == 2
     assert len(_Mod().variables) == 2
