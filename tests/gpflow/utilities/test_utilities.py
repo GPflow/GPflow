@@ -13,15 +13,12 @@ from gpflow.utilities.ops import difference_matrix
 
 def _module() -> tf.Module:
     class _Mod(tf.Module):
-        class_var = tf.Variable(0.)
-        class_param = Parameter(1.)
-
         def __init__(self):
             super().__init__()
-            self.instance_var = tf.Variable(2.)
-            self.instance_param = Parameter(3.)
+            self.var = tf.Variable(0.)
+            self.param = Parameter(0.)
 
-    assert len(_Mod().trainable_variables) == 4
+    assert len(_Mod().trainable_variables) == 2
 
     return _Mod()
 
@@ -36,7 +33,7 @@ def test_can_set_not_trainable_then_trainable_again():
     module = _module()
     set_trainable(module, False)
     set_trainable(module, True)
-    assert len(module.trainable_variables) == 4
+    assert len(module.trainable_variables) == 2
 
 
 def test_can_set_not_trainable_iterable():
@@ -49,7 +46,7 @@ def test_can_set_not_trainable_then_trainable_iterable():
     modules = [_module(), _module(), _module()]
     set_trainable(modules, False)
     set_trainable(modules, True)
-    assert all(len(m.trainable_variables) == 4 for m in modules)
+    assert all(len(m.trainable_variables) == 2 for m in modules)
 
 
 @pytest.mark.parametrize(
