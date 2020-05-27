@@ -1,15 +1,19 @@
 BLACK_CONFIG=-t py36 -l 100
 BLACK_TARGETS=gpflow tests doc setup.py
 
-.PHONY: help clean dev-install install package format test
+.PHONY: help clean dev-install install package format format-check type-check test check-all
 
 help:
 	@echo "The following make targets are available:"
 	@echo "	dev-install		install all dependencies for dev environment and sets a egg link to the project sources"
 	@echo "	install			install all dependencies and the project in the current environment"
 	@echo "	package			build pip package"
-	@echo "	test			run all tests in parallel"
 	@echo "	clean			removes package, build files and egg info"
+	@echo "	format			auto-format code"
+	@echo "	format-check		check that code has been formatted correctly"
+	@echo "	type-check		check that mypy is happy with type annotations"
+	@echo "	test			run all tests"
+	@echo "	check-all		run format-check, type-check, and test (as run by the continuous integration system)"
 
 clean:
 	rm -rf dist *.egg-info build
@@ -32,7 +36,7 @@ format-check:
 type-check:
 	mypy .
 
-pytest:
+test:
 	pytest -v --durations=10 tests/
 
-test: format-check type-check pytest
+check-all: format-check type-check test
