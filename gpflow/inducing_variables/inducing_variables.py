@@ -80,7 +80,7 @@ class Multiscale(InducingPointsBase):
             )  # pragma: no cover
 
     @staticmethod
-    def _cust_square_dist(A: TensorData, B: TensorData, sc: TensorData) -> tf.Tensor:
+    def _cust_square_dist(A: TensorType, B: TensorType, sc: TensorType) -> tf.Tensor:
         """
         Custom version of _square_dist that allows sc to provide per-datapoint length
         scales. sc: [N, M, D].
