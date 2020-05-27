@@ -70,11 +70,11 @@ class Multiscale(InducingPointsBase):
       }
     """
 
-    def __init__(self, Z: TensorType, scales: TensorType):
+    def __init__(self, Z: TensorData, scales: TensorData):
         super().__init__(Z)
         # Multi-scale inducing_variable widths (std. dev. of Gaussian)
         self.scales = Parameter(scales, transform=positive())
-        if self.Z.shape != scales.shape:
+        if self.Z.shape != self.scales.shape:
             raise ValueError(
                 "Input locations `Z` and `scales` must have the same shape."
             )  # pragma: no cover
