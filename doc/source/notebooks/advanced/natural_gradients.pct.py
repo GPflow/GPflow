@@ -74,6 +74,7 @@ gpr.log_marginal_likelihood().numpy()
 
 # %%
 vgp = VGP(data, kernel=gpflow.kernels.Matern52(), likelihood=gpflow.likelihoods.Gaussian())
+# (Note that GPflow's NaturalGradient optimizer does not implement diagonal covariance parametrization, i.e., it does not work for `q_diag=True`.)
 
 # %% [markdown]
 # The log marginal likelihood lower bound (evidence lower bound or ELBO) of the approximate GP model is:
