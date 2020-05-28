@@ -10,10 +10,12 @@ def _module() -> tf.Module:
             self.var = tf.Variable(0.0)
             self.param = Parameter(0.0)
 
-    assert len(_Mod().trainable_variables) == 2
-    assert len(_Mod().variables) == 2
+    module = _Mod()
 
-    return _Mod()
+    assert len(module.trainable_variables) == 2
+    assert len(module.variables) == 2
+
+    return module
 
 
 def test_can_set_not_trainable():
