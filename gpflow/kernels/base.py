@@ -16,6 +16,14 @@ Kernels form a core component of GPflow models and allow prior information to
 be encoded about a latent function of interest. The effect of choosing
 different kernels, and how it is possible to combine multiple kernels is shown
 in the `"Using kernels in GPflow" notebook <notebooks/kernels.html>`_.
+
+Broadcasting over leading dimensions:
+`kernel.K(X1, X2)` returns the kernel evaluated on every pair in X1 and X2.
+E.g. if X1 has shape [S1, N1, D] and X2 has shape [S2, N2, D], kernel.K(X1, X2)
+will return a tensor of shape [S1, N1, S2, N2]. Similarly, kernel.K(X1, X1)
+returns a tensor of shape [S1, N1, S1, N1]. In contrast, the return shape of
+kernel.K(X1) is [S1, N1, N1]. (Without leading dimensions, the behaviour of
+kernel.K(X, None) is identical to kernel.K(X, X).)
 """
 
 import abc
@@ -25,21 +33,32 @@ from typing import List, Optional, Union
 import numpy as np
 import tensorflow as tf
 
+from ..base import Module
 
-class Kernel(tf.Module, metaclass=abc.ABCMeta):
+ActiveDims = Union[slice, list]
+
+
+class Kernel(Module, metaclass=abc.ABCMeta):
     """
     The basic kernel class. Handles active dims.
     """
 
-    def __init__(self,
-                 active_dims: Optional[Union[slice, list]] = None,
-                 name: Optional[str] = None):
+    def __init__(self, active_dims: Optional[ActiveDims] = None, name: Optional[str] = None):
         """
-        :param active_dims: active dimensions, has the slice type.
+        :param active_dims: active dimensions, either a slice or list of
+            indices into the columns of X.
         :param name: optional kernel name.
         """
         super().__init__(name=name)
-        self.active_dims = active_dims
+        self._active_dims = self._normalize_active_dims(active_dims)
+
+    @staticmethod
+    def _normalize_active_dims(value):
+        if value is None:
+            value = slice(None, None, None)
+        if not isinstance(value, slice):
+            value = np.array(value, dtype=int)
+        return value
 
     @property
     def active_dims(self):
@@ -47,11 +66,7 @@ class Kernel(tf.Module, metaclass=abc.ABCMeta):
 
     @active_dims.setter
     def active_dims(self, value):
-        if value is None:
-            value = slice(None, None, None)
-        if not isinstance(value, slice):
-            value = np.array(value, dtype=int)
-        self._active_dims = value
+        self._active_dims = self._normalize_active_dims(value)
 
     def on_separate_dims(self, other):
         """
@@ -95,11 +110,12 @@ class Kernel(tf.Module, metaclass=abc.ABCMeta):
         dims = self.active_dims
         if isinstance(dims, slice):
             X = X[..., dims]
-            X2 = X2[..., dims] if X2 is not None else X
+            if X2 is not None:
+                X2 = X2[..., dims]
         elif dims is not None:
-            # TODO(@awav): Convert when TF2.0 will support proper slicing.
             X = tf.gather(X, dims, axis=-1)
-            X2 = tf.gather(X2, dims, axis=-1) if X2 is not None else X
+            if X2 is not None:
+                X2 = tf.gather(X2, dims, axis=-1)
         return X, X2
 
     def slice_cov(self, cov: tf.Tensor) -> tf.Tensor:
@@ -120,15 +136,16 @@ class Kernel(tf.Module, metaclass=abc.ABCMeta):
         if isinstance(dims, slice):
             return cov[..., dims, dims]
         elif dims is not None:
-            nlast = cov.shape[-1]
+            nlast = tf.shape(cov)[-1]
             ndims = len(dims)
 
-            cov_shape = cov.shape
+            cov_shape = tf.shape(cov)
             cov_reshaped = tf.reshape(cov, [-1, nlast, nlast])
             gather1 = tf.gather(tf.transpose(cov_reshaped, [2, 1, 0]), dims)
             gather2 = tf.gather(tf.transpose(gather1, [1, 0, 2]), dims)
-            cov = tf.reshape(tf.transpose(gather2, [2, 0, 1]),
-                             tf.concat([cov_shape[:-2], [ndims, ndims]], 0))
+            cov = tf.reshape(
+                tf.transpose(gather2, [2, 0, 1]), tf.concat([cov_shape[:-2], [ndims, ndims]], 0)
+            )
 
         return cov
 
@@ -142,24 +159,32 @@ class Kernel(tf.Module, metaclass=abc.ABCMeta):
             return
 
         if ard_parameter.shape.rank > 0 and ard_parameter.shape[0] != len(self.active_dims):
-            raise ValueError(f"Size of `active_dims` {self.active_dims} does not match "
-                             f"size of ard parameter ({ard_parameter.shape[0]})")
-
-    @abc.abstractmethod
-    def K(self, X, X2=None, presliced=False):
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def K_diag(self, X, presliced=False):
-        raise NotImplementedError
-
-    def __call__(self, X, X2=None, full=True, presliced=False):
-        if not full and X2 is not None:
             raise ValueError(
-                "Ambiguous inputs: `diagonal` and `y` are not compatible.")
-        if not full:
+                f"Size of `active_dims` {self.active_dims} does not match "
+                f"size of ard parameter ({ard_parameter.shape[0]})"
+            )
+
+    @abc.abstractmethod
+    def K(self, X, X2=None):
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def K_diag(self, X):
+        raise NotImplementedError
+
+    def __call__(self, X, X2=None, *, full_cov=True, presliced=False):
+        if (not full_cov) and (X2 is not None):
+            raise ValueError("Ambiguous inputs: `not full_cov` and `X2` are not compatible.")
+
+        if not presliced:
+            X, X2 = self.slice(X, X2)
+
+        if not full_cov:
+            assert X2 is None
             return self.K_diag(X)
-        return self.K(X, X2)
+
+        else:
+            return self.K(X, X2)
 
     def __add__(self, other):
         return Sum([self, other])
@@ -183,8 +208,7 @@ class Combination(Kernel):
         super().__init__(name=name)
 
         if not all(isinstance(k, Kernel) for k in kernels):
-            raise TypeError(
-                "can only combine Kernel instances")  # pragma: no cover
+            raise TypeError("can only combine Kernel instances")  # pragma: no cover
 
         self._set_kernels(kernels)
 
@@ -214,28 +238,38 @@ class Combination(Kernel):
             dimlist = [k.active_dims for k in self.kernels]
             overlapping = False
             for i, dims_i in enumerate(dimlist):
-                for dims_j in dimlist[i + 1:]:
+                for dims_j in dimlist[i + 1 :]:
                     print(f"dims_i = {type(dims_i)}")
                     if np.any(dims_i.reshape(-1, 1) == dims_j.reshape(1, -1)):
                         overlapping = True
             return not overlapping
 
-    def K(self, X: tf.Tensor, X2: Optional[tf.Tensor] = None, presliced: bool = False) -> tf.Tensor:
-        res = [k.K(X, X2, presliced=presliced) for k in self.kernels]
-        return self._reduce(res)
 
-    def K_diag(self, X: tf.Tensor, presliced: bool = False) -> tf.Tensor:
-        res = [k.K_diag(X, presliced=presliced) for k in self.kernels]
-        return self._reduce(res)
+class ReducingCombination(Combination):
+    def __call__(self, X, X2=None, *, full_cov=True, presliced=False):
+        return self._reduce(
+            [k(X, X2, full_cov=full_cov, presliced=presliced) for k in self.kernels]
+        )
 
+    def K(self, X: tf.Tensor, X2: Optional[tf.Tensor] = None) -> tf.Tensor:
+        return self._reduce([k.K(X, X2) for k in self.kernels])
 
-class Sum(Combination):
+    def K_diag(self, X: tf.Tensor) -> tf.Tensor:
+        return self._reduce([k.K_diag(X) for k in self.kernels])
+
     @property
-    def _reduce(cls):
+    @abc.abstractmethod
+    def _reduce(self):
+        pass
+
+
+class Sum(ReducingCombination):
+    @property
+    def _reduce(self):
         return tf.add_n
 
 
-class Product(Combination):
+class Product(ReducingCombination):
     @property
-    def _reduce(cls):
+    def _reduce(self):
         return partial(reduce, tf.multiply)

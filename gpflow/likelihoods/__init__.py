@@ -1,4 +1,19 @@
-from .likelihoods import (Bernoulli, Beta, Exponential, Gamma, Gaussian,
-                          GaussianMC, Likelihood, MonteCarloLikelihood,
-                          MultiClass, Ordinal, Poisson, Softmax,
-                          SwitchedLikelihood, StudentT, RobustMax)
+from .base import Likelihood, ScalarLikelihood, SwitchedLikelihood, MonteCarloLikelihood
+from .scalar_discrete import (
+    Bernoulli,
+    Ordinal,
+    Poisson,
+)
+from .scalar_continuous import (
+    Beta,
+    Exponential,
+    Gamma,
+    Gaussian,
+    StudentT,
+)
+from .misc import GaussianMC
+from .multiclass import (
+    MultiClass,
+    Softmax,
+    RobustMax,
+)

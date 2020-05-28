@@ -1,27 +1,32 @@
+import copy
 import re
-from copy import deepcopy
 from functools import lru_cache
-from typing import Callable, Dict, List, Optional, Union, TypeVar, Any, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple, TypeVar, Union
 
 import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
 from tabulate import tabulate
 
+from .ops import cast
 from ..base import Parameter
-from ..config import default_summary_fmt, default_float, default_int
+from ..config import default_float, default_int, default_summary_fmt
 
 __all__ = [
     "set_trainable",
     "multiple_assign",
     "training_loop",
     "print_summary",
-    "deepcopy_components",
+    "tabulate_module_summary",
+    "deepcopy",
+    "freeze",
     "leaf_components",
     "parameter_dict",
     "read_values",
     "to_default_float",
     "to_default_int",
+    "reset_cache_bijectors",
+    "select_dict_parameters_with_prior",
 ]
 
 TraverseInput = TypeVar("TraverseInput", tf.Variable, tf.Module, Parameter)
@@ -32,11 +37,11 @@ TraverseUpdateCallable = Callable[[TraverseInput, Path, State], State]
 
 
 def to_default_int(x):
-    return tf.cast(x, dtype=default_int())
+    return cast(x, dtype=default_int())
 
 
 def to_default_float(x):
-    return tf.cast(x, dtype=default_float())
+    return cast(x, dtype=default_float())
 
 
 def set_trainable(model: tf.Module, flag: bool):
@@ -90,11 +95,13 @@ def parameter_dict(module: tf.Module) -> Dict[str, Union[Parameter, tf.Variable]
     return {f".{key.split('.', 1)[-1]}": value for key, value in param_dict.items()}
 
 
-def training_loop(closure: Callable[..., tf.Tensor],
-                  optimizer: Optional[tf.optimizers.Optimizer] = None,
-                  var_list: List[tf.Variable] = None,
-                  maxiter=1e3,
-                  jit=False):
+def training_loop(
+    closure: Callable[[], tf.Tensor],
+    optimizer: Optional[tf.optimizers.Optimizer] = None,
+    var_list: List[tf.Variable] = None,
+    maxiter=1e3,
+    compile=False,
+):
     """
     Simple generic training loop. At each iteration uses a GradientTape to compute
     the gradients of a loss function with respect to a set of variables.
@@ -110,13 +117,13 @@ def training_loop(closure: Callable[..., tf.Tensor],
     optimizer = tf.optimizers.Adam() if optimizer is None else optimizer
 
     def optimization_step():
-        with tf.GradientTape() as tape:
+        with tf.GradientTape(watch_accessed_variables=False) as tape:
             tape.watch(var_list)
             loss = closure()
         grads = tape.gradient(loss, var_list)
         optimizer.apply_gradients(zip(grads, var_list))
 
-    if jit:
+    if compile:
         optimization_step = tf.function(optimization_step)
 
     for _ in range(int(maxiter)):
@@ -130,6 +137,7 @@ def print_summary(module: tf.Module, fmt: str = None):
     fmt = fmt if fmt is not None else default_summary_fmt()
     if fmt == "notebook":
         from IPython.core.display import display, HTML
+
         tab = tabulate_module_summary(module, "html")
         display(HTML(tab))
     else:
@@ -138,14 +146,14 @@ def print_summary(module: tf.Module, fmt: str = None):
 
 def tabulate_module_summary(module: tf.Module, tablefmt: Optional[str] = None) -> str:
     def get_transform(path, var):
-        if hasattr(var, 'transform') and var.transform is not None:
+        if hasattr(var, "transform") and var.transform is not None:
             if isinstance(var.transform, tfp.bijectors.Chain):
                 return " + ".join(b.__class__.__name__ for b in var.transform.bijectors[::-1])
             return var.transform.__class__.__name__
         return None
 
     def get_prior(path, var):
-        if hasattr(var, 'prior') and var.prior is not None:
+        if hasattr(var, "prior") and var.prior is not None:
             return var.prior.name
         return None
 
@@ -159,7 +167,7 @@ def tabulate_module_summary(module: tf.Module, tablefmt: Optional[str] = None) -
         ("shape", lambda path, var: var.shape),
         ("dtype", lambda path, var: var.dtype.name),
         ("value", lambda path, var: _str_tensor_value(var.numpy())),
-        ]
+    ]
     column_names, column_getters = zip(*column_definition)
 
     merged_leaf_components = _merge_leaf_components(leaf_components(module))
@@ -176,12 +184,9 @@ def leaf_components(input: tf.Module):
 
 
 def _merge_leaf_components(
-        input: Dict[str, Union[tf.Variable, tf.Tensor, Parameter]]
+    input: Dict[str, Union[tf.Variable, tf.Tensor, Parameter]]
 ) -> Dict[str, Union[tf.Variable, tf.Tensor, Parameter]]:
-
-    input_values = set(
-        [value.experimental_ref() for value in input.values()]
-    )
+    input_values = set([value.experimental_ref() for value in input.values()])
     if len(input_values) == len(input):
         return input
     tmp_dict = dict()  # Type: Dict[ref, str]
@@ -224,31 +229,58 @@ def reset_cache_bijectors(input_module: tf.Module) -> tf.Module:
     :param input_module: tf.Module including keras.Model, keras.layers.Layer and gpflow.Module.
     :return:
     """
-    target_types = (tfp.bijectors.Bijector, )
-    accumulator = ('', None)
+    target_types = (tfp.bijectors.Bijector,)
+    accumulator = ("", None)
+
+    def clear_cache(b):
+        if isinstance(b, tfp.bijectors.Bijector):
+            # `_from_x` and `_from_y` are cache dictionaries for forward and inverse transformations
+            # in bijector class.
+            b._from_x.clear()
+            b._from_y.clear()
 
     def clear_bijector(bijector, _, state):
-        bijector._from_x.clear()
-        bijector._from_y.clear()
+        clear_cache(bijector)
+        if isinstance(bijector, tfp.bijectors.Chain):
+            for m in bijector.submodules:
+                clear_cache(m)
         return state
 
     _ = traverse_module(input_module, accumulator, clear_bijector, target_types)
     return input_module
 
 
-def deepcopy_components(input_module: tf.Module) -> tf.Module:
+M = TypeVar("M", bound=tf.Module)
+
+
+def deepcopy(input_module: M, memo: Optional[Dict[int, Any]] = None) -> M:
     """
     Returns a deepcopy of the input tf.Module. To do that first resets the caches stored inside each
     tfp.bijectors.Bijector to allow the deepcopy of the tf.Module.
 
     :param input_module: tf.Module including keras.Model, keras.layers.Layer and gpflow.Module.
-    :return:
+    :param memo: passed through to func:`copy.deepcopy` (see https://docs.python.org/3/library/copy.html).
+    :return: Returns a deepcopy of an input object.
     """
-    return deepcopy(reset_cache_bijectors(input_module))
+    return copy.deepcopy(reset_cache_bijectors(input_module), memo)
 
 
-def traverse_module(m: TraverseInput, acc: Accumulator, update_cb: TraverseUpdateCallable,
-                    target_types: tuple) -> Accumulator:
+def freeze(input_module: M) -> M:
+    """
+    Returns a deepcopy of the input tf.Module with constants instead of variables and parameters.
+
+    :param input_module: tf.Module or gpflow.Module.
+    :return: Returns a frozen deepcopy of an input object.
+    """
+    objects_to_freeze = _get_leaf_components(input_module)
+    memo_tensors = {id(v): tf.convert_to_tensor(v) for v in objects_to_freeze.values()}
+    module_copy = deepcopy(input_module, memo_tensors)
+    return module_copy
+
+
+def traverse_module(
+    m: TraverseInput, acc: Accumulator, update_cb: TraverseUpdateCallable, target_types: tuple
+) -> Accumulator:
     """
     Recursively traverses `m`, accumulating in `acc` a path and a state until it finds an object of type
     in `target_types` to apply `update_cb` to update the accumulator `acc` and/or the object.
@@ -276,7 +308,13 @@ def traverse_module(m: TraverseInput, acc: Accumulator, update_cb: TraverseUpdat
             new_state = traverse_module(subterm, new_acc, update_cb, target_types)
     elif isinstance(m, tf.Module):
         for name, submodule in vars(m).items():
-            if name in tf.Module._TF_MODULE_IGNORED_PROPERTIES:
+            ignored_attributes = m._TF_MODULE_IGNORED_PROPERTIES
+            # NOTE(awav): since tfp version 0.10.0, tfp.bijectors.Bijector instances have
+            # `_parameters` dictionary with "self" references that cause
+            # infinite recursive loop.
+            if isinstance(m, tfp.bijectors.Bijector):
+                ignored_attributes = ignored_attributes.union({"_parameters"})
+            if name in ignored_attributes:
                 continue
             new_acc = (f"{path}.{name}", new_state)
             new_state = traverse_module(submodule, new_acc, update_cb, target_types)
@@ -311,3 +349,12 @@ def _str_tensor_value(value: np.ndarray):
         out = f"{brackets}{out}..."
 
     return out
+
+
+def select_dict_parameters_with_prior(model: tf.Module) -> Dict[str, Parameter]:
+    """Collects parameters with prior into a dictionary."""
+    return {
+        k: p
+        for k, p in parameter_dict(model).items()
+        if hasattr(p, "prior") and p.prior is not None
+    }

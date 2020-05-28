@@ -33,19 +33,14 @@ class Linear(Kernel):
         """
         return self.variance.shape.ndims > 0
 
-    def K(self, X, X2=None, presliced=False):
-        if not presliced:
-            X, X2 = self.slice(X, X2)
-
+    def K(self, X, X2=None):
         if X2 is None:
-            return tf.linalg.matmul(X * self.variance, X, transpose_b=True)
+            return tf.matmul(X * self.variance, X, transpose_b=True)
+        else:
+            return tf.tensordot(X * self.variance, X2, [[-1], [-1]])
 
-        return tf.linalg.matmul(X * self.variance, X2, transpose_b=True)
-
-    def K_diag(self, X, presliced=False):
-        if not presliced:
-            X, _ = self.slice(X, None)
-        return tf.reduce_sum(tf.square(X) * self.variance, 1)
+    def K_diag(self, X):
+        return tf.reduce_sum(tf.square(X) * self.variance, axis=-1)
 
 
 class Polynomial(Linear):
@@ -60,6 +55,7 @@ class Polynomial(Linear):
     γ is the offset parameter,
     d is the degree parameter.
     """
+
     def __init__(self, degree=3.0, variance=1.0, offset=1.0, active_dims=None):
         """
         :param degree: the degree of the polynomial
@@ -73,8 +69,8 @@ class Polynomial(Linear):
         self.degree = degree
         self.offset = Parameter(offset, transform=positive())
 
-    def K(self, X, X2=None, presliced=False):
-        return (super().K(X, X2, presliced=presliced) + self.offset)**self.degree
+    def K(self, X, X2=None):
+        return (super().K(X, X2) + self.offset) ** self.degree
 
-    def K_diag(self, X, presliced=False):
-        return (super().K_diag(X, presliced=presliced) + self.offset)**self.degree
+    def K_diag(self, X):
+        return (super().K_diag(X) + self.offset) ** self.degree

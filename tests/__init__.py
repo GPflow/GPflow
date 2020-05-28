@@ -5,5 +5,5 @@ import tensorflow as tf
 
 import gpflow
 
-warnings.filterwarnings('ignore')
+warnings.filterwarnings("ignore")
 gpflow.config.set_default_float(np.float64)
