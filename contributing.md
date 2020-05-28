@@ -64,7 +64,7 @@ GPflow is ~97% covered by the testing suite. We expect changes to code to pass t
 
 ## Documentation
 
-GPflow's documentation is not comprehensive, but covers enough to get users started. We expect that new features have documentation that can help others get up to speed. The docs are mostly IPython notebooks (stored in the git repository in jupytext format) that compile into HTML via Sphinx, using nbsphinx.
+GPflow's documentation is not comprehensive, but covers enough to get users started. We expect that new features have documentation that can help others get up to speed. The docs are mostly IPython notebooks (stored in the git repository in Jupytext format) that compile into HTML via Sphinx, using nbsphinx.
 
 ## Version numbering
 
