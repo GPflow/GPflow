@@ -15,7 +15,7 @@
 import copy
 import re
 from functools import lru_cache
-from typing import Any, Callable, Dict, List, Optional, Tuple, TypeVar, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, TypeVar, Union, Iterable
 
 import numpy as np
 import tensorflow as tf
@@ -58,12 +58,16 @@ def to_default_float(x):
     return cast(x, dtype=default_float())
 
 
-def set_trainable(model: tf.Module, flag: bool):
+def set_trainable(model: Union[tf.Module, Iterable[tf.Module]], flag: bool) -> None:
     """
-    Set trainable flag for all `tf.Variable`s and `gpflow.Parameter`s in a module.
+    Set trainable flag for all `tf.Variable`s and `gpflow.Parameter`s in a `tf.Module` or collection
+    of `tf.Module`s.
     """
-    for variable in model.variables:
-        variable._trainable = flag
+    modules = [model] if isinstance(model, tf.Module) else model
+
+    for mod in modules:
+        for variable in mod.variables:
+            variable._trainable = flag
 
 
 def multiple_assign(module: tf.Module, parameters: Dict[str, tf.Tensor]):

@@ -11,7 +11,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from typing import Sequence, Tuple
 
+from ...base import TensorType
 from ..inducing_variables import InducingVariables
 
 
@@ -27,7 +29,7 @@ class MultioutputInducingVariables(InducingVariables):
     """
 
     @property
-    def inducing_variables(self):
+    def inducing_variables(self) -> Tuple[TensorType, ...]:
         raise NotImplementedError
 
 
@@ -60,15 +62,15 @@ class FallbackSharedIndependentInducingVariables(MultioutputInducingVariables):
     processes.
     """
 
-    def __init__(self, inducing_variable):
+    def __init__(self, inducing_variable: TensorType):
         super().__init__()
         self.inducing_variable = inducing_variable
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.inducing_variable)
 
     @property
-    def inducing_variables(self):
+    def inducing_variables(self) -> Tuple[TensorType]:
         return (self.inducing_variable,)
 
 
@@ -101,15 +103,15 @@ class FallbackSeparateIndependentInducingVariables(MultioutputInducingVariables)
     Note: each object should have the same number of inducing variables, M.
     """
 
-    def __init__(self, inducing_variable_list):
+    def __init__(self, inducing_variable_list: Sequence[TensorType]):
         super().__init__()
         self.inducing_variable_list = inducing_variable_list
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.inducing_variable_list[0])
 
     @property
-    def inducing_variables(self):
+    def inducing_variables(self) -> Tuple[TensorType, ...]:
         return tuple(self.inducing_variable_list)
 
 
