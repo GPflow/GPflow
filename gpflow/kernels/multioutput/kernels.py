@@ -73,7 +73,9 @@ class MultioutputKernel(Kernel):
         """
         raise NotImplementedError
 
-    def __call__(self, X, X2=None, *, full_cov=False, full_output_cov=True):
+    def __call__(self, X, X2=None, *, full_cov=False, full_output_cov=True, presliced=False):
+        if not presliced:
+            X, X2 = self.slice(X, X2)
         if not full_cov and X2 is not None:
             raise ValueError("Ambiguous inputs: `diagonal` and `y` are not compatible.")
         if not full_cov:

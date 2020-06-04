@@ -541,3 +541,18 @@ def test_latent_kernels():
     assert len(multioutput_kernel_list[0].latent_kernels) == 1
     assert multioutput_kernel_list[1].latent_kernels == tuple(kernel_list)
     assert multioutput_kernel_list[2].latent_kernels == tuple(kernel_list)
+
+
+def test_combination_LMC_kernels():
+    N, D = 100, 3
+    L1, L2, P = 2, 3, 2
+    kernel_list1 = [Linear(active_dims=[1]), SquaredExponential()]
+    assert len(kernel_list1) == L1
+    kernel_list2 = [SquaredExponential(), Linear(), Linear()]
+    assert len(kernel_list2) == L2
+    kernel = (
+        LinearCoregionalization(kernel_list1, np.random.randn(P, L1)) +
+        LinearCoregionalization(kernel_list2, np.random.randn(P, L2))
+    )
+    X = np.random.randn(N, D)
+    assert kernel(X, full_cov=True).shape == [N, P, N, P]
