@@ -55,7 +55,9 @@ def _E__Gaussian__Linear__Sum__InducingPoints(p, mean, _, kernel, inducing_varia
 
 
 @dispatch.expectation.register(MarkovGaussian, mfn.Identity, NoneType, kernels.Sum, InducingPoints)
-def _E__MarkovGaussian__Identity__Sum__InducingPoints(p, mean, _, kernel, inducing_variable, nghp=None):
+def _E__MarkovGaussian__Identity__Sum__InducingPoints(
+    p, mean, _, kernel, inducing_variable, nghp=None
+):
     r"""
     Compute the expectation:
     expectation[n] = <x_{n+1} (\Sum_i Ki_{x_n, Z})>_p(x_{n:n+1})
@@ -70,7 +72,9 @@ def _E__MarkovGaussian__Identity__Sum__InducingPoints(p, mean, _, kernel, induci
 @dispatch.expectation.register(
     (Gaussian, DiagonalGaussian), kernels.Sum, InducingPoints, kernels.Sum, InducingPoints
 )
-def _E__Gaussian__Sum__InducingPoints__Sum__InducingPoints(p, kern1, feat1, kern2, feat2, nghp=None):
+def _E__Gaussian__Sum__InducingPoints__Sum__InducingPoints(
+    p, kern1, feat1, kern2, feat2, nghp=None
+):
     r"""
     Compute the expectation:
     expectation[n] = <(\Sum_i K1_i_{Z1, x_n}) (\Sum_j K2_j_{x_n, Z2})>_p(x_n)

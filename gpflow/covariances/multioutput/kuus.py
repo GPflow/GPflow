@@ -19,7 +19,9 @@ from ..dispatch import Kuu
 
 
 @Kuu.register(InducingPoints, MultioutputKernel)
-def _Kuu__InducingPoints__MultioutputKernel(inducing_variable: InducingPoints, kernel: MultioutputKernel, *, jitter=0.0):
+def _Kuu__InducingPoints__MultioutputKernel(
+    inducing_variable: InducingPoints, kernel: MultioutputKernel, *, jitter=0.0
+):
     Kmm = kernel(inducing_variable.Z, full_cov=True, full_output_cov=True)  # [M, P, M, P]
     M = tf.shape(Kmm)[0] * tf.shape(Kmm)[1]
     jittermat = jitter * tf.reshape(tf.eye(M, dtype=Kmm.dtype), tf.shape(Kmm))

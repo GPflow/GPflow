@@ -19,7 +19,9 @@ from ..dispatch import Kuf
 
 
 @Kuf.register(InducingPoints, MultioutputKernel, object)
-def _Kuf__InducingPoints__MultioutputKernel(inducing_variable: InducingPoints, kernel: MultioutputKernel, Xnew: tf.Tensor):
+def _Kuf__InducingPoints__MultioutputKernel(
+    inducing_variable: InducingPoints, kernel: MultioutputKernel, Xnew: tf.Tensor
+):
     return kernel(inducing_variable.Z, Xnew, full_cov=True, full_output_cov=True)  # [M, P, N, P]
 
 
@@ -95,7 +97,11 @@ def _Kuf__SharedIndependentInducingVariables__LinearCoregionalization(
 
 
 @Kuf.register(SeparateIndependentInducingVariables, LinearCoregionalization, object)
-def _Kuf__SeparateIndependentInducingVariables__LinearCoregionalization(inducing_variable: SeparateIndependentInducingVariables, kernel: LinearCoregionalization, Xnew: tf.Tensor):
+def _Kuf__SeparateIndependentInducingVariables__LinearCoregionalization(
+    inducing_variable: SeparateIndependentInducingVariables,
+    kernel: LinearCoregionalization,
+    Xnew: tf.Tensor,
+):
     return tf.stack(
         [Kuf(f, k, Xnew) for f, k in zip(inducing_variable.inducing_variable_list, kernel.kernels)],
         axis=0,

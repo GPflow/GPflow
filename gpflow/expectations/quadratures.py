@@ -45,7 +45,9 @@ def get_eval_func(obj, inducing_variable, slice=None):
     object,
     (InducingVariables, NoneType),
 )
-def _quadrature_expectation__Gaussian(p, obj1, inducing_variable1, obj2, inducing_variable2, nghp=None):
+def _quadrature_expectation__Gaussian(
+    p, obj1, inducing_variable1, obj2, inducing_variable2, nghp=None
+):
     """
     General handling of quadrature expectations for Gaussians and DiagonalGaussians
     Fallback method for missing analytic expectations
@@ -90,7 +92,9 @@ def _quadrature_expectation__Gaussian(p, obj1, inducing_variable1, obj2, inducin
 @dispatch.quadrature_expectation.register(
     MarkovGaussian, object, (InducingVariables, NoneType), object, (InducingVariables, NoneType)
 )
-def _quadrature_expectation__MarkovGaussian(p, obj1, inducing_variable1, obj2, inducing_variable2, nghp=None):
+def _quadrature_expectation__MarkovGaussian(
+    p, obj1, inducing_variable1, obj2, inducing_variable2, nghp=None
+):
     """
     Handling of quadrature expectations for Markov Gaussians (useful for time series)
     Fallback method for missing analytic expectations wrt Markov Gaussians

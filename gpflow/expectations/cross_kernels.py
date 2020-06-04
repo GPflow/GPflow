@@ -14,7 +14,9 @@ from .expectations import expectation
     kernels.Linear,
     InducingPoints,
 )
-def _E__Gaussian__SquaredExponential__InducingPoints__Linear__InducingPoints(p, sqexp_kern, feat1, lin_kern, feat2, nghp=None):
+def _E__Gaussian__SquaredExponential__InducingPoints__Linear__InducingPoints(
+    p, sqexp_kern, feat1, lin_kern, feat2, nghp=None
+):
     """
     Compute the expectation:
     expectation[n] = <Ka_{Z1, x_n} Kb_{x_n, Z2}>_p(x_n)
@@ -96,7 +98,9 @@ def _E__Gaussian__SquaredExponential__InducingPoints__Linear__InducingPoints(p, 
     kernels.SquaredExponential,
     InducingPoints,
 )
-def _E__Gaussian__Linear__InducingPoints__SquaredExponential__InducingPoints(p, lin_kern, feat1, sqexp_kern, feat2, nghp=None):
+def _E__Gaussian__Linear__InducingPoints__SquaredExponential__InducingPoints(
+    p, lin_kern, feat1, sqexp_kern, feat2, nghp=None
+):
     """
     Compute the expectation:
     expectation[n] = <Ka_{Z1, x_n} Kb_{x_n, Z2}>_p(x_n)

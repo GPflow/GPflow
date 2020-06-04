@@ -54,7 +54,9 @@ def _E__DiagonalGaussian__Product__InducingPoints(p, kernel, inducing_variable, 
 @dispatch.expectation.register(
     DiagonalGaussian, kernels.Product, InducingPoints, kernels.Product, InducingPoints
 )
-def _E__DiagonalGaussian__Product__InducingPoints__Product__InducingPoints(p, kern1, feat1, kern2, feat2, nghp=None):
+def _E__DiagonalGaussian__Product__InducingPoints__Product__InducingPoints(
+    p, kern1, feat1, kern2, feat2, nghp=None
+):
     r"""
     Compute the expectation:
     expectation[n] = < prodK_{Z, x_n} prodK_{x_n, Z} >_p(x_n)

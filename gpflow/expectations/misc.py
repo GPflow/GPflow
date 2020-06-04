@@ -16,7 +16,9 @@ NoneType = type(None)
 @dispatch.expectation.register(
     (Gaussian, MarkovGaussian), mfn.Identity, NoneType, kernels.Linear, InducingPoints
 )
-def _E__Gaussian__Identity__Linear__InducingPoints(p, mean, _, kernel, inducing_variable, nghp=None):
+def _E__Gaussian__Identity__Linear__InducingPoints(
+    p, mean, _, kernel, inducing_variable, nghp=None
+):
     """
     Compute the expectation:
     expectation[n] = <x_n K_{x_n, Z}>_p(x_n)
@@ -31,7 +33,9 @@ def _E__Gaussian__Identity__Linear__InducingPoints(p, mean, _, kernel, inducing_
 @dispatch.expectation.register(
     (Gaussian, MarkovGaussian), kernels.Kernel, InducingVariables, mfn.MeanFunction, NoneType
 )
-def _E__Gaussian__Kernel__InducingVariables__MeanFunction(p, kernel, inducing_variable, mean, _, nghp=None):
+def _E__Gaussian__Kernel__InducingVariables__MeanFunction(
+    p, kernel, inducing_variable, mean, _, nghp=None
+):
     """
     Compute the expectation:
     expectation[n] = <K_{Z, x_n} m(x_n)>_p(x_n)
@@ -43,7 +47,9 @@ def _E__Gaussian__Kernel__InducingVariables__MeanFunction(p, kernel, inducing_va
 
 
 @dispatch.expectation.register(Gaussian, mfn.Constant, NoneType, kernels.Kernel, InducingPoints)
-def _E__Gaussian__ConstantMF__Kernel__InducingPoints(p, constant_mean, _, kernel, inducing_variable, nghp=None):
+def _E__Gaussian__ConstantMF__Kernel__InducingPoints(
+    p, constant_mean, _, kernel, inducing_variable, nghp=None
+):
     """
     Compute the expectation:
     expectation[n] = <m(x_n)^T K_{x_n, Z}>_p(x_n)
@@ -59,7 +65,9 @@ def _E__Gaussian__ConstantMF__Kernel__InducingPoints(p, constant_mean, _, kernel
 
 
 @dispatch.expectation.register(Gaussian, mfn.Linear, NoneType, kernels.Kernel, InducingPoints)
-def _E__Gaussian__LinearMF__Kernel__InducingPoints(p, linear_mean, _, kernel, inducing_variable, nghp=None):
+def _E__Gaussian__LinearMF__Kernel__InducingPoints(
+    p, linear_mean, _, kernel, inducing_variable, nghp=None
+):
     """
     Compute the expectation:
     expectation[n] = <m(x_n)^T K_{x_n, Z}>_p(x_n)
@@ -80,7 +88,9 @@ def _E__Gaussian__LinearMF__Kernel__InducingPoints(p, linear_mean, _, kernel, in
 
 
 @dispatch.expectation.register(Gaussian, mfn.Identity, NoneType, kernels.Kernel, InducingPoints)
-def _E__Gaussian__Identity__Kernel__InducingPoints(p, identity_mean, _, kernel, inducing_variable, nghp=None):
+def _E__Gaussian__Identity__Kernel__InducingPoints(
+    p, identity_mean, _, kernel, inducing_variable, nghp=None
+):
     """
     This prevents infinite recursion for kernels that don't have specific
     implementations of _expectation(p, identity_mean, None, kernel, inducing_variable).

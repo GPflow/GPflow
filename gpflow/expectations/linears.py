@@ -43,7 +43,9 @@ def _E__Gaussian__Linear__InducingPoints(p, kernel, inducing_variable, _, __, ng
 
 
 @dispatch.expectation.register(Gaussian, kernels.Linear, InducingPoints, mfn.Identity, NoneType)
-def _E__Gaussian__Linear__InducingPoints__Identity(p, kernel, inducing_variable, mean, _, nghp=None):
+def _E__Gaussian__Linear__InducingPoints__Identity(
+    p, kernel, inducing_variable, mean, _, nghp=None
+):
     """
     Compute the expectation:
     expectation[n] = <K_{Z, x_n} x_n^T>_p(x_n)
@@ -62,7 +64,9 @@ def _E__Gaussian__Linear__InducingPoints__Identity(p, kernel, inducing_variable,
 @dispatch.expectation.register(
     MarkovGaussian, kernels.Linear, InducingPoints, mfn.Identity, NoneType
 )
-def _E__MarkovGaussian__Linear__InducingPoints__Identity(p, kernel, inducing_variable, mean, _, nghp=None):
+def _E__MarkovGaussian__Linear__InducingPoints__Identity(
+    p, kernel, inducing_variable, mean, _, nghp=None
+):
     """
     Compute the expectation:
     expectation[n] = <K_{Z, x_n} x_{n+1}^T>_p(x_{n:n+1})
@@ -83,7 +87,9 @@ def _E__MarkovGaussian__Linear__InducingPoints__Identity(p, kernel, inducing_var
 @dispatch.expectation.register(
     (Gaussian, DiagonalGaussian), kernels.Linear, InducingPoints, kernels.Linear, InducingPoints
 )
-def _E__Gaussian__Linear__InducingPoints__Linear__InducingPoints(p, kern1, feat1, kern2, feat2, nghp=None):
+def _E__Gaussian__Linear__InducingPoints__Linear__InducingPoints(
+    p, kern1, feat1, kern2, feat2, nghp=None
+):
     """
     Compute the expectation:
     expectation[n] = <Ka_{Z1, x_n} Kb_{x_n, Z2}>_p(x_n)
