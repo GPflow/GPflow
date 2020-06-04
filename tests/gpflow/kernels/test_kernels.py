@@ -550,9 +550,8 @@ def test_combination_LMC_kernels():
     assert len(kernel_list1) == L1
     kernel_list2 = [SquaredExponential(), Linear(), Linear()]
     assert len(kernel_list2) == L2
-    kernel = (
-        LinearCoregionalization(kernel_list1, np.random.randn(P, L1)) +
-        LinearCoregionalization(kernel_list2, np.random.randn(P, L2))
-    )
+    kernel = LinearCoregionalization(
+        kernel_list1, np.random.randn(P, L1)
+    ) + LinearCoregionalization(kernel_list2, np.random.randn(P, L2))
     X = np.random.randn(N, D)
     assert kernel(X, full_cov=True).shape == [N, P, N, P]
