@@ -77,7 +77,7 @@ class MultioutputKernel(Kernel):
         if not presliced:
             X, X2 = self.slice(X, X2)
         if not full_cov and X2 is not None:
-            raise ValueError("Ambiguous inputs: `diagonal` and `y` are not compatible.")
+            raise ValueError("Ambiguous inputs: passing in `X2` is not compatible with `full_cov=False`.")
         if not full_cov:
             return self.K_diag(X, full_output_cov=full_output_cov)
         return self.K(X, X2, full_output_cov=full_output_cov)

@@ -544,14 +544,17 @@ def test_latent_kernels():
 
 
 def test_combination_LMC_kernels():
-    N, D = 100, 3
-    L1, L2, P = 2, 3, 2
+    N, D, P = 100, 3, 2
     kernel_list1 = [Linear(active_dims=[1]), SquaredExponential()]
-    assert len(kernel_list1) == L1
+    L1 = len(kernel_list1)
     kernel_list2 = [SquaredExponential(), Linear(), Linear()]
-    assert len(kernel_list2) == L2
-    kernel = LinearCoregionalization(
-        kernel_list1, np.random.randn(P, L1)
-    ) + LinearCoregionalization(kernel_list2, np.random.randn(P, L2))
+    L2 = len(kernel_list2)
+    k1 = LinearCoregionalization(kernel_list1, np.random.randn(P, L1))
+    k2 = LinearCoregionalization(kernel_list2, np.random.randn(P, L2))
+    kernel = k1 + k2
     X = np.random.randn(N, D)
-    assert kernel(X, full_cov=True).shape == [N, P, N, P]
+    K1 = k1(X, full_cov=True)
+    K2 = k2(X, full_cov=True)
+    K = kernel(X, full_cov=True)
+    assert K.shape == [N, P, N, P]
+    np.testing.assert_allclose(K, K1 + K2)
