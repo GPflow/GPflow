@@ -8,7 +8,7 @@ from .util import sample_mvn
 
 @sample_conditional.register(object, object, Kernel, object)
 @sample_conditional.register(object, InducingVariables, Kernel, object)
-def _sample_conditional(
+def sample_conditional__InducingVariables__Kernel(
     Xnew: tf.Tensor,
     inducing_variable: InducingVariables,
     kernel: Kernel,

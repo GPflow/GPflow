@@ -12,7 +12,7 @@ NoneType = type(None)
 
 
 @dispatch.expectation.register(Gaussian, kernels.SquaredExponential, NoneType, NoneType, NoneType)
-def _E(p, kernel, _, __, ___, nghp=None):
+def _E__Gaussian__SquaredExponential(p, kernel, _, __, ___, nghp=None):
     """
     Compute the expectation:
     <diag(K_{X, X})>_p(X)
@@ -26,7 +26,7 @@ def _E(p, kernel, _, __, ___, nghp=None):
 @dispatch.expectation.register(
     Gaussian, kernels.SquaredExponential, InducingPoints, NoneType, NoneType
 )
-def _E(p, kernel, inducing_variable, _, __, nghp=None):
+def _E__Gaussian__SquaredExponential__InducingPoints(p, kernel, inducing_variable, _, __, nghp=None):
     """
     Compute the expectation:
     <K_{X, Z}>_p(X)
@@ -64,7 +64,7 @@ def _E(p, kernel, inducing_variable, _, __, nghp=None):
 @dispatch.expectation.register(
     Gaussian, mfn.Identity, NoneType, kernels.SquaredExponential, InducingPoints
 )
-def _E(p, mean, _, kernel, inducing_variable, nghp=None):
+def _E__Gaussian__Identity__SquaredExponential__InducingPoints(p, mean, _, kernel, inducing_variable, nghp=None):
     """
     Compute the expectation:
     expectation[n] = <x_n K_{x_n, Z}>_p(x_n)
@@ -106,7 +106,7 @@ def _E(p, mean, _, kernel, inducing_variable, nghp=None):
 @dispatch.expectation.register(
     MarkovGaussian, mfn.Identity, NoneType, kernels.SquaredExponential, InducingPoints
 )
-def _E(p, mean, _, kernel, inducing_variable, nghp=None):
+def _E__MarkovGaussian__Identity__SquaredExponential__InducingPoints(p, mean, _, kernel, inducing_variable, nghp=None):
     """
     Compute the expectation:
     expectation[n] = <x_{n+1} K_{x_n, Z}>_p(x_{n:n+1})
@@ -152,7 +152,7 @@ def _E(p, mean, _, kernel, inducing_variable, nghp=None):
     kernels.SquaredExponential,
     InducingPoints,
 )
-def _E(p, kern1, feat1, kern2, feat2, nghp=None):
+def _E__Gaussian__SquaredExponential__InducingPoints__SquaredExponential__InducingPoints(p, kern1, feat1, kern2, feat2, nghp=None):
     """
     Compute the expectation:
     expectation[n] = <Ka_{Z1, x_n} Kb_{x_n, Z2}>_p(x_n)

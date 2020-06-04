@@ -25,7 +25,7 @@ prior_kl = Dispatcher("prior_kl")
 
 
 @prior_kl.register(InducingVariables, Kernel, object, object)
-def _(inducing_variable, kernel, q_mu, q_sqrt, whiten=False):
+def prior_kl__InducingVariables__Kernel(inducing_variable, kernel, q_mu, q_sqrt, whiten=False):
     if whiten:
         return gauss_kl(q_mu, q_sqrt, None)
     else:
