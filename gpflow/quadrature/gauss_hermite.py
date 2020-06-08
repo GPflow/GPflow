@@ -25,9 +25,13 @@ def gh_points_and_weights(n_gh: int):
     return tf.convert_to_tensor(z), tf.convert_to_tensor(dz)
 
 
-def reshape_Z_dZ(zs, dzs, dim: int):
-    Z = tf.reshape(tf.stack(tf.meshgrid(*zs), axis=-1), (-1, dim))
-    dZ = tf.reduce_prod(tf.reshape(tf.stack(tf.meshgrid(*dzs), axis=-1), (-1, dim)), axis=-1, keepdims=True)
+def list_to_flat_grid(xs):
+    return tf.reshape(tf.stack(tf.meshgrid(*xs), axis=-1), (-1, len(xs)))
+
+
+def reshape_Z_dZ(zs, dzs):
+    Z = list_to_flat_grid(zs)
+    dZ = tf.reduce_prod(list_to_flat_grid(dzs), axis=-1, keepdims=True)
     return Z, dZ
 
 
@@ -40,7 +44,7 @@ def ndgh_points_and_weights(dim: int, n_gh: int):
     z, dz = gh_points_and_weights(n_gh)
     zs = tf.unstack(tf.repeat(tf.expand_dims(z, axis=0), dim, axis=0), axis=0)
     dzs = tf.unstack(tf.repeat(tf.expand_dims(dz, axis=0), dim, axis=0), axis=0)
-    return reshape_Z_dZ(zs, dzs, dim)
+    return reshape_Z_dZ(zs, dzs)
 
 
 class NDDiagGHQuadrature(GaussianQuadrature):
