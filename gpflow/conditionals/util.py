@@ -14,6 +14,7 @@ def base_conditional(
     full_cov=False,
     q_sqrt: Optional[tf.Tensor] = None,
     white=False,
+    Lm=None
 ):
     r"""
     Given a g1 and g2, and distribution p and q such that
@@ -36,6 +37,8 @@ def base_conditional(
     :param q_sqrt: If this is a Tensor, it must have shape [R, M, M] (lower
         triangular) or [M, R] (diagonal)
     :param white: bool
+    :param Lm: The cholesky decomposition of `Kmm`, of shape[M, M]. If this is not provided then
+    it is computed within this function. Passing this in may improve performance.
     :return: [N, R]  or [R, N, N]
     """
     # compute kernel stuff
@@ -75,7 +78,8 @@ def base_conditional(
     )
 
     leading_dims = tf.shape(Kmn)[:-2]
-    Lm = tf.linalg.cholesky(Kmm)  # [M, M]
+    if Lm is None:
+        Lm = tf.linalg.cholesky(Kmm)  # [M, M]
 
     # Compute the projection matrix A
     Lm = tf.broadcast_to(Lm, tf.concat([leading_dims, tf.shape(Lm)], 0))  # [..., M, M]
