@@ -4,7 +4,8 @@ import abc
 import tensorflow as tf
 
 
-class GaussianQuadrature:
+class GaussianQuadrature():
+
     @abc.abstractmethod
     def _build_X_W(self, mean, var):
         raise NotImplementedError
