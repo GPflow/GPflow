@@ -125,7 +125,7 @@ def ndiagquad(funcs, H: int, Fmu, Fvar, logspace: bool = False, **Ys):
         Fmu = tf.stack(Fmu, axis=-1)
         Fvar = tf.stack(Fvar, axis=-1)
     else:
-        dim = int(tf.shape(Fmu)[-1])
+        dim = tf.shape(Fmu)[-1]
 
     quadrature = NDDiagGHQuadrature(dim, n_gh)
 
