@@ -24,7 +24,13 @@ import gpflow.quadrature as quadrature
 @pytest.mark.parametrize("var", [np.array([3.0, 3.5])])
 def test_diagquad_1d(mu, var):
     num_gauss_hermite_points = 25
-    quad = quadrature.ndiagquad([lambda *X: tf.exp(X[0])], num_gauss_hermite_points, [mu], [var])
+
+    mu = mu[:, None]
+    var = var[:, None]
+
+    # quad = quadrature.ndiagquad([lambda *X: tf.exp(X[0])], num_gauss_hermite_points, [mu], [var])
+    quad = quadrature.ndiagquad([lambda *X: tf.exp(X[0])], num_gauss_hermite_points, mu, var)
+
     expected = np.exp(mu + var / 2)
     assert_allclose(quad[0], expected)
 
@@ -37,10 +43,19 @@ def test_diagquad_2d(mu1, var1, mu2, var2):
     alpha = 2.5
     # using logspace=True we can reduce this, see test_diagquad_logspace
     num_gauss_hermite_points = 35
-    quad = quadrature.ndiagquad(
-        lambda *X: tf.exp(X[0] + alpha * X[1]), num_gauss_hermite_points, [mu1, mu2], [var1, var2],
-    )
-    expected = np.exp(mu1 + var1 / 2 + alpha * mu2 + alpha ** 2 * var2 / 2)
+
+    mu = np.hstack([x[:, None] for x in (mu1, mu2)])
+    var = np.hstack([x[:, None] for x in (var1, var2)])
+
+    # fun = lambda *X: tf.exp(X[0] + alpha * X[1])
+    fun = lambda X: tf.exp(X[..., 0:1] + alpha * X[..., 1:2])
+
+    # quad = quadrature.ndiagquad(fun, num_gauss_hermite_points, [mu1, mu2], [var1, var2],)
+    quad = quadrature.ndiagquad(fun, num_gauss_hermite_points, mu, var,)
+
+    # expected = np.exp(mu1 + var1 / 2 + alpha * mu2 + alpha ** 2 * var2 / 2)
+    expected = np.exp(mu[..., 0:1] + var[..., 0:1] / 2 + alpha * mu[..., 1:2] + alpha ** 2 * var[..., 1:2] / 2)
+
     assert_allclose(quad, expected)
 
 
@@ -51,14 +66,23 @@ def test_diagquad_2d(mu1, var1, mu2, var2):
 def test_diagquad_logspace(mu1, var1, mu2, var2):
     alpha = 2.5
     num_gauss_hermite_points = 25
+
+    mu = np.hstack([x[:, None] for x in (mu1, mu2)])
+    var = np.hstack([x[:, None] for x in (var1, var2)])
+
+    # fun = lambda *X: (X[0] + alpha * X[1])
+    fun = lambda X: (X[..., 0:1] + alpha * X[..., 1:2])
+
+    # quad = quadrature.ndiagquad(
+    #     fun, num_gauss_hermite_points, [mu1, mu2], [var1, var2], logspace=True,
+    # )
     quad = quadrature.ndiagquad(
-        lambda *X: (X[0] + alpha * X[1]),
-        num_gauss_hermite_points,
-        [mu1, mu2],
-        [var1, var2],
-        logspace=True,
+        fun, num_gauss_hermite_points, mu, var, logspace=True,
     )
-    expected = mu1 + var1 / 2 + alpha * mu2 + alpha ** 2 * var2 / 2
+
+    # expected = mu1 + var1 / 2 + alpha * mu2 + alpha ** 2 * var2 / 2
+    expected = mu[..., 0:1] + var[..., 0:1] / 2 + alpha * mu[..., 1:2] + alpha ** 2 * var[..., 1:2] / 2
+
     assert_allclose(quad, expected)
 
 
@@ -67,8 +91,18 @@ def test_diagquad_logspace(mu1, var1, mu2, var2):
 def test_diagquad_with_kwarg(mu1, var1):
     alpha = np.array([2.5, -1.3])
     num_gauss_hermite_points = 25
+
+    mu1 = mu1[:, None]
+    var1 = var1[:, None]
+    alpha = alpha[:, None]
+
+    fun = lambda X, Y: tf.exp(X * Y)
     quad = quadrature.ndiagquad(
-        lambda X, Y: tf.exp(X * Y), num_gauss_hermite_points, mu1, var1, Y=alpha
+        fun, num_gauss_hermite_points, mu1, var1, Y=alpha
     )
+
     expected = np.exp(alpha * mu1 + alpha ** 2 * var1 / 2)
+
+    print(expected)
+
     assert_allclose(quad, expected)
