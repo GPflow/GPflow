@@ -102,7 +102,4 @@ def test_diagquad_with_kwarg(mu1, var1):
     quad = quadrature.ndiagquad(fun, num_gauss_hermite_points, mu1, var1, Y=alpha)
 
     expected = np.exp(alpha * mu1 + alpha ** 2 * var1 / 2)
-
-    print(expected)
-
     assert_allclose(quad, expected)
