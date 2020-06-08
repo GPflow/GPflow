@@ -9,6 +9,9 @@ from ..utilities import positive
 from .base import Likelihood
 
 
+# NOTE- in the following we're assuming outputs are independent, i.e. full_output_cov=False
+
+
 class Heteroskedastic(Likelihood):
     r"""
     Heteroskedastic likelihood for which GPs parametrize not just location (mean) of
@@ -25,7 +28,7 @@ class Heteroskedastic(Likelihood):
 
     def _log_prob(self, F, Y):
         Fs = self._split_f(F)
-        return self._scalar_log_prob(*Fs, Y=Y)
+        return self._scalar_log_prob(*Fs, Y=Y[..., 0])
 
     @abc.abstractmethod
     def _scalar_log_prob(self, *Fs, Y):
