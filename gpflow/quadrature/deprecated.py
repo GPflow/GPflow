@@ -35,6 +35,9 @@ def ndiagquad(funcs, H: int, Fmu, Fvar, logspace: bool = False, **Ys):
 
         shape = tf.shape(Fmu[0])
         Fmu, Fvar = map(unify, [Fmu, Fvar])  # both [N, 1, Din]
+
+        print(Fmu)
+        print(Fvar)
     else:
         Din = 1
         shape = tf.shape(Fmu)
