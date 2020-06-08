@@ -10,11 +10,11 @@ def gh_points_and_weights(n_gh: int):
     Given the number of Gauss-Hermite points n_gh,
     returns the points z and the weights dz to perform the following
     uni-dimensional gaussian quadrature:
-    
+
     q(x) = N(mu, sigma²)
-    
+
     E_{X~q(x)}[f(X)] = ∫ f(x)q(x)dx = \sum f(mu + sigma*z_k)*dz_k
-    
+
     :param n_gh: number of Gauss-Hermite points, integer
     :returns: points z and weights dz to compute uni-dimensional gaussian expectation, tuple
     """
@@ -43,7 +43,7 @@ def ndgh_points_and_weights(dim: int, n_gh: int):
 
 class NDDiagGHQuadrature(GaussianQuadrature):
 
-    def __init__(self, dim, n_gh):
+    def __init__(self, dim: int, n_gh: int):
         Z, dZ = ndgh_points_and_weights(dim, n_gh)
         self.n_gh_total = n_gh ** dim
         self.Z = tf.convert_to_tensor(Z)
