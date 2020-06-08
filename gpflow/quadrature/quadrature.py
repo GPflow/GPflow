@@ -122,12 +122,10 @@ def ndiagquad(funcs, H: int, Fmu, Fvar, logspace: bool = False, **Ys):
     n_gh = H
     if isinstance(Fmu, (tuple, list)):
         dim = len(Fmu)
-        shape = tf.shape(Fmu[0])
         Fmu = tf.stack(Fmu, axis=-1)
         Fvar = tf.stack(Fvar, axis=-1)
     else:
-        dim = tf.shape(Fmu)[-1]
-        shape = tf.shape(Fmu)[:-1]
+        dim = int(tf.shape(Fmu)[-1])
 
     quadrature = NDDiagGHQuadrature(dim, n_gh)
 
@@ -136,9 +134,7 @@ def ndiagquad(funcs, H: int, Fmu, Fvar, logspace: bool = False, **Ys):
     else:
         result = quadrature(funcs, Fmu, Fvar, **Ys)
 
-    if isinstance(result, (tuple, list)):
-        return [tf.reshape(r, shape) for r in result]
-    return tf.reshape(result, shape)
+    return result
 
 
 def ndiag_mc(funcs, S: int, Fmu, Fvar, logspace: bool = False, epsilon=None, **Ys):

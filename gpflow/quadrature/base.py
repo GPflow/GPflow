@@ -19,7 +19,7 @@ class GaussianQuadrature:
     def __call__(self, fun, mean, var, *args, **kwargs):
         X, W = self._build_X_W(mean, var)
         if isinstance(fun, Iterable):
-            # Maybe this can be better implemented by stacking [f1(X), f2(X), ...] 
+            # Maybe this can be better implemented by stacking [f1(X), f2(X), ...]
             # and sum-reducing all at once
             # The problem: there is no garantee that f1(X), f2(X), ...
             # have comaptible shapes
