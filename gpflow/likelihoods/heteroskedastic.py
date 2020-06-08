@@ -152,6 +152,11 @@ class HeteroskedasticTFPConditional(HeteroskedasticTFPBase):
 
 
 class HeteroskedasticTFPDistribution(HeteroskedasticTFPBase):
+    # NOTE: this could instead subclass HeteroskedasticTFPConditional and pass
+    # self._get_conditional_distribution as the conditional_distribution
+    # argument, or None (as _get_conditional_distribution is overwritten), or
+    # call HeteroskedasticTFPBase.__init__ instead...
+
     """
     Heteroskedastic Likelihood where the conditional distribution
     is given by a TensorFlow Probability Distribution.
