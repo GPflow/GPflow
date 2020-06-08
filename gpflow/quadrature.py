@@ -21,6 +21,7 @@ import tensorflow as tf
 from .config import default_float
 from .utilities import to_default_float
 
+from .gaussian_quadrature import NDDiagGHQuadrature
 
 def hermgauss(n: int):
     x, w = np.polynomial.hermite.hermgauss(n)
@@ -97,7 +98,7 @@ def mvnquad(func, means, covs, H: int, Din: int = None, Dout=None):
     return tf.reduce_sum(fX * wr, 0)
 
 
-def ndiagquad(funcs, H: int, Fmu, Fvar, logspace: bool = False, **Ys):
+def ndiagquad_old(funcs, H: int, Fmu, Fvar, logspace: bool = False, **Ys):
     """
     Computes N Gaussian expectation integrals of one or more functions
     using Gauss-Hermite quadrature. The Gaussians must be independent.
@@ -162,6 +163,41 @@ def ndiagquad(funcs, H: int, Fmu, Fvar, logspace: bool = False, **Ys):
         return [eval_func(f) for f in funcs]
 
     return eval_func(funcs)
+
+
+def ndiagquad(funcs, H: int, Fmu, Fvar, logspace: bool = False, **Ys):
+    """
+    Computes N Gaussian expectation integrals of one or more functions
+    using Gauss-Hermite quadrature. The Gaussians must be independent.
+
+    The means and variances of the Gaussians are specified by Fmu and Fvar.
+    The N-integrals are assumed to be taken wrt the last dimensions of Fmu, Fvar.
+
+    :param funcs: the integrand(s):
+        Callable or Iterable of Callables that operates elementwise
+    :param H: number of Gauss-Hermite quadrature points
+    :param Fmu: array/tensor or `Din`-tuple/list thereof
+    :param Fvar: array/tensor or `Din`-tuple/list thereof
+    :param logspace: if True, funcs are the log-integrands and this calculates
+        the log-expectation of exp(funcs)
+    :param **Ys: arrays/tensors; deterministic arguments to be passed by name
+
+    Fmu, Fvar, Ys should all have same shape, with overall size `N`
+    :return: shape is the same as that of the first Fmu
+    """
+    print('Using new quadrature')
+    n_gh = H
+    if isinstance(Fmu, (tuple, list)):
+        dim = len(Fmu)
+        Fmu = tf.stack(Fmu, axis=-1)
+        Fvar = tf.stack(Fvar, axis=-1)
+    else:
+        dim = 1
+
+    quadrature = NDDiagGHQuadrature(dim, n_gh)
+    if logspace:
+        return quadrature.logspace(funcs, Fmu, Fvar, **Ys)
+    return quadrature(funcs, Fmu, Fvar, **Ys)
 
 
 def ndiag_mc(funcs, S: int, Fmu, Fvar, logspace: bool = False, epsilon=None, **Ys):
