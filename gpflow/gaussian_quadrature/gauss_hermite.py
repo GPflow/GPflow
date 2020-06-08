@@ -19,16 +19,19 @@ def gh_points_and_weights(n_gh: int):
     :returns: points z and weights dz to compute uni-dimensional gaussian expectation, tuple
     """
     z, dz = np.polynomial.hermite.hermgauss(n_gh)
-    z = z*np.sqrt(2)
-    dz = dz/np.sqrt(np.pi)
+    z = z * np.sqrt(2)
+    dz = dz / np.sqrt(np.pi)
     z, dz = z.astype(default_float()), dz.astype(default_float())
     return z, dz
 
+
 def reshape_Z_dZ(Z: np.array, dZ: np.array, dim: int):
     Z = np.swapaxes(np.array(np.meshgrid(*Z)), 0, -1).reshape(-1, dim)
-    dZ = np.swapaxes(np.array(np.meshgrid(*dZ)), 0, -1).reshape(-1, dim).\
-        prod(axis=-1, keepdims=True)
+    dZ = (
+        np.swapaxes(np.array(np.meshgrid(*dZ)), 0, -1).reshape(-1, dim).prod(axis=-1, keepdims=True)
+    )
     return Z, dZ
+
 
 def ndgh_points_and_weights(dim: int, n_gh: int):
     r"""
@@ -37,12 +40,12 @@ def ndgh_points_and_weights(dim: int, n_gh: int):
     :returns: points Z, with shape [n_gh**dim, dim], and weights dZ, with shape [n_gh**dim, 1]
     """
     z, dz = gh_points_and_weights(n_gh)
-    Z = [z]*dim
-    dZ = [dz]*dim
+    Z = [z] * dim
+    dZ = [dz] * dim
     return reshape_Z_dZ(Z, dZ, dim)
 
-class NDDiagGHQuadrature(GaussianQuadrature):
 
+class NDDiagGHQuadrature(GaussianQuadrature):
     def __init__(self, dim: int, n_gh: int):
         Z, dZ = ndgh_points_and_weights(dim, n_gh)
         self.n_gh_total = n_gh ** dim
@@ -50,7 +53,7 @@ class NDDiagGHQuadrature(GaussianQuadrature):
         self.dZ = tf.convert_to_tensor(dZ)
 
     def _build_X_W(self, mean, var):
-        new_shape = (self.n_gh_total,) + tuple([1] * (len(mean.shape) -  1)) + (-1,)
+        new_shape = (self.n_gh_total,) + tuple([1] * (len(mean.shape) - 1)) + (-1,)
         Z = tf.reshape(self.Z, new_shape)
         dZ = tf.reshape(self.dZ, new_shape)
         # Z : [n_gh_total] + [1]*len(batch) + [dims],   typically [n_gh_total, 1, dims]
@@ -60,7 +63,7 @@ class NDDiagGHQuadrature(GaussianQuadrature):
         stddev = tf.expand_dims(tf.sqrt(var), 0)
         # mean, stddev: [1] + batch + [dims],           typically [1, N, dims]
 
-        X = mean + stddev*Z
+        X = mean + stddev * Z
         W = dZ
         # X: [n_gh_total] + batch + [dims],             typically [n_gh_total, N, dims]
         # W: [n_gh_total] + [1]*len(batch) + [1],       typically [n_gh_total, 1, 1]

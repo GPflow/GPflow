@@ -23,6 +23,7 @@ from .utilities import to_default_float
 
 from .gaussian_quadrature import NDDiagGHQuadrature
 
+
 def hermgauss(n: int):
     x, w = np.polynomial.hermite.hermgauss(n)
     x, w = x.astype(default_float()), w.astype(default_float())
