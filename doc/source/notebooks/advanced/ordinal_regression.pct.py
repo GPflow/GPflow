@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.4.2
+#       jupytext_version: 1.3.3
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -74,16 +74,8 @@ bin_edges = bin_edges - bin_edges.mean()
 likelihood = gpflow.likelihoods.Ordinal(bin_edges)
 
 # build a model with this likelihood
-m = gpflow.models.VGP(
-    data=(tf.convert_to_tensor(X), tf.convert_to_tensor(Y)), 
-    kernel=gpflow.kernels.Matern32(),
-    likelihood=likelihood
-)
+m = gpflow.models.VGP(data=(X, Y), kernel=gpflow.kernels.Matern32(), likelihood=likelihood)
 
-# %%
-tf.cast(tf.shape(tf.ones((10,3)))[-1], tf.int32)
-
-# %%
 # fit the model
 opt = gpflow.optimizers.Scipy()
 opt.minimize(m.training_loss, m.trainable_variables, options=dict(maxiter=100))
