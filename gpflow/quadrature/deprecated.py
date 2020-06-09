@@ -128,9 +128,11 @@ def ndiagquad(funcs, H: int, Fmu, Fvar, logspace: bool = False, **Ys):
     else:
         dim = 1
         shape = tf.shape(Fmu)
-        if tf.rank(Fmu) < 2:
-            Fmu = tf.expand_dims(Fmu, axis=-1)
-            Fvar = tf.expand_dims(Fvar, axis=-1)
+
+    Fmu = tf.reshape(Fmu, (-1, dim))
+    Fvar = tf.reshape(Fvar, (-1, dim))
+
+    Ys = {Yname : tf.reshape(Y, (-1, 1)) for Yname, Y in Ys.items()}
 
     def wrapper(old_fun):
         def new_fun(X, **Ys):
