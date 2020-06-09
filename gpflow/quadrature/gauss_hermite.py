@@ -47,7 +47,7 @@ def ndgh_points_and_weights(dim: int, n_gh: int):
     return reshape_Z_dZ(zs, dzs)
 
 
-class NDDiagGHQuadrature(GaussianQuadrature):
+class NDiagGHQuadrature(GaussianQuadrature):
     def __init__(self, dim: int, n_gh: int):
         Z, dZ = ndgh_points_and_weights(dim, n_gh)
         self.n_gh_total = n_gh ** dim
