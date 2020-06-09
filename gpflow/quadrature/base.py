@@ -13,7 +13,7 @@ class GaussianQuadrature:
         r"""
         Compute the Gaussian log-Expectation of a function f
             q(x) = N(mean, var)
-            E_{X~q(x)}[f(X)] = log∫f(x)q(x)dx
+            E_{X~q(x)}[f(X)] = log ∫f(x)q(x)dx
         Using the approximation
             log \sum exp(f(x_i) + log w_i)
         Where x_i, w_i must be provided by some inheriting class
