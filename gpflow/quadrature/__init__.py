@@ -1,5 +1,5 @@
 from .base import GaussianQuadrature
-from .gauss_hermite import NDDiagGHQuadrature
-from .quadrature import hermgauss, mvhermgauss, mvnquad, ndiagquad, ndiag_mc
+from .gauss_hermite import NDiagGHQuadrature
+from .deprecated import hermgauss, mvhermgauss, mvnquad, ndiagquad, ndiag_mc
 
-from .deprecated import ndiagquad as ndiagquad_old
+from .old import ndiagquad as ndiagquad_old
