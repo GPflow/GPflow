@@ -132,7 +132,7 @@ def ndiagquad(funcs, H: int, Fmu, Fvar, logspace: bool = False, **Ys):
     Fmu = tf.reshape(Fmu, (-1, dim))
     Fvar = tf.reshape(Fvar, (-1, dim))
 
-    Ys = {Yname : tf.reshape(Y, (-1, 1)) for Yname, Y in Ys.items()}
+    Ys = {Yname: tf.reshape(Y, (-1, 1)) for Yname, Y in Ys.items()}
 
     def wrapper(old_fun):
         def new_fun(X, **Ys):
@@ -141,6 +141,7 @@ def ndiagquad(funcs, H: int, Fmu, Fvar, logspace: bool = False, **Ys):
             if tf.rank(fun_eval) < tf.rank(X):
                 fun_eval = tf.expand_dims(fun_eval, axis=-1)
             return fun_eval
+
         return new_fun
 
     if isinstance(funcs, Iterable):
