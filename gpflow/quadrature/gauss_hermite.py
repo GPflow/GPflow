@@ -53,21 +53,18 @@ class NDiagGHQuadrature(GaussianQuadrature):
         self.n_gh_total = n_gh ** dim
         self.Z = tf.convert_to_tensor(Z)
         self.dZ = tf.convert_to_tensor(dZ)
+        #  Z: [n_gh_total, dims]
+        # dZ: [n_gh_total,    1]
 
     def _build_X_W(self, mean, var):
-        new_shape = (self.n_gh_total,) + tuple([1] * (len(mean.shape) - 1)) + (-1,)
-        Z = tf.reshape(self.Z, new_shape)
-        dZ = tf.reshape(self.dZ, new_shape)
-        # Z : [n_gh_total] + [1]*len(batch) + [dims],   typically [n_gh_total, 1, dims]
-        # dZ: [n_gh_total] + [1]*len(batch) + [1],      typically [n_gh_total, 1, 1]
+        # mean, stddev: batch + [dims], typically [N, dims]
+        mean = tf.expand_dims(mean, -2)
+        stddev = tf.expand_dims(tf.sqrt(var), -2)
+        # mean, stddev: batch + [1, dims], typically [N, 1, dims]
 
-        mean = tf.expand_dims(mean, 0)
-        stddev = tf.expand_dims(tf.sqrt(var), 0)
-        # mean, stddev: [1] + batch + [dims],           typically [1, N, dims]
-
-        X = mean + stddev * Z
-        W = dZ
-        # X: [n_gh_total] + batch + [dims],             typically [n_gh_total, N, dims]
-        # W: [n_gh_total] + [1]*len(batch) + [1],       typically [n_gh_total, 1, 1]
+        X = mean + stddev * self.Z
+        W = self.dZ
+        # X: batch + [n_gh_total, dims], typically [N, n_gh_total, dims]
+        # W: batch + [n_gh_total,    1], typically [N, n_gh_total,    1]
 
         return X, W

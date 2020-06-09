@@ -13,8 +13,8 @@ class GaussianQuadrature:
         X, W = self._build_X_W(mean, var)
         logW = tf.math.log(W)
         if isinstance(fun, Iterable):
-            return [tf.reduce_logsumexp(f(X, *args, **kwargs) + logW, axis=0) for f in fun]
-        return tf.reduce_logsumexp(fun(X, *args, **kwargs) + logW, axis=0)
+            return [tf.reduce_logsumexp(f(X, *args, **kwargs) + logW, axis=-2) for f in fun]
+        return tf.reduce_logsumexp(fun(X, *args, **kwargs) + logW, axis=-2)
 
     def __call__(self, fun, mean, var, *args, **kwargs):
         X, W = self._build_X_W(mean, var)
@@ -23,5 +23,5 @@ class GaussianQuadrature:
             # and sum-reducing all at once
             # The problem: there is no garantee that f1(X), f2(X), ...
             # have comaptible shapes
-            return [tf.reduce_sum(f(X, *args, **kwargs) * W, axis=0) for f in fun]
-        return tf.reduce_sum(fun(X, *args, **kwargs) * W, axis=0)
+            return [tf.reduce_sum(f(X, *args, **kwargs) * W, axis=-2) for f in fun]
+        return tf.reduce_sum(fun(X, *args, **kwargs) * W, axis=-2)
