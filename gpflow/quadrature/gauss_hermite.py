@@ -35,6 +35,10 @@ def reshape_Z_dZ(zs, dzs):
     return Z, dZ
 
 
+def repeat_as_list(x, n):
+    return tf.unstack(tf.repeat(tf.expand_dims(x, axis=0), n, axis=0), axis=0)
+
+
 def ndgh_points_and_weights(dim: int, n_gh: int):
     r"""
     :param n_gh: number of Gauss-Hermite points, integer
@@ -42,8 +46,8 @@ def ndgh_points_and_weights(dim: int, n_gh: int):
     :returns: points Z, with shape [n_gh**dim, dim], and weights dZ, with shape [n_gh**dim, 1]
     """
     z, dz = gh_points_and_weights(n_gh)
-    zs = tf.unstack(tf.repeat(tf.expand_dims(z, axis=0), dim, axis=0), axis=0)
-    dzs = tf.unstack(tf.repeat(tf.expand_dims(dz, axis=0), dim, axis=0), axis=0)
+    zs = repeat_as_list(z, dim)
+    dzs = repeat_as_list(dz, dim)
     return reshape_Z_dZ(zs, dzs)
 
 
