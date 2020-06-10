@@ -1,0 +1,95 @@
+# Copyright 2017-2020 the GPflow authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import numpy as np
+import tensorflow as tf
+import tensorflow_probability as tfp
+
+import gpflow
+from gpflow.likelihoods.heteroskedastic import HeteroskedasticTFPDistribution
+
+tf.random.set_seed(99012)
+
+# toy data: shape [N, 1]
+Y = np.c_[0.5, 0.4, 1.0].T
+N, _ = Y.shape
+# single "GP" (for the mean):
+f_mean = np.c_[0.4, 0.7, 0.9].T
+f_var = np.c_[0.7, 0.2, 1.3].T
+equivalent_f2 = np.log(np.sqrt(0.345))
+f2_mean = np.full((N, 1), equivalent_f2)
+f2_var = np.zeros((N, 1))
+# stacked N x 2 arrays
+F2_mean = np.c_[f_mean, f2_mean]
+F2_var = np.c_[f_var, f2_var]
+
+
+def test_log_prob():
+    """
+    heteroskedastic likelihood where the variance parameter is always constant
+     giving the same answers for variational_expectations, predict_mean_and_var,
+      etc as the regular Gaussian  likelihood
+    """
+    l1 = gpflow.likelihoods.Gaussian(variance=0.345)
+    l2 = HeteroskedasticTFPDistribution(tfp.distributions.Normal)
+    np.testing.assert_allclose(
+        l1.log_prob(f_mean, Y),
+        l2.log_prob(F2_mean, Y),
+    )
+
+
+def test_variational_expectations():
+    # Create likelihoods
+    l1 = gpflow.likelihoods.Gaussian(variance=0.345)
+    l2 = HeteroskedasticTFPDistribution(tfp.distributions.Normal)
+    np.testing.assert_allclose(
+        l1.variational_expectations(f_mean, f_var, Y),
+        l2.variational_expectations(F2_mean, F2_var, Y),
+    )
+
+
+def test_predict_mean_and_var():
+    l1 = gpflow.likelihoods.Gaussian(variance=0.345)
+    l2 = HeteroskedasticTFPDistribution(tfp.distributions.Normal)
+    np.testing.assert_allclose(
+        l1.predict_mean_and_var(f_mean, f_var),
+        l2.predict_mean_and_var(F2_mean, F2_var),
+    )
+
+
+def test_conditional_mean():
+    l1 = gpflow.likelihoods.Gaussian(variance=0.345)
+    l2 = HeteroskedasticTFPDistribution(tfp.distributions.Normal)
+    np.testing.assert_allclose(
+        l1.conditional_mean(f_mean),
+        l2.conditional_mean(F2_mean),
+    )
+
+
+def test_conditional_variance():
+    l1 = gpflow.likelihoods.Gaussian(variance=0.345)
+    l2 = HeteroskedasticTFPDistribution(tfp.distributions.Normal)
+    np.testing.assert_allclose(
+        l1.conditional_mean(f_mean),
+        l2.conditional_mean(F2_mean),
+    )
+
+
+def test_predict_log_density():
+    l1 = gpflow.likelihoods.Gaussian(variance=0.345)
+    l2 = HeteroskedasticTFPDistribution(tfp.distributions.Normal)
+    np.testing.assert_allclose(
+        l1.predict_log_density(f_mean, f_var, Y),
+        l2.predict_log_density(F2_mean, f2_var, Y),
+    )
