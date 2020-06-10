@@ -26,7 +26,7 @@
 #   - optimizing the model parameters
 #   - making predictions
 #
-# We focus here on the implementation of the models in GPflow; for more intuition on these models, see [A Practical Guide to Gaussian Processes](https://drafts.distill.pub/gp/).
+# We focus here on the implementation of the models in GPflow; for more intuition on these models, see [A Visual Exploration of Gaussian Processes](https://distill.pub/2019/visual-exploration-gaussian-processes/).
 #
 
 # %%
