@@ -102,17 +102,6 @@ def test_multiple_assign_fails_with_invalid_values(model, wrong_var_update_dict)
         multiple_assign(model, wrong_var_update_dict)
 
 
-def test_make_trainable(model):
-    """
-    Checks whether we `set_trainable()` can make parameters which are *not*
-    trainable trainable again.
-    """
-    set_trainable(model, False)
-    assert len(model.trainable_variables) == 0
-    set_trainable(model, True)
-    assert len(model.trainable_variables) == len(model.parameters)
-
-
 def test_dict_utilities(model):
     """
     Test both `parameter_dict()` and `read_values()`
