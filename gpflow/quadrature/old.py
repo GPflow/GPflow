@@ -1,7 +1,7 @@
+from collections.abc import Iterable
+
 import numpy as np
 import tensorflow as tf
-
-from collections.abc import Iterable
 
 from .deprecated import mvhermgauss
 
