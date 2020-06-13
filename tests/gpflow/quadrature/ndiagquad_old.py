@@ -3,7 +3,7 @@ from collections.abc import Iterable
 import numpy as np
 import tensorflow as tf
 
-from .deprecated import mvhermgauss
+from gpflow.quadrature.deprecated import mvhermgauss
 
 
 def ndiagquad(funcs, H: int, Fmu, Fvar, logspace: bool = False, **Ys):
