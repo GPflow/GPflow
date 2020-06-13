@@ -76,9 +76,7 @@ def test_diagquad_logspace(mu1, var1, mu2, var2):
 def test_diagquad_with_kwarg(mu1, var1):
     alpha = np.array([2.5, -1.3])
     num_gauss_hermite_points = 25
-    quad = ndiagquad(
-        lambda X, Y: tf.exp(X * Y), num_gauss_hermite_points, mu1, var1, Y=alpha
-    )
+    quad = ndiagquad(lambda X, Y: tf.exp(X * Y), num_gauss_hermite_points, mu1, var1, Y=alpha)
     quad_old = ndiagquad_old(
         lambda X, Y: tf.exp(X * Y), num_gauss_hermite_points, mu1, var1, Y=alpha
     )
