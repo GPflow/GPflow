@@ -84,8 +84,8 @@ def test_conditional_variance():
     l1 = gpflow.likelihoods.Gaussian(variance=Data.g_var)
     l2 = HeteroskedasticTFPDistribution(tfp.distributions.Normal)
     np.testing.assert_allclose(
-        l1.conditional_mean(Data.f_mean),
-        l2.conditional_mean(Data.F2_mean),
+        l1.conditional_variance(Data.f_mean),
+        l2.conditional_variance(Data.F2_mean),
     )
 
 
