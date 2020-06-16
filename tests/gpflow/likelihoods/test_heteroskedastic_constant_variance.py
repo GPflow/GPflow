@@ -31,7 +31,7 @@ class Data:
     # single "GP" (for the mean):
     f_mean = np.c_[0.4, 0.7, 0.9].T
     f_var = np.c_[0.7, 0.2, 1.3].T
-    equivalent_f2 = np.log(np.sqrt(0.345))
+    equivalent_f2 = np.log(np.sqrt(g_var))
     F2_mean = np.full((N, 1), equivalent_f2)
     f2_var = np.zeros((N, 1))
     # stacked N x 2 arraData.Ys
