@@ -72,7 +72,7 @@ def test_predict_mean_and_var():
     )
 
 
-@pytest.skip("Conditional mean is not implemented in heteroskedastic likelihood")
+@pytest.mark.skip("Conditional mean is not implemented in heteroskedastic likelihood")
 def test_conditional_mean():
     l1 = gpflow.likelihoods.Gaussian(variance=Data.g_var)
     l2 = HeteroskedasticTFPDistribution(tfp.distributions.Normal)
@@ -82,7 +82,7 @@ def test_conditional_mean():
     )
 
 
-@pytest.skip("Conditional variance is not implemented in heteroskedastic likelihood")
+@pytest.mark.skip("Conditional variance is not implemented in heteroskedastic likelihood")
 def test_conditional_variance():
     l1 = gpflow.likelihoods.Gaussian(variance=Data.g_var)
     l2 = HeteroskedasticTFPDistribution(tfp.distributions.Normal)
@@ -92,7 +92,7 @@ def test_conditional_variance():
     )
 
 
-@pytest.skip("Currently broken as it returns the sum over outputs when given multiple outputs")
+@pytest.mark.skip("Currently broken as it returns the sum over outputs when given multiple outputs")
 def test_predict_log_density():
     l1 = gpflow.likelihoods.Gaussian(variance=Data.g_var)
     l2 = HeteroskedasticTFPDistribution(tfp.distributions.Normal)
