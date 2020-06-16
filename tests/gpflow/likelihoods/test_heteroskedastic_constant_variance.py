@@ -25,23 +25,22 @@ tf.random.set_seed(99012)
 
 class Data:
     g_var = 0.345
-    # toData.Y data: shape [N, 1]
-    Y = np.c_[0.5, 0.4, 1.0].T
-    N, _ = Y.shape
+    rng = np.random.RandomState(123)
+    N = 5
+    Y = rng.randn(N, 1)
     # single "GP" (for the mean):
-    f_mean = np.c_[0.4, 0.7, 0.9].T
-    f_var = np.c_[0.7, 0.2, 1.3].T
+    f_mean = rng.randn(N, 1)
+    f_var = rng.uniform(0.1, 1.0, (N, 1))  # must be positive
     equivalent_f2 = np.log(np.sqrt(g_var))
-    F2_mean = np.full((N, 1), equivalent_f2)
+    f2_mean = np.full((N, 1), equivalent_f2)
     f2_var = np.zeros((N, 1))
-    # stacked N x 2 arraData.Ys
-    F2_mean = np.c_[f_mean, F2_mean]
+    F2_mean = np.c_[f_mean, f2_mean]
     F2_var = np.c_[f_var, f2_var]
 
 
 def test_log_prob():
     """
-    heteroskedastic likelihood where the variance parameter is alwaData.Ys constant
+    heteroskedastic likelihood where the variance parameter is always constant
      giving the same answers for variational_expectations, predict_mean_and_var,
       etc as the regular Gaussian  likelihood
     """
