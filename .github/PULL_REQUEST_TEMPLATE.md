@@ -1,41 +1,52 @@
-# Standard GPflow pull request
+<!-- (Lines like this are comments and will be invisible - you do not need to edit/remove them) -->
 
-At first, thank you very much for spending time on contributing to GPflow.\
-This template exists to help us to grasp your work without asking very common questions. The template helps you to get thorough feedback as well.
+<!-- Thank you very much for spending time on contributing to GPflow!
+This template exists to simplify communicating basic information that is required to understand your contribution.
+Please fill it in as far as possible; if anything about this template is unclear, please do mention it! -->
 
+PR type:
+<!-- e.g. bugfix / enhancement / new feature / doc improvement -->
 
-## PR content:
+Related issue:
+<!-- GitHub issue number, e.g. #1216 -->
 
-* [Title](#title)
-* [Description](#description)
-* [Minimal working example](#minimal-working-example)
+# Summary
 
-### Title
+**Proposed changes**
+<!-- A clear and concise description of the contents of this pull request. -->
+<!-- Large PRs should ideally be preceded by a design discussion on a separate issue! -->
 
-Squeeze it. Be creative. There is no necessity for any marks like [BUG], {feature} and cetera. We have github labels for that.
+**What alternatives have you considered?**
+<!-- A clear and concise description of any alternative solutions or features you've considered. -->
 
-### Description
+## Minimal working example
 
-Describe your contribution by writing down the context and reasons. Make it clear whether it is a **bug fix**, **feature** or **enhancement**. Do not make it very wordy, keep it short and simple.
+<!-- Short code snippet with relevant comments.
+* Bug fixes: show what happens before (without this PR) and after.
+* New feature: show different use cases and demonstrate its benefits.
+-->
 
-* Bad example: `This is a bug-fix found at #111.`
-* Bad example: `Add new SuperMagic optimizer.`
-* Good example: `Working on feature #111, we found that parameters of VGP are not instantiated properly. It causes arbitrary failures at training. The bug is fixed by adding necessary parameters to the list of trainables.`
+```python
+# Put your example code in here
+```
 
+## PR checklist
+- [ ] New features: code is well-documented
+  - [ ] detailed docstrings (API documentation)
+  - [ ] notebook examples (usage demonstration)
+- [ ] The bug case / new feature is covered by unit tests
+- [ ] Code has type annotations
+- [ ] I ran the black formatter (`make format`)
+- [ ] I locally tested that the tests pass (`make check-all`)
 
-### Minimal working example
+## Release notes
 
-No matter how good the description is, the best thing you can do for making a reviewer's life much easier is to add a minimal working example (MWE). Ideally, it should be a short code snippet with relevant comments. If a MWE is big (> 50 lines), you should consider [gist](https://gist.github.com) instead.
+Fully backwards compatible: yes / no
 
-* If your PR is a *bug* related fix, then your MWE must disclose the bug explicitly showing what happened before and after.
-* When you propose a new *feature*, the MWE must show different use cases and demonstrate its benefits.
+If not, why is it worth breaking backwards compatibility:
+<!-- include a short justification -->
 
-## Code quality requirements
+Commit message (for release notes):
 
-For details, look at the code quality requirements section in [contributing.md](../contributing.md). The *main* points are repeated here:
+* ...
 
-* _New feature's_ code must be accompanied with [detailed](../contributing.md) docstrings.
-* _New features_ must be covered with tests.
-* _Fixed bug_ must be proved by test suites.
-* Use type annotations.
-* Use `.pylintrc` for code formatting.
