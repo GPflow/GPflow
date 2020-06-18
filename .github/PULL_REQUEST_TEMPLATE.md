@@ -13,8 +13,12 @@ Related issue:
 # Summary
 
 **Proposed changes**
-<!-- A clear and concise description of the contents of this pull request. -->
 <!-- Large PRs should ideally be preceded by a design discussion on a separate issue! -->
+
+<!-- A clear and concise description of the contents of this pull request. -->
+* ...
+* ...
+* ...
 
 **What alternatives have you considered?**
 <!-- A clear and concise description of any alternative solutions or features you've considered. -->
@@ -31,6 +35,7 @@ Related issue:
 ```
 
 ## PR checklist
+<!-- tick off [X] as applicable -->
 - [ ] New features: code is well-documented
   - [ ] detailed docstrings (API documentation)
   - [ ] notebook examples (usage demonstration)
@@ -41,12 +46,13 @@ Related issue:
 
 ## Release notes
 
-Fully backwards compatible: yes / no
+<!-- leave blank if unsure -->
 
-If not, why is it worth breaking backwards compatibility:
+**Fully backwards compatible:** yes / no
+
+**If not, why is it worth breaking backwards compatibility:**
 <!-- include a short justification -->
 
-Commit message (for release notes):
+**Commit message (for release notes):**
 
 * ...
-
