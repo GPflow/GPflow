@@ -4,13 +4,11 @@
 This template exists to simplify communicating basic information that is required to understand your contribution.
 Please fill it in as far as possible; if anything about this template is unclear, please do mention it! -->
 
-PR type:
-<!-- e.g. bugfix / enhancement / new feature / doc improvement -->
+**PR type:** bugfix / enhancement / new feature / doc improvement
 
-Related issue:
-<!-- GitHub issue number, e.g. #1216 -->
+**Related issue(s)/PRs:** <!-- GitHub issue number, e.g. #1216 -->
 
-# Summary
+## Summary
 
 **Proposed changes**
 <!-- Large PRs should ideally be preceded by a design discussion on a separate issue! -->
@@ -23,7 +21,7 @@ Related issue:
 **What alternatives have you considered?**
 <!-- A clear and concise description of any alternative solutions or features you've considered. -->
 
-## Minimal working example
+### Minimal working example
 
 <!-- Short code snippet with relevant comments.
 * Bug fixes: show what happens before (without this PR) and after.
@@ -44,7 +42,7 @@ Related issue:
 - [ ] I ran the black formatter (`make format`)
 - [ ] I locally tested that the tests pass (`make check-all`)
 
-## Release notes
+### Release notes
 
 <!-- leave blank if unsure -->
 
