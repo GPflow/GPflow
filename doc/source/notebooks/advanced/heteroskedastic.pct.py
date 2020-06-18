@@ -22,7 +22,7 @@
 #
 #
 # ## Heteroskedastic Regression
-# This notebooks shows how to construct a model which uses multiple (2) GP latent functions to learn both the location and the scale and of the Gaussian likelihood distribution. It does so by connecting a **Multi-Output Kernel**, which generates multiple GP latent functions, to a **Heteroskedastic Likelihood**, which maps the latent GPs into a single likelihood.
+# This notebooks shows how to construct a model which uses multiple (2) GP latent functions to learn both the location and the scale of the Gaussian likelihood distribution. It does so by connecting a **Multi-Output Kernel**, which generates multiple GP latent functions, to a **Heteroskedastic Likelihood**, which maps the latent GPs into a single likelihood.
 #
 # The generative model is described as:
 #
