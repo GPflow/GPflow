@@ -23,7 +23,7 @@ def _conditional(
     q_sqrt=None,
     white=False,
     Kmm=None,
-    Lm=None
+    Lm=None,
 ):
     """
     Single-output GP conditional.
@@ -82,7 +82,7 @@ def _conditional(
     q_sqrt=None,
     white=False,
     Kmm=None,
-    Lm=None
+    Lm=None,
 ):
     """
     Given f, representing the GP at the points X, produce the mean and
@@ -126,7 +126,8 @@ def _conditional(
         Kmm = kernel(X) + eye(tf.shape(X)[-2], value=default_jitter(), dtype=X.dtype)  # [..., M, M]
     Kmn = kernel(X, Xnew)  # [M, ..., N]
     Knn = kernel(Xnew, full_cov=full_cov)  # [..., N] (full_cov = False) or [..., N, N] (True)
-    mean, var = base_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov, q_sqrt=q_sqrt,
-                                 white=white, Lm=Lm)
+    mean, var = base_conditional(
+        Kmn, Kmm, Knn, f, full_cov=full_cov, q_sqrt=q_sqrt, white=white, Lm=Lm
+    )
 
     return mean, var  # [N, R], [N, R] or [R, N, N]

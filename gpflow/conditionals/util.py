@@ -14,7 +14,7 @@ def base_conditional(
     full_cov=False,
     q_sqrt: Optional[tf.Tensor] = None,
     white=False,
-    Lm=None
+    Lm=None,
 ):
     r"""
     Given a g1 and g2, and distribution p and q such that
