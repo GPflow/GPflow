@@ -126,9 +126,9 @@ res = gpflow.optimizers.Scipy().minimize(
 print(f"{res.nfev / (time.time() - start_time):.3f} iter/s")
 
 # %%
-train_err = np.mean((rbf_m.predict_y(X)[0] > 0.5).numpy().astype("float") == Y)
-test_err = np.mean((rbf_m.predict_y(Xt)[0] > 0.5).numpy().astype("float") == Yt)
-print(f"Train acc: {train_err * 100}%\nTest acc : {test_err*100}%")
+train_acc = np.mean((rbf_m.predict_y(X)[0] > 0.5).numpy().astype("float") == Y)
+test_acc = np.mean((rbf_m.predict_y(Xt)[0] > 0.5).numpy().astype("float") == Yt)
+print(f"Train acc: {train_acc * 100}%\nTest acc : {test_acc*100}%")
 print("RBF elbo after training: %.4e" % rbf_elbo())
 
 # %% [markdown]
@@ -185,9 +185,9 @@ res = gpflow.optimizers.Scipy().minimize(
     method="l-bfgs-b",
     options={"disp": True, "maxiter": MAXITER},
 )
-train_err = np.mean((conv_m.predict_y(X)[0] > 0.5).numpy().astype("float") == Y)
-test_err = np.mean((conv_m.predict_y(Xt)[0] > 0.5).numpy().astype("float") == Yt)
-print(f"Train acc: {train_err * 100}%\nTest acc : {test_err*100}%")
+train_acc = np.mean((conv_m.predict_y(X)[0] > 0.5).numpy().astype("float") == Y)
+test_acc = np.mean((conv_m.predict_y(Xt)[0] > 0.5).numpy().astype("float") == Yt)
+print(f"Train acc: {train_acc * 100}%\nTest acc : {test_acc*100}%")
 print("conv elbo after training: %.4e" % conv_elbo())
 
 # %%
@@ -197,9 +197,9 @@ res = gpflow.optimizers.Scipy().minimize(
     method="l-bfgs-b",
     options={"disp": True, "maxiter": MAXITER},
 )
-train_err = np.mean((conv_m.predict_y(X)[0] > 0.5).numpy().astype("float") == Y)
-test_err = np.mean((conv_m.predict_y(Xt)[0] > 0.5).numpy().astype("float") == Yt)
-print(f"Train acc: {train_err * 100}%\nTest acc : {test_err*100}%")
+train_acc = np.mean((conv_m.predict_y(X)[0] > 0.5).numpy().astype("float") == Y)
+test_acc = np.mean((conv_m.predict_y(Xt)[0] > 0.5).numpy().astype("float") == Yt)
+print(f"Train acc: {train_acc * 100}%\nTest acc : {test_acc*100}%")
 print("conv elbo after training: %.4e" % conv_elbo())
 
 # %%
@@ -210,9 +210,9 @@ res = gpflow.optimizers.Scipy().minimize(
     method="l-bfgs-b",
     options={"disp": True, "maxiter": MAXITER},
 )
-train_err = np.mean((conv_m.predict_y(X)[0] > 0.5).numpy().astype("float") == Y)
-test_err = np.mean((conv_m.predict_y(Xt)[0] > 0.5).numpy().astype("float") == Yt)
-print(f"Train acc: {train_err * 100}%\nTest acc : {test_err*100}%")
+train_acc = np.mean((conv_m.predict_y(X)[0] > 0.5).numpy().astype("float") == Y)
+test_acc = np.mean((conv_m.predict_y(Xt)[0] > 0.5).numpy().astype("float") == Yt)
+print(f"Train acc: {train_acc * 100}%\nTest acc : {test_acc*100}%")
 print("conv elbo after training: %.4e" % conv_elbo())
 
 # %%

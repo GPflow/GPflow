@@ -42,7 +42,7 @@ LowRank = tf.linalg.LinearOperatorLowRankUpdate
 # %%
 import matplotlib.pyplot as plt
 
-# %matplotlib notebook
+# %matplotlib inline
 
 # %% [markdown]
 # The VFF inducing variables are defined as a projection $u_m = \mathcal{P}_{\phi_m}(f)$ (eq. (59)) of the GP $f(\cdot)$ onto a truncated Fourier basis, $\phi_m = [1, \cos(\omega_1(x-a)),\dots,\cos(\omega_M(x-a)),\sin(\omega_1(x-a)),\dots,\sin(\omega_M(x-a))]$ (eq. (47)). To represent this we define a new inducing variables class that derives from the `InducingVariables` base class.

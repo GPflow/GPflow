@@ -66,7 +66,7 @@ class GPR(GPModel, InternalDataTrainingLossMixin):
         """
         X, Y = self.data
         K = self.kernel(X)
-        num_data = X.shape[0]
+        num_data = tf.shape(X)[0]
         k_diag = tf.linalg.diag_part(K)
         s_diag = tf.fill([num_data], self.likelihood.variance)
         ks = tf.linalg.set_diag(K, k_diag + s_diag)
