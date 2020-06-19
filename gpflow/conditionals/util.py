@@ -334,7 +334,7 @@ def fully_correlated_conditional(
         full_output_cov=full_output_cov,
         q_sqrt=q_sqrt,
         white=white,
-        Lm=Lm
+        Lm=Lm,
     )
     return tf.squeeze(mean, axis=0), tf.squeeze(var, axis=0)
 

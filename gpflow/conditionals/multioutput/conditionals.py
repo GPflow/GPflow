@@ -135,12 +135,14 @@ def separate_independent_conditional(
 
     def single_gp_conditional(t):
         Kmm, Kmn, Knn, f, q_sqrt, Lm = t
-        return base_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov, q_sqrt=q_sqrt, white=white,
-                                Lm=Lm)
+        return base_conditional(
+            Kmn, Kmm, Knn, f, full_cov=full_cov, q_sqrt=q_sqrt, white=white, Lm=Lm
+        )
 
     rmu, rvar = tf.map_fn(
-        single_gp_conditional, (Kmms, Kmns, Knns, fs, q_sqrts, Lms),
-        (default_float(), default_float())
+        single_gp_conditional,
+        (Kmms, Kmns, Knns, fs, q_sqrts, Lms),
+        (default_float(), default_float()),
     )  # [P, N, 1], [P, 1, N, N] or [P, N, 1]
 
     fmu = rollaxis_left(tf.squeeze(rmu, axis=-1), 1)  # [N, P]
@@ -202,7 +204,7 @@ def fallback_independent_latent_conditional(
         full_output_cov=full_output_cov,
         q_sqrt=q_sqrt,
         white=white,
-        Lm=Lm
+        Lm=Lm,
     )
 
 

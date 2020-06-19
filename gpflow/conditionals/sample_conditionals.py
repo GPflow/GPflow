@@ -47,7 +47,7 @@ def _sample_conditional(
         full_cov=full_cov,
         full_output_cov=full_output_cov,
         Kmm=Kmm,
-        Lm=Lm
+        Lm=Lm,
     )
     if full_cov:
         # mean: [..., N, P]
