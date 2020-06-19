@@ -19,6 +19,8 @@ def _sample_conditional(
     q_sqrt=None,
     white=False,
     num_samples=None,
+    Kmm=None,
+    Lm=None,
 ):
     """
     `sample_conditional` will return a sample from the conditional distribution.
@@ -44,6 +46,8 @@ def _sample_conditional(
         white=white,
         full_cov=full_cov,
         full_output_cov=full_output_cov,
+        Kmm=Kmm,
+        Lm=Lm
     )
     if full_cov:
         # mean: [..., N, P]

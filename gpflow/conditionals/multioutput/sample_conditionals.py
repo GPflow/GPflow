@@ -23,6 +23,8 @@ def _sample_conditional(
     q_sqrt=None,
     white=False,
     num_samples=None,
+    Kmm=None,
+    Lm=None,
 ):
     """
     `sample_conditional` will return a sample from the conditinoal distribution.
@@ -41,7 +43,7 @@ def _sample_conditional(
         object, SeparateIndependentInducingVariables, SeparateIndependent, object
     )
     g_mu, g_var = ind_conditional(
-        Xnew, inducing_variable, kernel, f, white=white, q_sqrt=q_sqrt
+        Xnew, inducing_variable, kernel, f, white=white, q_sqrt=q_sqrt, Kmm=Kmm, Lm=Lm
     )  # [..., N, L], [..., N, L]
     g_sample = sample_mvn(g_mu, g_var, full_cov, num_samples=num_samples)  # [..., (S), N, L]
     f_mu, f_var = mix_latent_gp(kernel.W, g_mu, g_var, full_cov, full_output_cov)

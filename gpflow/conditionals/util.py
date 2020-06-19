@@ -37,7 +37,7 @@ def base_conditional(
     :param q_sqrt: If this is a Tensor, it must have shape [R, M, M] (lower
         triangular) or [M, R] (diagonal)
     :param white: bool
-    :param Lm: The cholesky decomposition of `Kmm`, of shape[M, M]. If this is not provided then
+    :param Lm: The cholesky decomposition of `Kmm`, of shape [M, M]. If this is not provided then
     it is computed within this function. Passing this in may improve performance.
     :return: [N, R]  or [R, N, N]
     """
@@ -216,7 +216,7 @@ def expand_independent_outputs(fvar, full_cov, full_output_cov):
 
 
 def independent_interdomain_conditional(
-    Kmn, Kmm, Knn, f, *, full_cov=False, full_output_cov=False, q_sqrt=None, white=False
+    Kmn, Kmm, Knn, f, *, full_cov=False, full_output_cov=False, q_sqrt=None, white=False, Lm=None
 ):
     """
     The inducing outputs live in the g-space (R^L).
@@ -229,6 +229,8 @@ def independent_interdomain_conditional(
     :param full_cov: calculate covariance between inputs
     :param full_output_cov: calculate covariance between outputs
     :param white: use whitened representation
+    :param Lm: The cholesky decomposition of `Kmm`, of shape [L, M, M]. If this is not provided then
+    it is computed within this function. Passing this in may improve performance.
     :return:
         - mean: [N, P]
         - variance: [N, P], [N, P, P], [P, N, N], [N, P, N, P]
@@ -243,7 +245,8 @@ def independent_interdomain_conditional(
     if q_sqrt is not None:
         shape_constraints.append((q_sqrt, "ML" if q_sqrt.shape.ndims == 2 else "LMM"))
 
-    Lm = tf.linalg.cholesky(Kmm)  # [L, M, M]
+    if Lm is None:
+        Lm = tf.linalg.cholesky(Kmm)  # [L, M, M]
 
     # Compute the projection matrix A
     Kmn = tf.reshape(tf.transpose(Kmn, (1, 0, 2, 3)), (L, M, N * P))
@@ -303,7 +306,7 @@ def independent_interdomain_conditional(
 
 
 def fully_correlated_conditional(
-    Kmn, Kmm, Knn, f, *, full_cov=False, full_output_cov=False, q_sqrt=None, white=False
+    Kmn, Kmm, Knn, f, *, full_cov=False, full_output_cov=False, q_sqrt=None, white=False, Lm=None
 ):
     """
     This function handles conditioning of multi-output GPs in the case where the conditioning
@@ -316,6 +319,8 @@ def fully_correlated_conditional(
     :param full_cov: calculate covariance between inputs
     :param full_output_cov: calculate covariance between outputs
     :param white: use whitened representation
+    :param Lm: The cholesky decomposition of `Kmm`, of shape[M, M]. If this is not provided then
+    it is computed within this function. Passing this in may improve performance.
     :return:
         - mean: [N, P]
         - variance: [N, P], [N, P, P], [P, N, N], [N, P, N, P]
@@ -329,12 +334,13 @@ def fully_correlated_conditional(
         full_output_cov=full_output_cov,
         q_sqrt=q_sqrt,
         white=white,
+        Lm=Lm
     )
     return tf.squeeze(mean, axis=0), tf.squeeze(var, axis=0)
 
 
 def fully_correlated_conditional_repeat(
-    Kmn, Kmm, Knn, f, *, full_cov=False, full_output_cov=False, q_sqrt=None, white=False
+    Kmn, Kmm, Knn, f, *, full_cov=False, full_output_cov=False, q_sqrt=None, white=False, Lm=None
 ):
     """
     This function handles conditioning of multi-output GPs in the case where the conditioning
@@ -348,6 +354,8 @@ def fully_correlated_conditional_repeat(
     :param full_cov: calculate covariance between inputs
     :param full_output_cov: calculate covariance between outputs
     :param white: use whitened representation
+    :param Lm: The cholesky decomposition of `Kmm`, of shape [M, M]. If this is not provided then
+    it is computed within this function. Passing this in may improve performance.
     :return:
         - mean: [R, N, P]
         - variance: [R, N, P], [R, N, P, P], [R, P, N, N], [R, N, P, N, P]
@@ -365,7 +373,8 @@ def fully_correlated_conditional_repeat(
             (q_sqrt, ["M", "R"] if q_sqrt.shape.ndims == 2 else ["R", "M", "M"])
         )
 
-    Lm = tf.linalg.cholesky(Kmm)
+    if Lm is None:
+        Lm = tf.linalg.cholesky(Kmm)
 
     # Compute the projection matrix A
     # Lm: [M, M]    Kmn: [M, P]

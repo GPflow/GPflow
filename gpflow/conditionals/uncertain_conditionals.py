@@ -21,6 +21,8 @@ def uncertain_conditional(
     full_output_cov=False,
     full_cov=False,
     white=False,
+    Kuu=None,
+    Luu=None,
 ):
     """
     Calculates the conditional for uncertain inputs Xnew, p(Xnew) = N(Xnew_mu, Xnew_var).
@@ -34,6 +36,10 @@ def uncertain_conditional(
     :param full_output_cov: boolean wheter to compute covariance between output dimension.
                             Influences the shape of return value ``fvar``. Default is False
     :param white: boolean whether to use whitened representation. Default is False.
+    :param Kuu: [M, M]. If this is not provided then it is computed within this function.
+    Passing this in may improve performance.
+    :param Luu: The cholesky decomposition of `Kuu`, of shape [M, M]. If this is not provided then
+    it is computed within this function. Passing this in may improve performance.
     :return fmean, fvar: mean and covariance of the conditional, size ``fmean`` is [N, Dout],
             size ``fvar`` depends on ``full_output_cov``: if True ``f_var`` is [N, t, t],
             if False then ``f_var`` is [N, Dout]
@@ -56,8 +62,10 @@ def uncertain_conditional(
     q_sqrt_r = tf.linalg.band_part(q_sqrt, -1, 0)  # [D, M, M]
 
     eKuf = tf.transpose(expectation(pXnew, (kernel, inducing_variable)))  # [M, N] (psi1)
-    Kuu = covariances.Kuu(inducing_variable, kernel, jitter=default_jitter())  # [M, M]
-    Luu = tf.linalg.cholesky(Kuu)  # [M, M]
+    if Kuu is None:
+        Kuu = covariances.Kuu(inducing_variable, kernel, jitter=default_jitter())  # [M, M]
+    if Luu is None:
+        Luu = tf.linalg.cholesky(Kuu)  # [M, M]
 
     if not white:
         q_mu = tf.linalg.triangular_solve(Luu, q_mu, lower=True)
