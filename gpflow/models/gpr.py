@@ -33,12 +33,11 @@ class GPR(GPModel, InternalDataTrainingLossMixin):
     This is a vanilla implementation of GP regression with a Gaussian
     likelihood.  Multiple columns of Y are treated independently.
 
-    The log likelihood of this model is sometimes referred to as the 'log
-    marginal likelihood', and is given by
+    The log likelihood of this model is given by
 
     .. math::
-       \log p(\mathbf y \,|\, \mathbf f) =
-            \mathcal N(\mathbf{y} \,|\, 0, \mathbf{K} + \sigma_n \mathbf{I})
+       \log p(Y \,|\, \mathbf f) =
+            \mathcal N(Y \,|\, 0, \mathbf{K} + \sigma_n \mathbf{I})
     """
 
     def __init__(
