@@ -37,7 +37,16 @@ class GPR(GPModel, InternalDataTrainingLossMixin):
 
     .. math::
        \log p(Y \,|\, \mathbf f) =
-            \mathcal N(Y \,|\, 0, \mathbf{K} + \sigma_n \mathbf{I})
+            \mathcal N(Y \,|\, 0, \sigma_n^2 \mathbf{I})
+            
+    To train the model, we maximise the log _marginal_ likelihood
+    w.r.t. the likelihood variance and kernel hyperparameters theta.
+    The marginal likelihood is found by integrating the likelihood
+    over the prior, and has the form
+    
+    .. math::
+       \log p(Y \,|\, \sigma_n, \theta) =
+            \mathcal N(Y \,|\, 0, \mathbf{K} + \sigma_n^2 \mathbf{I})
     """
 
     def __init__(
