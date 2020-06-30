@@ -84,10 +84,10 @@ def test_multiple_assign_updates_correct_values(model, var_update_dict):
     for path, variable in leaf_components(model).items():
         if path in var_update_dict.keys():
             np.testing.assert_almost_equal(
-                variable.value().numpy(), var_update_dict[path], decimal=7
+                variable.numpy(), var_update_dict[path], decimal=7
             )
         else:
-            np.testing.assert_equal(variable.value().numpy(), old_value_dict[path].value().numpy())
+            np.testing.assert_equal(variable.numpy(), old_value_dict[path].numpy())
 
 
 @pytest.mark.parametrize("wrong_var_update_dict", model_wrong_path)

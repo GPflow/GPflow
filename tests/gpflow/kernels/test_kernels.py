@@ -392,8 +392,8 @@ def test_ard_init_scalar(D):
     """
     kernel_1 = gpflow.kernels.SquaredExponential(lengthscales=2.3)
     kernel_2 = gpflow.kernels.SquaredExponential(lengthscales=np.ones(D) * 2.3)
-    lengthscales_1 = kernel_1.lengthscales.read_value()
-    lengthscales_2 = kernel_2.lengthscales.read_value()
+    lengthscales_1 = kernel_1.lengthscales.numpy()
+    lengthscales_2 = kernel_2.lengthscales.numpy()
     assert np.allclose(lengthscales_1, lengthscales_2, atol=1e-10)
 
 

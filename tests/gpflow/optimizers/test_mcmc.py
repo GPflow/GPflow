@@ -64,7 +64,7 @@ def test_mcmc_helper_target_function_constrained():
     # Priors which are set on the constrained space
     expected_log_prior = 0.0
     for param in model.trainable_parameters:
-        if param.value() < 1e-3:
+        if param.numpy() < 1e-3:
             # Avoid values which would be pathological for the Exp transform
             param.assign(1.0)
 
@@ -77,7 +77,7 @@ def test_mcmc_helper_target_function_constrained():
         param.prior_on = PriorOn.CONSTRAINED
 
         prior_density_on_constrained = 1 / prior_width
-        prior_density_on_unconstrained = prior_density_on_constrained * param.value()
+        prior_density_on_unconstrained = prior_density_on_constrained * param.numpy()
 
         expected_log_prior += np.log(prior_density_on_unconstrained)
 
