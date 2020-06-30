@@ -83,9 +83,7 @@ def test_multiple_assign_updates_correct_values(model, var_update_dict):
     multiple_assign(model, var_update_dict)
     for path, variable in leaf_components(model).items():
         if path in var_update_dict.keys():
-            np.testing.assert_almost_equal(
-                variable.numpy(), var_update_dict[path], decimal=7
-            )
+            np.testing.assert_almost_equal(variable.numpy(), var_update_dict[path], decimal=7)
         else:
             np.testing.assert_equal(variable.numpy(), old_value_dict[path].numpy())
 

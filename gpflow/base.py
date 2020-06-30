@@ -119,7 +119,6 @@ class Parameter(tfp.util.DeferredTensor):
         self.prior = prior
         self.prior_on = prior_on  # type: ignore  # see https://github.com/python/mypy/issues/3004
 
-
     def log_prior_density(self) -> tf.Tensor:
         """ Log of the prior probability density of the constrained variable. """
 
@@ -222,6 +221,7 @@ class Parameter(tfp.util.DeferredTensor):
         return self.unconstrained_variable.assign(
             unconstrained_value, use_locking=use_locking, name=name, read_value=read_value
         )
+
 
 #     @property
 #     def is_tensor_like(self) -> bool:
