@@ -15,6 +15,7 @@
 import gpflow
 import numpy as np
 import pytest
+import tensorflow as tf
 from gpflow import set_trainable
 
 rng = np.random.RandomState(0)
@@ -45,3 +46,30 @@ def test_non_trainable_model_objective():
 
     _ = model.log_marginal_likelihood()
     assert model.log_prior_density() == 0.0
+
+
+def test_varying_data():
+    input_dim = 2
+    output_dim = 1
+
+    N = 5
+    X, Y = rng.randn(N, input_dim), rng.randn(N, output_dim)
+
+    var_data = (tf.Variable(X, shape=[None, input_dim]), tf.Variable(Y, shape=[None, output_dim]))
+    m = gpflow.models.GPR(var_data, gpflow.kernels.SquaredExponential())
+
+    lml_func = tf.function(m.log_marginal_likelihood)
+    old_lml = lml_func()
+
+    new_N = 7
+    new_X, new_Y = rng.randn(new_N, input_dim), rng.randn(new_N, output_dim)
+
+    # assign new data:
+    for var, new_value in zip(var_data, (new_X, new_Y)):
+        var.assign(new_value)
+
+    new_lml = lml_func()  # re-use compiled function
+
+    assert (
+        np.abs((old_lml - new_lml) / (new_lml + old_lml)) > 0.1
+    ), "we expect the LML for different data to be significantly different"
