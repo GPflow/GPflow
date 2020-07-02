@@ -56,12 +56,12 @@ _Array = Sequence[Any]  # a nested array of int, float, bool etc. kept simple fo
 TensorData = Union[_NativeScalar, _Array, TensorType]
 
 
-def _IS_PARAMETER(o: Any) -> bool:
+def _IS_PARAMETER(o: object) -> bool:
     return isinstance(o, Parameter)
 
 
-def _IS_TRAINABLE_PARAMETER(o: Any) -> bool:
-    return _IS_PARAMETER(o) and o.trainable
+def _IS_TRAINABLE_PARAMETER(o: object) -> bool:
+    return isinstance(o, Parameter) and o.trainable
 
 
 class Module(tf.Module):
