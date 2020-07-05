@@ -51,8 +51,10 @@ def test_mcmc_helper_parameters():
 def test_mcmc_helper_target_function_constrained():
     """ Set up priors on the model parameters such that we can
     readily compute their expected values. """
-    data = build_data()
-    model = build_model(data)
+    config = gpflow.config.Config(positive_bijector="exp")
+    with gpflow.config.as_context(config):
+        data = build_data()
+        model = build_model(data)
 
     prior_width = 200.0
 
@@ -67,8 +69,6 @@ def test_mcmc_helper_target_function_constrained():
         if param.numpy() < 1e-3:
             # Avoid values which would be pathological for the Exp transform
             param.assign(1.0)
-
-        param.transform = Exp()
 
         low_value = -100
         high_value = low_value + prior_width
