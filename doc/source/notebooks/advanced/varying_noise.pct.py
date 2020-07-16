@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.3.3
+#       jupytext_version: 1.4.0
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -103,6 +103,7 @@ class HeteroskedasticGaussian(gpflow.likelihoods.Likelihood):
 
     def _variational_expectations(self, Fmu, Fvar, Y):
         Y, NoiseVar = Y[:, 0], Y[:, 1]
+        Fmu, Fvar = Fmu[:, 0], Fvar[:, 0]
         return (
             -0.5 * np.log(2 * np.pi)
             - 0.5 * tf.math.log(NoiseVar)
@@ -174,7 +175,7 @@ _ = plt.xlim(-5, 5)
 # ### Questions for the reader
 # 1) What is the difference in meaning between the orange vertical bars and the blue regions in the prediction?
 #
-# 2) Why did we not implement `conditional_mean` and `conditional_var` in the HeteroskedasticGaussian likelihood? What could be done here?
+# 2) Why did we not implement `_conditional_mean` and `_conditional_variance` in the HeteroskedasticGaussian likelihood? What could be done here?
 #
 # 2) What are some better kernel settings for this dataset? How could they be estimated?
 
