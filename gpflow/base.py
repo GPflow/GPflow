@@ -108,6 +108,7 @@ class Parameter(tfp.util.TransformedVariable):
 
         value = _cast_to_dtype(value, dtype)
         value_dtype = value.dtype
+        _validate_unconstrained_value(value, transform, dtype)
         super().__init__(value, transform, dtype=dtype, trainable=trainable, name=name)
 
         # if isinstance(value, tf.Variable):
@@ -193,37 +194,37 @@ class Parameter(tfp.util.TransformedVariable):
     # def initial_value(self) -> tf.Tensor:
     #     return self._unconstrained.initial_value
 
-    # def assign(
-    #     self,
-    #     value: TensorData,
-    #     use_locking: bool = False,
-    #     name: Optional[str] = None,
-    #     read_value: bool = True,
-    # ) -> tf.Tensor:
-    #     """
-    #     Assigns constrained `value` to the unconstrained parameter's variable.
-    #     It passes constrained value through parameter's transform first.
+    def assign(
+        self,
+        value: TensorData,
+        use_locking: bool = False,
+        name: Optional[str] = None,
+        read_value: bool = True,
+    ) -> tf.Tensor:
+        """
+        Assigns constrained `value` to the unconstrained parameter's variable.
+        It passes constrained value through parameter's transform first.
 
-    #     Example:
-    #         ```
-    #         a = Parameter(2.0, transform=tfp.bijectors.Softplus())
-    #         b = Parameter(3.0)
+        Example:
+            ```
+            a = Parameter(2.0, transform=tfp.bijectors.Softplus())
+            b = Parameter(3.0)
 
-    #         a.assign(4.0)               # `a` parameter to `2.0` value.
-    #         a.assign(tf.constant(5.0))  # `a` parameter to `5.0` value.
-    #         a.assign(b)                 # `a` parameter to constrained value of `b`.
-    #         ```
+            a.assign(4.0)               # `a` parameter to `2.0` value.
+            a.assign(tf.constant(5.0))  # `a` parameter to `5.0` value.
+            a.assign(b)                 # `a` parameter to constrained value of `b`.
+            ```
 
-    #     :param value: Constrained tensor-like value.
-    #     :param use_locking: If `True`, use locking during the assignment.
-    #     :param name: The name of the operation to be created.
-    #     :param read_value: if True, will return something which evaluates to the new
-    #         value of the variable; if False will return the assign op.
-    #     """
-    #     unconstrained_value = _validate_unconstrained_value(value, self.transform, self.dtype)
-    #     return self.unconstrained_variable.assign(
-    #         unconstrained_value, use_locking=use_locking, name=name, read_value=read_value
-    #     )
+        :param value: Constrained tensor-like value.
+        :param use_locking: If `True`, use locking during the assignment.
+        :param name: The name of the operation to be created.
+        :param read_value: if True, will return something which evaluates to the new
+            value of the variable; if False will return the assign op.
+        """
+        unconstrained_value = _validate_unconstrained_value(value, self.transform, self.dtype)
+        return self.unconstrained_variable.assign(
+            unconstrained_value, use_locking=use_locking, name=name, read_value=read_value
+        )
 
 
 #     @property
