@@ -42,8 +42,8 @@ def reshape_Z_dZ(zs: List[TensorType], dzs: List[TensorType]):
     """
     :param zs: List with d rank-1 Tensors, with shapes N1, N2, ..., Nd
     :param dzs: List with d rank-1 Tensors, with shapes N1, N2, ..., Nd
-    :returns: points Z, Tensor with shape [n_gh**dim, dim],
-        and weights dZ, Tensor with shape [n_gh**dim, 1]
+    :returns: points Z, Tensor with shape [N1*N2*...*Nd, d],
+        and weights dZ, Tensor with shape [N1*N2*...*Nd, 1]
     """
     Z = list_to_flat_grid(zs)
     dZ = tf.reduce_prod(list_to_flat_grid(dzs), axis=-1, keepdims=True)
