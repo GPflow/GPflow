@@ -9,7 +9,7 @@ from ..base import TensorType
 class GaussianQuadrature:
     """
     Abstract class implementing quadrature methods to compute Gaussian Expectations.  
-    Inhering classes must provide the method _build_X_W to create points and weights
+    Inheriting classes must provide the method _build_X_W to create points and weights
     to be used for quadrature.
     """
 
