@@ -32,8 +32,8 @@ def gh_points_and_weights(n_gh: int):
 def list_to_flat_grid(xs: List[TensorType]):
     """
     :param xs: List with d rank-1 Tensors, with shapes N1, N2, ..., Nd
-    :return: Tensor with shape [N1*N2*...*Nd, dim] representing the flattened
-        D-dimensional grid built from the input tensors xs
+    :return: Tensor with shape [N1*N2*...*Nd, d] representing the flattened
+        d-dimensional grid built from the input tensors xs
     """
     return tf.reshape(tf.stack(tf.meshgrid(*xs), axis=-1), (-1, len(xs)))
 
