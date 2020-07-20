@@ -49,10 +49,6 @@ class GaussianQuadrature:
 
         X, W = self._build_X_W(mean, var)
         if isinstance(fun, Iterable):
-            # Maybe this can be better implemented by stacking [f1(X), f2(X), ...]
-            # and sum-reducing all at once
-            # The problem: there is no garantee that f1(X), f2(X), ...
-            # have comaptible shapes
             return [tf.reduce_sum(f(X, *args, **kwargs) * W, axis=-2) for f in fun]
         return tf.reduce_sum(fun(X, *args, **kwargs) * W, axis=-2)
 
