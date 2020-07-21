@@ -78,12 +78,12 @@ class NDiagGHQuadrature(GaussianQuadrature):
         :param n_gh: number of Gauss-Hermite points, integer
         :param dim: dimension of the multivariate normal, integer
         """
-        Z, dZ = ndgh_points_and_weights(dim, n_gh)
+        self.dim = dim
+        self.n_gh = n_gh
         self.n_gh_total = n_gh ** dim
-        self.Z = tf.convert_to_tensor(Z)
-        self.dZ = tf.convert_to_tensor(dZ)
-        #  Z: [n_gh_total, dim]
-        # dZ: [n_gh_total,   1]
+        Z, dZ = ndgh_points_and_weights(self.dim, self.n_gh)
+        self.Z = tf.ensure_shape(Z, (self.n_gh_total, self.dim))
+        self.dZ = tf.ensure_shape(dZ, (self.n_gh_total, self.dim))
 
     def _build_X_W(self, mean: TensorType, var: TensorType):
         """
