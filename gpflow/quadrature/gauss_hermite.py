@@ -56,7 +56,7 @@ def repeat_as_list(x: TensorType, n: int):
     :param n: Integer with the number of repetitions
     :return: List of n repetitions of Tensor x
     """
-    return tf.unstack(tf.repeat(tf.expand_dims(x, axis=0), n, axis=0), axis=0)
+    return [x for _ in range(n)]
 
 
 def ndgh_points_and_weights(dim: int, n_gh: int):
