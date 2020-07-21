@@ -26,7 +26,7 @@ from ndiagquad_old import ndiagquad as ndiagquad_old
 def test_diagquad_1d(mu, var):
     num_gauss_hermite_points = 25
     quad = ndiagquad([lambda *X: tf.exp(X[0])], num_gauss_hermite_points, [mu], [var])
-    quad_old = ndiagquad([lambda *X: tf.exp(X[0])], num_gauss_hermite_points, [mu], [var])
+    quad_old = ndiagquad_old([lambda *X: tf.exp(X[0])], num_gauss_hermite_points, [mu], [var])
     assert_allclose(quad[0], quad_old[0])
 
 
