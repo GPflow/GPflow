@@ -27,7 +27,7 @@ if sys.version_info < (3, 7):
 # use autodoc_mock_imports instead. Hence we use this flag to decide whether or
 # not to append tensorflow and tensorflow_probability to the requirements:
 if os.environ.get("READTHEDOCS") != "True":
-    requirements.extend(["tensorflow>=2.1.0", "tensorflow-probability>=0.9"])
+    requirements.extend(["tensorflow>=2.1.0,<2.3", "tensorflow-probability>=0.9,<0.11"])
 
 
 def read_file(filename):
