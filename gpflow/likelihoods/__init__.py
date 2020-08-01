@@ -17,3 +17,4 @@ from .multiclass import (
     Softmax,
     RobustMax,
 )
+from .quadrature import NDiagGHQuadratureLikelihood
