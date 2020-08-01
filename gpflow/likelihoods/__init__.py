@@ -1,4 +1,11 @@
-from .base import Likelihood, ScalarLikelihood, SwitchedLikelihood, MonteCarloLikelihood
+from .base import (
+    Likelihood,
+    QuadratureLikelihood,
+    NDiagGHQuadratureLikelihood,
+    ScalarLikelihood,
+    SwitchedLikelihood,
+    MonteCarloLikelihood,
+)
 from .scalar_discrete import (
     Bernoulli,
     Ordinal,
@@ -17,4 +24,3 @@ from .multiclass import (
     Softmax,
     RobustMax,
 )
-from .quadrature import NDiagGHQuadratureLikelihood

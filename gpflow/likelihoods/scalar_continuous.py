@@ -125,7 +125,7 @@ class Gamma(ScalarLikelihood):
     def _variational_expectations(self, Fmu, Fvar, Y):
         if self.invlink is tf.exp:
             return tf.reduce_sum(
-                - self.shape * Fmu
+                -self.shape * Fmu
                 - tf.math.lgamma(self.shape)
                 + (self.shape - 1.0) * tf.math.log(Y)
                 - Y * tf.exp(-Fmu + Fvar / 2.0),

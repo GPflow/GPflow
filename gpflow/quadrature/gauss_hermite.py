@@ -78,8 +78,8 @@ class NDiagGHQuadrature(GaussianQuadrature):
         :param n_gh: number of Gauss-Hermite points, integer
         :param dim: dimension of the multivariate normal, integer
         """
-        print('PRINT - Initializing NDiagGHQuadrature')
-        tf.print('TF PRINT - Initializing NDiagGHQuadrature')
+        print("PRINT - Initializing NDiagGHQuadrature")
+        tf.print("TF PRINT - Initializing NDiagGHQuadrature")
         self.dim = dim
         self.n_gh = n_gh
         self.n_gh_total = n_gh ** dim
