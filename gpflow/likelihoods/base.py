@@ -329,8 +329,8 @@ class QuadratureLikelihood(Likelihood):
 
 
 class NDiagGHQuadratureLikelihood(QuadratureLikelihood):
-    def __init__(self, latent_dim: int, n_gh: int = 20, **kwargs):
-        super().__init__(latent_dim=latent_dim, **kwargs)
+    def __init__(self, n_gh: int = 20, **kwargs):
+        super().__init__(**kwargs)
         self.n_gh = n_gh
         self._quadrature = None
 
