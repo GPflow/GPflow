@@ -65,7 +65,7 @@ def base_conditional_with_lm(
     N = tf.shape(Kmn)[-1]
     M = tf.shape(f)[-2]
 
-    # get the leadings dims in Kmn to the front of the tensor
+    # get the leading dims in Kmn to the front of the tensor
     # if Kmn has rank two, i.e. [M, N], this is the identity op.
     K = tf.rank(Kmn)
     perm = tf.concat(
