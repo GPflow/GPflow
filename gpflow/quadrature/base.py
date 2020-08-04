@@ -31,11 +31,11 @@ class GaussianQuadrature:
         The computations broadcast along batch-dimensions, represented by [b1, b2, ..., bX].
 
         :param fun: Callable or Iterable of Callables that operates elementwise, with
-            signature f(X, *args, **kwargs). Moreover, if must satisfy the shape-mapping:
-                X shape: [b1, b2, ..., bX, N_quad_points, d],
-                    usually [N, N_quad_points, d]
-                f(X) shape: [b1, b2, ...., bf, N_quad_points, d'],
-                    usually [N, N_quad_points, 1] or [N, N_quad_points, d]
+            signature f(X, *args, **kwargs). Moreover, it must satisfy the shape-mapping:
+                X shape: [N_quad_points, b1, b2, ..., bX, d],
+                    usually [N_quad_points, N, d]
+                f(X) shape: [N_quad_points, b1, b2, ...., bf, d'],
+                    usually [N_quad_points, N, 1] or [N_quad_points, N, d]
             In most cases, f should only operate over the last dimension of X
         :param mean: Array/Tensor with shape [b1, b2, ..., bX, d], usually [N, d],
             representing the mean of a d-Variate Gaussian distribution
@@ -43,14 +43,14 @@ class GaussianQuadrature:
             representing the variance of a d-Variate Gaussian distribution
         :param *args: Passed to fun
         :param **kargs: Passed to fun
-        :return: Array/Tensor with shape [b1, b2, ...., bf, N_quad_points, d'],
+        :return: Array/Tensor with shape [b1, b2, ...., bX, d'],
             usually [N, d] or [N, 1]
         """
 
         X, W = self._build_X_W(mean, var)
         if isinstance(fun, Iterable):
-            return [tf.reduce_sum(f(X, *args, **kwargs) * W, axis=-2) for f in fun]
-        return tf.reduce_sum(fun(X, *args, **kwargs) * W, axis=-2)
+            return [tf.reduce_sum(f(X, *args, **kwargs) * W, axis=0) for f in fun]
+        return tf.reduce_sum(fun(X, *args, **kwargs) * W, axis=0)
 
     def logspace(self, fun: Union[Callable, Iterable[Callable]], mean, var, *args, **kwargs):
         r"""
@@ -66,11 +66,11 @@ class GaussianQuadrature:
         The computations broadcast along batch-dimensions, represented by [b1, b2, ..., bX].
 
         :param fun: Callable or Iterable of Callables that operates elementwise, with
-            signature f(X, *args, **kwargs). Moreover, if must satisfy the shape-mapping:
-                X shape: [b1, b2, ..., bX, N_quad_points, d],
-                    usually [N, N_quad_points, d]
-                f(X) shape: [b1, b2, ...., bf, N_quad_points, d'],
-                    usually [N, N_quad_points, 1] or [N, N_quad_points, d]
+            signature f(X, *args, **kwargs). Moreover, it must satisfy the shape-mapping:
+                X shape: [N_quad_points, b1, b2, ..., bX, d],
+                    usually [N_quad_points, N, d]
+                f(X) shape: [N_quad_points, b1, b2, ...., bf, d'],
+                    usually [N_quad_points, N, 1] or [N_quad_points, N, d]
             In most cases, f should only operate over the last dimension of X
         :param mean: Array/Tensor with shape [b1, b2, ..., bX, d], usually [N, d],
             representing the mean of a d-Variate Gaussian distribution
@@ -78,12 +78,12 @@ class GaussianQuadrature:
             representing the variance of a d-Variate Gaussian distribution
         :param *args: Passed to fun
         :param **kargs: Passed to fun
-        :return: Array/Tensor with shape [b1, b2, ...., bf, N_quad_points, d'],
+        :return: Array/Tensor with shape [b1, b2, ...., bX, d'],
             usually [N, d] or [N, 1]
         """
 
         X, W = self._build_X_W(mean, var)
         logW = tf.math.log(W)
         if isinstance(fun, Iterable):
-            return [tf.reduce_logsumexp(f(X, *args, **kwargs) + logW, axis=-2) for f in fun]
-        return tf.reduce_logsumexp(fun(X, *args, **kwargs) + logW, axis=-2)
+            return [tf.reduce_logsumexp(f(X, *args, **kwargs) + logW, axis=0) for f in fun]
+        return tf.reduce_logsumexp(fun(X, *args, **kwargs) + logW, axis=0)

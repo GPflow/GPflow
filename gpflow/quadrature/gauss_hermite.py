@@ -94,20 +94,26 @@ class NDiagGHQuadrature(GaussianQuadrature):
             representing the mean of a dim-Variate Gaussian distribution
         :param var: Array/Tensor with shape b1, b2, ..., bX, dim], usually [N, dim],
             representing the variance of a dim-Variate Gaussian distribution
-        :return: points X, Tensor with shape [b1, b2, ..., bX, n_gh_total, dim],
-            usually [N, n_gh_total, dim],
-            and weights W, a Tensor with shape [b1, b2, ..., bX, n_gh_total, 1],
-            usually [N, n_gh_total, 1]
+        :return: points X, Tensor with shape [n_gh_total, b1, b2, ..., bX, dim],
+            usually [n_gh_total, N, dim],
+            and weights W, a Tensor with shape [n_gh_total, b1, b2, ..., bX, 1],
+            usually [n_gh_total, N, 1]
         """
 
-        # mean, stddev: [b1, b2, ..., bX, dim], usually [N, dim]
-        mean = tf.expand_dims(mean, -2)
-        stddev = tf.expand_dims(tf.sqrt(var), -2)
-        # mean, stddev: [b1, b2, ..., bX, 1, dim], usually [N, 1, dim]
+        batch_shape_broadcast = tf.ones(tf.rank(mean) - 1, dtype=tf.int32)
+        shape_aux = tf.concat([[self.n_gh_total], batch_shape_broadcast], axis=0)
 
-        X = mean + stddev * self.Z
-        W = self.dZ
-        # X: [b1, b2, ..., bX, n_gh_total, dim], usually [N, n_gh_total, dim]
-        # W: [b1, b2, ..., bX, n_gh_total,   1], usually [N, n_gh_total,   1]
+        # mean, var: [b1, b2, ..., bX, dim], usually [N, dim]
+        mean = tf.expand_dims(mean, 0)
+        stddev = tf.expand_dims(tf.sqrt(var), 0)
+        # mean, stddev: [1, b1, b2, ..., bX, dim], usually [1, N, dim]
+
+        Z = tf.reshape(self.Z, tf.concat([shape_aux, [self.dim]], axis=0))
+        dZ = tf.reshape(self.dZ, tf.concat([shape_aux, [1,]], axis=0))
+
+        X = mean + stddev * Z
+        W = dZ
+        # X: [n_gh_total, b1, b2, ..., bX, dim], usually [n_gh_total, N, dim]
+        # W: [n_gh_total,  1,  1, ...,  1,   1], usually [n_gh_total, N,   1]
 
         return X, W
