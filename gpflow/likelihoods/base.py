@@ -307,7 +307,7 @@ class QuadratureLikelihood(Likelihood):
         return E_y, V_y
 
     def _quadrature_log_prob(self, F, Y):
-        return tf.expand_dims(self.log_prob(F, tf.expand_dims(Y, -2)), -1)
+        return tf.expand_dims(self.log_prob(F, Y), -1)
 
     def _predict_log_density(self, Fmu, Fvar, Y):
         r"""
