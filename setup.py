@@ -16,7 +16,6 @@ requirements = [
     "multipledispatch>=0.6",
     "tabulate",
     "typing_extensions",
-    "cloudpickle==1.3.0",  # temporary workaround for tensorflow/probability#991
 ]
 
 if sys.version_info < (3, 7):
