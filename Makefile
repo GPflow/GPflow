@@ -37,6 +37,6 @@ type-check:
 	mypy .
 
 test:
-	pytest -v --durations=10 tests/
+	pytest -n auto --dist loadfile -v --durations=10 tests/
 
 check-all: format-check type-check test
