@@ -31,7 +31,8 @@ if os.environ.get("READTHEDOCS") != "True":
         [
             "tensorflow>=2.1.0,<2.3",
             "tensorflow-probability>=0.9,<0.11",
-            "setuptools>=41.0.0",  # pinned to satisfy dependency constraints
+            "setuptools>=41.0.0",  # to satisfy dependency constraints
+            "scipy==1.4.1",  # to satisfy dependency constraints
         ]
     )
 
