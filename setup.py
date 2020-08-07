@@ -12,7 +12,7 @@ from setuptools import find_packages, setup
 # Dependencies of GPflow
 requirements = [
     "numpy>=1.10.0",
-    "scipy==1.4.1",  # pinned so specifically to satisfy tensorflow requirements
+    "scipy>=0.18.0,==1.4.1",  # pinned to ==1.4.1 to satisfy tensorflow requirements
     "multipledispatch>=0.6",
     "tabulate",
     "typing_extensions",
