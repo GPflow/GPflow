@@ -182,8 +182,8 @@ name                      class      transform    prior    trainable    shape   
 SVGP.kernel.variance      Parameter  Softplus              True         ()       float64  1.0\n\
 SVGP.kernel.lengthscales  Parameter  Softplus              False        ()       float64  2.0\n\
 SVGP.likelihood.variance  Parameter  Softplus              True         ()       float64  1.0\n\
-SVGP.inducing_variable.Z  Parameter                        True         (10, 1)  float64  [[0.5...\n\
-SVGP.q_mu                 Parameter                        False        (10, 1)  float64  [[0....\n\
+SVGP.inducing_variable.Z  Parameter  Identity              True         (10, 1)  float64  [[0.5...\n\
+SVGP.q_mu                 Parameter  Identity              False        (10, 1)  float64  [[0....\n\
 SVGP.q_sqrt               Parameter  Softplus              True         (10, 1)  float64  [[1...."""
 
 example_tf_module_variable_print_string = """\
@@ -215,7 +215,7 @@ example_tf_keras_model = """\
 | C._trainable_weights[0] | ResourceVariable |             |         | True        | (2, 2, 1) | float32 | [[[0.... |\n\
 | C.variable              |                  |             |         |             |           |         |          |\n\
 +-------------------------+------------------+-------------+---------+-------------+-----------+---------+----------+\n\
-| C.param                 | Parameter        |             |         | True        | ()        | float64 | 0.0      |\n\
+| C.param                 | Parameter        | Identity    |         | True        | ()        | float64 | 0.0      |\n\
 +-------------------------+------------------+-------------+---------+-------------+-----------+---------+----------+"""
 
 # ------------------------------------------
