@@ -40,7 +40,7 @@ def build_model_with_uniform_prior(data, prior_on, prior_width):
         high_value = low_value + prior_width
         prior = Uniform(low=np.float64(low_value), high=np.float64(high_value))
         return gpflow.Parameter(value, prior=prior, prior_on=prior_on)
-    
+
     k = gpflow.kernels.Matern52(lengthscales=0.3)
     k.variance = parameter(k.variance)
     k.lengthscales = parameter(k.lengthscales)
@@ -51,6 +51,7 @@ def build_model_with_uniform_prior(data, prior_on, prior_width):
     m = gpflow.models.GPR(data, k, mf, noise_variance=0.01)
     m.likelihood.variance = parameter(m.likelihood.variance)
     return m
+
 
 def test_mcmc_helper_parameters():
     data = build_data()
