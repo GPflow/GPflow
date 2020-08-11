@@ -103,7 +103,7 @@ def test_mcmc_helper_target_function_constrained():
     log_marginal_likelihood = model.log_marginal_likelihood().numpy()
     expected_log_prob = log_marginal_likelihood + expected_log_prior
 
-    np.testing.assert_allclose(target_log_prob_fn(), expected_log_prob)
+    np.testing.assert_allclose(target_log_prob_fn(), expected_log_prob, rtol=1e-6)
 
 
 def test_mcmc_helper_target_function_unconstrained():
