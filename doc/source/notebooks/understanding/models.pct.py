@@ -123,7 +123,7 @@ p.transform.inverse(p)
 
 # %%
 p = m.kernel.kernels[0].variance
-m.kernel.kernels[0].variance = gpflow.Parameter(p.numpy(), transform=tf.bijectors.Exp())
+m.kernel.kernels[0].variance = gpflow.Parameter(p.numpy(), transform=tfp.bijectors.Exp())
 
 # %%
 print_summary(m, fmt="notebook")
