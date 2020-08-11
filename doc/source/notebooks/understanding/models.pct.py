@@ -119,10 +119,11 @@ m.kernel.kernels[0].lengthscales = new_parameter
 p.transform.inverse(p)
 
 # %% [markdown]
-# You can also change the `transform` attribute in place:
+# To replace the `transform` of a parameter you need to recreate the parameter with updated transform:
 
 # %%
-m.kernel.kernels[0].variance.transform = tfp.bijectors.Exp()
+p = m.kernel.kernels[0].variance
+m.kernel.kernels[0].variance = gpflow.Parameter(p.numpy(), transform=tf.bijectors.Exp())
 
 # %%
 print_summary(m, fmt="notebook")
