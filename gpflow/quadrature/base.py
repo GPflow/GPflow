@@ -34,7 +34,7 @@ class GaussianQuadrature:
             signature f(X, *args, **kwargs). Moreover, it must satisfy the shape-mapping:
                 X shape: [N_quad_points, b1, b2, ..., bX, d],
                     usually [N_quad_points, N, d]
-                f(X) shape: [N_quad_points, b1, b2, ...., bf, d'],
+                f(X) shape: [N_quad_points, b1, b2, ...., bX, d'],
                     usually [N_quad_points, N, 1] or [N_quad_points, N, d]
             In most cases, f should only operate over the last dimension of X
         :param mean: Array/Tensor with shape [b1, b2, ..., bX, d], usually [N, d],
@@ -69,7 +69,7 @@ class GaussianQuadrature:
             signature f(X, *args, **kwargs). Moreover, it must satisfy the shape-mapping:
                 X shape: [N_quad_points, b1, b2, ..., bX, d],
                     usually [N_quad_points, N, d]
-                f(X) shape: [N_quad_points, b1, b2, ...., bf, d'],
+                f(X) shape: [N_quad_points, b1, b2, ...., bX, d'],
                     usually [N_quad_points, N, 1] or [N_quad_points, N, d]
             In most cases, f should only operate over the last dimension of X
         :param mean: Array/Tensor with shape [b1, b2, ..., bX, d], usually [N, d],
