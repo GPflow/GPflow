@@ -121,14 +121,26 @@ def separate_independent_conditional(
     Knns = tf.stack([k.K(Xnew) if full_cov else k.K_diag(Xnew) for k in kernels], axis=0)
     fs = tf.transpose(f)[:, :, None]  # [P, M, 1]
     # [P, 1, M, M]  or  [P, M, 1]
-    q_sqrts = tf.transpose(q_sqrt)[:, :, None] if q_sqrt.shape.ndims == 2 else q_sqrt[:, None, :, :]
 
-    def single_gp_conditional(t):
-        Kmm, Kmn, Knn, f, q_sqrt = t
-        return base_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov, q_sqrt=q_sqrt, white=white)
+    if q_sqrt is not None:
+        q_sqrts = (
+            tf.transpose(q_sqrt)[:, :, None] if q_sqrt.shape.ndims == 2 else q_sqrt[:, None, :, :]
+        )
+        base_conditional_args_to_map = (Kmms, Kmns, Knns, fs, q_sqrts)
+
+        def single_gp_conditional(t):
+            Kmm, Kmn, Knn, f, q_sqrt = t
+            return base_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov, q_sqrt=q_sqrt, white=white)
+
+    else:
+        base_conditional_args_to_map = (Kmms, Kmns, Knns, fs)
+
+        def single_gp_conditional(t):
+            Kmm, Kmn, Knn, f = t
+            return base_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov, q_sqrt=q_sqrt, white=white)
 
     rmu, rvar = tf.map_fn(
-        single_gp_conditional, (Kmms, Kmns, Knns, fs, q_sqrts), (default_float(), default_float())
+        single_gp_conditional, base_conditional_args_to_map, (default_float(), default_float())
     )  # [P, N, 1], [P, 1, N, N] or [P, N, 1]
 
     fmu = rollaxis_left(tf.squeeze(rmu, axis=-1), 1)  # [N, P]
