@@ -58,7 +58,6 @@ def test_env_variables(attr_name, value, expected_value):
         assert getattr(config, attr_name) == expected_value
 
 
-# @pytest.mark.parametrize("attr_name", set(list(zip(*_env_values))[0]))
 @pytest.mark.parametrize("attr_name", dict.fromkeys(list(zip(*_env_values))[0]).keys())
 def test_env_variables_failures(attr_name):
     if attr_name == "summary_fmt":
