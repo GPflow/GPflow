@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 
 DType = Union[np.dtype, tf.DType]
 VariableData = Union[List, Tuple, np.ndarray, int, float]  # deprecated
-Transform = tfp.bijectors.Bijector
+Transform = Union[tfp.bijectors.Bijector]
 Prior = Union[tfp.distributions.Distribution]
 
 
