@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 
 DType = Union[np.dtype, tf.DType]
 VariableData = Union[List, Tuple, np.ndarray, int, float]  # deprecated
-Transform = Union[tfp.bijectors.Bijector]
+Transform = tfp.bijectors.Bijector
 Prior = Union[tfp.distributions.Distribution]
 
 
@@ -107,9 +107,8 @@ class Parameter(tfp.util.TransformedVariable):
             transform = tfp.bijectors.Identity()
 
         value = _cast_to_dtype(value, dtype)
-        value_dtype = value.dtype
         _validate_unconstrained_value(value, transform, dtype)
-        super().__init__(value, transform, dtype=dtype, trainable=trainable, name=name)
+        super().__init__(value, transform, dtype=value.dtype, trainable=trainable, name=name)
 
         self.prior = prior
         self.prior_on = prior_on  # type: ignore  # see https://github.com/python/mypy/issues/3004
