@@ -111,15 +111,6 @@ class Parameter(tfp.util.TransformedVariable):
         _validate_unconstrained_value(value, transform, dtype)
         super().__init__(value, transform, dtype=dtype, trainable=trainable, name=name)
 
-        # if isinstance(value, tf.Variable):
-        #     super().__init__(value, )
-        # else:
-        #     # init_value = _validate_unconstrained_value(value, transform, dtype)
-        #     # unconstrained_variable = tf.Variable(
-        #     #     init_value, dtype=dtype, name=name, trainable=trainable
-        #     # )
-        #     super().__init__(unconstrained_variable, transform.forward)
-
         self.prior = prior
         self.prior_on = prior_on  # type: ignore  # see https://github.com/python/mypy/issues/3004
 
@@ -155,18 +146,6 @@ class Parameter(tfp.util.TransformedVariable):
     def prior_on(self, value: Union[str, PriorOn]) -> None:
         self._prior_on = PriorOn(value)
 
-    # def value(self) -> tf.Tensor:
-    #     return _to_constrained(self._unconstrained.value(), self.transform)  # type: ignore  # assumes _to_constrained returns a tf.Tensor
-
-    # def read_value(self) -> tf.Tensor:
-    #     return _to_constrained(self._unconstrained.read_value(), self.transform)  # type: ignore  # assumes _to_constrained returns a tf.Tensor
-
-    # def experimental_ref(self) -> "Parameter":
-    #     return self
-
-    # def deref(self) -> "Parameter":
-    #     return self
-
     @property
     def unconstrained_variable(self) -> tf.Variable:
         return self._pretransformed_input
@@ -174,12 +153,6 @@ class Parameter(tfp.util.TransformedVariable):
     @property
     def transform(self) -> Optional[Transform]:
         return self.bijector
-
-    # @transform.setter
-    # def transform(self, new_transform: Optional[Transform]) -> None:
-    #     constrained_value = self.read_value()
-    #     self._transform = new_transform
-    #     self.assign(constrained_value)
 
     @property
     def trainable(self) -> bool:
@@ -189,10 +162,6 @@ class Parameter(tfp.util.TransformedVariable):
         This attribute cannot be set directly. Use :func:`gpflow.set_trainable`.
         """
         return self.unconstrained_variable.trainable
-
-    # @property
-    # def initial_value(self) -> tf.Tensor:
-    #     return self._unconstrained.initial_value
 
     def assign(
         self,
@@ -225,121 +194,6 @@ class Parameter(tfp.util.TransformedVariable):
         return self.unconstrained_variable.assign(
             unconstrained_value, use_locking=use_locking, name=name, read_value=read_value
         )
-
-
-#     @property
-#     def is_tensor_like(self) -> bool:
-#         """
-#         This method means that TensorFlow's `tensor_util.is_tensor` function
-#         will return `True`
-#         """
-#         return True
-
-#     @property
-#     def name(self) -> str:
-#         return self._unconstrained.name
-
-#     @property
-#     def initializer(self):  # type unknown
-#         return self._unconstrained.initializer
-
-#     @property
-#     def device(self) -> Optional[str]:
-#         return self._unconstrained.device
-
-#     @property
-#     def dtype(self) -> tf.DType:
-#         return self._unconstrained.dtype
-
-#     @property
-#     def op(self) -> tf.Operation:
-#         return self._unconstrained.op
-
-#     @property
-#     def shape(self) -> tf.TensorShape:
-#         if self.transform is not None:
-#             return self.transform.forward_event_shape(self._unconstrained.shape)
-#         return self._unconstrained.shape
-
-#     def numpy(self) -> np.ndarray:
-#         return self.read_value().numpy()
-
-#     def get_shape(self) -> tf.TensorShape:
-#         return self.shape
-
-#     def _should_act_as_resource_variable(self):  # type unknown
-#         # needed so that Parameters are correctly identified by TensorFlow's
-#         # is_resource_variable() in resource_variable_ops.py
-#         pass  # only checked by TensorFlow using hasattr()
-
-#     @property
-#     def handle(self):  # type unknown
-#         return self._unconstrained.handle
-
-#     def __repr__(self) -> str:
-#         unconstrained = self.unconstrained_variable
-#         constrained = self.read_value()
-#         if tf.executing_eagerly():
-#             info = (
-#                 f"unconstrained-shape={unconstrained.shape} "
-#                 f"unconstrained-value={unconstrained.numpy()} "
-#                 f"constrained-shape={constrained.shape} "
-#                 f"constrained-value={constrained.numpy()}"
-#             )
-#         else:
-#             if unconstrained.shape == constrained.shape:
-#                 info = f"shape={constrained.shape}"
-#             else:
-#                 info = (
-#                     f"unconstrained-shape={unconstrained.shape} "
-#                     f"constrained-shape={constrained.shape}"
-#                 )
-
-#         return f"<gpflow.Parameter {self.name!r} dtype={self.dtype.name} {info}>"
-
-#     # Below
-#     # TensorFlow copy-paste code to make variable-like object to work
-
-#     @classmethod
-#     def _OverloadAllOperators(cls):  # pylint: disable=invalid-name
-#         """Register overloads for all operators."""
-#         for operator in tf.Tensor.OVERLOADABLE_OPERATORS:
-#             cls._OverloadOperator(operator)
-#         # For slicing, bind getitem differently than a tensor (use SliceHelperVar
-#         # instead)
-#         # pylint: disable=protected-access
-#         setattr(cls, "__getitem__", array_ops._SliceHelperVar)
-
-#     @classmethod
-#     def _OverloadOperator(cls, operator):  # pylint: disable=invalid-name
-#         """Defer an operator overload to `ops.Tensor`.
-
-#         We pull the operator out of ops.Tensor dynamically to avoid ordering issues.
-
-#         Args:
-#             operator: string. The operator name.
-#         """
-#         tensor_oper = getattr(tf.Tensor, operator)
-
-#         def _run_op(a, *args, **kwargs):
-#             # pylint: disable=protected-access
-#             return tensor_oper(a.read_value(), *args, **kwargs)
-
-#         functools.update_wrapper(_run_op, tensor_oper)
-#         setattr(cls, operator, _run_op)
-
-#     # NOTE(mrry): This enables the Variable's overloaded "right" binary
-#     # operators to run when the left operand is an ndarray, because it
-#     # accords the Variable class higher priority than an ndarray, or a
-#     # numpy matrix.
-#     # TODO(mrry): Convert this to using numpy's __numpy_ufunc__
-#     # mechanism, which allows more control over how Variables interact
-#     # with ndarrays.
-#     __array_priority__ = 100
-
-
-# Parameter._OverloadAllOperators()
-# tf.register_tensor_conversion_function(Parameter, lambda x, *args, **kwds: x.read_value())
 
 
 def _cast_to_dtype(
