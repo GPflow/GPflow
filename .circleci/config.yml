@@ -19,6 +19,18 @@ runtest: &runtest
 version: 2.1
 
 jobs:
+  verify-dependencies:
+    docker:
+      - image: circleci/python:3.6-buster
+
+    steps:
+      - checkout
+      - run:
+          name: Check installed dependencies are compatible
+          command: |
+            pip install --progress-bar=off -e .
+            pip check -vvv
+
   type-check:
     docker:
       - image: circleci/python:3.6-buster
@@ -116,6 +128,10 @@ workflows:
   version: 2.1
   build_test_and_deploy:
     jobs:
+      - verify-dependencies:
+          filters:
+            tags:
+              only: /^v[0-9]+(\.[0-9]+)*(-rc[0-9]+)?/
       - type-check:
           filters:
             tags:
