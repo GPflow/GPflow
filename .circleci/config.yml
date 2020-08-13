@@ -21,7 +21,7 @@ version: 2.1
 jobs:
   type-check:
     docker:
-      - image: awav/tensorflow:2.1
+      - image: circleci/python:3.6-buster
 
     steps:
       - checkout
@@ -35,20 +35,20 @@ jobs:
   unit-test:
     <<: *runtest
     docker:
-      - image: awav/tensorflow:2.1
+      - image: circleci/python:3.6-buster
         environment:
           PYTEST_FILTER: not notebooks
 
   notebook-test:
     <<: *runtest
     docker:
-      - image: awav/tensorflow:2.1
+      - image: circleci/python:3.6-buster
         environment:
           PYTEST_FILTER: notebooks
 
   format-checker:
     docker:
-      - image: awav/tensorflow:2.1
+      - image: circleci/python:3.6-buster
 
     steps:
       - checkout
@@ -63,7 +63,7 @@ jobs:
 
   trigger-docs-generation:
     docker:
-      - image: awav/tensorflow:2.1
+      - image: circleci/python:3.6-buster
         environment:
             ORGANIZATION: GPflow
             PROJECT: docs
@@ -81,7 +81,7 @@ jobs:
 
   deploy:
     docker:
-      - image: awav/tensorflow:2.1
+      - image: circleci/python:3.6-buster
     steps:
       - checkout
       - run:
