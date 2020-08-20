@@ -135,12 +135,15 @@ def ndiagquad(funcs, H: int, Fmu, Fvar, logspace: bool = False, **Ys):
     Ys = {Yname: tf.reshape(Y, (-1, 1)) for Yname, Y in Ys.items()}
 
     def wrapper(old_fun):
+
         def new_fun(X, **Ys):
             Xs = tf.unstack(X, axis=-1)
             fun_eval = old_fun(*Xs, **Ys)
-            if tf.rank(fun_eval) < tf.rank(X):
-                fun_eval = tf.expand_dims(fun_eval, axis=-1)
-            return fun_eval
+            return tf.cond(
+                pred=tf.less(tf.rank(fun_eval), tf.rank(X)),
+                true_fn=lambda: fun_eval[..., tf.newaxis],
+                false_fn=lambda: fun_eval
+            )
 
         return new_fun
 
