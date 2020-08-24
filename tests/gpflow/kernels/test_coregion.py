@@ -125,13 +125,13 @@ def _prepare_models():
 def test_likelihood_variance():
     vgp0, vgp1, cvgp = _prepare_models()
     assert_allclose(
-        vgp0.likelihood.variance.read_value(),
-        cvgp.likelihood.likelihoods[0].variance.read_value(),
+        vgp0.likelihood.variance.numpy(),
+        cvgp.likelihood.likelihoods[0].variance.numpy(),
         atol=1e-2,
     )
     assert_allclose(
-        vgp1.likelihood.variance.read_value(),
-        cvgp.likelihood.likelihoods[1].variance.read_value(),
+        vgp1.likelihood.variance.numpy(),
+        cvgp.likelihood.likelihoods[1].variance.numpy(),
         atol=1e-2,
     )
 
@@ -139,28 +139,20 @@ def test_likelihood_variance():
 def test_kernel_variance():
     vgp0, vgp1, cvgp = _prepare_models()
     assert_allclose(
-        vgp0.kernel.variance.read_value(),
-        cvgp.kernel.kernels[1].kappa.read_value()[0],
-        atol=1.0e-4,
+        vgp0.kernel.variance.numpy(), cvgp.kernel.kernels[1].kappa.numpy()[0], atol=1.0e-4,
     )
     assert_allclose(
-        vgp1.kernel.variance.read_value(),
-        cvgp.kernel.kernels[1].kappa.read_value()[1],
-        atol=1.0e-4,
+        vgp1.kernel.variance.numpy(), cvgp.kernel.kernels[1].kappa.numpy()[1], atol=1.0e-4,
     )
 
 
 def test_mean_values():
     vgp0, vgp1, cvgp = _prepare_models()
     assert_allclose(
-        vgp0.mean_function.c.read_value(),
-        cvgp.mean_function.meanfunctions[0].c.read_value(),
-        atol=1.0e-4,
+        vgp0.mean_function.c.numpy(), cvgp.mean_function.meanfunctions[0].c.numpy(), atol=1.0e-4,
     )
     assert_allclose(
-        vgp1.mean_function.c.read_value(),
-        cvgp.mean_function.meanfunctions[1].c.read_value(),
-        atol=1.0e-4,
+        vgp1.mean_function.c.numpy(), cvgp.mean_function.meanfunctions[1].c.numpy(), atol=1.0e-4,
     )
 
 

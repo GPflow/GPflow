@@ -193,11 +193,11 @@ def test_equivalence(approximate_model):
     approximate_likelihood = maximum_log_likelihood_objective(approximate_model, Datum.data)
     assert_allclose(approximate_likelihood, gpr_likelihood, rtol=1e-6)
 
-    gpr_kernel_ls = gpr_model.kernel.lengthscales.read_value()
-    gpr_kernel_var = gpr_model.kernel.variance.read_value()
+    gpr_kernel_ls = gpr_model.kernel.lengthscales.numpy()
+    gpr_kernel_var = gpr_model.kernel.variance.numpy()
 
-    approximate_kernel_ls = approximate_model.kernel.lengthscales.read_value()
-    approximate_kernel_var = approximate_model.kernel.variance.read_value()
+    approximate_kernel_ls = approximate_model.kernel.lengthscales.numpy()
+    approximate_kernel_var = approximate_model.kernel.variance.numpy()
 
     assert_allclose(gpr_kernel_ls, approximate_kernel_ls, 1e-4)
     assert_allclose(gpr_kernel_var, approximate_kernel_var, 1e-3)

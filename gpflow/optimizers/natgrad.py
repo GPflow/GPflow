@@ -195,15 +195,14 @@ class NaturalGradient(tf.optimizers.Optimizer):
         :param parameters: List of tuples (q_mu, q_sqrt, xi_transform)
         """
         q_mus, q_sqrts, xis = zip(*parameters)
-        unconstrained_variables = [
-            p.unconstrained_variable for params in (q_mus, q_sqrts) for p in params
-        ]
+        q_mu_vars = [p.unconstrained_variable for p in q_mus]
+        q_sqrt_vars = [p.unconstrained_variable for p in q_sqrts]
 
         with tf.GradientTape(watch_accessed_variables=False) as tape:
-            tape.watch(unconstrained_variables)
+            tape.watch(q_mu_vars + q_sqrt_vars)
             loss = loss_fn()
 
-        q_mu_grads, q_sqrt_grads = tape.gradient(loss, [q_mus, q_sqrts])
+        q_mu_grads, q_sqrt_grads = tape.gradient(loss, [q_mu_vars, q_sqrt_vars])
         # NOTE that these are the gradients in *unconstrained* space
 
         with tf.name_scope(f"{self._name}/natural_gradient_steps"):
