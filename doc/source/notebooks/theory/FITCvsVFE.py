@@ -103,9 +103,9 @@ def repeatMinimization(model, Xtest, Ytest):
 
 def trainSparseModel(Xtrain, Ytrain, exact_model, isFITC, Xtest, Ytest):
     sparse_model = getSparseModel(Xtrain, Ytrain, isFITC)
-    sparse_model.likelihood.variance = exact_model.likelihood.variance.read_value().copy()
-    sparse_model.kern.lengthscales = exact_model.kern.lengthscales.read_value().copy()
-    sparse_model.kern.variance = exact_model.kern.variance.read_value().copy()
+    sparse_model.likelihood.variance = exact_model.likelihood.variance.numpy()
+    sparse_model.kern.lengthscales = exact_model.kern.lengthscales.numpy()
+    sparse_model.kern.variance = exact_model.kern.variance.numpy()
     return sparse_model, repeatMinimization(sparse_model, Xtest, Ytest)
 
 

@@ -34,6 +34,25 @@ def build_model(data):
     return model
 
 
+def build_model_with_uniform_prior(data, prior_on, prior_width):
+    def parameter(value):
+        low_value = -100
+        high_value = low_value + prior_width
+        prior = Uniform(low=np.float64(low_value), high=np.float64(high_value))
+        return gpflow.Parameter(value, prior=prior, prior_on=prior_on)
+
+    k = gpflow.kernels.Matern52(lengthscales=0.3)
+    k.variance = parameter(k.variance)
+    k.lengthscales = parameter(k.lengthscales)
+
+    mf = gpflow.mean_functions.Linear(1.0, 0.0)
+    mf.A = parameter(mf.A)
+    mf.b = parameter(mf.b)
+    m = gpflow.models.GPR(data, k, mf, noise_variance=0.01)
+    m.likelihood.variance = parameter(m.likelihood.variance)
+    return m
+
+
 def test_mcmc_helper_parameters():
     data = build_data()
     model = build_model(data)
@@ -51,8 +70,10 @@ def test_mcmc_helper_parameters():
 def test_mcmc_helper_target_function_constrained():
     """ Set up priors on the model parameters such that we can
     readily compute their expected values. """
-    data = build_data()
-    model = build_model(data)
+    config = gpflow.config.Config(positive_bijector="exp")
+    with gpflow.config.as_context(config):
+        data = build_data()
+        model = build_model(data)
 
     prior_width = 200.0
 
@@ -64,11 +85,9 @@ def test_mcmc_helper_target_function_constrained():
     # Priors which are set on the constrained space
     expected_log_prior = 0.0
     for param in model.trainable_parameters:
-        if param.value() < 1e-3:
+        if param.numpy() < 1e-3:
             # Avoid values which would be pathological for the Exp transform
             param.assign(1.0)
-
-        param.transform = Exp()
 
         low_value = -100
         high_value = low_value + prior_width
@@ -77,36 +96,32 @@ def test_mcmc_helper_target_function_constrained():
         param.prior_on = PriorOn.CONSTRAINED
 
         prior_density_on_constrained = 1 / prior_width
-        prior_density_on_unconstrained = prior_density_on_constrained * param.value()
+        prior_density_on_unconstrained = prior_density_on_constrained * param.numpy()
 
         expected_log_prior += np.log(prior_density_on_unconstrained)
 
     log_marginal_likelihood = model.log_marginal_likelihood().numpy()
     expected_log_prob = log_marginal_likelihood + expected_log_prior
 
-    np.testing.assert_allclose(target_log_prob_fn(), expected_log_prob)
+    np.testing.assert_allclose(target_log_prob_fn(), expected_log_prob, rtol=1e-6)
 
 
 def test_mcmc_helper_target_function_unconstrained():
-    """ Verifies the objective for a set of priors which are defined on the unconstrained space.
     """
-    data = build_data()
-    model = build_model(data)
-
+    Verifies the objective for a set of priors which are defined on the unconstrained space.
+    """
     # Set up priors on the model parameters such that we can readily compute their expected values.
     expected_log_prior = 0.0
     prior_width = 200.0
+
+    data = build_data()
+    model = build_model_with_uniform_prior(data, "unconstrained", prior_width)
 
     hmc_helper = gpflow.optimizers.SamplingHelper(
         model.log_posterior_density, model.trainable_parameters
     )
 
-    for param in model.trainable_parameters:
-        low_value = -100
-        high_value = low_value + prior_width
-        param.prior = Uniform(low=np.float64(low_value), high=np.float64(high_value))
-        param.prior_on = "unconstrained"
-
+    for _ in model.trainable_parameters:
         prior_density = 1 / prior_width
         expected_log_prior += np.log(prior_density)
 
@@ -120,22 +135,17 @@ def test_mcmc_helper_target_function_unconstrained():
 def test_mcmc_helper_target_function_no_transforms(prior_on):
     """ Verifies the objective for a set of priors where no transforms are set.
     """
-    data = build_data()
-    model = build_model(data)
     expected_log_prior = 0.0
     prior_width = 200.0
+
+    data = build_data()
+    model = build_model_with_uniform_prior(data, prior_on, prior_width)
 
     hmc_helper = gpflow.optimizers.SamplingHelper(
         model.log_posterior_density, model.trainable_parameters
     )
 
-    for param in model.trainable_parameters:
-        param.transform = None
-        low_value = -100
-        high_value = low_value + prior_width
-        param.prior = Uniform(low=np.float64(low_value), high=np.float64(high_value))
-        param.prior_on = prior_on
-
+    for _ in model.trainable_parameters:
         prior_density = 1 / prior_width
         expected_log_prior += np.log(prior_density)
 

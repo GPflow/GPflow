@@ -17,6 +17,7 @@ import gpflow
 import numpy as np
 import pytest
 import tensorflow as tf
+import tempfile
 from gpflow.utilities import positive
 
 
@@ -55,3 +56,24 @@ def test_cast_to_dtype_precision_issue():
     assert actual_value.dtype == np.float64
     expected_value = np.float64(0.2)
     assert actual_value == expected_value
+
+
+def test_parameter_saved():
+    dtype = tf.float64
+
+    class Model(tf.Module):
+        def __init__(self):
+            self.p = gpflow.Parameter(0.1, dtype=dtype, transform=gpflow.utilities.positive())
+
+        @tf.function(input_signature=[tf.TensorSpec([], dtype=dtype)])
+        def exec(self, x: tf.Tensor) -> tf.Tensor:
+            return tf.square(x * self.p)
+
+    m0 = Model()
+    x = tf.convert_to_tensor(2.0, dtype=dtype)
+    expected = m0.exec(x)
+    with tempfile.TemporaryDirectory() as dirname:
+        tf.saved_model.save(m0, dirname)
+        m1 = tf.saved_model.load(dirname)
+        actual = m1.exec(x)
+        np.testing.assert_equal(actual, expected)
