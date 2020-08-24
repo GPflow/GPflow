@@ -72,3 +72,44 @@ def test_diagquad_with_kwarg(mu1, var1):
     )
     expected = np.exp(alpha * mu1 + alpha ** 2 * var1 / 2)
     assert_allclose(quad, expected)
+
+
+def test_ndiagqiuad_doesnot_throw_error():
+    """
+    Check that the autograph=False for quadrature.ndiagquad does not throw an error.
+    Fix for https://github.com/GPflow/GPflow/issues/1547.
+    """
+
+    @tf.function(autograph=False)
+    def func_ndiagquad_autograph_false():
+        mu = np.array([1.0, 1.3])
+        var = np.array([3.0, 3.5])
+        num_gauss_hermite_points = 25
+        return quadrature.ndiagquad(
+            [lambda *X: tf.exp(X[0])], num_gauss_hermite_points, [mu], [var]
+        )
+
+    func_ndiagquad_autograph_false()
+
+
+def test_quadrature_autograph():
+    """
+    Check that the return value is equal with and without Autograph
+    Fix for https://github.com/GPflow/GPflow/issues/1547.
+    """
+
+    def compute(autograph):
+        @tf.function(autograph=autograph)
+        def func():
+            mu = np.array([1.0, 1.3])
+            var = np.array([3.0, 3.5])
+            num_gauss_hermite_points = 25
+            return quadrature.ndiagquad(
+                [lambda *X: tf.exp(X[0])], num_gauss_hermite_points, [mu], [var]
+            )
+
+        return func()
+
+    np.testing.assert_allclose(
+        compute(autograph=True), compute(autograph=False),
+    )
