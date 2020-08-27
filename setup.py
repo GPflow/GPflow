@@ -34,7 +34,7 @@ if os.environ.get("READTHEDOCS") != "True":
             # https://github.com/tensorflow/probability/issues/991
             #
             # gpflow uses private functionality not present in tensorflow-probability~=0.11
-            "tensorflow-probability>=0.9,<0.11,!=0.10.0",
+            "tensorflow-probability>0.10.0,<0.11",
             "setuptools>=41.0.0",  # to satisfy dependency constraints
         ]
     )
