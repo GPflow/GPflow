@@ -29,7 +29,7 @@ import numpy as np
 import tensorflow as tf
 
 from .base import Module, Parameter
-from .config import default_float
+from .config import default_float, default_int
 
 
 class MeanFunction(Module):
@@ -124,8 +124,11 @@ class Constant(MeanFunction):
         self.c = Parameter(c)
 
     def __call__(self, X):
-        shape = [tf.shape(X)[0], 1]
-        return tf.tile(tf.reshape(self.c, (1, -1)), shape)
+        tile_shape = tf.concat([tf.shape(X)[:-1], [1]], axis=0,)
+        reshape_shape = tf.concat(
+            [tf.ones(shape=(tf.rank(X) - 1), dtype=default_int()), [-1]], axis=0,
+        )
+        return tf.tile(tf.reshape(self.c, reshape_shape), tile_shape)
 
 
 class Zero(Constant):
@@ -135,7 +138,8 @@ class Zero(Constant):
         del self.c
 
     def __call__(self, X):
-        return tf.zeros((tf.shape(X)[0], self.output_dim), dtype=X.dtype)
+        output_shape = tf.concat([tf.shape(X)[:-1], [self.output_dim]], axis=0)
+        return tf.zeros(output_shape, dtype=X.dtype)
 
 
 class SwitchedMeanFunction(MeanFunction):
