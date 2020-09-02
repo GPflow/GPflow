@@ -190,17 +190,22 @@ def leaf_components(input: tf.Module):
 def _merge_leaf_components(
     input: Dict[str, Union[tf.Variable, tf.Tensor, Parameter]]
 ) -> Dict[str, Union[tf.Variable, tf.Tensor, Parameter]]:
-    input_values = set([value.experimental_ref() for value in input.values()])
+
+    ref_fn = lambda x: (x if isinstance(x, Parameter) else x.ref())
+    deref_fn = lambda x: (x if isinstance(x, Parameter) else x.deref())
+
+    input_values = set([ref_fn(value) for value in input.values()])
     if len(input_values) == len(input):
         return input
+
     tmp_dict = dict()  # Type: Dict[ref, str]
-    for key, variable in input.items():
-        ref = variable.experimental_ref()
+    for key, value in input.items():
+        ref = ref_fn(value)
         if ref in tmp_dict:
             tmp_dict[ref] = f"{tmp_dict[ref]}\n{key}"
         else:
             tmp_dict[ref] = key
-    return {key: ref.deref() for ref, key in tmp_dict.items()}
+    return {key: deref_fn(ref) for ref, key in tmp_dict.items()}
 
 
 def _get_leaf_components(input_module: tf.Module):
