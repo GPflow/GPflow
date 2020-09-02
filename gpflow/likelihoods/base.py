@@ -344,8 +344,6 @@ class NDiagGHQuadratureLikelihood(QuadratureLikelihood):
                     "call a method which passes data to have it inferred."
                 )
             with tf.init_scope():
-                print("PRINT - Initializing NDiagGHQuadrature")
-                tf.print("TF PRINT - Initializing NDiagGHQuadrature")
                 self._quadrature = NDiagGHQuadrature(self.latent_dim, self.n_gh)
         return self._quadrature
 
