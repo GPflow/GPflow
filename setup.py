@@ -11,8 +11,8 @@ from setuptools import find_packages, setup
 
 # Dependencies of GPflow
 requirements = [
-    "numpy>=1.10.0",
-    "scipy>=0.18.0,==1.4.1",  # pinned to ==1.4.1 to satisfy tensorflow requirements
+    "numpy",
+    "scipy",
     "multipledispatch>=0.6",
     "tabulate",
     "typing_extensions",
@@ -26,13 +26,12 @@ if sys.version_info < (3, 7):
 # use autodoc_mock_imports instead. Hence we use this flag to decide whether or
 # not to append tensorflow and tensorflow_probability to the requirements:
 if os.environ.get("READTHEDOCS") != "True":
-    requirements.insert(
-        0,
+    requirements.extend(
         [
             "tensorflow>=2.1.0",
             "tensorflow-probability>0.10.0",  # tensorflow-probability==0.10.0 doesn't install correctly, https://github.com/tensorflow/probability/issues/991
             "setuptools>=41.0.0",  # to satisfy dependency constraints
-        ],
+        ]
     )
 
 
