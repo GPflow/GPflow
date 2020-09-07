@@ -237,7 +237,7 @@ if Version(tfp.__version__) > Version("0.11.0"):
         bijector._cache.clear()
 
 
-elif Version(tfp.__version__) >= Version("0.11.0"):
+elif Version(tfp.__version__) == Version("0.11.0"):
     # Workaround for bug in tensorflow_probability 0.11.0
 
     def _clear_bijector_cache(bijector: tfp.bijectors.Bijector):
