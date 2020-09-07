@@ -1,5 +1,6 @@
 import re
 import warnings
+from packaging.version import Version
 
 import multipledispatch
 import pytest
@@ -67,9 +68,19 @@ def test_our_multipledispatch():
         assert len(w) == 0
 
 
+dispatcher_expectautographwarning_combinations_to_test = [
+    (gpflow.utilities.Dispatcher, False),  # no warnings with our custom Dispatcher
+]
+
+if Version(tf.__version__) < Version("2.3"):
+    dispatcher_expectautographwarning_combinations_to_test.append(
+        (multipledispatch.Dispatcher, True)
+    )  # check that our test is written correctly by asserting that the base Dispatcher does create the warnings
+    # unfortunately this no longer works at all in tensorflow>=2.3
+
+
 @pytest.mark.parametrize(
-    "Dispatcher, expect_autograph_warning",
-    [(multipledispatch.Dispatcher, True), (gpflow.utilities.Dispatcher, False),],
+    "Dispatcher, expect_autograph_warning", dispatcher_expectautographwarning_combinations_to_test
 )
 def test_dispatcher_autograph_warnings(capsys, Dispatcher, expect_autograph_warning):
     tf.autograph.set_verbosity(0, alsologtostdout=True)  # to be able to capture it using capsys
