@@ -29,12 +29,12 @@ if os.environ.get("READTHEDOCS") != "True":
     requirements.extend(
         [
             # tensorflow>=2.3 not compatible with tensorflow-probability<0.11
-            "tensorflow>=2.1.0,<2.3",
+            "tensorflow>=2.1.0",
             # tensorflow-probability==0.10.0 doesn't install correctly
             # https://github.com/tensorflow/probability/issues/991
             #
             # gpflow uses private functionality not present in tensorflow-probability~=0.11
-            "tensorflow-probability>0.10.0,<0.11",
+            "tensorflow-probability>0.10.0",
             "setuptools>=41.0.0",  # to satisfy dependency constraints
         ]
     )
