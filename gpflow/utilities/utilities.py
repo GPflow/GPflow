@@ -2,6 +2,7 @@ import copy
 import re
 from functools import lru_cache
 from typing import Any, Callable, Dict, List, Optional, Tuple, TypeVar, Union, Iterable
+from packaging.version import Version
 
 import numpy as np
 import tensorflow as tf
@@ -230,6 +231,29 @@ def _get_leaf_components(input_module: tf.Module):
     return state
 
 
+if Version(tfp.__version__) > Version("0.11.0"):
+    def _clear_bijector_cache(bijector: tfp.bijectors.Bijector):
+        bijector._cache.clear()
+
+elif Version(tfp.__version__) >= Version("0.11.0"):
+    # Workaround for bug in tensorflow_probability 0.11.0
+
+    def _clear_bijector_cache(bijector: tfp.bijectors.Bijector):
+        # in 0.11.0, there is bijector._cache.reset(), but its implementation is broken
+        cache = bijector._cache
+        cache_type = type(cache.forward)
+        assert type(cache.inverse) == cache_type
+        cache.__init__(cache.forward._func, cache.inverse._func, cache_type)
+
+else:
+    # fallback for backwards-compatibility with tensorflow_probability < 0.11.0
+
+    def _clear_bijector_cache(b: tfp.bijectors.Bijector):
+        # `_from_x` and `_from_y` are cache dictionaries for forward and inverse transformations
+        # in bijector class.
+        bijector._from_x.clear()
+        bijector._from_y.clear()
+
 def reset_cache_bijectors(input_module: tf.Module) -> tf.Module:
     """
     Recursively finds tfp.bijectors.Bijector-s inside the components of the tf.Module using `traverse_component`.
@@ -241,18 +265,18 @@ def reset_cache_bijectors(input_module: tf.Module) -> tf.Module:
     target_types = (tfp.bijectors.Bijector,)
     accumulator = ("", None)
 
-    def clear_cache(b):
-        if isinstance(b, tfp.bijectors.Bijector):
-            # `_from_x` and `_from_y` are cache dictionaries for forward and inverse transformations
-            # in bijector class.
-            b._from_x.clear()
-            b._from_y.clear()
-
     def clear_bijector(bijector, _, state):
-        clear_cache(bijector)
+        if not isinstance(bijector, tfp.bijectors.Bijector):
+            return  # skip submodules that are not bijectors
+
+        _clear_bijector_cache(bijector)
+
         if isinstance(bijector, tfp.bijectors.Chain):
+            # recursively clear caches of sub-bijectors
             for m in bijector.submodules:
-                clear_cache(m)
+                if isinstance(m, tfp.bijectors.Bijector):
+                    _clear_bijector_cache(m)
+
         return state
 
     _ = traverse_module(input_module, accumulator, clear_bijector, target_types)
