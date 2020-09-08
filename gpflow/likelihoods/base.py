@@ -369,7 +369,7 @@ class ScalarLikelihood(NDiagGHQuadratureLikelihood):
     """
 
     def __init__(
-        self, latent_dim: int = None, observation_dim: int = None, n_gh: int = 20, **kwargs
+        self, latent_dim: Optional[int] = None, observation_dim: Optional[int] = None, n_gh: int = 20, **kwargs
     ):
         super().__init__(
             latent_dim=latent_dim, observation_dim=observation_dim, n_gh=n_gh, **kwargs
