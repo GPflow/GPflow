@@ -234,11 +234,12 @@ def _get_leaf_components(input_module: tf.Module):
 if Version(tfp.__version__) > Version("0.11.0"):
 
     def _clear_bijector_cache(bijector: tfp.bijectors.Bijector):
+        # implementation in `master` branch (checked 8 Sep 2020)
         bijector._cache.clear()
 
 
 elif Version(tfp.__version__) == Version("0.11.0"):
-    # Workaround for bug in tensorflow_probability 0.11.0
+    # Workaround for bug in tensorflow_probability 0.11.0 (latest release as of 8 Sep 2020)
 
     def _clear_bijector_cache(bijector: tfp.bijectors.Bijector):
         # in 0.11.0, there is bijector._cache.reset(), but its implementation is broken
@@ -251,7 +252,7 @@ elif Version(tfp.__version__) == Version("0.11.0"):
 else:
     # fallback for backwards-compatibility with tensorflow_probability < 0.11.0
 
-    def _clear_bijector_cache(b: tfp.bijectors.Bijector):
+    def _clear_bijector_cache(bijector: tfp.bijectors.Bijector):
         # `_from_x` and `_from_y` are cache dictionaries for forward and inverse transformations
         # in bijector class.
         bijector._from_x.clear()
