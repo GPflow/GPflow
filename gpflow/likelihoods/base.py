@@ -58,7 +58,7 @@ import abc
 import warnings
 
 from ..base import Module
-from ..quadrature import hermgauss, ndiag_mc, ndiagquad
+from ..quadrature import hermgauss, ndiag_mc, NDiagGHQuadrature
 
 
 class Likelihood(Module, metaclass=abc.ABCMeta):
@@ -286,7 +286,69 @@ class Likelihood(Module, metaclass=abc.ABCMeta):
         raise NotImplementedError
 
 
-class ScalarLikelihood(Likelihood):
+class QuadratureLikelihood(Likelihood):
+    @property
+    def quadrature(self):
+        raise NotImplementedError()
+
+    def _predict_mean_and_var(self, Fmu, Fvar):
+        r"""
+        :param Fmu: mean function evaluation Tensor, with shape [..., latent_dim]
+        :param Fvar: variance of function evaluation Tensor, with shape [..., latent_dim]
+        :returns: mean and variance, both with shape [..., observation_dim]
+        """
+
+        def conditional_y_squared(F):
+            return self.conditional_variance(F) + self.conditional_mean(F) ** 2
+
+        integrands = [self.conditional_mean, conditional_y_squared]
+        E_y, E_y2 = self.quadrature(integrands, Fmu, Fvar)
+        V_y = E_y2 - E_y ** 2
+        return E_y, V_y
+
+    def _quadrature_log_prob(self, F, Y):
+        return tf.expand_dims(self.log_prob(F, Y), -1)
+
+    def _predict_log_density(self, Fmu, Fvar, Y):
+        r"""
+        :param Fmu: mean function evaluation Tensor, with shape [..., latent_dim]
+        :param Fvar: variance of function evaluation Tensor, with shape [..., latent_dim]
+        :param Y: observation Tensor, with shape [..., observation_dim]:
+        :returns: variational expectations, with shape [...]
+        """
+        return tf.squeeze(self.quadrature.logspace(self._quadrature_log_prob, Fmu, Fvar, Y), -1)
+
+    def _variational_expectations(self, Fmu, Fvar, Y):
+        r"""
+        :param Fmu: mean function evaluation Tensor, with shape [..., latent_dim]
+        :param Fvar: variance of function evaluation Tensor, with shape [..., latent_dim]
+        :param Y: observation Tensor, with shape [..., observation_dim]:
+        :returns: log predictive density, with shape [...]
+        """
+        return tf.squeeze(self.quadrature(self._quadrature_log_prob, Fmu, Fvar, Y), -1)
+
+
+class NDiagGHQuadratureLikelihood(QuadratureLikelihood):
+    def __init__(self, n_gh: int = 20, **kwargs):
+        super().__init__(**kwargs)
+        self.n_gh = n_gh
+        self._quadrature = None
+
+    @property
+    def quadrature(self):
+        if self._quadrature is None:
+            if self.latent_dim is None:
+                raise Exception(
+                    "latent_dim not specified. "
+                    "Either set likelihood.latent_dim directly or "
+                    "call a method which passes data to have it inferred."
+                )
+            with tf.init_scope():
+                self._quadrature = NDiagGHQuadrature(self.latent_dim, self.n_gh)
+        return self._quadrature
+
+
+class ScalarLikelihood(NDiagGHQuadratureLikelihood):
     """
     A likelihood class that helps with scalar likelihood functions: likelihoods where
     each scalar latent function is associated with a single scalar observation variable.
@@ -306,17 +368,12 @@ class ScalarLikelihood(Likelihood):
     integrals are available in closed form.
     """
 
-    def __init__(self, **kwargs):
-        super().__init__(latent_dim=None, observation_dim=None, **kwargs)
-        self.num_gauss_hermite_points = 20
-
-    def _check_last_dims_valid(self, F, Y):
-        """
-        Assert that the dimensions of the latent functions and the data are compatible
-        :param F: function evaluation Tensor, with shape [..., latent_dim]
-        :param Y: observation Tensor, with shape [..., latent_dim]
-        """
-        tf.debugging.assert_shapes([(F, (..., "num_latent")), (Y, (..., "num_latent"))])
+    def __init__(
+        self, latent_dim: int = None, observation_dim: int = None, n_gh: int = 20, **kwargs
+    ):
+        super().__init__(
+            latent_dim=latent_dim, observation_dim=observation_dim, n_gh=n_gh, **kwargs
+        )
 
     def _log_prob(self, F, Y):
         r"""
@@ -340,10 +397,10 @@ class ScalarLikelihood(Likelihood):
         :param Y: observation Tensor, with shape [..., latent_dim]:
         :returns: variational expectations, with shape [...]
         """
-        return tf.reduce_sum(
-            ndiagquad(self._scalar_log_prob, self.num_gauss_hermite_points, Fmu, Fvar, Y=Y),
-            axis=-1,
-        )
+        if self.latent_dim is None:
+            self.latent_dim = int(Fmu.shape[-1])
+            self.observation_dim = self.latent_dim
+        return super()._variational_expectations(Fmu, Fvar, Y)
 
     def _predict_log_density(self, Fmu, Fvar, Y):
         r"""
@@ -354,12 +411,10 @@ class ScalarLikelihood(Likelihood):
         :param Y: observation Tensor, with shape [..., latent_dim]:
         :returns: log predictive density, with shape [...]
         """
-        return tf.reduce_sum(
-            ndiagquad(
-                self._scalar_log_prob, self.num_gauss_hermite_points, Fmu, Fvar, logspace=True, Y=Y,
-            ),
-            axis=-1,
-        )
+        if self.latent_dim is None:
+            self.latent_dim = int(Fmu.shape[-1])
+            self.observation_dim = self.latent_dim
+        return super()._predict_log_density(Fmu, Fvar, Y)
 
     def _predict_mean_and_var(self, Fmu, Fvar):
         r"""
@@ -370,15 +425,10 @@ class ScalarLikelihood(Likelihood):
         :param Fvar: variance of function evaluation Tensor, with shape [..., latent_dim]
         :returns: mean and variance, both with shape [..., observation_dim]
         """
-
-        def conditional_y_squared(*X):
-            return self.conditional_variance(*X) + self.conditional_mean(*X) ** 2
-
-        E_y, E_y2 = ndiagquad(
-            [self.conditional_mean, conditional_y_squared], self.num_gauss_hermite_points, Fmu, Fvar
-        )
-        V_y = E_y2 - E_y ** 2
-        return E_y, V_y
+        if self.latent_dim is None:
+            self.latent_dim = int(Fmu.shape[-1])
+            self.observation_dim = self.latent_dim
+        return super()._predict_mean_and_var(Fmu, Fvar)
 
 
 class SwitchedLikelihood(ScalarLikelihood):

@@ -214,7 +214,7 @@ def test_RBF_eKzxKxz_gradient_notNaN():
 
     with tf.GradientTape() as tape:
         ekz = expectation(p, (kernel, z), (kernel, z))
-    grad = tape.gradient(ekz, kernel.lengthscales)
+    grad = tape.gradient(ekz, kernel.lengthscales.unconstrained_variable)
     assert grad is not None and not np.isnan(grad)
 
 

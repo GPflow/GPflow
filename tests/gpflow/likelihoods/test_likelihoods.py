@@ -19,6 +19,8 @@ from numpy.testing import assert_allclose
 
 import gpflow
 from gpflow.likelihoods import (
+    QuadratureLikelihood,
+    NDiagGHQuadratureLikelihood,
     ScalarLikelihood,
     Bernoulli,
     Beta,
@@ -116,7 +118,12 @@ def get_likelihood(likelihood_setup):
 def test_no_missing_likelihoods():
     tested_likelihood_types = [get_likelihood(l).__class__ for l in likelihood_setups]
     for likelihood_class in gpflow.ci_utils.subclasses(Likelihood):
-        if likelihood_class in (ScalarLikelihood, MonteCarloLikelihood):
+        if likelihood_class in (
+            QuadratureLikelihood,
+            NDiagGHQuadratureLikelihood,
+            ScalarLikelihood,
+            MonteCarloLikelihood,
+        ):
             # abstract base classes that cannot be tested
             continue
 
