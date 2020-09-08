@@ -38,13 +38,15 @@ GPflow 2.0 uses [TensorFlow 2.1+](http://www.tensorflow.org) for running computa
 
 ## Install GPflow 2
 
+**We have experienced issues with `pip`'s pre-2020 dependency resolver; if you encounter issues with incompatible third-party package versions when installing GPflow using the `pip` commands below, try adding the `--use-feature=2020-resolver` argument.**
+
 ### Latest release from PyPI
 
 ```bash
 pip install gpflow
 ```
 
-The current release, 2.0.0, requires TensorFlow ≥ 2.1 and TensorFlow Probability ≥ 0.9.
+The current release series, 2.x, requires TensorFlow ≥ 2.1 and TensorFlow Probability ≥ 0.10.1.
 
 ### Latest source from GitHub
 
