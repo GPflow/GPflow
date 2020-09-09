@@ -9,24 +9,27 @@ import sys
 from setuptools import find_packages, setup
 
 
-# Dependencies of GPflow
-requirements = [
-    "numpy>=1.10.0",
-    "scipy>=0.18.0",
-    "multipledispatch>=0.6",
-    "tabulate",
-    "typing_extensions",
-]
-
-if sys.version_info < (3, 7):
-    # became part of stdlib in python 3.7
-    requirements.append("dataclasses")
+##### Dependencies of GPflow
 
 # We do not want to install tensorflow in the readthedocs environment, where we
 # use autodoc_mock_imports instead. Hence we use this flag to decide whether or
 # not to append tensorflow and tensorflow_probability to the requirements:
 if os.environ.get("READTHEDOCS") != "True":
-    requirements.extend(["tensorflow>=2.1.0", "tensorflow-probability>=0.9"])
+    requirements = [
+        "tensorflow>=2.1.0",
+        "tensorflow-probability>0.10.0",  # tensorflow-probability==0.10.0 doesn't install correctly, https://github.com/tensorflow/probability/issues/991
+        "setuptools>=41.0.0",  # to satisfy dependency constraints
+    ]
+
+else:
+    requirements = []
+
+requirements.extend(
+    ["numpy", "scipy", "multipledispatch>=0.6", "tabulate", "typing_extensions",]
+)
+
+if sys.version_info < (3, 7):
+    requirements.append("dataclasses")  # became part of stdlib in python 3.7
 
 
 def read_file(filename):

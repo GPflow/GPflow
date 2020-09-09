@@ -34,6 +34,7 @@ In each notebook we go over the data format, model setup, model optimization, an
 ## Understanding
 
 This section covers the building blocks of GPflow from an implementation perspective, and shows how the different modules interact as a whole.
+
 <!--  - [Architecture](understanding/architecture.ipynb)  **[TODO]** -->
 <!--  - [Utilities](understanding/utilities.ipynb): expectations, multi-output, conditionals, Kullback-Leibler divergences (KL), log-densities, features and quadrature  **[TODO]** -->
   - [Manipulating models](understanding/models.ipynb)
@@ -45,6 +46,7 @@ This section covers the building blocks of GPflow from an implementation perspec
 This section explains the more complex models and features that are available in GPflow.
 
 ### Models
+
   - [Markov Chain Monte Carlo (MCMC)](advanced/mcmc.ipynb): using Hamiltonian Monte Carlo to sample the posterior GP and hyperparameters.
   - [Ordinal regression](advanced/ordinal_regression.ipynb): using GPflow to deal with ordinal variables.
   - [Gaussian process regression with varying output noise](advanced/varying_noise.ipynb) for different data points, using a custom likelihood or the `SwitchedLikelihood`.
@@ -58,6 +60,7 @@ This section explains the more complex models and features that are available in
   - [Convolutional GPs](advanced/convolutional.ipynb): how we can use GPs with convolutional kernels for image classification.
 
 ### Features
+
   - [Natural gradients](advanced/natural_gradients.ipynb): how to optimize the variational approximate posterior's parameters.
   - [Monitoring optimisation](basics/monitoring.ipynb): how to monitor the model during optimisation: running custom callbacks and writing images and model parameters to TensorBoards.
 <!--  - [optimizers](advanced/optimisation.ipynb)  **[TODO]** -->
@@ -67,6 +70,7 @@ This section explains the more complex models and features that are available in
 
 This section shows how to use GPflow's utilities and codebase to build new probabilistic models.
 These can be seen as complete examples.
+
   - [Kernel design](tailor/kernel_design.ipynb): how to implement a covariance function that is not available by default in GPflow. For this example, we look at the Brownian motion covariance.
 <!--  - [likelihood design](tailor/likelihood_design.ipynb) **[TODO]** -->
 <!--  - [Latent variable models](tailor/models_with_latent_variables.ipynb) **[TODO]** -->
@@ -79,6 +83,7 @@ These can be seen as complete examples.
 ## Theoretical notes
 
 The following notebooks relate to the theory of Gaussian processes and approximations. These are not required reading for using GPflow, but are included for those interested in the theoretical underpinning and technical details.
+
   - [Derivation of VGP equations](theory/vgp_notes.ipynb)
   - [Derivation of SGPR equations](theory/SGPR_notes.ipynb)
   - [Demonstration of the upper bound of the SGPR marginal likelihood](theory/upper_bound.ipynb)
@@ -93,9 +98,3 @@ James Hensman, Nicolo Fusi, and Neil D Lawrence. 'Gaussian Processes for Big Dat
 James Hensman, Alexander G de G Matthews, and Zoubin Ghahramani. 'Scalable variational Gaussian process classification'. *Proceedings of the Eighteenth International Conference on Artificial Intelligence and Statistics*, 2015.
 
 Michalis Titsias and Neil D Lawrence. 'Bayesian Gaussian process latent variable model'. *Proceedings of the Thirteenth International Conference on Artificial Intelligence and Statistics*, 2010.
-
-<!-- #endregion -->
-
-```python
-
-```
