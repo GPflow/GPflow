@@ -287,9 +287,23 @@ class Likelihood(Module, metaclass=abc.ABCMeta):
 
 
 class QuadratureLikelihood(Likelihood):
+    def __init__(self, n_gh: int = 20, **kwargs):
+        super().__init__(**kwargs)
+        self.n_gh = n_gh
+        self._quadrature = None
+
     @property
     def quadrature(self):
-        raise NotImplementedError()
+        if self._quadrature is None:
+            if self.latent_dim is None:
+                raise Exception(
+                    "latent_dim not specified. "
+                    "Either set likelihood.latent_dim directly or "
+                    "call a method which passes data to have it inferred."
+                )
+            with tf.init_scope():
+                self._quadrature = NDiagGHQuadrature(self.latent_dim, self.n_gh)
+        return self._quadrature
 
     def _predict_mean_and_var(self, Fmu, Fvar):
         r"""
@@ -328,27 +342,7 @@ class QuadratureLikelihood(Likelihood):
         return tf.squeeze(self.quadrature(self._quadrature_log_prob, Fmu, Fvar, Y), -1)
 
 
-class NDiagGHQuadratureLikelihood(QuadratureLikelihood):
-    def __init__(self, n_gh: int = 20, **kwargs):
-        super().__init__(**kwargs)
-        self.n_gh = n_gh
-        self._quadrature = None
-
-    @property
-    def quadrature(self):
-        if self._quadrature is None:
-            if self.latent_dim is None:
-                raise Exception(
-                    "latent_dim not specified. "
-                    "Either set likelihood.latent_dim directly or "
-                    "call a method which passes data to have it inferred."
-                )
-            with tf.init_scope():
-                self._quadrature = NDiagGHQuadrature(self.latent_dim, self.n_gh)
-        return self._quadrature
-
-
-class ScalarLikelihood(NDiagGHQuadratureLikelihood):
+class ScalarLikelihood(QuadratureLikelihood):
     """
     A likelihood class that helps with scalar likelihood functions: likelihoods where
     each scalar latent function is associated with a single scalar observation variable.

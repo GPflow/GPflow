@@ -1,7 +1,6 @@
 from .base import (
     Likelihood,
     QuadratureLikelihood,
-    NDiagGHQuadratureLikelihood,
     ScalarLikelihood,
     SwitchedLikelihood,
     MonteCarloLikelihood,
@@ -25,8 +24,8 @@ from .multiclass import (
     RobustMax,
 )
 
-from .heteroskedastic import (
-    HeteroskedasticTFPBase,
+from .multilatent import (
+    MultiLatentLikelihood,
+    MultiLatentTFPConditional,
     HeteroskedasticTFPConditional,
-    HeteroskedasticTFPDistribution,
 )

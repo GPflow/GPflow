@@ -18,7 +18,7 @@ import tensorflow as tf
 import tensorflow_probability as tfp
 
 import gpflow
-from gpflow.likelihoods.heteroskedastic import HeteroskedasticTFPDistribution
+from gpflow.likelihoods import HeteroskedasticTFPConditional
 
 tf.random.set_seed(99012)
 
@@ -30,7 +30,7 @@ class Data:
     Y = rng.randn(N, 1)
     # single "GP" (for the mean):
     f_mean = rng.randn(N, 1)
-    f_var = rng.uniform(0.1, 1.0, (N, 1))  # must be positive
+    f_var = rng.randn(N, 1) ** 2  # ensure positivity
     equivalent_f2 = np.log(np.sqrt(g_var))
     f2_mean = np.full((N, 1), equivalent_f2)
     f2_var = np.zeros((N, 1))
@@ -45,7 +45,7 @@ def test_log_prob():
       etc as the regular Gaussian  likelihood
     """
     l1 = gpflow.likelihoods.Gaussian(variance=Data.g_var)
-    l2 = HeteroskedasticTFPDistribution(tfp.distributions.Normal)
+    l2 = HeteroskedasticTFPConditional(tfp.distributions.Normal)
     np.testing.assert_allclose(
         l1.log_prob(Data.f_mean, Data.Y), l2.log_prob(Data.F2_mean, Data.Y),
     )
@@ -54,7 +54,7 @@ def test_log_prob():
 def test_variational_expectations():
     # Create likelihoods
     l1 = gpflow.likelihoods.Gaussian(variance=Data.g_var)
-    l2 = HeteroskedasticTFPDistribution(tfp.distributions.Normal)
+    l2 = HeteroskedasticTFPConditional(tfp.distributions.Normal)
     np.testing.assert_allclose(
         l1.variational_expectations(Data.f_mean, Data.f_var, Data.Y),
         l2.variational_expectations(Data.F2_mean, Data.F2_var, Data.Y),
@@ -63,7 +63,7 @@ def test_variational_expectations():
 
 def test_predict_mean_and_var():
     l1 = gpflow.likelihoods.Gaussian(variance=Data.g_var)
-    l2 = HeteroskedasticTFPDistribution(tfp.distributions.Normal)
+    l2 = HeteroskedasticTFPConditional(tfp.distributions.Normal)
     np.testing.assert_allclose(
         l1.predict_mean_and_var(Data.f_mean, Data.f_var),
         l2.predict_mean_and_var(Data.F2_mean, Data.F2_var),
@@ -73,7 +73,7 @@ def test_predict_mean_and_var():
 @pytest.mark.skip("Conditional mean is not implemented in heteroskedastic likelihood")
 def test_conditional_mean():
     l1 = gpflow.likelihoods.Gaussian(variance=Data.g_var)
-    l2 = HeteroskedasticTFPDistribution(tfp.distributions.Normal)
+    l2 = HeteroskedasticTFPConditional(tfp.distributions.Normal)
     np.testing.assert_allclose(
         l1.conditional_mean(Data.f_mean), l2.conditional_mean(Data.F2_mean),
     )
@@ -82,7 +82,7 @@ def test_conditional_mean():
 @pytest.mark.skip("Conditional variance is not implemented in heteroskedastic likelihood")
 def test_conditional_variance():
     l1 = gpflow.likelihoods.Gaussian(variance=Data.g_var)
-    l2 = HeteroskedasticTFPDistribution(tfp.distributions.Normal)
+    l2 = HeteroskedasticTFPConditional(tfp.distributions.Normal)
     np.testing.assert_allclose(
         l1.conditional_variance(Data.f_mean), l2.conditional_variance(Data.F2_mean),
     )
@@ -91,7 +91,7 @@ def test_conditional_variance():
 @pytest.mark.skip("Currently broken as it returns the sum over outputs when given multiple outputs")
 def test_predict_log_density():
     l1 = gpflow.likelihoods.Gaussian(variance=Data.g_var)
-    l2 = HeteroskedasticTFPDistribution(tfp.distributions.Normal)
+    l2 = HeteroskedasticTFPConditional(tfp.distributions.Normal)
     np.testing.assert_allclose(
         l1.predict_log_density(Data.f_mean, Data.f_var, Data.Y),
         l2.predict_log_density(Data.F2_mean, Data.f2_var, Data.Y),
