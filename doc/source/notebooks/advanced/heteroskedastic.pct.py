@@ -71,7 +71,8 @@ transform = np.exp
 
 # Compute loc and scale as functions of input X
 loc = f1(X)
-scale = transform(f2(X))
+variance = transform(f2(X))
+scale = variance ** 0.5
 
 # Sample outputs Y from Gaussian Likelihood
 Y = np.random.normal(loc, scale)
@@ -106,7 +107,7 @@ plt.close()
 # $$ y_i|f_1, f_2, x_i \sim \mathcal{N}(\text{loc}(x_i),\;\text{scale}^2(x_i))$$
 
 # %%
-likelihood = gpf.likelihoods.heteroskedastic.HeteroskedasticTFPDistribution(
+likelihood = gpf.likelihoods.HeteroskedasticTFPConditional(
     distribution_class=tfp.distributions.Normal,  # Gaussian Likelihood
     transform=tfp.bijectors.Exp(),  # Exponential Transform
 )
@@ -164,7 +165,7 @@ model = gpf.models.SVGP(
     num_latent_gps=likelihood.latent_dim,
 )
 
-display(model)
+model
 
 # %% [markdown]
 # # Build Optimizers (NatGrad + Adam)

@@ -95,7 +95,7 @@ class HeteroskedasticTFPConditional(MultiLatentTFPConditional):
         def conditional_distribution(Fs) -> tfp.distributions.Distribution:
             tf.debugging.assert_equal(tf.shape(Fs)[-1], 2)
             loc = Fs[..., :1]
-            scale = tf.exp(Fs[..., 1:] / 2)
+            scale = transform(Fs[..., 1:] / 2)
             return distribution_class(loc, scale)
 
         super().__init__(
