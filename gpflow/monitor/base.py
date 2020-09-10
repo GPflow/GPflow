@@ -18,7 +18,6 @@ from typing import Callable, List, Union
 
 import tensorflow as tf
 
-
 __all__ = ["MonitorTask", "ExecuteCallback", "MonitorTaskGroup", "Monitor"]
 
 
@@ -141,3 +140,26 @@ class Monitor:
     def __call__(self, step, **kwargs):
         for group in self.task_groups:
             group(step, **kwargs)
+
+
+class ScipyMonitor(Monitor):
+    r"""
+        Modifies Monitor class so that Scipy Optimization can be monitored
+        via tensorboard.
+
+        The Scipy Optimization behaves like one-step optimization for GPFlow, so a monitor instance
+        needs to be passed to be optimizer via the `step_callback` argument of the `minimize` function.
+        However, `minimize` expects to call the `step_callback` function with three arguments: step,
+        variables, and values. `Monitor`, however, only accepts one argument: step. To get around this,
+        this class implements a ScipyMonitor which can be called with step, variables, and values, but then
+        it calls the `Monitor` instance with just the step input.
+    """
+
+    def __init__(self, *task_groups: MonitorTaskGroup):
+        """
+        :param task_groups: a list of `MonitorTaskGroup`s to be executed.
+        """
+        super().__init__(*task_groups)
+
+    def __call__(self, step, variables, values, **kwargs):
+        super().__call__(step, **kwargs)

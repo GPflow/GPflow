@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.4.0
+#       jupytext_version: 1.6.0
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -127,6 +127,21 @@ opt = tf.optimizers.Adam()
 for step in range(optimisation_steps):
     opt.minimize(training_loss, model.trainable_variables)
     monitor(step)  # <-- run the monitoring
+
+# %% [markdown]
+# ### Scipy Optimization monitoring
+#
+# Note that if you want to use the scipy optimizer, and want to monitor the training progress, then you need to do
+# something slightly different.
+#
+# ```
+# # define fast_tasks, slow_tasks, training_loss as in done in the previous 2 cells. Then,
+# from gpflow.monitor import ScipyMonitor
+# monitor = ScipyMonitor(fast_tasks, slow_tasks)
+#
+# opt = gpflow.optimizers.Scipy()
+# opt.minimize(training_loss, model.trainable_variables, step_callback=monitor)
+# ```
 
 # %% [markdown]
 # TensorBoard is accessible through the browser, after launching the server by running `tensorboard --logdir ${logdir}`.
