@@ -307,10 +307,6 @@ class QuadratureLikelihood(Likelihood):
                 self._quadrature = NDiagGHQuadrature(self.latent_dim, self.num_gauss_hermite_points)
         return self._quadrature
 
-    @property
-    def quadrature(self):
-        raise NotImplementedError()
-
     def _predict_mean_and_var(self, Fmu, Fvar):
         r"""
         :param Fmu: mean function evaluation Tensor, with shape [..., latent_dim]
