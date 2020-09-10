@@ -1,7 +1,6 @@
 from .base import (
     Likelihood,
     QuadratureLikelihood,
-    NDiagGHQuadratureLikelihood,
     ScalarLikelihood,
     SwitchedLikelihood,
     MonteCarloLikelihood,

@@ -57,6 +57,8 @@ import tensorflow as tf
 import abc
 import warnings
 
+from typing import Optional
+
 from ..base import Module
 from ..quadrature import hermgauss, ndiag_mc, NDiagGHQuadrature
 
@@ -287,6 +289,24 @@ class Likelihood(Module, metaclass=abc.ABCMeta):
 
 
 class QuadratureLikelihood(Likelihood):
+    def __init__(self, num_gauss_hermite_points: int = 20, **kwargs):
+        super().__init__(**kwargs)
+        self.num_gauss_hermite_points = num_gauss_hermite_points
+        self._quadrature = None
+
+    @property
+    def quadrature(self):
+        if self._quadrature is None:
+            if self.latent_dim is None:
+                raise Exception(
+                    "latent_dim not specified. "
+                    "Either set likelihood.latent_dim directly or "
+                    "call a method which passes data to have it inferred."
+                )
+            with tf.init_scope():
+                self._quadrature = NDiagGHQuadrature(self.latent_dim, self.num_gauss_hermite_points)
+        return self._quadrature
+
     @property
     def quadrature(self):
         raise NotImplementedError()
@@ -328,27 +348,7 @@ class QuadratureLikelihood(Likelihood):
         return tf.squeeze(self.quadrature(self._quadrature_log_prob, Fmu, Fvar, Y), -1)
 
 
-class NDiagGHQuadratureLikelihood(QuadratureLikelihood):
-    def __init__(self, n_gh: int = 20, **kwargs):
-        super().__init__(**kwargs)
-        self.n_gh = n_gh
-        self._quadrature = None
-
-    @property
-    def quadrature(self):
-        if self._quadrature is None:
-            if self.latent_dim is None:
-                raise Exception(
-                    "latent_dim not specified. "
-                    "Either set likelihood.latent_dim directly or "
-                    "call a method which passes data to have it inferred."
-                )
-            with tf.init_scope():
-                self._quadrature = NDiagGHQuadrature(self.latent_dim, self.n_gh)
-        return self._quadrature
-
-
-class ScalarLikelihood(NDiagGHQuadratureLikelihood):
+class ScalarLikelihood(QuadratureLikelihood):
     """
     A likelihood class that helps with scalar likelihood functions: likelihoods where
     each scalar latent function is associated with a single scalar observation variable.
@@ -369,7 +369,11 @@ class ScalarLikelihood(NDiagGHQuadratureLikelihood):
     """
 
     def __init__(
-        self, latent_dim: Optional[int] = None, observation_dim: Optional[int] = None, n_gh: int = 20, **kwargs
+        self,
+        latent_dim: Optional[int] = None,
+        observation_dim: Optional[int] = None,
+        n_gh: int = 20,
+        **kwargs,
     ):
         super().__init__(
             latent_dim=latent_dim, observation_dim=observation_dim, n_gh=n_gh, **kwargs
