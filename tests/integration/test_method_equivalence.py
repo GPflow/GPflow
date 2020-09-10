@@ -46,12 +46,6 @@ class DatumVGP:
     data = (X, Y)
 
 
-class DatumUpper:
-    X = np.random.rand(100, 1)
-    Y = np.sin(1.5 * 2 * np.pi * X) + np.random.randn(*X.shape) * 0.1
-    data = (X, Y)
-
-
 def _create_full_gp_model():
     """
     GP Regression
@@ -268,6 +262,14 @@ def test_equivalence_vgp_and_opper_archambeau():
     assert_allclose(vgp_oa_var, vgp_var, rtol=1e-4)  # jitter?
     assert_allclose(svgp_unwhitened_mu, vgp_mu)
     assert_allclose(svgp_unwhitened_var, vgp_var, rtol=1e-4)
+
+
+class DatumUpper:
+    rng = np.random.default_rng(123)
+    X = rng.random((100, 1))
+    Y = np.sin(1.5 * 2 * np.pi * X) + rng.standard_normal(X.shape) * 0.1 + 5.3
+    assert Y.mean() > 5.0, "offset ensures a regression test against the bug fixed by PR #1560"
+    data = (X, Y)
 
 
 def test_upper_bound_few_inducing_points():
