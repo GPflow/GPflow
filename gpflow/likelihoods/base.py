@@ -380,8 +380,7 @@ class ScalarLikelihood(QuadratureLikelihood):
 
     def _set_latent_and_observation_dimension_eagerly(self, Fmu):
         if self.latent_dim is None:
-            # self.latent_dim = int(Fmu.shape[-1])
-            self.latent_dim = tf.shape(Fmu)[-1]
+            self.latent_dim = int(Fmu.shape[-1])
             self.observation_dim = self.latent_dim
 
     def _log_prob(self, F, Y):
