@@ -49,4 +49,3 @@ def test_analytic_mean_and_var(likelihood):
     y_mean, y_var = likelihood.predict_mean_and_var(Data.f_mean, Data.f_var)
     np.testing.assert_array_almost_equal(y_mean, analytic_mean)
     np.testing.assert_array_almost_equal(y_var, analytic_variance)
-
