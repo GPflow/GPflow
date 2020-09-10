@@ -20,7 +20,6 @@ from numpy.testing import assert_allclose
 import gpflow
 from gpflow.likelihoods import (
     QuadratureLikelihood,
-    NDiagGHQuadratureLikelihood,
     ScalarLikelihood,
     Bernoulli,
     Beta,
