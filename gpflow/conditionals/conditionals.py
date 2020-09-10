@@ -1,5 +1,3 @@
-# noqa: F811
-
 import tensorflow as tf
 
 from ..covariances import Kuf, Kuu
@@ -12,7 +10,7 @@ from .util import base_conditional, expand_independent_outputs
 
 
 @conditional.register(object, InducingVariables, Kernel, object)
-def _conditional(
+def single_output_conditional(
     Xnew: tf.Tensor,
     inducing_variable: InducingVariables,
     kernel: Kernel,
@@ -64,7 +62,7 @@ def _conditional(
 
 
 @conditional.register(object, object, Kernel, object)
-def _conditional(
+def plain_conditional(
     Xnew: tf.Tensor,
     X: tf.Tensor,
     kernel: Kernel,

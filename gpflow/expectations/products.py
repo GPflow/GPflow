@@ -12,7 +12,7 @@ NoneType = type(None)
 
 
 @dispatch.expectation.register(DiagonalGaussian, kernels.Product, NoneType, NoneType, NoneType)
-def _E(p, kernel, _, __, ___, nghp=None):
+def _E__DiagonalGaussian__Product(p, kernel, _, __, ___, nghp=None):
     r"""
     Compute the expectation:
     <\HadamardProd_i diag(Ki_{X[:, active_dims_i], X[:, active_dims_i]})>_p(X)
@@ -33,7 +33,7 @@ def _E(p, kernel, _, __, ___, nghp=None):
 @dispatch.expectation.register(
     DiagonalGaussian, kernels.Product, InducingPoints, NoneType, NoneType
 )
-def _E(p, kernel, inducing_variable, __, ___, nghp=None):
+def _E__DiagonalGaussian__Product__InducingPoints(p, kernel, inducing_variable, __, ___, nghp=None):
     r"""
     Compute the expectation:
     <\HadamardProd_i Ki_{X[:, active_dims_i], Z[:, active_dims_i]}>_p(X)
@@ -54,7 +54,9 @@ def _E(p, kernel, inducing_variable, __, ___, nghp=None):
 @dispatch.expectation.register(
     DiagonalGaussian, kernels.Product, InducingPoints, kernels.Product, InducingPoints
 )
-def _E(p, kern1, feat1, kern2, feat2, nghp=None):
+def _E__DiagonalGaussian__Product__InducingPoints__Product__InducingPoints(
+    p, kern1, feat1, kern2, feat2, nghp=None
+):
     r"""
     Compute the expectation:
     expectation[n] = < prodK_{Z, x_n} prodK_{x_n, Z} >_p(x_n)

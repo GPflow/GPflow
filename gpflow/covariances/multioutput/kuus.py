@@ -19,7 +19,9 @@ from ..dispatch import Kuu
 
 
 @Kuu.register(InducingPoints, MultioutputKernel)
-def _Kuu(inducing_variable: InducingPoints, kernel: MultioutputKernel, *, jitter=0.0):
+def _Kuu__InducingPoints__MultioutputKernel(
+    inducing_variable: InducingPoints, kernel: MultioutputKernel, *, jitter=0.0
+):
     Kmm = kernel(inducing_variable.Z, full_cov=True, full_output_cov=True)  # [M, P, M, P]
     M = tf.shape(Kmm)[0] * tf.shape(Kmm)[1]
     jittermat = jitter * tf.reshape(tf.eye(M, dtype=Kmm.dtype), tf.shape(Kmm))
@@ -27,7 +29,7 @@ def _Kuu(inducing_variable: InducingPoints, kernel: MultioutputKernel, *, jitter
 
 
 @Kuu.register(FallbackSharedIndependentInducingVariables, SharedIndependent)
-def _Kuu(
+def _Kuu__FallbackSharedIndependentInducingVariables__shared(
     inducing_variable: FallbackSharedIndependentInducingVariables,
     kernel: SharedIndependent,
     *,
@@ -39,7 +41,7 @@ def _Kuu(
 
 
 @Kuu.register(FallbackSharedIndependentInducingVariables, (SeparateIndependent, IndependentLatent))
-def _Kuu(
+def _Kuu__FallbackSharedIndependentInducingVariables__independent(
     inducing_variable: FallbackSharedIndependentInducingVariables,
     kernel: Union[SeparateIndependent, IndependentLatent],
     *,
@@ -53,7 +55,7 @@ def _Kuu(
 
 
 @Kuu.register(FallbackSeparateIndependentInducingVariables, SharedIndependent)
-def _Kuu(
+def _Kuu__FallbackSeparateIndependentInducingVariables__shared(
     inducing_variable: FallbackSeparateIndependentInducingVariables,
     kernel: SharedIndependent,
     *,
@@ -69,7 +71,7 @@ def _Kuu(
 @Kuu.register(
     FallbackSeparateIndependentInducingVariables, (SeparateIndependent, LinearCoregionalization)
 )
-def _Kuu(
+def _Kuu__FallbackSeparateIndependentInducingVariables__independent(
     inducing_variable: FallbackSeparateIndependentInducingVariables,
     kernel: Union[SeparateIndependent, LinearCoregionalization],
     *,

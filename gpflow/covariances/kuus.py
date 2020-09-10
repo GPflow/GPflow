@@ -14,7 +14,9 @@ def Kuu_kernel_inducingpoints(inducing_variable: InducingPoints, kernel: Kernel,
 
 
 @Kuu.register(Multiscale, SquaredExponential)
-def Kuu_sqexp_multiscale(inducing_variable: Multiscale, kernel: SquaredExponential, *, jitter=0.0):
+def Kuu_squaredexponential_multiscale(
+    inducing_variable: Multiscale, kernel: SquaredExponential, *, jitter=0.0
+):
     Zmu, Zlen = kernel.slice(inducing_variable.Z, inducing_variable.scales)
     idlengthscales2 = tf.square(kernel.lengthscales + Zlen)
     sc = tf.sqrt(
@@ -27,5 +29,7 @@ def Kuu_sqexp_multiscale(inducing_variable: Multiscale, kernel: SquaredExponenti
 
 
 @Kuu.register(InducingPatches, Convolutional)
-def Kuu_conv_patch(feat, kern, jitter=0.0):
-    return kern.base_kernel.K(feat.Z) + jitter * tf.eye(len(feat), dtype=default_float())
+def Kuu_conv_patch(inducing_variable: InducingPatches, kernel: Convolutional, jitter=0.0):
+    return kernel.base_kernel.K(inducing_variable.Z) + jitter * tf.eye(
+        len(inducing_variable), dtype=default_float()
+    )

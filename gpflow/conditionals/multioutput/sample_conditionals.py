@@ -12,7 +12,7 @@ from ..util import sample_mvn, mix_latent_gp
 @sample_conditional.register(
     object, SharedIndependentInducingVariables, LinearCoregionalization, object
 )
-def _sample_conditional(
+def sample_conditional__SharedIndependentInducingVariables__LinearCoregionalization(
     Xnew,
     inducing_variable,
     kernel,

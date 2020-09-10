@@ -12,7 +12,7 @@ NoneType = type(None)
 
 
 @dispatch.expectation.register(Gaussian, kernels.Linear, NoneType, NoneType, NoneType)
-def _E(p, kernel, _, __, ___, nghp=None):
+def _E__Gaussian__Linear(p, kernel, _, __, ___, nghp=None):
     """
     Compute the expectation:
     <diag(K_{X, X})>_p(X)
@@ -28,7 +28,7 @@ def _E(p, kernel, _, __, ___, nghp=None):
 
 
 @dispatch.expectation.register(Gaussian, kernels.Linear, InducingPoints, NoneType, NoneType)
-def _E(p, kernel, inducing_variable, _, __, nghp=None):
+def _E__Gaussian__Linear__InducingPoints(p, kernel, inducing_variable, _, __, nghp=None):
     """
     Compute the expectation:
     <K_{X, Z}>_p(X)
@@ -43,7 +43,9 @@ def _E(p, kernel, inducing_variable, _, __, nghp=None):
 
 
 @dispatch.expectation.register(Gaussian, kernels.Linear, InducingPoints, mfn.Identity, NoneType)
-def _E(p, kernel, inducing_variable, mean, _, nghp=None):
+def _E__Gaussian__Linear__InducingPoints__Identity(
+    p, kernel, inducing_variable, mean, _, nghp=None
+):
     """
     Compute the expectation:
     expectation[n] = <K_{Z, x_n} x_n^T>_p(x_n)
@@ -62,7 +64,9 @@ def _E(p, kernel, inducing_variable, mean, _, nghp=None):
 @dispatch.expectation.register(
     MarkovGaussian, kernels.Linear, InducingPoints, mfn.Identity, NoneType
 )
-def _E(p, kernel, inducing_variable, mean, _, nghp=None):
+def _E__MarkovGaussian__Linear__InducingPoints__Identity(
+    p, kernel, inducing_variable, mean, _, nghp=None
+):
     """
     Compute the expectation:
     expectation[n] = <K_{Z, x_n} x_{n+1}^T>_p(x_{n:n+1})
@@ -83,7 +87,9 @@ def _E(p, kernel, inducing_variable, mean, _, nghp=None):
 @dispatch.expectation.register(
     (Gaussian, DiagonalGaussian), kernels.Linear, InducingPoints, kernels.Linear, InducingPoints
 )
-def _E(p, kern1, feat1, kern2, feat2, nghp=None):
+def _E__Gaussian__Linear__InducingPoints__Linear__InducingPoints(
+    p, kern1, feat1, kern2, feat2, nghp=None
+):
     """
     Compute the expectation:
     expectation[n] = <Ka_{Z1, x_n} Kb_{x_n, Z2}>_p(x_n)
