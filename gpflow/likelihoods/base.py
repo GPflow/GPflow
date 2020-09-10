@@ -379,6 +379,11 @@ class ScalarLikelihood(QuadratureLikelihood):
             latent_dim=latent_dim, observation_dim=observation_dim, n_gh=n_gh, **kwargs
         )
 
+    def _set_latent_and_observation_dimension_eagerly(self, Fmu):
+        if self.latent_dim is None:
+            self.latent_dim = int(Fmu.shape[-1])
+            self.observation_dim = self.latent_dim
+
     def _log_prob(self, F, Y):
         r"""
         Compute log p(Y|F), where by convention we sum out the last axis as it represented
@@ -401,9 +406,7 @@ class ScalarLikelihood(QuadratureLikelihood):
         :param Y: observation Tensor, with shape [..., latent_dim]:
         :returns: variational expectations, with shape [...]
         """
-        if self.latent_dim is None:
-            self.latent_dim = int(Fmu.shape[-1])
-            self.observation_dim = self.latent_dim
+        self._set_latent_and_observation_dimension_eagerly(Fmu)
         return super()._variational_expectations(Fmu, Fvar, Y)
 
     def _predict_log_density(self, Fmu, Fvar, Y):
@@ -415,9 +418,7 @@ class ScalarLikelihood(QuadratureLikelihood):
         :param Y: observation Tensor, with shape [..., latent_dim]:
         :returns: log predictive density, with shape [...]
         """
-        if self.latent_dim is None:
-            self.latent_dim = int(Fmu.shape[-1])
-            self.observation_dim = self.latent_dim
+        self._set_latent_and_observation_dimension_eagerly(Fmu)
         return super()._predict_log_density(Fmu, Fvar, Y)
 
     def _predict_mean_and_var(self, Fmu, Fvar):
@@ -429,9 +430,7 @@ class ScalarLikelihood(QuadratureLikelihood):
         :param Fvar: variance of function evaluation Tensor, with shape [..., latent_dim]
         :returns: mean and variance, both with shape [..., observation_dim]
         """
-        if self.latent_dim is None:
-            self.latent_dim = int(Fmu.shape[-1])
-            self.observation_dim = self.latent_dim
+        self._set_latent_and_observation_dimension_eagerly(Fmu)
         return super()._predict_mean_and_var(Fmu, Fvar)
 
 
