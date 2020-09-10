@@ -43,3 +43,4 @@ from .multilatent import (
     MultiLatentTFPConditional,
     HeteroskedasticTFPConditional,
 )
+from .multioutput import MultiOutputLikelihood
