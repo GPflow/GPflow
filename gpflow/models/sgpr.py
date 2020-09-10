@@ -122,9 +122,7 @@ class SGPRBase(GPModel, InternalDataTrainingLossMixin):
 
         err = Y_data - self.mean_function(X_data)
         LC = tf.linalg.cholesky(I + AAT / corrected_noise)
-        v = tf.linalg.triangular_solve(
-            LC, tf.linalg.matmul(A, err) / corrected_noise, lower=True
-        )
+        v = tf.linalg.triangular_solve(LC, tf.linalg.matmul(A, err) / corrected_noise, lower=True)
         quad = -0.5 * tf.reduce_sum(tf.square(err)) / corrected_noise + 0.5 * tf.reduce_sum(
             tf.square(v)
         )
