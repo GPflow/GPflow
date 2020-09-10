@@ -62,7 +62,9 @@ def _equivant_likelihoods_fixture(
     if request.param == "studentt":
         return (
             gpflow.likelihoods.StudentT(scale=Data.g_var ** 0.5, df=3.0),
-            HeteroskedasticTFPConditional(distribution_class=student_t_class_factory(df=3)),
+            HeteroskedasticTFPConditional(
+                distribution_class=student_t_class_factory(df=3), num_gauss_hermite_points=50
+            ),
         )
     elif request.param == "gaussian":
         return (
@@ -101,29 +103,28 @@ def test_predict_mean_and_var(equivalent_likelihoods):
     )
 
 
-# @pytest.mark.skip("Conditional mean is not implemented in heteroskedastic likelihood")
-# def test_conditional_mean():
-#     l1 = gpflow.likelihoods.Gaussian(variance=Data.g_var)
-#     l2 = HeteroskedasticTFPConditional()
-#     np.testing.assert_allclose(
-#         l1.conditional_mean(Data.f_mean), l2.conditional_mean(Data.F2_mean),
-#     )
+def test_conditional_mean(equivalent_likelihoods):
+    homoskedastic_likelihood, heteroskedastic_likelihood = equivalent_likelihoods
+    np.testing.assert_allclose(
+        homoskedastic_likelihood.conditional_mean(Data.f_mean),
+        heteroskedastic_likelihood.conditional_mean(Data.F2_mean),
+    )
 
 
-# @pytest.mark.skip("Conditional variance is not implemented in heteroskedastic likelihood")
-# def test_conditional_variance():
-#     l1 = gpflow.likelihoods.Gaussian(variance=Data.g_var)
-#     l2 = HeteroskedasticTFPConditional()
-#     np.testing.assert_allclose(
-#         l1.conditional_variance(Data.f_mean), l2.conditional_variance(Data.F2_mean),
-#     )
+def test_conditional_variance(equivalent_likelihoods):
+    homoskedastic_likelihood, heteroskedastic_likelihood = equivalent_likelihoods
+    np.testing.assert_allclose(
+        homoskedastic_likelihood.conditional_variance(Data.f_mean),
+        heteroskedastic_likelihood.conditional_variance(Data.F2_mean),
+    )
 
 
-# @pytest.mark.skip("Currently broken as it returns the sum over outputs when given multiple outputs")
-# def test_predict_log_density():
-#     l1 = gpflow.likelihoods.Gaussian(variance=Data.g_var)
-#     l2 = HeteroskedasticTFPConditional()
-#     np.testing.assert_allclose(
-#         l1.predict_log_density(Data.f_mean, Data.f_var, Data.Y),
-#         l2.predict_log_density(Data.F2_mean, Data.f2_var, Data.Y),
-#     )
+def test_predict_log_density(equivalent_likelihoods):
+    homoskedastic_likelihood, heteroskedastic_likelihood = equivalent_likelihoods
+    ll1 = homoskedastic_likelihood.predict_log_density(Data.f_mean, Data.f_var, Data.Y)
+    ll2 = heteroskedastic_likelihood.predict_log_density(Data.F2_mean, Data.F2_var, Data.Y)
+    np.testing.assert_array_almost_equal(
+        homoskedastic_likelihood.predict_log_density(Data.f_mean, Data.f_var, Data.Y),
+        heteroskedastic_likelihood.predict_log_density(Data.F2_mean, Data.F2_var, Data.Y),
+        decimal=1,  # student-t has a max absolute difference of 0.025
+    )
