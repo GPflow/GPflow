@@ -376,7 +376,10 @@ class ScalarLikelihood(QuadratureLikelihood):
         **kwargs,
     ):
         super().__init__(
-            latent_dim=latent_dim, observation_dim=observation_dim, num_gauss_hermite_points=num_gauss_hermite_points, **kwargs
+            latent_dim=latent_dim,
+            observation_dim=observation_dim,
+            num_gauss_hermite_points=num_gauss_hermite_points,
+            **kwargs,
         )
 
     def _set_latent_and_observation_dimension_eagerly(self, Fmu):
