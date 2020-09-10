@@ -58,7 +58,7 @@ def test_scipy_jit():
     )
 
     def get_values(model):
-        return np.array([var.value().numpy().squeeze() for var in model.trainable_variables])
+        return np.array([var.numpy().squeeze() for var in model.trainable_variables])
 
     # The tolerance of the following test had to be loosened slightly from atol=1e-15
     # due to the changes introduced by PR #1213, which removed some implicit casts

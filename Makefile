@@ -19,10 +19,10 @@ clean:
 	rm -rf dist *.egg-info build
 
 dev-install:
-	pip install -e .
+	pip install --use-feature=2020-resolver -e .
 
 install:
-	pip install .
+	pip install --use-feature=2020-resolver .
 
 package:
 	python setup.py bdist
@@ -37,6 +37,6 @@ type-check:
 	mypy .
 
 test:
-	pytest -v --durations=10 tests/
+	pytest -n auto --dist loadfile -v --durations=10 tests/
 
 check-all: format-check type-check test

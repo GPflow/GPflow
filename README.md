@@ -38,13 +38,15 @@ GPflow 2.0 uses [TensorFlow 2.1+](http://www.tensorflow.org) for running computa
 
 ## Install GPflow 2
 
+**We have experienced issues with `pip`'s pre-2020 dependency resolver; if you encounter issues with incompatible third-party package versions when installing GPflow using the `pip` commands below, try adding the `--use-feature=2020-resolver` argument.**
+
 ### Latest release from PyPI
 
 ```bash
 pip install gpflow
 ```
 
-The current release, 2.0.0, requires TensorFlow ≥ 2.1 and TensorFlow Probability ≥ 0.9.
+The current release series, 2.x, requires TensorFlow ≥ 2.1 and TensorFlow Probability ≥ 0.10.1.
 
 ### Latest source from GitHub
 
@@ -115,6 +117,7 @@ A few projects building on GPflow and demonstrating its usage are listed below.
 | [VBPP](https://github.com/st--/vbpp) | Implementation of "Variational Bayes for Point Processes".|
 | [DGPs_with_IWVI](https://github.com/hughsalimbeni/DGPs_with_IWVI) | Deep Gaussian Processes with Importance-Weighted Variational Inference|
 | [kerndisc](https://github.com/BracketJohn/kernDisc) | Library for automated kernel structure discovery in univariate data|
+| [Gaussian Process Regression on Molecules](https://medium.com/@ryangriff123/gaussian-process-regression-on-molecules-in-gpflow-ee6fedab2130) | GPs to predict molecular properties by creating a custom-defined Tanimoto kernel to operate on Morgan fingerprints |
 
 If you would like your project listed here, let us know - or simply [open a pull request](https://github.com/GPflow/GPflow/compare) that adds your project to the table above!
 

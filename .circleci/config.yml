@@ -5,8 +5,8 @@ runtest: &runtest
         name: Install GPflow
         command: |
           pip install -U pip
-          pip install -e .
-          pip install -r tests_requirements.txt
+          pip install --use-feature=2020-resolver -e .
+          pip install --use-feature=2020-resolver -r tests_requirements.txt
     - run:
         name: Run tests
         command: |
@@ -19,9 +19,21 @@ runtest: &runtest
 version: 2.1
 
 jobs:
+  verify-dependencies:
+    docker:
+      - image: circleci/python:3.6-buster
+
+    steps:
+      - checkout
+      - run:
+          name: Check installed dependencies are compatible
+          command: |
+            pip install --use-feature=2020-resolver --progress-bar=off -e .
+            pip check -vvv
+
   type-check:
     docker:
-      - image: awav/tensorflow:2.1
+      - image: circleci/python:3.6-buster
 
     steps:
       - checkout
@@ -35,20 +47,20 @@ jobs:
   unit-test:
     <<: *runtest
     docker:
-      - image: awav/tensorflow:2.1
+      - image: circleci/python:3.6-buster
         environment:
           PYTEST_FILTER: not notebooks
 
   notebook-test:
     <<: *runtest
     docker:
-      - image: awav/tensorflow:2.1
+      - image: circleci/python:3.6-buster
         environment:
           PYTEST_FILTER: notebooks
 
   format-checker:
     docker:
-      - image: awav/tensorflow:2.1
+      - image: circleci/python:3.6-buster
 
     steps:
       - checkout
@@ -63,7 +75,7 @@ jobs:
 
   trigger-docs-generation:
     docker:
-      - image: awav/tensorflow:2.1
+      - image: circleci/python:3.6-buster
         environment:
             ORGANIZATION: GPflow
             PROJECT: docs
@@ -81,7 +93,7 @@ jobs:
 
   deploy:
     docker:
-      - image: awav/tensorflow:2.1
+      - image: circleci/python:3.6-buster
     steps:
       - checkout
       - run:
@@ -116,6 +128,10 @@ workflows:
   version: 2.1
   build_test_and_deploy:
     jobs:
+      - verify-dependencies:
+          filters:
+            tags:
+              only: /^v[0-9]+(\.[0-9]+)*(-rc[0-9]+)?/
       - type-check:
           filters:
             tags:
