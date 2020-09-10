@@ -119,7 +119,6 @@ def test_no_missing_likelihoods():
     for likelihood_class in gpflow.ci_utils.subclasses(Likelihood):
         if likelihood_class in (
             QuadratureLikelihood,
-            NDiagGHQuadratureLikelihood,
             ScalarLikelihood,
             MonteCarloLikelihood,
         ):
