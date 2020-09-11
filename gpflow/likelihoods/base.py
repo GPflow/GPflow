@@ -348,10 +348,7 @@ class ScalarLikelihood(Likelihood):
         :param Y: observation Tensor, with shape [..., latent_dim]:
         :returns: variational expectations, with shape [...]
         """
-        return tf.reduce_sum(
-            self.quadrature(self._scalar_log_prob, Fmu, Fvar, Y=Y),
-            axis=-1
-        )
+        return tf.reduce_sum(self.quadrature(self._scalar_log_prob, Fmu, Fvar, Y=Y), axis=-1)
 
     def _predict_log_density(self, Fmu, Fvar, Y):
         r"""
@@ -363,8 +360,7 @@ class ScalarLikelihood(Likelihood):
         :returns: log predictive density, with shape [...]
         """
         return tf.reduce_sum(
-            self.quadrature.logspace(self._scalar_log_prob, Fmu, Fvar, Y=Y),
-            axis=-1
+            self.quadrature.logspace(self._scalar_log_prob, Fmu, Fvar, Y=Y), axis=-1
         )
 
     def _predict_mean_and_var(self, Fmu, Fvar):
