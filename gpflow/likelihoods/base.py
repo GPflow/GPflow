@@ -58,7 +58,7 @@ import abc
 import warnings
 
 from ..base import Module
-from ..quadrature import hermgauss, ndiag_mc, ndiagquad
+from ..quadrature import hermgauss, ndiag_mc, ndiagquad, NDiagGHQuadrature
 
 
 class Likelihood(Module, metaclass=abc.ABCMeta):
@@ -310,6 +310,14 @@ class ScalarLikelihood(Likelihood):
         super().__init__(latent_dim=None, observation_dim=None, **kwargs)
         self.num_gauss_hermite_points = 20
 
+    @property
+    def num_gauss_hermite_points(self):
+        return self.quadrature.n_gh
+
+    @num_gauss_hermite_points.setter
+    def num_gauss_hermite_points(self, n_gh):
+        self.quadrature = NDiagGHQuadrature(1, n_gh)
+
     def _check_last_dims_valid(self, F, Y):
         """
         Assert that the dimensions of the latent functions and the data are compatible
@@ -341,8 +349,8 @@ class ScalarLikelihood(Likelihood):
         :returns: variational expectations, with shape [...]
         """
         return tf.reduce_sum(
-            ndiagquad(self._scalar_log_prob, self.num_gauss_hermite_points, Fmu, Fvar, Y=Y),
-            axis=-1,
+            self.quadrature(self._scalar_log_prob, Fmu, Fvar, Y=Y),
+            axis=-1
         )
 
     def _predict_log_density(self, Fmu, Fvar, Y):
@@ -355,10 +363,8 @@ class ScalarLikelihood(Likelihood):
         :returns: log predictive density, with shape [...]
         """
         return tf.reduce_sum(
-            ndiagquad(
-                self._scalar_log_prob, self.num_gauss_hermite_points, Fmu, Fvar, logspace=True, Y=Y,
-            ),
-            axis=-1,
+            self.quadrature.logspace(self._scalar_log_prob, Fmu, Fvar, Y=Y),
+            axis=-1
         )
 
     def _predict_mean_and_var(self, Fmu, Fvar):
@@ -375,7 +381,7 @@ class ScalarLikelihood(Likelihood):
             return self.conditional_variance(*X) + self.conditional_mean(*X) ** 2
 
         integrands = [self.conditional_mean, integrand]
-        E_y, E_y2 = ndiagquad(integrands, self.num_gauss_hermite_points, Fmu, Fvar)
+        E_y, E_y2 = self.quadrature(integrands, Fmu, Fvar)
         V_y = E_y2 - E_y ** 2
         return E_y, V_y
 
