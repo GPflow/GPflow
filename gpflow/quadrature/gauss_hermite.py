@@ -119,8 +119,8 @@ class NDiagGHQuadrature(GaussianQuadrature):
         stddev = tf.expand_dims(tf.sqrt(var), 0)
         # mean, stddev: [1, b1, b2, ..., bX, dim], usually [1, N, dim]
 
-        Z = tf.reshape(self.Z, tf.concat([shape_aux, [self.dim]], axis=0))
-        dZ = tf.reshape(self.dZ, tf.concat([shape_aux, [1,]], axis=0))
+        Z = tf.cast(tf.reshape(self.Z, tf.concat([shape_aux, [self.dim]], axis=0)), mean.dtype)
+        dZ = tf.cast(tf.reshape(self.dZ, tf.concat([shape_aux, [1,]], axis=0)), mean.dtype)
 
         X = mean + stddev * Z
         W = dZ
