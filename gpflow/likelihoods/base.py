@@ -344,7 +344,7 @@ class QuadratureLikelihood(Likelihood):
         return tf.squeeze(self.quadrature(self._quadrature_log_prob, Fmu, Fvar, Y), -1)
 
 
-class ScalarLikelihood(QuadratureLikelihood):
+class ScalarLikelihood(Likelihood):
     """
     A likelihood class that helps with scalar likelihood functions: likelihoods where
     each scalar latent function is associated with a single scalar observation variable.
@@ -364,19 +364,9 @@ class ScalarLikelihood(QuadratureLikelihood):
     integrals are available in closed form.
     """
 
-    def __init__(
-        self,
-        latent_dim: Optional[int] = None,
-        observation_dim: Optional[int] = None,
-        num_gauss_hermite_points: int = 20,
-        **kwargs,
-    ):
-        super().__init__(
-            latent_dim=latent_dim,
-            observation_dim=observation_dim,
-            num_gauss_hermite_points=num_gauss_hermite_points,
-            **kwargs,
-        )
+    def __init__(self, **kwargs):
+        super().__init__(latent_dim=None, observation_dim=None, **kwargs)
+        self.num_gauss_hermite_points = 20
 
     @property
     def num_gauss_hermite_points(self):
@@ -440,6 +430,7 @@ class ScalarLikelihood(QuadratureLikelihood):
         :param Fvar: variance of function evaluation Tensor, with shape [..., latent_dim]
         :returns: mean and variance, both with shape [..., observation_dim]
         """
+
         def integrand(*X):
             return self.conditional_variance(*X) + self.conditional_mean(*X) ** 2
 
