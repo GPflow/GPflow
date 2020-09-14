@@ -60,7 +60,7 @@ import warnings
 from typing import Optional
 
 from ..base import Module
-from ..quadrature import hermgauss, ndiag_mc, NDiagGHQuadrature
+from ..quadrature import hermgauss, ndiag_mc, ndiagquad, NDiagGHQuadrature
 
 
 class Likelihood(Module, metaclass=abc.ABCMeta):
@@ -378,10 +378,21 @@ class ScalarLikelihood(QuadratureLikelihood):
             **kwargs,
         )
 
-    def _set_latent_and_observation_dimension_eagerly(self, Fmu):
-        if self.latent_dim is None:
-            self.latent_dim = int(Fmu.shape[-1])
-            self.observation_dim = self.latent_dim
+    @property
+    def num_gauss_hermite_points(self):
+        return self.quadrature.n_gh
+
+    @num_gauss_hermite_points.setter
+    def num_gauss_hermite_points(self, n_gh):
+        self.quadrature = NDiagGHQuadrature(1, n_gh)
+
+    def _check_last_dims_valid(self, F, Y):
+        """
+        Assert that the dimensions of the latent functions and the data are compatible
+        :param F: function evaluation Tensor, with shape [..., latent_dim]
+        :param Y: observation Tensor, with shape [..., latent_dim]
+        """
+        tf.debugging.assert_shapes([(F, (..., "num_latent")), (Y, (..., "num_latent"))])
 
     def _log_prob(self, F, Y):
         r"""
@@ -405,8 +416,7 @@ class ScalarLikelihood(QuadratureLikelihood):
         :param Y: observation Tensor, with shape [..., latent_dim]:
         :returns: variational expectations, with shape [...]
         """
-        self._set_latent_and_observation_dimension_eagerly(Fmu)
-        return super()._variational_expectations(Fmu, Fvar, Y)
+        return tf.reduce_sum(self.quadrature(self._scalar_log_prob, Fmu, Fvar, Y=Y), axis=-1)
 
     def _predict_log_density(self, Fmu, Fvar, Y):
         r"""
@@ -417,8 +427,9 @@ class ScalarLikelihood(QuadratureLikelihood):
         :param Y: observation Tensor, with shape [..., latent_dim]:
         :returns: log predictive density, with shape [...]
         """
-        self._set_latent_and_observation_dimension_eagerly(Fmu)
-        return super()._predict_log_density(Fmu, Fvar, Y)
+        return tf.reduce_sum(
+            self.quadrature.logspace(self._scalar_log_prob, Fmu, Fvar, Y=Y), axis=-1
+        )
 
     def _predict_mean_and_var(self, Fmu, Fvar):
         r"""
@@ -429,8 +440,13 @@ class ScalarLikelihood(QuadratureLikelihood):
         :param Fvar: variance of function evaluation Tensor, with shape [..., latent_dim]
         :returns: mean and variance, both with shape [..., observation_dim]
         """
-        self._set_latent_and_observation_dimension_eagerly(Fmu)
-        return super()._predict_mean_and_var(Fmu, Fvar)
+        def integrand(*X):
+            return self.conditional_variance(*X) + self.conditional_mean(*X) ** 2
+
+        integrands = [self.conditional_mean, integrand]
+        E_y, E_y2 = self.quadrature(integrands, Fmu, Fvar)
+        V_y = E_y2 - E_y ** 2
+        return E_y, V_y
 
 
 class SwitchedLikelihood(ScalarLikelihood):
