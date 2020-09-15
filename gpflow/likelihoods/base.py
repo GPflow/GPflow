@@ -57,6 +57,8 @@ import tensorflow as tf
 import abc
 import warnings
 
+from typing import Optional
+
 from ..base import Module
 from ..quadrature import hermgauss, ndiag_mc, ndiagquad, NDiagGHQuadrature
 
@@ -284,6 +286,62 @@ class Likelihood(Module, metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def _variational_expectations(self, Fmu, Fvar, Y):
         raise NotImplementedError
+
+
+class QuadratureLikelihood(Likelihood):
+    def __init__(self, num_gauss_hermite_points: int = 20, **kwargs):
+        super().__init__(**kwargs)
+        self.num_gauss_hermite_points = num_gauss_hermite_points
+        self._quadrature = None
+
+    @property
+    def quadrature(self):
+        if self._quadrature is None:
+            if self.latent_dim is None:
+                raise Exception(
+                    "latent_dim not specified. "
+                    "Either set likelihood.latent_dim directly or "
+                    "call a method which passes data to have it inferred."
+                )
+            with tf.init_scope():
+                self._quadrature = NDiagGHQuadrature(self.latent_dim, self.num_gauss_hermite_points)
+        return self._quadrature
+
+    def _predict_mean_and_var(self, Fmu, Fvar):
+        r"""
+        :param Fmu: mean function evaluation Tensor, with shape [..., latent_dim]
+        :param Fvar: variance of function evaluation Tensor, with shape [..., latent_dim]
+        :returns: mean and variance, both with shape [..., observation_dim]
+        """
+
+        def conditional_y_squared(F):
+            return self.conditional_variance(F) + self.conditional_mean(F) ** 2
+
+        integrands = [self.conditional_mean, conditional_y_squared]
+        E_y, E_y2 = self.quadrature(integrands, Fmu, Fvar)
+        V_y = E_y2 - E_y ** 2
+        return E_y, V_y
+
+    def _quadrature_log_prob(self, F, Y):
+        return tf.expand_dims(self.log_prob(F, Y), -1)
+
+    def _predict_log_density(self, Fmu, Fvar, Y):
+        r"""
+        :param Fmu: mean function evaluation Tensor, with shape [..., latent_dim]
+        :param Fvar: variance of function evaluation Tensor, with shape [..., latent_dim]
+        :param Y: observation Tensor, with shape [..., observation_dim]:
+        :returns: variational expectations, with shape [...]
+        """
+        return tf.squeeze(self.quadrature.logspace(self._quadrature_log_prob, Fmu, Fvar, Y), -1)
+
+    def _variational_expectations(self, Fmu, Fvar, Y):
+        r"""
+        :param Fmu: mean function evaluation Tensor, with shape [..., latent_dim]
+        :param Fvar: variance of function evaluation Tensor, with shape [..., latent_dim]
+        :param Y: observation Tensor, with shape [..., observation_dim]:
+        :returns: log predictive density, with shape [...]
+        """
+        return tf.squeeze(self.quadrature(self._quadrature_log_prob, Fmu, Fvar, Y), -1)
 
 
 class ScalarLikelihood(Likelihood):
