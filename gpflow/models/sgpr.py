@@ -1,4 +1,4 @@
-# Copyright 2016 James Hensman, alexggmatthews, Mark van der Wilk
+# Copyright 2016-2020 The GPflow Contributors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -120,11 +120,10 @@ class SGPRBase(GPModel, InternalDataTrainingLossMixin):
         const = -0.5 * num_data * tf.math.log(2 * np.pi * self.likelihood.variance)
         logdet = -tf.reduce_sum(tf.math.log(tf.linalg.diag_part(LB)))
 
+        err = Y_data - self.mean_function(X_data)
         LC = tf.linalg.cholesky(I + AAT / corrected_noise)
-        v = tf.linalg.triangular_solve(
-            LC, tf.linalg.matmul(A, Y_data) / corrected_noise, lower=True
-        )
-        quad = -0.5 * tf.reduce_sum(tf.square(Y_data)) / corrected_noise + 0.5 * tf.reduce_sum(
+        v = tf.linalg.triangular_solve(LC, tf.linalg.matmul(A, err) / corrected_noise, lower=True)
+        quad = -0.5 * tf.reduce_sum(tf.square(err)) / corrected_noise + 0.5 * tf.reduce_sum(
             tf.square(v)
         )
 

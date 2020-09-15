@@ -1,5 +1,4 @@
-# Copyright 2016 Valentine Svensson, James Hensman, alexggmatthews, Alexis Boukouvalas
-# Copyright 2017 Artem Artemev @awav
+# Copyright 2016-2020 The GPflow Contributors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 """
 Likelihoods are another core component of GPflow. This describes how likely the
 data is under the assumptions made about the underlying latent functions
@@ -57,8 +57,10 @@ import tensorflow as tf
 import abc
 import warnings
 
+from typing import Optional
+
 from ..base import Module
-from ..quadrature import hermgauss, ndiag_mc, NDiagGHQuadrature
+from ..quadrature import hermgauss, ndiag_mc, ndiagquad, NDiagGHQuadrature
 
 
 class Likelihood(Module, metaclass=abc.ABCMeta):
@@ -287,9 +289,9 @@ class Likelihood(Module, metaclass=abc.ABCMeta):
 
 
 class QuadratureLikelihood(Likelihood):
-    def __init__(self, n_gh: int = 20, **kwargs):
+    def __init__(self, num_gauss_hermite_points: int = 20, **kwargs):
         super().__init__(**kwargs)
-        self.n_gh = n_gh
+        self.num_gauss_hermite_points = num_gauss_hermite_points
         self._quadrature = None
 
     @property
@@ -302,7 +304,7 @@ class QuadratureLikelihood(Likelihood):
                     "call a method which passes data to have it inferred."
                 )
             with tf.init_scope():
-                self._quadrature = NDiagGHQuadrature(self.latent_dim, self.n_gh)
+                self._quadrature = NDiagGHQuadrature(self.latent_dim, self.num_gauss_hermite_points)
         return self._quadrature
 
     def _predict_mean_and_var(self, Fmu, Fvar):
@@ -342,7 +344,7 @@ class QuadratureLikelihood(Likelihood):
         return tf.squeeze(self.quadrature(self._quadrature_log_prob, Fmu, Fvar, Y), -1)
 
 
-class ScalarLikelihood(QuadratureLikelihood):
+class ScalarLikelihood(Likelihood):
     """
     A likelihood class that helps with scalar likelihood functions: likelihoods where
     each scalar latent function is associated with a single scalar observation variable.
@@ -362,12 +364,25 @@ class ScalarLikelihood(QuadratureLikelihood):
     integrals are available in closed form.
     """
 
-    def __init__(
-        self, latent_dim: int = None, observation_dim: int = None, n_gh: int = 20, **kwargs
-    ):
-        super().__init__(
-            latent_dim=latent_dim, observation_dim=observation_dim, n_gh=n_gh, **kwargs
-        )
+    def __init__(self, **kwargs):
+        super().__init__(latent_dim=None, observation_dim=None, **kwargs)
+        self.num_gauss_hermite_points = 20
+
+    @property
+    def num_gauss_hermite_points(self):
+        return self.quadrature.n_gh
+
+    @num_gauss_hermite_points.setter
+    def num_gauss_hermite_points(self, n_gh):
+        self.quadrature = NDiagGHQuadrature(1, n_gh)
+
+    def _check_last_dims_valid(self, F, Y):
+        """
+        Assert that the dimensions of the latent functions and the data are compatible
+        :param F: function evaluation Tensor, with shape [..., latent_dim]
+        :param Y: observation Tensor, with shape [..., latent_dim]
+        """
+        tf.debugging.assert_shapes([(F, (..., "num_latent")), (Y, (..., "num_latent"))])
 
     def _log_prob(self, F, Y):
         r"""
@@ -391,10 +406,7 @@ class ScalarLikelihood(QuadratureLikelihood):
         :param Y: observation Tensor, with shape [..., latent_dim]:
         :returns: variational expectations, with shape [...]
         """
-        if self.latent_dim is None:
-            self.latent_dim = int(Fmu.shape[-1])
-            self.observation_dim = self.latent_dim
-        return super()._variational_expectations(Fmu, Fvar, Y)
+        return tf.reduce_sum(self.quadrature(self._scalar_log_prob, Fmu, Fvar, Y=Y), axis=-1)
 
     def _predict_log_density(self, Fmu, Fvar, Y):
         r"""
@@ -405,10 +417,9 @@ class ScalarLikelihood(QuadratureLikelihood):
         :param Y: observation Tensor, with shape [..., latent_dim]:
         :returns: log predictive density, with shape [...]
         """
-        if self.latent_dim is None:
-            self.latent_dim = int(Fmu.shape[-1])
-            self.observation_dim = self.latent_dim
-        return super()._predict_log_density(Fmu, Fvar, Y)
+        return tf.reduce_sum(
+            self.quadrature.logspace(self._scalar_log_prob, Fmu, Fvar, Y=Y), axis=-1
+        )
 
     def _predict_mean_and_var(self, Fmu, Fvar):
         r"""
@@ -419,10 +430,14 @@ class ScalarLikelihood(QuadratureLikelihood):
         :param Fvar: variance of function evaluation Tensor, with shape [..., latent_dim]
         :returns: mean and variance, both with shape [..., observation_dim]
         """
-        if self.latent_dim is None:
-            self.latent_dim = int(Fmu.shape[-1])
-            self.observation_dim = self.latent_dim
-        return super()._predict_mean_and_var(Fmu, Fvar)
+
+        def integrand(*X):
+            return self.conditional_variance(*X) + self.conditional_mean(*X) ** 2
+
+        integrands = [self.conditional_mean, integrand]
+        E_y, E_y2 = self.quadrature(integrands, Fmu, Fvar)
+        V_y = E_y2 - E_y ** 2
+        return E_y, V_y
 
 
 class SwitchedLikelihood(ScalarLikelihood):
