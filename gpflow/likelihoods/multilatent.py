@@ -32,8 +32,7 @@ class MultiLatentLikelihood(QuadratureLikelihood):
     """
 
     def __init__(self, latent_dim: int, *, num_gauss_hermite_points: int = 21):
-        # TODO: use same variable name for num_gauss_hermite_points as in ScalarLikelihood.
-        super().__init__(latent_dim=latent_dim, observation_dim=1, n_gh=num_gauss_hermite_points)
+        super().__init__(latent_dim=latent_dim, observation_dim=1, num_gauss_hermite_points=num_gauss_hermite_points)
 
 
 class MultiLatentTFPConditional(MultiLatentLikelihood):
