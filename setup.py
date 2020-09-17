@@ -25,7 +25,7 @@ else:
     requirements = []
 
 requirements.extend(
-    ["numpy", "scipy", "multipledispatch>=0.6", "tabulate", "typing_extensions",]
+    ["numpy", "scipy", "multipledispatch>=0.6", "tabulate", "typing_extensions", "packaging"]
 )
 
 if sys.version_info < (3, 7):
