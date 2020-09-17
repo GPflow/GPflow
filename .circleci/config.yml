@@ -19,7 +19,7 @@ runtest: &runtest
 version: 2.1
 
 jobs:
-  verify-dependencies:
+  verify-install:
     docker:
       - image: circleci/python:3.6-buster
 
@@ -30,6 +30,7 @@ jobs:
           command: |
             pip install --use-feature=2020-resolver --progress-bar=off -e .
             pip check -vvv
+            python -c "import gpflow"
 
   type-check:
     docker:
