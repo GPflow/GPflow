@@ -63,6 +63,9 @@ from ..base import Module
 from ..quadrature import hermgauss, ndiag_mc, ndiagquad, NDiagGHQuadrature
 
 
+DEFAULT_NUM_GAUSS_HERMITE_POINTS = 20
+
+
 class Likelihood(Module, metaclass=abc.ABCMeta):
     def __init__(self, latent_dim: int, observation_dim: int):
         """
@@ -289,7 +292,7 @@ class Likelihood(Module, metaclass=abc.ABCMeta):
 
 
 class QuadratureLikelihood(Likelihood):
-    def __init__(self, num_gauss_hermite_points: int = 20, **kwargs):
+    def __init__(self, num_gauss_hermite_points: int = DEFAULT_NUM_GAUSS_HERMITE_POINTS, **kwargs):
         super().__init__(**kwargs)
         self.num_gauss_hermite_points = num_gauss_hermite_points
         self._quadrature = None
@@ -366,7 +369,7 @@ class ScalarLikelihood(Likelihood):
 
     def __init__(self, **kwargs):
         super().__init__(latent_dim=None, observation_dim=None, **kwargs)
-        self.num_gauss_hermite_points = 20
+        self.num_gauss_hermite_points = DEFAULT_NUM_GAUSS_HERMITE_POINTS
 
     @property
     def num_gauss_hermite_points(self):

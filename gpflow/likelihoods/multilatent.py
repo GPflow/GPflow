@@ -19,7 +19,7 @@ import tensorflow as tf
 import tensorflow_probability as tfp
 
 from ..utilities import positive
-from .base import QuadratureLikelihood
+from .base import QuadratureLikelihood, DEFAULT_NUM_GAUSS_HERMITE_POINTS
 
 
 # NOTE- in the following we're assuming outputs are independent, i.e. full_output_cov=False
@@ -31,7 +31,9 @@ class MultiLatentLikelihood(QuadratureLikelihood):
     by multiple latent GPs.
     """
 
-    def __init__(self, latent_dim: int, *, num_gauss_hermite_points: int = 21):
+    def __init__(
+        self, latent_dim: int, *, num_gauss_hermite_points: int = DEFAULT_NUM_GAUSS_HERMITE_POINTS
+    ):
         super().__init__(
             latent_dim=latent_dim,
             observation_dim=1,
@@ -49,7 +51,7 @@ class MultiLatentTFPConditional(MultiLatentLikelihood):
         self,
         latent_dim: int,
         conditional_distribution: Callable[..., tfp.distributions.Distribution],
-        num_gauss_hermite_points: int = 21,
+        num_gauss_hermite_points: int = DEFAULT_NUM_GAUSS_HERMITE_POINTS0,
     ):
         """
         :param latent_dim: number of arguments to the `conditional_distribution` callable
@@ -100,7 +102,7 @@ class HeteroskedasticTFPConditional(MultiLatentTFPConditional):
         self,
         distribution_class: Type[tfp.distributions.Distribution] = tfp.distributions.Normal,
         transform: tfp.bijectors.Bijector = positive(base="exp"),
-        num_gauss_hermite_points: int = 21,
+        num_gauss_hermite_points: int = DEFAULT_NUM_GAUSS_HERMITE_POINTS,
     ):
         """
         :param distribution_class: distribution class parameterized by `loc` and `scale`
