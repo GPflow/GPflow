@@ -92,9 +92,24 @@ class NDiagGHQuadrature(GaussianQuadrature):
         :param n_gh: number of Gauss-Hermite points, integer
         :param dim: dimension of the multivariate normal, integer
         """
+        self._n_gh = None
         self.dim = dim
         self.n_gh = n_gh
-        self.n_gh_total = n_gh ** dim
+
+    @property
+    def n_gh_total(self):
+        return self._n_gh ** self.dim
+
+    @property
+    def n_gh(self):
+        return self._n_gh
+
+    @n_gh.setter
+    def n_gh(self, n_gh):
+        self._n_gh = n_gh
+        self._build_Z_dZ()
+
+    def _build_Z_dZ(self):
         Z, dZ = ndgh_points_and_weights(self.dim, self.n_gh)
         self.Z = tf.ensure_shape(Z, (self.n_gh_total, self.dim))
         self.dZ = tf.ensure_shape(dZ, (self.n_gh_total, 1))
