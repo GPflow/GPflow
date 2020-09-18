@@ -32,7 +32,7 @@ class MultiLatentLikelihood(QuadratureLikelihood):
     """
 
     def __init__(
-        self, latent_dim: int, *, num_gauss_hermite_points: int = DEFAULT_NUM_GAUSS_HERMITE_POINTS
+        self, latent_dim: int, *, num_gauss_hermite_points: int = DEFAULT_NUM_GAUSS_HERMITE_POINTS,
     ):
         super().__init__(
             latent_dim=latent_dim,
@@ -51,6 +51,7 @@ class MultiLatentTFPConditional(MultiLatentLikelihood):
         self,
         latent_dim: int,
         conditional_distribution: Callable[..., tfp.distributions.Distribution],
+        *,
         num_gauss_hermite_points: int = DEFAULT_NUM_GAUSS_HERMITE_POINTS0,
     ):
         """
@@ -102,6 +103,7 @@ class HeteroskedasticTFPConditional(MultiLatentTFPConditional):
         self,
         distribution_class: Type[tfp.distributions.Distribution] = tfp.distributions.Normal,
         transform: tfp.bijectors.Bijector = positive(base="exp"),
+        *,
         num_gauss_hermite_points: int = DEFAULT_NUM_GAUSS_HERMITE_POINTS,
     ):
         """
