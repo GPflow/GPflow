@@ -539,9 +539,12 @@ class MonteCarloLikelihood(Likelihood):
 
         Here, we implement a default Monte Carlo routine.
         """
-        integrand2 = lambda *X: self.conditional_variance(*X) + tf.square(self.conditional_mean(*X))
+
+        def conditional_y_squared(*F):
+            return self.conditional_variance(*F) + tf.square(self.conditional_mean(*F))
+
         E_y, E_y2 = self._mc_quadrature(
-            [self.conditional_mean, integrand2], Fmu, Fvar, epsilon=epsilon
+            [self.conditional_mean, conditional_y_squared], Fmu, Fvar, epsilon=epsilon
         )
         V_y = E_y2 - tf.square(E_y)
         return E_y, V_y  # [N, D]
