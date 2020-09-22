@@ -60,7 +60,7 @@ import warnings
 from typing import Optional
 
 from ..base import Module
-from ..quadrature import hermgauss, ndiag_mc, ndiagquad, NDiagGHQuadrature
+from ..quadrature import ndiag_mc, GaussianQuadrature, NDiagGHQuadrature
 
 
 DEFAULT_NUM_GAUSS_HERMITE_POINTS = 20
