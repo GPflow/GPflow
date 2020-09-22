@@ -298,11 +298,10 @@ class QuadratureLikelihood(Likelihood):
         observation_dim: int,
         *,
         num_gauss_hermite_points: int = DEFAULT_NUM_GAUSS_HERMITE_POINTS,
-        **kwargs,
     ):
-        super().__init__(latent_dim=latent_dim, observation_dim=observation_dim, **kwargs)
+        super().__init__(latent_dim=latent_dim, observation_dim=observation_dim)
         self.num_gauss_hermite_points = num_gauss_hermite_points
-        self._quadrature = None
+        self._quadrature: Optional[NDiagGHQuadrature] = None
 
     @property
     def quadrature(self):
@@ -394,11 +393,11 @@ class ScalarLikelihood(QuadratureLikelihood):
         self.num_gauss_hermite_points = DEFAULT_NUM_GAUSS_HERMITE_POINTS
 
     @property
-    def num_gauss_hermite_points(self):
+    def num_gauss_hermite_points(self) -> int:
         return self.quadrature.n_gh
 
     @num_gauss_hermite_points.setter
-    def num_gauss_hermite_points(self, n_gh):
+    def num_gauss_hermite_points(self, n_gh: int):
         self._quadrature = NDiagGHQuadrature(1, n_gh)
 
     def _check_last_dims_valid(self, F, Y):
