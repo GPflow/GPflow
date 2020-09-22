@@ -30,7 +30,7 @@ def gh_points_and_weights(n_gh: int):
     uni-dimensional gaussian quadrature:
 
     X ~ N(mean, stddev²)
-    E[f(X)] = ∫f(x)p(x)dx = sum_{i=1}^{n_gh} f(mean + stddev*z_i)*dz_i
+    E[f(X)] = ∫ f(x) p(x) dx = \sum_{i=1}^{n_gh} f(mean + stddev*z_i) dz_i
 
     :param n_gh: Number of Gauss-Hermite points
     :returns: Points z and weights dz, both tensors with shape [n_gh],
