@@ -33,7 +33,7 @@ class Data:
     # single "GP" (for the mean):
     f_mean = rng.randn(N, 1)
     f_var = rng.randn(N, 1) ** 2  # ensure positivity
-    equivalent_f2 = np.log(g_var)
+    equivalent_f2 = np.log(g_var) / 2
     f2_mean = np.full((N, 1), equivalent_f2)
     f2_var = np.zeros((N, 1))
     F2_mean = np.c_[f_mean, f2_mean]
