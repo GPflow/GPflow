@@ -52,7 +52,7 @@ class MultiLatentTFPConditional(MultiLatentLikelihood):
         latent_dim: int,
         conditional_distribution: Callable[..., tfp.distributions.Distribution],
         *,
-        num_gauss_hermite_points: int = DEFAULT_NUM_GAUSS_HERMITE_POINTS0,
+        num_gauss_hermite_points: int = DEFAULT_NUM_GAUSS_HERMITE_POINTS,
     ):
         """
         :param latent_dim: number of arguments to the `conditional_distribution` callable
