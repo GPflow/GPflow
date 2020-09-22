@@ -20,7 +20,6 @@ import tensorflow as tf
 
 from ..config import default_float
 from ..utilities import to_default_float
-
 from .gauss_hermite import NDiagGHQuadrature
 
 

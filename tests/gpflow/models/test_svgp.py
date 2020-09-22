@@ -13,14 +13,15 @@
 # limitations under the License.
 
 from dataclasses import dataclass
+
 import numpy as np
 import pytest
 import tensorflow as tf
 from numpy.testing import assert_allclose, assert_array_equal, assert_array_less
 
 import gpflow
-from gpflow.config import default_float
 from gpflow import set_trainable
+from gpflow.config import default_float
 
 
 @dataclass(frozen=True)

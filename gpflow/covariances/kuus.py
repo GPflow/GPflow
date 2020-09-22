@@ -14,10 +14,10 @@
 
 import tensorflow as tf
 
-from ..inducing_variables import InducingPoints, Multiscale, InducingPatches
-from ..kernels import Kernel, SquaredExponential, Convolutional
-from .dispatch import Kuu
 from ..config import default_float
+from ..inducing_variables import InducingPatches, InducingPoints, Multiscale
+from ..kernels import Convolutional, Kernel, SquaredExponential
+from .dispatch import Kuu
 
 
 @Kuu.register(InducingPoints, Kernel)

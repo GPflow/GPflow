@@ -13,14 +13,13 @@
 # limitations under the License.
 
 import abc
-from typing import Callable, Type, Optional
+from typing import Callable, Optional, Type
 
 import tensorflow as tf
 import tensorflow_probability as tfp
 
 from ..utilities import positive
 from .base import QuadratureLikelihood
-
 
 # NOTE- in the following we're assuming outputs are independent, i.e. full_output_cov=False
 

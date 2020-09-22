@@ -19,7 +19,6 @@ from typing import Callable, List, Union
 
 import tensorflow as tf
 
-
 __all__ = ["MonitorTask", "ExecuteCallback", "MonitorTaskGroup", "Monitor"]
 
 

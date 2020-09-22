@@ -17,10 +17,9 @@ from typing import List
 import numpy as np
 import tensorflow as tf
 
-from .base import GaussianQuadrature
-from ..config import default_float
-
 from ..base import TensorType
+from ..config import default_float
+from .base import GaussianQuadrature
 
 
 def gh_points_and_weights(n_gh: int):

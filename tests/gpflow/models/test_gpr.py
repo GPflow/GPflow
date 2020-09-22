@@ -12,10 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import gpflow
 import numpy as np
 import pytest
 import tensorflow as tf
+
+import gpflow
 from gpflow import set_trainable
 
 rng = np.random.RandomState(0)

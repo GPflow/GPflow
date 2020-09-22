@@ -6,18 +6,18 @@ import tensorflow as tf
 import gpflow
 import gpflow.inducing_variables.multioutput as mf
 import gpflow.kernels.multioutput as mk
+from gpflow import set_trainable
 from gpflow.conditionals import sample_conditional
 from gpflow.conditionals.util import (
     fully_correlated_conditional,
     fully_correlated_conditional_repeat,
     sample_mvn,
 )
+from gpflow.config import default_float, default_jitter
 from gpflow.inducing_variables import InducingPoints
 from gpflow.kernels import SquaredExponential
 from gpflow.likelihoods import Gaussian
 from gpflow.models import SVGP
-from gpflow.config import default_jitter, default_float
-from gpflow import set_trainable
 
 float_type = default_float()
 rng = np.random.RandomState(99201)

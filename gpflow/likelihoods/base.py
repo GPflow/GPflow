@@ -52,15 +52,15 @@ or 2D), if the new likelihood inherits from
 integration is done by sampling (can be more suitable when F is higher dimensional).
 """
 
-import numpy as np
-import tensorflow as tf
 import abc
 import warnings
-
 from typing import Optional
 
+import numpy as np
+import tensorflow as tf
+
 from ..base import Module
-from ..quadrature import hermgauss, ndiag_mc, ndiagquad, NDiagGHQuadrature
+from ..quadrature import NDiagGHQuadrature, hermgauss, ndiag_mc, ndiagquad
 
 
 class Likelihood(Module, metaclass=abc.ABCMeta):

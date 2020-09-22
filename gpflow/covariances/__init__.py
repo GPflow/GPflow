@@ -1,5 +1,2 @@
-from .dispatch import Kuf
-from .dispatch import Kuu
-
-from . import kufs, kuus
-from . import multioutput
+from . import kufs, kuus, multioutput
+from .dispatch import Kuf, Kuu

@@ -1,12 +1,13 @@
 from typing import Optional
+
 import numpy as np
 import pytest
 import tensorflow as tf
 
 import gpflow
+from gpflow import set_trainable
 from gpflow.config import default_float
 from gpflow.optimizers import NaturalGradient
-from gpflow import set_trainable
 
 
 class Setup:

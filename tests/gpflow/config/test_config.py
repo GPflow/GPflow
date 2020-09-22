@@ -35,7 +35,6 @@ from gpflow.config import (
 )
 from gpflow.utilities import to_default_float, to_default_int
 
-
 _env_values = [
     ("int", "int16", np.int16),
     ("int", "int64", np.int64),

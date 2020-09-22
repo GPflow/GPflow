@@ -1,5 +1,3 @@
-from .expectations import expectation, quadrature_expectation
-
 from . import (
     cross_kernels,
     linears,
@@ -10,5 +8,6 @@ from . import (
     squared_exponentials,
     sums,
 )
+from .expectations import expectation, quadrature_expectation
 
 __all__ = ["expectation", "quadrature_expectation"]
