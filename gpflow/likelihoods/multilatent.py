@@ -22,22 +22,18 @@ from ..utilities import positive
 from .base import QuadratureLikelihood, DEFAULT_NUM_GAUSS_HERMITE_POINTS
 
 
-# NOTE- in the following we're assuming outputs are independent, i.e. full_output_cov=False
-
-
 class MultiLatentLikelihood(QuadratureLikelihood):
     r"""
     A Likelihood which assumes that a single dimensional observation is driven
     by multiple latent GPs.
+
+    Note that this implementation does not allow for taking into account
+    covariance between outputs.
     """
 
-    def __init__(
-        self, latent_dim: int, *, num_gauss_hermite_points: int = DEFAULT_NUM_GAUSS_HERMITE_POINTS,
-    ):
+    def __init__(self, latent_dim: int, **kwargs):
         super().__init__(
-            latent_dim=latent_dim,
-            observation_dim=1,
-            num_gauss_hermite_points=num_gauss_hermite_points,
+            latent_dim=latent_dim, observation_dim=1, **kwargs,
         )
 
 
@@ -51,15 +47,14 @@ class MultiLatentTFPConditional(MultiLatentLikelihood):
         self,
         latent_dim: int,
         conditional_distribution: Callable[..., tfp.distributions.Distribution],
-        *,
-        num_gauss_hermite_points: int = DEFAULT_NUM_GAUSS_HERMITE_POINTS,
+        **kwargs,
     ):
         """
         :param latent_dim: number of arguments to the `conditional_distribution` callable
         :param conditional_distribution: function from Fs to a tfp Distribution,
             where Fs has shape [..., latent_dim]
         """
-        super().__init__(latent_dim, num_gauss_hermite_points=num_gauss_hermite_points)
+        super().__init__(latent_dim, **kwargs)
         self.conditional_distribution = conditional_distribution
 
     def _log_prob(self, Fs, Y) -> tf.Tensor:
@@ -103,8 +98,7 @@ class HeteroskedasticTFPConditional(MultiLatentTFPConditional):
         self,
         distribution_class: Type[tfp.distributions.Distribution] = tfp.distributions.Normal,
         transform: tfp.bijectors.Bijector = positive(base="exp"),
-        *,
-        num_gauss_hermite_points: int = DEFAULT_NUM_GAUSS_HERMITE_POINTS,
+        **kwargs,
     ):
         """
         :param distribution_class: distribution class parameterized by `loc` and `scale`
@@ -120,7 +114,5 @@ class HeteroskedasticTFPConditional(MultiLatentTFPConditional):
             return distribution_class(loc, scale)
 
         super().__init__(
-            latent_dim=2,
-            conditional_distribution=conditional_distribution,
-            num_gauss_hermite_points=num_gauss_hermite_points,
+            latent_dim=2, conditional_distribution=conditional_distribution, **kwargs,
         )

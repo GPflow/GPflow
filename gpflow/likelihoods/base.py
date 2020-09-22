@@ -296,30 +296,19 @@ class QuadratureLikelihood(Likelihood):
         self,
         latent_dim: int,
         observation_dim: int,
+        quadrature: Optional[GaussianQuadrature] = None,
         *,
         num_gauss_hermite_points: int = DEFAULT_NUM_GAUSS_HERMITE_POINTS,
     ):
         super().__init__(latent_dim=latent_dim, observation_dim=observation_dim)
-        self._num_gauss_hermite_points = num_gauss_hermite_points
-        self._set_quadrature()
-
-    def _set_quadrature(self) -> None:
-        with tf.init_scope():
-            self.quadrature = NDiagGHQuadrature(self._quadrature_dim, self.num_gauss_hermite_points)
+        if quadrature is None:
+            with tf.init_scope():
+                quadrature = NDiagGHQuadrature(self._quadrature_dim, num_gauss_hermite_points)
+        self.quadrature = quadrature
 
     @property
     def _quadrature_dim(self) -> int:
         return self.latent_dim
-
-    @property
-    def num_gauss_hermite_points(self) -> int:
-        return self._num_gauss_hermite_points
-
-    @num_gauss_hermite_points.setter
-    def num_gauss_hermite_points(self, n_gh: int):
-        if n_gh != self._num_gauss_hermite_points:
-            self._num_gauss_hermite_points = n_gh
-            self._set_quadrature()
 
     def _quadrature_log_prob(self, F, Y):
         return tf.expand_dims(self.log_prob(F, Y), axis=-1)
@@ -393,6 +382,27 @@ class ScalarLikelihood(QuadratureLikelihood):
 
     def __init__(self, **kwargs):
         super().__init__(latent_dim=None, observation_dim=None, **kwargs)
+
+    @property
+    def num_gauss_hermite_points(self) -> int:
+        if not isinstance(self.quadrature, NDiagGHQuadrature):
+            raise TypeError(
+                "Can only query num_gauss_hermite_points if quadrature is a NDiagGHQuadrature instance"
+            )
+        return self.quadrature.n_gh
+
+    @num_gauss_hermite_points.setter
+    def num_gauss_hermite_points(self, n_gh: int):
+        warnings.warn(
+            "The num_gauss_hermite_points setter is deprecated; assign a new GaussianQuadrature instance to the quadrature attribute instead",
+            DeprecationWarning,
+        )
+
+        if isinstance(self.quadrature, NDiagGHQuadrature) and n_gh == self.quadrature.n_gh:
+            return
+
+        with tf.init_scope():
+            self.quadrature = NDiagGHQuadrature(self._quadrature_dim, n_gh)
 
     @property
     def _quadrature_dim(self) -> int:
