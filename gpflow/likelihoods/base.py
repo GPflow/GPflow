@@ -300,23 +300,25 @@ class QuadratureLikelihood(Likelihood):
         num_gauss_hermite_points: int = DEFAULT_NUM_GAUSS_HERMITE_POINTS,
     ):
         super().__init__(latent_dim=latent_dim, observation_dim=observation_dim)
-        self.num_gauss_hermite_points = num_gauss_hermite_points
-        self._quadrature: Optional[NDiagGHQuadrature] = None
+        self._num_gauss_hermite_points = num_gauss_hermite_points
+        self._set_quadrature()
+
+    def _set_quadrature(self) -> None:
+        with tf.init_scope():
+            self.quadrature = NDiagGHQuadrature(self._quadrature_dim, self.num_gauss_hermite_points)
 
     @property
-    def quadrature(self):
-        if self._quadrature is not None:
-            return self._quadrature
+    def _quadrature_dim(self) -> int:
+        return self.latent_dim
 
-        if self.latent_dim is None:
-            raise Exception(
-                "latent_dim not specified. Either set likelihood.latent_dim directly "
-                "or call a method which passes data to have it inferred."
-            )
+    @property
+    def num_gauss_hermite_points(self) -> int:
+        return self._num_gauss_hermite_points
 
-        with tf.init_scope():
-            self._quadrature = NDiagGHQuadrature(self.latent_dim, self.num_gauss_hermite_points)
-        return self._quadrature
+    @num_gauss_hermite_points.setter
+    def num_gauss_hermite_points(self, n_gh: int):
+        self._num_gauss_hermite_points = n_gh
+        self._set_quadrature()
 
     def _quadrature_log_prob(self, F, Y):
         return tf.expand_dims(self.log_prob(F, Y), axis=-1)
@@ -393,15 +395,8 @@ class ScalarLikelihood(QuadratureLikelihood):
         self.num_gauss_hermite_points = DEFAULT_NUM_GAUSS_HERMITE_POINTS
 
     @property
-    def num_gauss_hermite_points(self) -> int:
-        if self._quadrature is not None:
-            return self.quadrature.n_gh
-        else:
-            return None  # workaround for TensorFlow calling the getter when setting!
-
-    @num_gauss_hermite_points.setter
-    def num_gauss_hermite_points(self, n_gh: int):
-        self._quadrature = NDiagGHQuadrature(1, n_gh)
+    def _quadrature_dim(self) -> int:
+        return 1
 
     def _check_last_dims_valid(self, F, Y):
         """
