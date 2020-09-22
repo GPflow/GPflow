@@ -66,13 +66,13 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Install Black
+          name: Install Black and Isort
           command: |
-            pip install black==19.10b0
+            pip install black==19.10b0 isort
       - run:
           name: Run format checker
           command: |
-            black --check -t py36 -l 100 gpflow tests doc setup.py
+            make format-check
 
   trigger-docs-generation:
     docker:
