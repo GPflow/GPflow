@@ -317,8 +317,9 @@ class QuadratureLikelihood(Likelihood):
 
     @num_gauss_hermite_points.setter
     def num_gauss_hermite_points(self, n_gh: int):
-        self._num_gauss_hermite_points = n_gh
-        self._set_quadrature()
+        if n_gh != self._num_gauss_hermite_points:
+            self._num_gauss_hermite_points = n_gh
+            self._set_quadrature()
 
     def _quadrature_log_prob(self, F, Y):
         return tf.expand_dims(self.log_prob(F, Y), axis=-1)
@@ -392,7 +393,6 @@ class ScalarLikelihood(QuadratureLikelihood):
 
     def __init__(self, **kwargs):
         super().__init__(latent_dim=None, observation_dim=None, **kwargs)
-        self.num_gauss_hermite_points = DEFAULT_NUM_GAUSS_HERMITE_POINTS
 
     @property
     def _quadrature_dim(self) -> int:
