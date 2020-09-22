@@ -19,7 +19,7 @@ import tensorflow as tf
 import tensorflow_probability as tfp
 
 from ..utilities import positive
-from .base import QuadratureLikelihood, DEFAULT_NUM_GAUSS_HERMITE_POINTS
+from .base import QuadratureLikelihood
 
 
 class MultiLatentLikelihood(QuadratureLikelihood):
