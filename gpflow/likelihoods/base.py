@@ -394,7 +394,10 @@ class ScalarLikelihood(QuadratureLikelihood):
 
     @property
     def num_gauss_hermite_points(self) -> int:
-        return self.quadrature.n_gh
+        if self._quadrature is not None:
+            return self.quadrature.n_gh
+        else:
+            return None  # workaround for TensorFlow calling the getter when setting!
 
     @num_gauss_hermite_points.setter
     def num_gauss_hermite_points(self, n_gh: int):
