@@ -31,12 +31,7 @@ class Data:
     f_var = rng.randn(N, 2) ** 2
 
 
-@pytest.fixture
-def likelihood() -> HeteroskedasticTFPConditional:
-    return HeteroskedasticTFPConditional(num_gauss_hermite_points=20)
-
-
-def test_analytic_mean_and_var(likelihood):
+def test_analytic_mean_and_var():
     """
     Test that quadrature computation used in HeteroskedasticTFPConditional
     of the predictive mean and variance is close to the analytical version, 
@@ -44,8 +39,10 @@ def test_analytic_mean_and_var(likelihood):
     where f1, f2 ~ GP.
     """
     analytic_mean = Data.f_mean[:, [0]]
-    analytic_variance = np.exp(Data.f_mean[:, [1]] + Data.f_var[:, [1]] / 2.0) + Data.f_var[:, [0]]
+    analytic_variance = np.exp(Data.f_mean[:, [1]] + Data.f_var[:, [1]])**2 + Data.f_var[:, [0]]
 
+    likelihood = HeteroskedasticTFPConditional()
     y_mean, y_var = likelihood.predict_mean_and_var(Data.f_mean, Data.f_var)
-    np.testing.assert_array_almost_equal(y_mean, analytic_mean)
-    np.testing.assert_array_almost_equal(y_var, analytic_variance)
+
+    np.testing.assert_allclose(y_mean, analytic_mean)
+    np.testing.assert_allclose(y_var, analytic_variance, rtol=1.5e-6)
