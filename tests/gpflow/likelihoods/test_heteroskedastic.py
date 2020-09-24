@@ -39,7 +39,7 @@ def test_analytic_mean_and_var():
     where f1, f2 ~ GP.
     """
     analytic_mean = Data.f_mean[:, [0]]
-    analytic_variance = np.exp(Data.f_mean[:, [1]] + Data.f_var[:, [1]])**2 + Data.f_var[:, [0]]
+    analytic_variance = np.exp(Data.f_mean[:, [1]] + Data.f_var[:, [1]]) ** 2 + Data.f_var[:, [0]]
 
     likelihood = HeteroskedasticTFPConditional()
     y_mean, y_var = likelihood.predict_mean_and_var(Data.f_mean, Data.f_var)
