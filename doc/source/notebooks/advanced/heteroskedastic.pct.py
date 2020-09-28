@@ -95,6 +95,7 @@ def plot_distribution(X, Y, loc, scale):
     plt.show()
     plt.close()
 
+
 plot_distribution(X, Y, loc, scale)
 
 
@@ -184,10 +185,12 @@ natgrad_opt = gpf.optimizers.NaturalGradient(gamma=0.1)
 adam_vars = model.trainable_variables
 adam_opt = tf.optimizers.Adam(0.01)
 
+
 @tf.function
 def optimisation_step():
     natgrad_opt.minimize(loss_fn, variational_vars)
     adam_opt.minimize(loss_fn, adam_vars)
+
 
 # %% [markdown]
 # # Run Optimization Loop
