@@ -385,6 +385,11 @@ class ScalarLikelihood(QuadratureLikelihood):
 
     @property
     def num_gauss_hermite_points(self) -> int:
+        warnings.warn(
+            "The num_gauss_hermite_points property is deprecated; access through the `quadrature` attribute instead",
+            DeprecationWarning,
+        )
+
         if not isinstance(self.quadrature, NDiagGHQuadrature):
             raise TypeError(
                 "Can only query num_gauss_hermite_points if quadrature is a NDiagGHQuadrature instance"
@@ -394,12 +399,12 @@ class ScalarLikelihood(QuadratureLikelihood):
     @num_gauss_hermite_points.setter
     def num_gauss_hermite_points(self, n_gh: int):
         warnings.warn(
-            "The num_gauss_hermite_points setter is deprecated; assign a new GaussianQuadrature instance to the quadrature attribute instead",
+            "The num_gauss_hermite_points setter is deprecated; assign a new GaussianQuadrature instance to the `quadrature` attribute instead",
             DeprecationWarning,
         )
 
         if isinstance(self.quadrature, NDiagGHQuadrature) and n_gh == self.quadrature.n_gh:
-            return
+            return  # nothing to do here
 
         with tf.init_scope():
             self.quadrature = NDiagGHQuadrature(self._quadrature_dim, n_gh)
