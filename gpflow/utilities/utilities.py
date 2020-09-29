@@ -245,22 +245,22 @@ def _get_leaf_components(input_module: tf.Module):
     return state
 
 
-if Version(tfp.__version__) > Version("0.11.0"):
+if Version(tfp.__version__) >= Version("0.11.0"):
+    if hasattr(tfp.bijectors.Identity()._cache, "clear"):
+        # implementation in `master` branch (checked 29 Sep 2020) provides clear():
 
-    def _clear_bijector_cache(bijector: tfp.bijectors.Bijector):
-        # implementation in `master` branch (checked 8 Sep 2020)
-        bijector._cache.clear()
+        def _clear_bijector_cache(bijector: tfp.bijectors.Bijector):
+            bijector._cache.clear()
 
+    else:
+        # previous versions (including the versions 0.11.0 and 0.11.1 released as of 29 Sep 2020) provide reset(), but its implementation is broken
 
-elif Version(tfp.__version__) == Version("0.11.0"):
-    # Workaround for bug in tensorflow_probability 0.11.0 (latest release as of 8 Sep 2020)
-
-    def _clear_bijector_cache(bijector: tfp.bijectors.Bijector):
-        # in 0.11.0, there is bijector._cache.reset(), but its implementation is broken
-        cache = bijector._cache
-        cache_type = type(cache.forward)
-        assert type(cache.inverse) == cache_type
-        cache.__init__(cache.forward._func, cache.inverse._func, cache_type)
+        def _clear_bijector_cache(bijector: tfp.bijectors.Bijector):
+            # workaround for broken implementation of bijector._cache.reset():
+            cache = bijector._cache
+            cache_type = type(cache.forward)
+            assert type(cache.inverse) == cache_type
+            cache.__init__(cache.forward._func, cache.inverse._func, cache_type)
 
 
 else:
