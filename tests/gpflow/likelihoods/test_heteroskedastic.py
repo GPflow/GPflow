@@ -35,7 +35,7 @@ def test_analytic_mean_and_var():
     """
     Test that quadrature computation used in HeteroskedasticTFPConditional
     of the predictive mean and variance is close to the analytical version, 
-    which can be computed for the special case of N(y | mean=f1, variance=exp(f2)),
+    which can be computed for the special case of N(y | mean=f1, scale=exp(f2)),
     where f1, f2 ~ GP.
     """
     analytic_mean = Data.f_mean[:, [0]]
