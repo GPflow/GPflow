@@ -62,7 +62,6 @@ import tensorflow as tf
 from ..base import Module
 from ..quadrature import GaussianQuadrature, NDiagGHQuadrature, ndiag_mc
 
-
 DEFAULT_NUM_GAUSS_HERMITE_POINTS = 20
 """
 The number of Gauss-Hermite points to use for quadrature (fallback when a

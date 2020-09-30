@@ -13,8 +13,8 @@
 # limitations under the License.
 
 import itertools
-from collections.abc import Iterable
 import warnings
+from collections.abc import Iterable
 
 import numpy as np
 import tensorflow as tf
