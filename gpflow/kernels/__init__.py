@@ -13,17 +13,20 @@ from .multioutput import (
 )
 from .periodic import Periodic
 from .statics import Constant, Static, White
-from .stationaries import (
+
+from .stationaries import (  # isort:skip
+    # base classes:
+    Stationary,
+    IsotropicStationary,
     AnisotropicStationary,
+    # actual kernel classes:
     Cosine,
     Exponential,
-    IsotropicStationary,
     Matern12,
     Matern32,
     Matern52,
     RationalQuadratic,
     SquaredExponential,
-    Stationary,
 )
 
 Bias = Constant
