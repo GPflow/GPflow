@@ -67,7 +67,7 @@ DEFAULT_NUM_GAUSS_HERMITE_POINTS = 20
 """
 The number of Gauss-Hermite points to use for quadrature (fallback when a
 likelihood method does not have an analytic method) if quadrature object is not
-explicitly given to likelihood constructoV
+explicitly passed to likelihood constructor.
 """
 
 
