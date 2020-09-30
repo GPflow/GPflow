@@ -17,8 +17,8 @@ import pytest
 import tensorflow as tf
 from numpy.testing import assert_array_less
 
-from gpflow import kernels
 import gpflow.ci_utils
+from gpflow import kernels
 
 KERNEL_CLASSES = [
     kernel

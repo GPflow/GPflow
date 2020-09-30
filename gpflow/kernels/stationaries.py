@@ -17,7 +17,7 @@ import tensorflow as tf
 
 from ..base import Parameter
 from ..utilities import positive
-from ..utilities.ops import square_distance, difference_matrix
+from ..utilities.ops import difference_matrix, square_distance
 from .base import Kernel
 
 
@@ -46,7 +46,7 @@ class Stationary(Kernel):
         """
         for kwarg in kwargs:
             if kwarg not in {"name", "active_dims"}:
-                raise TypeError("Unknown keyword argument:", kwarg)
+                raise TypeError(f"Unknown keyword argument: {kwarg}")
 
         super().__init__(**kwargs)
         self.variance = Parameter(variance, transform=positive())

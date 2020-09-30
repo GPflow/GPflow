@@ -1,10 +1,11 @@
 import copy
 import pickle
 
-import gpflow
 import pytest
 import tensorflow as tf
 import tensorflow_probability as tfp
+
+import gpflow
 
 
 class A(tf.Module):

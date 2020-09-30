@@ -13,15 +13,15 @@
 # limitations under the License.
 
 import numpy as np
-from numpy.random import randn
 import pytest
-import tensorflow as tf
-from gpflow import logdensities
-from gpflow import default_float
-from gpflow.utilities import to_default_float
 import scipy.stats
-from scipy.stats import multivariate_normal as mvn
+import tensorflow as tf
+from numpy.random import randn
 from numpy.testing import assert_allclose
+from scipy.stats import multivariate_normal as mvn
+
+from gpflow import default_float, logdensities
+from gpflow.utilities import to_default_float
 
 rng = np.random.RandomState(1)
 

@@ -14,9 +14,6 @@
 
 # flake8: noqa
 
-from .base import Module, Parameter
-from .config import default_int, default_float, default_jitter
-from .utilities import set_trainable
 from . import (
     conditionals,
     config,
@@ -35,6 +32,9 @@ from . import (
     quadrature,
     utilities,
 )
+from .base import Module, Parameter
+from .config import default_float, default_int, default_jitter
+from .utilities import set_trainable
 from .versions import __version__
 
 __all__ = [export for export in dir()]

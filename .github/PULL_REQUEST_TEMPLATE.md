@@ -39,7 +39,7 @@ Please fill it in as far as possible; if anything about this template is unclear
   - [ ] notebook examples (usage demonstration)
 - [ ] The bug case / new feature is covered by unit tests
 - [ ] Code has type annotations
-- [ ] I ran the black formatter (`make format`)
+- [ ] I ran the black+isort formatter (`make format`)
 - [ ] I locally tested that the tests pass (`make check-all`)
 
 ### Release notes

@@ -19,9 +19,9 @@ from numpy.testing import assert_allclose
 
 import gpflow
 from gpflow import Parameter
-from gpflow.utilities.bijectors import triangular
 from gpflow.conditionals import conditional
 from gpflow.config import default_float
+from gpflow.utilities.bijectors import triangular
 
 rng = np.random.RandomState(123)
 

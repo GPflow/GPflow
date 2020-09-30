@@ -18,9 +18,9 @@ from ...inducing_variables import (
     SeparateIndependentInducingVariables,
     SharedIndependentInducingVariables,
 )
-from ...kernels import SeparateIndependent, LinearCoregionalization
+from ...kernels import LinearCoregionalization, SeparateIndependent
 from ..dispatch import conditional, sample_conditional
-from ..util import sample_mvn, mix_latent_gp
+from ..util import mix_latent_gp, sample_mvn
 
 
 @sample_conditional.register(

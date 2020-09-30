@@ -21,7 +21,6 @@ from ..probability_distributions import DiagonalGaussian, Gaussian, MarkovGaussi
 from . import dispatch
 from .expectations import expectation
 
-
 NoneType = type(None)
 
 

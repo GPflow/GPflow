@@ -20,12 +20,11 @@ import tensorflow as tf
 from numpy.testing import assert_allclose
 
 import gpflow
-from gpflow.mean_functions import Zero, Constant, Linear
-from gpflow.conditionals import conditional
-from gpflow.conditionals import uncertain_conditional
+from gpflow.conditionals import conditional, uncertain_conditional
+from gpflow.config import default_float
+from gpflow.mean_functions import Constant, Linear, Zero
 from gpflow.optimizers import Scipy
 from gpflow.quadrature import mvnquad
-from gpflow.config import default_float
 from gpflow.utilities import training_loop
 
 rng = np.random.RandomState(1)

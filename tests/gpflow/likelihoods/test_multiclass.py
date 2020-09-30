@@ -18,13 +18,8 @@ import tensorflow as tf
 from numpy.testing import assert_allclose
 
 import gpflow
-from gpflow.likelihoods import (
-    Bernoulli,
-    MultiClass,
-    RobustMax,
-    Softmax,
-)
 from gpflow.config import default_float, default_int
+from gpflow.likelihoods import Bernoulli, MultiClass, RobustMax, Softmax
 from gpflow.utilities import to_default_float, to_default_int
 
 tf.random.set_seed(99012)

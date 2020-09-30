@@ -19,7 +19,6 @@ import tensorflow_probability as tfp
 from .. import config
 from .utilities import to_default_float
 
-
 __all__ = ["positive", "triangular"]
 
 
