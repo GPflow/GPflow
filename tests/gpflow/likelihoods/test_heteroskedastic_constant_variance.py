@@ -63,9 +63,7 @@ def _equivant_likelihoods_fixture(
     if request.param == "studentt":
         return (
             gpflow.likelihoods.StudentT(scale=Data.g_var ** 0.5, df=3.0),
-            HeteroskedasticTFPConditional(
-                distribution_class=student_t_class_factory(df=3), num_gauss_hermite_points=50
-            ),
+            HeteroskedasticTFPConditional(distribution_class=student_t_class_factory(df=3)),
         )
     elif request.param == "gaussian":
         return (
