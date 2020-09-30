@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.4.2
+#       jupytext_version: 1.6.0
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -18,11 +18,11 @@
 
 # %% [markdown]
 # ## Standard (Homoskedastic) Regression
-# In standard GP Regression, the GP latent function is used to learn the location parameter of a likelihood distribution (usually a Gaussian) as a function of the input $x$, whereas the scale parameter is considered constant. This is a homoskedastic model, which is unable to capture variations of the noise distribution with the input $x$.
+# In standard GP regression, the GP latent function is used to learn the location parameter of a likelihood distribution (usually a Gaussian) as a function of the input $x$, whereas the scale parameter is considered constant. This is a homoskedastic model, which is unable to capture variations of the noise distribution with the input $x$.
 #
 #
 # ## Heteroskedastic Regression
-# This notebooks shows how to construct a model which uses multiple (2) GP latent functions to learn both the location and the scale of the Gaussian likelihood distribution. It does so by connecting a **Multi-Output Kernel**, which generates multiple GP latent functions, to a **Heteroskedastic Likelihood**, which maps the latent GPs into a single likelihood.
+# This notebooks shows how to construct a model which uses multiple (here two) GP latent functions to learn both the location and the scale of the Gaussian likelihood distribution. It does so by connecting a **Multi-Output Kernel**, which generates multiple GP latent functions, to a **Heteroskedastic Likelihood**, which maps the latent GPs into a single likelihood.
 #
 # The generative model is described as:
 #
@@ -30,28 +30,28 @@
 # $$ f_2(x) \sim \mathcal{GP}(0, k_2(\cdot, \cdot)) $$
 # $$ \text{loc}(x) = f_1(x) $$
 # $$ \text{scale}(x) = \text{transform}(f_2(x)) $$
-# $$ y_i|f_1, f_2, x_i \sim \mathcal{N}(\text{loc}(x_i),\;\text{scale}^2(x_i))$$
+# $$ y_i|f_1, f_2, x_i \sim \mathcal{N}(\text{loc}(x_i),\;\text{scale}(x_i)^2)$$
 #
-# Where the function $\text{transform}$ is used to map the GP $f_2$ to **positive-only values**, which is required as it represent the $\text{scale}$ of a Gaussian likelihood. In this notebook, the $\exp$ function will be used as the $\text{transform}$. An alternative would be the $\text{softplus}$ function.
+# The function $\text{transform}$ is used to map from the unconstrained GP $f_2$ to **positive-only values**, which is required as it represents the $\text{scale}$ of a Gaussian likelihood. In this notebook, the $\exp$ function will be used as the $\text{transform}$. Other positive transforms such as the $\text{softplus}$ function can also be used.
 
 # %%
+import matplotlib.pyplot as plt
 import numpy as np
-import gpflow as gpf
 import tensorflow as tf
 import tensorflow_probability as tfp
-import matplotlib.pyplot as plt
+import gpflow as gpf
 
 
 # %% [markdown]
 # # Data Generation
-# We generate some heteroskedastic data by substituting the random latent functions $f_1$ and $f_2$ of the generative model by deterministic $\sin$ and $\cos$ functions. The input $X$ is built with $N=1001$ uniformly spaced values in the interval $[0, 4\pi]$. The outputs $Y$ are still sampled from a Gaussian likelihood.
+# We generate heteroskedastic data by substituting the random latent functions $f_1$ and $f_2$ of the generative model by deterministic $\sin$ and $\cos$ functions. The input $X$ is built with $N=1001$ uniformly spaced values in the interval $[0, 4\pi]$. The outputs $Y$ are still sampled from a Gaussian likelihood.
 #
 # $$ x_i \in [0, 4\pi], \quad i = 1,\dots,N $$
 # $$ f_1(x) = \sin(x) $$
 # $$ f_2(x) = \cos(x) $$
 # $$ \text{loc}(x) = f_1(x) $$
 # $$ \text{scale}(x) = \exp(f_2(x)) $$
-# $$ y_i|x_i \sim \mathcal{N}(\text{loc}(x_i),\;\text{scale}^2(x_i))$$
+# $$ y_i|x_i \sim \mathcal{N}(\text{loc}(x_i),\;\text{scale}(x_i)^2)$$
 
 # %%
 N = 1001
@@ -71,29 +71,32 @@ transform = np.exp
 
 # Compute loc and scale as functions of input X
 loc = f1(X)
-variance = transform(f2(X))
-scale = variance ** 0.5
+scale = transform(f2(X))
 
 # Sample outputs Y from Gaussian Likelihood
 Y = np.random.normal(loc, scale)
 
 # %% [markdown]
 # # Plot Data
-# Note how the distribution density (shaded area) and the outputs $Y$ are more/less scatered depending on the input $X$.
+# Note how the distribution density (shaded area) and the outputs $Y$ both change depending on the input $X$.
 
 # %%
-plt.figure(figsize=(15, 5))
-for k in (1, 2):
+def plot_distribution(X, Y, loc, scale):
+    plt.figure(figsize=(15, 5))
     x = X.squeeze()
-    lb = (loc - k * scale).squeeze()
-    ub = (loc + k * scale).squeeze()
-    plt.fill_between(x, lb, ub, color="silver", alpha=1 - 0.05 * k ** 3)
-plt.plot(x, lb, color="silver")
-plt.plot(x, ub, color="silver")
-plt.plot(X, loc, color="black")
-plt.scatter(X, Y, color="gray", alpha=0.8)
-plt.show()
-plt.close()
+    for k in (1, 2):
+        lb = (loc - k * scale).squeeze()
+        ub = (loc + k * scale).squeeze()
+        plt.fill_between(x, lb, ub, color="silver", alpha=1 - 0.05 * k ** 3)
+    plt.plot(x, lb, color="silver")
+    plt.plot(x, ub, color="silver")
+    plt.plot(X, loc, color="black")
+    plt.scatter(X, Y, color="gray", alpha=0.8)
+    plt.show()
+    plt.close()
+
+
+plot_distribution(X, Y, loc, scale)
 
 
 # %% [markdown]
@@ -104,12 +107,12 @@ plt.close()
 # This implements the following part of the generative model:
 # $$ \text{loc}(x) = f_1(x) $$
 # $$ \text{scale}(x) = \text{transform}(f_2(x)) $$
-# $$ y_i|f_1, f_2, x_i \sim \mathcal{N}(\text{loc}(x_i),\;\text{scale}^2(x_i))$$
+# $$ y_i|f_1, f_2, x_i \sim \mathcal{N}(\text{loc}(x_i),\;\text{scale}(x_i)^2)$$
 
 # %%
 likelihood = gpf.likelihoods.HeteroskedasticTFPConditional(
     distribution_class=tfp.distributions.Normal,  # Gaussian Likelihood
-    transform=tfp.bijectors.Exp(),  # Exponential Transform
+    scale_transform=tfp.bijectors.Exp(),  # Exponential Transform
 )
 
 print(f"Likelihood's expected latent_dim: {likelihood.latent_dim}")
@@ -119,16 +122,16 @@ print(f"Likelihood's expected latent_dim: {likelihood.latent_dim}")
 # This implements the following part of the generative model:
 # $$ f_1(x) \sim \mathcal{GP}(0, k_1(\cdot, \cdot)) $$
 # $$ f_2(x) \sim \mathcal{GP}(0, k_2(\cdot, \cdot)) $$
-# with both kernels being modeled as separated and independent $\text{RBF}$ kernels.
+# with both kernels being modeled as separate and independent $\text{SquaredExponential}$ kernels.
 
 # %%
 kernel = gpf.kernels.SeparateIndependent(
     [
-        gpf.kernels.RBF(),  # This is k1, the kernel of f1
-        gpf.kernels.RBF(),  # this is k2, the kernel of f2
+        gpf.kernels.SquaredExponential(),  # This is k1, the kernel of f1
+        gpf.kernels.SquaredExponential(),  # this is k2, the kernel of f2
     ]
 )
-# The list contained in gpf.kernels.SeparateIndependent must be the same size of likelihood.latent_dim
+# The number of kernels contained in gpf.kernels.SeparateIndependent must be the same as likelihood.latent_dim
 
 # %% [markdown]
 # # Inducing Points
@@ -149,13 +152,12 @@ inducing_variable = gpf.inducing_variables.SeparateIndependentInducingVariables(
         gpf.inducing_variables.InducingPoints(Z),  # This is U2 = f2(Z2)
     ]
 )
-# The list contained in gpf.kernels.SeparateIndependent must be the same size of likelihood.latent_dim
 
 # %% [markdown]
 # ## SVGP Model
-# Build the **SVGP** model by composing composing the **Kernel**, the **Likelihood** and the **Inducing Variables**.
+# Build the **SVGP** model by composing the **Kernel**, the **Likelihood** and the **Inducing Variables**.
 #
-# Note that the model needs to be instructed about the number of latent GPs by passing `num_latent_gps=likelihood.latent_dim`
+# Note that the model needs to be instructed about the number of latent GPs by passing `num_latent_gps=likelihood.latent_dim`.
 
 # %%
 model = gpf.models.SVGP(
@@ -178,10 +180,17 @@ gpf.utilities.set_trainable(model.q_mu, False)
 gpf.utilities.set_trainable(model.q_sqrt, False)
 
 variational_vars = [(model.q_mu, model.q_sqrt)]
-natgrad_opt = gpf.optimizers.NaturalGradient(gamma=0.01)
+natgrad_opt = gpf.optimizers.NaturalGradient(gamma=0.1)
 
 adam_vars = model.trainable_variables
 adam_opt = tf.optimizers.Adam(0.01)
+
+
+@tf.function
+def optimisation_step():
+    natgrad_opt.minimize(loss_fn, variational_vars)
+    adam_opt.minimize(loss_fn, adam_vars)
+
 
 # %% [markdown]
 # # Run Optimization Loop
@@ -190,9 +199,8 @@ adam_opt = tf.optimizers.Adam(0.01)
 epochs = 100
 log_freq = 20
 
-for epoch in range(epochs + 1):
-    natgrad_opt.minimize(loss_fn, variational_vars)
-    adam_opt.minimize(loss_fn, adam_vars)
+for epoch in range(1, epochs + 1):
+    optimisation_step()
 
     # For every 'log_freq' epochs, print the epoch and plot the predictions against the data
     if epoch % log_freq == 0 and epoch > 0:
@@ -200,15 +208,6 @@ for epoch in range(epochs + 1):
         Ymean, Yvar = model.predict_y(X)
         Ymean = Ymean.numpy().squeeze()
         Ystd = tf.sqrt(Yvar).numpy().squeeze()
-        plt.figure(figsize=(15, 5))
-        for k in (1, 2):
-            x = X.squeeze()
-            lb = (Ymean - k * Ystd).squeeze()
-            ub = (Ymean + k * Ystd).squeeze()
-            plt.fill_between(x, lb, ub, color="silver", alpha=1 - 0.05 * k ** 3)
-        plt.plot(x, lb, color="silver")
-        plt.plot(x, ub, color="silver")
-        plt.plot(X, Ymean, color="black")
-        plt.scatter(X, Y, color="gray", alpha=0.8)
-        plt.show()
-        plt.close()
+        plot_distribution(X, Y, Ymean, Ystd)
+
+model
