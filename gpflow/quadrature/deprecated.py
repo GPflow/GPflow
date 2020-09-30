@@ -14,6 +14,7 @@
 
 import itertools
 from collections.abc import Iterable
+import warnings
 
 import numpy as np
 import tensorflow as tf
@@ -118,6 +119,12 @@ def ndiagquad(funcs, H: int, Fmu, Fvar, logspace: bool = False, **Ys):
     Fmu, Fvar, Ys should all have same shape, with overall size `N`
     :return: shape is the same as that of the first Fmu
     """
+    warnings.warn(
+        "Please use gpflow.quadrature.NDiagGHQuadrature instead "
+        "(note the changed convention of how multi-dimensional quadrature is handled)",
+        DeprecationWarning,
+    )
+
     n_gh = H
     if isinstance(Fmu, (tuple, list)):
         dim = len(Fmu)

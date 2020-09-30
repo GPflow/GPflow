@@ -60,7 +60,15 @@ import numpy as np
 import tensorflow as tf
 
 from ..base import Module
-from ..quadrature import NDiagGHQuadrature, hermgauss, ndiag_mc, ndiagquad
+from ..quadrature import GaussianQuadrature, NDiagGHQuadrature, ndiag_mc
+
+
+DEFAULT_NUM_GAUSS_HERMITE_POINTS = 20
+"""
+The number of Gauss-Hermite points to use for quadrature (fallback when a
+likelihood method does not have an analytic method) if quadrature object is not
+explicitly passed to likelihood constructor.
+"""
 
 
 class Likelihood(Module, metaclass=abc.ABCMeta):
@@ -289,62 +297,101 @@ class Likelihood(Module, metaclass=abc.ABCMeta):
 
 
 class QuadratureLikelihood(Likelihood):
-    def __init__(self, num_gauss_hermite_points: int = 20, **kwargs):
-        super().__init__(**kwargs)
-        self.num_gauss_hermite_points = num_gauss_hermite_points
-        self._quadrature = None
+    def __init__(
+        self,
+        latent_dim: int,
+        observation_dim: int,
+        *,
+        quadrature: Optional[GaussianQuadrature] = None,
+    ):
+        super().__init__(latent_dim=latent_dim, observation_dim=observation_dim)
+        if quadrature is None:
+            with tf.init_scope():
+                quadrature = NDiagGHQuadrature(
+                    self._quadrature_dim, DEFAULT_NUM_GAUSS_HERMITE_POINTS
+                )
+        self.quadrature = quadrature
 
     @property
-    def quadrature(self):
-        if self._quadrature is None:
-            if self.latent_dim is None:
-                raise Exception(
-                    "latent_dim not specified. "
-                    "Either set likelihood.latent_dim directly or "
-                    "call a method which passes data to have it inferred."
-                )
-            with tf.init_scope():
-                self._quadrature = NDiagGHQuadrature(self.latent_dim, self.num_gauss_hermite_points)
-        return self._quadrature
-
-    def _predict_mean_and_var(self, Fmu, Fvar):
-        r"""
-        :param Fmu: mean function evaluation Tensor, with shape [..., latent_dim]
-        :param Fvar: variance of function evaluation Tensor, with shape [..., latent_dim]
-        :returns: mean and variance, both with shape [..., observation_dim]
+    def _quadrature_dim(self) -> int:
         """
-
-        def conditional_y_squared(F):
-            return self.conditional_variance(F) + self.conditional_mean(F) ** 2
-
-        integrands = [self.conditional_mean, conditional_y_squared]
-        E_y, E_y2 = self.quadrature(integrands, Fmu, Fvar)
-        V_y = E_y2 - E_y ** 2
-        return E_y, V_y
+        This defines the number of dimensions over which to evaluate the
+        quadrature. Generally, this is equal to self.latent_dim. This exists
+        as a separate property to allow the ScalarLikelihood subclass to
+        override it with 1 (broadcasting over observation/latent dimensions
+        instead).
+        """
+        return self.latent_dim
 
     def _quadrature_log_prob(self, F, Y):
-        return tf.expand_dims(self.log_prob(F, Y), -1)
+        """
+        Returns the appropriate log prob integrand for quadrature.
+
+        Quadrature expects f(X), here logp(F), to return shape [N_quad_points]
+        + batch_shape + [d']. Here d'=1, but log_prob() only returns
+        [N_quad_points] + batch_shape, so we add an extra dimension.
+
+        Also see _quadrature_reduction.
+        """
+        return tf.expand_dims(self.log_prob(F, Y), axis=-1)
+
+    def _quadrature_reduction(self, quadrature_result):
+        """
+        Converts the quadrature integral appropriately.
+
+        The return shape of quadrature is batch_shape + [d']. Here, d'=1, but
+        we want predict_log_density and variational_expectations to return just
+        batch_shape, so we squeeze out the extra dimension.
+
+        Also see _quadrature_log_prob.
+        """
+        return tf.squeeze(quadrature_result, axis=-1)
 
     def _predict_log_density(self, Fmu, Fvar, Y):
         r"""
-        :param Fmu: mean function evaluation Tensor, with shape [..., latent_dim]
-        :param Fvar: variance of function evaluation Tensor, with shape [..., latent_dim]
-        :param Y: observation Tensor, with shape [..., observation_dim]:
-        :returns: variational expectations, with shape [...]
-        """
-        return tf.squeeze(self.quadrature.logspace(self._quadrature_log_prob, Fmu, Fvar, Y), -1)
-
-    def _variational_expectations(self, Fmu, Fvar, Y):
-        r"""
+        Here, we implement a default Gauss-Hermite quadrature routine, but some
+        likelihoods (Gaussian, Poisson) will implement specific cases.
         :param Fmu: mean function evaluation Tensor, with shape [..., latent_dim]
         :param Fvar: variance of function evaluation Tensor, with shape [..., latent_dim]
         :param Y: observation Tensor, with shape [..., observation_dim]:
         :returns: log predictive density, with shape [...]
         """
-        return tf.squeeze(self.quadrature(self._quadrature_log_prob, Fmu, Fvar, Y), -1)
+        return self._quadrature_reduction(
+            self.quadrature.logspace(self._quadrature_log_prob, Fmu, Fvar, Y=Y)
+        )
+
+    def _variational_expectations(self, Fmu, Fvar, Y):
+        r"""
+        Here, we implement a default Gauss-Hermite quadrature routine, but some
+        likelihoods (Gaussian, Poisson) will implement specific cases.
+        :param Fmu: mean function evaluation Tensor, with shape [..., latent_dim]
+        :param Fvar: variance of function evaluation Tensor, with shape [..., latent_dim]
+        :param Y: observation Tensor, with shape [..., observation_dim]:
+        :returns: variational expectations, with shape [...]
+        """
+        return self._quadrature_reduction(
+            self.quadrature(self._quadrature_log_prob, Fmu, Fvar, Y=Y)
+        )
+
+    def _predict_mean_and_var(self, Fmu, Fvar):
+        r"""
+        Here, we implement a default Gauss-Hermite quadrature routine, but some
+        likelihoods (e.g. Gaussian) will implement specific cases.
+
+        :param Fmu: mean function evaluation Tensor, with shape [..., latent_dim]
+        :param Fvar: variance of function evaluation Tensor, with shape [..., latent_dim]
+        :returns: mean and variance of Y, both with shape [..., observation_dim]
+        """
+
+        def conditional_y_squared(*F):
+            return self.conditional_variance(*F) + tf.square(self.conditional_mean(*F))
+
+        E_y, E_y2 = self.quadrature([self.conditional_mean, conditional_y_squared], Fmu, Fvar)
+        V_y = E_y2 - E_y ** 2
+        return E_y, V_y
 
 
-class ScalarLikelihood(Likelihood):
+class ScalarLikelihood(QuadratureLikelihood):
     """
     A likelihood class that helps with scalar likelihood functions: likelihoods where
     each scalar latent function is associated with a single scalar observation variable.
@@ -366,15 +413,32 @@ class ScalarLikelihood(Likelihood):
 
     def __init__(self, **kwargs):
         super().__init__(latent_dim=None, observation_dim=None, **kwargs)
-        self.num_gauss_hermite_points = 20
 
     @property
-    def num_gauss_hermite_points(self):
+    def num_gauss_hermite_points(self) -> int:
+        warnings.warn(
+            "The num_gauss_hermite_points property is deprecated; access through the `quadrature` attribute instead",
+            DeprecationWarning,
+        )
+
+        if not isinstance(self.quadrature, NDiagGHQuadrature):
+            raise TypeError(
+                "Can only query num_gauss_hermite_points if quadrature is a NDiagGHQuadrature instance"
+            )
         return self.quadrature.n_gh
 
     @num_gauss_hermite_points.setter
-    def num_gauss_hermite_points(self, n_gh):
-        self.quadrature = NDiagGHQuadrature(1, n_gh)
+    def num_gauss_hermite_points(self, n_gh: int):
+        warnings.warn(
+            "The num_gauss_hermite_points setter is deprecated; assign a new GaussianQuadrature instance to the `quadrature` attribute instead",
+            DeprecationWarning,
+        )
+
+        if isinstance(self.quadrature, NDiagGHQuadrature) and n_gh == self.quadrature.n_gh:
+            return  # nothing to do here
+
+        with tf.init_scope():
+            self.quadrature = NDiagGHQuadrature(self._quadrature_dim, n_gh)
 
     def _check_last_dims_valid(self, F, Y):
         """
@@ -397,47 +461,40 @@ class ScalarLikelihood(Likelihood):
     def _scalar_log_prob(self, F, Y):
         raise NotImplementedError
 
-    def _variational_expectations(self, Fmu, Fvar, Y):
-        r"""
-        Here, we implement a default Gauss-Hermite quadrature routine, but some
-        likelihoods (Gaussian, Poisson) will implement specific cases.
-        :param Fmu: mean function evaluation Tensor, with shape [..., latent_dim]
-        :param Fvar: variance of function evaluation Tensor, with shape [..., latent_dim]
-        :param Y: observation Tensor, with shape [..., latent_dim]:
-        :returns: variational expectations, with shape [...]
+    @property
+    def _quadrature_dim(self) -> int:
         """
-        return tf.reduce_sum(self.quadrature(self._scalar_log_prob, Fmu, Fvar, Y=Y), axis=-1)
-
-    def _predict_log_density(self, Fmu, Fvar, Y):
-        r"""
-        Here, we implement a default Gauss-Hermite quadrature routine, but some
-        likelihoods (Gaussian, Poisson) will implement specific cases.
-        :param Fmu: mean function evaluation Tensor, with shape [..., latent_dim]
-        :param Fvar: variance of function evaluation Tensor, with shape [..., latent_dim]
-        :param Y: observation Tensor, with shape [..., latent_dim]:
-        :returns: log predictive density, with shape [...]
+        Quadrature is over the latent dimensions. Generally, this is equal to
+        self.latent_dim. This separate property allows the ScalarLikelihood
+        subclass to override it with 1 (broadcasting over observation/latent
+        dimensions instead).
         """
-        return tf.reduce_sum(
-            self.quadrature.logspace(self._scalar_log_prob, Fmu, Fvar, Y=Y), axis=-1
-        )
+        return 1
 
-    def _predict_mean_and_var(self, Fmu, Fvar):
-        r"""
-        Here, we implement a default Gauss-Hermite quadrature routine, but some
-        likelihoods (e.g. Gaussian) will implement specific cases.
-
-        :param Fmu: mean function evaluation Tensor, with shape [..., latent_dim]
-        :param Fvar: variance of function evaluation Tensor, with shape [..., latent_dim]
-        :returns: mean and variance, both with shape [..., observation_dim]
+    def _quadrature_log_prob(self, F, Y):
         """
+        Returns the appropriate log prob integrand for quadrature.
 
-        def integrand(*X):
-            return self.conditional_variance(*X) + self.conditional_mean(*X) ** 2
+        Quadrature expects f(X), here logp(F), to return shape [N_quad_points]
+        + batch_shape + [d']. Here d' corresponds to the last dimension of both
+        F and Y, and _scalar_log_prob simply broadcasts over this.
 
-        integrands = [self.conditional_mean, integrand]
-        E_y, E_y2 = self.quadrature(integrands, Fmu, Fvar)
-        V_y = E_y2 - E_y ** 2
-        return E_y, V_y
+        Also see _quadrature_reduction.
+        """
+        return self._scalar_log_prob(F, Y)
+
+    def _quadrature_reduction(self, quadrature_result):
+        """
+        Converts the quadrature integral appropriately.
+
+        The return shape of quadrature is batch_shape + [d']. Here, d'
+        corresponds to the last dimension of both F and Y, and we want to sum
+        over the observations to obtain the overall predict_log_density or
+        variational_expectations.
+
+        Also see _quadrature_log_prob.
+        """
+        return tf.reduce_sum(quadrature_result, axis=-1)
 
 
 class SwitchedLikelihood(ScalarLikelihood):
@@ -495,8 +552,8 @@ class SwitchedLikelihood(ScalarLikelihood):
     def _predict_mean_and_var(self, Fmu, Fvar):
         mvs = [lik.predict_mean_and_var(Fmu, Fvar) for lik in self.likelihoods]
         mu_list, var_list = zip(*mvs)
-        mu = tf.concat(mu_list, 1)
-        var = tf.concat(var_list, 1)
+        mu = tf.concat(mu_list, axis=1)
+        var = tf.concat(var_list, axis=1)
         return mu, var
 
     def _conditional_mean(self, F):
@@ -536,9 +593,12 @@ class MonteCarloLikelihood(Likelihood):
 
         Here, we implement a default Monte Carlo routine.
         """
-        integrand2 = lambda *X: self.conditional_variance(*X) + tf.square(self.conditional_mean(*X))
+
+        def conditional_y_squared(*F):
+            return self.conditional_variance(*F) + tf.square(self.conditional_mean(*F))
+
         E_y, E_y2 = self._mc_quadrature(
-            [self.conditional_mean, integrand2], Fmu, Fvar, epsilon=epsilon
+            [self.conditional_mean, conditional_y_squared], Fmu, Fvar, epsilon=epsilon
         )
         V_y = E_y2 - tf.square(E_y)
         return E_y, V_y  # [N, D]

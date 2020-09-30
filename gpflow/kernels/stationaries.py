@@ -46,7 +46,7 @@ class Stationary(Kernel):
         """
         for kwarg in kwargs:
             if kwarg not in {"name", "active_dims"}:
-                raise TypeError("Unknown keyword argument:", kwarg)
+                raise TypeError(f"Unknown keyword argument: {kwarg}")
 
         super().__init__(**kwargs)
         self.variance = Parameter(variance, transform=positive())
