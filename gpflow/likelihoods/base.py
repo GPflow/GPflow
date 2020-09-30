@@ -302,7 +302,9 @@ class QuadratureLikelihood(Likelihood):
         super().__init__(latent_dim=latent_dim, observation_dim=observation_dim)
         if quadrature is None:
             with tf.init_scope():
-                quadrature = NDiagGHQuadrature(self._quadrature_dim, DEFAULT_NUM_GAUSS_HERMITE_POINTS)
+                quadrature = NDiagGHQuadrature(
+                    self._quadrature_dim, DEFAULT_NUM_GAUSS_HERMITE_POINTS
+                )
         self.quadrature = quadrature
 
     @property
