@@ -325,21 +325,27 @@ class QuadratureLikelihood(Likelihood):
 
     def _quadrature_log_prob(self, F, Y):
         """
+        Returns the appropriate log prob integrand for quadrature.
+
         Quadrature expects f(X), here logp(F), to return shape [N_quad_points]
         + batch_shape + [d']. Here d'=1, but log_prob() only returns
         [N_quad_points] + batch_shape, so we add an extra dimension.
+
         Also see _quadrature_reduction.
         """
         return tf.expand_dims(self.log_prob(F, Y), axis=-1)
 
-    def _quadrature_reduction(self, v):
+    def _quadrature_reduction(self, quadrature_result):
         """
+        Converts the quadrature integral appropriately.
+
         The return shape of quadrature is batch_shape + [d']. Here, d'=1, but
         we want predict_log_density and variational_expectations to return just
         batch_shape, so we squeeze out the extra dimension.
+
         Also see _quadrature_log_prob.
         """
-        return tf.squeeze(v, axis=-1)
+        return tf.squeeze(quadrature_result, axis=-1)
 
     def _predict_log_density(self, Fmu, Fvar, Y):
         r"""
@@ -467,22 +473,28 @@ class ScalarLikelihood(QuadratureLikelihood):
 
     def _quadrature_log_prob(self, F, Y):
         """
+        Returns the appropriate log prob integrand for quadrature.
+
         Quadrature expects f(X), here logp(F), to return shape [N_quad_points]
         + batch_shape + [d']. Here d' corresponds to the last dimension of both
         F and Y, and _scalar_log_prob simply broadcasts over this.
+
         Also see _quadrature_reduction.
         """
         return self._scalar_log_prob(F, Y)
 
-    def _quadrature_reduction(self, v):
+    def _quadrature_reduction(self, quadrature_result):
         """
+        Converts the quadrature integral appropriately.
+
         The return shape of quadrature is batch_shape + [d']. Here, d'
         corresponds to the last dimension of both F and Y, and we want to sum
         over the observations to obtain the overall predict_log_density or
         variational_expectations.
+
         Also see _quadrature_log_prob.
         """
-        return tf.reduce_sum(v, axis=-1)
+        return tf.reduce_sum(quadrature_result, axis=-1)
 
 
 class SwitchedLikelihood(ScalarLikelihood):
