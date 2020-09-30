@@ -296,24 +296,42 @@ class QuadratureLikelihood(Likelihood):
         self,
         latent_dim: int,
         observation_dim: int,
-        quadrature: Optional[GaussianQuadrature] = None,
         *,
-        num_gauss_hermite_points: int = DEFAULT_NUM_GAUSS_HERMITE_POINTS,
+        quadrature: Optional[GaussianQuadrature] = None,
     ):
         super().__init__(latent_dim=latent_dim, observation_dim=observation_dim)
         if quadrature is None:
             with tf.init_scope():
-                quadrature = NDiagGHQuadrature(self._quadrature_dim, num_gauss_hermite_points)
+                quadrature = NDiagGHQuadrature(self._quadrature_dim, DEFAULT_NUM_GAUSS_HERMITE_POINTS)
         self.quadrature = quadrature
 
     @property
     def _quadrature_dim(self) -> int:
+        """
+        This defines the number of dimensions over which to evaluate the
+        quadrature. Generally, this is equal to self.latent_dim. This exists
+        as a separate property to allow the ScalarLikelihood subclass to
+        override it with 1 (broadcasting over observation/latent dimensions
+        instead).
+        """
         return self.latent_dim
 
     def _quadrature_log_prob(self, F, Y):
+        """
+        Quadrature expects f(X), here logp(F), to return shape [N_quad_points]
+        + batch_shape + [d']. Here d'=1, but log_prob() only returns
+        [N_quad_points] + batch_shape, so we add an extra dimension.
+        Also see _quadrature_reduction.
+        """
         return tf.expand_dims(self.log_prob(F, Y), axis=-1)
 
     def _quadrature_reduction(self, v):
+        """
+        The return shape of quadrature is batch_shape + [d']. Here, d'=1, but
+        we want predict_log_density and variational_expectations to return just
+        batch_shape, so we squeeze out the extra dimension.
+        Also see _quadrature_log_prob.
+        """
         return tf.squeeze(v, axis=-1)
 
     def _predict_log_density(self, Fmu, Fvar, Y):
@@ -409,10 +427,6 @@ class ScalarLikelihood(QuadratureLikelihood):
         with tf.init_scope():
             self.quadrature = NDiagGHQuadrature(self._quadrature_dim, n_gh)
 
-    @property
-    def _quadrature_dim(self) -> int:
-        return 1
-
     def _check_last_dims_valid(self, F, Y):
         """
         Assert that the dimensions of the latent functions and the data are compatible
@@ -434,10 +448,33 @@ class ScalarLikelihood(QuadratureLikelihood):
     def _scalar_log_prob(self, F, Y):
         raise NotImplementedError
 
+    @property
+    def _quadrature_dim(self) -> int:
+        """
+        Quadrature is over the latent dimensions. Generally, this is equal to
+        self.latent_dim. This separate property allows the ScalarLikelihood
+        subclass to override it with 1 (broadcasting over observation/latent
+        dimensions instead).
+        """
+        return 1
+
     def _quadrature_log_prob(self, F, Y):
+        """
+        Quadrature expects f(X), here logp(F), to return shape [N_quad_points]
+        + batch_shape + [d']. Here d' corresponds to the last dimension of both
+        F and Y, and _scalar_log_prob simply broadcasts over this.
+        Also see _quadrature_reduction.
+        """
         return self._scalar_log_prob(F, Y)
 
     def _quadrature_reduction(self, v):
+        """
+        The return shape of quadrature is batch_shape + [d']. Here, d'
+        corresponds to the last dimension of both F and Y, and we want to sum
+        over the observations to obtain the overall predict_log_density or
+        variational_expectations.
+        Also see _quadrature_log_prob.
+        """
         return tf.reduce_sum(v, axis=-1)
 
 
@@ -496,8 +533,8 @@ class SwitchedLikelihood(ScalarLikelihood):
     def _predict_mean_and_var(self, Fmu, Fvar):
         mvs = [lik.predict_mean_and_var(Fmu, Fvar) for lik in self.likelihoods]
         mu_list, var_list = zip(*mvs)
-        mu = tf.concat(mu_list, 1)
-        var = tf.concat(var_list, 1)
+        mu = tf.concat(mu_list, axis=1)
+        var = tf.concat(var_list, axis=1)
         return mu, var
 
     def _conditional_mean(self, F):
