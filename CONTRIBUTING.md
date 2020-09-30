@@ -42,7 +42,7 @@ Variable names: scalars and vectors start lowercase, but following the notation 
 
 ### Formatting
 
-GPflow uses [black](https://github.com/psf/black) for formatting, calling it with `black -t py36 -l 100`. Simply run `make format` from the GPflow root directory.
+GPflow uses [black](https://github.com/psf/black) and [isort](https://pycqa.github.io/isort/) for formatting. Simply run `make format` from the GPflow root directory (or check our Makefile for the appropriate command-line options).
 
 ## Pull requests
 

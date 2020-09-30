@@ -14,13 +14,12 @@
 
 import tensorflow as tf
 
-from .. import mean_functions
-from .. import covariances
+from .. import covariances, mean_functions
+from ..config import default_float, default_jitter
 from ..expectations import expectation
-from ..inducing_variables import InducingVariables, InducingPoints
+from ..inducing_variables import InducingPoints, InducingVariables
 from ..kernels import Kernel
 from ..probability_distributions import Gaussian
-from ..config import default_float, default_jitter
 
 
 def uncertain_conditional(

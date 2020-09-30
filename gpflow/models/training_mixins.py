@@ -33,10 +33,9 @@ to the objective function (ExternalDataTrainingLossMixin).
 import abc
 from typing import Callable, Iterator, Optional, Tuple, TypeVar, Union
 
+import numpy as np
 import tensorflow as tf
 from tensorflow.python.data.ops.iterator_ops import OwnedIterator as DatasetOwnedIterator
-import numpy as np
-
 
 InputData = Union[tf.Tensor]
 OutputData = Union[tf.Tensor]

@@ -15,22 +15,22 @@
 import tensorflow as tf
 
 from ... import covariances
+from ...config import default_float, default_jitter
 from ...inducing_variables import (
-    InducingPoints,
-    FallbackSharedIndependentInducingVariables,
     FallbackSeparateIndependentInducingVariables,
-    SharedIndependentInducingVariables,
+    FallbackSharedIndependentInducingVariables,
+    InducingPoints,
     SeparateIndependentInducingVariables,
+    SharedIndependentInducingVariables,
 )
 from ...kernels import (
     Combination,
+    IndependentLatent,
+    LinearCoregionalization,
     MultioutputKernel,
     SeparateIndependent,
     SharedIndependent,
-    IndependentLatent,
-    LinearCoregionalization,
 )
-from ...config import default_float, default_jitter
 from ..dispatch import conditional
 from ..util import (
     base_conditional,

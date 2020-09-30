@@ -13,15 +13,14 @@
 # limitations under the License.
 
 import itertools
-from collections.abc import Iterable
 import warnings
+from collections.abc import Iterable
 
 import numpy as np
 import tensorflow as tf
 
 from ..config import default_float
 from ..utilities import to_default_float
-
 from .gauss_hermite import NDiagGHQuadrature
 
 

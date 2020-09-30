@@ -15,10 +15,10 @@
 import numpy as np
 import tensorflow as tf
 
-from .base import Kernel
 from ..base import Parameter
 from ..config import default_float
 from ..utilities import to_default_float
+from .base import Kernel
 
 
 class Convolutional(Kernel):

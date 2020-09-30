@@ -15,10 +15,10 @@
 import numpy as np
 import pytest
 import tensorflow as tf
+from ndiagquad_old import ndiagquad as ndiagquad_old
 from numpy.testing import assert_allclose
 
 from gpflow.quadrature import ndiagquad
-from ndiagquad_old import ndiagquad as ndiagquad_old
 
 
 @pytest.mark.parametrize("mu", [np.array([1.0, 1.3])])

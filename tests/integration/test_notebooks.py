@@ -24,7 +24,6 @@ import pytest
 from nbconvert.preprocessors import ExecutePreprocessor
 from nbconvert.preprocessors.execute import CellExecutionError
 
-
 NOTEBOOK_DIR = "../../doc/source/notebooks"
 
 
