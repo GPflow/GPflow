@@ -14,7 +14,7 @@
 
 import functools
 from enum import Enum
-from typing import Any, List, Optional, Sequence, TYPE_CHECKING, Tuple, Union
+from typing import TYPE_CHECKING, Any, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 import tensorflow as tf

@@ -17,16 +17,16 @@ from typing import Union
 import tensorflow as tf
 
 from ...inducing_variables import (
-    InducingPoints,
-    FallbackSharedIndependentInducingVariables,
     FallbackSeparateIndependentInducingVariables,
-    SharedIndependentInducingVariables,
+    FallbackSharedIndependentInducingVariables,
+    InducingPoints,
     SeparateIndependentInducingVariables,
+    SharedIndependentInducingVariables,
 )
 from ...kernels import (
+    LinearCoregionalization,
     MultioutputKernel,
     SeparateIndependent,
-    LinearCoregionalization,
     SharedIndependent,
 )
 from ..dispatch import Kuf

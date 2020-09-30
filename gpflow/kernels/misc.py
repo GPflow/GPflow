@@ -19,7 +19,7 @@ import tensorflow as tf
 
 from ..base import Parameter
 from ..utilities import positive, to_default_float
-from .base import Kernel, ActiveDims
+from .base import ActiveDims, Kernel
 
 
 class ArcCosine(Kernel):

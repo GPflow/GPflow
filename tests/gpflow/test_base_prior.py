@@ -2,11 +2,11 @@ import numpy as np
 import pytest
 import tensorflow as tf
 import tensorflow_probability as tfp
-from gpflow.base import PriorOn
-from tensorflow_probability.python.distributions import Uniform
 from tensorflow_probability.python.bijectors import Exp
+from tensorflow_probability.python.distributions import Uniform
 
 import gpflow
+from gpflow.base import PriorOn
 from gpflow.config import set_default_float
 from gpflow.utilities import to_default_float
 

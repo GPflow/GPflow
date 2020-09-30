@@ -13,11 +13,13 @@
 # limitations under the License.
 
 
-import gpflow
+import tempfile
+
 import numpy as np
 import pytest
 import tensorflow as tf
-import tempfile
+
+import gpflow
 from gpflow.utilities import positive
 
 

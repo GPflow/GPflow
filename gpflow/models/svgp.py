@@ -22,7 +22,7 @@ from ..base import Parameter
 from ..conditionals import conditional
 from ..config import default_float
 from ..utilities import positive, triangular
-from .model import GPModel, InputData, RegressionData, MeanAndVariance
+from .model import GPModel, InputData, MeanAndVariance, RegressionData
 from .training_mixins import ExternalDataTrainingLossMixin
 from .util import inducingpoint_wrapper
 

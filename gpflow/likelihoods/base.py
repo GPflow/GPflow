@@ -52,16 +52,15 @@ or 2D), if the new likelihood inherits from
 integration is done by sampling (can be more suitable when F is higher dimensional).
 """
 
-import numpy as np
-import tensorflow as tf
 import abc
 import warnings
-
 from typing import Optional
 
-from ..base import Module
-from ..quadrature import ndiag_mc, GaussianQuadrature, NDiagGHQuadrature
+import numpy as np
+import tensorflow as tf
 
+from ..base import Module
+from ..quadrature import GaussianQuadrature, NDiagGHQuadrature, ndiag_mc
 
 DEFAULT_NUM_GAUSS_HERMITE_POINTS = 20
 """

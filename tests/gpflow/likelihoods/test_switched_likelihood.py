@@ -20,7 +20,6 @@ from numpy.testing import assert_allclose
 import gpflow
 from gpflow.inducing_variables import InducingPoints
 from gpflow.likelihoods import Gaussian, StudentT, SwitchedLikelihood
-from gpflow.inducing_variables import InducingPoints
 
 
 @pytest.mark.parametrize("Y_list", [[tf.random.normal((i, 2)) for i in range(3, 6)]])

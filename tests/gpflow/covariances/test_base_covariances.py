@@ -13,12 +13,13 @@
 # limitations under the License.
 
 import numpy as np
-from numpy.testing import assert_allclose, assert_equal
 import pytest
+from numpy.testing import assert_allclose, assert_equal
+
 import gpflow
-from gpflow.inducing_variables import InducingPoints, Multiscale, InducingPatches
-from gpflow.covariances import Kuu, Kuf
 from gpflow.config import default_jitter
+from gpflow.covariances import Kuf, Kuu
+from gpflow.inducing_variables import InducingPatches, InducingPoints, Multiscale
 
 
 @pytest.mark.parametrize("N, D", [[17, 3], [10, 7]])

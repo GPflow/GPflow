@@ -14,11 +14,11 @@
 
 import tensorflow as tf
 
+from ..config import default_jitter
 from ..covariances import Kuf, Kuu
 from ..inducing_variables import InducingVariables
 from ..kernels import Kernel
 from ..utilities.ops import eye
-from ..config import default_jitter
 from .dispatch import conditional
 from .util import base_conditional, expand_independent_outputs
 
