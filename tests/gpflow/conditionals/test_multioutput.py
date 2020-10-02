@@ -11,6 +11,7 @@ from gpflow.conditionals import sample_conditional
 from gpflow.conditionals.util import (
     fully_correlated_conditional,
     fully_correlated_conditional_repeat,
+    independent_interdomain_conditional,
     sample_mvn,
 )
 from gpflow.config import default_float, default_jitter
@@ -727,4 +728,45 @@ def test_separate_independent_conditional_with_q_sqrt_none():
         full_output_cov=False,
         q_sqrt=q_sqrt,
         white=True,
+    )
+
+
+def test_independent_interdomain_conditional():
+    M = 32
+    N = 10
+    D = 36 * 2
+
+    Zs = [np.random.randn(M, D // 2) for _ in range(2)]
+    k = gpflow.kernels.SquaredExponential(D // 2)
+
+    def compute_Kmn(Z, X):
+        X1 = X[:, 0 : D // 2]
+        X2 = X[:, D // 2 :]
+        return tf.stack([k(Z, X1), k(Z, X2)])
+
+    def compute_Knn(X):
+        X1 = X[:, 0 : D // 2]
+        X2 = X[:, D // 2 :]
+        return tf.stack([k(X1, full_cov=False), k(X2, full_cov=False)])
+
+    Xbatch = np.random.randn(N, D)
+    # L = 2, P = 2, N = 10, M = 32
+    Kmm = tf.stack([k(Z) for Z in Zs])  # L x M x M
+    Kmn = tf.stack([compute_Kmn(Z, Xbatch) for Z in Zs])  # L x P x M x N
+    Kmn = tf.transpose(Kmn, [2, 0, 3, 1])  # -> M x L x N x P
+    Knn = tf.transpose(compute_Knn(Xbatch))  # N x P
+    q_mu = tf.convert_to_tensor(np.zeros((M, 2)))
+    q_sqrt = tf.convert_to_tensor(np.stack([np.eye(M) for _ in range(2)]))
+    tf.debugging.assert_shapes(
+        [
+            (Kmm, ["L", "M", "M"]),
+            (Kmn, ["M", "L", "N", "P"]),
+            (Knn, ["N", "P"]),
+            (q_mu, ["M", "L"]),
+            (q_sqrt, ["L", "M", "M"]),
+        ]
+    )
+
+    _, _ = independent_interdomain_conditional(
+        Kmn, Kmm, Knn, q_mu, q_sqrt=q_sqrt, full_cov=False, full_output_cov=False
     )
