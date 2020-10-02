@@ -213,3 +213,8 @@ for epoch in range(1, epochs + 1):
         plot_distribution(X, Y, Ymean, Ystd)
 
 model
+
+# %% [markdown]
+# ## Further reading
+#
+# See [Chained Gaussian Processes](http://proceedings.mlr.press/v51/saul16.html) by Saul et al. (AISTATS 2016).
