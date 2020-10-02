@@ -2,6 +2,7 @@
 name: Bug report (including performance and build issues)
 about: Help us find mistakes in the GPflow code base
 labels: bug
+projects: 7
 ---
 
 <!-- Lines like this are comments and will be invisible -->
