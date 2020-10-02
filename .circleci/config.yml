@@ -80,7 +80,7 @@ jobs:
         environment:
             ORGANIZATION: GPflow
             PROJECT: docs
-            BRANCH: develop
+            BRANCH: << pipeline.git.branch >>
 
     steps:
       - run:
@@ -159,7 +159,9 @@ workflows:
             - notebook-test
           filters:
             branches:
-              only: develop
+              only:
+                - master
+                - develop
       - deploy:
           requires:
             - unit-test
