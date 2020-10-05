@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import itertools
+import warnings
 from collections.abc import Iterable
 
 import numpy as np
@@ -20,7 +21,6 @@ import tensorflow as tf
 
 from ..config import default_float
 from ..utilities import to_default_float
-
 from .gauss_hermite import NDiagGHQuadrature
 
 
@@ -119,6 +119,12 @@ def ndiagquad(funcs, H: int, Fmu, Fvar, logspace: bool = False, **Ys):
     Fmu, Fvar, Ys should all have same shape, with overall size `N`
     :return: shape is the same as that of the first Fmu
     """
+    warnings.warn(
+        "Please use gpflow.quadrature.NDiagGHQuadrature instead "
+        "(note the changed convention of how multi-dimensional quadrature is handled)",
+        DeprecationWarning,
+    )
+
     n_gh = H
     if isinstance(Fmu, (tuple, list)):
         dim = len(Fmu)

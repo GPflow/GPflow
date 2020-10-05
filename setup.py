@@ -8,7 +8,6 @@ import sys
 
 from setuptools import find_packages, setup
 
-
 ##### Dependencies of GPflow
 
 # We do not want to install tensorflow in the readthedocs environment, where we

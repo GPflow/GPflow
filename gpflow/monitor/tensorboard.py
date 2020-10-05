@@ -25,7 +25,6 @@ from ..models import BayesianModel
 from ..utilities import parameter_dict
 from .base import MonitorTask
 
-
 __all__ = ["ToTensorBoard", "ModelToTensorBoard", "ScalarToTensorBoard", "ImageToTensorBoard"]
 
 

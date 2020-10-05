@@ -14,32 +14,17 @@
 
 from .base import (
     Likelihood,
+    MonteCarloLikelihood,
     QuadratureLikelihood,
     ScalarLikelihood,
     SwitchedLikelihood,
-    MonteCarloLikelihood,
-)
-from .scalar_discrete import (
-    Bernoulli,
-    Ordinal,
-    Poisson,
-)
-from .scalar_continuous import (
-    Beta,
-    Exponential,
-    Gamma,
-    Gaussian,
-    StudentT,
 )
 from .misc import GaussianMC
-from .multiclass import (
-    MultiClass,
-    Softmax,
-    RobustMax,
-)
-
+from .multiclass import MultiClass, RobustMax, Softmax
 from .multilatent import (
+    HeteroskedasticTFPConditional,
     MultiLatentLikelihood,
     MultiLatentTFPConditional,
-    HeteroskedasticTFPConditional,
 )
+from .scalar_continuous import Beta, Exponential, Gamma, Gaussian, StudentT
+from .scalar_discrete import Bernoulli, Ordinal, Poisson

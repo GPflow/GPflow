@@ -18,8 +18,8 @@ import tensorflow_probability as tfp
 
 from ..base import Module, Parameter
 from ..config import default_float
-from ..utilities import to_default_float, to_default_int
 from ..quadrature import hermgauss
+from ..utilities import to_default_float, to_default_int
 from .base import Likelihood, MonteCarloLikelihood
 
 

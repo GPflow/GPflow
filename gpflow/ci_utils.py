@@ -15,7 +15,7 @@
 # pylint: skip-file
 
 import os
-from typing import Sequence, Type, Any, List, Iterable, TypeVar
+from typing import Any, Iterable, List, Sequence, Type, TypeVar
 
 
 def is_continuous_integration() -> bool:

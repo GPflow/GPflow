@@ -18,23 +18,18 @@ import tensorflow as tf
 from numpy.testing import assert_allclose
 
 import gpflow
+import gpflow.ci_utils
 from gpflow.config import default_float
 from gpflow.kernels import (
-    SquaredExponential,
     ArcCosine,
     Linear,
-    White,
+    LinearCoregionalization,
     SeparateIndependent,
     SharedIndependent,
-    LinearCoregionalization,
+    SquaredExponential,
+    White,
 )
-import gpflow.ci_utils
-from tests.gpflow.kernels.reference import (
-    ref_rbf_kernel,
-    ref_arccosine_kernel,
-    ref_periodic_kernel,
-)
-
+from tests.gpflow.kernels.reference import ref_arccosine_kernel, ref_periodic_kernel, ref_rbf_kernel
 
 rng = np.random.RandomState(1)
 

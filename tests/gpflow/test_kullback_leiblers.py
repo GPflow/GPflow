@@ -20,7 +20,7 @@ import tensorflow as tf
 from numpy.testing import assert_allclose, assert_almost_equal
 
 import gpflow
-from gpflow import default_float, default_jitter, Parameter
+from gpflow import Parameter, default_float, default_jitter
 from gpflow.inducing_variables import InducingPoints
 from gpflow.kullback_leiblers import gauss_kl, prior_kl
 from gpflow.utilities.bijectors import triangular

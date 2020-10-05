@@ -1,5 +1,7 @@
 BLACK_CONFIG=-t py36 -l 100
 BLACK_TARGETS=gpflow tests doc setup.py
+ISORT_CONFIG=--atomic -l 100 --trailing-comma --remove-redundant-aliases --multi-line 3
+ISORT_TARGETS=gpflow tests setup.py
 
 .PHONY: help clean dev-install install package format format-check type-check test check-all
 
@@ -29,9 +31,11 @@ package:
 
 format:
 	black $(BLACK_CONFIG) $(BLACK_TARGETS)
+	isort $(ISORT_CONFIG) $(ISORT_TARGETS)
 
 format-check:
 	black --check $(BLACK_CONFIG) $(BLACK_TARGETS)
+	isort --check-only $(ISORT_CONFIG) $(ISORT_TARGETS)
 
 type-check:
 	mypy .
