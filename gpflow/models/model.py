@@ -211,6 +211,12 @@ class GPModel(BayesianModel):
         """
         Compute the mean and variance of the held-out data at the input points.
         """
+        if full_cov or full_output_cov:
+            # See https://github.com/GPflow/GPflow/issues/1461
+            raise NotImplementedError(
+                "The predict_y method currently supports only the argument values full_cov=False and full_output_cov=False"
+            )
+
         f_mean, f_var = self.predict_f(Xnew, full_cov=full_cov, full_output_cov=full_output_cov)
         return self.likelihood.predict_mean_and_var(f_mean, f_var)
 
@@ -220,6 +226,12 @@ class GPModel(BayesianModel):
         """
         Compute the log density of the data at the new data points.
         """
+        if full_cov or full_output_cov:
+            # See https://github.com/GPflow/GPflow/issues/1461
+            raise NotImplementedError(
+                "The predict_log_density method currently supports only the argument values full_cov=False and full_output_cov=False"
+            )
+
         X, Y = data
         f_mean, f_var = self.predict_f(X, full_cov=full_cov, full_output_cov=full_output_cov)
         return self.likelihood.predict_log_density(f_mean, f_var, Y)
