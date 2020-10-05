@@ -732,6 +732,9 @@ def test_separate_independent_conditional_with_q_sqrt_none():
 
 
 def test_independent_interdomain_conditional():
+    """
+    Regression test for https://github.com/GPflow/GPflow/issues/818
+    """
     M = 32
     N = 10
     D = 36 * 2
