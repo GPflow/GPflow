@@ -134,7 +134,7 @@ def gauss_kl(q_mu, q_sqrt, K=None, *, K_cholesky=None):
         else:
             if is_batched or Version(tf.__version__) >= Version("2.2"):
                 Lp_full = Lp
-            else:
+            else:  # pragma: no cover
                 # workaround for segfaults when broadcasting in TensorFlow<2.2
                 Lp_full = tf.tile(tf.expand_dims(Lp, 0), [L, 1, 1])
             LpiLq = tf.linalg.triangular_solve(Lp_full, Lq_full, lower=True)
