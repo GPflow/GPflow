@@ -270,7 +270,6 @@ def reset_cache_bijectors(input_module: tf.Module) -> tf.Module:
                 assert type(cache.inverse) == cache_type
                 cache.__init__(cache.forward._func, cache.inverse._func, cache_type)
 
-
     else:
         # fallback for backwards-compatibility with tensorflow_probability < 0.11.0
 
@@ -278,7 +277,6 @@ def reset_cache_bijectors(input_module: tf.Module) -> tf.Module:
             # `_from_x` and `_from_y` are cache dictionaries for forward and inverse transformations
             bijector._from_x.clear()
             bijector._from_y.clear()
-
 
     target_types = (tfp.bijectors.Bijector,)
     accumulator = ("", None)
