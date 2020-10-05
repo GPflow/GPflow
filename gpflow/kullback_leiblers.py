@@ -14,8 +14,8 @@
 
 # -*- coding: utf-8 -*-
 
-from packaging.version import Version
 import tensorflow as tf
+from packaging.version import Version
 
 from .config import default_float, default_jitter
 from .covariances.kuus import Kuu
