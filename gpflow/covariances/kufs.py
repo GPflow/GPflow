@@ -15,8 +15,8 @@
 import tensorflow as tf
 
 from ..base import TensorLike
-from ..inducing_variables import InducingPoints, Multiscale, InducingPatches
-from ..kernels import Kernel, SquaredExponential, Convolutional
+from ..inducing_variables import InducingPatches, InducingPoints, Multiscale
+from ..kernels import Convolutional, Kernel, SquaredExponential
 from .dispatch import Kuf
 
 

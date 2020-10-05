@@ -13,16 +13,12 @@
 # limitations under the License.
 
 
-import gpflow
 import numpy as np
 import pytest
 import tensorflow as tf
-from gpflow.utilities import (
-    multiple_assign,
-    set_trainable,
-    leaf_components,
-    read_values,
-)
+
+import gpflow
+from gpflow.utilities import leaf_components, multiple_assign, read_values, set_trainable
 
 rng = np.random.RandomState(0)
 

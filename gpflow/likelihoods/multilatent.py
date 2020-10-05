@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import abc
-from typing import Callable, Type, Optional
+from typing import Callable, Optional, Type
 
 import tensorflow as tf
 import tensorflow_probability as tfp

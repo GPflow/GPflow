@@ -15,6 +15,7 @@
 # -*- coding: utf-8 -*-
 
 import tensorflow as tf
+
 from .config import default_float, default_jitter
 from .covariances.kuus import Kuu
 from .inducing_variables import InducingVariables

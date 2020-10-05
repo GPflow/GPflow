@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from typing import Optional
+
 import tensorflow as tf
 
 from ..config import default_float, default_jitter

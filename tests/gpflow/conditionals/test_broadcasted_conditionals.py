@@ -27,7 +27,6 @@ import gpflow.kernels.multioutput as mk
 from gpflow.conditionals import sample_conditional
 from gpflow.conditionals.util import mix_latent_gp
 
-
 # ------------------------------------------
 # Data classes: storing constants
 # ------------------------------------------

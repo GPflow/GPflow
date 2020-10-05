@@ -18,28 +18,31 @@ import tensorflow as tf
 from numpy.testing import assert_allclose
 
 import gpflow
-from gpflow.likelihoods import (
+import gpflow.ci_utils
+from gpflow.config import default_float, default_int
+from gpflow.quadrature import ndiagquad
+
+from gpflow.likelihoods import (  # isort:skip
+    # classes we cannot test:
+    Likelihood,
     QuadratureLikelihood,
     ScalarLikelihood,
+    MonteCarloLikelihood,
+    MultiLatentLikelihood,
+    MultiLatentTFPConditional,
+    HeteroskedasticTFPConditional,
+    # classes we do test in this file:
     Bernoulli,
     Beta,
     Exponential,
     Gamma,
     Gaussian,
     GaussianMC,
-    Likelihood,
-    MonteCarloLikelihood,
     MultiClass,
-    MultiLatentLikelihood,
-    MultiLatentTFPConditional,
-    HeteroskedasticTFPConditional,
     Ordinal,
     Poisson,
     StudentT,
 )
-from gpflow.quadrature import ndiagquad
-from gpflow.config import default_float, default_int
-import gpflow.ci_utils
 
 tf.random.set_seed(99012)
 

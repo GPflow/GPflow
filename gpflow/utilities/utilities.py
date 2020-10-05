@@ -15,17 +15,17 @@
 import copy
 import re
 from functools import lru_cache
-from typing import Any, Callable, Dict, List, Optional, Tuple, TypeVar, Union, Iterable
-from packaging.version import Version
+from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, TypeVar, Union
 
 import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
+from packaging.version import Version
 from tabulate import tabulate
 
-from .ops import cast
 from ..base import Parameter
 from ..config import default_float, default_int, default_summary_fmt
+from .ops import cast
 
 __all__ = [
     "set_trainable",
@@ -155,7 +155,7 @@ def print_summary(module: tf.Module, fmt: str = None):
     """
     fmt = fmt if fmt is not None else default_summary_fmt()
     if fmt == "notebook":
-        from IPython.core.display import display, HTML
+        from IPython.core.display import HTML, display
 
         tab = tabulate_module_summary(module, "html")
         display(HTML(tab))

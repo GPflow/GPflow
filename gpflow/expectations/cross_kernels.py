@@ -14,10 +14,10 @@
 
 import tensorflow as tf
 
-from . import dispatch
 from .. import kernels
 from ..inducing_variables import InducingPoints
 from ..probability_distributions import DiagonalGaussian, Gaussian
+from . import dispatch
 from .expectations import expectation
 
 

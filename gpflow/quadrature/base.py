@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Callable, Union, Iterable
-
 import abc
+from typing import Callable, Iterable, Union
+
 import tensorflow as tf
 
 from ..base import TensorType
