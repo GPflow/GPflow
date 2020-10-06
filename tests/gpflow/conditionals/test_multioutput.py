@@ -731,9 +731,10 @@ def test_separate_independent_conditional_with_q_sqrt_none():
     )
 
 
-def test_independent_interdomain_conditional():
+def test_independent_interdomain_conditional_bug_regression():
     """
     Regression test for https://github.com/GPflow/GPflow/issues/818
+    Not an exhaustive test
     """
     M = 32
     N = 10
