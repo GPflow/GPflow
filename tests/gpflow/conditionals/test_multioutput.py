@@ -753,7 +753,6 @@ def test_independent_interdomain_conditional_bug_regression():
     def compute_Knn(X):
         return tf.stack([k(X[:, i * D_lat : (i + 1) * D_lat], full_cov=False) for i in range(P)])
 
-    # L = 2, P = 2, N = 10, M = 32
     Kmm = tf.stack([k(Z) for Z in Zs])  # L x M x M
     Kmn = tf.stack([compute_Kmn(Z, X) for Z in Zs])  # L x P x M x N
     Kmn = tf.transpose(Kmn, [2, 0, 3, 1])  # -> M x L x N x P
