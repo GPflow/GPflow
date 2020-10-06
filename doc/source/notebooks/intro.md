@@ -49,7 +49,7 @@ This section explains the more complex models and features that are available in
 
   - [Markov Chain Monte Carlo (MCMC)](advanced/mcmc.ipynb): using Hamiltonian Monte Carlo to sample the posterior GP and hyperparameters.
   - [Ordinal regression](advanced/ordinal_regression.ipynb): using GPflow to deal with ordinal variables.
-  - [Gaussian process regression with varying output noise](advanced/varying_noise.ipynb) for different data points, using a custom likelihood or the `SwitchedLikelihood`.
+  - [Gaussian process regression with varying output noise](advanced/varying_noise.ipynb) for different data points, using a custom likelihood or the `SwitchedLikelihood`, and [Heteroskedastic regression with a multi-latent likelihood](advanced/heteroskedastic.ipynb).
   - [Multiclass classification](advanced/multiclass_classification.ipynb) for non-binary examples.
   - [GPs for big data](advanced/gps_for_big_data.ipynb): using GPflow's Sparse Variational Gaussian Process (SVGP) model (Hensman et al., 2013; 2015). Use sparse methods when dealing with large datasets (more than around a thousand data points).
 <!--  - [GPs for big data (part 2)](advanced/advanced_many_points.ipynb)  **[TODO]** -->
