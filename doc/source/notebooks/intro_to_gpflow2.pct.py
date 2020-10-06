@@ -505,7 +505,7 @@ model.predict_f_compiled = tf.function(
 )
 
 # %% [markdown]
-# We also save the original prediction for later comparison. Here, `samples_input` needs to be a tensor, so that `tf.function` will compile a single graph:
+# We also save the original prediction for later comparison. Here `samples_input` needs to be a tensor so that `tf.function` will compile a single graph:
 
 # %%
 samples_input = tf.convert_to_tensor(samples_input, dtype=default_float())
