@@ -43,7 +43,7 @@ import gpflow as gpf
 
 
 # %% [markdown]
-# # Data Generation
+# ## Data Generation
 # We generate heteroskedastic data by substituting the random latent functions $f_1$ and $f_2$ of the generative model by deterministic $\sin$ and $\cos$ functions. The input $X$ is built with $N=1001$ uniformly spaced values in the interval $[0, 4\pi]$. The outputs $Y$ are still sampled from a Gaussian likelihood.
 #
 # $$ x_i \in [0, 4\pi], \quad i = 1,\dots,N $$
@@ -77,7 +77,7 @@ scale = transform(f2(X))
 Y = np.random.normal(loc, scale)
 
 # %% [markdown]
-# # Plot Data
+# ### Plot Data
 # Note how the distribution density (shaded area) and the outputs $Y$ both change depending on the input $X$.
 
 # %%
@@ -100,10 +100,10 @@ plot_distribution(X, Y, loc, scale)
 
 
 # %% [markdown]
-# # Build Model
+# ## Build Model
 
 # %% [markdown]
-# ## Likelihood
+# ### Likelihood
 # This implements the following part of the generative model:
 # $$ \text{loc}(x) = f_1(x) $$
 # $$ \text{scale}(x) = \text{transform}(f_2(x)) $$
@@ -118,7 +118,7 @@ likelihood = gpf.likelihoods.HeteroskedasticTFPConditional(
 print(f"Likelihood's expected latent_dim: {likelihood.latent_dim}")
 
 # %% [markdown]
-# ## Kernel
+# ### Kernel
 # This implements the following part of the generative model:
 # $$ f_1(x) \sim \mathcal{GP}(0, k_1(\cdot, \cdot)) $$
 # $$ f_2(x) \sim \mathcal{GP}(0, k_2(\cdot, \cdot)) $$
@@ -134,7 +134,7 @@ kernel = gpf.kernels.SeparateIndependent(
 # The number of kernels contained in gpf.kernels.SeparateIndependent must be the same as likelihood.latent_dim
 
 # %% [markdown]
-# # Inducing Points
+# ### Inducing Points
 # Since we will use the **SVGP** model to perform inference, we need to implement the inducing variables $U_1$ and $U_2$, both with size $M=20$, which are used to approximate $f_1$ and $f_2$ respectively, and initialize the inducing points positions $Z_1$ and $Z_2$. This gives a total of $2M=40$ inducing variables and inducing points.
 #
 # The inducing variables and their corresponding inputs will be Separate and Independent, but both $Z_1$ and $Z_2$ will be initialized as $Z$, which are placed as $M=20$ equally spaced points in $[\min(X), \max(X)]$.
@@ -154,7 +154,7 @@ inducing_variable = gpf.inducing_variables.SeparateIndependentInducingVariables(
 )
 
 # %% [markdown]
-# ## SVGP Model
+# ### SVGP Model
 # Build the **SVGP** model by composing the **Kernel**, the **Likelihood** and the **Inducing Variables**.
 #
 # Note that the model needs to be instructed about the number of latent GPs by passing `num_latent_gps=likelihood.latent_dim`.
@@ -170,7 +170,9 @@ model = gpf.models.SVGP(
 model
 
 # %% [markdown]
-# # Build Optimizers (NatGrad + Adam)
+# ## Model Optimization
+#
+# ### Build Optimizers (NatGrad + Adam)
 
 # %%
 data = (X, Y)
@@ -193,7 +195,7 @@ def optimisation_step():
 
 
 # %% [markdown]
-# # Run Optimization Loop
+# ### Run Optimization Loop
 
 # %%
 epochs = 100
@@ -211,3 +213,8 @@ for epoch in range(1, epochs + 1):
         plot_distribution(X, Y, Ymean, Ystd)
 
 model
+
+# %% [markdown]
+# ## Further reading
+#
+# See [Chained Gaussian Processes](http://proceedings.mlr.press/v51/saul16.html) by Saul et al. (AISTATS 2016).
