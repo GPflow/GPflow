@@ -174,8 +174,7 @@ def test_sumkl_equals_batchkl_shared_k_not_diag_mocked_tf21():
     Version of test_sumkl_equals_batchkl with shared_k=True and diag=False
     that tests the TensorFlow < 2.2 workaround with tiling still works.
     """
-    s = Datum.sqrt
-    kl_batch = gauss_kl(Datum.mu, s, Datum.K)
+    kl_batch = gauss_kl(Datum.mu, Datum.sqrt, Datum.K)
     kl_sum = []
     for n in range(Datum.N):
         q_mu_n = Datum.mu[:, n][:, None]  # [M, 1]
