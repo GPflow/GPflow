@@ -736,31 +736,30 @@ def test_independent_interdomain_conditional_bug_regression():
     Regression test for https://github.com/GPflow/GPflow/issues/818
     Not an exhaustive test
     """
-    M = 32
-    N = 10
-    D = 36 * 2
+    M = 31
+    N = 11
+    D_lat = 5
+    D_inp = D_lat * 7
+    L = 2
+    P = 3
 
-    Zs = [np.random.randn(M, D // 2) for _ in range(2)]
-    k = gpflow.kernels.SquaredExponential(D // 2)
+    X = np.random.randn(N, D_inp)
+    Zs = [np.random.randn(M, D_lat) for _ in range(L)]
+    k = gpflow.kernels.SquaredExponential(lengthscales=np.ones(D_lat))
 
     def compute_Kmn(Z, X):
-        X1 = X[:, 0 : D // 2]
-        X2 = X[:, D // 2 :]
-        return tf.stack([k(Z, X1), k(Z, X2)])
+        return tf.stack([k(Z, X[:, i * D_lat : (i + 1) * D_lat]) for i in range(P)])
 
     def compute_Knn(X):
-        X1 = X[:, 0 : D // 2]
-        X2 = X[:, D // 2 :]
-        return tf.stack([k(X1, full_cov=False), k(X2, full_cov=False)])
+        return tf.stack([k(X[:, i * D_lat : (i + 1) * D_lat], full_cov=False) for i in range(P)])
 
-    Xbatch = np.random.randn(N, D)
     # L = 2, P = 2, N = 10, M = 32
     Kmm = tf.stack([k(Z) for Z in Zs])  # L x M x M
-    Kmn = tf.stack([compute_Kmn(Z, Xbatch) for Z in Zs])  # L x P x M x N
+    Kmn = tf.stack([compute_Kmn(Z, X) for Z in Zs])  # L x P x M x N
     Kmn = tf.transpose(Kmn, [2, 0, 3, 1])  # -> M x L x N x P
-    Knn = tf.transpose(compute_Knn(Xbatch))  # N x P
-    q_mu = tf.convert_to_tensor(np.zeros((M, 2)))
-    q_sqrt = tf.convert_to_tensor(np.stack([np.eye(M) for _ in range(2)]))
+    Knn = tf.transpose(compute_Knn(X))  # N x P
+    q_mu = tf.convert_to_tensor(np.zeros((M, L)))
+    q_sqrt = tf.convert_to_tensor(np.stack([np.eye(M) for _ in range(L)]))
     tf.debugging.assert_shapes(
         [
             (Kmm, ["L", "M", "M"]),
