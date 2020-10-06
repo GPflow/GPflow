@@ -141,7 +141,7 @@ class MultiClass(Likelihood):
         self.invlink = invlink
 
     def _log_prob(self, F, Y):
-        hits = tf.equal(tf.expand_dims(tf.argmax(F, 1), 1), tf.cast(Y, tf.int64))
+        hits = tf.equal(tf.expand_dims(tf.argmax(F, axis=-1), axis=-1), tf.cast(Y, tf.int64))
         yes = tf.ones(tf.shape(Y), dtype=default_float()) - self.invlink.epsilon
         no = tf.zeros(tf.shape(Y), dtype=default_float()) + self.invlink.eps_k1
         p = tf.where(hits, yes, no)
