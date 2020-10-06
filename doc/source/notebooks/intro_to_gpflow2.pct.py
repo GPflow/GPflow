@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.4.2
+#       jupytext_version: 1.6.0
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -210,6 +210,8 @@ vgp_model.training_loss_closure(compile=True)  # compiled
 vgp_model.training_loss_closure(compile=False)  # uncompiled, same as vgp_model.training_loss
 
 # %% [markdown]
+# ### External data
+#
 # The SVGP model inherits from ExternalDataTrainingLossMixin and expects the data to be passed to training_loss().
 # For SVGP as for the other regression models, `data` is a two-tuple of `(X, Y)`, where `X` is an array/tensor with shape `(num_data, input_dim)` and `Y` is an array/tensor with shape `(num_data, output_dim)`:
 
@@ -473,7 +475,7 @@ for i, recorded_checkpoint in enumerate(manager.checkpoints):
     )
 
 # %% [markdown]
-# ## Copying (hyper)parameter values between models
+# ### Copying (hyper)parameter values between models
 #
 # It is easy to interact with the set of all parameters of a model or a subcomponent programmatically.
 #
@@ -495,45 +497,32 @@ gpflow.utilities.multiple_assign(model, params)
 # %% [markdown]
 # ### TensorFlow `saved_model`
 #
-# At present, TensorFlow does not support saving custom variables like instances of the `gpflow.base.Parameter` class, see [this TensorFlow github issue](https://github.com/tensorflow/tensorflow/issues/34908).
-#
-# However, once training is complete, it is possible to clone the model and replace all `gpflow.base.Parameter`s with `tf.constant`s holding the same value:
+# In order to save the model we need to explicitly store the `tf.function`-compiled functions that we wish to export:
 
 # %%
-model
-
-# %%
-frozen_model = gpflow.utilities.freeze(model)
-
-# %% [markdown]
-# In order to save the model we need to define a `tf.Module` holding the `tf.function`'s that we wish to export, as well as a reference to the underlying model:
-
-# %%
-module_to_save = tf.Module()
-predict_fn = tf.function(
-    frozen_model.predict_f, input_signature=[tf.TensorSpec(shape=[None, 1], dtype=tf.float64)]
+model.predict_f_compiled = tf.function(
+    model.predict_f, input_signature=[tf.TensorSpec(shape=[None, 1], dtype=tf.float64)]
 )
-module_to_save.predict = predict_fn
 
 # %% [markdown]
-# Save original result for futher comparison. We also convert `samples_input` to a tensor. For a tensor input a `tf.function` will compile a single graph.
+# We also save the original prediction for later comparison. Here `samples_input` needs to be a tensor so that `tf.function` will compile a single graph:
 
 # %%
 samples_input = tf.convert_to_tensor(samples_input, dtype=default_float())
-original_result = module_to_save.predict(samples_input)
+original_result = model.predict_f_compiled(samples_input)
 
 # %% [markdown]
-# Let's save the module
+# Let's save the model:
 # %%
 save_dir = str(pathlib.Path(tempfile.gettempdir()))
-tf.saved_model.save(module_to_save, save_dir)
+tf.saved_model.save(model, save_dir)
 
 # %% [markdown]
-# Load module back as new instance and compare predict results
+# We can load the module back as a new instance and compare the prediction results:
 
 # %%
 loaded_model = tf.saved_model.load(save_dir)
-loaded_result = loaded_model.predict(samples_input)
+loaded_result = loaded_model.predict_f_compiled(samples_input)
 
 np.testing.assert_array_equal(loaded_result, original_result)
 
