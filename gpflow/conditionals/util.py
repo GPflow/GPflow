@@ -300,7 +300,7 @@ def independent_interdomain_conditional(
 
     # another backsubstitution in the unwhitened case
     if not white:
-        A = tf.linalg.triangular_solve(Lm, A)  # [L, M, M]  \ [L, M, N*P]  ->  [L, M, N*P]
+        A = tf.linalg.triangular_solve(Lm, A)  # [L, M, M] \ [L, M, N*P]  ->  [L, M, N*P]
         Ar = tf.reshape(A, (L, M, N, P))
 
     fmean = tf.tensordot(Ar, f, [[1, 0], [0, 1]])  # [N, P]
