@@ -88,7 +88,7 @@ Citing GPflow
 
 To cite GPflow, please reference the `JMLR paper <http://www.jmlr.org/papers/volume18/16-537/16-537.pdf>`_. Sample BibTeX is given below:
 
-.. code-block:: bst
+.. code-block:: bib
 
     @ARTICLE{GPflow2017,
         author = {Matthews, Alexander G. de G. and {van der Wilk}, Mark and Nickson, Tom and Fujii, Keisuke. and {Boukouvalas}, Alexis and {Le{\'o}n-Villagr{\'a}}, Pablo and Ghahramani, Zoubin and Hensman, James},
@@ -107,7 +107,7 @@ with the framework for interdomain approximations and multioutput priors. We rev
 framework and describe the design in an `arXiv paper <https://arxiv.org/abs/2003.01115>`_
 which can be cited by users.
 
-.. code-block:: bst
+.. code-block:: bib
 
     @article{GPflow2020multioutput,
       author = {{van der Wilk}, Mark and Dutordoir, Vincent and John, ST and
