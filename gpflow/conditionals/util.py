@@ -279,7 +279,7 @@ def independent_interdomain_conditional(
 
     # Compute the projection matrix A
     Kmn = tf.reshape(tf.transpose(Kmn, (1, 0, 2, 3)), (L, M, N * P))
-    A = tf.linalg.triangular_solve(Lm, Kmn, lower=True)  # [L, M, M]  *  [L, M, P]  ->  [L, M, P]
+    A = tf.linalg.triangular_solve(Lm, Kmn, lower=True)  # [L, M, M] \ [L, M, N*P] -> [L, M, N*P]
     Ar = tf.reshape(A, (L, M, N, P))
 
     # compute the covariance due to the conditioning
@@ -300,7 +300,7 @@ def independent_interdomain_conditional(
 
     # another backsubstitution in the unwhitened case
     if not white:
-        A = tf.linalg.triangular_solve(Lm, Ar)  # [L, M, M]  *  [L, M, P]  ->  [L, M, P]
+        A = tf.linalg.triangular_solve(Lm, A)  # [L, M, M] \ [L, M, N*P]  ->  [L, M, N*P]
         Ar = tf.reshape(A, (L, M, N, P))
 
     fmean = tf.tensordot(Ar, f, [[1, 0], [0, 1]])  # [N, P]
