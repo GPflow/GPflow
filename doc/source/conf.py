@@ -84,8 +84,8 @@ master_doc = "index"
 
 # General information about the project.
 project = "GPflow"
-copyright = "2016-2020, James Hensman, Alexander G. de G. Matthews and the GPflow contributors"
-author = "James Hensman and Alexander G. de G. Matthews and others"
+copyright = "2016-2020 The GPflow Contributors"
+author = "James Hensman and Alexander G. de G. Matthews and many others"
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
