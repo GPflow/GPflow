@@ -4,7 +4,7 @@ import tensorflow as tf
 import gpflow
 
 
-def test_inducing_points_with_None_shape():
+def test_inducing_points_with_variable_shape():
     N, M1, D, P = 50, 13, 3, 1
     X, Y = np.random.randn(N, D), np.random.randn(N, P)
 
@@ -16,13 +16,17 @@ def test_inducing_points_with_None_shape():
 
     m = gpflow.models.SGPR(data=(X, Y), kernel=gpflow.kernels.Matern32(), inducing_variable=iv)
 
-    Z2 = np.random.randn(M1 + 1, D)
-    m.inducing_variable.Z.assign(Z2)
-
     opt = tf.optimizers.Adam()
 
     @tf.function
     def optimization_step():
         opt.minimize(m.training_loss, m.trainable_variables)
 
+    optimization_step()
+
+    # Check 1: that we can successfully assign a new Z with different number of inducing points!
+    Z2 = np.random.randn(M1 + 1, D)
+    m.inducing_variable.Z.assign(Z2)
+
+    # Check 2: that we can still optimize!
     optimization_step()
