@@ -49,7 +49,7 @@ class InducingPointsBase(InducingVariables):
         self.Z = Parameter(Z, dtype=default_float())
 
     def __len__(self) -> int:
-        return self.Z.shape[0]
+        return tf.shape(self.Z)[0]
 
 
 class InducingPoints(InducingPointsBase):
