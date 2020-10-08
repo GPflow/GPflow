@@ -67,7 +67,7 @@ class FallbackSharedIndependentInducingVariables(MultioutputInducingVariables):
         self.inducing_variable = inducing_variable
 
     def __len__(self) -> int:
-        return len(self.inducing_variable)
+        return self.inducing_variable.num_inducing
 
     @property
     def inducing_variables(self) -> Tuple[TensorType]:
@@ -108,7 +108,8 @@ class FallbackSeparateIndependentInducingVariables(MultioutputInducingVariables)
         self.inducing_variable_list = inducing_variable_list
 
     def __len__(self) -> int:
-        return len(self.inducing_variable_list[0])
+        # TODO(st--) we should check that they all have the same length...
+        return self.inducing_variable_list[0].num_inducing
 
     @property
     def inducing_variables(self) -> Tuple[TensorType, ...]:

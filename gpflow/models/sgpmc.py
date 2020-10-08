@@ -83,7 +83,7 @@ class SGPMC(GPModel, InternalDataTrainingLossMixin):
         self.data = data_input_to_tensor(data)
         self.num_data = data[0].shape[0]
         self.inducing_variable = inducingpoint_wrapper(inducing_variable)
-        self.V = Parameter(np.zeros((len(self.inducing_variable), self.num_latent_gps)))
+        self.V = Parameter(np.zeros((self.inducing_variable.num_inducing, self.num_latent_gps)))
         self.V.prior = tfp.distributions.Normal(
             loc=to_default_float(0.0), scale=to_default_float(1.0)
         )

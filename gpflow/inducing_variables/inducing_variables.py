@@ -35,6 +35,10 @@ class InducingVariables(Module):
         """
         raise NotImplementedError
 
+    @property
+    def num_inducing(self) -> int:
+        return self.__len__()
+
 
 class InducingPointsBase(InducingVariables):
     def __init__(self, Z: TensorData, name: Optional[str] = None):
