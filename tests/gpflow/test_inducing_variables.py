@@ -30,6 +30,7 @@ def test_inducing_points_with_variable_shape():
 
     m = gpflow.models.SGPR(data=(X, Y), kernel=gpflow.kernels.Matern32(), inducing_variable=iv)
 
+    # Check 1: that we can still optimize with None shape
     opt = tf.optimizers.Adam()
 
     @tf.function
@@ -38,9 +39,9 @@ def test_inducing_points_with_variable_shape():
 
     optimization_step()
 
-    # Check 1: that we can successfully assign a new Z with different number of inducing points!
+    # Check 2: that we can successfully assign a new Z with different number of inducing points!
     Z2 = np.random.randn(M1 + 1, D)
     m.inducing_variable.Z.assign(Z2)
 
-    # Check 2: that we can still optimize!
+    # Check 3: that we can also optimize with changed Z tensor
     optimization_step()
