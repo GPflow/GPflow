@@ -24,9 +24,12 @@ def test_inducing_points_with_variable_shape():
 
     Z1 = np.random.randn(M1, D)
 
-    iv = gpflow.inducing_variables.InducingPoints(Z1)
-    # overwrite Parameter with explicit tf.Variable with None shape:
-    iv.Z = tf.Variable(Z1, trainable=False, dtype=gpflow.default_float(), shape=(None, D))
+    # use explicit tf.Variable with None shape:
+    iv = gpflow.inducing_variables.InducingPoints(
+        tf.Variable(Z1, trainable=False, dtype=gpflow.default_float(), shape=(None, D))
+    )
+    # Note that we cannot have Z be trainable if we want to be able to change its shape;
+    # TensorFlow optimizers expect shape to be known at construction time.
 
     m = gpflow.models.SGPR(data=(X, Y), kernel=gpflow.kernels.Matern32(), inducing_variable=iv)
 

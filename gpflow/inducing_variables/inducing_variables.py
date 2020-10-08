@@ -16,6 +16,7 @@ import abc
 from typing import Optional
 
 import tensorflow as tf
+import tensorflow_probability as tfp
 
 from ..base import Module, Parameter, TensorData, TensorType
 from ..config import default_float
@@ -46,7 +47,9 @@ class InducingPointsBase(InducingVariables):
         :param Z: the initial positions of the inducing points, size [M, D]
         """
         super().__init__(name=name)
-        self.Z = Parameter(Z, dtype=default_float())
+        if not isinstance(Z, (tf.Variable, tfp.util.TransformedVariable)):
+            Z = Parameter(Z)
+        self.Z = Z
 
     def __len__(self) -> int:
         return tf.shape(self.Z)[0]
