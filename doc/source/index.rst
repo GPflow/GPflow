@@ -23,8 +23,13 @@ GPflow Documentation
    notebooks_file
    derivations
 
-.. toctree::
-   :caption: API reference
-   :hidden:
+API reference
+-------------
 
-   gpflow <api>
+.. autosummary::
+   :toctree: _autosummary
+   :caption: API reference
+   :template: module.rst
+   :recursive:
+
+   gpflow

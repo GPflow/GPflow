@@ -4,20 +4,18 @@
 
 .. autoclass:: {{ objname }}
    :members:
-   :inherited-members:
    :show-inheritance:
-   {#:private-members:#}
-   {#:special-members:#}
-   {#:undoc-members:#}
+   :inherited-members:
+   :special-members: __call__, __add__, __mul__
 
    {% block methods %}
    {% if methods %}
-   .. rubric:: Class methods
+   .. rubric:: {{ _('Methods') }}
 
    .. autosummary::
       :nosignatures:
    {% for item in methods %}
-      {%- if not item.startswith('_') or item in ['__call__'] %}
+      {%- if not item.startswith('_') %}
       ~{{ name }}.{{ item }}
       {%- endif -%}
    {%- endfor %}
@@ -26,14 +24,11 @@
 
    {% block attributes %}
    {% if attributes %}
-   .. rubric:: Class attributes
+   .. rubric:: {{ _('Attributes') }}
 
    .. autosummary::
-      :nosignatures:
    {% for item in attributes %}
-      {%- if not item.startswith('_') %}
       ~{{ name }}.{{ item }}
-      {%- endif -%}
    {%- endfor %}
    {% endif %}
    {% endblock %}

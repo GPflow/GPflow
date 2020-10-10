@@ -2,50 +2,65 @@
 
 .. automodule:: {{ fullname }}
 
-   {% block classes %}
-   {% if classes %}
-   .. rubric:: Classes
+   {% block attributes %}
+   {% if attributes %}
+   .. rubric:: Module attributes
 
    .. autosummary::
-      :toctree: .
-      :nosignatures:
-      :template: class.rst
-   {% for item in classes %}
-      {%- if not item.startswith('_') %}
+      :toctree:
+   {% for item in attributes %}
       {{ item }}
-      {%- endif -%}
    {%- endfor %}
    {% endif %}
    {% endblock %}
 
    {% block functions %}
    {% if functions %}
-   .. rubric:: Functions
+   .. rubric:: {{ _('Functions') }}
 
    .. autosummary::
-      :toctree: .
+      :toctree:
       :nosignatures:
    {% for item in functions %}
-      {#- if not item.startswith('_') #}
       {{ item }}
-      {#- endif -#}
+   {%- endfor %}
+   {% endif %}
+   {% endblock %}
+
+   {% block classes %}
+   {% if classes %}
+   .. rubric:: {{ _('Classes') }}
+
+   .. autosummary::
+      :toctree:
+      :template: class.rst
+      :nosignatures:
+   {% for item in classes %}
+      {{ item }}
    {%- endfor %}
    {% endif %}
    {% endblock %}
 
    {% block exceptions %}
    {% if exceptions %}
-   .. rubric:: Exceptions
+   .. rubric:: {{ _('Exceptions') }}
 
    .. autosummary::
-      :toctree: .
-      :nosignatures:
+      :toctree:
    {% for item in exceptions %}
       {{ item }}
    {%- endfor %}
    {% endif %}
    {% endblock %}
 
-   .. autopackagesummary:: {{ fullname }}
-      :toctree: .
-      :template: module.rst
+{% block modules %}
+{% if modules %}
+.. autosummary::
+   :toctree:
+   :template: module.rst
+   :recursive:
+{% for item in modules %}
+   {{ item }}
+{%- endfor %}
+{% endif %}
+{% endblock %}
