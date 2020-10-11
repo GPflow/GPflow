@@ -211,14 +211,14 @@ class GPModel(BayesianModel):
         """
         Compute the mean and variance of the held-out data at the input points.
         """
-        if full_cov or full_output_cov:
-            # See https://github.com/GPflow/GPflow/issues/1461
-            raise NotImplementedError(
-                "The predict_y method currently supports only the argument values full_cov=False and full_output_cov=False"
-            )
-
         f_mean, f_var = self.predict_f(Xnew, full_cov=full_cov, full_output_cov=full_output_cov)
-        return self.likelihood.predict_mean_and_var(f_mean, f_var)
+        
+        if full_cov and full_output_cov:
+            f_var_mat = tf.reshape(f_var, [1, f_var.shape[0]*f_var.shape[1], f_var.shape[2]*f_var.shape[3]])
+            f_mean_pred, f_var_pred = self.likelihood.predict_mean_and_var(f_mean, f_var_mat)
+            return f_mean_pred, tf.reshape(f_var_pred, f_var.shape)
+        else:
+            return self.likelihood.predict_mean_and_var(f_mean, f_var)
 
     def predict_log_density(
         self, data: RegressionData, full_cov: bool = False, full_output_cov: bool = False

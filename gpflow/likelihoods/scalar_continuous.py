@@ -18,9 +18,9 @@ import tensorflow as tf
 from .. import logdensities
 from ..base import Parameter
 from ..utilities import positive
+from ..utilities.ops import eye
 from .base import ScalarLikelihood
 from .utils import inv_probit
-
 
 class Gaussian(ScalarLikelihood):
     r"""
@@ -61,7 +61,11 @@ class Gaussian(ScalarLikelihood):
         return tf.fill(tf.shape(F), tf.squeeze(self.variance))
 
     def _predict_mean_and_var(self, Fmu, Fvar):
-        return tf.identity(Fmu), Fvar + self.variance
+        rank = tf.rank(Fvar).numpy()
+        if rank == 2:
+            return tf.identity(Fmu), Fvar + self.variance
+        else:
+            return tf.identity(Fmu), Fvar + eye(Fvar.shape[-1], self.variance)
 
     def _predict_log_density(self, Fmu, Fvar, Y):
         return tf.reduce_sum(logdensities.gaussian(Y, Fmu, Fvar + self.variance), axis=-1)
