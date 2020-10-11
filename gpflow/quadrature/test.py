@@ -45,7 +45,7 @@ F1 = likelihood.variational_expectations(mu, var, y)
 def quadrature_log_prob(F, Y):
     return tf.expand_dims(likelihood.log_prob(F, Y), axis=-1)
 
-for n_gh in (20, 21, 22, 23, 24, 25):
+for n_gh in (20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30):
     pass
     quadrature = gpflow.quadrature.NDiagGHQuadrature(
         dim=3, n_gh=n_gh
@@ -55,7 +55,7 @@ for n_gh in (20, 21, 22, 23, 24, 25):
     atol = np.max(np.abs((F1-F2).numpy()))
     rtol = np.max(np.abs((F1-F2).numpy())/np.abs(F1.numpy()))
 
-    print(f'n_gh: {n_gh} - atol: {atol} - rtol: {rtol}')
+    print(f'n_gh: {n_gh} - atol: {atol:.6f} - rtol: {rtol:.6f}')
 
 # %%
 np.testing.assert_allclose(F1, F2, rtol=likelihood_setup.rtol, atol=likelihood_setup.atol)
