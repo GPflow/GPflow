@@ -97,7 +97,7 @@ class HeteroskedasticTFPConditional(MultiLatentTFPConditional):
     def __init__(
         self,
         distribution_class: Type[tfp.distributions.Distribution] = tfp.distributions.Normal,
-        scale_transform: tfp.bijectors.Bijector = positive(base="exp"),
+        scale_transform: Optional[tfp.bijectors.Bijector] = None,
         **kwargs,
     ):
         """
@@ -107,6 +107,8 @@ class HeteroskedasticTFPConditional(MultiLatentTFPConditional):
             function modelling the scale to ensure its positivity.
             Typically, `tf.exp` or `tf.softplus`, but can be any function f: R -> R^+.
         """
+        if scale_transform is None:
+            scale_transform = positive(base="exp")
 
         def conditional_distribution(Fs) -> tfp.distributions.Distribution:
             tf.debugging.assert_equal(tf.shape(Fs)[-1], 2)
