@@ -105,7 +105,7 @@ class HeteroskedasticTFPConditional(MultiLatentTFPConditional):
             as first and second argument, respectively.
         :param scale_transform: callable/bijector applied to the latent
             function modelling the scale to ensure its positivity.
-            Typically, `tf.exp` or `tf.softplus`, but can be any function f: R -> R^+. Defaults to `tf.exp` if not explicitly specified. 
+            Typically, `tf.exp` or `tf.softplus`, but can be any function f: R -> R^+. Defaults to exp if not explicitly specified. 
         """
         if scale_transform is None:
             scale_transform = positive(base="exp")
