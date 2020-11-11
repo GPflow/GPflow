@@ -16,11 +16,9 @@
 GPflow is a package for building Gaussian process models in Python, using [TensorFlow](http://www.tensorflow.org).
 It was originally created by [James Hensman](http://jameshensman.github.io/) and [Alexander G. de G. Matthews](https://github.com/alexggmatthews).
 It is now actively maintained by (in alphabetical order)
-[Alexis Boukouvalas](https://github.com/alexisboukouvalas),
 [Artem Artemev](http://github.com/awav/),
 [Eric Hambro](https://erichambro.com),
 [James Hensman](http://jameshensman.github.io/),
-[Joel Berkeley](https://github.com/joelberkeley),
 [Mark van der Wilk](https://markvdw.github.io/),
 [ST John](https://github.com/st--),
 and [Vincent Dutordoir](https://vdutor.github.io/).
@@ -118,6 +116,7 @@ A few projects building on GPflow and demonstrating its usage are listed below.
 | [DGPs_with_IWVI](https://github.com/hughsalimbeni/DGPs_with_IWVI) | Deep Gaussian Processes with Importance-Weighted Variational Inference|
 | [kerndisc](https://github.com/BracketJohn/kernDisc) | Library for automated kernel structure discovery in univariate data|
 | [Gaussian Process Regression on Molecules](https://medium.com/@ryangriff123/gaussian-process-regression-on-molecules-in-gpflow-ee6fedab2130) | GPs to predict molecular properties by creating a custom-defined Tanimoto kernel to operate on Morgan fingerprints |
+| [Signature covariances](https://github.com/tgcsaba/GPSig) | kernels for (time)series as *inputs* |
 
 If you would like your project listed here, let us know - or simply [open a pull request](https://github.com/GPflow/GPflow/compare) that adds your project to the table above!
 
