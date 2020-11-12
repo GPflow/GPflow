@@ -43,8 +43,15 @@ def positive(lower: Optional[float] = None, base: Optional[str] = None) -> tfp.b
     return bijector
 
 
-def triangular() -> tfp.bijectors.Bijector:
+def triangular(positive_diag: bool = False, diag_bijector=None) -> tfp.bijectors.Bijector:
     """
     Returns instance of a triangular bijector.
+
+    :param positive_diag: if True, constrains the diagonal to be positive
+    :param diag_bijector: passed through to FillScaleTriL for positive_diag
     """
-    return tfp.bijectors.FillTriangular()
+    if positive_diag:
+        return tfp.bijectors.FillScaleTriL(diag_bijector=diag_bijector)
+    else:
+        assert diag_bijector is None, "should not pass diag_bijector when positive_diag is False"
+        return tfp.bijectors.FillTriangular()
