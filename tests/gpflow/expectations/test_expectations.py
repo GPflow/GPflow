@@ -38,6 +38,7 @@ Xmu_markov = ctt(rng.randn(num_data + 1, D_in))  # (N+1)xD
 Xcov = rng.randn(num_data, D_in, D_in)
 Xcov = ctt(Xcov @ np.transpose(Xcov, (0, 2, 1)))
 Z = rng.randn(num_ind, D_in)
+Z2 = rng.randn(num_ind, D_in)
 
 
 def markov_gauss():
@@ -67,6 +68,7 @@ _distrs = {
 
 _kerns = {
     "rbf": kernels.SquaredExponential(variance=rng.rand(), lengthscales=rng.rand() + 1.0),
+    "rbf2": kernels.SquaredExponential(variance=rng.rand(), lengthscales=rng.rand() + 1.0),
     "lin": kernels.Linear(variance=rng.rand()),
     "matern": kernels.Matern32(variance=rng.rand()),
     "rbf_act_dim_0": kernels.SquaredExponential(
@@ -117,6 +119,11 @@ def means(*args):
 @pytest.fixture
 def inducing_variable():
     return inducing_variables.InducingPoints(Z)
+
+
+@pytest.fixture
+def inducing_variable2():
+    return inducing_variables.InducingPoints(Z2)
 
 
 def _check(params):
@@ -240,6 +247,13 @@ def test_eKzxKxz_same_vs_different_sum_kernels(distribution, kern1, kern2, induc
     same = expectation(*(distribution, (kern1, inducing_variable), (kern1, inducing_variable)))
     different = expectation(*(distribution, (kern1, inducing_variable), (kern2, inducing_variable)))
     assert_allclose(same, different, rtol=RTOL)
+
+
+@pytest.mark.parametrize("distribution", distrs("gauss", "gauss_diag"))
+@pytest.mark.parametrize("kern1", kerns("rbf"))
+@pytest.mark.parametrize("kern2", kerns("rbf2"))
+def test_RBF_eKzxKxz_differentK_differentZ(distribution, kern1, kern2, inducing_variable, inducing_variable2):
+    _check((distribution, (kern1, inducing_variable), (kern2, inducing_variable2)))
 
 
 @pytest.mark.parametrize("distribution", distrs("markov_gauss"))
