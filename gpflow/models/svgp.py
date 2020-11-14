@@ -173,16 +173,19 @@ class SVGP(GPModel, ExternalDataTrainingLossMixin):
             scale_tril=self.q_sqrt,
             validate_args=False,
             allow_nan_stats=True,
-            name='InducingOutputMultivariateNormalQ')
+            name="InducingOutputMultivariateNormalQ",
+        )
         inducing_samples = q_dist.sample(num_samples)
         return tf.transpose(inducing_samples, [0, 2, 1])
 
-    def predict_f(self,
-                  Xnew: InputData,
-                  num_inducing_samples: int = None,
-                  full_cov: bool = False,
-                  full_output_cov: bool = False) -> MeanAndVariance:
-        """"Compute mean and (co)variance of latent function at Xnew.
+    def predict_f(
+        self,
+        Xnew: InputData,
+        num_inducing_samples: int = None,
+        full_cov: bool = False,
+        full_output_cov: bool = False,
+    ) -> MeanAndVariance:
+        """ "Compute mean and (co)variance of latent function at Xnew.
 
         If num_inducing_samples is not None then sample inducing points instead
         of analytically integrating them.
@@ -214,44 +217,51 @@ class SVGP(GPModel, ExternalDataTrainingLossMixin):
         if num_inducing_samples is None:
             q_mu = self.q_mu
             q_sqrt = self.q_sqrt
-            mu, var = conditional(Xnew,
-                                  self.inducing_variable,
-                                  self.kernel,
-                                  q_mu,
-                                  q_sqrt=q_sqrt,
-                                  full_cov=full_cov,
-                                  white=self.whiten,
-                                  full_output_cov=full_output_cov)
+            mu, var = conditional(
+                Xnew,
+                self.inducing_variable,
+                self.kernel,
+                q_mu,
+                q_sqrt=q_sqrt,
+                full_cov=full_cov,
+                white=self.whiten,
+                full_output_cov=full_output_cov,
+            )
         else:
             q_mu = self.sample_inducing_points(num_inducing_samples)
             q_sqrt = None
 
             @tf.function
             def single_sample_conditional(q_mu):
-                return conditional(Xnew,
-                                   self.inducing_variable,
-                                   self.kernel,
-                                   q_mu,
-                                   q_sqrt=q_sqrt,
-                                   full_cov=full_cov,
-                                   white=self.whiten,
-                                   full_output_cov=full_output_cov)
+                return conditional(
+                    Xnew,
+                    self.inducing_variable,
+                    self.kernel,
+                    q_mu,
+                    q_sqrt=q_sqrt,
+                    full_cov=full_cov,
+                    white=self.whiten,
+                    full_output_cov=full_output_cov,
+                )
 
             # map each inducing point sample through the standard GP conditional
-            mu, var = tf.map_fn(single_sample_conditional,
-                                q_mu,
-                                dtype=(default_float(), default_float()))
+            mu, var = tf.map_fn(
+                single_sample_conditional, q_mu, dtype=(default_float(), default_float())
+            )
         return mu + self.mean_function(Xnew), var
 
-    def predict_y(self,
-                  Xnew: InputData,
-                  num_inducing_samples: int = None,
-                  full_cov: bool = False,
-                  full_output_cov: bool = False) -> MeanAndVariance:
+    def predict_y(
+        self,
+        Xnew: InputData,
+        num_inducing_samples: int = None,
+        full_cov: bool = False,
+        full_output_cov: bool = False,
+    ) -> MeanAndVariance:
         """Compute mean and variance at Xnew."""
         f_mean, f_var = self.predict_f(
             Xnew,
             num_inducing_samples=num_inducing_samples,
             full_cov=full_cov,
-            full_output_cov=full_output_cov)
+            full_output_cov=full_output_cov,
+        )
         return self.likelihood.predict_mean_and_var(f_mean, f_var)
