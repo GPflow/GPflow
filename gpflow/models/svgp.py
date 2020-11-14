@@ -242,3 +242,15 @@ class SVGP(GPModel, ExternalDataTrainingLossMixin):
                                 q_mu,
                                 dtype=(default_float(), default_float()))
             return mu + self.mean_function(Xnew), var
+    def predict_y(self,
+                  Xnew: InputData,
+                  num_inducing_samples: int = None,
+                  full_cov: bool = False,
+                  full_output_cov: bool = False) -> MeanAndVariance:
+        """Compute mean and variance at Xnew."""
+        f_mean, f_var = self.predict_f(
+            Xnew,
+            num_inducing_samples=num_inducing_samples,
+            full_cov=full_cov,
+            full_output_cov=full_output_cov)
+        return self.likelihood.predict_mean_and_var(f_mean, f_var)
