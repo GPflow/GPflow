@@ -16,6 +16,7 @@ from typing import Tuple
 
 import numpy as np
 import tensorflow as tf
+import tensorflow_probability as tfp
 
 from .. import kullback_leiblers
 from ..base import Parameter
