@@ -155,6 +155,27 @@ class SVGP(GPModel, ExternalDataTrainingLossMixin):
             scale = tf.cast(1.0, kl.dtype)
         return tf.reduce_sum(var_exp) * scale - kl
 
+    def sample_inducing_points(self, num_samples: int = None) -> tf.Tensor:
+        """Returns samples from the inducing point distribution.
+
+        The distribution is given by,
+
+        .. math::
+            q \sim \mathcal{N}(q\_mu, q\_sqrt q\_sqrt^T)
+
+        :param num_samples: the number of samples to draw
+        :returns: samples with shape [num_samples, num_data, output_dim]
+        """
+        mu = tf.transpose(self.q_mu, [1, 0])
+        q_dist = tfp.distributions.MultivariateNormalTriL(
+            loc=mu,
+            scale_tril=self.q_sqrt,
+            validate_args=False,
+            allow_nan_stats=True,
+            name='InducingOutputMultivariateNormalQ')
+        inducing_samples = q_dist.sample(num_samples)
+        return tf.transpose(inducing_samples, [0, 2, 1])
+
     def predict_f(self, Xnew: InputData, full_cov=False, full_output_cov=False) -> MeanAndVariance:
         q_mu = self.q_mu
         q_sqrt = self.q_sqrt
