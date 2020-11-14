@@ -215,13 +215,13 @@ class SVGP(GPModel, ExternalDataTrainingLossMixin):
             q_mu = self.q_mu
             q_sqrt = self.q_sqrt
             mu, var = conditional(Xnew,
-                                    self.inducing_variable,
-                                    self.kernel,
-                                    q_mu,
-                                    q_sqrt=q_sqrt,
-                                    full_cov=full_cov,
-                                    white=self.whiten,
-                                    full_output_cov=full_output_cov)
+                                  self.inducing_variable,
+                                  self.kernel,
+                                  q_mu,
+                                  q_sqrt=q_sqrt,
+                                  full_cov=full_cov,
+                                  white=self.whiten,
+                                  full_output_cov=full_output_cov)
         else:
             q_mu = self.sample_inducing_points(num_inducing_samples)
             q_sqrt = None
@@ -229,19 +229,20 @@ class SVGP(GPModel, ExternalDataTrainingLossMixin):
             @tf.function
             def single_sample_conditional(q_mu):
                 return conditional(Xnew,
-                                    self.inducing_variable,
-                                    self.kernel,
-                                    q_mu,
-                                    q_sqrt=q_sqrt,
-                                    full_cov=full_cov,
-                                    white=self.whiten,
-                                    full_output_cov=full_output_cov)
+                                   self.inducing_variable,
+                                   self.kernel,
+                                   q_mu,
+                                   q_sqrt=q_sqrt,
+                                   full_cov=full_cov,
+                                   white=self.whiten,
+                                   full_output_cov=full_output_cov)
 
             # map each inducing point sample through the standard GP conditional
             mu, var = tf.map_fn(single_sample_conditional,
                                 q_mu,
                                 dtype=(default_float(), default_float()))
-            return mu + self.mean_function(Xnew), var
+        return mu + self.mean_function(Xnew), var
+
     def predict_y(self,
                   Xnew: InputData,
                   num_inducing_samples: int = None,
