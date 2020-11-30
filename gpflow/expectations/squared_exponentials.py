@@ -159,11 +159,13 @@ def _E(p, mean, _, kernel, inducing_variable, nghp=None):
     )
 
 
-@dispatch.expectation.register((Gaussian, DiagonalGaussian),
-                               kernels.SquaredExponential,
-                               InducingPoints,
-                               kernels.SquaredExponential,
-                               InducingPoints)
+@dispatch.expectation.register(
+    (Gaussian, DiagonalGaussian),
+    kernels.SquaredExponential,
+    InducingPoints,
+    kernels.SquaredExponential,
+    InducingPoints,
+)
 def _E(p, kern1, feat1, kern2, feat2, nghp=None):
     """
     Compute the expectation:
@@ -178,12 +180,14 @@ def _E(p, kern1, feat1, kern2, feat2, nghp=None):
         return eKxz1[:, :, None] * eKxz2[:, None, :]
 
     if kern1.on_separate_dims(kern2):
-        raise NotImplementedError("The expectation over two kernels only has an "
-                                  "analytical implementation if both kernels have "
-                                  "the same active features.")
+        raise NotImplementedError(
+            "The expectation over two kernels only has an "
+            "analytical implementation if both kernels have "
+            "the same active features."
+        )
 
-    is_same_kern = (kern1 == kern2)  # code branches by case for
-    is_same_feat = (feat1 == feat2)  # computational efficiency
+    is_same_kern = kern1 == kern2  # code branches by case for
+    is_same_feat = feat1 == feat2  # computational efficiency
 
     mx = kern1.slice(p.mu)[0]
     if isinstance(p, DiagonalGaussian):
@@ -197,17 +201,17 @@ def _E(p, kern1, feat1, kern2, feat2, nghp=None):
     # First Gaussian kernel $k1(x, z) = exp(-0.5*(x - z) V1^{-1} (x - z))$
     V1 = kern1.lengthscales ** 2  # D|1
     z1 = kern1.slice(feat1.Z)[0]  # M1xD
-    iV1_z1 = (1/V1) * z1
+    iV1_z1 = (1 / V1) * z1
 
     # Second Gaussian kernel $k2(x, z) = exp(-0.5*(x - z) V2^{-1} (x - z))$
     V2 = V1 if is_same_kern else kern2.lengthscales ** 2  # D|1
     z2 = z1 if is_same_feat else kern2.slice(feat2.Z)[0]  # M2xD
-    iV2_z2 = iV1_z1 if (is_same_kern and is_same_feat) else (1/V2) * z2
+    iV2_z2 = iV1_z1 if (is_same_kern and is_same_feat) else (1 / V2) * z2
 
     # Product of Gaussian kernels is another Gaussian kernel $k = k1 * k2$
-    V = 0.5 * V1 if is_same_kern else (V1 * V2)/(V1 + V2)  # D|1
+    V = 0.5 * V1 if is_same_kern else (V1 * V2) / (V1 + V2)  # D|1
     if not (kern1.ard or kern2.ard):
-            V = tf.fill((D,), V)  # D
+        V = tf.fill((D,), V)  # D
 
     # Product of Gaussians is an unnormalized Gaussian; compute determinant of
     # this new Gaussian (and the Gaussian kernel) in order to normalize
@@ -220,14 +224,10 @@ def _E(p, kern1, feat1, kern2, feat2, nghp=None):
 
     # Solve for linear systems involving $S = LL^{T}$ where $S$
     # is the covariance of an (unnormalized) Gaussian distribution
-    iL_mu = tf.linalg.triangular_solve(L,
-                                       tf.expand_dims(mx, 2),
-                                       lower=True)  # NxDx1
+    iL_mu = tf.linalg.triangular_solve(L, tf.expand_dims(mx, 2), lower=True)  # NxDx1
 
     V_iV1_z1 = tf.expand_dims(tf.transpose(V * iV1_z1), 0)
-    iL_z1 = tf.linalg.triangular_solve(L,
-                                       tf.tile(V_iV1_z1, [N, 1, 1]),
-                                       lower=True)  # NxDxM1
+    iL_z1 = tf.linalg.triangular_solve(L, tf.tile(V_iV1_z1, [N, 1, 1]), lower=True)  # NxDxM1
 
     z1_iS_z1 = tf.reduce_sum(tf.square(iL_z1), axis=1)  # NxM1
     z1_iS_mu = tf.squeeze(tf.linalg.matmul(iL_z1, iL_mu, transpose_a=True), 2)  # NxM1
@@ -237,9 +237,7 @@ def _E(p, kern1, feat1, kern2, feat2, nghp=None):
         z2_iS_mu = z1_iS_mu
     else:
         V_iV2_z2 = tf.expand_dims(tf.transpose(V * iV2_z2), 0)
-        iL_z2 = tf.linalg.triangular_solve(L,
-                                           tf.tile(V_iV2_z2, [N, 1, 1]),
-                                           lower=True)  # NxDxM2
+        iL_z2 = tf.linalg.triangular_solve(L, tf.tile(V_iV2_z2, [N, 1, 1]), lower=True)  # NxDxM2
 
         z2_iS_z2 = tf.reduce_sum(tf.square(iL_z2), 1)  # NxM2
         z2_iS_mu = tf.squeeze(tf.matmul(iL_z2, iL_mu, transpose_a=True), 2)  # NxM2
@@ -248,10 +246,15 @@ def _E(p, kern1, feat1, kern2, feat2, nghp=None):
     mu_iS_mu = tf.expand_dims(tf.reduce_sum(tf.square(iL_mu), 1), 2)  # Nx1x1
 
     # Gram matrix from Gaussian integral of Gaussian kernel $k = k1 * k2$
-    exp_mahalanobis = tf.exp(-0.5 * (mu_iS_mu + 2 * z1_iS_z2
-        + tf.expand_dims(z1_iS_z1 - 2 * z1_iS_mu, axis=-1)
-        + tf.expand_dims(z2_iS_z2 - 2 * z2_iS_mu, axis=-2)
-    ))  # NxM1xM2
+    exp_mahalanobis = tf.exp(
+        -0.5
+        * (
+            mu_iS_mu
+            + 2 * z1_iS_z2
+            + tf.expand_dims(z1_iS_z1 - 2 * z1_iS_mu, axis=-1)
+            + tf.expand_dims(z2_iS_z2 - 2 * z2_iS_mu, axis=-2)
+        )
+    )  # NxM1xM2
 
     # Part of $E_{p(x)}[k1(z1, x) k2(x, z2)]$ that is independent of $x$
     if is_same_kern:
@@ -267,10 +270,17 @@ def _E(p, kern1, feat1, kern2, feat2, nghp=None):
         z1_iV1pV2_z1 = tf.reduce_sum(iV1_z1 * V * iV1_z1, axis=-1)
         z2_iV1pV2_z2 = tf.reduce_sum(iV2_z2 * V * iV2_z2, axis=-1)
         z1_iV1pV2_z2 = tf.matmul(iV1_z1, V * iV2_z2, transpose_b=True)  # M1xM2
-        matrix_term = kern1.variance * kern2.variance * tf.exp(0.5 * (
-                2 * z1_iV1pV2_z2  # implicit negative
-                + tf.expand_dims(z1_iV1pV2_z1 - z1_iV1_z1, axis=-1)
-                + tf.expand_dims(z2_iV1pV2_z2 - z2_iV2_z2, axis=-2)
-        ))
+        matrix_term = (
+            kern1.variance
+            * kern2.variance
+            * tf.exp(
+                0.5
+                * (
+                    2 * z1_iV1pV2_z2  # implicit negative
+                    + tf.expand_dims(z1_iV1pV2_z1 - z1_iV1_z1, axis=-1)
+                    + tf.expand_dims(z2_iV1pV2_z2 - z2_iV2_z2, axis=-2)
+                )
+            )
+        )
 
     return tf.reshape(determinant, [N, 1, 1]) * matrix_term * exp_mahalanobis
