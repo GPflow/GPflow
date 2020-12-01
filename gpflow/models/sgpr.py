@@ -92,7 +92,7 @@ class SGPRBase(GPModel, InternalDataTrainingLossMixin):
         The key quantity, the trace term, can be computed via
 
         >>> _, v = conditionals.conditional(X, model.inducing_variable.Z, model.kernel,
-        ...                                 np.zeros((len(model.inducing_variable), 1)))
+        ...                                 np.zeros((model.inducing_variable.num_inducing, 1)))
 
         which computes each individual element of the trace term.
         """
@@ -161,7 +161,7 @@ class SGPR(SGPRBase):
         """
         X_data, Y_data = self.data
 
-        num_inducing = len(self.inducing_variable)
+        num_inducing = self.inducing_variable.num_inducing
         num_data = to_default_float(tf.shape(Y_data)[0])
         output_dim = to_default_float(tf.shape(Y_data)[1])
 
@@ -198,7 +198,7 @@ class SGPR(SGPRBase):
         notebook.
         """
         X_data, Y_data = self.data
-        num_inducing = len(self.inducing_variable)
+        num_inducing = self.inducing_variable.num_inducing
         err = Y_data - self.mean_function(X_data)
         kuf = Kuf(self.inducing_variable, self.kernel, X_data)
         kuu = Kuu(self.inducing_variable, self.kernel, jitter=default_jitter())
@@ -282,7 +282,7 @@ class GPRFITC(SGPRBase):
 
     def common_terms(self):
         X_data, Y_data = self.data
-        num_inducing = len(self.inducing_variable)
+        num_inducing = self.inducing_variable.num_inducing
         err = Y_data - self.mean_function(X_data)  # size [N, R]
         Kdiag = self.kernel(X_data, full_cov=False)
         kuf = Kuf(self.inducing_variable, self.kernel, X_data)

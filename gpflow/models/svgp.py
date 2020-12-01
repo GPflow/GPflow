@@ -75,7 +75,7 @@ class SVGP(GPModel, ExternalDataTrainingLossMixin):
         self.inducing_variable = inducingpoint_wrapper(inducing_variable)
 
         # init variational parameters
-        num_inducing = len(self.inducing_variable)
+        num_inducing = self.inducing_variable.num_inducing
         self._init_variational_parameters(num_inducing, q_mu, q_sqrt, q_diag)
 
     def _init_variational_parameters(self, num_inducing, q_mu, q_sqrt, q_diag):

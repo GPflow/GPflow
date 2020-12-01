@@ -157,7 +157,7 @@ class BayesianGPLVM(GPModel, InternalDataTrainingLossMixin):
 
         pX = DiagonalGaussian(self.X_data_mean, self.X_data_var)
 
-        num_inducing = len(self.inducing_variable)
+        num_inducing = self.inducing_variable.num_inducing
         psi0 = tf.reduce_sum(expectation(pX, self.kernel))
         psi1 = expectation(pX, (self.kernel, self.inducing_variable))
         psi2 = tf.reduce_sum(
@@ -223,7 +223,7 @@ class BayesianGPLVM(GPModel, InternalDataTrainingLossMixin):
         pX = DiagonalGaussian(self.X_data_mean, self.X_data_var)
 
         Y_data = self.data
-        num_inducing = len(self.inducing_variable)
+        num_inducing = self.inducing_variable.num_inducing
         psi1 = expectation(pX, (self.kernel, self.inducing_variable))
         psi2 = tf.reduce_sum(
             expectation(
