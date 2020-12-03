@@ -1,27 +1,26 @@
-import numpy as np
-import gpflow
-from gpflow import covariances as cov
-import tensorflow as tf
-import tensorflow_probability as tfp
-
 from typing import Tuple
 
 import numpy as np
 import tensorflow as tf
+import tensorflow_probability as tfp
 
-from gpflow import kullback_leiblers
+import gpflow
 from gpflow import Parameter
+from gpflow import covariances as cov
+from gpflow import kullback_leiblers
 # from gpflow.conditionals import conditional
 from gpflow.config import default_float
-from gpflow.utilities import positive, triangular
 from gpflow.models.model import GPModel, InputData, MeanAndVariance, RegressionData
 from gpflow.models.training_mixins import ExternalDataTrainingLossMixin
 from gpflow.models.util import inducingpoint_wrapper
+from gpflow.utilities import positive, triangular
+
 
 class DiagNormal(gpflow.Module):
     def __init__(self, q_mu, q_sqrt):
         self.q_mu = gpflow.Parameter(q_mu)  # [M, L]
         self.q_sqrt = gpflow.Parameter(q_sqrt)  # [M, L]
+
 
 class MvnNormal(gpflow.Module):
     def __init__(self, q_mu, q_sqrt):
@@ -46,7 +45,9 @@ class Posterior:
         self.alpha = tf.constant(self.alpha.numpy())
         self.Qinv = tf.constant(self.Qinv.numpy())
 
-    def predict_f(self, Xnew, full_cov: bool=False, full_output_cov: bool=False) -> MeanAndVariance:
+    def predict_f(
+        self, Xnew, full_cov: bool = False, full_output_cov: bool = False
+    ) -> MeanAndVariance:
         Kuf = cov.Kmn = Kuf(self.iv, self.kernel, Xnew)  # [M, N]
         Kff = self.kernel(Xnew, full_cov=full_cov)
         mean = tf.matmul(Kuf, self.alpha, transpose_a=True)
@@ -55,7 +56,7 @@ class Posterior:
         if full_cov:
             Kfu_Qinv_Kuf = tf.matmul(Kuf, tf.matmul(self.Qinv, Kuf), transpose_a=True)
         else:
-            # [AT B]_ij = AT_ik B_kj = A_ki B_kj 
+            # [AT B]_ij = AT_ik B_kj = A_ki B_kj
             # TODO check whether einsum is faster now?
             Kfu_Qinv_Kuf = tf.reduce_sum(Kuf * tf.matmul(self.Qinv, Kuf), axis=-2)
         cov = Kff - Kfu_Qinv_Kuf
@@ -107,6 +108,7 @@ class NewSVGP(GPModel, ExternalDataTrainingLossMixin):
     - q_dist instead of q_mu/q_sqrt
     - posterior() method
     """
+
     def __init__(
         self,
         kernel,
@@ -137,7 +139,13 @@ class NewSVGP(GPModel, ExternalDataTrainingLossMixin):
         this works around some issues in the tensorflow graph optimisation and gives much
         faster prediction when wrapped inside tf.function()
         """
-        posterior = Posterior(self.kernel, self.inducing_variable, self.q_dist, whiten=self.whiten, mean_function=self.mean_function)
+        posterior = Posterior(
+            self.kernel,
+            self.inducing_variable,
+            self.q_dist,
+            whiten=self.whiten,
+            mean_function=self.mean_function,
+        )
         if freeze:
             posterior.freeze()
         return posterior
@@ -156,9 +164,12 @@ class NewSVGP(GPModel, ExternalDataTrainingLossMixin):
             return DiagNormal(q_mu, q_sqrt)
         else:
             if q_sqrt is None:
-                q_sqrt = np.array([
-                    np.eye(num_inducing, dtype=default_float()) for _ in range(self.num_latent_gps)
-                ])
+                q_sqrt = np.array(
+                    [
+                        np.eye(num_inducing, dtype=default_float())
+                        for _ in range(self.num_latent_gps)
+                    ]
+                )
             else:
                 assert q_sqrt.ndim == 3
                 self.num_latent_gps = q_sqrt.shape[0]
@@ -168,7 +179,11 @@ class NewSVGP(GPModel, ExternalDataTrainingLossMixin):
 
     def prior_kl(self) -> tf.Tensor:
         return kullback_leiblers.prior_kl(
-            self.inducing_variable, self.kernel, self.q_dist.q_mu, self.q_dist.q_sqrt, whiten=self.whiten
+            self.inducing_variable,
+            self.kernel,
+            self.q_dist.q_mu,
+            self.q_dist.q_sqrt,
+            whiten=self.whiten,
         )
 
     def maximum_log_likelihood_objective(self, data: RegressionData) -> tf.Tensor:
@@ -197,7 +212,10 @@ class NewSVGP(GPModel, ExternalDataTrainingLossMixin):
         For fast prediction, get a posterior object first: model.posterior() -- see freeze argument
         then do posterior.predict_f(Xnew...)
         """
-        return self.posterior(freeze=False).predict_f(Xnew, full_cov=full_cov, full_output_cov=full_output_cov)
+        return self.posterior(freeze=False).predict_f(
+            Xnew, full_cov=full_cov, full_output_cov=full_output_cov
+        )
+
 
 """
 # Option 1: recomputing from scratch
