@@ -6,7 +6,7 @@ import tensorflow_probability as tfp
 
 import gpflow
 from gpflow import Parameter
-from gpflow import covariances as cov
+from gpflow import covariances
 from gpflow import kullback_leiblers
 # from gpflow.conditionals import conditional
 from gpflow.config import default_float
@@ -26,6 +26,10 @@ class MvnNormal(gpflow.Module):
     def __init__(self, q_mu, q_sqrt):
         self.q_mu = gpflow.Parameter(q_mu)  # [M, L]
         self.q_sqrt = gpflow.Parameter(q_sqrt)  # [L, M, M]
+
+
+def eye_like(A):
+    return tf.eye(tf.shape(A)[-1], dtype=A.dtype)
 
 
 class Posterior:
@@ -48,7 +52,10 @@ class Posterior:
     def predict_f(
         self, Xnew, full_cov: bool = False, full_output_cov: bool = False
     ) -> MeanAndVariance:
-        Kuf = cov.Kmn = Kuf(self.iv, self.kernel, Xnew)  # [M, N]
+        # Qinv: [L, M, M]
+        # alpha: [M, L]
+
+        Kuf = covariances.Kuf(self.iv, self.kernel, Xnew)  # [M, N]
         Kff = self.kernel(Xnew, full_cov=full_cov)
         mean = tf.matmul(Kuf, self.alpha, transpose_a=True)
         if self.mean_function is not None:
@@ -63,7 +70,7 @@ class Posterior:
         return mean, cov
 
     def _precompute(self):
-        Kuu = cov.Kuu(self.iv, self.kernel)  # [M, M]
+        Kuu = covariances.Kuu(self.iv, self.kernel)  # [M, M]
         L = tf.linalg.cholesky(Kuu)
         if not self.whiten:
             # alpha = Kuu⁻¹ q_mu
@@ -94,6 +101,7 @@ class Posterior:
             # Qinv = Kuu⁻¹ - L⁻T S L⁻¹
             # Linv = (L⁻¹ I) = solve(L, I)
             # Kinv = Linv.T @ Linv
+        I = eye_like(Linv_cov_u_LinvT)
         B = I - Linv_cov_u_LinvT
         LinvT_B = tf.linalg.triangular_solve(L, B, adjoint=True)
         B_Linv = tf.linalg.adjoint(LinvT_B)
