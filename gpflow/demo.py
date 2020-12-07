@@ -25,7 +25,7 @@ class DiagNormal(gpflow.Module):
 class MvnNormal(gpflow.Module):
     def __init__(self, q_mu, q_sqrt):
         self.q_mu = gpflow.Parameter(q_mu)  # [M, L]
-        self.q_sqrt = gpflow.Parameter(q_sqrt)  # [L, M, M]
+        self.q_sqrt = gpflow.Parameter(q_sqrt, transform=gpflow.utilities.triangular())  # [L, M, M]
 
 
 def eye_like(A):
@@ -67,6 +67,8 @@ class Posterior:
             # TODO check whether einsum is faster now?
             Kfu_Qinv_Kuf = tf.reduce_sum(Kuf * tf.matmul(self.Qinv, Kuf), axis=-2)
         cov = Kff - Kfu_Qinv_Kuf
+        if not full_cov:
+            cov = tf.linalg.adjoint(cov)
         return mean, cov
 
     def _precompute(self):
@@ -77,7 +79,7 @@ class Posterior:
             alpha = tf.linalg.cholesky_solve(L, self.q_dist.q_mu)
         else:
             # alpha = L⁻T q_mu
-            alpha = tf.linalg.triangular_solve(L, self.q_dist.q_mu)
+            alpha = tf.linalg.triangular_solve(L, self.q_dist.q_mu, adjoint=True)
         # predictive mean = Kfu alpha
         # predictive variance = Kff - Kfu Qinv Kuf
         # S = q_sqrt q_sqrtT
@@ -94,7 +96,7 @@ class Posterior:
             Linv_cov_u_LinvT = tf.matmul(Linv_qsqrt, Linv_qsqrt, transpose_b=True)
         else:
             if isinstance(self.q_dist, DiagNormal):
-                Linv_cov_u_LinvT = tf.linalg.diag(self.q_dist.q_sqrt ** 2)
+                Linv_cov_u_LinvT = tf.linalg.diag(tf.linalg.adjoint(self.q_dist.q_sqrt ** 2))
             else:
                 q_sqrt = self.q_dist.q_sqrt
                 Linv_cov_u_LinvT = tf.matmul(q_sqrt, q_sqrt, transpose_b=True)
