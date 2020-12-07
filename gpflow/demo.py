@@ -256,3 +256,26 @@ predfn()
 
 m.predict_f()
 """
+
+
+def make_models(M=64, D=5, L=3, q_diag=False, whiten=True):
+    k = gpflow.kernels.Matern52()
+    lik = gpflow.likelihoods.Gaussian(0.1)
+    Z = np.random.randn(M, D)
+    q_mu = np.random.randn(M, L)
+    if q_diag:
+        q_sqrt = np.random.randn(M, L)**2
+    else:
+        q_sqrt = np.tril(np.random.randn(L, M, M))
+    mold = gpflow.models.SVGP(k, lik, Z, q_diag=q_diag, q_mu=q_mu, q_sqrt=q_sqrt, whiten=whiten)
+    mnew = NewSVGP(k, lik, Z, q_diag=q_diag, q_mu=q_mu, q_sqrt=q_sqrt, whiten=whiten)
+    return mold, mnew
+
+# TODO: compare timings for q_diag=True, whiten=False, ...
+mold, mnew = make_models()
+X = np.random.randn(100, 5)
+Xt = tf.convert_to_tensor(X)
+pred_old = tf.function(mold.predict_f)
+pred_new = tf.function(mnew.posterior(freeze=True).predict_f)
+# %timeit pred_old(Xt)
+# %timeit pred_new(Xt)
