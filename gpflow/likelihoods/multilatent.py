@@ -15,6 +15,7 @@
 import abc
 from typing import Callable, Optional, Type
 
+import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
 
@@ -54,7 +55,6 @@ class MultiLatentTFPConditional(MultiLatentLikelihood):
         :param conditional_distribution: function from Fs to a tfp Distribution,
             where Fs has shape [..., latent_dim]
         """
-        self._
         super().__init__(latent_dim, **kwargs)
         self.conditional_distribution = conditional_distribution
 
@@ -140,7 +140,7 @@ class HeteroskedasticGaussian(QuadratureLikelihood):
         if quadrature and quadrature.dim != self._quadrature_dim:
             raise Exception("If passing quadrature, quadrature.dim must be 1")
 
-        super().__init__(lobservation_dim=1, latent_dim=2, quadrature=quadrature)
+        super().__init__(observation_dim=1, latent_dim=2, quadrature=quadrature)
         self.scale_transform = tfp.bijectors.Exp()
 
     @property
