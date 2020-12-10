@@ -25,6 +25,7 @@ from .multilatent import (
     HeteroskedasticTFPConditional,
     MultiLatentLikelihood,
     MultiLatentTFPConditional,
+    HeteroskedasticGaussian,
 )
 from .scalar_continuous import Beta, Exponential, Gamma, Gaussian, StudentT
 from .scalar_discrete import Bernoulli, Ordinal, Poisson
