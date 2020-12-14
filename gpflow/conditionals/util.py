@@ -54,9 +54,152 @@ def base_conditional(
     :return: [N, R]  or [R, N, N]
     """
     Lm = tf.linalg.cholesky(Kmm)
-    return base_conditional_with_lm(
+    return base_conditional_with_lm_reordered(
         Kmn=Kmn, Lm=Lm, Knn=Knn, f=f, full_cov=full_cov, q_sqrt=q_sqrt, white=white
     )
+
+
+def eye_like(A):
+    return tf.eye(tf.shape(A)[-1], dtype=A.dtype)
+
+def base_conditional_with_lm_reordered(
+    Kmn: tf.Tensor,
+    Lm: tf.Tensor,
+    Knn: tf.Tensor,
+    f: tf.Tensor,
+    *,
+    full_cov=False,
+    q_sqrt: Optional[tf.Tensor] = None,
+    white=False,
+):
+    r"""
+    Has the same functionality as the `base_conditional` function, except that instead of
+    `Kmm` this function accepts `Lm`, which is the Cholesky decomposition of `Kmm`.
+
+    This allows `Lm` to be precomputed, which can improve performance.
+    """
+    # compute kernel stuff
+    num_func = tf.shape(f)[-1]  # R
+    N = tf.shape(Kmn)[-1]
+    M = tf.shape(f)[-2]
+    q_sqrt_is_diag = q_sqrt is not None and q_sqrt.shape.ndims == 2
+
+    # get the leading dims in Kmn to the front of the tensor
+    # if Kmn has rank two, i.e. [M, N], this is the identity op.
+    K = tf.rank(Kmn)
+    perm = tf.concat(
+        [
+            tf.reshape(tf.range(1, K - 1), [K - 2]),  # leading dims (...)
+            tf.reshape(0, [1]),  # [M]
+            tf.reshape(K - 1, [1]),
+        ],
+        0,
+    )  # [N]
+    Kmn = tf.transpose(Kmn, perm)  # [..., M, N]
+
+    shape_constraints = [
+        (Kmn, [..., "M", "N"]),
+        (Lm, ["M", "M"]),
+        (Knn, [..., "N", "N"] if full_cov else [..., "N"]),
+        (f, ["M", "R"]),
+    ]
+    if q_sqrt is not None:
+        shape_constraints.append(
+            (q_sqrt, (["M", "R"] if q_sqrt_is_diag else ["R", "M", "M"]))
+        )
+    tf.debugging.assert_shapes(
+        shape_constraints,
+        message="base_conditional() arguments "
+        "[Note that this check verifies the shape of an alternative "
+        "representation of Kmn. See the docs for the actual expected "
+        "shape.]",
+    )
+
+    leading_dims = tf.shape(Kmn)[:-2]
+
+    if not white:
+        # alpha = Kuu⁻¹ q_mu
+        alpha = tf.linalg.cholesky_solve(Lm, f)
+    else:
+        # alpha = Lm⁻T q_mu
+        alpha = tf.linalg.triangular_solve(Lm, f)
+
+    shape_constraints = [
+        (f, ["M", "R"]),  # tensor included again for R dimension
+        (alpha, ["M", "R"]),
+    ]
+    tf.debugging.assert_shapes(shape_constraints, message="alpha")
+
+    if q_sqrt is not None:
+        if not white:
+            # Qinv = Kuu⁻¹ - Kuu⁻¹ S Kuu⁻¹
+            #      = Kuu⁻¹ - Lm⁻T Lm⁻¹ S Lm⁻T Lm⁻¹
+            #      = Lm⁻T (I - Lm⁻¹ S Lm⁻T) Lm⁻¹
+            #      = Lm⁻T B Lm⁻¹
+            if q_sqrt_is_diag:
+                q_sqrt = tf.linalg.diag(q_sqrt)
+            Linv_qsqrt = tf.linalg.triangular_solve(Lm, q_sqrt)
+            Linv_cov_u_LinvT = tf.matmul(Linv_qsqrt, Linv_qsqrt, transpose_b=True)
+        else:
+            if q_sqrt_is_diag:
+                Linv_cov_u_LinvT = tf.linalg.diag(q_sqrt ** 2)
+            else:
+                Linv_cov_u_LinvT = tf.matmul(q_sqrt, q_sqrt, transpose_b=True)
+            # Qinv = Kuu⁻¹ - Lm⁻T S Lm⁻¹
+            # Linv = (Lm⁻¹ I) = solve(Lm, I)
+            # Kinv = Linv.T @ Linv
+        I = eye_like(Linv_cov_u_LinvT)
+        B = I - Linv_cov_u_LinvT
+        LinvT_B = tf.linalg.triangular_solve(Lm, B, adjoint=True)
+        B_Linv = tf.linalg.adjoint(LinvT_B)
+        Qinv = tf.linalg.triangular_solve(Lm, B_Linv, adjoint=True)
+
+        shape_constraints = [
+            (f, ["M", "R"]),
+            (Qinv, ["R", "M", "M"]),
+        ]
+        tf.debugging.assert_shapes(shape_constraints, message="Qinv")
+
+    else:
+        # TODO computing inverse of K directly would be more efficient...
+        K = tf.matmul(Lm, Lm, transpose_b=True)
+        Qinv = tf.linalg.inv(K)
+
+        shape_constraints = [
+            (f, ["M", "R"]),
+            (Qinv, ["M", "M"]),
+        ]
+        tf.debugging.assert_shapes(shape_constraints, message="Qinv")
+
+
+    fmean = tf.linalg.matmul(Kmn, alpha, transpose_a=True)  # [..., N, R]
+
+    if full_cov:
+        # Qinv [R, M, M]
+        # Kmn [..., M, N]
+        Kfu_Qinv_Kuf = tf.matmul(Kmn, tf.matmul(Qinv, Kmn), transpose_a=True)
+        fvar = Knn - Kfu_Qinv_Kuf  # [R, N, N]
+        tf.debugging.assert_shapes([
+            (Qinv, "RMM"),
+            (Kmn, "MN"),
+            (fvar, "RNN"),
+            ], message="full_cov=True fvar")
+    else:
+        # [AT B]_ij = AT_ik B_kj = A_ki B_kj
+        # TODO check whether einsum is faster now?
+        Kfu_Qinv_Kuf = tf.matmul(Qinv, Kmn ** 2)  # [R, N]
+        fvar = tf.linalg.adjoint(Knn - Kfu_Qinv_Kuf)
+
+    shape_constraints = [
+        (Kmn, [..., "M", "N"]),  # tensor included again for N dimension
+        (f, [..., "M", "R"]),  # tensor included again for R dimension
+        (fmean, [..., "N", "R"]),
+        
+        #(fvar, [..., "R", "N", "N"] if full_cov else [..., "N", "R"]),
+    ]
+    tf.debugging.assert_shapes(shape_constraints, message="base_conditional() return values")
+
+    return fmean, fvar
 
 
 def base_conditional_with_lm(
