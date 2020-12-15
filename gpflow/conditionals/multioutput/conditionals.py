@@ -34,6 +34,7 @@ from ...kernels import (
 from ..dispatch import conditional
 from ..util import (
     base_conditional,
+    broadcasting_base_conditional,
     expand_independent_outputs,
     fully_correlated_conditional,
     independent_interdomain_conditional,
@@ -128,37 +129,9 @@ def separate_independent_conditional(
     else:
         kernels = [kernel.kernel] * len(inducing_variable.inducing_variable_list)
     Knns = tf.stack([k.K(Xnew) if full_cov else k.K_diag(Xnew) for k in kernels], axis=0)
-    fs = tf.transpose(f)[:, :, None]  # [P, M, 1]
     # [P, 1, M, M]  or  [P, M, 1]
 
-    if q_sqrt is not None:
-        q_sqrts = (
-            tf.transpose(q_sqrt)[:, :, None] if q_sqrt.shape.ndims == 2 else q_sqrt[:, None, :, :]
-        )
-        base_conditional_args_to_map = (Kmms, Kmns, Knns, fs, q_sqrts)
-
-        def single_gp_conditional(t):
-            Kmm, Kmn, Knn, f, q_sqrt = t
-            return base_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov, q_sqrt=q_sqrt, white=white)
-
-    else:
-        base_conditional_args_to_map = (Kmms, Kmns, Knns, fs)
-
-        def single_gp_conditional(t):
-            Kmm, Kmn, Knn, f = t
-            return base_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov, q_sqrt=q_sqrt, white=white)
-
-    rmu, rvar = tf.map_fn(
-        single_gp_conditional, base_conditional_args_to_map, (default_float(), default_float())
-    )  # [P, N, 1], [P, 1, N, N] or [P, N, 1]
-
-    fmu = rollaxis_left(tf.squeeze(rmu, axis=-1), 1)  # [N, P]
-
-    if full_cov:
-        fvar = tf.squeeze(rvar, axis=-3)  # [..., 0, :, :]  # [P, N, N]
-    else:
-        fvar = rollaxis_left(tf.squeeze(rvar, axis=-1), 1)  # [N, P]
-
+    fmu, fvar = broadcasting_base_conditional(Kmns, Kmms, Knns, f, full_cov=full_cov, q_sqrt=q_sqrt, white=white)
     return fmu, expand_independent_outputs(fvar, full_cov, full_output_cov)
 
 
