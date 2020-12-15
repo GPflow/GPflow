@@ -142,7 +142,7 @@ def base_conditional_with_lm_reordered(
             Linv_cov_u_LinvT = tf.matmul(Linv_qsqrt, Linv_qsqrt, transpose_b=True)
         else:
             if q_sqrt_is_diag:
-                Linv_cov_u_LinvT = tf.linalg.diag(q_sqrt ** 2)
+                Linv_cov_u_LinvT = tf.linalg.diag(tf.transpose(q_sqrt ** 2))
             else:
                 Linv_cov_u_LinvT = tf.matmul(q_sqrt, q_sqrt, transpose_b=True)
             # Qinv = Kuu⁻¹ - Lm⁻T S Lm⁻¹
