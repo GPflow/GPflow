@@ -137,7 +137,7 @@ def base_conditional_with_lm_reordered(
             #      = Lm⁻T (I - Lm⁻¹ S Lm⁻T) Lm⁻¹
             #      = Lm⁻T B Lm⁻¹
             if q_sqrt_is_diag:
-                q_sqrt = tf.linalg.diag(q_sqrt)
+                q_sqrt = tf.linalg.diag(tf.transpose(q_sqrt))
             Linv_qsqrt = tf.linalg.triangular_solve(Lm, q_sqrt)
             Linv_cov_u_LinvT = tf.matmul(Linv_qsqrt, Linv_qsqrt, transpose_b=True)
         else:
@@ -187,7 +187,8 @@ def base_conditional_with_lm_reordered(
     else:
         # [AT B]_ij = AT_ik B_kj = A_ki B_kj
         # TODO check whether einsum is faster now?
-        Kfu_Qinv_Kuf = tf.matmul(Qinv, Kmn ** 2)  # [R, N]
+        Kfu_Qinv_Kuf = tf.linalg.diag_part(tf.matmul(Kmn, tf.matmul(Qinv, Kmn), transpose_a=True))
+        # Kfu_Qinv_Kuf = tf.reduce_sum(tf.matmul(Qinv, Kmn ** 2), -2) # [R, N]
         fvar = tf.linalg.adjoint(Knn - Kfu_Qinv_Kuf)
 
     shape_constraints = [
@@ -195,7 +196,7 @@ def base_conditional_with_lm_reordered(
         (f, [..., "M", "R"]),  # tensor included again for R dimension
         (fmean, [..., "N", "R"]),
         
-        #(fvar, [..., "R", "N", "N"] if full_cov else [..., "N", "R"]),
+        (fvar, [..., "R", "N", "N"] if full_cov else [..., "N", "R"]),
     ]
     tf.debugging.assert_shapes(shape_constraints, message="base_conditional() return values")
 
