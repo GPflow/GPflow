@@ -32,16 +32,15 @@ def base_conditional_closure(
     #    Knn = Knn[..., None, :, :]
     #else:
     #    Knn = Knn[..., None, :]
-    return broadcasting_base_conditional(Kmn[None, ...], Kmm[None, ...], Knn[None, ...], f,
-            full_cov=full_cov, q_sqrt=q_sqrt, white=white)
+    orig_closure = broadcasting_base_conditional(Kmm[None, ...], f, q_sqrt=q_sqrt, white=white)
+    def closure(Kmn, Knn, full_cov):
+        return orig_closure(Kmn[None, ...], Knn[None, ...], full_cov=full_cov)
+    return closure
 
 def broadcasting_base_conditional(
-    Kmn: tf.Tensor,
     Kmm: tf.Tensor,
-    Knn: tf.Tensor,
     f: tf.Tensor,
     *,
-    full_cov=False,
     q_sqrt: Optional[tf.Tensor] = None,
     white=False,
 ):
@@ -69,9 +68,7 @@ def broadcasting_base_conditional(
     :return: [N, R]  or [R, N, N]
     """
     Lm = tf.linalg.cholesky(Kmm)
-    return base_conditional_with_lm_reordered_closure(
-        Lm=Lm, f=f, q_sqrt=q_sqrt, white=white
-    )
+    return base_conditional_with_lm_reordered_closure(Lm=Lm, f=f, q_sqrt=q_sqrt, white=white)
 
 
 def eye_like(A):
@@ -193,7 +190,7 @@ def base_conditional_with_lm_reordered_closure(
             fvar = Knn - Kfu_Qinv_Kuf  # [R, N, N]
             tf.debugging.assert_shapes([
                 (Qinv, "RMM"),
-                (Kmn, "MN"),
+                (Kmn, "RM*N"),   # TODO broadcast over R
                 (fvar, "RNN"),
                 ], message="full_cov=True fvar")
         else:
