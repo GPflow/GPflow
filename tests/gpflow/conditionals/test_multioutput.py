@@ -132,9 +132,9 @@ def create_q_sqrt(M, L):
 
 
 class Data:
-    N, Ntest = 20, 5
+    N, Ntest = 23, 5
     D = 1  # input dimension
-    M = 3  # inducing points
+    M = 7  # inducing points
     L = 2  # latent gps
     P = 3  # output dimension
     MAXITER = int(15e2)

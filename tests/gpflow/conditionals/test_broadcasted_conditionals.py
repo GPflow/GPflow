@@ -35,14 +35,14 @@ from gpflow.conditionals.util import mix_latent_gp
 class Data:
     S1, S2, N, M = (
         7,  # num samples 1
-        6,  # num samples 2
-        4,  # num datapoints
-        3,  # num inducing
+        11,  # num samples 2
+        23,  # num datapoints
+        17,  # num inducing
     )
     Dx, Dy, L = (
         2,  # input dim
         5,  # output dim
-        4,  # num latent GPs
+        3,  # num latent GPs
     )
     W = np.random.randn(Dy, L)  # mixing matrix
 
