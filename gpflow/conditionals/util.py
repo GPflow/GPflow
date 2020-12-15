@@ -20,13 +20,10 @@ from ..config import default_float, default_jitter
 from ..utilities.ops import leading_transpose
 
 
-def base_conditional(
-    Kmn: tf.Tensor,
+def base_conditional_closure(
     Kmm: tf.Tensor,
-    Knn: tf.Tensor,
     f: tf.Tensor,
     *,
-    full_cov=False,
     q_sqrt: Optional[tf.Tensor] = None,
     white=False,
 ):
@@ -54,21 +51,18 @@ def base_conditional(
     :return: [N, R]  or [R, N, N]
     """
     Lm = tf.linalg.cholesky(Kmm)
-    return base_conditional_with_lm(
-        Kmn=Kmn, Lm=Lm, Knn=Knn, f=f, full_cov=full_cov, q_sqrt=q_sqrt, white=white
+    return base_conditional_with_lm_reordered_closure(
+        Lm=Lm, f=f, q_sqrt=q_sqrt, white=white
     )
 
 
 def eye_like(A):
     return tf.eye(tf.shape(A)[-1], dtype=A.dtype)
 
-def base_conditional_with_lm_reordered(
-    Kmn: tf.Tensor,
+def base_conditional_with_lm_reordered_closure(
     Lm: tf.Tensor,
-    Knn: tf.Tensor,
     f: tf.Tensor,
     *,
-    full_cov=False,
     q_sqrt: Optional[tf.Tensor] = None,
     white=False,
 ):
@@ -80,28 +74,14 @@ def base_conditional_with_lm_reordered(
     """
     # compute kernel stuff
     num_func = tf.shape(f)[-1]  # R
-    N = tf.shape(Kmn)[-1]
     M = tf.shape(f)[-2]
     q_sqrt_is_diag = q_sqrt is not None and q_sqrt.shape.ndims == 2
 
-    # get the leading dims in Kmn to the front of the tensor
-    # if Kmn has rank two, i.e. [M, N], this is the identity op.
-    K = tf.rank(Kmn)
-    perm = tf.concat(
-        [
-            tf.reshape(tf.range(1, K - 1), [K - 2]),  # leading dims (...)
-            tf.reshape(0, [1]),  # [M]
-            tf.reshape(K - 1, [1]),
-        ],
-        0,
-    )  # [N]
-    Kmn = tf.transpose(Kmn, perm)  # [..., M, N]
-
     shape_constraints = [
-        (Kmn, [..., "M", "N"]),
-        (Lm, ["M", "M"]),
-        (Knn, [..., "N", "N"] if full_cov else [..., "N"]),
-        (f, ["M", "R"]),
+        # (Kmn, [..., "M", "N"]),
+        (Lm, ["P", "M", "M"]),
+        # (Knn, [..., "N", "N"] if full_cov else [..., "N"]),
+        (f, ["M", "P"]),
     ]
     if q_sqrt is not None:
         shape_constraints.append(
@@ -114,8 +94,6 @@ def base_conditional_with_lm_reordered(
         "representation of Kmn. See the docs for the actual expected "
         "shape.]",
     )
-
-    leading_dims = tf.shape(Kmn)[:-2]
 
     if not white:
         # alpha = Kuu⁻¹ q_mu
@@ -172,35 +150,53 @@ def base_conditional_with_lm_reordered(
         tf.debugging.assert_shapes(shape_constraints, message="Qinv")
 
 
-    fmean = tf.linalg.matmul(Kmn, alpha, transpose_a=True)  # [..., N, R]
+    def closure(Kmn, Knn, full_cov):
+        # get the leading dims in Kmn to the front of the tensor
+        # if Kmn has rank two, i.e. [M, N], this is the identity op.
+        K = tf.rank(Kmn)
+        perm = tf.concat(
+            [
+                tf.reshape(tf.range(1, K - 1), [K - 2]),  # leading dims (...)
+                tf.reshape(0, [1]),  # [M]
+                tf.reshape(K - 1, [1]),
+            ],
+            0,
+        )  # [N]
+        Kmn = tf.transpose(Kmn, perm)  # [..., M, N]
 
-    if full_cov:
-        # Qinv [R, M, M]
-        # Kmn [..., M, N]
-        Kfu_Qinv_Kuf = tf.matmul(Kmn, tf.matmul(Qinv, Kmn), transpose_a=True)
-        fvar = Knn - Kfu_Qinv_Kuf  # [R, N, N]
-        tf.debugging.assert_shapes([
-            (Qinv, "RMM"),
-            (Kmn, "MN"),
-            (fvar, "RNN"),
-            ], message="full_cov=True fvar")
-    else:
-        # [AT B]_ij = AT_ik B_kj = A_ki B_kj
-        # TODO check whether einsum is faster now?
-        Kfu_Qinv_Kuf = tf.linalg.diag_part(tf.matmul(Kmn, tf.matmul(Qinv, Kmn), transpose_a=True))
-        # Kfu_Qinv_Kuf = tf.reduce_sum(tf.matmul(Qinv, Kmn ** 2), -2) # [R, N]
-        fvar = tf.linalg.adjoint(Knn - Kfu_Qinv_Kuf)
+        leading_dims = tf.shape(Kmn)[:-2]
 
-    shape_constraints = [
-        (Kmn, [..., "M", "N"]),  # tensor included again for N dimension
-        (f, [..., "M", "R"]),  # tensor included again for R dimension
-        (fmean, [..., "N", "R"]),
-        
-        (fvar, [..., "R", "N", "N"] if full_cov else [..., "N", "R"]),
-    ]
-    tf.debugging.assert_shapes(shape_constraints, message="base_conditional() return values")
+        fmean = tf.linalg.matmul(Kmn, alpha, transpose_a=True)  # [..., N, R]
 
-    return fmean, fvar
+        if full_cov:
+            # Qinv [R, M, M]
+            # Kmn [..., M, N]
+            Kfu_Qinv_Kuf = tf.matmul(Kmn, tf.matmul(Qinv, Kmn), transpose_a=True)
+            fvar = Knn - Kfu_Qinv_Kuf  # [R, N, N]
+            tf.debugging.assert_shapes([
+                (Qinv, "RMM"),
+                (Kmn, "MN"),
+                (fvar, "RNN"),
+                ], message="full_cov=True fvar")
+        else:
+            # [AT B]_ij = AT_ik B_kj = A_ki B_kj
+            # TODO check whether einsum is faster now?
+            Kfu_Qinv_Kuf = tf.linalg.diag_part(tf.matmul(Kmn, tf.matmul(Qinv, Kmn), transpose_a=True))
+            # Kfu_Qinv_Kuf = tf.reduce_sum(tf.matmul(Qinv, Kmn ** 2), -2) # [R, N]
+            fvar = tf.linalg.adjoint(Knn - Kfu_Qinv_Kuf)
+
+        shape_constraints = [
+            (Kmn, [..., "M", "N"]),  # tensor included again for N dimension
+            (f, [..., "M", "R"]),  # tensor included again for R dimension
+            (fmean, [..., "N", "R"]),
+            
+            (fvar, [..., "R", "N", "N"] if full_cov else [..., "N", "R"]),
+        ]
+        tf.debugging.assert_shapes(shape_constraints, message="base_conditional() return values")
+
+        return fmean, fvar
+
+    return closure
 
 
 def base_conditional_with_lm(

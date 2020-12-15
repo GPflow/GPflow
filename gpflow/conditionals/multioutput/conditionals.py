@@ -83,26 +83,28 @@ def shared_independent_conditional(
         about the shape of the variance, depending on `full_cov` and `full_output_cov`.
     """
     Kmm = covariances.Kuu(inducing_variable, kernel, jitter=default_jitter())  # [M, M]
-    Kmn = covariances.Kuf(inducing_variable, kernel, Xnew)  # [M, N]
-    Knn = kernel.kernel(Xnew, full_cov=full_cov)
+    base_closure = base_conditional_closure(
+        Kmm, f, q_sqrt=q_sqrt, white=white
+    )
 
-    fmean, fvar = base_conditional(
-        Kmn, Kmm, Knn, f, full_cov=full_cov, q_sqrt=q_sqrt, white=white
-    )  # [N, P],  [P, N, N] or [N, P]
-    return fmean, expand_independent_outputs(fvar, full_cov, full_output_cov)
+    def f_predictor(Xnew, full_cov, full_output_cov):
+        Kmn = covariances.Kuf(inducing_variable, kernel, Xnew)  # [M, N]
+        Knn = kernel.kernel(Xnew, full_cov=full_cov)
+        fmean, fvar = base_closure(
+            Kmn, Knn, full_cov=full_cov
+        )  # [N, P],  [P, N, N] or [N, P]
+        return fmean, expand_independent_outputs(fvar, full_cov, full_output_cov)
+    return f_predictor
 
 
 @conditional.register(object, SeparateIndependentInducingVariables, SeparateIndependent, object)
 @conditional.register(object, SharedIndependentInducingVariables, SeparateIndependent, object)
 @conditional.register(object, SeparateIndependentInducingVariables, SharedIndependent, object)
 def separate_independent_conditional(
-    Xnew,
     inducing_variable,
     kernel,
     f,
     *,
-    full_cov=False,
-    full_output_cov=False,
     q_sqrt=None,
     white=False,
 ):
@@ -122,14 +124,15 @@ def separate_independent_conditional(
     """
     # Following are: [P, M, M]  -  [P, M, N]  -  [P, N](x N)
     Kmms = covariances.Kuu(inducing_variable, kernel, jitter=default_jitter())  # [P, M, M]
-    Kmns = covariances.Kuf(inducing_variable, kernel, Xnew)  # [P, M, N]
     if isinstance(kernel, Combination):
         kernels = kernel.kernels
     else:
         kernels = [kernel.kernel] * len(inducing_variable.inducing_variable_list)
-    Knns = tf.stack([k.K(Xnew) if full_cov else k.K_diag(Xnew) for k in kernels], axis=0)
     fs = tf.transpose(f)[:, :, None]  # [P, M, 1]
     # [P, 1, M, M]  or  [P, M, 1]
+
+    Kmns = covariances.Kuf(inducing_variable, kernel, Xnew)  # [P, M, N]
+    Knns = tf.stack([k.K(Xnew) if full_cov else k.K_diag(Xnew) for k in kernels], axis=0)  # [P, N, N] if full_cov else [P, N]
 
     if q_sqrt is not None:
         q_sqrts = (
@@ -307,14 +310,15 @@ def coregionalization_conditional(
     ind_conditional = conditional.dispatch(
         object, SeparateIndependentInducingVariables, SeparateIndependent, object
     )
-    gmu, gvar = ind_conditional(
-        Xnew,
+    g_predictor = ind_conditional(
         inducing_variable,
         kernel,
         f,
         full_cov=full_cov,
         q_sqrt=q_sqrt,
-        full_output_cov=False,
         white=white,
     )  # [N, L], [L, N, N] or [N, L]
-    return mix_latent_gp(kernel.W, gmu, gvar, full_cov, full_output_cov)
+    def mixed_closure(Xnew, full_cov, full_output_cov):
+        gmu, gvar = g_predictor(Xnew, full_cov=full_cov, full_output_cov=False)
+        return mix_latent_gp(kernel.W, gmu, gvar, full_cov, full_output_cov)
+    return mixed_closure
