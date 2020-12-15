@@ -32,6 +32,24 @@ def eye_like(A):
     return tf.eye(tf.shape(A)[-1], dtype=A.dtype)
 
 
+"""
+@dispatch
+def cond_precompute(kernel, iv, q_mu, q_sqrt, whiten):
+    pass
+
+@dispatch
+def cond_execute(Xnew, kernel, iv, alpha, Qinv):
+    pass
+
+
+@dispatch
+def conditional(kernel, iv, q_mu, q_sqrt, whiten):
+    # precompute
+    def execute(Xnew, full_cov):
+        pass
+    return execute
+"""
+
 class Posterior:
     def __init__(self, kernel, iv, q_dist, whiten=True, mean_function=None):
         self.iv = iv
@@ -56,12 +74,14 @@ class Posterior:
         # alpha: [M, L]
 
         Kuf = covariances.Kuf(self.iv, self.kernel, Xnew)  # [M, N]
+        # TODO: introduce a Kfu function that does not require an unnecessary transpose
         Kff = self.kernel(Xnew, full_cov=full_cov)
         mean = tf.matmul(Kuf, self.alpha, transpose_a=True)
         if self.mean_function is not None:
             mean = mean + self.mean_function(Xnew)
         if full_cov:
             Kfu_Qinv_Kuf = tf.matmul(Kuf, tf.matmul(self.Qinv, Kuf), transpose_a=True)
+            cov = Kff - Kfu_Qinv_Kuf
         else:
             # [AT B]_ij = AT_ik B_kj = A_ki B_kj
             # TODO check whether einsum is faster now?
@@ -112,6 +132,71 @@ class Posterior:
         self.Qinv = Qinv
 
 
+def conditional_closure(kernel, iv, q_dist, whiten=True, mean_function=None):
+    Kuu = covariances.Kuu(iv, kernel)  # [M, M]
+    L = tf.linalg.cholesky(Kuu)
+    if not whiten:
+        # alpha = Kuu⁻¹ q_mu
+        alpha = tf.linalg.cholesky_solve(L, q_dist.q_mu)
+    else:
+        # alpha = L⁻T q_mu
+        alpha = tf.linalg.triangular_solve(L, q_dist.q_mu, adjoint=True)
+    # predictive mean = Kfu alpha
+    # predictive variance = Kff - Kfu Qinv Kuf
+    # S = q_sqrt q_sqrtT
+    if not whiten:
+        # Qinv = Kuu⁻¹ - Kuu⁻¹ S Kuu⁻¹
+        #      = Kuu⁻¹ - L⁻T L⁻¹ S L⁻T L⁻¹
+        #      = L⁻T (I - L⁻¹ S L⁻T) L⁻¹
+        #      = L⁻T B L⁻¹
+        if isinstance(q_dist, DiagNormal):
+            q_sqrt = tf.linalg.diag(q_dist.q_sqrt)
+        else:
+            q_sqrt = q_dist.q_sqrt
+        Linv_qsqrt = tf.linalg.triangular_solve(L, q_sqrt)
+        Linv_cov_u_LinvT = tf.matmul(Linv_qsqrt, Linv_qsqrt, transpose_b=True)
+    else:
+        if isinstance(q_dist, DiagNormal):
+            Linv_cov_u_LinvT = tf.linalg.diag(tf.linalg.adjoint(q_dist.q_sqrt ** 2))
+        else:
+            q_sqrt = q_dist.q_sqrt
+            Linv_cov_u_LinvT = tf.matmul(q_sqrt, q_sqrt, transpose_b=True)
+        # Qinv = Kuu⁻¹ - L⁻T S L⁻¹
+        # Linv = (L⁻¹ I) = solve(L, I)
+        # Kinv = Linv.T @ Linv
+    I = eye_like(Linv_cov_u_LinvT)
+    B = I - Linv_cov_u_LinvT
+    LinvT_B = tf.linalg.triangular_solve(L, B, adjoint=True)
+    B_Linv = tf.linalg.adjoint(LinvT_B)
+    Qinv = tf.linalg.triangular_solve(L, B_Linv, adjoint=True)
+
+    def predict_f(
+        Xnew, full_cov: bool = False, full_output_cov: bool = False
+    ) -> MeanAndVariance:
+        # Qinv: [L, M, M]
+        # alpha: [M, L]
+
+        Kuf = covariances.Kuf(iv, kernel, Xnew)  # [M, N]
+        # TODO: introduce a Kfu function that does not require an unnecessary transpose
+        Kff = kernel(Xnew, full_cov=full_cov)
+        mean = tf.matmul(Kuf, alpha, transpose_a=True)
+        if mean_function is not None:
+            mean = mean + mean_function(Xnew)
+        if full_cov:
+            Kfu_Qinv_Kuf = tf.matmul(Kuf, tf.matmul(Qinv, Kuf), transpose_a=True)
+            cov = Kff - Kfu_Qinv_Kuf
+        else:
+            # [AT B]_ij = AT_ik B_kj = A_ki B_kj
+            # TODO check whether einsum is faster now?
+            Kfu_Qinv_Kuf = tf.reduce_sum(Kuf * tf.matmul(Qinv, Kuf), axis=-2)
+        cov = Kff - Kfu_Qinv_Kuf
+        if not full_cov:
+            cov = tf.linalg.adjoint(cov)
+        return mean, cov
+
+    return predict_f
+
+
 class NewSVGP(GPModel, ExternalDataTrainingLossMixin):
     """
     Differences from gpflow.models.SVGP:
@@ -160,6 +245,15 @@ class NewSVGP(GPModel, ExternalDataTrainingLossMixin):
             posterior.freeze()
         return posterior
 
+    def predictor(self):
+        return conditional_closure(
+            self.kernel,
+            self.inducing_variable,
+            self.q_dist,
+            whiten=self.whiten,
+            mean_function=self.mean_function,
+        )
+
     def _init_variational_parameters(self, num_inducing, q_mu, q_sqrt, q_diag):
         q_mu = np.zeros((num_inducing, self.num_latent_gps)) if q_mu is None else q_mu
         q_mu = Parameter(q_mu, dtype=default_float())  # [M, P]
@@ -206,7 +300,8 @@ class NewSVGP(GPModel, ExternalDataTrainingLossMixin):
         """
         X, Y = data
         kl = self.prior_kl()
-        f_mean, f_var = self.posterior().predict_f(X, full_cov=False, full_output_cov=False)
+        # f_mean, f_var = self.posterior().predict_f(X, full_cov=False, full_output_cov=False)
+        f_mean, f_var = self.predictor()(X, full_cov=False, full_output_cov=False)
         var_exp = self.likelihood.variational_expectations(f_mean, f_var, Y)
         if self.num_data is not None:
             num_data = tf.cast(self.num_data, kl.dtype)
@@ -222,7 +317,8 @@ class NewSVGP(GPModel, ExternalDataTrainingLossMixin):
         For fast prediction, get a posterior object first: model.posterior() -- see freeze argument
         then do posterior.predict_f(Xnew...)
         """
-        return self.posterior(freeze=False).predict_f(
+        # return self.posterior(freeze=False).predict_f(
+        return self.predictor()(
             Xnew, full_cov=full_cov, full_output_cov=full_output_cov
         )
 
@@ -276,6 +372,13 @@ mold, mnew = make_models()
 X = np.random.randn(100, 5)
 Xt = tf.convert_to_tensor(X)
 pred_old = tf.function(mold.predict_f)
-pred_new = tf.function(mnew.posterior(freeze=True).predict_f)
+"""
+pred_newfrozen = tf.function(mnew.posterior(freeze=True).predict_f)
+pred_new = tf.function(mnew.posterior(freeze=False).predict_f)
+def predict_f_once(Xnew):
+    return mnew.posterior().predict_f(Xnew)
+pred_new_once = tf.function(predict_f_once)
+"""
+pred_new = tf.function(mnew.predictor())
 # %timeit pred_old(Xt)
 # %timeit pred_new(Xt)
