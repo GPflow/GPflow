@@ -1,6 +1,6 @@
 from .gplvm import GPLVM, BayesianGPLVM
 from .gpmc import GPMC
-from .gpr import GPR
+from .gpr import GPR, MultivariateGPR
 from .model import BayesianModel, GPModel
 from .sgpmc import SGPMC
 from .sgpr import GPRFITC, SGPR
