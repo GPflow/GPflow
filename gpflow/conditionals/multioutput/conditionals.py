@@ -123,13 +123,16 @@ def separate_independent_conditional(
     """
     # Following are: [P, M, M]  -  [P, M, N]  -  [P, N](x N)
     Kmms = covariances.Kuu(inducing_variable, kernel, jitter=default_jitter())  # [P, M, M]
-    Kmns = covariances.Kuf(inducing_variable, kernel, Xnew)  # [P, M, N]
-    if isinstance(kernel, Combination):
-        kernels = kernel.kernels
+    Kmns = covariances.Kuf(inducing_variable, kernel, Xnew)  # [P, M, ..., N]
+    if full_cov:
+        Knns = kernel(Xnew, full_cov=True, full_output_cov=False)
     else:
-        kernels = [kernel.kernel] * len(inducing_variable.inducing_variable_list)
-    Knns = tf.stack([k.K(Xnew) if full_cov else k.K_diag(Xnew) for k in kernels], axis=0)
-    # [P, 1, M, M]  or  [P, M, 1]
+        # Knns = kernel(Xnew, full_cov=False, full_output_cov=False)  [..., N, P] requires extra transpose
+        if isinstance(kernel, Combination):
+            Knns = tf.stack([k(Xnew, full_cov=full_cov) for k in kernel.kernels], axis=0)
+        else:
+            Knns = tf.tile(kernel(Xnew, full_cov=full_cov)[None], [kernel.output_dim, 1])
+        # [P, N]
 
     fmu, fvar = broadcasting_base_conditional(
         Kmns, Kmms, Knns, f, full_cov=full_cov, q_sqrt=q_sqrt, white=white
