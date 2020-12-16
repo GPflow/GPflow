@@ -309,20 +309,26 @@ m.predict_f()
 """
 
 
-def make_models(M=64, D=5, L=3, q_diag=False, whiten=True, mo=True):
-
-    if mo:
-        k_list = [gpflow.kernels.Matern52() for _ in range(L)]
-        w = tf.Variable(initial_value=np.random.rand(2, L), dtype=tf.float64, name='w')
-        k = gpflow.kernels.LinearCoregionalization(k_list, W=w)
-        # k = gpflow.kernels.SeparateIndependent(k_list)
-        # k = gpflow.kernels.SharedIndependent(k_list[0], output_dim=2)
-        iv_list = [gpflow.inducing_variables.InducingPoints(np.random.randn(M, D)) for _ in range(L)]
-        Z = gpflow.inducing_variables.SeparateIndependentInducingVariables(iv_list)
-        # Z = gpflow.inducing_variables.SharedIndependentInducingVariables(iv_list[0])
-    else:
+def make_models(M=64, D=5, L=3, q_diag=False, whiten=True, mo=None):
+    if mo is None:
         k = gpflow.kernels.Matern52()
         Z = np.random.randn(M, D)
+    else:
+        kernel_type, iv_type = mo
+
+        k_list = [gpflow.kernels.Matern52() for _ in range(L)]
+        w = tf.Variable(initial_value=np.random.rand(2, L), dtype=tf.float64, name='w')
+        if kernel_type == "LinearCoregionalization":
+            k = gpflow.kernels.LinearCoregionalization(k_list, W=w)
+        elif kernel_type == "SeparateIndependent":
+            k = gpflow.kernels.SeparateIndependent(k_list)
+        elif kernel_type == "SharedIndependent":
+            k = gpflow.kernels.SharedIndependent(k_list[0], output_dim=2)
+        iv_list = [gpflow.inducing_variables.InducingPoints(np.random.randn(M, D)) for _ in range(L)]
+        if iv_type == "SeparateIndependent":
+            Z = gpflow.inducing_variables.SeparateIndependentInducingVariables(iv_list)
+        elif iv_type == "SharedIndependent":
+            Z = gpflow.inducing_variables.SharedIndependentInducingVariables(iv_list[0])
     lik = gpflow.likelihoods.Gaussian(0.1)
     q_mu = np.random.randn(M, L)
     if q_diag:
@@ -334,7 +340,7 @@ def make_models(M=64, D=5, L=3, q_diag=False, whiten=True, mo=True):
     return mold, mnew
 
 # TODO: compare timings for q_diag=True, whiten=False, ...
-mold, mnew = make_models(q_diag=False, mo=True)
+mold, mnew = make_models(q_diag=False, mo=None)
 X = np.random.randn(100, 5)
 Xt = tf.convert_to_tensor(X)
 pred_old = tf.function(mold.predict_f)
@@ -352,26 +358,35 @@ pred_new_once = tf.function(predict_f_once)
 
 def test_correct():
     from itertools import product
-    conf = list(product(*[(True, False)] * 3))
-    for q_diag, white, mo in conf:
-        mold, mnew = make_models(q_diag=q_diag, whiten=white, mo=mo)
+    conf = product(*[(True, False)] * 3)
+    for q_diag, white, use_mo in conf:
+        if use_mo:
+            mo_options = list(product(
+                ("LinearCoregionalization", "SeparateIndependent", "SharedIndependent"),
+                ("SeparateIndependent", "SharedIndependent"),
+            ))
+        else:
+            mo_options = [None]
+        for mo in mo_options:
+            print(f"Testing q_diag={q_diag} white={white} mo={mo}...")
+            mold, mnew = make_models(q_diag=q_diag, whiten=white, mo=mo)
 
-        mu, var = mnew.predict_f(X, full_cov=True, full_output_cov=True)
-        mu2, var2 = mold.predict_f(X, full_cov=True, full_output_cov=True)
-        np.testing.assert_allclose(mu, mu2)
-        np.testing.assert_allclose(var, var2)
-        mu, var = mnew.predict_f(X, full_cov=True, full_output_cov=False)
-        mu2, var2 = mold.predict_f(X, full_cov=True, full_output_cov=False)
-        np.testing.assert_allclose(mu, mu2)
-        np.testing.assert_allclose(var, var2)
-        mu, var = mnew.predict_f(X, full_cov=False, full_output_cov=True)
-        mu2, var2 = mold.predict_f(X, full_cov=False, full_output_cov=True)
-        np.testing.assert_allclose(mu, mu2)
-        np.testing.assert_allclose(var, var2)
-        mu, var = mnew.predict_f(X, full_cov=False, full_output_cov=False)
-        mu2, var2 = mold.predict_f(X, full_cov=False, full_output_cov=False)
-        np.testing.assert_allclose(mu, mu2)
-        np.testing.assert_allclose(var, var2)
+            mu, var = mnew.predict_f(X, full_cov=True, full_output_cov=True)
+            mu2, var2 = mold.predict_f(X, full_cov=True, full_output_cov=True)
+            np.testing.assert_allclose(mu, mu2)
+            np.testing.assert_allclose(var, var2)
+            mu, var = mnew.predict_f(X, full_cov=True, full_output_cov=False)
+            mu2, var2 = mold.predict_f(X, full_cov=True, full_output_cov=False)
+            np.testing.assert_allclose(mu, mu2)
+            np.testing.assert_allclose(var, var2)
+            mu, var = mnew.predict_f(X, full_cov=False, full_output_cov=True)
+            mu2, var2 = mold.predict_f(X, full_cov=False, full_output_cov=True)
+            np.testing.assert_allclose(mu, mu2)
+            np.testing.assert_allclose(var, var2)
+            mu, var = mnew.predict_f(X, full_cov=False, full_output_cov=False)
+            mu2, var2 = mold.predict_f(X, full_cov=False, full_output_cov=False)
+            np.testing.assert_allclose(mu, mu2)
+            np.testing.assert_allclose(var, var2)
 
 
 test_correct()
