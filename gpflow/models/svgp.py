@@ -17,10 +17,14 @@ from typing import Tuple
 import numpy as np
 import tensorflow as tf
 
-from .. import kullback_leiblers
+from .. import covariances, kernels, kullback_leiblers
 from ..base import Module, Parameter
 from ..conditionals import conditional
-from ..config import default_float
+from ..conditionals.util import expand_independent_outputs, mix_latent_gp
+from ..config import default_float, default_jitter
+from ..models.model import GPModel, InputData, MeanAndVariance, RegressionData
+from ..models.training_mixins import ExternalDataTrainingLossMixin
+from ..models.util import inducingpoint_wrapper
 from ..utilities import positive, triangular
 from .model import GPModel, InputData, MeanAndVariance, RegressionData
 from .training_mixins import ExternalDataTrainingLossMixin
@@ -216,12 +220,10 @@ class Posterior(Module):
         if Kuf.shape.ndims == 3:
             mean = tf.einsum("...nr->...rn", tf.squeeze(mean, axis=-1))
 
-        if isinstance(
-            self.kernel, (gpflow.kernels.SeparateIndependent, gpflow.kernels.IndependentLatent)
-        ):
+        if isinstance(self.kernel, (kernels.SeparateIndependent, kernels.IndependentLatent)):
 
             Knn = tf.stack([k(Xnew, full_cov=full_cov) for k in self.kernel.kernels], axis=0)
-        elif isinstance(self.kernel, gpflow.kernels.MultioutputKernel):
+        elif isinstance(self.kernel, kernels.MultioutputKernel):
             Knn = self.kernel.kernel(Xnew, full_cov=full_cov)
         else:
             Knn = self.kernel(Xnew, full_cov=full_cov)
@@ -236,7 +238,7 @@ class Posterior(Module):
             cov = Knn - Kfu_Qinv_Kuf
             cov = tf.linalg.adjoint(cov)
 
-        if isinstance(self.kernel, gpflow.kernels.LinearCoregionalization):
+        if isinstance(self.kernel, kernels.LinearCoregionalization):
             cov = expand_independent_outputs(cov, full_cov, full_output_cov=False)
             mean, cov = mix_latent_gp(self.kernel.W, mean, cov, full_cov, full_output_cov)
         else:
