@@ -331,4 +331,5 @@ class NewSVGP(OldSVGP):
         )
 
 
-SVGP = NewSVGP
+class SVGP(NewSVGP):
+    pass
