@@ -5,16 +5,14 @@ import tensorflow as tf
 import tensorflow_probability as tfp
 
 import gpflow
-from gpflow import Parameter
-from gpflow import covariances
-from gpflow import kullback_leiblers
+from gpflow import Parameter, covariances, kullback_leiblers
+from gpflow.conditionals.util import expand_independent_outputs, mix_latent_gp
 # from gpflow.conditionals import conditional
 from gpflow.config import default_float, default_jitter
 from gpflow.models.model import GPModel, InputData, MeanAndVariance, RegressionData
 from gpflow.models.training_mixins import ExternalDataTrainingLossMixin
 from gpflow.models.util import inducingpoint_wrapper
 from gpflow.utilities import positive, triangular
-from gpflow.conditionals.util import mix_latent_gp, expand_independent_outputs
 
 
 class DiagNormal(gpflow.Module):
@@ -51,6 +49,7 @@ def conditional(kernel, iv, q_mu, q_sqrt, whiten):
     return execute
 """
 
+
 class Posterior:
     def __init__(self, kernel, iv, q_dist, whiten=True, mean_function=None):
         self.iv = iv
@@ -79,9 +78,10 @@ class Posterior:
         if Kuf.shape.ndims == 3:
             mean = tf.einsum("...rn->...nr", tf.squeeze(mean, axis=-1))
 
-        if isinstance(self.kernel,
-                      (gpflow.kernels.SeparateIndependent, gpflow.kernels.IndependentLatent)):
-             
+        if isinstance(
+            self.kernel, (gpflow.kernels.SeparateIndependent, gpflow.kernels.IndependentLatent)
+        ):
+
             Knn = tf.stack([k(Xnew, full_cov=full_cov) for k in self.kernel.kernels], axis=0)
         elif isinstance(self.kernel, gpflow.kernels.MultioutputKernel):
             Knn = self.kernel.kernel(Xnew, full_cov=full_cov)
@@ -273,8 +273,10 @@ class NewSVGP(GPModel, ExternalDataTrainingLossMixin):
         then do posterior.predict_f(Xnew...)
         """
         return self.posterior(freeze=False).predict_f(
-        # return self.predictor()(
-            Xnew, full_cov=full_cov, full_output_cov=full_output_cov
+            # return self.predictor()(
+            Xnew,
+            full_cov=full_cov,
+            full_output_cov=full_output_cov,
         )
 
 
@@ -317,14 +319,16 @@ def make_models(M=64, D=5, L=3, q_diag=False, whiten=True, mo=None):
         kernel_type, iv_type = mo
 
         k_list = [gpflow.kernels.Matern52() for _ in range(L)]
-        w = tf.Variable(initial_value=np.random.rand(2, L), dtype=tf.float64, name='w')
+        w = tf.Variable(initial_value=np.random.rand(2, L), dtype=tf.float64, name="w")
         if kernel_type == "LinearCoregionalization":
             k = gpflow.kernels.LinearCoregionalization(k_list, W=w)
         elif kernel_type == "SeparateIndependent":
             k = gpflow.kernels.SeparateIndependent(k_list)
         elif kernel_type == "SharedIndependent":
             k = gpflow.kernels.SharedIndependent(k_list[0], output_dim=2)
-        iv_list = [gpflow.inducing_variables.InducingPoints(np.random.randn(M, D)) for _ in range(L)]
+        iv_list = [
+            gpflow.inducing_variables.InducingPoints(np.random.randn(M, D)) for _ in range(L)
+        ]
         if iv_type == "SeparateIndependent":
             Z = gpflow.inducing_variables.SeparateIndependentInducingVariables(iv_list)
         elif iv_type == "SharedIndependent":
@@ -332,12 +336,13 @@ def make_models(M=64, D=5, L=3, q_diag=False, whiten=True, mo=None):
     lik = gpflow.likelihoods.Gaussian(0.1)
     q_mu = np.random.randn(M, L)
     if q_diag:
-        q_sqrt = np.random.randn(M, L)**2
+        q_sqrt = np.random.randn(M, L) ** 2
     else:
         q_sqrt = np.tril(np.random.randn(L, M, M))
     mold = gpflow.models.SVGP(k, lik, Z, q_diag=q_diag, q_mu=q_mu, q_sqrt=q_sqrt, whiten=whiten)
     mnew = NewSVGP(k, lik, Z, q_diag=q_diag, q_mu=q_mu, q_sqrt=q_sqrt, whiten=whiten)
     return mold, mnew
+
 
 # TODO: compare timings for q_diag=True, whiten=False, ...
 mold, mnew = make_models(q_diag=False, mo=None)
@@ -347,8 +352,12 @@ pred_old = tf.function(mold.predict_f)
 
 pred_newfrozen = tf.function(mnew.posterior(freeze=True).predict_f)
 pred_new = tf.function(mnew.posterior(freeze=False).predict_f)
+
+
 def predict_f_once(Xnew):
     return mnew.posterior().predict_f(Xnew)
+
+
 pred_new_once = tf.function(predict_f_once)
 
 # pred_new = tf.function(mnew.predictor())
@@ -358,13 +367,16 @@ pred_new_once = tf.function(predict_f_once)
 
 def test_correct():
     from itertools import product
+
     conf = product(*[(True, False)] * 3)
     for q_diag, white, use_mo in conf:
         if use_mo:
-            mo_options = list(product(
-                ("LinearCoregionalization", "SeparateIndependent", "SharedIndependent"),
-                ("SeparateIndependent", "SharedIndependent"),
-            ))
+            mo_options = list(
+                product(
+                    ("LinearCoregionalization", "SeparateIndependent", "SharedIndependent"),
+                    ("SeparateIndependent", "SharedIndependent"),
+                )
+            )
         else:
             mo_options = [None]
         for mo in mo_options:
