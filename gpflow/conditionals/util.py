@@ -166,8 +166,8 @@ def base_conditional_with_lm(
     # A
 
 
-    #f_reordered = tf.einsum("...mr->...rm", f)[..., None]  # [..., R, M, 1]
-    #fmean = tf.linalg.matmul(A, f_reordered, transpose_a=True)
+    f_reordered = tf.einsum("...mr->...rm", f)[..., None]  # [..., R, M, 1]
+    fmean = tf.linalg.matmul(A, f_reordered, transpose_a=True)
     fmean = tf.einsum("...rm->...mr", tf.squeeze(fmean, axis=-1))
 
     if q_sqrt is not None:
