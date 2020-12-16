@@ -178,14 +178,14 @@ class OldSVGP(GPModel, ExternalDataTrainingLossMixin):
 
 class DiagNormal(Module):
     def __init__(self, q_mu, q_sqrt):
-        self.q_mu = Parameter(q_mu)  # [M, L]
-        self.q_sqrt = Parameter(q_sqrt)  # [M, L]
+        self.q_mu = q_mu  # [M, L]
+        self.q_sqrt = q_sqrt  # [M, L]
 
 
 class MvnNormal(Module):
     def __init__(self, q_mu, q_sqrt):
-        self.q_mu = Parameter(q_mu)  # [M, L]
-        self.q_sqrt = Parameter(q_sqrt, transform=triangular())  # [L, M, M]
+        self.q_mu = q_mu  # [M, L]
+        self.q_sqrt = q_sqrt  # [L, M, M], lower-triangular
 
 
 def eye_like(A):
