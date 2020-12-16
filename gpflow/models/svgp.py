@@ -18,7 +18,7 @@ import numpy as np
 import tensorflow as tf
 
 from .. import kullback_leiblers
-from ..base import Parameter
+from ..base import Module, Parameter
 from ..conditionals import conditional
 from ..config import default_float
 from ..utilities import positive, triangular
@@ -27,7 +27,7 @@ from .training_mixins import ExternalDataTrainingLossMixin
 from .util import inducingpoint_wrapper
 
 
-class SVGP(GPModel, ExternalDataTrainingLossMixin):
+class OldSVGP(GPModel, ExternalDataTrainingLossMixin):
     """
     This is the Sparse Variational GP (SVGP). The key reference is
 
@@ -170,3 +170,163 @@ class SVGP(GPModel, ExternalDataTrainingLossMixin):
         )
         # tf.debugging.assert_positive(var)  # We really should make the tests pass with this here
         return mu + self.mean_function(Xnew), var
+
+
+class DiagNormal(Module):
+    def __init__(self, q_mu, q_sqrt):
+        self.q_mu = Parameter(q_mu)  # [M, L]
+        self.q_sqrt = Parameter(q_sqrt)  # [M, L]
+
+
+class MvnNormal(Module):
+    def __init__(self, q_mu, q_sqrt):
+        self.q_mu = Parameter(q_mu)  # [M, L]
+        self.q_sqrt = Parameter(q_sqrt, transform=triangular())  # [L, M, M]
+
+
+def eye_like(A):
+    return tf.eye(tf.shape(A)[-1], dtype=A.dtype)
+
+
+class Posterior(Module):
+    def __init__(self, kernel, iv, q_dist, whiten=True, mean_function=None):
+        self.iv = iv
+        self.kernel = kernel
+        self.q_dist = q_dist
+        self.mean_function = mean_function
+        self.whiten = whiten
+
+        self._precompute()  # populates self.alpha and self.Qinv
+
+    def freeze(self):
+        """
+        Note- this simply cuts the computational graph
+        """
+        self.alpha = Parameter(self.alpha.numpy(), trainable=False)
+        self.Qinv = Parameter(self.Qinv.numpy(), trainable=False)
+
+    def predict_f(
+        self, Xnew, full_cov: bool = False, full_output_cov: bool = False
+    ) -> MeanAndVariance:
+        # Qinv: [L, M, M]
+        # alpha: [M, L]
+
+        Kuf = covariances.Kuf(self.iv, self.kernel, Xnew)  # [(R), M, N]
+        mean = tf.matmul(Kuf, self.alpha, transpose_a=True)
+        if Kuf.shape.ndims == 3:
+            mean = tf.einsum("...nr->...rn", tf.squeeze(mean, axis=-1))
+
+        if isinstance(
+            self.kernel, (gpflow.kernels.SeparateIndependent, gpflow.kernels.IndependentLatent)
+        ):
+
+            Knn = tf.stack([k(Xnew, full_cov=full_cov) for k in self.kernel.kernels], axis=0)
+        elif isinstance(self.kernel, gpflow.kernels.MultioutputKernel):
+            Knn = self.kernel.kernel(Xnew, full_cov=full_cov)
+        else:
+            Knn = self.kernel(Xnew, full_cov=full_cov)
+
+        if full_cov:
+            Kfu_Qinv_Kuf = tf.matmul(Kuf, tf.matmul(self.Qinv, Kuf), transpose_a=True)
+            cov = Knn - Kfu_Qinv_Kuf
+        else:
+            # [AT B]_ij = AT_ik B_kj = A_ki B_kj
+            # TODO check whether einsum is faster now?
+            Kfu_Qinv_Kuf = tf.reduce_sum(Kuf * tf.matmul(self.Qinv, Kuf), axis=-2)
+            cov = Knn - Kfu_Qinv_Kuf
+            cov = tf.linalg.adjoint(cov)
+
+        if isinstance(self.kernel, gpflow.kernels.LinearCoregionalization):
+            cov = expand_independent_outputs(cov, full_cov, full_output_cov=False)
+            mean, cov = mix_latent_gp(self.kernel.W, mean, cov, full_cov, full_output_cov)
+        else:
+            cov = expand_independent_outputs(cov, full_cov, full_output_cov)
+
+        return mean + self.mean_function(Xnew), cov
+
+    def _precompute(self):
+        Kuu = covariances.Kuu(self.iv, self.kernel, jitter=default_jitter())  # [(R), M, M]
+        L = tf.linalg.cholesky(Kuu)
+
+        q_mu = self.q_dist.q_mu
+        if Kuu.shape.ndims == 3:
+            q_mu = tf.einsum("...mr->...rm", self.q_dist.q_mu)[..., None]  # [..., R, M, 1]
+
+        if not self.whiten:
+            # alpha = Kuu⁻¹ q_mu
+            alpha = tf.linalg.cholesky_solve(L, q_mu)
+        else:
+            # alpha = L⁻T q_mu
+            alpha = tf.linalg.triangular_solve(L, q_mu, adjoint=True)
+        # predictive mean = Kfu alpha
+        # predictive variance = Kff - Kfu Qinv Kuf
+        # S = q_sqrt q_sqrtT
+        if not self.whiten:
+            # Qinv = Kuu⁻¹ - Kuu⁻¹ S Kuu⁻¹
+            #      = Kuu⁻¹ - L⁻T L⁻¹ S L⁻T L⁻¹
+            #      = L⁻T (I - L⁻¹ S L⁻T) L⁻¹
+            #      = L⁻T B L⁻¹
+            if isinstance(self.q_dist, DiagNormal):
+                q_sqrt = tf.linalg.diag(tf.linalg.adjoint(self.q_dist.q_sqrt))
+            else:
+                q_sqrt = self.q_dist.q_sqrt
+            Linv_qsqrt = tf.linalg.triangular_solve(L, q_sqrt)
+            Linv_cov_u_LinvT = tf.matmul(Linv_qsqrt, Linv_qsqrt, transpose_b=True)
+        else:
+            if isinstance(self.q_dist, DiagNormal):
+                Linv_cov_u_LinvT = tf.linalg.diag(tf.linalg.adjoint(self.q_dist.q_sqrt ** 2))
+            else:
+                q_sqrt = self.q_dist.q_sqrt
+                Linv_cov_u_LinvT = tf.matmul(q_sqrt, q_sqrt, transpose_b=True)
+            # Qinv = Kuu⁻¹ - L⁻T S L⁻¹
+            # Linv = (L⁻¹ I) = solve(L, I)
+            # Kinv = Linv.T @ Linv
+        I = eye_like(Linv_cov_u_LinvT)
+        B = I - Linv_cov_u_LinvT
+        LinvT_B = tf.linalg.triangular_solve(L, B, adjoint=True)
+        B_Linv = tf.linalg.adjoint(LinvT_B)
+        Qinv = tf.linalg.triangular_solve(L, B_Linv, adjoint=True)
+        self.alpha = alpha
+        self.Qinv = Qinv
+
+
+class NewSVGP(OldSVGP):
+    """
+    Adds posterior() method and uses different math ordering for predict_f
+    """
+
+    def posterior(self, freeze=False):
+        """
+        If freeze=True, cuts the computational graph after precomputing alpha and Qinv
+        this works around some issues in the tensorflow graph optimisation and gives much
+        faster prediction when wrapped inside tf.function()
+        """
+        if self.q_diag:
+            q_dist = DiagNormal(self.q_mu, self.q_sqrt)
+        else:
+            q_dist = MvnNormal(self.q_mu, self.q_sqrt)
+        posterior = Posterior(
+            self.kernel,
+            self.inducing_variable,
+            q_dist,
+            whiten=self.whiten,
+            mean_function=self.mean_function,
+        )
+        if freeze:
+            posterior.freeze()
+        return posterior
+
+    def predict_f(self, Xnew: InputData, full_cov=False, full_output_cov=False) -> MeanAndVariance:
+        """
+        For backwards compatibility.
+        For faster (cached) prediction, get a posterior object first:
+            posterior = model.posterior()
+        then call
+            posterior.predict_f(Xnew, ...)
+        """
+        return self.posterior(freeze=False).predict_f(
+            Xnew, full_cov=full_cov, full_output_cov=full_output_cov
+        )
+
+
+SVGP = OldSVGP
