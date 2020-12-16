@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from typing import Optional
+import warnings
 
 import tensorflow as tf
 
@@ -35,9 +36,32 @@ def base_conditional(
     #    Knn = Knn[..., None, :, :]
     # else:
     #    Knn = Knn[..., None, :]
+    warnings.warn("base_conditional is deprecated, use broadcasting_base_conditional instead", DeprecationWarning)
     return broadcasting_base_conditional(
         Kmn[None, ...],
         Kmm[None, ...],
+        Knn[None, ...],
+        f,
+        full_cov=full_cov,
+        q_sqrt=q_sqrt,
+        white=white,
+    )
+
+
+def base_conditional_with_lm(
+    Kmn: tf.Tensor,
+    Lm: tf.Tensor,
+    Knn: tf.Tensor,
+    f: tf.Tensor,
+    *,
+    full_cov=False,
+    q_sqrt: Optional[tf.Tensor] = None,
+    white=False,
+):
+    warnings.warn("base_conditional_with_lm is deprecated, use broadcasting_base_conditional instead", DeprecationWarning)
+    return broadcasting_base_conditional_with_lm(
+        Kmn[None, ...],
+        Lm[None, ...],
         Knn[None, ...],
         f,
         full_cov=full_cov,
@@ -80,12 +104,12 @@ def broadcasting_base_conditional(
     :return: [N, R]  or [R, N, N]
     """
     Lm = tf.linalg.cholesky(Kmm)
-    return base_conditional_with_lm(
+    return broadcasting_base_conditional_with_lm(
         Kmn=Kmn, Lm=Lm, Knn=Knn, f=f, full_cov=full_cov, q_sqrt=q_sqrt, white=white
     )
 
 
-def base_conditional_with_lm(
+def broadcasting_base_conditional_with_lm(
     Kmn: tf.Tensor,
     Lm: tf.Tensor,
     Knn: tf.Tensor,
