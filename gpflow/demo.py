@@ -143,8 +143,8 @@ class Posterior:
         LinvT_B = tf.linalg.triangular_solve(L, B, adjoint=True)
         B_Linv = tf.linalg.adjoint(LinvT_B)
         Qinv = tf.linalg.triangular_solve(L, B_Linv, adjoint=True)
-        self.alpha = alpha
-        self.Qinv = Qinv
+        self.alpha = Parameter(alpha, trainable=False)
+        self.Qinv = Parameter(Qinv, trainable=False)
 
 
 def conditional_closure(kernel, iv, q_dist, whiten=True, mean_function=None):
@@ -391,7 +391,7 @@ def make_models(M=64, D=5, L=3, q_diag=False, whiten=True, mo=True):
     return mold, mnew
 
 # TODO: compare timings for q_diag=True, whiten=False, ...
-mold, mnew = make_models(mo=True)
+mold, mnew = make_models(q_diag=True, mo=True)
 X = np.random.randn(100, 5)
 Xt = tf.convert_to_tensor(X)
 pred_old = tf.function(mold.predict_f)
