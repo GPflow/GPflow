@@ -329,4 +329,4 @@ class NewSVGP(OldSVGP):
         )
 
 
-SVGP = OldSVGP
+SVGP = NewSVGP
