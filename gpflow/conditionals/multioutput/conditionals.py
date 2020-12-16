@@ -131,7 +131,9 @@ def separate_independent_conditional(
     Knns = tf.stack([k.K(Xnew) if full_cov else k.K_diag(Xnew) for k in kernels], axis=0)
     # [P, 1, M, M]  or  [P, M, 1]
 
-    fmu, fvar = broadcasting_base_conditional(Kmns, Kmms, Knns, f, full_cov=full_cov, q_sqrt=q_sqrt, white=white)
+    fmu, fvar = broadcasting_base_conditional(
+        Kmns, Kmms, Knns, f, full_cov=full_cov, q_sqrt=q_sqrt, white=white
+    )
     return fmu, expand_independent_outputs(fvar, full_cov, full_output_cov)
 
 
