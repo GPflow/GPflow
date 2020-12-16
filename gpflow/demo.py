@@ -76,12 +76,13 @@ class Posterior:
 
         Kuf = covariances.Kuf(self.iv, self.kernel, Xnew)  # [(R), M, N]
         mean = tf.matmul(Kuf, self.alpha, transpose_a=True)
+        if Kuf.shape.ndims == 3:
+            mean = tf.einsum("...rn->...nr", tf.squeeze(mean, axis=-1))
 
         if isinstance(self.kernel,
                       (gpflow.kernels.SeparateIndependent, gpflow.kernels.IndependentLatent)):
              
             Knn = tf.stack([k(Xnew, full_cov=full_cov) for k in self.kernel.kernels], axis=0)
-            mean = tf.einsum("...rn->...nr", tf.squeeze(mean, axis=-1))
         elif isinstance(self.kernel, gpflow.kernels.MultioutputKernel):
             Knn = self.kernel.kernel(Xnew, full_cov=full_cov)
         else:
@@ -314,8 +315,11 @@ def make_models(M=64, D=5, L=3, q_diag=False, whiten=True, mo=True):
         k_list = [gpflow.kernels.Matern52() for _ in range(L)]
         w = tf.Variable(initial_value=np.random.rand(2, L), dtype=tf.float64, name='w')
         k = gpflow.kernels.LinearCoregionalization(k_list, W=w)
+        # k = gpflow.kernels.SeparateIndependent(k_list)
+        # k = gpflow.kernels.SharedIndependent(k_list[0], output_dim=2)
         iv_list = [gpflow.inducing_variables.InducingPoints(np.random.randn(M, D)) for _ in range(L)]
         Z = gpflow.inducing_variables.SeparateIndependentInducingVariables(iv_list)
+        # Z = gpflow.inducing_variables.SharedIndependentInducingVariables(iv_list[0])
     else:
         k = gpflow.kernels.Matern52()
         Z = np.random.randn(M, D)
