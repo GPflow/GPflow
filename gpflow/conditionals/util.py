@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Optional
 import warnings
+from typing import Optional
 
 import tensorflow as tf
 
@@ -36,7 +36,10 @@ def base_conditional(
     #    Knn = Knn[..., None, :, :]
     # else:
     #    Knn = Knn[..., None, :]
-    warnings.warn("base_conditional is deprecated, use broadcasting_base_conditional instead", DeprecationWarning)
+    warnings.warn(
+        "base_conditional is deprecated, use broadcasting_base_conditional instead",
+        DeprecationWarning,
+    )
     return broadcasting_base_conditional(
         Kmn[None, ...],
         Kmm[None, ...],
@@ -58,7 +61,10 @@ def base_conditional_with_lm(
     q_sqrt: Optional[tf.Tensor] = None,
     white=False,
 ):
-    warnings.warn("base_conditional_with_lm is deprecated, use broadcasting_base_conditional instead", DeprecationWarning)
+    warnings.warn(
+        "base_conditional_with_lm is deprecated, use broadcasting_base_conditional instead",
+        DeprecationWarning,
+    )
     return broadcasting_base_conditional_with_lm(
         Kmn[None, ...],
         Lm[None, ...],
