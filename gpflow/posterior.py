@@ -47,10 +47,6 @@ class Posterior(Module):
         else:
             self.q_dist = MvnNormal(q_mu, q_sqrt)
 
-        # we will keep track on these variables the precomputed matrices needed for speeding up
-        # predictions
-        self.alpha = None
-        self.Qinv = None
         self._cache_is_empty = True  # to avoid recreating tf.Variables
 
         self.update_cache()  # populates or updates self.alpha and self.Qinv
