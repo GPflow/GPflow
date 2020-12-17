@@ -226,8 +226,8 @@ class NewSVGP(OldSVGP):
         self.posterior = Posterior(
             self.kernel,
             self.inducing_variable,
-            q_mu,
-            q_sqrt,
+            self.q_mu,
+            self.q_sqrt,
             whiten=self.whiten,
             mean_function=self.mean_function,
         )
