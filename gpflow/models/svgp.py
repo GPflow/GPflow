@@ -208,9 +208,7 @@ class NewSVGP(OldSVGP):
         then call
             posterior.predict_f(Xnew, ...)
         """
-        return self.posterior().predict_f(
-            Xnew, full_cov=full_cov, full_output_cov=full_output_cov
-        )
+        return self.posterior().predict_f(Xnew, full_cov=full_cov, full_output_cov=full_output_cov)
 
 
 class SVGP(NewSVGP):
