@@ -47,11 +47,9 @@ class Posterior(Module):
         else:
             self.q_dist = MvnNormal(q_mu, q_sqrt)
 
-        self._cache_is_empty = True  # to avoid recreating tf.Variables
-
         self.update_cache()  # populates or updates self.alpha and self.Qinv
 
-    def update_cache(self):
+    def _precompute(self):
         Kuu = covariances.Kuu(self.iv, self.kernel, jitter=default_jitter())  # [(R), M, M]
         L = tf.linalg.cholesky(Kuu)
 
@@ -94,13 +92,23 @@ class Posterior(Module):
         B_Linv = tf.linalg.adjoint(LinvT_B)
         Qinv = tf.linalg.triangular_solve(L, B_Linv, adjoint=True)
 
-        if self._cache_is_empty:
-            self.alpha = Parameter(alpha, trainable=False)
-            self.Qinv = Parameter(Qinv, trainable=False)
-            self._cache_is_empty = False
-        else:
+        return alpha, Qinv
+
+    def update_cache(self):
+        self.alpha, self.Qinv = self._precompute()
+
+    def freeze(self):
+        self.alpha = Parameter(alpha, trainable=False)
+        self.Qinv = Parameter(Qinv, trainable=False)
+
+    def update_cache_with_variables(self):
+        alpha, Qinv = self._precompute()
+        if isinstance(self.alpha, Parameter) and isinstance(self.Qinv, Parameter):
             self.alpha.assign(alpha)
             self.Qinv.assign(Qinv)
+        else:
+            self.alpha = Parameter(alpha, trainable=False)
+            self.Qinv = Parameter(Qinv, trainable=False)
 
     def predict_f(
         self, Xnew, full_cov: bool = False, full_output_cov: bool = False
