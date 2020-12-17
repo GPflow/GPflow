@@ -20,7 +20,7 @@ import tensorflow as tf
 from . import covariances, kernels
 from .base import Module, Parameter
 from .conditionals.util import expand_independent_outputs, mix_latent_gp
-from .config import default_jitter
+from .config import default_jitter, default_float
 from .models.model import MeanAndVariance
 
 
@@ -51,11 +51,14 @@ class Posterior(Module):
 
     def _precompute(self):
         Kuu = covariances.Kuu(self.iv, self.kernel, jitter=default_jitter())  # [(R), M, M]
-        L = tf.linalg.cholesky(Kuu)
-
         q_mu = self.q_dist.q_mu
+
+        if Kuu.shape.ndims == 4:
+            ML = tf.cast(tf.sqrt(tf.cast(tf.reduce_prod(tf.shape(Kuu)), default_float())), tf.int32)
+            Kuu = tf.reshape(Kuu, [ML, ML])
         if Kuu.shape.ndims == 3:
             q_mu = tf.linalg.adjoint(self.q_dist.q_mu)[..., None]  # [..., R, M, 1]
+        L = tf.linalg.cholesky(Kuu)
 
         if not self.whiten:
             # alpha = Kuu⁻¹ q_mu
@@ -116,18 +119,23 @@ class Posterior(Module):
         # Qinv: [L, M, M]
         # alpha: [M, L]
 
-        Kuf = covariances.Kuf(self.iv, self.kernel, Xnew)  # [(R), M, N]
+        # Kuf = covariances.Kuf(self.iv, self.kernel, Xnew)  # [(R), M, N]
+        # mean = tf.matmul(Kuf, self.alpha, transpose_a=True)
+        # if Kuf.shape.ndims == 3:
+        #     mean = tf.linalg.adjoint(tf.squeeze(mean, axis=-1))
+
+        # if isinstance(self.kernel, (kernels.SeparateIndependent, kernels.IndependentLatent)):
+
+        #     Knn = tf.stack([k(Xnew, full_cov=full_cov) for k in self.kernel.kernels], axis=0)
+        # elif isinstance(self.kernel, kernels.MultioutputKernel):
+        #     Knn = self.kernel.kernel(Xnew, full_cov=full_cov)
+        # else:
+        #     Knn = self.kernel(Xnew, full_cov=full_cov)
+        Kuf, Knn = _get_kernels(Xnew, self.iv, self.kernel, full_cov, full_output_cov) 
+
         mean = tf.matmul(Kuf, self.alpha, transpose_a=True)
         if Kuf.shape.ndims == 3:
             mean = tf.linalg.adjoint(tf.squeeze(mean, axis=-1))
-
-        if isinstance(self.kernel, (kernels.SeparateIndependent, kernels.IndependentLatent)):
-
-            Knn = tf.stack([k(Xnew, full_cov=full_cov) for k in self.kernel.kernels], axis=0)
-        elif isinstance(self.kernel, kernels.MultioutputKernel):
-            Knn = self.kernel.kernel(Xnew, full_cov=full_cov)
-        else:
-            Knn = self.kernel(Xnew, full_cov=full_cov)
 
         if full_cov:
             Kfu_Qinv_Kuf = tf.matmul(Kuf, tf.matmul(self.Qinv, Kuf), transpose_a=True)
@@ -146,3 +154,18 @@ class Posterior(Module):
             cov = expand_independent_outputs(cov, full_cov, full_output_cov)
 
         return mean + self.mean_function(Xnew), cov
+
+
+def _get_kernels(Xnew, iv, kernel, full_cov, full_output_cov):
+
+    Kuf = covariances.Kuf(iv, kernel, Xnew)  # [(R), M, N]
+
+    if isinstance(kernel, (kernels.SeparateIndependent, kernels.IndependentLatent)):
+
+        Knn = tf.stack([k(Xnew, full_cov=full_cov) for k in kernel.kernels], axis=0)
+    elif isinstance(kernel, kernels.MultioutputKernel):
+        Knn = kernel.kernel(Xnew, full_cov=full_cov)
+    else:
+        Knn = kernel(Xnew, full_cov=full_cov)
+
+    return Kuf, Knn
