@@ -18,7 +18,7 @@ import numpy as np
 import tensorflow as tf
 
 from . import covariances, kernels
-from .base import Module
+from .base import Module, Parameter
 from .conditionals.util import expand_independent_outputs, mix_latent_gp
 from .config import default_jitter
 from .models.model import MeanAndVariance
@@ -37,16 +37,25 @@ class MvnNormal(Module):
 
 
 class Posterior(Module):
-    def __init__(self, kernel, iv, q_dist, whiten=True, mean_function=None):
+    def __init__(self, kernel, iv, q_mu, q_sqrt, whiten=True, mean_function=None):
         self.iv = iv
         self.kernel = kernel
-        self.q_dist = q_dist
         self.mean_function = mean_function
         self.whiten = whiten
+        if len(q_sqrt.shape) == 2:  # q_diag
+            self.q_dist = DiagNormal(q_mu, q_sqrt)
+        else:
+            self.q_dist = MvnNormal(q_mu, q_sqrt)
 
-        self._precompute()  # populates self.alpha and self.Qinv
+        # we will keep track on these variables the precomputed matrices needed for speeding up
+        # predictions
+        self.alpha = None
+        self.Qinv = None
+        self._cache_is_empty = True  # to avoid recreating tf.Variables
 
-    def _precompute(self):
+        self.update_cache()  # populates or updates self.alpha and self.Qinv
+
+    def update_cache(self):
         Kuu = covariances.Kuu(self.iv, self.kernel, jitter=default_jitter())  # [(R), M, M]
         L = tf.linalg.cholesky(Kuu)
 
@@ -88,8 +97,14 @@ class Posterior(Module):
         LinvT_B = tf.linalg.triangular_solve(L, B, adjoint=True)
         B_Linv = tf.linalg.adjoint(LinvT_B)
         Qinv = tf.linalg.triangular_solve(L, B_Linv, adjoint=True)
-        self.alpha = alpha
-        self.Qinv = Qinv
+
+        if self._cache_is_empty:
+            self.alpha = Parameter(alpha, trainable=False)
+            self.Qinv = Parameter(Qinv, trainable=False)
+            self._cache_is_empty = False
+        else:
+            self.alpha.assign(alpha)
+            self.Qinv.assign(Qinv)
 
     def predict_f(
         self, Xnew, full_cov: bool = False, full_output_cov: bool = False

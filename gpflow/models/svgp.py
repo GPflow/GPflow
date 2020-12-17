@@ -182,33 +182,65 @@ class NewSVGP(OldSVGP):
     Adds posterior() method and uses different math ordering for predict_f
     """
 
-    def posterior(self):
+    def __init__(
+        self,
+        kernel,
+        likelihood,
+        inducing_variable,
+        *,
+        mean_function=None,
+        num_latent_gps: int = 1,
+        q_diag: bool = False,
+        q_mu=None,
+        q_sqrt=None,
+        whiten: bool = True,
+        num_data=None,
+    ):
         """
-        Creates and returns a Posterior object which contains precomputed matrices for
-        faster prediction when wrapped inside tf.function()
+        - kernel, likelihood, inducing_variables, mean_function are appropriate
+          GPflow objects
+        - num_latent_gps is the number of latent processes to use, defaults to 1
+        - q_diag is a boolean. If True, the covariance is approximated by a
+          diagonal matrix.
+        - whiten is a boolean. If True, we use the whitened representation of
+          the inducing points.
+        - num_data is the total number of observations, defaults to X.shape[0]
+          (relevant when feeding in external minibatches)
         """
-        if self.q_diag:
-            q_dist = DiagNormal(self.q_mu, self.q_sqrt)
-        else:
-            q_dist = MvnNormal(self.q_mu, self.q_sqrt)
-        posterior = Posterior(
+        # init the super class, accept args
+        super().__init__(
+            kernel,
+            likelihood,
+            inducing_variable,
+            mean_function=mean_function,
+            num_latent_gps=num_latent_gps,
+            q_diag=q_diag,
+            q_mu=q_mu,
+            q_sqrt=q_sqrt,
+            whiten=whiten,
+            num_data=num_data,
+        )
+
+        # Create the Posterior object which contains precomputed matrices for
+        # faster prediction when wrapped inside tf.function()
+        self.posterior = Posterior(
             self.kernel,
             self.inducing_variable,
-            q_dist,
+            q_mu,
+            q_sqrt,
             whiten=self.whiten,
             mean_function=self.mean_function,
         )
-        return posterior
 
     def predict_f(self, Xnew: InputData, full_cov=False, full_output_cov=False) -> MeanAndVariance:
         """
-        For backwards compatibility.
-        For faster (cached) prediction, get a posterior object first:
-            posterior = model.posterior()
-        then call
-            posterior.predict_f(Xnew, ...)
+        For backwards compatibility. We have to update posterior's cache here so we have acces to
+        the latest values during training.
+        For faster (cached) prediction, predict directly from the posterior object, i.e.,:
+            model.posterior.predict_f(Xnew, ...)
         """
-        return self.posterior().predict_f(Xnew, full_cov=full_cov, full_output_cov=full_output_cov)
+        self.posterior.update_cache()
+        return self.posterior.predict_f(Xnew, full_cov=full_cov, full_output_cov=full_output_cov)
 
 
 class SVGP(NewSVGP):
