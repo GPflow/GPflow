@@ -98,6 +98,7 @@ class Posterior(Module):
         self.alpha, self.Qinv = self._precompute()
 
     def freeze(self):
+        alpha, Qinv = self._precompute()
         self.alpha = Parameter(alpha, trainable=False)
         self.Qinv = Parameter(Qinv, trainable=False)
 
