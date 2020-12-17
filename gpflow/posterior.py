@@ -20,7 +20,7 @@ import tensorflow as tf
 from . import covariances, kernels
 from .base import Module, Parameter
 from .conditionals.util import expand_independent_outputs, mix_latent_gp
-from .config import default_jitter, default_float
+from .config import default_float, default_jitter
 from .models.model import MeanAndVariance
 
 
@@ -101,6 +101,7 @@ class Posterior(Module):
         self.alpha, self.Qinv = self._precompute()
 
     def freeze(self):
+        alpha, Qinv = self._precompute()
         self.alpha = Parameter(alpha, trainable=False)
         self.Qinv = Parameter(Qinv, trainable=False)
 
@@ -119,19 +120,9 @@ class Posterior(Module):
         # Qinv: [L, M, M]
         # alpha: [M, L]
 
-        # Kuf = covariances.Kuf(self.iv, self.kernel, Xnew)  # [(R), M, N]
-        # mean = tf.matmul(Kuf, self.alpha, transpose_a=True)
-        # if Kuf.shape.ndims == 3:
-        #     mean = tf.linalg.adjoint(tf.squeeze(mean, axis=-1))
-
-        # if isinstance(self.kernel, (kernels.SeparateIndependent, kernels.IndependentLatent)):
-
-        #     Knn = tf.stack([k(Xnew, full_cov=full_cov) for k in self.kernel.kernels], axis=0)
-        # elif isinstance(self.kernel, kernels.MultioutputKernel):
-        #     Knn = self.kernel.kernel(Xnew, full_cov=full_cov)
-        # else:
-        #     Knn = self.kernel(Xnew, full_cov=full_cov)
-        Kuf, Knn = _get_kernels(Xnew, self.iv, self.kernel, full_cov, full_output_cov) 
+        Kuf, Knn, fully_correlated = _get_kernels(
+            Xnew, self.iv, self.kernel, full_cov, full_output_cov
+        )
 
         mean = tf.matmul(Kuf, self.alpha, transpose_a=True)
         if Kuf.shape.ndims == 3:
@@ -153,6 +144,12 @@ class Posterior(Module):
         else:
             cov = expand_independent_outputs(cov, full_cov, full_output_cov)
 
+        if fully_correlated:
+            N = tf.shape(Xnew)[0]
+            K = tf.shape(mean)[0] // N
+            mean = tf.reshape(mean, (N, K))
+            cov = tf.reshape(cov, (N, K, N, K) if full_cov else (N, K))
+
         return mean + self.mean_function(Xnew), cov
 
 
@@ -160,12 +157,22 @@ def _get_kernels(Xnew, iv, kernel, full_cov, full_output_cov):
 
     Kuf = covariances.Kuf(iv, kernel, Xnew)  # [(R), M, N]
 
-    if isinstance(kernel, (kernels.SeparateIndependent, kernels.IndependentLatent)):
+    fully_correlated = Kuf.shape.ndims == 4
+    flags_dont_match = full_cov ^ full_output_cov
 
+    if fully_correlated:
+        Knn = kernel(Xnew, full_cov=full_cov, full_output_cov=full_output_cov)
+        M, L, N, K = tf.unstack(tf.shape(Kuf), num=Kuf.shape.ndims, axis=0)
+        if flags_dont_match:
+            Kuf = tf.reshape(Kuf, (M * L, N, K))
+        else:
+            Kuf = tf.reshape(Kuf, (M * L, N * K))
+            Knn = tf.reshape(Knn, (N * K, N * K)) if full_cov else tf.reshape(Knn, (N * K,))
+    elif isinstance(kernel, (kernels.SeparateIndependent, kernels.IndependentLatent)):
         Knn = tf.stack([k(Xnew, full_cov=full_cov) for k in kernel.kernels], axis=0)
     elif isinstance(kernel, kernels.MultioutputKernel):
         Knn = kernel.kernel(Xnew, full_cov=full_cov)
     else:
         Knn = kernel(Xnew, full_cov=full_cov)
 
-    return Kuf, Knn
+    return Kuf, Knn, fully_correlated
