@@ -124,31 +124,50 @@ class Posterior(Module):
             Xnew, self.iv, self.kernel, full_cov, full_output_cov
         )
 
+        N = tf.shape(Xnew)[0]
+        K = tf.shape(Kuf)[-1] // N
+
         mean = tf.matmul(Kuf, self.alpha, transpose_a=True)
         if Kuf.shape.ndims == 3:
             mean = tf.linalg.adjoint(tf.squeeze(mean, axis=-1))
 
         if full_cov:
-            Kfu_Qinv_Kuf = tf.matmul(Kuf, tf.matmul(self.Qinv, Kuf), transpose_a=True)
+            Kfu_Qinv_Kuf = tf.matmul(Kuf, self.Qinv @ Kuf, transpose_a=True)
+            if fully_correlated and not full_output_cov:
+                Kfu_Qinv_Kuf = tf.reshape(
+                    Kfu_Qinv_Kuf, tf.concat([tf.shape(Kfu_Qinv_Kuf)[:-2], (N, K, N, K)], axis=0)
+                )
+                tmp = tf.linalg.diag_part(tf.einsum("...ijkl->...ikjl", Kfu_Qinv_Kuf))
+                Kfu_Qinv_Kuf = tf.einsum("...ijk->...kij", tmp)
             cov = Knn - Kfu_Qinv_Kuf
         else:
             # [AT B]_ij = AT_ik B_kj = A_ki B_kj
             # TODO check whether einsum is faster now?
             Kfu_Qinv_Kuf = tf.reduce_sum(Kuf * tf.matmul(self.Qinv, Kuf), axis=-2)
+            if fully_correlated and full_output_cov:
+                Kfu_Qinv_Kuf = tf.matmul(Kuf, self.Qinv @ Kuf, transpose_a=True)
+                Kfu_Qinv_Kuf = tf.reshape(
+                    Kfu_Qinv_Kuf, tf.concat([tf.shape(Kfu_Qinv_Kuf)[:-2], (N, K, N, K)], axis=0)
+                )
+                tmp = tf.linalg.diag_part(tf.einsum("...ijkl->...ljki", Kfu_Qinv_Kuf))
+                Kfu_Qinv_Kuf = tf.einsum("...ijk->...kij", tmp)
             cov = Knn - Kfu_Qinv_Kuf
             cov = tf.linalg.adjoint(cov)
 
-        if isinstance(self.kernel, kernels.LinearCoregionalization):
-            cov = expand_independent_outputs(cov, full_cov, full_output_cov=False)
-            mean, cov = mix_latent_gp(self.kernel.W, mean, cov, full_cov, full_output_cov)
-        else:
-            cov = expand_independent_outputs(cov, full_cov, full_output_cov)
+        if not fully_correlated:
+            if isinstance(self.kernel, kernels.LinearCoregionalization):
+                cov = expand_independent_outputs(cov, full_cov, full_output_cov=False)
+                mean, cov = mix_latent_gp(self.kernel.W, mean, cov, full_cov, full_output_cov)
+            else:
+                cov = expand_independent_outputs(cov, full_cov, full_output_cov)
 
         if fully_correlated:
-            N = tf.shape(Xnew)[0]
-            K = tf.shape(mean)[0] // N
             mean = tf.reshape(mean, (N, K))
-            cov = tf.reshape(cov, (N, K, N, K) if full_cov else (N, K))
+            if full_cov == full_output_cov:
+                cov_shape = (N, K, N, K) if full_cov else (N, K)
+            else:
+                cov_shape = (K, N, N) if full_cov else (N, K, K)
+            cov = tf.reshape(cov, cov_shape)
 
         return mean + self.mean_function(Xnew), cov
 
@@ -158,15 +177,12 @@ def _get_kernels(Xnew, iv, kernel, full_cov, full_output_cov):
     Kuf = covariances.Kuf(iv, kernel, Xnew)  # [(R), M, N]
 
     fully_correlated = Kuf.shape.ndims == 4
-    flags_dont_match = full_cov ^ full_output_cov
 
     if fully_correlated:
         Knn = kernel(Xnew, full_cov=full_cov, full_output_cov=full_output_cov)
         M, L, N, K = tf.unstack(tf.shape(Kuf), num=Kuf.shape.ndims, axis=0)
-        if flags_dont_match:
-            Kuf = tf.reshape(Kuf, (M * L, N, K))
-        else:
-            Kuf = tf.reshape(Kuf, (M * L, N * K))
+        Kuf = tf.reshape(Kuf, (M * L, N * K))
+        if full_cov == full_output_cov:
             Knn = tf.reshape(Knn, (N * K, N * K)) if full_cov else tf.reshape(Knn, (N * K,))
     elif isinstance(kernel, (kernels.SeparateIndependent, kernels.IndependentLatent)):
         Knn = tf.stack([k(Xnew, full_cov=full_cov) for k in kernel.kernels], axis=0)
