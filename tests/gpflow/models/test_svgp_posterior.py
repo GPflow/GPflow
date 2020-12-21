@@ -24,6 +24,9 @@ def make_models(M=64, D=5, L=3, q_diag=False, whiten=True, mo=None):
             k = gpflow.kernels.SeparateIndependent(k_list)
         elif kernel_type == "SharedIndependent":
             k = gpflow.kernels.SharedIndependent(k_list[0], output_dim=2)
+        else:
+            raise NotImplementedError
+
         iv_list = [
             gpflow.inducing_variables.InducingPoints(np.random.randn(M, D)) for _ in range(L)
         ]
@@ -31,6 +34,9 @@ def make_models(M=64, D=5, L=3, q_diag=False, whiten=True, mo=None):
             Z = gpflow.inducing_variables.SeparateIndependentInducingVariables(iv_list)
         elif iv_type == "SharedIndependent":
             Z = gpflow.inducing_variables.SharedIndependentInducingVariables(iv_list[0])
+        else:
+            raise NotImplementedError
+
     lik = gpflow.likelihoods.Gaussian(0.1)
     q_mu = np.random.randn(M, L)
     if q_diag:

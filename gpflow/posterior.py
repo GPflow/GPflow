@@ -153,13 +153,6 @@ class Posterior(Module):
             cov = Knn - Kfu_Qinv_Kuf
             cov = tf.linalg.adjoint(cov)
 
-        if not fully_correlated:
-            if isinstance(self.kernel, kernels.LinearCoregionalization):
-                cov = expand_independent_outputs(cov, full_cov, full_output_cov=False)
-                mean, cov = mix_latent_gp(self.kernel.W, mean, cov, full_cov, full_output_cov)
-            else:
-                cov = expand_independent_outputs(cov, full_cov, full_output_cov)
-
         if fully_correlated:
             mean = tf.reshape(mean, (N, K))
             if full_cov == full_output_cov:
@@ -167,6 +160,13 @@ class Posterior(Module):
             else:
                 cov_shape = (K, N, N) if full_cov else (N, K, K)
             cov = tf.reshape(cov, cov_shape)
+
+        else:
+            if isinstance(self.kernel, kernels.LinearCoregionalization):
+                cov = expand_independent_outputs(cov, full_cov, full_output_cov=False)
+                mean, cov = mix_latent_gp(self.kernel.W, mean, cov, full_cov, full_output_cov)
+            else:
+                cov = expand_independent_outputs(cov, full_cov, full_output_cov)
 
         return mean + self.mean_function(Xnew), cov
 
