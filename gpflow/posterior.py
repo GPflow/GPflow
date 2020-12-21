@@ -182,7 +182,7 @@ def _get_kernels(Xnew, iv, kernel, full_cov, full_output_cov):
         M, L, N, K = tf.unstack(tf.shape(Kuf), num=Kuf.shape.ndims, axis=0)
         Kuf = tf.reshape(Kuf, (M * L, N * K))
         if full_cov == full_output_cov:
-            new_shape = (N * K, N * K)  if full_cov else (N * K,)
+            new_shape = (N * K, N * K) if full_cov else (N * K,)
             Knn = tf.reshape(Knn, new_shape)
     elif isinstance(kernel, (kernels.SeparateIndependent, kernels.IndependentLatent)):
         Knn = tf.stack([k(Xnew, full_cov=full_cov) for k in kernel.kernels], axis=0)
