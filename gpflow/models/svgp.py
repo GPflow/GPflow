@@ -221,9 +221,12 @@ class NewSVGP(OldSVGP):
             num_data=num_data,
         )
 
-        # Create the Posterior object which contains precomputed matrices for
-        # faster prediction when wrapped inside tf.function()
-        self.posterior = Posterior(
+    def posterior(self):
+        """
+        Create the Posterior object which contains precomputed matrices for
+        faster prediction when wrapped inside tf.function()
+        """
+        return Posterior(
             self.kernel,
             self.inducing_variable,
             self.q_mu,
@@ -239,8 +242,7 @@ class NewSVGP(OldSVGP):
         For faster (cached) prediction, predict directly from the posterior object, i.e.,:
             model.posterior.predict_f(Xnew, ...)
         """
-        self.posterior.update_cache()
-        return self.posterior.predict_f(Xnew, full_cov=full_cov, full_output_cov=full_output_cov)
+        return self.posterior().predict_f(Xnew, full_cov=full_cov, full_output_cov=full_output_cov)
 
 
 class SVGP(NewSVGP):
