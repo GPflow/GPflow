@@ -134,9 +134,8 @@ class Posterior(Module):
         if full_cov:
             Kfu_Qinv_Kuf = tf.matmul(Kuf, self.Qinv @ Kuf, transpose_a=True)
             if fully_correlated and not full_output_cov:
-                Kfu_Qinv_Kuf = tf.reshape(
-                    Kfu_Qinv_Kuf, tf.concat([tf.shape(Kfu_Qinv_Kuf)[:-2], (N, K, N, K)], axis=0)
-                )
+                new_shape = tf.concat([tf.shape(Kfu_Qinv_Kuf)[:-2], (N, K, N, K)], axis=0)
+                Kfu_Qinv_Kuf = tf.reshape(Kfu_Qinv_Kuf, new_shape)
                 tmp = tf.linalg.diag_part(tf.einsum("...ijkl->...ikjl", Kfu_Qinv_Kuf))
                 Kfu_Qinv_Kuf = tf.einsum("...ijk->...kij", tmp)
             cov = Knn - Kfu_Qinv_Kuf
@@ -183,7 +182,8 @@ def _get_kernels(Xnew, iv, kernel, full_cov, full_output_cov):
         M, L, N, K = tf.unstack(tf.shape(Kuf), num=Kuf.shape.ndims, axis=0)
         Kuf = tf.reshape(Kuf, (M * L, N * K))
         if full_cov == full_output_cov:
-            Knn = tf.reshape(Knn, (N * K, N * K)) if full_cov else tf.reshape(Knn, (N * K,))
+            new_shape = (N * K, N * K)  if full_cov else (N * K,)
+            Knn = tf.reshape(Knn, new_shape)
     elif isinstance(kernel, (kernels.SeparateIndependent, kernels.IndependentLatent)):
         Knn = tf.stack([k(Xnew, full_cov=full_cov) for k in kernel.kernels], axis=0)
     elif isinstance(kernel, kernels.MultioutputKernel):
