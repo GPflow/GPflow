@@ -60,6 +60,9 @@ class Gaussian(ScalarLikelihood):
     def _conditional_variance(self, F):
         return tf.fill(tf.shape(F), tf.squeeze(self.variance))
 
+    def _data_variance(self, Y):
+        return tf.fill(tf.shape(Y)[:-1], tf.squeeze(self.variance))
+
     def _predict_mean_and_var(self, Fmu, Fvar):
         return tf.identity(Fmu), Fvar + self.variance
 

@@ -55,8 +55,10 @@ class GPR(GPModel, InternalDataTrainingLossMixin):
         kernel: Kernel,
         mean_function: Optional[MeanFunction] = None,
         noise_variance: float = 1.0,
+        likelihood=None,
     ):
-        likelihood = gpflow.likelihoods.Gaussian(noise_variance)
+        if likelihood is None:
+            likelihood = gpflow.likelihoods.Gaussian(noise_variance)
         _, Y_data = data
         super().__init__(kernel, likelihood, mean_function, num_latent_gps=Y_data.shape[-1])
         self.data = data_input_to_tensor(data)
@@ -74,9 +76,8 @@ class GPR(GPModel, InternalDataTrainingLossMixin):
         """
         X, Y = self.data
         K = self.kernel(X)
-        num_data = tf.shape(X)[0]
         k_diag = tf.linalg.diag_part(K)
-        s_diag = tf.fill([num_data], self.likelihood.variance)
+        s_diag = self.likelihood.data_variance(Y)
         ks = tf.linalg.set_diag(K, k_diag + s_diag)
         L = tf.linalg.cholesky(ks)
         m = self.mean_function(X)
@@ -103,8 +104,7 @@ class GPR(GPModel, InternalDataTrainingLossMixin):
         knn = self.kernel(Xnew, full_cov=full_cov)
         kmn = self.kernel(X_data, Xnew)
 
-        num_data = X_data.shape[0]
-        s = tf.linalg.diag(tf.fill([num_data], self.likelihood.variance))
+        s = tf.linalg.diag(self.likelihood.data_variance(Y_data))
 
         conditional = gpflow.conditionals.base_conditional
         f_mean_zero, f_var = conditional(

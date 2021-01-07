@@ -116,6 +116,23 @@ def test_switched_likelihood_with_vgp():
     opt.minimize(model.training_loss, model.trainable_variables, options=dict(maxiter=1))
 
 
+def test_switched_likelihood_with_gpr():
+    """
+    Test that SwitchedLikelihood works with basic GPR.
+    """
+    X = np.random.randn(12 + 15, 1)
+    Y = np.random.randn(12 + 15, 1)
+    idx = np.array([0] * 12 + [1] * 15)
+    Y_aug = np.c_[Y, idx]
+    assert Y_aug.shape == (12 + 15, 2)
+
+    kernel = gpflow.kernels.Matern32()
+    likelihood = gpflow.likelihoods.SwitchedLikelihood([Gaussian(), Gaussian()])
+    model = gpflow.models.GPR((X, Y_aug), kernel=kernel, likelihood=likelihood)
+    opt = gpflow.optimizers.Scipy()
+    opt.minimize(model.training_loss, model.trainable_variables, options=dict(maxiter=1))
+
+
 @pytest.mark.parametrize("num_latent_gps", [1, 2])
 def test_switched_likelihood_regression_valid_num_latent_gps(num_latent_gps):
     """

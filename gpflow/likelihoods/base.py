@@ -181,6 +181,22 @@ class Likelihood(Module, metaclass=abc.ABCMeta):
     def _conditional_variance(self, F):
         raise NotImplementedError
 
+    def data_variance(self, Y):
+        """
+        The conditional marginal variance of Y: [var(Y₁), ..., var(Yₖ)]
+        where K = observation_dim
+
+        :param Y: function evaluation Tensor, with shape [..., observation_dim]
+        :returns: variance [..., observation_dim]
+        """
+        self._check_data_dims(Y)
+        var_Y = self._data_variance(Y)
+        self._check_data_dims(var_Y)
+        return var_Y
+
+    def _data_variance(self, Y):
+        raise NotImplementedError
+
     def predict_mean_and_var(self, Fmu, Fvar):
         """
         Given a Normal distribution for the latent function,
@@ -560,6 +576,9 @@ class SwitchedLikelihood(ScalarLikelihood):
 
     def _conditional_variance(self, F):
         raise NotImplementedError
+
+    def _data_variance(self, Y):
+        return self._partition_and_stitch([Y], "data_variance")
 
 
 class MonteCarloLikelihood(Likelihood):
