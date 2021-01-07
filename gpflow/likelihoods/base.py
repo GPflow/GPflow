@@ -191,7 +191,7 @@ class Likelihood(Module, metaclass=abc.ABCMeta):
         """
         self._check_data_dims(Y)
         var_Y = self._data_variance(Y)
-        self._check_data_dims(var_Y)
+        tf.debugging.assert_equal(tf.shape(var_Y), tf.shape(Y)[:-1])
         return var_Y
 
     def _data_variance(self, Y):
