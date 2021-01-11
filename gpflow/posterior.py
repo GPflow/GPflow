@@ -64,16 +64,16 @@ class Posterior(Module):
             # alpha = Kuu⁻¹ q_mu
             alpha = tf.linalg.cholesky_solve(L, q_mu)
         else:
-            # alpha = L⁻T q_mu
+            # alpha = L⁻ᵀ q_mu
             alpha = tf.linalg.triangular_solve(L, q_mu, adjoint=True)
         # predictive mean = Kfu alpha
         # predictive variance = Kff - Kfu Qinv Kuf
-        # S = q_sqrt q_sqrtT
+        # S = q_sqrt q_sqrtᵀ
         if not self.whiten:
             # Qinv = Kuu⁻¹ - Kuu⁻¹ S Kuu⁻¹
-            #      = Kuu⁻¹ - L⁻T L⁻¹ S L⁻T L⁻¹
-            #      = L⁻T (I - L⁻¹ S L⁻T) L⁻¹
-            #      = L⁻T B L⁻¹
+            #      = Kuu⁻¹ - L⁻ᵀ L⁻¹ S L⁻ᵀ L⁻¹
+            #      = L⁻ᵀ (I - L⁻¹ S L⁻ᵀ) L⁻¹
+            #      = L⁻ᵀ B L⁻¹
             if isinstance(self.q_dist, DiagNormal):
                 q_sqrt = tf.linalg.diag(tf.linalg.adjoint(self.q_dist.q_sqrt))
             else:
@@ -86,9 +86,9 @@ class Posterior(Module):
             else:
                 q_sqrt = self.q_dist.q_sqrt
                 Linv_cov_u_LinvT = tf.matmul(q_sqrt, q_sqrt, transpose_b=True)
-            # Qinv = Kuu⁻¹ - L⁻T S L⁻¹
+            # Qinv = Kuu⁻¹ - L⁻ᵀ S L⁻¹
             # Linv = (L⁻¹ I) = solve(L, I)
-            # Kinv = Linv.T @ Linv
+            # Kinv = Linvᵀ @ Linv
         I = tf.eye(tf.shape(Linv_cov_u_LinvT)[-1], dtype=Linv_cov_u_LinvT.dtype)
         B = I - Linv_cov_u_LinvT
         LinvT_B = tf.linalg.triangular_solve(L, B, adjoint=True)
@@ -140,7 +140,7 @@ class Posterior(Module):
                 Kfu_Qinv_Kuf = tf.einsum("...ijk->...kij", tmp)
             cov = Knn - Kfu_Qinv_Kuf
         else:
-            # [AT B]_ij = AT_ik B_kj = A_ki B_kj
+            # [Aᵀ B]_ij = Aᵀ_ik B_kj = A_ki B_kj
             # TODO check whether einsum is faster now?
             Kfu_Qinv_Kuf = tf.reduce_sum(Kuf * tf.matmul(self.Qinv, Kuf), axis=-2)
             if fully_correlated and full_output_cov:
