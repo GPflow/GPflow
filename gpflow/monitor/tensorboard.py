@@ -116,10 +116,13 @@ class ModelToTensorBoard(ToTensorBoard):
                 "make sure the shape of all parameters is known beforehand. Otherwise, "
                 "run the monitor outside the `tf.function`."
             )
-
-        it = range(size) if self.max_size == -1 else range(min(size, self.max_size))
-        for i in it:
-            tf.summary.scalar(f"{name}[{i}]", param[i], step=self.current_step)
+        if size == 1:
+            # if there's only one element do not add a numbered suffix
+            tf.summary.scalar(name, param[0], step=self.current_step)
+        else:
+            it = range(size) if self.max_size == -1 else range(min(size, self.max_size))
+            for i in it:
+                tf.summary.scalar(f"{name}[{i}]", param[i], step=self.current_step)
 
 
 class ScalarToTensorBoard(ToTensorBoard):
