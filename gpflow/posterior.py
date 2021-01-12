@@ -37,8 +37,8 @@ class MvnNormal(Module):
 
 
 class Posterior(Module):
-    def __init__(self, kernel, iv, q_mu, q_sqrt, whiten=True, mean_function=None):
-        self.iv = iv
+    def __init__(self, kernel, inducing_variable, q_mu, q_sqrt, whiten=True, mean_function=None):
+        self.inducing_variable = inducing_variable
         self.kernel = kernel
         self.mean_function = mean_function
         self.whiten = whiten
@@ -50,7 +50,7 @@ class Posterior(Module):
         self.update_cache()  # populates or updates self.alpha and self.Qinv
 
     def _precompute(self):
-        Kuu = covariances.Kuu(self.iv, self.kernel, jitter=default_jitter())  # [(R), M, M]
+        Kuu = covariances.Kuu(self.inducing_variable, self.kernel, jitter=default_jitter())  # [(R), M, M]
         q_mu = self.q_dist.q_mu
 
         if Kuu.shape.ndims == 4:
@@ -121,7 +121,7 @@ class Posterior(Module):
         # alpha: [M, L]
 
         Kuf, Knn, fully_correlated = _get_kernels(
-            Xnew, self.iv, self.kernel, full_cov, full_output_cov
+            Xnew, self.inducing_variable, self.kernel, full_cov, full_output_cov
         )
 
         N = tf.shape(Xnew)[0]
@@ -171,11 +171,11 @@ class Posterior(Module):
         return mean + self.mean_function(Xnew), cov
 
 
-def _get_kernels(Xnew, iv, kernel, full_cov, full_output_cov):
+def _get_kernels(Xnew, inducing_variable, kernel, full_cov, full_output_cov):
 
     # TODO: this (and the fully_correlated code path below) assumes that Xnew has shape [N, D] and no leading dims
 
-    Kuf = covariances.Kuf(iv, kernel, Xnew)  # [(R), M, N]
+    Kuf = covariances.Kuf(inducing_variable, kernel, Xnew)  # [(R), M, N]
 
     fully_correlated = Kuf.shape.ndims == 4
 
