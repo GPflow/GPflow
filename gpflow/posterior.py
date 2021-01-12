@@ -54,7 +54,7 @@ class Posterior(Module):
         q_mu = self.q_dist.q_mu
 
         if Kuu.shape.ndims == 4:
-            ML = tf.cast(tf.sqrt(tf.cast(tf.reduce_prod(tf.shape(Kuu)), default_float())), tf.int32)
+            ML = tf.reduce_prod(tf.shape(Kuu)[:2])
             Kuu = tf.reshape(Kuu, [ML, ML])
         if Kuu.shape.ndims == 3:
             q_mu = tf.linalg.adjoint(self.q_dist.q_mu)[..., None]  # [..., R, M, 1]
@@ -173,22 +173,36 @@ class Posterior(Module):
 
 def _get_kernels(Xnew, iv, kernel, full_cov, full_output_cov):
 
+    # TODO: this (and the fully_correlated code path below) assumes that Xnew has shape [N, D] and no leading dims
+
     Kuf = covariances.Kuf(iv, kernel, Xnew)  # [(R), M, N]
 
     fully_correlated = Kuf.shape.ndims == 4
 
     if fully_correlated:
         Knn = kernel(Xnew, full_cov=full_cov, full_output_cov=full_output_cov)
+        # full_cov=True and full_output_cov=True: [N, P, N, P]
+        # full_cov=True and full_output_cov=False: [P, N, N]
+        # full_cov=False and full_output_cov=True: [N, P, P]
+        # full_cov=False and full_output_cov=False: [N, P]
         M, L, N, K = tf.unstack(tf.shape(Kuf), num=Kuf.shape.ndims, axis=0)
         Kuf = tf.reshape(Kuf, (M * L, N * K))
         if full_cov == full_output_cov:
             new_shape = (N * K, N * K) if full_cov else (N * K,)
             Knn = tf.reshape(Knn, new_shape)
     elif isinstance(kernel, (kernels.SeparateIndependent, kernels.IndependentLatent)):
+        # NOTE calling kernel(Xnew, full_cov=full_cov, full_output_cov=False) directly would return
+        # if full_cov: [P, N, N] -- this is what we want
+        # else: [N, P] instead of [P, N] as we get from the explicit stack below
         Knn = tf.stack([k(Xnew, full_cov=full_cov) for k in kernel.kernels], axis=0)
     elif isinstance(kernel, kernels.MultioutputKernel):
+        # effectively, SharedIndependent path
         Knn = kernel.kernel(Xnew, full_cov=full_cov)
+        # NOTE calling kernel(Xnew, full_cov=full_cov, full_output_cov=False) directly would return
+        # if full_cov: [P, N, N] instead of [N, N]
+        # else: [N, P] instead of [N]
     else:
-        Knn = kernel(Xnew, full_cov=full_cov)
+        # standard ("single-output") kernels
+        Knn = kernel(Xnew, full_cov=full_cov)  # [N, N] if full_cov else [N]
 
     return Kuf, Knn, fully_correlated
