@@ -191,26 +191,27 @@ class FullyCorrelatedPosterior(BasePosterior):
         if Kuf.shape.ndims == 3:
             mean = tf.linalg.adjoint(tf.squeeze(mean, axis=-1))
 
-        if full_cov:
-            Kfu_Qinv_Kuf = tf.matmul(Kuf, self.Qinv @ Kuf, transpose_a=True)
-            if not full_output_cov:
-                new_shape = tf.concat([tf.shape(Kfu_Qinv_Kuf)[:-2], (N, K, N, K)], axis=0)
-                Kfu_Qinv_Kuf = tf.reshape(Kfu_Qinv_Kuf, new_shape)
-                tmp = tf.linalg.diag_part(tf.einsum("...ijkl->...ikjl", Kfu_Qinv_Kuf))
-                Kfu_Qinv_Kuf = tf.einsum("...ijk->...kij", tmp)
-            cov = Knn - Kfu_Qinv_Kuf
-        else:
+        if not full_cov and not full_output_cov:
+            # fully diagonal case in both inputs and outputs
             # [Aᵀ B]_ij = Aᵀ_ik B_kj = A_ki B_kj
             # TODO check whether einsum is faster now?
             Kfu_Qinv_Kuf = tf.reduce_sum(Kuf * tf.matmul(self.Qinv, Kuf), axis=-2)
-            if full_output_cov:
-                Kfu_Qinv_Kuf = tf.matmul(Kuf, self.Qinv @ Kuf, transpose_a=True)
-                Kfu_Qinv_Kuf = tf.reshape(
-                    Kfu_Qinv_Kuf, tf.concat([tf.shape(Kfu_Qinv_Kuf)[:-2], (N, K, N, K)], axis=0)
-                )
-                tmp = tf.linalg.diag_part(tf.einsum("...ijkl->...ljki", Kfu_Qinv_Kuf))
-                Kfu_Qinv_Kuf = tf.einsum("...ijk->...kij", tmp)
-            cov = Knn - Kfu_Qinv_Kuf
+        else:
+            Kfu_Qinv_Kuf = tf.matmul(Kuf, self.Qinv @ Kuf, transpose_a=True)
+            if not (full_cov and full_output_cov):
+                # diagonal in either inputs or outputs
+                new_shape = tf.concat([tf.shape(Kfu_Qinv_Kuf)[:-2], (N, K, N, K)], axis=0)
+                Kfu_Qinv_Kuf = tf.reshape(Kfu_Qinv_Kuf, new_shape)
+                if full_cov:
+                    # diagonal in outputs: move outputs to end
+                    tmp = tf.linalg.diag_part(tf.einsum("...ijkl->...ikjl", Kfu_Qinv_Kuf))
+                elif full_output_cov:
+                    # diagonal in inputs: move inputs to end
+                    tmp = tf.linalg.diag_part(tf.einsum("...ijkl->...jlik", Kfu_Qinv_Kuf))
+                Kfu_Qinv_Kuf = tf.einsum("...ijk->...kij", tmp)  # move diagonal dim to [-3]
+        cov = Knn - Kfu_Qinv_Kuf
+
+        if not full_cov:
             cov = tf.linalg.adjoint(cov)
 
         mean = tf.reshape(mean, (N, K))
