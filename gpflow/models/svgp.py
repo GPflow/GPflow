@@ -25,7 +25,7 @@ from ..config import default_float, default_jitter
 from ..models.model import GPModel, InputData, MeanAndVariance, RegressionData
 from ..models.training_mixins import ExternalDataTrainingLossMixin
 from ..models.util import inducingpoint_wrapper
-from ..posterior import DiagNormal, MvnNormal, Posterior
+from ..posterior import DiagNormal, MvnNormal, create_posterior
 from ..utilities import positive, triangular
 from .model import GPModel, InputData, MeanAndVariance, RegressionData
 from .training_mixins import ExternalDataTrainingLossMixin
@@ -226,7 +226,7 @@ class NewSVGP(OldSVGP):
         Create the Posterior object which contains precomputed matrices for
         faster prediction when wrapped inside tf.function()
         """
-        return Posterior(
+        return create_posterior(
             self.kernel,
             self.inducing_variable,
             self.q_mu,

@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from abc import ABC, abstractmethod
 from typing import Tuple
 
 import numpy as np
@@ -21,6 +22,13 @@ from . import covariances, kernels
 from .base import Module, Parameter
 from .conditionals.util import expand_independent_outputs, mix_latent_gp
 from .config import default_float, default_jitter
+from .inducing_variables import (
+    FallbackSeparateIndependentInducingVariables,
+    FallbackSharedIndependentInducingVariables,
+    InducingPoints,
+    SeparateIndependentInducingVariables,
+    SharedIndependentInducingVariables,
+)
 from .models.model import MeanAndVariance
 
 
@@ -36,7 +44,7 @@ class MvnNormal(Module):
         self.q_sqrt = q_sqrt  # [L, M, M], lower-triangular
 
 
-class Posterior(Module):
+class BasePosterior(Module, ABC):
     def __init__(self, kernel, inducing_variable, q_mu, q_sqrt, whiten=True, mean_function=None):
         self.inducing_variable = inducing_variable
         self.kernel = kernel
@@ -50,7 +58,9 @@ class Posterior(Module):
         self.update_cache()  # populates or updates self.alpha and self.Qinv
 
     def _precompute(self):
-        Kuu = covariances.Kuu(self.inducing_variable, self.kernel, jitter=default_jitter())  # [(R), M, M]
+        Kuu = covariances.Kuu(
+            self.inducing_variable, self.kernel, jitter=default_jitter()
+        )  # [(R), M, M]
         q_mu = self.q_dist.q_mu
 
         if Kuu.shape.ndims == 4:
@@ -114,6 +124,17 @@ class Posterior(Module):
             self.alpha = Parameter(alpha, trainable=False)
             self.Qinv = Parameter(Qinv, trainable=False)
 
+    @abstractmethod
+    def predict_f(
+        self, Xnew, full_cov: bool = False, full_output_cov: bool = False
+    ) -> MeanAndVariance:
+        raise NotImplementedError()
+
+
+class IndependentPosterior(BasePosterior):
+    def _post_process_mean_and_cov(self, mean, cov, full_cov, full_output_cov):
+        return mean, expand_independent_outputs(cov, full_cov, full_output_cov)
+
     def predict_f(
         self, Xnew, full_cov: bool = False, full_output_cov: bool = False
     ) -> MeanAndVariance:
@@ -133,7 +154,46 @@ class Posterior(Module):
 
         if full_cov:
             Kfu_Qinv_Kuf = tf.matmul(Kuf, self.Qinv @ Kuf, transpose_a=True)
-            if fully_correlated and not full_output_cov:
+            cov = Knn - Kfu_Qinv_Kuf
+        else:
+            # [Aᵀ B]_ij = Aᵀ_ik B_kj = A_ki B_kj
+            # TODO check whether einsum is faster now?
+            Kfu_Qinv_Kuf = tf.reduce_sum(Kuf * tf.matmul(self.Qinv, Kuf), axis=-2)
+            cov = Knn - Kfu_Qinv_Kuf
+            cov = tf.linalg.adjoint(cov)
+
+        mean, cov = self._post_process_mean_and_cov(mean, cov, full_cov, full_output_cov)
+        return mean + self.mean_function(Xnew), cov
+
+
+class LinearCoregionalizationPosterior(IndependentPosterior):
+    def _post_process_mean_and_cov(self, mean, cov, full_cov, full_output_cov):
+        cov = expand_independent_outputs(cov, full_cov, full_output_cov=False)
+        mean, cov = mix_latent_gp(self.kernel.W, mean, cov, full_cov, full_output_cov)
+        return mean, cov
+
+
+class FullyCorrelatedPosterior(BasePosterior):
+    def predict_f(
+        self, Xnew, full_cov: bool = False, full_output_cov: bool = False
+    ) -> MeanAndVariance:
+        # Qinv: [L, M, M]
+        # alpha: [M, L]
+
+        Kuf, Knn, fully_correlated = _get_kernels(
+            Xnew, self.inducing_variable, self.kernel, full_cov, full_output_cov
+        )
+
+        N = tf.shape(Xnew)[0]
+        K = tf.shape(Kuf)[-1] // N
+
+        mean = tf.matmul(Kuf, self.alpha, transpose_a=True)
+        if Kuf.shape.ndims == 3:
+            mean = tf.linalg.adjoint(tf.squeeze(mean, axis=-1))
+
+        if full_cov:
+            Kfu_Qinv_Kuf = tf.matmul(Kuf, self.Qinv @ Kuf, transpose_a=True)
+            if not full_output_cov:
                 new_shape = tf.concat([tf.shape(Kfu_Qinv_Kuf)[:-2], (N, K, N, K)], axis=0)
                 Kfu_Qinv_Kuf = tf.reshape(Kfu_Qinv_Kuf, new_shape)
                 tmp = tf.linalg.diag_part(tf.einsum("...ijkl->...ikjl", Kfu_Qinv_Kuf))
@@ -143,7 +203,7 @@ class Posterior(Module):
             # [Aᵀ B]_ij = Aᵀ_ik B_kj = A_ki B_kj
             # TODO check whether einsum is faster now?
             Kfu_Qinv_Kuf = tf.reduce_sum(Kuf * tf.matmul(self.Qinv, Kuf), axis=-2)
-            if fully_correlated and full_output_cov:
+            if full_output_cov:
                 Kfu_Qinv_Kuf = tf.matmul(Kuf, self.Qinv @ Kuf, transpose_a=True)
                 Kfu_Qinv_Kuf = tf.reshape(
                     Kfu_Qinv_Kuf, tf.concat([tf.shape(Kfu_Qinv_Kuf)[:-2], (N, K, N, K)], axis=0)
@@ -153,20 +213,12 @@ class Posterior(Module):
             cov = Knn - Kfu_Qinv_Kuf
             cov = tf.linalg.adjoint(cov)
 
-        if fully_correlated:
-            mean = tf.reshape(mean, (N, K))
-            if full_cov == full_output_cov:
-                cov_shape = (N, K, N, K) if full_cov else (N, K)
-            else:
-                cov_shape = (K, N, N) if full_cov else (N, K, K)
-            cov = tf.reshape(cov, cov_shape)
-
+        mean = tf.reshape(mean, (N, K))
+        if full_cov == full_output_cov:
+            cov_shape = (N, K, N, K) if full_cov else (N, K)
         else:
-            if isinstance(self.kernel, kernels.LinearCoregionalization):
-                cov = expand_independent_outputs(cov, full_cov, full_output_cov=False)
-                mean, cov = mix_latent_gp(self.kernel.W, mean, cov, full_cov, full_output_cov)
-            else:
-                cov = expand_independent_outputs(cov, full_cov, full_output_cov)
+            cov_shape = (K, N, N) if full_cov else (N, K, K)
+        cov = tf.reshape(cov, cov_shape)
 
         return mean + self.mean_function(Xnew), cov
 
@@ -206,3 +258,32 @@ def _get_kernels(Xnew, inducing_variable, kernel, full_cov, full_output_cov):
         Knn = kernel(Xnew, full_cov=full_cov)  # [N, N] if full_cov else [N]
 
     return Kuf, Knn, fully_correlated
+
+
+def create_posterior(kernel, inducing_variable, q_mu, q_sqrt, whiten=True, mean_function=None):
+    if isinstance(kernel, kernels.LinearCoregionalization) and not isinstance(
+        inducing_variable, InducingPoints
+    ):
+        # Linear mixing---efficient multi-output
+        posterior_class = LinearCoregionalizationPosterior
+    elif isinstance(
+        inducing_variable,
+        (SeparateIndependentInducingVariables, SharedIndependentInducingVariables),
+    ):
+        # independent single- or multi-output
+        posterior_class = IndependentPosterior
+    elif isinstance(
+        inducing_variable,
+        (
+            InducingPoints,
+            FallbackSeparateIndependentInducingVariables,
+            FallbackSharedIndependentInducingVariables,
+        ),
+    ) and isinstance(kernel, kernels.MultioutputKernel):
+        # Fully correlated or dummy multi-output
+        posterior_class = FullyCorrelatedPosterior
+    else:
+        # independent single- or multi-output
+        posterior_class = IndependentPosterior
+
+    return posterior_class(kernel, inducing_variable, q_mu, q_sqrt, whiten, mean_function)
