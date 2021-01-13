@@ -30,6 +30,7 @@ from .inducing_variables import (
     SharedIndependentInducingVariables,
 )
 from .models.model import MeanAndVariance
+from .utilities import Dispatcher
 
 
 class DiagNormal(Module):
@@ -260,30 +261,46 @@ def _get_kernels(Xnew, inducing_variable, kernel, full_cov, full_output_cov):
     return Kuf, Knn
 
 
-def create_posterior(kernel, inducing_variable, q_mu, q_sqrt, whiten=True, mean_function=None):
-    if isinstance(kernel, kernels.LinearCoregionalization) and not isinstance(
-        inducing_variable, InducingPoints
-    ):
-        # Linear mixing---efficient multi-output
-        posterior_class = LinearCoregionalizationPosterior
-    elif isinstance(
-        inducing_variable,
-        (SeparateIndependentInducingVariables, SharedIndependentInducingVariables),
-    ):
-        # independent single- or multi-output
-        posterior_class = IndependentPosterior
-    elif isinstance(
-        inducing_variable,
-        (
-            InducingPoints,
-            FallbackSeparateIndependentInducingVariables,
-            FallbackSharedIndependentInducingVariables,
-        ),
-    ) and isinstance(kernel, kernels.MultioutputKernel):
-        # Fully correlated or dummy multi-output
-        posterior_class = FullyCorrelatedPosterior
-    else:
-        # independent single- or multi-output
-        posterior_class = IndependentPosterior
+get_posterior_class = Dispatcher("get_posterior_class")
 
+
+@get_posterior_class.register(kernels.Kernel, InducingVariable)
+def _get_posterior_base_case(kernel, inducing_variable):
+    # independent single output
+    return IndependentPosterior
+
+
+@get_posterior_class.register(kernels.MultioutputKernel, InducingPoints)
+def _get_posterior_fully_correlated_mo(kernel, inducing_variable):
+    return FullyCorrelatedPosterior
+
+
+@get_posterior_class.register(
+    (kernels.SharedIndependent, kernels.SeparateIndependent),
+    (SeparateIndependentInducingVariables, SharedIndependentInducingVariables),
+)
+def _get_posterior_independent_mo(kernel, inducing_variable):
+    # independent multi-output
+    return IndependentPosterior
+
+
+@get_posterior_class.register(
+    kernels.IndependentLatent,
+    (FallbackSeparateIndependentInducingVariables, FallbackSharedIndependentInducingVariables),
+)
+def _get_posterior_independentlatent_mo_fallback(kernel, inducing_variable):
+    return FullyCorrelatedPosterior  # XXX
+
+
+@get_posterior_class.register(
+    kernels.LinearCoregionalization,
+    (SeparateIndependentInducingVariables, SharedIndependentInducingVariables),
+)
+def _get_posterior_linearcoregionalization_mo_efficient(kernel, inducing_variable):
+    # Linear mixing---efficient multi-output
+    return LinearCoregionalizationPosterior
+
+
+def create_posterior(kernel, inducing_variable, q_mu, q_sqrt, whiten=True, mean_function=None):
+    posterior_class = get_posterior_class(kernel, inducing_variable)
     return posterior_class(kernel, inducing_variable, q_mu, q_sqrt, whiten, mean_function)
