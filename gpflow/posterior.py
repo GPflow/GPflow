@@ -141,7 +141,7 @@ class IndependentPosterior(BasePosterior):
         # Qinv: [L, M, M]
         # alpha: [M, L]
 
-        Kuf, Knn, fully_correlated = _get_kernels(
+        Kuf, Knn = _get_kernels(
             Xnew, self.inducing_variable, self.kernel, full_cov, full_output_cov
         )
 
@@ -177,12 +177,24 @@ class FullyCorrelatedPosterior(BasePosterior):
     def predict_f(
         self, Xnew, full_cov: bool = False, full_output_cov: bool = False
     ) -> MeanAndVariance:
+        # TODO: this assumes that Xnew has shape [N, D] and no leading dims
+
         # Qinv: [L, M, M]
         # alpha: [M, L]
 
-        Kuf, Knn, fully_correlated = _get_kernels(
-            Xnew, self.inducing_variable, self.kernel, full_cov, full_output_cov
-        )
+        Kuf = covariances.Kuf(inducing_variable, kernel, Xnew)
+        assert Kuf.shape.ndims == 4
+        M, L, N, K = tf.unstack(tf.shape(Kuf), num=Kuf.shape.ndims, axis=0)
+        Kuf = tf.reshape(Kuf, (M * L, N * K))
+
+        Knn = self.kernel(Xnew, full_cov=full_cov, full_output_cov=full_output_cov)
+        # full_cov=True and full_output_cov=True: [N, P, N, P]
+        # full_cov=True and full_output_cov=False: [P, N, N]
+        # full_cov=False and full_output_cov=True: [N, P, P]
+        # full_cov=False and full_output_cov=False: [N, P]
+        if full_cov == full_output_cov:
+            new_shape = (N * K, N * K) if full_cov else (N * K,)
+            Knn = tf.reshape(Knn, new_shape)
 
         N = tf.shape(Xnew)[0]
         K = tf.shape(Kuf)[-1] // N
@@ -226,24 +238,11 @@ class FullyCorrelatedPosterior(BasePosterior):
 
 def _get_kernels(Xnew, inducing_variable, kernel, full_cov, full_output_cov):
 
-    # TODO: this (and the fully_correlated code path below) assumes that Xnew has shape [N, D] and no leading dims
+    # TODO: this assumes that Xnew has shape [N, D] and no leading dims
 
     Kuf = covariances.Kuf(inducing_variable, kernel, Xnew)  # [(R), M, N]
 
-    fully_correlated = Kuf.shape.ndims == 4
-
-    if fully_correlated:
-        Knn = kernel(Xnew, full_cov=full_cov, full_output_cov=full_output_cov)
-        # full_cov=True and full_output_cov=True: [N, P, N, P]
-        # full_cov=True and full_output_cov=False: [P, N, N]
-        # full_cov=False and full_output_cov=True: [N, P, P]
-        # full_cov=False and full_output_cov=False: [N, P]
-        M, L, N, K = tf.unstack(tf.shape(Kuf), num=Kuf.shape.ndims, axis=0)
-        Kuf = tf.reshape(Kuf, (M * L, N * K))
-        if full_cov == full_output_cov:
-            new_shape = (N * K, N * K) if full_cov else (N * K,)
-            Knn = tf.reshape(Knn, new_shape)
-    elif isinstance(kernel, (kernels.SeparateIndependent, kernels.IndependentLatent)):
+    if isinstance(kernel, (kernels.SeparateIndependent, kernels.IndependentLatent)):
         # NOTE calling kernel(Xnew, full_cov=full_cov, full_output_cov=False) directly would return
         # if full_cov: [P, N, N] -- this is what we want
         # else: [N, P] instead of [P, N] as we get from the explicit stack below
@@ -258,7 +257,7 @@ def _get_kernels(Xnew, inducing_variable, kernel, full_cov, full_output_cov):
         # standard ("single-output") kernels
         Knn = kernel(Xnew, full_cov=full_cov)  # [N, N] if full_cov else [N]
 
-    return Kuf, Knn, fully_correlated
+    return Kuf, Knn
 
 
 def create_posterior(kernel, inducing_variable, q_mu, q_sqrt, whiten=True, mean_function=None):
