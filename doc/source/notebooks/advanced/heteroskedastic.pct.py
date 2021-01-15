@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.6.0
+#       jupytext_version: 1.9.1
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -213,6 +213,30 @@ for epoch in range(1, epochs + 1):
         plot_distribution(X, Y, Ymean, Ystd)
 
 model
+
+# %%
+from scipy.stats import norm
+f_mu = 0.0
+f_var = 0.1
+g_mu = 0.0
+g_var = 0.1
+n_samples = 1_00_000
+
+f = np.random.normal(loc=f_mu, scale=np.sqrt(f_var), size=n_samples)
+g = np.random.normal(loc=g_mu, scale=np.sqrt(g_var), size=n_samples)
+
+y = np.random.normal(loc=f, scale=np.exp(g))
+
+fig, ax = plt.subplots(1, 1)
+ax.hist(y, bins=100, density=True, alpha=0.5)
+xx = np.linspace(-10, 10, 101)
+noise_var = np.exp(g_mu + g_var / 2) ** 2
+y_var = (f_var + noise_var) 
+ax.plot(xx, norm.pdf(xx, loc=f_mu, scale=y_var ** 0.5), c='k')
+ax.set_yscale('log')
+ax.set_ylim(1e-8, 1e0)
+
+
 
 # %% [markdown]
 # ## Further reading
