@@ -96,6 +96,23 @@ class GPModel(BayesianModel):
     self.predict_f_samples.
     """
 
+    class ConditionedLikelihood:
+        def __init__(self, likelihood: Likelihood, Fmean, Fvar) -> None:
+            self.likelihood = likelihood
+            self.f_mean = Fmean
+            self.f_var = Fvar
+
+        def predict_mean_and_var(self):
+            return self.likelihood.predict_mean_and_var(self.f_mean, self.f_var)
+
+        def sample(self, num_samples: int = 1000):
+            f_sample = tf.random.normal(
+                shape=(num_samples,),
+                mean=self.f_mean,
+                stddev=tf.sqrt(self.f_var)
+            )
+            return self.likelihood.conditional_sample(f_sample)
+
     def __init__(
         self,
         kernel: Kernel,
@@ -235,3 +252,8 @@ class GPModel(BayesianModel):
         X, Y = data
         f_mean, f_var = self.predict_f(X, full_cov=full_cov, full_output_cov=full_output_cov)
         return self.likelihood.predict_log_density(f_mean, f_var, Y)
+
+    def conditinal_y_dist(self, Xnew):
+        Fmu, Fvar = self.predict_f(Xnew)
+
+        return self.ConditionedLikelihood(self.likelihood, Fmu, Fvar)

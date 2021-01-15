@@ -56,7 +56,6 @@ import abc
 import warnings
 from typing import Optional
 
-import numpy as np
 import tensorflow as tf
 
 from ..base import Module
@@ -293,6 +292,10 @@ class Likelihood(Module, metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def _variational_expectations(self, Fmu, Fvar, Y):
         raise NotImplementedError
+
+    @abc.abstractmethod
+    def conditional_sample(self, Fsample):
+        """ Sample from the likelihood """
 
 
 class QuadratureLikelihood(Likelihood):
