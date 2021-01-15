@@ -70,8 +70,11 @@ class Bernoulli(ScalarLikelihood):
         super().__init__(**kwargs)
         self.invlink = invlink
 
+    def conditional_parameters(self, F):
+        return self._conditional_mean(F)
+
     def conditional_sample(self, F):
-        return tfp.distributions.Bernoulli(probs=self.invlink(F)).sample(F.shape)
+        return tfp.distributions.Bernoulli(probs=self._conditional_mean(F)).sample()
 
     def _scalar_log_prob(self, F, Y):
         return logdensities.bernoulli(Y, self.invlink(F))

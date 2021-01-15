@@ -42,6 +42,15 @@ plt.rcParams["figure.figsize"] = (8, 4)
 X = np.genfromtxt("data/classif_1D_X.csv").reshape(-1, 1)
 Y = np.genfromtxt("data/classif_1D_Y.csv").reshape(-1, 1)
 
+n_data = 40
+X = np.random.rand(n_data) * 2 + 2
+
+Y = np.zeros_like(X)
+Y = (np.random.rand(n_data) > 0.25).astype(float)
+
+X = X.reshape(-1, 1)
+Y = Y.reshape(-1, 1)
+
 plt.figure(figsize=(10, 6))
 _ = plt.plot(X, Y, "C3x", ms=8, mew=2)
 
@@ -115,7 +124,7 @@ _ = plt.plot(X_gen, Y_gen, "C3x", ms=8, mew=2)
 m = gpflow.models.VGP(
     (X, Y), likelihood=gpflow.likelihoods.Bernoulli(), kernel=gpflow.kernels.Matern52()
 )
-
+gpflow.set_trainable(m.kernel, False)
 opt = gpflow.optimizers.Scipy()
 opt.minimize(m.training_loss, variables=m.trainable_variables)
 
@@ -136,9 +145,6 @@ gpflow.utilities.print_summary(m, fmt="notebook")
 #
 # Finally, we will see how to use model predictions to plot the resulting model.
 # We will replicate the figures of the generative model above, but using the approximate posterior distribution given by the model.
-
-# %%
-# np.quantile?
 
 # %%
 plt.figure(figsize=(12, 8))
@@ -184,60 +190,29 @@ plt.fill_between(
 
 # plot data
 plt.plot(X, Y, "C3x", ms=8, mew=2)
-plt.ylim((-3, 3))
-
-# %% [markdown]
-# ## Two-dimensional example
-#
-# In this section we will use the following data:
+plt.ylim((-1.5, 1.5))
 
 # %%
-X = np.loadtxt("data/banana_X_train", delimiter=",")
-Y = np.loadtxt("data/banana_Y_train", delimiter=",").reshape(-1, 1)
-mask = Y[:, 0] == 1
+y_dist = m.conditional_y_dist(x_grid.reshape(-1, 1))
 
-plt.figure(figsize=(6, 6))
-plt.plot(X[mask, 0], X[mask, 1], "oC0", mew=0, alpha=0.5)
-_ = plt.plot(X[np.logical_not(mask), 0], X[np.logical_not(mask), 1], "oC1", mew=0, alpha=0.5)
+y_samples = y_dist.sample(100)
+plt.plot(x_grid, y_samples.numpy().mean(axis=1))
 
-# %% [markdown]
-# The model definition is the same as above; the only important difference is that we now specify that the kernel operates over a two-dimensional input space:
+p_samples = y_dist.parameter_samples(1_000)
 
-# %%
-m = gpflow.models.VGP(
-    (X, Y), kernel=gpflow.kernels.SquaredExponential(), likelihood=gpflow.likelihoods.Bernoulli()
+p_mu = np.mean(p_samples, axis=1)
+p_lo, p_hi = np.quantile(p_samples, q=(0.05, 0.95), axis=1)
+l1, = plt.plot(x_grid, p_mu)
+plt.fill_between(
+    x_grid.flatten(),
+    np.ravel(p_lo),
+    np.ravel(p_hi),
+    alpha=0.3,
+    color=l1.get_color(),
 )
-
-opt = gpflow.optimizers.Scipy()
-opt.minimize(
-    m.training_loss, variables=m.trainable_variables, options=dict(maxiter=25), method="L-BFGS-B"
-)
-# in practice, the optimization needs around 250 iterations to converge
-
-# %% [markdown]
-# We can now plot the predicted decision boundary between the two classes.
-# To do so, we can equivalently plot the contour lines $E[f(x)|Y]=0$, or $E[g(f(x))|Y]=0.5$.
-# We will do the latter, because it allows us to introduce the `predict_y` function, which returns the mean and variance at test points:
-
-# %%
-x_grid = np.linspace(-3, 3, 40)
-xx, yy = np.meshgrid(x_grid, x_grid)
-Xplot = np.vstack((xx.flatten(), yy.flatten())).T
-
-p, _ = m.predict_y(Xplot)  # here we only care about the mean
-plt.figure(figsize=(7, 7))
-plt.plot(X[mask, 0], X[mask, 1], "oC0", mew=0, alpha=0.5)
-plt.plot(X[np.logical_not(mask), 0], X[np.logical_not(mask), 1], "oC1", mew=0, alpha=0.5)
-
-_ = plt.contour(
-    xx,
-    yy,
-    p.numpy().reshape(*xx.shape),
-    [0.5],  # plot the p=0.5 contour line only
-    colors="k",
-    linewidths=1.8,
-    zorder=100,
-)
+# plot data
+plt.plot(X, Y, "C3x", ms=8, mew=2)
+plt.ylim((-0.5, 1.5))
 
 # %% [markdown]
 # ## Further reading

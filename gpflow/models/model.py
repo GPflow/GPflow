@@ -102,15 +102,23 @@ class GPModel(BayesianModel):
             self.f_mean = Fmean
             self.f_var = Fvar
 
+        def _get_f_samples(self, num_samples):
+            return tf.random.normal(
+                shape=(num_samples,),
+                mean=self.f_mean,
+                stddev=tf.sqrt(self.f_var),
+                dtype=tf.float64,
+            )
+
+        def parameter_samples(self, num_samples: int = 1000):
+            f_sample = self._get_f_samples(num_samples)
+            return self.likelihood.conditional_parameters(f_sample)
+
         def predict_mean_and_var(self):
             return self.likelihood.predict_mean_and_var(self.f_mean, self.f_var)
 
         def sample(self, num_samples: int = 1000):
-            f_sample = tf.random.normal(
-                shape=(num_samples,),
-                mean=self.f_mean,
-                stddev=tf.sqrt(self.f_var)
-            )
+            f_sample = self._get_f_samples(num_samples)
             return self.likelihood.conditional_sample(f_sample)
 
     def __init__(
@@ -253,7 +261,6 @@ class GPModel(BayesianModel):
         f_mean, f_var = self.predict_f(X, full_cov=full_cov, full_output_cov=full_output_cov)
         return self.likelihood.predict_log_density(f_mean, f_var, Y)
 
-    def conditinal_y_dist(self, Xnew):
+    def conditional_y_dist(self, Xnew):
         Fmu, Fvar = self.predict_f(Xnew)
-
         return self.ConditionedLikelihood(self.likelihood, Fmu, Fvar)
