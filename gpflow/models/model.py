@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import abc
+import warnings
 from typing import Optional, Tuple
 
 import tensorflow as tf
@@ -103,17 +104,18 @@ class GPModel(BayesianModel):
             self.f_var = Fvar
 
         def _get_f_samples(self, num_samples):
-            samples = sample_mvn(
-                self.f_mean, self.f_var, False, num_samples=num_samples
-            )
+            samples = sample_mvn(self.f_mean, self.f_var, full_cov=False, num_samples=num_samples)
             return samples
 
         def parameter_samples(self, num_samples: int = 1000):
             f_sample = self._get_f_samples(num_samples)
             return self.likelihood.conditional_parameters(f_sample)
 
-        def predict_mean_and_var(self):
+        def mean_and_var(self):
             return self.likelihood.predict_mean_and_var(self.f_mean, self.f_var)
+
+        def log_density(self, Y):
+            return self.likelihood.predict_log_density(self.f_mean, self.f_var, Y)
 
         def sample(self, num_samples: int = 1000):
             f_sample = self._get_f_samples(num_samples)
@@ -240,8 +242,8 @@ class GPModel(BayesianModel):
                 "The predict_y method currently supports only the argument values full_cov=False and full_output_cov=False"
             )
 
-        f_mean, f_var = self.predict_f(Xnew, full_cov=full_cov, full_output_cov=full_output_cov)
-        return self.likelihood.predict_mean_and_var(f_mean, f_var)
+        warnings.warn(DeprecationWarning, "use conditional_y_dist(Xnew).mean_and_var() instead")
+        return self.conditional_y_dist(Xnew).predict_mean_and_var()
 
     def predict_log_density(
         self, data: RegressionData, full_cov: bool = False, full_output_cov: bool = False
@@ -256,8 +258,7 @@ class GPModel(BayesianModel):
             )
 
         X, Y = data
-        f_mean, f_var = self.predict_f(X, full_cov=full_cov, full_output_cov=full_output_cov)
-        return self.likelihood.predict_log_density(f_mean, f_var, Y)
+        return self.conditional_y_dist(X).log_density(Y)
 
     def conditional_y_dist(self, Xnew):
         Fmu, Fvar = self.predict_f(Xnew)
