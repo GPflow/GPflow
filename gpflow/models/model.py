@@ -218,7 +218,7 @@ class GPModel(BayesianModel):
                 "The predict_y method currently supports only the argument values full_cov=False and full_output_cov=False"
             )
 
-        warnings.warn(DeprecationWarning, "use conditional_y_dist(Xnew).mean_and_var() instead")
+        warnings.warn("use conditional_y_dist(Xnew).mean_and_var() instead", DeprecationWarning)
         return self.conditional_y_dist(Xnew).predict_mean_and_var()
 
     def predict_log_density(
