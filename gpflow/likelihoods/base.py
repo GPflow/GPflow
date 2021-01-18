@@ -54,9 +54,10 @@ integration is done by sampling (can be more suitable when F is higher dimension
 
 import abc
 import warnings
-from typing import Optional
+from typing import Optional, Union, Sequence
 
 import tensorflow as tf
+import tensorflow_probability as tfp
 
 from ..base import Module
 from ..conditionals.util import sample_mvn
@@ -321,6 +322,14 @@ class ConditionedLikelihood:
     def sample(self, num_samples: int = 1000):
         f_sample = self._get_f_samples(num_samples)
         return self.likelihood.conditional_sample(f_sample)
+
+    def y_percentile(self, p: Union[float, Sequence[float]], num_samples: int = 1000):
+        y_samples = self.sample(num_samples)
+        return tfp.stats.percentile(y_samples, q=p, axis=0)
+
+    def parameter_percentile(self, p: Union[float, Sequence[float]], num_samples: int = 1000):
+        p_samples = self.parameter_samples(num_samples)
+        return (tfp.stats.percentile(p_sample, q=p, axis=0) for p_sample in p_samples)
 
 
 class QuadratureLikelihood(Likelihood):

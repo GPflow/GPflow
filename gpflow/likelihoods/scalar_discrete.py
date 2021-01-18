@@ -71,7 +71,7 @@ class Bernoulli(ScalarLikelihood):
         self.invlink = invlink
 
     def conditional_parameters(self, F):
-        return self._conditional_mean(F)
+        return (self._conditional_mean(F),)
 
     def conditional_sample(self, F):
         return tfp.distributions.Bernoulli(probs=self._conditional_mean(F)).sample()
