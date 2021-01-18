@@ -120,3 +120,9 @@ class HeteroskedasticTFPConditional(MultiLatentTFPConditional):
         super().__init__(
             latent_dim=2, conditional_distribution=conditional_distribution, **kwargs,
         )
+
+    def conditional_parameters(self, F):
+        return self._conditional_mean(F), self._conditional_variance(F)
+
+    def conditional_sample(self, F):
+        return self.conditional_distribution(F).sample()

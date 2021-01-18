@@ -103,12 +103,10 @@ class GPModel(BayesianModel):
             self.f_var = Fvar
 
         def _get_f_samples(self, num_samples):
-            return tf.random.normal(
-                shape=(num_samples,),
-                mean=self.f_mean,
-                stddev=tf.sqrt(self.f_var),
-                dtype=tf.float64,
+            samples = sample_mvn(
+                self.f_mean, self.f_var, False, num_samples=num_samples
             )
+            return samples
 
         def parameter_samples(self, num_samples: int = 1000):
             f_sample = self._get_f_samples(num_samples)
