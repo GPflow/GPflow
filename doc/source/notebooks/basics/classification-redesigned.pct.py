@@ -146,62 +146,20 @@ gpflow.utilities.print_summary(m, fmt="notebook")
 # Finally, we will see how to use model predictions to plot the resulting model.
 # We will replicate the figures of the generative model above, but using the approximate posterior distribution given by the model.
 
+# %% [markdown]
+# ## The conditional output distribution
+#
+# Here we show how to get the conditional output distribution and plot samples from it. In order to plot the uncertainty associated with that, we also get the percentiles from a sample of the corresponding likelihood parameter values, because the those of the output values are binary and would neither be convenient nor interesting to plot.
+
 # %%
-plt.figure(figsize=(12, 8))
-
-# bubble fill the predictions
-# mu, var = m.predict_f(x_grid)
-
-# plt.fill_between(
-#     x_grid.flatten(),
-#     np.ravel(mu + 2 * np.sqrt(var)),
-#     np.ravel(mu - 2 * np.sqrt(var)),
-#     alpha=0.3,
-#     color="C0",
-# )
-
-# plot samples
 tf.random.set_seed(6)
-samples = m.predict_f_samples(x_grid, 10).numpy().squeeze().T
-
-# plt.plot(x_grid, samples, "C0", lw=1)
-
-def compute_y_sample_statistics(model, num_samples: int = 100):
-    p = invlink(model.predict_f_samples(x_grid, num_samples).numpy().squeeze().T)
-    mean = np.mean(p, axis=1)
-    p_low, p_high = np.quantile(a=p, q=[.05, 0.95], axis=1)
-    
-    return mean, p_low, p_high
-
-y_mu, y_p_low, y_p_high = compute_y_sample_statistics(m, 10000)
-
-plt.plot(x_grid.flatten(), y_mu)
-plt.fill_between(
-    x_grid.flatten(),
-    np.ravel(y_p_low),
-    np.ravel(y_p_high),
-    alpha=0.3,
-    color="C0",
-)
-
-# # plot p-samples
-# p = invlink(samples)
-# # plt.plot(x_grid, p, "C1", lw=1)
-
-# plot data
-plt.plot(X, Y, "C3x", ms=8, mew=2)
-plt.ylim((-1.5, 1.5))
-
-# %%
 y_dist = m.conditional_y_dist(x_grid.reshape(-1, 1))
 
 y_samples = y_dist.sample(100)
+
+plt.figure(figsize=(12, 8))
 plt.plot(x_grid, np.mean(y_samples, axis=0))
 
-# p_samples = y_dist.parameter_samples(1_000)
-
-# p_mu = np.mean(p_samples, axis=0)
-# p_lo, p_hi = np.quantile(p_samples, q=(0.025, 0.975), axis=0)
 (p_lo, p_50, p_hi), = y_dist.parameter_percentile(p=(2.5, 50.0, 97.5), num_samples=10_000)
 l1, = plt.plot(x_grid, p_50)
 plt.fill_between(
@@ -214,6 +172,31 @@ plt.fill_between(
 # plot data
 plt.plot(X, Y, "C3x", ms=8, mew=2)
 plt.ylim((-0.5, 1.5))
+
+# %%
+# this is functionally equivalent to the following, but more user-friendly and intuitive
+# we need to get samples from the latent process, then obtain the quantiles at different levels to
+# get the sample output mean (p=0.5) and the lowest (p=0.05) and highest (p=.95) quantiles.
+samples = m.predict_f_samples(x_grid, 10).numpy().squeeze().T
+
+def compute_y_sample_statistics(model, num_samples: int = 100):
+    p = invlink(model.predict_f_samples(x_grid, num_samples).numpy().squeeze().T)
+    mean = np.mean(p, axis=1)
+    p_low, p_high = np.quantile(a=p, q=[.05, 0.95], axis=1)
+    
+    return mean, p_low, p_high
+
+y_mu, y_p_low, y_p_high = compute_y_sample_statistics(m, 10000)
+
+plt.figure(figsize=(12, 8))
+plt.plot(x_grid.flatten(), y_mu)
+plt.fill_between(
+    x_grid.flatten(),
+    np.ravel(y_p_low),
+    np.ravel(y_p_high),
+    alpha=0.3,
+    color="C0",
+)
 
 # %% [markdown]
 # ## Further reading

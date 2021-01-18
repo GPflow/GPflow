@@ -236,6 +236,12 @@ class GPModel(BayesianModel):
         X, Y = data
         return self.conditional_y_dist(X).log_density(Y)
 
-    def conditional_y_dist(self, Xnew):
+    def conditional_y_dist(self, Xnew) -> ConditionedLikelihood:
+        """
+        Return the conditional output distribution, i.e. p(Y|F).
+
+        :param Xnew: the points at which to evaluate the distribution
+        :return: instance of ConditionalLikelihood
+        """
         Fmu, Fvar = self.predict_f(Xnew)
         return ConditionedLikelihood(self.likelihood, Fmu, Fvar)
