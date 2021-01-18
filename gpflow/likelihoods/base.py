@@ -59,6 +59,7 @@ from typing import Optional
 import tensorflow as tf
 
 from ..base import Module
+from ..conditionals.util import sample_mvn
 from ..quadrature import GaussianQuadrature, NDiagGHQuadrature, ndiag_mc
 
 DEFAULT_NUM_GAUSS_HERMITE_POINTS = 20
@@ -305,8 +306,7 @@ class ConditionedLikelihood:
         self.f_var = Fvar
 
     def _get_f_samples(self, num_samples):
-        samples = sample_mvn(self.f_mean, self.f_var, full_cov=False, num_samples=num_samples)
-        return samples
+        return sample_mvn(self.f_mean, self.f_var, full_cov=False, num_samples=num_samples)
 
     def parameter_samples(self, num_samples: int = 1000):
         f_sample = self._get_f_samples(num_samples)
