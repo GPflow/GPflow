@@ -54,7 +54,7 @@ integration is done by sampling (can be more suitable when F is higher dimension
 
 import abc
 import warnings
-from typing import Optional, Union, Sequence
+from typing import Optional, Union, Sequence, Tuple
 
 import tensorflow as tf
 import tensorflow_probability as tfp
@@ -296,40 +296,82 @@ class Likelihood(Module, metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     # @abc.abstractmethod
-    def conditional_sample(self, Fsample):
+    def conditional_sample(self, Fsample) -> tf.Tensor:
         """ Sample from the likelihood """
 
 
 class ConditionedLikelihood:
-    def __init__(self, likelihood: Likelihood, Fmean, Fvar) -> None:
+    """
+    This class represents the likelihood of the output conditioned on the latent
+    process(es) function values.
+    """
+
+    def __init__(self, likelihood: Likelihood, Fmean: tf.Tensor, Fvar: tf.Tensor) -> None:
+        """
+        :param likelihood: model likelihood
+        :param Fmean: latent process mean values obtained at some points X.
+        :param Fvar: latent process variance values ontained at some points.
+        """
         self.likelihood = likelihood
         self.f_mean = Fmean
         self.f_var = Fvar
 
-    def _get_f_samples(self, num_samples):
+    def _get_f_samples(self, num_samples: int) -> tf.Tensor:
+        """ Convenience method to return samples from the latent process """
         return sample_mvn(self.f_mean, self.f_var, full_cov=False, num_samples=num_samples)
 
-    def parameter_samples(self, num_samples: int = 1000):
+    def parameter_samples(self, num_samples: int = 1000) -> Tuple[tf.Tensor, ...]:
+        """ Get samples from the distribution of likelihood parameters """
         f_sample = self._get_f_samples(num_samples)
         return self.likelihood.conditional_parameters(f_sample)
 
     def mean_and_var(self):
+        """ Return the (conditional) output mean and variance """
         return self.likelihood.predict_mean_and_var(self.f_mean, self.f_var)
 
-    def log_density(self, Y):
+    def log_density(self, Y: tf.Tensor) -> tf.Tensor:
+        """
+        Return the (conditional) log density of the output values.
+
+        :param Y: the output values to return the log density of. Note how these output values
+        should correspond to the input values used to obtain this conditional likelihood
+        """
         return self.likelihood.predict_log_density(self.f_mean, self.f_var, Y)
 
-    def sample(self, num_samples: int = 1000):
+    def sample(self, num_samples: int = 1000) -> tf.Tensor:
+        """
+        Return samples from the conditional likelihood.
+
+        :param num_samples: integer specifying the number of samples
+        """
+        assert num_samples > 0, 'Must provide a positive number of samples'
+
         f_sample = self._get_f_samples(num_samples)
+
         return self.likelihood.conditional_sample(f_sample)
 
-    def y_percentile(self, p: Union[float, Sequence[float]], num_samples: int = 1000):
+    def y_percentile(self, p: Union[float, Sequence[float]], num_samples: int = 1000) -> tf.Tensor:
+        """
+        Return percentiles of the conditional output distrubution at different levels.
+
+        :param p: a float or an array of percentile values (between 0 and 100)
+        :param num_samples: integer specifying the number of samples to compute the percentile from.
+        :return: a tensor like object representing the percentiles
+        """
         y_samples = self.sample(num_samples)
+
         return tfp.stats.percentile(y_samples, q=p, axis=0)
 
-    def parameter_percentile(self, p: Union[float, Sequence[float]], num_samples: int = 1000):
+    def parameter_percentile(self, p: Union[float, Sequence[float]], num_samples: int = 1000) -> Tuple[tf.Tensor, ...]:
+        """
+        Return percentiles of the likelihood parameter distribution at different levels.
+
+        :param p: a float or an array of percentile values (between 0 and 100)
+        :param num_samples: integer specifying the number of samples to compute the percentile from.
+        :return: a tensor like object representing the percentiles
+        """
         p_samples = self.parameter_samples(num_samples)
-        return (tfp.stats.percentile(p_sample, q=p, axis=0) for p_sample in p_samples)
+        return tuple(tfp.stats.percentile(p_sample, q=p, axis=0) for p_sample in p_samples)
 
 
 class QuadratureLikelihood(Likelihood):
