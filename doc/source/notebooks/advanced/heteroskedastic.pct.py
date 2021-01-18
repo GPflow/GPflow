@@ -228,14 +228,16 @@ samples = y_dist.sample(10_000)
 
 # The folling is equivalent at doing:
 # y_lo_lo, y_lo, y_hi, y_hi_hi = np.quantile(samples, q=(0.025, 0.159, 0.841, 0.975), axis=0)
-# Note how, contrary to the binary classification case, here we get the percentiles directly from the 
+# Note how, contrary to the binary classification case, here we get the percentiles directly from the
 # conditional output distribution
 y_lo_lo, y_lo, y_hi, y_hi_hi = y_dist.y_percentile(p=(2.5, 15.9, 84.1, 97.5), num_samples=10_000)
 
 fig, ax = plt.subplots(1, 1, figsize=(15, 5))
-ax.plot(X, np.mean(samples, axis=0), c='k')
-ax.fill_between(X.squeeze(), y_lo[...,0], y_hi[...,0], color="silver", alpha=1 - 0.05 * 1 ** 3)
-ax.fill_between(X.squeeze(), y_lo_lo[...,0], y_hi_hi[...,0], color="silver", alpha=1 - 0.05 * 2 ** 3)
+ax.plot(X, np.mean(samples, axis=0), c="k")
+ax.fill_between(X.squeeze(), y_lo[..., 0], y_hi[..., 0], color="silver", alpha=1 - 0.05 * 1 ** 3)
+ax.fill_between(
+    X.squeeze(), y_lo_lo[..., 0], y_hi_hi[..., 0], color="silver", alpha=1 - 0.05 * 2 ** 3
+)
 ax.scatter(X, Y, color="gray", alpha=0.8)
 
 # %%
@@ -243,23 +245,26 @@ p_mu_samples, p_var_samples = y_dist.parameter_samples(10_000)
 # p_mu_lo, p_mu_hi = np.quantile(p_mu_samples, q=(0.159, 0.841), axis=0)
 # p_var_lo, p_var_hi = np.quantile(p_var_samples, q=(0.159, 0.841), axis=0)
 
-(p_mu_lo, p_mu_hi), (p_var_lo, p_var_hi) = y_dist.parameter_percentile(p=(15.9, 84.1), num_samples=10_000)
+(p_mu_lo, p_mu_hi), (p_var_lo, p_var_hi) = y_dist.parameter_percentile(
+    p=(15.9, 84.1), num_samples=10_000
+)
 
 # %%
 fig, ax = plt.subplots(1, 1, figsize=(15, 5))
 ax.scatter(X, Y, color="gray", alpha=0.8)
-ax.plot(X, Ymean, c='k')
-ax.plot(X, np.mean(p_mu_samples, axis=0), ls='--')
+ax.plot(X, Ymean, c="k")
+ax.plot(X, np.mean(p_mu_samples, axis=0), ls="--")
 
-ax.fill_between(X.squeeze(), p_mu_lo[...,0], p_mu_hi[...,0], color="silver", alpha=0.8)
+ax.fill_between(X.squeeze(), p_mu_lo[..., 0], p_mu_hi[..., 0], color="silver", alpha=0.8)
 
 fig, ax = plt.subplots(1, 1, figsize=(15, 5))
-ax.plot(X, scale ** 2, c='k')
-ax.plot(X, np.mean(p_var_samples, axis=0), ls='--')
-ax.fill_between(X.squeeze(), p_var_lo[...,0], p_var_hi[...,0], color="silver", alpha=0.8)
+ax.plot(X, scale ** 2, c="k")
+ax.plot(X, np.mean(p_var_samples, axis=0), ls="--")
+ax.fill_between(X.squeeze(), p_var_lo[..., 0], p_var_hi[..., 0], color="silver", alpha=0.8)
 
 # %%
 from scipy.stats import norm
+
 f_mu = 0.0
 f_var = 0.1
 g_mu = 0.0
@@ -275,11 +280,10 @@ fig, ax = plt.subplots(1, 1)
 ax.hist(y, bins=100, density=True, alpha=0.5)
 xx = np.linspace(-10, 10, 101)
 noise_var = np.exp(g_mu + g_var / 2) ** 2
-y_var = (f_var + noise_var) 
-ax.plot(xx, norm.pdf(xx, loc=f_mu, scale=y_var ** 0.5), c='k')
-ax.set_yscale('log')
+y_var = f_var + noise_var
+ax.plot(xx, norm.pdf(xx, loc=f_mu, scale=y_var ** 0.5), c="k")
+ax.set_yscale("log")
 ax.set_ylim(1e-8, 1e0)
-
 
 
 # %% [markdown]

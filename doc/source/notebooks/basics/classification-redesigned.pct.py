@@ -160,14 +160,10 @@ y_samples = y_dist.sample(100)
 plt.figure(figsize=(12, 8))
 plt.plot(x_grid, np.mean(y_samples, axis=0))
 
-(p_lo, p_50, p_hi), = y_dist.parameter_percentile(p=(2.5, 50.0, 97.5), num_samples=10_000)
-l1, = plt.plot(x_grid, p_50)
+((p_lo, p_50, p_hi),) = y_dist.parameter_percentile(p=(2.5, 50.0, 97.5), num_samples=10_000)
+(l1,) = plt.plot(x_grid, p_50)
 plt.fill_between(
-    x_grid.flatten(),
-    np.ravel(p_lo),
-    np.ravel(p_hi),
-    alpha=0.3,
-    color=l1.get_color(),
+    x_grid.flatten(), np.ravel(p_lo), np.ravel(p_hi), alpha=0.3, color=l1.get_color(),
 )
 # plot data
 plt.plot(X, Y, "C3x", ms=8, mew=2)
@@ -179,23 +175,21 @@ plt.ylim((-0.5, 1.5))
 # get the sample output mean (p=0.5) and the lowest (p=0.05) and highest (p=.95) quantiles.
 samples = m.predict_f_samples(x_grid, 10).numpy().squeeze().T
 
+
 def compute_y_sample_statistics(model, num_samples: int = 100):
     p = invlink(model.predict_f_samples(x_grid, num_samples).numpy().squeeze().T)
     mean = np.mean(p, axis=1)
-    p_low, p_high = np.quantile(a=p, q=[.05, 0.95], axis=1)
-    
+    p_low, p_high = np.quantile(a=p, q=[0.05, 0.95], axis=1)
+
     return mean, p_low, p_high
+
 
 y_mu, y_p_low, y_p_high = compute_y_sample_statistics(m, 10000)
 
 plt.figure(figsize=(12, 8))
 plt.plot(x_grid.flatten(), y_mu)
 plt.fill_between(
-    x_grid.flatten(),
-    np.ravel(y_p_low),
-    np.ravel(y_p_high),
-    alpha=0.3,
-    color="C0",
+    x_grid.flatten(), np.ravel(y_p_low), np.ravel(y_p_high), alpha=0.3, color="C0",
 )
 
 # %% [markdown]

@@ -54,7 +54,7 @@ integration is done by sampling (can be more suitable when F is higher dimension
 
 import abc
 import warnings
-from typing import Optional, Union, Sequence, Tuple
+from typing import Optional, Sequence, Tuple, Union
 
 import tensorflow as tf
 import tensorflow_probability as tfp
@@ -344,7 +344,7 @@ class ConditionedLikelihood:
 
         :param num_samples: integer specifying the number of samples
         """
-        assert num_samples > 0, 'Must provide a positive number of samples'
+        assert num_samples > 0, "Must provide a positive number of samples"
 
         f_sample = self._get_f_samples(num_samples)
 
@@ -362,7 +362,9 @@ class ConditionedLikelihood:
 
         return tfp.stats.percentile(y_samples, q=p, axis=0)
 
-    def parameter_percentile(self, p: Union[float, Sequence[float]], num_samples: int = 1000) -> Tuple[tf.Tensor, ...]:
+    def parameter_percentile(
+        self, p: Union[float, Sequence[float]], num_samples: int = 1000
+    ) -> Tuple[tf.Tensor, ...]:
         """
         Return percentiles of the likelihood parameter distribution at different levels.
 
