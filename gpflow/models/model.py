@@ -219,7 +219,7 @@ class GPModel(BayesianModel):
             )
 
         warnings.warn("use conditional_y_dist(Xnew).mean_and_var() instead", DeprecationWarning)
-        return self.conditional_y_dist(Xnew).predict_mean_and_var()
+        return self.conditional_y_dist(Xnew).mean_and_var()
 
     def predict_log_density(
         self, data: RegressionData, full_cov: bool = False, full_output_cov: bool = False
