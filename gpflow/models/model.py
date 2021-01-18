@@ -21,7 +21,7 @@ import tensorflow as tf
 from ..base import Module
 from ..conditionals.util import sample_mvn
 from ..kernels import Kernel, MultioutputKernel
-from ..likelihoods import Likelihood, SwitchedLikelihood
+from ..likelihoods import ConditionedLikelihood, Likelihood, SwitchedLikelihood
 from ..mean_functions import MeanFunction, Zero
 from ..utilities import to_default_float
 from .training_mixins import InputData, RegressionData
@@ -96,30 +96,6 @@ class GPModel(BayesianModel):
     It is also possible to draw samples from the latent GPs using
     self.predict_f_samples.
     """
-
-    class ConditionedLikelihood:
-        def __init__(self, likelihood: Likelihood, Fmean, Fvar) -> None:
-            self.likelihood = likelihood
-            self.f_mean = Fmean
-            self.f_var = Fvar
-
-        def _get_f_samples(self, num_samples):
-            samples = sample_mvn(self.f_mean, self.f_var, full_cov=False, num_samples=num_samples)
-            return samples
-
-        def parameter_samples(self, num_samples: int = 1000):
-            f_sample = self._get_f_samples(num_samples)
-            return self.likelihood.conditional_parameters(f_sample)
-
-        def mean_and_var(self):
-            return self.likelihood.predict_mean_and_var(self.f_mean, self.f_var)
-
-        def log_density(self, Y):
-            return self.likelihood.predict_log_density(self.f_mean, self.f_var, Y)
-
-        def sample(self, num_samples: int = 1000):
-            f_sample = self._get_f_samples(num_samples)
-            return self.likelihood.conditional_sample(f_sample)
 
     def __init__(
         self,
@@ -262,4 +238,4 @@ class GPModel(BayesianModel):
 
     def conditional_y_dist(self, Xnew):
         Fmu, Fvar = self.predict_f(Xnew)
-        return self.ConditionedLikelihood(self.likelihood, Fmu, Fvar)
+        return ConditionedLikelihood(self.likelihood, Fmu, Fvar)

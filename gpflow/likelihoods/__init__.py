@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from .base import (
+    ConditionedLikelihood,
     Likelihood,
     MonteCarloLikelihood,
     QuadratureLikelihood,

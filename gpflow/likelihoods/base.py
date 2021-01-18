@@ -293,9 +293,34 @@ class Likelihood(Module, metaclass=abc.ABCMeta):
     def _variational_expectations(self, Fmu, Fvar, Y):
         raise NotImplementedError
 
-    @abc.abstractmethod
+    # @abc.abstractmethod
     def conditional_sample(self, Fsample):
         """ Sample from the likelihood """
+
+
+class ConditionedLikelihood:
+    def __init__(self, likelihood: Likelihood, Fmean, Fvar) -> None:
+        self.likelihood = likelihood
+        self.f_mean = Fmean
+        self.f_var = Fvar
+
+    def _get_f_samples(self, num_samples):
+        samples = sample_mvn(self.f_mean, self.f_var, full_cov=False, num_samples=num_samples)
+        return samples
+
+    def parameter_samples(self, num_samples: int = 1000):
+        f_sample = self._get_f_samples(num_samples)
+        return self.likelihood.conditional_parameters(f_sample)
+
+    def mean_and_var(self):
+        return self.likelihood.predict_mean_and_var(self.f_mean, self.f_var)
+
+    def log_density(self, Y):
+        return self.likelihood.predict_log_density(self.f_mean, self.f_var, Y)
+
+    def sample(self, num_samples: int = 1000):
+        f_sample = self._get_f_samples(num_samples)
+        return self.likelihood.conditional_sample(f_sample)
 
 
 class QuadratureLikelihood(Likelihood):
