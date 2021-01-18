@@ -196,12 +196,12 @@ plt.ylim((-1.5, 1.5))
 y_dist = m.conditional_y_dist(x_grid.reshape(-1, 1))
 
 y_samples = y_dist.sample(100)
-plt.plot(x_grid, y_samples.numpy().mean(axis=1))
+plt.plot(x_grid, y_samples.numpy().mean(axis=0))
 
 p_samples = y_dist.parameter_samples(1_000)
 
-p_mu = np.mean(p_samples, axis=1)
-p_lo, p_hi = np.quantile(p_samples, q=(0.05, 0.95), axis=1)
+p_mu = np.mean(p_samples, axis=0)
+p_lo, p_hi = np.quantile(p_samples, q=(0.025, 0.975), axis=0)
 l1, = plt.plot(x_grid, p_mu)
 plt.fill_between(
     x_grid.flatten(),

@@ -215,6 +215,36 @@ for epoch in range(1, epochs + 1):
 model
 
 # %%
+plot_distribution(X, Y, Ymean, Ystd)
+y_dist = model.conditional_y_dist(X)
+samples = y_dist.sample(10_000)
+y_lo_lo, y_lo, y_hi, y_hi_hi = np.quantile(samples, q=(0.025, 0.159, 0.841, 0.975), axis=0)
+
+fig, ax = plt.subplots(1, 1, figsize=(15, 5))
+ax.plot(X, np.mean(samples, axis=0), c='k')
+ax.fill_between(X.squeeze(), y_lo.squeeze(), y_hi.squeeze(), color="silver", alpha=1 - 0.05 * 1 ** 3)
+ax.fill_between(X.squeeze(), y_lo_lo.squeeze(), y_hi_hi.squeeze(), color="silver", alpha=1 - 0.05 * 2 ** 3)
+ax.scatter(X, Y, color="gray", alpha=0.8)
+
+# %%
+p_mu_samples, p_var_samples = y_dist.parameter_samples(10_000)
+p_mu_lo, p_mu_hi = np.quantile(p_mu_samples, q=(0.159, 0.841), axis=0)
+
+p_var_lo, p_var_hi = np.quantile(p_var_samples, q=(0.159, 0.841), axis=0)
+
+fig, ax = plt.subplots(1, 1, figsize=(15, 5))
+ax.scatter(X, Y, color="gray", alpha=0.8)
+ax.plot(X, Ymean, c='k')
+ax.plot(X, np.mean(p_mu_samples, axis=0), ls='--')
+
+ax.fill_between(X.squeeze(), p_mu_lo.squeeze(), p_mu_hi.squeeze(), color="silver", alpha=0.8)
+
+fig, ax = plt.subplots(1, 1, figsize=(15, 5))
+ax.plot(X, scale ** 2, c='k')
+ax.plot(X, np.mean(p_var_samples, axis=0), ls='--')
+ax.fill_between(X.squeeze(), p_var_lo.squeeze(), p_var_hi.squeeze(), color="silver", alpha=0.8)
+
+# %%
 from scipy.stats import norm
 f_mu = 0.0
 f_var = 0.1
