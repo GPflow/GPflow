@@ -7,7 +7,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.3.3
+#       jupytext_version: 1.6.0
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -77,14 +77,14 @@ def Kuu_matern12_fourierfeatures1d(inducing_variable, kernel, jitter=None):
         (b - a) * (tf.square(lamb) + tf.square(omegas)) / lamb / kernel.variance / two_or_four
     )  # eq. (111)
     v_cos = tf.ones_like(d_cos) / tf.sqrt(kernel.variance)  # eq. (110)
-    cosine_block = LowRank(Diag(d_cos), v_cos[:, None])
+    cosine_block = LowRank(Diag(d_cos, is_positive_definite=True), v_cos[:, None])
 
     # Sine block:
     omegas = omegas[tf.not_equal(omegas, 0)]  # the sine block does not include omega=0
     d_sin = (
         (b - a) * (tf.square(lamb) + tf.square(omegas)) / lamb / kernel.variance / 4.0
     )  # eq. (113)
-    sine_block = Diag(d_sin)
+    sine_block = Diag(d_sin, is_positive_definite=True)
 
     return BlockDiag([cosine_block, sine_block])
 
@@ -126,7 +126,7 @@ def Kuu_matern32_fourierfeatures1d(inducing_variable, kernel, jitter=None):
         / four_or_eight
     )
     v_cos = tf.ones_like(d_cos) / tf.sqrt(kernel.variance)
-    cosine_block = LowRank(Diag(d_cos), v_cos[:, None])
+    cosine_block = LowRank(Diag(d_cos, is_positive_definite=True), v_cos[:, None])
 
     # Sine block: eq. (115)
     omegas = omegas[tf.not_equal(omegas, 0)]  # don't compute omega=0
@@ -138,7 +138,7 @@ def Kuu_matern32_fourierfeatures1d(inducing_variable, kernel, jitter=None):
         / 8.0
     )
     v_sin = omegas / lamb / tf.sqrt(kernel.variance)
-    sine_block = LowRank(Diag(d_sin), v_sin[:, None])
+    sine_block = LowRank(Diag(d_sin, is_positive_definite=True), v_sin[:, None])
 
     return BlockDiag([cosine_block, sine_block])  # eq. (116)
 
