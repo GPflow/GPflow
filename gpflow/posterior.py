@@ -45,8 +45,8 @@ class MvnNormal(Module):
         self.q_sqrt = q_sqrt  # [L, M, M], lower-triangular
 
 
-class BasePosterior(Module, ABC):
-    def __init__(self, kernel, inducing_variable, q_mu, q_sqrt, whiten=True, mean_function=None):
+class AbstractPosterior(Module, ABC):
+    def __init__(self, kernel, inducing_variable, q_mu, q_sqrt, whiten=True, mean_function=None, precompute=True):
         self.inducing_variable = inducing_variable
         self.kernel = kernel
         self.mean_function = mean_function
@@ -56,8 +56,52 @@ class BasePosterior(Module, ABC):
         else:
             self.q_dist = MvnNormal(q_mu, q_sqrt)
 
-        self.update_cache()  # populates or updates self.alpha and self.Qinv
+        if precompute:
+            self.update_cache()  # populates or updates self.alpha and self.Qinv
 
+    def update_cache(self):
+        self.alpha, self.Qinv = self._precompute()
+
+    def freeze(self):
+        alpha, Qinv = self._precompute()
+        self.alpha = Parameter(alpha, trainable=False)
+        self.Qinv = Parameter(Qinv, trainable=False)
+
+    def update_cache_with_variables(self):
+        alpha, Qinv = self._precompute()
+        if isinstance(self.alpha, Parameter) and isinstance(self.Qinv, Parameter):
+            self.alpha.assign(alpha)
+            self.Qinv.assign(Qinv)
+        else:
+            self.alpha = Parameter(alpha, trainable=False)
+            self.Qinv = Parameter(Qinv, trainable=False)
+
+    @abstractmethod
+    def _precompute(self) -> Tuple[tf.Tensor]:
+        """
+        Precomputes alpha and Qinv that do not depend on Xnew
+        """
+
+    @abstractmethod
+    def predict_f(
+        self, Xnew, full_cov: bool = False, full_output_cov: bool = False
+    ) -> MeanAndVariance:
+        """
+        Computes predictive mean and (co)variance at Xnew
+        Relies on precomputed alpha and Qinv (see _precompute method)
+        """
+
+    @abstractmethod
+    def fused_predict_f(
+        self, Xnew, full_cov: bool = False, full_output_cov: bool = False
+    ) -> MeanAndVariance:
+        """
+        Computes predictive mean and (co)variance at Xnew
+        Does not make use of caching
+        """
+
+
+class BasePosterior(AbstractPosterior):
     def _precompute(self):
         Kuu = covariances.Kuu(
             self.inducing_variable, self.kernel, jitter=default_jitter()
@@ -107,29 +151,6 @@ class BasePosterior(Module, ABC):
         Qinv = tf.linalg.triangular_solve(L, B_Linv, adjoint=True)
 
         return alpha, Qinv
-
-    def update_cache(self):
-        self.alpha, self.Qinv = self._precompute()
-
-    def freeze(self):
-        alpha, Qinv = self._precompute()
-        self.alpha = Parameter(alpha, trainable=False)
-        self.Qinv = Parameter(Qinv, trainable=False)
-
-    def update_cache_with_variables(self):
-        alpha, Qinv = self._precompute()
-        if isinstance(self.alpha, Parameter) and isinstance(self.Qinv, Parameter):
-            self.alpha.assign(alpha)
-            self.Qinv.assign(Qinv)
-        else:
-            self.alpha = Parameter(alpha, trainable=False)
-            self.Qinv = Parameter(Qinv, trainable=False)
-
-    @abstractmethod
-    def predict_f(
-        self, Xnew, full_cov: bool = False, full_output_cov: bool = False
-    ) -> MeanAndVariance:
-        raise NotImplementedError()
 
 
 class IndependentPosterior(BasePosterior):
