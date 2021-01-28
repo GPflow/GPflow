@@ -138,40 +138,52 @@ class Data:
     L = 2  # latent gps
     P = 3  # output dimension
     MAXITER = int(15e2)
+
     X = tf.random.normal((N,), dtype=tf.float64)[:, None] * 10 - 5
+    assert X.shape == (N, D)
     G = np.hstack((0.5 * np.sin(3 * X) + X, 3.0 * np.cos(X) - X))
-    Ptrue = np.array([[0.5, -0.3, 1.5], [-0.4, 0.43, 0.0]])  # [L, P]
+    assert G.shape == (N, L)
+    Ptrue = np.array([[0.5, -0.3, 1.5], [-0.4, 0.43, 0.0]])
+    assert Ptrue.shape == (L, P)
 
     Y = tf.convert_to_tensor(G @ Ptrue)
-    G = tf.convert_to_tensor(np.hstack((0.5 * np.sin(3 * X) + X, 3.0 * np.cos(X) - X)))
-    Ptrue = tf.convert_to_tensor(np.array([[0.5, -0.3, 1.5], [-0.4, 0.43, 0.0]]))  # [L, P]
     Y += tf.random.normal(Y.shape, dtype=tf.float64) * [0.2, 0.2, 0.2]
-    Xs = tf.convert_to_tensor(np.linspace(-6, 6, Ntest)[:, None])
+    assert Y.shape == (N, P)
+
     data = (X, Y)
+
+    Xs = tf.convert_to_tensor(np.linspace(-6, 6, Ntest)[:, None])
+    assert Xs.shape == (Ntest, D)
 
 
 class DataMixedKernelWithEye(Data):
     """ Note in this class L == P """
 
     M, L = 4, 3
+    assert L == Data.P
     W = np.eye(L)
 
     G = np.hstack(
         [0.5 * np.sin(3 * Data.X) + Data.X, 3.0 * np.cos(Data.X) - Data.X, 1.0 + Data.X]
-    )  # [N, P]
+    )
+    assert G.shape == (Data.N, Data.P)
 
-    mu_data = tf.random.uniform((M, L), dtype=tf.float64)  # [M, L]
-    sqrt_data = create_q_sqrt(M, L)  # [L, M, M]
+    mu_data = tf.random.uniform((M, L), dtype=tf.float64)
+    assert mu_data.shape == (M, L)
+    sqrt_data = create_q_sqrt(M, L)
+    assert sqrt_data.shape == (L, M, M)
 
-    mu_data_full = tf.reshape(mu_data @ W, [-1, 1])  # [L, 1]
-    sqrt_data_full = expand_cov(sqrt_data, W)  # [1, LM, LM]
+    mu_data_full = tf.reshape(mu_data @ W, [-1, 1])
+    assert mu_data_full.shape == (L*M, 1)
+    sqrt_data_full = expand_cov(sqrt_data, W)
+    assert sqrt_data_full.shape == (1, L*M, L*M)
 
     Y = tf.convert_to_tensor(G @ W)
-    G = tf.convert_to_tensor(G)
     W = tf.convert_to_tensor(W)
     sqrt_data = tf.convert_to_tensor(sqrt_data)
     sqrt_data_full = tf.convert_to_tensor(sqrt_data_full)
     Y += tf.random.normal(Y.shape, dtype=tf.float64) * tf.ones((L,), dtype=tf.float64) * 0.2
+    assert Y.shape == (Data.N, Data.P)
     data = (Data.X, Y)
 
 
@@ -180,16 +192,20 @@ class DataMixedKernel(Data):
     L = 2
     P = 3
     W = rng.randn(P, L)
-    G = np.hstack([0.5 * np.sin(3 * Data.X) + Data.X, 3.0 * np.cos(Data.X) - Data.X])  # [N, L]
+    G = np.hstack([0.5 * np.sin(3 * Data.X) + Data.X, 3.0 * np.cos(Data.X) - Data.X])
+    assert G.shape == (Data.N, L)
 
-    mu_data = tf.random.normal((M, L), dtype=tf.float64)  # [M, L]
-    sqrt_data = create_q_sqrt(M, L)  # [L, M, M]
+    mu_data = tf.random.normal((M, L), dtype=tf.float64)
+    assert mu_data.shape == (M, L)
+    sqrt_data = create_q_sqrt(M, L)
+    assert sqrt_data.shape == (L, M, M)
 
     Y = tf.convert_to_tensor(G @ W.T)
     G = tf.convert_to_tensor(G)
     W = tf.convert_to_tensor(W)
     sqrt_data = tf.convert_to_tensor(sqrt_data)
     Y += tf.random.normal(Y.shape, dtype=tf.float64) * tf.ones((P,), dtype=tf.float64) * 0.1
+    assert Y.shape == (Data.N, P)
     data = (Data.X, Y)
 
 
