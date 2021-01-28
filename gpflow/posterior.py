@@ -52,13 +52,18 @@ class AbstractPosterior(Module, ABC):
         self.kernel = kernel
         self.mean_function = mean_function
         self.whiten = whiten
+        self._set_qdist(q_mu, q_sqrt)
+
+        if precompute:
+            self.update_cache()  # populates or updates self.alpha and self.Qinv
+        # NOTE we CANNOT use update_cache_with_variables() here,
+        # as that would break gradient flow in training
+
+    def _set_qdist(self, q_mu, q_sqrt):
         if len(q_sqrt.shape) == 2:  # q_diag
             self.q_dist = DiagNormal(q_mu, q_sqrt)
         else:
             self.q_dist = MvnNormal(q_mu, q_sqrt)
-
-        if precompute:
-            self.update_cache()  # populates or updates self.alpha and self.Qinv
 
     def update_cache(self):
         self.alpha, self.Qinv = self._precompute()
