@@ -26,6 +26,7 @@ from .inducing_variables import (
     FallbackSeparateIndependentInducingVariables,
     FallbackSharedIndependentInducingVariables,
     InducingPoints,
+    InducingVariables,
     SeparateIndependentInducingVariables,
     SharedIndependentInducingVariables,
 )
@@ -285,7 +286,7 @@ def _get_kernels(Xnew, inducing_variable, kernel, full_cov, full_output_cov):
 get_posterior_class = Dispatcher("get_posterior_class")
 
 
-@get_posterior_class.register(kernels.Kernel, InducingVariable)
+@get_posterior_class.register(kernels.Kernel, InducingVariables)
 def _get_posterior_base_case(kernel, inducing_variable):
     # independent single output
     return IndependentPosterior
