@@ -21,7 +21,13 @@ import tensorflow_probability as tfp
 
 from . import covariances, kernels
 from .base import Module, Parameter
-from .conditionals.util import expand_independent_outputs, mix_latent_gp
+from .conditionals.util import (
+    base_conditional,
+    expand_independent_outputs,
+    fully_correlated_conditional,
+    independent_interdomain_conditional,
+    mix_latent_gp,
+)
 from .config import default_float, default_jitter
 from .inducing_variables import (
     FallbackSeparateIndependentInducingVariables,
@@ -48,7 +54,16 @@ class MvnNormal(Module):
 
 
 class AbstractPosterior(Module, ABC):
-    def __init__(self, kernel, inducing_variable, q_mu, q_sqrt, whiten=True, mean_function=None, precompute=True):
+    def __init__(
+        self,
+        kernel,
+        inducing_variable,
+        q_mu,
+        q_sqrt,
+        whiten=True,
+        mean_function=None,
+        precompute=True,
+    ):
         self.inducing_variable = inducing_variable
         self.kernel = kernel
         self.mean_function = mean_function
@@ -183,21 +198,18 @@ class LinearOperatorBasePosterior(BasePosterior):
     #  - diagonal (mean field across L), [M, L] --> [L, M]?
     #    LinearOperatorDiag(ones(M*L))
 
-
     def _set_qdist(self, q_mu, q_sqrt):
         q_mu = tf.linalg.adjoint(q_mu)  # TODO redefine how q_mu is stored internally
         if len(q_sqrt.shape) == 2:  # q_diag
             q_sqrt = tf.linalg.adjoint(q_sqrt)  # TODO redefine how q_sqrt is stored internally
-            tf.debugging.assert_shapes([
-                (q_mu, ["L", "M"]),
-                (q_sqrt, ["L", "M"]),
-            ])
+            tf.debugging.assert_shapes(
+                [(q_mu, ["L", "M"]), (q_sqrt, ["L", "M"]),]
+            )
             self.q_dist = tfp.distributions.MultivariateNormalDiag(loc=q_mu, scale_diag=q_sqrt)
         else:
-            tf.debugging.assert_shapes([
-                (q_mu, ["L", "M"]),
-                (q_sqrt, ["L", "M", "M"]),
-            ])
+            tf.debugging.assert_shapes(
+                [(q_mu, ["L", "M"]), (q_sqrt, ["L", "M", "M"]),]
+            )
             self.q_dist = tfp.distributions.MultivariateNormalTriL(loc=q_mu, scale_tril=q_sqrt)
 
     def _precompute(self):
@@ -288,8 +300,65 @@ class IndependentPosterior(BasePosterior):
         return mean + self.mean_function(Xnew), cov
 
 
-class LinearCoregionalizationPosterior(IndependentPosterior):
+class IndependentPosteriorSingleOutput(IndependentPosterior):
+    # could almost be the same as IndependentPosteriorMultiOutput ...
+    def fused_predict_f(
+        self, Xnew, full_cov: bool = False, full_output_cov: bool = False
+    ) -> MeanAndVariance:
+        # same as IndependentPosteriorMultiOutput, Shared~/Shared~ branch, except for following line:
+        Knn = self.kernel(Xnew, full_cov=full_cov)
+
+        Kmm = covariances.Kuu(
+            self.inducing_variable, self.kernel, jitter=default_jitter()
+        )  # [M, M]
+        Kmn = covariances.Kuf(self.inducing_variable, self.kernel, Xnew)  # [M, N]
+
+        fmean, fvar = base_conditional(
+            Kmn, Kmm, Knn, self.q_mu, full_cov=full_cov, q_sqrt=self.q_sqrt, white=self.whiten
+        )  # [N, P],  [P, N, N] or [N, P]
+        return self._post_process_mean_and_cov(fmean, fvar, full_cov, full_output_cov)
+
+
+class IndependentPosteriorMultiOutput(IndependentPosterior):
+    def fused_predict_f(
+        self, Xnew, full_cov: bool = False, full_output_cov: bool = False
+    ) -> MeanAndVariance:
+        if isinstance(self.inducing_variable, SharedIndependentInducingVariables) and isinstance(
+            self.kernel, kernels.SharedIndependent
+        ):
+            # same as IndependentPosteriorSingleOutput except for following line
+            Knn = self.kernel.kernel(Xnew, full_cov=full_cov)
+            # we don't call self.kernel() directly as that would do unnecessary tiling
+
+            Kmm = covariances.Kuu(
+                self.inducing_variable, self.kernel, jitter=default_jitter()
+            )  # [M, M]
+            Kmn = covariances.Kuf(self.inducing_variable, self.kernel, Xnew)  # [M, N]
+
+            fmean, fvar = base_conditional(
+                Kmn, Kmm, Knn, self.q_mu, full_cov=full_cov, q_sqrt=self.q_sqrt, white=self.whiten
+            )  # [N, P],  [P, N, N] or [N, P]
+            return self._post_process_mean_and_cov(fmean, fvar, full_cov, full_output_cov)
+        else:
+            # this is the messy thing with tf.map_fn, cleaned up by the st/clean_up_broadcasting_conditionals branch
+            return separate_independent_conditional_implementation(
+                Xnew,
+                self.inducing_variable,
+                self.kernel,
+                self.q_mu,
+                q_sqrt=self.q_sqrt,
+                full_cov=full_cov,
+                full_output_cov=full_output_cov,
+                white=self.whiten,
+            )
+
+
+class LinearCoregionalizationPosterior(IndependentPosteriorMultiOutput):
     def _post_process_mean_and_cov(self, mean, cov, full_cov, full_output_cov):
+        """
+        mean: [N, L]
+        cov: [L, N, N] or [N, L]
+        """
         cov = expand_independent_outputs(cov, full_cov, full_output_cov=False)
         mean, cov = mix_latent_gp(self.kernel.W, mean, cov, full_cov, full_output_cov)
         return mean, cov
@@ -357,6 +426,66 @@ class FullyCorrelatedPosterior(BasePosterior):
 
         return mean + self.mean_function(Xnew), cov
 
+    def fused_predict_f(
+        self, Xnew, full_cov: bool = False, full_output_cov: bool = False
+    ) -> MeanAndVariance:
+        Kmm = covariances.Kuu(
+            self.inducing_variable, self.kernel, jitter=default_jitter()
+        )  # [M, L, M, L]
+        Kmn = covariances.Kuf(self.inducing_variable, self.kernel, Xnew)  # [M, L, N, P]
+        Knn = kernel(
+            Xnew, full_cov=full_cov, full_output_cov=full_output_cov
+        )  # [N, P](x N)x P  or  [N, P](x P)
+
+        M, L, N, K = tf.unstack(tf.shape(Kmn), num=Kmn.shape.ndims, axis=0)
+        Kmm = tf.reshape(Kmm, (M * L, M * L))
+
+        if full_cov == full_output_cov:
+            Kmn = tf.reshape(Kmn, (M * L, N * K))
+            Knn = tf.reshape(Knn, (N * K, N * K)) if full_cov else tf.reshape(Knn, (N * K,))
+            fmean, fvar = base_conditional(
+                Kmn, Kmm, Knn, self.q_mu, full_cov=full_cov, q_sqrt=self.q_sqrt, white=self.whiten
+            )  # [K, 1], [1, K](x NK)
+            fmean = tf.reshape(fmean, (N, K))
+            fvar = tf.reshape(fvar, (N, K, N, K) if full_cov else (N, K))
+        else:
+            Kmn = tf.reshape(Kmn, (M * L, N, K))
+            fmean, fvar = fully_correlated_conditional(
+                Kmn,
+                Kmm,
+                Knn,
+                self.q_mu,
+                full_cov=full_cov,
+                full_output_cov=full_output_cov,
+                q_sqrt=self.q_sqrt,
+                white=self.whiten,
+            )
+        return fmean, fvar
+
+
+class FallbackIndependentLatentPosterior(FullyCorrelatedPosterior):  # XXX
+    def fused_predict_f(
+        self, Xnew, full_cov: bool = False, full_output_cov: bool = False
+    ) -> MeanAndVariance:
+        Kmm = covariances.Kuu(
+            self.inducing_variable, self.kernel, jitter=default_jitter()
+        )  # [L, M, M]
+        Kmn = covariances.Kuf(self.inducing_variable, self.kernel, Xnew)  # [M, L, N, P]
+        Knn = self.kernel(
+            Xnew, full_cov=full_cov, full_output_cov=full_output_cov
+        )  # [N, P](x N)x P  or  [N, P](x P)
+
+        return independent_interdomain_conditional(
+            Kmn,
+            Kmm,
+            Knn,
+            self.q_mu,
+            full_cov=full_cov,
+            full_output_cov=full_output_cov,
+            q_sqrt=self.q_sqrt,
+            white=self.whiten,
+        )
+
 
 def _get_kernels(Xnew, inducing_variable, kernel, full_cov, full_output_cov):
 
@@ -388,7 +517,7 @@ get_posterior_class = Dispatcher("get_posterior_class")
 @get_posterior_class.register(kernels.Kernel, InducingVariables)
 def _get_posterior_base_case(kernel, inducing_variable):
     # independent single output
-    return IndependentPosterior
+    return IndependentPosteriorSingleOutput
 
 
 @get_posterior_class.register(kernels.MultioutputKernel, InducingPoints)
@@ -402,7 +531,7 @@ def _get_posterior_fully_correlated_mo(kernel, inducing_variable):
 )
 def _get_posterior_independent_mo(kernel, inducing_variable):
     # independent multi-output
-    return IndependentPosterior
+    return IndependentPosteriorMultiOutput
 
 
 @get_posterior_class.register(
@@ -410,7 +539,7 @@ def _get_posterior_independent_mo(kernel, inducing_variable):
     (FallbackSeparateIndependentInducingVariables, FallbackSharedIndependentInducingVariables),
 )
 def _get_posterior_independentlatent_mo_fallback(kernel, inducing_variable):
-    return FullyCorrelatedPosterior  # XXX
+    return FallbackIndependentLatentPosterior
 
 
 @get_posterior_class.register(
