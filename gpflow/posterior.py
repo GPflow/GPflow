@@ -27,6 +27,7 @@ from .conditionals.util import (
     fully_correlated_conditional,
     independent_interdomain_conditional,
     mix_latent_gp,
+    separate_independent_conditional_implementation,
 )
 from .config import default_float, default_jitter
 from .inducing_variables import (
@@ -363,10 +364,26 @@ class IndependentPosteriorMultiOutput(IndependentPosterior):
             return self._post_process_mean_and_cov(fmean, fvar, full_cov, full_output_cov)
         else:
             # this is the messy thing with tf.map_fn, cleaned up by the st/clean_up_broadcasting_conditionals branch
+
+            # Following are: [P, M, M]  -  [P, M, N]  -  [P, N](x N)
+            Kmms = covariances.Kuu(
+                self.inducing_variable, self.kernel, jitter=default_jitter()
+            )  # [P, M, M]
+            Kmns = covariances.Kuf(self.inducing_variable, self.kernel, Xnew)  # [P, M, N]
+            if isinstance(self.kernel, kernels.Combination):
+                kernel_list = self.kernel.kernels
+            else:
+                kernel_list = [self.kernel.kernel] * len(
+                    self.inducing_variable.inducing_variable_list
+                )
+            Knns = tf.stack(
+                [k.K(Xnew) if full_cov else k.K_diag(Xnew) for k in kernel_list], axis=0
+            )
+
             return separate_independent_conditional_implementation(
-                Xnew,
-                self.inducing_variable,
-                self.kernel,
+                Kmns,
+                Kmms,
+                Knns,
                 self.q_mu,
                 q_sqrt=self.q_sqrt,
                 full_cov=full_cov,
@@ -395,7 +412,7 @@ class FullyCorrelatedPosterior(BasePosterior):
         # Qinv: [L, M, M]
         # alpha: [M, L]
 
-        Kuf = covariances.Kuf(inducing_variable, kernel, Xnew)
+        Kuf = covariances.Kuf(self.inducing_variable, self.kernel, Xnew)
         assert Kuf.shape.ndims == 4
         M, L, N, K = tf.unstack(tf.shape(Kuf), num=Kuf.shape.ndims, axis=0)
         Kuf = tf.reshape(Kuf, (M * L, N * K))
