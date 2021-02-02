@@ -31,6 +31,12 @@ from ...kernels import (
     SeparateIndependent,
     SharedIndependent,
 )
+from ...posterior import (
+    FallbackIndependentLatentPosterior,
+    FullyCorrelatedPosterior,
+    IndependentPosteriorMultiOutput,
+    LinearCoregionalizationPosterior,
+)
 from ..dispatch import conditional
 from ..util import base_conditional, expand_independent_outputs, rollaxis_left
 

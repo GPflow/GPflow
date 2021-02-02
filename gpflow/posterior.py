@@ -37,8 +37,17 @@ from .inducing_variables import (
     SeparateIndependentInducingVariables,
     SharedIndependentInducingVariables,
 )
-from .models.model import MeanAndVariance
+from .types import MeanAndVariance
 from .utilities import Dispatcher
+
+
+class DeltaDist(Module):
+    def __init__(self, q_mu):
+        self.q_mu = q_mu  # [M, L]
+
+    @property
+    def q_sqrt(self):
+        return None
 
 
 class DiagNormal(Module):
@@ -75,8 +84,18 @@ class AbstractPosterior(Module, ABC):
         # NOTE we CANNOT use update_cache_with_variables() here,
         # as that would break gradient flow in training
 
+    @property
+    def q_mu(self):
+        return self.q_dist.q_mu
+
+    @property
+    def q_sqrt(self):
+        return self.q_dist.q_sqrt
+
     def _set_qdist(self, q_mu, q_sqrt):
-        if len(q_sqrt.shape) == 2:  # q_diag
+        if q_sqrt is None:
+            self.q_dist = DeltaDist(q_mu)
+        elif len(q_sqrt.shape) == 2:  # q_diag
             self.q_dist = DiagNormal(q_mu, q_sqrt)
         else:
             self.q_dist = MvnNormal(q_mu, q_sqrt)
@@ -146,28 +165,31 @@ class BasePosterior(AbstractPosterior):
         # predictive mean = Kfu alpha
         # predictive variance = Kff - Kfu Qinv Kuf
         # S = q_sqrt q_sqrtᵀ
-        if not self.whiten:
-            # Qinv = Kuu⁻¹ - Kuu⁻¹ S Kuu⁻¹
-            #      = Kuu⁻¹ - L⁻ᵀ L⁻¹ S L⁻ᵀ L⁻¹
-            #      = L⁻ᵀ (I - L⁻¹ S L⁻ᵀ) L⁻¹
-            #      = L⁻ᵀ B L⁻¹
-            if isinstance(self.q_dist, DiagNormal):
-                q_sqrt = tf.linalg.diag(tf.linalg.adjoint(self.q_dist.q_sqrt))
-            else:
-                q_sqrt = self.q_dist.q_sqrt
-            Linv_qsqrt = tf.linalg.triangular_solve(L, q_sqrt)
-            Linv_cov_u_LinvT = tf.matmul(Linv_qsqrt, Linv_qsqrt, transpose_b=True)
+        I = tf.eye(tf.shape(L)[-1], dtype=L.dtype)
+        if isinstance(self.q_dist, DeltaDist):
+            B = I
         else:
-            if isinstance(self.q_dist, DiagNormal):
-                Linv_cov_u_LinvT = tf.linalg.diag(tf.linalg.adjoint(self.q_dist.q_sqrt ** 2))
+            if not self.whiten:
+                # Qinv = Kuu⁻¹ - Kuu⁻¹ S Kuu⁻¹
+                #      = Kuu⁻¹ - L⁻ᵀ L⁻¹ S L⁻ᵀ L⁻¹
+                #      = L⁻ᵀ (I - L⁻¹ S L⁻ᵀ) L⁻¹
+                #      = L⁻ᵀ B L⁻¹
+                if isinstance(self.q_dist, DiagNormal):
+                    q_sqrt = tf.linalg.diag(tf.linalg.adjoint(self.q_dist.q_sqrt))
+                else:
+                    q_sqrt = self.q_dist.q_sqrt
+                Linv_qsqrt = tf.linalg.triangular_solve(L, q_sqrt)
+                Linv_cov_u_LinvT = tf.matmul(Linv_qsqrt, Linv_qsqrt, transpose_b=True)
             else:
-                q_sqrt = self.q_dist.q_sqrt
-                Linv_cov_u_LinvT = tf.matmul(q_sqrt, q_sqrt, transpose_b=True)
-            # Qinv = Kuu⁻¹ - L⁻ᵀ S L⁻¹
-            # Linv = (L⁻¹ I) = solve(L, I)
-            # Kinv = Linvᵀ @ Linv
-        I = tf.eye(tf.shape(Linv_cov_u_LinvT)[-1], dtype=Linv_cov_u_LinvT.dtype)
-        B = I - Linv_cov_u_LinvT
+                if isinstance(self.q_dist, DiagNormal):
+                    Linv_cov_u_LinvT = tf.linalg.diag(tf.linalg.adjoint(self.q_dist.q_sqrt ** 2))
+                else:
+                    q_sqrt = self.q_dist.q_sqrt
+                    Linv_cov_u_LinvT = tf.matmul(q_sqrt, q_sqrt, transpose_b=True)
+                # Qinv = Kuu⁻¹ - L⁻ᵀ S L⁻¹
+                # Linv = (L⁻¹ I) = solve(L, I)
+                # Kinv = Linvᵀ @ Linv
+            B = I - Linv_cov_u_LinvT
         LinvT_B = tf.linalg.triangular_solve(L, B, adjoint=True)
         B_Linv = tf.linalg.adjoint(LinvT_B)
         Qinv = tf.linalg.triangular_solve(L, B_Linv, adjoint=True)
