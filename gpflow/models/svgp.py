@@ -25,7 +25,7 @@ from ..config import default_float, default_jitter
 from ..models.model import GPModel, InputData, MeanAndVariance, RegressionData
 from ..models.training_mixins import ExternalDataTrainingLossMixin
 from ..models.util import inducingpoint_wrapper
-from ..posterior import DiagNormal, MvnNormal, create_posterior
+from ..posterior import create_posterior
 from ..utilities import positive, triangular
 from .model import GPModel, InputData, MeanAndVariance, RegressionData
 from .training_mixins import ExternalDataTrainingLossMixin
@@ -242,7 +242,9 @@ class NewSVGP(OldSVGP):
         For faster (cached) prediction, predict directly from the posterior object, i.e.,:
             model.posterior.predict_f(Xnew, ...)
         """
-        return self.posterior().predict_f(Xnew, full_cov=full_cov, full_output_cov=full_output_cov)
+        return self.posterior().fused_predict_f(
+            Xnew, full_cov=full_cov, full_output_cov=full_output_cov
+        )
 
 
 class SVGP(NewSVGP):
