@@ -163,9 +163,7 @@ class DataMixedKernelWithEye(Data):
     assert L == Data.P
     W = np.eye(L)
 
-    G = np.hstack(
-        [0.5 * np.sin(3 * Data.X) + Data.X, 3.0 * np.cos(Data.X) - Data.X, 1.0 + Data.X]
-    )
+    G = np.hstack([0.5 * np.sin(3 * Data.X) + Data.X, 3.0 * np.cos(Data.X) - Data.X, 1.0 + Data.X])
     assert G.shape == (Data.N, Data.P)
 
     mu_data = tf.random.uniform((M, L), dtype=tf.float64)
@@ -174,9 +172,9 @@ class DataMixedKernelWithEye(Data):
     assert sqrt_data.shape == (L, M, M)
 
     mu_data_full = tf.reshape(mu_data @ W, [-1, 1])
-    assert mu_data_full.shape == (L*M, 1)
+    assert mu_data_full.shape == (L * M, 1)
     sqrt_data_full = expand_cov(sqrt_data, W)
-    assert sqrt_data_full.shape == (1, L*M, L*M)
+    assert sqrt_data_full.shape == (1, L * M, L * M)
 
     Y = tf.convert_to_tensor(G @ W)
     W = tf.convert_to_tensor(W)
