@@ -545,7 +545,7 @@ def mix_latent_gp(W, g_mean, g_var, full_cov, full_output_cov):
 
 
 def separate_independent_conditional_implementation(
-    Kmns, Kmms, Knns, f, *, full_cov=False, full_output_cov=False, q_sqrt=None, white=False,
+    Kmns, Kmms, Knns, f, *, full_cov=False, q_sqrt=None, white=False,
 ):
     """Multi-output GP with independent GP priors.
     Number of latent processes equals the number of outputs (L = P).
@@ -592,4 +592,4 @@ def separate_independent_conditional_implementation(
     else:
         fvar = rollaxis_left(tf.squeeze(rvar, axis=-1), 1)  # [N, P]
 
-    return fmu, expand_independent_outputs(fvar, full_cov, full_output_cov)
+    return fmu, fvar
