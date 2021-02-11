@@ -19,7 +19,7 @@ runtest: &runtest
 version: 2.1
 
 jobs:
-  verify-dependencies:
+  verify-install:
     docker:
       - image: circleci/python:3.6-buster
 
@@ -30,6 +30,7 @@ jobs:
           command: |
             pip install --use-feature=2020-resolver --progress-bar=off -e .
             pip check -vvv
+            python -c "import gpflow"
 
   type-check:
     docker:
@@ -42,7 +43,7 @@ jobs:
           command: pip install mypy
       - run:
           name: Run type checker
-          command: mypy .
+          command: mypy gpflow tests
 
   unit-test:
     <<: *runtest
@@ -65,13 +66,13 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Install Black
+          name: Install black and isort
           command: |
-            pip install black==19.10b0
+            pip install black==19.10b0 isort
       - run:
-          name: Run format checker
+          name: Run format check
           command: |
-            black --check -t py36 -l 100 gpflow tests doc setup.py
+            make format-check
 
   trigger-docs-generation:
     docker:
@@ -79,7 +80,7 @@ jobs:
         environment:
             ORGANIZATION: GPflow
             PROJECT: docs
-            BRANCH: develop
+            BRANCH: << pipeline.git.branch >>
 
     steps:
       - run:
@@ -128,7 +129,7 @@ workflows:
   version: 2.1
   build_test_and_deploy:
     jobs:
-      - verify-dependencies:
+      - verify-install:
           filters:
             tags:
               only: /^v[0-9]+(\.[0-9]+)*(-rc[0-9]+)?/
@@ -158,7 +159,9 @@ workflows:
             - notebook-test
           filters:
             branches:
-              only: develop
+              only:
+                - master
+                - develop
       - deploy:
           requires:
             - unit-test

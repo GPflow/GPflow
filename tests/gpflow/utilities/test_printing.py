@@ -19,10 +19,10 @@ import tensorflow as tf
 import gpflow
 from gpflow.config import Config, as_context
 from gpflow.utilities.utilities import (
-    leaf_components,
     _merge_leaf_components,
-    tabulate_module_summary,
+    leaf_components,
     set_trainable,
+    tabulate_module_summary,
 )
 
 rng = np.random.RandomState(0)

@@ -1,10 +1,10 @@
 import re
 import warnings
-from packaging.version import Version
 
 import multipledispatch
 import pytest
 import tensorflow as tf
+from packaging.version import Version
 
 import gpflow
 

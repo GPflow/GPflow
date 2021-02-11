@@ -1,4 +1,4 @@
-# Copyright 2016 James Hensman, alexggmatthews, Mark van der Wilk
+# Copyright 2016-2020 The GPflow Contributors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -92,7 +92,7 @@ class SGPRBase(GPModel, InternalDataTrainingLossMixin):
         The key quantity, the trace term, can be computed via
 
         >>> _, v = conditionals.conditional(X, model.inducing_variable.Z, model.kernel,
-        ...                                 np.zeros((len(model.inducing_variable), 1)))
+        ...                                 np.zeros((model.inducing_variable.num_inducing, 1)))
 
         which computes each individual element of the trace term.
         """
@@ -120,11 +120,10 @@ class SGPRBase(GPModel, InternalDataTrainingLossMixin):
         const = -0.5 * num_data * tf.math.log(2 * np.pi * self.likelihood.variance)
         logdet = -tf.reduce_sum(tf.math.log(tf.linalg.diag_part(LB)))
 
+        err = Y_data - self.mean_function(X_data)
         LC = tf.linalg.cholesky(I + AAT / corrected_noise)
-        v = tf.linalg.triangular_solve(
-            LC, tf.linalg.matmul(A, Y_data) / corrected_noise, lower=True
-        )
-        quad = -0.5 * tf.reduce_sum(tf.square(Y_data)) / corrected_noise + 0.5 * tf.reduce_sum(
+        v = tf.linalg.triangular_solve(LC, tf.linalg.matmul(A, err) / corrected_noise, lower=True)
+        quad = -0.5 * tf.reduce_sum(tf.square(err)) / corrected_noise + 0.5 * tf.reduce_sum(
             tf.square(v)
         )
 
@@ -162,7 +161,7 @@ class SGPR(SGPRBase):
         """
         X_data, Y_data = self.data
 
-        num_inducing = len(self.inducing_variable)
+        num_inducing = self.inducing_variable.num_inducing
         num_data = to_default_float(tf.shape(Y_data)[0])
         output_dim = to_default_float(tf.shape(Y_data)[1])
 
@@ -199,7 +198,7 @@ class SGPR(SGPRBase):
         notebook.
         """
         X_data, Y_data = self.data
-        num_inducing = len(self.inducing_variable)
+        num_inducing = self.inducing_variable.num_inducing
         err = Y_data - self.mean_function(X_data)
         kuf = Kuf(self.inducing_variable, self.kernel, X_data)
         kuu = Kuu(self.inducing_variable, self.kernel, jitter=default_jitter())
@@ -283,7 +282,7 @@ class GPRFITC(SGPRBase):
 
     def common_terms(self):
         X_data, Y_data = self.data
-        num_inducing = len(self.inducing_variable)
+        num_inducing = self.inducing_variable.num_inducing
         err = Y_data - self.mean_function(X_data)  # size [N, R]
         Kdiag = self.kernel(X_data, full_cov=False)
         kuf = Kuf(self.inducing_variable, self.kernel, X_data)

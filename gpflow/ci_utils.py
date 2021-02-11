@@ -1,4 +1,4 @@
-# Copyright 2017-2019 GPflow
+# Copyright 2017-2020 The GPflow Contributors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
 # pylint: skip-file
 
 import os
-from typing import Sequence, Type, Any, List, Iterable, TypeVar
+from typing import Any, Iterable, List, Sequence, Type, TypeVar
 
 
 def is_continuous_integration() -> bool:

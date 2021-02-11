@@ -14,13 +14,15 @@
 
 # -*- coding: utf-8 -*-
 
+from unittest.mock import patch
+
 import numpy as np
 import pytest
 import tensorflow as tf
 from numpy.testing import assert_allclose, assert_almost_equal
 
 import gpflow
-from gpflow import default_float, default_jitter, Parameter
+from gpflow import Parameter, default_float, default_jitter
 from gpflow.inducing_variables import InducingPoints
 from gpflow.kullback_leiblers import gauss_kl, prior_kl
 from gpflow.utilities.bijectors import triangular
@@ -159,6 +161,25 @@ def test_sumkl_equals_batchkl(shared_k, diag):
             Datum.sqrt_diag[:, n][:, None] if diag else Datum.sqrt[n, :, :][None, :, :]
         )  # [1, M, M] or [M, 1]
         K_n = Datum.K if shared_k else Datum.K_batch[n, :, :][None, :, :]  # [1, M, M] or [M, M]
+        kl_n = gauss_kl(q_mu_n, q_sqrt_n, K=K_n)
+        kl_sum.append(kl_n)
+
+    kl_sum = tf.reduce_sum(kl_sum)
+    assert_almost_equal(kl_sum, kl_batch)
+
+
+@patch("tensorflow.__version__", "2.1.0")
+def test_sumkl_equals_batchkl_shared_k_not_diag_mocked_tf21():
+    """
+    Version of test_sumkl_equals_batchkl with shared_k=True and diag=False
+    that tests the TensorFlow < 2.2 workaround with tiling still works.
+    """
+    kl_batch = gauss_kl(Datum.mu, Datum.sqrt, Datum.K)
+    kl_sum = []
+    for n in range(Datum.N):
+        q_mu_n = Datum.mu[:, n][:, None]  # [M, 1]
+        q_sqrt_n = Datum.sqrt[n, :, :][None, :, :]  # [1, M, M] or [M, 1]
+        K_n = Datum.K  # [1, M, M] or [M, M]
         kl_n = gauss_kl(q_mu_n, q_sqrt_n, K=K_n)
         kl_sum.append(kl_n)
 

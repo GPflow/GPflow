@@ -1,10 +1,10 @@
-from .inducing_variables import InducingVariables, InducingPoints, Multiscale
-from .inducing_patch import InducingPatches
 from . import multioutput
+from .inducing_patch import InducingPatches
+from .inducing_variables import InducingPoints, InducingVariables, Multiscale
 from .multioutput import (
-    MultioutputInducingVariables,
-    FallbackSharedIndependentInducingVariables,
     FallbackSeparateIndependentInducingVariables,
-    SharedIndependentInducingVariables,
+    FallbackSharedIndependentInducingVariables,
+    MultioutputInducingVariables,
     SeparateIndependentInducingVariables,
+    SharedIndependentInducingVariables,
 )

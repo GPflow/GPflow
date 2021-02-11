@@ -1,4 +1,4 @@
-# Copyright 2016 James Hensman, alexggmatthews
+# Copyright 2016-2020 The GPflow Contributors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
 # -*- coding: utf-8 -*-
 
 import tensorflow as tf
+from packaging.version import Version
+
 from .config import default_float, default_jitter
 from .covariances.kuus import Kuu
 from .inducing_variables import InducingVariables
@@ -130,10 +132,11 @@ def gauss_kl(q_mu, q_sqrt, K=None, *, K_cholesky=None):
             ]  # [M, M] -> [M, 1]
             trace = tf.reduce_sum(K_inv * tf.square(q_sqrt))
         else:
-            # TODO: broadcast instead of tile when tf allows -- tf2.1 segfaults
-            # (https://github.com/tensorflow/tensorflow/issues/37584).
-            # See # https://github.com/GPflow/GPflow/issues/1321
-            Lp_full = Lp if is_batched else tf.tile(tf.expand_dims(Lp, 0), [L, 1, 1])
+            if is_batched or Version(tf.__version__) >= Version("2.2"):
+                Lp_full = Lp
+            else:
+                # workaround for segfaults when broadcasting in TensorFlow<2.2
+                Lp_full = tf.tile(tf.expand_dims(Lp, 0), [L, 1, 1])
             LpiLq = tf.linalg.triangular_solve(Lp_full, Lq_full, lower=True)
             trace = tf.reduce_sum(tf.square(LpiLq))
 

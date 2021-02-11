@@ -1,10 +1,12 @@
 import copy
 import pickle
 
-import gpflow
 import pytest
 import tensorflow as tf
 import tensorflow_probability as tfp
+from packaging.version import Version
+
+import gpflow
 
 
 class A(tf.Module):
@@ -52,9 +54,15 @@ def test_clears_bijector_cache_and_deepcopy(module):
     """
     input = 1.0
     _ = module(input)
-    with pytest.raises(TypeError):
-        copy.deepcopy(module)
-    module_copy = gpflow.utilities.deepcopy(module)
+
+    if Version(tfp.__version__) >= Version("0.12"):
+        module_copy = copy.deepcopy(module)
+    else:
+        # older versions of tensorflow_probability required us to maintain a workaround
+        with pytest.raises(TypeError):
+            copy.deepcopy(module)
+        module_copy = gpflow.utilities.deepcopy(module)
+
     assert module.var == module_copy.var
     assert module.var is not module_copy.var
     module_copy.var.assign([5.0])

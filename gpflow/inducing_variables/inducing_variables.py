@@ -1,4 +1,4 @@
-# Copyright 2017 GPflow
+# Copyright 2017-2020 The GPflow Contributors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@ import abc
 from typing import Optional
 
 import tensorflow as tf
+import tensorflow_probability as tfp
 
 from ..base import Module, Parameter, TensorData, TensorType
 from ..config import default_float
@@ -35,6 +36,10 @@ class InducingVariables(Module):
         """
         raise NotImplementedError
 
+    @property
+    def num_inducing(self) -> int:
+        return self.__len__()
+
 
 class InducingPointsBase(InducingVariables):
     def __init__(self, Z: TensorData, name: Optional[str] = None):
@@ -42,10 +47,12 @@ class InducingPointsBase(InducingVariables):
         :param Z: the initial positions of the inducing points, size [M, D]
         """
         super().__init__(name=name)
-        self.Z = Parameter(Z, dtype=default_float())
+        if not isinstance(Z, (tf.Variable, tfp.util.TransformedVariable)):
+            Z = Parameter(Z)
+        self.Z = Z
 
     def __len__(self) -> int:
-        return self.Z.shape[0]
+        return tf.shape(self.Z)[0]
 
 
 class InducingPoints(InducingPointsBase):

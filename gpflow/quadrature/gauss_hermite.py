@@ -1,12 +1,25 @@
+# Copyright 2020 The GPflow Contributors. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 from typing import List
 
 import numpy as np
 import tensorflow as tf
 
-from .base import GaussianQuadrature
-from ..config import default_float
-
 from ..base import TensorType
+from ..config import default_float
+from .base import GaussianQuadrature
 
 
 def gh_points_and_weights(n_gh: int):
@@ -16,9 +29,9 @@ def gh_points_and_weights(n_gh: int):
     uni-dimensional gaussian quadrature:
 
     X ~ N(mean, stddev²)
-    E[f(X)] = ∫f(x)p(x)dx = sum_{i=1}^{n_gh} f(mean + stddev*z_i)*dz_i
+    E[f(X)] = ∫ f(x) p(x) dx = \sum_{i=1}^{n_gh} f(mean + stddev*z_i) dz_i
 
-    :param n_gh: Number of Gauss-Hermite points, integer
+    :param n_gh: Number of Gauss-Hermite points
     :returns: Points z and weights dz, both tensors with shape [n_gh],
         to compute uni-dimensional gaussian expectation
     """
@@ -61,8 +74,8 @@ def repeat_as_list(x: TensorType, n: int):
 
 def ndgh_points_and_weights(dim: int, n_gh: int):
     r"""
-    :param n_gh: number of Gauss-Hermite points, integer
-    :param dim: dimension of the multivariate normal, integer
+    :param dim: dimension of the multivariate normal
+    :param n_gh: number of Gauss-Hermite points per dimension
     :returns: points Z, Tensor with shape [n_gh**dim, dim],
         and weights dZ, Tensor with shape [n_gh**dim, 1]
     """
@@ -75,8 +88,8 @@ def ndgh_points_and_weights(dim: int, n_gh: int):
 class NDiagGHQuadrature(GaussianQuadrature):
     def __init__(self, dim: int, n_gh: int):
         """
-        :param n_gh: number of Gauss-Hermite points, integer
-        :param dim: dimension of the multivariate normal, integer
+        :param dim: dimension of the multivariate normal
+        :param n_gh: number of Gauss-Hermite points per dimension
         """
         self.dim = dim
         self.n_gh = n_gh
@@ -105,8 +118,8 @@ class NDiagGHQuadrature(GaussianQuadrature):
         stddev = tf.expand_dims(tf.sqrt(var), 0)
         # mean, stddev: [1, b1, b2, ..., bX, dim], usually [1, N, dim]
 
-        Z = tf.reshape(self.Z, tf.concat([shape_aux, [self.dim]], axis=0))
-        dZ = tf.reshape(self.dZ, tf.concat([shape_aux, [1,]], axis=0))
+        Z = tf.cast(tf.reshape(self.Z, tf.concat([shape_aux, [self.dim]], axis=0)), mean.dtype)
+        dZ = tf.cast(tf.reshape(self.dZ, tf.concat([shape_aux, [1,]], axis=0)), mean.dtype)
 
         X = mean + stddev * Z
         W = dZ

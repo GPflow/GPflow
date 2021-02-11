@@ -1,17 +1,31 @@
+# Copyright 2017-2020 The GPflow Contributors. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import copy
 import re
 from functools import lru_cache
-from typing import Any, Callable, Dict, List, Optional, Tuple, TypeVar, Union, Iterable
-from packaging.version import Version
+from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, TypeVar, Union
 
 import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
+from packaging.version import Version
 from tabulate import tabulate
 
-from .ops import cast
 from ..base import Parameter
 from ..config import default_float, default_int, default_summary_fmt
+from .ops import cast
 
 __all__ = [
     "set_trainable",
@@ -141,7 +155,7 @@ def print_summary(module: tf.Module, fmt: str = None):
     """
     fmt = fmt if fmt is not None else default_summary_fmt()
     if fmt == "notebook":
-        from IPython.core.display import display, HTML
+        from IPython.core.display import HTML, display
 
         tab = tabulate_module_summary(module, "html")
         display(HTML(tab))
@@ -231,34 +245,6 @@ def _get_leaf_components(input_module: tf.Module):
     return state
 
 
-if Version(tfp.__version__) > Version("0.11.0"):
-
-    def _clear_bijector_cache(bijector: tfp.bijectors.Bijector):
-        # implementation in `master` branch (checked 8 Sep 2020)
-        bijector._cache.clear()
-
-
-elif Version(tfp.__version__) == Version("0.11.0"):
-    # Workaround for bug in tensorflow_probability 0.11.0 (latest release as of 8 Sep 2020)
-
-    def _clear_bijector_cache(bijector: tfp.bijectors.Bijector):
-        # in 0.11.0, there is bijector._cache.reset(), but its implementation is broken
-        cache = bijector._cache
-        cache_type = type(cache.forward)
-        assert type(cache.inverse) == cache_type
-        cache.__init__(cache.forward._func, cache.inverse._func, cache_type)
-
-
-else:
-    # fallback for backwards-compatibility with tensorflow_probability < 0.11.0
-
-    def _clear_bijector_cache(bijector: tfp.bijectors.Bijector):
-        # `_from_x` and `_from_y` are cache dictionaries for forward and inverse transformations
-        # in bijector class.
-        bijector._from_x.clear()
-        bijector._from_y.clear()
-
-
 def reset_cache_bijectors(input_module: tf.Module) -> tf.Module:
     """
     Recursively finds tfp.bijectors.Bijector-s inside the components of the tf.Module using `traverse_component`.
@@ -267,6 +253,31 @@ def reset_cache_bijectors(input_module: tf.Module) -> tf.Module:
     :param input_module: tf.Module including keras.Model, keras.layers.Layer and gpflow.Module.
     :return:
     """
+    if Version(tfp.__version__) >= Version("0.11.0"):
+        if hasattr(tfp.bijectors.Identity()._cache, "clear"):
+            # implementation in `master` branch (checked 29 Sep 2020) provides clear():
+
+            def _clear_bijector_cache(bijector: tfp.bijectors.Bijector):
+                bijector._cache.clear()
+
+        else:
+            # previous versions (including the versions 0.11.0 and 0.11.1 released as of 29 Sep 2020) provide reset(), but its implementation is broken
+
+            def _clear_bijector_cache(bijector: tfp.bijectors.Bijector):
+                # workaround for broken implementation of bijector._cache.reset():
+                cache = bijector._cache
+                cache_type = type(cache.forward)
+                assert type(cache.inverse) == cache_type
+                cache.__init__(cache.forward._func, cache.inverse._func, cache_type)
+
+    else:
+        # fallback for backwards-compatibility with tensorflow_probability < 0.11.0
+
+        def _clear_bijector_cache(bijector: tfp.bijectors.Bijector):
+            # `_from_x` and `_from_y` are cache dictionaries for forward and inverse transformations
+            bijector._from_x.clear()
+            bijector._from_y.clear()
+
     target_types = (tfp.bijectors.Bijector,)
     accumulator = ("", None)
 

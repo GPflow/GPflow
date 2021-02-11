@@ -1,4 +1,4 @@
-# Copyright 2016 James Hensman, alexggmatthews
+# Copyright 2016-2020 The GPflow Contributors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,6 +14,7 @@
 
 import numpy as np
 import tensorflow as tf
+
 from .config import default_float
 from .utilities import to_default_float
 

@@ -106,7 +106,8 @@ A few projects building on GPflow and demonstrating its usage are listed below.
 
 | Project | Description |
 | --- | --- |
-| [GPflowOpt](https://github.com/GPflow/GPflowOpt)       | Bayesian Optimization using GPflow. |
+| [GPflowOpt](https://github.com/GPflow/GPflowOpt)       | Bayesian Optimization using GPflow (stable release requires GPflow 0.5). |
+| [Trieste](https://github.com/secondmind-labs/trieste)       | Bayesian optimization with TensorFlow, with out-of-the-box support for GPflow (2.x) models. |
 | [VFF](https://github.com/jameshensman/VFF)       | Variational Fourier Features for Gaussian Processes. |
 | [Doubly-Stochastic-DGP](https://github.com/ICL-SML/Doubly-Stochastic-DGP)| Deep Gaussian Processes with Doubly Stochastic Variational Inference.|
 | [BranchedGP](https://github.com/ManchesterBioinference/BranchedGP) | Gaussian processes with branching kernels.|
@@ -118,6 +119,7 @@ A few projects building on GPflow and demonstrating its usage are listed below.
 | [DGPs_with_IWVI](https://github.com/hughsalimbeni/DGPs_with_IWVI) | Deep Gaussian Processes with Importance-Weighted Variational Inference|
 | [kerndisc](https://github.com/BracketJohn/kernDisc) | Library for automated kernel structure discovery in univariate data|
 | [Gaussian Process Regression on Molecules](https://medium.com/@ryangriff123/gaussian-process-regression-on-molecules-in-gpflow-ee6fedab2130) | GPs to predict molecular properties by creating a custom-defined Tanimoto kernel to operate on Morgan fingerprints |
+| [Structured-DGP](https://github.com/boschresearch/Structured_DGP) | Adding more structure to the variational posterior of the Doubly Stochastic Deep Gaussian Process |
 
 If you would like your project listed here, let us know - or simply [open a pull request](https://github.com/GPflow/GPflow/compare) that adds your project to the table above!
 

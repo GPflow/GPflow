@@ -1,4 +1,4 @@
-# Copyright 2016 James Hensman, Mark van der Wilk, Valentine Svensson, alexggmatthews, fujiisoup
+# Copyright 2016-2020 The GPflow Contributors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,13 +17,13 @@ from typing import Optional, Tuple
 
 import tensorflow as tf
 
-from .training_mixins import InputData, RegressionData
 from ..base import Module
 from ..conditionals.util import sample_mvn
 from ..kernels import Kernel, MultioutputKernel
 from ..likelihoods import Likelihood, SwitchedLikelihood
 from ..mean_functions import MeanFunction, Zero
 from ..utilities import to_default_float
+from .training_mixins import InputData, RegressionData
 
 MeanAndVariance = Tuple[tf.Tensor, tf.Tensor]
 
@@ -211,6 +211,12 @@ class GPModel(BayesianModel):
         """
         Compute the mean and variance of the held-out data at the input points.
         """
+        if full_cov or full_output_cov:
+            # See https://github.com/GPflow/GPflow/issues/1461
+            raise NotImplementedError(
+                "The predict_y method currently supports only the argument values full_cov=False and full_output_cov=False"
+            )
+
         f_mean, f_var = self.predict_f(Xnew, full_cov=full_cov, full_output_cov=full_output_cov)
         return self.likelihood.predict_mean_and_var(f_mean, f_var)
 
@@ -220,6 +226,12 @@ class GPModel(BayesianModel):
         """
         Compute the log density of the data at the new data points.
         """
+        if full_cov or full_output_cov:
+            # See https://github.com/GPflow/GPflow/issues/1461
+            raise NotImplementedError(
+                "The predict_log_density method currently supports only the argument values full_cov=False and full_output_cov=False"
+            )
+
         X, Y = data
         f_mean, f_var = self.predict_f(X, full_cov=full_cov, full_output_cov=full_output_cov)
         return self.likelihood.predict_log_density(f_mean, f_var, Y)

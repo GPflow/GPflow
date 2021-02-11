@@ -12,16 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import tensorflow as tf
-
 import numpy as np
-from numpy.testing import assert_allclose
 import pytest
+import tensorflow as tf
+from numpy.testing import assert_allclose
 
 import gpflow
 import gpflow.ci_utils
 from gpflow import kernels
-
 
 KERNEL_CLASSES = [
     # Static kernels:

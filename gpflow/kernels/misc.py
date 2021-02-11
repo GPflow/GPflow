@@ -1,4 +1,4 @@
-# Copyright 2018-2020 GPflow
+# Copyright 2018-2020 The GPflow Contributors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ import tensorflow as tf
 
 from ..base import Parameter
 from ..utilities import positive, to_default_float
-from .base import Kernel, ActiveDims
+from .base import ActiveDims, Kernel
 
 
 class ArcCosine(Kernel):

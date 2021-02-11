@@ -302,3 +302,7 @@ _ = ax.plot(xx, 2.5 * np.sin(6 * xx) + np.cos(3 * xx), "C2--")
 from gpflow.utilities import print_summary
 
 print_summary(model, fmt="notebook")
+
+# %% [markdown]
+# ## Further reading
+# To model the variance using a second GP, see the [Heteroskedastic regression notebook](heteroskedastic.ipynb).

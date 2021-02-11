@@ -5,7 +5,8 @@ import tensorflow as tf
 import gpflow
 import gpflow.inducing_variables.multioutput as mf
 import gpflow.kernels.multioutput as mk
-from gpflow.covariances.multioutput import kufs as mo_kufs, kuus as mo_kuus
+from gpflow.covariances.multioutput import kufs as mo_kufs
+from gpflow.covariances.multioutput import kuus as mo_kuus
 
 rng = np.random.RandomState(9911)
 

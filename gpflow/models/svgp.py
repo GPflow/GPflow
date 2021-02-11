@@ -1,4 +1,4 @@
-# Copyright 2016 James Hensman, Valentine Svensson, alexggmatthews, Mark van der Wilk
+# Copyright 2016-2020 The GPflow Contributors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 from typing import Tuple
 
 import numpy as np
@@ -21,7 +22,7 @@ from ..base import Parameter
 from ..conditionals import conditional
 from ..config import default_float
 from ..utilities import positive, triangular
-from .model import GPModel, InputData, RegressionData, MeanAndVariance
+from .model import GPModel, InputData, MeanAndVariance, RegressionData
 from .training_mixins import ExternalDataTrainingLossMixin
 from .util import inducingpoint_wrapper
 
@@ -74,7 +75,7 @@ class SVGP(GPModel, ExternalDataTrainingLossMixin):
         self.inducing_variable = inducingpoint_wrapper(inducing_variable)
 
         # init variational parameters
-        num_inducing = len(self.inducing_variable)
+        num_inducing = self.inducing_variable.num_inducing
         self._init_variational_parameters(num_inducing, q_mu, q_sqrt, q_diag)
 
     def _init_variational_parameters(self, num_inducing, q_mu, q_sqrt, q_diag):

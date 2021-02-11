@@ -1,4 +1,4 @@
-# Copyright 2017 the GPflow authors.
+# Copyright 2020 The GPflow Contributors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,24 +18,31 @@ import tensorflow as tf
 from numpy.testing import assert_allclose
 
 import gpflow
-from gpflow.likelihoods import (
+import gpflow.ci_utils
+from gpflow.config import default_float, default_int
+from gpflow.quadrature import ndiagquad
+
+from gpflow.likelihoods import (  # isort:skip
+    # classes we cannot test:
+    Likelihood,
+    QuadratureLikelihood,
     ScalarLikelihood,
+    MonteCarloLikelihood,
+    MultiLatentLikelihood,
+    MultiLatentTFPConditional,
+    HeteroskedasticTFPConditional,
+    # classes we do test in this file:
     Bernoulli,
     Beta,
     Exponential,
     Gamma,
     Gaussian,
     GaussianMC,
-    Likelihood,
-    MonteCarloLikelihood,
     MultiClass,
     Ordinal,
     Poisson,
     StudentT,
 )
-from gpflow.quadrature import ndiagquad
-from gpflow.config import default_float, default_int
-import gpflow.ci_utils
 
 tf.random.set_seed(99012)
 
@@ -116,7 +123,12 @@ def get_likelihood(likelihood_setup):
 def test_no_missing_likelihoods():
     tested_likelihood_types = [get_likelihood(l).__class__ for l in likelihood_setups]
     for likelihood_class in gpflow.ci_utils.subclasses(Likelihood):
-        if likelihood_class in (ScalarLikelihood, MonteCarloLikelihood):
+        if likelihood_class in (
+            QuadratureLikelihood,
+            ScalarLikelihood,
+            MonteCarloLikelihood,
+            MultiLatentLikelihood,
+        ):
             # abstract base classes that cannot be tested
             continue
 
@@ -126,6 +138,10 @@ def test_no_missing_likelihoods():
 
         if likelihood_class is gpflow.likelihoods.SwitchedLikelihood:
             # tested separately, see test_switched_likelihood.py
+            continue
+
+        if likelihood_class in (MultiLatentTFPConditional, HeteroskedasticTFPConditional):
+            # tested separately, see test_heteroskedastic*.py
             continue
 
         if issubclass(likelihood_class, MonteCarloLikelihood):

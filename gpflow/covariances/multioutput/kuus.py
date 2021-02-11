@@ -1,19 +1,33 @@
+# Copyright 2017-2020 The GPflow Contributors. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 from typing import Union
 
 import tensorflow as tf
 
 from ...inducing_variables import (
-    InducingPoints,
-    FallbackSharedIndependentInducingVariables,
     FallbackSeparateIndependentInducingVariables,
+    FallbackSharedIndependentInducingVariables,
+    InducingPoints,
     SharedIndependentInducingVariables,
 )
 from ...kernels import (
+    IndependentLatent,
+    LinearCoregionalization,
     MultioutputKernel,
     SeparateIndependent,
-    LinearCoregionalization,
     SharedIndependent,
-    IndependentLatent,
 )
 from ..dispatch import Kuu
 
@@ -34,7 +48,7 @@ def _Kuu(
     jitter=0.0,
 ):
     Kmm = Kuu(inducing_variable.inducing_variable, kernel.kernel)  # [M, M]
-    jittermat = tf.eye(len(inducing_variable), dtype=Kmm.dtype) * jitter
+    jittermat = tf.eye(inducing_variable.num_inducing, dtype=Kmm.dtype) * jitter
     return Kmm + jittermat
 
 
@@ -48,7 +62,7 @@ def _Kuu(
     Kmm = tf.stack(
         [Kuu(inducing_variable.inducing_variable, k) for k in kernel.kernels], axis=0
     )  # [L, M, M]
-    jittermat = tf.eye(len(inducing_variable), dtype=Kmm.dtype)[None, :, :] * jitter
+    jittermat = tf.eye(inducing_variable.num_inducing, dtype=Kmm.dtype)[None, :, :] * jitter
     return Kmm + jittermat
 
 
@@ -62,7 +76,7 @@ def _Kuu(
     Kmm = tf.stack(
         [Kuu(f, kernel.kernel) for f in inducing_variable.inducing_variable_list], axis=0
     )  # [L, M, M]
-    jittermat = tf.eye(len(inducing_variable), dtype=Kmm.dtype)[None, :, :] * jitter
+    jittermat = tf.eye(inducing_variable.num_inducing, dtype=Kmm.dtype)[None, :, :] * jitter
     return Kmm + jittermat
 
 
@@ -77,5 +91,5 @@ def _Kuu(
 ):
     Kmms = [Kuu(f, k) for f, k in zip(inducing_variable.inducing_variable_list, kernel.kernels)]
     Kmm = tf.stack(Kmms, axis=0)  # [L, M, M]
-    jittermat = tf.eye(len(inducing_variable), dtype=Kmm.dtype)[None, :, :] * jitter
+    jittermat = tf.eye(inducing_variable.num_inducing, dtype=Kmm.dtype)[None, :, :] * jitter
     return Kmm + jittermat

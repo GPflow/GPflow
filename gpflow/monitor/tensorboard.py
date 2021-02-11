@@ -1,4 +1,4 @@
-# Copyright 2020 GPflow authors
+# Copyright 2020 The GPflow Contributors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 """ Tasks that write to TensorBoard """
 
 from io import BytesIO
@@ -23,7 +24,6 @@ from ..base import Parameter
 from ..models import BayesianModel
 from ..utilities import parameter_dict
 from .base import MonitorTask
-
 
 __all__ = ["ToTensorBoard", "ModelToTensorBoard", "ScalarToTensorBoard", "ImageToTensorBoard"]
 
@@ -116,11 +116,12 @@ class ModelToTensorBoard(ToTensorBoard):
                 "make sure the shape of all parameters is known beforehand. Otherwise, "
                 "run the monitor outside the `tf.function`."
             )
-
         if size == 1:
+            # if there's only one element do not add a numbered suffix
             tf.summary.scalar(name, param[0], step=self.current_step)
         else:
-            for i in range(min(size, self.max_size)):
+            it = range(size) if self.max_size == -1 else range(min(size, self.max_size))
+            for i in it:
                 tf.summary.scalar(f"{name}[{i}]", param[i], step=self.current_step)
 
 

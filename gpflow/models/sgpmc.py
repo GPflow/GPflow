@@ -1,4 +1,4 @@
-# Copyright 2016 James Hensman, alexggmatthews
+# Copyright 2016-2020 The GPflow Contributors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 from typing import Optional
 
 import numpy as np
@@ -82,7 +83,7 @@ class SGPMC(GPModel, InternalDataTrainingLossMixin):
         self.data = data_input_to_tensor(data)
         self.num_data = data[0].shape[0]
         self.inducing_variable = inducingpoint_wrapper(inducing_variable)
-        self.V = Parameter(np.zeros((len(self.inducing_variable), self.num_latent_gps)))
+        self.V = Parameter(np.zeros((self.inducing_variable.num_inducing, self.num_latent_gps)))
         self.V.prior = tfp.distributions.Normal(
             loc=to_default_float(0.0), scale=to_default_float(1.0)
         )

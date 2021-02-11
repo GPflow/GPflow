@@ -6,18 +6,19 @@ import tensorflow as tf
 import gpflow
 import gpflow.inducing_variables.multioutput as mf
 import gpflow.kernels.multioutput as mk
+from gpflow import set_trainable
 from gpflow.conditionals import sample_conditional
 from gpflow.conditionals.util import (
     fully_correlated_conditional,
     fully_correlated_conditional_repeat,
+    independent_interdomain_conditional,
     sample_mvn,
 )
+from gpflow.config import default_float, default_jitter
 from gpflow.inducing_variables import InducingPoints
 from gpflow.kernels import SquaredExponential
 from gpflow.likelihoods import Gaussian
 from gpflow.models import SVGP
-from gpflow.config import default_jitter, default_float
-from gpflow import set_trainable
 
 float_type = default_float()
 rng = np.random.RandomState(99201)
@@ -727,4 +728,47 @@ def test_separate_independent_conditional_with_q_sqrt_none():
         full_output_cov=False,
         q_sqrt=q_sqrt,
         white=True,
+    )
+
+
+def test_independent_interdomain_conditional_bug_regression():
+    """
+    Regression test for https://github.com/GPflow/GPflow/issues/818
+    Not an exhaustive test
+    """
+    M = 31
+    N = 11
+    D_lat = 5
+    D_inp = D_lat * 7
+    L = 2
+    P = 3
+
+    X = np.random.randn(N, D_inp)
+    Zs = [np.random.randn(M, D_lat) for _ in range(L)]
+    k = gpflow.kernels.SquaredExponential(lengthscales=np.ones(D_lat))
+
+    def compute_Kmn(Z, X):
+        return tf.stack([k(Z, X[:, i * D_lat : (i + 1) * D_lat]) for i in range(P)])
+
+    def compute_Knn(X):
+        return tf.stack([k(X[:, i * D_lat : (i + 1) * D_lat], full_cov=False) for i in range(P)])
+
+    Kmm = tf.stack([k(Z) for Z in Zs])  # L x M x M
+    Kmn = tf.stack([compute_Kmn(Z, X) for Z in Zs])  # L x P x M x N
+    Kmn = tf.transpose(Kmn, [2, 0, 3, 1])  # -> M x L x N x P
+    Knn = tf.transpose(compute_Knn(X))  # N x P
+    q_mu = tf.convert_to_tensor(np.zeros((M, L)))
+    q_sqrt = tf.convert_to_tensor(np.stack([np.eye(M) for _ in range(L)]))
+    tf.debugging.assert_shapes(
+        [
+            (Kmm, ["L", "M", "M"]),
+            (Kmn, ["M", "L", "N", "P"]),
+            (Knn, ["N", "P"]),
+            (q_mu, ["M", "L"]),
+            (q_sqrt, ["L", "M", "M"]),
+        ]
+    )
+
+    _, _ = independent_interdomain_conditional(
+        Kmn, Kmm, Knn, q_mu, q_sqrt=q_sqrt, full_cov=False, full_output_cov=False
     )

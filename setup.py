@@ -8,7 +8,6 @@ import sys
 
 from setuptools import find_packages, setup
 
-
 ##### Dependencies of GPflow
 
 # We do not want to install tensorflow in the readthedocs environment, where we
@@ -18,6 +17,7 @@ if os.environ.get("READTHEDOCS") != "True":
     requirements = [
         "tensorflow>=2.1.0",
         "tensorflow-probability>0.10.0",  # tensorflow-probability==0.10.0 doesn't install correctly, https://github.com/tensorflow/probability/issues/991
+        # NOTE: once we require tensorflow-probability>=0.12, we can remove our custom deepcopy handling
         "setuptools>=41.0.0",  # to satisfy dependency constraints
     ]
 
@@ -25,7 +25,7 @@ else:
     requirements = []
 
 requirements.extend(
-    ["numpy", "scipy", "multipledispatch>=0.6", "tabulate", "typing_extensions",]
+    ["numpy", "scipy", "multipledispatch>=0.6", "tabulate", "typing_extensions", "packaging"]
 )
 
 if sys.version_info < (3, 7):

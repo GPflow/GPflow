@@ -1,4 +1,4 @@
-# Copyright 2017-2018 the GPflow authors.
+# Copyright 2017-2020 The GPflow Contributors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import itertools
+import warnings
 from collections.abc import Iterable
 
 import numpy as np
@@ -20,7 +21,6 @@ import tensorflow as tf
 
 from ..config import default_float
 from ..utilities import to_default_float
-
 from .gauss_hermite import NDiagGHQuadrature
 
 
@@ -119,6 +119,12 @@ def ndiagquad(funcs, H: int, Fmu, Fvar, logspace: bool = False, **Ys):
     Fmu, Fvar, Ys should all have same shape, with overall size `N`
     :return: shape is the same as that of the first Fmu
     """
+    warnings.warn(
+        "Please use gpflow.quadrature.NDiagGHQuadrature instead "
+        "(note the changed convention of how multi-dimensional quadrature is handled)",
+        DeprecationWarning,
+    )
+
     n_gh = H
     if isinstance(Fmu, (tuple, list)):
         dim = len(Fmu)
@@ -182,10 +188,10 @@ def ndiag_mc(funcs, S: int, Fmu, Fvar, logspace: bool = False, epsilon=None, **Y
     Fmu, Fvar, Ys should all have same shape, with overall size `N`
     :return: shape is the same as that of the first Fmu
     """
-    N, D = Fmu.shape[0], Fvar.shape[1]
+    N, D = tf.shape(Fmu)[0], tf.shape(Fvar)[1]
 
     if epsilon is None:
-        epsilon = tf.random.normal((S, N, D), dtype=default_float())
+        epsilon = tf.random.normal(shape=[S, N, D], dtype=default_float())
 
     mc_x = Fmu[None, :, :] + tf.sqrt(Fvar[None, :, :]) * epsilon
     mc_Xr = tf.reshape(mc_x, (S * N, D))
