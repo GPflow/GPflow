@@ -115,6 +115,12 @@ class AnisotropicStationary(Stationary):
     input dimension.
     """
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        if tf.size(self.lengthscales) > 1:
+            self.lengthscales = Parameter(self.lengthscales.numpy())
+
     def K(self, X, X2=None):
         return self.K_d(self.scaled_difference_matrix(X, X2))
 
