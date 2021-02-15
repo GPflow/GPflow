@@ -22,7 +22,7 @@ from scipy.optimize import OptimizeResult
 __all__ = ["Scipy"]
 
 Variables = Iterable[tf.Variable]  # deprecated
-StepCallback = Callable[[int, Sequence[tf.Variable], Sequence[tf.Tensor]], None]
+StepCallback = Callable[[int], None]
 LossClosure = Callable[[], tf.Tensor]
 
 
@@ -117,7 +117,7 @@ class Scipy:
     def callback_func(cls, step_callback: StepCallback) -> Callable[[np.ndarray], None]:
         step = 0  # type: int
 
-        def _callback(_) -> None:
+        def _callback(_: np.ndarray) -> None:
             nonlocal step
             step_callback(step)
             step += 1

@@ -169,7 +169,7 @@ for i in tf.range(optimisation_steps):
 # %% [markdown]
 # ### Scipy Optimization monitoring
 #
-# Note that if you want to use the scipy optimizer, and want to monitor the training progress, then you need to simply replace 
+# Note that if you want to use the scipy optimizer, and want to monitor the training progress, then you need to simply replace
 # the optimization loop with a single call to SciPy's `minimize` and pass in the monitor as a `step_callback` keyword-argument:
 #
 
