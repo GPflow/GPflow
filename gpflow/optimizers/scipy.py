@@ -82,7 +82,7 @@ class Scipy:
             if "callback" in scipy_kwargs:
                 raise ValueError("Callback passed both via `step_callback` and `callback`")
 
-            callback = self.callback_func(variables, step_callback)
+            callback = self.callback_func(step_callback)
             scipy_kwargs.update(dict(callback=callback))
 
         return scipy.optimize.minimize(
@@ -114,15 +114,12 @@ class Scipy:
         return _eval
 
     @classmethod
-    def callback_func(
-        cls, variables: Sequence[tf.Variable], step_callback: StepCallback
-    ) -> Callable[[np.ndarray], None]:
+    def callback_func(cls, step_callback: StepCallback) -> Callable[[np.ndarray], None]:
         step = 0  # type: int
 
-        def _callback(x: np.ndarray) -> None:
+        def _callback(_) -> None:
             nonlocal step
-            values = cls.unpack_tensors(variables, x)
-            step_callback(step, variables, values)
+            step_callback(step)
             step += 1
 
         return _callback

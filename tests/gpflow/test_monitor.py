@@ -289,3 +289,9 @@ def test_compile_monitor(monitor, model):
 
     for step in tf.range(100):
         tf_func(step)
+
+
+def test_scipy_monitor(monitor, model):
+    opt = gpflow.optimizers.Scipy()
+
+    opt.minimize(model.training_loss, model.trainable_variables, step_callback=monitor)
