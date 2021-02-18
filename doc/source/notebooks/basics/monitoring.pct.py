@@ -134,14 +134,16 @@ for step in range(optimisation_steps):
 
 
 # %% [markdown]
-# For optimal performance, we can also wrap the monitor call inside `tf.function`:
+# ### For optimal performance, we can also wrap the monitor call inside `tf.function`:
 
 # %%
 opt = tf.optimizers.Adam()
 
-log_dir = f"{log_dir}/compiled"
-model_task = ModelToTensorBoard(log_dir, model)
-lml_task = ScalarToTensorBoard(log_dir, lambda: model.training_loss(), "training_objective")
+log_dir_compiled = f"{log_dir}/compiled"
+model_task = ModelToTensorBoard(log_dir_compiled, model)
+lml_task = ScalarToTensorBoard(
+    log_dir_compiled, lambda: model.training_loss(), "training_objective"
+)
 # Note that the `ImageToTensorBoard` task cannot be compiled, and is omitted from the monitoring
 monitor = Monitor(MonitorTaskGroup([model_task, lml_task]))
 
@@ -163,3 +165,27 @@ for i in tf.range(optimisation_steps):
 
 # %% [markdown]
 # When opening TensorBoard, you may need to use the command `tensorboard --logdir . --reload_multifile=true`, as multiple `FileWriter` objects are used.
+
+# %% [markdown]
+# ### Scipy Optimization monitoring
+#
+# Note that if you want to use the `Scipy` optimizer provided by GPflow, and want to monitor the training progress, then you need to simply replace
+# the optimization loop with a single call to its `minimize` method and pass in the monitor as a `step_callback` keyword argument:
+#
+
+# %%
+opt = gpflow.optimizers.Scipy()
+
+log_dir_scipy = f"{log_dir}/scipy"
+model_task = ModelToTensorBoard(log_dir_scipy, model)
+lml_task = ScalarToTensorBoard(log_dir_scipy, lambda: model.training_loss(), "training_objective")
+image_task = ImageToTensorBoard(log_dir_scipy, plot_prediction, "image_samples")
+
+monitor = Monitor(
+    MonitorTaskGroup([model_task, lml_task], period=1), MonitorTaskGroup(image_task, period=5)
+)
+
+# %%
+opt.minimize(training_loss, model.trainable_variables, step_callback=monitor)
+
+# %%
