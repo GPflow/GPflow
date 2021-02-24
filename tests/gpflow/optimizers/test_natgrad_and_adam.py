@@ -236,3 +236,15 @@ def test_svgp_vs_sgpr(sgpr_and_svgp):
     """
     sgpr, svgp = sgpr_and_svgp
     assert_sgpr_vs_svgp(sgpr, svgp)
+
+
+def test_config():
+    """
+    Test config functionality of JointNaturalGradientAndAdam
+    """
+    gamma, adam_lr = 0.5, 0.01
+    opt = JointNaturalGradientAndAdam(gamma, adam_lr=adam_lr)
+    opt_config = opt.get_config()
+
+    assert opt_config["gamma"] == gamma
+    assert opt_config["adam_lr"] == adam_lr

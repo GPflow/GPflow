@@ -65,11 +65,11 @@ class JointNaturalGradientAndAdam(tf.optimizers.Optimizer):
         """
         name = self.__class__.__name__ if name is None else name
         super().__init__(name)
-        self.gamma = gamma
+        self._set_hyper("gamma", gamma)
+        self._set_hyper("adam_lr", adam_lr)
         self.xi_transform = XiNat()
 
-        self.adam_lr = adam_lr
-        self.adam_optimizer = tf.optimizers.Adam(learning_rate=self.adam_lr)
+        self.adam_optimizer = tf.optimizers.Adam(learning_rate=adam_lr)
 
     def minimize(
         self,
@@ -139,7 +139,12 @@ class JointNaturalGradientAndAdam(tf.optimizers.Optimizer):
                 q_mu_grads, q_sqrt_grads, q_mus, q_sqrts
             ):
                 natgrad_apply_gradients(
-                    self.gamma, q_mu_grad, q_sqrt_grad, q_mu, q_sqrt, self.xi_transform
+                    self._get_hyper("gamma", q_mu.dtype.base_dtype),
+                    q_mu_grad,
+                    q_sqrt_grad,
+                    q_mu,
+                    q_sqrt,
+                    self.xi_transform,
                 )
 
     def get_config(self):
