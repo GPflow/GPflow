@@ -37,7 +37,6 @@ GPflow 2.1 uses [TensorFlow 2.2+](http://www.tensorflow.org) for running computa
 
 ## Install GPflow 2
 
-We have experienced issues with `pip`'s pre-2020 dependency resolver; if you encounter issues with incompatible third-party package versions when installing GPflow using the `pip` commands below, try adding the `--use-feature=2020-resolver` argument.
 
 **NOTE** GPflow depends on both TensorFlow (TF) and TensorFlow Probability (TFP). TensorFlow Probability releases are tightly coupled to TensorFlow, e.g. TFP 0.12 requires TF>=2.4, TFP 0.11 requires TF>=2.3, and TFP 0.10 requires TF>=2.2. Unfortunately, this is _not_ specified in TFP's dependencies. So if you already have an (older) version of TensorFlow installed, GPflow will pull in the latest TFP, which will be incompatible. If you get errors such as `ImportError: This version of TensorFlow Probability requires TensorFlow version >= 2.4`, you have to either upgrade TensorFlow (`pip install -U tensorflow`) or manually install an older version of the `tensorflow_probability` package.
 
