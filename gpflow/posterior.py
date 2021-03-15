@@ -23,6 +23,7 @@ from .base import Module, Parameter
 from .conditionals.util import expand_independent_outputs, mix_latent_gp
 from .config import default_float, default_jitter
 from .inducing_variables import (
+    InducingVariables,
     FallbackSeparateIndependentInducingVariables,
     FallbackSharedIndependentInducingVariables,
     InducingPoints,
@@ -183,7 +184,7 @@ class FullyCorrelatedPosterior(BasePosterior):
         # Qinv: [L, M, M]
         # alpha: [M, L]
 
-        Kuf = covariances.Kuf(inducing_variable, kernel, Xnew)
+        Kuf = covariances.Kuf(self.inducing_variable, self.kernel, Xnew)
         assert Kuf.shape.ndims == 4
         M, L, N, K = tf.unstack(tf.shape(Kuf), num=Kuf.shape.ndims, axis=0)
         Kuf = tf.reshape(Kuf, (M * L, N * K))
@@ -264,7 +265,7 @@ def _get_kernels(Xnew, inducing_variable, kernel, full_cov, full_output_cov):
 get_posterior_class = Dispatcher("get_posterior_class")
 
 
-@get_posterior_class.register(kernels.Kernel, InducingVariable)
+@get_posterior_class.register(kernels.Kernel, InducingVariables)
 def _get_posterior_base_case(kernel, inducing_variable):
     # independent single output
     return IndependentPosterior
