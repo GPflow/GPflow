@@ -242,7 +242,7 @@ class NewSVGP(OldSVGP):
         For faster (cached) prediction, predict directly from the posterior object, i.e.,:
             model.posterior.predict_f(Xnew, ...)
         """
-        return self.posterior().fused_predict_f(
+        return self.posterior().predict_f(
             Xnew, full_cov=full_cov, full_output_cov=full_output_cov
         )
 
