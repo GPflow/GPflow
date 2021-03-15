@@ -164,7 +164,15 @@ def test_equivalence(approximate_model):
             if isinstance(model, ExternalDataTrainingLossMixin)
             else model.training_loss
         )
-        opt.minimize(loss, model.trainable_variables, options=dict(maxiter=300))
+        opt.minimize(loss, model.trainable_variables, options=dict(maxiter=3000))
+        if isinstance(model, gpflow.models.SVGP) and not model.whiten:
+            # The (S)VGP model in non-whitened representation has significantly
+            # worse optimization behaviour. To get the tests to pass, we need
+            # to optimize much harder: we set ftol=gtol=0.0 to enforce
+            # continued optimization.
+            opt.minimize(
+                loss, model.trainable_variables, options=dict(maxiter=6000, ftol=0.0, gtol=0.0)
+            )
 
     gpr_model = _create_full_gp_model()
     optimize(gpr_model)
