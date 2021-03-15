@@ -240,10 +240,10 @@ class VFFPosterior(gpflow.posterior.AbstractPosterior):
         """
         return np.nan, np.nan
 
-    def predict_f(self, Xnew, full_cov, full_output_cov):
-        return self.fused_predict_f(Xnew, full_cov, full_output_cov)
+    def _conditional_with_precompute(self, Xnew, full_cov, full_output_cov):
+        return self._conditional_fused(Xnew, full_cov, full_output_cov)
 
-    def fused_predict_f(self, Xnew, full_cov, full_output_cov):
+    def _conditional_fused(self, Xnew, full_cov, full_output_cov):
         """
          - Xnew are the points of the data or minibatch, size N x D (tf.array, 2d)
          - feat is an instance of features.InducingFeature that provides `Kuu` and `Kuf` methods
@@ -323,7 +323,7 @@ class VFFPosterior(gpflow.posterior.AbstractPosterior):
                 fvar = fvar + tf.reduce_sum(tf.square(ATL), 2)  # K x N
         fvar = tf.transpose(fvar)  # N x K or N x N x K
 
-        return fmean + self.mean_function(Xnew), fvar
+        return fmean, fvar
 
 
 @gpflow.posterior.get_posterior_class.register(gpflow.kernels.Kernel, FourierFeatures1D)
