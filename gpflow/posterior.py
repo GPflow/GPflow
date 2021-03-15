@@ -322,15 +322,35 @@ class IndependentPosterior(BasePosterior):
     def _post_process_mean_and_cov(self, mean, cov, full_cov, full_output_cov):
         return mean, expand_independent_outputs(cov, full_cov, full_output_cov)
 
+    def _get_Kff(self, Xnew, full_cov):
+
+        # TODO: this assumes that Xnew has shape [N, D] and no leading dims
+
+        if isinstance(self.kernel, (kernels.SeparateIndependent, kernels.IndependentLatent)):
+            # NOTE calling kernel(Xnew, full_cov=full_cov, full_output_cov=False) directly would return
+            # if full_cov: [P, N, N] -- this is what we want
+            # else: [N, P] instead of [P, N] as we get from the explicit stack below
+            Kff = tf.stack([k(Xnew, full_cov=full_cov) for k in self.kernel.kernels], axis=0)
+        elif isinstance(self.kernel, kernels.MultioutputKernel):
+            # effectively, SharedIndependent path
+            Kff = self.kernel.kernel(Xnew, full_cov=full_cov)
+            # NOTE calling kernel(Xnew, full_cov=full_cov, full_output_cov=False) directly would return
+            # if full_cov: [P, N, N] instead of [N, N]
+            # else: [N, P] instead of [N]
+        else:
+            # standard ("single-output") kernels
+            Kff = self.kernel(Xnew, full_cov=full_cov)  # [N, N] if full_cov else [N]
+
+        return Kff
+
     def _conditional_with_precompute(
         self, Xnew, full_cov: bool = False, full_output_cov: bool = False
     ) -> MeanAndVariance:
         # Qinv: [L, M, M]
         # alpha: [M, L]
 
-        Kuf, Knn = _get_kernels(
-            Xnew, self.inducing_variable, self.kernel, full_cov, full_output_cov
-        )
+        Kuf = covariances.Kuf(self.inducing_variable, self.kernel, Xnew)  # [(R), M, N]
+        Kff = self._get_Kff(Xnew, full_cov)
 
         N = tf.shape(Xnew)[0]
         K = tf.shape(Kuf)[-1] // N
@@ -341,12 +361,12 @@ class IndependentPosterior(BasePosterior):
 
         if full_cov:
             Kfu_Qinv_Kuf = tf.matmul(Kuf, self.Qinv @ Kuf, transpose_a=True)
-            cov = Knn - Kfu_Qinv_Kuf
+            cov = Kff - Kfu_Qinv_Kuf
         else:
             # [Aᵀ B]_ij = Aᵀ_ik B_kj = A_ki B_kj
             # TODO check whether einsum is faster now?
             Kfu_Qinv_Kuf = tf.reduce_sum(Kuf * tf.matmul(self.Qinv, Kuf), axis=-2)
-            cov = Knn - Kfu_Qinv_Kuf
+            cov = Kff - Kfu_Qinv_Kuf
             cov = tf.linalg.adjoint(cov)
 
         return self._post_process_mean_and_cov(mean, cov, full_cov, full_output_cov)
@@ -446,14 +466,14 @@ class FullyCorrelatedPosterior(BasePosterior):
         M, L, N, K = tf.unstack(tf.shape(Kuf), num=Kuf.shape.ndims, axis=0)
         Kuf = tf.reshape(Kuf, (M * L, N * K))
 
-        Knn = self.kernel(Xnew, full_cov=full_cov, full_output_cov=full_output_cov)
+        Kff = self.kernel(Xnew, full_cov=full_cov, full_output_cov=full_output_cov)
         # full_cov=True and full_output_cov=True: [N, P, N, P]
         # full_cov=True and full_output_cov=False: [P, N, N]
         # full_cov=False and full_output_cov=True: [N, P, P]
         # full_cov=False and full_output_cov=False: [N, P]
         if full_cov == full_output_cov:
             new_shape = (N * K, N * K) if full_cov else (N * K,)
-            Knn = tf.reshape(Knn, new_shape)
+            Kff = tf.reshape(Kff, new_shape)
 
         N = tf.shape(Xnew)[0]
         K = tf.shape(Kuf)[-1] // N
@@ -480,7 +500,7 @@ class FullyCorrelatedPosterior(BasePosterior):
                     # diagonal in inputs: move inputs to end
                     tmp = tf.linalg.diag_part(tf.einsum("...ijkl->...jlik", Kfu_Qinv_Kuf))
                 Kfu_Qinv_Kuf = tf.einsum("...ijk->...kij", tmp)  # move diagonal dim to [-3]
-        cov = Knn - Kfu_Qinv_Kuf
+        cov = Kff - Kfu_Qinv_Kuf
 
         if not full_cov and not full_output_cov:
             cov = tf.linalg.adjoint(cov)
@@ -553,30 +573,6 @@ class FallbackIndependentLatentPosterior(FullyCorrelatedPosterior):  # XXX
             q_sqrt=self.q_sqrt,
             white=self.whiten,
         )
-
-
-def _get_kernels(Xnew, inducing_variable, kernel, full_cov, full_output_cov):
-
-    # TODO: this assumes that Xnew has shape [N, D] and no leading dims
-
-    Kuf = covariances.Kuf(inducing_variable, kernel, Xnew)  # [(R), M, N]
-
-    if isinstance(kernel, (kernels.SeparateIndependent, kernels.IndependentLatent)):
-        # NOTE calling kernel(Xnew, full_cov=full_cov, full_output_cov=False) directly would return
-        # if full_cov: [P, N, N] -- this is what we want
-        # else: [N, P] instead of [P, N] as we get from the explicit stack below
-        Knn = tf.stack([k(Xnew, full_cov=full_cov) for k in kernel.kernels], axis=0)
-    elif isinstance(kernel, kernels.MultioutputKernel):
-        # effectively, SharedIndependent path
-        Knn = kernel.kernel(Xnew, full_cov=full_cov)
-        # NOTE calling kernel(Xnew, full_cov=full_cov, full_output_cov=False) directly would return
-        # if full_cov: [P, N, N] instead of [N, N]
-        # else: [N, P] instead of [N]
-    else:
-        # standard ("single-output") kernels
-        Knn = kernel(Xnew, full_cov=full_cov)  # [N, N] if full_cov else [N]
-
-    return Kuf, Knn
 
 
 get_posterior_class = Dispatcher("get_posterior_class")
