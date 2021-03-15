@@ -230,97 +230,105 @@ def gauss_kl_vff(q_mu, q_sqrt, K):
 
 
 # %%
-@gpflow.conditionals.conditional.register(
-    TensorLike, FourierFeatures1D, gpflow.kernels.Kernel, TensorLike
-)
-def conditional_vff(
-    Xnew,
-    inducing_variable,
-    kernel,
-    f,
-    *,
-    full_cov=False,
-    full_output_cov=False,
-    q_sqrt=None,
-    white=False,
-):
-    """
-     - Xnew are the points of the data or minibatch, size N x D (tf.array, 2d)
-     - feat is an instance of features.InducingFeature that provides `Kuu` and `Kuf` methods
-       for Fourier features, this contains the limits of the bounding box and the frequencies
-     - f is the value (or mean value) of the features (i.e. the weights)
-     - q_sqrt (default None) is the Cholesky factor of the uncertainty about f
-       (to be propagated through the conditional as per the GPflow inducing-point implementation)
-     - white (defaults False) specifies whether the whitening has been applied
+import gpflow.posterior
 
-    Given the GP represented by the inducing points specified in `feat`, produce the mean and
-    (co-)variance of the GP at the points Xnew.
 
-       Xnew :: N x D
-       Kuu :: M x M
-       Kuf :: M x N
-       f :: M x K, K = 1
-       q_sqrt :: K x M x M, with K = 1
-    """
-    if full_output_cov:
-        raise NotImplementedError
+class VFFPosterior(gpflow.posterior.AbstractPosterior):
+    def _precompute(self):
+        """
+        Not implemented yet
+        """
+        return np.nan, np.nan
 
-    # num_data = tf.shape(Xnew)[0]  # M
-    num_func = tf.shape(f)[1]  # K
+    def predict_f(self, Xnew, full_cov, full_output_cov):
+        return self.fused_predict_f(Xnew, full_cov, full_output_cov)
 
-    Kuu = cov.Kuu(inducing_variable, kernel)  # this is now a LinearOperator
-    Kuf = cov.Kuf(inducing_variable, kernel, Xnew)  # still a Tensor
+    def fused_predict_f(self, Xnew, full_cov, full_output_cov):
+        """
+         - Xnew are the points of the data or minibatch, size N x D (tf.array, 2d)
+         - feat is an instance of features.InducingFeature that provides `Kuu` and `Kuf` methods
+           for Fourier features, this contains the limits of the bounding box and the frequencies
+         - f is the value (or mean value) of the features (i.e. the weights)
+         - q_sqrt (default None) is the Cholesky factor of the uncertainty about f
+           (to be propagated through the conditional as per the GPflow inducing-point implementation)
+         - white (defaults False) specifies whether the whitening has been applied
 
-    KuuInv_Kuf = Kuu.solve(Kuf)
+        Given the GP represented by the inducing points specified in `feat`, produce the mean and
+        (co-)variance of the GP at the points Xnew.
 
-    # compute the covariance due to the conditioning
-    if full_cov:
-        fvar = kernel(Xnew) - tf.matmul(Kuf, KuuInv_Kuf, transpose_a=True)
-        shape = (num_func, 1, 1)
-    else:
-        KufT_KuuInv_Kuf_diag = tf.reduce_sum(Kuf * KuuInv_Kuf, axis=-2)
-        fvar = kernel(Xnew, full_cov=False) - KufT_KuuInv_Kuf_diag
-        shape = (num_func, 1)
-    fvar = tf.expand_dims(fvar, 0) * tf.ones(
-        shape, dtype=gpflow.default_float()
-    )  # K x N x N or K x N
-
-    # another backsubstitution in the unwhitened case
-    if white:
-        raise NotImplementedError
-
-    A = KuuInv_Kuf
-
-    # construct the conditional mean
-    fmean = tf.matmul(A, f, transpose_a=True)
-
-    if q_sqrt is not None:
-        if q_sqrt.get_shape().ndims == 2:
-            # LTA = A * tf.expand_dims(q_sqrt, 2)  # K x M x N
-            # won't work  # make ticket for this?
+           Xnew :: N x D
+           Kuu :: M x M
+           Kuf :: M x N
+           f :: M x K, K = 1
+           q_sqrt :: K x M x M, with K = 1
+        """
+        if full_output_cov:
             raise NotImplementedError
-        elif q_sqrt.get_shape().ndims == 3:
-            # L = tf.matrix_band_part(tf.transpose(q_sqrt, (2, 0, 1)), -1, 0)  # K x M x M
 
-            # K x M x N
-            # A_tiled = tf.expand_dims(A.get(), 0) * tf.ones((num_func, 1, 1), dtype=float_type)
+        f = self.q_dist.q_mu
+        q_sqrt = self.q_dist.q_sqrt
 
-            # LTA = tf.matmul(L, A_tiled, transpose_a=True)  # K x M x N
-            # TODO the following won't work for K > 1
-            assert q_sqrt.shape[0] == 1
-            # LTA = (A.T @ DenseMatrix(q_sqrt[:,:,0])).T.get()[None, :, :]
-            ATL = tf.matmul(A, q_sqrt, transpose_a=True)
-        else:
-            raise ValueError("Bad dimension for q_sqrt: %s" % str(q_sqrt.get_shape().ndims))
+        # num_data = tf.shape(Xnew)[0]  # M
+        num_func = tf.shape(f)[1]  # K
+
+        Kuu = cov.Kuu(self.inducing_variable, self.kernel)  # this is now a LinearOperator
+        Kuf = cov.Kuf(self.inducing_variable, self.kernel, Xnew)  # still a Tensor
+
+        KuuInv_Kuf = Kuu.solve(Kuf)
+
+        # compute the covariance due to the conditioning
         if full_cov:
-            # fvar = fvar + tf.matmul(LTA, LTA, transpose_a=True)  # K x N x N
-            fvar = fvar + tf.matmul(ATL, ATL, transpose_b=True)  # K x N x N
+            fvar = self.kernel(Xnew) - tf.matmul(Kuf, KuuInv_Kuf, transpose_a=True)
+            shape = (num_func, 1, 1)
         else:
-            # fvar = fvar + tf.reduce_sum(tf.square(LTA), 1)  # K x N
-            fvar = fvar + tf.reduce_sum(tf.square(ATL), 2)  # K x N
-    fvar = tf.transpose(fvar)  # N x K or N x N x K
+            KufT_KuuInv_Kuf_diag = tf.reduce_sum(Kuf * KuuInv_Kuf, axis=-2)
+            fvar = self.kernel(Xnew, full_cov=False) - KufT_KuuInv_Kuf_diag
+            shape = (num_func, 1)
+        fvar = tf.expand_dims(fvar, 0) * tf.ones(
+            shape, dtype=gpflow.default_float()
+        )  # K x N x N or K x N
 
-    return fmean, fvar
+        # another backsubstitution in the unwhitened case
+        if self.whiten:
+            raise NotImplementedError
+
+        A = KuuInv_Kuf
+
+        # construct the conditional mean
+        fmean = tf.matmul(A, f, transpose_a=True)
+
+        if q_sqrt is not None:
+            if q_sqrt.get_shape().ndims == 2:
+                # LTA = A * tf.expand_dims(q_sqrt, 2)  # K x M x N
+                # won't work  # make ticket for this?
+                raise NotImplementedError
+            elif q_sqrt.get_shape().ndims == 3:
+                # L = tf.matrix_band_part(tf.transpose(q_sqrt, (2, 0, 1)), -1, 0)  # K x M x M
+
+                # K x M x N
+                # A_tiled = tf.expand_dims(A.get(), 0) * tf.ones((num_func, 1, 1), dtype=float_type)
+
+                # LTA = tf.matmul(L, A_tiled, transpose_a=True)  # K x M x N
+                # TODO the following won't work for K > 1
+                assert q_sqrt.shape[0] == 1
+                # LTA = (A.T @ DenseMatrix(q_sqrt[:,:,0])).T.get()[None, :, :]
+                ATL = tf.matmul(A, q_sqrt, transpose_a=True)
+            else:
+                raise ValueError("Bad dimension for q_sqrt: %s" % str(q_sqrt.get_shape().ndims))
+            if full_cov:
+                # fvar = fvar + tf.matmul(LTA, LTA, transpose_a=True)  # K x N x N
+                fvar = fvar + tf.matmul(ATL, ATL, transpose_b=True)  # K x N x N
+            else:
+                # fvar = fvar + tf.reduce_sum(tf.square(LTA), 1)  # K x N
+                fvar = fvar + tf.reduce_sum(tf.square(ATL), 2)  # K x N
+        fvar = tf.transpose(fvar)  # N x K or N x N x K
+
+        return fmean + self.mean_function(Xnew), fvar
+
+
+@gpflow.posterior.get_posterior_class.register(gpflow.kernels.Kernel, FourierFeatures1D)
+def _get_posterior_vff(kernel, inducing_variable):
+    return VFFPosterior
 
 
 # %% [markdown]
