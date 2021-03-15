@@ -171,7 +171,7 @@ def test_equivalence(approximate_model):
             # to optimize much harder: we set ftol=gtol=0.0 to enforce
             # continued optimization.
             opt.minimize(
-                loss, model.trainable_variables, options=dict(maxiter=6000, ftol=0.0, gtol=0.0)
+                loss, model.trainable_variables, options=dict(maxiter=7000, ftol=0.0, gtol=0.0)
             )
 
     gpr_model = _create_full_gp_model()
