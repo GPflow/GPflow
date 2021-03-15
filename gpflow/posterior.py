@@ -19,7 +19,7 @@ import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
 
-from . import covariances, kernels
+from . import covariances, kernels, mean_functions
 from .base import Module, Parameter
 from .conditionals.util import (
     base_conditional,
@@ -76,6 +76,8 @@ class AbstractPosterior(Module, ABC):
     ):
         self.inducing_variable = inducing_variable
         self.kernel = kernel
+        if mean_function is None:
+            mean_function = mean_functions.Zero()
         self.mean_function = mean_function
         self.whiten = whiten
         self._set_qdist(q_mu, q_sqrt)
@@ -339,7 +341,8 @@ class IndependentPosteriorSingleOutput(IndependentPosterior):
         fmean, fvar = base_conditional(
             Kmn, Kmm, Knn, self.q_mu, full_cov=full_cov, q_sqrt=self.q_sqrt, white=self.whiten
         )  # [N, P],  [P, N, N] or [N, P]
-        return self._post_process_mean_and_cov(fmean, fvar, full_cov, full_output_cov)
+        mean, cov = self._post_process_mean_and_cov(fmean, fvar, full_cov, full_output_cov)
+        return mean + self.mean_function(Xnew), cov
 
 
 class IndependentPosteriorMultiOutput(IndependentPosterior):
@@ -389,7 +392,8 @@ class IndependentPosteriorMultiOutput(IndependentPosterior):
                 white=self.whiten,
             )
 
-        return self._post_process_mean_and_cov(fmean, fvar, full_cov, full_output_cov)
+        mean, cov = self._post_process_mean_and_cov(fmean, fvar, full_cov, full_output_cov)
+        return mean + self.mean_function(Xnew), cov
 
 
 class LinearCoregionalizationPosterior(IndependentPosteriorMultiOutput):
@@ -499,7 +503,7 @@ class FullyCorrelatedPosterior(BasePosterior):
                 q_sqrt=self.q_sqrt,
                 white=self.whiten,
             )
-        return fmean, fvar
+        return fmean + self.mean_function(Xnew), fvar
 
 
 class FallbackIndependentLatentPosterior(FullyCorrelatedPosterior):  # XXX
@@ -514,7 +518,7 @@ class FallbackIndependentLatentPosterior(FullyCorrelatedPosterior):  # XXX
             Xnew, full_cov=full_cov, full_output_cov=full_output_cov
         )  # [N, P](x N)x P  or  [N, P](x P)
 
-        return independent_interdomain_conditional(
+        mean, cov = independent_interdomain_conditional(
             Kmn,
             Kmm,
             Knn,
@@ -524,6 +528,7 @@ class FallbackIndependentLatentPosterior(FullyCorrelatedPosterior):  # XXX
             q_sqrt=self.q_sqrt,
             white=self.whiten,
         )
+        return mean + self.mean_function(Xnew), cov
 
 
 def _get_kernels(Xnew, inducing_variable, kernel, full_cov, full_output_cov):
