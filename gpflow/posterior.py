@@ -23,10 +23,10 @@ from .base import Module, Parameter
 from .conditionals.util import expand_independent_outputs, mix_latent_gp
 from .config import default_float, default_jitter
 from .inducing_variables import (
-    InducingVariables,
     FallbackSeparateIndependentInducingVariables,
     FallbackSharedIndependentInducingVariables,
     InducingPoints,
+    InducingVariables,
     SeparateIndependentInducingVariables,
     SharedIndependentInducingVariables,
 )
