@@ -76,8 +76,6 @@ class AbstractPosterior(Module, ABC):
     ):
         self.inducing_variable = inducing_variable
         self.kernel = kernel
-        if mean_function is None:
-            mean_function = mean_functions.Zero()
         self.mean_function = mean_function
         self.whiten = whiten
         self._set_qdist(q_mu, q_sqrt)
@@ -120,6 +118,45 @@ class AbstractPosterior(Module, ABC):
             self.alpha = Parameter(alpha, trainable=False)
             self.Qinv = Parameter(Qinv, trainable=False)
 
+    def _add_mean_function(self, Xnew, mean):
+        if self.mean_function is None:
+            return mean
+        else:
+            return mean + self.mean_function(Xnew)
+
+    def fused_predict_f(
+        self, Xnew, full_cov: bool = False, full_output_cov: bool = False
+    ) -> MeanAndVariance:
+        """
+        Computes predictive mean and (co)variance at Xnew, including mean_function
+        Does not make use of caching
+        """
+        mean, cov = self._conditional_fused(
+            Xnew, full_cov=full_cov, full_output_cov=full_output_cov
+        )
+        return self._add_mean_function(Xnew, mean), cov
+
+    @abstractmethod
+    def _conditional_fused(
+        self, Xnew, full_cov: bool = False, full_output_cov: bool = False
+    ) -> MeanAndVariance:
+        """
+        Computes predictive mean and (co)variance at Xnew, *excluding* mean_function
+        Does not make use of caching
+        """
+
+    def predict_f(
+        self, Xnew, full_cov: bool = False, full_output_cov: bool = False
+    ) -> MeanAndVariance:
+        """
+        Computes predictive mean and (co)variance at Xnew, including mean_function
+        Relies on precomputed alpha and Qinv (see _precompute method)
+        """
+        mean, cov = self._conditional_with_precompute(
+            Xnew, full_cov=full_cov, full_output_cov=full_output_cov
+        )
+        return self._add_mean_function(Xnew, mean), cov
+
     @abstractmethod
     def _precompute(self) -> Tuple[tf.Tensor]:
         """
@@ -127,21 +164,12 @@ class AbstractPosterior(Module, ABC):
         """
 
     @abstractmethod
-    def predict_f(
+    def _conditional_with_precompute(
         self, Xnew, full_cov: bool = False, full_output_cov: bool = False
     ) -> MeanAndVariance:
         """
-        Computes predictive mean and (co)variance at Xnew
+        Computes predictive mean and (co)variance at Xnew, *excluding* mean_function
         Relies on precomputed alpha and Qinv (see _precompute method)
-        """
-
-    @abstractmethod
-    def fused_predict_f(
-        self, Xnew, full_cov: bool = False, full_output_cov: bool = False
-    ) -> MeanAndVariance:
-        """
-        Computes predictive mean and (co)variance at Xnew
-        Does not make use of caching
         """
 
 
@@ -294,7 +322,7 @@ class IndependentPosterior(BasePosterior):
     def _post_process_mean_and_cov(self, mean, cov, full_cov, full_output_cov):
         return mean, expand_independent_outputs(cov, full_cov, full_output_cov)
 
-    def predict_f(
+    def _conditional_with_precompute(
         self, Xnew, full_cov: bool = False, full_output_cov: bool = False
     ) -> MeanAndVariance:
         # Qinv: [L, M, M]
@@ -321,13 +349,12 @@ class IndependentPosterior(BasePosterior):
             cov = Knn - Kfu_Qinv_Kuf
             cov = tf.linalg.adjoint(cov)
 
-        mean, cov = self._post_process_mean_and_cov(mean, cov, full_cov, full_output_cov)
-        return mean + self.mean_function(Xnew), cov
+        return self._post_process_mean_and_cov(mean, cov, full_cov, full_output_cov)
 
 
 class IndependentPosteriorSingleOutput(IndependentPosterior):
     # could almost be the same as IndependentPosteriorMultiOutput ...
-    def fused_predict_f(
+    def _conditional_fused(
         self, Xnew, full_cov: bool = False, full_output_cov: bool = False
     ) -> MeanAndVariance:
         # same as IndependentPosteriorMultiOutput, Shared~/Shared~ branch, except for following line:
@@ -341,12 +368,11 @@ class IndependentPosteriorSingleOutput(IndependentPosterior):
         fmean, fvar = base_conditional(
             Kmn, Kmm, Knn, self.q_mu, full_cov=full_cov, q_sqrt=self.q_sqrt, white=self.whiten
         )  # [N, P],  [P, N, N] or [N, P]
-        mean, cov = self._post_process_mean_and_cov(fmean, fvar, full_cov, full_output_cov)
-        return mean + self.mean_function(Xnew), cov
+        return self._post_process_mean_and_cov(fmean, fvar, full_cov, full_output_cov)
 
 
 class IndependentPosteriorMultiOutput(IndependentPosterior):
-    def fused_predict_f(
+    def _conditional_fused(
         self, Xnew, full_cov: bool = False, full_output_cov: bool = False
     ) -> MeanAndVariance:
         if isinstance(self.inducing_variable, SharedIndependentInducingVariables) and isinstance(
@@ -392,8 +418,7 @@ class IndependentPosteriorMultiOutput(IndependentPosterior):
                 white=self.whiten,
             )
 
-        mean, cov = self._post_process_mean_and_cov(fmean, fvar, full_cov, full_output_cov)
-        return mean + self.mean_function(Xnew), cov
+        return self._post_process_mean_and_cov(fmean, fvar, full_cov, full_output_cov)
 
 
 class LinearCoregionalizationPosterior(IndependentPosteriorMultiOutput):
@@ -408,7 +433,7 @@ class LinearCoregionalizationPosterior(IndependentPosteriorMultiOutput):
 
 
 class FullyCorrelatedPosterior(BasePosterior):
-    def predict_f(
+    def _conditional_with_precompute(
         self, Xnew, full_cov: bool = False, full_output_cov: bool = False
     ) -> MeanAndVariance:
         # TODO: this assumes that Xnew has shape [N, D] and no leading dims
@@ -467,9 +492,9 @@ class FullyCorrelatedPosterior(BasePosterior):
             cov_shape = (K, N, N) if full_cov else (N, K, K)
         cov = tf.reshape(cov, cov_shape)
 
-        return mean + self.mean_function(Xnew), cov
+        return mean, cov
 
-    def fused_predict_f(
+    def _conditional_fused(
         self, Xnew, full_cov: bool = False, full_output_cov: bool = False
     ) -> MeanAndVariance:
         Kmm = covariances.Kuu(
@@ -486,14 +511,14 @@ class FullyCorrelatedPosterior(BasePosterior):
         if full_cov == full_output_cov:
             Kmn = tf.reshape(Kmn, (M * L, N * K))
             Knn = tf.reshape(Knn, (N * K, N * K)) if full_cov else tf.reshape(Knn, (N * K,))
-            fmean, fvar = base_conditional(
+            mean, cov = base_conditional(
                 Kmn, Kmm, Knn, self.q_mu, full_cov=full_cov, q_sqrt=self.q_sqrt, white=self.whiten
             )  # [K, 1], [1, K](x NK)
-            fmean = tf.reshape(fmean, (N, K))
-            fvar = tf.reshape(fvar, (N, K, N, K) if full_cov else (N, K))
+            mean = tf.reshape(mean, (N, K))
+            cov = tf.reshape(cov, (N, K, N, K) if full_cov else (N, K))
         else:
             Kmn = tf.reshape(Kmn, (M * L, N, K))
-            fmean, fvar = fully_correlated_conditional(
+            mean, cov = fully_correlated_conditional(
                 Kmn,
                 Kmm,
                 Knn,
@@ -503,11 +528,11 @@ class FullyCorrelatedPosterior(BasePosterior):
                 q_sqrt=self.q_sqrt,
                 white=self.whiten,
             )
-        return fmean + self.mean_function(Xnew), fvar
+        return mean, cov
 
 
 class FallbackIndependentLatentPosterior(FullyCorrelatedPosterior):  # XXX
-    def fused_predict_f(
+    def _conditional_fused(
         self, Xnew, full_cov: bool = False, full_output_cov: bool = False
     ) -> MeanAndVariance:
         Kmm = covariances.Kuu(
@@ -518,7 +543,7 @@ class FallbackIndependentLatentPosterior(FullyCorrelatedPosterior):  # XXX
             Xnew, full_cov=full_cov, full_output_cov=full_output_cov
         )  # [N, P](x N)x P  or  [N, P](x P)
 
-        mean, cov = independent_interdomain_conditional(
+        return independent_interdomain_conditional(
             Kmn,
             Kmm,
             Knn,
@@ -528,7 +553,6 @@ class FallbackIndependentLatentPosterior(FullyCorrelatedPosterior):  # XXX
             q_sqrt=self.q_sqrt,
             white=self.whiten,
         )
-        return mean + self.mean_function(Xnew), cov
 
 
 def _get_kernels(Xnew, inducing_variable, kernel, full_cov, full_output_cov):
