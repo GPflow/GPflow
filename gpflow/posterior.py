@@ -472,7 +472,7 @@ class FullyCorrelatedPosterior(BasePosterior):
             self.inducing_variable, self.kernel, jitter=default_jitter()
         )  # [M, L, M, L]
         Kmn = covariances.Kuf(self.inducing_variable, self.kernel, Xnew)  # [M, L, N, P]
-        Knn = kernel(
+        Knn = self.kernel(
             Xnew, full_cov=full_cov, full_output_cov=full_output_cov
         )  # [N, P](x N)x P  or  [N, P](x P)
 
