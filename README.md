@@ -96,28 +96,31 @@ All constructive input is gratefully received. For more information, see the [no
 
 ### Projects using GPflow
 
-A few projects building on GPflow and demonstrating its usage are listed below.
+Projects building on GPflow and demonstrating its usage are listed below. The following projects are based on the current GPflow 2.x release:
 
-*Note that the new GPflow 2.0 release was published on 31 March 2020. The projects listed below have not been checked for compatibility with the 2.0 branch, and it is up to their authors whether they will upgrade to GPflow 2.0. We encourage all projects to upgrade, as GPflow 2.0 contains numerous improvements on GPflow 1.*
+| Project | Description |
+| --- | --- |
+| [Trieste](https://github.com/secondmind-labs/trieste)       | Bayesian optimization with TensorFlow, with out-of-the-box support for GPflow (2.x) models. |
+| [VFF](https://github.com/st--/VFF)       | Variational Fourier Features for Gaussian Processes (GPflow 2.x version) |
+| [BranchedGP](https://github.com/ManchesterBioinference/BranchedGP) | Gaussian processes with branching kernels.|
+| [VBPP](https://github.com/st--/vbpp) | Implementation of "Variational Bayes for Point Processes".|
+| [Gaussian Process Regression on Molecules](https://medium.com/@ryangriff123/gaussian-process-regression-on-molecules-in-gpflow-ee6fedab2130) | GPs to predict molecular properties by creating a custom-defined Tanimoto kernel to operate on Morgan fingerprints |
+
+If you would like your project listed here, let us know - or simply [open a pull request](https://github.com/GPflow/GPflow/compare) that adds your project to the table above!
+
+*The following projects build on older versions of GPflow (pre-2020); we encourage their authors to upgrade to GPflow 2.*
 
 | Project | Description |
 | --- | --- |
 | [GPflowOpt](https://github.com/GPflow/GPflowOpt)       | Bayesian Optimization using GPflow (stable release requires GPflow 0.5). |
-| [Trieste](https://github.com/secondmind-labs/trieste)       | Bayesian optimization with TensorFlow, with out-of-the-box support for GPflow (2.x) models. |
-| [VFF](https://github.com/jameshensman/VFF)       | Variational Fourier Features for Gaussian Processes. |
 | [Doubly-Stochastic-DGP](https://github.com/ICL-SML/Doubly-Stochastic-DGP)| Deep Gaussian Processes with Doubly Stochastic Variational Inference.|
-| [BranchedGP](https://github.com/ManchesterBioinference/BranchedGP) | Gaussian processes with branching kernels.|
-| [heterogp](https://github.com/Joshuaalbert/heterogp) | Heteroscedastic noise for sparse variational GP. |
 | [widedeepnetworks](https://github.com/widedeepnetworks/widedeepnetworks) | Measuring the relationship between random wide deep neural networks and GPs.| 
 | [orth_decoupled_var_gps](https://github.com/hughsalimbeni/orth_decoupled_var_gps) | Variationally sparse GPs with orthogonally decoupled bases| 
 | [kernel_learning](https://github.com/frgsimpson/kernel_learning) | Implementation of "Differentiable Compositional Kernel Learning for Gaussian Processes".|
-| [VBPP](https://github.com/st--/vbpp) | Implementation of "Variational Bayes for Point Processes".|
 | [DGPs_with_IWVI](https://github.com/hughsalimbeni/DGPs_with_IWVI) | Deep Gaussian Processes with Importance-Weighted Variational Inference|
 | [kerndisc](https://github.com/BracketJohn/kernDisc) | Library for automated kernel structure discovery in univariate data|
-| [Gaussian Process Regression on Molecules](https://medium.com/@ryangriff123/gaussian-process-regression-on-molecules-in-gpflow-ee6fedab2130) | GPs to predict molecular properties by creating a custom-defined Tanimoto kernel to operate on Morgan fingerprints |
+| [Signature covariances](https://github.com/tgcsaba/GPSig) | kernels for (time)series as *inputs* |
 | [Structured-DGP](https://github.com/boschresearch/Structured_DGP) | Adding more structure to the variational posterior of the Doubly Stochastic Deep Gaussian Process |
-
-If you would like your project listed here, let us know - or simply [open a pull request](https://github.com/GPflow/GPflow/compare) that adds your project to the table above!
 
 ## Compatibility
 
