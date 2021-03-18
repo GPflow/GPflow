@@ -16,9 +16,11 @@
 GPflow is a package for building Gaussian process models in Python, using [TensorFlow](http://www.tensorflow.org).
 It was originally created by [James Hensman](http://jameshensman.github.io/) and [Alexander G. de G. Matthews](https://github.com/alexggmatthews).
 It is now actively maintained by (in alphabetical order)
+[Alexis Boukouvalas](https://github.com/alexisboukouvalas),
 [Artem Artemev](http://github.com/awav/),
 [Eric Hambro](https://erichambro.com),
 [James Hensman](http://jameshensman.github.io/),
+[Joel Berkeley](https://github.com/joelberkeley),
 [Mark van der Wilk](https://markvdw.github.io/),
 [ST John](https://github.com/st--),
 and [Vincent Dutordoir](https://vdutor.github.io/).
@@ -31,12 +33,12 @@ GPflow would not be the same without the community. **We are grateful to [all co
 
 GPflow implements modern Gaussian process inference for composable kernels and likelihoods. The [online documentation (develop)](http://gpflow.readthedocs.io/en/develop/)/[(master)](http://gpflow.readthedocs.io/en/master/) contains more details.
 
-GPflow 2.0 uses [TensorFlow 2.1+](http://www.tensorflow.org) for running computations, which allows fast execution on GPUs, and uses Python ≥ 3.6.
-
+GPflow 2.1 uses [TensorFlow 2.2+](http://www.tensorflow.org) for running computations, which allows fast execution on GPUs, and uses Python ≥ 3.6.
 
 ## Install GPflow 2
 
-**We have experienced issues with `pip`'s pre-2020 dependency resolver; if you encounter issues with incompatible third-party package versions when installing GPflow using the `pip` commands below, try adding the `--use-feature=2020-resolver` argument.**
+
+**NOTE** GPflow depends on both TensorFlow (TF) and TensorFlow Probability (TFP). TensorFlow Probability releases are tightly coupled to TensorFlow, e.g. TFP 0.12 requires TF>=2.4, TFP 0.11 requires TF>=2.3, and TFP 0.10 requires TF>=2.2. Unfortunately, this is _not_ specified in TFP's dependencies. So if you already have an (older) version of TensorFlow installed, GPflow will pull in the latest TFP, which will be incompatible. If you get errors such as `ImportError: This version of TensorFlow Probability requires TensorFlow version >= 2.4`, you have to either upgrade TensorFlow (`pip install -U tensorflow`) or manually install an older version of the `tensorflow_probability` package.
 
 ### Latest release from PyPI
 
@@ -44,7 +46,7 @@ GPflow 2.0 uses [TensorFlow 2.1+](http://www.tensorflow.org) for running computa
 pip install gpflow
 ```
 
-The current release series, 2.x, requires TensorFlow ≥ 2.1 and TensorFlow Probability ≥ 0.10.1.
+The current release series, 2.x, requires TensorFlow ≥ 2.2 and TensorFlow Probability ≥ 0.10.1.
 
 ### Latest source from GitHub
 
@@ -104,7 +106,8 @@ A few projects building on GPflow and demonstrating its usage are listed below.
 
 | Project | Description |
 | --- | --- |
-| [GPflowOpt](https://github.com/GPflow/GPflowOpt)       | Bayesian Optimization using GPflow. |
+| [GPflowOpt](https://github.com/GPflow/GPflowOpt)       | Bayesian Optimization using GPflow (stable release requires GPflow 0.5). |
+| [Trieste](https://github.com/secondmind-labs/trieste)       | Bayesian optimization with TensorFlow, with out-of-the-box support for GPflow (2.x) models. |
 | [VFF](https://github.com/jameshensman/VFF)       | Variational Fourier Features for Gaussian Processes. |
 | [Doubly-Stochastic-DGP](https://github.com/ICL-SML/Doubly-Stochastic-DGP)| Deep Gaussian Processes with Doubly Stochastic Variational Inference.|
 | [BranchedGP](https://github.com/ManchesterBioinference/BranchedGP) | Gaussian processes with branching kernels.|
@@ -116,7 +119,7 @@ A few projects building on GPflow and demonstrating its usage are listed below.
 | [DGPs_with_IWVI](https://github.com/hughsalimbeni/DGPs_with_IWVI) | Deep Gaussian Processes with Importance-Weighted Variational Inference|
 | [kerndisc](https://github.com/BracketJohn/kernDisc) | Library for automated kernel structure discovery in univariate data|
 | [Gaussian Process Regression on Molecules](https://medium.com/@ryangriff123/gaussian-process-regression-on-molecules-in-gpflow-ee6fedab2130) | GPs to predict molecular properties by creating a custom-defined Tanimoto kernel to operate on Morgan fingerprints |
-| [Signature covariances](https://github.com/tgcsaba/GPSig) | kernels for (time)series as *inputs* |
+| [Structured-DGP](https://github.com/boschresearch/Structured_DGP) | Adding more structure to the variational posterior of the Doubly Stochastic Deep Gaussian Process |
 
 If you would like your project listed here, let us know - or simply [open a pull request](https://github.com/GPflow/GPflow/compare) that adds your project to the table above!
 
