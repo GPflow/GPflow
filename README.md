@@ -13,20 +13,19 @@
 [Documentation (develop)](https://gpflow.readthedocs.io/en/develop/) |
 [Glossary](GLOSSARY.md)
 
-Table of Contents
-=================
+### Table of Contents
 
-      * [What does GPflow do?](#what-does-gpflow-do)
-      * [Installation](#installation)
-      * [Getting Started with GPflow 2.0](#getting-started-with-gpflow-20)
-      * [The GPflow Community](#the-gpflow-community)
-         * [Getting help](#getting-help)
-         * [Slack workspace](#slack-workspace)
-         * [Contributing](#contributing)
-         * [Projects using GPflow](#projects-using-gpflow)
-      * [Version Compatibility](#version-compatibility)
-         * [TensorFlow 1.x and GPflow 1.x](#tensorflow-1x-and-gpflow-1x)
-      * [Citing GPflow](#citing-gpflow)
+* [What does GPflow do?](#what-does-gpflow-do)
+* [Installation](#installation)
+* [Getting Started with GPflow 2.0](#getting-started-with-gpflow-20)
+* [The GPflow Community](#the-gpflow-community)
+   * [Getting help](#getting-help)
+   * [Slack workspace](#slack-workspace)
+   * [Contributing](#contributing)
+   * [Projects using GPflow](#projects-using-gpflow)
+* [Version Compatibility](#version-compatibility)
+   * [TensorFlow 1.x and GPflow 1.x](#tensorflow-1x-and-gpflow-1x)
+* [Citing GPflow](#citing-gpflow)
 
 
 ## What does GPflow do?
