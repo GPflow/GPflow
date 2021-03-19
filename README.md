@@ -32,9 +32,10 @@
 
 GPflow is a package for building Gaussian process models in Python.
 It implements modern Gaussian process inference for composable kernels and likelihoods.
-The [online documentation (develop)](http://gpflow.readthedocs.io/en/develop/)/[(master)](http://gpflow.readthedocs.io/en/master/) contains more details.
 
 GPflow 2.1 builds on [TensorFlow 2.2+](http://www.tensorflow.org) and [TensorFlow Probability](https://www.tensorflow.org/probability/) for running computations, which allows fast execution on GPUs.
+
+The [online documentation (develop)](http://gpflow.readthedocs.io/en/develop/)/[(master)](http://gpflow.readthedocs.io/en/master/) contains more details.
 
 
 ### Maintainers
