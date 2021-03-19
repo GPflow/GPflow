@@ -210,7 +210,7 @@ def reset_cache_bijectors(input_module: tf.Module) -> tf.Module:
     Resets the caches stored inside each tfp.bijectors.Bijector.
 
     :param input_module: tf.Module including keras.Model, keras.layers.Layer and gpflow.Module.
-    :return:
+    :returns: same object but with all bijector caches reset
     """
     if Version(tfp.__version__) >= Version("0.11.0"):
         if hasattr(tfp.bijectors.Identity()._cache, "clear"):
