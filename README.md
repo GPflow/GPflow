@@ -14,6 +14,7 @@
 [Glossary](GLOSSARY.md)
 
 #### Table of Contents
+<!-- created with help from https://github.com/ekalinin/github-markdown-toc and further manual adjustments -->
 
 * [What does GPflow do?](#what-does-gpflow-do)
 * [Installation](#installation)
