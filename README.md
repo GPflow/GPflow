@@ -13,7 +13,7 @@
 [Documentation (develop)](https://gpflow.readthedocs.io/en/develop/) |
 [Glossary](GLOSSARY.md)
 
-### Table of Contents
+#### Table of Contents
 
 * [What does GPflow do?](#what-does-gpflow-do)
 * [Installation](#installation)
