@@ -13,7 +13,18 @@
 [Documentation (develop)](https://gpflow.readthedocs.io/en/develop/) |
 [Glossary](GLOSSARY.md)
 
-GPflow is a package for building Gaussian process models in Python, using [TensorFlow](http://www.tensorflow.org).
+
+## What does GPflow do?
+
+GPflow is a package for building Gaussian process models in Python.
+It implements modern Gaussian process inference for composable kernels and likelihoods.
+The [online documentation (develop)](http://gpflow.readthedocs.io/en/develop/)/[(master)](http://gpflow.readthedocs.io/en/master/) contains more details.
+
+GPflow 2.1 builds on [TensorFlow 2.2+](http://www.tensorflow.org) and [TensorFlow Probability](https://www.tensorflow.org/probability/) for running computations, which allows fast execution on GPUs.
+
+
+### Maintainers
+
 It was originally created by [James Hensman](http://jameshensman.github.io/) and [Alexander G. de G. Matthews](https://github.com/alexggmatthews).
 It is now actively maintained by (in alphabetical order)
 [Artem Artemev](http://github.com/awav/),
@@ -25,26 +36,21 @@ GPflow would not be the same without the community. **We are grateful to [all co
  *GPflow is an open source project. If you have relevant skills and are interested in contributing then please do contact us (see ["The GPflow community" section](#the-gpflow-community) below).*
 
 
-## What does GPflow do?
+## Installation
 
-GPflow implements modern Gaussian process inference for composable kernels and likelihoods. The [online documentation (develop)](http://gpflow.readthedocs.io/en/develop/)/[(master)](http://gpflow.readthedocs.io/en/master/) contains more details.
+### Requirements
 
-GPflow 2.1 uses [TensorFlow 2.2+](http://www.tensorflow.org) for running computations, which allows fast execution on GPUs, and uses Python ≥ 3.6.
+GPflow depends on both TensorFlow (TF, version ≥ 2.2) and TensorFlow Probability (TFP, version ≥ 0.10.1). We support Python ≥ 3.6.
 
-## Install GPflow 2
+**NOTE:** TensorFlow Probability releases are tightly coupled to TensorFlow, e.g. TFP 0.12 requires TF>=2.4, TFP 0.11 requires TF>=2.3, and TFP 0.10 requires TF>=2.2. Unfortunately, this is _not_ specified in TFP's dependencies. So if you already have an (older) version of TensorFlow installed, GPflow will pull in the latest TFP, which will be incompatible. If you get errors such as `ImportError: This version of TensorFlow Probability requires TensorFlow version >= 2.4`, you have to either upgrade TensorFlow (`pip install -U tensorflow`) or manually install an older version of the `tensorflow_probability` package.
 
-
-**NOTE** GPflow depends on both TensorFlow (TF) and TensorFlow Probability (TFP). TensorFlow Probability releases are tightly coupled to TensorFlow, e.g. TFP 0.12 requires TF>=2.4, TFP 0.11 requires TF>=2.3, and TFP 0.10 requires TF>=2.2. Unfortunately, this is _not_ specified in TFP's dependencies. So if you already have an (older) version of TensorFlow installed, GPflow will pull in the latest TFP, which will be incompatible. If you get errors such as `ImportError: This version of TensorFlow Probability requires TensorFlow version >= 2.4`, you have to either upgrade TensorFlow (`pip install -U tensorflow`) or manually install an older version of the `tensorflow_probability` package.
-
-### Latest release from PyPI
+### Latest (stable) release from PyPI
 
 ```bash
 pip install gpflow
 ```
 
-The current release series, 2.x, requires TensorFlow ≥ 2.2 and TensorFlow Probability ≥ 0.10.1.
-
-### Latest source from GitHub
+### Latest (bleeding-edge) source from GitHub
 
 *Be aware that the `develop` branch may change regularly, and new commits may break your code.*
 
@@ -58,13 +64,6 @@ Alternatively, you can install the latest GitHub `develop` version using `pip`:
 pip install git+https://github.com/GPflow/GPflow.git@develop#egg=gpflow
 ```
 This will automatically install all required dependencies.
-
-## Install the last GPflow version compatible with TensorFlow 1:
-
-*We have stopped development and support for GPflow based on TensorFlow 1.x.*
-
-The latest available release is [v1.5.1](https://github.com/GPflow/GPflow/releases/tag/v1.5.1). [Documentation](https://gpflow.readthedocs.io/en/v1.5.1-docs/) and [tutorials](https://nbviewer.jupyter.org/github/GPflow/GPflow/blob/v1.5.1/doc/source/notebooks/intro.ipynb) will remain available.
-
 
 ## Getting Started with GPflow 2.0
 
@@ -122,16 +121,24 @@ If you would like your project listed here, let us know - or simply [open a pull
 | [Signature covariances](https://github.com/tgcsaba/GPSig) | kernels for (time)series as *inputs* |
 | [Structured-DGP](https://github.com/boschresearch/Structured_DGP) | Adding more structure to the variational posterior of the Doubly Stochastic Deep Gaussian Process |
 
-## Compatibility
+## Version Compatibility
 
 GPflow heavily depends on TensorFlow and as far as TensorFlow supports forward compatibility, GPflow should as well. The version of GPflow can give you a hint about backward compatibility. If the major version has changed then you need to check the release notes to find out how the API has been changed.
 
 Unfortunately, there is no such thing as backward compatibility for GPflow _models_, which means that a model implementation can change without changing interfaces. In other words, the TensorFlow graph can be different for the same models from different versions of GPflow.
 
+### TensorFlow 1.x and GPflow 1.x
+
+We have stopped development and support for GPflow based on TensorFlow 1.
+The latest release supporting TensorFlow 1 is [v1.5.1](https://github.com/GPflow/GPflow/releases/tag/v1.5.1).
+[Documentation](https://gpflow.readthedocs.io/en/v1.5.1-docs/) and
+[tutorials](https://nbviewer.jupyter.org/github/GPflow/GPflow/blob/v1.5.1/doc/source/notebooks/intro.ipynb)
+will remain available.
+
+
 ## Citing GPflow
 
 To cite GPflow, please reference the [JMLR paper](http://www.jmlr.org/papers/volume18/16-537/16-537.pdf). Sample Bibtex is given below:
-
 ```
 @ARTICLE{GPflow2017,
   author = {Matthews, Alexander G. de G. and {van der Wilk}, Mark and Nickson, Tom and
@@ -152,7 +159,6 @@ Since the publication of the GPflow paper, the software has been significantly e
 with the framework for interdomain approximations and multioutput priors. We review the
 framework and describe the design in an [arXiv paper](https://arxiv.org/abs/2003.01115),
 which can be cited by users.
-
 ```
 @article{GPflow2020multioutput,
   author = {{van der Wilk}, Mark and Dutordoir, Vincent and John, ST and
