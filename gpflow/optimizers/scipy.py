@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import warnings
 from typing import Callable, Iterable, List, Optional, Sequence, Tuple, TypeVar, Union
 
 import numpy as np
@@ -29,6 +30,9 @@ LossClosure = Callable[[], tf.Tensor]
 
 
 class Scipy:
+    def __init__(self):
+        self.gradient_already_checked = False
+
     def minimize(
         self,
         closure: LossClosure,
@@ -36,6 +40,7 @@ class Scipy:
         method: Optional[str] = "L-BFGS-B",
         step_callback: Optional[StepCallback] = None,
         compile: bool = True,
+        unconnected_gradients: str = tf.UnconnectedGradients.ZERO,
         **scipy_kwargs,
     ) -> OptimizeResult:
         """
@@ -59,6 +64,10 @@ class Scipy:
             compile: If True, wraps the evaluation function (the passed `closure`
                 as well as its gradient computation) inside a `tf.function()`,
                 which will improve optimization speed in most cases.
+            unconnected_gradients: A value that can either hold 'none' or 'zero',
+                which will influence the handling when one of the passed-in variables
+                is not connected to the loss to be minimized. As 'zero'  (default)
+                the entry of the gradient equals a zero tensor, [None] otherwise.
 
             scipy_kwargs: Arguments passed through to `scipy.optimize.minimize`
                 Note that Scipy's minimize() takes a `callback` argument, but
@@ -79,7 +88,15 @@ class Scipy:
             )  # pragma: no cover
         initial_params = self.initial_parameters(variables)
 
-        func = self.eval_func(closure, variables, compile=compile)
+        func = self.eval_func(
+            closure,
+            variables,
+            compile=compile,
+            unconnected_gradients=unconnected_gradients,
+            gradient_already_checked=self.gradient_already_checked,
+        )
+        self.gradient_already_checked = True
+
         if step_callback is not None:
             if "callback" in scipy_kwargs:
                 raise ValueError("Callback passed both via `step_callback` and `callback`")
@@ -97,13 +114,18 @@ class Scipy:
 
     @classmethod
     def eval_func(
-        cls, closure: LossClosure, variables: Sequence[tf.Variable], compile: bool = True
+        cls,
+        closure: LossClosure,
+        variables: Sequence[tf.Variable],
+        compile: bool = True,
+        unconnected_gradients: str = tf.UnconnectedGradients.ZERO,
+        gradient_already_checked: bool = True,
     ) -> Callable[[np.ndarray], Tuple[np.ndarray, np.ndarray]]:
         def _tf_eval(x: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor]:
             values = cls.unpack_tensors(variables, x)
             cls.assign_tensors(variables, values)
 
-            loss, grads = _compute_loss_and_gradients(closure, variables)
+            loss, grads = _compute_loss_and_gradients(closure, variables, unconnected_gradients)
             return loss, cls.pack_tensors(grads)
 
         if compile:
@@ -111,6 +133,15 @@ class Scipy:
 
         def _eval(x: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
             loss, grad = _tf_eval(tf.convert_to_tensor(x))
+
+            if not gradient_already_checked and any(
+                [tf.math.count_nonzero(gr) == 0 for gr in grad]
+            ):
+                warnings.warn(
+                    "At least one of the passed-in variables is not connected to the loss to be minimized. Therefore, this entry of the gradient is a zero tensor.",
+                    RuntimeWarning,
+                )
+
             return loss.numpy().astype(np.float64), grad.numpy().astype(np.float64)
 
         return _eval
@@ -165,10 +196,10 @@ class Scipy:
 
 
 def _compute_loss_and_gradients(
-    loss_closure: LossClosure, variables: Sequence[tf.Variable]
+    loss_closure: LossClosure, variables: Sequence[tf.Variable], unconnected_gradients: str
 ) -> Tuple[tf.Tensor, Sequence[tf.Tensor]]:
     with tf.GradientTape(watch_accessed_variables=False) as tape:
         tape.watch(variables)
         loss = loss_closure()
-    grads = tape.gradient(loss, variables)
+    grads = tape.gradient(loss, variables, unconnected_gradients=unconnected_gradients)
     return loss, grads

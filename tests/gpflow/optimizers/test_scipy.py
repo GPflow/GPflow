@@ -64,3 +64,17 @@ def test_scipy_jit():
     # due to the changes introduced by PR #1213, which removed some implicit casts
     # to float32. With TF 2.4 / TFP 0.12, we had to further increase atol from 1e-14.
     np.testing.assert_allclose(get_values(m1), get_values(m2), rtol=1e-14, atol=2e-14)
+
+
+def test_scipy_uncon_gradient_warning():
+
+    m1 = _create_full_gp_model()
+    m2 = _create_full_gp_model()
+    opt = gpflow.optimizers.Scipy()
+    with pytest.warns(RuntimeWarning):
+        opt.minimize(
+            m1.training_loss,
+            variables=m2.trainable_variables,
+            options=dict(maxiter=50),
+            compile=False,
+        )
