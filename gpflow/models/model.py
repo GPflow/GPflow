@@ -25,8 +25,10 @@ from ..mean_functions import MeanFunction, Zero
 from ..utilities import to_default_float
 from .training_mixins import InputData, RegressionData
 
+
 class MeanAndVariance(NamedTuple):
     """ NamedTuple to access mean- and variance-function separately """
+
     mean: tf.Tensor
     variance: tf.Tensor
 

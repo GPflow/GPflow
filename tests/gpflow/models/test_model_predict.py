@@ -12,13 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from gpflow.models.model import MeanAndVariance
 import numpy as np
 import pytest
 
 import gpflow
 from gpflow.inducing_variables import InducingPoints
 from gpflow.kernels import Matern32
+from gpflow.models.model import MeanAndVariance
 
 rng = np.random.RandomState(0)
 
