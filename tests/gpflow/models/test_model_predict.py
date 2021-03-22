@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from gpflow.models.model import MeanAndVariance
 import numpy as np
 import pytest
 
@@ -96,6 +97,9 @@ def test_gaussian_mean_and_variance(Ntrain, Ntest, D):
 
     assert np.allclose(mu_f, mu_y)
     assert np.allclose(var_f, var_y - 1.0)
+
+    assert np.allclose(model_gp.predict_f(Xtest).mean, mu_f)
+    assert np.allclose(model_gp.predict_f(Xtest).variance, model_gp.predict_f(Xtest)[1])
 
 
 @pytest.mark.parametrize("Ntrain, Ntest, D", [[100, 10, 2]])
