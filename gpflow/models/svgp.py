@@ -169,4 +169,4 @@ class SVGP(GPModel, ExternalDataTrainingLossMixin):
             full_output_cov=full_output_cov,
         )
         # tf.debugging.assert_positive(var)  # We really should make the tests pass with this here
-        return mu + self.mean_function(Xnew), var
+        return MeanAndVariance(mu + self.mean_function(Xnew), var)

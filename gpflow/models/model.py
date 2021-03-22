@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import abc
-from typing import Optional, Tuple
+from typing import NamedTuple, Optional
 
 import tensorflow as tf
 
@@ -25,7 +25,10 @@ from ..mean_functions import MeanFunction, Zero
 from ..utilities import to_default_float
 from .training_mixins import InputData, RegressionData
 
-MeanAndVariance = Tuple[tf.Tensor, tf.Tensor]
+class MeanAndVariance(NamedTuple):
+    """ NamedTuple to access mean- and variance-function separately """
+    mean: tf.Tensor
+    variance: tf.Tensor
 
 
 class BayesianModel(Module, metaclass=abc.ABCMeta):
@@ -218,7 +221,7 @@ class GPModel(BayesianModel):
             )
 
         f_mean, f_var = self.predict_f(Xnew, full_cov=full_cov, full_output_cov=full_output_cov)
-        return self.likelihood.predict_mean_and_var(f_mean, f_var)
+        return MeanAndVariance(*self.likelihood.predict_mean_and_var(f_mean, f_var))
 
     def predict_log_density(
         self, data: RegressionData, full_cov: bool = False, full_output_cov: bool = False

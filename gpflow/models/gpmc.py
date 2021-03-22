@@ -106,4 +106,4 @@ class GPMC(GPModel, InternalDataTrainingLossMixin):
         mu, var = conditional(
             Xnew, X_data, self.kernel, self.V, full_cov=full_cov, q_sqrt=None, white=True
         )
-        return mu + self.mean_function(Xnew), var
+        return MeanAndVariance(mu + self.mean_function(Xnew), var)

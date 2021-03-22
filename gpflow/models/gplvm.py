@@ -262,7 +262,7 @@ class BayesianGPLVM(GPModel, InternalDataTrainingLossMixin):
             )
             shape = tf.stack([1, tf.shape(Y_data)[1]])
             var = tf.tile(tf.expand_dims(var, 1), shape)
-        return mean + self.mean_function(Xnew), var
+        return MeanAndVariance(mean + self.mean_function(Xnew), var)
 
     def predict_log_density(self, data: OutputData) -> tf.Tensor:
         raise NotImplementedError

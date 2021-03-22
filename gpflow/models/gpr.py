@@ -115,4 +115,4 @@ class GPR(GPModel, InternalDataTrainingLossMixin):
             kmn, kmm_plus_s, knn, err, full_cov=full_cov, white=False
         )  # [N, P], [N, P] or [P, N, N]
         f_mean = f_mean_zero + self.mean_function(Xnew)
-        return f_mean, f_var
+        return MeanAndVariance(f_mean, f_var)

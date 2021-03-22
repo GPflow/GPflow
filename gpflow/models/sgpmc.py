@@ -127,4 +127,4 @@ class SGPMC(GPModel, InternalDataTrainingLossMixin):
             white=True,
             full_output_cov=full_output_cov,
         )
-        return mu + self.mean_function(Xnew), var
+        return MeanAndVariance(mu + self.mean_function(Xnew), var)

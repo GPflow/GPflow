@@ -227,7 +227,7 @@ class SGPR(SGPRBase):
                 - tf.reduce_sum(tf.square(tmp1), 0)
             )
             var = tf.tile(var[:, None], [1, self.num_latent_gps])
-        return mean + self.mean_function(Xnew), var
+        return MeanAndVariance(mean + self.mean_function(Xnew), var)
 
     def compute_qu(self) -> Tuple[tf.Tensor, tf.Tensor]:
         """
@@ -384,4 +384,4 @@ class GPRFITC(SGPRBase):
             )  # [N, P]
             var = tf.tile(var[:, None], [1, self.num_latent_gps])
 
-        return mean, var
+        return MeanAndVariance(mean, var)

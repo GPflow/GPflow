@@ -118,7 +118,7 @@ class VGP(GPModel, InternalDataTrainingLossMixin):
         mu, var = conditional(
             Xnew, X_data, self.kernel, self.q_mu, q_sqrt=self.q_sqrt, full_cov=full_cov, white=True,
         )
-        return mu + self.mean_function(Xnew), var
+        return MeanAndVariance(mu + self.mean_function(Xnew), var)
 
 
 class VGPOpperArchambeau(GPModel, InternalDataTrainingLossMixin):
@@ -252,4 +252,4 @@ class VGPOpperArchambeau(GPModel, InternalDataTrainingLossMixin):
             f_var = self.kernel(Xnew) - tf.linalg.matmul(LiKx, LiKx, transpose_a=True)
         else:
             f_var = self.kernel(Xnew, full_cov=False) - tf.reduce_sum(tf.square(LiKx), axis=1)
-        return f_mean, tf.transpose(f_var)
+        return MeanAndVariance(f_mean, tf.transpose(f_var))
