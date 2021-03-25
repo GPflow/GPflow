@@ -49,7 +49,9 @@ class Datum:
 
 
 multioutput_inducing_variable_list = [
-    mf.SharedIndependentInducingVariables(gpflow.inducing_variables.InducingPoints(np.random.rand(1, 1))),
+    mf.SharedIndependentInducingVariables(
+        gpflow.inducing_variables.InducingPoints(np.random.rand(1, 1))
+    ),
     mf.SeparateIndependentInducingVariables(make_ips(Datum.P)),
 ]
 
