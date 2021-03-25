@@ -317,10 +317,9 @@ def test_sample_conditional_mixedkernel():
     )
 
 
-@pytest.fixture(name="q_sqrt_factory", params=[
-    lambda _, __: None,
-    lambda LM, R: tf.eye(LM, batch_shape=(R,))
-])
+@pytest.fixture(
+    name="q_sqrt_factory", params=[lambda _, __: None, lambda LM, R: tf.eye(LM, batch_shape=(R,))]
+)
 def _q_sqrt_factory_fixture(request):
     return request.param
 
@@ -336,7 +335,9 @@ def _full_output_cov_fixture(request):
 
 
 @pytest.mark.parametrize("R", [1, 2, 5])
-def test_fully_correlated_conditional_repeat_shapes_fc_and_foc(R, q_sqrt_factory, full_cov, full_output_cov):
+def test_fully_correlated_conditional_repeat_shapes_fc_and_foc(
+    R, q_sqrt_factory, full_cov, full_output_cov
+):
     # fully_correlated_conditional_repeat does not support whiten = False
     whiten = True
 
@@ -362,7 +363,14 @@ def test_fully_correlated_conditional_repeat_shapes_fc_and_foc(R, q_sqrt_factory
     q_sqrt = q_sqrt_factory(L * M, R)
 
     m, v = fully_correlated_conditional_repeat(
-        Kmn, Kmm, Knn, f, full_cov=full_cov, full_output_cov=full_output_cov, q_sqrt=q_sqrt, white=whiten,
+        Kmn,
+        Kmm,
+        Knn,
+        f,
+        full_cov=full_cov,
+        full_output_cov=full_output_cov,
+        q_sqrt=q_sqrt,
+        white=whiten,
     )
 
     assert m.shape.as_list() == [R, N, P]
@@ -395,7 +403,14 @@ def test_fully_correlated_conditional_fc_and_foc(q_sqrt_factory, full_cov, full_
     q_sqrt = q_sqrt_factory(L * M, 1)
 
     m, v = fully_correlated_conditional(
-        Kmn, Kmm, Knn, f, full_cov=full_cov, full_output_cov=full_output_cov, q_sqrt=q_sqrt, white=whiten,
+        Kmn,
+        Kmm,
+        Knn,
+        f,
+        full_cov=full_cov,
+        full_output_cov=full_output_cov,
+        q_sqrt=q_sqrt,
+        white=whiten,
     )
 
     assert m.shape.as_list() == [N, P]
