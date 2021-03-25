@@ -80,21 +80,40 @@ def _Kuf(
     return tf.stack(Kufs, axis=0)  # [L, M, N]
 
 
+def _fallback_Kuf(kuf_impl, inducing_variable: Union[
+        SeparateIndependentInducingVariables, SharedIndependentInducingVariables
+    ],    kernel: LinearCoregionalization,
+    Xnew: tf.Tensor,):
+    K = tf.transpose(kuf_impl(inducing_variable, kernel, Xnew), [1, 0, 2])  # [M, L, N]
+    return K[:, :, :, None] * tf.transpose(kernel.W)[None, :, None, :]  # [M, L, N, P]
+
+
 @Kuf.register(
-    (FallbackSeparateIndependentInducingVariables, FallbackSharedIndependentInducingVariables),
+    FallbackSeparateIndependentInducingVariables,
     LinearCoregionalization,
     object,
 )
 def _Kuf(
-    inducing_variable: Union[
-        SeparateIndependentInducingVariables, SharedIndependentInducingVariables
-    ],
+    inducing_variable: SeparateIndependentInducingVariables,
     kernel: LinearCoregionalization,
     Xnew: tf.Tensor,
 ):
-    kuf_impl = Kuf.dispatch(type(inducing_variable), SeparateIndependent, object)
-    K = tf.transpose(kuf_impl(inducing_variable, kernel, Xnew), [1, 0, 2])  # [M, L, N]
-    return K[:, :, :, None] * tf.transpose(kernel.W)[None, :, None, :]  # [M, L, N, P]
+    kuf_impl = Kuf.dispatch(SeparateIndependentInducingVariables, SeparateIndependent, object)
+    return _fallback_Kuf(kuf_impl, inducing_variable, kernel, Xnew)
+
+
+@Kuf.register(
+    FallbackSharedIndependentInducingVariables,
+    LinearCoregionalization,
+    object,
+)
+def _Kuf(
+    inducing_variable: SharedIndependentInducingVariables,
+    kernel: LinearCoregionalization,
+    Xnew: tf.Tensor,
+):
+    kuf_impl = Kuf.dispatch(SharedIndependentInducingVariables, SeparateIndependent, object)
+    return _fallback_Kuf(kuf_impl, inducing_variable, kernel, Xnew)
 
 
 @Kuf.register(SharedIndependentInducingVariables, LinearCoregionalization, object)
