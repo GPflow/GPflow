@@ -53,6 +53,11 @@ multioutput_inducing_variable_list = [
     mf.SeparateIndependentInducingVariables(make_ips(Datum.P)),
 ]
 
+multioutput_fallback_inducing_variable_list = [
+    mf.FallbackSharedIndependentInducingVariables(make_ip()),
+    mf.FallbackSeparateIndependentInducingVariables(make_ips(Datum.P)),
+]
+
 multioutput_kernel_list = [
     mk.SharedIndependent(make_kernel(), Datum.P),
     mk.SeparateIndependent(make_kernels(Datum.L)),
@@ -70,6 +75,12 @@ def test_kuu(inducing_variable, kernel):
 @pytest.mark.parametrize("inducing_variable", multioutput_inducing_variable_list)
 @pytest.mark.parametrize("kernel", multioutput_kernel_list)
 def test_kuf(inducing_variable, kernel):
+    Kuf = mo_kufs.Kuf(inducing_variable, kernel, Datum.Xnew)
+
+
+@pytest.mark.parametrize("inducing_variable", multioutput_fallback_inducing_variable_list)
+def test_kuf_fallback_shared_inducing_variables(inducing_variable):
+    kernel = mk.LinearCoregionalization(make_kernels(Datum.L), Datum.W)
     Kuf = mo_kufs.Kuf(inducing_variable, kernel, Datum.Xnew)
 
 
