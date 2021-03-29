@@ -324,16 +324,6 @@ def _q_sqrt_factory_fixture(request):
     return request.param
 
 
-@pytest.fixture(name="full_cov", params=[True, False])
-def _full_cov_fixture(request):
-    return request.param
-
-
-@pytest.fixture(name="full_output_cov", params=[True, False])
-def _full_output_cov_fixture(request):
-    return request.param
-
-
 @pytest.mark.parametrize("R", [1, 2, 5])
 def test_fully_correlated_conditional_repeat_shapes_fc_and_foc(
     R, q_sqrt_factory, full_cov, full_output_cov
