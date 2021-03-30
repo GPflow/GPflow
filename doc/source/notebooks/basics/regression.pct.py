@@ -180,7 +180,7 @@ _ = plt.xlim(-0.1, 1.1)
 
 
 # %% [markdown]
-# Moreover, you can get the mean and variance data individually for example as `m.predict_f(xx).mean` instead of `m.predict_f(xx)[0]`.
+# Moreover, you can get the mean and variance predictions individually, using for `m.predict_f(xx).mean` instead of `m.predict_f(xx)[0]` and `m.predict_f(xx).variance` instead of `m.predict_f(xx)[1]`.
 
 # %% [markdown]
 # ## GP regression in higher dimensions

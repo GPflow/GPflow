@@ -27,7 +27,7 @@ from .training_mixins import InputData, RegressionData
 
 
 class MeanAndVariance(NamedTuple):
-    """ NamedTuple to access mean- and variance-function separately """
+    """ NamedTuple that holds mean and variance as named fields """
 
     mean: tf.Tensor
     variance: tf.Tensor
