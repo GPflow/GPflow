@@ -25,11 +25,11 @@ import gpflow.ci_utils
 from gpflow.models.util import inducingpoint_wrapper
 from gpflow.posterior import (
     AbstractPosterior,
-    LinearCoregionalizationPosterior,
-    IndependentPosteriorMultiOutput,
     FallbackIndependentLatentPosterior,
     FullyCorrelatedPosterior,
+    IndependentPosteriorMultiOutput,
     IndependentPosteriorSingleOutput,
+    LinearCoregionalizationPosterior,
 )
 
 NUM_INDUCING_POINTS = 3
