@@ -502,9 +502,6 @@ class FullyCorrelatedPosterior(BasePosterior):
                 Kfu_Qinv_Kuf = tf.einsum("...ijk->...kij", tmp)  # move diagonal dim to [-3]
         cov = Kff - Kfu_Qinv_Kuf
 
-        if not full_cov and not full_output_cov:
-            cov = tf.linalg.adjoint(cov)
-
         mean = tf.reshape(mean, (N, K))
         if full_cov == full_output_cov:
             cov_shape = (N, K, N, K) if full_cov else (N, K)

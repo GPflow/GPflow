@@ -459,7 +459,8 @@ def fully_correlated_conditional_repeat(
             addvar = tf.reshape(tf.reduce_sum(tf.square(LTA), axis=1), (R, N, P))  # [R, N, P]
             fvar = fvar[None, ...] + addvar  # [R, N, P]
     else:
-        fvar = tf.broadcast_to(fvar[None], tf.shape(fmean))
+        fvar_shape = tf.concat([[R], tf.shape(fvar)], axis=0)
+        fvar = tf.broadcast_to(fvar[None], fvar_shape)
 
     shape_constraints.extend(
         [(Knn, intended_cov_shape), (fmean, ["R", "N", "P"]), (fvar, ["R"] + intended_cov_shape),]
