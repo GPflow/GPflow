@@ -23,13 +23,19 @@ import tensorflow as tf
 import gpflow
 import gpflow.ci_utils
 from gpflow.models.util import inducingpoint_wrapper
-from gpflow.posterior import AbstractPosterior, LinearCoregionalizationPosterior, IndependentPosteriorMultiOutput, \
-    FallbackIndependentLatentPosterior, FullyCorrelatedPosterior, IndependentPosteriorSingleOutput
+from gpflow.posterior import (
+    AbstractPosterior,
+    LinearCoregionalizationPosterior,
+    IndependentPosteriorMultiOutput,
+    FallbackIndependentLatentPosterior,
+    FullyCorrelatedPosterior,
+    IndependentPosteriorSingleOutput,
+)
 
 NUM_INDUCING_POINTS = 3
 
 
-@pytest.fixture(name="mean_function", params=[None, 1.])
+@pytest.fixture(name="mean_function", params=[None, 1.0])
 def _mean_function_fixture(request):
     mean_function_parameter = request.param
 
@@ -57,13 +63,15 @@ _linear_coregionalization = [LinearCoregionalizationPosterior]
 
 
 def test_no_missing_kernels():
-    tested_kernels = set(chain(
-        _independent_single_output,
-        _fully_correlated_multi_output,
-        _independent_multi_output,
-        _fallback_independent_multi_output,
-        _linear_coregionalization
-    ))
+    tested_kernels = set(
+        chain(
+            _independent_single_output,
+            _fully_correlated_multi_output,
+            _independent_multi_output,
+            _fallback_independent_multi_output,
+            _linear_coregionalization,
+        )
+    )
 
     available_kernels = list(gpflow.ci_utils.subclasses(AbstractPosterior))
     concrete_kernels = set([k for k in available_kernels if not isabstract(k)])
@@ -77,23 +85,30 @@ class LatentVariationalParameters:
     qmean = np.random.randn(NUM_INDUCING_POINTS, 1)
 
 
-def _assert_fused_predict_f_equals_precomputed_predict_f(posterior, precompute, full_cov, full_output_cov):
+def _assert_fused_predict_f_equals_precomputed_predict_f(
+    posterior, precompute, full_cov, full_output_cov
+):
     Xnew = np.random.randn(20, 1)
 
-    fused_f_mean, fused_f_cov = posterior.fused_predict_f(Xnew, full_cov=full_cov, full_output_cov=full_output_cov)
+    fused_f_mean, fused_f_cov = posterior.fused_predict_f(
+        Xnew, full_cov=full_cov, full_output_cov=full_output_cov
+    )
 
     if not precompute:
         posterior.update_cache()
 
-    precomputed_f_mean, precomputed_f_cov = posterior.predict_f(Xnew, full_cov=full_cov,
-                                                                full_output_cov=full_output_cov)
+    precomputed_f_mean, precomputed_f_cov = posterior.predict_f(
+        Xnew, full_cov=full_cov, full_output_cov=full_output_cov
+    )
 
     np.testing.assert_array_almost_equal(fused_f_mean, precomputed_f_mean)
     np.testing.assert_array_almost_equal(fused_f_cov, precomputed_f_cov)
 
 
 @pytest.mark.parametrize("posterior_class", _independent_single_output)
-def test_independent_single_output(posterior_class, whiten, mean_function, precompute, full_cov, full_output_cov):
+def test_independent_single_output(
+    posterior_class, whiten, mean_function, precompute, full_cov, full_output_cov
+):
     kernel = gpflow.kernels.SquaredExponential()
     inducing_variable = inducingpoint_wrapper(np.random.randn(NUM_INDUCING_POINTS, 1))
 
@@ -104,10 +119,12 @@ def test_independent_single_output(posterior_class, whiten, mean_function, preco
         q_sqrt=tf.constant(LatentVariationalParameters.qsqrt),
         whiten=whiten,
         mean_function=mean_function,
-        precompute=precompute
+        precompute=precompute,
     )
 
-    _assert_fused_predict_f_equals_precomputed_predict_f(posterior, precompute, full_cov, full_output_cov)
+    _assert_fused_predict_f_equals_precomputed_predict_f(
+        posterior, precompute, full_cov, full_output_cov
+    )
 
 
 @dataclass(frozen=True)
@@ -117,8 +134,12 @@ class LatentVariationalMultiOutputParameters:
 
 
 @pytest.mark.parametrize("posterior_class", _fully_correlated_multi_output)
-@pytest.mark.parametrize("q_sqrt", [None, tf.constant(LatentVariationalMultiOutputParameters.qsqrt)])
-def test_fully_correlated_multi_output(posterior_class, q_sqrt, mean_function, precompute, full_cov, full_output_cov):
+@pytest.mark.parametrize(
+    "q_sqrt", [None, tf.constant(LatentVariationalMultiOutputParameters.qsqrt)]
+)
+def test_fully_correlated_multi_output(
+    posterior_class, q_sqrt, mean_function, precompute, full_cov, full_output_cov
+):
     # fully_correlated_conditional_repeat does not support whiten=False
     whiten = True
 
@@ -132,7 +153,9 @@ def test_fully_correlated_multi_output(posterior_class, q_sqrt, mean_function, p
         q_sqrt=q_sqrt,
         whiten=whiten,
         mean_function=mean_function,
-        precompute=precompute
+        precompute=precompute,
     )
 
-    _assert_fused_predict_f_equals_precomputed_predict_f(posterior, precompute, full_cov, full_output_cov)
+    _assert_fused_predict_f_equals_precomputed_predict_f(
+        posterior, precompute, full_cov, full_output_cov
+    )
