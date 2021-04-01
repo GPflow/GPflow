@@ -20,7 +20,7 @@ from numpy.testing import assert_allclose
 import gpflow
 from gpflow.config import default_jitter
 from gpflow.mean_functions import Constant
-from gpflow.models import maximum_log_likelihood_objective
+from gpflow.models import ExternalDataTrainingLossMixin, maximum_log_likelihood_objective
 
 rng = np.random.RandomState(0)
 
@@ -55,13 +55,6 @@ def _create_full_gp_model():
         kernel=gpflow.kernels.SquaredExponential(),
         mean_function=gpflow.mean_functions.Constant(),
     )
-
-    opt = gpflow.optimizers.Scipy()
-    opt.minimize(
-        full_gp_model.training_loss,
-        variables=full_gp_model.trainable_variables,
-        options=dict(maxiter=300),
-    )
     return full_gp_model
 
 
@@ -78,19 +71,22 @@ def _create_approximate_models():
     """
     model_1 = gpflow.models.VGP(
         (Datum.X, Datum.Y),
-        gpflow.kernels.SquaredExponential(),
+        kernel=gpflow.kernels.SquaredExponential(),
         likelihood=gpflow.likelihoods.Gaussian(),
         mean_function=gpflow.mean_functions.Constant(),
     )
+
     model_2 = gpflow.models.SVGP(
-        gpflow.kernels.SquaredExponential(),
-        gpflow.likelihoods.Gaussian(),
+        kernel=gpflow.kernels.SquaredExponential(),
+        likelihood=gpflow.likelihoods.Gaussian(),
         inducing_variable=Datum.X.copy(),
         q_diag=False,
+        whiten=False,
         mean_function=gpflow.mean_functions.Constant(),
         num_latent_gps=Datum.Y.shape[1],
     )
     gpflow.set_trainable(model_2.inducing_variable, False)
+
     model_3 = gpflow.models.SVGP(
         kernel=gpflow.kernels.SquaredExponential(),
         likelihood=gpflow.likelihoods.Gaussian(),
@@ -101,44 +97,22 @@ def _create_approximate_models():
         num_latent_gps=Datum.Y.shape[1],
     )
     gpflow.set_trainable(model_3.inducing_variable, False)
-    model_4 = gpflow.models.GPRFITC(
+
+    model_4 = gpflow.models.SGPR(
         (Datum.X, Datum.Y),
         kernel=gpflow.kernels.SquaredExponential(),
         inducing_variable=Datum.X.copy(),
         mean_function=Constant(),
     )
     gpflow.set_trainable(model_4.inducing_variable, False)
-    model_5 = gpflow.models.SGPR(
+
+    model_5 = gpflow.models.GPRFITC(
         (Datum.X, Datum.Y),
-        gpflow.kernels.SquaredExponential(),
+        kernel=gpflow.kernels.SquaredExponential(),
         inducing_variable=Datum.X.copy(),
         mean_function=Constant(),
     )
     gpflow.set_trainable(model_5.inducing_variable, False)
-
-    # Train models
-
-    opt = gpflow.optimizers.Scipy()
-
-    opt.minimize(
-        model_1.training_loss, variables=model_1.trainable_variables, options=dict(maxiter=300),
-    )
-    opt.minimize(
-        model_2.training_loss_closure(Datum.data),
-        variables=model_2.trainable_variables,
-        options=dict(maxiter=300),
-    )
-    opt.minimize(
-        model_3.training_loss_closure(Datum.data),
-        variables=model_3.trainable_variables,
-        options=dict(maxiter=300),
-    )
-    opt.minimize(
-        model_4.training_loss, variables=model_4.trainable_variables, options=dict(maxiter=300),
-    )
-    opt.minimize(
-        model_5.training_loss, variables=model_5.trainable_variables, options=dict(maxiter=300),
-    )
 
     return model_1, model_2, model_3, model_4, model_5
 
@@ -182,7 +156,28 @@ def test_equivalence(approximate_model):
     positioned at the data, many of the gpflow methods are equivalent (perhaps
     subject to some optimization).
     """
+
+    def optimize(model):
+        opt = gpflow.optimizers.Scipy()
+        loss = (
+            model.training_loss_closure(Datum.data)
+            if isinstance(model, ExternalDataTrainingLossMixin)
+            else model.training_loss
+        )
+        opt.minimize(loss, model.trainable_variables, options=dict(maxiter=3000))
+        if isinstance(model, gpflow.models.SVGP) and not model.whiten:
+            # The (S)VGP model in non-whitened representation has significantly
+            # worse optimization behaviour. To get the tests to pass, we need
+            # to optimize much harder: we set ftol=gtol=0.0 to enforce
+            # continued optimization.
+            opt.minimize(
+                loss, model.trainable_variables, options=dict(maxiter=7000, ftol=0.0, gtol=0.0)
+            )
+
     gpr_model = _create_full_gp_model()
+    optimize(gpr_model)
+    optimize(approximate_model)
+
     gpr_likelihood = gpr_model.log_marginal_likelihood()
     approximate_likelihood = maximum_log_likelihood_objective(approximate_model, Datum.data)
     assert_allclose(approximate_likelihood, gpr_likelihood, rtol=1e-6)

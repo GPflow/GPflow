@@ -38,7 +38,7 @@ format-check:
 	isort --check-only $(ISORT_CONFIG) $(ISORT_TARGETS)
 
 type-check:
-	mypy .
+	mypy gpflow tests
 
 test:
 	pytest -n auto --dist loadfile -v --durations=10 tests/

@@ -11,6 +11,7 @@ from gpflow.monitor import (
     ImageToTensorBoard,
     ModelToTensorBoard,
     Monitor,
+    MonitorTask,
     MonitorTaskGroup,
     ScalarToTensorBoard,
 )
@@ -19,6 +20,18 @@ from gpflow.monitor import (
 class Data:
     num_data = 20
     num_steps = 2
+
+
+class DummyTask(MonitorTask):
+    def run(self, **kwargs):
+        pass
+
+
+class DummyStepCallback:
+    current_step = 0
+
+    def callback(self, step, variables, values):
+        self.current_step = step
 
 
 @pytest.fixture
@@ -289,3 +302,24 @@ def test_compile_monitor(monitor, model):
 
     for step in tf.range(100):
         tf_func(step)
+
+
+def test_scipy_monitor(monitor, model):
+    opt = gpflow.optimizers.Scipy()
+
+    opt.minimize(model.training_loss, model.trainable_variables, step_callback=monitor)
+
+
+def test_scipy_monitor_called(model):
+    task = DummyTask()
+    monitor = Monitor(MonitorTaskGroup(task, period=1))
+    opt = gpflow.optimizers.Scipy()
+    opt.minimize(model.training_loss, model.trainable_variables, step_callback=monitor)
+    assert task.current_step > 1
+
+
+def test_scipy_step_callback_called(model):
+    dsc = DummyStepCallback()
+    opt = gpflow.optimizers.Scipy()
+    opt.minimize(model.training_loss, model.trainable_variables, step_callback=dsc.callback)
+    assert dsc.current_step > 1
