@@ -42,6 +42,8 @@ from gpflow.likelihoods import (  # isort:skip
     Ordinal,
     Poisson,
     StudentT,
+    NegativeBinomial,
+    ZeroInflatedNegativeBinomial,
 )
 
 tf.random.set_seed(99012)
@@ -87,6 +89,13 @@ scalar_likelihood_setups = [
     ),
     LikelihoodSetup(
         Bernoulli(invlink=tf.sigmoid), Y=tf.random.uniform(Datum.Yshape, dtype=default_float()),
+    ),
+    LikelihoodSetup(
+        NegativeBinomial(), Y=tf.random.poisson(Datum.Yshape, 100, dtype=default_float()),
+    ),
+    LikelihoodSetup(
+        ZeroInflatedNegativeBinomial(),
+        Y=tf.random.poisson(Datum.Yshape, 100, dtype=default_float()),
     ),
 ]
 

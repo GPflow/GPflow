@@ -173,7 +173,8 @@ class Ordinal(ScalarLikelihood):
 
 class NegativeBinomial(ScalarLikelihood):
     """
-    The negative-binomial likelihood with pmf:
+    A likelihood for count data with overdispersion. The pmf
+    of this parameterization of the negative binomial distribution is given by
 
     .. math::
 
@@ -182,27 +183,25 @@ class NegativeBinomial(ScalarLikelihood):
             \left( \frac{\mu}{\mu + \psi} \right)^y
             \left( \frac{\psi}{\mu + \psi} \right)^\psi
 
-    where :math:`\mu = \exp(\nu)`. Its expected value is :math:`\mathbb{E}[y] = \mu `
+    and described by a mean :math:`\mu = \exp(\nu)` parameter, where the predictor
+    :math:`\nu` is given by a latent GP, and a parameter that controls
+    overdispersion :math:`\psi`.
+
+    The expected value and variance of a negative binomially distributed random
+    variable :math:`y` is given by :math:`\mathbb{E}[y] = \mu `
     and variance :math:`Var[Y] = \mu + \frac{\mu^2}{\psi}`.
     """
 
-    def __init__(self, psi=1.0, **kwargs):
+    def __init__(self, psi=1.0, invlink=tf.exp, **kwargs):
         super().__init__(**kwargs)
-        self.invlink = tf.exp
-        self.psi = Parameter(
-            psi,
-            transform=positive(lower=0.01)
-        )
+        self.invlink = invlink
+        self.psi = Parameter(psi, transform=positive())
 
     def _scalar_log_prob(self, F, Y):
         mu = self.invlink(F)
         mu_psi = mu + self.psi
         psi_y = self.psi + Y
-        f1 = (
-                tf.math.lgamma(psi_y) -
-                tf.math.lgamma(Y + 1.0) -
-                tf.math.lgamma(self.psi)
-        )
+        f1 = tf.math.lgamma(psi_y) - tf.math.lgamma(Y + 1.0) - tf.math.lgamma(self.psi)
         f2 = Y * tf.math.log(mu / mu_psi)
         f3 = self.psi * tf.math.log(self.psi / mu_psi)
         return f1 + f2 + f3
@@ -217,24 +216,29 @@ class NegativeBinomial(ScalarLikelihood):
 
 class ZeroInflatedNegativeBinomial(NegativeBinomial):
     """
-    The zero-inflated negative binomial distribution with pmf:
+    A likelihood for count data with overdispersion and inflation of zeros.
+    The distribution of a zero-inflated negative binomial random variable
+    arises as a mixture of a negative binomial and a distribution with all mass
+    at zero.
+
+    Its pmf is given by
 
     .. math::
 
         ZINB(y \mid \mu, \psi, \theta) =
             \theta * I(y == 0) + (1 - \theta) NB(y \mid \mu, \psi)
 
+    where :math:`\mu` and :math:`\psi` are mean and overdispersion parameter
+    of the negative binomial component, and :math:`\theta` is a parameter to
+    control how much mass should be used for excess zeros.
 
     with expected value :math:`\mathbb{E}[y] = (1 - \theta)  \mu `
     and variance :math:`Var[Y] = (1 - \theta) \mu (1 + \theta * \mu + \mu / \psi )`
     """
 
-    def __init__(self, theta=0.5, psi=1.0, **kwargs):
-        super().__init__(psi, **kwargs)
-        self.theta = Parameter(
-            theta,
-            transform=positive(lower=0.01)
-        )
+    def __init__(self, theta=0.5, psi=1.0, invlink=tf.exp, **kwargs):
+        super().__init__(psi, invlink, **kwargs)
+        self.theta = Parameter(theta, transform=positive())
 
     def _scalar_log_prob(self, F, Y):
         yz = tf.cast(Y == 0.0, dtype=default_float())
