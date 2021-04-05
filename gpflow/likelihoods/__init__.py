@@ -29,8 +29,8 @@ from .multilatent import (
 from .scalar_continuous import Beta, Exponential, Gamma, Gaussian, StudentT
 from .scalar_discrete import (
     Bernoulli,
+    NegativeBinomial,
     Ordinal,
     Poisson,
-    NegativeBinomial,
     ZeroInflatedNegativeBinomial,
 )

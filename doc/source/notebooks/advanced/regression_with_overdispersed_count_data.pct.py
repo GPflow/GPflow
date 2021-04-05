@@ -41,15 +41,18 @@ def generate_data(n=30, s=20, seed=123):
     X = np.linspace(-1, 1, n).reshape(-1, 1)
     k = gpflow.kernels.Exponential(lengthscales=0.25, variance=2.0)
 
-    f = tfd.MultivariateNormalTriL(
-        np.repeat(0.0, X.shape[0]),
-        tf.linalg.cholesky(k(X, X))
-    ).sample(1, seed=seed).numpy().reshape((n, 1))
-    
+    f = (
+        tfd.MultivariateNormalTriL(np.repeat(0.0, X.shape[0]), tf.linalg.cholesky(k(X, X)))
+        .sample(1, seed=seed)
+        .numpy()
+        .reshape((n, 1))
+    )
+
     y = tfd.NegativeBinomial(logits=f, total_count=s).sample(1, seed=seed).numpy()
     Y = y.reshape((n, 1))
-    
+
     return Y, X, f
+
 
 n, s = 100, 10
 Y, X, f = generate_data(n, s)
