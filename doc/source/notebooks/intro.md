@@ -58,6 +58,7 @@ This section explains the more complex models and features that are available in
   - [Inter-domain Variational Fourier features](advanced/variational_fourier_features.ipynb): how to add new inter-domain inducing variables, at the example of representing sparse GPs in the spectral domain.
   - [Manipulating kernels](advanced/kernels.ipynb): information on the covariances that are included in the library, and how you can combine them to create new ones.
   - [Convolutional GPs](advanced/convolutional.ipynb): how we can use GPs with convolutional kernels for image classification.
+  - [Regression with over-dispersed count data](advanced/regression_with_overdispersed_count_data.ipynb): how we can use GPs for regression when the data are non-negative counts
 
 ### Features
 
