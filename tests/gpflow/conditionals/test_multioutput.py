@@ -318,20 +318,26 @@ def test_sample_conditional_mixedkernel():
 
 
 @pytest.fixture(
-    name="fully_correlated_q_sqrt_factory", params=[lambda _, __: None, lambda LM, R: tf.eye(LM, batch_shape=(R,))]
+    name="fully_correlated_q_sqrt_factory",
+    params=[lambda _, __: None, lambda LM, R: tf.eye(LM, batch_shape=(R,))],
 )
 def _q_sqrt_factory_fixture(request):
     return request.param
 
 
 @pytest.mark.parametrize("R", [1, 2, 5])
-@pytest.mark.parametrize("whiten", [
-    True,
-    pytest.param(
-        False,
-        marks=pytest.mark.xfail(reason="fully_correlated_conditional_repeat does not support whiten=False"),
-    ),
-])       
+@pytest.mark.parametrize(
+    "whiten",
+    [
+        True,
+        pytest.param(
+            False,
+            marks=pytest.mark.xfail(
+                reason="fully_correlated_conditional_repeat does not support whiten=False"
+            ),
+        ),
+    ],
+)
 def test_fully_correlated_conditional_repeat_shapes_fc_and_foc(
     R, fully_correlated_q_sqrt_factory, full_cov, full_output_cov, whiten
 ):
@@ -372,14 +378,21 @@ def test_fully_correlated_conditional_repeat_shapes_fc_and_foc(
     assert v.shape.as_list() == expected_v_shape
 
 
-@pytest.mark.parametrize("whiten", [
-    True,
-    pytest.param(
-        False,
-        marks=pytest.mark.xfail(reason="fully_correlated_conditional does not support whiten=False"),
-    ),
-])       
-def test_fully_correlated_conditional_shapes_fc_and_foc(fully_correlated_q_sqrt_factory, full_cov, full_output_cov, whiten):
+@pytest.mark.parametrize(
+    "whiten",
+    [
+        True,
+        pytest.param(
+            False,
+            marks=pytest.mark.xfail(
+                reason="fully_correlated_conditional does not support whiten=False"
+            ),
+        ),
+    ],
+)
+def test_fully_correlated_conditional_shapes_fc_and_foc(
+    fully_correlated_q_sqrt_factory, full_cov, full_output_cov, whiten
+):
     L, M, N, P = Data.L, Data.M, Data.N, Data.P
 
     Kmm = tf.ones((L * M, L * M)) + default_jitter() * tf.eye(L * M)
