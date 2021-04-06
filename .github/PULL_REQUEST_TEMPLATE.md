@@ -6,7 +6,7 @@ Please fill it in as far as possible; if anything about this template is unclear
 
 **PR type:** bugfix / enhancement / new feature / doc improvement
 
-**Related issue(s)/PRs:** <!-- GitHub issue number, e.g. #1216 -->
+**Related issue(s)/PRs:** <!-- GitHub issue number, e.g. "resolves #1216" -->
 
 ## Summary
 
@@ -41,6 +41,7 @@ Please fill it in as far as possible; if anything about this template is unclear
 - [ ] Code has type annotations
 - [ ] I ran the black+isort formatter (`make format`)
 - [ ] I locally tested that the tests pass (`make check-all`)
+- [ ] New contributors: I've added myself to CONTRIBUTORS.md
 
 ### Release notes
 
