@@ -382,10 +382,14 @@ def test_fully_correlated_conditional_repeat_shapes_fc_and_foc(
     assert v.shape.as_list() == expected_v_shape
 
 
-def test_fully_correlated_conditional_fc_and_foc(q_sqrt_factory, full_cov, full_output_cov):
-    # fully_correlated_conditional_repeat does not support whiten = False
-    whiten = True
-
+@pytest.mark.parametrize("whiten", [
+    True,
+    pytest.param(
+        False,
+        marks=pytest.mark.xfail("fully_correlated_conditional does not support whiten=False"),
+    ),
+])       
+def test_fully_correlated_conditional_shapes_fc_and_foc(q_sqrt_factory, full_cov, full_output_cov, whiten):
     L, M, N, P = Data.L, Data.M, Data.N, Data.P
 
     Kmm = tf.ones((L * M, L * M)) + default_jitter() * tf.eye(L * M)
