@@ -324,26 +324,16 @@ def _q_sqrt_factory_fixture(request):
     return request.param
 
 
-@pytest.fixture(name="full_cov", params=[True, False])
-def _full_cov_fixture(request):
-    return request.param
-
-
-@pytest.fixture(name="full_output_cov", params=[True, False])
-def _full_output_cov_fixture(request):
-    return request.param
-
-
 @pytest.mark.parametrize("R", [1, 2, 5])
 @pytest.mark.parametrize("whiten", [
     True,
     pytest.param(
         False,
-        marks=pytest.mark.xfail("fully_correlated_conditional_repeat does not support whiten=False"),
+        marks=pytest.mark.xfail(reason="fully_correlated_conditional_repeat does not support whiten=False"),
     ),
 ])       
 def test_fully_correlated_conditional_repeat_shapes_fc_and_foc(
-    R, q_sqrt_factory, full_cov, full_output_cov, whiten
+    R, fully_correlated_q_sqrt_factory, full_cov, full_output_cov, whiten
 ):
 
     L, M, N, P = Data.L, Data.M, Data.N, Data.P
@@ -365,7 +355,7 @@ def test_fully_correlated_conditional_repeat_shapes_fc_and_foc(
         expected_v_shape = [R, N, P]
 
     f = tf.ones((L * M, R))
-    q_sqrt = q_sqrt_factory(L * M, R)
+    q_sqrt = fully_correlated_q_sqrt_factory(L * M, R)
 
     m, v = fully_correlated_conditional_repeat(
         Kmn,
@@ -386,10 +376,10 @@ def test_fully_correlated_conditional_repeat_shapes_fc_and_foc(
     True,
     pytest.param(
         False,
-        marks=pytest.mark.xfail("fully_correlated_conditional does not support whiten=False"),
+        marks=pytest.mark.xfail(reason="fully_correlated_conditional does not support whiten=False"),
     ),
 ])       
-def test_fully_correlated_conditional_shapes_fc_and_foc(q_sqrt_factory, full_cov, full_output_cov, whiten):
+def test_fully_correlated_conditional_shapes_fc_and_foc(fully_correlated_q_sqrt_factory, full_cov, full_output_cov, whiten):
     L, M, N, P = Data.L, Data.M, Data.N, Data.P
 
     Kmm = tf.ones((L * M, L * M)) + default_jitter() * tf.eye(L * M)
@@ -409,7 +399,7 @@ def test_fully_correlated_conditional_shapes_fc_and_foc(q_sqrt_factory, full_cov
         expected_v_shape = [N, P]
 
     f = tf.ones((L * M, 1))
-    q_sqrt = q_sqrt_factory(L * M, 1)
+    q_sqrt = fully_correlated_q_sqrt_factory(L * M, 1)
 
     m, v = fully_correlated_conditional(
         Kmn,
