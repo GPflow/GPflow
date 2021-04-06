@@ -67,15 +67,39 @@ multioutput_kernel_list = [
 
 @pytest.mark.parametrize("inducing_variable", multioutput_inducing_variable_list)
 @pytest.mark.parametrize("kernel", multioutput_kernel_list)
-def test_kuu(inducing_variable, kernel):
+def test_kuu_shape(inducing_variable, kernel):
     Kuu = mo_kuus.Kuu(inducing_variable, kernel, jitter=1e-9)
-    tf.linalg.cholesky(Kuu)
+    t = tf.linalg.cholesky(Kuu)
+
+    if isinstance(kernel, mk.SharedIndependent):
+        if isinstance(inducing_variable, mf.SeparateIndependentInducingVariables):
+            assert t.shape == (3, 10, 10)
+        else:
+            assert t.shape == (10, 10)
+    else:
+        assert t.shape == (2, 10, 10)
 
 
 @pytest.mark.parametrize("inducing_variable", multioutput_inducing_variable_list)
 @pytest.mark.parametrize("kernel", multioutput_kernel_list)
-def test_kuf(inducing_variable, kernel):
+def test_kuf_shape(inducing_variable, kernel):
     Kuf = mo_kufs.Kuf(inducing_variable, kernel, Datum.Xnew)
+
+    if isinstance(kernel, mk.SharedIndependent):
+        if isinstance(inducing_variable, mf.SeparateIndependentInducingVariables):
+            assert Kuf.shape == (3, 10, 100)
+        else:
+            assert Kuf.shape == (10, 100)
+    else:
+        assert Kuf.shape == (2, 10, 100)
+
+
+@pytest.mark.parametrize("inducing_variable", multioutput_fallback_inducing_variable_list)
+def test_kuf_fallback_shared_inducing_variables_shape(inducing_variable):
+    kernel = mk.LinearCoregionalization(make_kernels(Datum.L), Datum.W)
+    Kuf = mo_kufs.Kuf(inducing_variable, kernel, Datum.Xnew)
+
+    assert Kuf.shape == (10, 2, 100, 3)
 
 
 @pytest.mark.parametrize("inducing_variable", multioutput_fallback_inducing_variable_list)
@@ -85,11 +109,12 @@ def test_kuf_fallback_shared_inducing_variables(inducing_variable):
 
 
 @pytest.mark.parametrize("fun", [mo_kuus.Kuu, mo_kufs.Kuf])
-def test_mixed_shared(fun):
+def test_mixed_shared_shape(fun):
     inducing_variable = mf.SharedIndependentInducingVariables(make_ip())
     kernel = mk.LinearCoregionalization(make_kernels(Datum.L), Datum.W)
     if fun is mo_kuus.Kuu:
         t = tf.linalg.cholesky(fun(inducing_variable, kernel, jitter=1e-9))
+        assert t.shape == (2, 10, 10)
     else:
         t = fun(inducing_variable, kernel, Datum.Xnew)
-        print(t.shape)
+        assert t.shape == (2, 10, 100)
