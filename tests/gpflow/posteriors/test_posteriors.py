@@ -162,13 +162,19 @@ def test_fully_correlated_multi_output(
 
 
 @pytest.mark.parametrize("posterior_class", _independent_multi_output)
-@pytest.mark.parametrize("q_sqrt", [None, tf.constant(LatentVariationalMultiOutputParameters.qsqrt)])
-def test_independent_multi_output_sek_shi(posterior_class, q_sqrt, mean_function, precompute, full_cov, full_output_cov, whiten):
+@pytest.mark.parametrize(
+    "q_sqrt", [None, tf.constant(LatentVariationalMultiOutputParameters.qsqrt)]
+)
+def test_independent_multi_output_sek_shi(
+    posterior_class, q_sqrt, mean_function, precompute, full_cov, full_output_cov, whiten
+):
     """
     Independent multi-output posterior with separate independent kernels and shared inducing points.
     """
     kernel = gpflow.kernels.SeparateIndependent([gpflow.kernels.SquaredExponential()])
-    inducing_variable = gpflow.inducing_variables.SharedIndependentInducingVariables(inducingpoint_wrapper(np.random.randn(NUM_INDUCING_POINTS, 1)))
+    inducing_variable = gpflow.inducing_variables.SharedIndependentInducingVariables(
+        inducingpoint_wrapper(np.random.randn(NUM_INDUCING_POINTS, 1))
+    )
 
     posterior = posterior_class(
         kernel=kernel,
@@ -177,20 +183,28 @@ def test_independent_multi_output_sek_shi(posterior_class, q_sqrt, mean_function
         q_sqrt=q_sqrt,
         whiten=whiten,
         mean_function=mean_function,
-        precompute=precompute
+        precompute=precompute,
     )
 
-    _assert_fused_predict_f_equals_precomputed_predict_f(posterior, precompute, full_cov, full_output_cov, decimals=4)
+    _assert_fused_predict_f_equals_precomputed_predict_f(
+        posterior, precompute, full_cov, full_output_cov, decimals=4
+    )
 
 
 @pytest.mark.parametrize("posterior_class", _independent_multi_output)
-@pytest.mark.parametrize("q_sqrt", [None, tf.constant(LatentVariationalMultiOutputParameters.qsqrt)])
-def test_independent_multi_output_sek_sei(posterior_class, q_sqrt, mean_function, precompute, full_cov, full_output_cov, whiten):
+@pytest.mark.parametrize(
+    "q_sqrt", [None, tf.constant(LatentVariationalMultiOutputParameters.qsqrt)]
+)
+def test_independent_multi_output_sek_sei(
+    posterior_class, q_sqrt, mean_function, precompute, full_cov, full_output_cov, whiten
+):
     """
     Independent multi-output posterior with separate independent kernel and separate inducing points.
     """
     kernel = gpflow.kernels.SeparateIndependent([gpflow.kernels.SquaredExponential()])
-    inducing_variable = gpflow.inducing_variables.SeparateIndependentInducingVariables([inducingpoint_wrapper(np.random.randn(NUM_INDUCING_POINTS, 1))])
+    inducing_variable = gpflow.inducing_variables.SeparateIndependentInducingVariables(
+        [inducingpoint_wrapper(np.random.randn(NUM_INDUCING_POINTS, 1))]
+    )
 
     posterior = posterior_class(
         kernel=kernel,
@@ -199,7 +213,9 @@ def test_independent_multi_output_sek_sei(posterior_class, q_sqrt, mean_function
         q_sqrt=q_sqrt,
         whiten=whiten,
         mean_function=mean_function,
-        precompute=precompute
+        precompute=precompute,
     )
 
-    _assert_fused_predict_f_equals_precomputed_predict_f(posterior, precompute, full_cov, full_output_cov, decimals=5)
+    _assert_fused_predict_f_equals_precomputed_predict_f(
+        posterior, precompute, full_cov, full_output_cov, decimals=5
+    )
