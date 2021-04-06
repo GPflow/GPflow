@@ -137,7 +137,19 @@ class LatentVariationalMultiOutputParameters:
 @pytest.mark.parametrize(
     "q_sqrt", [None, tf.constant(LatentVariationalMultiOutputParameters.qsqrt)]
 )
-@pytest.mark.parametrize("whiten", [True, pytest.param(False, marks=pytest.mark.xfail("FullyCorrelatedPosterior and subclasses are not consistent between the fused and precomputed implementations with whiten=False."))])
+@pytest.mark.parametrize(
+    "whiten",
+    [
+        True,
+        pytest.param(
+            False,
+            marks=pytest.mark.xfail(
+                reason="FullyCorrelatedPosterior and subclasses are not consistent between the "
+                "fused and precomputed implementations with whiten=False."
+            ),
+        ),
+    ],
+)
 def test_fully_correlated_multi_output(
     posterior_class, q_sqrt, mean_function, precompute, full_cov, full_output_cov, whiten
 ):
@@ -283,7 +295,19 @@ def test_independent_multi_output_sek_sei(
 @pytest.mark.parametrize(
     "q_sqrt", [None, tf.constant(LatentVariationalMultiOutputParameters.qsqrt)]
 )
-@pytest.mark.parametrize("whiten", [True, pytest.param(False, marks=pytest.mark.xfail("FullyCorrelatedPosterior and subclasses are not consistent between the fused and precomputed implementations with whiten=False."))])
+@pytest.mark.parametrize(
+    "whiten",
+    [
+        True,
+        pytest.param(
+            False,
+            marks=pytest.mark.xfail(
+                reason="FullyCorrelatedPosterior and subclasses are not consistent between the "
+                "fused and precomputed implementations with whiten=False."
+            ),
+        ),
+    ],
+)
 def test_fallback_independent_multi_output_sei(
     posterior_class, q_sqrt, mean_function, precompute, full_cov, full_output_cov, whiten
 ):
@@ -316,7 +340,19 @@ def test_fallback_independent_multi_output_sei(
 @pytest.mark.parametrize(
     "q_sqrt", [None, tf.constant(LatentVariationalMultiOutputParameters.qsqrt)]
 )
-@pytest.mark.parametrize("whiten", [True, pytest.param(False, marks=pytest.mark.xfail("FullyCorrelatedPosterior and subclasses are not consistent between the fused and precomputed implementations with whiten=False."))])
+@pytest.mark.parametrize(
+    "whiten",
+    [
+        True,
+        pytest.param(
+            False,
+            marks=pytest.mark.xfail(
+                reason="FullyCorrelatedPosterior and subclasses are not consistent between the "
+                "fused and precomputed implementations with whiten=False."
+            ),
+        ),
+    ],
+)
 def test_fallback_independent_multi_output_shi(
     posterior_class, q_sqrt, mean_function, precompute, full_cov, full_output_cov, whiten
 ):
