@@ -346,8 +346,14 @@ class IndependentPosterior(BasePosterior):
     def _conditional_with_precompute(
         self, Xnew, full_cov: bool = False, full_output_cov: bool = False
     ) -> MeanAndVariance:
-        # Qinv: [L, M, M]
+        # Qinv: [M, M] or [L, M, M]
         # alpha: [M, L]
+        if self.Qinv.shape.ndims == 2:
+            # When using a shared kernel and shared inducing points, the shape of Qinv is [M, M].
+            # We need to manually reintroduce the axis representing the number of outputs.
+            Qinv = tf.repeat(self.Qinv[None, :], self.kernel.output_dim, axis=0)
+        else:
+            Qinv = self.Qinv
 
         Kuf = covariances.Kuf(self.inducing_variable, self.kernel, Xnew)  # [(R), M, N]
         Kff = self._get_Kff(Xnew, full_cov)
@@ -360,12 +366,12 @@ class IndependentPosterior(BasePosterior):
             mean = tf.linalg.adjoint(tf.squeeze(mean, axis=-1))
 
         if full_cov:
-            Kfu_Qinv_Kuf = tf.matmul(Kuf, self.Qinv @ Kuf, transpose_a=True)
+            Kfu_Qinv_Kuf = tf.matmul(Kuf, Qinv @ Kuf, transpose_a=True)
             cov = Kff - Kfu_Qinv_Kuf
         else:
             # [Aᵀ B]_ij = Aᵀ_ik B_kj = A_ki B_kj
             # TODO check whether einsum is faster now?
-            Kfu_Qinv_Kuf = tf.reduce_sum(Kuf * tf.matmul(self.Qinv, Kuf), axis=-2)
+            Kfu_Qinv_Kuf = tf.reduce_sum(Kuf * tf.matmul(Qinv, Kuf), axis=-2)
             cov = Kff - Kfu_Qinv_Kuf
             cov = tf.linalg.adjoint(cov)
 

@@ -165,7 +165,6 @@ def test_fully_correlated_multi_output(
 @pytest.mark.parametrize(
     "q_sqrt", [None, tf.constant(LatentVariationalMultiOutputParameters.qsqrt)]
 )
-@pytest.mark.xfail()
 def test_independent_multi_output_shk_shi(
     posterior_class, q_sqrt, mean_function, precompute, full_cov, full_output_cov, whiten
 ):
@@ -188,7 +187,7 @@ def test_independent_multi_output_shk_shi(
     )
 
     _assert_fused_predict_f_equals_precomputed_predict_f(
-        posterior, precompute, full_cov, full_output_cov
+        posterior, precompute, full_cov, full_output_cov, decimals=4
     )
 
 
