@@ -96,7 +96,7 @@ def _fallback_Kuf(
     FallbackSeparateIndependentInducingVariables, LinearCoregionalization, object,
 )
 def _Kuf(
-    inducing_variable: SeparateIndependentInducingVariables,
+    inducing_variable: FallbackSeparateIndependentInducingVariables,
     kernel: LinearCoregionalization,
     Xnew: tf.Tensor,
 ):
