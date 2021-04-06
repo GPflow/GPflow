@@ -32,19 +32,7 @@ Please fill it in as far as possible; if anything about this template is unclear
 # Put your example code in here
 ```
 
-## PR checklist
-<!-- tick off [X] as applicable -->
-- [ ] New features: code is well-documented
-  - [ ] detailed docstrings (API documentation)
-  - [ ] notebook examples (usage demonstration)
-- [ ] The bug case / new feature is covered by unit tests
-- [ ] Code has type annotations
-- [ ] I ran the black+isort formatter (`make format`)
-- [ ] I locally tested that the tests pass (`make check-all`)
-- [ ] New contributors: I've added myself to CONTRIBUTORS.md
-
 ### Release notes
-
 <!-- leave blank if unsure -->
 
 **Fully backwards compatible:** yes / no
@@ -52,6 +40,17 @@ Please fill it in as far as possible; if anything about this template is unclear
 **If not, why is it worth breaking backwards compatibility:**
 <!-- include a short justification -->
 
-**Commit message (for release notes):**
+## PR checklist
+<!-- tick off [X] as applicable -->
+- [ ] New features: code is well-documented
+  - [ ] detailed docstrings (API documentation)
+  - [ ] notebook examples (usage demonstration)
+- [ ] The bug case / new feature is covered by unit tests
+- [ ] Code has type annotations
+- [ ] Build checks
+  - [ ] I ran the black+isort formatter (`make format`)
+  - [ ] I locally tested that the tests pass (`make check-all`)
+- [ ] Release management
+  - [ ] RELEASE.md updated with entry for this change
+  - [ ] New contributors: I've added myself to CONTRIBUTORS.md
 
-* ...
