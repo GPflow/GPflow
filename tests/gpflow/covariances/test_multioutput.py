@@ -102,12 +102,6 @@ def test_kuf_fallback_shared_inducing_variables_shape(inducing_variable):
     assert Kuf.shape == (10, 2, 100, 3)
 
 
-@pytest.mark.parametrize("inducing_variable", multioutput_fallback_inducing_variable_list)
-def test_kuf_fallback_shared_inducing_variables(inducing_variable):
-    kernel = mk.LinearCoregionalization(make_kernels(Datum.L), Datum.W)
-    Kuf = mo_kufs.Kuf(inducing_variable, kernel, Datum.Xnew)
-
-
 @pytest.mark.parametrize("fun", [mo_kuus.Kuu, mo_kufs.Kuf])
 def test_mixed_shared_shape(fun):
     inducing_variable = mf.SharedIndependentInducingVariables(make_ip())
