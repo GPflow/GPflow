@@ -1,4 +1,4 @@
-<!-- (Lines like this are comments and will be invisible - you do not need to edit/remove them) -->
+<!-- (Lines like this are comments and will be invisible - you can leave them as is, or remove them) -->
 
 <!-- Thank you very much for spending time on contributing to GPflow!
 This template exists to simplify communicating basic information that is required to understand your contribution.
