@@ -318,7 +318,7 @@ def test_sample_conditional_mixedkernel():
 
 
 @pytest.fixture(
-    name="q_sqrt_factory", params=[lambda _, __: None, lambda LM, R: tf.eye(LM, batch_shape=(R,))]
+    name="fully_correlated_q_sqrt_factory", params=[lambda _, __: None, lambda LM, R: tf.eye(LM, batch_shape=(R,))]
 )
 def _q_sqrt_factory_fixture(request):
     return request.param
