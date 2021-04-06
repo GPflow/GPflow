@@ -335,11 +335,16 @@ def _full_output_cov_fixture(request):
 
 
 @pytest.mark.parametrize("R", [1, 2, 5])
+@pytest.mark.parametrize("whiten", [
+    True,
+    pytest.param(
+        False,
+        marks=pytest.mark.xfail("fully_correlated_conditional_repeat does not support whiten=False"),
+    ),
+])       
 def test_fully_correlated_conditional_repeat_shapes_fc_and_foc(
-    R, q_sqrt_factory, full_cov, full_output_cov
+    R, q_sqrt_factory, full_cov, full_output_cov, whiten
 ):
-    # fully_correlated_conditional_repeat does not support whiten = False
-    whiten = True
 
     L, M, N, P = Data.L, Data.M, Data.N, Data.P
 
