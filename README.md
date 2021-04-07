@@ -47,7 +47,7 @@ It is now actively maintained by (in alphabetical order)
 [Mark van der Wilk](https://markvdw.github.io/),
 [ST John](https://github.com/st--),
 and [Vincent Dutordoir](https://vdutor.github.io/).
-GPflow would not be the same without the community. **We are grateful to [all contributors](http://github.com/GPflow/GPflow/graphs/contributors) who have helped shape GPflow.**
+GPflow would not be the same without the community. **We are grateful to [all contributors](CONTRIBUTORS.md) who have helped shape GPflow.**
  
  *GPflow is an open source project. If you have relevant skills and are interested in contributing then please do contact us (see ["The GPflow community" section](#the-gpflow-community) below).*
 
