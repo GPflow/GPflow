@@ -18,7 +18,7 @@ import tensorflow as tf
 
 import gpflow
 from gpflow.config import Config, as_context
-from gpflow.utilities.utilities import (
+from gpflow.utilities.traversal import (
     _merge_leaf_components,
     leaf_components,
     set_trainable,
