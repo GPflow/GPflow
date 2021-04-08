@@ -39,6 +39,10 @@ This release contains contributions from:
 
 * GPflow requires TensorFlow >= 2.2.
 
+## Deprecations
+
+* The `gpflow.utilities.utilities` submodule has been deprecated and will be removed in GPflow 2.3. User code should access functions directly through `gpflow.utilities` instead (#1650).
+
 ## Major Features and Improvements
 
 * Improves compatibility between monitoring API and Scipy optimizer (#1642).
@@ -52,9 +56,9 @@ This release contains contributions from:
 * Fixes #1653, a bug in the "fallback" code path for multioutput Kuf (#1654).
 
 * Test suite
-	* Fixes the test suite for TensorFlow 2.4 / TFP 0.12 (#1625).
-	* Fixes mypy call (#1637).
-	* Fixes a bug in test_method_equivalence.py (#1649).
+  * Fixes the test suite for TensorFlow 2.4 / TFP 0.12 (#1625).
+  * Fixes mypy call (#1637).
+  * Fixes a bug in test_method_equivalence.py (#1649).
 
 ## Thanks to our Contributors
 
