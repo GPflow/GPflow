@@ -20,25 +20,11 @@ from typing import Any, Callable, Dict, Optional, Tuple, TypeVar, Union
 import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
-from deprecated import deprecated
 from packaging.version import Version
 from tabulate import tabulate
 
 from ..base import Parameter
 from ..config import default_summary_fmt
-from .misc import (  # for backwards-compatibility
-    set_trainable,
-    to_default_float,
-    to_default_int,
-    training_loop,
-)
-
-to_default_float = deprecated(reason="moved to gpflow.utilities.misc.to_default_float")(
-    to_default_float
-)
-to_default_int = deprecated(reason="moved to gpflow.utilities.misc.to_default_int")(to_default_int)
-training_loop = deprecated(reason="moved to gpflow.utilities.misc.training_loop")(training_loop)
-set_trainable = deprecated(reason="moved to gpflow.utilities.misc.set_trainable")(set_trainable)
 
 __all__ = [
     "multiple_assign",
@@ -51,11 +37,6 @@ __all__ = [
     "read_values",
     "reset_cache_bijectors",
     "select_dict_parameters_with_prior",
-    # for backwards-compatibility:
-    "to_default_float",
-    "to_default_int",
-    "set_trainable",
-    "training_loop",
 ]
 
 TraverseInput = TypeVar("TraverseInput", tf.Variable, tf.Module, Parameter)
