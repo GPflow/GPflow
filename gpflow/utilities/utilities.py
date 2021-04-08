@@ -28,8 +28,8 @@ def _create_module_redirects(m):
         func = getattr(m, name)
         assert callable(func), "all names exported by misc and traversal should be functions"
         deprecated_func = deprecated(
-            reason="gpflow.utilities.utilities module is deprecated and will "
-            f"be removed in GPflow 2.3; use gpflow.utilities.{name} instead"
+            reason="The gpflow.utilities.utilities module is deprecated and will "
+            f"be removed in GPflow 2.3; use gpflow.utilities.{name} instead."
         )(func)
         globals()[name] = deprecated_func
         __all__.append(name)
