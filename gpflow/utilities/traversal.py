@@ -200,7 +200,7 @@ def reset_cache_bijectors(input_module: tf.Module) -> tf.Module:
             def _clear_bijector_cache(bijector: tfp.bijectors.Bijector):
                 bijector._cache.clear()
 
-        else:
+        else:  # pragma: no cover
             # previous versions (including the versions 0.11.0 and 0.11.1 released as of 29 Sep 2020) provide reset(), but its implementation is broken
 
             def _clear_bijector_cache(bijector: tfp.bijectors.Bijector):
@@ -210,7 +210,7 @@ def reset_cache_bijectors(input_module: tf.Module) -> tf.Module:
                 assert type(cache.inverse) == cache_type
                 cache.__init__(cache.forward._func, cache.inverse._func, cache_type)
 
-    else:
+    else:  # pragma: no cover
         # fallback for backwards-compatibility with tensorflow_probability < 0.11.0
 
         def _clear_bijector_cache(bijector: tfp.bijectors.Bijector):
