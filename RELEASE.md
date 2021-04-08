@@ -1,4 +1,4 @@
-Release notes for all past releases are available in the ['Releases' section](https://github.com/GPflow/GPflow/releases) of the GPflow GitHub Repo.
+Release notes for all past releases are available in the ['Releases' section](https://github.com/GPflow/GPflow/releases) of the GPflow GitHub Repo. [HOWTO_RELEASE.md](HOWTO_RELEASE.md) explains just that.
 
 # Release x.y.z (template for future releases)
 
