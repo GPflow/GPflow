@@ -3,6 +3,7 @@ import pytest
 import tensorflow as tf
 
 import gpflow
+from gpflow.utilities.ops import difference_matrix
 
 
 def pca_reduce(X: np.ndarray, Q: np.ndarray) -> np.ndarray:
@@ -26,7 +27,7 @@ def pca_reduce(X: np.ndarray, Q: np.ndarray) -> np.ndarray:
 @pytest.mark.parametrize("N", [3, 7])
 @pytest.mark.parametrize("D", [2, 5, 9])
 @pytest.mark.parametrize("Q", [2, 5, 9])
-def test_numpy_equivalence(N, D, Q):
+def test_pca_reduce_numpy_equivalence(N, D, Q):
     X = np.random.randn(N, D)
 
     if Q > D:
@@ -43,3 +44,16 @@ def test_numpy_equivalence(N, D, Q):
             tf_column = tf_result[:, i]
             np_column = np_result[:, i]
             assert np.allclose(tf_column, np_column) or np.allclose(tf_column, -np_column)
+
+
+def test_difference_matrix_broadcasting_symmetric():
+    X = np.random.randn(5, 4, 3, 2)
+    d = difference_matrix(X, None)
+    assert d.shape == (5, 4, 3, 3, 2)
+
+
+def test_difference_matrix_broadcasting_cross():
+    X = np.random.randn(2, 3, 4, 5)
+    X2 = np.random.randn(8, 7, 6, 5)
+    d = difference_matrix(X, X2)
+    assert d.shape == (2, 3, 4, 8, 7, 6, 5)
