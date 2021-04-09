@@ -29,7 +29,7 @@ from gpflow.posterior import (
     FullyCorrelatedPosterior,
     IndependentPosteriorMultiOutput,
     IndependentPosteriorSingleOutput,
-    LinearCoregionalizationPosterior, get_posterior_class, create_posterior,
+    LinearCoregionalizationPosterior,
 )
 
 NUM_INDUCING_POINTS = 3
@@ -121,7 +121,14 @@ def _assert_fused_predict_f_equals_precomputed_predict_f(
 
 @pytest.mark.parametrize("posterior_class", _independent_single_output)
 def test_independent_single_output(
-    posterior_class, set_q_sqrt, whiten, mean_function, precompute, full_cov, full_output_cov, input_dims
+    posterior_class,
+    set_q_sqrt,
+    whiten,
+    mean_function,
+    precompute,
+    full_cov,
+    full_output_cov,
+    input_dims,
 ):
     kernel = gpflow.kernels.SquaredExponential()
     inducing_variable = inducingpoint_wrapper(np.random.randn(NUM_INDUCING_POINTS, input_dims))
@@ -169,12 +176,22 @@ class LatentVariationalMultiOutputParameters:
     ],
 )
 def test_fully_correlated_multi_output(
-    posterior_class, set_q_sqrt, mean_function, precompute, full_cov, full_output_cov, whiten, input_dims, output_dims
+    posterior_class,
+    set_q_sqrt,
+    mean_function,
+    precompute,
+    full_cov,
+    full_output_cov,
+    whiten,
+    input_dims,
+    output_dims,
 ):
     """
     The fully correlated posterior has one latent GP.
     """
-    kernel = gpflow.kernels.SharedIndependent(gpflow.kernels.SquaredExponential(), output_dim=output_dims)
+    kernel = gpflow.kernels.SharedIndependent(
+        gpflow.kernels.SquaredExponential(), output_dim=output_dims
+    )
     inducing_variable = inducingpoint_wrapper(np.random.randn(NUM_INDUCING_POINTS, input_dims))
 
     q_mu = np.random.randn(output_dims * NUM_INDUCING_POINTS, 1)
@@ -200,12 +217,23 @@ def test_fully_correlated_multi_output(
 
 @pytest.mark.parametrize("posterior_class", _independent_multi_output)
 def test_independent_multi_output_shk_shi(
-    posterior_class, set_q_sqrt, mean_function, precompute, full_cov, full_output_cov, whiten, input_dims, num_latent_gps, output_dims
+    posterior_class,
+    set_q_sqrt,
+    mean_function,
+    precompute,
+    full_cov,
+    full_output_cov,
+    whiten,
+    input_dims,
+    num_latent_gps,
+    output_dims,
 ):
     """
     Independent multi-output posterior with a shared kernel and shared inducing points.
     """
-    kernel = gpflow.kernels.SharedIndependent(gpflow.kernels.SquaredExponential(), output_dim=output_dims)
+    kernel = gpflow.kernels.SharedIndependent(
+        gpflow.kernels.SquaredExponential(), output_dim=output_dims
+    )
     inducing_variable = gpflow.inducing_variables.SharedIndependentInducingVariables(
         inducingpoint_wrapper(np.random.randn(NUM_INDUCING_POINTS, input_dims))
     )
@@ -233,14 +261,28 @@ def test_independent_multi_output_shk_shi(
 
 @pytest.mark.parametrize("posterior_class", _independent_multi_output)
 def test_independent_multi_output_shk_sei(
-    posterior_class, set_q_sqrt, mean_function, precompute, full_cov, full_output_cov, whiten, input_dims, num_latent_gps, output_dims
+    posterior_class,
+    set_q_sqrt,
+    mean_function,
+    precompute,
+    full_cov,
+    full_output_cov,
+    whiten,
+    input_dims,
+    num_latent_gps,
+    output_dims,
 ):
     """
     Independent multi-output posterior with a shared kernel and separate inducing points.
     """
-    kernel = gpflow.kernels.SharedIndependent(gpflow.kernels.SquaredExponential(), output_dim=output_dims)
+    kernel = gpflow.kernels.SharedIndependent(
+        gpflow.kernels.SquaredExponential(), output_dim=output_dims
+    )
     inducing_variable = gpflow.inducing_variables.SeparateIndependentInducingVariables(
-        [inducingpoint_wrapper(np.random.randn(NUM_INDUCING_POINTS, input_dims)) for _ in range(num_latent_gps)]
+        [
+            inducingpoint_wrapper(np.random.randn(NUM_INDUCING_POINTS, input_dims))
+            for _ in range(num_latent_gps)
+        ]
     )
 
     q_mu = np.random.randn(NUM_INDUCING_POINTS, num_latent_gps)
@@ -266,12 +308,23 @@ def test_independent_multi_output_shk_sei(
 
 @pytest.mark.parametrize("posterior_class", _independent_multi_output)
 def test_independent_multi_output_sek_shi(
-    posterior_class, set_q_sqrt, mean_function, precompute, full_cov, full_output_cov, whiten, input_dims, num_latent_gps, output_dims
+    posterior_class,
+    set_q_sqrt,
+    mean_function,
+    precompute,
+    full_cov,
+    full_output_cov,
+    whiten,
+    input_dims,
+    num_latent_gps,
+    output_dims,
 ):
     """
     Independent multi-output posterior with separate independent kernels and shared inducing points.
     """
-    kernel = gpflow.kernels.SeparateIndependent([gpflow.kernels.SquaredExponential() for _ in range(num_latent_gps)])
+    kernel = gpflow.kernels.SeparateIndependent(
+        [gpflow.kernels.SquaredExponential() for _ in range(num_latent_gps)]
+    )
     inducing_variable = gpflow.inducing_variables.SharedIndependentInducingVariables(
         inducingpoint_wrapper(np.random.randn(NUM_INDUCING_POINTS, input_dims))
     )
@@ -299,14 +352,28 @@ def test_independent_multi_output_sek_shi(
 
 @pytest.mark.parametrize("posterior_class", _independent_multi_output)
 def test_independent_multi_output_sek_sei(
-    posterior_class, set_q_sqrt, mean_function, precompute, full_cov, full_output_cov, whiten, input_dims, num_latent_gps, output_dims
+    posterior_class,
+    set_q_sqrt,
+    mean_function,
+    precompute,
+    full_cov,
+    full_output_cov,
+    whiten,
+    input_dims,
+    num_latent_gps,
+    output_dims,
 ):
     """
     Independent multi-output posterior with separate independent kernel and separate inducing points.
     """
-    kernel = gpflow.kernels.SeparateIndependent([gpflow.kernels.SquaredExponential() for _ in range(num_latent_gps)])
+    kernel = gpflow.kernels.SeparateIndependent(
+        [gpflow.kernels.SquaredExponential() for _ in range(num_latent_gps)]
+    )
     inducing_variable = gpflow.inducing_variables.SeparateIndependentInducingVariables(
-        [inducingpoint_wrapper(np.random.randn(NUM_INDUCING_POINTS, input_dims)) for _ in range(num_latent_gps)]
+        [
+            inducingpoint_wrapper(np.random.randn(NUM_INDUCING_POINTS, input_dims))
+            for _ in range(num_latent_gps)
+        ]
     )
 
     q_mu = np.random.randn(NUM_INDUCING_POINTS, num_latent_gps)
@@ -345,7 +412,15 @@ def test_independent_multi_output_sek_sei(
     ],
 )
 def test_fallback_independent_multi_output_sei(
-    posterior_class, set_q_sqrt, mean_function, precompute, full_cov, full_output_cov, whiten, input_dims, output_dims
+    posterior_class,
+    set_q_sqrt,
+    mean_function,
+    precompute,
+    full_cov,
+    full_output_cov,
+    whiten,
+    input_dims,
+    output_dims,
 ):
     """
     Fallback posterior with separate independent inducing variables.
@@ -396,7 +471,15 @@ def test_fallback_independent_multi_output_sei(
     ],
 )
 def test_fallback_independent_multi_output_shi(
-    posterior_class, set_q_sqrt, mean_function, precompute, full_cov, full_output_cov, whiten, input_dims, output_dims
+    posterior_class,
+    set_q_sqrt,
+    mean_function,
+    precompute,
+    full_cov,
+    full_output_cov,
+    whiten,
+    input_dims,
+    output_dims,
 ):
     """
     Fallback posterior with shared independent inducing variables.
@@ -434,16 +517,29 @@ def test_fallback_independent_multi_output_shi(
 
 @pytest.mark.parametrize("posterior_class", _linear_coregionalization)
 def test_linear_coregionalization_sei(
-    posterior_class, set_q_sqrt, mean_function, precompute, full_cov, full_output_cov, whiten, input_dims, num_latent_gps, output_dims
+    posterior_class,
+    set_q_sqrt,
+    mean_function,
+    precompute,
+    full_cov,
+    full_output_cov,
+    whiten,
+    input_dims,
+    num_latent_gps,
+    output_dims,
 ):
     """
     Linear coregionalization posterior with separate independent inducing variables.
     """
     kernel = gpflow.kernels.LinearCoregionalization(
-        [gpflow.kernels.SquaredExponential() for _ in range(num_latent_gps)], W=tf.ones((output_dims, num_latent_gps))
+        [gpflow.kernels.SquaredExponential() for _ in range(num_latent_gps)],
+        W=tf.ones((output_dims, num_latent_gps)),
     )
     inducing_variable = gpflow.inducing_variables.SeparateIndependentInducingVariables(
-        [inducingpoint_wrapper(np.random.randn(NUM_INDUCING_POINTS, input_dims)) for _ in range(num_latent_gps)]
+        [
+            inducingpoint_wrapper(np.random.randn(NUM_INDUCING_POINTS, input_dims))
+            for _ in range(num_latent_gps)
+        ]
     )
 
     q_mu = np.random.randn(NUM_INDUCING_POINTS, num_latent_gps)
@@ -469,13 +565,23 @@ def test_linear_coregionalization_sei(
 
 @pytest.mark.parametrize("posterior_class", _linear_coregionalization)
 def test_linear_coregionalization_shi(
-    posterior_class, set_q_sqrt, mean_function, precompute, full_cov, full_output_cov, whiten, input_dims, num_latent_gps, output_dims
+    posterior_class,
+    set_q_sqrt,
+    mean_function,
+    precompute,
+    full_cov,
+    full_output_cov,
+    whiten,
+    input_dims,
+    num_latent_gps,
+    output_dims,
 ):
     """
     Linear coregionalization with shared independent inducing variables.
     """
     kernel = gpflow.kernels.LinearCoregionalization(
-        [gpflow.kernels.SquaredExponential() for _ in range(num_latent_gps)], W=tf.ones((output_dims, num_latent_gps))
+        [gpflow.kernels.SquaredExponential() for _ in range(num_latent_gps)],
+        W=tf.ones((output_dims, num_latent_gps)),
     )
     inducing_variable = gpflow.inducing_variables.SharedIndependentInducingVariables(
         inducingpoint_wrapper(np.random.randn(NUM_INDUCING_POINTS, input_dims))
