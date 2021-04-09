@@ -354,7 +354,7 @@ def test_fallback_independent_multi_output_sei(
     requires a single latent GP function.
     """
     kernel = gpflow.kernels.LinearCoregionalization(
-        [gpflow.kernels.SquaredExponential() for _ in range(1)], W=tf.ones((output_dims, 1))
+        [gpflow.kernels.SquaredExponential()], W=tf.ones((output_dims, 1))
     )
     inducing_variable = gpflow.inducing_variables.FallbackSeparateIndependentInducingVariables(
         [inducingpoint_wrapper(np.random.randn(NUM_INDUCING_POINTS, input_dims)) for _ in range(1)]
@@ -405,7 +405,7 @@ def test_fallback_independent_multi_output_shi(
     requires a single latent GP function.
     """
     kernel = gpflow.kernels.LinearCoregionalization(
-        [gpflow.kernels.SquaredExponential() for _ in range(1)], W=tf.ones((output_dims, 1))
+        [gpflow.kernels.SquaredExponential()], W=tf.ones((output_dims, 1))
     )
     inducing_variable = gpflow.inducing_variables.FallbackSharedIndependentInducingVariables(
         inducingpoint_wrapper(np.random.randn(NUM_INDUCING_POINTS, input_dims))
@@ -433,26 +433,29 @@ def test_fallback_independent_multi_output_shi(
 
 
 @pytest.mark.parametrize("posterior_class", _linear_coregionalization)
-@pytest.mark.parametrize(
-    "q_sqrt", [None, tf.constant(LatentVariationalMultiOutputParameters.qsqrt)]
-)
 def test_linear_coregionalization_sei(
-    posterior_class, q_sqrt, mean_function, precompute, full_cov, full_output_cov, whiten
+    posterior_class, set_q_sqrt, mean_function, precompute, full_cov, full_output_cov, whiten, input_dims, num_latent_gps, output_dims
 ):
     """
     Linear coregionalization posterior with separate independent inducing variables.
     """
     kernel = gpflow.kernels.LinearCoregionalization(
-        [gpflow.kernels.SquaredExponential()], W=tf.ones((1, 1))
+        [gpflow.kernels.SquaredExponential() for _ in range(num_latent_gps)], W=tf.ones((output_dims, num_latent_gps))
     )
     inducing_variable = gpflow.inducing_variables.SeparateIndependentInducingVariables(
-        [inducingpoint_wrapper(np.random.randn(NUM_INDUCING_POINTS, 1))]
+        [inducingpoint_wrapper(np.random.randn(NUM_INDUCING_POINTS, input_dims)) for _ in range(num_latent_gps)]
     )
+
+    q_mu = np.random.randn(NUM_INDUCING_POINTS, num_latent_gps)
+
+    q_sqrt = None
+    if set_q_sqrt:
+        q_sqrt = tf.eye(NUM_INDUCING_POINTS, batch_shape=[num_latent_gps], dtype=tf.float64)
 
     posterior = posterior_class(
         kernel=kernel,
         inducing_variable=inducing_variable,
-        q_mu=LatentVariationalMultiOutputParameters.qmean,
+        q_mu=q_mu,
         q_sqrt=q_sqrt,
         whiten=whiten,
         mean_function=mean_function,
@@ -460,31 +463,34 @@ def test_linear_coregionalization_sei(
     )
 
     _assert_fused_predict_f_equals_precomputed_predict_f(
-        posterior, precompute, full_cov, full_output_cov, decimals=4
+        posterior, precompute, full_cov, full_output_cov, input_dims, decimals=4
     )
 
 
 @pytest.mark.parametrize("posterior_class", _linear_coregionalization)
-@pytest.mark.parametrize(
-    "q_sqrt", [None, tf.constant(LatentVariationalMultiOutputParameters.qsqrt)]
-)
 def test_linear_coregionalization_shi(
-    posterior_class, q_sqrt, mean_function, precompute, full_cov, full_output_cov, whiten
+    posterior_class, set_q_sqrt, mean_function, precompute, full_cov, full_output_cov, whiten, input_dims, num_latent_gps, output_dims
 ):
     """
     Linear coregionalization with shared independent inducing variables.
     """
     kernel = gpflow.kernels.LinearCoregionalization(
-        [gpflow.kernels.SquaredExponential()], W=tf.ones((1, 1))
+        [gpflow.kernels.SquaredExponential() for _ in range(num_latent_gps)], W=tf.ones((output_dims, num_latent_gps))
     )
     inducing_variable = gpflow.inducing_variables.SharedIndependentInducingVariables(
-        inducingpoint_wrapper(np.random.randn(NUM_INDUCING_POINTS, 1))
+        inducingpoint_wrapper(np.random.randn(NUM_INDUCING_POINTS, input_dims))
     )
+
+    q_mu = np.random.randn(NUM_INDUCING_POINTS, num_latent_gps)
+
+    q_sqrt = None
+    if set_q_sqrt:
+        q_sqrt = tf.eye(NUM_INDUCING_POINTS, batch_shape=[num_latent_gps], dtype=tf.float64)
 
     posterior = posterior_class(
         kernel=kernel,
         inducing_variable=inducing_variable,
-        q_mu=LatentVariationalMultiOutputParameters.qmean,
+        q_mu=q_mu,
         q_sqrt=q_sqrt,
         whiten=whiten,
         mean_function=mean_function,
@@ -492,5 +498,5 @@ def test_linear_coregionalization_shi(
     )
 
     _assert_fused_predict_f_equals_precomputed_predict_f(
-        posterior, precompute, full_cov, full_output_cov, decimals=4
+        posterior, precompute, full_cov, full_output_cov, input_dims, decimals=4
     )
