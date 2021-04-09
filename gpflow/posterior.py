@@ -350,8 +350,9 @@ class IndependentPosterior(BasePosterior):
         # alpha: [M, L]
         if self.Qinv.shape.ndims == 2:
             # When using a shared kernel and shared inducing points, the shape of Qinv is [M, M].
-            # We need to manually reintroduce the axis representing the number of outputs.
-            Qinv = tf.repeat(self.Qinv[None, :], self.kernel.output_dim, axis=0)
+            # We need to manually reintroduce the axis representing the number of latent GPs.
+            L = self.q_dist.q_mu.shape[1]
+            Qinv = tf.repeat(self.Qinv[None, :], L, axis=0)
         else:
             Qinv = self.Qinv
 
@@ -507,6 +508,10 @@ class FullyCorrelatedPosterior(BasePosterior):
                     tmp = tf.linalg.diag_part(tf.einsum("...ijkl->...jlik", Kfu_Qinv_Kuf))
                 Kfu_Qinv_Kuf = tf.einsum("...ijk->...kij", tmp)  # move diagonal dim to [-3]
         cov = Kff - Kfu_Qinv_Kuf
+
+        if not full_cov and not full_output_cov:
+            if cov.shape.ndims > 1:
+                cov = tf.linalg.adjoint(cov)
 
         mean = tf.reshape(mean, (N, K))
         if full_cov == full_output_cov:
