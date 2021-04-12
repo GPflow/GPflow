@@ -380,13 +380,7 @@ def test_fully_correlated_conditional_repeat_whiten(whiten):
     Knn = tf.ones((N, P))
     f = np.random.randn(1, 1).astype(np.float32)
 
-    mean, _ = fully_correlated_conditional_repeat(
-        Kmn,
-        Kmm,
-        Knn,
-        f,
-        white=whiten,
-    )
+    mean, _ = fully_correlated_conditional_repeat(Kmn, Kmm, Knn, f, white=whiten,)
 
     if whiten:
         expected_mean = (f * Kmn) / Lm
