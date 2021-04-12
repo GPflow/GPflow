@@ -81,9 +81,7 @@ def test_no_missing_kernels():
     assert tested_kernels == concrete_kernels
 
 
-def _assert_fused_predict_f_equals_precomputed_predict_f(
-    posterior, full_cov, full_output_cov, decimals=6
-):
+def _assert_fused_predict_f_equals_precomputed_predict_f(posterior, full_cov, full_output_cov):
     Xnew = np.random.randn(13, INPUT_DIMS)
 
     fused_f_mean, fused_f_cov = posterior.fused_predict_f(
@@ -94,8 +92,8 @@ def _assert_fused_predict_f_equals_precomputed_predict_f(
         Xnew, full_cov=full_cov, full_output_cov=full_output_cov
     )
 
-    np.testing.assert_array_almost_equal(fused_f_mean, precomputed_f_mean, decimal=decimals)
-    np.testing.assert_array_almost_equal(fused_f_cov, precomputed_f_cov, decimal=decimals)
+    np.testing.assert_allclose(fused_f_mean, precomputed_f_mean)
+    np.testing.assert_allclose(fused_f_cov, precomputed_f_cov)
 
 
 def test_independent_single_output(set_q_sqrt, whiten, full_cov, full_output_cov):
@@ -165,9 +163,7 @@ def test_independent_multi_output_shk_shi(
     )
     assert isinstance(posterior, IndependentPosteriorMultiOutput)
 
-    _assert_fused_predict_f_equals_precomputed_predict_f(
-        posterior, full_cov, full_output_cov, decimals=4
-    )
+    _assert_fused_predict_f_equals_precomputed_predict_f(posterior, full_cov, full_output_cov)
 
 
 def test_independent_multi_output_shk_sei(
@@ -197,9 +193,7 @@ def test_independent_multi_output_shk_sei(
     )
     assert isinstance(posterior, IndependentPosteriorMultiOutput)
 
-    _assert_fused_predict_f_equals_precomputed_predict_f(
-        posterior, full_cov, full_output_cov, decimals=4
-    )
+    _assert_fused_predict_f_equals_precomputed_predict_f(posterior, full_cov, full_output_cov)
 
 
 def test_independent_multi_output_sek_shi(
@@ -226,9 +220,7 @@ def test_independent_multi_output_sek_shi(
     )
     assert isinstance(posterior, IndependentPosteriorMultiOutput)
 
-    _assert_fused_predict_f_equals_precomputed_predict_f(
-        posterior, full_cov, full_output_cov, decimals=3
-    )
+    _assert_fused_predict_f_equals_precomputed_predict_f(posterior, full_cov, full_output_cov)
 
 
 def test_independent_multi_output_sek_sei(
@@ -258,9 +250,7 @@ def test_independent_multi_output_sek_sei(
     )
     assert isinstance(posterior, IndependentPosteriorMultiOutput)
 
-    _assert_fused_predict_f_equals_precomputed_predict_f(
-        posterior, full_cov, full_output_cov, decimals=4
-    )
+    _assert_fused_predict_f_equals_precomputed_predict_f(posterior, full_cov, full_output_cov)
 
 
 def test_fallback_independent_multi_output_sei(
@@ -350,9 +340,7 @@ def test_linear_coregionalization_sei(
     )
     assert isinstance(posterior, LinearCoregionalizationPosterior)
 
-    _assert_fused_predict_f_equals_precomputed_predict_f(
-        posterior, full_cov, full_output_cov, decimals=4
-    )
+    _assert_fused_predict_f_equals_precomputed_predict_f(posterior, full_cov, full_output_cov)
 
 
 def test_linear_coregionalization_shi(
@@ -379,6 +367,4 @@ def test_linear_coregionalization_shi(
         kernel=kernel, inducing_variable=inducing_variable, q_mu=q_mu, q_sqrt=q_sqrt, whiten=whiten,
     )
 
-    _assert_fused_predict_f_equals_precomputed_predict_f(
-        posterior, full_cov, full_output_cov, decimals=4
-    )
+    _assert_fused_predict_f_equals_precomputed_predict_f(posterior, full_cov, full_output_cov)
