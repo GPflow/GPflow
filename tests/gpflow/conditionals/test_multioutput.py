@@ -859,3 +859,31 @@ def test_independent_interdomain_conditional_bug_regression():
     _, _ = independent_interdomain_conditional(
         Kmn, Kmm, Knn, q_mu, q_sqrt=q_sqrt, full_cov=False, full_output_cov=False
     )
+
+
+def test_independent_interdomain_conditional_whiten(whiten):
+    """
+    This test checks the effect of the `white` flag, which changes the projection matrix `A`.
+
+    The impact of the flag on the value of `A` can be easily verified by its effect on the
+    predicted mean. While the predicted covariance is also a function of `A` this test does not
+    inspect that value.
+    """
+    N, P = Data.N, Data.P
+
+    Lm = np.random.randn(1, 1, 1).astype(np.float32) ** 2
+    Kmm = Lm * Lm + default_jitter()
+
+    Kmn = tf.ones((1, 1, N, P))
+
+    Knn = tf.ones((N, P))
+    f = np.random.randn(1, 1).astype(np.float32)
+
+    mean, _ = independent_interdomain_conditional(Kmn, Kmm, Knn, f, white=whiten,)
+
+    if whiten:
+        expected_mean = (f * Kmn) / Lm
+    else:
+        expected_mean = (f * Kmn) / Kmm
+
+    np.testing.assert_allclose(mean, expected_mean[0][0], rtol=1e-2)
