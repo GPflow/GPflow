@@ -29,7 +29,8 @@ from gpflow.posterior import (
     FullyCorrelatedPosterior,
     IndependentPosteriorMultiOutput,
     IndependentPosteriorSingleOutput,
-    LinearCoregionalizationPosterior, create_posterior,
+    LinearCoregionalizationPosterior,
+    create_posterior,
 )
 
 INPUT_DIMS = 2
@@ -108,11 +109,7 @@ def test_independent_single_output(set_q_sqrt, whiten, full_cov, full_output_cov
         q_sqrt = tf.constant((np.random.randn(NUM_INDUCING_POINTS, 1) ** 2) * 0.01)
 
     posterior = create_posterior(
-        kernel=kernel,
-        inducing_variable=inducing_variable,
-        q_mu=q_mu,
-        q_sqrt=q_sqrt,
-        whiten=whiten,
+        kernel=kernel, inducing_variable=inducing_variable, q_mu=q_mu, q_sqrt=q_sqrt, whiten=whiten,
     )
     assert isinstance(posterior, IndependentPosteriorSingleOutput)
 
@@ -120,11 +117,7 @@ def test_independent_single_output(set_q_sqrt, whiten, full_cov, full_output_cov
 
 
 def test_fully_correlated_multi_output(
-    set_q_sqrt,
-    full_cov,
-    full_output_cov,
-    whiten,
-    output_dims,
+    set_q_sqrt, full_cov, full_output_cov, whiten, output_dims,
 ):
     """
     The fully correlated posterior has one latent GP.
@@ -141,11 +134,7 @@ def test_fully_correlated_multi_output(
         q_sqrt = tf.eye(output_dims * NUM_INDUCING_POINTS, batch_shape=[1], dtype=tf.float64)
 
     posterior = create_posterior(
-        kernel=kernel,
-        inducing_variable=inducing_variable,
-        q_mu=q_mu,
-        q_sqrt=q_sqrt,
-        whiten=whiten,
+        kernel=kernel, inducing_variable=inducing_variable, q_mu=q_mu, q_sqrt=q_sqrt, whiten=whiten,
     )
     assert isinstance(posterior, FullyCorrelatedPosterior)
 
@@ -153,12 +142,7 @@ def test_fully_correlated_multi_output(
 
 
 def test_independent_multi_output_shk_shi(
-    set_q_sqrt,
-    full_cov,
-    full_output_cov,
-    whiten,
-    num_latent_gps,
-    output_dims,
+    set_q_sqrt, full_cov, full_output_cov, whiten, num_latent_gps, output_dims,
 ):
     """
     Independent multi-output posterior with a shared kernel and shared inducing points.
@@ -177,11 +161,7 @@ def test_independent_multi_output_shk_shi(
         q_sqrt = tf.eye(NUM_INDUCING_POINTS, batch_shape=[num_latent_gps], dtype=tf.float64)
 
     posterior = create_posterior(
-        kernel=kernel,
-        inducing_variable=inducing_variable,
-        q_mu=q_mu,
-        q_sqrt=q_sqrt,
-        whiten=whiten,
+        kernel=kernel, inducing_variable=inducing_variable, q_mu=q_mu, q_sqrt=q_sqrt, whiten=whiten,
     )
     assert isinstance(posterior, IndependentPosteriorMultiOutput)
 
@@ -191,12 +171,7 @@ def test_independent_multi_output_shk_shi(
 
 
 def test_independent_multi_output_shk_sei(
-    set_q_sqrt,
-    full_cov,
-    full_output_cov,
-    whiten,
-    num_latent_gps,
-    output_dims,
+    set_q_sqrt, full_cov, full_output_cov, whiten, num_latent_gps, output_dims,
 ):
     """
     Independent multi-output posterior with a shared kernel and separate inducing points.
@@ -218,11 +193,7 @@ def test_independent_multi_output_shk_sei(
         q_sqrt = tf.eye(NUM_INDUCING_POINTS, batch_shape=[num_latent_gps], dtype=tf.float64)
 
     posterior = create_posterior(
-        kernel=kernel,
-        inducing_variable=inducing_variable,
-        q_mu=q_mu,
-        q_sqrt=q_sqrt,
-        whiten=whiten,
+        kernel=kernel, inducing_variable=inducing_variable, q_mu=q_mu, q_sqrt=q_sqrt, whiten=whiten,
     )
     assert isinstance(posterior, IndependentPosteriorMultiOutput)
 
@@ -232,12 +203,7 @@ def test_independent_multi_output_shk_sei(
 
 
 def test_independent_multi_output_sek_shi(
-    set_q_sqrt,
-    full_cov,
-    full_output_cov,
-    whiten,
-    num_latent_gps,
-    output_dims,
+    set_q_sqrt, full_cov, full_output_cov, whiten, num_latent_gps, output_dims,
 ):
     """
     Independent multi-output posterior with separate independent kernels and shared inducing points.
@@ -256,11 +222,7 @@ def test_independent_multi_output_sek_shi(
         q_sqrt = tf.eye(NUM_INDUCING_POINTS, batch_shape=[num_latent_gps], dtype=tf.float64)
 
     posterior = create_posterior(
-        kernel=kernel,
-        inducing_variable=inducing_variable,
-        q_mu=q_mu,
-        q_sqrt=q_sqrt,
-        whiten=whiten,
+        kernel=kernel, inducing_variable=inducing_variable, q_mu=q_mu, q_sqrt=q_sqrt, whiten=whiten,
     )
     assert isinstance(posterior, IndependentPosteriorMultiOutput)
 
@@ -270,12 +232,7 @@ def test_independent_multi_output_sek_shi(
 
 
 def test_independent_multi_output_sek_sei(
-    set_q_sqrt,
-    full_cov,
-    full_output_cov,
-    whiten,
-    num_latent_gps,
-    output_dims,
+    set_q_sqrt, full_cov, full_output_cov, whiten, num_latent_gps, output_dims,
 ):
     """
     Independent multi-output posterior with separate independent kernel and separate inducing points.
@@ -297,11 +254,7 @@ def test_independent_multi_output_sek_sei(
         q_sqrt = tf.eye(NUM_INDUCING_POINTS, batch_shape=[num_latent_gps], dtype=tf.float64)
 
     posterior = create_posterior(
-        kernel=kernel,
-        inducing_variable=inducing_variable,
-        q_mu=q_mu,
-        q_sqrt=q_sqrt,
-        whiten=whiten,
+        kernel=kernel, inducing_variable=inducing_variable, q_mu=q_mu, q_sqrt=q_sqrt, whiten=whiten,
     )
     assert isinstance(posterior, IndependentPosteriorMultiOutput)
 
@@ -311,11 +264,7 @@ def test_independent_multi_output_sek_sei(
 
 
 def test_fallback_independent_multi_output_sei(
-    set_q_sqrt,
-    full_cov,
-    full_output_cov,
-    whiten,
-    output_dims,
+    set_q_sqrt, full_cov, full_output_cov, whiten, output_dims,
 ):
     """
     Fallback posterior with separate independent inducing variables.
@@ -337,11 +286,7 @@ def test_fallback_independent_multi_output_sei(
         q_sqrt = tf.eye(NUM_INDUCING_POINTS, batch_shape=[1], dtype=tf.float64)
 
     posterior = create_posterior(
-        kernel=kernel,
-        inducing_variable=inducing_variable,
-        q_mu=q_mu,
-        q_sqrt=q_sqrt,
-        whiten=whiten,
+        kernel=kernel, inducing_variable=inducing_variable, q_mu=q_mu, q_sqrt=q_sqrt, whiten=whiten,
     )
     assert isinstance(posterior, FallbackIndependentLatentPosterior)
 
@@ -349,11 +294,7 @@ def test_fallback_independent_multi_output_sei(
 
 
 def test_fallback_independent_multi_output_shi(
-    set_q_sqrt,
-    full_cov,
-    full_output_cov,
-    whiten,
-    output_dims,
+    set_q_sqrt, full_cov, full_output_cov, whiten, output_dims,
 ):
     """
     Fallback posterior with shared independent inducing variables.
@@ -375,23 +316,14 @@ def test_fallback_independent_multi_output_shi(
         q_sqrt = tf.eye(NUM_INDUCING_POINTS, batch_shape=[1], dtype=tf.float64)
 
     posterior = create_posterior(
-        kernel=kernel,
-        inducing_variable=inducing_variable,
-        q_mu=q_mu,
-        q_sqrt=q_sqrt,
-        whiten=whiten,
+        kernel=kernel, inducing_variable=inducing_variable, q_mu=q_mu, q_sqrt=q_sqrt, whiten=whiten,
     )
 
     _assert_fused_predict_f_equals_precomputed_predict_f(posterior, full_cov, full_output_cov)
 
 
 def test_linear_coregionalization_sei(
-    set_q_sqrt,
-    full_cov,
-    full_output_cov,
-    whiten,
-    num_latent_gps,
-    output_dims,
+    set_q_sqrt, full_cov, full_output_cov, whiten, num_latent_gps, output_dims,
 ):
     """
     Linear coregionalization posterior with separate independent inducing variables.
@@ -414,11 +346,7 @@ def test_linear_coregionalization_sei(
         q_sqrt = tf.eye(NUM_INDUCING_POINTS, batch_shape=[num_latent_gps], dtype=tf.float64)
 
     posterior = create_posterior(
-        kernel=kernel,
-        inducing_variable=inducing_variable,
-        q_mu=q_mu,
-        q_sqrt=q_sqrt,
-        whiten=whiten,
+        kernel=kernel, inducing_variable=inducing_variable, q_mu=q_mu, q_sqrt=q_sqrt, whiten=whiten,
     )
     assert isinstance(posterior, LinearCoregionalizationPosterior)
 
@@ -428,12 +356,7 @@ def test_linear_coregionalization_sei(
 
 
 def test_linear_coregionalization_shi(
-    set_q_sqrt,
-    full_cov,
-    full_output_cov,
-    whiten,
-    num_latent_gps,
-    output_dims,
+    set_q_sqrt, full_cov, full_output_cov, whiten, num_latent_gps, output_dims,
 ):
     """
     Linear coregionalization with shared independent inducing variables.
@@ -453,11 +376,7 @@ def test_linear_coregionalization_shi(
         q_sqrt = tf.eye(NUM_INDUCING_POINTS, batch_shape=[num_latent_gps], dtype=tf.float64)
 
     posterior = create_posterior(
-        kernel=kernel,
-        inducing_variable=inducing_variable,
-        q_mu=q_mu,
-        q_sqrt=q_sqrt,
-        whiten=whiten,
+        kernel=kernel, inducing_variable=inducing_variable, q_mu=q_mu, q_sqrt=q_sqrt, whiten=whiten,
     )
 
     _assert_fused_predict_f_equals_precomputed_predict_f(
