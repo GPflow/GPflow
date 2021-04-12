@@ -887,4 +887,3 @@ def test_independent_interdomain_conditional_whiten(whiten):
         expected_mean = (f * Kmn) / Kmm
 
     np.testing.assert_allclose(mean, expected_mean[0][0], rtol=1e-2)
-
