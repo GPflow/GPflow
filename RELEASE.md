@@ -54,6 +54,7 @@ This release contains contributions from:
 * Fixes a dynamic shape issue in the quadrature code (#1626).
 * Fixes #1651, a bug in `fully_correlated_conditional_repeat` (#1652).
 * Fixes #1653, a bug in the "fallback" code path for multioutput Kuf (#1654).
+* Fixes a bug in the un-whitened code path for the fully correlated conditional function (#1662).
 * Fixes a bug in `independent_interdomain_conditional` (#1663).
 
 * Test suite
