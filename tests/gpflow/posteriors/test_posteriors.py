@@ -317,6 +317,9 @@ def test_fallback_independent_multi_output_shi(
     _assert_fused_predict_f_equals_precomputed_predict_f(posterior, full_cov, full_output_cov)
 
 
+TESTED_POSTERIORS.add(LinearCoregionalizationPosterior)
+
+
 def test_linear_coregionalization_sei(
     set_q_sqrt, full_cov, full_output_cov, whiten, num_latent_gps, output_dims,
 ):
