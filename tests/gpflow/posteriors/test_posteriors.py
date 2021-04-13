@@ -267,7 +267,7 @@ def test_fallback_independent_multi_output_sei(
     requires a single latent GP function.
     """
     kernel = gpflow.kernels.LinearCoregionalization(
-        [gpflow.kernels.SquaredExponential()], W=tf.ones((output_dims, 1))
+        [gpflow.kernels.SquaredExponential()], W=tf.random.normal((output_dims, 1))
     )
     inducing_variable = gpflow.inducing_variables.FallbackSeparateIndependentInducingVariables(
         [inducingpoint_wrapper(np.random.randn(NUM_INDUCING_POINTS, INPUT_DIMS)) for _ in range(1)]
@@ -297,7 +297,7 @@ def test_fallback_independent_multi_output_shi(
     requires a single latent GP function.
     """
     kernel = gpflow.kernels.LinearCoregionalization(
-        [gpflow.kernels.SquaredExponential()], W=tf.ones((output_dims, 1))
+        [gpflow.kernels.SquaredExponential()], W=tf.random.normal((output_dims, 1))
     )
     inducing_variable = gpflow.inducing_variables.FallbackSharedIndependentInducingVariables(
         inducingpoint_wrapper(np.random.randn(NUM_INDUCING_POINTS, INPUT_DIMS))
@@ -328,7 +328,7 @@ def test_linear_coregionalization_sei(
     """
     kernel = gpflow.kernels.LinearCoregionalization(
         [gpflow.kernels.SquaredExponential() for _ in range(num_latent_gps)],
-        W=tf.ones((output_dims, num_latent_gps)),
+        W=tf.random.normal((output_dims, num_latent_gps)),
     )
     inducing_variable = gpflow.inducing_variables.SeparateIndependentInducingVariables(
         [
@@ -359,7 +359,7 @@ def test_linear_coregionalization_shi(
     """
     kernel = gpflow.kernels.LinearCoregionalization(
         [gpflow.kernels.SquaredExponential() for _ in range(num_latent_gps)],
-        W=tf.ones((output_dims, num_latent_gps)),
+        W=tf.random.normal((output_dims, num_latent_gps)),
     )
     inducing_variable = gpflow.inducing_variables.SharedIndependentInducingVariables(
         inducingpoint_wrapper(np.random.randn(NUM_INDUCING_POINTS, INPUT_DIMS))

@@ -225,6 +225,9 @@ class BasePosterior(AbstractPosterior):
         B_Linv = tf.linalg.adjoint(LinvT_B)
         Qinv = tf.linalg.triangular_solve(L, B_Linv, adjoint=True)
 
+        _M, _L = tf.shape(self.q_dist.q_mu)
+        Qinv = tf.broadcast_to(Qinv, [_L, _M, _M])
+
         return alpha, Qinv
 
 
@@ -315,6 +318,8 @@ class LinearOperatorBasePosterior(BasePosterior):
 
         Qinv = Kuu.inverse() - KuuInv_covu_KuuInv  # XXX LinearOperator does not support `-`
 
+        tf.debugging.assert_shapes([(Qinv, ["L", "M", "M"]), ])
+
         return alpha, Qinv
 
 
@@ -346,33 +351,23 @@ class IndependentPosterior(BasePosterior):
     def _conditional_with_precompute(
         self, Xnew, full_cov: bool = False, full_output_cov: bool = False
     ) -> MeanAndVariance:
-        # Qinv: [M, M] or [L, M, M]
+        # Qinv: [L, M, M]
         # alpha: [M, L]
-        if self.Qinv.shape.ndims == 2:
-            # When using a shared kernel and shared inducing points, the shape of Qinv is [M, M].
-            # We need to manually reintroduce the axis representing the number of latent GPs.
-            L = self.q_dist.q_mu.shape[1]
-            Qinv = tf.repeat(self.Qinv[None, :], L, axis=0)
-        else:
-            Qinv = self.Qinv
 
         Kuf = covariances.Kuf(self.inducing_variable, self.kernel, Xnew)  # [(R), M, N]
         Kff = self._get_Kff(Xnew, full_cov)
-
-        N = tf.shape(Xnew)[0]
-        K = tf.shape(Kuf)[-1] // N
 
         mean = tf.matmul(Kuf, self.alpha, transpose_a=True)
         if Kuf.shape.ndims == 3:
             mean = tf.linalg.adjoint(tf.squeeze(mean, axis=-1))
 
         if full_cov:
-            Kfu_Qinv_Kuf = tf.matmul(Kuf, Qinv @ Kuf, transpose_a=True)
+            Kfu_Qinv_Kuf = tf.matmul(Kuf, self.Qinv @ Kuf, transpose_a=True)
             cov = Kff - Kfu_Qinv_Kuf
         else:
             # [Aᵀ B]_ij = Aᵀ_ik B_kj = A_ki B_kj
             # TODO check whether einsum is faster now?
-            Kfu_Qinv_Kuf = tf.reduce_sum(Kuf * tf.matmul(Qinv, Kuf), axis=-2)
+            Kfu_Qinv_Kuf = tf.reduce_sum(Kuf * tf.matmul(self.Qinv, Kuf), axis=-2)
             cov = Kff - Kfu_Qinv_Kuf
             cov = tf.linalg.adjoint(cov)
 
@@ -510,8 +505,7 @@ class FullyCorrelatedPosterior(BasePosterior):
         cov = Kff - Kfu_Qinv_Kuf
 
         if not full_cov and not full_output_cov:
-            if cov.shape.ndims > 1:
-                cov = tf.linalg.adjoint(cov)
+            cov = tf.linalg.adjoint(cov)
 
         mean = tf.reshape(mean, (N, K))
         if full_cov == full_output_cov:
