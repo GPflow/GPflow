@@ -230,7 +230,7 @@ class BasePosterior(AbstractPosterior):
         Qinv = tf.broadcast_to(Qinv, tf.reverse(Qinv_shape, axis=[0]))
 
         tf.debugging.assert_shapes(
-            [(Qinv, ["L", "M", "M"]), ]
+            [(Qinv, ["L", "M", "M"]),]
         )
 
         return alpha, Qinv
