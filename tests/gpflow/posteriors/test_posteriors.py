@@ -68,7 +68,9 @@ def test_no_missing_posterior_tests():
     concrete_posteriors = set([k for k in available_posteriors if not isabstract(k)])
 
     untested_posteriors = concrete_posteriors - TESTED_POSTERIORS
-    assert not untested_posteriors, f"No tests have been registered for the following posteriors: {untested_posteriors}."
+    assert (
+        not untested_posteriors
+    ), f"No tests have been registered for the following posteriors: {untested_posteriors}."
 
 
 def _assert_fused_predict_f_equals_precomputed_predict_f(posterior, full_cov, full_output_cov):
