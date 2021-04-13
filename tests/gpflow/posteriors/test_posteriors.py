@@ -12,9 +12,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from dataclasses import dataclass
 from inspect import isabstract
-from itertools import chain
 
 import numpy as np
 import pytest
@@ -57,28 +55,20 @@ def _output_dims_fixture(request):
     return request.param
 
 
-_independent_single_output = [IndependentPosteriorSingleOutput]
-_fully_correlated_multi_output = [FullyCorrelatedPosterior]
-_independent_multi_output = [IndependentPosteriorMultiOutput]
-_fallback_independent_multi_output = [FallbackIndependentLatentPosterior]
-_linear_coregionalization = [LinearCoregionalizationPosterior]
+TESTED_POSTERIORS = set()
 
 
-def test_no_missing_kernels():
-    tested_kernels = set(
-        chain(
-            _independent_single_output,
-            _fully_correlated_multi_output,
-            _independent_multi_output,
-            _fallback_independent_multi_output,
-            _linear_coregionalization,
-        )
-    )
+def test_no_missing_posterior_tests():
+    """
+    This test ensures that all concrete posteriors have unit tests which compare the predictions
+    from the fused and precomputed code paths. When adding a new concrete posterior class to
+    GPFlow, ensure that it is also tested in this manner.
+    """
+    available_posteriors = list(gpflow.ci_utils.subclasses(AbstractPosterior))
+    concrete_posteriors = set([k for k in available_posteriors if not isabstract(k)])
 
-    available_kernels = list(gpflow.ci_utils.subclasses(AbstractPosterior))
-    concrete_kernels = set([k for k in available_kernels if not isabstract(k)])
-
-    assert tested_kernels == concrete_kernels
+    untested_posteriors = concrete_posteriors - TESTED_POSTERIORS
+    assert not untested_posteriors, f"No tests have been registered for the following posteriors: {untested_posteriors}."
 
 
 def _assert_fused_predict_f_equals_precomputed_predict_f(posterior, full_cov, full_output_cov):
@@ -94,6 +84,9 @@ def _assert_fused_predict_f_equals_precomputed_predict_f(posterior, full_cov, fu
 
     np.testing.assert_allclose(fused_f_mean, precomputed_f_mean)
     np.testing.assert_allclose(fused_f_cov, precomputed_f_cov)
+
+
+TESTED_POSTERIORS.add(IndependentPosteriorSingleOutput)
 
 
 def test_independent_single_output(set_q_sqrt, whiten, full_cov, full_output_cov):
@@ -112,6 +105,9 @@ def test_independent_single_output(set_q_sqrt, whiten, full_cov, full_output_cov
     assert isinstance(posterior, IndependentPosteriorSingleOutput)
 
     _assert_fused_predict_f_equals_precomputed_predict_f(posterior, full_cov, full_output_cov)
+
+
+TESTED_POSTERIORS.add(FullyCorrelatedPosterior)
 
 
 def test_fully_correlated_multi_output(
@@ -137,6 +133,9 @@ def test_fully_correlated_multi_output(
     assert isinstance(posterior, FullyCorrelatedPosterior)
 
     _assert_fused_predict_f_equals_precomputed_predict_f(posterior, full_cov, full_output_cov)
+
+
+TESTED_POSTERIORS.add(IndependentPosteriorMultiOutput)
 
 
 def test_independent_multi_output_shk_shi(
@@ -253,6 +252,9 @@ def test_independent_multi_output_sek_sei(
     _assert_fused_predict_f_equals_precomputed_predict_f(posterior, full_cov, full_output_cov)
 
 
+TESTED_POSTERIORS.add(FallbackIndependentLatentPosterior)
+
+
 def test_fallback_independent_multi_output_sei(
     set_q_sqrt, full_cov, full_output_cov, whiten, output_dims,
 ):
@@ -308,6 +310,7 @@ def test_fallback_independent_multi_output_shi(
     posterior = create_posterior(
         kernel=kernel, inducing_variable=inducing_variable, q_mu=q_mu, q_sqrt=q_sqrt, whiten=whiten,
     )
+    assert isinstance(posterior, FallbackIndependentLatentPosterior)
 
     _assert_fused_predict_f_equals_precomputed_predict_f(posterior, full_cov, full_output_cov)
 
