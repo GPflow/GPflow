@@ -300,7 +300,9 @@ def independent_interdomain_conditional(
 
     # another backsubstitution in the unwhitened case
     if not white:
-        A = tf.linalg.triangular_solve(Lm, A)  # [L, M, M] \ [L, M, N*P]  ->  [L, M, N*P]
+        A = tf.linalg.triangular_solve(
+            Lm, A, adjoint=True
+        )  # [L, M, M] \ [L, M, N*P]  ->  [L, M, N*P]
         Ar = tf.reshape(A, (L, M, N, P))
 
     fmean = tf.tensordot(Ar, f, [[1, 0], [0, 1]])  # [N, P]
@@ -428,8 +430,7 @@ def fully_correlated_conditional_repeat(
 
     # another backsubstitution in the unwhitened case
     if not white:
-        # A = tf.linalg.triangular_solve(tf.linalg.adjoint(Lm), A, lower=False)  # [M, P]
-        raise NotImplementedError("Need to verify this.")  # pragma: no cover
+        A = tf.linalg.triangular_solve(Lm, A, adjoint=True)  # [M, P]
 
     # f: [M, R]
     fmean = tf.linalg.matmul(f, A, transpose_a=True)  # [R, M]  *  [M, P]  ->  [R, P]

@@ -23,3 +23,8 @@ def _full_cov_fixture(request):
 @pytest.fixture(name="full_output_cov", params=[True, False])
 def _full_output_cov_fixture(request):
     return request.param
+
+
+@pytest.fixture(name="whiten", params=[True, False])
+def _whiten_fixture(request):
+    return request.param
