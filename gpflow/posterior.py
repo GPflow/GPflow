@@ -318,7 +318,9 @@ class LinearOperatorBasePosterior(BasePosterior):
 
         Qinv = Kuu.inverse() - KuuInv_covu_KuuInv  # XXX LinearOperator does not support `-`
 
-        tf.debugging.assert_shapes([(Qinv, ["L", "M", "M"]), ])
+        tf.debugging.assert_shapes(
+            [(Qinv, ["L", "M", "M"]),]
+        )
 
         return alpha, Qinv
 
