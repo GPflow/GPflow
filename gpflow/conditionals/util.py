@@ -428,8 +428,7 @@ def fully_correlated_conditional_repeat(
 
     # another backsubstitution in the unwhitened case
     if not white:
-        # A = tf.linalg.triangular_solve(tf.linalg.adjoint(Lm), A, lower=False)  # [M, P]
-        raise NotImplementedError("Need to verify this.")  # pragma: no cover
+        A = tf.linalg.triangular_solve(Lm, A, adjoint=True)  # [M, P]
 
     # f: [M, R]
     fmean = tf.linalg.matmul(f, A, transpose_a=True)  # [R, M]  *  [M, P]  ->  [R, P]
