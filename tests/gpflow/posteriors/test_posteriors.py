@@ -58,6 +58,16 @@ def _output_dims_fixture(request):
 TESTED_POSTERIORS = set()
 
 
+def _test_of(posterior_class):
+    TESTED_POSTERIORS.add(posterior_class)
+
+    def _decorator(test_fn):
+        def _wrapped_test_fn(*args, **kwargs):
+            test_fn(*args, **kwargs)
+        return _wrapped_test_fn
+    return _decorator
+
+
 def test_no_missing_posterior_tests():
     """
     This test ensures that all concrete posteriors have unit tests which compare the predictions
@@ -88,9 +98,7 @@ def _assert_fused_predict_f_equals_precomputed_predict_f(posterior, full_cov, fu
     np.testing.assert_allclose(fused_f_cov, precomputed_f_cov)
 
 
-TESTED_POSTERIORS.add(IndependentPosteriorSingleOutput)
-
-
+@_test_of(IndependentPosteriorSingleOutput)
 def test_independent_single_output(set_q_sqrt, whiten, full_cov, full_output_cov):
     kernel = gpflow.kernels.SquaredExponential()
     inducing_variable = inducingpoint_wrapper(np.random.randn(NUM_INDUCING_POINTS, INPUT_DIMS))
@@ -109,9 +117,7 @@ def test_independent_single_output(set_q_sqrt, whiten, full_cov, full_output_cov
     _assert_fused_predict_f_equals_precomputed_predict_f(posterior, full_cov, full_output_cov)
 
 
-TESTED_POSTERIORS.add(FullyCorrelatedPosterior)
-
-
+@_test_of(FullyCorrelatedPosterior)
 def test_fully_correlated_multi_output(
     set_q_sqrt, full_cov, full_output_cov, whiten, output_dims,
 ):
@@ -140,6 +146,7 @@ def test_fully_correlated_multi_output(
 TESTED_POSTERIORS.add(IndependentPosteriorMultiOutput)
 
 
+@_test_of(IndependentPosteriorMultiOutput)
 def test_independent_multi_output_shk_shi(
     set_q_sqrt, full_cov, full_output_cov, whiten, num_latent_gps, output_dims,
 ):
@@ -167,6 +174,7 @@ def test_independent_multi_output_shk_shi(
     _assert_fused_predict_f_equals_precomputed_predict_f(posterior, full_cov, full_output_cov)
 
 
+@_test_of(IndependentPosteriorMultiOutput)
 def test_independent_multi_output_shk_sei(
     set_q_sqrt, full_cov, full_output_cov, whiten, num_latent_gps, output_dims,
 ):
@@ -197,6 +205,7 @@ def test_independent_multi_output_shk_sei(
     _assert_fused_predict_f_equals_precomputed_predict_f(posterior, full_cov, full_output_cov)
 
 
+@_test_of(IndependentPosteriorMultiOutput)
 def test_independent_multi_output_sek_shi(
     set_q_sqrt, full_cov, full_output_cov, whiten, num_latent_gps, output_dims,
 ):
@@ -224,6 +233,7 @@ def test_independent_multi_output_sek_shi(
     _assert_fused_predict_f_equals_precomputed_predict_f(posterior, full_cov, full_output_cov)
 
 
+@_test_of(IndependentPosteriorMultiOutput)
 def test_independent_multi_output_sek_sei(
     set_q_sqrt, full_cov, full_output_cov, whiten, num_latent_gps, output_dims,
 ):
@@ -254,9 +264,7 @@ def test_independent_multi_output_sek_sei(
     _assert_fused_predict_f_equals_precomputed_predict_f(posterior, full_cov, full_output_cov)
 
 
-TESTED_POSTERIORS.add(FallbackIndependentLatentPosterior)
-
-
+@_test_of(FallbackIndependentLatentPosterior)
 def test_fallback_independent_multi_output_sei(
     set_q_sqrt, full_cov, full_output_cov, whiten, output_dims,
 ):
@@ -287,6 +295,7 @@ def test_fallback_independent_multi_output_sei(
     _assert_fused_predict_f_equals_precomputed_predict_f(posterior, full_cov, full_output_cov)
 
 
+@_test_of(FallbackIndependentLatentPosterior)
 def test_fallback_independent_multi_output_shi(
     set_q_sqrt, full_cov, full_output_cov, whiten, output_dims,
 ):
@@ -320,6 +329,7 @@ def test_fallback_independent_multi_output_shi(
 TESTED_POSTERIORS.add(LinearCoregionalizationPosterior)
 
 
+@_test_of(LinearCoregionalizationPosterior)
 def test_linear_coregionalization_sei(
     set_q_sqrt, full_cov, full_output_cov, whiten, num_latent_gps, output_dims,
 ):
@@ -351,6 +361,7 @@ def test_linear_coregionalization_sei(
     _assert_fused_predict_f_equals_precomputed_predict_f(posterior, full_cov, full_output_cov)
 
 
+@_test_of(LinearCoregionalizationPosterior)
 def test_linear_coregionalization_shi(
     set_q_sqrt, full_cov, full_output_cov, whiten, num_latent_gps, output_dims,
 ):
