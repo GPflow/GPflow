@@ -228,6 +228,96 @@ class BasePosterior(AbstractPosterior):
         return alpha, Qinv
 
 
+class LinearOperatorBasePosterior(BasePosterior):
+    # WIP
+
+    # base Kuu [M, M]:
+    #  - LinearOperatorFullMatrix
+    #  - LinearOperatorBlockDiag
+    #  - LinearOperatorDiag
+
+    # Kernels / inducing variables:
+    #  - single-output = shared IV *and* kernel; Kuu [M, M], Kuf [M, ..., N] / Kfu [..., N, M]
+    #  - fully-correlated multi-output; Kuu [M, P, M, P], Kuf [M, P, ..., N, P] / Kfu [..., N, P, M, P]
+    #  - separate independent IV and/or kernel (mainly for DGPs); Kuu [L=P, M, M], Kuf [L=P, ..., N] / Kfu [..., N, L=P, M]
+    #  - LinearCoregionalization, IV in g-space; Kuu [L, M, M], Kuf [L, M, ..., N] / Kfu [..., N, L, M]
+    #  - LinearCoregionalization, IV in f-space (fallback); Kuu [L, M, M], Kuf [M, L, ..., N, P] / Kfu [..., N, P, M, L]
+
+    # q(u):
+    #  - fully-correlated, [M*L, M*L]
+    #    LinearOperatorFullMatrix(eye(M*L))
+    #  - block-diagonal (mean field across L), [L, M, M]
+    #    LinearOperatorBlockDiag([LinearOperatorFullMatrix(eye(M)) for _ in range(L)])
+    #  - diagonal (mean field across L), [M, L] --> [L, M]?
+    #    LinearOperatorDiag(ones(M*L))
+
+    def _set_qdist(self, q_mu, q_sqrt):
+        q_mu = tf.linalg.adjoint(q_mu)  # TODO redefine how q_mu is stored internally
+        if len(q_sqrt.shape) == 2:  # q_diag
+            q_sqrt = tf.linalg.adjoint(q_sqrt)  # TODO redefine how q_sqrt is stored internally
+            tf.debugging.assert_shapes(
+                [(q_mu, ["L", "M"]), (q_sqrt, ["L", "M"]),]
+            )
+            self.q_dist = tfp.distributions.MultivariateNormalDiag(loc=q_mu, scale_diag=q_sqrt)
+        else:
+            tf.debugging.assert_shapes(
+                [(q_mu, ["L", "M"]), (q_sqrt, ["L", "M", "M"]),]
+            )
+            self.q_dist = tfp.distributions.MultivariateNormalTriL(loc=q_mu, scale_tril=q_sqrt)
+
+    def _precompute(self):
+        Kuu = covariances.Kuu(
+            self.inducing_variable, self.kernel, jitter=default_jitter()
+        )  # [(R), M, M]
+
+        q_mu = self.q_dist.loc
+        q_sqrt = self.q_dist.scale  # type: tf.linalg.LinearOperator
+
+        if Kuu.shape.ndims == 4:
+            # this branch only gets called in fully-correlated case
+            # TODO this branch won't work; it's left-over from dense Kuu matrices
+            ML = tf.reduce_prod(tf.shape(Kuu)[:2])
+            Kuu = tf.reshape(Kuu, [ML, ML])
+
+        L = Kuu.cholesky()
+
+        if not self.whiten:
+            # alpha = Kuu⁻¹ q_mu
+            alpha = L.solvevec(L.solvevec(q_mu), adjoint=True)  # type: tf.Tensor
+        else:
+            # alpha = L⁻ᵀ q_mu
+            alpha = L.solvevec(q_mu, adjoint=True)  # type: tf.Tensor
+
+        # predictive mean = Kfu alpha
+        # predictive variance = Kff - Kfu Qinv Kuf
+        # S = q_sqrt q_sqrtᵀ
+        if not self.whiten:
+            # Qinv = Kuu⁻¹ - Kuu⁻¹ S Kuu⁻¹
+            #      = Kuu⁻¹ - L⁻ᵀ L⁻¹ S L⁻ᵀ L⁻¹
+            #      = L⁻ᵀ (I - L⁻¹ S L⁻ᵀ) L⁻¹
+            #      = L⁻ᵀ B L⁻¹
+            # Linv_qsqrt = L.solve(q_sqrt)
+            # Linv_cov_u_LinvT = Linv_qsqrt.matmul(Linv_qsqrt, adjoint_arg=True)
+            KuuInv_qsqrt = L.solve(L.solve(q_sqrt), adjoint=True)
+            KuuInv_covu_KuuInv = KuuInv_qsqrt.matmul(KuuInv_qsqrt, adjoint_arg=True)
+        else:
+            # Qinv = Kuu⁻¹ - L⁻ᵀ S L⁻¹
+            # Linv = (L⁻¹ I) = solve(L, I)
+            # Kinv = Linvᵀ @ Linv
+            # Linv_cov_u_LinvT = q_sqrt.matmul(q_sqrt, adjoint_arg=True)
+            LinvT_qsqrt = L.solve(q_sqrt, adjoint=True)
+            KuuInv_covu_KuuInv = LinvT_qsqrt.matmul(LinvT_qsqrt, adjoint_arg=True)
+        # I = tf.eye(tf.shape(Linv_cov_u_LinvT)[-1], dtype=Linv_cov_u_LinvT.dtype)
+        # B = I - Linv_cov_u_LinvT
+        # LinvT_B = tf.linalg.triangular_solve(L, B, adjoint=True)
+        # B_Linv = tf.linalg.adjoint(LinvT_B)
+        # Qinv = tf.linalg.triangular_solve(L, B_Linv, adjoint=True)
+
+        Qinv = Kuu.inverse() - KuuInv_covu_KuuInv  # XXX LinearOperator does not support `-`
+
+        return alpha, Qinv
+
+
 class IndependentPosterior(BasePosterior):
     def _post_process_mean_and_cov(self, mean, cov, full_cov, full_output_cov):
         return mean, expand_independent_outputs(cov, full_cov, full_output_cov)
