@@ -443,7 +443,7 @@ def fully_correlated_conditional_repeat(
             LTA = tf.linalg.matmul(Lf, A_tiled, transpose_a=True)  # [R, M, P]
         elif q_sqrt.shape.ndims == 2:
             A_tiled = tf.tile(A[None, :, :], tf.stack([R, 1, 1]))  # [R, M, P]
-            LTA = Lf * A_tiled                                     # [R, M, P]
+            LTA = Lf * A_tiled  # [R, M, P]
         else:  # pragma: no cover
             raise ValueError(f"Bad dimension for q_sqrt: {q_sqrt.shape.ndims}")
 

@@ -41,17 +41,20 @@ def _q_sqrt_factory_fixture(request):
     When upgrading to Python 3.10, this can be replaced with a match-case statement.
     """
     if request.param == 0:
+
         def fn_0(_, __):
             return None
 
         return fn_0
     elif request.param == 1:
+
         def fn_1(n_inducing_points, num_latent_gps):
             # qsqrt: [M, L]
             return tf.ones((n_inducing_points, num_latent_gps), dtype=tf.float64)
 
         return fn_1
     elif request.param == 2:
+
         def fn_2(n_inducing_points, num_latent_gps):
             # qsqrt: [L, M, M]
             return tf.eye(n_inducing_points, batch_shape=[num_latent_gps], dtype=tf.float64)
@@ -94,7 +97,9 @@ def _ensure_all_posteriors_are_tested_fixture():
     untested_posteriors = concrete_posteriors - TESTED_POSTERIORS
 
     if untested_posteriors:
-        message = f"No tests have been registered for the following posteriors: {untested_posteriors}."
+        message = (
+            f"No tests have been registered for the following posteriors: {untested_posteriors}."
+        )
         if gpflow.ci_utils.is_continuous_integration():
             raise AssertionError(message)
         else:
@@ -125,7 +130,9 @@ def _assert_fused_predict_f_equals_precomputed_predict_f(posterior, full_cov, fu
     np.testing.assert_allclose(fused_f_cov, precomputed_f_cov)
 
 
-def test_independent_single_output(register_posterior_test, q_sqrt_factory, whiten, full_cov, full_output_cov):
+def test_independent_single_output(
+    register_posterior_test, q_sqrt_factory, whiten, full_cov, full_output_cov
+):
     kernel = gpflow.kernels.SquaredExponential()
     inducing_variable = inducingpoint_wrapper(np.random.randn(NUM_INDUCING_POINTS, INPUT_DIMS))
 
@@ -163,7 +170,13 @@ def test_fully_correlated_multi_output(
 
 
 def test_independent_multi_output_shk_shi(
-    register_posterior_test, q_sqrt_factory, full_cov, full_output_cov, whiten, num_latent_gps, output_dims,
+    register_posterior_test,
+    q_sqrt_factory,
+    full_cov,
+    full_output_cov,
+    whiten,
+    num_latent_gps,
+    output_dims,
 ):
     """
     Independent multi-output posterior with a shared kernel and shared inducing points.
@@ -187,7 +200,13 @@ def test_independent_multi_output_shk_shi(
 
 
 def test_independent_multi_output_shk_sei(
-    register_posterior_test, q_sqrt_factory, full_cov, full_output_cov, whiten, num_latent_gps, output_dims,
+    register_posterior_test,
+    q_sqrt_factory,
+    full_cov,
+    full_output_cov,
+    whiten,
+    num_latent_gps,
+    output_dims,
 ):
     """
     Independent multi-output posterior with a shared kernel and separate inducing points.
@@ -214,7 +233,13 @@ def test_independent_multi_output_shk_sei(
 
 
 def test_independent_multi_output_sek_shi(
-    register_posterior_test, q_sqrt_factory, full_cov, full_output_cov, whiten, num_latent_gps, output_dims,
+    register_posterior_test,
+    q_sqrt_factory,
+    full_cov,
+    full_output_cov,
+    whiten,
+    num_latent_gps,
+    output_dims,
 ):
     """
     Independent multi-output posterior with separate independent kernels and shared inducing points.
@@ -238,7 +263,13 @@ def test_independent_multi_output_sek_shi(
 
 
 def test_independent_multi_output_sek_sei(
-    register_posterior_test, q_sqrt_factory, full_cov, full_output_cov, whiten, num_latent_gps, output_dims,
+    register_posterior_test,
+    q_sqrt_factory,
+    full_cov,
+    full_output_cov,
+    whiten,
+    num_latent_gps,
+    output_dims,
 ):
     """
     Independent multi-output posterior with separate independent kernel and separate inducing points.
@@ -319,7 +350,13 @@ def test_fallback_independent_multi_output_shi(
 
 
 def test_linear_coregionalization_sei(
-    register_posterior_test, q_sqrt_factory, full_cov, full_output_cov, whiten, num_latent_gps, output_dims,
+    register_posterior_test,
+    q_sqrt_factory,
+    full_cov,
+    full_output_cov,
+    whiten,
+    num_latent_gps,
+    output_dims,
 ):
     """
     Linear coregionalization posterior with separate independent inducing variables.
@@ -347,7 +384,13 @@ def test_linear_coregionalization_sei(
 
 
 def test_linear_coregionalization_shi(
-    register_posterior_test, q_sqrt_factory, full_cov, full_output_cov, whiten, num_latent_gps, output_dims,
+    register_posterior_test,
+    q_sqrt_factory,
+    full_cov,
+    full_output_cov,
+    whiten,
+    num_latent_gps,
+    output_dims,
 ):
     """
     Linear coregionalization with shared independent inducing variables.
