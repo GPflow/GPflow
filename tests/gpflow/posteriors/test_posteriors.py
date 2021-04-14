@@ -61,7 +61,7 @@ def _q_sqrt_factory_fixture(request):
 
         return fn_2
     else:
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 @pytest.fixture(name="whiten", params=[False, True])
