@@ -57,7 +57,7 @@ def _q_sqrt_factory_fixture(request):
 
         def fn_2(n_inducing_points, num_latent_gps):
             # qsqrt: [L, M, M]
-            return tf.eye(n_inducing_points, batch_shape=[num_latent_gps], dtype=tf.float64)
+            return tf.linalg.band_part(tf.random.normal((num_latent_gps, n_inducing_points, n_inducing_points), dtype=tf.float64), -1, 0)
 
         return fn_2
     else:
