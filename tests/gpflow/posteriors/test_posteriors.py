@@ -57,7 +57,13 @@ def _q_sqrt_factory_fixture(request):
 
         def fn_2(n_inducing_points, num_latent_gps):
             # qsqrt: [L, M, M]
-            return tf.linalg.band_part(tf.random.normal((num_latent_gps, n_inducing_points, n_inducing_points), dtype=tf.float64), -1, 0)
+            return tf.linalg.band_part(
+                tf.random.normal(
+                    (num_latent_gps, n_inducing_points, n_inducing_points), dtype=tf.float64
+                ),
+                -1,
+                0,
+            )
 
         return fn_2
     else:
@@ -88,8 +94,14 @@ def _ensure_all_posteriors_are_tested_fixture():
     This fixture ensures that all concrete posteriors have unit tests which compare the predictions
     from the fused and precomputed code paths. When adding a new concrete posterior class to
     GPFlow, ensure that it is also tested in this manner.
+
+    This autouse, module scoped fixture will always be executed when tests in this module are run.
     """
-    yield
+    # Code here will be executed before any of the tests in this module.
+
+    yield  # Run tests in this module.
+
+    # Code here will be executed after all of the tests in this module.
 
     available_posteriors = list(gpflow.ci_utils.subclasses(AbstractPosterior))
     concrete_posteriors = set([k for k in available_posteriors if not isabstract(k)])
