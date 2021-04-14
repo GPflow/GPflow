@@ -225,9 +225,8 @@ class BasePosterior(AbstractPosterior):
         B_Linv = tf.linalg.adjoint(LinvT_B)
         Qinv = tf.linalg.triangular_solve(L, B_Linv, adjoint=True)
 
-        M_L = tf.shape(self.q_dist.q_mu)
-        Qinv_shape = tf.concat(([M_L[0]], M_L), axis=0)
-        Qinv = tf.broadcast_to(Qinv, tf.reverse(Qinv_shape, axis=[0]))
+        M, L = tf.unstack(tf.shape(self.q_dist.q_mu), num=2)
+        Qinv = tf.broadcast_to(Qinv, [L, M, M])
 
         tf.debugging.assert_shapes(
             [(Qinv, ["L", "M", "M"]),]
