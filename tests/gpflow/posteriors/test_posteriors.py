@@ -50,7 +50,7 @@ def _q_sqrt_factory_fixture(request):
 
         def fn_1(n_inducing_points, num_latent_gps):
             # qsqrt: [M, L]
-            return tf.ones((n_inducing_points, num_latent_gps), dtype=tf.float64)
+            return tf.random.normal((n_inducing_points, num_latent_gps), dtype=tf.float64) ** 2
 
         return fn_1
     elif request.param == 2:
