@@ -11,7 +11,7 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-
+import warnings
 from inspect import isabstract
 
 import numpy as np
@@ -35,9 +35,30 @@ INPUT_DIMS = 2
 NUM_INDUCING_POINTS = 3
 
 
-@pytest.fixture(name="set_q_sqrt", params=[False, True])
-def _set_q_sqrt(request):
-    return request.param
+@pytest.fixture(name="q_sqrt_factory", params=[0, 1, 2])
+def _q_sqrt_factory_fixture(request):
+    """
+    When upgrading to Python 3.10, this can be replaced with a match-case statement.
+    """
+    if request.param == 0:
+        def fn_0(_, __):
+            return None
+
+        return fn_0
+    elif request.param == 1:
+        def fn_1(n_inducing_points, num_latent_gps):
+            # qsqrt: [M, L]
+            return tf.ones((n_inducing_points, num_latent_gps), dtype=tf.float64)
+
+        return fn_1
+    elif request.param == 2:
+        def fn_2(n_inducing_points, num_latent_gps):
+            # qsqrt: [L, M, M]
+            return tf.eye(n_inducing_points, batch_shape=[num_latent_gps], dtype=tf.float64)
+
+        return fn_2
+    else:
+        raise NotImplementedError()
 
 
 @pytest.fixture(name="whiten", params=[False, True])
@@ -58,31 +79,35 @@ def _output_dims_fixture(request):
 TESTED_POSTERIORS = set()
 
 
-def _test_of(posterior_class):
-    TESTED_POSTERIORS.add(posterior_class)
-
-    def _decorator(test_fn):
-        def _wrapped_test_fn(*args, **kwargs):
-            test_fn(*args, **kwargs)
-
-        return _wrapped_test_fn
-
-    return _decorator
-
-
-def test_no_missing_posterior_tests():
+@pytest.fixture(scope="module", autouse=True)
+def _ensure_all_posteriors_are_tested_fixture():
     """
-    This test ensures that all concrete posteriors have unit tests which compare the predictions
+    This fixture ensures that all concrete posteriors have unit tests which compare the predictions
     from the fused and precomputed code paths. When adding a new concrete posterior class to
     GPFlow, ensure that it is also tested in this manner.
     """
+    yield
+
     available_posteriors = list(gpflow.ci_utils.subclasses(AbstractPosterior))
     concrete_posteriors = set([k for k in available_posteriors if not isabstract(k)])
 
     untested_posteriors = concrete_posteriors - TESTED_POSTERIORS
-    assert (
-        not untested_posteriors
-    ), f"No tests have been registered for the following posteriors: {untested_posteriors}."
+
+    if untested_posteriors:
+        message = f"No tests have been registered for the following posteriors: {untested_posteriors}."
+        if gpflow.ci_utils.is_continuous_integration():
+            raise AssertionError(message)
+        else:
+            warnings.warn(message)
+
+
+@pytest.fixture(name="register_posterior_test")
+def _register_posterior_test_fixture():
+    def _verify_and_register_posterior_test(posterior, expected_posterior_class):
+        assert isinstance(posterior, expected_posterior_class)
+        TESTED_POSTERIORS.add(expected_posterior_class)
+
+    return _verify_and_register_posterior_test
 
 
 def _assert_fused_predict_f_equals_precomputed_predict_f(posterior, full_cov, full_output_cov):
@@ -100,28 +125,23 @@ def _assert_fused_predict_f_equals_precomputed_predict_f(posterior, full_cov, fu
     np.testing.assert_allclose(fused_f_cov, precomputed_f_cov)
 
 
-@_test_of(IndependentPosteriorSingleOutput)
-def test_independent_single_output(set_q_sqrt, whiten, full_cov, full_output_cov):
+def test_independent_single_output(register_posterior_test, q_sqrt_factory, whiten, full_cov, full_output_cov):
     kernel = gpflow.kernels.SquaredExponential()
     inducing_variable = inducingpoint_wrapper(np.random.randn(NUM_INDUCING_POINTS, INPUT_DIMS))
 
     q_mu = np.random.randn(NUM_INDUCING_POINTS, 1)
-
-    q_sqrt = None
-    if set_q_sqrt:
-        q_sqrt = tf.constant((np.random.randn(NUM_INDUCING_POINTS, 1) ** 2) * 0.01)
+    q_sqrt = q_sqrt_factory(NUM_INDUCING_POINTS, 1)
 
     posterior = create_posterior(
         kernel=kernel, inducing_variable=inducing_variable, q_mu=q_mu, q_sqrt=q_sqrt, whiten=whiten,
     )
-    assert isinstance(posterior, IndependentPosteriorSingleOutput)
+    register_posterior_test(posterior, IndependentPosteriorSingleOutput)
 
     _assert_fused_predict_f_equals_precomputed_predict_f(posterior, full_cov, full_output_cov)
 
 
-@_test_of(FullyCorrelatedPosterior)
 def test_fully_correlated_multi_output(
-    set_q_sqrt, full_cov, full_output_cov, whiten, output_dims,
+    register_posterior_test, q_sqrt_factory, full_cov, full_output_cov, whiten, output_dims,
 ):
     """
     The fully correlated posterior has one latent GP.
@@ -132,25 +152,18 @@ def test_fully_correlated_multi_output(
     inducing_variable = inducingpoint_wrapper(np.random.randn(NUM_INDUCING_POINTS, INPUT_DIMS))
 
     q_mu = np.random.randn(output_dims * NUM_INDUCING_POINTS, 1)
-
-    q_sqrt = None
-    if set_q_sqrt:
-        q_sqrt = tf.eye(output_dims * NUM_INDUCING_POINTS, batch_shape=[1], dtype=tf.float64)
+    q_sqrt = q_sqrt_factory(output_dims * NUM_INDUCING_POINTS, 1)
 
     posterior = create_posterior(
         kernel=kernel, inducing_variable=inducing_variable, q_mu=q_mu, q_sqrt=q_sqrt, whiten=whiten,
     )
-    assert isinstance(posterior, FullyCorrelatedPosterior)
+    register_posterior_test(posterior, FullyCorrelatedPosterior)
 
     _assert_fused_predict_f_equals_precomputed_predict_f(posterior, full_cov, full_output_cov)
 
 
-TESTED_POSTERIORS.add(IndependentPosteriorMultiOutput)
-
-
-@_test_of(IndependentPosteriorMultiOutput)
 def test_independent_multi_output_shk_shi(
-    set_q_sqrt, full_cov, full_output_cov, whiten, num_latent_gps, output_dims,
+    register_posterior_test, q_sqrt_factory, full_cov, full_output_cov, whiten, num_latent_gps, output_dims,
 ):
     """
     Independent multi-output posterior with a shared kernel and shared inducing points.
@@ -163,22 +176,18 @@ def test_independent_multi_output_shk_shi(
     )
 
     q_mu = np.random.randn(NUM_INDUCING_POINTS, num_latent_gps)
-
-    q_sqrt = None
-    if set_q_sqrt:
-        q_sqrt = tf.eye(NUM_INDUCING_POINTS, batch_shape=[num_latent_gps], dtype=tf.float64)
+    q_sqrt = q_sqrt_factory(NUM_INDUCING_POINTS, num_latent_gps)
 
     posterior = create_posterior(
         kernel=kernel, inducing_variable=inducing_variable, q_mu=q_mu, q_sqrt=q_sqrt, whiten=whiten,
     )
-    assert isinstance(posterior, IndependentPosteriorMultiOutput)
+    register_posterior_test(posterior, IndependentPosteriorMultiOutput)
 
     _assert_fused_predict_f_equals_precomputed_predict_f(posterior, full_cov, full_output_cov)
 
 
-@_test_of(IndependentPosteriorMultiOutput)
 def test_independent_multi_output_shk_sei(
-    set_q_sqrt, full_cov, full_output_cov, whiten, num_latent_gps, output_dims,
+    register_posterior_test, q_sqrt_factory, full_cov, full_output_cov, whiten, num_latent_gps, output_dims,
 ):
     """
     Independent multi-output posterior with a shared kernel and separate inducing points.
@@ -194,22 +203,18 @@ def test_independent_multi_output_shk_sei(
     )
 
     q_mu = np.random.randn(NUM_INDUCING_POINTS, num_latent_gps)
-
-    q_sqrt = None
-    if set_q_sqrt:
-        q_sqrt = tf.eye(NUM_INDUCING_POINTS, batch_shape=[num_latent_gps], dtype=tf.float64)
+    q_sqrt = q_sqrt_factory(NUM_INDUCING_POINTS, num_latent_gps)
 
     posterior = create_posterior(
         kernel=kernel, inducing_variable=inducing_variable, q_mu=q_mu, q_sqrt=q_sqrt, whiten=whiten,
     )
-    assert isinstance(posterior, IndependentPosteriorMultiOutput)
+    register_posterior_test(posterior, IndependentPosteriorMultiOutput)
 
     _assert_fused_predict_f_equals_precomputed_predict_f(posterior, full_cov, full_output_cov)
 
 
-@_test_of(IndependentPosteriorMultiOutput)
 def test_independent_multi_output_sek_shi(
-    set_q_sqrt, full_cov, full_output_cov, whiten, num_latent_gps, output_dims,
+    register_posterior_test, q_sqrt_factory, full_cov, full_output_cov, whiten, num_latent_gps, output_dims,
 ):
     """
     Independent multi-output posterior with separate independent kernels and shared inducing points.
@@ -222,22 +227,18 @@ def test_independent_multi_output_sek_shi(
     )
 
     q_mu = np.random.randn(NUM_INDUCING_POINTS, num_latent_gps)
-
-    q_sqrt = None
-    if set_q_sqrt:
-        q_sqrt = tf.eye(NUM_INDUCING_POINTS, batch_shape=[num_latent_gps], dtype=tf.float64)
+    q_sqrt = q_sqrt_factory(NUM_INDUCING_POINTS, num_latent_gps)
 
     posterior = create_posterior(
         kernel=kernel, inducing_variable=inducing_variable, q_mu=q_mu, q_sqrt=q_sqrt, whiten=whiten,
     )
-    assert isinstance(posterior, IndependentPosteriorMultiOutput)
+    register_posterior_test(posterior, IndependentPosteriorMultiOutput)
 
     _assert_fused_predict_f_equals_precomputed_predict_f(posterior, full_cov, full_output_cov)
 
 
-@_test_of(IndependentPosteriorMultiOutput)
 def test_independent_multi_output_sek_sei(
-    set_q_sqrt, full_cov, full_output_cov, whiten, num_latent_gps, output_dims,
+    register_posterior_test, q_sqrt_factory, full_cov, full_output_cov, whiten, num_latent_gps, output_dims,
 ):
     """
     Independent multi-output posterior with separate independent kernel and separate inducing points.
@@ -253,22 +254,18 @@ def test_independent_multi_output_sek_sei(
     )
 
     q_mu = np.random.randn(NUM_INDUCING_POINTS, num_latent_gps)
-
-    q_sqrt = None
-    if set_q_sqrt:
-        q_sqrt = tf.eye(NUM_INDUCING_POINTS, batch_shape=[num_latent_gps], dtype=tf.float64)
+    q_sqrt = q_sqrt_factory(NUM_INDUCING_POINTS, num_latent_gps)
 
     posterior = create_posterior(
         kernel=kernel, inducing_variable=inducing_variable, q_mu=q_mu, q_sqrt=q_sqrt, whiten=whiten,
     )
-    assert isinstance(posterior, IndependentPosteriorMultiOutput)
+    register_posterior_test(posterior, IndependentPosteriorMultiOutput)
 
     _assert_fused_predict_f_equals_precomputed_predict_f(posterior, full_cov, full_output_cov)
 
 
-@_test_of(FallbackIndependentLatentPosterior)
 def test_fallback_independent_multi_output_sei(
-    set_q_sqrt, full_cov, full_output_cov, whiten, output_dims,
+    register_posterior_test, q_sqrt_factory, full_cov, full_output_cov, whiten, output_dims,
 ):
     """
     Fallback posterior with separate independent inducing variables.
@@ -284,22 +281,18 @@ def test_fallback_independent_multi_output_sei(
     )
 
     q_mu = np.random.randn(NUM_INDUCING_POINTS, 1)
-
-    q_sqrt = None
-    if set_q_sqrt:
-        q_sqrt = tf.eye(NUM_INDUCING_POINTS, batch_shape=[1], dtype=tf.float64)
+    q_sqrt = q_sqrt_factory(NUM_INDUCING_POINTS, 1)
 
     posterior = create_posterior(
         kernel=kernel, inducing_variable=inducing_variable, q_mu=q_mu, q_sqrt=q_sqrt, whiten=whiten,
     )
-    assert isinstance(posterior, FallbackIndependentLatentPosterior)
+    register_posterior_test(posterior, FallbackIndependentLatentPosterior)
 
     _assert_fused_predict_f_equals_precomputed_predict_f(posterior, full_cov, full_output_cov)
 
 
-@_test_of(FallbackIndependentLatentPosterior)
 def test_fallback_independent_multi_output_shi(
-    set_q_sqrt, full_cov, full_output_cov, whiten, output_dims,
+    register_posterior_test, q_sqrt_factory, full_cov, full_output_cov, whiten, output_dims,
 ):
     """
     Fallback posterior with shared independent inducing variables.
@@ -315,25 +308,18 @@ def test_fallback_independent_multi_output_shi(
     )
 
     q_mu = np.random.randn(NUM_INDUCING_POINTS, 1)
-
-    q_sqrt = None
-    if set_q_sqrt:
-        q_sqrt = tf.eye(NUM_INDUCING_POINTS, batch_shape=[1], dtype=tf.float64)
+    q_sqrt = q_sqrt_factory(NUM_INDUCING_POINTS, 1)
 
     posterior = create_posterior(
         kernel=kernel, inducing_variable=inducing_variable, q_mu=q_mu, q_sqrt=q_sqrt, whiten=whiten,
     )
-    assert isinstance(posterior, FallbackIndependentLatentPosterior)
+    register_posterior_test(posterior, FallbackIndependentLatentPosterior)
 
     _assert_fused_predict_f_equals_precomputed_predict_f(posterior, full_cov, full_output_cov)
 
 
-TESTED_POSTERIORS.add(LinearCoregionalizationPosterior)
-
-
-@_test_of(LinearCoregionalizationPosterior)
 def test_linear_coregionalization_sei(
-    set_q_sqrt, full_cov, full_output_cov, whiten, num_latent_gps, output_dims,
+    register_posterior_test, q_sqrt_factory, full_cov, full_output_cov, whiten, num_latent_gps, output_dims,
 ):
     """
     Linear coregionalization posterior with separate independent inducing variables.
@@ -350,22 +336,18 @@ def test_linear_coregionalization_sei(
     )
 
     q_mu = np.random.randn(NUM_INDUCING_POINTS, num_latent_gps)
-
-    q_sqrt = None
-    if set_q_sqrt:
-        q_sqrt = tf.eye(NUM_INDUCING_POINTS, batch_shape=[num_latent_gps], dtype=tf.float64)
+    q_sqrt = q_sqrt_factory(NUM_INDUCING_POINTS, num_latent_gps)
 
     posterior = create_posterior(
         kernel=kernel, inducing_variable=inducing_variable, q_mu=q_mu, q_sqrt=q_sqrt, whiten=whiten,
     )
-    assert isinstance(posterior, LinearCoregionalizationPosterior)
+    register_posterior_test(posterior, LinearCoregionalizationPosterior)
 
     _assert_fused_predict_f_equals_precomputed_predict_f(posterior, full_cov, full_output_cov)
 
 
-@_test_of(LinearCoregionalizationPosterior)
 def test_linear_coregionalization_shi(
-    set_q_sqrt, full_cov, full_output_cov, whiten, num_latent_gps, output_dims,
+    register_posterior_test, q_sqrt_factory, full_cov, full_output_cov, whiten, num_latent_gps, output_dims,
 ):
     """
     Linear coregionalization with shared independent inducing variables.
@@ -379,13 +361,11 @@ def test_linear_coregionalization_shi(
     )
 
     q_mu = np.random.randn(NUM_INDUCING_POINTS, num_latent_gps)
-
-    q_sqrt = None
-    if set_q_sqrt:
-        q_sqrt = tf.eye(NUM_INDUCING_POINTS, batch_shape=[num_latent_gps], dtype=tf.float64)
+    q_sqrt = q_sqrt_factory(NUM_INDUCING_POINTS, num_latent_gps)
 
     posterior = create_posterior(
         kernel=kernel, inducing_variable=inducing_variable, q_mu=q_mu, q_sqrt=q_sqrt, whiten=whiten,
     )
+    register_posterior_test(posterior, LinearCoregionalizationPosterior)
 
     _assert_fused_predict_f_equals_precomputed_predict_f(posterior, full_cov, full_output_cov)
