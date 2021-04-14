@@ -64,7 +64,9 @@ def _test_of(posterior_class):
     def _decorator(test_fn):
         def _wrapped_test_fn(*args, **kwargs):
             test_fn(*args, **kwargs)
+
         return _wrapped_test_fn
+
     return _decorator
 
 
