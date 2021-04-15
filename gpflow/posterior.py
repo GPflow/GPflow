@@ -111,11 +111,6 @@ class AbstractPosterior(Module, ABC):
     def update_cache(self):
         self.alpha, self.Qinv = self._precompute()
 
-    def freeze(self):
-        alpha, Qinv = self._precompute()
-        self.alpha = Parameter(alpha, trainable=False)
-        self.Qinv = Parameter(Qinv, trainable=False)
-
     def update_cache_with_variables(self):
         alpha, Qinv = self._precompute()
         if isinstance(self.alpha, Parameter) and isinstance(self.Qinv, Parameter):
