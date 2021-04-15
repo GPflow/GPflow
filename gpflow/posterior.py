@@ -42,7 +42,14 @@ from .types import MeanAndVariance
 from .utilities import Dispatcher
 
 
-class DeltaDist(Module):
+class _QDistribution(Module):
+    """
+    Base class for our parametrization of q(u).
+    Internal - do not rely on this outside of GPflow.
+    """
+
+
+class _DeltaDist(_QDistribution):
     def __init__(self, q_mu):
         self.q_mu = q_mu  # [M, L]
 
@@ -51,13 +58,13 @@ class DeltaDist(Module):
         return None
 
 
-class DiagNormal(Module):
+class _DiagNormal(_QDistribution):
     def __init__(self, q_mu, q_sqrt):
         self.q_mu = q_mu  # [M, L]
         self.q_sqrt = q_sqrt  # [M, L]
 
 
-class MvnNormal(Module):
+class _MvNormal(_QDistribution):
     def __init__(self, q_mu, q_sqrt):
         self.q_mu = q_mu  # [M, L]
         self.q_sqrt = q_sqrt  # [L, M, M], lower-triangular
@@ -87,27 +94,22 @@ class AbstractPosterior(Module, ABC):
 
     @property
     def q_mu(self):
-        return self.q_dist.q_mu
+        return self._q_dist.q_mu
 
     @property
     def q_sqrt(self):
-        return self.q_dist.q_sqrt
+        return self._q_dist.q_sqrt
 
     def _set_qdist(self, q_mu, q_sqrt):
         if q_sqrt is None:
-            self.q_dist = DeltaDist(q_mu)
+            self._q_dist = _DeltaDist(q_mu)
         elif len(q_sqrt.shape) == 2:  # q_diag
-            self.q_dist = DiagNormal(q_mu, q_sqrt)
+            self._q_dist = _DiagNormal(q_mu, q_sqrt)
         else:
-            self.q_dist = MvnNormal(q_mu, q_sqrt)
+            self._q_dist = _MvNormal(q_mu, q_sqrt)
 
     def update_cache(self):
         self.alpha, self.Qinv = self._precompute()
-
-    def freeze(self):
-        alpha, Qinv = self._precompute()
-        self.alpha = Parameter(alpha, trainable=False)
-        self.Qinv = Parameter(Qinv, trainable=False)
 
     def update_cache_with_variables(self):
         alpha, Qinv = self._precompute()
@@ -178,13 +180,13 @@ class BasePosterior(AbstractPosterior):
         Kuu = covariances.Kuu(
             self.inducing_variable, self.kernel, jitter=default_jitter()
         )  # [(R), M, M]
-        q_mu = self.q_dist.q_mu
+        q_mu = self._q_dist.q_mu
 
         if Kuu.shape.ndims == 4:
             ML = tf.reduce_prod(tf.shape(Kuu)[:2])
             Kuu = tf.reshape(Kuu, [ML, ML])
         if Kuu.shape.ndims == 3:
-            q_mu = tf.linalg.adjoint(self.q_dist.q_mu)[..., None]  # [..., R, M, 1]
+            q_mu = tf.linalg.adjoint(self._q_dist.q_mu)[..., None]  # [..., R, M, 1]
         L = tf.linalg.cholesky(Kuu)
 
         if not self.whiten:
@@ -197,7 +199,7 @@ class BasePosterior(AbstractPosterior):
         # predictive variance = Kff - Kfu Qinv Kuf
         # S = q_sqrt q_sqrtᵀ
         I = tf.eye(tf.shape(L)[-1], dtype=L.dtype)
-        if isinstance(self.q_dist, DeltaDist):
+        if isinstance(self._q_dist, _DeltaDist):
             B = I
         else:
             if not self.whiten:
@@ -205,17 +207,17 @@ class BasePosterior(AbstractPosterior):
                 #      = Kuu⁻¹ - L⁻ᵀ L⁻¹ S L⁻ᵀ L⁻¹
                 #      = L⁻ᵀ (I - L⁻¹ S L⁻ᵀ) L⁻¹
                 #      = L⁻ᵀ B L⁻¹
-                if isinstance(self.q_dist, DiagNormal):
-                    q_sqrt = tf.linalg.diag(tf.linalg.adjoint(self.q_dist.q_sqrt))
-                else:
-                    q_sqrt = self.q_dist.q_sqrt
+                if isinstance(self._q_dist, _DiagNormal):
+                    q_sqrt = tf.linalg.diag(tf.linalg.adjoint(self._q_dist.q_sqrt))
+                elif isinstance(self._q_dist, _MvNormal):
+                    q_sqrt = self._q_dist.q_sqrt
                 Linv_qsqrt = tf.linalg.triangular_solve(L, q_sqrt)
                 Linv_cov_u_LinvT = tf.matmul(Linv_qsqrt, Linv_qsqrt, transpose_b=True)
             else:
-                if isinstance(self.q_dist, DiagNormal):
-                    Linv_cov_u_LinvT = tf.linalg.diag(tf.linalg.adjoint(self.q_dist.q_sqrt ** 2))
-                else:
-                    q_sqrt = self.q_dist.q_sqrt
+                if isinstance(self._q_dist, _DiagNormal):
+                    Linv_cov_u_LinvT = tf.linalg.diag(tf.linalg.adjoint(self._q_dist.q_sqrt ** 2))
+                elif isinstance(self._q_dist, _MvNormal):
+                    q_sqrt = self._q_dist.q_sqrt
                     Linv_cov_u_LinvT = tf.matmul(q_sqrt, q_sqrt, transpose_b=True)
                 # Qinv = Kuu⁻¹ - L⁻ᵀ S L⁻¹
                 # Linv = (L⁻¹ I) = solve(L, I)
@@ -224,6 +226,13 @@ class BasePosterior(AbstractPosterior):
         LinvT_B = tf.linalg.triangular_solve(L, B, adjoint=True)
         B_Linv = tf.linalg.adjoint(LinvT_B)
         Qinv = tf.linalg.triangular_solve(L, B_Linv, adjoint=True)
+
+        M, L = tf.unstack(tf.shape(self._q_dist.q_mu), num=2)
+        Qinv = tf.broadcast_to(Qinv, [L, M, M])
+
+        tf.debugging.assert_shapes(
+            [(Qinv, ["L", "M", "M"]),]
+        )
 
         return alpha, Qinv
 
@@ -351,9 +360,6 @@ class IndependentPosterior(BasePosterior):
 
         Kuf = covariances.Kuf(self.inducing_variable, self.kernel, Xnew)  # [(R), M, N]
         Kff = self._get_Kff(Xnew, full_cov)
-
-        N = tf.shape(Xnew)[0]
-        K = tf.shape(Kuf)[-1] // N
 
         mean = tf.matmul(Kuf, self.alpha, transpose_a=True)
         if Kuf.shape.ndims == 3:
