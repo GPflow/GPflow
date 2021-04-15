@@ -225,6 +225,13 @@ class BasePosterior(AbstractPosterior):
         B_Linv = tf.linalg.adjoint(LinvT_B)
         Qinv = tf.linalg.triangular_solve(L, B_Linv, adjoint=True)
 
+        M, L = tf.unstack(tf.shape(self.q_dist.q_mu), num=2)
+        Qinv = tf.broadcast_to(Qinv, [L, M, M])
+
+        tf.debugging.assert_shapes(
+            [(Qinv, ["L", "M", "M"]),]
+        )
+
         return alpha, Qinv
 
 
@@ -261,9 +268,6 @@ class IndependentPosterior(BasePosterior):
 
         Kuf = covariances.Kuf(self.inducing_variable, self.kernel, Xnew)  # [(R), M, N]
         Kff = self._get_Kff(Xnew, full_cov)
-
-        N = tf.shape(Xnew)[0]
-        K = tf.shape(Kuf)[-1] // N
 
         mean = tf.matmul(Kuf, self.alpha, transpose_a=True)
         if Kuf.shape.ndims == 3:
