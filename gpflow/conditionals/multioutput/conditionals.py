@@ -76,10 +76,10 @@ def shared_independent_conditional(
         Please see `gpflow.conditional._expand_independent_outputs` for more information
         about the shape of the variance, depending on `full_cov` and `full_output_cov`.
     """
-    gp_posterior = IndependentPosteriorMultiOutput(
+    posterior = IndependentPosteriorMultiOutput(
         kernel, inducing_variable, f, q_sqrt, whiten=white, mean_function=None, precompute=False
     )
-    return gp_posterior.fused_predict_f(Xnew, full_cov=full_cov, full_output_cov=full_output_cov)
+    return posterior.fused_predict_f(Xnew, full_cov=full_cov, full_output_cov=full_output_cov)
 
 
 @conditional.register(object, SeparateIndependentInducingVariables, SeparateIndependent, object)
@@ -96,10 +96,10 @@ def separate_independent_conditional(
     q_sqrt=None,
     white=False,
 ):
-    gp_posterior = IndependentPosteriorMultiOutput(
+    posterior = IndependentPosteriorMultiOutput(
         kernel, inducing_variable, f, q_sqrt, whiten=white, mean_function=None, precompute=False
     )
-    return gp_posterior.fused_predict_f(Xnew, full_cov=full_cov, full_output_cov=full_output_cov)
+    return posterior.fused_predict_f(Xnew, full_cov=full_cov, full_output_cov=full_output_cov)
 
 
 @conditional.register(
@@ -133,10 +133,10 @@ def fallback_independent_latent_conditional(
     - See the multioutput notebook for more information about the multioutput framework.
     - See above for the parameters and the return value.
     """
-    gp_posterior = FallbackIndependentLatentPosterior(
+    posterior = FallbackIndependentLatentPosterior(
         kernel, inducing_variable, f, q_sqrt, whiten=white, mean_function=None, precompute=False
     )
-    return gp_posterior.fused_predict_f(Xnew, full_cov=full_cov, full_output_cov=full_output_cov)
+    return posterior.fused_predict_f(Xnew, full_cov=full_cov, full_output_cov=full_output_cov)
 
 
 @conditional.register(object, InducingPoints, MultioutputKernel, object)
@@ -170,10 +170,10 @@ def inducing_point_conditional(
     :param f: variational mean, [L, 1]
     :param q_sqrt: standard-deviations or cholesky, [L, 1]  or  [1, L, L]
     """
-    gp_posterior = FullyCorrelatedPosterior(
+    posterior = FullyCorrelatedPosterior(
         kernel, inducing_variable, f, q_sqrt, whiten=white, mean_function=None, precompute=False
     )
-    return gp_posterior.fused_predict_f(Xnew, full_cov=full_cov, full_output_cov=full_output_cov)
+    return posterior.fused_predict_f(Xnew, full_cov=full_cov, full_output_cov=full_output_cov)
 
 
 @conditional.register(
@@ -206,7 +206,7 @@ def coregionalization_conditional(
       conditional in the single-output case.
     - See the multioutput notebook for more information about the multioutput framework.
     """
-    gp_posterior = LinearCoregionalizationPosterior(
+    posterior = LinearCoregionalizationPosterior(
         kernel, inducing_variable, f, q_sqrt, whiten=white, mean_function=None, precompute=False
     )
-    return gp_posterior.fused_predict_f(Xnew, full_cov=full_cov, full_output_cov=full_output_cov)
+    return posterior.fused_predict_f(Xnew, full_cov=full_cov, full_output_cov=full_output_cov)

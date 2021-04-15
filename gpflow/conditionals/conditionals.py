@@ -17,7 +17,7 @@ import tensorflow as tf
 from ..config import default_jitter
 from ..inducing_variables import InducingVariables
 from ..kernels import Kernel
-from ..posterior import IndependentPosteriorSingleOutput
+from ..posterior import IndependentPosteriorSingleOutput, get_posterior_class
 from ..utilities.ops import eye
 from .dispatch import conditional
 from .util import base_conditional
@@ -66,10 +66,16 @@ def _conditional(
         Please see `gpflow.conditional._expand_independent_outputs` for more information
         about the shape of the variance, depending on `full_cov` and `full_output_cov`.
     """
-    gp_posterior = IndependentPosteriorSingleOutput(
+    try:
+        posterior_class = get_posterior_class(kernel, inducing_variable)
+    except NotImplementedError:
+        # try IndependentPosteriorSingleOutput fallback
+        posterior_class = IndependentPosteriorSingleOutput
+
+    posterior = posterior_class(
         kernel, inducing_variable, f, q_sqrt, whiten=white, mean_function=None, precompute=False
     )
-    return gp_posterior.fused_predict_f(Xnew, full_cov=full_cov, full_output_cov=full_output_cov)
+    return posterior.fused_predict_f(Xnew, full_cov=full_cov, full_output_cov=full_output_cov)
 
 
 @conditional.register(object, object, Kernel, object)
