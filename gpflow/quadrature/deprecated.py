@@ -188,10 +188,10 @@ def ndiag_mc(funcs, S: int, Fmu, Fvar, logspace: bool = False, epsilon=None, **Y
     Fmu, Fvar, Ys should all have same shape, with overall size `N`
     :return: shape is the same as that of the first Fmu
     """
-    N, D = Fmu.shape[0], Fvar.shape[1]
+    N, D = tf.shape(Fmu)[0], tf.shape(Fvar)[1]
 
     if epsilon is None:
-        epsilon = tf.random.normal((S, N, D), dtype=default_float())
+        epsilon = tf.random.normal(shape=[S, N, D], dtype=default_float())
 
     mc_x = Fmu[None, :, :] + tf.sqrt(Fvar[None, :, :]) * epsilon
     mc_Xr = tf.reshape(mc_x, (S * N, D))
