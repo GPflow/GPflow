@@ -234,39 +234,15 @@ import gpflow.posterior
 
 
 class VFFPosterior(gpflow.posterior.AbstractPosterior):
-    def _precompute(self):
-        """
-        Not implemented yet
-        """
-        return np.nan, np.nan
-
-    def _conditional_with_precompute(self, Xnew, full_cov, full_output_cov):
-        return self._conditional_fused(Xnew, full_cov, full_output_cov)
-
     def _conditional_fused(self, Xnew, full_cov, full_output_cov):
         """
-         - Xnew are the points of the data or minibatch, size N x D (tf.array, 2d)
-         - feat is an instance of features.InducingFeature that provides `Kuu` and `Kuf` methods
-           for Fourier features, this contains the limits of the bounding box and the frequencies
-         - f is the value (or mean value) of the features (i.e. the weights)
-         - q_sqrt (default None) is the Cholesky factor of the uncertainty about f
-           (to be propagated through the conditional as per the GPflow inducing-point implementation)
-         - white (defaults False) specifies whether the whitening has been applied
-
-        Given the GP represented by the inducing points specified in `feat`, produce the mean and
-        (co-)variance of the GP at the points Xnew.
-
-           Xnew :: N x D
-           Kuu :: M x M
-           Kuf :: M x N
-           f :: M x K, K = 1
-           q_sqrt :: K x M x M, with K = 1
+        Xnew is a tensor with the points of the data or minibatch, shape N x D
         """
         if full_output_cov:
             raise NotImplementedError
 
-        f = self.q_dist.q_mu
-        q_sqrt = self.q_dist.q_sqrt
+        f = self._q_dist.q_mu
+        q_sqrt = self._q_dist.q_sqrt
 
         # num_data = tf.shape(Xnew)[0]  # M
         num_func = tf.shape(f)[1]  # K
@@ -288,7 +264,6 @@ class VFFPosterior(gpflow.posterior.AbstractPosterior):
             shape, dtype=gpflow.default_float()
         )  # K x N x N or K x N
 
-        # another backsubstitution in the unwhitened case
         if self.whiten:
             raise NotImplementedError
 
@@ -325,11 +300,98 @@ class VFFPosterior(gpflow.posterior.AbstractPosterior):
 
         return fmean, fvar
 
+    # We can also provide a conditional that precomputes as much as possible,
+    # to speed up predictions:
 
+    def _precompute(self):
+        Kuu = cov.Kuu(self.inducing_variable, self.kernel)  # this is now a LinearOperator
+
+        q_mu = self._q_dist.q_mu
+        q_sqrt = self._q_dist.q_sqrt
+
+        if self.whiten:
+            raise NotImplementedError
+        else:
+            # alpha = Kuu⁻¹ q_mu
+            alpha = Kuu.solve(q_mu)  # type: tf.Tensor
+
+        if self.whiten:
+            raise NotImplementedError
+        else:
+            # Qinv = Kuu⁻¹ - Kuu⁻¹ S Kuu⁻¹
+            KuuInv_qsqrt = Kuu.solve(q_sqrt)
+            KuuInv_covu_KuuInv = tf.matmul(KuuInv_qsqrt, KuuInv_qsqrt, transpose_a=True)
+
+        Qinv = Kuu.inverse().to_dense() - KuuInv_covu_KuuInv
+
+        return alpha, Qinv
+
+    def _conditional_with_precompute(self, Xnew, full_cov, full_output_cov):
+        if full_output_cov:
+            raise NotImplementedError
+
+        Kuf = cov.Kuf(self.inducing_variable, self.kernel, Xnew)  # still a Tensor
+
+        # construct the conditional mean
+        fmean = tf.matmul(Kuf, self.alpha, transpose_a=True)
+
+        num_func = tf.shape(self.alpha)[1]  # K
+        Qinv_Kuf = tf.matmul(self.Qinv, Kuf)
+
+        # compute the covariance due to the conditioning
+        if full_cov:
+            fvar = self.kernel(Xnew) - tf.matmul(Kuf, Qinv_Kuf, transpose_a=True)
+        else:
+            KufT_Qinv_Kuf_diag = tf.reduce_sum(Kuf * Qinv_Kuf, axis=-2)
+            fvar = self.kernel(Xnew, full_cov=False) - KufT_Qinv_Kuf_diag
+        fvar = tf.transpose(fvar)
+
+        return fmean, fvar
+
+
+# %% [markdown]
+# We now have to register our Posterior object:
+
+# %%
 @gpflow.posterior.get_posterior_class.register(gpflow.kernels.Kernel, FourierFeatures1D)
 def _get_posterior_vff(kernel, inducing_variable):
     return VFFPosterior
 
+
+# %% [markdown]
+# `gpflow.conditionals.conditional` is a short-hand for calling the fused prediction code path:
+
+# %%
+Mf = 2
+M = 2 * Mf - 1
+kernel = gpflow.kernels.Matern32()
+inducing_variable = FourierFeatures1D(-0.5, 1.5, Mf)
+
+Xnew = np.random.rand(7, 1)
+f = np.random.randn(M, 1)
+q_sqrt = tf.convert_to_tensor(np.tril(np.random.randn(1, M, M)))
+
+conditional_f_mean, conditional_f_var = gpflow.conditionals.conditional(
+    Xnew, inducing_variable, kernel, f, q_sqrt=q_sqrt, white=False, full_cov=True
+)
+
+posterior = VFFPosterior(kernel, inducing_variable, f, q_sqrt, whiten=False, precompute=False)
+posterior_f_mean, posterior_f_var = posterior.fused_predict_f(Xnew, full_cov=True)
+
+np.testing.assert_array_equal(conditional_f_mean, posterior_f_mean)
+np.testing.assert_array_equal(conditional_f_var, posterior_f_var)
+
+# %% [markdown]
+# We can also call the cached path:
+#
+
+# %%
+posterior.update_cache()
+precomputed_posterior_f_mean, precomputed_posterior_f_var = posterior.predict_f(Xnew, full_cov=True)
+
+# np.testing.assert_allclose(precomputed_posterior_f_mean, posterior_f_mean)
+# np.testing.assert_allclose(precomputed_posterior_f_var, posterior_f_var)
+# TODO: there's possibly a bug in this implementation
 
 # %% [markdown]
 # We now demonstrate how to use these new types of inducing variables with the `SVGP` model class. First, let's create some toy data:
