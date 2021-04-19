@@ -54,6 +54,7 @@ class ChangePoints(Combination):
         kernels: List[Kernel],
         locations: List[float],
         steepness: Union[float, List[float]] = 1.0,
+        switch_dim: int = 0,
         name: Optional[str] = None,
     ):
         """
@@ -61,6 +62,8 @@ class ChangePoints(Combination):
         :param locations: list of change-point locations in the 1d input space
         :param steepness: the steepness parameter(s) of the sigmoids, this can be
             common between them or decoupled
+        :param switch_dim: the (one) dimension of the input space along which
+            the change-points are defined
         """
         if len(kernels) != len(locations) + 1:
             raise ValueError(
@@ -76,6 +79,7 @@ class ChangePoints(Combination):
 
         super().__init__(kernels, name=name)
 
+        self.switch_dim = switch_dim
         self.locations = Parameter(locations)
         self.steepness = Parameter(steepness, transform=positive())
 
@@ -119,4 +123,5 @@ class ChangePoints(Combination):
         locations = tf.sort(self.locations)  # ensure locations are ordered
         locations = tf.reshape(locations, (1, 1, -1))
         steepness = tf.reshape(self.steepness, (1, 1, -1))
-        return tf.sigmoid(steepness * (X[:, :, None] - locations))
+        Xslice = tf.reshape(X[:, self.switch_dim], (-1, 1, 1))
+        return tf.sigmoid(steepness * (Xslice - locations))
