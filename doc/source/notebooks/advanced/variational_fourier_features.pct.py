@@ -19,7 +19,9 @@
 #
 # In this notebook we demonstrate how new types of inducing variables can easily be incorporated in the GPflow framework. As an example case, we use the variational Fourier features from [Hensman, Durrande, and Solin (JMLR 2018)](http://jmlr.csail.mit.edu/papers/v18/16-579). All equation and table references are to this paper.
 #
-# **Note:** we cannot yet use Fourier features within the multi-output framework, as `Kuu` and `Kuf` for SharedIndependent and SeparateIndependent inducing variables assume that the sub-inducing variable's covariances are simply computed as dense Tensors. Moreover, the `conditional` is not able to make use of the structure in `Kuu` and `Kuf` as it has to dispatch on the *arguments* to `Kuu` and `Kuf` instead...
+# **Note:** This implementation is meant as an example, not as a feature-complete implementation. For more features, such as multi-dimensional inputs, use the [GPflow 2 version of the original VFF code](https://github.com/st--/VFF).
+#
+# We cannot directly use Fourier features within the multi-output framework without losing the computational advantages, as `Kuu` and `Kuf` for SharedIndependent and SeparateIndependent inducing variables assume that the sub-inducing variable's covariances are simply computed as dense Tensors. However, there is nothing preventing a dedicated implementation of multi-output Fourier features that is computationally more efficient - feel free to discuss this within [the GPflow community](https://github.com/GPflow/GPflow/#the-gpflow-community)!
 
 # %%
 import tensorflow as tf
@@ -50,6 +52,10 @@ import matplotlib.pyplot as plt
 # %%
 class FourierFeatures1D(InducingVariables):
     def __init__(self, a, b, M):
+        """
+        `a` and `b` define the interval [a, b] of the Fourier representation.
+        `M` specifies the number of frequencies to use.
+        """
         # [a, b] defining the interval of the Fourier representation:
         self.a = gpflow.Parameter(a, dtype=gpflow.default_float())
         self.b = gpflow.Parameter(b, dtype=gpflow.default_float())
@@ -58,7 +64,7 @@ class FourierFeatures1D(InducingVariables):
 
     def __len__(self):
         """ number of inducing variables (defines dimensionality of q(u)) """
-        return 2 * len(self.ms) - 1  # M cosine and M-1 sine components
+        return 2 * len(self.ms) - 1  # `M` cosine and `M-1` sine components
 
 
 # %% [markdown]
@@ -173,7 +179,7 @@ def Kuf_matern32_fourierfeatures1d(inducing_variable, kernel, X):
 
 
 # %% [markdown]
-# In principle, this is all we need; however, to be able to take advantage of the structure of `Kuu`, we need to also implement new versions of the KL divergence from the prior to the approximate posterior (`prior_kl`) and the `conditional` computation:
+# In principle, this is all we need; however, to be able to take advantage of the structure of `Kuu`, we need to also implement new versions of the KL divergence from the prior to the approximate posterior (`prior_kl`) and the computation of the Gaussian process conditional (posterior) equations:
 
 # %%
 @kl.prior_kl.register(FourierFeatures1D, gpflow.kernels.Kernel, TensorLike, TensorLike)
