@@ -186,7 +186,7 @@ def test_independent_single_output(
     )
     register_posterior_test(posterior, IndependentPosteriorSingleOutput)
 
-    _assert_fused_predict_f_equals_precomputed_predict_f(
+    _assert_fused_predict_f_equals_precomputed_predict_f_and_conditional(
         posterior, conditional, full_cov, full_output_cov
     )
 
@@ -213,7 +213,7 @@ def test_fully_correlated_multi_output(
     )
     register_posterior_test(posterior, FullyCorrelatedPosterior)
 
-    _assert_fused_predict_f_equals_precomputed_predict_f(
+    _assert_fused_predict_f_equals_precomputed_predict_f_and_conditional(
         posterior, conditional, full_cov, full_output_cov
     )
 
@@ -248,7 +248,7 @@ def test_independent_multi_output_shk_shi(
     )
     register_posterior_test(posterior, IndependentPosteriorMultiOutput)
 
-    _assert_fused_predict_f_equals_precomputed_predict_f(
+    _assert_fused_predict_f_equals_precomputed_predict_f_and_conditional(
         posterior, conditional, full_cov, full_output_cov
     )
 
@@ -286,7 +286,7 @@ def test_independent_multi_output_shk_sei(
     )
     register_posterior_test(posterior, IndependentPosteriorMultiOutput)
 
-    _assert_fused_predict_f_equals_precomputed_predict_f(
+    _assert_fused_predict_f_equals_precomputed_predict_f_and_conditional(
         posterior, conditional, full_cov, full_output_cov
     )
 
@@ -321,7 +321,7 @@ def test_independent_multi_output_sek_shi(
     )
     register_posterior_test(posterior, IndependentPosteriorMultiOutput)
 
-    _assert_fused_predict_f_equals_precomputed_predict_f(
+    _assert_fused_predict_f_equals_precomputed_predict_f_and_conditional(
         posterior, conditional, full_cov, full_output_cov
     )
 
@@ -359,7 +359,7 @@ def test_independent_multi_output_sek_sei(
     )
     register_posterior_test(posterior, IndependentPosteriorMultiOutput)
 
-    _assert_fused_predict_f_equals_precomputed_predict_f(
+    _assert_fused_predict_f_equals_precomputed_predict_f_and_conditional(
         posterior, conditional, full_cov, full_output_cov
     )
 
@@ -391,7 +391,7 @@ def test_fallback_independent_multi_output_sei(
     )
     register_posterior_test(posterior, FallbackIndependentLatentPosterior)
 
-    _assert_fused_predict_f_equals_precomputed_predict_f(
+    _assert_fused_predict_f_equals_precomputed_predict_f_and_conditional(
         posterior, conditional, full_cov, full_output_cov
     )
 
@@ -423,7 +423,7 @@ def test_fallback_independent_multi_output_shi(
     )
     register_posterior_test(posterior, FallbackIndependentLatentPosterior)
 
-    _assert_fused_predict_f_equals_precomputed_predict_f(
+    _assert_fused_predict_f_equals_precomputed_predict_f_and_conditional(
         posterior, conditional, full_cov, full_output_cov
     )
 
@@ -462,7 +462,7 @@ def test_linear_coregionalization_sei(
     )
     register_posterior_test(posterior, LinearCoregionalizationPosterior)
 
-    _assert_fused_predict_f_equals_precomputed_predict_f(
+    _assert_fused_predict_f_equals_precomputed_predict_f_and_conditional(
         posterior, conditional, full_cov, full_output_cov
     )
 
@@ -498,6 +498,6 @@ def test_linear_coregionalization_shi(
     )
     register_posterior_test(posterior, LinearCoregionalizationPosterior)
 
-    _assert_fused_predict_f_equals_precomputed_predict_f(
+    _assert_fused_predict_f_equals_precomputed_predict_f_and_conditional(
         posterior, conditional, full_cov, full_output_cov
     )
