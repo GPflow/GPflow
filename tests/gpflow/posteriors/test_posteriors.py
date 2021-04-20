@@ -20,7 +20,6 @@ import tensorflow as tf
 
 import gpflow
 import gpflow.ci_utils
-from gpflow import Parameter
 from gpflow.conditionals import conditional
 from gpflow.models.util import inducingpoint_wrapper
 from gpflow.posteriors import (
@@ -502,72 +501,3 @@ def test_linear_coregionalization_shi(
     _assert_fused_predict_f_equals_precomputed_predict_f_and_conditional(
         posterior, conditional, full_cov, full_output_cov
     )
-
-
-@pytest.mark.xfail()
-def test_posterior_update_cache_with_variables_no_precompute(q_sqrt_factory, whiten):
-    """
-    precompute=False followed by `update_cache_with_variables` does not work, whereas `update_cache` does.
-    """
-    kernel = gpflow.kernels.SquaredExponential()
-    inducing_variable = inducingpoint_wrapper(np.random.randn(NUM_INDUCING_POINTS, INPUT_DIMS))
-
-    q_mu = np.random.randn(NUM_INDUCING_POINTS, 1)
-    q_sqrt = q_sqrt_factory(NUM_INDUCING_POINTS, 1)
-
-    posterior = IndependentPosteriorSingleOutput(
-        kernel=kernel, inducing_variable=inducing_variable, q_mu=q_mu, q_sqrt=q_sqrt, whiten=whiten, precompute=False
-    )
-    posterior.update_cache_with_variables()
-
-    assert isinstance(posterior.alpha, Parameter)
-    assert isinstance(posterior.Qinv, Parameter)
-
-
-def test_posterior_update_cache_with_variables(q_sqrt_factory, whiten):
-    kernel = gpflow.kernels.SquaredExponential()
-    inducing_variable = inducingpoint_wrapper(np.random.randn(NUM_INDUCING_POINTS, INPUT_DIMS))
-
-    q_mu = np.random.randn(NUM_INDUCING_POINTS, 1)
-    q_sqrt = q_sqrt_factory(NUM_INDUCING_POINTS, 1)
-
-    posterior = IndependentPosteriorSingleOutput(
-        kernel=kernel, inducing_variable=inducing_variable, q_mu=q_mu, q_sqrt=q_sqrt, whiten=whiten
-    )
-    posterior.update_cache_with_variables()
-
-    assert isinstance(posterior.alpha, Parameter)
-    assert isinstance(posterior.Qinv, Parameter)
-
-
-def test_posterior_update_cache_with_variables_update_value(q_sqrt_factory, whiten):
-    # setup posterior
-    kernel = gpflow.kernels.SquaredExponential()
-    inducing_variable = inducingpoint_wrapper(np.random.randn(NUM_INDUCING_POINTS, INPUT_DIMS))
-
-    q_mu = tf.Variable(np.random.randn(NUM_INDUCING_POINTS, 1))
-
-    initial_q_sqrt = q_sqrt_factory(NUM_INDUCING_POINTS, 1)
-    if initial_q_sqrt is not None:
-        q_sqrt = tf.Variable(initial_q_sqrt)
-    else:
-        q_sqrt = initial_q_sqrt
-
-    posterior = IndependentPosteriorSingleOutput(
-        kernel=kernel, inducing_variable=inducing_variable, q_mu=q_mu, q_sqrt=q_sqrt, whiten=whiten
-    )
-    initial_alpha = posterior.alpha
-    initial_Qinv = posterior.Qinv
-
-    posterior.update_cache_with_variables()
-
-    # ensure the values of alpha and Qinv will change
-    q_mu.assign_add(tf.ones_like(q_mu))
-    if initial_q_sqrt is not None:
-        q_sqrt.assign_add(tf.ones_like(q_sqrt))
-    posterior.update_cache_with_variables()
-
-    # assert that the values have changed
-    assert np.any(np.not_equal(initial_alpha, posterior.alpha))
-    if initial_q_sqrt is not None:
-        assert np.any(np.not_equal(initial_Qinv, posterior.Qinv))
