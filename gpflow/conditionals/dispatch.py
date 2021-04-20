@@ -12,7 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from deprecated import deprecated
+
 from ..utilities import Dispatcher
 
 conditional = Dispatcher("conditional")
+conditional._gpflow_internal_register = conditional.register
+
+conditional.register = deprecated(
+    reason="Registering new implementations of conditional() is deprecated. "
+    "Instead, create your own subclass of gpflow.posteriors.AbstractPosterior "
+    "and register an implementation of gpflow.posteriors.get_posterior_class "
+    "that returns your class."
+)(conditional._gpflow_internal_register)
+
 sample_conditional = Dispatcher("sample_conditional")
