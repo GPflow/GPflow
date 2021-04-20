@@ -27,7 +27,7 @@ from ...kernels import (
     SeparateIndependent,
     SharedIndependent,
 )
-from ...posterior import (
+from ...posteriors import (
     FallbackIndependentLatentPosterior,
     FullyCorrelatedPosterior,
     IndependentPosteriorMultiOutput,

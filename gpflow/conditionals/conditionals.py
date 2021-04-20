@@ -17,7 +17,7 @@ import tensorflow as tf
 from ..config import default_jitter
 from ..inducing_variables import InducingVariables
 from ..kernels import Kernel
-from ..posterior import IndependentPosteriorSingleOutput, get_posterior_class
+from ..posteriors import get_posterior_class
 from ..utilities.ops import eye
 from .dispatch import conditional
 from .util import base_conditional

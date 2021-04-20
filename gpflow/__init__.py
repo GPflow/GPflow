@@ -28,7 +28,7 @@ from . import (
     models,
     monitor,
     optimizers,
-    posterior,
+    posteriors,
     probability_distributions,
     quadrature,
     utilities,

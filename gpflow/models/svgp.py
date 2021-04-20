@@ -25,7 +25,7 @@ from ..config import default_float, default_jitter
 from ..models.model import GPModel, InputData, MeanAndVariance, RegressionData
 from ..models.training_mixins import ExternalDataTrainingLossMixin
 from ..models.util import inducingpoint_wrapper
-from ..posterior import create_posterior
+from ..posteriors import create_posterior
 from ..utilities import positive, triangular
 from .model import GPModel, InputData, MeanAndVariance, RegressionData
 from .training_mixins import ExternalDataTrainingLossMixin

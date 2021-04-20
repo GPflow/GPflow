@@ -22,7 +22,7 @@ import gpflow
 import gpflow.ci_utils
 from gpflow.conditionals import conditional
 from gpflow.models.util import inducingpoint_wrapper
-from gpflow.posterior import (
+from gpflow.posteriors import (
     AbstractPosterior,
     FallbackIndependentLatentPosterior,
     FullyCorrelatedPosterior,
