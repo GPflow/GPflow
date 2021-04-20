@@ -320,7 +320,7 @@ class VFFPosterior(gpflow.posterior.AbstractPosterior):
         else:
             # Qinv = Kuu⁻¹ - Kuu⁻¹ S Kuu⁻¹
             KuuInv_qsqrt = Kuu.solve(q_sqrt)
-            KuuInv_covu_KuuInv = tf.matmul(KuuInv_qsqrt, KuuInv_qsqrt, transpose_a=True)
+            KuuInv_covu_KuuInv = tf.matmul(KuuInv_qsqrt, KuuInv_qsqrt, transpose_b=True)
 
         Qinv = Kuu.inverse().to_dense() - KuuInv_covu_KuuInv
 
@@ -389,9 +389,8 @@ np.testing.assert_array_equal(conditional_f_var, posterior_f_var)
 posterior.update_cache()
 precomputed_posterior_f_mean, precomputed_posterior_f_var = posterior.predict_f(Xnew, full_cov=True)
 
-# np.testing.assert_allclose(precomputed_posterior_f_mean, posterior_f_mean)
-# np.testing.assert_allclose(precomputed_posterior_f_var, posterior_f_var)
-# TODO: there's possibly a bug in this implementation
+np.testing.assert_allclose(precomputed_posterior_f_mean, posterior_f_mean)
+np.testing.assert_allclose(precomputed_posterior_f_var, posterior_f_var)
 
 # %% [markdown]
 # We now demonstrate how to use these new types of inducing variables with the `SVGP` model class. First, let's create some toy data:
