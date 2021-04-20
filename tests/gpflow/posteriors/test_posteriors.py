@@ -20,6 +20,7 @@ import tensorflow as tf
 
 import gpflow
 import gpflow.ci_utils
+from gpflow.conditionals import conditional
 from gpflow.models.util import inducingpoint_wrapper
 from gpflow.posterior import (
     AbstractPosterior,
@@ -127,7 +128,27 @@ def _register_posterior_test_fixture():
     return _verify_and_register_posterior_test
 
 
-def _assert_fused_predict_f_equals_precomputed_predict_f(posterior, full_cov, full_output_cov):
+def create_conditional(
+    *, kernel, inducing_variable, q_mu, q_sqrt, whiten,
+):
+    def conditional_closure(Xnew, *, full_cov, full_output_cov):
+        return conditional(
+            Xnew,
+            inducing_variable,
+            kernel,
+            q_mu,
+            q_sqrt=q_sqrt,
+            white=whiten,
+            full_cov=full_cov,
+            full_output_cov=full_output_cov,
+        )
+
+    return conditional_closure
+
+
+def _assert_fused_predict_f_equals_precomputed_predict_f_and_conditional(
+    posterior, conditional_closure, full_cov, full_output_cov
+):
     Xnew = np.random.randn(13, INPUT_DIMS)
 
     fused_f_mean, fused_f_cov = posterior.fused_predict_f(
@@ -138,8 +159,14 @@ def _assert_fused_predict_f_equals_precomputed_predict_f(posterior, full_cov, fu
         Xnew, full_cov=full_cov, full_output_cov=full_output_cov
     )
 
+    conditional_f_mean, conditional_f_cov = conditional_closure(
+        Xnew, full_cov=full_cov, full_output_cov=full_output_cov
+    )
+
     np.testing.assert_allclose(fused_f_mean, precomputed_f_mean)
     np.testing.assert_allclose(fused_f_cov, precomputed_f_cov)
+    np.testing.assert_array_equal(fused_f_mean, conditional_f_mean)
+    np.testing.assert_array_equal(fused_f_cov, conditional_f_cov)
 
 
 def test_independent_single_output(
@@ -151,12 +178,17 @@ def test_independent_single_output(
     q_mu = np.random.randn(NUM_INDUCING_POINTS, 1)
     q_sqrt = q_sqrt_factory(NUM_INDUCING_POINTS, 1)
 
+    conditional = create_conditional(
+        kernel=kernel, inducing_variable=inducing_variable, q_mu=q_mu, q_sqrt=q_sqrt, whiten=whiten,
+    )
     posterior = create_posterior(
         kernel=kernel, inducing_variable=inducing_variable, q_mu=q_mu, q_sqrt=q_sqrt, whiten=whiten,
     )
     register_posterior_test(posterior, IndependentPosteriorSingleOutput)
 
-    _assert_fused_predict_f_equals_precomputed_predict_f(posterior, full_cov, full_output_cov)
+    _assert_fused_predict_f_equals_precomputed_predict_f(
+        posterior, conditional, full_cov, full_output_cov
+    )
 
 
 def test_fully_correlated_multi_output(
@@ -173,12 +205,17 @@ def test_fully_correlated_multi_output(
     q_mu = np.random.randn(output_dims * NUM_INDUCING_POINTS, 1)
     q_sqrt = q_sqrt_factory(output_dims * NUM_INDUCING_POINTS, 1)
 
+    conditional = create_conditional(
+        kernel=kernel, inducing_variable=inducing_variable, q_mu=q_mu, q_sqrt=q_sqrt, whiten=whiten,
+    )
     posterior = create_posterior(
         kernel=kernel, inducing_variable=inducing_variable, q_mu=q_mu, q_sqrt=q_sqrt, whiten=whiten,
     )
     register_posterior_test(posterior, FullyCorrelatedPosterior)
 
-    _assert_fused_predict_f_equals_precomputed_predict_f(posterior, full_cov, full_output_cov)
+    _assert_fused_predict_f_equals_precomputed_predict_f(
+        posterior, conditional, full_cov, full_output_cov
+    )
 
 
 def test_independent_multi_output_shk_shi(
@@ -203,12 +240,17 @@ def test_independent_multi_output_shk_shi(
     q_mu = np.random.randn(NUM_INDUCING_POINTS, num_latent_gps)
     q_sqrt = q_sqrt_factory(NUM_INDUCING_POINTS, num_latent_gps)
 
+    conditional = create_conditional(
+        kernel=kernel, inducing_variable=inducing_variable, q_mu=q_mu, q_sqrt=q_sqrt, whiten=whiten,
+    )
     posterior = create_posterior(
         kernel=kernel, inducing_variable=inducing_variable, q_mu=q_mu, q_sqrt=q_sqrt, whiten=whiten,
     )
     register_posterior_test(posterior, IndependentPosteriorMultiOutput)
 
-    _assert_fused_predict_f_equals_precomputed_predict_f(posterior, full_cov, full_output_cov)
+    _assert_fused_predict_f_equals_precomputed_predict_f(
+        posterior, conditional, full_cov, full_output_cov
+    )
 
 
 def test_independent_multi_output_shk_sei(
@@ -236,12 +278,17 @@ def test_independent_multi_output_shk_sei(
     q_mu = np.random.randn(NUM_INDUCING_POINTS, num_latent_gps)
     q_sqrt = q_sqrt_factory(NUM_INDUCING_POINTS, num_latent_gps)
 
+    conditional = create_conditional(
+        kernel=kernel, inducing_variable=inducing_variable, q_mu=q_mu, q_sqrt=q_sqrt, whiten=whiten,
+    )
     posterior = create_posterior(
         kernel=kernel, inducing_variable=inducing_variable, q_mu=q_mu, q_sqrt=q_sqrt, whiten=whiten,
     )
     register_posterior_test(posterior, IndependentPosteriorMultiOutput)
 
-    _assert_fused_predict_f_equals_precomputed_predict_f(posterior, full_cov, full_output_cov)
+    _assert_fused_predict_f_equals_precomputed_predict_f(
+        posterior, conditional, full_cov, full_output_cov
+    )
 
 
 def test_independent_multi_output_sek_shi(
@@ -266,12 +313,17 @@ def test_independent_multi_output_sek_shi(
     q_mu = np.random.randn(NUM_INDUCING_POINTS, num_latent_gps)
     q_sqrt = q_sqrt_factory(NUM_INDUCING_POINTS, num_latent_gps)
 
+    conditional = create_conditional(
+        kernel=kernel, inducing_variable=inducing_variable, q_mu=q_mu, q_sqrt=q_sqrt, whiten=whiten,
+    )
     posterior = create_posterior(
         kernel=kernel, inducing_variable=inducing_variable, q_mu=q_mu, q_sqrt=q_sqrt, whiten=whiten,
     )
     register_posterior_test(posterior, IndependentPosteriorMultiOutput)
 
-    _assert_fused_predict_f_equals_precomputed_predict_f(posterior, full_cov, full_output_cov)
+    _assert_fused_predict_f_equals_precomputed_predict_f(
+        posterior, conditional, full_cov, full_output_cov
+    )
 
 
 def test_independent_multi_output_sek_sei(
@@ -299,12 +351,17 @@ def test_independent_multi_output_sek_sei(
     q_mu = np.random.randn(NUM_INDUCING_POINTS, num_latent_gps)
     q_sqrt = q_sqrt_factory(NUM_INDUCING_POINTS, num_latent_gps)
 
+    conditional = create_conditional(
+        kernel=kernel, inducing_variable=inducing_variable, q_mu=q_mu, q_sqrt=q_sqrt, whiten=whiten,
+    )
     posterior = create_posterior(
         kernel=kernel, inducing_variable=inducing_variable, q_mu=q_mu, q_sqrt=q_sqrt, whiten=whiten,
     )
     register_posterior_test(posterior, IndependentPosteriorMultiOutput)
 
-    _assert_fused_predict_f_equals_precomputed_predict_f(posterior, full_cov, full_output_cov)
+    _assert_fused_predict_f_equals_precomputed_predict_f(
+        posterior, conditional, full_cov, full_output_cov
+    )
 
 
 def test_fallback_independent_multi_output_sei(
@@ -326,12 +383,17 @@ def test_fallback_independent_multi_output_sei(
     q_mu = np.random.randn(NUM_INDUCING_POINTS, 1)
     q_sqrt = q_sqrt_factory(NUM_INDUCING_POINTS, 1)
 
+    conditional = create_conditional(
+        kernel=kernel, inducing_variable=inducing_variable, q_mu=q_mu, q_sqrt=q_sqrt, whiten=whiten,
+    )
     posterior = create_posterior(
         kernel=kernel, inducing_variable=inducing_variable, q_mu=q_mu, q_sqrt=q_sqrt, whiten=whiten,
     )
     register_posterior_test(posterior, FallbackIndependentLatentPosterior)
 
-    _assert_fused_predict_f_equals_precomputed_predict_f(posterior, full_cov, full_output_cov)
+    _assert_fused_predict_f_equals_precomputed_predict_f(
+        posterior, conditional, full_cov, full_output_cov
+    )
 
 
 def test_fallback_independent_multi_output_shi(
@@ -353,12 +415,17 @@ def test_fallback_independent_multi_output_shi(
     q_mu = np.random.randn(NUM_INDUCING_POINTS, 1)
     q_sqrt = q_sqrt_factory(NUM_INDUCING_POINTS, 1)
 
+    conditional = create_conditional(
+        kernel=kernel, inducing_variable=inducing_variable, q_mu=q_mu, q_sqrt=q_sqrt, whiten=whiten,
+    )
     posterior = create_posterior(
         kernel=kernel, inducing_variable=inducing_variable, q_mu=q_mu, q_sqrt=q_sqrt, whiten=whiten,
     )
     register_posterior_test(posterior, FallbackIndependentLatentPosterior)
 
-    _assert_fused_predict_f_equals_precomputed_predict_f(posterior, full_cov, full_output_cov)
+    _assert_fused_predict_f_equals_precomputed_predict_f(
+        posterior, conditional, full_cov, full_output_cov
+    )
 
 
 def test_linear_coregionalization_sei(
@@ -387,12 +454,17 @@ def test_linear_coregionalization_sei(
     q_mu = np.random.randn(NUM_INDUCING_POINTS, num_latent_gps)
     q_sqrt = q_sqrt_factory(NUM_INDUCING_POINTS, num_latent_gps)
 
+    conditional = create_conditional(
+        kernel=kernel, inducing_variable=inducing_variable, q_mu=q_mu, q_sqrt=q_sqrt, whiten=whiten,
+    )
     posterior = create_posterior(
         kernel=kernel, inducing_variable=inducing_variable, q_mu=q_mu, q_sqrt=q_sqrt, whiten=whiten,
     )
     register_posterior_test(posterior, LinearCoregionalizationPosterior)
 
-    _assert_fused_predict_f_equals_precomputed_predict_f(posterior, full_cov, full_output_cov)
+    _assert_fused_predict_f_equals_precomputed_predict_f(
+        posterior, conditional, full_cov, full_output_cov
+    )
 
 
 def test_linear_coregionalization_shi(
@@ -418,9 +490,14 @@ def test_linear_coregionalization_shi(
     q_mu = np.random.randn(NUM_INDUCING_POINTS, num_latent_gps)
     q_sqrt = q_sqrt_factory(NUM_INDUCING_POINTS, num_latent_gps)
 
+    conditional = create_conditional(
+        kernel=kernel, inducing_variable=inducing_variable, q_mu=q_mu, q_sqrt=q_sqrt, whiten=whiten,
+    )
     posterior = create_posterior(
         kernel=kernel, inducing_variable=inducing_variable, q_mu=q_mu, q_sqrt=q_sqrt, whiten=whiten,
     )
     register_posterior_test(posterior, LinearCoregionalizationPosterior)
 
-    _assert_fused_predict_f_equals_precomputed_predict_f(posterior, full_cov, full_output_cov)
+    _assert_fused_predict_f_equals_precomputed_predict_f(
+        posterior, conditional, full_cov, full_output_cov
+    )
