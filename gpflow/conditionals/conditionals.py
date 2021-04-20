@@ -66,11 +66,7 @@ def _conditional(
         Please see `gpflow.conditional._expand_independent_outputs` for more information
         about the shape of the variance, depending on `full_cov` and `full_output_cov`.
     """
-    try:
-        posterior_class = get_posterior_class(kernel, inducing_variable)
-    except NotImplementedError:
-        # try IndependentPosteriorSingleOutput fallback
-        posterior_class = IndependentPosteriorSingleOutput
+    posterior_class = get_posterior_class(kernel, inducing_variable)
 
     posterior = posterior_class(
         kernel, inducing_variable, f, q_sqrt, whiten=white, mean_function=None, precompute=False

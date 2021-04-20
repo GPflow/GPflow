@@ -573,14 +573,14 @@ def separate_independent_conditional_implementation(
         )
         base_conditional_args_to_map = (Kmms, Kmns, Knns, fs, q_sqrts)
 
-        def single_gp_conditional(t):
+        def single_gp_conditional(t):  # pragma: no cover - tf.map_fn is invisible to codecov
             Kmm, Kmn, Knn, f, q_sqrt = t
             return base_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov, q_sqrt=q_sqrt, white=white)
 
     else:
         base_conditional_args_to_map = (Kmms, Kmns, Knns, fs)
 
-        def single_gp_conditional(t):
+        def single_gp_conditional(t):  # pragma: no cover - tf.map_fn is invisible to codecov
             Kmm, Kmn, Knn, f = t
             return base_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov, q_sqrt=q_sqrt, white=white)
 
