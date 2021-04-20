@@ -516,12 +516,7 @@ def test_posterior_update_cache_with_variables_no_precompute(q_sqrt_factory, whi
     q_sqrt = q_sqrt_factory(NUM_INDUCING_POINTS, 1)
 
     posterior = IndependentPosteriorSingleOutput(
-        kernel=kernel,
-        inducing_variable=inducing_variable,
-        q_mu=q_mu,
-        q_sqrt=q_sqrt,
-        whiten=whiten,
-        precompute=False,
+        kernel=kernel, inducing_variable=inducing_variable, q_mu=q_mu, q_sqrt=q_sqrt, whiten=whiten, precompute=False
     )
     posterior.update_cache_with_variables()
 
