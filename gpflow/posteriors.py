@@ -568,8 +568,8 @@ def create_posterior(
     q_mu,
     q_sqrt,
     whiten,
-    mean_function,
-    precompute_cache: Union[str, bool, PrecomputeCacheType],
+    mean_function=None,
+    precompute_cache: Union[str, bool, PrecomputeCacheType] = PrecomputeCacheType.TENSOR,
 ):
     posterior_class = get_posterior_class(kernel, inducing_variable)
     precompute_cache = _validate_precompute_cache_type(precompute_cache)
