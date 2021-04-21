@@ -104,8 +104,6 @@ class AbstractPosterior(Module, ABC):
     ):
         """
         Concrete implementations should not overwrite this constructor.
-
-        :param kernel:
         """
         self.inducing_variable = inducing_variable
         self.kernel = kernel
