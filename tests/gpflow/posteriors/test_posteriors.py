@@ -30,7 +30,8 @@ from gpflow.posteriors import (
     IndependentPosteriorMultiOutput,
     IndependentPosteriorSingleOutput,
     LinearCoregionalizationPosterior,
-    create_posterior, PrecomputeCacheType,
+    PrecomputeCacheType,
+    create_posterior,
 )
 
 INPUT_DIMS = 2
@@ -504,8 +505,12 @@ def test_linear_coregionalization_shi(
     )
 
 
-@pytest.mark.parametrize("precompute_cache_type", [PrecomputeCacheType.NOCACHE, PrecomputeCacheType.TENSOR])
-def test_posterior_update_cache_with_variables_no_precompute(q_sqrt_factory, whiten, precompute_cache_type):
+@pytest.mark.parametrize(
+    "precompute_cache_type", [PrecomputeCacheType.NOCACHE, PrecomputeCacheType.TENSOR]
+)
+def test_posterior_update_cache_with_variables_no_precompute(
+    q_sqrt_factory, whiten, precompute_cache_type
+):
     kernel = gpflow.kernels.SquaredExponential()
     inducing_variable = inducingpoint_wrapper(np.random.randn(NUM_INDUCING_POINTS, INPUT_DIMS))
 
@@ -540,7 +545,12 @@ def test_posterior_update_cache_with_variables_update_value(q_sqrt_factory, whit
         q_sqrt = initial_q_sqrt
 
     posterior = IndependentPosteriorSingleOutput(
-        kernel=kernel, inducing_variable=inducing_variable, q_mu=q_mu, q_sqrt=q_sqrt, whiten=whiten, precompute_cache=PrecomputeCacheType.TENSOR
+        kernel=kernel,
+        inducing_variable=inducing_variable,
+        q_mu=q_mu,
+        q_sqrt=q_sqrt,
+        whiten=whiten,
+        precompute_cache=PrecomputeCacheType.TENSOR,
     )
     initial_alpha = posterior.alpha
     initial_Qinv = posterior.Qinv
