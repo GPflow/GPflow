@@ -17,15 +17,10 @@ from typing import Tuple
 import numpy as np
 import tensorflow as tf
 
-from .. import covariances, kernels, kullback_leiblers
+from .. import kullback_leiblers, posteriors
 from ..base import Module, Parameter
 from ..conditionals import conditional
-from ..conditionals.util import expand_independent_outputs, mix_latent_gp
-from ..config import default_float, default_jitter
-from ..models.model import GPModel, InputData, MeanAndVariance, RegressionData
-from ..models.training_mixins import ExternalDataTrainingLossMixin
-from ..models.util import inducingpoint_wrapper
-from ..posteriors import create_posterior
+from ..config import default_float
 from ..utilities import positive, triangular
 from .model import GPModel, InputData, MeanAndVariance, RegressionData
 from .training_mixins import ExternalDataTrainingLossMixin
@@ -221,28 +216,44 @@ class NewSVGP(OldSVGP):
             num_data=num_data,
         )
 
-    def posterior(self):
+    def posterior(self, precompute_cache=posteriors.PrecomputeCacheType.TENSOR):
         """
         Create the Posterior object which contains precomputed matrices for
-        faster prediction when wrapped inside tf.function()
+        faster prediction.
+
+        precompute_cache has three settings:
+
+        - PrecomputeCacheType.TENSOR (or `"tensor"`): Precomputes the cached
+          quantities and stores them as tensors (which allows differentiating
+          through the prediction). This is the default.
+        - PrecomputeCacheType.VARIABLE (or `"variable"`): Precomputes the cached
+          quantities and stores them as variables, which allows for updating
+          their values without changing the compute graph (relevant for AOT
+          compilation).
+        - PrecomputeCacheType.NOCACHE (or `"nocache"` or `None`): Avoids
+          immediate cache computation.  This is useful for avoiding extraneous
+          computations when you only want to call the posterior's
+          fused_predict_f method.
         """
-        return create_posterior(
+        return posteriors.create_posterior(
             self.kernel,
             self.inducing_variable,
             self.q_mu,
             self.q_sqrt,
             whiten=self.whiten,
             mean_function=self.mean_function,
+            precompute_cache=precompute_cache,
         )
 
     def predict_f(self, Xnew: InputData, full_cov=False, full_output_cov=False) -> MeanAndVariance:
         """
-        For backwards compatibility. We have to update posterior's cache here so we have acces to
-        the latest values during training.
+        For backwards compatibility, SVGP's predict_f uses the fused (no-cache)
+        computation, which is more efficient during training.
+
         For faster (cached) prediction, predict directly from the posterior object, i.e.,:
-            model.posterior.predict_f(Xnew, ...)
+            model.posterior().predict_f(Xnew, ...)
         """
-        return self.posterior().fused_predict_f(
+        return self.posterior(posteriors.PrecomputeCacheType.NOCACHE).fused_predict_f(
             Xnew, full_cov=full_cov, full_output_cov=full_output_cov
         )
 

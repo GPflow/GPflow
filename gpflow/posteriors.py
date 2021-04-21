@@ -12,15 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import enum
 from abc import ABC, abstractmethod
-from typing import Tuple
+from typing import Optional, Tuple, Union
 
 import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
 
 from . import covariances, kernels, mean_functions
-from .base import Module, Parameter
+from .base import Module
 from .conditionals.util import (
     base_conditional,
     expand_independent_outputs,
@@ -44,7 +45,7 @@ from .utilities import Dispatcher
 
 class _QDistribution(Module):
     """
-    Base class for our parametrization of q(u).
+    Base class for our parametrization of q(u) in the `AbstractPosterior`.
     Internal - do not rely on this outside of GPflow.
     """
 
@@ -70,27 +71,46 @@ class _MvNormal(_QDistribution):
         self.q_sqrt = q_sqrt  # [L, M, M], lower-triangular
 
 
+class PrecomputeCacheType(enum.Enum):
+    TENSOR = "tensor"
+    VARIABLE = "variable"
+    NOCACHE = "nocache"
+
+
+def _validate_precompute_cache_type(value) -> PrecomputeCacheType:
+    if value is None:
+        return PrecomputeCacheType.NOCACHE
+    elif isinstance(value, PrecomputeCacheType):
+        return value
+    elif isinstance(value, str):
+        return PrecomputeCacheType(value.lower())
+    else:
+        raise ValueError(
+            f"{value} is not a valid PrecomputeCacheType. Valid options: 'tensor', 'variable', 'nocache' (or None)."
+        )
+
+
 class AbstractPosterior(Module, ABC):
     def __init__(
         self,
         kernel,
         inducing_variable,
-        q_mu,
-        q_sqrt,
-        whiten=True,
-        mean_function=None,
-        precompute=True,
+        q_mu: tf.Tensor,
+        q_sqrt: tf.Tensor,
+        whiten: bool = True,
+        mean_function: Optional[mean_functions.MeanFunction] = None,
+        *,
+        precompute_cache: PrecomputeCacheType,
     ):
+        """
+        Concrete implementations should not overwrite this constructor.
+        """
         self.inducing_variable = inducing_variable
         self.kernel = kernel
         self.mean_function = mean_function
         self.whiten = whiten
         self._set_qdist(q_mu, q_sqrt)
-
-        if precompute:
-            self.update_cache()  # populates or updates self.alpha and self.Qinv
-        # NOTE we CANNOT use update_cache_with_variables() here,
-        # as that would break gradient flow in training
+        self.update_cache(precompute_cache)
 
     @property
     def q_mu(self):
@@ -108,17 +128,22 @@ class AbstractPosterior(Module, ABC):
         else:
             self._q_dist = _MvNormal(q_mu, q_sqrt)
 
-    def update_cache(self):
-        self.alpha, self.Qinv = self._precompute()
+    def update_cache(self, precompute_cache: PrecomputeCacheType):
+        if precompute_cache is PrecomputeCacheType.NOCACHE:
+            self.alpha = self.Qinv = None
 
-    def update_cache_with_variables(self):
-        alpha, Qinv = self._precompute()
-        if isinstance(self.alpha, Parameter) and isinstance(self.Qinv, Parameter):
-            self.alpha.assign(alpha)
-            self.Qinv.assign(Qinv)
-        else:
-            self.alpha = Parameter(alpha, trainable=False)
-            self.Qinv = Parameter(Qinv, trainable=False)
+        elif precompute_cache is PrecomputeCacheType.TENSOR:
+            self.alpha, self.Qinv = self._precompute()
+
+        elif precompute_cache is PrecomputeCacheType.VARIABLE:
+            alpha, Qinv = self._precompute()
+            if isinstance(self.alpha, tf.Variable) and isinstance(self.Qinv, tf.Variable):
+                # re-use existing variables
+                self.alpha.assign(alpha)
+                self.Qinv.assign(Qinv)
+            else:  # create variables
+                self.alpha = tf.Variable(alpha, trainable=False)
+                self.Qinv = tf.Variable(Qinv, trainable=False)
 
     def _add_mean_function(self, Xnew, mean):
         if self.mean_function is None:
@@ -154,13 +179,17 @@ class AbstractPosterior(Module, ABC):
         Computes predictive mean and (co)variance at Xnew, including mean_function
         Relies on precomputed alpha and Qinv (see _precompute method)
         """
+        if self.alpha is None or self.Qinv is None:
+            raise ValueError(
+                "Cannot compute cached prediction because cache has not been precomputed yet. Call update_cache first or use fused_predict_f"
+            )
         mean, cov = self._conditional_with_precompute(
             Xnew, full_cov=full_cov, full_output_cov=full_output_cov
         )
         return self._add_mean_function(Xnew, mean), cov
 
     @abstractmethod
-    def _precompute(self) -> Tuple[tf.Tensor]:
+    def _precompute(self) -> Tuple[tf.Tensor, tf.Tensor]:
         """
         Precomputes alpha and Qinv that do not depend on Xnew
         """
@@ -531,6 +560,23 @@ def _get_posterior_linearcoregionalization_mo_efficient(kernel, inducing_variabl
     return LinearCoregionalizationPosterior
 
 
-def create_posterior(kernel, inducing_variable, q_mu, q_sqrt, whiten=True, mean_function=None):
+def create_posterior(
+    kernel,
+    inducing_variable,
+    q_mu,
+    q_sqrt,
+    whiten,
+    mean_function=None,
+    precompute_cache: Union[PrecomputeCacheType, str, None] = PrecomputeCacheType.TENSOR,
+):
     posterior_class = get_posterior_class(kernel, inducing_variable)
-    return posterior_class(kernel, inducing_variable, q_mu, q_sqrt, whiten, mean_function)
+    precompute_cache = _validate_precompute_cache_type(precompute_cache)
+    return posterior_class(
+        kernel,
+        inducing_variable,
+        q_mu,
+        q_sqrt,
+        whiten,
+        mean_function,
+        precompute_cache=precompute_cache,
+    )
