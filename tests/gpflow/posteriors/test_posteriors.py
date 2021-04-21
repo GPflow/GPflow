@@ -20,7 +20,6 @@ import tensorflow as tf
 
 import gpflow
 import gpflow.ci_utils
-from gpflow import Parameter
 from gpflow.conditionals import conditional
 from gpflow.models.util import inducingpoint_wrapper
 from gpflow.posteriors import (
