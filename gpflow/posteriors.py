@@ -78,15 +78,15 @@ class PrecomputeCacheType(enum.Enum):
 
 
 def _validate_precompute_cache_type(value) -> PrecomputeCacheType:
-    if isinstance(value, PrecomputeCacheType):
+    if value is None:
+        return PrecomputeCacheType.NOCACHE
+    elif isinstance(value, PrecomputeCacheType):
         return value
     elif isinstance(value, str):
         return PrecomputeCacheType(value.lower())
-    elif not value:
-        return PrecomputeCacheType.NOCACHE
     else:
         raise ValueError(
-            f"{value} is not a valid PrecomputeCacheType. Valid options: 'tensor', 'variable', 'nocache' (or False)."
+            f"{value} is not a valid PrecomputeCacheType. Valid options: 'tensor', 'variable', 'nocache' (or None)."
         )
 
 
@@ -104,8 +104,6 @@ class AbstractPosterior(Module, ABC):
     ):
         """
         Concrete implementations should not overwrite this constructor.
-
-        :param kernel:
         """
         self.inducing_variable = inducing_variable
         self.kernel = kernel
@@ -569,7 +567,7 @@ def create_posterior(
     q_sqrt,
     whiten,
     mean_function=None,
-    precompute_cache: Union[str, bool, PrecomputeCacheType] = PrecomputeCacheType.TENSOR,
+    precompute_cache: Union[PrecomputeCacheType, str, None] = PrecomputeCacheType.TENSOR,
 ):
     posterior_class = get_posterior_class(kernel, inducing_variable)
     precompute_cache = _validate_precompute_cache_type(precompute_cache)

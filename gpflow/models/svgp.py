@@ -230,7 +230,7 @@ class NewSVGP(OldSVGP):
           quantities and stores them as variables, which allows for updating
           their values without changing the compute graph (relevant for AOT
           compilation).
-        - PrecomputeCacheType.NOCACHE (or `"nocache"` or `False`): Avoids
+        - PrecomputeCacheType.NOCACHE (or `"nocache"` or `None`): Avoids
           immediate cache computation.  This is useful for avoiding extraneous
           computations when you only want to call the posterior's
           fused_predict_f method.
