@@ -45,7 +45,7 @@ with the `SVGP` model (partially resolving #1599).
   Posterior object that precomputes all quantities not depending on the test
   inputs (e.g. Choleskty of Kuu), and provides a `posterior.predict_f()` method
   that reuses these cached quantities. `model.predict_f` computes exactly the
-  same quantities as before and does NOT give any speed-up.
+  same quantities as before and does **not** give any speed-up.
 * `gpflow.conditionals.conditional()` forwards to the same "fused" code-path as
   before.
 
@@ -114,4 +114,3 @@ stefanosele, johnamcleod, st--
 This release contains contributions from:
 
 johnamcleod, st--, vatsalaggarwal, sam-willis, vdutor
-

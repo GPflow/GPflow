@@ -176,12 +176,12 @@ class AbstractPosterior(Module, ABC):
         self, Xnew, full_cov: bool = False, full_output_cov: bool = False
     ) -> MeanAndVariance:
         """
-        Computes predictive mean and (co)variance at Xnew, including mean_function
+        Computes predictive mean and (co)variance at Xnew, including mean_function.
         Relies on precomputed alpha and Qinv (see _precompute method)
         """
         if self.alpha is None or self.Qinv is None:
             raise ValueError(
-                "Cannot compute cached prediction because cache has not been precomputed yet. Call update_cache first or use fused_predict_f"
+                "Cache has not been precomputed yet. Call update_cache first or use fused_predict_f"
             )
         mean, cov = self._conditional_with_precompute(
             Xnew, full_cov=full_cov, full_output_cov=full_output_cov
@@ -199,7 +199,7 @@ class AbstractPosterior(Module, ABC):
         self, Xnew, full_cov: bool = False, full_output_cov: bool = False
     ) -> MeanAndVariance:
         """
-        Computes predictive mean and (co)variance at Xnew, *excluding* mean_function
+        Computes predictive mean and (co)variance at Xnew, *excluding* mean_function.
         Relies on precomputed alpha and Qinv (see _precompute method)
         """
 

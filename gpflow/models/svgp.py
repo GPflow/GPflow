@@ -27,7 +27,7 @@ from .training_mixins import ExternalDataTrainingLossMixin
 from .util import inducingpoint_wrapper
 
 
-class OldSVGP(GPModel, ExternalDataTrainingLossMixin):
+class SVGP_deprecated(GPModel, ExternalDataTrainingLossMixin):
     """
     This is the Sparse Variational GP (SVGP). The key reference is
 
@@ -172,7 +172,7 @@ class OldSVGP(GPModel, ExternalDataTrainingLossMixin):
         return mu + self.mean_function(Xnew), var
 
 
-class NewSVGP(OldSVGP):
+class SVGP_with_posterior(SVGP_deprecated):
     """
     Adds posterior() method and uses different math ordering for predict_f
     """
@@ -258,5 +258,5 @@ class NewSVGP(OldSVGP):
         )
 
 
-class SVGP(NewSVGP):
+class SVGP(SVGP_with_posterior):
     pass
