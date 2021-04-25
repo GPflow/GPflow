@@ -25,9 +25,9 @@ from gpflow.utilities.bijectors import triangular
 
 rng = np.random.RandomState(123)
 
-Ln = 2
-Nn = 10
-Mn = 20
+Ln = 3
+Nn = 11
+Mn = 23
 
 
 @pytest.fixture(scope="module")
@@ -74,7 +74,7 @@ def test_diag(Xdata, Xnew, kernel, mu, sqrt, chol, white):
     assert_allclose(var_diff, 0)
 
 
-def test_whiten(Xdata, Xnew, kernel, mu, sqrt):
+def test_whiten(Xdata, Xnew, kernel, mu):
     """
     Make sure that predicting using the whitened representation is the
     sameas the non-whitened one.

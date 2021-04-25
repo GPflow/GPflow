@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import warnings
 from typing import Optional
 
 import tensorflow as tf
@@ -21,6 +22,61 @@ from ..utilities.ops import leading_transpose
 
 
 def base_conditional(
+    Kmn: tf.Tensor,
+    Kmm: tf.Tensor,
+    Knn: tf.Tensor,
+    f: tf.Tensor,
+    *,
+    full_cov=False,
+    q_sqrt: Optional[tf.Tensor] = None,
+    white=False,
+):
+    # Kmn [M, ..., N] -> [1, M, ..., N]
+    # if full_cov:
+    #    Knn = Knn[..., None, :, :]
+    # else:
+    #    Knn = Knn[..., None, :]
+    warnings.warn(
+        "base_conditional is deprecated, use broadcasting_base_conditional instead",
+        DeprecationWarning,
+    )
+    return broadcasting_base_conditional(
+        Kmn[None, ...],
+        Kmm[None, ...],
+        Knn[None, ...],
+        f,
+        full_cov=full_cov,
+        q_sqrt=q_sqrt,
+        white=white,
+    )
+
+
+def base_conditional_with_lm(
+    Kmn: tf.Tensor,
+    Lm: tf.Tensor,
+    Knn: tf.Tensor,
+    f: tf.Tensor,
+    *,
+    full_cov=False,
+    q_sqrt: Optional[tf.Tensor] = None,
+    white=False,
+):
+    warnings.warn(
+        "base_conditional_with_lm is deprecated, use broadcasting_base_conditional instead",
+        DeprecationWarning,
+    )
+    return broadcasting_base_conditional_with_lm(
+        Kmn[None, ...],
+        Lm[None, ...],
+        Knn[None, ...],
+        f,
+        full_cov=full_cov,
+        q_sqrt=q_sqrt,
+        white=white,
+    )
+
+
+def broadcasting_base_conditional(
     Kmn: tf.Tensor,
     Kmm: tf.Tensor,
     Knn: tf.Tensor,
@@ -43,9 +99,9 @@ def base_conditional(
     This method computes the mean and (co)variance of
       q(g1) = ∫ q(g2) p(g1 | g2)
 
-    :param Kmn: [M, ..., N]
-    :param Kmm: [M, M]
-    :param Knn: [..., N, N]  or  N
+    :param Kmn: [R, M, ..., N]
+    :param Kmm: [R, M, M]
+    :param Knn: [R, ..., N, N]  or  [R, ..., N] if not full_cov
     :param f: [M, R]
     :param full_cov: bool
     :param q_sqrt: If this is a Tensor, it must have shape [R, M, M] (lower
@@ -54,12 +110,12 @@ def base_conditional(
     :return: [N, R]  or [R, N, N]
     """
     Lm = tf.linalg.cholesky(Kmm)
-    return base_conditional_with_lm(
+    return broadcasting_base_conditional_with_lm(
         Kmn=Kmn, Lm=Lm, Knn=Knn, f=f, full_cov=full_cov, q_sqrt=q_sqrt, white=white
     )
 
 
-def base_conditional_with_lm(
+def broadcasting_base_conditional_with_lm(
     Kmn: tf.Tensor,
     Lm: tf.Tensor,
     Knn: tf.Tensor,
@@ -82,21 +138,14 @@ def base_conditional_with_lm(
 
     # get the leading dims in Kmn to the front of the tensor
     # if Kmn has rank two, i.e. [M, N], this is the identity op.
-    K = tf.rank(Kmn)
-    perm = tf.concat(
-        [
-            tf.reshape(tf.range(1, K - 1), [K - 2]),  # leading dims (...)
-            tf.reshape(0, [1]),  # [M]
-            tf.reshape(K - 1, [1]),
-        ],
-        0,
-    )  # [N]
-    Kmn = tf.transpose(Kmn, perm)  # [..., M, N]
+    origKmn = Kmn
+    Kmn = tf.einsum("rm...n->...rmn", Kmn)
+    leading_dims = tf.shape(Kmn)[:-3]
 
     shape_constraints = [
-        (Kmn, [..., "M", "N"]),
-        (Lm, ["M", "M"]),
-        (Knn, [..., "N", "N"] if full_cov else [..., "N"]),
+        # (Kmn, [..., "R/1", "M", "N"]),
+        # (Lm, ["R/1", "M", "M"]),
+        # (Knn, ["R/1", ..., "N", "N"] if full_cov else ["R/1", ..., "N"]),
         (f, ["M", "R"]),
     ]
     if q_sqrt is not None:
@@ -111,30 +160,40 @@ def base_conditional_with_lm(
         "shape.]",
     )
 
-    leading_dims = tf.shape(Kmn)[:-2]
-
     # Compute the projection matrix A
-    Lm = tf.broadcast_to(Lm, tf.concat([leading_dims, tf.shape(Lm)], 0))  # [..., M, M]
-    A = tf.linalg.triangular_solve(Lm, Kmn, lower=True)  # [..., M, N]
+    # Lm = tf.broadcast_to(Lm, tf.concat([leading_dims, tf.shape(Lm)], 0))  # [..., R, M, M]
+    A = tf.linalg.triangular_solve(Lm, Kmn, lower=True)  # [..., R, M, N]
 
     # compute the covariance due to the conditioning
+    origKnn = Knn
     if full_cov:
-        fvar = Knn - tf.linalg.matmul(A, A, transpose_a=True)  # [..., N, N]
-        cov_shape = tf.concat([leading_dims, [num_func, N, N]], 0)
-        fvar = tf.broadcast_to(tf.expand_dims(fvar, -3), cov_shape)  # [..., R, N, N]
+        Knn = tf.einsum("r...nm->...rnm", Knn)
+        fvar = Knn - tf.linalg.matmul(A, A, transpose_a=True)  # [..., R/1, N, N]
+        cov_shape = tf.concat([leading_dims, [num_func, N, N]], axis=0)  # [..., R, N, N]
     else:
-        fvar = Knn - tf.reduce_sum(tf.square(A), -2)  # [..., N]
-        cov_shape = tf.concat([leading_dims, [num_func, N]], 0)  # [..., R, N]
-        fvar = tf.broadcast_to(tf.expand_dims(fvar, -2), cov_shape)  # [..., R, N]
+        Knn = tf.einsum("r...n->...rn", Knn)
+        fvar = Knn - tf.reduce_sum(tf.square(A), -2)  # [..., R/1, N]
+        cov_shape = tf.concat([leading_dims, [num_func, N]], axis=0)  # [..., R, N]
+    fvar = tf.broadcast_to(fvar, cov_shape)  # [..., R, N(, N)]
 
     # another backsubstitution in the unwhitened case
     if not white:
         A = tf.linalg.triangular_solve(tf.linalg.adjoint(Lm), A, lower=False)
 
     # construct the conditional mean
-    f_shape = tf.concat([leading_dims, [M, num_func]], 0)  # [..., M, R]
-    f = tf.broadcast_to(f, f_shape)  # [..., M, R]
-    fmean = tf.linalg.matmul(A, f, transpose_a=True)  # [..., N, R]
+    # f_shape = tf.concat([leading_dims, [M, num_func]], 0)  # [..., M, R]
+    # f = tf.broadcast_to(f, f_shape)  # [..., M, R]
+    # A: [..., 1, M, N]
+    # f: [..., M, 5]
+    # [1, N, R]
+    # fmean = tf.linalg.matmul(A, f, transpose_a=True)  # [..., N, R]
+    # fmean = tf.einsum("...rmn,mr->...nr", A, f)  # sum over m, broadcast over r
+    # fmean = tf.einsum("...rmn,mrd->...nr", A, f[..., None])  # sum over m, broadcast over r
+    # A
+
+    f_reordered = tf.einsum("...mr->...rm", f)[..., None]  # [..., R, M, 1]
+    fmean = tf.linalg.matmul(A, f_reordered, transpose_a=True)
+    fmean = tf.einsum("...rm->...mr", tf.squeeze(fmean, axis=-1))
 
     if q_sqrt is not None:
         q_sqrt_dims = q_sqrt.shape.ndims
@@ -143,10 +202,11 @@ def base_conditional_with_lm(
         elif q_sqrt_dims == 3:
             L = tf.linalg.band_part(q_sqrt, -1, 0)  # force lower triangle # [R, M, M]
             L_shape = tf.shape(L)
-            L = tf.broadcast_to(L, tf.concat([leading_dims, L_shape], 0))
+            # L = tf.broadcast_to(L, tf.concat([leading_dims, L_shape], 0))
 
-            shape = tf.concat([leading_dims, [num_func, M, N]], axis=0)
-            A_tiled = tf.broadcast_to(tf.expand_dims(A, -3), shape)
+            # shape = tf.concat([leading_dims, [num_func, M, N]], axis=0)
+            # A_tiled = tf.broadcast_to(tf.expand_dims(A, -3), shape)
+            A_tiled = A
             LTA = tf.linalg.matmul(L, A_tiled, transpose_a=True)  # [R, M, N]
         else:  # pragma: no cover
             raise ValueError("Bad dimension for q_sqrt: %s" % str(q_sqrt.shape.ndims))
@@ -160,7 +220,8 @@ def base_conditional_with_lm(
         fvar = tf.linalg.adjoint(fvar)  # [N, R]
 
     shape_constraints = [
-        (Kmn, [..., "M", "N"]),  # tensor included again for N dimension
+        # TODO the "R/1" does not parse as "equal to R *or* 1" but catches anything there
+        (Kmn, [..., "R/1", "M", "N"]),  # tensor included again for N dimension
         (f, [..., "M", "R"]),  # tensor included again for R dimension
         (fmean, [..., "N", "R"]),
         (fvar, [..., "R", "N", "N"] if full_cov else [..., "N", "R"]),
