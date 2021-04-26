@@ -561,3 +561,48 @@ def test_posterior_update_cache_with_variables_update_value(q_sqrt_factory, whit
     assert np.any(np.not_equal(initial_alpha, posterior.alpha))
     if initial_q_sqrt is not None:
         assert np.any(np.not_equal(initial_Qinv, posterior.Qinv))
+
+
+def test_posterior_update_cache_fails_without_argument(q_sqrt_factory, whiten):
+    # setup posterior
+    kernel = gpflow.kernels.SquaredExponential()
+    inducing_variable = inducingpoint_wrapper(np.random.randn(NUM_INDUCING_POINTS, INPUT_DIMS))
+
+    q_mu = tf.Variable(np.random.randn(NUM_INDUCING_POINTS, 1))
+
+    initial_q_sqrt = q_sqrt_factory(NUM_INDUCING_POINTS, 1)
+    if initial_q_sqrt is not None:
+        q_sqrt = tf.Variable(initial_q_sqrt)
+    else:
+        q_sqrt = initial_q_sqrt
+
+    posterior = IndependentPosteriorSingleOutput(
+        kernel=kernel,
+        inducing_variable=inducing_variable,
+        q_mu=q_mu,
+        q_sqrt=q_sqrt,
+        whiten=whiten,
+        precompute_cache=None,
+    )
+    assert posterior.alpha is None
+    assert posterior.Qinv is None
+
+    with pytest.raises(ValueError):
+        posterior.update_cache()
+
+    posterior.update_cache(PrecomputeCacheType.TENSOR)
+    assert isinstance(posterior.alpha, tf.Tensor)
+    assert isinstance(posterior.Qinv, tf.Tensor)
+
+    posterior.update_cache(PrecomputeCacheType.NOCACHE)
+    assert posterior._precompute_cache == PrecomputeCacheType.NOCACHE
+    assert posterior.alpha is None
+    assert posterior.Qinv is None
+
+    posterior.update_cache(PrecomputeCacheType.TENSOR)  # set posterior._precompute_cache
+    assert posterior._precompute_cache == PrecomputeCacheType.TENSOR
+    posterior.alpha = posterior.Qinv = None  # clear again
+
+    posterior.update_cache()  # does not raise an exception
+    assert isinstance(posterior.alpha, tf.Tensor)
+    assert isinstance(posterior.Qinv, tf.Tensor)

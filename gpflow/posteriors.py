@@ -140,8 +140,7 @@ class AbstractPosterior(Module, ABC):
         if precompute_cache is None:
             try:
                 precompute_cache = cast(
-                    self._precompute_cache,  # type: ignore
-                    PrecomputeCacheType,
+                    PrecomputeCacheType, self._precompute_cache,  # type: ignore
                 )
             except AttributeError:
                 raise ValueError(
