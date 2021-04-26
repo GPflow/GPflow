@@ -14,7 +14,7 @@
 
 import enum
 from abc import ABC, abstractmethod
-from typing import Optional, Tuple, Union
+from typing import Optional, Tuple, Union, cast
 
 import numpy as np
 import tensorflow as tf
@@ -100,7 +100,7 @@ class AbstractPosterior(Module, ABC):
         whiten: bool = True,
         mean_function: Optional[mean_functions.MeanFunction] = None,
         *,
-        precompute_cache: PrecomputeCacheType,
+        precompute_cache: Optional[PrecomputeCacheType],
     ):
         """
         Users should use `create_posterior` to create instances of concrete
@@ -114,7 +114,11 @@ class AbstractPosterior(Module, ABC):
         self.mean_function = mean_function
         self.whiten = whiten
         self._set_qdist(q_mu, q_sqrt)
-        self.update_cache(precompute_cache)
+
+        if precompute_cache is None:
+            self.alpha = self.Qinv = None
+        else:
+            self.update_cache(precompute_cache)
 
     @property
     def q_mu(self):
@@ -132,7 +136,19 @@ class AbstractPosterior(Module, ABC):
         else:
             self._q_dist = _MvNormal(q_mu, q_sqrt)
 
-    def update_cache(self, precompute_cache: PrecomputeCacheType):
+    def update_cache(self, precompute_cache: Optional[PrecomputeCacheType] = None):
+        if precompute_cache is None:
+            try:
+                precompute_cache = cast(
+                    PrecomputeCacheType, self._precompute_cache,  # type: ignore
+                )
+            except AttributeError:
+                raise ValueError(
+                    "You must pass precompute_cache explicitly (the cache had not been updated before)."
+                )
+        else:
+            self._precompute_cache = precompute_cache
+
         if precompute_cache is PrecomputeCacheType.NOCACHE:
             self.alpha = self.Qinv = None
 

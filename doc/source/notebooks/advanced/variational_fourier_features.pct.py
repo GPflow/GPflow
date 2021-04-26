@@ -392,7 +392,7 @@ np.testing.assert_array_equal(conditional_f_var, posterior_f_var)
 #
 
 # %%
-posterior.update_cache()
+posterior.update_cache(gpflow.posteriors.PrecomputeCacheType.TENSOR)
 precomputed_posterior_f_mean, precomputed_posterior_f_var = posterior.predict_f(Xnew, full_cov=True)
 
 np.testing.assert_allclose(precomputed_posterior_f_mean, posterior_f_mean)
