@@ -69,7 +69,13 @@ def _conditional(
     posterior_class = get_posterior_class(kernel, inducing_variable)
 
     posterior = posterior_class(
-        kernel, inducing_variable, f, q_sqrt, whiten=white, mean_function=None, precompute=False
+        kernel,
+        inducing_variable,
+        f,
+        q_sqrt,
+        whiten=white,
+        mean_function=None,
+        precompute_cache=None,
     )
     return posterior.fused_predict_f(Xnew, full_cov=full_cov, full_output_cov=full_output_cov)
 

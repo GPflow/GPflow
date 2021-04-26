@@ -381,7 +381,7 @@ conditional_f_mean, conditional_f_var = gpflow.conditionals.conditional(
     Xnew, inducing_variable, kernel, f, q_sqrt=q_sqrt, white=False, full_cov=True
 )
 
-posterior = VFFPosterior(kernel, inducing_variable, f, q_sqrt, whiten=False, precompute=False)
+posterior = VFFPosterior(kernel, inducing_variable, f, q_sqrt, whiten=False, precompute_cache=None)
 posterior_f_mean, posterior_f_var = posterior.fused_predict_f(Xnew, full_cov=True)
 
 np.testing.assert_array_equal(conditional_f_mean, posterior_f_mean)

@@ -6,7 +6,7 @@ import pytest
 import tensorflow as tf
 
 import gpflow
-from gpflow.models.svgp import NewSVGP, OldSVGP
+from gpflow.models.svgp import SVGP_deprecated, SVGP_with_posterior
 
 input_dim = 7
 
@@ -46,8 +46,8 @@ def make_models(M=64, D=input_dim, L=3, q_diag=False, whiten=True, mo=None):
         q_sqrt = np.random.randn(M, L) ** 2
     else:
         q_sqrt = np.tril(np.random.randn(L, M, M))
-    mold = OldSVGP(k, lik, Z, q_diag=q_diag, q_mu=q_mu, q_sqrt=q_sqrt, whiten=whiten)
-    mnew = NewSVGP(k, lik, Z, q_diag=q_diag, q_mu=q_mu, q_sqrt=q_sqrt, whiten=whiten)
+    mold = SVGP_deprecated(k, lik, Z, q_diag=q_diag, q_mu=q_mu, q_sqrt=q_sqrt, whiten=whiten)
+    mnew = SVGP_with_posterior(k, lik, Z, q_diag=q_diag, q_mu=q_mu, q_sqrt=q_sqrt, whiten=whiten)
     return mold, mnew
 
 
@@ -55,13 +55,13 @@ def make_models(M=64, D=input_dim, L=3, q_diag=False, whiten=True, mo=None):
 @pytest.mark.parametrize("white", [True, False])
 @pytest.mark.parametrize(
     "multioutput",
-    [None]
-    + list(
-        product(
+    [
+        None,
+        *product(
             ("LinearCoregionalization", "SeparateIndependent", "SharedIndependent"),
             ("SeparateIndependent", "SharedIndependent"),
-        )
-    ),
+        ),
+    ],
 )
 def test_old_vs_new_svgp(q_diag, white, multioutput):
     mold, mnew = make_models(q_diag=q_diag, whiten=white, mo=multioutput)

@@ -77,7 +77,13 @@ def shared_independent_conditional(
         about the shape of the variance, depending on `full_cov` and `full_output_cov`.
     """
     posterior = IndependentPosteriorMultiOutput(
-        kernel, inducing_variable, f, q_sqrt, whiten=white, mean_function=None, precompute=False
+        kernel,
+        inducing_variable,
+        f,
+        q_sqrt,
+        whiten=white,
+        mean_function=None,
+        precompute_cache=None,
     )
     return posterior.fused_predict_f(Xnew, full_cov=full_cov, full_output_cov=full_output_cov)
 
@@ -97,7 +103,13 @@ def separate_independent_conditional(
     white=False,
 ):
     posterior = IndependentPosteriorMultiOutput(
-        kernel, inducing_variable, f, q_sqrt, whiten=white, mean_function=None, precompute=False
+        kernel,
+        inducing_variable,
+        f,
+        q_sqrt,
+        whiten=white,
+        mean_function=None,
+        precompute_cache=None,
     )
     return posterior.fused_predict_f(Xnew, full_cov=full_cov, full_output_cov=full_output_cov)
 
@@ -134,7 +146,13 @@ def fallback_independent_latent_conditional(
     - See above for the parameters and the return value.
     """
     posterior = FallbackIndependentLatentPosterior(
-        kernel, inducing_variable, f, q_sqrt, whiten=white, mean_function=None, precompute=False
+        kernel,
+        inducing_variable,
+        f,
+        q_sqrt,
+        whiten=white,
+        mean_function=None,
+        precompute_cache=None,
     )
     return posterior.fused_predict_f(Xnew, full_cov=full_cov, full_output_cov=full_output_cov)
 
@@ -171,7 +189,13 @@ def inducing_point_conditional(
     :param q_sqrt: standard-deviations or cholesky, [L, 1]  or  [1, L, L]
     """
     posterior = FullyCorrelatedPosterior(
-        kernel, inducing_variable, f, q_sqrt, whiten=white, mean_function=None, precompute=False
+        kernel,
+        inducing_variable,
+        f,
+        q_sqrt,
+        whiten=white,
+        mean_function=None,
+        precompute_cache=None,
     )
     return posterior.fused_predict_f(Xnew, full_cov=full_cov, full_output_cov=full_output_cov)
 
@@ -207,6 +231,12 @@ def coregionalization_conditional(
     - See the multioutput notebook for more information about the multioutput framework.
     """
     posterior = LinearCoregionalizationPosterior(
-        kernel, inducing_variable, f, q_sqrt, whiten=white, mean_function=None, precompute=False
+        kernel,
+        inducing_variable,
+        f,
+        q_sqrt,
+        whiten=white,
+        mean_function=None,
+        precompute_cache=None,
     )
     return posterior.fused_predict_f(Xnew, full_cov=full_cov, full_output_cov=full_output_cov)
