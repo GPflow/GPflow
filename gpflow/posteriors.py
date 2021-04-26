@@ -14,7 +14,7 @@
 
 import enum
 from abc import ABC, abstractmethod
-from typing import Optional, Tuple, Union
+from typing import Optional, Tuple, Union, cast
 
 import numpy as np
 import tensorflow as tf
@@ -139,7 +139,10 @@ class AbstractPosterior(Module, ABC):
     def update_cache(self, precompute_cache: Optional[PrecomputeCacheType] = None):
         if precompute_cache is None:
             try:
-                precompute_cache = self._precompute_cache
+                precompute_cache = cast(
+                    self._precompute_cache,  # type: ignore
+                    PrecomputeCacheType,
+                )
             except AttributeError:
                 raise ValueError(
                     "You must pass precompute_cache explicitly (the cache had not been updated before)."
