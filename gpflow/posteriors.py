@@ -100,7 +100,7 @@ class AbstractPosterior(Module, ABC):
         whiten: bool = True,
         mean_function: Optional[mean_functions.MeanFunction] = None,
         *,
-        precompute_cache: PrecomputeCacheType,
+        precompute_cache: Optional[PrecomputeCacheType],
     ):
         """
         Users should use `create_posterior` to create instances of concrete
@@ -114,7 +114,11 @@ class AbstractPosterior(Module, ABC):
         self.mean_function = mean_function
         self.whiten = whiten
         self._set_qdist(q_mu, q_sqrt)
-        self.update_cache(precompute_cache)
+
+        if precompute_cache is None:
+            self.alpha = self.Qinv = None
+        else:
+            self.update_cache(precompute_cache)
 
     @property
     def q_mu(self):
