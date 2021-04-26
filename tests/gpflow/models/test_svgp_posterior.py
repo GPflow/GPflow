@@ -6,7 +6,7 @@ import pytest
 import tensorflow as tf
 
 import gpflow
-from gpflow.models.svgp import SVGP_with_posterior, SVGP_deprecated
+from gpflow.models.svgp import SVGP_deprecated, SVGP_with_posterior
 
 input_dim = 7
 
@@ -60,9 +60,8 @@ def make_models(M=64, D=input_dim, L=3, q_diag=False, whiten=True, mo=None):
         *product(
             ("LinearCoregionalization", "SeparateIndependent", "SharedIndependent"),
             ("SeparateIndependent", "SharedIndependent"),
-        )
-     ]
-    ),
+        ),
+    ],
 )
 def test_old_vs_new_svgp(q_diag, white, multioutput):
     mold, mnew = make_models(q_diag=q_diag, whiten=white, mo=multioutput)
