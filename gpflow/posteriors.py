@@ -132,7 +132,17 @@ class AbstractPosterior(Module, ABC):
         else:
             self._q_dist = _MvNormal(q_mu, q_sqrt)
 
-    def update_cache(self, precompute_cache: PrecomputeCacheType):
+    def update_cache(self, precompute_cache: Optional[PrecomputeCacheType] = None):
+        if precompute_cache is None:
+            try:
+                precompute_cache = self._precompute_cache
+            except AttributeError:
+                raise ValueError(
+                    "You must pass precompute_cache explicitly (the cache had not been updated before)."
+                )
+        else:
+            self._precompute_cache = precompute_cache
+
         if precompute_cache is PrecomputeCacheType.NOCACHE:
             self.alpha = self.Qinv = None
 
