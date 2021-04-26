@@ -103,7 +103,11 @@ class AbstractPosterior(Module, ABC):
         precompute_cache: PrecomputeCacheType,
     ):
         """
-        Concrete implementations should not overwrite this constructor.
+        Users should use `create_posterior` to create instances of concrete
+        subclasses of this AbstractPosterior class instead of calling this
+        constructor directly. For `create_posterior` to be able to correctly
+        instantiate subclasses, developers need to ensure their subclasses
+        don't change the constructor signature.
         """
         self.inducing_variable = inducing_variable
         self.kernel = kernel
