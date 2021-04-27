@@ -19,7 +19,7 @@ Release notes for all past releases are available in the ['Releases' section](ht
 
 * <INSERT MAJOR FEATURE HERE, USING MARKDOWN SYNTAX>
 * <IF RELEASE CONTAINS MULTIPLE FEATURES FROM SAME AREA, GROUP THEM TOGETHER>
-  
+
 ## Bug Fixes and Other Changes
 
 * <SIMILAR TO ABOVE SECTION, BUT FOR OTHER IMPORTANT CHANGES / BUG FIXES>
@@ -33,7 +33,40 @@ This release contains contributions from:
 <INSERT>, <NAME>, <HERE>, <USING>, <GITHUB>, <HANDLE>
 
 
-# Release 2.2.0 (next upcoming release)
+# Release 2.2.1 (next upcoming release in progress)
+
+<INSERT SMALL BLURB ABOUT RELEASE FOCUS AREA AND POTENTIAL TOOLCHAIN CHANGES>
+
+## Breaking Changes
+
+* <DOCUMENT BREAKING CHANGES HERE>
+* <THIS SECTION SHOULD CONTAIN API AND BEHAVIORAL BREAKING CHANGES>
+
+## Known Caveats
+
+* <CAVEATS REGARDING THE RELEASE (BUT NOT BREAKING CHANGES).>
+* <ADDING/BUMPING DEPENDENCIES SHOULD GO HERE>
+* <KNOWN LACK OF SUPPORT ON SOME PLATFORM SHOULD GO HERE>
+
+## Major Features and Improvements
+
+* <INSERT MAJOR FEATURE HERE, USING MARKDOWN SYNTAX>
+* <IF RELEASE CONTAINS MULTIPLE FEATURES FROM SAME AREA, GROUP THEM TOGETHER>
+
+## Bug Fixes and Other Changes
+
+* <SIMILAR TO ABOVE SECTION, BUT FOR OTHER IMPORTANT CHANGES / BUG FIXES>
+* <IF A CHANGE CLOSES A GITHUB ISSUE, IT SHOULD BE DOCUMENTED HERE>
+* <NOTES SHOULD BE GROUPED PER AREA>
+
+## Thanks to our Contributors
+
+This release contains contributions from:
+
+<INSERT>, <NAME>, <HERE>, <USING>, <GITHUB>, <HANDLE>
+
+
+# Release 2.2.0
 
 The main focus of this release is the new "Posterior" object introduced by
 PR #1636, which allows for a significant speed-up of post-training predictions
@@ -93,7 +126,7 @@ stefanosele, johnamcleod, st--
 
 * Improves compatibility between monitoring API and Scipy optimizer (#1642).
 * Adds `_add_noise_cov` method to GPR model class to make it more easily extensible (#1645).
-  
+
 ## Bug Fixes
 
 * Fixes a bug in ModelToTensorBoard (#1619) when `max_size=-1` (#1619)
