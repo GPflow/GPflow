@@ -174,47 +174,19 @@ class SVGP_deprecated(GPModel, ExternalDataTrainingLossMixin):
 
 class SVGP_with_posterior(SVGP_deprecated):
     """
-    Adds posterior() method and uses different math ordering for predict_f
-    """
+    This is the Sparse Variational GP (SVGP). The key reference is
 
-    def __init__(
-        self,
-        kernel,
-        likelihood,
-        inducing_variable,
-        *,
-        mean_function=None,
-        num_latent_gps: int = 1,
-        q_diag: bool = False,
-        q_mu=None,
-        q_sqrt=None,
-        whiten: bool = True,
-        num_data=None,
-    ):
-        """
-        - kernel, likelihood, inducing_variables, mean_function are appropriate
-          GPflow objects
-        - num_latent_gps is the number of latent processes to use, defaults to 1
-        - q_diag is a boolean. If True, the covariance is approximated by a
-          diagonal matrix.
-        - whiten is a boolean. If True, we use the whitened representation of
-          the inducing points.
-        - num_data is the total number of observations, defaults to X.shape[0]
-          (relevant when feeding in external minibatches)
-        """
-        # init the super class, accept args
-        super().__init__(
-            kernel,
-            likelihood,
-            inducing_variable,
-            mean_function=mean_function,
-            num_latent_gps=num_latent_gps,
-            q_diag=q_diag,
-            q_mu=q_mu,
-            q_sqrt=q_sqrt,
-            whiten=whiten,
-            num_data=num_data,
-        )
+    ::
+
+      @inproceedings{hensman2014scalable,
+        title={Scalable Variational Gaussian Process Classification},
+        author={Hensman, James and Matthews, Alexander G. de G. and Ghahramani, Zoubin},
+        booktitle={Proceedings of AISTATS},
+        year={2015}
+      }
+
+    This class provides a posterior() method that enables caching for faster subsequent predictions.
+    """
 
     def posterior(self, precompute_cache=posteriors.PrecomputeCacheType.TENSOR):
         """
@@ -223,17 +195,17 @@ class SVGP_with_posterior(SVGP_deprecated):
 
         precompute_cache has three settings:
 
-        - PrecomputeCacheType.TENSOR (or `"tensor"`): Precomputes the cached
+        - `PrecomputeCacheType.TENSOR` (or `"tensor"`): Precomputes the cached
           quantities and stores them as tensors (which allows differentiating
           through the prediction). This is the default.
-        - PrecomputeCacheType.VARIABLE (or `"variable"`): Precomputes the cached
+        - `PrecomputeCacheType.VARIABLE` (or `"variable"`): Precomputes the cached
           quantities and stores them as variables, which allows for updating
           their values without changing the compute graph (relevant for AOT
           compilation).
-        - PrecomputeCacheType.NOCACHE (or `"nocache"` or `None`): Avoids
-          immediate cache computation.  This is useful for avoiding extraneous
+        - `PrecomputeCacheType.NOCACHE` (or `"nocache"` or `None`): Avoids
+          immediate cache computation. This is useful for avoiding extraneous
           computations when you only want to call the posterior's
-          fused_predict_f method.
+          `fused_predict_f` method.
         """
         return posteriors.create_posterior(
             self.kernel,
@@ -259,4 +231,5 @@ class SVGP_with_posterior(SVGP_deprecated):
 
 
 class SVGP(SVGP_with_posterior):
+    # subclassed to ensure __class__ == "SVGP"
     pass

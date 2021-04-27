@@ -72,6 +72,20 @@ class _MvNormal(_QDistribution):
 
 
 class PrecomputeCacheType(enum.Enum):
+    """
+    - `PrecomputeCacheType.TENSOR` (or `"tensor"`): Precomputes the cached
+      quantities and stores them as tensors (which allows differentiating
+      through the prediction). This is the default.
+    - `PrecomputeCacheType.VARIABLE` (or `"variable"`): Precomputes the cached
+      quantities and stores them as variables, which allows for updating
+      their values without changing the compute graph (relevant for AOT
+      compilation).
+    - `PrecomputeCacheType.NOCACHE` (or `"nocache"` or `None`): Avoids
+      immediate cache computation. This is useful for avoiding extraneous
+      computations when you only want to call the posterior's
+      `fused_predict_f` method.
+    """
+
     TENSOR = "tensor"
     VARIABLE = "variable"
     NOCACHE = "nocache"
@@ -137,6 +151,11 @@ class AbstractPosterior(Module, ABC):
             self._q_dist = _MvNormal(q_mu, q_sqrt)
 
     def update_cache(self, precompute_cache: Optional[PrecomputeCacheType] = None):
+        """
+        Sets the cache depending on the value of `precompute_cache` to a
+        `tf.Tensor`, `tf.Variable`, or clears the cache. If `precompute_cache`
+        is not given, the setting defaults to the most-recently-used one.
+        """
         if precompute_cache is None:
             try:
                 precompute_cache = cast(

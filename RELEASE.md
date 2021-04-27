@@ -44,7 +44,7 @@ with the `SVGP` model (partially resolving #1599).
 * After training an `SVGP` model, you can call `model.posterior()` to obtain a
   Posterior object that precomputes all quantities not depending on the test
   inputs (e.g. Choleskty of Kuu), and provides a `posterior.predict_f()` method
-  that reuses these cached quantities. `model.predict_f` computes exactly the
+  that reuses these cached quantities. `model.predict_f()` computes exactly the
   same quantities as before and does **not** give any speed-up.
 * `gpflow.conditionals.conditional()` forwards to the same "fused" code-path as
   before.
@@ -56,7 +56,7 @@ with the `SVGP` model (partially resolving #1599).
   implementations of `gpflow.conditionals.conditional()`, you have two options
   to use your code with GPflow 2.2:
   1. Temporary work-around: Instead of `gpflow.models.SVGP`, use the
-     backwards-compatible `gpflow.models.svgp.OldSVGP`.
+     backwards-compatible `gpflow.models.svgp.SVGP_deprecated`.
   2. Convert your conditional() implementation into a subclass of
      `gpflow.posteriors.AbstractPosterior`, and register
      `get_posterior_class()` instead (see the "Variational Fourier Features"
