@@ -12,10 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Optional
+from typing import Optional, Union, overload
 
 import numpy as np
 import tensorflow as tf
+from typing_extensions import Literal
 
 import gpflow
 
@@ -27,7 +28,7 @@ from ..kullback_leiblers import gauss_kl
 from ..likelihoods import Likelihood
 from ..mean_functions import MeanFunction, Zero
 from ..utilities import triangular
-from .model import GPModel, InputData, MeanAndVariance, RegressionData
+from .model import GPModel, InputData, MeanAndCovariance, MeanAndVariance, RegressionData
 from .training_mixins import InternalDataTrainingLossMixin
 from .util import data_input_to_tensor, inducingpoint_wrapper
 
@@ -111,13 +112,30 @@ class VGP(GPModel, InternalDataTrainingLossMixin):
 
         return tf.reduce_sum(var_exp) - KL
 
+    @overload
+    def predict_f(
+        self,
+        Xnew: InputData,
+        full_cov: Literal[False] = False,
+        full_output_cov: Literal[False] = False,
+    ) -> MeanAndVariance:
+        ...
+
+    @overload
     def predict_f(
         self, Xnew: InputData, full_cov: bool = False, full_output_cov: bool = False
-    ) -> MeanAndVariance:
+    ) -> MeanAndCovariance:
+        ...
+
+    def predict_f(
+        self, Xnew: InputData, full_cov: bool = False, full_output_cov: bool = False
+    ) -> Union[MeanAndVariance, MeanAndCovariance]:
         X_data, _ = self.data
         mu, var = conditional(
             Xnew, X_data, self.kernel, self.q_mu, q_sqrt=self.q_sqrt, full_cov=full_cov, white=True,
         )
+        if full_cov or full_output_cov:
+            return MeanAndCovariance(mu + self.mean_function(Xnew), var)
         return MeanAndVariance(mu + self.mean_function(Xnew), var)
 
 
@@ -219,9 +237,24 @@ class VGPOpperArchambeau(GPModel, InternalDataTrainingLossMixin):
         v_exp = self.likelihood.variational_expectations(f_mean, f_var, Y_data)
         return tf.reduce_sum(v_exp) - KL
 
+    @overload
+    def predict_f(
+        self,
+        Xnew: InputData,
+        full_cov: Literal[False] = False,
+        full_output_cov: Literal[False] = False,
+    ) -> MeanAndVariance:
+        ...
+
+    @overload
     def predict_f(
         self, Xnew: InputData, full_cov: bool = False, full_output_cov: bool = False
-    ) -> MeanAndVariance:
+    ) -> MeanAndCovariance:
+        ...
+
+    def predict_f(
+        self, Xnew: InputData, full_cov: bool = False, full_output_cov: bool = False
+    ) -> Union[MeanAndVariance, MeanAndCovariance]:
         r"""
         The posterior variance of F is given by
             q(f) = N(f | K alpha + mean, [K^-1 + diag(lambda**2)]^-1)
@@ -252,4 +285,6 @@ class VGPOpperArchambeau(GPModel, InternalDataTrainingLossMixin):
             f_var = self.kernel(Xnew) - tf.linalg.matmul(LiKx, LiKx, transpose_a=True)
         else:
             f_var = self.kernel(Xnew, full_cov=False) - tf.reduce_sum(tf.square(LiKx), axis=1)
+        if full_cov or full_output_cov:
+            return MeanAndCovariance(f_mean, tf.transpose(f_var))
         return MeanAndVariance(f_mean, tf.transpose(f_var))

@@ -12,10 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Union, overload
 
 import numpy as np
 import tensorflow as tf
+from typing_extensions import Literal
 
 from gpflow.kernels import Kernel
 
@@ -25,7 +26,7 @@ from ..covariances.dispatch import Kuf, Kuu
 from ..inducing_variables import InducingPoints
 from ..mean_functions import MeanFunction
 from ..utilities import to_default_float
-from .model import GPModel, MeanAndVariance
+from .model import GPModel, MeanAndCovariance, MeanAndVariance
 from .training_mixins import InputData, InternalDataTrainingLossMixin, RegressionData
 from .util import data_input_to_tensor, inducingpoint_wrapper
 
@@ -191,7 +192,24 @@ class SGPR(SGPRBase):
 
         return bound
 
-    def predict_f(self, Xnew: InputData, full_cov=False, full_output_cov=False) -> MeanAndVariance:
+    @overload
+    def predict_f(
+        self,
+        Xnew: InputData,
+        full_cov: Literal[False] = False,
+        full_output_cov: Literal[False] = False,
+    ) -> MeanAndVariance:
+        ...
+
+    @overload
+    def predict_f(
+        self, Xnew: InputData, full_cov: bool = False, full_output_cov: bool = False
+    ) -> MeanAndCovariance:
+        ...
+
+    def predict_f(
+        self, Xnew: InputData, full_cov=False, full_output_cov=False
+    ) -> Union[MeanAndVariance, MeanAndCovariance]:
         """
         Compute the mean and variance of the latent function at some new points
         Xnew. For a derivation of the terms in here, see the associated SGPR
@@ -227,6 +245,8 @@ class SGPR(SGPRBase):
                 - tf.reduce_sum(tf.square(tmp1), 0)
             )
             var = tf.tile(var[:, None], [1, self.num_latent_gps])
+        if full_cov or full_output_cov:
+            return MeanAndCovariance(mean + self.mean_function(Xnew), var)
         return MeanAndVariance(mean + self.mean_function(Xnew), var)
 
     def compute_qu(self) -> Tuple[tf.Tensor, tf.Tensor]:
@@ -355,7 +375,24 @@ class GPRFITC(SGPRBase):
 
         return mahalanobisTerm + logNormalizingTerm * self.num_latent_gps
 
-    def predict_f(self, Xnew: InputData, full_cov=False, full_output_cov=False) -> MeanAndVariance:
+    @overload
+    def predict_f(
+        self,
+        Xnew: InputData,
+        full_cov: Literal[False] = False,
+        full_output_cov: Literal[False] = False,
+    ) -> MeanAndVariance:
+        ...
+
+    @overload
+    def predict_f(
+        self, Xnew: InputData, full_cov: bool = False, full_output_cov: bool = False
+    ) -> MeanAndCovariance:
+        ...
+
+    def predict_f(
+        self, Xnew: InputData, full_cov=False, full_output_cov=False
+    ) -> Union[MeanAndVariance, MeanAndCovariance]:
         """
         Compute the mean and variance of the latent function at some new points
         Xnew.
@@ -383,5 +420,6 @@ class GPRFITC(SGPRBase):
                 + tf.reduce_sum(tf.square(intermediateA), 0)
             )  # [N, P]
             var = tf.tile(var[:, None], [1, self.num_latent_gps])
-
+        if full_cov or full_output_cov:
+            return MeanAndCovariance(mean, var)
         return MeanAndVariance(mean, var)

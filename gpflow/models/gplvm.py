@@ -12,10 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Optional
+from typing import Optional, Union, overload
 
 import numpy as np
 import tensorflow as tf
+from typing_extensions import Literal
 
 from .. import covariances, kernels, likelihoods
 from ..base import Parameter
@@ -28,7 +29,7 @@ from ..probability_distributions import DiagonalGaussian
 from ..utilities import positive, to_default_float
 from ..utilities.ops import pca_reduce
 from .gpr import GPR
-from .model import GPModel, MeanAndVariance
+from .model import GPModel, MeanAndCovariance, MeanAndVariance
 from .training_mixins import InputData, InternalDataTrainingLossMixin, OutputData
 from .util import data_input_to_tensor, inducingpoint_wrapper
 
@@ -205,9 +206,24 @@ class BayesianGPLVM(GPModel, InternalDataTrainingLossMixin):
         bound -= KL
         return bound
 
+    @overload
+    def predict_f(
+        self,
+        Xnew: InputData,
+        full_cov: Literal[False] = False,
+        full_output_cov: Literal[False] = False,
+    ) -> MeanAndVariance:
+        ...
+
+    @overload
     def predict_f(
         self, Xnew: InputData, full_cov: bool = False, full_output_cov: bool = False
-    ) -> MeanAndVariance:
+    ) -> MeanAndCovariance:
+        ...
+
+    def predict_f(
+        self, Xnew: InputData, full_cov: bool = False, full_output_cov: bool = False
+    ) -> Union[MeanAndVariance, MeanAndCovariance]:
         """
         Compute the mean and variance of the latent function at some new points.
         Note that this is very similar to the SGPR prediction, for which
@@ -262,6 +278,8 @@ class BayesianGPLVM(GPModel, InternalDataTrainingLossMixin):
             )
             shape = tf.stack([1, tf.shape(Y_data)[1]])
             var = tf.tile(tf.expand_dims(var, 1), shape)
+        if full_cov or full_output_cov:
+            return MeanAndCovariance(mean + self.mean_function(Xnew), var)
         return MeanAndVariance(mean + self.mean_function(Xnew), var)
 
     def predict_log_density(self, data: OutputData) -> tf.Tensor:

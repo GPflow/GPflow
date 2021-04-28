@@ -18,7 +18,10 @@ import pytest
 import gpflow
 from gpflow.inducing_variables import InducingPoints
 from gpflow.kernels import Matern32
-from gpflow.models.model import MeanAndVariance
+from gpflow.mean_functions import Zero
+from gpflow.models.gplvm import BayesianGPLVM
+from gpflow.models.model import MeanAndCovariance, MeanAndVariance
+from gpflow.utilities.ops import pca_reduce
 
 rng = np.random.RandomState(0)
 
@@ -100,6 +103,7 @@ def test_gaussian_mean_and_variance(Ntrain, Ntest, D):
 
     assert np.allclose(model_gp.predict_f(Xtest).mean, mu_f)
     assert np.allclose(model_gp.predict_f(Xtest).variance, model_gp.predict_f(Xtest)[1])
+    assert isinstance(model_gp.predict_y(Xtest), MeanAndVariance)
 
 
 @pytest.mark.parametrize("Ntrain, Ntest, D", [[100, 10, 2]])
@@ -193,3 +197,81 @@ def test_other_models_full_cov_samples(
 
     samples = model_gp.predict_f_samples(Xtest, num_samples)
     assert samples.shape == samples_shape
+
+
+@pytest.mark.parametrize("Ntrain, Ntest, D", [[100, 10, 2]])
+@pytest.mark.parametrize(
+    "model",
+    [
+        gpflow.models.GPR,
+        gpflow.models.SGPR,
+        gpflow.models.GPRFITC,
+        gpflow.models.SVGP,
+        gpflow.models.SGPMC,
+        gpflow.models.GPMC,
+        gpflow.models.VGP,
+        gpflow.models.VGPOpperArchambeau,
+        gpflow.models.BayesianGPLVM,
+    ],
+)
+@pytest.mark.parametrize(
+    "predict_kwargs, Returntype",
+    [
+        [{}, MeanAndVariance],
+        [{"full_cov": False}, MeanAndVariance],
+        [{"full_cov": True}, MeanAndCovariance],
+        [{"full_output_cov": False}, MeanAndVariance],
+        [{"full_output_cov": True}, MeanAndCovariance],
+        [{"full_cov": False, "full_output_cov": False}, MeanAndVariance],
+        [{"full_cov": True, "full_output_cov": False}, MeanAndCovariance],
+        [{"full_cov": False, "full_output_cov": True}, MeanAndCovariance],
+        [{"full_cov": True, "full_output_cov": True}, MeanAndCovariance],
+    ],
+)
+def test_MeanAndVariance_MeanAndCovariance(Ntrain, Ntest, D, model, predict_kwargs, Returntype):
+
+    data = rng.randn(Ntrain, D), rng.randn(Ntrain, 1)
+    Xtest, _ = rng.randn(Ntest, D), rng.randn(Ntest, 1)
+    kernel = gpflow.kernels.Matern32()
+
+    model_kwargs = {"kernel": kernel}
+
+    if model in [gpflow.models.GPR]:
+        model_kwargs["data"] = data
+
+    if model in [gpflow.models.GPRFITC, gpflow.models.SGPR]:
+        model_kwargs["inducing_variable"] = InducingPoints(Z=rng.randn(10, D))
+        model_kwargs["data"] = data
+
+    if model in [gpflow.models.SVGP]:
+        model_kwargs["inducing_variable"] = InducingPoints(Z=rng.randn(10, D))
+        model_kwargs["likelihood"] = gpflow.likelihoods.Gaussian()
+
+    if model in [gpflow.models.SGPMC]:
+        model_kwargs["likelihood"] = gpflow.likelihoods.Gaussian()
+        model_kwargs["inducing_variable"] = InducingPoints(Z=rng.randn(10, D))
+        model_kwargs["mean_function"] = Zero()
+        model_kwargs["data"] = data
+
+    if model in [gpflow.models.GPMC, gpflow.models.VGP, gpflow.models.VGPOpperArchambeau]:
+        model_kwargs["likelihood"] = gpflow.likelihoods.Gaussian()
+        model_kwargs["data"] = data
+
+    if model in [gpflow.models.BayesianGPLVM]:
+        model_kwargs["kernel"] = gpflow.kernels.SquaredExponential()
+        model_kwargs["X_data_mean"] = pca_reduce(data[0], D)
+        model_kwargs["X_data_var"] = np.ones((Ntrain, D))
+        model_kwargs["num_inducing_variables"] = Ntest
+        model_kwargs["data"] = data[0]
+
+    model_gp = model(**model_kwargs)
+
+    if model in [
+        gpflow.models.VGPOpperArchambeau,
+        gpflow.models.BayesianGPLVM,
+    ] and predict_kwargs.get("full_output_cov", False):
+        with pytest.raises(NotImplementedError):
+            model_gp.predict_f(Xtest, **predict_kwargs)
+        return
+
+    assert isinstance(model_gp.predict_f(Xtest, **predict_kwargs), Returntype)

@@ -12,11 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Optional
+from typing import Optional, Union, overload
 
 import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
+from typing_extensions import Literal
 
 from ..base import Parameter
 from ..conditionals import conditional
@@ -25,7 +26,7 @@ from ..kernels import Kernel
 from ..likelihoods import Likelihood
 from ..mean_functions import MeanFunction
 from ..utilities import to_default_float
-from .model import GPModel, InputData, MeanAndVariance, RegressionData
+from .model import GPModel, InputData, MeanAndCovariance, MeanAndVariance, RegressionData
 from .training_mixins import InternalDataTrainingLossMixin
 from .util import data_input_to_tensor
 
@@ -91,7 +92,24 @@ class GPMC(GPModel, InternalDataTrainingLossMixin):
 
         return tf.reduce_sum(self.likelihood.log_prob(F, Y_data))
 
-    def predict_f(self, Xnew: InputData, full_cov=False, full_output_cov=False) -> MeanAndVariance:
+    @overload
+    def predict_f(
+        self,
+        Xnew: InputData,
+        full_cov: Literal[False] = False,
+        full_output_cov: Literal[False] = False,
+    ) -> MeanAndVariance:
+        ...
+
+    @overload
+    def predict_f(
+        self, Xnew: InputData, full_cov: bool = False, full_output_cov: bool = False
+    ) -> MeanAndCovariance:
+        ...
+
+    def predict_f(
+        self, Xnew: InputData, full_cov=False, full_output_cov=False
+    ) -> Union[MeanAndVariance, MeanAndCovariance]:
         """
         Xnew is a data matrix, point at which we want to predict
 
@@ -106,4 +124,6 @@ class GPMC(GPModel, InternalDataTrainingLossMixin):
         mu, var = conditional(
             Xnew, X_data, self.kernel, self.V, full_cov=full_cov, q_sqrt=None, white=True
         )
+        if full_cov or full_output_cov:
+            return MeanAndCovariance(mu + self.mean_function(Xnew), var)
         return MeanAndVariance(mu + self.mean_function(Xnew), var)

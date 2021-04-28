@@ -13,9 +13,10 @@
 # limitations under the License.
 
 import abc
-from typing import NamedTuple, Optional
+from typing import NamedTuple, Optional, Union, overload
 
 import tensorflow as tf
+from typing_extensions import Literal
 
 from ..base import Module
 from ..conditionals.util import sample_mvn
@@ -31,6 +32,13 @@ class MeanAndVariance(NamedTuple):
 
     mean: tf.Tensor
     variance: tf.Tensor
+
+
+class MeanAndCovariance(NamedTuple):
+    """ NamedTuple that holds mean and covariance as named fields """
+
+    mean: tf.Tensor
+    covariance: tf.Tensor
 
 
 class BayesianModel(Module, metaclass=abc.ABCMeta):
@@ -153,10 +161,25 @@ class GPModel(BayesianModel):
 
         return num_latent_gps
 
+    @overload
+    def predict_f(
+        self,
+        Xnew: InputData,
+        full_cov: Literal[False] = False,
+        full_output_cov: Literal[False] = False,
+    ) -> MeanAndVariance:
+        ...
+
+    @overload
+    def predict_f(
+        self, Xnew: InputData, full_cov: bool = False, full_output_cov: bool = False
+    ) -> MeanAndCovariance:
+        ...
+
     @abc.abstractmethod
     def predict_f(
         self, Xnew: InputData, full_cov: bool = False, full_output_cov: bool = False
-    ) -> MeanAndVariance:
+    ) -> Union[MeanAndCovariance, MeanAndVariance]:
         raise NotImplementedError
 
     def predict_f_samples(
@@ -210,9 +233,24 @@ class GPModel(BayesianModel):
             )  # [..., (S), N, P]
         return samples  # [..., (S), N, P]
 
+    @overload
+    def predict_y(
+        self,
+        Xnew: InputData,
+        full_cov: Literal[False] = False,
+        full_output_cov: Literal[False] = False,
+    ) -> MeanAndVariance:
+        ...
+
+    @overload
     def predict_y(
         self, Xnew: InputData, full_cov: bool = False, full_output_cov: bool = False
-    ) -> MeanAndVariance:
+    ) -> MeanAndCovariance:
+        ...
+
+    def predict_y(
+        self, Xnew: InputData, full_cov: bool = False, full_output_cov: bool = False
+    ) -> Union[MeanAndVariance, MeanAndCovariance]:
         """
         Compute the mean and variance of the held-out data at the input points.
         """
@@ -223,6 +261,8 @@ class GPModel(BayesianModel):
             )
 
         f_mean, f_var = self.predict_f(Xnew, full_cov=full_cov, full_output_cov=full_output_cov)
+        if full_cov or full_output_cov:
+            return MeanAndCovariance(*self.likelihood.predict_mean_and_var(f_mean, f_var))
         return MeanAndVariance(*self.likelihood.predict_mean_and_var(f_mean, f_var))
 
     def predict_log_density(

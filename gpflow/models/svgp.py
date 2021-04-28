@@ -12,17 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Tuple
+from typing import Tuple, Union, overload
 
 import numpy as np
 import tensorflow as tf
+from typing_extensions import Literal
 
 from .. import kullback_leiblers
 from ..base import Parameter
 from ..conditionals import conditional
 from ..config import default_float
 from ..utilities import positive, triangular
-from .model import GPModel, InputData, MeanAndVariance, RegressionData
+from .model import GPModel, InputData, MeanAndCovariance, MeanAndVariance, RegressionData
 from .training_mixins import ExternalDataTrainingLossMixin
 from .util import inducingpoint_wrapper
 
@@ -155,7 +156,24 @@ class SVGP(GPModel, ExternalDataTrainingLossMixin):
             scale = tf.cast(1.0, kl.dtype)
         return tf.reduce_sum(var_exp) * scale - kl
 
-    def predict_f(self, Xnew: InputData, full_cov=False, full_output_cov=False) -> MeanAndVariance:
+    @overload
+    def predict_f(
+        self,
+        Xnew: InputData,
+        full_cov: Literal[False] = False,
+        full_output_cov: Literal[False] = False,
+    ) -> MeanAndVariance:
+        ...
+
+    @overload
+    def predict_f(
+        self, Xnew: InputData, full_cov: bool = False, full_output_cov: bool = False
+    ) -> MeanAndCovariance:
+        ...
+
+    def predict_f(
+        self, Xnew: InputData, full_cov=False, full_output_cov=False
+    ) -> Union[MeanAndVariance, MeanAndCovariance]:
         q_mu = self.q_mu
         q_sqrt = self.q_sqrt
         mu, var = conditional(
@@ -169,4 +187,6 @@ class SVGP(GPModel, ExternalDataTrainingLossMixin):
             full_output_cov=full_output_cov,
         )
         # tf.debugging.assert_positive(var)  # We really should make the tests pass with this here
+        if full_cov or full_output_cov:
+            return MeanAndCovariance(mu + self.mean_function(Xnew), var)
         return MeanAndVariance(mu + self.mean_function(Xnew), var)

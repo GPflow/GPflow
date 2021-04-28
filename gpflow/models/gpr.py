@@ -12,16 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Union, overload
 
 import tensorflow as tf
+from typing_extensions import Literal
 
 import gpflow
 
 from ..kernels import Kernel
 from ..logdensities import multivariate_normal
 from ..mean_functions import MeanFunction
-from .model import GPModel, InputData, MeanAndVariance, RegressionData
+from .model import GPModel, InputData, MeanAndCovariance, MeanAndVariance, RegressionData
 from .training_mixins import InternalDataTrainingLossMixin
 from .util import data_input_to_tensor
 
@@ -91,9 +92,24 @@ class GPR(GPModel, InternalDataTrainingLossMixin):
         log_prob = multivariate_normal(Y, m, L)
         return tf.reduce_sum(log_prob)
 
+    @overload
+    def predict_f(
+        self,
+        Xnew: InputData,
+        full_cov: Literal[False] = False,
+        full_output_cov: Literal[False] = False,
+    ) -> MeanAndVariance:
+        ...
+
+    @overload
     def predict_f(
         self, Xnew: InputData, full_cov: bool = False, full_output_cov: bool = False
-    ) -> MeanAndVariance:
+    ) -> MeanAndCovariance:
+        ...
+
+    def predict_f(
+        self, Xnew: InputData, full_cov: bool = False, full_output_cov: bool = False
+    ) -> Union[MeanAndVariance, MeanAndCovariance]:
         r"""
         This method computes predictions at X \in R^{N \x D} input points
 
@@ -115,4 +131,6 @@ class GPR(GPModel, InternalDataTrainingLossMixin):
             kmn, kmm_plus_s, knn, err, full_cov=full_cov, white=False
         )  # [N, P], [N, P] or [P, N, N]
         f_mean = f_mean_zero + self.mean_function(Xnew)
+        if full_cov or full_output_cov:
+            return MeanAndCovariance(f_mean, f_var)
         return MeanAndVariance(f_mean, f_var)
