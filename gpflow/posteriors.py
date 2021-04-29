@@ -129,9 +129,8 @@ class AbstractPosterior(Module, ABC):
         self.whiten = whiten
         self._set_qdist(q_mu, q_sqrt)
 
-        if precompute_cache is None:
-            self.alpha = self.Qinv = None
-        else:
+        self.alpha = self.Qinv = None
+        if precompute_cache is not None:
             self.update_cache(precompute_cache)
 
     @property
