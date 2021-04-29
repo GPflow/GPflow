@@ -558,9 +558,9 @@ def test_posterior_update_cache_with_variables_update_value(q_sqrt_factory, whit
     posterior.update_cache(PrecomputeCacheType.VARIABLE)
 
     # assert that the values have changed
-    assert np.any(np.not_equal(initial_alpha, posterior.alpha))
+    assert not np.allclose(initial_alpha, tf.convert_to_tensor(posterior.alpha))
     if initial_q_sqrt is not None:
-        assert np.any(np.not_equal(initial_Qinv, posterior.Qinv))
+        assert not np.allclose(initial_Qinv, tf.convert_to_tensor(posterior.Qinv))
 
 
 def test_posterior_update_cache_fails_without_argument(q_sqrt_factory, whiten):
