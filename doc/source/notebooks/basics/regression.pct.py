@@ -180,7 +180,7 @@ _ = plt.xlim(-0.1, 1.1)
 
 
 # %% [markdown]
-# Moreover, you can get the mean and variance predictions individually, using for `m.predict_f(xx).mean` instead of `m.predict_f(xx)[0]` and `m.predict_f(xx).variance` instead of `m.predict_f(xx)[1]`.
+# Moreover, you can get the mean and variance predictions individually, using for `m.predict_f(xx).mean` instead of `m.predict_f(xx)[0]` and `m.predict_f(xx).variance` instead of `m.predict_f(xx)[1]`. If you pass `full_cov=True` or `full_output_cov=True` to `m.predict_f`, you will get information about the covariance instead of variance prediction. You can access it with `m.predict_f(xx).covariance`.
 
 # %% [markdown]
 # ## GP regression in higher dimensions
