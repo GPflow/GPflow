@@ -261,8 +261,6 @@ class GPModel(BayesianModel):
             )
 
         f_mean, f_var = self.predict_f(Xnew, full_cov=full_cov, full_output_cov=full_output_cov)
-        if full_cov or full_output_cov:
-            return MeanAndCovariance(*self.likelihood.predict_mean_and_var(f_mean, f_var))
         return MeanAndVariance(*self.likelihood.predict_mean_and_var(f_mean, f_var))
 
     def predict_log_density(
