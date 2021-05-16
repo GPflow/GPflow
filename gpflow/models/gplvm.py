@@ -149,6 +149,7 @@ class BayesianGPLVM(GPModel, InternalDataTrainingLossMixin):
         return self.elbo()
 
     def elbo(self) -> tf.Tensor:
+
         """
         Construct a tensorflow function to compute the bound on the marginal
         likelihood.
@@ -169,16 +170,15 @@ class BayesianGPLVM(GPModel, InternalDataTrainingLossMixin):
         cov_uu = covariances.Kuu(self.inducing_variable, self.kernel, jitter=default_jitter())
         L = tf.linalg.cholesky(cov_uu)
         sigma2 = self.likelihood.variance
-        sigma = tf.sqrt(sigma2)
 
         # Compute intermediate matrices
-        A = tf.linalg.triangular_solve(L, tf.transpose(psi1), lower=True) / sigma
+        A = tf.linalg.triangular_solve(L, tf.transpose(psi1), lower=True)
         tmp = tf.linalg.triangular_solve(L, psi2, lower=True)
         AAT = tf.linalg.triangular_solve(L, tf.transpose(tmp), lower=True) / sigma2
         B = AAT + tf.eye(num_inducing, dtype=default_float())
         LB = tf.linalg.cholesky(B)
         log_det_B = 2.0 * tf.reduce_sum(tf.math.log(tf.linalg.diag_part(LB)))
-        c = tf.linalg.triangular_solve(LB, tf.linalg.matmul(A, Y_data), lower=True) / sigma
+        c = tf.linalg.triangular_solve(LB, tf.linalg.matmul(A, Y_data), lower=True) / sigma2
 
         # KL[q(x) || p(x)]
         dX_data_var = (
