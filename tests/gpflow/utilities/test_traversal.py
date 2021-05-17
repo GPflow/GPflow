@@ -15,6 +15,7 @@
 import numpy as np
 import pytest
 import tensorflow as tf
+from packaging.version import Version
 
 import gpflow
 from gpflow.config import Config, as_context
@@ -208,16 +209,28 @@ B.var_fixed                          ResourceVariable                        Fal
 
 # Note: we use grid format here because we have a double reference to the same variable
 # which does not render nicely in the table formatting.
-example_tf_keras_model = """\
-+-------------------------------+------------------+-------------+---------+-------------+-----------+---------+----------+\n\
-| name                          | class            | transform   | prior   | trainable   | shape     | dtype   | value    |\n\
-+===============================+==================+=============+=========+=============+===========+=========+==========+\n\
-| C._trainable_weights[0]       | ResourceVariable |             |         | True        | (2, 2, 1) | float32 | [[[0.... |\n\
-| C.variable                    |                  |             |         |             |           |         |          |\n\
-+-------------------------------+------------------+-------------+---------+-------------+-----------+---------+----------+\n\
-| C._self_tracked_trackables[0] | Parameter        | Identity    |         | True        | ()        | float64 | 0.0      |\n\
-| C.param                       |                  |             |         |             |           |         |          |\n\
-+-------------------------------+------------------+-------------+---------+-------------+-----------+---------+----------+"""
+# The internal structure of the Keras model changed in TensorFlow version 2.5.0.
+if Version(tf.__version__) >= Version("2.5"):
+    example_tf_keras_model = """\
+    +-------------------------------+------------------+-------------+---------+-------------+-----------+---------+----------+\n\
+    | name                          | class            | transform   | prior   | trainable   | shape     | dtype   | value    |\n\
+    +===============================+==================+=============+=========+=============+===========+=========+==========+\n\
+    | C._trainable_weights[0]       | ResourceVariable |             |         | True        | (2, 2, 1) | float32 | [[[0.... |\n\
+    | C.variable                    |                  |             |         |             |           |         |          |\n\
+    +-------------------------------+------------------+-------------+---------+-------------+-----------+---------+----------+\n\
+    | C._self_tracked_trackables[0] | Parameter        | Identity    |         | True        | ()        | float64 | 0.0      |\n\
+    | C.param                       |                  |             |         |             |           |         |          |\n\
+    +-------------------------------+------------------+-------------+---------+-------------+-----------+---------+----------+"""
+else:
+    example_tf_keras_model = """\
+    +-------------------------+------------------+-------------+---------+-------------+-----------+---------+----------+\n\
+    | name                    | class            | transform   | prior   | trainable   | shape     | dtype   | value    |\n\
+    +=========================+==================+=============+=========+=============+===========+=========+==========+\n\
+    | C._trainable_weights[0] | ResourceVariable |             |         | True        | (2, 2, 1) | float32 | [[[0.... |\n\
+    | C.variable              |                  |             |         |             |           |         |          |\n\
+    +-------------------------+------------------+-------------+---------+-------------+-----------+---------+----------+\n\
+    | C.param                 | Parameter        | Identity    |         | True        | ()        | float64 | 0.0      |\n\
+    +-------------------------+------------------+-------------+---------+-------------+-----------+---------+----------+"""
 
 # ------------------------------------------
 # Fixtures
