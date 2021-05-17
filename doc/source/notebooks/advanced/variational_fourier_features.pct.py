@@ -239,7 +239,7 @@ def gauss_kl_vff(q_mu, q_sqrt, K):
 import gpflow.posteriors
 
 
-class VFFPosterior(gpflow.posteriors.AbstractPosterior):
+class VFFPosterior(gpflow.posteriors.BasePosterior):
     def _conditional_fused(self, Xnew, full_cov, full_output_cov):
         """
         Xnew is a tensor with the points of the data or minibatch, shape N x D

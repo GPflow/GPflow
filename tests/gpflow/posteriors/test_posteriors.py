@@ -23,7 +23,7 @@ import gpflow.ci_utils
 from gpflow.conditionals import conditional
 from gpflow.models.util import inducingpoint_wrapper
 from gpflow.posteriors import (
-    AbstractPosterior,
+    Posterior,
     FallbackIndependentLatentPosterior,
     FullyCorrelatedPosterior,
     IndependentPosteriorMultiOutput,
@@ -100,7 +100,7 @@ def _ensure_all_posteriors_are_tested_fixture():
 
     # Code here will be executed after all of the tests in this module.
 
-    available_posteriors = list(gpflow.ci_utils.subclasses(AbstractPosterior))
+    available_posteriors = list(gpflow.ci_utils.subclasses(Posterior))
     concrete_posteriors = set([k for k in available_posteriors if not isabstract(k)])
 
     untested_posteriors = concrete_posteriors - TESTED_POSTERIORS
