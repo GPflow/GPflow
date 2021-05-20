@@ -14,7 +14,7 @@
 
 
 from .dispatch import create_posterior, get_posterior_class
-from .posterior import PrecomputeCacheType, Posterior
+from .posterior import Posterior, PrecomputeCacheType
 from .svgp import (
     BasePosterior,
     FallbackIndependentLatentPosterior,

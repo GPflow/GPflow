@@ -16,7 +16,6 @@ from typing import Optional
 
 import tensorflow as tf
 
-from .posterior import _DeltaDist, _DiagNormal, _MvNormal, PrecomputeCacheType, Posterior, VariationalPosteriorMixin
 from .. import covariances, kernels, mean_functions
 from ..conditionals.util import (
     base_conditional,
@@ -29,10 +28,17 @@ from ..conditionals.util import (
 from ..config import default_jitter
 from ..inducing_variables import SharedIndependentInducingVariables
 from ..types import MeanAndVariance
+from .posterior import (
+    Posterior,
+    PrecomputeCacheType,
+    VariationalPosteriorMixin,
+    _DeltaDist,
+    _DiagNormal,
+    _MvNormal,
+)
 
 
 class BasePosterior(Posterior, VariationalPosteriorMixin, ABC):
-
     def __init__(
         self,
         kernel,

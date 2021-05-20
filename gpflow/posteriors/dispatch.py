@@ -13,14 +13,6 @@
 #  limitations under the License.
 from typing import Union
 
-from .posterior import PrecomputeCacheType
-from .svgp import (
-    IndependentPosteriorMultiOutput,
-    IndependentPosteriorSingleOutput,
-    LinearCoregionalizationPosterior,
-    FullyCorrelatedPosterior,
-    FallbackIndependentLatentPosterior
-)
 from .. import kernels
 from ..inducing_variables import (
     FallbackSeparateIndependentInducingVariables,
@@ -31,6 +23,14 @@ from ..inducing_variables import (
     SharedIndependentInducingVariables,
 )
 from ..utilities import Dispatcher
+from .posterior import PrecomputeCacheType
+from .svgp import (
+    FallbackIndependentLatentPosterior,
+    FullyCorrelatedPosterior,
+    IndependentPosteriorMultiOutput,
+    IndependentPosteriorSingleOutput,
+    LinearCoregionalizationPosterior,
+)
 
 get_posterior_class = Dispatcher("get_posterior_class")
 
@@ -105,4 +105,3 @@ def create_posterior(
         mean_function,
         precompute_cache=precompute_cache,
     )
-

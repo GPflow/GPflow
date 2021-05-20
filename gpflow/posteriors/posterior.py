@@ -13,7 +13,7 @@
 #  limitations under the License.
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Optional, cast, Tuple
+from typing import Optional, Tuple, cast
 
 import tensorflow as tf
 
@@ -43,7 +43,6 @@ class PrecomputeCacheType(Enum):
 
 
 class Posterior(Module, ABC):
-
     def __init__(
         self,
         kernel,
