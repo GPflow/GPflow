@@ -17,6 +17,7 @@ from typing import Optional, cast, Tuple
 
 import tensorflow as tf
 
+from .. import mean_functions
 from ..base import Module
 from ..types import MeanAndVariance
 
@@ -42,6 +43,27 @@ class PrecomputeCacheType(Enum):
 
 
 class Posterior(Module, ABC):
+
+    def __init__(
+        self,
+        kernel,
+        mean_function: Optional[mean_functions.MeanFunction] = None,
+        *,
+        precompute_cache: Optional[PrecomputeCacheType],
+    ):
+        """
+        Users should use `create_posterior` to create instances of concrete
+        subclasses of this Posterior class instead of calling this constructor
+        directly. For `create_posterior` to be able to correctly instantiate
+        subclasses, developers need to ensure their subclasses don't change the
+        constructor signature.
+        """
+        self.kernel = kernel
+        self.mean_function = mean_function
+
+        self.alpha = self.Qinv = None
+        if precompute_cache is not None:
+            self.update_cache(precompute_cache)
 
     def update_cache(self, precompute_cache: Optional[PrecomputeCacheType] = None):
         """

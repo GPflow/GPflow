@@ -23,3 +23,4 @@ from .svgp import (
     IndependentPosteriorSingleOutput,
     LinearCoregionalizationPosterior,
 )
+from .vgp import VariationalPosterior

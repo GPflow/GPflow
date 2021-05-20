@@ -52,14 +52,10 @@ class BasePosterior(Posterior, VariationalPosteriorMixin, ABC):
         don't change the constructor signature.
         """
         self.inducing_variable = inducing_variable
-        self.kernel = kernel
-        self.mean_function = mean_function
         self.whiten = whiten
         self._set_qdist(q_mu, q_sqrt)
 
-        self.alpha = self.Qinv = None
-        if precompute_cache is not None:
-            self.update_cache(precompute_cache)
+        super().__init__(kernel, mean_function, precompute_cache=precompute_cache)
 
     def _precompute(self):
         Kuu = covariances.Kuu(
