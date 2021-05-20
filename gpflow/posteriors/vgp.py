@@ -15,14 +15,15 @@ from typing import Tuple
 
 import tensorflow as tf
 
-from .posterior import Posterior, VariationalPosteriorMixin
 from ..conditionals import conditional
 from ..types import MeanAndVariance
+from .posterior import Posterior, VariationalPosteriorMixin
 
 
 class VariationalPosterior(Posterior, VariationalPosteriorMixin):
-
-    def _conditional_fused(self, Xnew, full_cov: bool = False, full_output_cov: bool = False) -> MeanAndVariance:
+    def _conditional_fused(
+        self, Xnew, full_cov: bool = False, full_output_cov: bool = False
+    ) -> MeanAndVariance:
         X_data, _ = self.data
         mu, var = conditional(
             Xnew, X_data, self.kernel, self.q_mu, q_sqrt=self.q_sqrt, full_cov=full_cov, white=True,
@@ -32,6 +33,7 @@ class VariationalPosterior(Posterior, VariationalPosteriorMixin):
     def _precompute(self) -> Tuple[tf.Tensor, tf.Tensor]:
         pass
 
-    def _conditional_with_precompute(self, Xnew, full_cov: bool = False,
-                                     full_output_cov: bool = False) -> MeanAndVariance:
+    def _conditional_with_precompute(
+        self, Xnew, full_cov: bool = False, full_output_cov: bool = False
+    ) -> MeanAndVariance:
         pass
