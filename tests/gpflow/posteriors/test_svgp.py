@@ -23,7 +23,6 @@ import gpflow.ci_utils
 from gpflow.conditionals import conditional
 from gpflow.models.util import inducingpoint_wrapper
 from gpflow.posteriors import (
-    AbstractPosterior,
     FallbackIndependentLatentPosterior,
     FullyCorrelatedPosterior,
     IndependentPosteriorMultiOutput,
@@ -80,48 +79,6 @@ def _num_latent_gps_fixture(request):
 @pytest.fixture(name="output_dims", params=[1, 5])
 def _output_dims_fixture(request):
     return request.param
-
-
-TESTED_POSTERIORS = set()
-
-
-@pytest.fixture(scope="module", autouse=True)
-def _ensure_all_posteriors_are_tested_fixture():
-    """
-    This fixture ensures that all concrete posteriors have unit tests which compare the predictions
-    from the fused and precomputed code paths. When adding a new concrete posterior class to
-    GPFlow, ensure that it is also tested in this manner.
-
-    This autouse, module scoped fixture will always be executed when tests in this module are run.
-    """
-    # Code here will be executed before any of the tests in this module.
-
-    yield  # Run tests in this module.
-
-    # Code here will be executed after all of the tests in this module.
-
-    available_posteriors = list(gpflow.ci_utils.subclasses(AbstractPosterior))
-    concrete_posteriors = set([k for k in available_posteriors if not isabstract(k)])
-
-    untested_posteriors = concrete_posteriors - TESTED_POSTERIORS
-
-    if untested_posteriors:
-        message = (
-            f"No tests have been registered for the following posteriors: {untested_posteriors}."
-        )
-        if gpflow.ci_utils.is_continuous_integration():
-            raise AssertionError(message)
-        else:
-            warnings.warn(message)
-
-
-@pytest.fixture(name="register_posterior_test")
-def _register_posterior_test_fixture():
-    def _verify_and_register_posterior_test(posterior, expected_posterior_class):
-        assert isinstance(posterior, expected_posterior_class)
-        TESTED_POSTERIORS.add(expected_posterior_class)
-
-    return _verify_and_register_posterior_test
 
 
 def create_conditional(
