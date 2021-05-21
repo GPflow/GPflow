@@ -11,8 +11,6 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-import warnings
-from inspect import isabstract
 
 import numpy as np
 import pytest
@@ -454,6 +452,29 @@ def test_linear_coregionalization_shi(
     _assert_fused_predict_f_equals_precomputed_predict_f_and_conditional(
         posterior, conditional, full_cov, full_output_cov
     )
+
+
+@pytest.mark.parametrize("precompute_cache,expected_cache_type", [
+    (None, None),
+    (PrecomputeCacheType.TENSOR, tf.Tensor),
+    (PrecomputeCacheType.VARIABLE.value, tf.Variable)
+])
+def test_valid_precompute_type(precompute_cache, expected_cache_type):
+    kernel = gpflow.kernels.SquaredExponential()
+    inducing_variable = inducingpoint_wrapper(np.random.randn(3, 2))
+
+    q_mu = np.random.randn(3, 1)
+
+    posterior = create_posterior(
+        kernel=kernel, inducing_variable=inducing_variable, q_mu=q_mu, q_sqrt=None, whiten=True, precompute_cache=precompute_cache
+    )
+
+    if expected_cache_type is None:
+        assert posterior.alpha is None
+        assert posterior.Qinv is None
+    else:
+        assert isinstance(posterior.alpha, expected_cache_type)
+        assert isinstance(posterior.Qinv, expected_cache_type)
 
 
 @pytest.mark.parametrize(
