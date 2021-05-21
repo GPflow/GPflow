@@ -454,11 +454,14 @@ def test_linear_coregionalization_shi(
     )
 
 
-@pytest.mark.parametrize("precompute_cache,expected_cache_type", [
-    (None, None),
-    (PrecomputeCacheType.TENSOR, tf.Tensor),
-    (PrecomputeCacheType.VARIABLE.value, tf.Variable)
-])
+@pytest.mark.parametrize(
+    "precompute_cache,expected_cache_type",
+    [
+        (None, None),
+        (PrecomputeCacheType.TENSOR, tf.Tensor),
+        (PrecomputeCacheType.VARIABLE.value, tf.Variable),
+    ],
+)
 def test_valid_precompute_type(precompute_cache, expected_cache_type):
     kernel = gpflow.kernels.SquaredExponential()
     inducing_variable = inducingpoint_wrapper(np.random.randn(3, 2))
@@ -466,7 +469,12 @@ def test_valid_precompute_type(precompute_cache, expected_cache_type):
     q_mu = np.random.randn(3, 1)
 
     posterior = create_posterior(
-        kernel=kernel, inducing_variable=inducing_variable, q_mu=q_mu, q_sqrt=None, whiten=True, precompute_cache=precompute_cache
+        kernel=kernel,
+        inducing_variable=inducing_variable,
+        q_mu=q_mu,
+        q_sqrt=None,
+        whiten=True,
+        precompute_cache=precompute_cache,
     )
 
     if expected_cache_type is None:
