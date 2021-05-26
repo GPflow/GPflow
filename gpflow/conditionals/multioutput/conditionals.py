@@ -12,10 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import tensorflow as tf
-
-from ... import covariances
-from ...config import default_float, default_jitter
 from ...inducing_variables import (
     FallbackSeparateIndependentInducingVariables,
     FallbackSharedIndependentInducingVariables,
@@ -31,15 +27,13 @@ from ...kernels import (
     SeparateIndependent,
     SharedIndependent,
 )
-from ..dispatch import conditional
-from ..util import (
-    base_conditional,
-    expand_independent_outputs,
-    fully_correlated_conditional,
-    independent_interdomain_conditional,
-    mix_latent_gp,
-    rollaxis_left,
+from ...posteriors import (
+    FallbackIndependentLatentPosterior,
+    FullyCorrelatedPosterior,
+    IndependentPosteriorMultiOutput,
+    LinearCoregionalizationPosterior,
 )
+from ..dispatch import conditional
 
 
 @conditional.register(object, SharedIndependentInducingVariables, SharedIndependent, object)
@@ -82,14 +76,16 @@ def shared_independent_conditional(
         Please see `gpflow.conditional._expand_independent_outputs` for more information
         about the shape of the variance, depending on `full_cov` and `full_output_cov`.
     """
-    Kmm = covariances.Kuu(inducing_variable, kernel, jitter=default_jitter())  # [M, M]
-    Kmn = covariances.Kuf(inducing_variable, kernel, Xnew)  # [M, N]
-    Knn = kernel.kernel(Xnew, full_cov=full_cov)
-
-    fmean, fvar = base_conditional(
-        Kmn, Kmm, Knn, f, full_cov=full_cov, q_sqrt=q_sqrt, white=white
-    )  # [N, P],  [P, N, N] or [N, P]
-    return fmean, expand_independent_outputs(fvar, full_cov, full_output_cov)
+    posterior = IndependentPosteriorMultiOutput(
+        kernel,
+        inducing_variable,
+        f,
+        q_sqrt,
+        whiten=white,
+        mean_function=None,
+        precompute_cache=None,
+    )
+    return posterior.fused_predict_f(Xnew, full_cov=full_cov, full_output_cov=full_output_cov)
 
 
 @conditional.register(object, SeparateIndependentInducingVariables, SeparateIndependent, object)
@@ -106,60 +102,16 @@ def separate_independent_conditional(
     q_sqrt=None,
     white=False,
 ):
-    """Multi-output GP with independent GP priors.
-    Number of latent processes equals the number of outputs (L = P).
-    The covariance matrices used to calculate the conditional have the following shape:
-    - Kuu: [P, M, M]
-    - Kuf: [P, M, N]
-    - Kff: [P, N] or [P, N, N]
-
-    Further reference
-    -----------------
-    - See `gpflow.conditionals._conditional` for a detailed explanation of
-      conditional in the single-output case.
-    - See the multioutput notebook for more information about the multioutput framework.
-    - See above for the parameters and the return value.
-    """
-    # Following are: [P, M, M]  -  [P, M, N]  -  [P, N](x N)
-    Kmms = covariances.Kuu(inducing_variable, kernel, jitter=default_jitter())  # [P, M, M]
-    Kmns = covariances.Kuf(inducing_variable, kernel, Xnew)  # [P, M, N]
-    if isinstance(kernel, Combination):
-        kernels = kernel.kernels
-    else:
-        kernels = [kernel.kernel] * len(inducing_variable.inducing_variable_list)
-    Knns = tf.stack([k.K(Xnew) if full_cov else k.K_diag(Xnew) for k in kernels], axis=0)
-    fs = tf.transpose(f)[:, :, None]  # [P, M, 1]
-    # [P, 1, M, M]  or  [P, M, 1]
-
-    if q_sqrt is not None:
-        q_sqrts = (
-            tf.transpose(q_sqrt)[:, :, None] if q_sqrt.shape.ndims == 2 else q_sqrt[:, None, :, :]
-        )
-        base_conditional_args_to_map = (Kmms, Kmns, Knns, fs, q_sqrts)
-
-        def single_gp_conditional(t):
-            Kmm, Kmn, Knn, f, q_sqrt = t
-            return base_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov, q_sqrt=q_sqrt, white=white)
-
-    else:
-        base_conditional_args_to_map = (Kmms, Kmns, Knns, fs)
-
-        def single_gp_conditional(t):
-            Kmm, Kmn, Knn, f = t
-            return base_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov, q_sqrt=q_sqrt, white=white)
-
-    rmu, rvar = tf.map_fn(
-        single_gp_conditional, base_conditional_args_to_map, (default_float(), default_float())
-    )  # [P, N, 1], [P, 1, N, N] or [P, N, 1]
-
-    fmu = rollaxis_left(tf.squeeze(rmu, axis=-1), 1)  # [N, P]
-
-    if full_cov:
-        fvar = tf.squeeze(rvar, axis=-3)  # [..., 0, :, :]  # [P, N, N]
-    else:
-        fvar = rollaxis_left(tf.squeeze(rvar, axis=-1), 1)  # [N, P]
-
-    return fmu, expand_independent_outputs(fvar, full_cov, full_output_cov)
+    posterior = IndependentPosteriorMultiOutput(
+        kernel,
+        inducing_variable,
+        f,
+        q_sqrt,
+        whiten=white,
+        mean_function=None,
+        precompute_cache=None,
+    )
+    return posterior.fused_predict_f(Xnew, full_cov=full_cov, full_output_cov=full_output_cov)
 
 
 @conditional.register(
@@ -193,22 +145,16 @@ def fallback_independent_latent_conditional(
     - See the multioutput notebook for more information about the multioutput framework.
     - See above for the parameters and the return value.
     """
-    Kmm = covariances.Kuu(inducing_variable, kernel, jitter=default_jitter())  # [L, M, M]
-    Kmn = covariances.Kuf(inducing_variable, kernel, Xnew)  # [M, L, N, P]
-    Knn = kernel(
-        Xnew, full_cov=full_cov, full_output_cov=full_output_cov
-    )  # [N, P](x N)x P  or  [N, P](x P)
-
-    return independent_interdomain_conditional(
-        Kmn,
-        Kmm,
-        Knn,
+    posterior = FallbackIndependentLatentPosterior(
+        kernel,
+        inducing_variable,
         f,
-        full_cov=full_cov,
-        full_output_cov=full_output_cov,
-        q_sqrt=q_sqrt,
-        white=white,
+        q_sqrt,
+        whiten=white,
+        mean_function=None,
+        precompute_cache=None,
     )
+    return posterior.fused_predict_f(Xnew, full_cov=full_cov, full_output_cov=full_output_cov)
 
 
 @conditional.register(object, InducingPoints, MultioutputKernel, object)
@@ -242,36 +188,16 @@ def inducing_point_conditional(
     :param f: variational mean, [L, 1]
     :param q_sqrt: standard-deviations or cholesky, [L, 1]  or  [1, L, L]
     """
-    Kmm = covariances.Kuu(inducing_variable, kernel, jitter=default_jitter())  # [M, L, M, L]
-    Kmn = covariances.Kuf(inducing_variable, kernel, Xnew)  # [M, L, N, P]
-    Knn = kernel(
-        Xnew, full_cov=full_cov, full_output_cov=full_output_cov
-    )  # [N, P](x N)x P  or  [N, P](x P)
-
-    M, L, N, K = tf.unstack(tf.shape(Kmn), num=Kmn.shape.ndims, axis=0)
-    Kmm = tf.reshape(Kmm, (M * L, M * L))
-
-    if full_cov == full_output_cov:
-        Kmn = tf.reshape(Kmn, (M * L, N * K))
-        Knn = tf.reshape(Knn, (N * K, N * K)) if full_cov else tf.reshape(Knn, (N * K,))
-        fmean, fvar = base_conditional(
-            Kmn, Kmm, Knn, f, full_cov=full_cov, q_sqrt=q_sqrt, white=white
-        )  # [K, 1], [1, K](x NK)
-        fmean = tf.reshape(fmean, (N, K))
-        fvar = tf.reshape(fvar, (N, K, N, K) if full_cov else (N, K))
-    else:
-        Kmn = tf.reshape(Kmn, (M * L, N, K))
-        fmean, fvar = fully_correlated_conditional(
-            Kmn,
-            Kmm,
-            Knn,
-            f,
-            full_cov=full_cov,
-            full_output_cov=full_output_cov,
-            q_sqrt=q_sqrt,
-            white=white,
-        )
-    return fmean, fvar
+    posterior = FullyCorrelatedPosterior(
+        kernel,
+        inducing_variable,
+        f,
+        q_sqrt,
+        whiten=white,
+        mean_function=None,
+        precompute_cache=None,
+    )
+    return posterior.fused_predict_f(Xnew, full_cov=full_cov, full_output_cov=full_output_cov)
 
 
 @conditional.register(
@@ -304,17 +230,13 @@ def coregionalization_conditional(
       conditional in the single-output case.
     - See the multioutput notebook for more information about the multioutput framework.
     """
-    ind_conditional = conditional.dispatch(
-        object, SeparateIndependentInducingVariables, SeparateIndependent, object
-    )
-    gmu, gvar = ind_conditional(
-        Xnew,
-        inducing_variable,
+    posterior = LinearCoregionalizationPosterior(
         kernel,
+        inducing_variable,
         f,
-        full_cov=full_cov,
-        q_sqrt=q_sqrt,
-        full_output_cov=False,
-        white=white,
-    )  # [N, L], [L, N, N] or [N, L]
-    return mix_latent_gp(kernel.W, gmu, gvar, full_cov, full_output_cov)
+        q_sqrt,
+        whiten=white,
+        mean_function=None,
+        precompute_cache=None,
+    )
+    return posterior.fused_predict_f(Xnew, full_cov=full_cov, full_output_cov=full_output_cov)
