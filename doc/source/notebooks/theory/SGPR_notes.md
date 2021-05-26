@@ -133,7 +133,7 @@ At prediction time, we need to compute the mean and variance of the variational 
 Following Hensman et al. (2013), we know that all the information in the posterior approximation is contained in the Gaussian distribution $q(\mathbf u)$, which represents the distribution of function values at the inducing points $\mathbf Z$. Remember that:
 
 \begin{equation}
-q(\mathbf u) = \mathcal N(\mathbf u\,|\,  \mathbf m, \mathbf \Lambda)
+q(\mathbf u) = \mathcal N(\mathbf u\,|\,  \mathbf m, \mathbf \Lambda^{-1})
 \end{equation}
 
 with:
@@ -161,13 +161,13 @@ p(\mathbf f^\star \,|\, \mathbf u) = \mathcal N(\mathbf f^\star\,|\, \mathbf K_{
 The integral results in:
 
 \begin{equation}
-p(\mathbf f^\star) = \mathcal N(\mathbf f^\star\,|\, \mathbf K_{\star u}\mathbf K_{uu}^{-1}\mathbf m, \,\mathbf K_{\star\star} - \mathbf K_{\star u}\mathbf K_{uu}^{-1}\mathbf K_{u\star} + \mathbf K_{\star u}\mathbf K_{uu}^{-1}\mathbf \Lambda \mathbf K_{uu}^{-1}\mathbf K_{u\star})
+p(\mathbf f^\star) = \mathcal N(\mathbf f^\star\,|\, \mathbf K_{\star u}\mathbf K_{uu}^{-1}\mathbf m, \,\mathbf K_{\star\star} - \mathbf K_{\star u}\mathbf K_{uu}^{-1}\mathbf K_{u\star} + \mathbf K_{\star u}\mathbf K_{uu}^{-1}\mathbf \Lambda^{-1} \mathbf K_{uu}^{-1}\mathbf K_{u\star})
 \end{equation}
 
 Note from our above definitions we have:
 
 \begin{equation}
-\mathbf K_{uu}^{-1}\mathbf \Lambda \mathbf K_{uu}^{-1} = 
+\mathbf K_{uu}^{-1}\mathbf \Lambda^{-1} \mathbf K_{uu}^{-1} = 
 \mathbf L^{-\top}\mathbf B^{-1}\mathbf L^{-1}
 \end{equation}
 
