@@ -106,12 +106,12 @@ def _validate_precompute_cache_type(value) -> PrecomputeCacheType:
 
 class AbstractPosterior(Module, ABC):
     def __init__(
-            self,
-            kernel,
-            X_data: Union[tf.Tensor, InducingVariables],
-            alpha: Optional[TensorType] = None,
-            Qinv: Optional[TensorType] = None,
-            mean_function: Optional[mean_functions.MeanFunction] = None
+        self,
+        kernel,
+        X_data: Union[tf.Tensor, InducingVariables],
+        alpha: Optional[TensorType] = None,
+        Qinv: Optional[TensorType] = None,
+        mean_function: Optional[mean_functions.MeanFunction] = None,
     ):
         """
         Users should use `create_posterior` to create instances of concrete
@@ -186,17 +186,16 @@ class AbstractPosterior(Module, ABC):
 
 
 class BasePosterior(AbstractPosterior):
-
     def __init__(
-            self,
-            kernel,
-            inducing_variable,
-            q_mu: tf.Tensor,
-            q_sqrt: tf.Tensor,
-            whiten: bool = True,
-            mean_function: Optional[mean_functions.MeanFunction] = None,
-            *,
-            precompute_cache: Optional[PrecomputeCacheType],
+        self,
+        kernel,
+        inducing_variable,
+        q_mu: tf.Tensor,
+        q_sqrt: tf.Tensor,
+        whiten: bool = True,
+        mean_function: Optional[mean_functions.MeanFunction] = None,
+        *,
+        precompute_cache: Optional[PrecomputeCacheType],
     ):
 
         super().__init__(kernel, inducing_variable, mean_function=mean_function)
@@ -258,9 +257,7 @@ class BasePosterior(AbstractPosterior):
                 self.Qinv = tf.Variable(Qinv, trainable=False)
 
     def _precompute(self):
-        Kuu = covariances.Kuu(
-            self.X_data, self.kernel, jitter=default_jitter()
-        )  # [(R), M, M]
+        Kuu = covariances.Kuu(self.X_data, self.kernel, jitter=default_jitter())  # [(R), M, M]
         q_mu = self._q_dist.q_mu
 
         if Kuu.shape.ndims == 4:
@@ -377,9 +374,7 @@ class IndependentPosteriorSingleOutput(IndependentPosterior):
         # same as IndependentPosteriorMultiOutput, Shared~/Shared~ branch, except for following line:
         Knn = self.kernel(Xnew, full_cov=full_cov)
 
-        Kmm = covariances.Kuu(
-            self.X_data, self.kernel, jitter=default_jitter()
-        )  # [M, M]
+        Kmm = covariances.Kuu(self.X_data, self.kernel, jitter=default_jitter())  # [M, M]
         Kmn = covariances.Kuf(self.X_data, self.kernel, Xnew)  # [M, N]
 
         fmean, fvar = base_conditional(
@@ -399,9 +394,7 @@ class IndependentPosteriorMultiOutput(IndependentPosterior):
             Knn = self.kernel.kernel(Xnew, full_cov=full_cov)
             # we don't call self.kernel() directly as that would do unnecessary tiling
 
-            Kmm = covariances.Kuu(
-                self.X_data, self.kernel, jitter=default_jitter()
-            )  # [M, M]
+            Kmm = covariances.Kuu(self.X_data, self.kernel, jitter=default_jitter())  # [M, M]
             Kmn = covariances.Kuf(self.X_data, self.kernel, Xnew)  # [M, N]
 
             fmean, fvar = base_conditional(
@@ -411,16 +404,12 @@ class IndependentPosteriorMultiOutput(IndependentPosterior):
             # this is the messy thing with tf.map_fn, cleaned up by the st/clean_up_broadcasting_conditionals branch
 
             # Following are: [P, M, M]  -  [P, M, N]  -  [P, N](x N)
-            Kmms = covariances.Kuu(
-                self.X_data, self.kernel, jitter=default_jitter()
-            )  # [P, M, M]
+            Kmms = covariances.Kuu(self.X_data, self.kernel, jitter=default_jitter())  # [P, M, M]
             Kmns = covariances.Kuf(self.X_data, self.kernel, Xnew)  # [P, M, N]
             if isinstance(self.kernel, kernels.Combination):
                 kernel_list = self.kernel.kernels
             else:
-                kernel_list = [self.kernel.kernel] * len(
-                    self.X_data.inducing_variable_list
-                )
+                kernel_list = [self.kernel.kernel] * len(self.X_data.inducing_variable_list)
             Knns = tf.stack(
                 [k.K(Xnew) if full_cov else k.K_diag(Xnew) for k in kernel_list], axis=0
             )
@@ -514,9 +503,7 @@ class FullyCorrelatedPosterior(BasePosterior):
     def _conditional_fused(
         self, Xnew, full_cov: bool = False, full_output_cov: bool = False
     ) -> MeanAndVariance:
-        Kmm = covariances.Kuu(
-            self.X_data, self.kernel, jitter=default_jitter()
-        )  # [M, L, M, L]
+        Kmm = covariances.Kuu(self.X_data, self.kernel, jitter=default_jitter())  # [M, L, M, L]
         Kmn = covariances.Kuf(self.X_data, self.kernel, Xnew)  # [M, L, N, P]
         Knn = self.kernel(
             Xnew, full_cov=full_cov, full_output_cov=full_output_cov
@@ -552,9 +539,7 @@ class FallbackIndependentLatentPosterior(FullyCorrelatedPosterior):  # XXX
     def _conditional_fused(
         self, Xnew, full_cov: bool = False, full_output_cov: bool = False
     ) -> MeanAndVariance:
-        Kmm = covariances.Kuu(
-            self.X_data, self.kernel, jitter=default_jitter()
-        )  # [L, M, M]
+        Kmm = covariances.Kuu(self.X_data, self.kernel, jitter=default_jitter())  # [L, M, M]
         Kmn = covariances.Kuf(self.X_data, self.kernel, Xnew)  # [M, L, N, P]
         Knn = self.kernel(
             Xnew, full_cov=full_cov, full_output_cov=full_output_cov
