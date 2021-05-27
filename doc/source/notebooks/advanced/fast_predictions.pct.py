@@ -104,8 +104,5 @@ model.predict_f(Xnew);
 
 posterior = model.posterior()
 
-
 # %%timeit
 posterior.predict_f(Xnew)
-
-
