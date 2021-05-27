@@ -16,7 +16,7 @@
 # # Faster predictions by caching
 
 # + [markdown] id="PLuPjfS7KLQ-"
-# The default behaviour of `predict_f` in GPflow models is to compute the predictions from scratch on each call. This is convenient when predicting and training are interleaved, and simplifies the use of these models. There are some use cases, such as Bayesian optimisation, where prediction (at different test points) happens much more frequently than training. In these cases it is convenient to cache parts of the calculation which do not depend upon the test points, and reuse those parts between predictions. 
+# The default behaviour of `predict_f` in GPflow models is to compute the predictions from scratch on each call. This is convenient when predicting and training are interleaved, and simplifies the use of these models. There are some use cases, such as Bayesian optimisation, where prediction (at different test points) happens much more frequently than training. In these cases it is convenient to cache parts of the calculation which do not depend upon the test points, and reuse those parts between predictions.
 #
 # There are three models to which we want to add this caching capability: GPR, (S)VGP and SGPR. The VGP and SVGP can be considered together; the difference between the models is whether to condition on the full training data set (VGP) or on the inducing variables (SVGP).
 
@@ -55,7 +55,7 @@
 # \Sigma = K_{nn} - K_{nu}L^{-1}(I - B^{-1})L^{-1}K_{un}
 # \end{equation*}
 #
-# Where the mean function is not the zero function, the predictive mean should have the mean function evaluated at the test points added to it. 
+# Where the mean function is not the zero function, the predictive mean should have the mean function evaluated at the test points added to it.
 
 # + [markdown] id="GX1U-fYPKPrt"
 # ## What can be cached?
@@ -98,7 +98,7 @@ Xnew = np.linspace(-1.1, 1.1, 1000)[:, None]
 # The `predict_f` method on the `GPModel` class performs no caching.
 
 # %%timeit
-model.predict_f(Xnew);
+model.predict_f(Xnew)
 
 # To make use of the caching, first retrieve the posterior class from the model. The posterior class has methods to predict the parameters of marginal distributions at test points, in the same way as the `predict_f` method of the `GPModel` .
 
