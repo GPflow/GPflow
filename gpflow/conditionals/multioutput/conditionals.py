@@ -124,10 +124,7 @@ def separate_independent_conditional(
 
 @conditional._gpflow_internal_register(
     object,
-    (
-        FallbackSharedIndependentInducingVariables,
-        FallbackSeparateIndependentInducingVariables,
-    ),
+    (FallbackSharedIndependentInducingVariables, FallbackSeparateIndependentInducingVariables),
     IndependentLatent,
     object,
 )
