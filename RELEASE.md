@@ -51,7 +51,7 @@ This release contains contributions from:
 ## Bug Fixes and Other Changes
 
 * Fix unit test failure when using TensorFlow 2.5.0 (#1684)
-* Remove erroneous DeprecationWarning in gpflow.utilities.bijectors (#1693)
+* Remove erroneous DeprecationWarnings (#1693)
 
 ## Thanks to our Contributors
 
