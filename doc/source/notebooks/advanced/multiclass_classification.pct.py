@@ -98,7 +98,7 @@ K = kernel_se(X) + jitter_eye
 f = np.random.multivariate_normal(mean=np.zeros(N), cov=K, size=(C)).T
 
 # Hard max observation
-Y = np.argmax(f, 1).reshape(-1,).astype(int)
+Y = np.argmax(f, 1).flatten().astype(int)
 
 # One-hot encoding
 Y_hot = np.zeros((N, C), dtype=bool)
@@ -111,7 +111,7 @@ data = (X, Y)
 
 # %%
 plt.figure(figsize=(12, 6))
-order = np.argsort(X.reshape(-1,))
+order = np.argsort(X.flatten())
 
 for c in range(C):
     plt.plot(X[order], f[order, c], ".", color=colors[c], label=str(c))

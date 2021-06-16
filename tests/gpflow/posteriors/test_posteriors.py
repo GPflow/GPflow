@@ -125,7 +125,12 @@ def _register_posterior_test_fixture():
 
 
 def create_conditional(
-    *, kernel, inducing_variable, q_mu, q_sqrt, whiten,
+    *,
+    kernel,
+    inducing_variable,
+    q_mu,
+    q_sqrt,
+    whiten,
 ):
     def conditional_closure(Xnew, *, full_cov, full_output_cov):
         return conditional(
@@ -175,10 +180,18 @@ def test_independent_single_output(
     q_sqrt = q_sqrt_factory(NUM_INDUCING_POINTS, 1)
 
     conditional = create_conditional(
-        kernel=kernel, inducing_variable=inducing_variable, q_mu=q_mu, q_sqrt=q_sqrt, whiten=whiten,
+        kernel=kernel,
+        inducing_variable=inducing_variable,
+        q_mu=q_mu,
+        q_sqrt=q_sqrt,
+        whiten=whiten,
     )
     posterior = create_posterior(
-        kernel=kernel, inducing_variable=inducing_variable, q_mu=q_mu, q_sqrt=q_sqrt, whiten=whiten,
+        kernel=kernel,
+        inducing_variable=inducing_variable,
+        q_mu=q_mu,
+        q_sqrt=q_sqrt,
+        whiten=whiten,
     )
     register_posterior_test(posterior, IndependentPosteriorSingleOutput)
 
@@ -188,7 +201,12 @@ def test_independent_single_output(
 
 
 def test_fully_correlated_multi_output(
-    register_posterior_test, q_sqrt_factory, full_cov, full_output_cov, whiten, output_dims,
+    register_posterior_test,
+    q_sqrt_factory,
+    full_cov,
+    full_output_cov,
+    whiten,
+    output_dims,
 ):
     """
     The fully correlated posterior has one latent GP.
@@ -202,10 +220,18 @@ def test_fully_correlated_multi_output(
     q_sqrt = q_sqrt_factory(output_dims * NUM_INDUCING_POINTS, 1)
 
     conditional = create_conditional(
-        kernel=kernel, inducing_variable=inducing_variable, q_mu=q_mu, q_sqrt=q_sqrt, whiten=whiten,
+        kernel=kernel,
+        inducing_variable=inducing_variable,
+        q_mu=q_mu,
+        q_sqrt=q_sqrt,
+        whiten=whiten,
     )
     posterior = create_posterior(
-        kernel=kernel, inducing_variable=inducing_variable, q_mu=q_mu, q_sqrt=q_sqrt, whiten=whiten,
+        kernel=kernel,
+        inducing_variable=inducing_variable,
+        q_mu=q_mu,
+        q_sqrt=q_sqrt,
+        whiten=whiten,
     )
     register_posterior_test(posterior, FullyCorrelatedPosterior)
 
@@ -237,10 +263,18 @@ def test_independent_multi_output_shk_shi(
     q_sqrt = q_sqrt_factory(NUM_INDUCING_POINTS, num_latent_gps)
 
     conditional = create_conditional(
-        kernel=kernel, inducing_variable=inducing_variable, q_mu=q_mu, q_sqrt=q_sqrt, whiten=whiten,
+        kernel=kernel,
+        inducing_variable=inducing_variable,
+        q_mu=q_mu,
+        q_sqrt=q_sqrt,
+        whiten=whiten,
     )
     posterior = create_posterior(
-        kernel=kernel, inducing_variable=inducing_variable, q_mu=q_mu, q_sqrt=q_sqrt, whiten=whiten,
+        kernel=kernel,
+        inducing_variable=inducing_variable,
+        q_mu=q_mu,
+        q_sqrt=q_sqrt,
+        whiten=whiten,
     )
     register_posterior_test(posterior, IndependentPosteriorMultiOutput)
 
@@ -275,10 +309,18 @@ def test_independent_multi_output_shk_sei(
     q_sqrt = q_sqrt_factory(NUM_INDUCING_POINTS, num_latent_gps)
 
     conditional = create_conditional(
-        kernel=kernel, inducing_variable=inducing_variable, q_mu=q_mu, q_sqrt=q_sqrt, whiten=whiten,
+        kernel=kernel,
+        inducing_variable=inducing_variable,
+        q_mu=q_mu,
+        q_sqrt=q_sqrt,
+        whiten=whiten,
     )
     posterior = create_posterior(
-        kernel=kernel, inducing_variable=inducing_variable, q_mu=q_mu, q_sqrt=q_sqrt, whiten=whiten,
+        kernel=kernel,
+        inducing_variable=inducing_variable,
+        q_mu=q_mu,
+        q_sqrt=q_sqrt,
+        whiten=whiten,
     )
     register_posterior_test(posterior, IndependentPosteriorMultiOutput)
 
@@ -310,10 +352,18 @@ def test_independent_multi_output_sek_shi(
     q_sqrt = q_sqrt_factory(NUM_INDUCING_POINTS, num_latent_gps)
 
     conditional = create_conditional(
-        kernel=kernel, inducing_variable=inducing_variable, q_mu=q_mu, q_sqrt=q_sqrt, whiten=whiten,
+        kernel=kernel,
+        inducing_variable=inducing_variable,
+        q_mu=q_mu,
+        q_sqrt=q_sqrt,
+        whiten=whiten,
     )
     posterior = create_posterior(
-        kernel=kernel, inducing_variable=inducing_variable, q_mu=q_mu, q_sqrt=q_sqrt, whiten=whiten,
+        kernel=kernel,
+        inducing_variable=inducing_variable,
+        q_mu=q_mu,
+        q_sqrt=q_sqrt,
+        whiten=whiten,
     )
     register_posterior_test(posterior, IndependentPosteriorMultiOutput)
 
@@ -348,10 +398,18 @@ def test_independent_multi_output_sek_sei(
     q_sqrt = q_sqrt_factory(NUM_INDUCING_POINTS, num_latent_gps)
 
     conditional = create_conditional(
-        kernel=kernel, inducing_variable=inducing_variable, q_mu=q_mu, q_sqrt=q_sqrt, whiten=whiten,
+        kernel=kernel,
+        inducing_variable=inducing_variable,
+        q_mu=q_mu,
+        q_sqrt=q_sqrt,
+        whiten=whiten,
     )
     posterior = create_posterior(
-        kernel=kernel, inducing_variable=inducing_variable, q_mu=q_mu, q_sqrt=q_sqrt, whiten=whiten,
+        kernel=kernel,
+        inducing_variable=inducing_variable,
+        q_mu=q_mu,
+        q_sqrt=q_sqrt,
+        whiten=whiten,
     )
     register_posterior_test(posterior, IndependentPosteriorMultiOutput)
 
@@ -361,7 +419,12 @@ def test_independent_multi_output_sek_sei(
 
 
 def test_fallback_independent_multi_output_sei(
-    register_posterior_test, q_sqrt_factory, full_cov, full_output_cov, whiten, output_dims,
+    register_posterior_test,
+    q_sqrt_factory,
+    full_cov,
+    full_output_cov,
+    whiten,
+    output_dims,
 ):
     """
     Fallback posterior with separate independent inducing variables.
@@ -380,10 +443,18 @@ def test_fallback_independent_multi_output_sei(
     q_sqrt = q_sqrt_factory(NUM_INDUCING_POINTS, 1)
 
     conditional = create_conditional(
-        kernel=kernel, inducing_variable=inducing_variable, q_mu=q_mu, q_sqrt=q_sqrt, whiten=whiten,
+        kernel=kernel,
+        inducing_variable=inducing_variable,
+        q_mu=q_mu,
+        q_sqrt=q_sqrt,
+        whiten=whiten,
     )
     posterior = create_posterior(
-        kernel=kernel, inducing_variable=inducing_variable, q_mu=q_mu, q_sqrt=q_sqrt, whiten=whiten,
+        kernel=kernel,
+        inducing_variable=inducing_variable,
+        q_mu=q_mu,
+        q_sqrt=q_sqrt,
+        whiten=whiten,
     )
     register_posterior_test(posterior, FallbackIndependentLatentPosterior)
 
@@ -393,7 +464,12 @@ def test_fallback_independent_multi_output_sei(
 
 
 def test_fallback_independent_multi_output_shi(
-    register_posterior_test, q_sqrt_factory, full_cov, full_output_cov, whiten, output_dims,
+    register_posterior_test,
+    q_sqrt_factory,
+    full_cov,
+    full_output_cov,
+    whiten,
+    output_dims,
 ):
     """
     Fallback posterior with shared independent inducing variables.
@@ -412,10 +488,18 @@ def test_fallback_independent_multi_output_shi(
     q_sqrt = q_sqrt_factory(NUM_INDUCING_POINTS, 1)
 
     conditional = create_conditional(
-        kernel=kernel, inducing_variable=inducing_variable, q_mu=q_mu, q_sqrt=q_sqrt, whiten=whiten,
+        kernel=kernel,
+        inducing_variable=inducing_variable,
+        q_mu=q_mu,
+        q_sqrt=q_sqrt,
+        whiten=whiten,
     )
     posterior = create_posterior(
-        kernel=kernel, inducing_variable=inducing_variable, q_mu=q_mu, q_sqrt=q_sqrt, whiten=whiten,
+        kernel=kernel,
+        inducing_variable=inducing_variable,
+        q_mu=q_mu,
+        q_sqrt=q_sqrt,
+        whiten=whiten,
     )
     register_posterior_test(posterior, FallbackIndependentLatentPosterior)
 
@@ -451,10 +535,18 @@ def test_linear_coregionalization_sei(
     q_sqrt = q_sqrt_factory(NUM_INDUCING_POINTS, num_latent_gps)
 
     conditional = create_conditional(
-        kernel=kernel, inducing_variable=inducing_variable, q_mu=q_mu, q_sqrt=q_sqrt, whiten=whiten,
+        kernel=kernel,
+        inducing_variable=inducing_variable,
+        q_mu=q_mu,
+        q_sqrt=q_sqrt,
+        whiten=whiten,
     )
     posterior = create_posterior(
-        kernel=kernel, inducing_variable=inducing_variable, q_mu=q_mu, q_sqrt=q_sqrt, whiten=whiten,
+        kernel=kernel,
+        inducing_variable=inducing_variable,
+        q_mu=q_mu,
+        q_sqrt=q_sqrt,
+        whiten=whiten,
     )
     register_posterior_test(posterior, LinearCoregionalizationPosterior)
 
@@ -487,10 +579,18 @@ def test_linear_coregionalization_shi(
     q_sqrt = q_sqrt_factory(NUM_INDUCING_POINTS, num_latent_gps)
 
     conditional = create_conditional(
-        kernel=kernel, inducing_variable=inducing_variable, q_mu=q_mu, q_sqrt=q_sqrt, whiten=whiten,
+        kernel=kernel,
+        inducing_variable=inducing_variable,
+        q_mu=q_mu,
+        q_sqrt=q_sqrt,
+        whiten=whiten,
     )
     posterior = create_posterior(
-        kernel=kernel, inducing_variable=inducing_variable, q_mu=q_mu, q_sqrt=q_sqrt, whiten=whiten,
+        kernel=kernel,
+        inducing_variable=inducing_variable,
+        q_mu=q_mu,
+        q_sqrt=q_sqrt,
+        whiten=whiten,
     )
     register_posterior_test(posterior, LinearCoregionalizationPosterior)
 
