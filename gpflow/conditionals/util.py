@@ -300,7 +300,9 @@ def independent_interdomain_conditional(
 
     # another backsubstitution in the unwhitened case
     if not white:
-        A = tf.linalg.triangular_solve(Lm, A)  # [L, M, M] \ [L, M, N*P]  ->  [L, M, N*P]
+        A = tf.linalg.triangular_solve(
+            Lm, A, adjoint=True
+        )  # [L, M, M] \ [L, M, N*P]  ->  [L, M, N*P]
         Ar = tf.reshape(A, (L, M, N, P))
 
     fmean = tf.tensordot(Ar, f, [[1, 0], [0, 1]])  # [N, P]
@@ -428,8 +430,7 @@ def fully_correlated_conditional_repeat(
 
     # another backsubstitution in the unwhitened case
     if not white:
-        # A = tf.linalg.triangular_solve(tf.linalg.adjoint(Lm), A, lower=False)  # [M, P]
-        raise NotImplementedError("Need to verify this.")  # pragma: no cover
+        A = tf.linalg.triangular_solve(Lm, A, adjoint=True)  # [M, P]
 
     # f: [M, R]
     fmean = tf.linalg.matmul(f, A, transpose_a=True)  # [R, M]  *  [M, P]  ->  [R, P]
@@ -440,8 +441,9 @@ def fully_correlated_conditional_repeat(
         if q_sqrt.shape.ndims == 3:
             A_tiled = tf.tile(A[None, :, :], tf.stack([R, 1, 1]))  # [R, M, P]
             LTA = tf.linalg.matmul(Lf, A_tiled, transpose_a=True)  # [R, M, P]
-        elif q_sqrt.shape.ndims == 2:  # pragma: no cover
-            raise NotImplementedError("Does not support diagonal q_sqrt yet...")
+        elif q_sqrt.shape.ndims == 2:
+            A_tiled = tf.tile(A[None, :, :], tf.stack([R, 1, 1]))  # [R, M, P]
+            LTA = Lf * A_tiled  # [R, M, P]
         else:  # pragma: no cover
             raise ValueError(f"Bad dimension for q_sqrt: {q_sqrt.shape.ndims}")
 
@@ -459,7 +461,8 @@ def fully_correlated_conditional_repeat(
             addvar = tf.reshape(tf.reduce_sum(tf.square(LTA), axis=1), (R, N, P))  # [R, N, P]
             fvar = fvar[None, ...] + addvar  # [R, N, P]
     else:
-        fvar = tf.broadcast_to(fvar[None], tf.shape(fmean))
+        fvar_shape = tf.concat([[R], tf.shape(fvar)], axis=0)
+        fvar = tf.broadcast_to(fvar[None], fvar_shape)
 
     shape_constraints.extend(
         [(Knn, intended_cov_shape), (fmean, ["R", "N", "P"]), (fvar, ["R"] + intended_cov_shape),]
@@ -542,3 +545,54 @@ def mix_latent_gp(W, g_mean, g_var, full_cov, full_output_cov):
     tf.debugging.assert_shapes(shape_constraints, message="mix_latent_gp()")
 
     return f_mean, f_var
+
+
+def separate_independent_conditional_implementation(
+    Kmns, Kmms, Knns, f, *, full_cov=False, q_sqrt=None, white=False,
+):
+    """Multi-output GP with independent GP priors.
+    Number of latent processes equals the number of outputs (L = P).
+    The covariance matrices used to calculate the conditional have the following shape:
+    - Kuu: [P, M, M]
+    - Kuf: [P, M, N]
+    - Kff: [P, N] or [P, N, N]
+
+    Further reference
+    -----------------
+    - See `gpflow.conditionals._conditional` for a detailed explanation of
+      conditional in the single-output case.
+    - See the multioutput notebook for more information about the multioutput framework.
+    - See above for the parameters and the return value.
+    """
+    fs = tf.transpose(f)[:, :, None]  # [P, M, 1]
+    # [P, 1, M, M]  or  [P, M, 1]
+
+    if q_sqrt is not None:
+        q_sqrts = (
+            tf.transpose(q_sqrt)[:, :, None] if q_sqrt.shape.ndims == 2 else q_sqrt[:, None, :, :]
+        )
+        base_conditional_args_to_map = (Kmms, Kmns, Knns, fs, q_sqrts)
+
+        def single_gp_conditional(t):  # pragma: no cover - tf.map_fn is invisible to codecov
+            Kmm, Kmn, Knn, f, q_sqrt = t
+            return base_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov, q_sqrt=q_sqrt, white=white)
+
+    else:
+        base_conditional_args_to_map = (Kmms, Kmns, Knns, fs)
+
+        def single_gp_conditional(t):  # pragma: no cover - tf.map_fn is invisible to codecov
+            Kmm, Kmn, Knn, f = t
+            return base_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov, q_sqrt=q_sqrt, white=white)
+
+    rmu, rvar = tf.map_fn(
+        single_gp_conditional, base_conditional_args_to_map, (default_float(), default_float())
+    )  # [P, N, 1], [P, 1, N, N] or [P, N, 1]
+
+    fmu = rollaxis_left(tf.squeeze(rmu, axis=-1), 1)  # [N, P]
+
+    if full_cov:
+        fvar = tf.squeeze(rvar, axis=-3)  # [..., 0, :, :]  # [P, N, N]
+    else:
+        fvar = rollaxis_left(tf.squeeze(rvar, axis=-1), 1)  # [N, P]
+
+    return fmu, fvar

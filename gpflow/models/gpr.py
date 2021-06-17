@@ -38,12 +38,12 @@ class GPR(GPModel, InternalDataTrainingLossMixin):
     .. math::
        \log p(Y \,|\, \mathbf f) =
             \mathcal N(Y \,|\, 0, \sigma_n^2 \mathbf{I})
-            
+
     To train the model, we maximise the log _marginal_ likelihood
     w.r.t. the likelihood variance and kernel hyperparameters theta.
     The marginal likelihood is found by integrating the likelihood
     over the prior, and has the form
-    
+
     .. math::
        \log p(Y \,|\, \sigma_n, \theta) =
             \mathcal N(Y \,|\, 0, \mathbf{K} + \sigma_n^2 \mathbf{I})
@@ -64,6 +64,15 @@ class GPR(GPModel, InternalDataTrainingLossMixin):
     def maximum_log_likelihood_objective(self) -> tf.Tensor:
         return self.log_marginal_likelihood()
 
+    def _add_noise_cov(self, K: tf.Tensor) -> tf.Tensor:
+        """
+        Returns K + σ² I, where σ² is the likelihood noise variance (scalar),
+        and I is the corresponding identity matrix.
+        """
+        k_diag = tf.linalg.diag_part(K)
+        s_diag = tf.fill(tf.shape(k_diag), self.likelihood.variance)
+        return tf.linalg.set_diag(K, k_diag + s_diag)
+
     def log_marginal_likelihood(self) -> tf.Tensor:
         r"""
         Computes the log marginal likelihood.
@@ -74,10 +83,7 @@ class GPR(GPModel, InternalDataTrainingLossMixin):
         """
         X, Y = self.data
         K = self.kernel(X)
-        num_data = tf.shape(X)[0]
-        k_diag = tf.linalg.diag_part(K)
-        s_diag = tf.fill([num_data], self.likelihood.variance)
-        ks = tf.linalg.set_diag(K, k_diag + s_diag)
+        ks = self._add_noise_cov(K)
         L = tf.linalg.cholesky(ks)
         m = self.mean_function(X)
 
@@ -102,13 +108,11 @@ class GPR(GPModel, InternalDataTrainingLossMixin):
         kmm = self.kernel(X_data)
         knn = self.kernel(Xnew, full_cov=full_cov)
         kmn = self.kernel(X_data, Xnew)
-
-        num_data = X_data.shape[0]
-        s = tf.linalg.diag(tf.fill([num_data], self.likelihood.variance))
+        kmm_plus_s = self._add_noise_cov(kmm)
 
         conditional = gpflow.conditionals.base_conditional
         f_mean_zero, f_var = conditional(
-            kmn, kmm + s, knn, err, full_cov=full_cov, white=False
+            kmn, kmm_plus_s, knn, err, full_cov=full_cov, white=False
         )  # [N, P], [N, P] or [P, N, N]
         f_mean = f_mean_zero + self.mean_function(Xnew)
         return f_mean, f_var

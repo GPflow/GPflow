@@ -7,7 +7,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.3.3
+#       jupytext_version: 1.6.0
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -19,7 +19,9 @@
 #
 # In this notebook we demonstrate how new types of inducing variables can easily be incorporated in the GPflow framework. As an example case, we use the variational Fourier features from [Hensman, Durrande, and Solin (JMLR 2018)](http://jmlr.csail.mit.edu/papers/v18/16-579). All equation and table references are to this paper.
 #
-# **Note:** we cannot yet use Fourier features within the multi-output framework, as `Kuu` and `Kuf` for SharedIndependent and SeparateIndependent inducing variables assume that the sub-inducing variable's covariances are simply computed as dense Tensors. Moreover, the `conditional` is not able to make use of the structure in `Kuu` and `Kuf` as it has to dispatch on the *arguments* to `Kuu` and `Kuf` instead...
+# **Note:** This implementation is meant as an example, not as a feature-complete implementation. For more features, such as multi-dimensional inputs, use the [GPflow 2 version of the original VFF code](https://github.com/st--/VFF).
+#
+# We cannot directly use Fourier features within the multi-output framework without losing the computational advantages, as `Kuu` and `Kuf` for SharedIndependent and SeparateIndependent inducing variables assume that the sub-inducing variable's covariances are simply computed as dense Tensors. However, there is nothing preventing a dedicated implementation of multi-output Fourier features that is computationally more efficient - feel free to discuss this within [the GPflow community](https://github.com/GPflow/GPflow/#the-gpflow-community)!
 
 # %%
 import tensorflow as tf
@@ -50,6 +52,10 @@ import matplotlib.pyplot as plt
 # %%
 class FourierFeatures1D(InducingVariables):
     def __init__(self, a, b, M):
+        """
+        `a` and `b` define the interval [a, b] of the Fourier representation.
+        `M` specifies the number of frequencies to use.
+        """
         # [a, b] defining the interval of the Fourier representation:
         self.a = gpflow.Parameter(a, dtype=gpflow.default_float())
         self.b = gpflow.Parameter(b, dtype=gpflow.default_float())
@@ -58,7 +64,7 @@ class FourierFeatures1D(InducingVariables):
 
     def __len__(self):
         """ number of inducing variables (defines dimensionality of q(u)) """
-        return 2 * len(self.ms) - 1  # M cosine and M-1 sine components
+        return 2 * len(self.ms) - 1  # `M` cosine and `M-1` sine components
 
 
 # %% [markdown]
@@ -77,14 +83,14 @@ def Kuu_matern12_fourierfeatures1d(inducing_variable, kernel, jitter=None):
         (b - a) * (tf.square(lamb) + tf.square(omegas)) / lamb / kernel.variance / two_or_four
     )  # eq. (111)
     v_cos = tf.ones_like(d_cos) / tf.sqrt(kernel.variance)  # eq. (110)
-    cosine_block = LowRank(Diag(d_cos), v_cos[:, None])
+    cosine_block = LowRank(Diag(d_cos, is_positive_definite=True), v_cos[:, None])
 
     # Sine block:
     omegas = omegas[tf.not_equal(omegas, 0)]  # the sine block does not include omega=0
     d_sin = (
         (b - a) * (tf.square(lamb) + tf.square(omegas)) / lamb / kernel.variance / 4.0
     )  # eq. (113)
-    sine_block = Diag(d_sin)
+    sine_block = Diag(d_sin, is_positive_definite=True)
 
     return BlockDiag([cosine_block, sine_block])
 
@@ -126,7 +132,7 @@ def Kuu_matern32_fourierfeatures1d(inducing_variable, kernel, jitter=None):
         / four_or_eight
     )
     v_cos = tf.ones_like(d_cos) / tf.sqrt(kernel.variance)
-    cosine_block = LowRank(Diag(d_cos), v_cos[:, None])
+    cosine_block = LowRank(Diag(d_cos, is_positive_definite=True), v_cos[:, None])
 
     # Sine block: eq. (115)
     omegas = omegas[tf.not_equal(omegas, 0)]  # don't compute omega=0
@@ -138,7 +144,7 @@ def Kuu_matern32_fourierfeatures1d(inducing_variable, kernel, jitter=None):
         / 8.0
     )
     v_sin = omegas / lamb / tf.sqrt(kernel.variance)
-    sine_block = LowRank(Diag(d_sin), v_sin[:, None])
+    sine_block = LowRank(Diag(d_sin, is_positive_definite=True), v_sin[:, None])
 
     return BlockDiag([cosine_block, sine_block])  # eq. (116)
 
@@ -173,7 +179,7 @@ def Kuf_matern32_fourierfeatures1d(inducing_variable, kernel, X):
 
 
 # %% [markdown]
-# In principle, this is all we need; however, to be able to take advantage of the structure of `Kuu`, we need to also implement new versions of the KL divergence from the prior to the approximate posterior (`prior_kl`) and the `conditional` computation:
+# In principle, this is all we need; however, to be able to take advantage of the structure of `Kuu`, we need to also implement new versions of the KL divergence from the prior to the approximate posterior (`prior_kl`) and the computation of the Gaussian process conditional (posterior) equations:
 
 # %%
 @kl.prior_kl.register(FourierFeatures1D, gpflow.kernels.Kernel, TensorLike, TensorLike)
@@ -230,98 +236,167 @@ def gauss_kl_vff(q_mu, q_sqrt, K):
 
 
 # %%
-@gpflow.conditionals.conditional.register(
-    TensorLike, FourierFeatures1D, gpflow.kernels.Kernel, TensorLike
-)
-def conditional_vff(
-    Xnew,
-    inducing_variable,
-    kernel,
-    f,
-    *,
-    full_cov=False,
-    full_output_cov=False,
-    q_sqrt=None,
-    white=False,
-):
-    """
-     - Xnew are the points of the data or minibatch, size N x D (tf.array, 2d)
-     - feat is an instance of features.InducingFeature that provides `Kuu` and `Kuf` methods
-       for Fourier features, this contains the limits of the bounding box and the frequencies
-     - f is the value (or mean value) of the features (i.e. the weights)
-     - q_sqrt (default None) is the Cholesky factor of the uncertainty about f
-       (to be propagated through the conditional as per the GPflow inducing-point implementation)
-     - white (defaults False) specifies whether the whitening has been applied
+import gpflow.posteriors
 
-    Given the GP represented by the inducing points specified in `feat`, produce the mean and
-    (co-)variance of the GP at the points Xnew.
 
-       Xnew :: N x D
-       Kuu :: M x M
-       Kuf :: M x N
-       f :: M x K, K = 1
-       q_sqrt :: K x M x M, with K = 1
-    """
-    if full_output_cov:
-        raise NotImplementedError
-
-    # num_data = tf.shape(Xnew)[0]  # M
-    num_func = tf.shape(f)[1]  # K
-
-    Kuu = cov.Kuu(inducing_variable, kernel)  # this is now a LinearOperator
-    Kuf = cov.Kuf(inducing_variable, kernel, Xnew)  # still a Tensor
-
-    KuuInv_Kuf = Kuu.solve(Kuf)
-
-    # compute the covariance due to the conditioning
-    if full_cov:
-        fvar = kernel(Xnew) - tf.matmul(Kuf, KuuInv_Kuf, transpose_a=True)
-        shape = (num_func, 1, 1)
-    else:
-        KufT_KuuInv_Kuf_diag = tf.reduce_sum(Kuf * KuuInv_Kuf, axis=-2)
-        fvar = kernel(Xnew, full_cov=False) - KufT_KuuInv_Kuf_diag
-        shape = (num_func, 1)
-    fvar = tf.expand_dims(fvar, 0) * tf.ones(
-        shape, dtype=gpflow.default_float()
-    )  # K x N x N or K x N
-
-    # another backsubstitution in the unwhitened case
-    if white:
-        raise NotImplementedError
-
-    A = KuuInv_Kuf
-
-    # construct the conditional mean
-    fmean = tf.matmul(A, f, transpose_a=True)
-
-    if q_sqrt is not None:
-        if q_sqrt.get_shape().ndims == 2:
-            # LTA = A * tf.expand_dims(q_sqrt, 2)  # K x M x N
-            # won't work  # make ticket for this?
+class VFFPosterior(gpflow.posteriors.AbstractPosterior):
+    def _conditional_fused(self, Xnew, full_cov, full_output_cov):
+        """
+        Xnew is a tensor with the points of the data or minibatch, shape N x D
+        """
+        if full_output_cov:
             raise NotImplementedError
-        elif q_sqrt.get_shape().ndims == 3:
-            # L = tf.matrix_band_part(tf.transpose(q_sqrt, (2, 0, 1)), -1, 0)  # K x M x M
 
-            # K x M x N
-            # A_tiled = tf.expand_dims(A.get(), 0) * tf.ones((num_func, 1, 1), dtype=float_type)
+        f = self._q_dist.q_mu
+        q_sqrt = self._q_dist.q_sqrt
 
-            # LTA = tf.matmul(L, A_tiled, transpose_a=True)  # K x M x N
-            # TODO the following won't work for K > 1
-            assert q_sqrt.shape[0] == 1
-            # LTA = (A.T @ DenseMatrix(q_sqrt[:,:,0])).T.get()[None, :, :]
-            ATL = tf.matmul(A, q_sqrt, transpose_a=True)
-        else:
-            raise ValueError("Bad dimension for q_sqrt: %s" % str(q_sqrt.get_shape().ndims))
+        # num_data = tf.shape(Xnew)[0]  # M
+        num_func = tf.shape(f)[1]  # K
+
+        Kuu = cov.Kuu(self.inducing_variable, self.kernel)  # this is now a LinearOperator
+        Kuf = cov.Kuf(self.inducing_variable, self.kernel, Xnew)  # still a Tensor
+
+        KuuInv_Kuf = Kuu.solve(Kuf)
+
+        # compute the covariance due to the conditioning
         if full_cov:
-            # fvar = fvar + tf.matmul(LTA, LTA, transpose_a=True)  # K x N x N
-            fvar = fvar + tf.matmul(ATL, ATL, transpose_b=True)  # K x N x N
+            fvar = self.kernel(Xnew) - tf.matmul(Kuf, KuuInv_Kuf, transpose_a=True)
+            shape = (num_func, 1, 1)
         else:
-            # fvar = fvar + tf.reduce_sum(tf.square(LTA), 1)  # K x N
-            fvar = fvar + tf.reduce_sum(tf.square(ATL), 2)  # K x N
-    fvar = tf.transpose(fvar)  # N x K or N x N x K
+            KufT_KuuInv_Kuf_diag = tf.reduce_sum(Kuf * KuuInv_Kuf, axis=-2)
+            fvar = self.kernel(Xnew, full_cov=False) - KufT_KuuInv_Kuf_diag
+            shape = (num_func, 1)
+        fvar = tf.expand_dims(fvar, 0) * tf.ones(
+            shape, dtype=gpflow.default_float()
+        )  # K x N x N or K x N
 
-    return fmean, fvar
+        if self.whiten:
+            raise NotImplementedError
 
+        A = KuuInv_Kuf
+
+        # construct the conditional mean
+        fmean = tf.matmul(A, f, transpose_a=True)
+
+        if q_sqrt is not None:
+            if q_sqrt.get_shape().ndims == 2:
+                # LTA = A * tf.expand_dims(q_sqrt, 2)  # K x M x N
+                # won't work  # make ticket for this?
+                raise NotImplementedError
+            elif q_sqrt.get_shape().ndims == 3:
+                # L = tf.matrix_band_part(tf.transpose(q_sqrt, (2, 0, 1)), -1, 0)  # K x M x M
+
+                # K x M x N
+                # A_tiled = tf.expand_dims(A.get(), 0) * tf.ones((num_func, 1, 1), dtype=float_type)
+
+                # LTA = tf.matmul(L, A_tiled, transpose_a=True)  # K x M x N
+                # TODO the following won't work for K > 1
+                assert q_sqrt.shape[0] == 1
+                # LTA = (A.T @ DenseMatrix(q_sqrt[:,:,0])).T.get()[None, :, :]
+                ATL = tf.matmul(A, q_sqrt, transpose_a=True)
+            else:
+                raise ValueError("Bad dimension for q_sqrt: %s" % str(q_sqrt.get_shape().ndims))
+            if full_cov:
+                # fvar = fvar + tf.matmul(LTA, LTA, transpose_a=True)  # K x N x N
+                fvar = fvar + tf.matmul(ATL, ATL, transpose_b=True)  # K x N x N
+            else:
+                # fvar = fvar + tf.reduce_sum(tf.square(LTA), 1)  # K x N
+                fvar = fvar + tf.reduce_sum(tf.square(ATL), 2)  # K x N
+        fvar = tf.transpose(fvar)  # N x K or N x N x K
+
+        return fmean, fvar
+
+    # We can also provide a conditional that precomputes as much as possible,
+    # to speed up predictions:
+
+    def _precompute(self):
+        Kuu = cov.Kuu(self.inducing_variable, self.kernel)  # this is now a LinearOperator
+
+        q_mu = self._q_dist.q_mu
+        q_sqrt = self._q_dist.q_sqrt
+
+        if self.whiten:
+            raise NotImplementedError
+        else:
+            # alpha = Kuu⁻¹ q_mu
+            alpha = Kuu.solve(q_mu)  # type: tf.Tensor
+
+        if self.whiten:
+            raise NotImplementedError
+        else:
+            # Qinv = Kuu⁻¹ - Kuu⁻¹ S Kuu⁻¹
+            KuuInv_qsqrt = Kuu.solve(q_sqrt)
+            KuuInv_covu_KuuInv = tf.matmul(KuuInv_qsqrt, KuuInv_qsqrt, transpose_b=True)
+
+        Qinv = Kuu.inverse().to_dense() - KuuInv_covu_KuuInv
+
+        return alpha, Qinv
+
+    def _conditional_with_precompute(self, Xnew, full_cov, full_output_cov):
+        if full_output_cov:
+            raise NotImplementedError
+
+        Kuf = cov.Kuf(self.inducing_variable, self.kernel, Xnew)  # still a Tensor
+
+        # construct the conditional mean
+        fmean = tf.matmul(Kuf, self.alpha, transpose_a=True)
+
+        num_func = tf.shape(self.alpha)[1]  # K
+        Qinv_Kuf = tf.matmul(self.Qinv, Kuf)
+
+        # compute the covariance due to the conditioning
+        if full_cov:
+            fvar = self.kernel(Xnew) - tf.matmul(Kuf, Qinv_Kuf, transpose_a=True)
+        else:
+            KufT_Qinv_Kuf_diag = tf.reduce_sum(Kuf * Qinv_Kuf, axis=-2)
+            fvar = self.kernel(Xnew, full_cov=False) - KufT_Qinv_Kuf_diag
+        fvar = tf.transpose(fvar)
+
+        return fmean, fvar
+
+
+# %% [markdown]
+# We now have to register our Posterior object:
+
+# %%
+@gpflow.posteriors.get_posterior_class.register(gpflow.kernels.Kernel, FourierFeatures1D)
+def _get_posterior_vff(kernel, inducing_variable):
+    return VFFPosterior
+
+
+# %% [markdown]
+# `gpflow.conditionals.conditional` is a short-hand for calling the fused prediction code path:
+
+# %%
+Mf = 2
+M = 2 * Mf - 1
+kernel = gpflow.kernels.Matern32()
+inducing_variable = FourierFeatures1D(-0.5, 1.5, Mf)
+
+Xnew = np.random.rand(7, 1)
+f = np.random.randn(M, 1)
+q_sqrt = tf.convert_to_tensor(np.tril(np.random.randn(1, M, M)))
+
+conditional_f_mean, conditional_f_var = gpflow.conditionals.conditional(
+    Xnew, inducing_variable, kernel, f, q_sqrt=q_sqrt, white=False, full_cov=True
+)
+
+posterior = VFFPosterior(kernel, inducing_variable, f, q_sqrt, whiten=False, precompute_cache=None)
+posterior_f_mean, posterior_f_var = posterior.fused_predict_f(Xnew, full_cov=True)
+
+np.testing.assert_array_equal(conditional_f_mean, posterior_f_mean)
+np.testing.assert_array_equal(conditional_f_var, posterior_f_var)
+
+# %% [markdown]
+# We can also call the cached path:
+#
+
+# %%
+posterior.update_cache(gpflow.posteriors.PrecomputeCacheType.TENSOR)
+precomputed_posterior_f_mean, precomputed_posterior_f_var = posterior.predict_f(Xnew, full_cov=True)
+
+np.testing.assert_allclose(precomputed_posterior_f_mean, posterior_f_mean)
+np.testing.assert_allclose(precomputed_posterior_f_var, posterior_f_var)
 
 # %% [markdown]
 # We now demonstrate how to use these new types of inducing variables with the `SVGP` model class. First, let's create some toy data:

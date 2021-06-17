@@ -198,7 +198,6 @@ class DataMixedKernel(Data):
 # ------------------------------------------
 
 
-@pytest.mark.parametrize("full_cov", [True, False])
 def test_sample_mvn(full_cov):
     """
     Draws 10,000 samples from a distribution
@@ -221,9 +220,6 @@ def test_sample_mvn(full_cov):
     np.testing.assert_array_almost_equal(samples_cov, [[1.0, 0.0], [0.0, 1.0]], decimal=1)
 
 
-@pytest.mark.parametrize("whiten", [True, False])
-@pytest.mark.parametrize("full_cov", [True, False])
-@pytest.mark.parametrize("full_output_cov", [True, False])
 def test_sample_conditional(whiten, full_cov, full_output_cov):
     if full_cov and full_output_cov:
         return
@@ -317,29 +313,120 @@ def test_sample_conditional_mixedkernel():
     )
 
 
-@pytest.mark.parametrize(
-    "func, R",
-    [
-        (fully_correlated_conditional_repeat, 5),
-        (fully_correlated_conditional_repeat, 1),
-        (fully_correlated_conditional, 1),
-    ],
+@pytest.fixture(
+    name="fully_correlated_q_sqrt_factory",
+    params=[lambda _, __: None, lambda LM, R: tf.eye(LM, batch_shape=(R,))],
 )
-def test_fully_correlated_conditional_repeat_shapes(func, R):
+def _q_sqrt_factory_fixture(request):
+    return request.param
+
+
+@pytest.mark.parametrize("R", [1, 2, 5])
+def test_fully_correlated_conditional_repeat_shapes_fc_and_foc(
+    R, fully_correlated_q_sqrt_factory, full_cov, full_output_cov, whiten
+):
+
     L, M, N, P = Data.L, Data.M, Data.N, Data.P
 
     Kmm = tf.ones((L * M, L * M)) + default_jitter() * tf.eye(L * M)
     Kmn = tf.ones((L * M, N, P))
-    Knn = tf.ones((N, P))
-    f = tf.ones((L * M, R))
-    q_sqrt = None
-    white = True
 
-    m, v = func(
-        Kmn, Kmm, Knn, f, full_cov=False, full_output_cov=False, q_sqrt=q_sqrt, white=white,
+    if full_cov and full_output_cov:
+        Knn = tf.ones((N, P, N, P))
+        expected_v_shape = [R, N, P, N, P]
+    elif not full_cov and full_output_cov:
+        Knn = tf.ones((N, P, P))
+        expected_v_shape = [R, N, P, P]
+    elif full_cov and not full_output_cov:
+        Knn = tf.ones((P, N, N))
+        expected_v_shape = [R, P, N, N]
+    else:
+        Knn = tf.ones((N, P))
+        expected_v_shape = [R, N, P]
+
+    f = tf.ones((L * M, R))
+    q_sqrt = fully_correlated_q_sqrt_factory(L * M, R)
+
+    m, v = fully_correlated_conditional_repeat(
+        Kmn,
+        Kmm,
+        Knn,
+        f,
+        full_cov=full_cov,
+        full_output_cov=full_output_cov,
+        q_sqrt=q_sqrt,
+        white=whiten,
     )
 
-    assert v.shape.as_list() == m.shape.as_list()
+    assert m.shape.as_list() == [R, N, P]
+    assert v.shape.as_list() == expected_v_shape
+
+
+def test_fully_correlated_conditional_repeat_whiten(whiten):
+    """
+    This test checks the effect of the `white` flag, which changes the projection matrix `A`.
+
+    The impact of the flag on the value of `A` can be easily verified by its effect on the
+    predicted mean. While the predicted covariance is also a function of `A` this test does not
+    inspect that value.
+    """
+    N, P = Data.N, Data.P
+
+    Lm = np.random.randn(1, 1).astype(np.float32) ** 2
+    Kmm = Lm * Lm + default_jitter()
+
+    Kmn = tf.ones((1, N, P))
+
+    Knn = tf.ones((N, P))
+    f = np.random.randn(1, 1).astype(np.float32)
+
+    mean, _ = fully_correlated_conditional_repeat(Kmn, Kmm, Knn, f, white=whiten,)
+
+    if whiten:
+        expected_mean = (f * Kmn) / Lm
+    else:
+        expected_mean = (f * Kmn) / Kmm
+
+    np.testing.assert_allclose(mean, expected_mean, rtol=1e-3)
+
+
+def test_fully_correlated_conditional_shapes_fc_and_foc(
+    fully_correlated_q_sqrt_factory, full_cov, full_output_cov, whiten
+):
+    L, M, N, P = Data.L, Data.M, Data.N, Data.P
+
+    Kmm = tf.ones((L * M, L * M)) + default_jitter() * tf.eye(L * M)
+    Kmn = tf.ones((L * M, N, P))
+
+    if full_cov and full_output_cov:
+        Knn = tf.ones((N, P, N, P))
+        expected_v_shape = [N, P, N, P]
+    elif not full_cov and full_output_cov:
+        Knn = tf.ones((N, P, P))
+        expected_v_shape = [N, P, P]
+    elif full_cov and not full_output_cov:
+        Knn = tf.ones((P, N, N))
+        expected_v_shape = [P, N, N]
+    else:
+        Knn = tf.ones((N, P))
+        expected_v_shape = [N, P]
+
+    f = tf.ones((L * M, 1))
+    q_sqrt = fully_correlated_q_sqrt_factory(L * M, 1)
+
+    m, v = fully_correlated_conditional(
+        Kmn,
+        Kmm,
+        Knn,
+        f,
+        full_cov=full_cov,
+        full_output_cov=full_output_cov,
+        q_sqrt=q_sqrt,
+        white=whiten,
+    )
+
+    assert m.shape.as_list() == [N, P]
+    assert v.shape.as_list() == expected_v_shape
 
 
 # ------------------------------------------
@@ -772,3 +859,31 @@ def test_independent_interdomain_conditional_bug_regression():
     _, _ = independent_interdomain_conditional(
         Kmn, Kmm, Knn, q_mu, q_sqrt=q_sqrt, full_cov=False, full_output_cov=False
     )
+
+
+def test_independent_interdomain_conditional_whiten(whiten):
+    """
+    This test checks the effect of the `white` flag, which changes the projection matrix `A`.
+
+    The impact of the flag on the value of `A` can be easily verified by its effect on the
+    predicted mean. While the predicted covariance is also a function of `A` this test does not
+    inspect that value.
+    """
+    N, P = Data.N, Data.P
+
+    Lm = np.random.randn(1, 1, 1).astype(np.float32) ** 2
+    Kmm = Lm * Lm + default_jitter()
+
+    Kmn = tf.ones((1, 1, N, P))
+
+    Knn = tf.ones((N, P))
+    f = np.random.randn(1, 1).astype(np.float32)
+
+    mean, _ = independent_interdomain_conditional(Kmn, Kmm, Knn, f, white=whiten,)
+
+    if whiten:
+        expected_mean = (f * Kmn) / Lm
+    else:
+        expected_mean = (f * Kmn) / Kmm
+
+    np.testing.assert_allclose(mean, expected_mean[0][0], rtol=1e-2)

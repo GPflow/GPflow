@@ -15,13 +15,14 @@
 import numpy as np
 import pytest
 import tensorflow as tf
+from packaging.version import Version
 
 import gpflow
 from gpflow.config import Config, as_context
-from gpflow.utilities.utilities import (
+from gpflow.utilities import set_trainable
+from gpflow.utilities.traversal import (
     _merge_leaf_components,
     leaf_components,
-    set_trainable,
     tabulate_module_summary,
 )
 
@@ -208,6 +209,18 @@ B.var_fixed                          ResourceVariable                        Fal
 
 # Note: we use grid format here because we have a double reference to the same variable
 # which does not render nicely in the table formatting.
+# The internal structure of the Keras model changed in TensorFlow version 2.5.0.
+example_tf_keras_model_tf_2_5_0 = """\
++-------------------------------+------------------+-------------+---------+-------------+-----------+---------+----------+\n\
+| name                          | class            | transform   | prior   | trainable   | shape     | dtype   | value    |\n\
++===============================+==================+=============+=========+=============+===========+=========+==========+\n\
+| C._trainable_weights[0]       | ResourceVariable |             |         | True        | (2, 2, 1) | float32 | [[[0.... |\n\
+| C.variable                    |                  |             |         |             |           |         |          |\n\
++-------------------------------+------------------+-------------+---------+-------------+-----------+---------+----------+\n\
+| C._self_tracked_trackables[0] | Parameter        | Identity    |         | True        | ()        | float64 | 0.0      |\n\
+| C.param                       |                  |             |         |             |           |         |          |\n\
++-------------------------------+------------------+-------------+---------+-------------+-----------+---------+----------+"""
+
 example_tf_keras_model = """\
 +-------------------------+------------------+-------------+---------+-------------+-----------+---------+----------+\n\
 | name                    | class            | transform   | prior   | trainable   | shape     | dtype   | value    |\n\
@@ -217,6 +230,9 @@ example_tf_keras_model = """\
 +-------------------------+------------------+-------------+---------+-------------+-----------+---------+----------+\n\
 | C.param                 | Parameter        | Identity    |         | True        | ()        | float64 | 0.0      |\n\
 +-------------------------+------------------+-------------+---------+-------------+-----------+---------+----------+"""
+
+if Version(tf.__version__) >= Version("2.5"):
+    example_tf_keras_model = example_tf_keras_model_tf_2_5_0
 
 # ------------------------------------------
 # Fixtures
