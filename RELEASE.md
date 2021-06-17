@@ -50,8 +50,7 @@ This release contains contributions from:
 
 ## Major Features and Improvements
 
-* <INSERT MAJOR FEATURE HERE, USING MARKDOWN SYNTAX>
-* <IF RELEASE CONTAINS MULTIPLE FEATURES FROM SAME AREA, GROUP THEM TOGETHER>
+* Refactor posterior base class to support other model types.
 
 ## Bug Fixes and Other Changes
 
@@ -61,7 +60,7 @@ This release contains contributions from:
 
 This release contains contributions from:
 
-<INSERT>, <NAME>, <HERE>, <USING>, <GITHUB>, <HANDLE>
+johnamcleod
 
 
 # Release 2.2.1
