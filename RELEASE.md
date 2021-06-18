@@ -51,6 +51,7 @@ This release contains contributions from:
 ## Bug Fixes and Other Changes
 
 * Fix unit test failure when using TensorFlow 2.5.0 (#1684)
+* Upgrade black formatter to version 20.8b1 (#1694)
 * Remove erroneous DeprecationWarnings (#1693)
 
 ## Thanks to our Contributors
