@@ -222,6 +222,26 @@ class GPRPosterior(AbstractPosterior):
     def __init__(
         self,
         kernel,
+        X_data:tf.Tensor,
+        mean_function: Optional[mean_functions.MeanFunction] = None,
+        *,
+        precompute_cache: Optional[PrecomputeCacheType],
+    ):
+
+        super().__init__(kernel, X_data, mean_function=mean_function)
+        self.mean_function = mean_function
+
+        if precompute_cache is not None:
+            self.update_cache(precompute_cache)
+
+    def _precompute(self):
+        pass
+
+
+class BasePosterior(AbstractPosterior):
+    def __init__(
+        self,
+        kernel,
         inducing_variable,
         q_mu: tf.Tensor,
         q_sqrt: tf.Tensor,
