@@ -17,6 +17,7 @@ from typing import Optional, Tuple
 import tensorflow as tf
 
 import gpflow
+from .. import posteriors
 
 from ..kernels import Kernel
 from ..logdensities import multivariate_normal
@@ -24,9 +25,10 @@ from ..mean_functions import MeanFunction
 from .model import GPModel, InputData, MeanAndVariance, RegressionData
 from .training_mixins import InternalDataTrainingLossMixin
 from .util import data_input_to_tensor
+from ..posteriors import GPRPosterior
 
 
-class GPR(GPModel, InternalDataTrainingLossMixin):
+class GP_deprecated(GPModel, InternalDataTrainingLossMixin):
     r"""
     Gaussian Process Regression.
 
@@ -116,3 +118,59 @@ class GPR(GPModel, InternalDataTrainingLossMixin):
         )  # [N, P], [N, P] or [P, N, N]
         f_mean = f_mean_zero + self.mean_function(Xnew)
         return f_mean, f_var
+
+class GP_with_posterior(GP_deprecated):
+    """
+    This is an implementation of GPR that provides a posterior() method that
+    enables caching for faster subsequent predictions.
+    """
+
+    def posterior(self, precompute_cache=posteriors.PrecomputeCacheType.TENSOR):
+        """
+        Create the Posterior object which contains precomputed matrices for
+        faster prediction.
+
+        precompute_cache has three settings:
+
+        - `PrecomputeCacheType.TENSOR` (or `"tensor"`): Precomputes the cached
+          quantities and stores them as tensors (which allows differentiating
+          through the prediction). This is the default.
+        - `PrecomputeCacheType.VARIABLE` (or `"variable"`): Precomputes the cached
+          quantities and stores them as variables, which allows for updating
+          their values without changing the compute graph (relevant for AOT
+          compilation).
+        - `PrecomputeCacheType.NOCACHE` (or `"nocache"` or `None`): Avoids
+          immediate cache computation. This is useful for avoiding extraneous
+          computations when you only want to call the posterior's
+          `fused_predict_f` method.
+        """
+
+        # construct specific posterior here
+        # currently GPR only supports single output GP's
+        # compare fused and cached implementation
+        # leave off update
+        # after this...structure refactor
+        # then, SGP model (has inducing points, but doesn't have additional variational approximation)
+        return GPRPosterior(
+            self.kernel,
+            self.XData,
+            mean_function=self.mean_function,
+            precompute_cache=precompute_cache,
+        )
+
+    def predict_f(self, Xnew: InputData, full_cov=False, full_output_cov=False) -> MeanAndVariance:
+        """
+        For backwards compatibility, GPR's predict_f uses the fused (no-cache)
+        computation, which is more efficient during training.
+
+        For faster (cached) prediction, predict directly from the posterior object, i.e.,:
+            model.posterior().predict_f(Xnew, ...)
+        """
+        return self.posterior(posteriors.PrecomputeCacheType.NOCACHE).fused_predict_f(
+            Xnew, full_cov=full_cov, full_output_cov=full_output_cov
+        )
+
+
+class GPR(GP_with_posterior):
+    # subclassed to ensure __class__ == "GPR"
+    pass
