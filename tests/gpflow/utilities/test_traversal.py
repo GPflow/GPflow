@@ -101,8 +101,16 @@ def create_model():
 # ------------------------------------------
 
 example_tf_module_variable_dict = {
-    "A.var_trainable": {"value": np.zeros((2, 2, 1)), "trainable": True, "shape": (2, 2, 1),},
-    "A.var_fixed": {"value": np.ones((2, 2, 1)), "trainable": False, "shape": (2, 2, 1),},
+    "A.var_trainable": {
+        "value": np.zeros((2, 2, 1)),
+        "trainable": True,
+        "shape": (2, 2, 1),
+    },
+    "A.var_fixed": {
+        "value": np.ones((2, 2, 1)),
+        "trainable": False,
+        "shape": (2, 2, 1),
+    },
 }
 
 example_module_list_variable_dict = {
@@ -119,7 +127,11 @@ example_module_list_variable_dict = {
 }
 
 kernel_param_dict = {
-    "SquaredExponential.lengthscales": {"value": Data.ls, "trainable": False, "shape": (),},
+    "SquaredExponential.lengthscales": {
+        "value": Data.ls,
+        "trainable": False,
+        "shape": (),
+    },
     "SquaredExponential.variance": {"value": Data.var, "trainable": True, "shape": ()},
 }
 
@@ -138,9 +150,21 @@ model_gp_param_dict = {
     "kernel.lengthscales": kernel_param_dict["SquaredExponential.lengthscales"],
     "kernel.variance": kernel_param_dict["SquaredExponential.variance"],
     "likelihood.variance": {"value": 1.0, "trainable": True, "shape": ()},
-    "inducing_variable.Z": {"value": Data.Z, "trainable": True, "shape": (Data.M, Data.D),},
-    "SVGP.q_mu": {"value": np.zeros((Data.M, 1)), "trainable": False, "shape": (Data.M, 1),},
-    "SVGP.q_sqrt": {"value": np.ones((Data.M, 1)), "trainable": True, "shape": (Data.M, 1),},
+    "inducing_variable.Z": {
+        "value": Data.Z,
+        "trainable": True,
+        "shape": (Data.M, Data.D),
+    },
+    "SVGP.q_mu": {
+        "value": np.zeros((Data.M, 1)),
+        "trainable": False,
+        "shape": (Data.M, 1),
+    },
+    "SVGP.q_sqrt": {
+        "value": np.ones((Data.M, 1)),
+        "trainable": True,
+        "shape": (Data.M, 1),
+    },
 }
 
 example_dag_module_param_dict = {
@@ -148,9 +172,21 @@ example_dag_module_param_dict = {
         "SquaredExponential.lengthscales"
     ],
     "SVGP.likelihood.variance": {"value": 1.0, "trainable": True, "shape": ()},
-    "SVGP.inducing_variable.Z": {"value": Data.Z, "trainable": True, "shape": (Data.M, Data.D),},
-    "SVGP.q_mu": {"value": np.zeros((Data.M, 1)), "trainable": False, "shape": (Data.M, 1),},
-    "SVGP.q_sqrt": {"value": np.ones((Data.M, 1)), "trainable": True, "shape": (Data.M, 1),},
+    "SVGP.inducing_variable.Z": {
+        "value": Data.Z,
+        "trainable": True,
+        "shape": (Data.M, Data.D),
+    },
+    "SVGP.q_mu": {
+        "value": np.zeros((Data.M, 1)),
+        "trainable": False,
+        "shape": (Data.M, 1),
+    },
+    "SVGP.q_sqrt": {
+        "value": np.ones((Data.M, 1)),
+        "trainable": True,
+        "shape": (Data.M, 1),
+    },
 }
 
 compose_kernel_param_print_string = """\
@@ -276,7 +312,10 @@ def test_leaf_components_registers_variable_properties(module_callable, expected
 
 
 @pytest.mark.parametrize(
-    "module_callable, expected_param_dicts", [(create_compose_kernel, compose_kernel_param_dict),],
+    "module_callable, expected_param_dicts",
+    [
+        (create_compose_kernel, compose_kernel_param_dict),
+    ],
 )
 def test_leaf_components_registers_compose_kernel_variable_properties(
     module_callable, expected_param_dicts
@@ -295,7 +334,10 @@ def test_leaf_components_registers_compose_kernel_variable_properties(
 
 @pytest.mark.parametrize(
     "module_class, expected_var_dicts",
-    [(A, example_tf_module_variable_dict), (B, example_module_list_variable_dict),],
+    [
+        (A, example_tf_module_variable_dict),
+        (B, example_module_list_variable_dict),
+    ],
 )
 def test_leaf_components_registers_param_properties(module_class, expected_var_dicts):
     module = module_class()

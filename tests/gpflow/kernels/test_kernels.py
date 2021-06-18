@@ -138,7 +138,13 @@ def test_arccosine_nan_gradient(D, N):
         [2, (11.5, 12.5), (3.0, 6.0)],  # 2d, ard lengthscales, ard period
     ],
 )
-@pytest.mark.parametrize("N, variance", [[3, 2.3], [5, 1.3],])
+@pytest.mark.parametrize(
+    "N, variance",
+    [
+        [3, 2.3],
+        [5, 1.3],
+    ],
+)
 def test_periodic(base_class, D, N, lengthscales, variance, period):
     X = rng.randn(N, D) if D == 1 else rng.multivariate_normal(np.zeros(D), np.eye(D), N)
 
@@ -153,7 +159,11 @@ def test_periodic(base_class, D, N, lengthscales, variance, period):
 
 
 @pytest.mark.parametrize(
-    "base_class", [gpflow.kernels.SquaredExponential, gpflow.kernels.Matern12,]
+    "base_class",
+    [
+        gpflow.kernels.SquaredExponential,
+        gpflow.kernels.Matern12,
+    ],
 )
 def test_periodic_diag(base_class):
     N, D = 5, 3
@@ -309,7 +319,11 @@ _kernel_classes_slice = [
     kernel
     for kernel in gpflow.ci_utils.subclasses(gpflow.kernels.Stationary)
     if kernel not in (gpflow.kernels.IsotropicStationary, gpflow.kernels.AnisotropicStationary)
-] + [gpflow.kernels.Constant, gpflow.kernels.Linear, gpflow.kernels.Polynomial,]
+] + [
+    gpflow.kernels.Constant,
+    gpflow.kernels.Linear,
+    gpflow.kernels.Polynomial,
+]
 
 _kernel_triples_slice = [
     (k1(active_dims=[0]), k2(active_dims=[1]), k3(active_dims=slice(0, 1)))
@@ -406,7 +420,14 @@ def test_ard_invalid_active_dims():
         [gpflow.kernels.ArcCosine, "weight_variances"],
     ],
 )
-@pytest.mark.parametrize("param_value, ard", [[1.0, False], [[1.0], True], [[1.0, 1.0], True],])
+@pytest.mark.parametrize(
+    "param_value, ard",
+    [
+        [1.0, False],
+        [[1.0], True],
+        [[1.0, 1.0], True],
+    ],
+)
 def test_ard_property(kernel_class, param_name, param_value, ard):
     kernel = kernel_class(**{param_name: param_value})
     assert kernel.ard is ard
@@ -455,13 +476,21 @@ def _assert_changepoints_kern_err(X, kernels, locations, steepness):
         [[gpflow.kernels.Constant(), gpflow.kernels.Constant()], [2.0], 5.0],
         # 2. Two changepoints
         [
-            [gpflow.kernels.Constant(), gpflow.kernels.Constant(), gpflow.kernels.Constant(),],
+            [
+                gpflow.kernels.Constant(),
+                gpflow.kernels.Constant(),
+                gpflow.kernels.Constant(),
+            ],
             [1.0, 2.0],
             5.0,
         ],
         # 3. Multiple steepness
         [
-            [gpflow.kernels.Constant(), gpflow.kernels.Constant(), gpflow.kernels.Constant(),],
+            [
+                gpflow.kernels.Constant(),
+                gpflow.kernels.Constant(),
+                gpflow.kernels.Constant(),
+            ],
             [1.0, 2.0],
             [5.0, 10.0],
         ],
