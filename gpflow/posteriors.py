@@ -184,8 +184,41 @@ class AbstractPosterior(Module, ABC):
 
         return base_conditional(Kmn, self.Qinv, Knn, self.alpha, full_cov=full_cov)
 
+    def update_cache(self, precompute_cache: Optional[PrecomputeCacheType] = None):
+        """
+        Sets the cache depending on the value of `precompute_cache` to a
+        `tf.Tensor`, `tf.Variable`, or clears the cache. If `precompute_cache`
+        is not given, the setting defaults to the most-recently-used one.
+        """
+        if precompute_cache is None:
+            try:
+                precompute_cache = cast(
+                    PrecomputeCacheType, self._precompute_cache,  # type: ignore
+                )
+            except AttributeError:
+                raise ValueError(
+                    "You must pass precompute_cache explicitly (the cache had not been updated before)."
+                )
+        else:
+            self._precompute_cache = precompute_cache
 
-class BasePosterior(AbstractPosterior):
+        if precompute_cache is PrecomputeCacheType.NOCACHE:
+            self.alpha = self.Qinv = None
+
+        elif precompute_cache is PrecomputeCacheType.TENSOR:
+            self.alpha, self.Qinv = self._precompute()
+
+        elif precompute_cache is PrecomputeCacheType.VARIABLE:
+            alpha, Qinv = self._precompute()
+            if isinstance(self.alpha, tf.Variable) and isinstance(self.Qinv, tf.Variable):
+                # re-use existing variables
+                self.alpha.assign(alpha)
+                self.Qinv.assign(Qinv)
+            else:  # create variables
+                self.alpha = tf.Variable(alpha, trainable=False)
+                self.Qinv = tf.Variable(Qinv, trainable=False)
+
+class GPRPosterior(AbstractPosterior):
     def __init__(
         self,
         kernel,
