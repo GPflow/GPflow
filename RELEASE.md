@@ -37,11 +37,6 @@ This release contains contributions from:
 
 <INSERT SMALL BLURB ABOUT RELEASE FOCUS AREA AND POTENTIAL TOOLCHAIN CHANGES>
 
-## Breaking Changes
-
-* <DOCUMENT BREAKING CHANGES HERE>
-* <THIS SECTION SHOULD CONTAIN API AND BEHAVIORAL BREAKING CHANGES>
-
 ## Known Caveats
 
 * <CAVEATS REGARDING THE RELEASE (BUT NOT BREAKING CHANGES).>
@@ -55,14 +50,15 @@ This release contains contributions from:
 
 ## Bug Fixes and Other Changes
 
-* Fix unit test failure when using TensorFlow 2.5.0
+* Fix unit test failure when using TensorFlow 2.5.0 (#1684)
 * Upgrade black formatter to version 20.8b1 (#1694)
+* Remove erroneous DeprecationWarnings (#1693)
 
 ## Thanks to our Contributors
 
 This release contains contributions from:
 
-<INSERT>, <NAME>, <HERE>, <USING>, <GITHUB>, <HANDLE>
+johnamcleod, st--
 
 
 # Release 2.2.1
