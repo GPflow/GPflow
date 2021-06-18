@@ -51,10 +51,16 @@ def test_scipy_jit():
     opt2 = gpflow.optimizers.Scipy()
 
     opt1.minimize(
-        m1.training_loss, variables=m1.trainable_variables, options=dict(maxiter=50), compile=False,
+        m1.training_loss,
+        variables=m1.trainable_variables,
+        options=dict(maxiter=50),
+        compile=False,
     )
     opt2.minimize(
-        m2.training_loss, variables=m2.trainable_variables, options=dict(maxiter=50), compile=True,
+        m2.training_loss,
+        variables=m2.trainable_variables,
+        options=dict(maxiter=50),
+        compile=True,
     )
 
     def get_values(model):

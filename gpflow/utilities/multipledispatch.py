@@ -21,7 +21,7 @@ __all__ = ["Dispatcher"]
 
 class Dispatcher(GeneratorDispatcher):
     """
-    multipledispatch.Dispatcher uses a generator to yield the 
+    multipledispatch.Dispatcher uses a generator to yield the
     desired function implementation, which is problematic as TensorFlow's
     autograph is not able to compile code that passes through generators.
 
@@ -40,13 +40,13 @@ class Dispatcher(GeneratorDispatcher):
         return self.get_first_occurrence(*types)
 
     def get_first_occurrence(self, *types):
-        """ 
-        Returns the first occurrence of a matching function 
-        
+        """
+        Returns the first occurrence of a matching function
+
         Based on `multipledispatch.Dispatcher.dispatch_iter`, which
         returns an iterator of matching functions. This method uses
         the same logic to select functions, but simply returns the first
-        element of the iterator. If no matching functions are found, 
+        element of the iterator. If no matching functions are found,
         `None` is returned.
         """
         n = len(types)

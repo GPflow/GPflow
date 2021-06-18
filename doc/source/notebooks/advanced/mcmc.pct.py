@@ -294,7 +294,13 @@ kernel = gpflow.kernels.SquaredExponential(lengthscales=0.1)
 K = kernel.K(X) + np.eye(N) * 1e-6
 
 f = rng.multivariate_normal(mean=np.zeros(N), cov=K, size=(C)).T
-Y = np.argmax(f, 1).reshape(-1,).astype(int)
+Y = (
+    np.argmax(f, 1)
+    .reshape(
+        -1,
+    )
+    .astype(int)
+)
 # One-hot encoding
 Y_hot = np.zeros((N, C), dtype=bool)
 Y_hot[np.arange(N), Y] = 1
@@ -303,7 +309,11 @@ data = (X, Y)
 
 # %%
 plt.figure(figsize=(12, 6))
-order = np.argsort(X.reshape(-1,))
+order = np.argsort(
+    X.reshape(
+        -1,
+    )
+)
 
 for c in range(C):
     plt.plot(X[order], f[order, c], ".", color=colors[c], label=str(c))

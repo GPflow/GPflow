@@ -93,7 +93,9 @@ def _fallback_Kuf(
 
 
 @Kuf.register(
-    FallbackSeparateIndependentInducingVariables, LinearCoregionalization, object,
+    FallbackSeparateIndependentInducingVariables,
+    LinearCoregionalization,
+    object,
 )
 def _Kuf(
     inducing_variable: FallbackSeparateIndependentInducingVariables,
@@ -105,7 +107,9 @@ def _Kuf(
 
 
 @Kuf.register(
-    FallbackSharedIndependentInducingVariables, LinearCoregionalization, object,
+    FallbackSharedIndependentInducingVariables,
+    LinearCoregionalization,
+    object,
 )
 def _Kuf(
     inducing_variable: FallbackSharedIndependentInducingVariables,

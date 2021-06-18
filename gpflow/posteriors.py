@@ -158,7 +158,8 @@ class AbstractPosterior(Module, ABC):
         if precompute_cache is None:
             try:
                 precompute_cache = cast(
-                    PrecomputeCacheType, self._precompute_cache,  # type: ignore
+                    PrecomputeCacheType,
+                    self._precompute_cache,  # type: ignore
                 )
             except AttributeError:
                 raise ValueError(
@@ -298,7 +299,9 @@ class BasePosterior(AbstractPosterior):
         Qinv = tf.broadcast_to(Qinv, [L, M, M])
 
         tf.debugging.assert_shapes(
-            [(Qinv, ["L", "M", "M"]),]
+            [
+                (Qinv, ["L", "M", "M"]),
+            ]
         )
 
         return alpha, Qinv

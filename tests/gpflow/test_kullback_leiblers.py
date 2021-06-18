@@ -223,7 +223,7 @@ def test_unknown_size_inputs():
 
 @pytest.mark.parametrize("white", [True, False])
 def test_q_sqrt_constraints(inducing_points, kernel, mu, white):
-    """ Test that sending in an unconstrained q_sqrt returns the same conditional
+    """Test that sending in an unconstrained q_sqrt returns the same conditional
     evaluation and gradients. This is important to match the behaviour of the KL, which
     enforces q_sqrt is triangular.
     """

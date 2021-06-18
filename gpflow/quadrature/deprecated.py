@@ -94,7 +94,14 @@ def mvnquad(func, means, covs, H: int, Din: int = None, Dout=None):
             "shape. Running mvnquad in `autoflow` without specifying `Din` and `Dout` "
             "is problematic. Consider using your own session."
         )  # pragma: no cover
-    fX = tf.reshape(fevals, (H ** Din, N,) + Dout)
+    fX = tf.reshape(
+        fevals,
+        (
+            H ** Din,
+            N,
+        )
+        + Dout,
+    )
     wr = np.reshape(wn * np.pi ** (-Din * 0.5), (-1,) + (1,) * (1 + len(Dout)))
     return tf.reduce_sum(fX * wr, 0)
 

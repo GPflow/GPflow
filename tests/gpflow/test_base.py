@@ -41,7 +41,7 @@ def test_cast_to_dtype_precision_issue():
 
     >>> tf.cast(0.2, tf.float64)
     <tf.Tensor: id=37, shape=(), dtype=float64, numpy=0.20000000298023224>
-    
+
     instead of the expected expansion of 0.2 to float64 precision that you get when
     passing in an object that already carries dtype information, such as a numpy array
     (which has float64 precision by default):
