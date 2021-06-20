@@ -27,4 +27,10 @@ from .multilatent import (
     MultiLatentTFPConditional,
 )
 from .scalar_continuous import Beta, Exponential, Gamma, Gaussian, StudentT
-from .scalar_discrete import Bernoulli, Ordinal, Poisson
+from .scalar_discrete import (
+    Bernoulli,
+    NegativeBinomial,
+    Ordinal,
+    Poisson,
+    ZeroInflatedNegativeBinomial,
+)

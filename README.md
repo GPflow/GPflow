@@ -107,7 +107,7 @@ We have a public [GPflow slack workspace](https://gpflow.slack.com/). Please use
 
 ### Contributing
 
-All constructive input is gratefully received. For more information, see the [notes for contributors](contributing.md).
+All constructive input is gratefully received. For more information, see the [notes for contributors](CONTRIBUTING.md).
 
 ### Projects using GPflow
 
