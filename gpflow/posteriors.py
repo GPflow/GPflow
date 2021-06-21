@@ -171,7 +171,6 @@ class AbstractPosterior(Module, ABC):
         )
         return self._add_mean_function(Xnew, mean), cov
 
-    @abstractmethod
     def _conditional_with_precompute(
         self, Xnew, full_cov: bool = False, full_output_cov: bool = False
     ) -> MeanAndVariance:
@@ -199,7 +198,6 @@ class BasePosterior(AbstractPosterior):
     ):
 
         super().__init__(kernel, inducing_variable, mean_function=mean_function)
-        self.mean_function = mean_function
         self.whiten = whiten
         self._set_qdist(q_mu, q_sqrt)
 
