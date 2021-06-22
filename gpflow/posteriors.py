@@ -21,7 +21,7 @@ import tensorflow as tf
 import tensorflow_probability as tfp
 
 from . import covariances, kernels, mean_functions
-from .base import Module
+from .base import Module, TensorType
 from .conditionals.util import (
     base_conditional,
     expand_independent_outputs,
@@ -108,13 +108,10 @@ class AbstractPosterior(Module, ABC):
     def __init__(
         self,
         kernel,
-        inducing_variable,
-        q_mu: tf.Tensor,
-        q_sqrt: tf.Tensor,
-        whiten: bool = True,
+        X_data: Union[tf.Tensor, InducingVariables],
+        alpha: Optional[TensorType] = None,
+        Qinv: Optional[TensorType] = None,
         mean_function: Optional[mean_functions.MeanFunction] = None,
-        *,
-        precompute_cache: Optional[PrecomputeCacheType],
     ):
         """
         Users should use `create_posterior` to create instances of concrete
@@ -123,13 +120,84 @@ class AbstractPosterior(Module, ABC):
         instantiate subclasses, developers need to ensure their subclasses
         don't change the constructor signature.
         """
-        self.inducing_variable = inducing_variable
+        super().__init__()
+
         self.kernel = kernel
+        self.X_data = X_data
+        self.alpha = alpha
+        self.Qinv = Qinv
         self.mean_function = mean_function
+
+    def _add_mean_function(self, Xnew, mean):
+        if self.mean_function is None:
+            return mean
+        else:
+            return mean + self.mean_function(Xnew)
+
+    def fused_predict_f(
+        self, Xnew, full_cov: bool = False, full_output_cov: bool = False
+    ) -> MeanAndVariance:
+        """
+        Computes predictive mean and (co)variance at Xnew, including mean_function
+        Does not make use of caching
+        """
+        mean, cov = self._conditional_fused(
+            Xnew, full_cov=full_cov, full_output_cov=full_output_cov
+        )
+        return self._add_mean_function(Xnew, mean), cov
+
+    @abstractmethod
+    def _conditional_fused(
+        self, Xnew, full_cov: bool = False, full_output_cov: bool = False
+    ) -> MeanAndVariance:
+        """
+        Computes predictive mean and (co)variance at Xnew, *excluding* mean_function
+        Does not make use of caching
+        """
+
+    def predict_f(
+        self, Xnew, full_cov: bool = False, full_output_cov: bool = False
+    ) -> MeanAndVariance:
+        """
+        Computes predictive mean and (co)variance at Xnew, including mean_function.
+        Relies on precomputed alpha and Qinv (see _precompute method)
+        """
+        if self.alpha is None or self.Qinv is None:
+            raise ValueError(
+                "Cache has not been precomputed yet. Call update_cache first or use fused_predict_f"
+            )
+        mean, cov = self._conditional_with_precompute(
+            Xnew, full_cov=full_cov, full_output_cov=full_output_cov
+        )
+        return self._add_mean_function(Xnew, mean), cov
+
+    @abstractmethod
+    def _conditional_with_precompute(
+        self, Xnew, full_cov: bool = False, full_output_cov: bool = False
+    ) -> MeanAndVariance:
+        """
+        Computes predictive mean and (co)variance at Xnew, *excluding* mean_function.
+        Relies on cached alpha and Qinv.
+        """
+
+
+class BasePosterior(AbstractPosterior):
+    def __init__(
+        self,
+        kernel,
+        inducing_variable,
+        q_mu: tf.Tensor,
+        q_sqrt: tf.Tensor,
+        whiten: bool = True,
+        mean_function: Optional[mean_functions.MeanFunction] = None,
+        *,
+        precompute_cache: Optional[PrecomputeCacheType],
+    ):
+
+        super().__init__(kernel, inducing_variable, mean_function=mean_function)
         self.whiten = whiten
         self._set_qdist(q_mu, q_sqrt)
 
-        self.alpha = self.Qinv = None
         if precompute_cache is not None:
             self.update_cache(precompute_cache)
 
@@ -184,70 +252,8 @@ class AbstractPosterior(Module, ABC):
                 self.alpha = tf.Variable(alpha, trainable=False)
                 self.Qinv = tf.Variable(Qinv, trainable=False)
 
-    def _add_mean_function(self, Xnew, mean):
-        if self.mean_function is None:
-            return mean
-        else:
-            return mean + self.mean_function(Xnew)
-
-    def fused_predict_f(
-        self, Xnew, full_cov: bool = False, full_output_cov: bool = False
-    ) -> MeanAndVariance:
-        """
-        Computes predictive mean and (co)variance at Xnew, including mean_function
-        Does not make use of caching
-        """
-        mean, cov = self._conditional_fused(
-            Xnew, full_cov=full_cov, full_output_cov=full_output_cov
-        )
-        return self._add_mean_function(Xnew, mean), cov
-
-    @abstractmethod
-    def _conditional_fused(
-        self, Xnew, full_cov: bool = False, full_output_cov: bool = False
-    ) -> MeanAndVariance:
-        """
-        Computes predictive mean and (co)variance at Xnew, *excluding* mean_function
-        Does not make use of caching
-        """
-
-    def predict_f(
-        self, Xnew, full_cov: bool = False, full_output_cov: bool = False
-    ) -> MeanAndVariance:
-        """
-        Computes predictive mean and (co)variance at Xnew, including mean_function.
-        Relies on precomputed alpha and Qinv (see _precompute method)
-        """
-        if self.alpha is None or self.Qinv is None:
-            raise ValueError(
-                "Cache has not been precomputed yet. Call update_cache first or use fused_predict_f"
-            )
-        mean, cov = self._conditional_with_precompute(
-            Xnew, full_cov=full_cov, full_output_cov=full_output_cov
-        )
-        return self._add_mean_function(Xnew, mean), cov
-
-    @abstractmethod
-    def _precompute(self) -> Tuple[tf.Tensor, tf.Tensor]:
-        """
-        Precomputes alpha and Qinv that do not depend on Xnew
-        """
-
-    @abstractmethod
-    def _conditional_with_precompute(
-        self, Xnew, full_cov: bool = False, full_output_cov: bool = False
-    ) -> MeanAndVariance:
-        """
-        Computes predictive mean and (co)variance at Xnew, *excluding* mean_function.
-        Relies on precomputed alpha and Qinv (see _precompute method)
-        """
-
-
-class BasePosterior(AbstractPosterior):
     def _precompute(self):
-        Kuu = covariances.Kuu(
-            self.inducing_variable, self.kernel, jitter=default_jitter()
-        )  # [(R), M, M]
+        Kuu = covariances.Kuu(self.X_data, self.kernel, jitter=default_jitter())  # [(R), M, M]
         q_mu = self._q_dist.q_mu
 
         if Kuu.shape.ndims == 4:
@@ -338,7 +344,7 @@ class IndependentPosterior(BasePosterior):
         # Qinv: [L, M, M]
         # alpha: [M, L]
 
-        Kuf = covariances.Kuf(self.inducing_variable, self.kernel, Xnew)  # [(R), M, N]
+        Kuf = covariances.Kuf(self.X_data, self.kernel, Xnew)  # [(R), M, N]
         Kff = self._get_Kff(Xnew, full_cov)
 
         mean = tf.matmul(Kuf, self.alpha, transpose_a=True)
@@ -366,10 +372,8 @@ class IndependentPosteriorSingleOutput(IndependentPosterior):
         # same as IndependentPosteriorMultiOutput, Shared~/Shared~ branch, except for following line:
         Knn = self.kernel(Xnew, full_cov=full_cov)
 
-        Kmm = covariances.Kuu(
-            self.inducing_variable, self.kernel, jitter=default_jitter()
-        )  # [M, M]
-        Kmn = covariances.Kuf(self.inducing_variable, self.kernel, Xnew)  # [M, N]
+        Kmm = covariances.Kuu(self.X_data, self.kernel, jitter=default_jitter())  # [M, M]
+        Kmn = covariances.Kuf(self.X_data, self.kernel, Xnew)  # [M, N]
 
         fmean, fvar = base_conditional(
             Kmn, Kmm, Knn, self.q_mu, full_cov=full_cov, q_sqrt=self.q_sqrt, white=self.whiten
@@ -381,17 +385,15 @@ class IndependentPosteriorMultiOutput(IndependentPosterior):
     def _conditional_fused(
         self, Xnew, full_cov: bool = False, full_output_cov: bool = False
     ) -> MeanAndVariance:
-        if isinstance(self.inducing_variable, SharedIndependentInducingVariables) and isinstance(
+        if isinstance(self.X_data, SharedIndependentInducingVariables) and isinstance(
             self.kernel, kernels.SharedIndependent
         ):
             # same as IndependentPosteriorSingleOutput except for following line
             Knn = self.kernel.kernel(Xnew, full_cov=full_cov)
             # we don't call self.kernel() directly as that would do unnecessary tiling
 
-            Kmm = covariances.Kuu(
-                self.inducing_variable, self.kernel, jitter=default_jitter()
-            )  # [M, M]
-            Kmn = covariances.Kuf(self.inducing_variable, self.kernel, Xnew)  # [M, N]
+            Kmm = covariances.Kuu(self.X_data, self.kernel, jitter=default_jitter())  # [M, M]
+            Kmn = covariances.Kuf(self.X_data, self.kernel, Xnew)  # [M, N]
 
             fmean, fvar = base_conditional(
                 Kmn, Kmm, Knn, self.q_mu, full_cov=full_cov, q_sqrt=self.q_sqrt, white=self.whiten
@@ -400,16 +402,12 @@ class IndependentPosteriorMultiOutput(IndependentPosterior):
             # this is the messy thing with tf.map_fn, cleaned up by the st/clean_up_broadcasting_conditionals branch
 
             # Following are: [P, M, M]  -  [P, M, N]  -  [P, N](x N)
-            Kmms = covariances.Kuu(
-                self.inducing_variable, self.kernel, jitter=default_jitter()
-            )  # [P, M, M]
-            Kmns = covariances.Kuf(self.inducing_variable, self.kernel, Xnew)  # [P, M, N]
+            Kmms = covariances.Kuu(self.X_data, self.kernel, jitter=default_jitter())  # [P, M, M]
+            Kmns = covariances.Kuf(self.X_data, self.kernel, Xnew)  # [P, M, N]
             if isinstance(self.kernel, kernels.Combination):
                 kernel_list = self.kernel.kernels
             else:
-                kernel_list = [self.kernel.kernel] * len(
-                    self.inducing_variable.inducing_variable_list
-                )
+                kernel_list = [self.kernel.kernel] * len(self.X_data.inducing_variable_list)
             Knns = tf.stack(
                 [k.K(Xnew) if full_cov else k.K_diag(Xnew) for k in kernel_list], axis=0
             )
@@ -447,7 +445,7 @@ class FullyCorrelatedPosterior(BasePosterior):
         # Qinv: [L, M, M]
         # alpha: [M, L]
 
-        Kuf = covariances.Kuf(self.inducing_variable, self.kernel, Xnew)
+        Kuf = covariances.Kuf(self.X_data, self.kernel, Xnew)
         assert Kuf.shape.ndims == 4
         M, L, N, K = tf.unstack(tf.shape(Kuf), num=Kuf.shape.ndims, axis=0)
         Kuf = tf.reshape(Kuf, (M * L, N * K))
@@ -503,10 +501,8 @@ class FullyCorrelatedPosterior(BasePosterior):
     def _conditional_fused(
         self, Xnew, full_cov: bool = False, full_output_cov: bool = False
     ) -> MeanAndVariance:
-        Kmm = covariances.Kuu(
-            self.inducing_variable, self.kernel, jitter=default_jitter()
-        )  # [M, L, M, L]
-        Kmn = covariances.Kuf(self.inducing_variable, self.kernel, Xnew)  # [M, L, N, P]
+        Kmm = covariances.Kuu(self.X_data, self.kernel, jitter=default_jitter())  # [M, L, M, L]
+        Kmn = covariances.Kuf(self.X_data, self.kernel, Xnew)  # [M, L, N, P]
         Knn = self.kernel(
             Xnew, full_cov=full_cov, full_output_cov=full_output_cov
         )  # [N, P](x N)x P  or  [N, P](x P)
@@ -541,10 +537,8 @@ class FallbackIndependentLatentPosterior(FullyCorrelatedPosterior):  # XXX
     def _conditional_fused(
         self, Xnew, full_cov: bool = False, full_output_cov: bool = False
     ) -> MeanAndVariance:
-        Kmm = covariances.Kuu(
-            self.inducing_variable, self.kernel, jitter=default_jitter()
-        )  # [L, M, M]
-        Kmn = covariances.Kuf(self.inducing_variable, self.kernel, Xnew)  # [M, L, N, P]
+        Kmm = covariances.Kuu(self.X_data, self.kernel, jitter=default_jitter())  # [L, M, M]
+        Kmn = covariances.Kuf(self.X_data, self.kernel, Xnew)  # [M, L, N, P]
         Knn = self.kernel(
             Xnew, full_cov=full_cov, full_output_cov=full_output_cov
         )  # [N, P](x N)x P  or  [N, P](x P)
