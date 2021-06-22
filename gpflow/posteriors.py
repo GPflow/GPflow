@@ -171,6 +171,7 @@ class AbstractPosterior(Module, ABC):
         )
         return self._add_mean_function(Xnew, mean), cov
 
+    @abstractmethod
     def _conditional_with_precompute(
         self, Xnew, full_cov: bool = False, full_output_cov: bool = False
     ) -> MeanAndVariance:
@@ -178,10 +179,6 @@ class AbstractPosterior(Module, ABC):
         Computes predictive mean and (co)variance at Xnew, *excluding* mean_function.
         Relies on cached alpha and Qinv.
         """
-        Kmn = self.kernel(self.X_data, Xnew)
-        Knn = self.kernel(Xnew, full_cov=full_cov)
-
-        return base_conditional(Kmn, self.Qinv, Knn, self.alpha, full_cov=full_cov)
 
 
 class BasePosterior(AbstractPosterior):
