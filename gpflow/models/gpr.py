@@ -83,14 +83,14 @@ class GP_deprecated(GPModel, InternalDataTrainingLossMixin):
             \log p(Y | \theta).
 
         """
-        X, Y = self.data
-        K = self.kernel(X)
+        X_data, Y_data = self.data
+        K = self.kernel(X_data)
         ks = self._add_noise_cov(K)
         L = tf.linalg.cholesky(ks)
-        m = self.mean_function(X)
+        m = self.mean_function(X_data)
 
         # [R,] log-likelihoods for each independent dimension of Y
-        log_prob = multivariate_normal(Y, m, L)
+        log_prob = multivariate_normal(Y_data, m, L)
         return tf.reduce_sum(log_prob)
 
     def predict_f(
@@ -145,15 +145,13 @@ class GP_with_posterior(GP_deprecated):
           `fused_predict_f` method.
         """
 
-        # construct specific posterior here
-        # currently GPR only supports single output GP's
-        # compare fused and cached implementation
-        # leave off update
-        # after this...structure refactor
-        # then, SGP model (has inducing points, but doesn't have additional variational approximation)
+        x_data, y_data = self.data
+
         return GPRPosterior(
-            self.kernel,
-            self.XData,
+            kernel=self.kernel,
+            X_data=x_data,
+            Y_data=y_data,
+            likelihood_variance=self.likelihood.variance,
             mean_function=self.mean_function,
             precompute_cache=precompute_cache,
         )
