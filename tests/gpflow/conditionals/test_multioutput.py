@@ -99,14 +99,10 @@ def check_equality_predictions(data, models, decimal=3):
     var_ff = vars_ff[0]  # N x P
 
     np.testing.assert_almost_equal(
-        np.diagonal(var_tt, axis1=1, axis2=3),
-        np.transpose(var_tf, [1, 2, 0]),
-        decimal=decimal,
+        np.diagonal(var_tt, axis1=1, axis2=3), np.transpose(var_tf, [1, 2, 0]), decimal=decimal,
     )
     np.testing.assert_almost_equal(
-        np.diagonal(var_tt, axis1=0, axis2=2),
-        np.transpose(var_ft, [1, 2, 0]),
-        decimal=decimal,
+        np.diagonal(var_tt, axis1=0, axis2=2), np.transpose(var_ft, [1, 2, 0]), decimal=decimal,
     )
     np.testing.assert_almost_equal(
         np.diagonal(np.diagonal(var_tt, axis1=0, axis2=2)), var_ff, decimal=decimal
@@ -384,13 +380,7 @@ def test_fully_correlated_conditional_repeat_whiten(whiten):
     Knn = tf.ones((N, P))
     f = np.random.randn(1, 1).astype(np.float32)
 
-    mean, _ = fully_correlated_conditional_repeat(
-        Kmn,
-        Kmm,
-        Knn,
-        f,
-        white=whiten,
-    )
+    mean, _ = fully_correlated_conditional_repeat(Kmn, Kmm, Knn, f, white=whiten,)
 
     if whiten:
         expected_mean = (f * Kmn) / Lm
@@ -597,12 +587,7 @@ def test_separate_independent_mok():
     kernel_1 = mk.SeparateIndependent(kern_list_1)
     inducing_variable_1 = InducingPoints(Data.X[: Data.M, ...])
     model_1 = SVGP(
-        kernel_1,
-        Gaussian(),
-        inducing_variable_1,
-        num_latent_gps=1,
-        q_mu=q_mu_1,
-        q_sqrt=q_sqrt_1,
+        kernel_1, Gaussian(), inducing_variable_1, num_latent_gps=1, q_mu=q_mu_1, q_sqrt=q_sqrt_1,
     )
     set_trainable(model_1, False)
     set_trainable(model_1.q_sqrt, True)
@@ -777,24 +762,14 @@ def test_multioutput_with_diag_q_sqrt():
     k1 = mk.LinearCoregionalization(kern_list, W=data.W)
     f1 = mf.SharedIndependentInducingVariables(InducingPoints(data.X[: data.M, ...]))
     model_1 = SVGP(
-        k1,
-        Gaussian(),
-        inducing_variable=f1,
-        q_mu=data.mu_data,
-        q_sqrt=q_sqrt_diag,
-        q_diag=True,
+        k1, Gaussian(), inducing_variable=f1, q_mu=data.mu_data, q_sqrt=q_sqrt_diag, q_diag=True,
     )
 
     kern_list = [SquaredExponential() for _ in range(data.L)]
     k2 = mk.LinearCoregionalization(kern_list, W=data.W)
     f2 = mf.SharedIndependentInducingVariables(InducingPoints(data.X[: data.M, ...]))
     model_2 = SVGP(
-        k2,
-        Gaussian(),
-        inducing_variable=f2,
-        q_mu=data.mu_data,
-        q_sqrt=q_sqrt,
-        q_diag=False,
+        k2, Gaussian(), inducing_variable=f2, q_mu=data.mu_data, q_sqrt=q_sqrt, q_diag=False,
     )
 
     check_equality_predictions(Data.data, [model_1, model_2])
@@ -904,13 +879,7 @@ def test_independent_interdomain_conditional_whiten(whiten):
     Knn = tf.ones((N, P))
     f = np.random.randn(1, 1).astype(np.float32)
 
-    mean, _ = independent_interdomain_conditional(
-        Kmn,
-        Kmm,
-        Knn,
-        f,
-        white=whiten,
-    )
+    mean, _ = independent_interdomain_conditional(Kmn, Kmm, Knn, f, white=whiten,)
 
     if whiten:
         expected_mean = (f * Kmn) / Lm

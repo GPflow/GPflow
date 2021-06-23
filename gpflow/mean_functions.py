@@ -125,13 +125,9 @@ class Constant(MeanFunction):
         self.c = Parameter(c)
 
     def __call__(self, X):
-        tile_shape = tf.concat(
-            [tf.shape(X)[:-1], [1]],
-            axis=0,
-        )
+        tile_shape = tf.concat([tf.shape(X)[:-1], [1]], axis=0,)
         reshape_shape = tf.concat(
-            [tf.ones(shape=(tf.rank(X) - 1), dtype=default_int()), [-1]],
-            axis=0,
+            [tf.ones(shape=(tf.rank(X) - 1), dtype=default_int()), [-1]], axis=0,
         )
         return tf.tile(tf.reshape(self.c, reshape_shape), tile_shape)
 

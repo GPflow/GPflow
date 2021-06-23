@@ -116,13 +116,7 @@ class VGP(GPModel, InternalDataTrainingLossMixin):
     ) -> MeanAndVariance:
         X_data, _ = self.data
         mu, var = conditional(
-            Xnew,
-            X_data,
-            self.kernel,
-            self.q_mu,
-            q_sqrt=self.q_sqrt,
-            full_cov=full_cov,
-            white=True,
+            Xnew, X_data, self.kernel, self.q_mu, q_sqrt=self.q_sqrt, full_cov=full_cov, white=True,
         )
         return mu + self.mean_function(Xnew), var
 

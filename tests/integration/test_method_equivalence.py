@@ -280,9 +280,7 @@ def test_upper_bound_few_inducing_points():
     opt = gpflow.optimizers.Scipy()
 
     opt.minimize(
-        model_vfe.training_loss,
-        variables=model_vfe.trainable_variables,
-        options=dict(maxiter=500),
+        model_vfe.training_loss, variables=model_vfe.trainable_variables, options=dict(maxiter=500),
     )
 
     full_gp = gpflow.models.GPR(

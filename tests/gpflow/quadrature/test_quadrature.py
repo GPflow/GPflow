@@ -38,10 +38,7 @@ def test_diagquad_2d(mu1, var1, mu2, var2):
     # using logspace=True we can reduce this, see test_diagquad_logspace
     num_gauss_hermite_points = 35
     quad = quadrature.ndiagquad(
-        lambda *X: tf.exp(X[0] + alpha * X[1]),
-        num_gauss_hermite_points,
-        [mu1, mu2],
-        [var1, var2],
+        lambda *X: tf.exp(X[0] + alpha * X[1]), num_gauss_hermite_points, [mu1, mu2], [var1, var2],
     )
     expected = np.exp(mu1 + var1 / 2 + alpha * mu2 + alpha ** 2 * var2 / 2)
     assert_allclose(quad, expected)
@@ -115,6 +112,5 @@ def test_quadrature_autograph():
         return result.numpy()
 
     np.testing.assert_equal(
-        compute(autograph=True),
-        compute(autograph=False),
+        compute(autograph=True), compute(autograph=False),
     )

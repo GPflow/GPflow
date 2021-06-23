@@ -66,8 +66,7 @@ def gen_L(n, *shape):
 
 def gen_q_sqrt(D_out, *shape):
     return tf.convert_to_tensor(
-        np.array([np.tril(rng.randn(*shape)) for _ in range(D_out)]),
-        dtype=default_float(),
+        np.array([np.tril(rng.randn(*shape)) for _ in range(D_out)]), dtype=default_float(),
     )
 
 
@@ -248,12 +247,7 @@ def test_quadrature(white, mean):
 
     def conditional_fn(X):
         return conditional(
-            X,
-            inducing_variable,
-            kernel,
-            DataQuad.q_mu,
-            q_sqrt=DataQuad.q_sqrt,
-            white=white,
+            X, inducing_variable, kernel, DataQuad.q_mu, q_sqrt=DataQuad.q_sqrt, white=white,
         )
 
     def mean_fn(X):

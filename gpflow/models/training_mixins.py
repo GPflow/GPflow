@@ -99,10 +99,7 @@ class ExternalDataTrainingLossMixin:
         return self._training_loss(data)
 
     def training_loss_closure(
-        self,
-        data: Union[Data, DatasetOwnedIterator],
-        *,
-        compile=True,
+        self, data: Union[Data, DatasetOwnedIterator], *, compile=True,
     ) -> Callable[[], tf.Tensor]:
         """
         Returns a closure that computes the training loss, which by default is

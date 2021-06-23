@@ -444,9 +444,7 @@ gpflow.set_trainable(m.inducing_variable, True)  # whether to optimize bounds [a
 # %%
 opt = gpflow.optimizers.Scipy()
 opt.minimize(
-    m.training_loss_closure(data),
-    m.trainable_variables,
-    options=dict(maxiter=ci_niter(5000)),
+    m.training_loss_closure(data), m.trainable_variables, options=dict(maxiter=ci_niter(5000)),
 )
 
 gpflow.utilities.print_summary(m, fmt="notebook")

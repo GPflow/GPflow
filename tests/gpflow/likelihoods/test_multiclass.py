@@ -73,8 +73,7 @@ def test_softmax_bernoulli_equivalence(num, dimF, dimY):
     )
 
     assert_allclose(
-        softmax_likelihood.log_prob(F, Ylabel),
-        bernoulli_likelihood.log_prob(F[:, :1], Y.numpy()),
+        softmax_likelihood.log_prob(F, Ylabel), bernoulli_likelihood.log_prob(F[:, :1], Y.numpy()),
     )
 
     mean1, var1 = softmax_likelihood.predict_mean_and_var(F, Fvar)

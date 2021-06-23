@@ -83,10 +83,7 @@ def test_svgp_white():
     model_1.q_mu.assign(default_datum_svgp.qmean)
     model_2.q_sqrt.assign(
         np.array(
-            [
-                np.diag(default_datum_svgp.qsqrt[:, 0]),
-                np.diag(default_datum_svgp.qsqrt[:, 1]),
-            ]
+            [np.diag(default_datum_svgp.qsqrt[:, 0]), np.diag(default_datum_svgp.qsqrt[:, 1]),]
         )
     )
     model_2.q_mu.assign(default_datum_svgp.qmean)
@@ -119,10 +116,7 @@ def test_svgp_non_white():
     model_1.q_mu.assign(default_datum_svgp.qmean)
     model_2.q_sqrt.assign(
         np.array(
-            [
-                np.diag(default_datum_svgp.qsqrt[:, 0]),
-                np.diag(default_datum_svgp.qsqrt[:, 1]),
-            ]
+            [np.diag(default_datum_svgp.qsqrt[:, 0]), np.diag(default_datum_svgp.qsqrt[:, 1]),]
         )
     )
     model_2.q_mu.assign(default_datum_svgp.qmean)
@@ -144,11 +138,7 @@ def _check_models_close(m1, m2, tolerance=1e-2):
 
 @pytest.mark.parametrize(
     "indices_1, indices_2, num_data1, num_data2, max_iter",
-    [
-        [[0, 1], [1, 0], 2, 2, 3],
-        [[0, 1], [0, 0], 1, 2, 1],
-        [[0, 0], [0, 1], 1, 1, 2],
-    ],
+    [[[0, 1], [1, 0], 2, 2, 3], [[0, 1], [0, 0], 1, 2, 1], [[0, 0], [0, 1], 1, 1, 2],],
 )
 def test_stochastic_gradients(indices_1, indices_2, num_data1, num_data2, max_iter):
     """

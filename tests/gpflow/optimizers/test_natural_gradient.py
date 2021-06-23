@@ -104,8 +104,7 @@ def assert_gpr_vs_vgp(
 
 
 def assert_sgpr_vs_svgp(
-    m1: gpflow.models.BayesianModel,
-    m2: gpflow.models.BayesianModel,
+    m1: gpflow.models.BayesianModel, m2: gpflow.models.BayesianModel,
 ):
     data = m1.data
 

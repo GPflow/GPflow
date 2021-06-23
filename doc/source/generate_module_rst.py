@@ -202,10 +202,7 @@ def write_to_rst_file(node_name: str, rst_content: List[str]) -> None:
 
     level_underline = RST_LEVEL_SYMBOLS[0] * len(node_name)
     rst_file = SPHINX_FILE_STRING.format(
-        title=node_name,
-        content="".join(rst_content),
-        date=DATE_STRING,
-        headerline=level_underline,
+        title=node_name, content="".join(rst_content), date=DATE_STRING, headerline=level_underline,
     )
 
     path_to_file = path + "/index.rst"

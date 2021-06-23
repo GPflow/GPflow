@@ -74,33 +74,25 @@ scalar_likelihood_setups = [
     LikelihoodSetup(StudentT()),
     LikelihoodSetup(Beta(), Y=tf.random.uniform(Datum.Yshape, dtype=default_float())),
     LikelihoodSetup(
-        Ordinal(np.array([-1, 1])),
-        Y=tf.random.uniform(Datum.Yshape, 0, 3, dtype=default_int()),
+        Ordinal(np.array([-1, 1])), Y=tf.random.uniform(Datum.Yshape, 0, 3, dtype=default_int()),
     ),
     LikelihoodSetup(
-        Poisson(invlink=tf.square),
-        Y=tf.random.poisson(Datum.Yshape, 1.0, dtype=default_float()),
+        Poisson(invlink=tf.square), Y=tf.random.poisson(Datum.Yshape, 1.0, dtype=default_float()),
     ),
     LikelihoodSetup(
-        Exponential(invlink=tf.square),
-        Y=tf.random.uniform(Datum.Yshape, dtype=default_float()),
+        Exponential(invlink=tf.square), Y=tf.random.uniform(Datum.Yshape, dtype=default_float()),
     ),
     LikelihoodSetup(
-        Gamma(invlink=tf.square),
-        Y=tf.random.uniform(Datum.Yshape, dtype=default_float()),
+        Gamma(invlink=tf.square), Y=tf.random.uniform(Datum.Yshape, dtype=default_float()),
     ),
     LikelihoodSetup(
-        Bernoulli(invlink=tf.sigmoid),
-        Y=tf.random.uniform(Datum.Yshape, dtype=default_float()),
+        Bernoulli(invlink=tf.sigmoid), Y=tf.random.uniform(Datum.Yshape, dtype=default_float()),
     ),
 ]
 
 likelihood_setups = scalar_likelihood_setups + [
     LikelihoodSetup(
-        MultiClass(3),
-        Y=tf.argmax(Datum.Y, 1).numpy().reshape(-1, 1),
-        rtol=1e-3,
-        atol=1e-3,
+        MultiClass(3), Y=tf.argmax(Datum.Y, 1).numpy().reshape(-1, 1), rtol=1e-3, atol=1e-3,
     ),
 ]
 

@@ -17,15 +17,15 @@ from typing import Optional, Tuple
 import tensorflow as tf
 
 import gpflow
-from .. import posteriors
 
+from .. import posteriors
 from ..kernels import Kernel
 from ..logdensities import multivariate_normal
 from ..mean_functions import MeanFunction
+from ..posteriors import GPRPosterior
 from .model import GPModel, InputData, MeanAndVariance, RegressionData
 from .training_mixins import InternalDataTrainingLossMixin
 from .util import data_input_to_tensor
-from ..posteriors import GPRPosterior
 
 
 class GP_deprecated(GPModel, InternalDataTrainingLossMixin):
@@ -118,6 +118,7 @@ class GP_deprecated(GPModel, InternalDataTrainingLossMixin):
         )  # [N, P], [N, P] or [P, N, N]
         f_mean = f_mean_zero + self.mean_function(Xnew)
         return f_mean, f_var
+
 
 class GP_with_posterior(GP_deprecated):
     """

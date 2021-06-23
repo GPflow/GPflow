@@ -33,9 +33,7 @@ class MultiLatentLikelihood(QuadratureLikelihood):
 
     def __init__(self, latent_dim: int, **kwargs):
         super().__init__(
-            latent_dim=latent_dim,
-            observation_dim=1,
-            **kwargs,
+            latent_dim=latent_dim, observation_dim=1, **kwargs,
         )
 
 
@@ -120,7 +118,5 @@ class HeteroskedasticTFPConditional(MultiLatentTFPConditional):
             return distribution_class(loc, scale)
 
         super().__init__(
-            latent_dim=2,
-            conditional_distribution=conditional_distribution,
-            **kwargs,
+            latent_dim=2, conditional_distribution=conditional_distribution, **kwargs,
         )

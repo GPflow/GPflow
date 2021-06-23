@@ -72,20 +72,14 @@ model_setups = [
     ModelSetup(model_class=gpflow.models.SVGP, whiten=False, q_diag=False),
     ModelSetup(model_class=gpflow.models.SGPR, requires_data=True, requires_likelihood=False),
     ModelSetup(
-        model_class=gpflow.models.VGP,
-        requires_inducing_variables=False,
-        requires_data=True,
+        model_class=gpflow.models.VGP, requires_inducing_variables=False, requires_data=True,
     ),
     #     ModelSetup(model_class=gpflow.models.GPRF),
     ModelSetup(
-        model_class=gpflow.models.GPMC,
-        requires_data=True,
-        requires_inducing_variables=False,
+        model_class=gpflow.models.GPMC, requires_data=True, requires_inducing_variables=False,
     ),
     ModelSetup(
-        model_class=gpflow.models.SGPMC,
-        requires_data=True,
-        requires_inducing_variables=True,
+        model_class=gpflow.models.SGPMC, requires_data=True, requires_inducing_variables=True,
     ),
 ]
 

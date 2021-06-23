@@ -156,9 +156,7 @@ class NaturalGradient(tf.optimizers.Optimizer):
         self.xi_transform = xi_transform
 
     def minimize(
-        self,
-        loss_fn: LossClosure,
-        var_list: Sequence[NatGradParameters],
+        self, loss_fn: LossClosure, var_list: Sequence[NatGradParameters],
     ):
         """
         Minimizes objective function of the model.
@@ -215,10 +213,7 @@ class NaturalGradient(tf.optimizers.Optimizer):
 
     def _assert_shapes(self, q_mu, q_sqrt):
         tf.debugging.assert_shapes(
-            [
-                (q_mu, ["M", "L"]),
-                (q_sqrt, ["L", "M", "M"]),
-            ]
+            [(q_mu, ["M", "L"]), (q_sqrt, ["L", "M", "M"]),]
         )
 
     def _natgrad_apply_gradients(

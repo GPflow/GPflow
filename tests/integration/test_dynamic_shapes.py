@@ -52,10 +52,7 @@ def test_svgp(whiten, q_diag):
 
     # test with explicitly unknown shapes:
     tensor_spec = tf.TensorSpec(shape=None, dtype=default_float())
-    elbo = tf.function(
-        model.elbo,
-        input_signature=[(tensor_spec, tensor_spec)],
-    )
+    elbo = tf.function(model.elbo, input_signature=[(tensor_spec, tensor_spec)],)
 
     @tf.function
     def model_closure():
@@ -65,10 +62,7 @@ def test_svgp(whiten, q_diag):
 
     # simply test whether it runs without erroring...:
     opt.minimize(
-        model_closure,
-        variables=model.trainable_variables,
-        options=dict(maxiter=3),
-        compile=True,
+        model_closure, variables=model.trainable_variables, options=dict(maxiter=3), compile=True,
     )
 
 
@@ -84,10 +78,7 @@ def test_multiclass():
 
     # test with explicitly unknown shapes:
     tensor_spec = tf.TensorSpec(shape=None, dtype=default_float())
-    elbo = tf.function(
-        model.elbo,
-        input_signature=[(tensor_spec, tensor_spec)],
-    )
+    elbo = tf.function(model.elbo, input_signature=[(tensor_spec, tensor_spec)],)
 
     @tf.function
     def model_closure():
@@ -97,8 +88,5 @@ def test_multiclass():
 
     # simply test whether it runs without erroring...:
     opt.minimize(
-        model_closure,
-        variables=model.trainable_variables,
-        options=dict(maxiter=3),
-        compile=True,
+        model_closure, variables=model.trainable_variables, options=dict(maxiter=3), compile=True,
     )

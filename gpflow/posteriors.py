@@ -21,14 +21,15 @@ import tensorflow as tf
 import tensorflow_probability as tfp
 
 from . import covariances, kernels, mean_functions
-from .base import Module, TensorType, Parameter
+from .base import Module, Parameter, TensorType
 from .conditionals.util import (
     base_conditional,
+    base_conditional_with_lm,
     expand_independent_outputs,
     fully_correlated_conditional,
     independent_interdomain_conditional,
     mix_latent_gp,
-    separate_independent_conditional_implementation, base_conditional_with_lm,
+    separate_independent_conditional_implementation,
 )
 from .config import default_float, default_jitter
 from .inducing_variables import (
@@ -180,7 +181,7 @@ class AbstractPosterior(Module, ABC):
         Relies on cached alpha and Qinv.
         """
 
-    def update_cache(self, precompute_cache: Optional[PrecomputeCacheType] = None):
+    def update_cache(self, precompute_cache: Optional[PrecomputeCacheType] = None) -> None:
         """
         Sets the cache depending on the value of `precompute_cache` to a
         `tf.Tensor`, `tf.Variable`, or clears the cache. If `precompute_cache`
@@ -214,13 +215,14 @@ class AbstractPosterior(Module, ABC):
                 self.alpha = tf.Variable(alpha, trainable=False)
                 self.Qinv = tf.Variable(Qinv, trainable=False)
 
+
 class GPRPosterior(AbstractPosterior):
     def __init__(
         self,
         kernel,
-        X_data:tf.Tensor,
+        X_data: tf.Tensor,
         Y_data: tf.Tensor,
-        likelihood_variance:Parameter,
+        likelihood_variance: Parameter,
         mean_function: Optional[mean_functions.MeanFunction] = None,
         *,
         precompute_cache: Optional[PrecomputeCacheType],
@@ -236,9 +238,9 @@ class GPRPosterior(AbstractPosterior):
 
     def _add_noise_cov(self, K: tf.Tensor) -> tf.Tensor:
         """
-                Returns K + σ² I, where σ² is the likelihood noise variance (scalar),
-                and I is the corresponding identity matrix.
-                """
+        Returns K + σ² I, where σ² is the likelihood noise variance (scalar),
+        and I is the corresponding identity matrix.
+        """
         # taken straight from deprecated version
         k_diag = tf.linalg.diag_part(K)
         s_diag = tf.fill(tf.shape(k_diag), self.likelihood_variance)
@@ -256,7 +258,7 @@ class GPRPosterior(AbstractPosterior):
 
         return base_conditional_with_lm(Kmn, self.Qinv, Knn, self.alpha, full_cov=full_cov)
 
-    def _precompute(self):
+    def _precompute(self) -> Tuple[tf.Tensor, tf.Tensor]:
 
         Kmm = self.kernel(self.X_data)
         Kmm_plus_s = self._add_noise_cov(Kmm)
@@ -265,12 +267,11 @@ class GPRPosterior(AbstractPosterior):
         # base_conditional_with_lm implementation
         Lm = tf.linalg.cholesky(Kmm_plus_s)
 
-        alpha = self.Y_data - self.mean_function(self.X_data)
+        alpha = self.Y_data - self.mean_function(self.X_data)  # type: ignore
         tf.debugging.assert_shapes(
             [(Lm, ["M", "M"]),]
         )
         return alpha, Lm
-
 
     def _conditional_fused(
         self, Xnew, full_cov: bool = False, full_output_cov: bool = False
@@ -280,8 +281,8 @@ class GPRPosterior(AbstractPosterior):
         Does not make use of caching
         """
 
-        # taken directly from the deprecated GPR implemenation
-        err = self.Y_data - self.mean_function(self.X_data)
+        # taken directly from the deprecated GPR implementation
+        err = self.Y_data - self.mean_function(self.X_data)  # type: ignore
 
         Kmm = self.kernel(self.X_data)
         Knn = self.kernel(Xnew, full_cov=full_cov)
@@ -382,9 +383,7 @@ class BasePosterior(AbstractPosterior):
         Qinv = tf.broadcast_to(Qinv, [L, M, M])
 
         tf.debugging.assert_shapes(
-            [
-                (Qinv, ["L", "M", "M"]),
-            ]
+            [(Qinv, ["L", "M", "M"]),]
         )
 
         return alpha, Qinv

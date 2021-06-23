@@ -329,11 +329,7 @@ def independent_interdomain_conditional(
             fvar = fvar + tf.reshape(tf.reduce_sum(tf.square(LTA), (0, 1)), (N, P))
 
     shape_constraints.extend(
-        [
-            (Knn, intended_cov_shape),
-            (fmean, ["N", "P"]),
-            (fvar, intended_cov_shape),
-        ]
+        [(Knn, intended_cov_shape), (fmean, ["N", "P"]), (fvar, intended_cov_shape),]
     )
     tf.debugging.assert_shapes(shape_constraints, message="independent_interdomain_conditional()")
 
@@ -469,11 +465,7 @@ def fully_correlated_conditional_repeat(
         fvar = tf.broadcast_to(fvar[None], fvar_shape)
 
     shape_constraints.extend(
-        [
-            (Knn, intended_cov_shape),
-            (fmean, ["R", "N", "P"]),
-            (fvar, ["R"] + intended_cov_shape),
-        ]
+        [(Knn, intended_cov_shape), (fmean, ["R", "N", "P"]), (fvar, ["R"] + intended_cov_shape),]
     )
     tf.debugging.assert_shapes(shape_constraints, message="fully_correlated_conditional_repeat()")
 
@@ -548,10 +540,7 @@ def mix_latent_gp(W, g_mean, g_var, full_cov, full_output_cov):
         intended_cov_shape = [..., "N", "P"]
 
     shape_constraints.extend(
-        [
-            (f_mean, [..., "N", "P"]),
-            (f_var, intended_cov_shape),
-        ]
+        [(f_mean, [..., "N", "P"]), (f_var, intended_cov_shape),]
     )
     tf.debugging.assert_shapes(shape_constraints, message="mix_latent_gp()")
 
