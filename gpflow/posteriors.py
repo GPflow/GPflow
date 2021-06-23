@@ -21,14 +21,14 @@ import tensorflow as tf
 import tensorflow_probability as tfp
 
 from . import covariances, kernels, mean_functions
-from .base import Module, TensorType
+from .base import Module, TensorType, Parameter
 from .conditionals.util import (
     base_conditional,
     expand_independent_outputs,
     fully_correlated_conditional,
     independent_interdomain_conditional,
     mix_latent_gp,
-    separate_independent_conditional_implementation,
+    separate_independent_conditional_implementation, base_conditional_with_lm,
 )
 from .config import default_float, default_jitter
 from .inducing_variables import (
@@ -179,10 +179,6 @@ class AbstractPosterior(Module, ABC):
         Computes predictive mean and (co)variance at Xnew, *excluding* mean_function.
         Relies on cached alpha and Qinv.
         """
-        Kmn = self.kernel(self.X_data, Xnew)
-        Knn = self.kernel(Xnew, full_cov=full_cov)
-
-        return base_conditional(Kmn, self.Qinv, Knn, self.alpha, full_cov=full_cov)
 
     def update_cache(self, precompute_cache: Optional[PrecomputeCacheType] = None):
         """
@@ -261,31 +257,20 @@ class GPRPosterior(AbstractPosterior):
         return base_conditional_with_lm(Kmn, self.Qinv, Knn, self.alpha, full_cov=full_cov)
 
     def _precompute(self):
-        # taken from the deprecated implementation
 
-        # Qinv = [Kmm + likelihood_variance*I]⁻¹
         Kmm = self.kernel(self.X_data)
         Kmm_plus_s = self._add_noise_cov(Kmm)
 
-        # start with naive implementation
-        # use triagonal solve against identiy
+        # we cache the cholesky decomposition of Kmm_plus_s because we will call
+        # base_conditional_with_lm implementation
         Lm = tf.linalg.cholesky(Kmm_plus_s)
-        #Lm_inv = tf.linalg.triangular_solve(Kmm_plus_s)
 
-        # Q⁻¹ = [L Lᵀ]⁻¹ = [L⁻ᵀ L]
-        #Qinv = tf.transpose(Lm_inv) @ Lm
-
-        # alpha = Q⁻¹ * y
-        # Q * alpha = y  -> cholesky solve for alpha
-        #alpha = tf.linalg.cholesky_solve(Lm, self.Y_data)
         alpha = self.Y_data - self.mean_function(self.X_data)
-
-        # in GPR case we aRE ACTUALLY GOING TO USE TH ECHOLESKY Factor
         tf.debugging.assert_shapes(
             [(Lm, ["M", "M"]),]
         )
-
         return alpha, Lm
+
 
     def _conditional_fused(
         self, Xnew, full_cov: bool = False, full_output_cov: bool = False
