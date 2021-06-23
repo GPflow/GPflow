@@ -117,7 +117,7 @@ def test_gaussian_whiten(Xdata, Xnew, kernel, mu, sqrt):
 
 @pytest.mark.parametrize("white", [True, False])
 def test_q_sqrt_constraints(Xdata, Xnew, kernel, mu, white):
-    """ Test that sending in an unconstrained q_sqrt returns the same conditional
+    """Test that sending in an unconstrained q_sqrt returns the same conditional
     evaluation and gradients. This is important to match the behaviour of the KL, which
     enforces q_sqrt is triangular.
     """

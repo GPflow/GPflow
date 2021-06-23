@@ -179,63 +179,6 @@ class AbstractPosterior(Module, ABC):
         Computes predictive mean and (co)variance at Xnew, *excluding* mean_function.
         Relies on cached alpha and Qinv.
         """
-        Kmn = self.kernel(self.X_data, Xnew)
-        Knn = self.kernel(Xnew, full_cov=full_cov)
-
-        return base_conditional(Kmn, self.Qinv, Knn, self.alpha, full_cov=full_cov)
-
-    def update_cache(self, precompute_cache: Optional[PrecomputeCacheType] = None):
-        """
-        Sets the cache depending on the value of `precompute_cache` to a
-        `tf.Tensor`, `tf.Variable`, or clears the cache. If `precompute_cache`
-        is not given, the setting defaults to the most-recently-used one.
-        """
-        if precompute_cache is None:
-            try:
-                precompute_cache = cast(
-                    PrecomputeCacheType, self._precompute_cache,  # type: ignore
-                )
-            except AttributeError:
-                raise ValueError(
-                    "You must pass precompute_cache explicitly (the cache had not been updated before)."
-                )
-        else:
-            self._precompute_cache = precompute_cache
-
-        if precompute_cache is PrecomputeCacheType.NOCACHE:
-            self.alpha = self.Qinv = None
-
-        elif precompute_cache is PrecomputeCacheType.TENSOR:
-            self.alpha, self.Qinv = self._precompute()
-
-        elif precompute_cache is PrecomputeCacheType.VARIABLE:
-            alpha, Qinv = self._precompute()
-            if isinstance(self.alpha, tf.Variable) and isinstance(self.Qinv, tf.Variable):
-                # re-use existing variables
-                self.alpha.assign(alpha)
-                self.Qinv.assign(Qinv)
-            else:  # create variables
-                self.alpha = tf.Variable(alpha, trainable=False)
-                self.Qinv = tf.Variable(Qinv, trainable=False)
-
-class GPRPosterior(AbstractPosterior):
-    def __init__(
-        self,
-        kernel,
-        X_data:tf.Tensor,
-        mean_function: Optional[mean_functions.MeanFunction] = None,
-        *,
-        precompute_cache: Optional[PrecomputeCacheType],
-    ):
-
-        super().__init__(kernel, X_data, mean_function=mean_function)
-        self.mean_function = mean_function
-
-        if precompute_cache is not None:
-            self.update_cache(precompute_cache)
-
-    def _precompute(self):
-        pass
 
 
 class BasePosterior(AbstractPosterior):
@@ -252,7 +195,6 @@ class BasePosterior(AbstractPosterior):
     ):
 
         super().__init__(kernel, inducing_variable, mean_function=mean_function)
-        self.mean_function = mean_function
         self.whiten = whiten
         self._set_qdist(q_mu, q_sqrt)
 
@@ -284,7 +226,8 @@ class BasePosterior(AbstractPosterior):
         if precompute_cache is None:
             try:
                 precompute_cache = cast(
-                    PrecomputeCacheType, self._precompute_cache,  # type: ignore
+                    PrecomputeCacheType,
+                    self._precompute_cache,  # type: ignore
                 )
             except AttributeError:
                 raise ValueError(
@@ -362,7 +305,9 @@ class BasePosterior(AbstractPosterior):
         Qinv = tf.broadcast_to(Qinv, [L, M, M])
 
         tf.debugging.assert_shapes(
-            [(Qinv, ["L", "M", "M"]),]
+            [
+                (Qinv, ["L", "M", "M"]),
+            ]
         )
 
         return alpha, Qinv

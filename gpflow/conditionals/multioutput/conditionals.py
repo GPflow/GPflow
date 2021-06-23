@@ -36,7 +36,9 @@ from ...posteriors import (
 from ..dispatch import conditional
 
 
-@conditional.register(object, SharedIndependentInducingVariables, SharedIndependent, object)
+@conditional._gpflow_internal_register(
+    object, SharedIndependentInducingVariables, SharedIndependent, object
+)
 def shared_independent_conditional(
     Xnew,
     inducing_variable,
@@ -88,9 +90,15 @@ def shared_independent_conditional(
     return posterior.fused_predict_f(Xnew, full_cov=full_cov, full_output_cov=full_output_cov)
 
 
-@conditional.register(object, SeparateIndependentInducingVariables, SeparateIndependent, object)
-@conditional.register(object, SharedIndependentInducingVariables, SeparateIndependent, object)
-@conditional.register(object, SeparateIndependentInducingVariables, SharedIndependent, object)
+@conditional._gpflow_internal_register(
+    object, SeparateIndependentInducingVariables, SeparateIndependent, object
+)
+@conditional._gpflow_internal_register(
+    object, SharedIndependentInducingVariables, SeparateIndependent, object
+)
+@conditional._gpflow_internal_register(
+    object, SeparateIndependentInducingVariables, SharedIndependent, object
+)
 def separate_independent_conditional(
     Xnew,
     inducing_variable,
@@ -114,7 +122,7 @@ def separate_independent_conditional(
     return posterior.fused_predict_f(Xnew, full_cov=full_cov, full_output_cov=full_output_cov)
 
 
-@conditional.register(
+@conditional._gpflow_internal_register(
     object,
     (FallbackSharedIndependentInducingVariables, FallbackSeparateIndependentInducingVariables),
     IndependentLatent,
@@ -157,7 +165,7 @@ def fallback_independent_latent_conditional(
     return posterior.fused_predict_f(Xnew, full_cov=full_cov, full_output_cov=full_output_cov)
 
 
-@conditional.register(object, InducingPoints, MultioutputKernel, object)
+@conditional._gpflow_internal_register(object, InducingPoints, MultioutputKernel, object)
 def inducing_point_conditional(
     Xnew,
     inducing_variable,
@@ -200,7 +208,7 @@ def inducing_point_conditional(
     return posterior.fused_predict_f(Xnew, full_cov=full_cov, full_output_cov=full_output_cov)
 
 
-@conditional.register(
+@conditional._gpflow_internal_register(
     object,
     (SharedIndependentInducingVariables, SeparateIndependentInducingVariables),
     LinearCoregionalization,

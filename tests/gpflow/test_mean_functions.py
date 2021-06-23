@@ -251,10 +251,16 @@ def test_models_with_mean_functions_changes(model_class):
         )
     elif model_class in [gpflow.models.SGPR, gpflow.models.GPRFITC]:
         model_zero_mean = model_class(
-            data, kernel=kernel, inducing_variable=inducing_variable, mean_function=zero_mean,
+            data,
+            kernel=kernel,
+            inducing_variable=inducing_variable,
+            mean_function=zero_mean,
         )
         model_non_zero_mean = model_class(
-            data, kernel=kernel, inducing_variable=inducing_variable, mean_function=non_zero_mean,
+            data,
+            kernel=kernel,
+            inducing_variable=inducing_variable,
+            mean_function=non_zero_mean,
         )
     elif model_class in [gpflow.models.SGPMC]:
         model_zero_mean = model_class(

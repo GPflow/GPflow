@@ -68,8 +68,8 @@ def test_mcmc_helper_parameters():
 
 
 def test_mcmc_helper_target_function_constrained():
-    """ Set up priors on the model parameters such that we can
-    readily compute their expected values. """
+    """Set up priors on the model parameters such that we can
+    readily compute their expected values."""
     config = gpflow.config.Config(positive_bijector="exp")
     with gpflow.config.as_context(config):
         data = build_data()
@@ -133,8 +133,7 @@ def test_mcmc_helper_target_function_unconstrained():
 
 @pytest.mark.parametrize("prior_on", ["constrained", "unconstrained"])
 def test_mcmc_helper_target_function_no_transforms(prior_on):
-    """ Verifies the objective for a set of priors where no transforms are set.
-    """
+    """Verifies the objective for a set of priors where no transforms are set."""
     expected_log_prior = 0.0
     prior_width = 200.0
 
@@ -171,7 +170,9 @@ def test_mcmc_sampler_integration():
     )
 
     hmc = tfp.mcmc.HamiltonianMonteCarlo(
-        target_log_prob_fn=hmc_helper.target_log_prob_fn, num_leapfrog_steps=2, step_size=0.01,
+        target_log_prob_fn=hmc_helper.target_log_prob_fn,
+        num_leapfrog_steps=2,
+        step_size=0.01,
     )
 
     adaptive_hmc = tfp.mcmc.SimpleStepSizeAdaptation(

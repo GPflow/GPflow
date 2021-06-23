@@ -105,7 +105,7 @@ class MDN(BayesianModel, ExternalDataTrainingLossMixin):
     def __init__(
         self,
         num_mixtures: Optional[int] = 5,
-        inner_dims: Optional[list] = [10, 10,],
+        inner_dims: Optional[list] = [10, 10],
         activation: Optional[Callable[[tf.Tensor], tf.Tensor]] = tf.keras.activations.relu,
     ):
         super().__init__()
@@ -114,7 +114,7 @@ class MDN(BayesianModel, ExternalDataTrainingLossMixin):
         # The number of output dims `self.dims[-1]` equals `num_mixtures` means +
         # `num _mixtures` variances + `num_mixtures` weights, a total of
         # 3 times `num_mixtures` variables.
-        self.dims = [1,] + list(inner_dims) + [3 * num_mixtures]
+        self.dims = [1] + list(inner_dims) + [3 * num_mixtures]
         self.activation = activation
         self._create_network()
 
