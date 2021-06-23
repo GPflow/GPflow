@@ -64,6 +64,8 @@
 # \begin{equation*}
 #     \alpha = [K_{mm} + \sigma^2I]^{-1}\mathbf{y}\\ Q^{-1} = [K_{mm} + \sigma^2I]^{-1}
 # \end{equation*}
+# _(note in practice, we cache the cholesky decomposition of Q)_
+#
 # in the case of the VGP and SVGP model these are:
 # \begin{equation*}
 #     \alpha = K_{uu}^{-1}\mathbf{u}\\ Q^{-1} = K_{uu}^{-1}
@@ -76,23 +78,26 @@
 #
 # Note that in the (S)VGP case, $\alpha$ is the parameter as proposed by Opper and Archambeau for the mean of the predictive distribution.
 
-# + [markdown] id="FzCgor4nKUcW"
-# ## Example
-#
-# We will construct an SVGP model to demonstrate the faster predictions from using the cached data in the GPFlow posterior classes (subclasses of `gpflow.posteriors.AbstractPosterior`).
-
-# + id="BMnIdXNiKU6t"
+# +
 import gpflow
 import numpy as np
 
-
-model = gpflow.models.SVGP(
-    gpflow.kernels.SquaredExponential(),
-    gpflow.likelihoods.Gaussian(),
-    np.linspace(-1.1, 1.1, 1000)[:, None],
-)
-
+# Create some data
+X = np.linspace(-1.1, 1.1, 1000)[:, None]
+Y = np.cos(X)
 Xnew = np.linspace(-1.1, 1.1, 1000)[:, None]
+
+# + [markdown] id="FzCgor4nKUcW"
+#
+# ## GP Example
+#
+# We will construct an GP model to demonstrate the faster predictions from using the cached data in the GPFlow posterior classes (subclasses of `gpflow.posteriors.AbstractPosterior`).
+
+# + id="BMnIdXNiKU6t"
+model = gpflow.models.GPR(
+    (X,Y),
+    gpflow.kernels.SquaredExponential(),
+)
 # -
 
 # The `predict_f` method on the `GPModel` class performs no caching.
@@ -106,3 +111,28 @@ posterior = model.posterior()
 
 # %%timeit
 posterior.predict_f(Xnew)
+
+# ## SVGP Example
+#
+# Likewise, we will can also construct an SVGP model to demonstrate the faster predictions from using the cached data in the GPFlow posterior classes.
+
+# + id="BMnIdXNiKU6t"
+model = gpflow.models.SVGP(
+    gpflow.kernels.SquaredExponential(),
+    gpflow.likelihoods.Gaussian(),
+    np.linspace(-1.1, 1.1, 1000)[:, None],
+)
+# -
+
+# The `predict_f` method on the `GPModel` class performs no caching.
+
+# %%timeit
+model.predict_f(Xnew)
+
+# And again using the posterior object and caching
+
+posterior = model.posterior()
+
+# %%timeit
+posterior.predict_f(Xnew)
+
