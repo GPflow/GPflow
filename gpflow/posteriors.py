@@ -179,6 +179,133 @@ class AbstractPosterior(Module, ABC):
         Computes predictive mean and (co)variance at Xnew, *excluding* mean_function.
         Relies on cached alpha and Qinv.
         """
+        Kmn = self.kernel(self.X_data, Xnew)
+        Knn = self.kernel(Xnew, full_cov=full_cov)
+
+        return base_conditional(Kmn, self.Qinv, Knn, self.alpha, full_cov=full_cov)
+
+    def update_cache(self, precompute_cache: Optional[PrecomputeCacheType] = None):
+        """
+        Sets the cache depending on the value of `precompute_cache` to a
+        `tf.Tensor`, `tf.Variable`, or clears the cache. If `precompute_cache`
+        is not given, the setting defaults to the most-recently-used one.
+        """
+        if precompute_cache is None:
+            try:
+                precompute_cache = cast(
+                    PrecomputeCacheType, self._precompute_cache,  # type: ignore
+                )
+            except AttributeError:
+                raise ValueError(
+                    "You must pass precompute_cache explicitly (the cache had not been updated before)."
+                )
+        else:
+            self._precompute_cache = precompute_cache
+
+        if precompute_cache is PrecomputeCacheType.NOCACHE:
+            self.alpha = self.Qinv = None
+
+        elif precompute_cache is PrecomputeCacheType.TENSOR:
+            self.alpha, self.Qinv = self._precompute()
+
+        elif precompute_cache is PrecomputeCacheType.VARIABLE:
+            alpha, Qinv = self._precompute()
+            if isinstance(self.alpha, tf.Variable) and isinstance(self.Qinv, tf.Variable):
+                # re-use existing variables
+                self.alpha.assign(alpha)
+                self.Qinv.assign(Qinv)
+            else:  # create variables
+                self.alpha = tf.Variable(alpha, trainable=False)
+                self.Qinv = tf.Variable(Qinv, trainable=False)
+
+class GPRPosterior(AbstractPosterior):
+    def __init__(
+        self,
+        kernel,
+        X_data:tf.Tensor,
+        Y_data: tf.Tensor,
+        likelihood_variance:Parameter,
+        mean_function: Optional[mean_functions.MeanFunction] = None,
+        *,
+        precompute_cache: Optional[PrecomputeCacheType],
+    ):
+
+        super().__init__(kernel, X_data, mean_function=mean_function)
+        self.mean_function = mean_function
+        self.Y_data = Y_data
+        self.likelihood_variance = likelihood_variance
+
+        if precompute_cache is not None:
+            self.update_cache(precompute_cache)
+
+    def _add_noise_cov(self, K: tf.Tensor) -> tf.Tensor:
+        """
+                Returns K + σ² I, where σ² is the likelihood noise variance (scalar),
+                and I is the corresponding identity matrix.
+                """
+        # taken straight from deprecated version
+        k_diag = tf.linalg.diag_part(K)
+        s_diag = tf.fill(tf.shape(k_diag), self.likelihood_variance)
+        return tf.linalg.set_diag(K, k_diag + s_diag)
+
+    def _conditional_with_precompute(
+        self, Xnew, full_cov: bool = False, full_output_cov: bool = False
+    ) -> MeanAndVariance:
+        """
+        Computes predictive mean and (co)variance at Xnew, *excluding* mean_function.
+        Relies on cached alpha and Qinv.
+        """
+        Kmn = self.kernel(self.X_data, Xnew)
+        Knn = self.kernel(Xnew, full_cov=full_cov)
+
+        return base_conditional_with_lm(Kmn, self.Qinv, Knn, self.alpha, full_cov=full_cov)
+
+    def _precompute(self):
+        # taken from the deprecated implementation
+
+        # Qinv = [Kmm + likelihood_variance*I]⁻¹
+        Kmm = self.kernel(self.X_data)
+        Kmm_plus_s = self._add_noise_cov(Kmm)
+
+        # start with naive implementation
+        # use triagonal solve against identiy
+        Lm = tf.linalg.cholesky(Kmm_plus_s)
+        #Lm_inv = tf.linalg.triangular_solve(Kmm_plus_s)
+
+        # Q⁻¹ = [L Lᵀ]⁻¹ = [L⁻ᵀ L]
+        #Qinv = tf.transpose(Lm_inv) @ Lm
+
+        # alpha = Q⁻¹ * y
+        # Q * alpha = y  -> cholesky solve for alpha
+        #alpha = tf.linalg.cholesky_solve(Lm, self.Y_data)
+        alpha = self.Y_data - self.mean_function(self.X_data)
+
+        # in GPR case we aRE ACTUALLY GOING TO USE TH ECHOLESKY Factor
+        tf.debugging.assert_shapes(
+            [(Lm, ["M", "M"]),]
+        )
+
+        return alpha, Lm
+
+    def _conditional_fused(
+        self, Xnew, full_cov: bool = False, full_output_cov: bool = False
+    ) -> MeanAndVariance:
+        """
+        Computes predictive mean and (co)variance at Xnew, *excluding* mean_function
+        Does not make use of caching
+        """
+
+        # taken directly from the deprecated GPR implemenation
+        err = self.Y_data - self.mean_function(self.X_data)
+
+        Kmm = self.kernel(self.X_data)
+        Knn = self.kernel(Xnew, full_cov=full_cov)
+        Kmn = self.kernel(self.X_data, Xnew)
+        Kmm_plus_s = self._add_noise_cov(Kmm)
+
+        return base_conditional(
+            Kmn, Kmm_plus_s, Knn, err, full_cov=full_cov, white=False
+        )  # [N, P], [N, P] or [P, N, N]
 
 
 class BasePosterior(AbstractPosterior):
