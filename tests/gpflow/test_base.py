@@ -18,8 +18,10 @@ import tempfile
 import numpy as np
 import pytest
 import tensorflow as tf
+import tensorflow_probability as tfp
 
 import gpflow
+from gpflow.base import PriorOn
 from gpflow.utilities import positive
 
 
@@ -79,3 +81,60 @@ def test_parameter_saved():
         m1 = tf.saved_model.load(dirname)
         actual = m1.exec(x)
         np.testing.assert_equal(actual, expected)
+
+
+@pytest.mark.parametrize("value", [0., [1.2, 1.1]])
+def test_construct_parameter_from_existing_parameter_check_value(value):
+    initial_parameter = gpflow.Parameter(value)
+    new_parameter = gpflow.Parameter(initial_parameter)
+
+    np.testing.assert_equal(new_parameter.numpy(), value)
+
+
+def test_construct_parameter_from_existing_parameter_check_transform():
+    transform = tfp.bijectors.Sigmoid(tf.constant(0., dtype=tf.float64), tf.constant(2., dtype=tf.float64))
+    initial_parameter = gpflow.Parameter([1.2, 1.1], transform=transform)
+    new_parameter = gpflow.Parameter(initial_parameter)
+
+    assert new_parameter.transform == transform
+
+
+def test_construct_parameter_from_existing_parameter_check_prior():
+    prior = tfp.distributions.Normal(0., 1.)
+    initial_parameter = gpflow.Parameter([1.2, 1.1], prior=prior)
+    new_parameter = gpflow.Parameter(initial_parameter)
+
+    assert new_parameter.prior == prior
+
+
+@pytest.mark.parametrize("prior_on", [PriorOn.CONSTRAINED, PriorOn.UNCONSTRAINED])
+def test_construct_parameter_from_existing_parameter_check_prior_on(prior_on):
+    transform = tfp.bijectors.Sigmoid(tf.constant(0., dtype=tf.float64), tf.constant(2., dtype=tf.float64))
+    initial_parameter = gpflow.Parameter([1.2, 1.1], transform=transform)
+    new_parameter = gpflow.Parameter(initial_parameter)
+
+    assert new_parameter.transform == transform
+
+
+@pytest.mark.parametrize("trainable", [True, False])
+def test_construct_parameter_from_existing_parameter_check_trainable(trainable):
+    initial_parameter = gpflow.Parameter([1.2, 1.1], trainable=trainable)
+    new_parameter = gpflow.Parameter(initial_parameter)
+
+    assert new_parameter.trainable == trainable
+
+
+@pytest.mark.parametrize("dtype", [tf.float32, tf.float64])
+def test_construct_parameter_from_existing_parameter_check_dtype(dtype):
+    initial_parameter = gpflow.Parameter([1.1, 2.1], dtype=dtype)
+    new_parameter = gpflow.Parameter(initial_parameter)
+
+    assert new_parameter.dtype == dtype
+
+
+def test_construct_parameter_from_existing_parameter_check_name():
+    transform = tfp.bijectors.Sigmoid(tf.constant(0., dtype=tf.float64), tf.constant(2., dtype=tf.float64))
+    initial_parameter = gpflow.Parameter([1.2, 1.1], transform=transform)
+    new_parameter = gpflow.Parameter(initial_parameter)
+
+    assert new_parameter.name == transform.name
