@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from enum import Enum
+from inspect import currentframe, getargvalues
 from typing import TYPE_CHECKING, Any, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
@@ -103,8 +104,8 @@ class Parameter(tfp.util.TransformedVariable):
         *,
         transform: Optional[Transform] = None,
         prior: Optional[Prior] = None,
-        prior_on: Optional[Union[str, PriorOn]] = None,
-        trainable: Optional[bool] = None,
+        prior_on: Union[str, PriorOn] = PriorOn.CONSTRAINED,
+        trainable: bool = True,
         dtype: Optional[DType] = None,
         name: Optional[str] = None,
     ):
@@ -116,27 +117,20 @@ class Parameter(tfp.util.TransformedVariable):
         A prior can be imposed either on the constrained version (default) or on the unconstrained version of the parameter.
         """
         if isinstance(value, Parameter):
-            transform = transform or value.transform
-            prior = prior or value.prior
-            prior_on = prior_on or value.prior_on
-            name = name or value.bijector.name
-            trainable = value.trainable if trainable is None else trainable
-
-            if dtype:
-                value = _cast_to_dtype(value, dtype)
+            transform = value.transform
+            trainable = value.trainable
+            prior = value.prior
+            prior_on = value.prior_on
+            name = value.bijector.name
         else:
             if transform is None:
                 transform = tfp.bijectors.Identity()
 
-            prior_on = prior_on if prior_on else PriorOn.CONSTRAINED
-            trainable = trainable if trainable is not None else True
-
             value = _cast_to_dtype(value, dtype)
-
-        _validate_unconstrained_value(value, transform, dtype)
+            _validate_unconstrained_value(value, transform, dtype)
         super().__init__(value, transform, dtype=value.dtype, trainable=trainable, name=name)
 
-        self.prior = prior  # type: Optional[Prior]
+        self.prior = prior
         self.prior_on = prior_on  # type: ignore  # see https://github.com/python/mypy/issues/3004
 
     def log_prior_density(self) -> tf.Tensor:
