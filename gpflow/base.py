@@ -12,14 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import functools
 from enum import Enum
+from inspect import currentframe, getargvalues
 from typing import TYPE_CHECKING, Any, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
-from tensorflow.python.ops import array_ops
 from typing_extensions import Final
 
 from .config import default_float, default_summary_fmt
@@ -101,7 +100,7 @@ class PriorOn(Enum):
 class Parameter(tfp.util.TransformedVariable):
     def __init__(
         self,
-        value: TensorData,
+        value: Union[TensorData, "Parameter"],
         *,
         transform: Optional[Transform] = None,
         prior: Optional[Prior] = None,
@@ -117,11 +116,18 @@ class Parameter(tfp.util.TransformedVariable):
         therefore we need a positive constraint and it is natural to use constrained values.
         A prior can be imposed either on the constrained version (default) or on the unconstrained version of the parameter.
         """
-        if transform is None:
-            transform = tfp.bijectors.Identity()
+        if isinstance(value, Parameter):
+            transform = value.transform
+            trainable = value.trainable
+            prior = value.prior
+            prior_on = value.prior_on
+            name = value.bijector.name
+        else:
+            if transform is None:
+                transform = tfp.bijectors.Identity()
 
-        value = _cast_to_dtype(value, dtype)
-        _validate_unconstrained_value(value, transform, dtype)
+            value = _cast_to_dtype(value, dtype)
+            _validate_unconstrained_value(value, transform, dtype)
         super().__init__(value, transform, dtype=value.dtype, trainable=trainable, name=name)
 
         self.prior = prior
