@@ -104,8 +104,8 @@ class Parameter(tfp.util.TransformedVariable):
         *,
         transform: Optional[Transform] = None,
         prior: Optional[Prior] = None,
-        prior_on: Union[str, PriorOn] = PriorOn.CONSTRAINED,
-        trainable: bool = True,
+        prior_on: Optional[Union[str, PriorOn]] = None,
+        trainable: Optional[bool] = None,
         dtype: Optional[DType] = None,
         name: Optional[str] = None,
     ):
@@ -117,14 +117,17 @@ class Parameter(tfp.util.TransformedVariable):
         A prior can be imposed either on the constrained version (default) or on the unconstrained version of the parameter.
         """
         if isinstance(value, Parameter):
-            transform = value.transform
-            trainable = value.trainable
-            prior = value.prior
-            prior_on = value.prior_on
-            name = value.bijector.name
+            transform = transform if transform else value.transform
+            prior = prior if prior else value.prior
+            prior_on = prior_on if prior_on else value.prior_on
+            trainable = trainable if trainable else value.trainable
+            name = name if name else value.bijector.name
         else:
             if transform is None:
                 transform = tfp.bijectors.Identity()
+
+            prior_on = prior_on if prior_on else PriorOn.CONSTRAINED
+            trainable = trainable if trainable else True
 
             value = _cast_to_dtype(value, dtype)
             _validate_unconstrained_value(value, transform, dtype)
