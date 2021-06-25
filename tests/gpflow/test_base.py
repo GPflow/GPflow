@@ -83,7 +83,7 @@ def test_parameter_saved():
         np.testing.assert_equal(actual, expected)
 
 
-@pytest.mark.parametrize("value", [0., [1.2, 1.1]])
+@pytest.mark.parametrize("value", [0.0, [1.2, 1.1]])
 def test_construct_parameter_from_existing_parameter_check_value(value):
     initial_parameter = gpflow.Parameter(value)
     new_parameter = gpflow.Parameter(initial_parameter)
@@ -92,7 +92,9 @@ def test_construct_parameter_from_existing_parameter_check_value(value):
 
 
 def test_construct_parameter_from_existing_parameter_check_transform():
-    transform = tfp.bijectors.Sigmoid(tf.constant(0., dtype=tf.float64), tf.constant(2., dtype=tf.float64))
+    transform = tfp.bijectors.Sigmoid(
+        tf.constant(0.0, dtype=tf.float64), tf.constant(2.0, dtype=tf.float64)
+    )
     initial_parameter = gpflow.Parameter([1.2, 1.1], transform=transform)
     new_parameter = gpflow.Parameter(initial_parameter)
 
@@ -100,7 +102,7 @@ def test_construct_parameter_from_existing_parameter_check_transform():
 
 
 def test_construct_parameter_from_existing_parameter_check_prior():
-    prior = tfp.distributions.Normal(0., 1.)
+    prior = tfp.distributions.Normal(0.0, 1.0)
     initial_parameter = gpflow.Parameter([1.2, 1.1], prior=prior)
     new_parameter = gpflow.Parameter(initial_parameter)
 
@@ -109,7 +111,9 @@ def test_construct_parameter_from_existing_parameter_check_prior():
 
 @pytest.mark.parametrize("prior_on", [PriorOn.CONSTRAINED, PriorOn.UNCONSTRAINED])
 def test_construct_parameter_from_existing_parameter_check_prior_on(prior_on):
-    transform = tfp.bijectors.Sigmoid(tf.constant(0., dtype=tf.float64), tf.constant(2., dtype=tf.float64))
+    transform = tfp.bijectors.Sigmoid(
+        tf.constant(0.0, dtype=tf.float64), tf.constant(2.0, dtype=tf.float64)
+    )
     initial_parameter = gpflow.Parameter([1.2, 1.1], transform=transform)
     new_parameter = gpflow.Parameter(initial_parameter)
 
@@ -133,7 +137,9 @@ def test_construct_parameter_from_existing_parameter_check_dtype(dtype):
 
 
 def test_construct_parameter_from_existing_parameter_check_name():
-    transform = tfp.bijectors.Sigmoid(tf.constant(0., dtype=tf.float64), tf.constant(2., dtype=tf.float64))
+    transform = tfp.bijectors.Sigmoid(
+        tf.constant(0.0, dtype=tf.float64), tf.constant(2.0, dtype=tf.float64)
+    )
     initial_parameter = gpflow.Parameter([1.2, 1.1], transform=transform)
     new_parameter = gpflow.Parameter(initial_parameter)
 
