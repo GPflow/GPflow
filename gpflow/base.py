@@ -130,7 +130,7 @@ class Parameter(tfp.util.TransformedVariable):
             _validate_unconstrained_value(value, transform, dtype)
         super().__init__(value, transform, dtype=value.dtype, trainable=trainable, name=name)
 
-        self.prior = prior
+        self.prior = prior  # type: Optional[Prior]
         self.prior_on = prior_on  # type: ignore  # see https://github.com/python/mypy/issues/3004
 
     def log_prior_density(self) -> tf.Tensor:
