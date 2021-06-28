@@ -28,7 +28,7 @@ from .training_mixins import InternalDataTrainingLossMixin
 from .util import data_input_to_tensor
 
 
-class GP_deprecated(GPModel, InternalDataTrainingLossMixin):
+class GPR_deprecated(GPModel, InternalDataTrainingLossMixin):
     r"""
     Gaussian Process Regression.
 
@@ -120,7 +120,7 @@ class GP_deprecated(GPModel, InternalDataTrainingLossMixin):
         return f_mean, f_var
 
 
-class GP_with_posterior(GP_deprecated):
+class GPR_with_posterior(GPR_deprecated):
     """
     This is an implementation of GPR that provides a posterior() method that
     enables caching for faster subsequent predictions.
@@ -170,6 +170,6 @@ class GP_with_posterior(GP_deprecated):
         )
 
 
-class GPR(GP_with_posterior):
+class GPR(GPR_with_posterior):
     # subclassed to ensure __class__ == "GPR"
     pass

@@ -64,7 +64,7 @@
 # \begin{equation*}
 #     \alpha = [K_{mm} + \sigma^2I]^{-1}\mathbf{y}\\ Q^{-1} = [K_{mm} + \sigma^2I]^{-1}
 # \end{equation*}
-# _(note in practice, we cache the cholesky decomposition of Q)_
+# _(note in practice, we cache the cholesky decomposition of Q to take advantage of the 'base_conditional_with_lm' utility function)_
 #
 # in the case of the VGP and SVGP model these are:
 # \begin{equation*}
@@ -89,9 +89,9 @@ Xnew = np.linspace(-1.1, 1.1, 1000)[:, None]
 
 # + [markdown] id="FzCgor4nKUcW"
 #
-# ## GP Example
+# ## GPR Example
 #
-# We will construct an GP model to demonstrate the faster predictions from using the cached data in the GPFlow posterior classes (subclasses of `gpflow.posteriors.AbstractPosterior`).
+# We will construct a GPR model to demonstrate the faster predictions from using the cached data in the GPFlow posterior classes (subclasses of `gpflow.posteriors.AbstractPosterior`).
 
 # + id="BMnIdXNiKU6t"
 model = gpflow.models.GPR(
@@ -105,8 +105,7 @@ model = gpflow.models.GPR(
 # %%timeit
 model.predict_f(Xnew)
 
-# To make use of the caching, first retrieve the posterior class from the model. The posterior class has methods to predict the parameters of marginal distributions at test points, in the same way as the `predict_f` method of the `GPModel` .
-
+# To make use of the caching, first retrieve the posterior class from the model. The posterior class has methods to predict the parameters of marginal distributions at test points, in the same way as the `predict_f` method of the `GPModel`.
 posterior = model.posterior()
 
 # %%timeit
@@ -114,7 +113,7 @@ posterior.predict_f(Xnew)
 
 # ## SVGP Example
 #
-# Likewise, we will can also construct an SVGP model to demonstrate the faster predictions from using the cached data in the GPFlow posterior classes.
+# Likewise, we will construct an SVGP model to demonstrate the faster predictions from using the cached data in the GPFlow posterior classes.
 
 # + id="BMnIdXNiKU6t"
 model = gpflow.models.SVGP(
