@@ -190,7 +190,8 @@ class AbstractPosterior(Module, ABC):
         if precompute_cache is None:
             try:
                 precompute_cache = cast(
-                    PrecomputeCacheType, self._precompute_cache,  # type: ignore
+                    PrecomputeCacheType,
+                    self._precompute_cache,  # type: ignore
                 )
             except AttributeError:
                 raise ValueError(
@@ -269,7 +270,9 @@ class GPRPosterior(AbstractPosterior):
 
         alpha = self.Y_data - self.mean_function(self.X_data)  # type: ignore
         tf.debugging.assert_shapes(
-            [(Lm, ["M", "M"]),]
+            [
+                (Lm, ["M", "M"]),
+            ]
         )
         return alpha, Lm
 
@@ -383,7 +386,9 @@ class BasePosterior(AbstractPosterior):
         Qinv = tf.broadcast_to(Qinv, [L, M, M])
 
         tf.debugging.assert_shapes(
-            [(Qinv, ["L", "M", "M"]),]
+            [
+                (Qinv, ["L", "M", "M"]),
+            ]
         )
 
         return alpha, Qinv

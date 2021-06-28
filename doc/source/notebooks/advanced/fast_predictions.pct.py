@@ -94,7 +94,10 @@ Xnew = np.linspace(-1.1, 1.1, 1000)[:, None]
 # We will construct an GP model to demonstrate the faster predictions from using the cached data in the GPFlow posterior classes (subclasses of `gpflow.posteriors.AbstractPosterior`).
 
 # + id="BMnIdXNiKU6t"
-model = gpflow.models.GPR((X, Y), gpflow.kernels.SquaredExponential(),)
+model = gpflow.models.GPR(
+    (X, Y),
+    gpflow.kernels.SquaredExponential(),
+)
 # -
 
 # The `predict_f` method on the `GPModel` class performs no caching.

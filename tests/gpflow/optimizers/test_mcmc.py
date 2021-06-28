@@ -170,7 +170,9 @@ def test_mcmc_sampler_integration():
     )
 
     hmc = tfp.mcmc.HamiltonianMonteCarlo(
-        target_log_prob_fn=hmc_helper.target_log_prob_fn, num_leapfrog_steps=2, step_size=0.01,
+        target_log_prob_fn=hmc_helper.target_log_prob_fn,
+        num_leapfrog_steps=2,
+        step_size=0.01,
     )
 
     adaptive_hmc = tfp.mcmc.SimpleStepSizeAdaptation(
