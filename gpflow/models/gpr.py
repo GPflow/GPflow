@@ -23,6 +23,7 @@ from ..kernels import Kernel
 from ..logdensities import multivariate_normal
 from ..mean_functions import MeanFunction
 from ..posteriors import GPRPosterior
+from ..utilities.model_utils import add_noise_cov
 from .model import GPModel, InputData, MeanAndVariance, RegressionData
 from .training_mixins import InternalDataTrainingLossMixin
 from .util import data_input_to_tensor
@@ -66,15 +67,6 @@ class GPR_deprecated(GPModel, InternalDataTrainingLossMixin):
     def maximum_log_likelihood_objective(self) -> tf.Tensor:
         return self.log_marginal_likelihood()
 
-    def _add_noise_cov(self, K: tf.Tensor) -> tf.Tensor:
-        """
-        Returns K + σ² I, where σ² is the likelihood noise variance (scalar),
-        and I is the corresponding identity matrix.
-        """
-        k_diag = tf.linalg.diag_part(K)
-        s_diag = tf.fill(tf.shape(k_diag), self.likelihood.variance)
-        return tf.linalg.set_diag(K, k_diag + s_diag)
-
     def log_marginal_likelihood(self) -> tf.Tensor:
         r"""
         Computes the log marginal likelihood.
@@ -85,7 +77,7 @@ class GPR_deprecated(GPModel, InternalDataTrainingLossMixin):
         """
         X_data, Y_data = self.data
         K = self.kernel(X_data)
-        ks = self._add_noise_cov(K)
+        ks = add_noise_cov(K, self.likelihood.variance)
         L = tf.linalg.cholesky(ks)
         m = self.mean_function(X_data)
 
@@ -110,7 +102,7 @@ class GPR_deprecated(GPModel, InternalDataTrainingLossMixin):
         kmm = self.kernel(X_data)
         knn = self.kernel(Xnew, full_cov=full_cov)
         kmn = self.kernel(X_data, Xnew)
-        kmm_plus_s = self._add_noise_cov(kmm)
+        kmm_plus_s = add_noise_cov(kmm, self.likelihood.variance)
 
         conditional = gpflow.conditionals.base_conditional
         f_mean_zero, f_var = conditional(

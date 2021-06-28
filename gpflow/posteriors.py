@@ -41,7 +41,7 @@ from .inducing_variables import (
     SharedIndependentInducingVariables,
 )
 from .types import MeanAndVariance
-from .utilities import Dispatcher
+from .utilities import Dispatcher, add_noise_cov
 
 
 class _QDistribution(Module):
@@ -237,16 +237,6 @@ class GPRPosterior(AbstractPosterior):
         if precompute_cache is not None:
             self.update_cache(precompute_cache)
 
-    def _add_noise_cov(self, K: tf.Tensor) -> tf.Tensor:
-        """
-        Returns K + σ² I, where σ² is the likelihood noise variance (scalar),
-        and I is the corresponding identity matrix.
-        """
-        # taken straight from deprecated version
-        k_diag = tf.linalg.diag_part(K)
-        s_diag = tf.fill(tf.shape(k_diag), self.likelihood_variance)
-        return tf.linalg.set_diag(K, k_diag + s_diag)
-
     def _conditional_with_precompute(
         self, Xnew, full_cov: bool = False, full_output_cov: bool = False
     ) -> MeanAndVariance:
@@ -262,7 +252,7 @@ class GPRPosterior(AbstractPosterior):
     def _precompute(self) -> Tuple[tf.Tensor, tf.Tensor]:
 
         Kmm = self.kernel(self.X_data)
-        Kmm_plus_s = self._add_noise_cov(Kmm)
+        Kmm_plus_s = add_noise_cov(Kmm, self.likelihood_variance)
 
         # we cache the cholesky decomposition of Kmm_plus_s because we will call
         # base_conditional_with_lm implementation
@@ -290,7 +280,7 @@ class GPRPosterior(AbstractPosterior):
         Kmm = self.kernel(self.X_data)
         Knn = self.kernel(Xnew, full_cov=full_cov)
         Kmn = self.kernel(self.X_data, Xnew)
-        Kmm_plus_s = self._add_noise_cov(Kmm)
+        Kmm_plus_s = add_noise_cov(Kmm, self.likelihood_variance)
 
         return base_conditional(
             Kmn, Kmm_plus_s, Knn, err, full_cov=full_cov, white=False
