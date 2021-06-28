@@ -251,11 +251,16 @@ class GPRPosterior(AbstractPosterior):
 
     def _precompute(self) -> Tuple[tf.Tensor, tf.Tensor]:
 
+        """
+        Precomputes the cholesky decomposition of Kmm_plus_s for later reuse we will call
+        base_conditional_with_lm implementation ('Qinv' in the Abstract Posterior class). We also
+        precompute the less compute intensive error term ('alpha' in the Abstract Posterior class)
+        """
+
         Kmm = self.kernel(self.X_data)
         Kmm_plus_s = add_noise_cov(Kmm, self.likelihood_variance)
 
-        # we cache the cholesky decomposition of Kmm_plus_s because we will call
-        # base_conditional_with_lm implementation
+        # obtain the cholesky decomposition of Kmm_plus_s
         Lm = tf.linalg.cholesky(Kmm_plus_s)
 
         alpha = self.Y_data - self.mean_function(self.X_data)  # type: ignore
