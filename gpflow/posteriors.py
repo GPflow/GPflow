@@ -267,6 +267,7 @@ class GPRPosterior(AbstractPosterior):
         tf.debugging.assert_shapes(
             [
                 (Lm, ["M", "M"]),
+                (Kmm, ["M", "M"]),
             ]
         )
         return alpha, Lm
