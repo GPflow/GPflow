@@ -67,6 +67,13 @@ class GPR_deprecated(GPModel, InternalDataTrainingLossMixin):
     def maximum_log_likelihood_objective(self) -> tf.Tensor:
         return self.log_marginal_likelihood()
 
+    def _add_noise_cov(self, K: tf.Tensor) -> tf.Tensor:
+        """
+        Returns K + σ² I, where σ² is the likelihood noise variance (scalar),
+        and I is the corresponding identity matrix.
+        """
+        return add_noise_cov(K, self.likelihood.variance)
+
     def log_marginal_likelihood(self) -> tf.Tensor:
         r"""
         Computes the log marginal likelihood.
@@ -75,14 +82,14 @@ class GPR_deprecated(GPModel, InternalDataTrainingLossMixin):
             \log p(Y | \theta).
 
         """
-        X_data, Y_data = self.data
-        K = self.kernel(X_data)
-        ks = add_noise_cov(K, self.likelihood.variance)
+        X, Y = self.data
+        K = self.kernel(X)
+        ks = self._add_noise_cov(K)
         L = tf.linalg.cholesky(ks)
-        m = self.mean_function(X_data)
+        m = self.mean_function(X)
 
         # [R,] log-likelihoods for each independent dimension of Y
-        log_prob = multivariate_normal(Y_data, m, L)
+        log_prob = multivariate_normal(Y, m, L)
         return tf.reduce_sum(log_prob)
 
     def predict_f(
@@ -96,13 +103,13 @@ class GPR_deprecated(GPModel, InternalDataTrainingLossMixin):
 
         where F* are points on the GP at new data points, Y are noisy observations at training data points.
         """
-        X_data, Y_data = self.data
-        err = Y_data - self.mean_function(X_data)
+        X, Y = self.data
+        err = Y - self.mean_function(X)
 
-        kmm = self.kernel(X_data)
+        kmm = self.kernel(X)
         knn = self.kernel(Xnew, full_cov=full_cov)
-        kmn = self.kernel(X_data, Xnew)
-        kmm_plus_s = add_noise_cov(kmm, self.likelihood.variance)
+        kmn = self.kernel(X, Xnew)
+        kmm_plus_s = self._add_noise_cov(kmm)
 
         conditional = gpflow.conditionals.base_conditional
         f_mean_zero, f_var = conditional(
@@ -138,12 +145,12 @@ class GPR_with_posterior(GPR_deprecated):
           `fused_predict_f` method.
         """
 
-        x_data, y_data = self.data
+        X, Y = self.data
 
         return GPRPosterior(
             kernel=self.kernel,
-            X_data=x_data,
-            Y_data=y_data,
+            X_data=X,
+            Y_data=Y,
             likelihood_variance=self.likelihood.variance,
             mean_function=self.mean_function,
             precompute_cache=precompute_cache,
