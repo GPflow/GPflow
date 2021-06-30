@@ -127,7 +127,7 @@ class Parameter(tfp.util.TransformedVariable):
                 transform = tfp.bijectors.Identity()
 
             prior_on = prior_on if prior_on else PriorOn.CONSTRAINED
-            trainable = trainable if trainable else True
+            trainable = trainable if trainable is not None else True
 
             value = _cast_to_dtype(value, dtype)
             _validate_unconstrained_value(value, transform, dtype)
