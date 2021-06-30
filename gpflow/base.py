@@ -120,8 +120,11 @@ class Parameter(tfp.util.TransformedVariable):
             transform = transform if transform else value.transform
             prior = prior if prior else value.prior
             prior_on = prior_on if prior_on else value.prior_on
-            trainable = trainable if trainable else value.trainable
+            trainable = trainable if trainable is not None else value.trainable
             name = name if name else value.bijector.name
+
+            if dtype:
+                value = _cast_to_dtype(value, dtype)
         else:
             if transform is None:
                 transform = tfp.bijectors.Identity()
