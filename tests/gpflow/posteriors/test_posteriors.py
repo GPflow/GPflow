@@ -631,7 +631,7 @@ def test_posterior_update_cache_with_variables_no_precompute(
     "precompute_cache_type", [PrecomputeCacheType.NOCACHE, PrecomputeCacheType.TENSOR]
 )
 def test_gpr_posterior_update_cache_with_variables_no_precompute(
-    q_sqrt_factory, whiten, precompute_cache_type
+    register_posterior_test, q_sqrt_factory, whiten, precompute_cache_type
 ):
     kernel = gpflow.kernels.SquaredExponential()
     X = np.random.randn(NUM_INDUCING_POINTS, INPUT_DIMS)
@@ -646,6 +646,7 @@ def test_gpr_posterior_update_cache_with_variables_no_precompute(
         mean_function=Zero(),
     )
     posterior.update_cache(PrecomputeCacheType.VARIABLE)
+    register_posterior_test(posterior, GPRPosterior)
 
     assert isinstance(posterior.alpha, tf.Variable)
     assert isinstance(posterior.Qinv, tf.Variable)
