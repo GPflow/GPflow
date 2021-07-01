@@ -46,10 +46,7 @@ This release contains contributions from:
 ## Major Features and Improvements
 
 * Refactor posterior base class to support other model types.
-* Refactor posterior abstract class to include common 'update_cache' method.
-* Added new GPR posterior class to enable caching of GP regression
-* Added new GPR model class that can make predictions with the new GPR posterior 
-  (both with and without caching)
+* Add new posterior class to enable faster predictions from the GPR model.
 
 ## Bug Fixes and Other Changes
 

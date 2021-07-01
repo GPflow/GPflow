@@ -22,7 +22,6 @@ from .. import posteriors
 from ..kernels import Kernel
 from ..logdensities import multivariate_normal
 from ..mean_functions import MeanFunction
-from ..posteriors import GPRPosterior
 from ..utilities.model_utils import add_noise_cov
 from .model import GPModel, InputData, MeanAndVariance, RegressionData
 from .training_mixins import InternalDataTrainingLossMixin
@@ -147,7 +146,7 @@ class GPR_with_posterior(GPR_deprecated):
 
         X, Y = self.data
 
-        return GPRPosterior(
+        return posteriors.GPRPosterior(
             kernel=self.kernel,
             X_data=X,
             Y_data=Y,
