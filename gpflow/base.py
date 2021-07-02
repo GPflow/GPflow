@@ -13,7 +13,6 @@
 # limitations under the License.
 
 from enum import Enum
-from inspect import currentframe, getargvalues
 from typing import TYPE_CHECKING, Any, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
