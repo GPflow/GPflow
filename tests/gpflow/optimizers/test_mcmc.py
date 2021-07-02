@@ -34,12 +34,14 @@ def build_model(data):
     return model
 
 
-def build_model_with_uniform_prior(data, prior_on, prior_width):
+def build_model_with_uniform_prior_no_transforms(data, prior_on, prior_width):
     def parameter(value):
         low_value = -100
         high_value = low_value + prior_width
         prior = Uniform(low=np.float64(low_value), high=np.float64(high_value))
-        return gpflow.Parameter(value, prior=prior, prior_on=prior_on)
+        return gpflow.Parameter(
+            value, transform=tfp.bijectors.Identity(), prior=prior, prior_on=prior_on
+        )
 
     k = gpflow.kernels.Matern52(lengthscales=0.3)
     k.variance = parameter(k.variance)
@@ -115,7 +117,7 @@ def test_mcmc_helper_target_function_unconstrained():
     prior_width = 200.0
 
     data = build_data()
-    model = build_model_with_uniform_prior(data, "unconstrained", prior_width)
+    model = build_model_with_uniform_prior_no_transforms(data, "unconstrained", prior_width)
 
     hmc_helper = gpflow.optimizers.SamplingHelper(
         model.log_posterior_density, model.trainable_parameters
@@ -138,7 +140,7 @@ def test_mcmc_helper_target_function_no_transforms(prior_on):
     prior_width = 200.0
 
     data = build_data()
-    model = build_model_with_uniform_prior(data, prior_on, prior_width)
+    model = build_model_with_uniform_prior_no_transforms(data, prior_on, prior_width)
 
     hmc_helper = gpflow.optimizers.SamplingHelper(
         model.log_posterior_density, model.trainable_parameters
