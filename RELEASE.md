@@ -47,6 +47,7 @@ This release contains contributions from:
 
 * Refactor posterior base class to support other model types.
 * Add new posterior class to enable faster predictions from the GPR model.
+* Construct Parameters from other Parameters and retain properties.
 
 ## Bug Fixes and Other Changes
 
