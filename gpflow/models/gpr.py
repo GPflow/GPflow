@@ -18,15 +18,17 @@ import tensorflow as tf
 
 import gpflow
 
+from .. import posteriors
 from ..kernels import Kernel
 from ..logdensities import multivariate_normal
 from ..mean_functions import MeanFunction
+from ..utilities.model_utils import add_noise_cov
 from .model import GPModel, InputData, MeanAndVariance, RegressionData
 from .training_mixins import InternalDataTrainingLossMixin
 from .util import data_input_to_tensor
 
 
-class GPR(GPModel, InternalDataTrainingLossMixin):
+class GPR_deprecated(GPModel, InternalDataTrainingLossMixin):
     r"""
     Gaussian Process Regression.
 
@@ -69,9 +71,7 @@ class GPR(GPModel, InternalDataTrainingLossMixin):
         Returns K + σ² I, where σ² is the likelihood noise variance (scalar),
         and I is the corresponding identity matrix.
         """
-        k_diag = tf.linalg.diag_part(K)
-        s_diag = tf.fill(tf.shape(k_diag), self.likelihood.variance)
-        return tf.linalg.set_diag(K, k_diag + s_diag)
+        return add_noise_cov(K, self.likelihood.variance)
 
     def log_marginal_likelihood(self) -> tf.Tensor:
         r"""
@@ -102,12 +102,12 @@ class GPR(GPModel, InternalDataTrainingLossMixin):
 
         where F* are points on the GP at new data points, Y are noisy observations at training data points.
         """
-        X_data, Y_data = self.data
-        err = Y_data - self.mean_function(X_data)
+        X, Y = self.data
+        err = Y - self.mean_function(X)
 
-        kmm = self.kernel(X_data)
+        kmm = self.kernel(X)
         knn = self.kernel(Xnew, full_cov=full_cov)
-        kmn = self.kernel(X_data, Xnew)
+        kmn = self.kernel(X, Xnew)
         kmm_plus_s = self._add_noise_cov(kmm)
 
         conditional = gpflow.conditionals.base_conditional
@@ -116,3 +116,58 @@ class GPR(GPModel, InternalDataTrainingLossMixin):
         )  # [N, P], [N, P] or [P, N, N]
         f_mean = f_mean_zero + self.mean_function(Xnew)
         return f_mean, f_var
+
+
+class GPR_with_posterior(GPR_deprecated):
+    """
+    This is an implementation of GPR that provides a posterior() method that
+    enables caching for faster subsequent predictions.
+    """
+
+    def posterior(self, precompute_cache=posteriors.PrecomputeCacheType.TENSOR):
+        """
+        Create the Posterior object which contains precomputed matrices for
+        faster prediction.
+
+        precompute_cache has three settings:
+
+        - `PrecomputeCacheType.TENSOR` (or `"tensor"`): Precomputes the cached
+          quantities and stores them as tensors (which allows differentiating
+          through the prediction). This is the default.
+        - `PrecomputeCacheType.VARIABLE` (or `"variable"`): Precomputes the cached
+          quantities and stores them as variables, which allows for updating
+          their values without changing the compute graph (relevant for AOT
+          compilation).
+        - `PrecomputeCacheType.NOCACHE` (or `"nocache"` or `None`): Avoids
+          immediate cache computation. This is useful for avoiding extraneous
+          computations when you only want to call the posterior's
+          `fused_predict_f` method.
+        """
+
+        X, Y = self.data
+
+        return posteriors.GPRPosterior(
+            kernel=self.kernel,
+            X_data=X,
+            Y_data=Y,
+            likelihood_variance=self.likelihood.variance,
+            mean_function=self.mean_function,
+            precompute_cache=precompute_cache,
+        )
+
+    def predict_f(self, Xnew: InputData, full_cov=False, full_output_cov=False) -> MeanAndVariance:
+        """
+        For backwards compatibility, GPR's predict_f uses the fused (no-cache)
+        computation, which is more efficient during training.
+
+        For faster (cached) prediction, predict directly from the posterior object, i.e.,:
+            model.posterior().predict_f(Xnew, ...)
+        """
+        return self.posterior(posteriors.PrecomputeCacheType.NOCACHE).fused_predict_f(
+            Xnew, full_cov=full_cov, full_output_cov=full_output_cov
+        )
+
+
+class GPR(GPR_with_posterior):
+    # subclassed to ensure __class__ == "GPR"
+    pass

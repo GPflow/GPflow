@@ -21,11 +21,13 @@ import tensorflow as tf
 import gpflow
 import gpflow.ci_utils
 from gpflow.conditionals import conditional
+from gpflow.mean_functions import Zero
 from gpflow.models.util import inducingpoint_wrapper
 from gpflow.posteriors import (
     AbstractPosterior,
     FallbackIndependentLatentPosterior,
     FullyCorrelatedPosterior,
+    GPRPosterior,
     IndependentPosteriorMultiOutput,
     IndependentPosteriorSingleOutput,
     LinearCoregionalizationPosterior,
@@ -620,6 +622,31 @@ def test_posterior_update_cache_with_variables_no_precompute(
         precompute_cache=precompute_cache_type,
     )
     posterior.update_cache(PrecomputeCacheType.VARIABLE)
+
+    assert isinstance(posterior.alpha, tf.Variable)
+    assert isinstance(posterior.Qinv, tf.Variable)
+
+
+@pytest.mark.parametrize(
+    "precompute_cache_type", [PrecomputeCacheType.NOCACHE, PrecomputeCacheType.TENSOR]
+)
+def test_gpr_posterior_update_cache_with_variables_no_precompute(
+    register_posterior_test, q_sqrt_factory, whiten, precompute_cache_type
+):
+    kernel = gpflow.kernels.SquaredExponential()
+    X = np.random.randn(NUM_INDUCING_POINTS, INPUT_DIMS)
+    Y = np.random.randn(NUM_INDUCING_POINTS, 1)
+
+    posterior = GPRPosterior(
+        kernel=kernel,
+        X_data=X,
+        Y_data=Y,
+        likelihood_variance=gpflow.Parameter(0.1),
+        precompute_cache=precompute_cache_type,
+        mean_function=Zero(),
+    )
+    posterior.update_cache(PrecomputeCacheType.VARIABLE)
+    register_posterior_test(posterior, GPRPosterior)
 
     assert isinstance(posterior.alpha, tf.Variable)
     assert isinstance(posterior.Qinv, tf.Variable)

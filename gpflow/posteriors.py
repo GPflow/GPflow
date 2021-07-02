@@ -21,9 +21,10 @@ import tensorflow as tf
 import tensorflow_probability as tfp
 
 from . import covariances, kernels, mean_functions
-from .base import Module, TensorType
+from .base import Module, Parameter, TensorType
 from .conditionals.util import (
     base_conditional,
+    base_conditional_with_lm,
     expand_independent_outputs,
     fully_correlated_conditional,
     independent_interdomain_conditional,
@@ -40,7 +41,7 @@ from .inducing_variables import (
     SharedIndependentInducingVariables,
 )
 from .types import MeanAndVariance
-from .utilities import Dispatcher
+from .utilities import Dispatcher, add_noise_cov
 
 
 class _QDistribution(Module):
@@ -180,6 +181,117 @@ class AbstractPosterior(Module, ABC):
         Relies on cached alpha and Qinv.
         """
 
+    def update_cache(self, precompute_cache: Optional[PrecomputeCacheType] = None) -> None:
+        """
+        Sets the cache depending on the value of `precompute_cache` to a
+        `tf.Tensor`, `tf.Variable`, or clears the cache. If `precompute_cache`
+        is not given, the setting defaults to the most-recently-used one.
+        """
+        if precompute_cache is None:
+            try:
+                precompute_cache = cast(
+                    PrecomputeCacheType,
+                    self._precompute_cache,  # type: ignore
+                )
+            except AttributeError:
+                raise ValueError(
+                    "You must pass precompute_cache explicitly (the cache had not been updated before)."
+                )
+        else:
+            self._precompute_cache = precompute_cache
+
+        if precompute_cache is PrecomputeCacheType.NOCACHE:
+            self.alpha = self.Qinv = None
+
+        elif precompute_cache is PrecomputeCacheType.TENSOR:
+            self.alpha, self.Qinv = self._precompute()
+
+        elif precompute_cache is PrecomputeCacheType.VARIABLE:
+            alpha, Qinv = self._precompute()
+            if isinstance(self.alpha, tf.Variable) and isinstance(self.Qinv, tf.Variable):
+                # re-use existing variables
+                self.alpha.assign(alpha)
+                self.Qinv.assign(Qinv)
+            else:  # create variables
+                self.alpha = tf.Variable(alpha, trainable=False)
+                self.Qinv = tf.Variable(Qinv, trainable=False)
+
+
+class GPRPosterior(AbstractPosterior):
+    def __init__(
+        self,
+        kernel,
+        X_data: tf.Tensor,
+        Y_data: tf.Tensor,
+        likelihood_variance: Parameter,
+        mean_function: Optional[mean_functions.MeanFunction] = None,
+        *,
+        precompute_cache: Optional[PrecomputeCacheType],
+    ):
+
+        super().__init__(kernel, X_data, mean_function=mean_function)
+        self.mean_function = mean_function
+        self.Y_data = Y_data
+        self.likelihood_variance = likelihood_variance
+
+        if precompute_cache is not None:
+            self.update_cache(precompute_cache)
+
+    def _conditional_with_precompute(
+        self, Xnew, full_cov: bool = False, full_output_cov: bool = False
+    ) -> MeanAndVariance:
+        """
+        Computes predictive mean and (co)variance at Xnew, *excluding* mean_function.
+        Relies on cached alpha and Qinv.
+        """
+        Kmn = self.kernel(self.X_data, Xnew)
+        Knn = self.kernel(Xnew, full_cov=full_cov)
+
+        return base_conditional_with_lm(Kmn, self.Qinv, Knn, self.alpha, full_cov=full_cov)
+
+    def _precompute(self) -> Tuple[tf.Tensor, tf.Tensor]:
+
+        """
+        Precomputes the cholesky decomposition of Kmm_plus_s for later reuse we will call
+        base_conditional_with_lm implementation ('Qinv' in the Abstract Posterior class). We also
+        precompute the less compute intensive error term ('alpha' in the Abstract Posterior class)
+        """
+
+        Kmm = self.kernel(self.X_data)
+        Kmm_plus_s = add_noise_cov(Kmm, self.likelihood_variance)
+
+        # obtain the cholesky decomposition of Kmm_plus_s
+        Lm = tf.linalg.cholesky(Kmm_plus_s)
+
+        alpha = self.Y_data - self.mean_function(self.X_data)  # type: ignore
+        tf.debugging.assert_shapes(
+            [
+                (Lm, ["M", "M"]),
+                (Kmm, ["M", "M"]),
+            ]
+        )
+        return alpha, Lm
+
+    def _conditional_fused(
+        self, Xnew, full_cov: bool = False, full_output_cov: bool = False
+    ) -> MeanAndVariance:
+        """
+        Computes predictive mean and (co)variance at Xnew, *excluding* mean_function
+        Does not make use of caching
+        """
+
+        # taken directly from the deprecated GPR implementation
+        err = self.Y_data - self.mean_function(self.X_data)  # type: ignore
+
+        Kmm = self.kernel(self.X_data)
+        Knn = self.kernel(Xnew, full_cov=full_cov)
+        Kmn = self.kernel(self.X_data, Xnew)
+        Kmm_plus_s = add_noise_cov(Kmm, self.likelihood_variance)
+
+        return base_conditional(
+            Kmn, Kmm_plus_s, Knn, err, full_cov=full_cov, white=False
+        )  # [N, P], [N, P] or [P, N, N]
+
 
 class BasePosterior(AbstractPosterior):
     def __init__(
@@ -216,41 +328,6 @@ class BasePosterior(AbstractPosterior):
             self._q_dist = _DiagNormal(q_mu, q_sqrt)
         else:
             self._q_dist = _MvNormal(q_mu, q_sqrt)
-
-    def update_cache(self, precompute_cache: Optional[PrecomputeCacheType] = None):
-        """
-        Sets the cache depending on the value of `precompute_cache` to a
-        `tf.Tensor`, `tf.Variable`, or clears the cache. If `precompute_cache`
-        is not given, the setting defaults to the most-recently-used one.
-        """
-        if precompute_cache is None:
-            try:
-                precompute_cache = cast(
-                    PrecomputeCacheType,
-                    self._precompute_cache,  # type: ignore
-                )
-            except AttributeError:
-                raise ValueError(
-                    "You must pass precompute_cache explicitly (the cache had not been updated before)."
-                )
-        else:
-            self._precompute_cache = precompute_cache
-
-        if precompute_cache is PrecomputeCacheType.NOCACHE:
-            self.alpha = self.Qinv = None
-
-        elif precompute_cache is PrecomputeCacheType.TENSOR:
-            self.alpha, self.Qinv = self._precompute()
-
-        elif precompute_cache is PrecomputeCacheType.VARIABLE:
-            alpha, Qinv = self._precompute()
-            if isinstance(self.alpha, tf.Variable) and isinstance(self.Qinv, tf.Variable):
-                # re-use existing variables
-                self.alpha.assign(alpha)
-                self.Qinv.assign(Qinv)
-            else:  # create variables
-                self.alpha = tf.Variable(alpha, trainable=False)
-                self.Qinv = tf.Variable(Qinv, trainable=False)
 
     def _precompute(self):
         Kuu = covariances.Kuu(self.X_data, self.kernel, jitter=default_jitter())  # [(R), M, M]

@@ -46,6 +46,7 @@ This release contains contributions from:
 ## Major Features and Improvements
 
 * Refactor posterior base class to support other model types.
+* Add new posterior class to enable faster predictions from the GPR model.
 
 ## Bug Fixes and Other Changes
 
@@ -57,7 +58,7 @@ This release contains contributions from:
 
 This release contains contributions from:
 
-johnamcleod, st--
+johnamcleod, st--, Andrew878
 
 
 # Release 2.2.1
