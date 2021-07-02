@@ -206,11 +206,10 @@ def test_construct_parameter_from_existing_parameter_override_name():
 
 
 def test_construct_parameter_from_existing_parameter_value_becomes_invalid():
-    initial_parameter = gpflow.Parameter(0.)
+    initial_parameter = gpflow.Parameter(0.0)
     transform = tfp.bijectors.Reciprocal()
 
     with pytest.raises(tf.errors.InvalidArgumentError) as exc:
         gpflow.Parameter(initial_parameter, transform=transform)
 
     assert "gpflow.Parameter" in exc.value.message
-
