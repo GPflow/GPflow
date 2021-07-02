@@ -117,11 +117,11 @@ class Parameter(tfp.util.TransformedVariable):
         A prior can be imposed either on the constrained version (default) or on the unconstrained version of the parameter.
         """
         if isinstance(value, Parameter):
-            transform = transform if transform else value.transform
-            prior = prior if prior else value.prior
-            prior_on = prior_on if prior_on else value.prior_on
-            trainable = trainable if trainable is not None else value.trainable
-            name = name if name else value.bijector.name
+            transform = transform or value.transform
+            prior = prior or value.prior
+            prior_on = prior_on or value.prior_on
+            name = name or value.bijector.name
+            trainable = value.trainable if trainable is None else trainable
 
             if dtype:
                 value = _cast_to_dtype(value, dtype)
