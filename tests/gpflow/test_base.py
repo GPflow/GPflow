@@ -185,6 +185,16 @@ def test_construct_parameter_from_existing_parameter_override_dtype(dtype):
     assert new_parameter.dtype == dtype
 
 
+def test_construct_parameter_from_existing_parameter_check_name():
+    transform = tfp.bijectors.Sigmoid(
+        tf.constant(0.0, dtype=tf.float64), tf.constant(2.0, dtype=tf.float64)
+    )
+    initial_parameter = gpflow.Parameter([1.2, 1.1], transform=transform)
+    new_parameter = gpflow.Parameter(initial_parameter)
+
+    assert new_parameter.name == transform.name
+
+
 def test_construct_parameter_from_existing_parameter_override_name():
     initial_parameter = gpflow.Parameter([1.2, 1.1])
     transform = tfp.bijectors.Sigmoid(
@@ -193,3 +203,14 @@ def test_construct_parameter_from_existing_parameter_override_name():
     new_parameter = gpflow.Parameter(initial_parameter, transform=transform)
 
     assert new_parameter.name == transform.name
+
+
+def test_construct_parameter_from_existing_parameter_value_becomes_invalid():
+    initial_parameter = gpflow.Parameter(0.)
+    transform = tfp.bijectors.Reciprocal()
+
+    with pytest.raises(tf.errors.InvalidArgumentError) as exc:
+        gpflow.Parameter(initial_parameter, transform=transform)
+
+    assert "gpflow.Parameter" in exc.value.message
+

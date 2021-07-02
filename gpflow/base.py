@@ -13,7 +13,6 @@
 # limitations under the License.
 
 from enum import Enum
-from inspect import currentframe, getargvalues
 from typing import TYPE_CHECKING, Any, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
@@ -133,7 +132,8 @@ class Parameter(tfp.util.TransformedVariable):
             trainable = trainable if trainable is not None else True
 
             value = _cast_to_dtype(value, dtype)
-            _validate_unconstrained_value(value, transform, dtype)
+
+        _validate_unconstrained_value(value, transform, dtype)
         super().__init__(value, transform, dtype=value.dtype, trainable=trainable, name=name)
 
         self.prior = prior  # type: Optional[Prior]
