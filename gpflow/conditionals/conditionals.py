@@ -15,15 +15,15 @@
 import tensorflow as tf
 
 from ..config import default_jitter
-from ..covariances import Kuf, Kuu
 from ..inducing_variables import InducingVariables
 from ..kernels import Kernel
+from ..posteriors import get_posterior_class
 from ..utilities.ops import eye
 from .dispatch import conditional
-from .util import base_conditional, expand_independent_outputs
+from .util import base_conditional
 
 
-@conditional.register(object, InducingVariables, Kernel, object)
+@conditional._gpflow_internal_register(object, InducingVariables, Kernel, object)
 def _conditional(
     Xnew: tf.Tensor,
     inducing_variable: InducingVariables,
@@ -66,16 +66,21 @@ def _conditional(
         Please see `gpflow.conditional._expand_independent_outputs` for more information
         about the shape of the variance, depending on `full_cov` and `full_output_cov`.
     """
-    Kmm = Kuu(inducing_variable, kernel, jitter=default_jitter())  # [M, M]
-    Kmn = Kuf(inducing_variable, kernel, Xnew)  # [M, N]
-    Knn = kernel(Xnew, full_cov=full_cov)
-    fmean, fvar = base_conditional(
-        Kmn, Kmm, Knn, f, full_cov=full_cov, q_sqrt=q_sqrt, white=white
-    )  # [N, R],  [R, N, N] or [N, R]
-    return fmean, expand_independent_outputs(fvar, full_cov, full_output_cov)
+    posterior_class = get_posterior_class(kernel, inducing_variable)
+
+    posterior = posterior_class(
+        kernel,
+        inducing_variable,
+        f,
+        q_sqrt,
+        whiten=white,
+        mean_function=None,
+        precompute_cache=None,
+    )
+    return posterior.fused_predict_f(Xnew, full_cov=full_cov, full_output_cov=full_output_cov)
 
 
-@conditional.register(object, object, Kernel, object)
+@conditional._gpflow_internal_register(object, object, Kernel, object)
 def _conditional(
     Xnew: tf.Tensor,
     X: tf.Tensor,

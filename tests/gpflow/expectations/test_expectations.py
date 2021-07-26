@@ -146,7 +146,11 @@ def test_mean_function_only_expectations(distribution, mean1, mean2, arg_filter)
 @pytest.mark.parametrize("kernel", kern_args1)
 @pytest.mark.parametrize(
     "arg_filter",
-    [lambda p, k, f: (p, k), lambda p, k, f: (p, (k, f)), lambda p, k, f: (p, (k, f), (k, f)),],
+    [
+        lambda p, k, f: (p, k),
+        lambda p, k, f: (p, (k, f)),
+        lambda p, k, f: (p, (k, f), (k, f)),
+    ],
 )
 def test_kernel_only_expectations(distribution, kernel, inducing_variable, arg_filter):
     params = arg_filter(distribution, kernel, inducing_variable)
@@ -208,7 +212,8 @@ def test_RBF_eKzxKxz_gradient_notNaN():
     kernel.variance.assign(2.0)
 
     p = gpflow.probability_distributions.Gaussian(
-        tf.constant([[10]], dtype=default_float()), tf.constant([[[0.1]]], dtype=default_float()),
+        tf.constant([[10]], dtype=default_float()),
+        tf.constant([[[0.1]]], dtype=default_float()),
     )
     z = gpflow.inducing_variables.InducingPoints([[-10.0], [10.0]])
 

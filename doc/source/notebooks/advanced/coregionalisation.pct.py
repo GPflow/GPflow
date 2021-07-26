@@ -121,7 +121,10 @@ m = gpflow.models.VGP((X_augmented, Y_augmented), kernel=kern, likelihood=lik)
 # fit the covariance function parameters
 maxiter = ci_niter(10000)
 gpflow.optimizers.Scipy().minimize(
-    m.training_loss, m.trainable_variables, options=dict(maxiter=maxiter), method="L-BFGS-B",
+    m.training_loss,
+    m.trainable_variables,
+    options=dict(maxiter=maxiter),
+    method="L-BFGS-B",
 )
 
 

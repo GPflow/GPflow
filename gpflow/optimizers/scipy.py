@@ -19,10 +19,12 @@ import scipy.optimize
 import tensorflow as tf
 from scipy.optimize import OptimizeResult
 
+from ..monitor.base import Monitor
+
 __all__ = ["Scipy"]
 
 Variables = Iterable[tf.Variable]  # deprecated
-StepCallback = Callable[[int, Sequence[tf.Variable], Sequence[tf.Tensor]], None]
+StepCallback = Union[Callable[[int, Sequence[tf.Variable], Sequence[tf.Tensor]], None], Monitor]
 LossClosure = Callable[[], tf.Tensor]
 
 
@@ -121,8 +123,13 @@ class Scipy:
 
         def _callback(x: np.ndarray) -> None:
             nonlocal step
-            values = cls.unpack_tensors(variables, x)
-            step_callback(step, variables, values)
+
+            if isinstance(step_callback, Monitor):
+                step_callback(step)
+            else:
+                values = cls.unpack_tensors(variables, x)
+                step_callback(step, variables, values)
+
             step += 1
 
         return _callback

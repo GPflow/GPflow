@@ -191,7 +191,7 @@ gpflow.set_trainable(m.inducing_variable, False)
 def run_adam(model, iterations):
     """
     Utility function running the Adam optimizer
-    
+
     :param model: GPflow model
     :param interations: number of iterations
     """
