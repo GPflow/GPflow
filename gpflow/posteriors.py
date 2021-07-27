@@ -41,7 +41,7 @@ from .inducing_variables import (
     SharedIndependentInducingVariables,
 )
 from .types import MeanAndVariance
-from .utilities import Dispatcher, add_noise_cov
+from .utilities import Dispatcher, add_noise_cov, add_linear_noise_cov, positive
 
 
 class _QDistribution(Module):
@@ -258,7 +258,7 @@ class GPRPosterior(AbstractPosterior):
         """
 
         Kmm = self.kernel(self.X_data)
-        Kmm_plus_s = add_noise_cov(Kmm, self.likelihood_variance)
+        Kmm_plus_s = self.add_noise(Kmm, self.X_data)
 
         # obtain the cholesky decomposition of Kmm_plus_s
         Lm = tf.linalg.cholesky(Kmm_plus_s)
@@ -286,11 +286,48 @@ class GPRPosterior(AbstractPosterior):
         Kmm = self.kernel(self.X_data)
         Knn = self.kernel(Xnew, full_cov=full_cov)
         Kmn = self.kernel(self.X_data, Xnew)
-        Kmm_plus_s = add_noise_cov(Kmm, self.likelihood_variance)
+        Kmm_plus_s = self.add_noise(Kmm, Xnew)
 
         return base_conditional(
             Kmn, Kmm_plus_s, Knn, err, full_cov=full_cov, white=False
         )  # [N, P], [N, P] or [P, N, N]
+
+    def add_noise(self, K: tf.tensor, X: tf.tensor):
+        return add_noise_cov(K, self.likelihood_variance)
+
+
+class HeteroskedasticGPRPosterior(GPRPosterior):
+
+    def __init__(self,
+                 kernel,
+                 X_data: tf.Tensor,
+                 Y_data: tf.Tensor,
+                 likelihood_variance: Parameter,
+                 mean_function: Optional[mean_functions.MeanFunction] = None,
+                 *,
+                 precompute_cache: Optional[PrecomputeCacheType],
+                 ):
+
+        super().__init__(kernel, X_data, Y_data, likelihood_variance, mean_function=mean_function, precompute_cache=precompute_cache)
+
+        ndims = X_data.shape[-1]
+
+        shift_prior = tfp.distributions.Cauchy(loc=np.float64(0.0), scale=np.float64(5.0))
+        self.shifts = Parameter(np.zeros(ndims), trainable=True, prior=shift_prior, name="shifts")
+        self.variance = Parameter(np.ones(ndims), transform=positive())
+
+    def evaluate_linear_noise_variance(self, X: tf.Tensor):
+        """ Noise variance contribution. """
+
+        Z = X + self.shifts
+        normalised_variance = self.variance / (1 + self.shifts ** 2)
+
+        return tf.reduce_sum(tf.square(Z) * normalised_variance, axis=-1)
+
+    def add_noise(self, K: tf.Tensor, X: tf.Tensor):
+
+        noise_variance = self.evaluate_linear_noise_variance(X)
+        return add_linear_noise_cov(K, noise_variance)
 
 
 class BasePosterior(AbstractPosterior):
