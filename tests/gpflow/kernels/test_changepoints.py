@@ -1,6 +1,90 @@
 import numpy as np
+import pytest
+from numpy.testing import assert_allclose
 
 import gpflow
+from tests.gpflow.kernels.reference import ref_changepoints
+
+rng = np.random.RandomState(1)
+
+
+@pytest.mark.parametrize(
+    "locations, steepness, error_msg",
+    [
+        # 1. Kernels locations dimension mismatch
+        [
+            [1.0],
+            1.0,
+            r"Number of kernels \(3\) must be one more than the number of changepoint locations \(1\)",
+        ],
+        # 2. Locations steepness dimension mismatch
+        [
+            [1.0, 2.0],
+            [1.0],
+            r"Dimension of steepness \(1\) does not match number of changepoint locations \(2\)",
+        ],
+    ],
+)
+def test_changepoints_init_fail(locations, steepness, error_msg):
+    kernels = [
+        gpflow.kernels.Matern12(),
+        gpflow.kernels.Linear(),
+        gpflow.kernels.Matern32(),
+    ]
+    with pytest.raises(ValueError, match=error_msg):
+        gpflow.kernels.ChangePoints(kernels, locations, steepness)
+
+
+def _assert_changepoints_kern_err(X, kernels, locations, steepness):
+    kernel = gpflow.kernels.ChangePoints(kernels, locations, steepness=steepness)
+    reference_gram_matrix = ref_changepoints(X, kernels, locations, steepness)
+
+    assert_allclose(kernel(X), reference_gram_matrix)
+    assert_allclose(kernel.K_diag(X), np.diag(reference_gram_matrix))
+
+
+@pytest.mark.parametrize("N", [2, 10])
+@pytest.mark.parametrize(
+    "kernels, locations, steepness",
+    [
+        # 1. Single changepoint
+        [[gpflow.kernels.Constant(), gpflow.kernels.Constant()], [2.0], 5.0],
+        # 2. Two changepoints
+        [
+            [
+                gpflow.kernels.Constant(),
+                gpflow.kernels.Constant(),
+                gpflow.kernels.Constant(),
+            ],
+            [1.0, 2.0],
+            5.0,
+        ],
+        # 3. Multiple steepness
+        [
+            [
+                gpflow.kernels.Constant(),
+                gpflow.kernels.Constant(),
+                gpflow.kernels.Constant(),
+            ],
+            [1.0, 2.0],
+            [5.0, 10.0],
+        ],
+        # 4. Variety of kernels
+        [
+            [
+                gpflow.kernels.Matern12(),
+                gpflow.kernels.Linear(),
+                gpflow.kernels.SquaredExponential(),
+                gpflow.kernels.Constant(),
+            ],
+            [1.0, 2.0, 3.0],
+            5.0,
+        ],
+    ],
+)
+def test_changepoints(N, kernels, locations, steepness):
+    X_data = rng.randn(N, 1)
+    _assert_changepoints_kern_err(X_data, kernels, locations, steepness)
 
 
 def test_changepoint_with_X1_X2():

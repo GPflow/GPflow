@@ -68,3 +68,27 @@ def ref_periodic_kernel(X, base_name, lengthscales, signal_variance, period):
         dist = np.sqrt(5) * np.sum(np.abs(sine_base), axis=-1)
         exp_dist = (1 + dist + dist ** 2 / 3) * np.exp(-dist)
     return signal_variance * exp_dist
+
+
+def ref_changepoints(X, kernels, locations, steepness):
+    """
+    Calculates K(X) for each kernel in `kernels`, then multiply by sigmoid functions
+    in order to smoothly transition betwen them. The sigmoid transitions are defined
+    by a location and a steepness parameter.
+    """
+    locations = sorted(locations)
+    steepness = steepness if isinstance(steepness, list) else [steepness] * len(locations)
+    locations = np.array(locations).reshape((1, 1, -1))
+    steepness = np.array(steepness).reshape((1, 1, -1))
+
+    sig_X = 1.0 / (1.0 + np.exp(-steepness * (X[:, :, None] - locations)))
+
+    starters = sig_X * np.transpose(sig_X, axes=(1, 0, 2))
+    stoppers = (1 - sig_X) * np.transpose((1 - sig_X), axes=(1, 0, 2))
+
+    ones = np.ones((X.shape[0], X.shape[0], 1))
+    starters = np.concatenate([ones, starters], axis=2)
+    stoppers = np.concatenate([stoppers, ones], axis=2)
+
+    kernel_stack = np.stack([k(X) for k in kernels], axis=2)
+    return (kernel_stack * starters * stoppers).sum(axis=2)
