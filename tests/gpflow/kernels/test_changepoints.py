@@ -82,7 +82,7 @@ def _assert_changepoints_kern_err(X, kernels, locations, steepness):
         ],
     ],
 )
-def test_changepoints(N, kernels, locations, steepness):
+def test_changepoint_output(N, kernels, locations, steepness):
     X_data = rng.randn(N, 1)
     _assert_changepoints_kern_err(X_data, kernels, locations, steepness)
 
