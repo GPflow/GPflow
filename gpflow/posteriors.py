@@ -286,13 +286,13 @@ class GPRPosterior(AbstractPosterior):
         Kmm = self.kernel(self.X_data)
         Knn = self.kernel(Xnew, full_cov=full_cov)
         Kmn = self.kernel(self.X_data, Xnew)
-        Kmm_plus_s = self.add_noise(Kmm, Xnew)
+        Kmm_plus_s = self.add_noise(Kmm, self.X_data)
 
         return base_conditional(
             Kmn, Kmm_plus_s, Knn, err, full_cov=full_cov, white=False
         )  # [N, P], [N, P] or [P, N, N]
 
-    def add_noise(self, K: tf.tensor, X: tf.tensor):
+    def add_noise(self, K: tf.Tensor, X: tf.Tensor):
         return add_noise_cov(K, self.likelihood_variance)
 
 

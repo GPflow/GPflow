@@ -1,11 +1,29 @@
-from gpflow import posteriors
-from gpflow.models.gpr import GPR_with_posterior
+import tensorflow as tf
+from typing import Optional
+
+from .. import posteriors
+from ..kernels import Kernel
+from ..likelihoods.heteroskedastic import HeteroskedasticGaussianLikelihood
+from ..mean_functions import MeanFunction
+from ..models.gpr import GPR_with_posterior
+from ..models.training_mixins import RegressionData
+from ..utilities import add_noise_cov
 
 
 class het_GPR(GPR_with_posterior):
     """ While the vanilla GPR enforces a constant noise variance across the input space, here we allow the
     noise amplitude to vary linearly (and hence the noise variance to change quadratically) across the input space.
     """
+
+    def __init__(
+        self,
+        data: RegressionData,
+        kernel: Kernel,
+        mean_function: Optional[MeanFunction] = None,
+        noise_variance: float = 1.0,
+    ):
+        super().__init__(data, kernel, mean_function, noise_variance)
+        self.likelihood = HeteroskedasticGaussianLikelihood(noise_variance)
 
     def posterior(self, precompute_cache=posteriors.PrecomputeCacheType.TENSOR):
         """
@@ -37,5 +55,13 @@ class het_GPR(GPR_with_posterior):
             mean_function=self.mean_function,
             precompute_cache=precompute_cache,
         )
+
+    def _add_noise_cov(self, K: tf.Tensor) -> tf.Tensor:
+        """
+        Returns K + diag(σ²), where σ² is the likelihood noise variance (vector),
+        and I is the corresponding identity matrix.
+        """
+        return add_noise_cov(K, self.likelihood.variance)
+
 
 
