@@ -4,6 +4,7 @@ from typing import Optional
 from .. import posteriors
 from ..kernels import Kernel
 from ..likelihoods.heteroskedastic import HeteroskedasticGaussianLikelihood
+from ..logdensities import multivariate_normal
 from ..mean_functions import MeanFunction
 from ..models.gpr import GPR_with_posterior
 from ..models.training_mixins import RegressionData, InputData
@@ -74,12 +75,31 @@ class het_GPR(GPR_with_posterior):
         f_mean, f_var = self.predict_f(Xnew, full_cov=full_cov, full_output_cov=full_output_cov)
         return self.likelihood.predict_mean_and_var(Xnew, f_mean, f_var)
 
-    def _add_noise_cov(self, K: tf.Tensor) -> tf.Tensor:
+    def _add_noise_cov(self, X, K: tf.Tensor) -> tf.Tensor:
         """
         Returns K + diag(σ²), where σ² is the likelihood noise variance (vector),
         and I is the corresponding identity matrix.
         """
-        return add_linear_noise_cov(K, self.likelihood.variance + self.likelihood.likelihood_variance)
+        variances = self.likelihood.compute_variances(X)
+        return add_linear_noise_cov(K, tf.squeeze(variances))
+
+    def log_marginal_likelihood(self) -> tf.Tensor:
+        r"""
+        Computes the log marginal likelihood.
+
+        .. math::
+            \log p(Y | \theta).
+
+        """
+        X, Y = self.data
+        K = self.kernel(X)
+        ks = self._add_noise_cov(X, K)
+        L = tf.linalg.cholesky(ks)
+        m = self.mean_function(X)
+
+        # [R,] log-likelihoods for each independent dimension of Y
+        log_prob = multivariate_normal(Y, m, L)
+        return tf.reduce_sum(log_prob)
 
 
 

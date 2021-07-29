@@ -94,8 +94,11 @@ print_summary(base_model)
 mean, var = base_model.predict_y(X)
 plot_distribution(X, Y, mean.numpy(), np.sqrt(var.numpy()))
 
-
-
+base_lml = base_model.log_marginal_likelihood()
+lml = model.log_marginal_likelihood()
+print("Base LML", base_lml)
+print("Het LML", lml)
+print("Odds ratio", np.exp(lml-base_lml))
 
 # ## generate test points for prediction
 # xx = np.linspace(-0.1, 1.1, 100).reshape(100, 1)  # test points must be of shape (N, D)
