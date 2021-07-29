@@ -6,8 +6,9 @@ from ..kernels import Kernel
 from ..likelihoods.heteroskedastic import HeteroskedasticGaussianLikelihood
 from ..mean_functions import MeanFunction
 from ..models.gpr import GPR_with_posterior
-from ..models.training_mixins import RegressionData
-from ..utilities import add_noise_cov
+from ..models.training_mixins import RegressionData, InputData
+from ..types import MeanAndVariance
+from ..utilities import add_linear_noise_cov
 
 
 class het_GPR(GPR_with_posterior):
@@ -51,17 +52,34 @@ class het_GPR(GPR_with_posterior):
             kernel=self.kernel,
             X_data=X,
             Y_data=Y,
-            likelihood_variance=self.likelihood.variance,
+            likelihood_variance=self.likelihood.likelihood_variance,
+            shifts=self.likelihood.shifts,
+            variance=self.likelihood.variance,  # todo use a general function instead of preset shift, variance
             mean_function=self.mean_function,
             precompute_cache=precompute_cache,
         )
+
+    def predict_y(
+        self, Xnew: InputData, full_cov: bool = False, full_output_cov: bool = False
+    ) -> MeanAndVariance:
+        """
+        Compute the mean and variance of the held-out data at the input points.
+        """
+        if full_cov or full_output_cov:
+            # See https://github.com/GPflow/GPflow/issues/1461
+            raise NotImplementedError(
+                "The predict_y method currently supports only the argument values full_cov=False and full_output_cov=False"
+            )
+
+        f_mean, f_var = self.predict_f(Xnew, full_cov=full_cov, full_output_cov=full_output_cov)
+        return self.likelihood.predict_mean_and_var(Xnew, f_mean, f_var)
 
     def _add_noise_cov(self, K: tf.Tensor) -> tf.Tensor:
         """
         Returns K + diag(σ²), where σ² is the likelihood noise variance (vector),
         and I is the corresponding identity matrix.
         """
-        return add_noise_cov(K, self.likelihood.variance)
+        return add_linear_noise_cov(K, self.likelihood.variance + self.likelihood.likelihood_variance)
 
 
 

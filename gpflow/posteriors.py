@@ -303,30 +303,27 @@ class HeteroskedasticGPRPosterior(GPRPosterior):
                  X_data: tf.Tensor,
                  Y_data: tf.Tensor,
                  likelihood_variance: Parameter,
+                 shifts: Parameter,
+                 variance: Parameter,
                  mean_function: Optional[mean_functions.MeanFunction] = None,
                  *,
                  precompute_cache: Optional[PrecomputeCacheType],
                  ):
 
+        self.shifts = shifts
+        self.variance = variance
         super().__init__(kernel, X_data, Y_data, likelihood_variance, mean_function=mean_function, precompute_cache=precompute_cache)
-
-        ndims = X_data.shape[-1]
-
-        shift_prior = tfp.distributions.Cauchy(loc=np.float64(0.0), scale=np.float64(5.0))
-        self.shifts = Parameter(np.zeros(ndims), trainable=True, prior=shift_prior, name="shifts")
-        self.variance = Parameter(np.ones(ndims), transform=positive())
 
     def evaluate_linear_noise_variance(self, X: tf.Tensor):
         """ Noise variance contribution. """
 
         Z = X + self.shifts
         normalised_variance = self.variance / (1 + self.shifts ** 2)
-
         return tf.reduce_sum(tf.square(Z) * normalised_variance, axis=-1)
 
     def add_noise(self, K: tf.Tensor, X: tf.Tensor):
 
-        noise_variance = self.evaluate_linear_noise_variance(X)
+        noise_variance = self.evaluate_linear_noise_variance(X) + self.likelihood_variance
         return add_linear_noise_cov(K, noise_variance)
 
 

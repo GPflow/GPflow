@@ -22,6 +22,7 @@ from typing import Optional
 
 import numpy as np
 import tensorflow as tf
+import tensorflow_probability as tfp
 
 from . import Likelihood
 from .base import DEFAULT_NUM_GAUSS_HERMITE_POINTS
@@ -32,6 +33,24 @@ from ..utilities import positive
 
 
 class HetereoskedasticLikelihood(Likelihood):
+
+
+    def conditional_variance(self, X, F):
+        """
+        The conditional marginal variance of Y|F: [var(Y₁|F), ..., var(Yₖ|F)]
+        where K = observation_dim
+
+        :param X: input location Tensor, with shape [..., inputs_dim]
+        :param F: function evaluation Tensor, with shape [..., latent_dim]
+        :returns: variance [..., observation_dim]
+        """
+        self._check_latent_dims(F)
+        var_Y = self._conditional_variance(X, F)
+        self._check_data_dims(var_Y)
+        return var_Y
+
+    def _conditional_variance(self, X, F):
+        raise NotImplementedError
 
     def log_prob(self, X, F, Y):
         """
@@ -380,7 +399,7 @@ class HeteroskedasticGaussianLikelihood(HetScalarLikelihood):
 
     DEFAULT_VARIANCE_LOWER_BOUND = 1e-6
 
-    def __init__(self, variance=1.0, variance_lower_bound=DEFAULT_VARIANCE_LOWER_BOUND, **kwargs):
+    def __init__(self, variance=1.0, ndims: int=1, variance_lower_bound=DEFAULT_VARIANCE_LOWER_BOUND, **kwargs):
         """
         :param variance: The noise variance; must be greater than
             ``variance_lower_bound``.
@@ -394,7 +413,19 @@ class HeteroskedasticGaussianLikelihood(HetScalarLikelihood):
                 f"The variance of the Gaussian likelihood must be strictly greater than {variance_lower_bound}"
             )
 
-        self.variance = Parameter(variance, transform=positive(lower=variance_lower_bound))
+        shift_prior = tfp.distributions.Cauchy(loc=np.float64(0.0), scale=np.float64(5.0))
+        base_prior = tfp.distributions.LogNormal(loc=np.float64(-2.0), scale=np.float64(2.0))
+        self.variance = Parameter(np.ones(ndims), transform=positive(lower=variance_lower_bound))
+        self.shifts = Parameter(np.zeros(ndims), trainable=True, prior=shift_prior, name="shifts")
+        self.likelihood_variance = Parameter(0.1, transform=positive(lower=variance_lower_bound), prior=base_prior)
+
+    def compute_variances(self, X):
+        """ Determine the likelihood variance at the specified input locations X. """
+
+        Z = X + self.shifts
+        normalised_variance = self.variance / (1 + self.shifts ** 2)
+        het_variance = tf.reduce_sum(tf.square(Z) * normalised_variance, axis=-1, keepdims=True)
+        return het_variance + self.likelihood_variance
 
     def _scalar_log_prob(self, X, F, Y):
         variances = self.compute_variances(X)
