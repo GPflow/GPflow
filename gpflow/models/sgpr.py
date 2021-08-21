@@ -25,7 +25,7 @@ from ..config import default_float, default_jitter
 from ..covariances.dispatch import Kuf, Kuu
 from ..inducing_variables import InducingPoints
 from ..mean_functions import MeanFunction
-from ..utilities import to_default_float
+from ..utilities import to_default_float, add_noise_cov
 from .model import GPModel, MeanAndVariance
 from .training_mixins import InputData, InternalDataTrainingLossMixin, RegressionData
 from .util import data_input_to_tensor, inducingpoint_wrapper
@@ -161,7 +161,7 @@ class SGPR(SGPRBase):
         Matrices used in log-det calculation
         :return: A, B, LB, AAT all square NxN matrices
         """
-        x, y = self.data
+        x, _ = self.data
         iv = self.inducing_variable
         num_iv = tf.shape(iv.Z)[0]
         sigma_sq = self.likelihood.variance
@@ -174,12 +174,12 @@ class SGPR(SGPRBase):
         # Compute intermediate matrices
         A = tf.linalg.triangular_solve(L, kuf, lower=True) / sigma
         AAT = tf.linalg.matmul(A, A, transpose_b=True)
-        B = AAT + tf.eye(num_iv, dtype=default_float())
+        B = add_noise_cov(AAT, 1.0)
         LB = tf.linalg.cholesky(B)
 
         return self.CommonTensors(A, B, LB, AAT, L)
 
-    def _logdet_term(self, common):
+    def logdet_term(self, common):
         """
         Bound from Jensen's Inequality:
 
@@ -195,23 +195,27 @@ class SGPR(SGPRBase):
 
         x, y = self.data
         num_data = to_default_float(tf.shape(x)[0])
-        output_dim = to_default_float(tf.shape(y)[1])
+        outdim = to_default_float(tf.shape(y)[1])
         kdiag = self.kernel(x, full_cov=False)
         sigma_sq = self.likelihood.variance
 
+        # tr(K) / σ²
+        trace_k = tf.reduce_sum(kdiag) / sigma_sq
+        # tr(Q) / σ²
+        trace_q = tf.reduce_sum(tf.linalg.diag_part(AAT))
         # tr(K - Q) / σ²
-        trace = tf.reduce_sum(kdiag) / sigma_sq - tf.reduce_sum(tf.linalg.diag_part(AAT))
+        trace = trace_k - trace_q
 
-        # log(det(B))
-        logdet_b = output_dim * tf.reduce_sum(tf.math.log(tf.linalg.diag_part(LB)))
+        # 0.5 * log(det(B))
+        half_logdet_b = tf.reduce_sum(tf.math.log(tf.linalg.diag_part(LB)))
 
-        # N * log(\sigma^2)
-        log_sigma_sq = num_data * output_dim * tf.math.log(sigma_sq)
+        # N * log(σ²)
+        log_sigma_sq = num_data * tf.math.log(sigma_sq)
 
-        logdet_k = -(logdet_b + 0.5 * log_sigma_sq + 0.5 * trace)
+        logdet_k = -outdim * (half_logdet_b + 0.5 * log_sigma_sq + 0.5 * trace)
         return logdet_k
 
-    def _quad_term(self, common) -> tf.Tensor:
+    def quad_term(self, common) -> tf.Tensor:
         A = common.A
         LB = common.LB
 
@@ -219,11 +223,16 @@ class SGPR(SGPRBase):
         err = y - self.mean_function(x)
         sigma_sq = self.likelihood.variance
         sigma = tf.sqrt(sigma_sq)
+        outdim = to_default_float(tf.shape(y)[1])
 
         Aerr = tf.linalg.matmul(A, err)
         c = tf.linalg.triangular_solve(LB, Aerr, lower=True) / sigma
 
-        quad = -0.5 * (tf.reduce_sum(tf.square(err)) / sigma_sq - tf.reduce_sum(tf.square(c)))
+        # σ⁻² yᵀy
+        err_inner_prod = tf.reduce_sum(tf.square(err)) / sigma_sq
+        c_inner_prod = tf.reduce_sum(tf.square(c))
+
+        quad = -0.5 * (outdim * err_inner_prod - c_inner_prod)
         return quad
 
     def elbo(self) -> tf.Tensor:
@@ -233,11 +242,12 @@ class SGPR(SGPRBase):
         SGPR notebook.
         """
         common = self._common_calculation()
-        num_data = to_default_float(tf.shape(self.data[-1])[0])
-        output_dim = to_default_float(tf.shape(self.data[-1])[1])
+        output_shape = tf.shape(self.data[-1])
+        num_data = to_default_float(output_shape[0])
+        output_dim = to_default_float(output_shape[1])
         const = -0.5 * num_data * output_dim * np.log(2 * np.pi)
-        logdet = self._logdet_term(common)
-        quad = self._quad_term(common)
+        logdet = self.logdet_term(common)
+        quad = self.quad_term(common)
         return const + logdet + quad
 
     def predict_f(self, Xnew: InputData, full_cov=False, full_output_cov=False) -> MeanAndVariance:

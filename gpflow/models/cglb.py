@@ -4,7 +4,7 @@ import tensorflow as tf
 
 from ..base import Parameter
 from ..config import default_float, default_int
-from ..utilities import to_default_float
+from ..utilities import to_default_float, add_noise_cov
 from .sgpr import SGPR
 from .training_mixins import RegressionData
 
@@ -15,9 +15,9 @@ class CGLB(SGPR):
         data: RegressionData,
         *args,
         max_cg_error: float = 1.0,
-        max_cg_iters=100,
-        restart_cg_iters=40,
-        v_grad_optimization=False,
+        max_cg_iters: int = 100,
+        restart_cg_iters: int = 40,
+        v_grad_optimization: bool = False,
         **kwargs,
     ):
         super(CGLB, self).__init__(data, *args, **kwargs)
@@ -27,7 +27,7 @@ class CGLB(SGPR):
         self._max_cg_iters = max_cg_iters
         self._restart_cg_iters = restart_cg_iters
 
-    def _logdet_term(self, common):
+    def logdet_term(self, common):
         """
         \math:`log |K + σ²I| <= log |Q + σ²I| + n * log(1 + tr(K - Q)/(σ²n))`
         """
@@ -48,12 +48,11 @@ class CGLB(SGPR):
         logtrace = num_data * tf.math.log(1 + trace / num_data)
         return -output_dim * (logdet_b + 0.5 * logsigma_sq + 0.5 * logtrace)
 
-    def _quad_term(self, common) -> tf.Tensor:
+    def quad_term(self, common) -> tf.Tensor:
         x, y = self.data
         err = y - self.mean_function(x)
-        num_data = to_default_float(tf.shape(err)[0])
         sigma_sq = self.likelihood.variance
-        K = self.kernel.K(x) + sigma_sq * tf.eye(num_data, dtype=default_float())
+        K = add_noise_cov(self.kernel.K(x), sigma_sq)
 
         A = common.A
         LB = common.LB
@@ -88,8 +87,8 @@ class CGLB(SGPR):
 
 class NystromPreconditioner:
     """
-    Preconditioner of the form \math:`(Qff + σ²I)⁻¹`,
-    where \math:`A = σ⁻²L⁻¹Kᵤₓ` and \math:`B = AAᵀ + I`.
+    Preconditioner of the form \math:`(Q_ff + σ²I)⁻¹`,
+    where \math:`A = σ⁻²L⁻¹Kᵤₓ` and \math:`B = AAᵀ + I = LᵦLᵦᵀ`
     """
 
     def __init__(self, A, LB, sigma_sq):
@@ -119,10 +118,18 @@ class NystromPreconditioner:
 
 def cglb_conjugate_gradient(K, b, initial, preconditioner, max_error, max_steps, restart_cg_step):
     """
-    :param A: [N, N] Matrix we want to backsolve from
-    :param b: [B, N] Vector we want to backsolve
-    :param P: Preconditioner (implements a mat_vec method)
-    :return: v: Approximate solution
+    Conjugate gradient algorithm used in CGLB model.
+
+    :param K: Matrix we want to backsolve from. Shape [N, N].
+    :param b: Vector we want to backsolve. Shape [B, N].
+    :param initial: Initial vector solution. Shape [N].
+    :param preconditioner: Preconditioner function.
+    :param max_error: Expected maximum error. This value is used as a
+        decision boundary against stopping criteria.
+    :param max_steps: Maximum number of CG iterations.
+    :param restart_cg_step: Restart step at which the CG resets the internal state to
+        the initial position using the currect solution vector \math:`v`.
+    :return: Approximate solution to \math:`K v = b`.
     """
     CGState = namedtuple("CGState", ["i", "v", "r", "p", "rz"])
 
