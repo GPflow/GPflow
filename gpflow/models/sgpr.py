@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from collections import namedtuple
 from typing import Optional, Tuple
 
 import numpy as np
@@ -19,7 +20,6 @@ import tensorflow as tf
 
 from gpflow.kernels import Kernel
 
-from collections import namedtuple
 from .. import likelihoods
 from ..config import default_float, default_jitter
 from ..covariances.dispatch import Kuf, Kuu
@@ -153,10 +153,9 @@ class SGPR(SGPRBase):
 
     CommonTensors = namedtuple("CommonTensors", ["A", "B", "LB", "AAT", "L"])
 
-
     def maximum_log_likelihood_objective(self) -> tf.Tensor:
         return self.elbo()
-    
+
     def _common_calculation(self):
         """
         Matrices used in log-det calculation
@@ -179,7 +178,7 @@ class SGPR(SGPRBase):
         LB = tf.linalg.cholesky(B)
 
         return self.CommonTensors(A, B, LB, AAT, L)
-    
+
     def _logdet_term(self, common):
         """
         Bound from Jensen's Inequality:
@@ -209,9 +208,9 @@ class SGPR(SGPRBase):
         # N * log(\sigma^2)
         log_sigma_sq = num_data * output_dim * tf.math.log(sigma_sq)
 
-        logdet_k = - (logdet_b + 0.5 * log_sigma_sq + 0.5 * trace)
+        logdet_k = -(logdet_b + 0.5 * log_sigma_sq + 0.5 * trace)
         return logdet_k
-    
+
     def _quad_term(self, common) -> tf.Tensor:
         A = common.A
         LB = common.LB

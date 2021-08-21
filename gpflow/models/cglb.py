@@ -1,11 +1,12 @@
+from collections import namedtuple
+
 import tensorflow as tf
 
-from collections import namedtuple
 from ..base import Parameter
 from ..config import default_float, default_int
 from ..utilities import to_default_float
-from .training_mixins import RegressionData
 from .sgpr import SGPR
+from .training_mixins import RegressionData
 
 
 class CGLB(SGPR):
