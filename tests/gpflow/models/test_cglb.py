@@ -13,9 +13,11 @@
 # limitations under the License.
 
 from dataclasses import dataclass
+
 import numpy as np
-from gpflow.models import CGLB, SGPR
+
 from gpflow.kernels import SquaredExponential
+from gpflow.models import CGLB, SGPR
 from gpflow.utilities import to_default_float as tdf
 
 
@@ -29,7 +31,6 @@ def data(rng: np.random.RandomState):
     z = rng.randn(20, 2)
 
     return (tdf(x), tdf(y)), tdf(z)
-
 
 
 def test_cglb_check_basics():
@@ -55,4 +56,3 @@ def test_cglb_check_basics():
     sgpr_logdet = sgpr.logdet_term(sgpr_common)
     cglb_logdet = cglb.logdet_term(cglb_common)
     assert cglb_logdet >= sgpr_logdet
-
