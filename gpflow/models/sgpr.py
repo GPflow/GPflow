@@ -25,7 +25,7 @@ from ..config import default_float, default_jitter
 from ..covariances.dispatch import Kuf, Kuu
 from ..inducing_variables import InducingPoints
 from ..mean_functions import MeanFunction
-from ..utilities import to_default_float, add_noise_cov
+from ..utilities import add_noise_cov, to_default_float
 from .model import GPModel, MeanAndVariance
 from .training_mixins import InputData, InternalDataTrainingLossMixin, RegressionData
 from .util import data_input_to_tensor, inducingpoint_wrapper

@@ -4,7 +4,7 @@ import tensorflow as tf
 
 from ..base import Parameter
 from ..config import default_float, default_int
-from ..utilities import to_default_float, add_noise_cov
+from ..utilities import add_noise_cov, to_default_float
 from .sgpr import SGPR
 from .training_mixins import RegressionData
 
