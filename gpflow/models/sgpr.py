@@ -163,7 +163,6 @@ class SGPR(SGPRBase):
         """
         x, _ = self.data
         iv = self.inducing_variable
-        num_iv = tf.shape(iv.Z)[0]
         sigma_sq = self.likelihood.variance
 
         kuf = Kuf(iv, self.kernel, x)
@@ -174,7 +173,7 @@ class SGPR(SGPRBase):
         # Compute intermediate matrices
         A = tf.linalg.triangular_solve(L, kuf, lower=True) / sigma
         AAT = tf.linalg.matmul(A, A, transpose_b=True)
-        B = add_noise_cov(AAT, 1.0)
+        B = add_noise_cov(AAT, tf.cast(1.0, AAT.dtype))
         LB = tf.linalg.cholesky(B)
 
         return self.CommonTensors(A, B, LB, AAT, L)
