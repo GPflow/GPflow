@@ -169,7 +169,7 @@ def cglb_conjugate_gradient(K, b, initial, preconditioner, max_error, max_steps,
         )
         return [CGState(i, v, r, p, new_rz)]
 
-    Kv = b @ K
+    Kv = initial @ K
     r = b - Kv
     z, rz = preconditioner(r)
     p = z
