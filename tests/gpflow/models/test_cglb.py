@@ -48,7 +48,13 @@ def test_cglb_check_basics():
 
     sgpr = SGPR(train, kernel=SquaredExponential(), inducing_variable=z, noise_variance=lik_var)
     # `v_grad_optimization=True` turns off the CG in the quadratic term
-    cglb = CGLB(train, kernel=SquaredExponential(), inducing_variable=z, noise_variance=lik_var, v_grad_optimization=True)
+    cglb = CGLB(
+        train,
+        kernel=SquaredExponential(),
+        inducing_variable=z,
+        noise_variance=lik_var,
+        v_grad_optimization=True,
+    )
 
     sgpr_common = sgpr._common_calculation()
     cglb_common = cglb._common_calculation()
@@ -61,7 +67,7 @@ def test_cglb_check_basics():
     cglb_logdet = cglb.logdet_term(cglb_common)
     x = train[0]
     K = SquaredExponential()(x) + lik_var * tf.eye(x.shape[0], dtype=default_float())
-    gpr_logdet = - 0.5 * tf.linalg.logdet(K)
+    gpr_logdet = -0.5 * tf.linalg.logdet(K)
     assert cglb_logdet >= sgpr_logdet
     assert cglb_logdet <= gpr_logdet
 
