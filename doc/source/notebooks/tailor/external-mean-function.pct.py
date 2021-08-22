@@ -145,7 +145,7 @@ from gpflow.config import default_float
 
 
 def build_mean_function():
-    tf.keras.backend.set_floatx('float64')
+    tf.keras.backend.set_floatx("float64")
     assert default_float() == np.float64
 
     inputs = tf.keras.layers.Input(shape=(1,))
