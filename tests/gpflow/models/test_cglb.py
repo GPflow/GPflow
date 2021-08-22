@@ -94,7 +94,7 @@ def test_conjugate_gradient_convergence():
     initial = tf.zeros_like(b)
     A = common.A
     LB = common.LB
-    max_error = 0.1
+    max_error = 0.01
     max_steps = 200
     restart_cg_step = 200
     preconditioner = NystromPreconditioner(A, LB, noise)
@@ -103,7 +103,8 @@ def test_conjugate_gradient_convergence():
         K, b, initial, preconditioner, max_error, max_steps, restart_cg_step
     )
 
-    np.testing.assert_allclose(Kinv_y, tf.transpose(v))
+    # NOTE: with smaller `max_error` we can reduce the `rtol`
+    np.testing.assert_allclose(Kinv_y, tf.transpose(v), rtol=0.1)
 
 
 def test_cglb_quad_term_guarantees():
