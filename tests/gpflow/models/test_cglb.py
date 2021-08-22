@@ -15,10 +15,13 @@
 from dataclasses import dataclass
 
 import numpy as np
+import tensorflow as tf
 
 from gpflow.kernels import SquaredExponential
 from gpflow.models import CGLB, SGPR
+from gpflow.models.cglb import NystromPreconditioner, cglb_conjugate_gradient
 from gpflow.utilities import to_default_float as tdf
+from gpflow.config import default_float
 
 
 def data(rng: np.random.RandomState):
@@ -28,7 +31,7 @@ def data(rng: np.random.RandomState):
     x = rng.randn(n, d)
     c = np.array([[-1.4], [0.5]])
     y = np.sin(x @ c + 0.5 * rng.randn(n, 1))
-    z = rng.randn(20, 2)
+    z = rng.randn(10, 2)
 
     return (tdf(x), tdf(y)), tdf(z)
 
@@ -56,3 +59,62 @@ def test_cglb_check_basics():
     sgpr_logdet = sgpr.logdet_term(sgpr_common)
     cglb_logdet = cglb.logdet_term(cglb_common)
     assert cglb_logdet >= sgpr_logdet
+
+def test_cg():
+    """
+    Check that the method of conjugate gradients implemented can solve a linear system of equations
+    """
+    rng: np.random.RandomState = np.random.RandomState(999)
+    lik_var = 1e-3
+    train, z = data(rng)
+    x, y = train
+    b = tf.transpose(y)
+    k = SquaredExponential()
+    K = k(x) + lik_var * tf.eye(x.shape[0], dtype=default_float())
+    Kinvy = tf.linalg.solve(K, y) # We could solve by cholesky instead
+    
+    K = k(x) + tf.eye(x.shape[0], dtype=default_float())
+    initial = tf.zeros_like(b)
+    model = CGLB((x, y), kernel = k, inducing_variable=z, noise_variance=lik_var)
+    common = model._common_calculation()
+    A = common.A
+    LB = common.LB
+    preconditioner = NystromPreconditioner(A, LB, lik_var)
+    v  = cglb_conjugate_gradient(K, b, initial, preconditioner, 
+                                 0.1, 200, 200) # error, steps, restart
+    np.allclose(Kinvy, v)
+
+
+
+def test_cglb_quad_term():
+    """
+    Check that when conjugate gradient is used to evaluate the quadratic term, the obtained solution is:
+    1. Smaller than the solution computed by Cholesky decomposition
+    2. Within the error tolerance of the solution computed by Cholesky
+    """
+    rng: np.random.RandomState = np.random.RandomState(999)
+    max_error: float = 1e-2
+    lik_var: float = 1e-2
+    train, z = data(rng)
+    x, y = train
+    k = SquaredExponential()
+    K = k(x) + lik_var * tf.eye(x.shape[0], dtype=default_float())
+    def inv_quad_term(K: tf.Tensor, y: tf.Tensor):
+        """
+        For PSD K, compute -0.5 * y.T K^{-1} y via Cholesky decomposition
+        """
+        L = tf.linalg.cholesky(K)
+        Linvy = tf.linalg.triangular_solve(L, y)
+        return -0.5 * tf.reduce_sum(tf.square(Linvy))
+    
+    choleksy_quad_term = inv_quad_term(K, y)
+
+    cglb = CGLB(train, kernel=k, inducing_variable=z, noise_variance=lik_var, max_cg_error=max_error, max_cg_iters = 100, restart_cg_iters=10)
+    common = cglb._common_calculation()
+    cglb_quad_term = cglb.quad_term(common)
+    
+    assert cglb_quad_term <= choleksy_quad_term
+
+    assert cglb_quad_term >= choleksy_quad_term - max_error
+
+
