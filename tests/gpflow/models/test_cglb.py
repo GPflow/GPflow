@@ -17,11 +17,11 @@ from dataclasses import dataclass
 import numpy as np
 import tensorflow as tf
 
+from gpflow.config import default_float
 from gpflow.kernels import SquaredExponential
 from gpflow.models import CGLB, SGPR
 from gpflow.models.cglb import NystromPreconditioner, cglb_conjugate_gradient
 from gpflow.utilities import to_default_float as tdf
-from gpflow.config import default_float
 
 
 def data(rng: np.random.RandomState):
@@ -60,6 +60,7 @@ def test_cglb_check_basics():
     cglb_logdet = cglb.logdet_term(cglb_common)
     assert cglb_logdet >= sgpr_logdet
 
+
 def test_cg():
     """
     Check that the method of conjugate gradients implemented can solve a linear system of equations
@@ -71,19 +72,19 @@ def test_cg():
     b = tf.transpose(y)
     k = SquaredExponential()
     K = k(x) + lik_var * tf.eye(x.shape[0], dtype=default_float())
-    Kinvy = tf.linalg.solve(K, y) # We could solve by cholesky instead
-    
+    Kinvy = tf.linalg.solve(K, y)  # We could solve by cholesky instead
+
     K = k(x) + tf.eye(x.shape[0], dtype=default_float())
     initial = tf.zeros_like(b)
-    model = CGLB((x, y), kernel = k, inducing_variable=z, noise_variance=lik_var)
+    model = CGLB((x, y), kernel=k, inducing_variable=z, noise_variance=lik_var)
     common = model._common_calculation()
     A = common.A
     LB = common.LB
     preconditioner = NystromPreconditioner(A, LB, lik_var)
-    v  = cglb_conjugate_gradient(K, b, initial, preconditioner, 
-                                 0.1, 200, 200) # error, steps, restart
+    v = cglb_conjugate_gradient(
+        K, b, initial, preconditioner, 0.1, 200, 200
+    )  # error, steps, restart
     np.allclose(Kinvy, v)
-
 
 
 def test_cglb_quad_term():
@@ -99,6 +100,7 @@ def test_cglb_quad_term():
     x, y = train
     k = SquaredExponential()
     K = k(x) + lik_var * tf.eye(x.shape[0], dtype=default_float())
+
     def inv_quad_term(K: tf.Tensor, y: tf.Tensor):
         """
         For PSD K, compute -0.5 * y.T K^{-1} y via Cholesky decomposition
@@ -106,15 +108,21 @@ def test_cglb_quad_term():
         L = tf.linalg.cholesky(K)
         Linvy = tf.linalg.triangular_solve(L, y)
         return -0.5 * tf.reduce_sum(tf.square(Linvy))
-    
+
     choleksy_quad_term = inv_quad_term(K, y)
 
-    cglb = CGLB(train, kernel=k, inducing_variable=z, noise_variance=lik_var, max_cg_error=max_error, max_cg_iters = 100, restart_cg_iters=10)
+    cglb = CGLB(
+        train,
+        kernel=k,
+        inducing_variable=z,
+        noise_variance=lik_var,
+        max_cg_error=max_error,
+        max_cg_iters=100,
+        restart_cg_iters=10,
+    )
     common = cglb._common_calculation()
     cglb_quad_term = cglb.quad_term(common)
-    
+
     assert cglb_quad_term <= choleksy_quad_term
 
     assert cglb_quad_term >= choleksy_quad_term - max_error
-
-
