@@ -231,7 +231,7 @@ class SGPR(SGPRBase):
         err_inner_prod = tf.reduce_sum(tf.square(err)) / sigma_sq
         c_inner_prod = tf.reduce_sum(tf.square(c))
 
-        quad = -0.5 * (outdim * err_inner_prod - c_inner_prod)
+        quad = -0.5 * (err_inner_prod - c_inner_prod)
         return quad
 
     def elbo(self) -> tf.Tensor:
