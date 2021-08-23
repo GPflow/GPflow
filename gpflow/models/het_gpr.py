@@ -1,4 +1,5 @@
 import tensorflow as tf
+import tensorflow_probability as tfp
 from typing import Optional
 
 from .. import posteriors
@@ -73,14 +74,19 @@ class het_GPR(GPR_with_posterior):
             )
 
         f_mean, f_var = self.predict_f(Xnew, full_cov=full_cov, full_output_cov=full_output_cov)
-        return self.likelihood.predict_mean_and_var(Xnew, f_mean, f_var)
+        Fs = tf.concat([f_mean, Xnew], axis=-1)
+        dummy_f_var = tf.zeros_like(f_var)
+        F_vars = tf.concat([f_var, dummy_f_var], axis=-1)
+        return self.likelihood.predict_mean_and_var(Fs, F_vars)
 
     def _add_noise_cov(self, X, K: tf.Tensor) -> tf.Tensor:
         """
         Returns K + diag(σ²), where σ² is the likelihood noise variance (vector),
         and I is the corresponding identity matrix.
         """
-        variances = self.likelihood.compute_variances(X)
+        dummy_F = tf.zeros_like(X)
+        Fs = tf.concat([dummy_F, X], axis=-1)
+        variances = self.likelihood.conditional_variance(Fs)
         return add_linear_noise_cov(K, tf.squeeze(variances))
 
     def log_marginal_likelihood(self) -> tf.Tensor:
