@@ -37,11 +37,6 @@ This release contains contributions from:
 
 <INSERT SMALL BLURB ABOUT RELEASE FOCUS AREA AND POTENTIAL TOOLCHAIN CHANGES>
 
-## Breaking Changes
-
-* <DOCUMENT BREAKING CHANGES HERE>
-* <THIS SECTION SHOULD CONTAIN API AND BEHAVIORAL BREAKING CHANGES>
-
 ## Known Caveats
 
 * <CAVEATS REGARDING THE RELEASE (BUT NOT BREAKING CHANGES).>
@@ -50,18 +45,21 @@ This release contains contributions from:
 
 ## Major Features and Improvements
 
-* <INSERT MAJOR FEATURE HERE, USING MARKDOWN SYNTAX>
-* <IF RELEASE CONTAINS MULTIPLE FEATURES FROM SAME AREA, GROUP THEM TOGETHER>
+* Refactor posterior base class to support other model types. (#1695)
+* Add new posterior class to enable faster predictions from the GPR model. (#1696)
+* Construct Parameters from other Parameters and retain properties. (#1699)
 
 ## Bug Fixes and Other Changes
 
-* Fix unit test failure when using TensorFlow 2.5.0
+* Fix unit test failure when using TensorFlow 2.5.0 (#1684)
+* Upgrade black formatter to version 20.8b1 (#1694)
+* Remove erroneous DeprecationWarnings (#1693)
 
 ## Thanks to our Contributors
 
 This release contains contributions from:
 
-<INSERT>, <NAME>, <HERE>, <USING>, <GITHUB>, <HANDLE>
+johnamcleod, st--, Andrew878
 
 
 # Release 2.2.1

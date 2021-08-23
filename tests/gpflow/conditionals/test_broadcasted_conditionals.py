@@ -78,7 +78,8 @@ def test_conditional_broadcasting(full_cov, white, conditional_type):
             gpflow.inducing_variables.InducingPoints(Data.Z)
         )
         kernel = mk.LinearCoregionalization(
-            kernels=[gpflow.kernels.Matern52(lengthscales=0.5) for _ in range(Data.L)], W=Data.W,
+            kernels=[gpflow.kernels.Matern52(lengthscales=0.5) for _ in range(Data.L)],
+            W=Data.W,
         )
     else:
         raise NotImplementedError
