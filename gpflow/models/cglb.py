@@ -24,6 +24,22 @@ from .training_mixins import RegressionData
 
 
 class CGLB(SGPR):
+    """
+    Conjugate Gradient Lower Bound. The key reference is
+
+    ::
+
+        @InProceedings{pmlr-v139-artemev21a,
+            title = {Tighter Bounds on the Log Marginal Likelihood of Gaussian Process Regression Using Conjugate Gradients},
+            author = {Artemev, Artem and Burt, David R. and van der Wilk, Mark},
+            booktitle = {Proceedings of the 38th International Conference on Machine Learning},
+            pages = {362--372},
+            year = {2021}
+        }
+
+
+    """
+
     def __init__(
         self,
         data: RegressionData,
@@ -43,7 +59,12 @@ class CGLB(SGPR):
 
     def logdet_term(self, common):
         """
+        Compute a lower bound on -0.5 * log |K + σ²I| based on a low-rank approximation to K.
+
         \math:`log |K + σ²I| <= log |Q + σ²I| + n * log(1 + tr(K - Q)/(σ²n))`
+
+        This bound is at least as tight as
+        \math: `log |K + σ²I| <=  log |Q + σ²I| + tr(K - Q)/σ², which appears in SGPR.
         """
         LB = common.LB
         AAT = common.AAT
@@ -63,6 +84,15 @@ class CGLB(SGPR):
         return -output_dim * (logdet_b + 0.5 * logsigma_sq + 0.5 * logtrace)
 
     def quad_term(self, common) -> tf.Tensor:
+        """
+        Computes a lower bound on the quadratic term in the log marginal likelihood of conjugate GPR.
+        The bound is based on an auxilary vector, v. For Q ≺ K and r = y - Kv
+
+        -0.5 * (rᵀQ⁻¹r + 2yᵀv - vᵀ K v ) <= -0.5 * yᵀK⁻¹y <= -0.5 * (2yᵀv - vᵀKv).
+
+        Equality holds if r=0, i.e. v = K⁻¹y.
+
+        """
         x, y = self.data
         err = y - self.mean_function(x)
         sigma_sq = self.likelihood.variance
@@ -102,7 +132,7 @@ class CGLB(SGPR):
 class NystromPreconditioner:
     """
     Preconditioner of the form \math:`(Q_ff + σ²I)⁻¹`,
-    where \math:`A = σ⁻²L⁻¹Kᵤₓ` and \math:`B = AAᵀ + I = LᵦLᵦᵀ`
+    where L is lower triangular with LLᵀ = Kᵤᵤ \math:`A = σ⁻²L⁻¹Kᵤₓ` and \math:`B = AAᵀ + I = LᵦLᵦᵀ`
     """
 
     def __init__(self, A, LB, sigma_sq):
@@ -111,6 +141,11 @@ class NystromPreconditioner:
         self.sigma_sq = sigma_sq
 
     def __call__(self, v):
+        """
+        Computes v Q^{-1}. Note that this is implemented as multipication of a row vector on the right.
+
+        :param v: Vector we want to backsolve. Shape [B, N].
+        """
         sigma_sq = self.sigma_sq
         A = self.A
         LB = self.LB
@@ -132,9 +167,14 @@ class NystromPreconditioner:
 
 def cglb_conjugate_gradient(K, b, initial, preconditioner, max_error, max_steps, restart_cg_step):
     """
-    Conjugate gradient algorithm used in CGLB model.
+    Conjugate gradient algorithm used in CGLB model. The method of conjugate gradient
+    (Hestenes and Stiefel, 1952) produces a sequence of vectors v_0, v_1, v_2, ..., v_N such that
+    v_0 = initial, and (in exact arithmetic) Kv_n = b. In practice, the v_i often converge quickly
+    to approximate K^{-1}b, and the algorithm can be stopped without running N iterations.
+    We assume the preconditioner, Q, satisfies Q ≺ K, and stop the algorithm when r_i = b - Kv_i
+    satisfies \math: ||r_i||_{Q^{-1}}^2 = r_i.T Q^{-1} r_i <= max_error.
 
-    :param K: Matrix we want to backsolve from. Shape [N, N].
+    :param K: Matrix we want to backsolve from. Must be PSD. Shape [N, N].
     :param b: Vector we want to backsolve. Shape [B, N].
     :param initial: Initial vector solution. Shape [N].
     :param preconditioner: Preconditioner function.
@@ -143,6 +183,7 @@ def cglb_conjugate_gradient(K, b, initial, preconditioner, max_error, max_steps,
     :param max_steps: Maximum number of CG iterations.
     :param restart_cg_step: Restart step at which the CG resets the internal state to
         the initial position using the currect solution vector \math:`v`.
+        Can help avoid build up of numerical errors.
     :return: Approximate solution to \math:`K v = b`.
     """
     CGState = namedtuple("CGState", ["i", "v", "r", "p", "rz"])
