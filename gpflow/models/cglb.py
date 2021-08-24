@@ -18,12 +18,12 @@ from typing import Union
 import tensorflow as tf
 
 from ..base import Parameter
-from .model import MeanAndVariance, InputData
 from ..config import default_float, default_int
+from ..covariances import Kuf
 from ..utilities import add_noise_cov, to_default_float
+from .model import InputData, MeanAndVariance
 from .sgpr import SGPR
 from .training_mixins import RegressionData
-from ..covariances import Kuf
 
 
 class CGLB(SGPR):

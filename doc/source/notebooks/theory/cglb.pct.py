@@ -14,7 +14,7 @@ from gpflow.optimizers import Scipy
 
 # %%
 def load_snelson_data():
-    if 'workbookDir' in globals():
+    if "workbookDir" in globals():
         curdir = Path(".").resolve()
     else:
         curdir = Path(__file__).parent
@@ -110,6 +110,7 @@ pred_tol = cglb.predict_y(xnew, cg_tolerance=0.01)
 
 fig, axes = plt.subplots(2, 1, figsize=(7, 5))
 
+
 def plot_prediction(ax, x, y, xnew, loc, scale, color, label):
     for k in (1, 2):
         lb = (loc - k * scale).squeeze()
@@ -119,6 +120,7 @@ def plot_prediction(ax, x, y, xnew, loc, scale, color, label):
 
     ax.plot(xnew, loc, color=color, label=label)
     ax.scatter(x, y, color="gray", s=8, alpha=0.7)
+
 
 x, y = x.squeeze(), y.squeeze()
 xnew = xnew.squeeze()
