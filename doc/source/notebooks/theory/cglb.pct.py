@@ -103,7 +103,7 @@ _ = opt.minimize(cglb.training_loss_closure(), variables, options=dict(maxiter=1
 
 # %%
 k = 100
-xnew = np.linspace(x.min() - 0.5, x.max() + 0.5, k).reshape(-1, 1)
+xnew = np.linspace(x.min() - 1.0, x.max() + 1.0, k).reshape(-1, 1)
 
 pred_no_tol = cglb.predict_y(xnew, cg_tolerance=None)
 pred_tol = cglb.predict_y(xnew, cg_tolerance=0.01)
