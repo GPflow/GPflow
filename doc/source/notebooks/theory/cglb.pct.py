@@ -1,6 +1,8 @@
-import tensorflow as tf
+# -*- coding: utf-8 -*-
+# %%
 import numpy as np
 import matplotlib.pyplot as plt
+from cglb import load_snelson_data, plot_prediction
 from pathlib import Path
 from gpflow.models import CGLB, SGPR, GPR
 from gpflow.kernels import SquaredExponential
@@ -13,22 +15,6 @@ from gpflow.optimizers import Scipy
 # First, we load the `snelson1d` training dataset.
 
 # %%
-def load_snelson_data():
-    if "workbookDir" in globals():
-        curdir = Path(".").resolve()
-    else:
-        curdir = Path(__file__).parent
-
-    train_inputs = "snelson_train_inputs.dat"
-    train_outputs = "snelson_train_outputs.dat"
-    datapath = lambda name: str(Path(curdir, "data", name).resolve())
-    xfile = datapath(train_inputs)
-    yfile = datapath(train_outputs)
-    x = np.loadtxt(xfile).reshape(-1, 1)
-    y = np.loadtxt(yfile).reshape(-1, 1)
-    return (x, y)
-
-
 data = load_snelson_data()
 
 # %% [markdown]
@@ -80,6 +66,8 @@ plt.show()
 # * `restart_cg_step`. The frequency with wich the CG resets the internal state to the initial position using current solution vector `v`.
 # * `v_grad_optimization`. CGLB introduces auxilary parameter `v`, and by default optimal `v` is found with the CG. Howover you can include `v` into the list of trainable model parameters.
 
+# %%
+
 cglb = CGLB(
     data,
     kernel=SquaredExponential(),
@@ -109,18 +97,6 @@ pred_no_tol = cglb.predict_y(xnew, cg_tolerance=None)
 pred_tol = cglb.predict_y(xnew, cg_tolerance=0.01)
 
 fig, axes = plt.subplots(2, 1, figsize=(7, 5))
-
-
-def plot_prediction(ax, x, y, xnew, loc, scale, color, label):
-    for k in (1, 2):
-        lb = (loc - k * scale).squeeze()
-        ub = (loc + k * scale).squeeze()
-        alpha = 1 - 0.4 * k
-        ax.fill_between(xnew, lb, ub, color=color, alpha=alpha)
-
-    ax.plot(xnew, loc, color=color, label=label)
-    ax.scatter(x, y, color="gray", s=8, alpha=0.7)
-
 
 x, y = x.squeeze(), y.squeeze()
 xnew = xnew.squeeze()
