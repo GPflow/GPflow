@@ -61,11 +61,14 @@ class CGLB(SGPR):
     def logdet_term(self, common):
         """
         Compute a lower bound on -0.5 * log |K + σ²I| based on a low-rank approximation to K.
-
-        \math:`log |K + σ²I| <= log |Q + σ²I| + n * log(1 + tr(K - Q)/(σ²n))`
+        ..  math::
+            log |K + σ²I| <= log |Q + σ²I| + n * log(1 + tr(K - Q)/(σ²n)).
 
         This bound is at least as tight as
-        \math: `log |K + σ²I| <=  log |Q + σ²I| + tr(K - Q)/σ², which appears in SGPR.
+        ..  math::
+            log |K + σ²I| <=  log |Q + σ²I| + tr(K - Q)/σ²,
+
+        which appears in SGPR.
         """
         LB = common.LB
         AAT = common.AAT
@@ -87,17 +90,18 @@ class CGLB(SGPR):
     def quad_term(self, common) -> tf.Tensor:
         """
         Computes a lower bound on the quadratic term in the log marginal likelihood of conjugate GPR.
-        The bound is based on an auxilary vector, v. For Q ≺ K and r = y - Kv
+        The bound is based on an auxilary vector, v. For :math:`Q ≺ K` and :math:`r=y - Kv`
 
-        -0.5 * (rᵀQ⁻¹r + 2yᵀv - vᵀ K v ) <= -0.5 * yᵀK⁻¹y <= -0.5 * (2yᵀv - vᵀKv).
+        .. math::
+            -0.5 * (rᵀQ⁻¹r + 2yᵀv - vᵀ K v ) <= -0.5 * yᵀK⁻¹y <= -0.5 * (2yᵀv - vᵀKv).
 
-        Equality holds if r=0, i.e. v = K⁻¹y.
+        Equality holds if :math:`r=0`, i.e. :math:`v = K⁻¹y`.
 
-        If self._v.is_trainable, gradients are computed with respect to v as well and v can be optimized using 
+        If self._v.is_trainable, gradients are computed with respect to v as well and v can be optimized using
         gradient based methods.
-        
-        Otherwise, v is updated with the method of conjugate gradients (CG). 
-        CG is run until 0.5 * rᵀQ⁻¹r <= self._cg_tolerance, which ensures that the maximum bias due to this term is 
+
+        Otherwise, v is updated with the method of conjugate gradients (CG).
+        CG is run until :math:`0.5 * rᵀQ⁻¹r <=` self._cg_tolerance, which ensures that the maximum bias due to this term is
         not more than self._cg_tolerance.
 
         """
@@ -141,20 +145,20 @@ class CGLB(SGPR):
         xnew: InputData,
         full_cov=False,
         full_output_cov=False,
-        cg_tolerance: Union[float, None] = 1e-3
+        cg_tolerance: Union[float, None] = 1e-3,
     ) -> MeanAndVariance:
         """
         The posterior mean for CGLB model is given by
 
-        \math:
+        .. :math::
             m(xs) = K_{sf}v + Q_{ff}Q⁻¹r
 
-        where \math:`r = y - K v`  is the residual from CG.
+        where :math:`r = y - K v`  is the residual from CG.
 
-        Note that when \math:`v=0`, this agree with the SGPR mean, while if \math:`v = K⁻¹ y`, \math:`r=0`, and the exact GP mean is recovered.
+        Note that when :math:`v=0`, this agree with the SGPR mean, while if :math:`v = K⁻¹ y`, then :math:`r=0`, and the exact GP mean is recovered.
 
         cg_tolerance: float or None: If None, the cached value of v is used. If float, conjugate gradient is run until
-        \math:`rᵀQ⁻¹r < cg_tolerance`
+        :math:`rᵀQ⁻¹r <` cg_tolerance
         """
         x, y = self.data
         err = y - self.mean_function(x)
@@ -259,8 +263,8 @@ class CGLB(SGPR):
 
 class NystromPreconditioner:
     """
-    Preconditioner of the form \math:`(Q_ff + σ²I)⁻¹`,
-    where L is lower triangular with LLᵀ = Kᵤᵤ \math:`A = σ⁻²L⁻¹Kᵤₓ` and \math:`B = AAᵀ + I = LᵦLᵦᵀ`
+    Preconditioner of the form :math:`Q=(Q_ff + σ²I)⁻¹`,
+    where L is lower triangular with :math: `LLᵀ = Kᵤᵤ` :math:`A = σ⁻²L⁻¹Kᵤₓ` and :math:`B = AAᵀ + I = LᵦLᵦᵀ`
     """
 
     def __init__(self, A, LB, sigma_sq):
@@ -270,7 +274,7 @@ class NystromPreconditioner:
 
     def __call__(self, v):
         """
-        Computes v Q^{-1}. Note that this is implemented as multipication of a row vector on the right.
+        Computes :math:`vQ^{-1}`. Note that this is implemented as multipication of a row vector on the right.
 
         :param v: Vector we want to backsolve. Shape [B, N].
         """
@@ -299,12 +303,12 @@ def cglb_conjugate_gradient(
     """
     Conjugate gradient algorithm used in CGLB model. The method of conjugate gradient
     (Hestenes and Stiefel, 1952) produces a sequence of vectors
-    \math:`v_0, v_1, v_2, ..., v_N` such that \math:`v_0` = initial, and (in exact arithmetic)
-    \math:`Kv_n = b`. In practice, the v_i often converge quickly to approximate
-    \math:`K^{-1}b`, and the algorithm can be stopped without running N iterations.
+    :math:`v_0, v_1, v_2, ..., v_N` such that \math:`v_0` = initial, and (in exact arithmetic)
+    :math:`Kv_n = b`. In practice, the v_i often converge quickly to approximate
+    :math:`K^{-1}b`, and the algorithm can be stopped without running N iterations.
 
     We assume the preconditioner, \math:`Q`, satisfies \math:`Q ≺ K`, and stop the algorithm
-    when \math:`r_i = b - Kv_i` satisfies \math:`||rᵢᵀ||_{Q⁻¹r}^2 = rᵢᵀQ⁻¹rᵢ <= ϵ`.
+    when :math:`r_i = b - Kv_i` satisfies :math:`||rᵢᵀ||_{Q⁻¹r}^2 = rᵢᵀQ⁻¹rᵢ <= ϵ`.
 
     :param K: Matrix we want to backsolve from. Must be PSD. Shape [N, N].
     :param b: Vector we want to backsolve. Shape [B, N].
