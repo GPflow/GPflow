@@ -303,11 +303,11 @@ def cglb_conjugate_gradient(
     """
     Conjugate gradient algorithm used in CGLB model. The method of conjugate gradient
     (Hestenes and Stiefel, 1952) produces a sequence of vectors
-    :math:`v_0, v_1, v_2, ..., v_N` such that \math:`v_0` = initial, and (in exact arithmetic)
+    :math:`v_0, v_1, v_2, ..., v_N` such that :math:`v_0` = initial, and (in exact arithmetic)
     :math:`Kv_n = b`. In practice, the v_i often converge quickly to approximate
     :math:`K^{-1}b`, and the algorithm can be stopped without running N iterations.
 
-    We assume the preconditioner, \math:`Q`, satisfies \math:`Q ≺ K`, and stop the algorithm
+    We assume the preconditioner, :math:`Q`, satisfies :math:`Q ≺ K`, and stop the algorithm
     when :math:`r_i = b - Kv_i` satisfies :math:`||rᵢᵀ||_{Q⁻¹r}^2 = rᵢᵀQ⁻¹rᵢ <= ϵ`.
 
     :param K: Matrix we want to backsolve from. Must be PSD. Shape [N, N].
@@ -318,9 +318,9 @@ def cglb_conjugate_gradient(
         decision boundary against stopping criteria.
     :param max_steps: Maximum number of CG iterations.
     :param restart_cg_step: Restart step at which the CG resets the internal state to
-        the initial position using the currect solution vector \math:`v`.
+        the initial position using the currect solution vector :math:`v`.
         Can help avoid build up of numerical errors.
-    :return: Approximate solution to \math:`K v = b`.
+    :return: Approximate solution to :math:`K v = b`.
     """
     CGState = namedtuple("CGState", ["i", "v", "r", "p", "rz"])
 
