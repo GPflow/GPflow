@@ -137,7 +137,7 @@ def test_cglb_quad_term_guarantees():
         kernel=k,
         inducing_variable=z,
         noise_variance=noise,
-        max_cg_error=max_error,
+        cg_tolerance=max_error,
         max_cg_iters=100,
         restart_cg_iters=10,
     )
