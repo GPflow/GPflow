@@ -13,14 +13,17 @@
 # limitations under the License.
 
 from collections import namedtuple
+from typing import Union
 
 import tensorflow as tf
 
 from ..base import Parameter
+from .model import MeanAndVariance, InputData
 from ..config import default_float, default_int
 from ..utilities import add_noise_cov, to_default_float
 from .sgpr import SGPR
 from .training_mixins import RegressionData
+from ..covariances import Kuf
 
 
 class CGLB(SGPR):
@@ -36,15 +39,13 @@ class CGLB(SGPR):
             pages = {362--372},
             year = {2021}
         }
-
-
     """
 
     def __init__(
         self,
         data: RegressionData,
         *args,
-        max_cg_error: float = 1.0,
+        cg_tolerance: float = 1.0,
         max_cg_iters: int = 100,
         restart_cg_iters: int = 40,
         v_grad_optimization: bool = False,
@@ -53,7 +54,7 @@ class CGLB(SGPR):
         super(CGLB, self).__init__(data, *args, **kwargs)
         n, b = self.data[1].shape
         self._v = Parameter(tf.zeros((b, n), dtype=default_float()), trainable=v_grad_optimization)
-        self._max_cg_error = max_cg_error
+        self._cg_tolerance = cg_tolerance
         self._max_cg_iters = max_cg_iters
         self._restart_cg_iters = restart_cg_iters
 
@@ -110,7 +111,7 @@ class CGLB(SGPR):
                 err_t,
                 v_init,
                 preconditioner,
-                self._max_cg_error,
+                self._cg_tolerance,
                 self._max_cg_iters,
                 self._restart_cg_iters,
             )
@@ -127,6 +128,123 @@ class CGLB(SGPR):
             v_init.assign(v)
 
         return -ub
+
+    def predict_f(
+        self,
+        xnew: InputData,
+        full_cov=False,
+        full_output_cov=False,
+        cg_tolerance: Union[float, None] = 1e-3,
+    ) -> MeanAndVariance:
+        """
+        The posterior mean for CGLB model is given by
+
+        \math:
+            m(xs) = K_{sf}v + Q_{ff} (Q_{ff} + σ²I)⁻¹r
+
+        where \math:`r = y - (K_{ff} + σ²I) v`  is the residual from CG.
+
+        Note that when \math:`v=0`, this agree with the SGPR mean, while if \math:`v = (Kff + σ²I)⁻¹ y`, \math:`r=0`, and the exact GP mean is recovered.
+        """
+        x, y = self.data
+        err = y - self.mean_function(x)
+        kxx = self.kernel(x, x)
+        ksf = self.kernel(xnew, x)
+        sigma_sq = self.likelihood.variance
+        sigma = tf.sqrt(sigma_sq)
+        iv = self.inducing_variable
+        kernel = self.kernel
+        matmul = tf.linalg.matmul
+        trisolve = tf.linalg.triangular_solve
+
+        kmat = add_noise_cov(kxx, sigma_sq)
+
+        common = self._common_calculation()
+        A, LB, L = common.A, common.LB, common.L
+
+        v = self._v
+        if cg_tolerance is not None:
+            preconditioner = NystromPreconditioner(A, LB, sigma_sq)
+            err_t = tf.transpose(err)
+            v = cglb_conjugate_gradient(
+                kmat,
+                err_t,
+                v,
+                preconditioner,
+                cg_tolerance,
+                self._max_cg_iters,
+                self._restart_cg_iters,
+            )
+
+        cg_mean = matmul(ksf, v, transpose_b=True)
+        res = err - matmul(kmat, v, transpose_b=True)
+
+        Kus = Kuf(iv, kernel, xnew)
+        Ares = matmul(A, res)  # The god of war!
+        c = trisolve(LB, Ares, lower=True) / sigma
+        tmp1 = trisolve(L, Kus, lower=True)
+        tmp2 = trisolve(LB, tmp1, lower=True)
+        sgpr_mean = matmul(tmp2, c, transpose_a=True)
+
+        if full_cov:
+            var = (
+                kernel(xnew)
+                + matmul(tmp2, tmp2, transpose_a=True)
+                - matmul(tmp1, tmp1, transpose_a=True)
+            )
+            var = tf.tile(var[None, ...], [self.num_latent_gps, 1, 1])  # [P, N, N]
+        else:
+            var = (
+                kernel(xnew, full_cov=False)
+                + tf.reduce_sum(tf.square(tmp2), 0)
+                - tf.reduce_sum(tf.square(tmp1), 0)
+            )
+            var = tf.tile(var[:, None], [1, self.num_latent_gps])
+
+        mean = sgpr_mean + cg_mean + self.mean_function(xnew)
+        return mean, var
+
+    def predict_y(
+        self,
+        xnew: InputData,
+        full_cov: bool = False,
+        full_output_cov: bool = False,
+        cg_tolerance: Union[float, None] = 1e-3,
+    ) -> MeanAndVariance:
+        """
+        Compute the mean and variance of the held-out data at the input points.
+        """
+        if full_cov or full_output_cov:
+            # See https://github.com/GPflow/GPflow/issues/1461
+            raise NotImplementedError(
+                "The predict_y method currently supports only the argument values full_cov=False and full_output_cov=False"
+            )
+
+        f_mean, f_var = self.predict_f(
+            xnew, full_cov=full_cov, full_output_cov=full_output_cov, cg_tolerance=cg_tolerance
+        )
+        return self.likelihood.predict_mean_and_var(f_mean, f_var)
+
+    def predict_log_density(
+        self,
+        data: RegressionData,
+        full_cov: bool = False,
+        full_output_cov: bool = False,
+        cg_tolerance: Union[float, None] = 1e-3,
+    ) -> tf.Tensor:
+        """
+        Compute the log density of the data at the new data points.
+        """
+        if full_cov or full_output_cov:
+            raise NotImplementedError(
+                "The predict_log_density method currently supports only the argument values full_cov=False and full_output_cov=False"
+            )
+
+        x, y = data
+        f_mean, f_var = self.predict_f(
+            x, full_cov=full_cov, full_output_cov=full_output_cov, cg_tolerance=cg_tolerance
+        )
+        return self.likelihood.predict_log_density(f_mean, f_var, y)
 
 
 class NystromPreconditioner:
@@ -165,20 +283,23 @@ class NystromPreconditioner:
         return trans(rv) / sigma_sq, vtrv / sigma_sq
 
 
-def cglb_conjugate_gradient(K, b, initial, preconditioner, max_error, max_steps, restart_cg_step):
+def cglb_conjugate_gradient(
+    K, b, initial, preconditioner, cg_tolerance, max_steps, restart_cg_step
+):
     """
     Conjugate gradient algorithm used in CGLB model. The method of conjugate gradient
-    (Hestenes and Stiefel, 1952) produces a sequence of vectors v_0, v_1, v_2, ..., v_N such that
-    v_0 = initial, and (in exact arithmetic) Kv_n = b. In practice, the v_i often converge quickly
-    to approximate K^{-1}b, and the algorithm can be stopped without running N iterations.
-    We assume the preconditioner, Q, satisfies Q ≺ K, and stop the algorithm when r_i = b - Kv_i
-    satisfies \math: ||r_i||_{Q^{-1}}^2 = r_i.T Q^{-1} r_i <= max_error.
+    (Hestenes and Stiefel, 1952) produces a sequence of vectors
+    \math:`v_0, v_1, v_2, ..., v_N` such that \math:`v_0` = initial, and (in exact arithmetic)
+    \math:`Kv_n = b`. In practice, the v_i often converge quickly to approximate
+    \math:`K^{-1}b`, and the algorithm can be stopped without running N iterations.
+    We assume the preconditioner, \math:`Q`, satisfies \math:`Q ≺ K`, and stop the algorithm
+    when \math:`r_i = b - Kv_i` satisfies \math:`||rᵢᵀ||_{Q⁻¹r}^2 = rᵢᵀQ⁻¹rᵢ <= ϵ`.
 
     :param K: Matrix we want to backsolve from. Must be PSD. Shape [N, N].
     :param b: Vector we want to backsolve. Shape [B, N].
     :param initial: Initial vector solution. Shape [N].
     :param preconditioner: Preconditioner function.
-    :param max_error: Expected maximum error. This value is used as a
+    :param cg_tolerance: Expected maximum error. This value is used as a
         decision boundary against stopping criteria.
     :param max_steps: Maximum number of CG iterations.
     :param restart_cg_step: Restart step at which the CG resets the internal state to
@@ -189,7 +310,7 @@ def cglb_conjugate_gradient(K, b, initial, preconditioner, max_error, max_steps,
     CGState = namedtuple("CGState", ["i", "v", "r", "p", "rz"])
 
     def stopping_criterion(state):
-        return (0.5 * state.rz > max_error) and (state.i < max_steps)
+        return (0.5 * state.rz > cg_tolerance) and (state.i < max_steps)
 
     def cg_step(state):
         Ap = state.p @ K

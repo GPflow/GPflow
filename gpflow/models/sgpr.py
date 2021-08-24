@@ -137,18 +137,15 @@ class SGPR(SGPRBase):
 
     ::
 
-      @inproceedings{titsias2009variational,
-        title={Variational learning of inducing variables in
-               sparse Gaussian processes},
-        author={Titsias, Michalis K},
-        booktitle={International Conference on
-                   Artificial Intelligence and Statistics},
-        pages={567--574},
-        year={2009}
-      }
-
-
-
+        @inproceedings{titsias2009variational,
+            title={Variational learning of inducing variables in
+                sparse Gaussian processes},
+            author={Titsias, Michalis K},
+            booktitle={International Conference on
+                    Artificial Intelligence and Statistics},
+            pages={567--574},
+            year={2009}
+        }
     """
 
     CommonTensors = namedtuple("CommonTensors", ["A", "B", "LB", "AAT", "L"])
