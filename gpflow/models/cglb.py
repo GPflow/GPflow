@@ -93,6 +93,13 @@ class CGLB(SGPR):
 
         Equality holds if r=0, i.e. v = K⁻¹y.
 
+        If self._v.is_trainable, gradients are computed with respect to v as well and v can be optimized using 
+        gradient based methods.
+        
+        Otherwise, v is updated with the method of conjugate gradients (CG). 
+        CG is run until 0.5 * rᵀQ⁻¹r <= self._cg_tolerance, which ensures that the maximum bias due to this term is 
+        not more than self._cg_tolerance.
+
         """
         x, y = self.data
         err = y - self.mean_function(x)
@@ -134,17 +141,20 @@ class CGLB(SGPR):
         xnew: InputData,
         full_cov=False,
         full_output_cov=False,
-        cg_tolerance: Union[float, None] = 1e-3,
+        cg_tolerance: Union[float, None] = 1e-3
     ) -> MeanAndVariance:
         """
         The posterior mean for CGLB model is given by
 
         \math:
-            m(xs) = K_{sf}v + Q_{ff} (Q_{ff} + σ²I)⁻¹r
+            m(xs) = K_{sf}v + Q_{ff}Q⁻¹r
 
-        where \math:`r = y - (K_{ff} + σ²I) v`  is the residual from CG.
+        where \math:`r = y - K v`  is the residual from CG.
 
-        Note that when \math:`v=0`, this agree with the SGPR mean, while if \math:`v = (Kff + σ²I)⁻¹ y`, \math:`r=0`, and the exact GP mean is recovered.
+        Note that when \math:`v=0`, this agree with the SGPR mean, while if \math:`v = K⁻¹ y`, \math:`r=0`, and the exact GP mean is recovered.
+
+        cg_tolerance: float or None: If None, the cached value of v is used. If float, conjugate gradient is run until
+        \math:`rᵀQ⁻¹r < cg_tolerance`
         """
         x, y = self.data
         err = y - self.mean_function(x)
@@ -292,6 +302,7 @@ def cglb_conjugate_gradient(
     \math:`v_0, v_1, v_2, ..., v_N` such that \math:`v_0` = initial, and (in exact arithmetic)
     \math:`Kv_n = b`. In practice, the v_i often converge quickly to approximate
     \math:`K^{-1}b`, and the algorithm can be stopped without running N iterations.
+
     We assume the preconditioner, \math:`Q`, satisfies \math:`Q ≺ K`, and stop the algorithm
     when \math:`r_i = b - Kv_i` satisfies \math:`||rᵢᵀ||_{Q⁻¹r}^2 = rᵢᵀQ⁻¹rᵢ <= ϵ`.
 
