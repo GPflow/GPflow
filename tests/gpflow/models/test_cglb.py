@@ -17,21 +17,23 @@ import tensorflow as tf
 
 from gpflow.config import default_float
 from gpflow.kernels import SquaredExponential
-from gpflow.models import CGLB, SGPR
+from gpflow.models import CGLB, SGPR, GPR
 from gpflow.models.cglb import NystromPreconditioner, cglb_conjugate_gradient
 from gpflow.utilities import to_default_float as tdf
 
 
 def data(rng: np.random.RandomState):
     n: int = 100
+    t: int = 20
     d: int = 2
 
     x = rng.randn(n, d)
+    xs = rng.randn(t, d) # test points
     c = np.array([[-1.4], [0.5]])
     y = np.sin(x @ c + 0.5 * rng.randn(n, 1))
     z = rng.randn(10, 2)
 
-    return (tdf(x), tdf(y)), tdf(z)
+    return (tdf(x), tdf(y)), tdf(z), tdf(xs)
 
 
 def test_cglb_check_basics():
@@ -41,7 +43,7 @@ def test_cglb_check_basics():
     """
 
     rng: np.random.RandomState = np.random.RandomState(999)
-    train, z = data(rng)
+    train, z, _ = data(rng)
     noise = 0.2
 
     sgpr = SGPR(train, kernel=SquaredExponential(), inducing_variable=z, noise_variance=noise)
@@ -78,7 +80,7 @@ def test_conjugate_gradient_convergence():
     """
     rng: np.random.RandomState = np.random.RandomState(999)
     noise = 1e-3
-    train, z = data(rng)
+    train, z, _ = data(rng)
     x, y = train
     n = x.shape[0]
     b = tf.transpose(y)
@@ -117,7 +119,7 @@ def test_cglb_quad_term_guarantees():
 
     max_error: float = 1e-2
     noise: float = 1e-2
-    train, z = data(rng)
+    train, z, _ = data(rng)
     x, y = train
     k = SquaredExponential()
     K = k(x) + noise * tf.eye(x.shape[0], dtype=default_float())
@@ -147,3 +149,39 @@ def test_cglb_quad_term_guarantees():
 
     assert cglb_quad_term <= cholesky_quad_term
     assert cglb_quad_term >= cholesky_quad_term - max_error
+
+def test_cglb_predict():
+    """
+    Test that 1.) The predict method returns the same variance estimate as SGPR.
+              2.) The predict method returns the same mean as SGPR for v=0.
+              3.) The predict method returns a mean very similar to GPR when CG is run to low tolerance.
+    """
+    rng: np.random.RandomState = np.random.RandomState(999)
+    train, z, xs = data(rng)
+    noise = 0.2
+
+    gpr = GPR(train, kernel=SquaredExponential(), noise_variance=noise)
+    sgpr = SGPR(train, kernel=SquaredExponential(), inducing_variable=z, noise_variance=noise)
+
+    cglb = CGLB(
+        train,
+        kernel=SquaredExponential(),
+        inducing_variable=z,
+        noise_variance=noise,
+    )
+
+
+    gpr_mean, _ = gpr.predict_y(xs, full_cov=False)
+    sgpr_mean, sgpr_cov = sgpr.predict_y(xs, full_cov=False)
+    cglb_mean, cglb_cov = cglb.predict_y(xs, full_cov=False, cg_tolerance=1e6) # set tolerance high so v stays at 0.
+
+    assert np.allclose(sgpr_cov, cglb_cov)
+    assert np.allclose(sgpr_mean, cglb_mean)
+
+    cglb_mean, _ = cglb.predict_y(xs, full_cov=False, cg_tolerance=1e-12)
+
+    assert np.allclose(gpr_mean, cglb_mean)
+
+
+
+
