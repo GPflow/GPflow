@@ -17,7 +17,7 @@ import tensorflow as tf
 
 from gpflow.config import default_float
 from gpflow.kernels import SquaredExponential
-from gpflow.models import CGLB, SGPR, GPR
+from gpflow.models import CGLB, GPR, SGPR
 from gpflow.models.cglb import NystromPreconditioner, cglb_conjugate_gradient
 from gpflow.utilities import to_default_float as tdf
 
@@ -28,7 +28,7 @@ def data(rng: np.random.RandomState):
     d: int = 2
 
     x = rng.randn(n, d)
-    xs = rng.randn(t, d) # test points
+    xs = rng.randn(t, d)  # test points
     c = np.array([[-1.4], [0.5]])
     y = np.sin(x @ c + 0.5 * rng.randn(n, 1))
     z = rng.randn(10, 2)
@@ -150,6 +150,7 @@ def test_cglb_quad_term_guarantees():
     assert cglb_quad_term <= cholesky_quad_term
     assert cglb_quad_term >= cholesky_quad_term - max_error
 
+
 def test_cglb_predict():
     """
     Test that 1.) The predict method returns the same variance estimate as SGPR.
@@ -170,10 +171,11 @@ def test_cglb_predict():
         noise_variance=noise,
     )
 
-
     gpr_mean, _ = gpr.predict_y(xs, full_cov=False)
     sgpr_mean, sgpr_cov = sgpr.predict_y(xs, full_cov=False)
-    cglb_mean, cglb_cov = cglb.predict_y(xs, full_cov=False, cg_tolerance=1e6) # set tolerance high so v stays at 0.
+    cglb_mean, cglb_cov = cglb.predict_y(
+        xs, full_cov=False, cg_tolerance=1e6
+    )  # set tolerance high so v stays at 0.
 
     assert np.allclose(sgpr_cov, cglb_cov)
     assert np.allclose(sgpr_mean, cglb_mean)
@@ -181,7 +183,3 @@ def test_cglb_predict():
     cglb_mean, _ = cglb.predict_y(xs, full_cov=False, cg_tolerance=1e-12)
 
     assert np.allclose(gpr_mean, cglb_mean)
-
-
-
-
