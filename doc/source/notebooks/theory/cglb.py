@@ -23,4 +23,3 @@ def plot_prediction(ax, x, y, xnew, loc, scale, color, label):
 
     ax.plot(xnew, loc, color=color, label=label)
     ax.scatter(x, y, color="gray", s=8, alpha=0.7)
-
