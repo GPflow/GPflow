@@ -130,7 +130,8 @@ plot_prediction(axes[0], x, y, xnew, mu_no_tol, std_no_tol, "tab:blue", "CGLB")
 
 mu_tol = pred_tol[0].numpy().squeeze()
 std_tol = np.sqrt(pred_tol[1].numpy().squeeze())
-plot_prediction(axes[1], x, y, xnew, mu_tol, std_tol, "tab:green", "CGLB-tol=0.01")
+plot_prediction(axes[1], x, y, xnew, mu_tol, std_tol, "tab:green", "CGLB, tol=0.01")
 
-plt.legend()
+axes[0].legend()
+axes[1].legend()
 plt.show()
