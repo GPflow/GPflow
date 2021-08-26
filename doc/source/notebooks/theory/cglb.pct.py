@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 # %%
 import numpy as np
+import tensorflow as tf
 import matplotlib.pyplot as plt
 from cglb import load_snelson_data, plot_prediction
 from pathlib import Path
@@ -53,15 +54,17 @@ cglb_obj = losses_fn(cglb)
 plt.plot(ls, gpr_obj, label="GPR")
 plt.plot(ls, sgpr_obj, label="SGPR")
 plt.plot(ls, cglb_obj, label="CGLB")
+plt.xlabel("lengthscale")
+plt.ylabel("Objective")
 plt.legend()
 plt.show()
 
 
 # %% [markdown]
-# The interface of CGLB model is similar to SGPR, however, it has extra options related to the conjugate gradient which is involved in the computation of `yᵀK⁻¹y`.
+# The interface of CGLB model is similar to SGPR, however, it has extra options related to the conjugate gradient which is involved in the computation of $ yᵀK⁻¹y $.
 # * `cg_tolerance`. This is the expected maximum error in the solution produced by the conjugate gradient,
-# i.e. the ϵ threshold of the stopping criteria in the CG loop: `rᵀQ⁻¹r < 0.5 ϵ`.
-# The default value for `cg_tolerance` is _1.0_. It is a good working value for model training, which has been confirmed in practice. The `predict_f`, `predict_log_density`, and `predict_y` methods have their own `cg_tolerance` options as for predictions you might want to tighten up the CG solution closer to exact.
+# i.e. the ϵ threshold of the stopping criteria in the CG loop: $ rᵀQ⁻¹r < 0.5ϵ $.
+# The default value for `cg_tolerance` is $ 1.0 $. It is a good working value for model training, which has been confirmed in practice. The `predict_f`, `predict_log_density`, and `predict_y` methods have their own `cg_tolerance` options as for predictions you might want to tighten up the CG solution closer to exact.
 # * `max_cg_iters`. The maximum number of CG iterations.
 # * `restart_cg_step`. The frequency with wich the CG resets the internal state to the initial position using current solution vector `v`.
 # * `v_grad_optimization`. CGLB introduces auxilary parameter `v`, and by default optimal `v` is found with the CG. Howover you can include `v` into the list of trainable model parameters.
@@ -80,14 +83,21 @@ cglb = CGLB(
 opt = Scipy()
 
 # %% [markdown]
-# We train the model as usual. Variables do not include the `v` auxilary vector.
+# We train the model as usual. Variables do not include the $ v $ auxilary vector.
 
 # %%
 variables = cglb.trainable_variables
 _ = opt.minimize(cglb.training_loss_closure(), variables, options=dict(maxiter=100))
 
 # %% [markdown]
-# Below we compare prediction results for different CG tolerances. The `cg_tolerance=None` means that no CG is run to tune the `v` vector, and `cg_tolerance=0.01` is much lower value than the one used at the model optimization.
+# Below we compare prediction results for different CG tolerances. The `cg_tolerance=None` means that no CG is run to tune the $ v $ vector, and `cg_tolerance=0.01` is much lower value than the one used at the model optimization.
+
+# %% [markdown]
+# The 1D dataset which we use is too simple and it would be hard to see the difference in mean prediction of the model. As a demonstration we reset the $ v $ auxiliary vector to zero.
+
+# %%
+v = tf.zeros_like(cglb.aux_vec)
+cglb.aux_vec.assign(v)
 
 # %%
 k = 100
@@ -96,7 +106,8 @@ xnew = np.linspace(x.min() - 1.0, x.max() + 1.0, k).reshape(-1, 1)
 pred_no_tol = cglb.predict_y(xnew, cg_tolerance=None)
 pred_tol = cglb.predict_y(xnew, cg_tolerance=0.01)
 
-fig, axes = plt.subplots(2, 1, figsize=(7, 5))
+fig, axes = plt.subplots(2, 1, figsize=(7, 5), sharex=True)
+fig.subplots_adjust(hspace=0.0)
 
 x, y = x.squeeze(), y.squeeze()
 xnew = xnew.squeeze()
@@ -112,4 +123,8 @@ plot_prediction(axes[1], x, y, xnew, mu_tol, std_tol, "tab:green", "CGLB, tol=0.
 
 axes[0].legend()
 axes[1].legend()
+axes[0].set_ylabel("y")
+axes[1].set_ylabel("y")
+axes[1].set_xlabel("x")
 plt.show()
+print()

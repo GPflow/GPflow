@@ -58,6 +58,10 @@ class CGLB(SGPR):
         self._max_cg_iters = max_cg_iters
         self._restart_cg_iters = restart_cg_iters
 
+    @property
+    def aux_vec(self):
+        return self._v
+
     def logdet_term(self, common):
         """
         Compute a lower bound on -0.5 * log |K + σ²I| based on a low-rank approximation to K.
@@ -97,12 +101,11 @@ class CGLB(SGPR):
 
         Equality holds if :math:`r=0`, i.e. :math:`v = K⁻¹y`.
 
-        If self._v.is_trainable, gradients are computed with respect to v as well and v can be optimized using
+        If `self.aux_vec` is trainable, gradients are computed with respect to :math:`v` as well and :math:`v` can be optimized using
         gradient based methods.
 
-        Otherwise, v is updated with the method of conjugate gradients (CG).
-        CG is run until :math:`0.5 * rᵀQ⁻¹r <=` self._cg_tolerance, which ensures that the maximum bias due to this term is
-        not more than self._cg_tolerance.
+        Otherwise, :math:`v` is updated with the method of conjugate gradients (CG).
+        CG is run until :math:`0.5 * rᵀQ⁻¹r <= ϵ`,  which ensures that the maximum bias due to this term is not more than :math:`ϵ`. The :math:`ϵ` is the CG tolerance.
 
         """
         x, y = self.data
@@ -115,7 +118,7 @@ class CGLB(SGPR):
         preconditioner = NystromPreconditioner(A, LB, sigma_sq)
         err_t = tf.transpose(err)
 
-        v_init = self._v
+        v_init = self.aux_vec
         if not v_init.trainable:
             v = cglb_conjugate_gradient(
                 K,
@@ -157,8 +160,7 @@ class CGLB(SGPR):
 
         Note that when :math:`v=0`, this agree with the SGPR mean, while if :math:`v = K⁻¹ y`, then :math:`r=0`, and the exact GP mean is recovered.
 
-        cg_tolerance: float or None: If None, the cached value of v is used. If float, conjugate gradient is run until
-        :math:`rᵀQ⁻¹r <` cg_tolerance
+        cg_tolerance: float or None: If None, the cached value of :math:`v` is used. If float, conjugate gradient is run until :math:`rᵀQ⁻¹r < ϵ`.
         """
         x, y = self.data
         err = y - self.mean_function(x)
@@ -176,7 +178,7 @@ class CGLB(SGPR):
         common = self._common_calculation()
         A, LB, L = common.A, common.LB, common.L
 
-        v = self._v
+        v = self.aux_vec
         if cg_tolerance is not None:
             preconditioner = NystromPreconditioner(A, LB, sigma_sq)
             err_t = tf.transpose(err)
