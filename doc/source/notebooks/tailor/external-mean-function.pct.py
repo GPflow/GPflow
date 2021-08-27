@@ -141,14 +141,13 @@ meta, test = generate_meta_and_test_tasks(
 # We will use a Keras model Deep Neural Network as mean function.
 
 # %%
-from tensorflow.python.keras import backend as K
 from gpflow.config import default_float
-
-K.set_floatx("float64")
-assert default_float() == np.float64
 
 
 def build_mean_function():
+    tf.keras.backend.set_floatx("float64")
+    assert default_float() == np.float64
+
     inputs = tf.keras.layers.Input(shape=(1,))
     x = tf.keras.layers.Dense(64, activation="relu")(inputs)
     x = tf.keras.layers.Dense(64, activation="relu")(x)
