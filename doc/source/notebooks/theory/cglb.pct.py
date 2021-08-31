@@ -67,7 +67,7 @@ plt.show()
 # The default value for `cg_tolerance` is $ 1.0 $. It is a good working value for model training, which has been confirmed in practice. The `predict_f`, `predict_log_density`, and `predict_y` methods have their own `cg_tolerance` options as for predictions you might want to tighten up the CG solution closer to exact.
 # * `max_cg_iters`. The maximum number of CG iterations.
 # * `restart_cg_step`. The frequency with wich the CG resets the internal state to the initial position using current solution vector `v`.
-# * `v_grad_optimization`. CGLB introduces auxilary parameter `v`, and by default optimal `v` is found with the CG. Howover you can include `v` into the list of trainable model parameters.
+# * `v_grad_optimization`. CGLB introduces auxiliary parameter `v`, and by default optimal `v` is found with the CG. However you can include `v` into the list of trainable model parameters.
 
 # %%
 
@@ -83,7 +83,7 @@ cglb = CGLB(
 opt = Scipy()
 
 # %% [markdown]
-# We train the model as usual. Variables do not include the $ v $ auxilary vector.
+# We train the model as usual. Variables do not include the $ v $ auxiliary vector.
 
 # %%
 variables = cglb.trainable_variables
@@ -127,4 +127,3 @@ axes[0].set_ylabel("y")
 axes[1].set_ylabel("y")
 axes[1].set_xlabel("x")
 plt.show()
-print()

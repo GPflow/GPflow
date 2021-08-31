@@ -38,8 +38,8 @@ def data(rng: np.random.RandomState):
 
 def test_cglb_check_basics():
     """
-    * Quadratic term of the CGLB with v=0 equivalent to the quadratic term of the SGPR.
-    * Log determinant term of the CGLB is less or equal to SGPR log determinant.
+    * Quadratic term of CGLB with v=0 is equivalent to the quadratic term of SGPR.
+    * Log determinant term of CGLB is less or equal to SGPR log determinant.
     """
 
     rng: np.random.RandomState = np.random.RandomState(999)
@@ -148,7 +148,7 @@ def test_cglb_quad_term_guarantees():
     cglb_quad_term = cglb.quad_term(common)
 
     assert cglb_quad_term <= cholesky_quad_term
-    assert cglb_quad_term >= cholesky_quad_term - max_error
+    assert np.abs(cglb_quad_term - cholesky_quad_term) <= max_error
 
 
 def test_cglb_predict():

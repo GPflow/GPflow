@@ -329,7 +329,7 @@ def cglb_conjugate_gradient(
     def stopping_criterion(state):
         return (0.5 * state.rz > cg_tolerance) and (state.i < max_steps)
 
-    def cg_step(state):
+    def cg_step(state: CGState):
         Ap = state.p @ K
         denom = tf.reduce_sum(state.p * Ap, axis=-1)
         gamma = state.rz / denom
