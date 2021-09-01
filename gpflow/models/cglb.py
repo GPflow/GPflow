@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from collections import namedtuple
-from typing import Union
+from typing import NamedTuple, Union
 
 import tensorflow as tf
 
@@ -39,6 +39,18 @@ class CGLB(SGPR):
             pages = {362--372},
             year = {2021}
         }
+        cg_tolerance: Determines accuracy to which conjugate gradient is run when evaluating the elbo. Running more iterations
+        of CG would increase the ELBO by at most `cg_tolerance`.
+
+        max_cg_iters: Maximum number of iterations of CG to run per evaluation of the ELBO (or mean prediction).
+
+        restart_cg_iters: How frequently to restart the CG iteration. Can be useful to avoid build up of numerical errors when many
+        steps of CG are run.
+
+        v_grad_optimization: If False, in every evaluation of the ELBO, CG is run to select a new auxilary vector `v`. If False,
+        no CG is run when evaluating the ELBO but gradients with respect to `v` are tracked so that it can be optimized jointly
+        with other parameters.
+
     """
 
     def __init__(
@@ -62,7 +74,7 @@ class CGLB(SGPR):
     def aux_vec(self):
         return self._v
 
-    def logdet_term(self, common):
+    def logdet_term(self, common: NamedTuple) -> tf.Tensor:
         """
         Compute a lower bound on -0.5 * log |K + σ²I| based on a low-rank approximation to K.
         ..  math::
@@ -91,7 +103,7 @@ class CGLB(SGPR):
         logtrace = num_data * tf.math.log(1 + trace / num_data)
         return -output_dim * (logdet_b + 0.5 * logsigma_sq + 0.5 * logtrace)
 
-    def quad_term(self, common) -> tf.Tensor:
+    def quad_term(self, common: NamedTuple) -> tf.Tensor:
         """
         Computes a lower bound on the quadratic term in the log marginal likelihood of conjugate GPR.
         The bound is based on an auxilary vector, v. For :math:`Q ≺ K` and :math:`r=y - Kv`
@@ -269,14 +281,14 @@ class NystromPreconditioner:
     where L is lower triangular with :math: `LLᵀ = Kᵤᵤ` :math:`A = σ⁻²L⁻¹Kᵤₓ` and :math:`B = AAᵀ + I = LᵦLᵦᵀ`
     """
 
-    def __init__(self, A, LB, sigma_sq):
+    def __init__(self, A: tf.Tensor, LB: tf.Tensor, sigma_sq: float):
         self.A = A
         self.LB = LB
         self.sigma_sq = sigma_sq
 
     def __call__(self, v):
         """
-        Computes :math:`vQ^{-1}`. Note that this is implemented as multipication of a row vector on the right.
+        Computes :math:`vᵀQ^{-1}` and `vᵀQ^{-1}v`. Note that this is implemented as multipication of a row vector on the right.
 
         :param v: Vector we want to backsolve. Shape [B, N].
         """
@@ -322,7 +334,7 @@ def cglb_conjugate_gradient(
     :param restart_cg_step: Restart step at which the CG resets the internal state to
         the initial position using the currect solution vector :math:`v`.
         Can help avoid build up of numerical errors.
-    :return: Approximate solution to :math:`K v = b`.
+    :return: `v` where `v` approximately satisfies :math:`Kv = b`.
     """
     CGState = namedtuple("CGState", ["i", "v", "r", "p", "rz"])
 

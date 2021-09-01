@@ -93,7 +93,7 @@ _ = opt.minimize(cglb.training_loss_closure(), variables, options=dict(maxiter=1
 # Below we compare prediction results for different CG tolerances. The `cg_tolerance=None` means that no CG is run to tune the $ v $ vector, and `cg_tolerance=0.01` is much lower value than the one used at the model optimization.
 
 # %% [markdown]
-# The 1D dataset which we use is too simple and it would be hard to see the difference in mean prediction of the model. As a demonstration we reset the $ v $ auxiliary vector to zero.
+# The 1D dataset which we use is too simple and it would be hard to see the difference in mean prediction of the model. As a demonstration we reset the $ v $ auxiliary vector to zero, so that predictions are identical to SGPR.
 
 # %%
 v = tf.zeros_like(cglb.aux_vec)
@@ -114,7 +114,7 @@ xnew = xnew.squeeze()
 
 mu_no_tol = pred_no_tol[0].numpy().squeeze()
 std_no_tol = np.sqrt(pred_no_tol[1].numpy().squeeze())
-plot_prediction(axes[0], x, y, xnew, mu_no_tol, std_no_tol, "tab:blue", "CGLB")
+plot_prediction(axes[0], x, y, xnew, mu_no_tol, std_no_tol, "tab:blue", "CGLB, use cached $v=0$")
 
 
 mu_tol = pred_tol[0].numpy().squeeze()
@@ -123,6 +123,10 @@ plot_prediction(axes[1], x, y, xnew, mu_tol, std_tol, "tab:green", "CGLB, tol=0.
 
 axes[0].legend()
 axes[1].legend()
+axes[0].set_xlim([-1, 7])
+axes[1].set_xlim([-1, 7])
+axes[0].set_ylim([-2.5, 2.5])
+axes[1].set_ylim([-2.5, 2.5])
 axes[0].set_ylabel("y")
 axes[1].set_ylabel("y")
 axes[1].set_xlabel("x")

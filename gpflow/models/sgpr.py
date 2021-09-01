@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from collections import namedtuple
-from typing import Optional, Tuple
+from typing import NamedTuple, Optional, Tuple
 
 import numpy as np
 import tensorflow as tf
@@ -156,7 +156,9 @@ class SGPR(SGPRBase):
     def _common_calculation(self):
         """
         Matrices used in log-det calculation
-        :return: A, B, LB, AAT all square NxN matrices
+
+        :return: A , B, LB, AAT with :math:`LLᵀ = Kᵤᵤ , A = L⁻¹K_{uf}/σ, AAT = AAᵀ, B = AAT+I, LBLBᵀ = B`
+        A is M x N, B is M x M, LB is M x M, AAT is M x M
         """
         x, _ = self.data
         iv = self.inducing_variable
@@ -175,16 +177,14 @@ class SGPR(SGPRBase):
 
         return self.CommonTensors(A, B, LB, AAT, L)
 
-    def logdet_term(self, common):
+    def logdet_term(self, common: NameError):
         """
         Bound from Jensen's Inequality:
+        .. math::
+            log |K + σ²I| <= log |Q + σ²I| + N * log (1 + tr(K - Q)/(σ²N))
 
-        log |K + σ²I| <= log |Q + σ²I| + N * log (1 + tr(K - Q)/(σ²N))
-
-        :param B: Matrix returned from common calc, unused
-        :param LB: Matrix returned from common calc
-        :param AAT: Matrix returned from common calc
-        :return: log_det, upper bound on .5 * log |K + σ²I|
+        :param common: A named tuple containing matrices that will be used
+        :return: log_det, lower bound on -.5 * output_dim * log |K + σ²I|
         """
         LB = common.LB
         AAT = common.AAT
@@ -211,7 +211,11 @@ class SGPR(SGPRBase):
         logdet_k = -outdim * (half_logdet_b + 0.5 * log_sigma_sq + 0.5 * trace)
         return logdet_k
 
-    def quad_term(self, common) -> tf.Tensor:
+    def quad_term(self, common: NamedTuple) -> tf.Tensor:
+        """
+        :param common: A named tuple containing matrices that will be used
+        :return: quad_term, lower bound on -.5 yᵀ(K + σ²I)⁻¹y
+        """
         A = common.A
         LB = common.LB
 
@@ -219,7 +223,6 @@ class SGPR(SGPRBase):
         err = y - self.mean_function(x)
         sigma_sq = self.likelihood.variance
         sigma = tf.sqrt(sigma_sq)
-        outdim = to_default_float(tf.shape(y)[1])
 
         Aerr = tf.linalg.matmul(A, err)
         c = tf.linalg.triangular_solve(LB, Aerr, lower=True) / sigma
