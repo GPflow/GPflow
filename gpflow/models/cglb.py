@@ -39,17 +39,24 @@ class CGLB(SGPR):
             pages = {362--372},
             year = {2021}
         }
-        cg_tolerance: Determines accuracy to which conjugate gradient is run when evaluating the elbo. Running more iterations
-        of CG would increase the ELBO by at most `cg_tolerance`.
 
-        max_cg_iters: Maximum number of iterations of CG to run per evaluation of the ELBO (or mean prediction).
+    :param cg_tolerance: Determines accuracy to which conjugate
+        gradient is run when evaluating the elbo. Running more
+        iterations of CG would increase the ELBO by at most
+        `cg_tolerance`.
 
-        restart_cg_iters: How frequently to restart the CG iteration. Can be useful to avoid build up of numerical errors when many
-        steps of CG are run.
+    :param max_cg_iters: Maximum number of iterations of CG to run
+        per evaluation of the ELBO (or mean prediction).
 
-        v_grad_optimization: If False, in every evaluation of the ELBO, CG is run to select a new auxilary vector `v`. If False,
-        no CG is run when evaluating the ELBO but gradients with respect to `v` are tracked so that it can be optimized jointly
-        with other parameters.
+    :param restart_cg_iters: How frequently to restart the CG iteration.
+        Can be useful to avoid build up of numerical errors when
+        many steps of CG are run.
+
+    :param v_grad_optimization: If False, in every evaluation of the
+        ELBO, CG is run to select a new auxilary vector `v`. If
+        False, no CG is run when evaluating the ELBO but
+        gradients with respect to `v` are tracked so that it can
+        be optimized jointly with other parameters.
 
     """
 
@@ -76,7 +83,8 @@ class CGLB(SGPR):
 
     def logdet_term(self, common: NamedTuple) -> tf.Tensor:
         """
-        Compute a lower bound on -0.5 * log |K + σ²I| based on a low-rank approximation to K.
+        Compute a lower bound on -0.5 * log |K + σ²I| based on a
+        low-rank approximation to K.
         ..  math::
             log |K + σ²I| <= log |Q + σ²I| + n * log(1 + tr(K - Q)/(σ²n)).
 
@@ -105,20 +113,24 @@ class CGLB(SGPR):
 
     def quad_term(self, common: NamedTuple) -> tf.Tensor:
         """
-        Computes a lower bound on the quadratic term in the log marginal likelihood of conjugate GPR.
-        The bound is based on an auxiliary vector, v. For :math:`Q ≺ K` and :math:`r=y - Kv`
+        Computes a lower bound on the quadratic term in the log
+        marginal likelihood of conjugate GPR.
+        The bound is based on an auxiliary vector, v. For :math:`Q ≺
+        K` and :math:`r=y - Kv`
 
         .. math::
             -0.5 * (rᵀQ⁻¹r + 2yᵀv - vᵀ K v ) <= -0.5 * yᵀK⁻¹y <= -0.5 * (2yᵀv - vᵀKv).
 
         Equality holds if :math:`r=0`, i.e. :math:`v = K⁻¹y`.
 
-        If `self.aux_vec` is trainable, gradients are computed with respect to :math:`v` as well and :math:`v` can be optimized using
-        gradient based methods.
+        If `self.aux_vec` is trainable, gradients are computed with
+        respect to :math:`v` as well and :math:`v` can be optimized
+        using gradient based methods.
 
-        Otherwise, :math:`v` is updated with the method of conjugate gradients (CG).
-        CG is run until :math:`0.5 * rᵀQ⁻¹r <= ϵ`,  which ensures that the maximum bias due to this term is not more than :math:`ϵ`. The :math:`ϵ` is the CG tolerance.
-
+        Otherwise, :math:`v` is updated with the method of conjugate
+        gradients (CG). CG is run until :math:`0.5 * rᵀQ⁻¹r <= ϵ`,
+        which ensures that the maximum bias due to this term is not
+        more than :math:`ϵ`. The :math:`ϵ` is the CG tolerance.
         """
         x, y = self.data
         err = y - self.mean_function(x)
@@ -170,9 +182,12 @@ class CGLB(SGPR):
 
         where :math:`r = y - K v`  is the residual from CG.
 
-        Note that when :math:`v=0`, this agree with the SGPR mean, while if :math:`v = K⁻¹ y`, then :math:`r=0`, and the exact GP mean is recovered.
+        Note that when :math:`v=0`, this agree with the SGPR mean,
+        while if :math:`v = K⁻¹ y`, then :math:`r=0`, and the exact
+        GP mean is recovered.
 
-        cg_tolerance: float or None: If None, the cached value of :math:`v` is used. If float, conjugate gradient is run until :math:`rᵀQ⁻¹r < ϵ`.
+        :param cg_tolerance: float or None: If None, the cached value of
+            :math:`v` is used. If float, conjugate gradient is run until :math:`rᵀQ⁻¹r < ϵ`.
         """
         x, y = self.data
         err = y - self.mean_function(x)
@@ -240,7 +255,8 @@ class CGLB(SGPR):
         cg_tolerance: Union[float, None] = 1e-3,
     ) -> MeanAndVariance:
         """
-        Compute the mean and variance of the held-out data at the input points.
+        Compute the mean and variance of the held-out data at the
+        input points.
         """
         if full_cov or full_output_cov:
             # See https://github.com/GPflow/GPflow/issues/1461
@@ -278,7 +294,8 @@ class CGLB(SGPR):
 class NystromPreconditioner:
     """
     Preconditioner of the form :math:`Q=(Q_ff + σ²I)⁻¹`,
-    where L is lower triangular with :math: `LLᵀ = Kᵤᵤ` :math:`A = σ⁻²L⁻¹Kᵤₓ` and :math:`B = AAᵀ + I = LᵦLᵦᵀ`
+    where L is lower triangular with :math: `LLᵀ = Kᵤᵤ`
+    :math:`A = σ⁻²L⁻¹Kᵤₓ` and :math:`B = AAᵀ + I = LᵦLᵦᵀ`
     """
 
     def __init__(self, A: tf.Tensor, LB: tf.Tensor, sigma_sq: float):
@@ -288,7 +305,8 @@ class NystromPreconditioner:
 
     def __call__(self, v):
         """
-        Computes :math:`vᵀQ^{-1}` and `vᵀQ^{-1}v`. Note that this is implemented as multipication of a row vector on the right.
+        Computes :math:`vᵀQ^{-1}` and `vᵀQ^{-1}v`. Note that this is
+        implemented as multipication of a row vector on the right.
 
         :param v: Vector we want to backsolve. Shape [B, N].
         """
@@ -315,25 +333,30 @@ def cglb_conjugate_gradient(
     K, b, initial, preconditioner, cg_tolerance, max_steps, restart_cg_step
 ):
     """
-    Conjugate gradient algorithm used in CGLB model. The method of conjugate gradient
-    (Hestenes and Stiefel, 1952) produces a sequence of vectors
-    :math:`v_0, v_1, v_2, ..., v_N` such that :math:`v_0` = initial, and (in exact arithmetic)
-    :math:`Kv_n = b`. In practice, the v_i often converge quickly to approximate
-    :math:`K^{-1}b`, and the algorithm can be stopped without running N iterations.
+    Conjugate gradient algorithm used in CGLB model. The method of
+    conjugate gradient (Hestenes and Stiefel, 1952) produces a
+    sequence of vectors :math:`v_0, v_1, v_2, ..., v_N` such that
+    :math:`v_0` = initial, and (in exact arithmetic)
+    :math:`Kv_n = b`. In practice, the v_i often converge quickly to
+    approximate :math:`K^{-1}b`, and the algorithm can be stopped
+    without running N iterations.
 
-    We assume the preconditioner, :math:`Q`, satisfies :math:`Q ≺ K`, and stop the algorithm
-    when :math:`r_i = b - Kv_i` satisfies :math:`||rᵢᵀ||_{Q⁻¹r}^2 = rᵢᵀQ⁻¹rᵢ <= ϵ`.
+    We assume the preconditioner, :math:`Q`, satisfies :math:`Q ≺ K`,
+    and stop the algorithm when :math:`r_i = b - Kv_i` satisfies
+    :math:`||rᵢᵀ||_{Q⁻¹r}^2 = rᵢᵀQ⁻¹rᵢ <= ϵ`.
 
     :param K: Matrix we want to backsolve from. Must be PSD. Shape [N, N].
     :param b: Vector we want to backsolve. Shape [B, N].
     :param initial: Initial vector solution. Shape [N].
     :param preconditioner: Preconditioner function.
-    :param cg_tolerance: Expected maximum error. This value is used as a
-        decision boundary against stopping criteria.
+    :param cg_tolerance: Expected maximum error. This value is used
+        as a decision boundary against stopping criteria.
     :param max_steps: Maximum number of CG iterations.
-    :param restart_cg_step: Restart step at which the CG resets the internal state to
-        the initial position using the currect solution vector :math:`v`.
-        Can help avoid build up of numerical errors.
+    :param restart_cg_step: Restart step at which the CG resets the
+        internal state to the initial position using the currect
+        solution vector :math:`v`. Can help avoid build up of
+        numerical errors.
+
     :return: `v` where `v` approximately satisfies :math:`Kv = b`.
     """
     CGState = namedtuple("CGState", ["i", "v", "r", "p", "rz"])
