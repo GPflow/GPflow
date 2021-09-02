@@ -214,7 +214,7 @@ class SGPR(SGPRBase):
     def quad_term(self, common: NamedTuple) -> tf.Tensor:
         """
         :param common: A named tuple containing matrices that will be used
-        :return: quad_term, lower bound on -.5 yᵀ(K + σ²I)⁻¹y
+        :return: Lower bound on -.5 yᵀ(K + σ²I)⁻¹y
         """
         A = common.A
         LB = common.LB

@@ -40,6 +40,8 @@ def test_cglb_check_basics():
     """
     * Quadratic term of CGLB with v=0 is equivalent to the quadratic term of SGPR.
     * Log determinant term of CGLB is less or equal to SGPR log determinant.
+        In the test the `logdet_term` method returns negative half of the logdet bound,
+        therefore we run the opposite direction of the sign.
     """
 
     rng: np.random.RandomState = np.random.RandomState(999)
