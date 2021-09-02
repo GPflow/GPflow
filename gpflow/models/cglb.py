@@ -33,7 +33,7 @@ class CGLB(SGPR):
     ::
 
         @InProceedings{pmlr-v139-artemev21a,
-            title = {Tighter Bounds on the Log Marginal Likelihood of 
+            title = {Tighter Bounds on the Log Marginal Likelihood of
             Gaussian Process Regression Using Conjugate Gradients},
             author = {Artemev, Artem and Burt, David R. and van der Wilk, Mark},
             booktitle = {Proceedings of the 38th International Conference on Machine Learning},
