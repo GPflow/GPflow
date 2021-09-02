@@ -106,7 +106,7 @@ class CGLB(SGPR):
     def quad_term(self, common: NamedTuple) -> tf.Tensor:
         """
         Computes a lower bound on the quadratic term in the log marginal likelihood of conjugate GPR.
-        The bound is based on an auxilary vector, v. For :math:`Q ≺ K` and :math:`r=y - Kv`
+        The bound is based on an auxiliary vector, v. For :math:`Q ≺ K` and :math:`r=y - Kv`
 
         .. math::
             -0.5 * (rᵀQ⁻¹r + 2yᵀv - vᵀ K v ) <= -0.5 * yᵀK⁻¹y <= -0.5 * (2yᵀv - vᵀKv).
