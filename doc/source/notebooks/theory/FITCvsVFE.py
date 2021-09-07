@@ -64,7 +64,7 @@ def getSparseModel(X, Y, isFITC=False):
     if isFITC:
         m = gpflow.models.GPRFITC((X, Y), kernel=getKernel(), inducing_variable=X.copy())
     else:
-        m = gpflow.models.SGPR((X, Y), kernel=getKernel(), inducing_variable=X.copy())
+        m = gpflow.models.SGPR_deprecated((X, Y), kernel=getKernel(), inducing_variable=X.copy())
     return m
 
 

@@ -39,7 +39,7 @@ def test_sgpr_qu():
     X = to_default_float(rng.randn(100, 2))
     Z = to_default_float(rng.randn(20, 2))
     Y = to_default_float(np.sin(X @ np.array([[-1.4], [0.5]])) + 0.5 * rng.randn(len(X), 1))
-    model = gpflow.models.SGPR(
+    model = gpflow.models.SGPR_deprecated(
         (X, Y), kernel=gpflow.kernels.SquaredExponential(), inducing_variable=Z
     )
 

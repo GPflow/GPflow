@@ -70,7 +70,7 @@ model_setups = [
     ModelSetup(model_class=gpflow.models.SVGP, whiten=True, q_diag=False),
     ModelSetup(model_class=gpflow.models.SVGP, whiten=True, q_diag=True),
     ModelSetup(model_class=gpflow.models.SVGP, whiten=False, q_diag=False),
-    ModelSetup(model_class=gpflow.models.SGPR, requires_data=True, requires_likelihood=False),
+    ModelSetup(model_class=gpflow.models.SGPR_deprecated, requires_data=True, requires_likelihood=False),
     ModelSetup(
         model_class=gpflow.models.VGP,
         requires_inducing_variables=False,

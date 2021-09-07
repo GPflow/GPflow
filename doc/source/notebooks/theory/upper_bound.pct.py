@@ -81,7 +81,7 @@ vupper_lml = []
 vfe_hyps = []
 for M in Ms:
     Zinit = X[:M, :].copy()
-    vfe = gpflow.models.SGPR((X, Y), gpflow.kernels.SquaredExponential(), inducing_variable=Zinit)
+    vfe = gpflow.models.SGPR_deprecated((X, Y), gpflow.kernels.SquaredExponential(), inducing_variable=Zinit)
     gpflow.optimizers.Scipy().minimize(
         vfe.training_loss,
         vfe.trainable_variables,
@@ -123,7 +123,7 @@ for M in fMs:
     Zinit = vfe.inducing_variable.Z.numpy()[:M, :]
     Zinit = np.vstack((Zinit, X[np.random.permutation(len(X))[: (M - len(Zinit))], :].copy()))
 
-    vfe = gpflow.models.SGPR((X, Y), gpflow.kernels.SquaredExponential(), inducing_variable=Zinit)
+    vfe = gpflow.models.SGPR_deprecated((X, Y), gpflow.kernels.SquaredExponential(), inducing_variable=Zinit)
 
     # copy hyperparameters (omitting inducing_variable.Z) from optimized model:
     gpflow.utilities.multiple_assign(vfe, init_params)
@@ -161,7 +161,7 @@ assert np.all(np.array(fvupper_lml) - np.array(fvfe_lml) > 0.0)
 
 # %%
 single_inducing_point = X[:1, :].copy()
-vfe = gpflow.models.SGPR(
+vfe = gpflow.models.SGPR_deprecated(
     (X, Y), gpflow.kernels.SquaredExponential(), inducing_variable=single_inducing_point
 )
 objective = tf.function(vfe.training_loss)

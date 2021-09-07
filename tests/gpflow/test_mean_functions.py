@@ -199,7 +199,7 @@ def test_bug_277_regression():
 
 _model_classes = [
     gpflow.models.GPR,
-    gpflow.models.SGPR,
+    gpflow.models.SGPR_deprecated,
     gpflow.models.GPRFITC,
     gpflow.models.SVGP,
     gpflow.models.VGP,
@@ -249,7 +249,7 @@ def test_models_with_mean_functions_changes(model_class):
             inducing_variable=inducing_variable,
             mean_function=non_zero_mean,
         )
-    elif model_class in [gpflow.models.SGPR, gpflow.models.GPRFITC]:
+    elif model_class in [gpflow.models.SGPR_deprecated, gpflow.models.GPRFITC]:
         model_zero_mean = model_class(
             data,
             kernel=kernel,

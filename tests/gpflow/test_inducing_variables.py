@@ -31,7 +31,7 @@ def test_inducing_points_with_variable_shape():
     # Note that we cannot have Z be trainable if we want to be able to change its shape;
     # TensorFlow optimizers expect shape to be known at construction time.
 
-    m = gpflow.models.SGPR(data=(X, Y), kernel=gpflow.kernels.Matern32(), inducing_variable=iv)
+    m = gpflow.models.SGPR_deprecated(data=(X, Y), kernel=gpflow.kernels.Matern32(), inducing_variable=iv)
 
     # Check 1: that we can still optimize with None shape
     opt = tf.optimizers.Adam()
