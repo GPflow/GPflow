@@ -1,10 +1,8 @@
 import tensorflow as tf
-import tensorflow_probability as tfp
 from typing import Optional
 
-from .. import posteriors
+from gpflow import posteriors
 from ..kernels import Kernel
-from ..likelihoods.heteroskedastic import HeteroskedasticGaussianLikelihood
 from ..logdensities import multivariate_normal
 from ..mean_functions import MeanFunction
 from ..models.gpr import GPR_with_posterior
@@ -22,11 +20,12 @@ class het_GPR(GPR_with_posterior):
         self,
         data: RegressionData,
         kernel: Kernel,
+        likelihood,
         mean_function: Optional[MeanFunction] = None,
         noise_variance: float = 1.0,
     ):
         super().__init__(data, kernel, mean_function, noise_variance)
-        self.likelihood = HeteroskedasticGaussianLikelihood(noise_variance)
+        self.likelihood = likelihood
 
     def posterior(self, precompute_cache=posteriors.PrecomputeCacheType.TENSOR):
         """
@@ -54,9 +53,7 @@ class het_GPR(GPR_with_posterior):
             kernel=self.kernel,
             X_data=X,
             Y_data=Y,
-            likelihood_variance=self.likelihood.likelihood_variance,
-            shifts=self.likelihood.shifts,
-            variance=self.likelihood.variance,  # todo use a general function instead of preset shift, variance
+            likelihood=self.likelihood,
             mean_function=self.mean_function,
             precompute_cache=precompute_cache,
         )
