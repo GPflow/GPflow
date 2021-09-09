@@ -32,6 +32,7 @@ from .conditionals.util import (
     separate_independent_conditional_implementation,
 )
 from .config import default_float, default_jitter
+from .covariances import Kuf, Kuu
 from .inducing_variables import (
     FallbackSeparateIndependentInducingVariables,
     FallbackSharedIndependentInducingVariables,
@@ -292,6 +293,118 @@ class GPRPosterior(AbstractPosterior):
             Kmn, Kmm_plus_s, Knn, err, full_cov=full_cov, white=False
         )  # [N, P], [N, P] or [P, N, N]
 
+class SGPRPosterior(AbstractPosterior):
+    def __init__(
+        self,
+        kernel,
+        X_data: tf.Tensor,
+        Y_data: tf.Tensor,
+        inducing_variable: InducingPoints,
+        likelihood_variance: Parameter,
+        num_latent_gps:int,
+        mean_function: Optional[mean_functions.MeanFunction] = None,
+        *,
+        precompute_cache: Optional[PrecomputeCacheType],
+    ):
+        super().__init__(kernel, X_data, mean_function=mean_function)
+        self.mean_function = mean_function
+        self.X_data = X_data
+        self.Y_data = Y_data
+        self.likelihood_variance = likelihood_variance
+        self.inducing_variable = inducing_variable
+        self.num_latent_gps = num_latent_gps
+
+        if precompute_cache is not None:
+            self.update_cache(precompute_cache)
+
+
+    def _precompute(self) -> Tuple[tf.Tensor, tf.Tensor]:
+
+        """
+        Precomputes the cholesky decomposition of Kmm_plus_s for later reuse we will call
+        base_conditional_with_lm implementation ('Qinv' in the Abstract Posterior class). We also
+        precompute the less compute intensive error term ('alpha' in the Abstract Posterior class)
+        """
+
+        # taken directly from the deprecated SGPR implementation
+        num_inducing = self.inducing_variable.num_inducing
+        err = self.Y_data - self.mean_function(self.X_data)
+        kuf = Kuf(self.inducing_variable, self.kernel, self.X_data)
+        kuu = Kuu(self.inducing_variable, self.kernel, jitter=default_jitter())
+        sigma = tf.sqrt(self.likelihood_variance)
+        L = tf.linalg.cholesky(kuu) # cache alpha, qinv
+        A = tf.linalg.triangular_solve(L, kuf, lower=True) / sigma
+        B = tf.linalg.matmul(A, A, transpose_b=True) + tf.eye(num_inducing, dtype=default_float()) # cache qinv
+        LB = tf.linalg.cholesky(B) # cache alpha
+        Aerr = tf.linalg.matmul(A, err)
+        c = tf.linalg.triangular_solve(LB, Aerr, lower=True) / sigma # cache alpha
+
+        # get intermediate variables
+        Linv = tf.linalg.triangular_solve(L,tf.eye(num_inducing, dtype=default_float()))
+        LBinv = tf.linalg.triangular_solve(LB,tf.eye(num_inducing, dtype=default_float()))
+        Binv = tf.linalg.inv(B) # naive...can do better?
+        tmp = tf.eye(num_inducing, dtype=default_float())-Binv
+
+        # calculate cached values
+        alpha = tf.transpose(Linv) @ tf.transpose(LBinv) @ c
+        Qinv = Linv @ tmp @ Linv
+
+        return alpha, Qinv
+
+    def _conditional_with_precompute(
+        self, Xnew, full_cov: bool = False, full_output_cov: bool = False
+    ) -> MeanAndVariance:
+        """
+        Computes predictive mean and (co)variance at Xnew, *excluding* mean_function.
+        Relies on cached alpha and Qinv.
+        """
+        Kus = Kuf(self.inducing_variable, self.kernel, Xnew)
+        Knn = self.kernel(Xnew, full_cov=full_cov)
+
+        mean = tf.transpose(Kus) @ self.alpha
+        var = Knn - tf.transpose(Kus) @ self.Qinv @ Kus
+
+        return mean + self.mean_function(Xnew), var
+
+    def _conditional_fused(
+        self, Xnew, full_cov: bool = False, full_output_cov: bool = False
+    ) -> MeanAndVariance:
+        """
+        Compute the mean and variance of the latent function at some new points
+        Xnew. Does not make use of caching
+        """
+
+        # taken directly from the deprecated SGPR implementation
+        num_inducing = self.inducing_variable.num_inducing
+        err = self.Y_data - self.mean_function(self.X_data)
+        kuf = Kuf(self.inducing_variable, self.kernel, self.X_data)
+        kuu = Kuu(self.inducing_variable, self.kernel, jitter=default_jitter())
+        Kus = Kuf(self.inducing_variable, self.kernel, Xnew)
+        sigma = tf.sqrt(self.likelihood_variance)
+        L = tf.linalg.cholesky(kuu) # cache alpha, qinv
+        A = tf.linalg.triangular_solve(L, kuf, lower=True) / sigma
+        B = tf.linalg.matmul(A, A, transpose_b=True) + tf.eye(num_inducing, dtype=default_float()) # cache qinv
+        LB = tf.linalg.cholesky(B) # cache alpha
+        Aerr = tf.linalg.matmul(A, err)
+        c = tf.linalg.triangular_solve(LB, Aerr, lower=True) / sigma # cache alpha
+        tmp1 = tf.linalg.triangular_solve(L, Kus, lower=True)
+        tmp2 = tf.linalg.triangular_solve(LB, tmp1, lower=True)
+        mean = tf.linalg.matmul(tmp2, c, transpose_a=True)
+        if full_cov:
+            var = (
+                self.kernel(Xnew)
+                + tf.linalg.matmul(tmp2, tmp2, transpose_a=True)
+                - tf.linalg.matmul(tmp1, tmp1, transpose_a=True)
+            )
+            var = tf.tile(var[None, ...], [self.num_latent_gps, 1, 1])  # [P, N, N]
+        else:
+            var = (
+                self.kernel(Xnew, full_cov=False)
+                + tf.reduce_sum(tf.square(tmp2), 0)
+                - tf.reduce_sum(tf.square(tmp1), 0)
+            )
+            var = tf.tile(var[:, None], [1, self.num_latent_gps])
+        return mean + self.mean_function(Xnew), var
 
 class BasePosterior(AbstractPosterior):
     def __init__(

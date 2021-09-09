@@ -192,6 +192,8 @@ class SGPR_deprecated(SGPRBase_deprecated):
         return bound
 
     def predict_f(self, Xnew: InputData, full_cov=False, full_output_cov=False) -> MeanAndVariance:
+
+        # could copy into posterior into a fused version
         """
         Compute the mean and variance of the latent function at some new points
         Xnew. For a derivation of the terms in here, see the associated SGPR
@@ -204,12 +206,12 @@ class SGPR_deprecated(SGPRBase_deprecated):
         kuu = Kuu(self.inducing_variable, self.kernel, jitter=default_jitter())
         Kus = Kuf(self.inducing_variable, self.kernel, Xnew)
         sigma = tf.sqrt(self.likelihood.variance)
-        L = tf.linalg.cholesky(kuu)
+        L = tf.linalg.cholesky(kuu) # cache alpha, qinv
         A = tf.linalg.triangular_solve(L, kuf, lower=True) / sigma
-        B = tf.linalg.matmul(A, A, transpose_b=True) + tf.eye(num_inducing, dtype=default_float())
-        LB = tf.linalg.cholesky(B)
+        B = tf.linalg.matmul(A, A, transpose_b=True) + tf.eye(num_inducing, dtype=default_float()) # cache qinv
+        LB = tf.linalg.cholesky(B) # cache alpha
         Aerr = tf.linalg.matmul(A, err)
-        c = tf.linalg.triangular_solve(LB, Aerr, lower=True) / sigma
+        c = tf.linalg.triangular_solve(LB, Aerr, lower=True) / sigma # cache alpha
         tmp1 = tf.linalg.triangular_solve(L, Kus, lower=True)
         tmp2 = tf.linalg.triangular_solve(LB, tmp1, lower=True)
         mean = tf.linalg.matmul(tmp2, c, transpose_a=True)
