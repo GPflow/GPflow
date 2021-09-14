@@ -23,10 +23,9 @@ from ..conditionals.util import sample_mvn
 from ..kernels import Kernel, MultioutputKernel
 from ..likelihoods import ConditionedLikelihood, Likelihood, SwitchedLikelihood
 from ..mean_functions import MeanFunction, Zero
+from ..types import MeanAndVariance
 from ..utilities import to_default_float
 from .training_mixins import InputData, RegressionData
-
-MeanAndVariance = Tuple[tf.Tensor, tf.Tensor]
 
 
 class BayesianModel(Module, metaclass=abc.ABCMeta):

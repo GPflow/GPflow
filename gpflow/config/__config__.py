@@ -202,7 +202,7 @@ def default_float():
 def default_jitter():
     """
     The jitter is a constant that GPflow adds to the diagonal of matrices
-    to achieve numerical stability of the system when the condition number 
+    to achieve numerical stability of the system when the condition number
     of the associated matrices is large, and therefore the matrices nearly singular.
     """
     return config().jitter
@@ -265,7 +265,7 @@ def set_default_jitter(value: float):
     """
     Sets constant jitter value.
     The jitter is a constant that GPflow adds to the diagonal of matrices
-    to achieve numerical stability of the system when the condition number 
+    to achieve numerical stability of the system when the condition number
     of the associated matrices is large, and therefore the matrices nearly singular.
     """
     if not (

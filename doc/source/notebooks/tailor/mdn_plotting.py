@@ -5,7 +5,7 @@ from scipy.stats import norm
 
 def make_grid(xx, yy):
     """
-    Returns two n-by-n matrices. The first one contains all the x values 
+    Returns two n-by-n matrices. The first one contains all the x values
     and the second all the y values of a cartesian product between `xx` and `yy`.
     """
     n = len(xx)

@@ -5,8 +5,8 @@ runtest: &runtest
         name: Install GPflow
         command: |
           pip install -U pip
-          pip install --use-feature=2020-resolver -e .
-          pip install --use-feature=2020-resolver -r tests_requirements.txt
+          pip install -e .
+          pip install -r tests_requirements.txt
     - run:
         name: Run tests
         command: |
@@ -28,7 +28,7 @@ jobs:
       - run:
           name: Check installed dependencies are compatible
           command: |
-            pip install --use-feature=2020-resolver --progress-bar=off -e .
+            pip install --progress-bar=off -e .
             pip check -vvv
             python -c "import gpflow"
 
@@ -40,10 +40,10 @@ jobs:
       - checkout
       - run:
           name: Install type checker
-          command: pip install mypy
+          command: pip install mypy types-pkg_resources
       - run:
           name: Run type checker
-          command: mypy .
+          command: mypy gpflow tests
 
   unit-test:
     <<: *runtest
@@ -68,7 +68,7 @@ jobs:
       - run:
           name: Install black and isort
           command: |
-            pip install black==19.10b0 isort
+            pip install black==20.8b1 isort
       - run:
           name: Run format check
           command: |

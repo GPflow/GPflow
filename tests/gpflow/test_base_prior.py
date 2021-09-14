@@ -76,7 +76,10 @@ def test_log_prior_on_unconstrained():
     scale_factor = 10.0
     uniform_prior = Uniform(low=np.float64(0), high=np.float64(100))
     param = gpflow.Parameter(
-        initial_value, transform=Exp(), prior=uniform_prior, prior_on=PriorOn.UNCONSTRAINED,
+        initial_value,
+        transform=Exp(),
+        prior=uniform_prior,
+        prior_on=PriorOn.UNCONSTRAINED,
     )
     low_value = param.log_prior_density().numpy()
     param.assign(scale_factor * initial_value)

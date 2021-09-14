@@ -17,8 +17,8 @@ from typing import Tuple
 import numpy as np
 import tensorflow as tf
 
-from .. import kullback_leiblers
-from ..base import Parameter
+from .. import kullback_leiblers, posteriors
+from ..base import Module, Parameter
 from ..conditionals import conditional
 from ..config import default_float
 from ..utilities import positive, triangular
@@ -27,7 +27,7 @@ from .training_mixins import ExternalDataTrainingLossMixin
 from .util import inducingpoint_wrapper
 
 
-class SVGP(GPModel, ExternalDataTrainingLossMixin):
+class SVGP_deprecated(GPModel, ExternalDataTrainingLossMixin):
     """
     This is the Sparse Variational GP (SVGP). The key reference is
 
@@ -170,3 +170,66 @@ class SVGP(GPModel, ExternalDataTrainingLossMixin):
         )
         # tf.debugging.assert_positive(var)  # We really should make the tests pass with this here
         return mu + self.mean_function(Xnew), var
+
+
+class SVGP_with_posterior(SVGP_deprecated):
+    """
+    This is the Sparse Variational GP (SVGP). The key reference is
+
+    ::
+
+      @inproceedings{hensman2014scalable,
+        title={Scalable Variational Gaussian Process Classification},
+        author={Hensman, James and Matthews, Alexander G. de G. and Ghahramani, Zoubin},
+        booktitle={Proceedings of AISTATS},
+        year={2015}
+      }
+
+    This class provides a posterior() method that enables caching for faster subsequent predictions.
+    """
+
+    def posterior(self, precompute_cache=posteriors.PrecomputeCacheType.TENSOR):
+        """
+        Create the Posterior object which contains precomputed matrices for
+        faster prediction.
+
+        precompute_cache has three settings:
+
+        - `PrecomputeCacheType.TENSOR` (or `"tensor"`): Precomputes the cached
+          quantities and stores them as tensors (which allows differentiating
+          through the prediction). This is the default.
+        - `PrecomputeCacheType.VARIABLE` (or `"variable"`): Precomputes the cached
+          quantities and stores them as variables, which allows for updating
+          their values without changing the compute graph (relevant for AOT
+          compilation).
+        - `PrecomputeCacheType.NOCACHE` (or `"nocache"` or `None`): Avoids
+          immediate cache computation. This is useful for avoiding extraneous
+          computations when you only want to call the posterior's
+          `fused_predict_f` method.
+        """
+        return posteriors.create_posterior(
+            self.kernel,
+            self.inducing_variable,
+            self.q_mu,
+            self.q_sqrt,
+            whiten=self.whiten,
+            mean_function=self.mean_function,
+            precompute_cache=precompute_cache,
+        )
+
+    def predict_f(self, Xnew: InputData, full_cov=False, full_output_cov=False) -> MeanAndVariance:
+        """
+        For backwards compatibility, SVGP's predict_f uses the fused (no-cache)
+        computation, which is more efficient during training.
+
+        For faster (cached) prediction, predict directly from the posterior object, i.e.,:
+            model.posterior().predict_f(Xnew, ...)
+        """
+        return self.posterior(posteriors.PrecomputeCacheType.NOCACHE).fused_predict_f(
+            Xnew, full_cov=full_cov, full_output_cov=full_output_cov
+        )
+
+
+class SVGP(SVGP_with_posterior):
+    # subclassed to ensure __class__ == "SVGP"
+    pass

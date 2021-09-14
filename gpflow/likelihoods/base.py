@@ -74,7 +74,7 @@ explicitly passed to likelihood constructor.
 class Likelihood(Module, metaclass=abc.ABCMeta):
     def __init__(self, latent_dim: int, observation_dim: int):
         """
-        A base class for likelihoods, which specifies an observation model 
+        A base class for likelihoods, which specifies an observation model
         connecting the latent functions ('F') to the data ('Y').
 
         All of the members of this class are expected to obey some shape conventions, as specified

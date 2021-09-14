@@ -15,7 +15,7 @@ from setuptools import find_packages, setup
 # not to append tensorflow and tensorflow_probability to the requirements:
 if os.environ.get("READTHEDOCS") != "True":
     requirements = [
-        "tensorflow>=2.1.0",
+        "tensorflow>=2.2.0",
         "tensorflow-probability>0.10.0",  # tensorflow-probability==0.10.0 doesn't install correctly, https://github.com/tensorflow/probability/issues/991
         # NOTE: once we require tensorflow-probability>=0.12, we can remove our custom deepcopy handling
         "setuptools>=41.0.0",  # to satisfy dependency constraints
@@ -25,7 +25,15 @@ else:
     requirements = []
 
 requirements.extend(
-    ["numpy", "scipy", "multipledispatch>=0.6", "tabulate", "typing_extensions", "packaging"]
+    [
+        "numpy",
+        "scipy",
+        "multipledispatch>=0.6",
+        "tabulate",
+        "typing_extensions",
+        "packaging",
+        "deprecated",
+    ]
 )
 
 if sys.version_info < (3, 7):
