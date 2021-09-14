@@ -12,7 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Optional, Tuple
+from collections import namedtuple
+from typing import NamedTuple, Optional, Tuple
 
 import numpy as np
 import tensorflow as tf
@@ -24,7 +25,7 @@ from ..config import default_float, default_jitter
 from ..covariances.dispatch import Kuf, Kuu
 from ..inducing_variables import InducingPoints
 from ..mean_functions import MeanFunction
-from ..utilities import to_default_float
+from ..utilities import add_noise_cov, to_default_float
 from .model import GPModel, MeanAndVariance
 from .training_mixins import InputData, InternalDataTrainingLossMixin, RegressionData
 from .util import data_input_to_tensor, inducingpoint_wrapper
@@ -136,22 +137,102 @@ class SGPR_deprecated(SGPRBase_deprecated):
 
     ::
 
-      @inproceedings{titsias2009variational,
-        title={Variational learning of inducing variables in
-               sparse Gaussian processes},
-        author={Titsias, Michalis K},
-        booktitle={International Conference on
-                   Artificial Intelligence and Statistics},
-        pages={567--574},
-        year={2009}
-      }
-
-
-
+        @inproceedings{titsias2009variational,
+            title={Variational learning of inducing variables in
+                sparse Gaussian processes},
+            author={Titsias, Michalis K},
+            booktitle={International Conference on
+                    Artificial Intelligence and Statistics},
+            pages={567--574},
+            year={2009}
+        }
     """
+
+    CommonTensors = namedtuple("CommonTensors", ["A", "B", "LB", "AAT", "L"])
 
     def maximum_log_likelihood_objective(self) -> tf.Tensor:
         return self.elbo()
+
+    def _common_calculation(self):
+        """
+        Matrices used in log-det calculation
+
+        :return: A , B, LB, AAT with :math:`LLᵀ = Kᵤᵤ , A = L⁻¹K_{uf}/σ, AAT = AAᵀ, B = AAT+I, LBLBᵀ = B`
+        A is M x N, B is M x M, LB is M x M, AAT is M x M
+        """
+        x, _ = self.data
+        iv = self.inducing_variable
+        sigma_sq = self.likelihood.variance
+
+        kuf = Kuf(iv, self.kernel, x)
+        kuu = Kuu(iv, self.kernel, jitter=default_jitter())
+        L = tf.linalg.cholesky(kuu)
+        sigma = tf.sqrt(sigma_sq)
+
+        # Compute intermediate matrices
+        A = tf.linalg.triangular_solve(L, kuf, lower=True) / sigma
+        AAT = tf.linalg.matmul(A, A, transpose_b=True)
+        B = add_noise_cov(AAT, tf.cast(1.0, AAT.dtype))
+        LB = tf.linalg.cholesky(B)
+
+        return self.CommonTensors(A, B, LB, AAT, L)
+
+    def logdet_term(self, common: NameError):
+        """
+        Bound from Jensen's Inequality:
+        .. math::
+            log |K + σ²I| <= log |Q + σ²I| + N * log (1 + tr(K - Q)/(σ²N))
+
+        :param common: A named tuple containing matrices that will be used
+        :return: log_det, lower bound on -.5 * output_dim * log |K + σ²I|
+        """
+        LB = common.LB
+        AAT = common.AAT
+
+        x, y = self.data
+        num_data = to_default_float(tf.shape(x)[0])
+        outdim = to_default_float(tf.shape(y)[1])
+        kdiag = self.kernel(x, full_cov=False)
+        sigma_sq = self.likelihood.variance
+
+        # tr(K) / σ²
+        trace_k = tf.reduce_sum(kdiag) / sigma_sq
+        # tr(Q) / σ²
+        trace_q = tf.reduce_sum(tf.linalg.diag_part(AAT))
+        # tr(K - Q) / σ²
+        trace = trace_k - trace_q
+
+        # 0.5 * log(det(B))
+        half_logdet_b = tf.reduce_sum(tf.math.log(tf.linalg.diag_part(LB)))
+
+        # N * log(σ²)
+        log_sigma_sq = num_data * tf.math.log(sigma_sq)
+
+        logdet_k = -outdim * (half_logdet_b + 0.5 * log_sigma_sq + 0.5 * trace)
+        return logdet_k
+
+    def quad_term(self, common: NamedTuple) -> tf.Tensor:
+        """
+        :param common: A named tuple containing matrices that will be used
+        :return: Lower bound on -.5 yᵀ(K + σ²I)⁻¹y
+        """
+        A = common.A
+        LB = common.LB
+
+        x, y = self.data
+        err = y - self.mean_function(x)
+        sigma_sq = self.likelihood.variance
+        sigma = tf.sqrt(sigma_sq)
+
+        Aerr = tf.linalg.matmul(A, err)
+        c = tf.linalg.triangular_solve(LB, Aerr, lower=True) / sigma
+
+        # σ⁻² yᵀy
+        err_inner_prod = tf.reduce_sum(tf.square(err)) / sigma_sq
+        c_inner_prod = tf.reduce_sum(tf.square(c))
+
+        quad = -0.5 * (err_inner_prod - c_inner_prod)
+        return quad
 
     def elbo(self) -> tf.Tensor:
         """
@@ -159,37 +240,14 @@ class SGPR_deprecated(SGPRBase_deprecated):
         likelihood. For a derivation of the terms in here, see the associated
         SGPR notebook.
         """
-        X_data, Y_data = self.data
-
-        num_inducing = self.inducing_variable.num_inducing
-        num_data = to_default_float(tf.shape(Y_data)[0])
-        output_dim = to_default_float(tf.shape(Y_data)[1])
-
-        err = Y_data - self.mean_function(X_data)
-        Kdiag = self.kernel(X_data, full_cov=False)
-        kuf = Kuf(self.inducing_variable, self.kernel, X_data)
-        kuu = Kuu(self.inducing_variable, self.kernel, jitter=default_jitter())
-        L = tf.linalg.cholesky(kuu)
-        sigma = tf.sqrt(self.likelihood.variance)
-
-        # Compute intermediate matrices
-        A = tf.linalg.triangular_solve(L, kuf, lower=True) / sigma
-        AAT = tf.linalg.matmul(A, A, transpose_b=True)
-        B = AAT + tf.eye(num_inducing, dtype=default_float())
-        LB = tf.linalg.cholesky(B)
-        Aerr = tf.linalg.matmul(A, err)
-        c = tf.linalg.triangular_solve(LB, Aerr, lower=True) / sigma
-
-        # compute log marginal bound
-        bound = -0.5 * num_data * output_dim * np.log(2 * np.pi)
-        bound += tf.negative(output_dim) * tf.reduce_sum(tf.math.log(tf.linalg.diag_part(LB)))
-        bound -= 0.5 * num_data * output_dim * tf.math.log(self.likelihood.variance)
-        bound += -0.5 * tf.reduce_sum(tf.square(err)) / self.likelihood.variance
-        bound += 0.5 * tf.reduce_sum(tf.square(c))
-        bound += -0.5 * output_dim * tf.reduce_sum(Kdiag) / self.likelihood.variance
-        bound += 0.5 * output_dim * tf.reduce_sum(tf.linalg.diag_part(AAT))
-
-        return bound
+        common = self._common_calculation()
+        output_shape = tf.shape(self.data[-1])
+        num_data = to_default_float(output_shape[0])
+        output_dim = to_default_float(output_shape[1])
+        const = -0.5 * num_data * output_dim * np.log(2 * np.pi)
+        logdet = self.logdet_term(common)
+        quad = self.quad_term(common)
+        return const + logdet + quad
 
     def predict_f(self, Xnew: InputData, full_cov=False, full_output_cov=False) -> MeanAndVariance:
 
