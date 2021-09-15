@@ -293,6 +293,7 @@ class GPRPosterior(AbstractPosterior):
             Kmn, Kmm_plus_s, Knn, err, full_cov=full_cov, white=False
         )  # [N, P], [N, P] or [P, N, N]
 
+
 class SGPRPosterior(AbstractPosterior):
     def __init__(
         self,
@@ -317,7 +318,6 @@ class SGPRPosterior(AbstractPosterior):
         if precompute_cache is not None:
             self.update_cache(precompute_cache)
 
-
     def _precompute(self) -> Tuple[tf.Tensor, tf.Tensor]:
 
         """
@@ -332,18 +332,18 @@ class SGPRPosterior(AbstractPosterior):
         kuf = Kuf(self.inducing_variable, self.kernel, self.X_data)
         kuu = Kuu(self.inducing_variable, self.kernel, jitter=default_jitter())
         sigma = tf.sqrt(self.likelihood_variance)
-        L = tf.linalg.cholesky(kuu) # cache alpha, qinv
+        L = tf.linalg.cholesky(kuu)  # cache alpha, qinv
         A = tf.linalg.triangular_solve(L, kuf, lower=True) / sigma
-        B = tf.linalg.matmul(A, A, transpose_b=True) + tf.eye(num_inducing, dtype=default_float()) # cache qinv
-        LB = tf.linalg.cholesky(B) # cache alpha
+        B = tf.linalg.matmul(A, A, transpose_b=True) + tf.eye(num_inducing, dtype=default_float())  # cache qinv
+        LB = tf.linalg.cholesky(B)  # cache alpha
         Aerr = tf.linalg.matmul(A, err)
-        c = tf.linalg.triangular_solve(LB, Aerr, lower=True) / sigma # cache alpha
+        c = tf.linalg.triangular_solve(LB, Aerr, lower=True) / sigma  # cache alpha
 
         # get intermediate variables
-        Linv = tf.linalg.triangular_solve(L,tf.eye(num_inducing, dtype=default_float()))
-        LBinv = tf.linalg.triangular_solve(LB,tf.eye(num_inducing, dtype=default_float()))
-        Binv = tf.linalg.inv(B) # naive...can do better?
-        tmp = tf.eye(num_inducing, dtype=default_float())-Binv
+        Linv = tf.linalg.triangular_solve(L, tf.eye(num_inducing, dtype=default_float()))
+        LBinv = tf.linalg.triangular_solve(LB, tf.eye(num_inducing, dtype=default_float()))
+        Binv = tf.linalg.inv(B)  # naive...can do better?
+        tmp = tf.eye(num_inducing, dtype=default_float()) - Binv
 
         # calculate cached values
         alpha = tf.transpose(Linv) @ tf.transpose(LBinv) @ c
@@ -361,8 +361,9 @@ class SGPRPosterior(AbstractPosterior):
         Kus = Kuf(self.inducing_variable, self.kernel, Xnew)
         Knn = self.kernel(Xnew, full_cov=full_cov)
 
-        mean = tf.transpose(Kus) @ self.alpha
-        var = Knn - tf.transpose(Kus) @ self.Qinv @ Kus
+        Ksu = tf.transpose(Kus)
+        mean = Ksu @ self.alpha
+        var = Knn - Ksu @ self.Qinv @ Kus
 
         return mean + self.mean_function(Xnew), var
 
@@ -404,7 +405,9 @@ class SGPRPosterior(AbstractPosterior):
                 - tf.reduce_sum(tf.square(tmp1), 0)
             )
             var = tf.tile(var[:, None], [1, self.num_latent_gps])
+
         return mean + self.mean_function(Xnew), var
+
 
 class BasePosterior(AbstractPosterior):
     def __init__(

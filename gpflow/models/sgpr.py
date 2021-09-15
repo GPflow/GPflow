@@ -264,12 +264,12 @@ class SGPR_deprecated(SGPRBase_deprecated):
         kuu = Kuu(self.inducing_variable, self.kernel, jitter=default_jitter())
         Kus = Kuf(self.inducing_variable, self.kernel, Xnew)
         sigma = tf.sqrt(self.likelihood.variance)
-        L = tf.linalg.cholesky(kuu) # cache alpha, qinv
+        L = tf.linalg.cholesky(kuu)
         A = tf.linalg.triangular_solve(L, kuf, lower=True) / sigma
         B = tf.linalg.matmul(A, A, transpose_b=True) + tf.eye(num_inducing, dtype=default_float()) # cache qinv
-        LB = tf.linalg.cholesky(B) # cache alpha
+        LB = tf.linalg.cholesky(B)
         Aerr = tf.linalg.matmul(A, err)
-        c = tf.linalg.triangular_solve(LB, Aerr, lower=True) / sigma # cache alpha
+        c = tf.linalg.triangular_solve(LB, Aerr, lower=True) / sigma
         tmp1 = tf.linalg.triangular_solve(L, Kus, lower=True)
         tmp2 = tf.linalg.triangular_solve(LB, tmp1, lower=True)
         mean = tf.linalg.matmul(tmp2, c, transpose_a=True)
@@ -287,6 +287,7 @@ class SGPR_deprecated(SGPRBase_deprecated):
                 - tf.reduce_sum(tf.square(tmp1), 0)
             )
             var = tf.tile(var[:, None], [1, self.num_latent_gps])
+
         return mean + self.mean_function(Xnew), var
 
     def compute_qu(self) -> Tuple[tf.Tensor, tf.Tensor]:
@@ -446,6 +447,7 @@ class GPRFITC(SGPRBase_deprecated):
 
         return mean, var
 
+
 class SGPR_with_posterior(SGPR_deprecated): #rename to deprecated
 
     """
@@ -453,7 +455,7 @@ class SGPR_with_posterior(SGPR_deprecated): #rename to deprecated
     enables caching for faster subsequent predictions.
     """
 
-    # still keep class heirarchy as per GPR
+    # still keep class hierarchy as per GPR
     def posterior(self, precompute_cache=posteriors.PrecomputeCacheType.TENSOR):
         """
         Create the Posterior object which contains precomputed matrices for
