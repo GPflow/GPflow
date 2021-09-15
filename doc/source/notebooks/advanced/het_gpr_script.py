@@ -4,7 +4,7 @@ import tensorflow as tf
 import tensorflow_probability as tfp
 import gpflow as gf
 from gpflow import Parameter
-from gpflow.likelihoods.heteroskedastic import ParameterisedGaussianLikelihood
+from gpflow.likelihoods import MultiLatentTFPConditional
 
 from gpflow.utilities import print_summary, positive
 
@@ -67,7 +67,7 @@ kernel = gf.kernels.Matern52()
 # Build the **GPR** model with the data and kernel
 
 # %%
-class CustomLikelihood(ParameterisedGaussianLikelihood):
+class CustomLikelihood(MultiLatentTFPConditional):
 
     def __init__(self, ndims: int = 1,  **kwargs):
         shift_prior = tfp.distributions.Cauchy(loc=np.float64(0.0), scale=np.float64(5.0))
