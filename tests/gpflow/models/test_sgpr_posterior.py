@@ -14,6 +14,7 @@ from gpflow.posteriors import PrecomputeCacheType
 INPUT_DIM = 7
 OUTPUT_DIM = 1
 
+MEAN_FUNCTION = gpflow.mean_functions.Constant(c=1.0)
 KERNEL = gpflow.kernels.Matern52()
 Z = np.random.randn(20, INPUT_DIM)
 
@@ -30,13 +31,23 @@ def _dummy_data() -> Tuple[InputData, InputData, OutputData]:
 @pytest.fixture(name="sgpr_deprecated_model")
 def _sgpr_deprecated_model(dummy_data) -> SGPR_deprecated:
     X, _, Y = dummy_data
-    return SGPR_deprecated(data=(X, Y), kernel=KERNEL, inducing_variable=InducingPoints(Z))
+    return SGPR_deprecated(
+        data=(X, Y),
+        kernel=KERNEL,
+        inducing_variable=InducingPoints(Z),
+        mean_function=MEAN_FUNCTION
+    )
 
 
 @pytest.fixture(name="sgpr_model")
 def sgpr_model(dummy_data) -> SGPR_with_posterior:
     X, _, Y = dummy_data
-    return SGPR_with_posterior(data=(X, Y), kernel=KERNEL, inducing_variable=InducingPoints(Z))
+    return SGPR_with_posterior(
+        data=(X, Y),
+        kernel=KERNEL,
+        inducing_variable=InducingPoints(Z),
+        mean_function=MEAN_FUNCTION
+    )
 
 
 @pytest.mark.parametrize("full_cov", [True, False])
