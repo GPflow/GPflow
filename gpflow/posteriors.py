@@ -365,7 +365,7 @@ class SGPRPosterior(AbstractPosterior):
         mean = Ksu @ self.alpha
         var = Knn - Ksu @ self.Qinv @ Kus
 
-        return mean + self.mean_function(Xnew), var
+        return mean, var
 
     def _conditional_fused(
         self, Xnew, full_cov: bool = False, full_output_cov: bool = False
@@ -406,7 +406,7 @@ class SGPRPosterior(AbstractPosterior):
             )
             var = tf.tile(var[:, None], [1, self.num_latent_gps])
 
-        return mean + self.mean_function(Xnew), var
+        return mean, var
 
 
 class BasePosterior(AbstractPosterior):
