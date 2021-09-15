@@ -1,10 +1,12 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
+import tensorflow_probability as tfp
 import gpflow as gf
+from gpflow import Parameter
+from gpflow.likelihoods import MultiLatentTFPConditional
 
-
-from gpflow.utilities import print_summary
+from gpflow.utilities import print_summary, positive
 
 N = 101
 
@@ -65,7 +67,24 @@ kernel = gf.kernels.Matern52()
 # Build the **GPR** model with the data and kernel
 
 # %%
-model = gf.models.het_GPR(data=(X, Y), kernel=kernel, mean_function=None)
+class CustomLikelihood(MultiLatentTFPConditional):
+
+    def __init__(self, ndims: int = 1,  **kwargs):
+        shift_prior = tfp.distributions.Cauchy(loc=np.float64(0.0), scale=np.float64(5.0))
+        base_prior = tfp.distributions.LogNormal(loc=np.float64(-2.0), scale=np.float64(2.0))
+        self.variance = Parameter(np.ones(ndims), transform=positive(lower=variance_lower_bound))
+        self.shifts = Parameter(np.zeros(ndims), trainable=True, prior=shift_prior, name="shifts")
+        super().__init__(**kwargs)
+
+    def _scale_transform(self, X):
+        """ Determine the likelihood variance at the specified input locations X. """
+        Z = X + self.shifts
+        normalised_variance = self.variance / (1 + self.shifts ** 2)
+        het_variance = tf.reduce_sum(tf.square(Z) * normalised_variance, axis=-1, keepdims=True)
+        return het_variance + self.likelihood_variance
+
+
+model = gf.models.het_GPR(data=(X, Y), kernel=kernel, likelihood=CustomLikelihood(), mean_function=None)
 
 # %% [markdown]
 # ## Model Optimization proceeds as in the GPR notebook
