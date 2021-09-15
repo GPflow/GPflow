@@ -21,7 +21,7 @@ rand_samples = np.random.normal(0.0, 1.0, size=N)[:, None]
 noise = rand_samples * (0.05 + 0.75 * X)
 signal = 2 * np.sin(2 * np.pi * X)
 
-Y = 5*(signal + noise)
+Y = 5 * (signal + noise)
 
 # %% [markdown]
 # ### Plot Data
@@ -67,24 +67,31 @@ kernel = gf.kernels.Matern52()
 # Build the **GPR** model with the data and kernel
 
 # %%
-class CustomLikelihood(MultiLatentTFPConditional):
+class LinearLikelihood(MultiLatentTFPConditional):
 
     def __init__(self, ndims: int = 1,  **kwargs):
-        shift_prior = tfp.distributions.Cauchy(loc=np.float64(0.0), scale=np.float64(5.0))
-        base_prior = tfp.distributions.LogNormal(loc=np.float64(-2.0), scale=np.float64(2.0))
-        self.variance = Parameter(np.ones(ndims), transform=positive(lower=variance_lower_bound))
-        self.shifts = Parameter(np.zeros(ndims), trainable=True, prior=shift_prior, name="shifts")
-        super().__init__(**kwargs)
+        gradient_prior = tfp.distributions.Normal(loc=np.float64(0.0), scale=np.float64(1.0))
+        self.noise_gradient = Parameter(np.ones(ndims), transform=positive(lower=1e-6), prior=gradient_prior)
+        self.constant_variance = Parameter(1.0, transform=positive(lower=1e-6))
+        self.minimum_noise_variance = 1e-6  # ?
 
-    def _scale_transform(self, X):
+        def conditional_distribution(Fs) -> tfp.distributions.Distribution:
+            tf.debugging.assert_equal(tf.shape(Fs)[-1], 2)
+            loc = Fs[..., :1]
+            scale = self.scale_transform(Fs[..., 1:])
+            return tfp.distributions.Normal(loc, scale)
+
+        super().__init__(latent_dim=2, conditional_distribution=conditional_distribution, ** kwargs)
+
+    def scale_transform(self, X):
         """ Determine the likelihood variance at the specified input locations X. """
-        Z = X + self.shifts
-        normalised_variance = self.variance / (1 + self.shifts ** 2)
-        het_variance = tf.reduce_sum(tf.square(Z) * normalised_variance, axis=-1, keepdims=True)
-        return het_variance + self.likelihood_variance
+
+        linear_variance = tf.reduce_sum(tf.square(X) * self.noise_gradient, axis=-1, keepdims=True)
+        noise_variance = linear_variance + self.constant_variance
+        return tf.maximum(noise_variance, self.minimum_noise_variance)
 
 
-model = gf.models.het_GPR(data=(X, Y), kernel=kernel, likelihood=CustomLikelihood(), mean_function=None)
+model = gf.models.het_GPR(data=(X, Y), kernel=kernel, likelihood=LinearLikelihood(), mean_function=None)
 
 # %% [markdown]
 # ## Model Optimization proceeds as in the GPR notebook
@@ -118,6 +125,17 @@ lml = model.log_marginal_likelihood()
 print("Base LML", base_lml)
 print("Het LML", lml)
 print("Odds ratio", np.exp(lml-base_lml))
+
+
+class PseudoPoissonLikelihood(MultiLatentTFPConditional):
+    """ While the Poisson likelihood is non-Gaussian, here we mimic the """
+    def __init__(self, ndims: int = 1,  **kwargs):
+        super().__init__(**kwargs)
+
+    def _scale_transform(self, f):
+        """ Determine the likelihood variance based upon the function value. """
+        pass
+
 
 # ## generate test points for prediction
 # xx = np.linspace(-0.1, 1.1, 100).reshape(100, 1)  # test points must be of shape (N, D)

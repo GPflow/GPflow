@@ -40,8 +40,9 @@ from .inducing_variables import (
     SeparateIndependentInducingVariables,
     SharedIndependentInducingVariables,
 )
+from .likelihoods import Likelihood
 from .types import MeanAndVariance
-from .utilities import Dispatcher, add_noise_cov, add_linear_noise_cov, positive
+from .utilities import Dispatcher, add_noise_cov, add_linear_noise_cov
 
 
 class _QDistribution(Module):
@@ -302,24 +303,19 @@ class HeteroskedasticGPRPosterior(GPRPosterior):
                  kernel,
                  X_data: tf.Tensor,
                  Y_data: tf.Tensor,
-                 likelihood_variance: Parameter,
-                 shifts: Parameter,
-                 variance: Parameter,
+                 likelihood: Likelihood,
                  mean_function: Optional[mean_functions.MeanFunction] = None,
                  *,
                  precompute_cache: Optional[PrecomputeCacheType],
                  ):
 
-        self.shifts = shifts
-        self.variance = variance
-        super().__init__(kernel, X_data, Y_data, likelihood_variance, mean_function=mean_function, precompute_cache=precompute_cache)
+        self.likelihood = likelihood
+        super().__init__(kernel, X_data, Y_data, likelihood.constant_variance, mean_function=mean_function, precompute_cache=precompute_cache)
 
     def evaluate_linear_noise_variance(self, X: tf.Tensor):
         """ Noise variance contribution. """
 
-        Z = X + self.shifts
-        normalised_variance = self.variance / (1 + self.shifts ** 2)
-        return tf.reduce_sum(tf.square(Z) * normalised_variance, axis=-1)
+        return self.likelihood.scale_transform(X)
 
     def add_noise(self, K: tf.Tensor, X: tf.Tensor):
 

@@ -18,5 +18,5 @@ def add_linear_noise_cov(K: tf.Tensor, noise_variance: tf.Tensor) -> tf.Tensor:
     Returns K + diag(σ²), where σ² is the likelihood noise variance (vector).
     """
     k_diag = tf.linalg.diag_part(K)
-    return tf.linalg.set_diag(K, k_diag + noise_variance)
+    return tf.linalg.set_diag(K, k_diag + tf.reshape(noise_variance, [-1]))
 
