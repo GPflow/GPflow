@@ -7,8 +7,8 @@ import tensorflow as tf
 
 import gpflow
 from gpflow.inducing_variables import InducingPoints
-from gpflow.models.training_mixins import InputData, OutputData, RegressionData
-from gpflow.models.sgpr import SGPR_deprecated,SGPR_with_posterior
+from gpflow.models.training_mixins import InputData, OutputData
+from gpflow.models.sgpr import SGPR_deprecated, SGPR
 from gpflow.posteriors import PrecomputeCacheType
 
 INPUT_DIM = 7
@@ -19,7 +19,7 @@ KERNEL = gpflow.kernels.Matern52()
 Z = np.random.randn(20, INPUT_DIM)
 
 
-@pytest.fixture(name="dummy_data", scope="session")
+@pytest.fixture(name="dummy_data", scope="module")
 def _dummy_data() -> Tuple[InputData, InputData, OutputData]:
     X = tf.convert_to_tensor(np.random.randn(100, INPUT_DIM), dtype=tf.float64)
     Y = tf.convert_to_tensor(np.random.randn(100, OUTPUT_DIM), dtype=tf.float64)
@@ -28,7 +28,7 @@ def _dummy_data() -> Tuple[InputData, InputData, OutputData]:
     return X, X_new, Y
 
 
-@pytest.fixture(name="sgpr_deprecated_model")
+@pytest.fixture(name="sgpr_deprecated_model", scope="module")
 def _sgpr_deprecated_model(dummy_data) -> SGPR_deprecated:
     X, _, Y = dummy_data
     return SGPR_deprecated(
@@ -39,10 +39,10 @@ def _sgpr_deprecated_model(dummy_data) -> SGPR_deprecated:
     )
 
 
-@pytest.fixture(name="sgpr_model")
-def sgpr_model(dummy_data) -> SGPR_with_posterior:
+@pytest.fixture(name="sgpr_model", scope="module")
+def sgpr_model(dummy_data) -> SGPR:
     X, _, Y = dummy_data
-    return SGPR_with_posterior(
+    return SGPR(
         data=(X, Y),
         kernel=KERNEL,
         inducing_variable=InducingPoints(Z),
@@ -54,7 +54,7 @@ def sgpr_model(dummy_data) -> SGPR_with_posterior:
 @pytest.mark.parametrize("full_output_cov", [True, False])
 def test_old_vs_new_gp_fused(
     sgpr_deprecated_model: SGPR_deprecated,
-    sgpr_model: SGPR_with_posterior,
+    sgpr_model: SGPR,
     dummy_data,
     full_cov: bool,
     full_output_cov: bool) -> None:
@@ -76,7 +76,7 @@ def test_old_vs_new_gp_fused(
 @pytest.mark.parametrize("full_output_cov", [True, False])
 def test_old_vs_new_with_posterior(
     sgpr_deprecated_model: SGPR_deprecated,
-    sgpr_model: SGPR_with_posterior,
+    sgpr_model: SGPR,
     dummy_data,
     cache_type: PrecomputeCacheType,
     full_cov: bool,

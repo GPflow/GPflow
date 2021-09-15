@@ -346,8 +346,9 @@ class SGPRPosterior(AbstractPosterior):
         tmp = tf.eye(num_inducing, dtype=default_float()) - Binv
 
         # calculate cached values
-        alpha = tf.transpose(Linv) @ tf.transpose(LBinv) @ c
-        Qinv = Linv @ tmp @ Linv
+        LinvT = tf.transpose(Linv)
+        alpha = LinvT @ tf.transpose(LBinv) @ c
+        Qinv = LinvT @ tmp @ Linv
 
         return alpha, Qinv
 
@@ -363,7 +364,14 @@ class SGPRPosterior(AbstractPosterior):
 
         Ksu = tf.transpose(Kus)
         mean = Ksu @ self.alpha
-        var = Knn - Ksu @ self.Qinv @ Kus
+
+        if full_cov:
+            var = Knn - Ksu @ self.Qinv @ Kus
+            var = tf.tile(var[None, ...], [self.num_latent_gps, 1, 1])  # [P, N, N]
+        else:
+            # TODO: modify to suit this particular case
+            var = Knn - Ksu @ self.Qinv @ Kus
+            var = tf.tile(var[:, None], [1, self.num_latent_gps])
 
         return mean, var
 

@@ -448,14 +448,12 @@ class GPRFITC(SGPRBase_deprecated):
         return mean, var
 
 
-class SGPR_with_posterior(SGPR_deprecated): #rename to deprecated
-
+class SGPR_with_posterior(SGPR_deprecated):
     """
     This is an implementation of GPR that provides a posterior() method that
     enables caching for faster subsequent predictions.
     """
 
-    # still keep class hierarchy as per GPR
     def posterior(self, precompute_cache=posteriors.PrecomputeCacheType.TENSOR):
         """
         Create the Posterior object which contains precomputed matrices for
@@ -503,5 +501,5 @@ class SGPR_with_posterior(SGPR_deprecated): #rename to deprecated
 
 
 class SGPR(SGPR_with_posterior):
-    # subclassed to ensure __class__ == "GPR"
+    # subclassed to ensure __class__ == "SGPR"
     pass

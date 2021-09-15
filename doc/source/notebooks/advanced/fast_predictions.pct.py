@@ -52,7 +52,7 @@
 # \end{equation*}
 # and
 # \begin{equation*}
-# \Sigma = K_{nn} - K_{nu}L^{-1}(I - B^{-1})L^{-1}K_{un}
+# \Sigma = K_{nn} - K_{nu}L^{-T}(I - B^{-1})L^{-1}K_{un}
 # \end{equation*}
 #
 # Where the mean function is not the zero function, the predictive mean should have the mean function evaluated at the test points added to it.
@@ -72,7 +72,7 @@
 # \end{equation*}
 # and in the case of the SGPR model these are:
 # \begin{equation*}
-#     \alpha = L^{-T}L_B^{-T}\mathbf{c}\\ Q^{-1} = L^{-1}(I - B^{-1})L^{-1}
+#     \alpha = L^{-T}L_B^{-T}\mathbf{c}\\ Q^{-1} = L^{-T}(I - B^{-1})L^{-1}
 # \end{equation*}
 #
 #
