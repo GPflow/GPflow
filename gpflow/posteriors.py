@@ -369,8 +369,8 @@ class SGPRPosterior(AbstractPosterior):
             var = Knn - Ksu @ self.Qinv @ Kus
             var = tf.tile(var[None, ...], [self.num_latent_gps, 1, 1])  # [P, N, N]
         else:
-            # TODO: modify to suit this particular case
-            var = Knn - Ksu @ self.Qinv @ Kus
+            tmp = tf.linalg.matmul(Ksu, tf.linalg.cholesky(self.Qinv))
+            var = Knn - tf.reduce_sum(tf.square(tmp), 1)
             var = tf.tile(var[:, None], [1, self.num_latent_gps])
 
         return mean, var
