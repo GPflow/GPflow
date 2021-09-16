@@ -5,7 +5,7 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.11.3
+#       jupytext_version: 1.9.1
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -134,3 +134,33 @@ posterior = model.posterior()
 
 # %%timeit
 posterior.predict_f(Xnew)
+
+# ## SGPR Example
+#
+# And finally, we follow the same approach this time for the SGPR case.
+
+model = gpflow.models.SGPR(
+    (X, Y),
+    gpflow.kernels.SquaredExponential(),
+    np.linspace(-1.1, 1.1, 1000)[:, None]
+)
+
+# ### The full_cov=True case works
+
+# %%timeit
+model.predict_f(Xnew, full_cov=True)
+
+posterior = model.posterior()
+
+# %%timeit
+posterior.predict_f(Xnew, full_cov=True)
+
+# ### The full_cov=False case does not work, but it does in the tests
+
+# %%timeit
+model.predict_f(Xnew)
+
+# %%timeit
+posterior.predict_f(Xnew)
+
+
