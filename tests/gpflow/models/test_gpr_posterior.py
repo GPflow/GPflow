@@ -1,9 +1,5 @@
-from itertools import product
-from typing import Tuple
-
 import numpy as np
 import pytest
-import tensorflow as tf
 
 import gpflow
 from gpflow.models.gpr import GPR_deprecated, GPR_with_posterior

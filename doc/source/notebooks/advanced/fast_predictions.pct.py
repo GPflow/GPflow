@@ -140,27 +140,17 @@ posterior.predict_f(Xnew)
 # And finally, we follow the same approach this time for the SGPR case.
 
 model = gpflow.models.SGPR(
-    (X, Y),
-    gpflow.kernels.SquaredExponential(),
-    np.linspace(-1.1, 1.1, 1000)[:, None]
+    (X, Y), gpflow.kernels.SquaredExponential(), np.linspace(-1.1, 1.1, 1000)[:, None]
 )
 
-# ### The full_cov=True case works
-
-# %%timeit
-model.predict_f(Xnew, full_cov=True)
-
-posterior = model.posterior()
-
-# %%timeit
-posterior.predict_f(Xnew, full_cov=True)
-
-# ### The full_cov=False case does not work, but it does in the tests
+# The predict_f method on the instance performs no caching.
 
 # %%timeit
 model.predict_f(Xnew)
 
+# Using the posterior object instead:
+
+posterior = model.posterior()
+
 # %%timeit
 posterior.predict_f(Xnew)
-
-

@@ -266,7 +266,9 @@ class SGPR_deprecated(SGPRBase_deprecated):
         sigma = tf.sqrt(self.likelihood.variance)
         L = tf.linalg.cholesky(kuu)
         A = tf.linalg.triangular_solve(L, kuf, lower=True) / sigma
-        B = tf.linalg.matmul(A, A, transpose_b=True) + tf.eye(num_inducing, dtype=default_float()) # cache qinv
+        B = tf.linalg.matmul(A, A, transpose_b=True) + tf.eye(
+            num_inducing, dtype=default_float()
+        )  # cache qinv
         LB = tf.linalg.cholesky(B)
         Aerr = tf.linalg.matmul(A, err)
         c = tf.linalg.triangular_solve(LB, Aerr, lower=True) / sigma
@@ -474,15 +476,12 @@ class SGPR_with_posterior(SGPR_deprecated):
           `fused_predict_f` method.
         """
 
-        X, Y = self.data
-
         return posteriors.SGPRPosterior(
             kernel=self.kernel,
-            X_data=X,
-            Y_data=Y,
+            data=self.data,
             inducing_variable=self.inducing_variable,
             likelihood_variance=self.likelihood.variance,
-            num_latent_gps =self.num_latent_gps,
+            num_latent_gps=self.num_latent_gps,
             mean_function=self.mean_function,
             precompute_cache=precompute_cache,
         )
