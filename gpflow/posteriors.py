@@ -369,7 +369,13 @@ class SGPRPosterior(AbstractPosterior):
             var = Knn - Ksu @ self.Qinv @ Kus
             var = tf.tile(var[None, ...], [self.num_latent_gps, 1, 1])  # [P, N, N]
         else:
-            tmp = tf.linalg.matmul(Ksu, tf.linalg.cholesky(self.Qinv))
+            try:
+                LQinv = tf.linalg.cholesky(self.Qinv)
+            except tf.errors.InvalidArgumentError:
+                Qinv = self.Qinv + 1e-7*tf.eye(self.Qinv.shape[0], dtype=default_float())
+                LQinv = tf.linalg.cholesky(Qinv)
+
+            tmp = Ksu @ LQinv
             var = Knn - tf.reduce_sum(tf.square(tmp), 1)
             var = tf.tile(var[:, None], [1, self.num_latent_gps])
 
