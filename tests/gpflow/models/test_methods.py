@@ -50,7 +50,7 @@ _gp_models = [
         default_datum.lik,
         inducing_variable=default_datum.Z,
     ),
-    gpflow.models.SGPR_deprecated(
+    gpflow.models.SGPR(
         (default_datum.X, default_datum.Y),
         default_datum.kernel,
         inducing_variable=default_datum.Z,

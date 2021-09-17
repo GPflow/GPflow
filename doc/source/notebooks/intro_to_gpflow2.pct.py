@@ -482,7 +482,7 @@ for i, recorded_checkpoint in enumerate(manager.checkpoints):
 # The following returns a dictionary of all parameters within
 
 # %%
-model = gpflow.models.SGPR_deprecated(data, kernel=kernel, inducing_variable=inducing_variable)
+model = gpflow.models.SGPR(data, kernel=kernel, inducing_variable=inducing_variable)
 
 # %%
 gpflow.utilities.parameter_dict(model)

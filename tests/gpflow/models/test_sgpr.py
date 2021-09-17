@@ -11,15 +11,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 from dataclasses import dataclass
 
 import numpy as np
-import pytest
 import tensorflow as tf
 
 import gpflow
-from gpflow.config import default_float
 from gpflow.utilities import to_default_float
 
 
@@ -39,7 +36,7 @@ def test_sgpr_qu():
     X = to_default_float(rng.randn(100, 2))
     Z = to_default_float(rng.randn(20, 2))
     Y = to_default_float(np.sin(X @ np.array([[-1.4], [0.5]])) + 0.5 * rng.randn(len(X), 1))
-    model = gpflow.models.SGPR_deprecated(
+    model = gpflow.models.SGPR(
         (X, Y), kernel=gpflow.kernels.SquaredExponential(), inducing_variable=Z
     )
 

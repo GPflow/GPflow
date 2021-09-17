@@ -56,7 +56,7 @@ def gpr_and_vgp(data, kernel, likelihood):
 @pytest.fixture
 def sgpr_and_svgp(data, inducing_variable, kernel, likelihood):
     svgp = gpflow.models.SVGP(kernel, likelihood, inducing_variable)
-    sgpr = gpflow.models.SGPR_deprecated(data, kernel, inducing_variable=inducing_variable)
+    sgpr = gpflow.models.SGPR(data, kernel, inducing_variable=inducing_variable)
     sgpr.likelihood.variance.assign(Setup.likelihood_variance)
     set_trainable(svgp, False)
     set_trainable(svgp.q_mu, True)

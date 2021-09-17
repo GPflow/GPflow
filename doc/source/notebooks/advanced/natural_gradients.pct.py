@@ -25,7 +25,7 @@ import gpflow
 import tensorflow as tf
 
 from gpflow.ci_utils import ci_niter, ci_range
-from gpflow.models import VGP, GPR, SGPR_deprecated, SVGP
+from gpflow.models import VGP, GPR, SGPR, SVGP
 from gpflow.optimizers import NaturalGradient
 from gpflow.optimizers.natgrad import XiSqrtMeanVar
 from gpflow import set_trainable
@@ -147,7 +147,7 @@ svgp = SVGP(
     likelihood=gpflow.likelihoods.Gaussian(),
     inducing_variable=inducing_variable,
 )
-sgpr = SGPR_deprecated(data, kernel=gpflow.kernels.Matern52(), inducing_variable=inducing_variable)
+sgpr = SGPR(data, kernel=gpflow.kernels.Matern52(), inducing_variable=inducing_variable)
 
 for model in svgp, sgpr:
     model.likelihood.variance.assign(0.1)

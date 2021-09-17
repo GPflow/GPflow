@@ -98,7 +98,7 @@ def _create_approximate_models():
     )
     gpflow.set_trainable(model_3.inducing_variable, False)
 
-    model_4 = gpflow.models.SGPR_deprecated(
+    model_4 = gpflow.models.SGPR(
         (Datum.X, Datum.Y),
         kernel=gpflow.kernels.SquaredExponential(),
         inducing_variable=Datum.X.copy(),
@@ -271,7 +271,7 @@ def test_upper_bound_few_inducing_points():
     """
     Test for upper bound for regression marginal likelihood
     """
-    model_vfe = gpflow.models.SGPR_deprecated(
+    model_vfe = gpflow.models.SGPR(
         (DatumUpper.X, DatumUpper.Y),
         gpflow.kernels.SquaredExponential(),
         inducing_variable=DatumUpper.X[:10, :].copy(),

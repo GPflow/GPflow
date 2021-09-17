@@ -639,8 +639,7 @@ def test_gpr_posterior_update_cache_with_variables_no_precompute(
 
     posterior = GPRPosterior(
         kernel=kernel,
-        X_data=X,
-        Y_data=Y,
+        data=(X, Y),
         likelihood_variance=gpflow.Parameter(0.1),
         precompute_cache=precompute_cache_type,
         mean_function=Zero(),

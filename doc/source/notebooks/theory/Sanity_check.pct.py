@@ -83,7 +83,7 @@ m4 = gpflow.models.SVGP(
 )
 set_trainable(m4.inducing_variable, False)
 
-m5 = gpflow.models.SGPR_deprecated(
+m5 = gpflow.models.SGPR(
     data, kernel=gpflow.kernels.SquaredExponential(), inducing_variable=inducing_variable
 )
 set_trainable(m5.inducing_variable, False)

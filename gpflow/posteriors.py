@@ -54,7 +54,6 @@ class _QDistribution(Module):
 
 class _DeltaDist(_QDistribution):
     def __init__(self, q_mu) -> None:
-        super().__init__()
         self.q_mu = q_mu  # [M, L]
 
     @property
@@ -64,14 +63,12 @@ class _DeltaDist(_QDistribution):
 
 class _DiagNormal(_QDistribution):
     def __init__(self, q_mu, q_sqrt) -> None:
-        super().__init__()
         self.q_mu = q_mu  # [M, L]
         self.q_sqrt = q_sqrt  # [M, L]
 
 
 class _MvNormal(_QDistribution):
     def __init__(self, q_mu, q_sqrt) -> None:
-        super().__init__()
         self.q_mu = q_mu  # [M, L]
         self.q_sqrt = q_sqrt  # [L, M, M], lower-triangular
 

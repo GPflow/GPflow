@@ -83,7 +83,9 @@ def initializeHyperparametersFromExactSolution(sparse_model):
 
 # %%
 # Train VFE model initialized from the perfect solution.
-VFEmodel = gpflow.models.SGPR_deprecated((Xtrain, Ytrain), kernel=getKernel(), inducing_variable=Xtrain.copy())
+VFEmodel = gpflow.models.SGPR(
+    (Xtrain, Ytrain), kernel=getKernel(), inducing_variable=Xtrain.copy()
+)
 
 initializeHyperparametersFromExactSolution(VFEmodel)
 

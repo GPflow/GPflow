@@ -81,11 +81,19 @@
 # +
 import gpflow
 import numpy as np
+import tensorflow as tf
+
+INPUT_DIM = 7
+OUTPUT_DIM = 1
 
 # Create some data
 X = np.linspace(-1.1, 1.1, 1000)[:, None]
-Y = np.cos(X)
-Xnew = np.linspace(-1.1, 1.1, 1000)[:, None]
+Y = np.sin(X)
+# Xnew = np.linspace(-1.1, 1.1, 1000)[:, None]
+
+# X = tf.convert_to_tensor(np.random.randn(100, INPUT_DIM), dtype=tf.float64)
+# Y = tf.convert_to_tensor(np.random.randn(100, OUTPUT_DIM), dtype=tf.float64)
+# X_new = tf.convert_to_tensor(np.random.randn(100, INPUT_DIM), dtype=tf.float64)
 
 # + [markdown] id="FzCgor4nKUcW"
 #
@@ -154,3 +162,5 @@ posterior = model.posterior()
 
 # %%timeit
 posterior.predict_f(Xnew)
+
+
