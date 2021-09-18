@@ -104,29 +104,4 @@ def test_old_vs_new_with_posterior(
 
     # check new cache is same as old version
     np.testing.assert_allclose(mu_old, mu_new_cache)
-    np.testing.assert_allclose(var2_old, var2_new_cache, rtol=1e-3)
-
-
-@pytest.mark.xfail(reason="Qinv not positive definite, cannot Cholesky factorise")
-def test_non_positive_definite_qinv() -> None:
-    """
-    Tests robustness when the cached Qinv is not positive definite
-    and predictions are asked with full_cov=False. This is because
-    in the full_cov=False case the matrix is Cholesky factorised.
-
-    This test is created from SGPR example in the `fast_predictions`
-    notebook.
-    """
-    X = np.linspace(-1.1, 1.1, 1000)[:, None]
-    Y = np.cos(X)
-    Xnew = np.linspace(-1.1, 1.1, 1000)[:, None]
-
-    model = gpflow.models.SGPR(
-        (X, Y), gpflow.kernels.SquaredExponential(), np.linspace(-1.1, 1.1, 1000)[:, None]
-    )
-
-    posterior = model.posterior()
-    try:
-        posterior.predict_f(Xnew, full_cov=False)
-    except tf.errors.InvalidArgumentError:
-        pytest.fail("This should not happen")
+    np.testing.assert_allclose(var2_old, var2_new_cache)
