@@ -146,9 +146,7 @@ positive_with_min = lambda: affine_scalar_bijector(shift=f64(1e-4))(tfp.bijector
 constrained = lambda: affine_scalar_bijector(shift=f64(1e-4), scale=f64(100.0))(
     tfp.bijectors.Sigmoid()
 )
-max_abs_1 = lambda: affine_scalar_bijector(shift=f64(-2.0), scale=f64(4.0))(
-    tfp.bijectors.Sigmoid()
-)
+max_abs_1 = lambda: affine_scalar_bijector(shift=f64(-2.0), scale=f64(4.0))(tfp.bijectors.Sigmoid())
 
 patch_shape = [3, 3]
 conv_k = gpflow.kernels.Convolutional(gpflow.kernels.SquaredExponential(), IMAGE_SHAPE, patch_shape)
