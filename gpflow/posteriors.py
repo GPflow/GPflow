@@ -39,8 +39,6 @@ from .inducing_variables import (
     SeparateIndependentInducingVariables,
     SharedIndependentInducingVariables,
 )
-# from .models.util import data_input_to_tensor
-# from .models.training_mixins import InputData, RegressionData
 from .types import MeanAndVariance
 from .utilities import Dispatcher, add_noise_cov
 
