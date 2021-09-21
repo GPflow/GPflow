@@ -87,7 +87,7 @@ opt = Scipy()
 
 # %%
 variables = cglb.trainable_variables
-_ = opt.minimize(cglb.training_loss_closure(), variables, options=dict(maxiter=100))
+_ = opt.minimize(cglb.training_loss_closure(compile=False), variables, compile=False, options=dict(maxiter=100))
 
 # %% [markdown]
 # Below we compare prediction results for different CG tolerances. The `cg_tolerance=None` means that no CG is run to tune the $ v $ vector, and `cg_tolerance=0.01` is much lower value than the one used at the model optimization.
