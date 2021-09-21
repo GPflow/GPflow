@@ -144,12 +144,9 @@ class GPR_with_posterior(GPR_deprecated):
           `fused_predict_f` method.
         """
 
-        X, Y = self.data
-
         return posteriors.GPRPosterior(
             kernel=self.kernel,
-            X_data=X,
-            Y_data=Y,
+            data=self.data,
             likelihood_variance=self.likelihood.variance,
             mean_function=self.mean_function,
             precompute_cache=precompute_cache,

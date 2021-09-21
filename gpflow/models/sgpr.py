@@ -20,7 +20,7 @@ import tensorflow as tf
 
 from gpflow.kernels import Kernel
 
-from .. import likelihoods
+from .. import likelihoods, posteriors
 from ..config import default_float, default_jitter
 from ..covariances.dispatch import Kuf, Kuu
 from ..inducing_variables import InducingPoints
@@ -31,7 +31,7 @@ from .training_mixins import InputData, InternalDataTrainingLossMixin, Regressio
 from .util import data_input_to_tensor, inducingpoint_wrapper
 
 
-class SGPRBase(GPModel, InternalDataTrainingLossMixin):
+class SGPRBase_deprecated(GPModel, InternalDataTrainingLossMixin):
     """
     Common base class for SGPR and GPRFITC that provides the common __init__
     and upper_bound() methods.
@@ -131,7 +131,7 @@ class SGPRBase(GPModel, InternalDataTrainingLossMixin):
         return const + logdet + quad
 
 
-class SGPR(SGPRBase):
+class SGPR_deprecated(SGPRBase_deprecated):
     """
     Sparse Variational GP regression. The key reference is
 
@@ -250,6 +250,8 @@ class SGPR(SGPRBase):
         return const + logdet + quad
 
     def predict_f(self, Xnew: InputData, full_cov=False, full_output_cov=False) -> MeanAndVariance:
+
+        # could copy into posterior into a fused version
         """
         Compute the mean and variance of the latent function at some new points
         Xnew. For a derivation of the terms in here, see the associated SGPR
@@ -264,7 +266,9 @@ class SGPR(SGPRBase):
         sigma = tf.sqrt(self.likelihood.variance)
         L = tf.linalg.cholesky(kuu)
         A = tf.linalg.triangular_solve(L, kuf, lower=True) / sigma
-        B = tf.linalg.matmul(A, A, transpose_b=True) + tf.eye(num_inducing, dtype=default_float())
+        B = tf.linalg.matmul(A, A, transpose_b=True) + tf.eye(
+            num_inducing, dtype=default_float()
+        )  # cache qinv
         LB = tf.linalg.cholesky(B)
         Aerr = tf.linalg.matmul(A, err)
         c = tf.linalg.triangular_solve(LB, Aerr, lower=True) / sigma
@@ -285,6 +289,7 @@ class SGPR(SGPRBase):
                 - tf.reduce_sum(tf.square(tmp1), 0)
             )
             var = tf.tile(var[:, None], [1, self.num_latent_gps])
+
         return mean + self.mean_function(Xnew), var
 
     def compute_qu(self) -> Tuple[tf.Tensor, tf.Tensor]:
@@ -318,7 +323,7 @@ class SGPR(SGPRBase):
         return mu, cov
 
 
-class GPRFITC(SGPRBase):
+class GPRFITC(SGPRBase_deprecated):
     """
     This implements GP regression with the FITC approximation.
     The key reference is
@@ -443,3 +448,57 @@ class GPRFITC(SGPRBase):
             var = tf.tile(var[:, None], [1, self.num_latent_gps])
 
         return mean, var
+
+
+class SGPR_with_posterior(SGPR_deprecated):
+    """
+    This is an implementation of GPR that provides a posterior() method that
+    enables caching for faster subsequent predictions.
+    """
+
+    def posterior(self, precompute_cache=posteriors.PrecomputeCacheType.TENSOR):
+        """
+        Create the Posterior object which contains precomputed matrices for
+        faster prediction.
+
+        precompute_cache has three settings:
+
+        - `PrecomputeCacheType.TENSOR` (or `"tensor"`): Precomputes the cached
+          quantities and stores them as tensors (which allows differentiating
+          through the prediction). This is the default.
+        - `PrecomputeCacheType.VARIABLE` (or `"variable"`): Precomputes the cached
+          quantities and stores them as variables, which allows for updating
+          their values without changing the compute graph (relevant for AOT
+          compilation).
+        - `PrecomputeCacheType.NOCACHE` (or `"nocache"` or `None`): Avoids
+          immediate cache computation. This is useful for avoiding extraneous
+          computations when you only want to call the posterior's
+          `fused_predict_f` method.
+        """
+
+        return posteriors.SGPRPosterior(
+            kernel=self.kernel,
+            data=self.data,
+            inducing_variable=self.inducing_variable,
+            likelihood_variance=self.likelihood.variance,
+            num_latent_gps=self.num_latent_gps,
+            mean_function=self.mean_function,
+            precompute_cache=precompute_cache,
+        )
+
+    def predict_f(self, Xnew: InputData, full_cov=False, full_output_cov=False) -> MeanAndVariance:
+        """
+        For backwards compatibility, GPR's predict_f uses the fused (no-cache)
+        computation, which is more efficient during training.
+
+        For faster (cached) prediction, predict directly from the posterior object, i.e.,:
+            model.posterior().predict_f(Xnew, ...)
+        """
+        return self.posterior(posteriors.PrecomputeCacheType.NOCACHE).fused_predict_f(
+            Xnew, full_cov=full_cov, full_output_cov=full_output_cov
+        )
+
+
+class SGPR(SGPR_with_posterior):
+    # subclassed to ensure __class__ == "SGPR"
+    pass
