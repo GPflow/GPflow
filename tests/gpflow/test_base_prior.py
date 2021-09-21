@@ -99,7 +99,9 @@ class DummyModel(gpflow.models.BayesianModel):
 
         scale = np.exp(self.log_scale)
         if with_transform:
-            transform = tfp.bijectors.AffineScalar(scale=to_default_float(scale))
+            transform = tfp.bijectors.Shift(to_default_float(0.0))(
+                tfp.bijectors.Scale(to_default_float(scale))
+            )
         else:
             transform = None
 
