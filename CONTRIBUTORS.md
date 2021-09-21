@@ -79,5 +79,6 @@ Because GitHub's [graph of contributors](http://github.com/GPflow/GPflow/graphs/
 [@sam-willis](https://github.com/sam-willis)
 [@vatsalaggarwal](https://github.com/vatsalaggarwal)
 [@Andrew878](https://github.com/Andrew878)
+[@avullo](https://github.com/avullo)
 
 Add yourself when you first contribute to GPflow's code, tests, or documentation!

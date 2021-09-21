@@ -5,7 +5,7 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.11.3
+#       jupytext_version: 1.9.1
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -52,7 +52,7 @@
 # \end{equation*}
 # and
 # \begin{equation*}
-# \Sigma = K_{nn} - K_{nu}L^{-1}(I - B^{-1})L^{-1}K_{un}
+# \Sigma = K_{nn} - K_{nu}L^{-T}(I - B^{-1})L^{-1}K_{un}
 # \end{equation*}
 #
 # Where the mean function is not the zero function, the predictive mean should have the mean function evaluated at the test points added to it.
@@ -72,7 +72,7 @@
 # \end{equation*}
 # and in the case of the SGPR model these are:
 # \begin{equation*}
-#     \alpha = L^{-T}L_B^{-T}\mathbf{c}\\ Q^{-1} = L^{-1}(I - B^{-1})L^{-1}
+#     \alpha = L^{-T}L_B^{-T}\mathbf{c}\\ Q^{-1} = L^{-T}(I - B^{-1})L^{-1}
 # \end{equation*}
 #
 #
@@ -81,10 +81,11 @@
 # +
 import gpflow
 import numpy as np
+import tensorflow as tf
 
 # Create some data
 X = np.linspace(-1.1, 1.1, 1000)[:, None]
-Y = np.cos(X)
+Y = np.sin(X)
 Xnew = np.linspace(-1.1, 1.1, 1000)[:, None]
 
 # + [markdown] id="FzCgor4nKUcW"
@@ -129,6 +130,26 @@ model = gpflow.models.SVGP(
 model.predict_f(Xnew)
 
 # And again using the posterior object and caching
+
+posterior = model.posterior()
+
+# %%timeit
+posterior.predict_f(Xnew)
+
+# ## SGPR Example
+#
+# And finally, we follow the same approach this time for the SGPR case.
+
+model = gpflow.models.SGPR(
+    (X, Y), gpflow.kernels.SquaredExponential(), np.linspace(-1.1, 1.1, 1000)[:, None]
+)
+
+# The predict_f method on the instance performs no caching.
+
+# %%timeit
+model.predict_f(Xnew)
+
+# Using the posterior object instead:
 
 posterior = model.posterior()
 
