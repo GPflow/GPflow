@@ -226,7 +226,7 @@ plot_distribution(X, Y, Ymean, Ystd)
 y_dist = model.conditional_y_dist(X)
 samples = y_dist.sample(10_000)
 
-# The folling is equivalent at doing:
+# The following is equivalent as doing:
 # y_lo_lo, y_lo, y_hi, y_hi_hi = np.quantile(samples, q=(0.025, 0.159, 0.841, 0.975), axis=0)
 # Note how, contrary to the binary classification case, here we get the percentiles directly from the
 # conditional output distribution

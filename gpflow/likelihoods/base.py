@@ -297,7 +297,7 @@ class Likelihood(Module, metaclass=abc.ABCMeta):
 
     # @abc.abstractmethod
     def conditional_sample(self, Fsample) -> tf.Tensor:
-        """ Sample from the likelihood """
+        """ Sample from the likelihood given the latent GP `Fsample`. """
 
 
 class ConditionedLikelihood:
@@ -326,7 +326,7 @@ class ConditionedLikelihood:
         return self.likelihood.conditional_parameters(f_sample)
 
     def mean_and_var(self):
-        """ Return the (conditional) output mean and variance """
+        """ Returns the mean and variance of the likelihood distribution `p(y) = \int p(f) p(y|f) df` (note that the distribution is not necessarily Gaussian). """
         return self.likelihood.predict_mean_and_var(self.f_mean, self.f_var)
 
     def log_density(self, Y: tf.Tensor) -> tf.Tensor:
@@ -340,7 +340,7 @@ class ConditionedLikelihood:
 
     def sample(self, num_samples: int = 1000) -> tf.Tensor:
         """
-        Return samples from the conditional likelihood.
+        Returns samples of y from the conditional likelihood for samples of f: `p(y | f^{samples})`.
 
         :param num_samples: integer specifying the number of samples
         """
