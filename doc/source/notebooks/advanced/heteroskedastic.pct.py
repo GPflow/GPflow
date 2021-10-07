@@ -215,39 +215,41 @@ for epoch in range(1, epochs + 1):
 model
 
 # %% [markdown]
-# ## The conditional output distribution
+# ## Plotting Predictions
+#
+# ### The conditional output distribution
 #
 # Here we show how to get the conditional output distribution and plot samples from it. In order to plot the uncertainty associated with that, we also get the percentiles from the conditional output distribution.
 # Although the likelihood is Gaussian, the marginal posterior is not hence plotting with just the mean and variance would be misrepresentative of the real situation.
 
 # %%
-plot_distribution(X, Y, Ymean, Ystd)
-
 y_dist = model.conditional_y_dist(X)
 samples = y_dist.sample(10_000)
 
 # The following is equivalent as doing:
-# y_lo_lo, y_lo, y_hi, y_hi_hi = np.quantile(samples, q=(0.025, 0.159, 0.841, 0.975), axis=0)
-# Note how, contrary to the binary classification case, here we get the percentiles directly from the
-# conditional output distribution
-y_lo_lo, y_lo, y_hi, y_hi_hi = y_dist.y_percentile(p=(2.5, 15.9, 84.1, 97.5), num_samples=10_000)
+# y_lo_lo, y_lo, y_mean, y_hi, y_hi_hi = np.quantile(samples, q=(0.025, 0.159, 0.50, 0.841, 0.975), axis=0)
+# But note how we get the percentiles directly from the conditional output distribution
+y_lo_lo, y_lo, y_mean, y_hi, y_hi_hi = y_dist.y_percentile(p=(.025, .159, .50, .841, .975), num_samples=10_000)
 
 fig, ax = plt.subplots(1, 1, figsize=(15, 5))
-ax.plot(X, np.mean(samples, axis=0), c="k")
+ax.plot(X, y_mean[..., 0], c="k")
 ax.fill_between(X.squeeze(), y_lo[..., 0], y_hi[..., 0], color="silver", alpha=1 - 0.05 * 1 ** 3)
 ax.fill_between(
     X.squeeze(), y_lo_lo[..., 0], y_hi_hi[..., 0], color="silver", alpha=1 - 0.05 * 2 ** 3
 )
 ax.scatter(X, Y, color="gray", alpha=0.8)
 
+# Compare this plot to the one output at the end of the training loop which is obtained with
+# plot_distribution(X, Y, Ymean, Ystd)
+
 # %%
 p_mu_samples, p_var_samples = y_dist.parameter_samples(10_000)
+
+# The following is equivalent as doing:
 # p_mu_lo, p_mu_hi = np.quantile(p_mu_samples, q=(0.159, 0.841), axis=0)
 # p_var_lo, p_var_hi = np.quantile(p_var_samples, q=(0.159, 0.841), axis=0)
 
-(p_mu_lo, p_mu_hi), (p_var_lo, p_var_hi) = y_dist.parameter_percentile(
-    p=(15.9, 84.1), num_samples=10_000
-)
+(p_mu_lo, p_mu_hi), (p_var_lo, p_var_hi) = y_dist.parameter_percentile(p=(.159, .841), num_samples=10_000)
 
 # %%
 fig, ax = plt.subplots(1, 1, figsize=(15, 5))
