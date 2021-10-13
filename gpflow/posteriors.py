@@ -615,7 +615,7 @@ class IndependentPosteriorMultiOutput(IndependentPosterior):
             else:
                 kernel_list = [self.kernel.kernel] * len(self.X_data.inducing_variable_list)
             Knns = tf.stack(
-                [k.K(Xnew) if full_cov else k.K_diag(Xnew) for k in kernel_list], axis=0
+                [k(Xnew, full_cov=full_cov) for k in kernel_list], axis=0
             )
 
             fmean, fvar = separate_independent_conditional_implementation(
