@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.9.1
+#       jupytext_version: 1.13.0
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -215,80 +215,118 @@ for epoch in range(1, epochs + 1):
 model
 
 # %% [markdown]
-# ## Plotting Predictions
-#
 # ### The conditional output distribution
 #
-# Here we show how to get the conditional output distribution and plot samples from it. In order to plot the uncertainty associated with that, we also get the percentiles from the conditional output distribution.
-# Although the likelihood is Gaussian, the marginal posterior is not hence plotting with just the mean and variance would be misrepresentative of the real situation.
-
-# %%
-y_dist = model.conditional_y_dist(X)
-samples = y_dist.sample(10_000)
-
-# The following is equivalent as doing:
-# y_lo_lo, y_lo, y_mean, y_hi, y_hi_hi = np.quantile(samples, q=(0.025, 0.159, 0.50, 0.841, 0.975), axis=0)
-# But note how we get the percentiles directly from the conditional output distribution
-y_lo_lo, y_lo, y_mean, y_hi, y_hi_hi = y_dist.y_percentile(p=(.025, .159, .50, .841, .975), num_samples=10_000)
-
-fig, ax = plt.subplots(1, 1, figsize=(15, 5))
-ax.plot(X, y_mean[..., 0], c="k")
-ax.fill_between(X.squeeze(), y_lo[..., 0], y_hi[..., 0], color="silver", alpha=1 - 0.05 * 1 ** 3)
-ax.fill_between(
-    X.squeeze(), y_lo_lo[..., 0], y_hi_hi[..., 0], color="silver", alpha=1 - 0.05 * 2 ** 3
-)
-ax.scatter(X, Y, color="gray", alpha=0.8)
-
-# Compare this plot to the one output at the end of the training loop which is obtained with
-# plot_distribution(X, Y, Ymean, Ystd)
-
-# %%
-p_mu_samples, p_var_samples = y_dist.parameter_samples(10_000)
-
-# The following is equivalent as doing:
-# p_mu_lo, p_mu_hi = np.quantile(p_mu_samples, q=(0.159, 0.841), axis=0)
-# p_var_lo, p_var_hi = np.quantile(p_var_samples, q=(0.159, 0.841), axis=0)
-
-(p_mu_lo, p_mu_hi), (p_var_lo, p_var_hi) = y_dist.parameter_percentile(p=(.159, .841), num_samples=10_000)
-
-# %%
-fig, ax = plt.subplots(1, 1, figsize=(15, 5))
-ax.scatter(X, Y, color="gray", alpha=0.8)
-ax.plot(X, Ymean, c="k")
-ax.plot(X, np.mean(p_mu_samples, axis=0), ls="--")
-
-ax.fill_between(X.squeeze(), p_mu_lo[..., 0], p_mu_hi[..., 0], color="silver", alpha=0.8)
-
-fig, ax = plt.subplots(1, 1, figsize=(15, 5))
-ax.plot(X, scale ** 2, c="k")
-ax.plot(X, np.mean(p_var_samples, axis=0), ls="--")
-ax.fill_between(X.squeeze(), p_var_lo[..., 0], p_var_hi[..., 0], color="silver", alpha=0.8)
+# Note, that while the mean and variance of the marginal posterior are given by `predict_y` the marginal posterior itself is not a Gaussian, despite the fact that the conditional distribution of the Likelihood is.  We illustrate this generally below.
 
 # %%
 from scipy.stats import norm
 
-f_mu = 0.0
+np.random.seed(42)
+
+f_mean = 0.0
 f_var = 0.1
-g_mu = 0.0
+g_mean = 0.01
 g_var = 0.1
+
 n_samples = 1_00_000
 
-f = np.random.normal(loc=f_mu, scale=np.sqrt(f_var), size=n_samples)
-g = np.random.normal(loc=g_mu, scale=np.sqrt(g_var), size=n_samples)
+f_samples = np.random.normal(loc=f_mean, scale=np.sqrt(f_var), size=n_samples)
+g_samples = np.random.normal(loc=g_mean, scale=np.sqrt(g_var), size=n_samples)
 
-y = np.random.normal(loc=f, scale=np.exp(g))
+y_samples = np.random.normal(loc=f_samples, scale=np.exp(g_samples))
+
+# Analytical expressions for y_mean and y_var (quantities provided by predict_y)
+y_mean = f_mean
+y_var = f_var + np.exp(g_mean + g_var / 2) ** 2
 
 fig, ax = plt.subplots(1, 1)
-ax.hist(y, bins=100, density=True, alpha=0.5)
-xx = np.linspace(-10, 10, 101)
-noise_var = np.exp(g_mu + g_var / 2) ** 2
-y_var = f_var + noise_var
-ax.plot(xx, norm.pdf(xx, loc=f_mu, scale=y_var ** 0.5), c="k")
-ax.set_yscale("log")
-ax.set_ylim(1e-8, 1e0)
+ax.hist(y_samples, bins="auto", density=True, alpha=0.33)
+x_grid = np.linspace(-10, 10, 101)
 
+ax.plot(x_grid, norm.pdf(x_grid, loc=y_mean, scale=y_var ** 0.5), c="k", ls="--")
+ax.set_yscale("log")
+ax.set_ylim(1e-6, 1e0)
+ax.set_xlim(-8, 8)
+
+# %% [markdown]
+# In fact, the marginal posterior of this model has no analytical expression.  Thus, for statistics of this distribution, one may wish to use samples from the `ConditionedLikelihood`.  An example of this is below.  Note the similarities of this figure to the final plot output by the optimization loop.
+
+# %%
+tf.random.set_seed(42)
+
+y_dist = model.conditional_y_dist(X)
+
+percentiles = (.025, .159, .50, .841, .975)
+y_2p5, y_15p9, y_50, y_84p1, y_97p5 = y_dist.y_percentile(p=percentiles, num_samples=10_000)
+
+fig, ax = plt.subplots(1, 1, figsize=(15, 5))
+ax.plot(X, y_50[..., 0], c="k")
+ax.fill_between(
+    X.squeeze(), y_15p9[..., 0], y_84p1[..., 0], color="silver", alpha=1 - 0.05 * 1 ** 3
+)
+ax.fill_between(
+    X.squeeze(), y_2p5[..., 0], y_97p5[..., 0], color="silver", alpha=1 - 0.05 * 2 ** 3
+)
+
+ax.scatter(X, Y, color="gray", alpha=0.8)
+
+# %% [markdown]
+# We can also extract samples of the marginal posterior parameters from the `ConditionalLikelihood`.  Whilst in most real world scenarios we do not have access to the true values of these parameters - it is informative here to compare the predictions of the model to the functions generating the synthetic training data above.
+
+# %%
+mu_samples, var_samples = y_dist.parameter_samples(10_000)
+
+# Note the following is equivalent to:
+# mu_lo, mu_hi = np.quantile(mu_samples, q=(0.025, 0.975), axis=0)
+# var_lo, var_hi = np.quantile(var_samples, q=(0.025, 0.975), axis=0)
+
+(mu_lo, mu_hi), (var_lo, var_hi) = y_dist.parameter_percentile(p=(.025, .975), num_samples=10_000)
+
+# Analytical expressions from predict_f
+latent_means, latent_variances = model.predict_f(X)
+f_mean, g_mean = tf.split(latent_means, 2, axis=-1)
+f_var, g_var = tf.split(latent_variances, 2, axis=-1)
+
+noise_stddev_mean = tf.exp(g_mean + g_var / 2)
+noise_stddev_var = tf.exp(2 * g_mean + g_var) * (tf.exp(g_var) - 1)
+
+# %%
+fig, axes = plt.subplots(2, 1, figsize=(15, 10), sharex="row")
+ax0, ax1 = axes
+
+ax0.plot(X, loc, c="k")
+l, = ax0.plot(X, np.mean(mu_samples, axis=0), ls="--")
+ax0.fill_between(X.squeeze(), mu_lo[..., 0], mu_hi[..., 0], color=l.get_color(), alpha=0.33)
+
+for sign in [-1.0, 0, 1.0]:
+    ax0.plot(
+        X.squeeze(),
+        f_mean + sign * 1.96 * tf.sqrt(f_var),
+        ls=':',
+        c=l.get_color(),
+        lw=2
+    )
+
+ax0.set_ylabel("loc")
+
+ax1.plot(X, scale, c="k")
+l, = ax1.plot(X, np.mean(np.sqrt(var_samples), axis=0), ls="--")
+ax1.fill_between(X.squeeze(), np.sqrt(var_lo[..., 0]), np.sqrt(var_hi[..., 0]), color=l.get_color(), alpha=0.33)
+
+for sign in [-1.0, 0, 1.0]:
+    ax1.plot(
+        X.squeeze(),
+        noise_stddev_mean + sign * 1.96 * tf.sqrt(noise_stddev_var),
+        ls=':',
+        c=l.get_color(),
+        lw=2
+    )
+ax1.set_ylabel("scale")
 
 # %% [markdown]
 # ## Further reading
 #
 # See [Chained Gaussian Processes](http://proceedings.mlr.press/v51/saul16.html) by Saul et al. (AISTATS 2016).
+
+# %%
