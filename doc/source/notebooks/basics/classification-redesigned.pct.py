@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.9.1
+#       jupytext_version: 1.13.0
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -41,15 +41,6 @@ plt.rcParams["figure.figsize"] = (8, 4)
 # %%
 X = np.genfromtxt("data/classif_1D_X.csv").reshape(-1, 1)
 Y = np.genfromtxt("data/classif_1D_Y.csv").reshape(-1, 1)
-
-# n_data = 40
-# X = np.random.rand(n_data) * 2 + 2
-
-# Y = np.zeros_like(X)
-# Y = (np.random.rand(n_data) > 0.25).astype(float)
-
-# X = X.reshape(-1, 1)
-# Y = Y.reshape(-1, 1)
 
 plt.figure(figsize=(10, 6))
 _ = plt.plot(X, Y, "C3x", ms=8, mew=2)
@@ -134,7 +125,6 @@ opt.minimize(m.training_loss, variables=m.trainable_variables)
 # %%
 gpflow.utilities.print_summary(m, fmt="notebook")
 
-
 # %% [markdown]
 # In this table, the first two lines are associated with the kernel parameters, and the last two correspond to the variational parameters.
 # **NOTE:** In practice, $q_\Sigma$ is actually parameterized by its lower-triangular square root $q_\Sigma = q_\text{sqrt} q_\text{sqrt}^T$ in order to ensure its positive-definiteness.
@@ -145,70 +135,92 @@ gpflow.utilities.print_summary(m, fmt="notebook")
 # ### Predictions
 #
 # Finally, we will see how to use model predictions to plot the resulting model. We will replicate the figures of the generative model above, but using the approximate posterior distribution given by the model.
-#
-# Using the model `predict_y` method to predict in the observation space (y) returns the mean and variance at test points. While these can be evaluated for (almost) all non-Gaussian likelihoods, it may not always be relevant, e.g for Bernoulli and Poisson likelihoods, the variance is deterministically related to the mean. 
-#
-# A more appropriate method is to use samples from the conditional output distribution and then compute the mean and the uncertainty band from the sample. In order to do that, we first sample from the latent process, squeeze these values using the invlink function to get a sample of the likelihood parameter values (in the case of a Bernoulli likelihood, these correspond to output probabilities), and then obtain the quantiles at different levels to get the sample output mean (p=0.5) and the lowest (p=0.05) and highest (p=.95) quantiles.
 
 # %%
-def compute_y_sample_statistics(model, num_samples: int = 100):
-    p = invlink(model.predict_f_samples(x_grid, num_samples).numpy().squeeze().T)
-    mean = np.mean(p, axis=1)
-    p_low, p_high = np.quantile(a=p, q=[0.05, 0.95], axis=1)
-
-    return mean, p_low, p_high
-
-
-y_mu, y_p_low, y_p_high = compute_y_sample_statistics(m, 10000)
-
 plt.figure(figsize=(12, 8))
-plt.plot(x_grid.flatten(), y_mu)
+
+# bubble fill the predictions
+mu, var = m.predict_f(x_grid)
+
 plt.fill_between(
-    x_grid.flatten(), np.ravel(y_p_low), np.ravel(y_p_high), alpha=0.3, color="C0",
+    x_grid.flatten(),
+    np.ravel(mu + 2 * np.sqrt(var)),
+    np.ravel(mu - 2 * np.sqrt(var)),
+    alpha=0.3,
+    color="C0",
 )
+
+# plot samples
+tf.random.set_seed(6)
+samples = m.predict_f_samples(x_grid, 10).numpy().squeeze().T
+
+plt.plot(x_grid, samples, "C0", lw=1)
+
+# plot p-samples
+p = m.likelihood.invlink(samples)
+plt.plot(x_grid, p, "C1", lw=1)
+
+# plot data
 plt.plot(X, Y, "C3x", ms=8, mew=2)
-plt.ylim((-0.1, 1.1))
+plt.ylim((-3, 3))
 
 # %% [markdown]
-# #### Using the conditional output distribution
+# ## Using the conditioned likelihood
+# Note that in some use cases we may wish to plot quantities only in the observation space (y).  We can use the model's `predict_y` for this, which returns the mean and variance at given test points, with many non-Gaussian likelihoods.
 #
-# There is a more principled way to perform the same steps as above which does not involve direct computation of output samples. We can directly access the model conditional output distribution using its `conditional_y_dist` method.
+# It may not always be relevant however.  For example, for the Bernoulli distribution assumed here (and also for the Poisson Likelihood) the variance is deterministically related to the mean.  We may be interested in, for example, how the epistemic uncertainty (`f_var`) projects into [0, 1] which is not well handled by `predict_y` here. In which case we can sample from the `ConditionedLikelihood`.
 #
-# A few things can be done using the conditional output distribution. We can for instance sample from it:
+# This object samples from our latent process(es), and uses these to derive samples of the likelihood parameters.  In this case this corresponds to the probability, p, of the Bernoulli distribution.  Quantities of interest can then be derived from these samples.
 
 # %%
 tf.random.set_seed(42)
+
+y_mu, _y_var = m.predict_y(x_grid)
+
 y_dist = m.conditional_y_dist(x_grid.reshape(-1, 1))
 
-
-plt.figure(figsize=(12, 8))
-
-# Sample the conditional output distribution
-y_samples = y_dist.sample(1000).numpy().squeeze().T
-
-# Plot two samples and the mean of all samples
-plt.plot(x_grid, y_samples[:, :2])
-plt.plot(x_grid, np.mean(y_samples, axis=-1).reshape(-1, 1))
-
-# plot data
-plt.plot(X, Y, "C3x", ms=8, mew=2)
-plt.ylim((-0.1, 1.1))
-
-# %% [markdown]
-# In order to plot the uncertainty associated with the predictions, we can ask for the relevant percentiles from a sample of the likelihood parameter values, as output samples are binary and would neither be convenient nor interesting to plot (see plot above). Using the model conditional output distribution's `parameter_percentile` method allows us to get percentiles we're interest with:
-
-# %%
-((p_lo, p_50, p_hi),) = y_dist.parameter_percentile(p=(.025, .50, .975), num_samples=10_000)
-
-plt.figure(figsize=(12, 8))
-(l1,) = plt.plot(x_grid, p_50)
-plt.fill_between(
-    x_grid.flatten(), np.ravel(p_lo), np.ravel(p_hi), alpha=0.3, color=l1.get_color(),
+num_samples = 10_000
+(p_samples,) = y_dist.parameter_samples(num_samples=num_samples)
+((p_2p5, p_15p9, p_84p1, p_97p5),) = y_dist.parameter_percentile(
+    p=(0.025, 0.159, 0.841, 0.975),
+    num_samples=num_samples
 )
 
+plt.figure(figsize=(12, 8))
+
+l, = plt.plot(x_grid, y_mu, lw=2)
+for sign in [-1.0, 1.0]:
+    plt.plot(x_grid, m.likelihood.invlink(mu + sign * 1.96 * np.sqrt(var)), ls = '--', c=l.get_color())
+
+
+l, = plt.plot(x_grid, p_samples.numpy().mean(axis=0)[..., 0], ls='--', lw=2)
+for p_lo, p_hi in [(p_2p5, p_97p5), (p_15p9, p_84p1)]:
+    plt.fill_between(
+        x_grid.flatten(),
+        np.ravel(p_lo),
+        np.ravel(p_hi),
+        alpha=0.2,
+        color=l.get_color(),
+    )
+
 # plot data
 plt.plot(X, Y, "C3x", ms=8, mew=2)
-plt.ylim((-0.1, 1.1))
+plt.ylim((-0.05, 1.05))
+
+# %% [markdown]
+# We can also sample directly from the `ConditionedLikelihood`.
+
+# %%
+plt.figure(figsize=(12, 8))
+
+plt.plot(x_grid, y_mu, lw=2)
+
+y_samples = y_dist.sample(num_samples=num_samples)
+plt.plot(x_grid, y_samples.numpy().mean(axis=0)[..., 0], ls='--', lw=2)
+
+# plot data
+plt.plot(X, Y, "C3x", ms=8, mew=2)
+plt.ylim((-0.05, 1.05))
 
 # %% [markdown]
 # ## Two-dimensional example
@@ -229,7 +241,9 @@ _ = plt.plot(X[np.logical_not(mask), 0], X[np.logical_not(mask), 1], "oC1", mew=
 
 # %%
 m = gpflow.models.VGP(
-    (X, Y), kernel=gpflow.kernels.SquaredExponential(), likelihood=gpflow.likelihoods.Bernoulli()
+    (X, Y),
+    kernel=gpflow.kernels.SquaredExponential(lengthscales=[1.0, 1.0]),
+    likelihood=gpflow.likelihoods.Bernoulli()
 )
 
 opt = gpflow.optimizers.Scipy()
@@ -244,7 +258,7 @@ opt.minimize(
 # We will do the latter, because it allows us to introduce the `predict_y` function, which returns the mean and variance at test points:
 
 # %%
-x_grid = np.linspace(-3, 3, 40)
+x_grid = np.linspace(-3, 3, 61)
 xx, yy = np.meshgrid(x_grid, x_grid)
 Xplot = np.vstack((xx.flatten(), yy.flatten())).T
 
@@ -276,3 +290,5 @@ _ = plt.contour(
 # ## References
 #
 # Hannes Nickisch and Carl Edward Rasmussen. 'Approximations for binary Gaussian process classification'. *Journal of Machine Learning Research* 9(Oct):2035--2078, 2008.
+
+# %%
