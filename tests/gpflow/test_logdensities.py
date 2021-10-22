@@ -40,14 +40,27 @@ def test_lognormal(x, mu, var):
     np.testing.assert_allclose(gpf, sps)
 
 
-@pytest.mark.parametrize("x, p", [[1, 0.6], [0, 0.6],])
+@pytest.mark.parametrize(
+    "x, p",
+    [
+        [1, 0.6],
+        [0, 0.6],
+    ],
+)
 def test_bernoulli(x, p):
     gpf = logdensities.bernoulli(x, p).numpy()
     sps = scipy.stats.bernoulli.logpmf(k=x, p=p)
     np.testing.assert_allclose(gpf, sps)
 
 
-@pytest.mark.parametrize("x, lam", [[0, 1.3], [1, 1.3], [2, 1.3],])
+@pytest.mark.parametrize(
+    "x, lam",
+    [
+        [0, 1.3],
+        [1, 1.3],
+        [2, 1.3],
+    ],
+)
 def test_poisson(x, lam):
     gpf = logdensities.poisson(x, lam).numpy()
     sps = scipy.stats.poisson.logpmf(k=x, mu=lam)
@@ -69,7 +82,12 @@ def test_gamma(x, shape, scale):
 
 
 @pytest.mark.parametrize(
-    "x, mean, scale, df", [(0.9, 0.5, 1.3, 1), (0.9, 0.5, 1.3, 2), (0.9, 0.5, 1.3, 3),]
+    "x, mean, scale, df",
+    [
+        (0.9, 0.5, 1.3, 1),
+        (0.9, 0.5, 1.3, 2),
+        (0.9, 0.5, 1.3, 3),
+    ],
 )
 def test_student_t(x, mean, scale, df):
     cast = to_default_float

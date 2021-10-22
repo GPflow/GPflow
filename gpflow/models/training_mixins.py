@@ -93,18 +93,21 @@ class ExternalDataTrainingLossMixin:
     def training_loss(self, data: Data) -> tf.Tensor:
         """
         Returns the training loss for this model.
-        
+
         :param data: the data to be used for computing the model objective.
         """
         return self._training_loss(data)
 
     def training_loss_closure(
-        self, data: Union[Data, DatasetOwnedIterator], *, compile=True,
+        self,
+        data: Union[Data, DatasetOwnedIterator],
+        *,
+        compile=True,
     ) -> Callable[[], tf.Tensor]:
         """
         Returns a closure that computes the training loss, which by default is
         wrapped in tf.function(). This can be disabled by passing `compile=False`.
-        
+
         :param data: the data to be used by the closure for computing the model
             objective. Can be the full dataset or an iterator, e.g.
             `iter(dataset.batch(batch_size))`, where dataset is an instance of

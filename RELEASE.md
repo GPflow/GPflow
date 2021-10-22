@@ -33,7 +33,7 @@ This release contains contributions from:
 <INSERT>, <NAME>, <HERE>, <USING>, <GITHUB>, <HANDLE>
 
 
-# Release 2.2.2 (next upcoming release in progress)
+# Release 2.3.1 (next upcoming release in progress)
 
 <INSERT SMALL BLURB ABOUT RELEASE FOCUS AREA AND POTENTIAL TOOLCHAIN CHANGES>
 
@@ -64,6 +64,30 @@ This release contains contributions from:
 This release contains contributions from:
 
 <INSERT>, <NAME>, <HERE>, <USING>, <GITHUB>, <HANDLE>
+
+
+# Release 2.3.0
+
+## Major Features and Improvements
+
+* Refactor posterior base class to support other model types. (#1695)
+* Add new posterior class to enable faster predictions from the GPR/SGPR models. (#1696, #1711)
+* Construct Parameters from other Parameters and retain properties. (#1699)
+* Add CGLB model (#1706)
+
+## Bug Fixes and Other Changes
+
+* Fix unit test failure when using TensorFlow 2.5.0 (#1684)
+* Upgrade black formatter to version 20.8b1 (#1694)
+* Remove erroneous DeprecationWarnings (#1693)
+* Fix SGPR derivation (#1688)
+* Fix tests which fail with TensorFlow 2.6.0 (#1714)
+
+## Thanks to our Contributors
+
+This release contains contributions from:
+
+johnamcleod, st--, Andrew878, tadejkrivec, awav, avullo
 
 
 # Release 2.2.1
