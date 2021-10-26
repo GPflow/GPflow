@@ -77,7 +77,7 @@ mathematical background and the resulting software design is described in a `pap
 GPLVM
 """""
 For visualisation, the GPLVM [6] and Bayesian GPLVM [7] models are implemented
-in GPflow (`notebook <notebooks/advanced/GPLVM.html>`_).
+in GPflow (`notebook <notebooks/basics/GPLVM.html>`_).
 
 Contributing
 ------------
