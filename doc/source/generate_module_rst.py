@@ -101,14 +101,12 @@ def set_global_path(path):
 
 
 def is_documentable_module(m: Any) -> bool:
-    """Return `True` if m is module to be documented automatically, `False` otherwise.
-    """
+    """Return `True` if m is module to be documented automatically, `False` otherwise."""
     return inspect.ismodule(m) and "gpflow" in m.__name__ and m.__name__ not in IGNORE_MODULES
 
 
 def is_documentable_component(m: Any) -> bool:
-    """Return `True` if a function or class to be documented automatically, `False` otherwise.
-    """
+    """Return `True` if a function or class to be documented automatically, `False` otherwise."""
     if inspect.isfunction(m):
         return "gpflow" in m.__module__ and m.__module__ not in IGNORE_MODULES
     elif inspect.isclass(m):
@@ -120,8 +118,7 @@ def is_documentable_component(m: Any) -> bool:
 
 
 def is_documentable(m: Any) -> bool:
-    """Return `True` if a function, class, or module to be documented automatically, else `False`.
-    """
+    """Return `True` if a function, class, or module to be documented automatically, else `False`."""
     return is_documentable_component(m) or is_documentable_module(m)
 
 
@@ -189,8 +186,7 @@ def get_module_rst_string(module: ModuleType, level: int) -> str:
 
 
 def get_public_attributes(node: Any) -> Any:
-    """Get the public attributes ('children') of the current node, accessible from this node.
-    """
+    """Get the public attributes ('children') of the current node, accessible from this node."""
     return [getattr(node, a) for a in dir(node) if not a.startswith("_")]
 
 
@@ -206,7 +202,10 @@ def write_to_rst_file(node_name: str, rst_content: List[str]) -> None:
 
     level_underline = RST_LEVEL_SYMBOLS[0] * len(node_name)
     rst_file = SPHINX_FILE_STRING.format(
-        title=node_name, content="".join(rst_content), date=DATE_STRING, headerline=level_underline,
+        title=node_name,
+        content="".join(rst_content),
+        date=DATE_STRING,
+        headerline=level_underline,
     )
 
     path_to_file = path + "/index.rst"

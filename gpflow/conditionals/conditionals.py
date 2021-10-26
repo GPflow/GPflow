@@ -23,7 +23,7 @@ from .dispatch import conditional
 from .util import base_conditional
 
 
-@conditional.register(object, InducingVariables, Kernel, object)
+@conditional._gpflow_internal_register(object, InducingVariables, Kernel, object)
 def _conditional(
     Xnew: tf.Tensor,
     inducing_variable: InducingVariables,
@@ -80,7 +80,7 @@ def _conditional(
     return posterior.fused_predict_f(Xnew, full_cov=full_cov, full_output_cov=full_output_cov)
 
 
-@conditional.register(object, object, Kernel, object)
+@conditional._gpflow_internal_register(object, object, Kernel, object)
 def _conditional(
     Xnew: tf.Tensor,
     X: tf.Tensor,

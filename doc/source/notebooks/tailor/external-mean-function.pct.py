@@ -94,7 +94,7 @@ def generate_meta_and_test_tasks(num_datapoints, num_meta, num_test, N):
         A tuple (meta, test) where
         - meta: List of num_meta pairs of arrays (X, Y) of size (n, 1) each.
         - test: List of num_test pairs of pairs of arrays of sizes
-                (((num_datapoints, 1), (num_datapoints, 1)), 
+                (((num_datapoints, 1), (num_datapoints, 1)),
                  ((N - num_datapoints, 1), (N - num_datapoints, 1))).
     """
     Xs, F = generate_data(num_functions=num_meta + num_test, N=N)
@@ -141,14 +141,13 @@ meta, test = generate_meta_and_test_tasks(
 # We will use a Keras model Deep Neural Network as mean function.
 
 # %%
-from tensorflow.python.keras import backend as K
 from gpflow.config import default_float
-
-K.set_floatx("float64")
-assert default_float() == np.float64
 
 
 def build_mean_function():
+    tf.keras.backend.set_floatx("float64")
+    assert default_float() == np.float64
+
     inputs = tf.keras.layers.Input(shape=(1,))
     x = tf.keras.layers.Dense(64, activation="relu")(inputs)
     x = tf.keras.layers.Dense(64, activation="relu")(x)
@@ -193,7 +192,7 @@ def create_optimization_step(optimizer, model: gpflow.models.GPR):
 def run_adam(model, iterations):
     """
     Utility function running the Adam optimizer
-    
+
     :param model: GPflow model
     :param interations: number of iterations
     """
@@ -219,7 +218,7 @@ import time
 def train_loop(meta_tasks, num_iter=5):
     """
     Metalearning training loop. Trained for 100 epochs in original experiment.
-    
+
     :param meta_tasks: list of metatasks.
     :param num_iter: number of iterations of tasks set
     :returns: a mean function object

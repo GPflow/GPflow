@@ -239,7 +239,7 @@ def gauss_kl_vff(q_mu, q_sqrt, K):
 import gpflow.posteriors
 
 
-class VFFPosterior(gpflow.posteriors.AbstractPosterior):
+class VFFPosterior(gpflow.posteriors.BasePosterior):
     def _conditional_fused(self, Xnew, full_cov, full_output_cov):
         """
         Xnew is a tensor with the points of the data or minibatch, shape N x D
@@ -253,8 +253,8 @@ class VFFPosterior(gpflow.posteriors.AbstractPosterior):
         # num_data = tf.shape(Xnew)[0]  # M
         num_func = tf.shape(f)[1]  # K
 
-        Kuu = cov.Kuu(self.inducing_variable, self.kernel)  # this is now a LinearOperator
-        Kuf = cov.Kuf(self.inducing_variable, self.kernel, Xnew)  # still a Tensor
+        Kuu = cov.Kuu(self.X_data, self.kernel)  # this is now a LinearOperator
+        Kuf = cov.Kuf(self.X_data, self.kernel, Xnew)  # still a Tensor
 
         KuuInv_Kuf = Kuu.solve(Kuf)
 
@@ -310,7 +310,7 @@ class VFFPosterior(gpflow.posteriors.AbstractPosterior):
     # to speed up predictions:
 
     def _precompute(self):
-        Kuu = cov.Kuu(self.inducing_variable, self.kernel)  # this is now a LinearOperator
+        Kuu = cov.Kuu(self.X_data, self.kernel)  # this is now a LinearOperator
 
         q_mu = self._q_dist.q_mu
         q_sqrt = self._q_dist.q_sqrt
@@ -336,7 +336,7 @@ class VFFPosterior(gpflow.posteriors.AbstractPosterior):
         if full_output_cov:
             raise NotImplementedError
 
-        Kuf = cov.Kuf(self.inducing_variable, self.kernel, Xnew)  # still a Tensor
+        Kuf = cov.Kuf(self.X_data, self.kernel, Xnew)  # still a Tensor
 
         # construct the conditional mean
         fmean = tf.matmul(Kuf, self.alpha, transpose_a=True)
@@ -444,7 +444,9 @@ gpflow.set_trainable(m.inducing_variable, True)  # whether to optimize bounds [a
 # %%
 opt = gpflow.optimizers.Scipy()
 opt.minimize(
-    m.training_loss_closure(data), m.trainable_variables, options=dict(maxiter=ci_niter(5000)),
+    m.training_loss_closure(data),
+    m.trainable_variables,
+    options=dict(maxiter=ci_niter(5000)),
 )
 
 gpflow.utilities.print_summary(m, fmt="notebook")
