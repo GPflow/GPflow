@@ -4,6 +4,9 @@ runtest: &runtest
     - run:
         name: Install GPflow
         command: |
+          # Run in a fresh virtual environment, to avoid conflicts with preinstalled packages.
+          virtualenv -p python3.6 .venv
+          source .venv/bin/activate
           pip install --progress-bar=off -U pip
           # Ensure consistency between tensorflow and tensorflow-probability
           pip install --progress-bar=off tensorflow==2.6.2 tensorflow-probability==0.14.0
@@ -30,11 +33,10 @@ jobs:
       - run:
           name: Check installed dependencies are compatible
           command: |
+            # Run in a fresh virtual environment, to avoid conflicts with preinstalled packages.
+            virtualenv -p python3.6 .venv
+            source .venv/bin/activate
             pip install --progress-bar=off -U pip
-            # For some reason poetry is pre-installed. However it creates a dependency conflict.
-            # poetry 1.1.11 requirement importlib-metadata<2.0.0,>=1.6.0.
-            # tensorflow requires tensorboard requires Markdown requires importlib-metadata>=4.4.
-            pip uninstall -y poetry poetry-core
             # Ensure consistency between tensorflow and tensorflow-probability
             pip install --progress-bar=off tensorflow==2.6.2 tensorflow-probability==0.14.0
             pip install --progress-bar=off -e .
@@ -50,6 +52,9 @@ jobs:
       - run:
           name: Install type checker
           command: |
+            # Run in a fresh virtual environment, to avoid conflicts with preinstalled packages.
+            virtualenv -p python3.6 .venv
+            source .venv/bin/activate
             pip install --progress-bar=off -U pip
             pip install --progress-bar=off mypy types-pkg_resources
       - run:
@@ -120,6 +125,9 @@ jobs:
       - run:
           name: Install twine
           command: |
+            # Run in a fresh virtual environment, to avoid conflicts with preinstalled packages.
+            virtualenv -p python3.6 .venv
+            source .venv/bin/activate
             pip install --progress-bar=off -U pip
             pip install --progress-bar=off twine
       - run:
