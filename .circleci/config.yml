@@ -4,9 +4,10 @@ runtest: &runtest
     - run:
         name: Install GPflow
         command: |
-          pip install -U pip
-          pip install -e .
-          pip install -r tests_requirements.txt
+          pip install --progress-bar=off -U pip
+          pip install --progress-bar=off tensorflow==2.6.2 tensorflow-probability==0.14.0
+          pip install --progress-bar=off -e .
+          pip install --progress-bar=off -r tests_requirements.txt
     - run:
         name: Run tests
         command: |
@@ -28,6 +29,8 @@ jobs:
       - run:
           name: Check installed dependencies are compatible
           command: |
+            pip install --progress-bar=off -U pip
+            pip install --progress-bar=off tensorflow==2.6.2 tensorflow-probability==0.14.0
             pip install --progress-bar=off -e .
             pip check -vvv
             python -c "import gpflow"
@@ -40,7 +43,9 @@ jobs:
       - checkout
       - run:
           name: Install type checker
-          command: pip install mypy types-pkg_resources
+          command: |
+            pip install --progress-bar=off -U pip
+            pip install --progress-bar=off mypy types-pkg_resources
       - run:
           name: Run type checker
           command: mypy gpflow tests
@@ -68,7 +73,8 @@ jobs:
       - run:
           name: Install black and isort
           command: |
-            pip install black==20.8b1 isort
+            pip install --progress-bar=off -U pip
+            pip install --progress-bar=off black==20.8b1 isort
       - run:
           name: Run format check
           command: |
@@ -108,7 +114,8 @@ jobs:
       - run:
           name: Install twine
           command: |
-            pip install twine
+            pip install --progress-bar=off -U pip
+            pip install --progress-bar=off twine
       - run:
           name: Init .pypirc
           command: |
