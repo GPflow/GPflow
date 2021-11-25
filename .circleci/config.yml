@@ -5,6 +5,7 @@ runtest: &runtest
         name: Install GPflow
         command: |
           pip install --progress-bar=off -U pip
+          # Ensure consistency between tensorflow and tensorflow-probability
           pip install --progress-bar=off tensorflow==2.6.2 tensorflow-probability==0.14.0
           pip install --progress-bar=off -e .
           pip install --progress-bar=off -r tests_requirements.txt
@@ -30,6 +31,11 @@ jobs:
           name: Check installed dependencies are compatible
           command: |
             pip install --progress-bar=off -U pip
+            # For some reason poetry is pre-installed. However it creates a dependency conflict.
+            # poetry 1.1.11 requirement importlib-metadata<2.0.0,>=1.6.0.
+            # tensorflow requires tensorboard requires Markdown requires importlib-metadata>=4.4.
+            pip uninstall -y poetry poetry-core
+            # Ensure consistency between tensorflow and tensorflow-probability
             pip install --progress-bar=off tensorflow==2.6.2 tensorflow-probability==0.14.0
             pip install --progress-bar=off -e .
             pip check -vvv
