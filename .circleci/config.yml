@@ -15,6 +15,7 @@ runtest: &runtest
     - run:
         name: Run tests
         command: |
+          source .venv/bin/activate
           pytest -v -W ignore::UserWarning --durations=10 -m "${PYTEST_FILTER}" --cov=./gpflow ./tests
     - run:
         name: Upload coverage report
@@ -59,7 +60,9 @@ jobs:
             pip install --progress-bar=off mypy types-pkg_resources
       - run:
           name: Run type checker
-          command: mypy gpflow tests
+          command: |
+            source .venv/bin/activate
+            mypy gpflow tests
 
   unit-test:
     <<: *runtest
@@ -139,10 +142,12 @@ jobs:
       - run:
           name: Create pip package
           command: |
+            source .venv/bin/activate
             python setup.py bdist_wheel sdist
       - run:
           name: Upload to PyPI
           command: |
+            source .venv/bin/activate
             twine upload dist/*
 
 
