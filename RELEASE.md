@@ -57,6 +57,7 @@ This release contains contributions from:
 
 * Fixed broken CircleCi build.
 * Fixed broken link in `README.md`.
+* Update CircleCi build to use next-gen Docker images.
 
 ## Thanks to our Contributors
 
