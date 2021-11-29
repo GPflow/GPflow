@@ -59,6 +59,7 @@ This release contains contributions from:
 * Update CircleCi build to use next-gen Docker images.
 * Fixed broken link in `README.md`.
 * Make `make dev-install` also install the test requirements.
+* Fix broken build of `cglb.ipynb`.
 
 ## Thanks to our Contributors
 
