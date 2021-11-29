@@ -48,7 +48,7 @@ It is now actively maintained by (in alphabetical order)
 [ST John](https://github.com/st--),
 and [Vincent Dutordoir](https://vdutor.github.io/).
 GPflow would not be the same without the community. **We are grateful to [all contributors](CONTRIBUTORS.md) who have helped shape GPflow.**
- 
+
  *GPflow is an open source project. If you have relevant skills and are interested in contributing then please do contact us (see ["The GPflow community" section](#the-gpflow-community) below).*
 
 
@@ -107,7 +107,7 @@ We have a public [GPflow slack workspace](https://gpflow.slack.com/). Please use
 
 ### Contributing
 
-All constructive input is gratefully received. For more information, see the [notes for contributors](contributing.md).
+All constructive input is gratefully received. For more information, see the [notes for contributors](CONTRIBUTING.md).
 
 ### Projects using GPflow
 
@@ -129,8 +129,8 @@ If you would like your project listed here, let us know - or simply [open a pull
 | --- | --- |
 | [GPflowOpt](https://github.com/GPflow/GPflowOpt)       | Bayesian Optimization using GPflow (stable release requires GPflow 0.5). |
 | [Doubly-Stochastic-DGP](https://github.com/ICL-SML/Doubly-Stochastic-DGP)| Deep Gaussian Processes with Doubly Stochastic Variational Inference.|
-| [widedeepnetworks](https://github.com/widedeepnetworks/widedeepnetworks) | Measuring the relationship between random wide deep neural networks and GPs.| 
-| [orth_decoupled_var_gps](https://github.com/hughsalimbeni/orth_decoupled_var_gps) | Variationally sparse GPs with orthogonally decoupled bases| 
+| [widedeepnetworks](https://github.com/widedeepnetworks/widedeepnetworks) | Measuring the relationship between random wide deep neural networks and GPs.|
+| [orth_decoupled_var_gps](https://github.com/hughsalimbeni/orth_decoupled_var_gps) | Variationally sparse GPs with orthogonally decoupled bases|
 | [kernel_learning](https://github.com/frgsimpson/kernel_learning) | Implementation of "Differentiable Compositional Kernel Learning for Gaussian Processes".|
 | [DGPs_with_IWVI](https://github.com/hughsalimbeni/DGPs_with_IWVI) | Deep Gaussian Processes with Importance-Weighted Variational Inference|
 | [kerndisc](https://github.com/BracketJohn/kernDisc) | Library for automated kernel structure discovery in univariate data|
