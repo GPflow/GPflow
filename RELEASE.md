@@ -55,6 +55,7 @@ This release contains contributions from:
 
 ## Bug Fixes and Other Changes
 
+* Fixed broken CircleCi build.
 * Fixed broken link in `README.md`.
 
 ## Thanks to our Contributors
