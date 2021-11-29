@@ -55,13 +55,18 @@ This release contains contributions from:
 
 ## Bug Fixes and Other Changes
 
+* Fixed broken CircleCi build.
+* Update CircleCi build to use next-gen Docker images.
+* Fixed broken link in `README.md`.
+* Make `make dev-install` also install the test requirements.
+* Fix broken build of `cglb.ipynb`.
 * Fix the calculation in the GPR posterior object (#1734).
 
 ## Thanks to our Contributors
 
 This release contains contributions from:
 
-johnamcleod
+jesnie, johnamcleod
 
 
 # Release 2.3.0
