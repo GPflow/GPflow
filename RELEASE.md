@@ -57,6 +57,7 @@ This release contains contributions from:
 
 * Fixed broken CircleCi build.
 * Update CircleCi build to use next-gen Docker images.
+* Update CircleCi build to use workspaces to avoid multiple pip installs.
 * Fixed broken link in `README.md`.
 * Make `make dev-install` also install the test requirements.
 

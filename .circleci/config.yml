@@ -1,41 +1,19 @@
 version: 2.1
 
-commands:
-  setup_venv:
-    steps:
-      - checkout
-      - run:
-          name: Setup virtual environment
-          command: |
-            # Run in a fresh virtual environment, to avoid conflicts with preinstalled packages.
-            virtualenv -p python3.6 .venv
-            source .venv/bin/activate
-            pip install --progress-bar=off -U pip
+executors:
+  default:
+    docker:
+      - image: cimg/python:3.6
+    working_directory: /tmp/workspace
 
-  install_gpflow:
-    steps:
-      - setup_venv
-      - run:
-          name: Install GPflow
-          command: |
-            source .venv/bin/activate
-            # Ensure consistency between tensorflow and tensorflow-probability
-            pip install --progress-bar=off tensorflow==2.6.* tensorflow-probability==0.14.*
-            pip install --progress-bar=off -e .
-  install_gpflow_tests:
-    steps:
-      - install_gpflow
-      - run:
-          name: Install GPflow tests
-          command: |
-            source .venv/bin/activate
-            pip install --progress-bar=off -r tests_requirements.txt
-  run_tests:
+commands:
+  run-tests:
     parameters:
       pytest_filter:
         type: string
     steps:
-      - install_gpflow_tests
+      - attach_workspace:
+          at: /tmp/workspace
       - run:
           name: Run tests
           command: |
@@ -48,12 +26,59 @@ commands:
             bash <(curl -s https://codecov.io/bash) -t "${CODECOV_TOKEN}"
 
 jobs:
-  verify-install:
-    docker:
-      - image: cimg/python:3.6
-
+  setup-venv:
+    executor: default
     steps:
-      - install_gpflow
+      - checkout
+      - run:
+          name: Setup virtual environment
+          command: |
+            # Run in a fresh virtual environment, to avoid conflicts with preinstalled packages.
+            virtualenv -p python3.6 .venv
+            source .venv/bin/activate
+            pip install --progress-bar=off -U pip
+      - persist_to_workspace:
+          root: /tmp/workspace
+          paths:
+            - "*"
+
+  install-gpflow:
+    executor: default
+    steps:
+      - attach_workspace:
+          at: /tmp/workspace
+      - run:
+          name: Install GPflow
+          command: |
+            source .venv/bin/activate
+            # Ensure consistency between tensorflow and tensorflow-probability
+            pip install --progress-bar=off tensorflow==2.6.* tensorflow-probability==0.14.*
+            pip install --progress-bar=off -e .
+      - persist_to_workspace:
+          root: /tmp/workspace
+          paths:
+            - .venv
+
+  install-gpflow-tests:
+    executor: default
+    steps:
+      - attach_workspace:
+          at: /tmp/workspace
+      - run:
+          name: Install GPflow tests
+          command: |
+            source .venv/bin/activate
+            pip install --progress-bar=off -r tests_requirements.txt
+      - persist_to_workspace:
+          root: /tmp/workspace
+          paths:
+            - .venv
+
+  verify-install:
+    executor: default
+    steps:
+      - attach_workspace:
+          at: /tmp/workspace
       - run:
           name: Check installed dependencies are compatible
           command: |
@@ -62,11 +87,10 @@ jobs:
             python -c "import gpflow"
 
   type-check:
-    docker:
-      - image: cimg/python:3.6
-
+    executor: default
     steps:
-      - setup_venv
+      - attach_workspace:
+          at: /tmp/workspace
       - run:
           name: Install type checker
           command: |
@@ -79,27 +103,22 @@ jobs:
             mypy gpflow tests
 
   unit-test:
-    docker:
-      - image: cimg/python:3.6
-
+    executor: default
     steps:
-      - run_tests:
+      - run-tests:
           pytest_filter: not notebooks
 
   notebook-test:
-    docker:
-      - image: cimg/python:3.6
-
+    executor: default
     steps:
-      - run_tests:
+      - run-tests:
           pytest_filter: notebooks
 
   format-checker:
-    docker:
-      - image: cimg/python:3.6
-
+    executor: default
     steps:
-      - setup_venv
+      - attach_workspace:
+          at: /tmp/workspace
       - run:
           name: Install black and isort
           command: |
@@ -130,8 +149,7 @@ jobs:
                 "https://circleci.com/api/v1/project/$ORGANIZATION/$PROJECT/tree/$BRANCH?circle-token=$DOCS_TOKEN")
 
   deploy:
-    docker:
-      - image: cimg/python:3.6
+    executor: default
     steps:
       - checkout
       - run:
@@ -172,26 +190,50 @@ workflows:
   version: 2.1
   build_test_and_deploy:
     jobs:
+      - setup-venv:
+          filters:
+            tags:
+              only: /^v[0-9]+(\.[0-9]+)*(-rc[0-9]+)?/
+      - install-gpflow:
+          requires:
+            - setup-venv
+          filters:
+            tags:
+              only: /^v[0-9]+(\.[0-9]+)*(-rc[0-9]+)?/
+      - install-gpflow-tests:
+          requires:
+            - install-gpflow
+          filters:
+            tags:
+              only: /^v[0-9]+(\.[0-9]+)*(-rc[0-9]+)?/
       - verify-install:
+          requires:
+            - install-gpflow
           filters:
             tags:
               only: /^v[0-9]+(\.[0-9]+)*(-rc[0-9]+)?/
       - type-check:
+          requires:
+            - setup-venv
           filters:
             tags:
               only: /^v[0-9]+(\.[0-9]+)*(-rc[0-9]+)?/
       - format-checker:
+          requires:
+            - setup-venv
           filters:
             tags:
               only: /^v[0-9]+(\.[0-9]+)*(-rc[0-9]+)?/
       - unit-test:
           requires:
+            - install-gpflow-tests
             - format-checker
           filters:
             tags:
               only: /^v[0-9]+(\.[0-9]+)*(-rc[0-9]+)?/
       - notebook-test:
           requires:
+            - install-gpflow-tests
             - format-checker
           filters:
             tags:
