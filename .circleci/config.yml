@@ -1,29 +1,51 @@
-runtest: &runtest
-  steps:
-    - checkout
-    - run:
-        name: Install GPflow
-        command: |
-          # Run in a fresh virtual environment, to avoid conflicts with preinstalled packages.
-          virtualenv -p python3.6 .venv
-          source .venv/bin/activate
-          pip install --progress-bar=off -U pip
-          # Ensure consistency between tensorflow and tensorflow-probability
-          pip install --progress-bar=off tensorflow==2.6.2 tensorflow-probability==0.14.0
-          pip install --progress-bar=off -e .
-          pip install --progress-bar=off -r tests_requirements.txt
-    - run:
-        name: Run tests
-        command: |
-          source .venv/bin/activate
-          pytest -v -W ignore::UserWarning --durations=10 -m "${PYTEST_FILTER}" --cov=./gpflow ./tests
-    - run:
-        name: Upload coverage report
-        command: |
-          source .venv/bin/activate
-          bash <(curl -s https://codecov.io/bash) -t "${CODECOV_TOKEN}"
-
 version: 2.1
+
+commands:
+  setup_venv:
+    steps:
+      - checkout
+      - run:
+          name: Setup virtual environment
+          command: |
+            # Run in a fresh virtual environment, to avoid conflicts with preinstalled packages.
+            virtualenv -p python3.6 .venv
+            source .venv/bin/activate
+            pip install --progress-bar=off -U pip
+
+  install_gpflow:
+    steps:
+      - setup_venv
+      - run:
+          name: Install GPflow
+          command: |
+            source .venv/bin/activate
+            # Ensure consistency between tensorflow and tensorflow-probability
+            pip install --progress-bar=off tensorflow==2.6.* tensorflow-probability==0.14.*
+            pip install --progress-bar=off -e .
+  install_gpflow_tests:
+    steps:
+      - install_gpflow
+      - run:
+          name: Install GPflow tests
+          command: |
+            source .venv/bin/activate
+            pip install --progress-bar=off -r tests_requirements.txt
+  run_tests:
+    parameters:
+      pytest_filter:
+        type: string
+    steps:
+      - install_gpflow_tests
+      - run:
+          name: Run tests
+          command: |
+            source .venv/bin/activate
+            pytest -v -W ignore::UserWarning --durations=10 -m "<<parameters.pytest_filter>>" --cov=./gpflow ./tests
+      - run:
+          name: Upload coverage report
+          command: |
+            source .venv/bin/activate
+            bash <(curl -s https://codecov.io/bash) -t "${CODECOV_TOKEN}"
 
 jobs:
   verify-install:
@@ -31,17 +53,11 @@ jobs:
       - image: circleci/python:3.6-buster
 
     steps:
-      - checkout
+      - install_gpflow
       - run:
           name: Check installed dependencies are compatible
           command: |
-            # Run in a fresh virtual environment, to avoid conflicts with preinstalled packages.
-            virtualenv -p python3.6 .venv
             source .venv/bin/activate
-            pip install --progress-bar=off -U pip
-            # Ensure consistency between tensorflow and tensorflow-probability
-            pip install --progress-bar=off tensorflow==2.6.2 tensorflow-probability==0.14.0
-            pip install --progress-bar=off -e .
             pip check -vvv
             python -c "import gpflow"
 
@@ -50,14 +66,11 @@ jobs:
       - image: circleci/python:3.6-buster
 
     steps:
-      - checkout
+      - setup_venv
       - run:
           name: Install type checker
           command: |
-            # Run in a fresh virtual environment, to avoid conflicts with preinstalled packages.
-            virtualenv -p python3.6 .venv
             source .venv/bin/activate
-            pip install --progress-bar=off -U pip
             pip install --progress-bar=off mypy types-pkg_resources
       - run:
           name: Run type checker
@@ -66,33 +79,36 @@ jobs:
             mypy gpflow tests
 
   unit-test:
-    <<: *runtest
     docker:
       - image: circleci/python:3.6-buster
-        environment:
-          PYTEST_FILTER: not notebooks
+
+    steps:
+      - run_tests:
+          pytest_filter: not notebooks
 
   notebook-test:
-    <<: *runtest
     docker:
       - image: circleci/python:3.6-buster
-        environment:
-          PYTEST_FILTER: notebooks
+
+    steps:
+      - run_tests:
+          pytest_filter: notebooks
 
   format-checker:
     docker:
       - image: circleci/python:3.6-buster
 
     steps:
-      - checkout
+      - setup_venv
       - run:
           name: Install black and isort
           command: |
-            pip install --progress-bar=off -U pip
+            source .venv/bin/activate
             pip install --progress-bar=off black==20.8b1 isort
       - run:
           name: Run format check
           command: |
+            source .venv/bin/activate
             make format-check
 
   trigger-docs-generation:
