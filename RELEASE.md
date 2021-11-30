@@ -57,6 +57,8 @@ This release contains contributions from:
 
 * Fixed broken CircleCi build (#1738).
 * Update CircleCi build to use next-gen Docker images (#1740).
+* Fixed broken triggering of docs generation (#1744).
+* Make all slow tests depend on fast tests (#1743).
 * Fixed broken link in `README.md` (#1736).
 * Make `make dev-install` also install the test requirements (#1737).
 * Fix broken build of `cglb.ipynb` (#1742).
