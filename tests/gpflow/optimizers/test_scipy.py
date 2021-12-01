@@ -74,7 +74,8 @@ def test_scipy_jit():
     np.testing.assert_allclose(get_values(m1), get_values(m2), rtol=1e-14, atol=2e-14)
 
 
-def test_scipy__optimal() -> None:
+@pytest.mark.parametrize("compile", [True, False])
+def test_scipy__optimal(compile: bool) -> None:
     target1 = [0.2, 0.8]
     target2 = [0.6]
     v1 = tf.Variable([0.5, 0.5], dtype=default_float())
@@ -87,16 +88,20 @@ def test_scipy__optimal() -> None:
         return tf.reduce_sum((target1 - v1) ** 2) + tf.reduce_sum((target2 - v2) ** 2)
 
     opt = gpflow.optimizers.Scipy()
-    result = opt.minimize(f, [v1, v2])
+    result = opt.minimize(f, [v1, v2], compile=compile)
 
-    assert 1 == compilation_count
+    if compile:
+        assert 1 == compilation_count
+    else:
+        assert 1 < compilation_count
     assert result.success
     np.testing.assert_allclose(target1 + target2, result.x)
     np.testing.assert_allclose(target1, v1)
     np.testing.assert_allclose(target2, v2)
 
 
-def test_scipy__partially_disconnected_variable() -> None:
+@pytest.mark.parametrize("compile", [True, False])
+def test_scipy__partially_disconnected_variable(compile: bool) -> None:
     target1 = 0.2
     target2 = 0.6
     v1 = tf.Variable([0.5, 0.5], dtype=default_float())
@@ -108,7 +113,7 @@ def test_scipy__partially_disconnected_variable() -> None:
         return (target1 - v10) ** 2 + (target2 - v2) ** 2
 
     opt = gpflow.optimizers.Scipy()
-    result = opt.minimize(f, [v1, v2])
+    result = opt.minimize(f, [v1, v2], compile=compile)
 
     assert result.success
     np.testing.assert_allclose([target1, 0.5, target2], result.x)
@@ -116,8 +121,9 @@ def test_scipy__partially_disconnected_variable() -> None:
     np.testing.assert_allclose(target2, v2)
 
 
+@pytest.mark.parametrize("compile", [True, False])
 @pytest.mark.parametrize("allow_unused_variables", [True, False])
-def test_scipy__disconnected_variable(allow_unused_variables: bool) -> None:
+def test_scipy__disconnected_variable(compile: bool, allow_unused_variables: bool) -> None:
     target1 = [0.2, 0.8]
     v1 = tf.Variable([0.5, 0.5], dtype=default_float(), name="v1")
     v2 = tf.Variable([0.5], dtype=default_float(), name="v2")
@@ -131,7 +137,9 @@ def test_scipy__disconnected_variable(allow_unused_variables: bool) -> None:
     if allow_unused_variables:
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
-            result = opt.minimize(f, [v1, v2], allow_unused_variables=allow_unused_variables)
+            result = opt.minimize(
+                f, [v1, v2], compile=compile, allow_unused_variables=allow_unused_variables
+            )
 
         (warning,) = w
         msg = warning.message.args[0]

@@ -108,11 +108,26 @@ class Scipy:
         compile: bool = True,
         allow_unused_variables: bool = False,
     ) -> Callable[[np.ndarray], Tuple[np.ndarray, np.ndarray]]:
+        first_call = True
+
         def _tf_eval(x: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor]:
+            nonlocal first_call
+
             values = cls.unpack_tensors(variables, x)
             cls.assign_tensors(variables, values)
-            loss, grads = _compute_loss_and_gradients(closure, variables)
-            grads = cls._filter_unused_variables(variables, grads, allow_unused_variables)
+
+            if first_call:
+                # Only check for unconnected gradients on the first function evaluation.
+                loss, grads = _compute_loss_and_gradients(
+                    closure, variables, tf.UnconnectedGradients.NONE
+                )
+                grads = cls._filter_unused_variables(variables, grads, allow_unused_variables)
+                first_call = False
+            else:
+                loss, grads = _compute_loss_and_gradients(
+                    closure, variables, tf.UnconnectedGradients.ZERO
+                )
+
             return loss, cls.pack_tensors(grads)
 
         if compile:
@@ -200,10 +215,12 @@ class Scipy:
 
 
 def _compute_loss_and_gradients(
-    loss_closure: LossClosure, variables: Sequence[tf.Variable]
+    loss_closure: LossClosure,
+    variables: Sequence[tf.Variable],
+    unconnected_gradients: tf.UnconnectedGradients,
 ) -> Tuple[tf.Tensor, Sequence[tf.Tensor]]:
     with tf.GradientTape(watch_accessed_variables=False) as tape:
         tape.watch(variables)
         loss = loss_closure()
-    grads = tape.gradient(loss, variables)
+    grads = tape.gradient(loss, variables, unconnected_gradients=unconnected_gradients)
     return loss, grads
