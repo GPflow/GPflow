@@ -242,20 +242,52 @@ class GPRPosterior(AbstractPosterior):
         Computes predictive mean and (co)variance at Xnew, *excluding* mean_function.
         Relies on cached alpha and Qinv.
         """
-        Kmn = self.kernel(self.X_data, Xnew)
-        Knn = self.kernel(Xnew, full_cov=full_cov)
 
+        Kmn = self.kernel(self.X_data, Xnew)
+        # compute kernel stuff
+        num_func = tf.shape(self.Y_data)[-1]  # R
+        N = tf.shape(Kmn)[-1]
+
+        # get the leading dims in Kmn to the front of the tensor Kmn
+        K = tf.rank(Kmn)
+        perm = tf.concat(
+            [
+                tf.reshape(tf.range(1, K - 1), [K - 2]),  # leading dims (...)
+                tf.reshape(0, [1]),  # [M]
+                tf.reshape(K - 1, [1]),
+            ],
+            0,
+        )  # [N]
+        Kmn = tf.transpose(Kmn, perm)  # [..., M, N]
+        leading_dims = tf.shape(Kmn)[:-2]
+
+        # get the leading dims in Knm to the front of the tensor Knm
+        perm_T = tf.concat(
+            [
+                tf.reshape(0, [1]),  # [M]
+                tf.reshape(K - 1, [1]),
+                tf.reshape(tf.range(1, K - 1), [K - 2]),  # leading dims (...)
+            ],
+            0,
+        )  # [N]
+        Knm = tf.transpose(Kmn, perm=perm_T)
+
+        Knn = self.kernel(Xnew, full_cov=full_cov)
         err = self.Y_data - self.mean_function(self.X_data)  # type: ignore
 
-        Knm = tf.transpose(Kmn)
         mean = Knm @ self.alpha @ err
-        cov = Knn - Knm @ self.Qinv @ Kmn
 
         # The GPR model only has a single latent GP.
         if full_cov:
-            cov = cov[None, ...]
+            cov = Knn - Knm @ self.Qinv @ Kmn  # [..., N, N]
+            cov_shape = tf.concat([leading_dims, [num_func, N, N]], 0)
+            cov = tf.broadcast_to(tf.expand_dims(cov, -3), cov_shape)  # [..., R, N, N]
+
         else:
-            cov = tf.linalg.diag_part(cov)[:, None]
+            cov = Knn - tf.linalg.diag_part(Knm @ self.Qinv @ Kmn)  # [..., N]
+            cov_shape = tf.concat([leading_dims, [num_func, N]], 0)  # [..., R, N]
+            cov = tf.broadcast_to(tf.expand_dims(cov, -2), cov_shape)  # [..., R, N]
+            cov = tf.linalg.adjoint(cov)
 
         return mean, cov
 
