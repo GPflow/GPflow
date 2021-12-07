@@ -5,8 +5,7 @@ import gpflow
 from gpflow.models.gpr import GPR_deprecated, GPR_with_posterior
 from gpflow.posteriors import PrecomputeCacheType
 
-input_dim = 7
-output_dim = 1
+output_dim = 2
 
 
 def make_models(regression_data):
@@ -21,9 +20,9 @@ def make_models(regression_data):
 
 def _get_data_for_tests():
     """Helper function to create testing data"""
-    X = np.random.randn(100, input_dim)
-    Y = np.random.randn(100, output_dim)
-    X_new = np.random.randn(100, input_dim)
+    X = np.random.randn(5, 2)
+    Y = np.random.randn(output_dim)
+    X_new = np.random.randn(10, 5, 2)
     return X, X_new, Y
 
 
