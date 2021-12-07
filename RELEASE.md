@@ -170,14 +170,16 @@ stefanosele, johnamcleod, st--
 * Fixes a bug in the un-whitened code path for the fully correlated conditional function (#1662).
 * Fixes a bug in `independent_interdomain_conditional` (#1663).
 * Fixes an issue with the gpflow.config API documentation (#1664).
+* Fixes leading dimension issues with `GPRPosterior._conditional_with_precompute()`
 
 * Test suite
   * Fixes the test suite for TensorFlow 2.4 / TFP 0.12 (#1625).
   * Fixes mypy call (#1637).
   * Fixes a bug in test_method_equivalence.py (#1649).
+  * Amends `test_gpr_posterior.py` so it will cover leading dimension uses.
 
 ## Thanks to our Contributors
 
 This release contains contributions from:
 
-johnamcleod, st--, vatsalaggarwal, sam-willis, vdutor
+johnamcleod, st--, vatsalaggarwal, sam-willis, vdutor, Andrew878
