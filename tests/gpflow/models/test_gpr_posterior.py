@@ -22,7 +22,7 @@ def _get_data_for_tests():
     """Helper function to create testing data"""
     X = np.random.randn(5, 2)
     Y = np.random.randn(output_dim)
-    X_new = np.random.randn(10, 5, 2)
+    X_new = np.random.randn(3, 10, 5, 2)
     return X, X_new, Y
 
 
