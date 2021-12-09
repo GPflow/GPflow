@@ -41,6 +41,7 @@ from .inducing_variables import (
 )
 from .types import MeanAndVariance
 from .utilities import Dispatcher, add_noise_cov
+from .utilities.ops import leading_transpose
 
 
 class _QDistribution(Module):
@@ -262,15 +263,7 @@ class GPRPosterior(AbstractPosterior):
         leading_dims = tf.shape(Kmn)[:-2]
 
         # get the leading dims in Knm to the front of the tensor Knm
-        perm_T = tf.concat(
-            [
-                tf.reshape(0, [1]),  # [M]
-                tf.reshape(K - 1, [1]),
-                tf.reshape(tf.range(1, K - 1), [K - 2]),  # leading dims (...)
-            ],
-            0,
-        )  # [N]
-        Knm = tf.transpose(Kmn, perm=perm_T)
+        Knm = leading_transpose(Kmn, [..., -1, -2])
 
         Knn = self.kernel(Xnew, full_cov=full_cov)
         err = self.Y_data - self.mean_function(self.X_data)  # type: ignore
