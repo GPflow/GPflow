@@ -245,30 +245,34 @@ class GPRPosterior(AbstractPosterior):
         Kmn = self.kernel(self.X_data, Xnew)
         Knn = self.kernel(Xnew, full_cov=full_cov)
 
-        return base_conditional_with_lm(Kmn, self.Qinv, Knn, self.alpha, full_cov=full_cov)
+        err = self.Y_data - self.mean_function(self.X_data)  # type: ignore
+
+        Knm = tf.transpose(Kmn)
+        mean = Knm @ self.alpha @ err
+        cov = Knn - Knm @ self.Qinv @ Kmn
+
+        # The GPR model only has a single latent GP.
+        if full_cov:
+            cov = cov[None, ...]
+        else:
+            cov = tf.linalg.diag_part(cov)[:, None]
+
+        return mean, cov
 
     def _precompute(self) -> Tuple[tf.Tensor, tf.Tensor]:
-
-        """
-        Precomputes the cholesky decomposition of Kmm_plus_s for later reuse we will call
-        base_conditional_with_lm implementation ('Qinv' in the Abstract Posterior class). We also
-        precompute the less compute intensive error term ('alpha' in the Abstract Posterior class)
-        """
-
         Kmm = self.kernel(self.X_data)
         Kmm_plus_s = add_noise_cov(Kmm, self.likelihood_variance)
 
-        # obtain the cholesky decomposition of Kmm_plus_s
         Lm = tf.linalg.cholesky(Kmm_plus_s)
+        Kmm_plus_s_inv = tf.linalg.cholesky_solve(Lm, tf.eye(self.X_data.shape[0], dtype=Lm.dtype))
 
-        alpha = self.Y_data - self.mean_function(self.X_data)  # type: ignore
         tf.debugging.assert_shapes(
             [
-                (Lm, ["M", "M"]),
+                (Kmm_plus_s_inv, ["M", "M"]),
                 (Kmm, ["M", "M"]),
             ]
         )
-        return alpha, Lm
+        return Kmm_plus_s_inv, Kmm_plus_s_inv
 
     def _conditional_fused(
         self, Xnew, full_cov: bool = False, full_output_cov: bool = False
@@ -320,13 +324,6 @@ class SGPRPosterior(AbstractPosterior):
             self.update_cache(precompute_cache)
 
     def _precompute(self) -> Tuple[tf.Tensor, tf.Tensor]:
-
-        """
-        Precomputes the cholesky decomposition of Kmm_plus_s for later reuse we will call
-        base_conditional_with_lm implementation ('Qinv' in the Abstract Posterior class). We also
-        precompute the less compute intensive error term ('alpha' in the Abstract Posterior class)
-        """
-
         # taken directly from the deprecated SGPR implementation
         num_inducing = self.inducing_variable.num_inducing
         err = self.Y_data - self.mean_function(self.X_data)  # type:ignore

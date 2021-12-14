@@ -55,24 +55,22 @@ This release contains contributions from:
 
 ## Bug Fixes and Other Changes
 
-* Make `gpflow.optimizers.Scipy` able to handle unused / unconnected variables.
-
-* Make `make dev-install` also install the test requirements.
-
-* Fixed broken link in `README.md`.
-
-* Fixed broken CircleCi build.
-* Make all slow tests depend on fast tests.
-* Update CircleCi build to use next-gen Docker images.
-* Fixed broken triggering of docs generation.
-* Fix broken build of `cglb.ipynb`.
+* Fixed broken CircleCi build (#1738).
+* Update CircleCi build to use next-gen Docker images (#1740).
+* Fixed broken triggering of docs generation (#1744).
+* Make all slow tests depend on fast tests (#1743).
+* Fixed broken link in `README.md` (#1736).
+* Make `make dev-install` also install the test requirements (#1737).
+* Fix broken build of `cglb.ipynb` (#1742).
+* Fix the calculation in the GPR posterior object (#1734).
+* Make `gpflow.optimizers.Scipy` able to handle unused / unconnected variables. (#1745)
 
 
 ## Thanks to our Contributors
 
 This release contains contributions from:
 
-jesnie
+jesnie, johnamcleod
 
 
 # Release 2.3.0
