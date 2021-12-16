@@ -63,6 +63,8 @@ This release contains contributions from:
 * Make `make dev-install` also install the test requirements (#1737).
 * Fix broken build of `cglb.ipynb` (#1742).
 * Fix the calculation in the GPR posterior object (#1734).
+* Make `gpflow.optimizers.Scipy` able to handle unused / unconnected variables. (#1745)
+
 
 ## Thanks to our Contributors
 
