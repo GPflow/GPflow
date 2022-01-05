@@ -13,13 +13,11 @@
 # limitations under the License.
 
 import copy
-from typing import List, Optional, Union
+from typing import Any, List, Optional, Union
 
 import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
-
-EllipsisType = type(...)
 
 
 def cast(
@@ -38,12 +36,11 @@ def eye(num: int, value: tf.Tensor, dtype: Optional[tf.DType] = None) -> tf.Tens
     return tf.linalg.diag(tf.fill([num], value))
 
 
-def leading_transpose(
-    tensor: tf.Tensor, perm: List[Union[int, EllipsisType]], leading_dim: int = 0
-) -> tf.Tensor:
+def leading_transpose(tensor: tf.Tensor, perm: List[Any], leading_dim: int = 0) -> tf.Tensor:
     """
     Transposes tensors with leading dimensions. Leading dimensions in
-    permutation list represented via ellipsis `...`.
+    permutation list represented via ellipsis `...` and is of type List[Union[int, type(...)]
+    (please note, due to mypy issues, List[Any] is used instead).
     When leading dimensions are found, `transpose` method
     considers them as a single grouped element indexed by 0 in `perm` list. So, passing
     `perm=[-2, ..., -1]`, you assume that your input tensor has [..., A, B] shape,
