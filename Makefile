@@ -22,7 +22,7 @@ clean:
 	rm -rf dist *.egg-info build
 
 dev-install:
-	pip install --use-feature=2020-resolver -e .
+	pip install --use-feature=2020-resolver -r tests_requirements.txt -e .
 
 install:
 	pip install --use-feature=2020-resolver .
