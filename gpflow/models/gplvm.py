@@ -202,7 +202,6 @@ class BayesianGPLVM(GPModel, InternalDataTrainingLossMixin):
         bound += 0.5 * tf.reduce_sum(tf.square(c))
         bound += -0.5 * D * (tf.reduce_sum(psi0) / sigma2 - tf.reduce_sum(tf.linalg.diag_part(AAT)))
         bound -= KL
-        print(bound)
         return bound
 
     def predict_f(
