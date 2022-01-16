@@ -122,6 +122,7 @@ print(f"Likelihood's expected latent_dim: {likelihood.latent_dim}")
 # This implements the following part of the generative model:
 # $$ f_1(x) \sim \mathcal{GP}(0, k_1(\cdot, \cdot)) $$
 # $$ f_2(x) \sim \mathcal{GP}(0, k_2(\cdot, \cdot)) $$
+#
 # with both kernels being modeled as separate and independent $\text{SquaredExponential}$ kernels.
 
 # %%

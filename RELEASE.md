@@ -33,9 +33,14 @@ This release contains contributions from:
 <INSERT>, <NAME>, <HERE>, <USING>, <GITHUB>, <HANDLE>
 
 
-# Release 2.2.2 (next upcoming release in progress)
+# Release 2.3.1 (next upcoming release in progress)
 
 <INSERT SMALL BLURB ABOUT RELEASE FOCUS AREA AND POTENTIAL TOOLCHAIN CHANGES>
+
+## Breaking Changes
+
+* <DOCUMENT BREAKING CHANGES HERE>
+* <THIS SECTION SHOULD CONTAIN API AND BEHAVIORAL BREAKING CHANGES>
 
 ## Known Caveats
 
@@ -45,19 +50,51 @@ This release contains contributions from:
 
 ## Major Features and Improvements
 
-* Refactor posterior base class to support other model types.
+* <INSERT MAJOR FEATURE HERE, USING MARKDOWN SYNTAX>
+* <IF RELEASE CONTAINS MULTIPLE FEATURES FROM SAME AREA, GROUP THEM TOGETHER>
+
+## Bug Fixes and Other Changes
+
+* Fixed broken CircleCi build (#1738).
+* Update CircleCi build to use next-gen Docker images (#1740).
+* Fixed broken triggering of docs generation (#1744).
+* Make all slow tests depend on fast tests (#1743).
+* Fixed broken link in `README.md` (#1736).
+* Make `make dev-install` also install the test requirements (#1737).
+* Fix broken build of `cglb.ipynb` (#1742).
+* Fix the calculation in the GPR posterior object (#1734).
+* Make `gpflow.optimizers.Scipy` able to handle unused / unconnected variables. (#1745)
+
+
+## Thanks to our Contributors
+
+This release contains contributions from:
+
+jesnie, johnamcleod
+
+
+# Release 2.3.0
+
+## Major Features and Improvements
+
+* Refactor posterior base class to support other model types. (#1695)
+* Add new posterior class to enable faster predictions from the GPR/SGPR models. (#1696, #1711)
+* Construct Parameters from other Parameters and retain properties. (#1699)
+* Add CGLB model (#1706)
 
 ## Bug Fixes and Other Changes
 
 * Fix unit test failure when using TensorFlow 2.5.0 (#1684)
 * Upgrade black formatter to version 20.8b1 (#1694)
 * Remove erroneous DeprecationWarnings (#1693)
+* Fix SGPR derivation (#1688)
+* Fix tests which fail with TensorFlow 2.6.0 (#1714)
 
 ## Thanks to our Contributors
 
 This release contains contributions from:
 
-johnamcleod, st--
+johnamcleod, st--, Andrew878, tadejkrivec, awav, avullo
 
 
 # Release 2.2.1
@@ -135,14 +172,16 @@ stefanosele, johnamcleod, st--
 * Fixes a bug in the un-whitened code path for the fully correlated conditional function (#1662).
 * Fixes a bug in `independent_interdomain_conditional` (#1663).
 * Fixes an issue with the gpflow.config API documentation (#1664).
+* Fixes leading dimension issues with `GPRPosterior._conditional_with_precompute()`
 
 * Test suite
   * Fixes the test suite for TensorFlow 2.4 / TFP 0.12 (#1625).
   * Fixes mypy call (#1637).
   * Fixes a bug in test_method_equivalence.py (#1649).
+  * Amends `test_gpr_posterior.py` so it will cover leading dimension uses.
 
 ## Thanks to our Contributors
 
 This release contains contributions from:
 
-johnamcleod, st--, vatsalaggarwal, sam-willis, vdutor
+johnamcleod, st--, vatsalaggarwal, sam-willis, vdutor, Andrew878

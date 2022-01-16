@@ -12,14 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import functools
 from enum import Enum
 from typing import TYPE_CHECKING, Any, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
-from tensorflow.python.ops import array_ops
 from typing_extensions import Final
 
 from .config import default_float, default_summary_fmt
@@ -101,12 +99,12 @@ class PriorOn(Enum):
 class Parameter(tfp.util.TransformedVariable):
     def __init__(
         self,
-        value: TensorData,
+        value: Union[TensorData, "Parameter"],
         *,
         transform: Optional[Transform] = None,
         prior: Optional[Prior] = None,
-        prior_on: Union[str, PriorOn] = PriorOn.CONSTRAINED,
-        trainable: bool = True,
+        prior_on: Optional[Union[str, PriorOn]] = None,
+        trainable: Optional[bool] = None,
         dtype: Optional[DType] = None,
         name: Optional[str] = None,
     ):
@@ -117,14 +115,28 @@ class Parameter(tfp.util.TransformedVariable):
         therefore we need a positive constraint and it is natural to use constrained values.
         A prior can be imposed either on the constrained version (default) or on the unconstrained version of the parameter.
         """
-        if transform is None:
-            transform = tfp.bijectors.Identity()
+        if isinstance(value, Parameter):
+            transform = transform or value.transform
+            prior = prior or value.prior
+            prior_on = prior_on or value.prior_on
+            name = name or value.bijector.name
+            trainable = value.trainable if trainable is None else trainable
 
-        value = _cast_to_dtype(value, dtype)
+            if dtype:
+                value = _cast_to_dtype(value, dtype)
+        else:
+            if transform is None:
+                transform = tfp.bijectors.Identity()
+
+            prior_on = prior_on if prior_on else PriorOn.CONSTRAINED
+            trainable = trainable if trainable is not None else True
+
+            value = _cast_to_dtype(value, dtype)
+
         _validate_unconstrained_value(value, transform, dtype)
         super().__init__(value, transform, dtype=value.dtype, trainable=trainable, name=name)
 
-        self.prior = prior
+        self.prior = prior  # type: Optional[Prior]
         self.prior_on = prior_on  # type: ignore  # see https://github.com/python/mypy/issues/3004
 
     def log_prior_density(self) -> tf.Tensor:

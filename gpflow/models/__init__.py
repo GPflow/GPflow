@@ -1,3 +1,4 @@
+from .cglb import CGLB
 from .gplvm import GPLVM, BayesianGPLVM
 from .gpmc import GPMC
 from .gpr import GPR
