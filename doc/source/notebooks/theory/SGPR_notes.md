@@ -180,7 +180,7 @@ and further:
 substituting:
 
 \begin{equation}
-p(\mathbf f^\star) = \mathcal N(\mathbf f^\star\,|\, \mathbf K_{\star u}\mathbf L^{-\top}\mathbf L_{\mathbf B}^{-\top}\mathbf c, \,\mathbf K_{\star\star} - \mathbf K_{\star u}\mathbf L^{-1}(\mathbf I - \mathbf B^{-1})\mathbf L^{-1}\mathbf K_{u\star})
+p(\mathbf f^\star) = \mathcal N(\mathbf f^\star\,|\, \mathbf K_{\star u}\mathbf L^{-\top}\mathbf L_{\mathbf B}^{-\top}\mathbf c, \,\mathbf K_{\star\star} - \mathbf K_{\star u}\mathbf L^{-\top}(\mathbf I - \mathbf B^{-1})\mathbf L^{-1}\mathbf K_{u\star})
 \end{equation}
 
 The code in `SGPR` implements this equation, with an additional switch depending on whether the full covariance matrix is required.
