@@ -169,16 +169,15 @@ class BayesianGPLVM(GPModel, InternalDataTrainingLossMixin):
         cov_uu = covariances.Kuu(self.inducing_variable, self.kernel, jitter=default_jitter())
         L = tf.linalg.cholesky(cov_uu)
         sigma2 = self.likelihood.variance
-        sigma = tf.sqrt(sigma2)
 
         # Compute intermediate matrices
-        A = tf.linalg.triangular_solve(L, tf.transpose(psi1), lower=True) / sigma
+        A = tf.linalg.triangular_solve(L, tf.transpose(psi1), lower=True)
         tmp = tf.linalg.triangular_solve(L, psi2, lower=True)
         AAT = tf.linalg.triangular_solve(L, tf.transpose(tmp), lower=True) / sigma2
         B = AAT + tf.eye(num_inducing, dtype=default_float())
         LB = tf.linalg.cholesky(B)
         log_det_B = 2.0 * tf.reduce_sum(tf.math.log(tf.linalg.diag_part(LB)))
-        c = tf.linalg.triangular_solve(LB, tf.linalg.matmul(A, Y_data), lower=True) / sigma
+        c = tf.linalg.triangular_solve(LB, tf.linalg.matmul(A, Y_data), lower=True) / sigma2
 
         # KL[q(x) || p(x)]
         dX_data_var = (
@@ -203,6 +202,7 @@ class BayesianGPLVM(GPModel, InternalDataTrainingLossMixin):
         bound += 0.5 * tf.reduce_sum(tf.square(c))
         bound += -0.5 * D * (tf.reduce_sum(psi0) / sigma2 - tf.reduce_sum(tf.linalg.diag_part(AAT)))
         bound -= KL
+        print(bound)
         return bound
 
     def predict_f(
@@ -234,15 +234,14 @@ class BayesianGPLVM(GPModel, InternalDataTrainingLossMixin):
         jitter = default_jitter()
         Kus = covariances.Kuf(self.inducing_variable, self.kernel, Xnew)
         sigma2 = self.likelihood.variance
-        sigma = tf.sqrt(sigma2)
         L = tf.linalg.cholesky(covariances.Kuu(self.inducing_variable, self.kernel, jitter=jitter))
 
-        A = tf.linalg.triangular_solve(L, tf.transpose(psi1), lower=True) / sigma
+        A = tf.linalg.triangular_solve(L, tf.transpose(psi1), lower=True)
         tmp = tf.linalg.triangular_solve(L, psi2, lower=True)
         AAT = tf.linalg.triangular_solve(L, tf.transpose(tmp), lower=True) / sigma2
         B = AAT + tf.eye(num_inducing, dtype=default_float())
         LB = tf.linalg.cholesky(B)
-        c = tf.linalg.triangular_solve(LB, tf.linalg.matmul(A, Y_data), lower=True) / sigma
+        c = tf.linalg.triangular_solve(LB, tf.linalg.matmul(A, Y_data), lower=True) / sigma2
         tmp1 = tf.linalg.triangular_solve(L, Kus, lower=True)
         tmp2 = tf.linalg.triangular_solve(LB, tmp1, lower=True)
         mean = tf.linalg.matmul(tmp2, c, transpose_a=True)
@@ -262,6 +261,7 @@ class BayesianGPLVM(GPModel, InternalDataTrainingLossMixin):
             )
             shape = tf.stack([1, tf.shape(Y_data)[1]])
             var = tf.tile(tf.expand_dims(var, 1), shape)
+        import pdb; pdb.set_trace()
         return mean + self.mean_function(Xnew), var
 
     def predict_log_density(self, data: OutputData) -> tf.Tensor:
