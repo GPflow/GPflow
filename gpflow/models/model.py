@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import abc
+import warnings
 from typing import Optional, Tuple
 
 import tensorflow as tf
@@ -20,7 +21,7 @@ import tensorflow as tf
 from ..base import Module
 from ..conditionals.util import sample_mvn
 from ..kernels import Kernel, MultioutputKernel
-from ..likelihoods import Likelihood, SwitchedLikelihood
+from ..likelihoods import ConditionedLikelihood, Likelihood, SwitchedLikelihood
 from ..mean_functions import MeanFunction, Zero
 from ..types import MeanAndVariance
 from ..utilities import to_default_float
@@ -216,8 +217,8 @@ class GPModel(BayesianModel):
                 "The predict_y method currently supports only the argument values full_cov=False and full_output_cov=False"
             )
 
-        f_mean, f_var = self.predict_f(Xnew, full_cov=full_cov, full_output_cov=full_output_cov)
-        return self.likelihood.predict_mean_and_var(f_mean, f_var)
+        warnings.warn("use conditional_y_dist(Xnew).mean_and_var() instead", DeprecationWarning)
+        return self.conditional_y_dist(Xnew).mean_and_var()
 
     def predict_log_density(
         self, data: RegressionData, full_cov: bool = False, full_output_cov: bool = False
@@ -232,5 +233,14 @@ class GPModel(BayesianModel):
             )
 
         X, Y = data
-        f_mean, f_var = self.predict_f(X, full_cov=full_cov, full_output_cov=full_output_cov)
-        return self.likelihood.predict_log_density(f_mean, f_var, Y)
+        return self.conditional_y_dist(X).log_density(Y)
+
+    def conditional_y_dist(self, Xnew) -> ConditionedLikelihood:
+        """
+        Return the conditional output distribution, i.e. p(Y|F).
+
+        :param Xnew: the points at which to evaluate the distribution
+        :return: instance of ConditionalLikelihood
+        """
+        Fmu, Fvar = self.predict_f(Xnew)
+        return ConditionedLikelihood(self.likelihood, Fmu, Fvar)

@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.6.0
+#       jupytext_version: 1.13.0
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -216,6 +216,118 @@ for epoch in range(1, epochs + 1):
 model
 
 # %% [markdown]
+# ### The conditional output distribution
+#
+# Note, that while the mean and variance of the marginal posterior are given by `predict_y` the marginal posterior itself is not a Gaussian, despite the fact that the conditional distribution of the Likelihood is.  We illustrate this generally below.
+
+# %%
+from scipy.stats import norm
+
+np.random.seed(42)
+
+f_mean = 0.0
+f_var = 0.1
+g_mean = 0.01
+g_var = 0.1
+
+n_samples = 1_00_000
+
+f_samples = np.random.normal(loc=f_mean, scale=np.sqrt(f_var), size=n_samples)
+g_samples = np.random.normal(loc=g_mean, scale=np.sqrt(g_var), size=n_samples)
+
+y_samples = np.random.normal(loc=f_samples, scale=np.exp(g_samples))
+
+# Analytical expressions for y_mean and y_var (quantities provided by predict_y)
+y_mean = f_mean
+y_var = f_var + np.exp(g_mean + g_var / 2) ** 2
+
+fig, ax = plt.subplots(1, 1)
+ax.hist(y_samples, bins="auto", density=True, alpha=0.33)
+x_grid = np.linspace(-10, 10, 101)
+
+ax.plot(x_grid, norm.pdf(x_grid, loc=y_mean, scale=y_var ** 0.5), c="k", ls="--")
+ax.set_yscale("log")
+ax.set_ylim(1e-6, 1e0)
+ax.set_xlim(-8, 8)
+
+# %% [markdown]
+# In fact, the marginal posterior of this model has no analytical expression.  Thus, for statistics of this distribution, one may wish to use samples from the `ConditionedLikelihood`.  An example of this is below.  Note the similarities of this figure to the final plot output by the optimization loop.
+
+# %%
+tf.random.set_seed(42)
+
+y_dist = model.conditional_y_dist(X)
+
+percentiles = (.025, .159, .50, .841, .975)
+y_2p5, y_15p9, y_50, y_84p1, y_97p5 = y_dist.y_percentile(p=percentiles, num_samples=10_000)
+
+fig, ax = plt.subplots(1, 1, figsize=(15, 5))
+ax.plot(X, y_50[..., 0], c="k")
+ax.fill_between(
+    X.squeeze(), y_15p9[..., 0], y_84p1[..., 0], color="silver", alpha=1 - 0.05 * 1 ** 3
+)
+ax.fill_between(
+    X.squeeze(), y_2p5[..., 0], y_97p5[..., 0], color="silver", alpha=1 - 0.05 * 2 ** 3
+)
+
+ax.scatter(X, Y, color="gray", alpha=0.8)
+
+# %% [markdown]
+# We can also extract samples of the marginal posterior parameters from the `ConditionalLikelihood`.  Whilst in most real world scenarios we do not have access to the true values of these parameters - it is informative here to compare the predictions of the model to the functions generating the synthetic training data above.
+
+# %%
+mu_samples, var_samples = y_dist.parameter_samples(10_000)
+
+# Note the following is equivalent to:
+# mu_lo, mu_hi = np.quantile(mu_samples, q=(0.025, 0.975), axis=0)
+# var_lo, var_hi = np.quantile(var_samples, q=(0.025, 0.975), axis=0)
+
+(mu_lo, mu_hi), (var_lo, var_hi) = y_dist.parameter_percentile(p=(.025, .975), num_samples=10_000)
+
+# Analytical expressions from predict_f
+latent_means, latent_variances = model.predict_f(X)
+f_mean, g_mean = tf.split(latent_means, 2, axis=-1)
+f_var, g_var = tf.split(latent_variances, 2, axis=-1)
+
+noise_stddev_mean = tf.exp(g_mean + g_var / 2)
+noise_stddev_var = tf.exp(2 * g_mean + g_var) * (tf.exp(g_var) - 1)
+
+# %%
+fig, axes = plt.subplots(2, 1, figsize=(15, 10), sharex="row")
+ax0, ax1 = axes
+
+ax0.plot(X, loc, c="k")
+l, = ax0.plot(X, np.mean(mu_samples, axis=0), ls="--")
+ax0.fill_between(X.squeeze(), mu_lo[..., 0], mu_hi[..., 0], color=l.get_color(), alpha=0.33)
+
+for sign in [-1.0, 0, 1.0]:
+    ax0.plot(
+        X.squeeze(),
+        f_mean + sign * 1.96 * tf.sqrt(f_var),
+        ls=':',
+        c=l.get_color(),
+        lw=2
+    )
+
+ax0.set_ylabel("loc")
+
+ax1.plot(X, scale, c="k")
+l, = ax1.plot(X, np.mean(np.sqrt(var_samples), axis=0), ls="--")
+ax1.fill_between(X.squeeze(), np.sqrt(var_lo[..., 0]), np.sqrt(var_hi[..., 0]), color=l.get_color(), alpha=0.33)
+
+for sign in [-1.0, 0, 1.0]:
+    ax1.plot(
+        X.squeeze(),
+        noise_stddev_mean + sign * 1.96 * tf.sqrt(noise_stddev_var),
+        ls=':',
+        c=l.get_color(),
+        lw=2
+    )
+ax1.set_ylabel("scale")
+
+# %% [markdown]
 # ## Further reading
 #
 # See [Chained Gaussian Processes](http://proceedings.mlr.press/v51/saul16.html) by Saul et al. (AISTATS 2016).
+
+# %%
