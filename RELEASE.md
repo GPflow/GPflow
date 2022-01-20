@@ -33,7 +33,7 @@ This release contains contributions from:
 <INSERT>, <NAME>, <HERE>, <USING>, <GITHUB>, <HANDLE>
 
 
-# Release 2.3.1 (next upcoming release in progress)
+# Release 2.3.2 (next upcoming release in progress)
 
 <INSERT SMALL BLURB ABOUT RELEASE FOCUS AREA AND POTENTIAL TOOLCHAIN CHANGES>
 
@@ -64,6 +64,44 @@ This release contains contributions from:
 This release contains contributions from:
 
 <INSERT>, <NAME>, <HERE>, <USING>, <GITHUB>, <HANDLE>
+
+
+# Release 2.3.1
+
+This is a bug-fix release, primarily for the GPR posterior object.
+
+## Bug Fixes and Other Changes
+
+* GPR posterior
+  * Fix the calculation in the GPR posterior object (#1734).
+  * Fixes leading dimension issues with `GPRPosterior._conditional_with_precompute()` (#1747).
+
+* Make `gpflow.optimizers.Scipy` able to handle unused / unconnected variables. (#1745).
+
+* Build
+  * Fixed broken CircleCi build (#1738).
+  * Update CircleCi build to use next-gen Docker images (#1740).
+  * Fixed broken triggering of docs generation (#1744).
+  * Make all slow tests depend on fast tests (#1743).
+  * Make `make dev-install` also install the test requirements (#1737).
+
+* Documentation
+  * Fixed broken link in `README.md` (#1736).
+  * Fix broken build of `cglb.ipynb` (#1742).
+  * Add explanation of how to run notebooks locally (#1729).
+  * Fix formatting in notebook on Heteroskedastic Likelihood (#1727).
+  * Fix broken link in introduction (#1718).
+
+* Test suite
+  * Amends `test_gpr_posterior.py` so it will cover leading dimension uses.
+
+
+
+## Thanks to our Contributors
+
+This release contains contributions from:
+
+st--, jesnie, johnamcleod, Andrew878
 
 
 # Release 2.3.0

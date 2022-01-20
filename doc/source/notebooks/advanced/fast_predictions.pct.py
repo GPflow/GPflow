@@ -60,12 +60,10 @@
 # + [markdown] id="GX1U-fYPKPrt"
 # ## What can be cached?
 #
-# We cache two separate values: $\alpha$ and $Q^{-1}$. These correspond to the parts of the mean and covariance functions respectively which do not depend upon the test points. Specifically, in the case of the GPR model these are:
+# We cache two separate values: $\alpha$ and $Q^{-1}$. These correspond to the parts of the mean and covariance functions respectively which do not depend upon the test points. In the case of the GPR these are the same value:
 # \begin{equation*}
-#     \alpha = [K_{mm} + \sigma^2I]^{-1}\mathbf{y}\\ Q^{-1} = [K_{mm} + \sigma^2I]^{-1}
+#     \alpha = Q^{-1} = [K_{mm} + \sigma^2I]^{-1}
 # \end{equation*}
-# _(note in practice, we cache the cholesky decomposition of Q to take advantage of the 'base_conditional_with_lm' utility function)_
-#
 # in the case of the VGP and SVGP model these are:
 # \begin{equation*}
 #     \alpha = K_{uu}^{-1}\mathbf{u}\\ Q^{-1} = K_{uu}^{-1}
@@ -81,7 +79,6 @@
 # +
 import gpflow
 import numpy as np
-import tensorflow as tf
 
 # Create some data
 X = np.linspace(-1.1, 1.1, 1000)[:, None]

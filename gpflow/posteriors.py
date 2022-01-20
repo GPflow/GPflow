@@ -41,6 +41,7 @@ from .inducing_variables import (
 )
 from .types import MeanAndVariance
 from .utilities import Dispatcher, add_noise_cov
+from .utilities.ops import leading_transpose
 
 
 class _QDistribution(Module):
@@ -242,33 +243,61 @@ class GPRPosterior(AbstractPosterior):
         Computes predictive mean and (co)variance at Xnew, *excluding* mean_function.
         Relies on cached alpha and Qinv.
         """
-        Kmn = self.kernel(self.X_data, Xnew)
-        Knn = self.kernel(Xnew, full_cov=full_cov)
 
-        return base_conditional_with_lm(Kmn, self.Qinv, Knn, self.alpha, full_cov=full_cov)
+        Kmn = self.kernel(self.X_data, Xnew)
+        # compute kernel stuff
+        num_func = tf.shape(self.Y_data)[-1]  # R
+        N = tf.shape(Kmn)[-1]
+
+        # get the leading dims in Kmn to the front of the tensor Kmn
+        K = tf.rank(Kmn)
+        perm = tf.concat(
+            [
+                tf.reshape(tf.range(1, K - 1), [K - 2]),  # leading dims (...)
+                tf.reshape(0, [1]),  # [M]
+                tf.reshape(K - 1, [1]),
+            ],
+            0,
+        )  # [N]
+        Kmn = tf.transpose(Kmn, perm)  # [..., M, N]
+        leading_dims = tf.shape(Kmn)[:-2]
+
+        # get the leading dims in Knm to the front of the tensor Knm
+        Knm = leading_transpose(Kmn, [..., -1, -2])
+
+        Knn = self.kernel(Xnew, full_cov=full_cov)
+        err = self.Y_data - self.mean_function(self.X_data)  # type: ignore
+
+        mean = Knm @ self.alpha @ err
+
+        # The GPR model only has a single latent GP.
+        if full_cov:
+            cov = Knn - Knm @ self.Qinv @ Kmn  # [..., N, N]
+            cov_shape = tf.concat([leading_dims, [num_func, N, N]], 0)
+            cov = tf.broadcast_to(tf.expand_dims(cov, -3), cov_shape)  # [..., R, N, N]
+
+        else:
+            cov = Knn - tf.linalg.diag_part(Knm @ self.Qinv @ Kmn)  # [..., N]
+            cov_shape = tf.concat([leading_dims, [num_func, N]], 0)  # [..., R, N]
+            cov = tf.broadcast_to(tf.expand_dims(cov, -2), cov_shape)  # [..., R, N]
+            cov = tf.linalg.adjoint(cov)
+
+        return mean, cov
 
     def _precompute(self) -> Tuple[tf.Tensor, tf.Tensor]:
-
-        """
-        Precomputes the cholesky decomposition of Kmm_plus_s for later reuse we will call
-        base_conditional_with_lm implementation ('Qinv' in the Abstract Posterior class). We also
-        precompute the less compute intensive error term ('alpha' in the Abstract Posterior class)
-        """
-
         Kmm = self.kernel(self.X_data)
         Kmm_plus_s = add_noise_cov(Kmm, self.likelihood_variance)
 
-        # obtain the cholesky decomposition of Kmm_plus_s
         Lm = tf.linalg.cholesky(Kmm_plus_s)
+        Kmm_plus_s_inv = tf.linalg.cholesky_solve(Lm, tf.eye(self.X_data.shape[0], dtype=Lm.dtype))
 
-        alpha = self.Y_data - self.mean_function(self.X_data)  # type: ignore
         tf.debugging.assert_shapes(
             [
-                (Lm, ["M", "M"]),
+                (Kmm_plus_s_inv, ["M", "M"]),
                 (Kmm, ["M", "M"]),
             ]
         )
-        return alpha, Lm
+        return Kmm_plus_s_inv, Kmm_plus_s_inv
 
     def _conditional_fused(
         self, Xnew, full_cov: bool = False, full_output_cov: bool = False
@@ -320,13 +349,6 @@ class SGPRPosterior(AbstractPosterior):
             self.update_cache(precompute_cache)
 
     def _precompute(self) -> Tuple[tf.Tensor, tf.Tensor]:
-
-        """
-        Precomputes the cholesky decomposition of Kmm_plus_s for later reuse we will call
-        base_conditional_with_lm implementation ('Qinv' in the Abstract Posterior class). We also
-        precompute the less compute intensive error term ('alpha' in the Abstract Posterior class)
-        """
-
         # taken directly from the deprecated SGPR implementation
         num_inducing = self.inducing_variable.num_inducing
         err = self.Y_data - self.mean_function(self.X_data)  # type:ignore
