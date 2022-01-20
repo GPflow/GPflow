@@ -23,9 +23,13 @@ GPflow Documentation
    notebooks_file
    derivations
 
-.. toctree::
-   :maxdepth: 3
-   :glob:
-   :caption: API:
+API reference
+-------------
 
-   gpflow/index
+.. autosummary::
+   :toctree: _autosummary
+   :caption: API reference
+   :template: module.rst
+   :recursive:
+
+   gpflow
