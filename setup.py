@@ -33,7 +33,7 @@ requirements.extend(
         "typing_extensions",
         "packaging",
         "deprecated",
-        "dataclasses; python_version < "3.7",
+        "dataclasses;python_version<'3.7'",
     ]
 )
 
