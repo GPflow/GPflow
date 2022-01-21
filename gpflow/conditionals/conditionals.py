@@ -17,7 +17,7 @@ import tensorflow as tf
 from ..config import default_jitter
 from ..inducing_variables import InducingVariables
 from ..kernels import Kernel
-from ..posteriors import get_posterior_class
+from ..posteriors import VGPPosterior, get_posterior_class
 from ..utilities.ops import eye
 from .dispatch import conditional
 from .util import base_conditional
@@ -126,9 +126,12 @@ def _conditional(
         - mean:     [N, R]
         - variance: [N, R] (full_cov = False), [R, N, N] (full_cov = True)
     """
-    Kmm = kernel(X) + eye(tf.shape(X)[-2], value=default_jitter(), dtype=X.dtype)  # [..., M, M]
-    Kmn = kernel(X, Xnew)  # [M, ..., N]
-    Knn = kernel(Xnew, full_cov=full_cov)  # [..., N] (full_cov = False) or [..., N, N] (True)
-    mean, var = base_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov, q_sqrt=q_sqrt, white=white)
-
-    return mean, var  # [N, R], [N, R] or [R, N, N]
+    posterior = VGPPosterior(
+        kernel=kernel,
+        X=X,
+        q_mu=f,
+        q_sqrt=q_sqrt,
+        white=white,
+        precompute_cache=None,
+    )
+    return posterior.fused_predict_f(Xnew, full_cov=full_cov, full_output_cov=full_output_cov)

@@ -60,7 +60,10 @@ This release contains contributions from:
 
 ## Major Features and Improvements
 
-* Added `gpflow.experimental.check_shapes` for checking tensor shapes. (#1760)
+* Add new posterior class to enable faster predictions from the VGP model. (#1761)
+
+* Added `experimental` sub-package for features that are still under developmet.
+  * Added `gpflow.experimental.check_shapes` for checking tensor shapes. (#1760)
 
 ## Bug Fixes and Other Changes
 

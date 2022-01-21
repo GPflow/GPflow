@@ -20,8 +20,10 @@ import tensorflow as tf
 
 from . import covariances, kernels, mean_functions
 from .base import MeanAndVariance, Module, Parameter, RegressionData, TensorType
+from .conditionals.dispatch import conditional
 from .conditionals.util import (
     base_conditional,
+    base_conditional_with_lm,
     expand_independent_outputs,
     fully_correlated_conditional,
     independent_interdomain_conditional,
@@ -41,7 +43,7 @@ from .inducing_variables import (
 from .kernels import Kernel
 from .mean_functions import MeanFunction
 from .utilities import Dispatcher, add_noise_cov
-from .utilities.ops import leading_transpose
+from .utilities.ops import eye, leading_transpose
 
 
 class _QDistribution(Module):
@@ -468,6 +470,64 @@ class SGPRPosterior(AbstractPosterior):
         return mean, var
 
 
+class VGPPosterior(AbstractPosterior):
+    def __init__(
+        self,
+        kernel: Kernel,
+        X: tf.Tensor,
+        q_mu: tf.Tensor,
+        q_sqrt: tf.Tensor,
+        mean_function: Optional[mean_functions.MeanFunction] = None,
+        white: bool = True,
+        *,
+        precompute_cache: Optional[PrecomputeCacheType],
+    ) -> None:
+        super().__init__(kernel, X, mean_function=mean_function)
+        self.q_mu = q_mu
+        self.q_sqrt = q_sqrt
+        self.white = white
+
+        if precompute_cache is not None:
+            self.update_cache(precompute_cache)
+
+    def _conditional_with_precompute(
+        self,
+        cache: Tuple[tf.Tensor, ...],
+        Xnew: TensorType,
+        full_cov: bool = False,
+        full_output_cov: bool = False,
+    ) -> MeanAndVariance:
+        (Lm,) = cache
+        Kmn = self.kernel(self.X_data, Xnew)  # [M, ..., N]
+        Knn = self.kernel(
+            Xnew, full_cov=full_cov
+        )  # [..., N] (full_cov = False) or [..., N, N] (True)
+
+        return base_conditional_with_lm(
+            Kmn=Kmn,
+            Lm=Lm,
+            Knn=Knn,
+            f=self.q_mu,
+            full_cov=full_cov,
+            q_sqrt=self.q_sqrt,
+            white=self.white,
+        )
+
+    def _precompute(self) -> Tuple[tf.Tensor, ...]:
+        Kmm = self.kernel(self.X_data) + eye(
+            tf.shape(self.X_data)[-2], value=default_jitter(), dtype=self.X_data.dtype
+        )  # [..., M, M]
+        Lm = tf.linalg.cholesky(Kmm)
+
+        return (Lm,)
+
+    def _conditional_fused(
+        self, Xnew: TensorType, full_cov: bool = False, full_output_cov: bool = False
+    ) -> MeanAndVariance:
+        temp_cache = self._precompute()
+        return self._conditional_with_precompute(temp_cache, Xnew, full_cov, full_output_cov)
+
+
 class BasePosterior(AbstractPosterior):
     def __init__(
         self,
@@ -504,7 +564,7 @@ class BasePosterior(AbstractPosterior):
         else:
             self._q_dist = _MvNormal(q_mu, q_sqrt)
 
-    def _precompute(self) -> Tuple[tf.Tensor, tf.Tensor]:
+    def _precompute(self) -> Tuple[tf.Tensor, ...]:
         Kuu = covariances.Kuu(self.X_data, self.kernel, jitter=default_jitter())  # [(R), M, M]
         q_mu = self._q_dist.q_mu
 

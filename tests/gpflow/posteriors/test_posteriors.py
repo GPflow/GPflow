@@ -34,6 +34,7 @@ from gpflow.posteriors import (
     LinearCoregionalizationPosterior,
     PrecomputeCacheType,
     SGPRPosterior,
+    VGPPosterior,
     create_posterior,
 )
 
@@ -680,6 +681,32 @@ def test_sgpr_posterior_update_cache_with_variables_no_precompute(
     alpha, Qinv = posterior.cache
     assert isinstance(alpha, tf.Variable)
     assert isinstance(Qinv, tf.Variable)
+
+
+@pytest.mark.parametrize(
+    "precompute_cache_type", [PrecomputeCacheType.NOCACHE, PrecomputeCacheType.TENSOR]
+)
+def test_vgp_posterior_update_cache_with_variables_no_precompute(
+    register_posterior_test, q_sqrt_factory, whiten, precompute_cache_type
+):
+    kernel = gpflow.kernels.SquaredExponential()
+    X = np.random.randn(NUM_INDUCING_POINTS, INPUT_DIMS)
+    q_mu = np.random.randn(NUM_INDUCING_POINTS, 1)
+    q_sqrt = q_sqrt_factory(NUM_INDUCING_POINTS, 1)
+
+    posterior = VGPPosterior(
+        kernel=kernel,
+        X=X,
+        q_mu=q_mu,
+        q_sqrt=q_sqrt,
+        mean_function=Zero(),
+        precompute_cache=precompute_cache_type,
+    )
+    posterior.update_cache(PrecomputeCacheType.VARIABLE)
+    register_posterior_test(posterior, VGPPosterior)
+
+    (Lm,) = posterior.cache
+    assert isinstance(Lm, tf.Variable)
 
 
 def test_posterior_update_cache_with_variables_update_value(q_sqrt_factory, whiten):
