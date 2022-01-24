@@ -110,8 +110,7 @@ class AbstractPosterior(Module, ABC):
         self,
         kernel,
         X_data: Union[tf.Tensor, InducingVariables],
-        alpha: Optional[TensorType] = None,
-        Qinv: Optional[TensorType] = None,
+        cache: Optional[Tuple[tf.Tensor, ...]] = None,
         mean_function: Optional[mean_functions.MeanFunction] = None,
     ) -> None:
         """
@@ -125,15 +124,25 @@ class AbstractPosterior(Module, ABC):
 
         self.kernel = kernel
         self.X_data = X_data
-        self.alpha = alpha
-        self.Qinv = Qinv
+        self.cache = cache
         self.mean_function = mean_function
+
+        self._precompute_cache: Optional[PrecomputeCacheType] = None
 
     def _add_mean_function(self, Xnew, mean) -> tf.Tensor:
         if self.mean_function is None:
             return mean
         else:
             return mean + self.mean_function(Xnew)
+
+    @abstractmethod
+    def _precompute(self) -> Tuple[tf.Tensor, ...]:
+        """
+        Precompute a cache.
+
+        The result of this method will later be passed to `_conditional_with_precompute` as the
+        `cache` argument.
+        """
 
     def fused_predict_f(
         self, Xnew, full_cov: bool = False, full_output_cov: bool = False
@@ -163,18 +172,22 @@ class AbstractPosterior(Module, ABC):
         Computes predictive mean and (co)variance at Xnew, including mean_function.
         Relies on precomputed alpha and Qinv (see _precompute method)
         """
-        if self.alpha is None or self.Qinv is None:
+        if self.cache is None:
             raise ValueError(
                 "Cache has not been precomputed yet. Call update_cache first or use fused_predict_f"
             )
         mean, cov = self._conditional_with_precompute(
-            Xnew, full_cov=full_cov, full_output_cov=full_output_cov
+            self.cache, Xnew, full_cov=full_cov, full_output_cov=full_output_cov
         )
         return self._add_mean_function(Xnew, mean), cov
 
     @abstractmethod
     def _conditional_with_precompute(
-        self, Xnew, full_cov: bool = False, full_output_cov: bool = False
+        self,
+        cache: Tuple[tf.Tensor, ...],
+        Xnew,
+        full_cov: bool = False,
+        full_output_cov: bool = False,
     ) -> MeanAndVariance:
         """
         Computes predictive mean and (co)variance at Xnew, *excluding* mean_function.
@@ -188,33 +201,28 @@ class AbstractPosterior(Module, ABC):
         is not given, the setting defaults to the most-recently-used one.
         """
         if precompute_cache is None:
-            try:
-                precompute_cache = cast(
-                    PrecomputeCacheType,
-                    self._precompute_cache,  # type: ignore
-                )
-            except AttributeError:
+            if self._precompute_cache is None:
                 raise ValueError(
                     "You must pass precompute_cache explicitly (the cache had not been updated before)."
                 )
+            precompute_cache = self._precompute_cache
         else:
             self._precompute_cache = precompute_cache
 
         if precompute_cache is PrecomputeCacheType.NOCACHE:
-            self.alpha = self.Qinv = None
+            self.cache = None
 
         elif precompute_cache is PrecomputeCacheType.TENSOR:
-            self.alpha, self.Qinv = self._precompute()
+            self.cache = self._precompute()
 
         elif precompute_cache is PrecomputeCacheType.VARIABLE:
-            alpha, Qinv = self._precompute()
-            if isinstance(self.alpha, tf.Variable) and isinstance(self.Qinv, tf.Variable):
+            cache = self._precompute()
+            if self.cache is not None and all(isinstance(c, tf.Variable) for c in self.cache):
                 # re-use existing variables
-                self.alpha.assign(alpha)
-                self.Qinv.assign(Qinv)
+                for cache_var, new_value in zip(self.cache, cache):
+                    cache_var.assign(new_value)
             else:  # create variables
-                self.alpha = tf.Variable(alpha, trainable=False)
-                self.Qinv = tf.Variable(Qinv, trainable=False)
+                self.cache = tuple(tf.Variable(new_value, trainable=False) for new_value in cache)
 
 
 class GPRPosterior(AbstractPosterior):
@@ -237,12 +245,18 @@ class GPRPosterior(AbstractPosterior):
             self.update_cache(precompute_cache)
 
     def _conditional_with_precompute(
-        self, Xnew, full_cov: bool = False, full_output_cov: bool = False
+        self,
+        cache: Tuple[tf.Tensor, ...],
+        Xnew,
+        full_cov: bool = False,
+        full_output_cov: bool = False,
     ) -> MeanAndVariance:
         """
         Computes predictive mean and (co)variance at Xnew, *excluding* mean_function.
         Relies on cached alpha and Qinv.
         """
+        (alpha,) = cache
+        (Qinv,) = cache
 
         Kmn = self.kernel(self.X_data, Xnew)
         # compute kernel stuff
@@ -268,23 +282,23 @@ class GPRPosterior(AbstractPosterior):
         Knn = self.kernel(Xnew, full_cov=full_cov)
         err = self.Y_data - self.mean_function(self.X_data)  # type: ignore
 
-        mean = Knm @ self.alpha @ err
+        mean = Knm @ alpha @ err
 
         # The GPR model only has a single latent GP.
         if full_cov:
-            cov = Knn - Knm @ self.Qinv @ Kmn  # [..., N, N]
+            cov = Knn - Knm @ Qinv @ Kmn  # [..., N, N]
             cov_shape = tf.concat([leading_dims, [num_func, N, N]], 0)
             cov = tf.broadcast_to(tf.expand_dims(cov, -3), cov_shape)  # [..., R, N, N]
 
         else:
-            cov = Knn - tf.linalg.diag_part(Knm @ self.Qinv @ Kmn)  # [..., N]
+            cov = Knn - tf.linalg.diag_part(Knm @ Qinv @ Kmn)  # [..., N]
             cov_shape = tf.concat([leading_dims, [num_func, N]], 0)  # [..., R, N]
             cov = tf.broadcast_to(tf.expand_dims(cov, -2), cov_shape)  # [..., R, N]
             cov = tf.linalg.adjoint(cov)
 
         return mean, cov
 
-    def _precompute(self) -> Tuple[tf.Tensor, tf.Tensor]:
+    def _precompute(self) -> Tuple[tf.Tensor, ...]:
         Kmm = self.kernel(self.X_data)
         Kmm_plus_s = add_noise_cov(Kmm, self.likelihood_variance)
 
@@ -297,7 +311,7 @@ class GPRPosterior(AbstractPosterior):
                 (Kmm, ["M", "M"]),
             ]
         )
-        return Kmm_plus_s_inv, Kmm_plus_s_inv
+        return (Kmm_plus_s_inv,)
 
     def _conditional_fused(
         self, Xnew, full_cov: bool = False, full_output_cov: bool = False
@@ -348,7 +362,7 @@ class SGPRPosterior(AbstractPosterior):
         if precompute_cache is not None:
             self.update_cache(precompute_cache)
 
-    def _precompute(self) -> Tuple[tf.Tensor, tf.Tensor]:
+    def _precompute(self) -> Tuple[tf.Tensor, ...]:
         # taken directly from the deprecated SGPR implementation
         num_inducing = self.inducing_variable.num_inducing
         err = self.Y_data - self.mean_function(self.X_data)  # type:ignore
@@ -378,23 +392,29 @@ class SGPRPosterior(AbstractPosterior):
         return alpha, Qinv
 
     def _conditional_with_precompute(
-        self, Xnew, full_cov: bool = False, full_output_cov: bool = False
+        self,
+        cache: Tuple[tf.Tensor, ...],
+        Xnew,
+        full_cov: bool = False,
+        full_output_cov: bool = False,
     ) -> MeanAndVariance:
         """
         Computes predictive mean and (co)variance at Xnew, *excluding* mean_function.
         Relies on cached alpha and Qinv.
         """
+        alpha, Qinv = cache
+
         Kus = Kuf(self.inducing_variable, self.kernel, Xnew)
         Knn = self.kernel(Xnew, full_cov=full_cov)
 
         Ksu = tf.transpose(Kus)
-        mean = Ksu @ self.alpha
+        mean = Ksu @ alpha
 
         if full_cov:
-            var = Knn - Ksu @ self.Qinv @ Kus
+            var = Knn - Ksu @ Qinv @ Kus
             var = tf.tile(var[None, ...], [self.num_latent_gps, 1, 1])  # [P, N, N]
         else:
-            Kfu_Qinv_Kuf = tf.reduce_sum(Kus * tf.matmul(self.Qinv, Kus), axis=-2)
+            Kfu_Qinv_Kuf = tf.reduce_sum(Kus * tf.matmul(Qinv, Kus), axis=-2)
             var = Knn - Kfu_Qinv_Kuf
             var = tf.tile(var[:, None], [1, self.num_latent_gps])
 
@@ -480,7 +500,7 @@ class BasePosterior(AbstractPosterior):
         else:
             self._q_dist = _MvNormal(q_mu, q_sqrt)
 
-    def _precompute(self):
+    def _precompute(self) -> Tuple[tf.Tensor, tf.Tensor]:
         Kuu = covariances.Kuu(self.X_data, self.kernel, jitter=default_jitter())  # [(R), M, M]
         q_mu = self._q_dist.q_mu
 
@@ -567,25 +587,30 @@ class IndependentPosterior(BasePosterior):
         return Kff
 
     def _conditional_with_precompute(
-        self, Xnew, full_cov: bool = False, full_output_cov: bool = False
+        self,
+        cache: Tuple[tf.Tensor, ...],
+        Xnew,
+        full_cov: bool = False,
+        full_output_cov: bool = False,
     ) -> MeanAndVariance:
         # Qinv: [L, M, M]
         # alpha: [M, L]
+        alpha, Qinv = cache
 
         Kuf = covariances.Kuf(self.X_data, self.kernel, Xnew)  # [(R), M, N]
         Kff = self._get_Kff(Xnew, full_cov)
 
-        mean = tf.matmul(Kuf, self.alpha, transpose_a=True)
+        mean = tf.matmul(Kuf, alpha, transpose_a=True)
         if Kuf.shape.ndims == 3:
             mean = tf.linalg.adjoint(tf.squeeze(mean, axis=-1))
 
         if full_cov:
-            Kfu_Qinv_Kuf = tf.matmul(Kuf, self.Qinv @ Kuf, transpose_a=True)
+            Kfu_Qinv_Kuf = tf.matmul(Kuf, Qinv @ Kuf, transpose_a=True)
             cov = Kff - Kfu_Qinv_Kuf
         else:
             # [Aᵀ B]_ij = Aᵀ_ik B_kj = A_ki B_kj
             # TODO check whether einsum is faster now?
-            Kfu_Qinv_Kuf = tf.reduce_sum(Kuf * tf.matmul(self.Qinv, Kuf), axis=-2)
+            Kfu_Qinv_Kuf = tf.reduce_sum(Kuf * tf.matmul(Qinv, Kuf), axis=-2)
             cov = Kff - Kfu_Qinv_Kuf
             cov = tf.linalg.adjoint(cov)
 
@@ -666,12 +691,17 @@ class LinearCoregionalizationPosterior(IndependentPosteriorMultiOutput):
 
 class FullyCorrelatedPosterior(BasePosterior):
     def _conditional_with_precompute(
-        self, Xnew, full_cov: bool = False, full_output_cov: bool = False
+        self,
+        cache: Tuple[tf.Tensor, ...],
+        Xnew,
+        full_cov: bool = False,
+        full_output_cov: bool = False,
     ) -> MeanAndVariance:
         # TODO: this assumes that Xnew has shape [N, D] and no leading dims
 
         # Qinv: [L, M, M]
         # alpha: [M, L]
+        alpha, Qinv = cache
 
         Kuf = covariances.Kuf(self.X_data, self.kernel, Xnew)
         assert Kuf.shape.ndims == 4
@@ -690,7 +720,7 @@ class FullyCorrelatedPosterior(BasePosterior):
         N = tf.shape(Xnew)[0]
         K = tf.shape(Kuf)[-1] // N
 
-        mean = tf.matmul(Kuf, self.alpha, transpose_a=True)
+        mean = tf.matmul(Kuf, alpha, transpose_a=True)
         if Kuf.shape.ndims == 3:
             mean = tf.linalg.adjoint(tf.squeeze(mean, axis=-1))
 
@@ -698,9 +728,9 @@ class FullyCorrelatedPosterior(BasePosterior):
             # fully diagonal case in both inputs and outputs
             # [Aᵀ B]_ij = Aᵀ_ik B_kj = A_ki B_kj
             # TODO check whether einsum is faster now?
-            Kfu_Qinv_Kuf = tf.reduce_sum(Kuf * tf.matmul(self.Qinv, Kuf), axis=-2)
+            Kfu_Qinv_Kuf = tf.reduce_sum(Kuf * tf.matmul(Qinv, Kuf), axis=-2)
         else:
-            Kfu_Qinv_Kuf = tf.matmul(Kuf, self.Qinv @ Kuf, transpose_a=True)
+            Kfu_Qinv_Kuf = tf.matmul(Kuf, Qinv @ Kuf, transpose_a=True)
             if not (full_cov and full_output_cov):
                 # diagonal in either inputs or outputs
                 new_shape = tf.concat([tf.shape(Kfu_Qinv_Kuf)[:-2], (N, K, N, K)], axis=0)
