@@ -33,11 +33,9 @@ requirements.extend(
         "typing_extensions",
         "packaging",
         "deprecated",
+        "dataclasses;python_version<'3.7'",
     ]
 )
-
-if sys.version_info < (3, 7):
-    requirements.append("dataclasses")  # became part of stdlib in python 3.7
 
 
 def read_file(filename):
