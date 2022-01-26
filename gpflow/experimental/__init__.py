@@ -11,32 +11,16 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""
+This package contains code that is still experimental. This means:
 
-# flake8: noqa
+* Expect breaking changes.
+* Expect poor documentation.
+* Expect bugs.
 
-from . import (
-    conditionals,
-    config,
-    covariances,
-    expectations,
-    experimental,
-    inducing_variables,
-    kernels,
-    kullback_leiblers,
-    likelihoods,
-    logdensities,
-    mean_functions,
-    models,
-    monitor,
-    optimizers,
-    posteriors,
-    probability_distributions,
-    quadrature,
-    utilities,
-)
-from .base import Module, Parameter
-from .config import default_float, default_int, default_jitter
-from .utilities import set_trainable
-from .versions import __version__
+When the code is considered mature it will be moved out of this package.
+"""
+
+from . import check_shapes
 
 __all__ = [export for export in dir()]
