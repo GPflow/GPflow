@@ -14,6 +14,7 @@
 
 import enum
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from typing import Optional, Tuple, Type, Union
 
 import tensorflow as tf
@@ -93,6 +94,57 @@ class PrecomputeCacheType(enum.Enum):
     NOCACHE = "nocache"
 
 
+@dataclass
+class PrecomputedValue:
+    value: tf.Tensor
+    """
+    The precomputed value itself.
+    """
+
+    axis_dynamic: Tuple[bool, ...]
+    """
+    A tuple with one element per dimension of `value`. That element is `True` if that dimension
+    of `value` might change size.
+    """
+
+    def __post_init__(self) -> None:
+        tf.debugging.assert_rank(
+            self.value,
+            len(self.axis_dynamic),
+            "axis_dynamic must have one element per dimension of value.",
+        )
+
+    @staticmethod
+    def wrap_alpha_Qinv(alpha: TensorType, Qinv: TensorType) -> Tuple["PrecomputedValue", ...]:
+        """
+        Wraps `alpha` and `Qinv` in `PrecomputedValue`s.
+        """
+        one_dynamic = False
+        L_dynamic = False
+        M_dynamic = False  # TODO(jesper): Support variable number of inducing points?
+
+        alpha_rank = tf.rank(alpha)
+        if alpha_rank == 2:
+            alpha_dynamic: Tuple[bool, ...] = (M_dynamic, L_dynamic)
+        elif alpha_rank == 3:
+            alpha_dynamic = (L_dynamic, M_dynamic, one_dynamic)
+        else:
+            raise AssertionError(f"Unknown rank of alpha {alpha_rank}.")
+
+        Qinv_rank = tf.rank(Qinv)
+        if Qinv_rank == 2:
+            Qinv_dynamic: Tuple[bool, ...] = (M_dynamic, M_dynamic)
+        elif Qinv_rank == 3:
+            Qinv_dynamic = (L_dynamic, M_dynamic, M_dynamic)
+        else:
+            raise AssertionError(f"Unknown rank of Qinv {Qinv_rank}.")
+
+        return (
+            PrecomputedValue(alpha, alpha_dynamic),
+            PrecomputedValue(Qinv, Qinv_dynamic),
+        )
+
+
 def _validate_precompute_cache_type(
     value: Union[None, PrecomputeCacheType, str]
 ) -> PrecomputeCacheType:
@@ -104,7 +156,8 @@ def _validate_precompute_cache_type(
         return PrecomputeCacheType(value.lower())
     else:
         raise ValueError(
-            f"{value} is not a valid PrecomputeCacheType. Valid options: 'tensor', 'variable', 'nocache' (or None)."
+            f"{value} is not a valid PrecomputeCacheType."
+            " Valid options: 'tensor', 'variable', 'nocache' (or None)."
         )
 
 
@@ -139,7 +192,7 @@ class AbstractPosterior(Module, ABC):
             return mean + self.mean_function(Xnew)
 
     @abstractmethod
-    def _precompute(self) -> Tuple[tf.Tensor, ...]:
+    def _precompute(self) -> Tuple[PrecomputedValue, ...]:
         """
         Precompute a cache.
 
@@ -206,7 +259,8 @@ class AbstractPosterior(Module, ABC):
         if precompute_cache is None:
             if self._precompute_cache is None:
                 raise ValueError(
-                    "You must pass precompute_cache explicitly (the cache had not been updated before)."
+                    "You must pass precompute_cache explicitly"
+                    " (the cache had not been updated before)."
                 )
             precompute_cache = self._precompute_cache
         else:
@@ -216,16 +270,23 @@ class AbstractPosterior(Module, ABC):
             self.cache = None
 
         elif precompute_cache is PrecomputeCacheType.TENSOR:
-            self.cache = self._precompute()
+            self.cache = tuple(c.value for c in self._precompute())
 
         elif precompute_cache is PrecomputeCacheType.VARIABLE:
             cache = self._precompute()
+
             if self.cache is not None and all(isinstance(c, tf.Variable) for c in self.cache):
                 # re-use existing variables
-                for cache_var, new_value in zip(self.cache, cache):
-                    cache_var.assign(new_value)
+                for cache_var, c in zip(self.cache, cache):
+                    cache_var.assign(c.value)
             else:  # create variables
-                self.cache = tuple(tf.Variable(new_value, trainable=False) for new_value in cache)
+                shapes = [
+                    [None if d else s for d, s in zip(c.axis_dynamic, tf.shape(c.value))]
+                    for c in cache
+                ]
+                self.cache = tuple(
+                    tf.Variable(c.value, trainable=False, shape=s) for c, s in zip(cache, shapes)
+                )
 
 
 class GPRPosterior(AbstractPosterior):
@@ -301,12 +362,17 @@ class GPRPosterior(AbstractPosterior):
 
         return mean, cov
 
-    def _precompute(self) -> Tuple[tf.Tensor, ...]:
+    def _precompute(self) -> Tuple[PrecomputedValue, ...]:
         Kmm = self.kernel(self.X_data)
         Kmm_plus_s = add_noise_cov(Kmm, self.likelihood_variance)
 
         Lm = tf.linalg.cholesky(Kmm_plus_s)
-        Kmm_plus_s_inv = tf.linalg.cholesky_solve(Lm, tf.eye(self.X_data.shape[0], dtype=Lm.dtype))
+        Kmm_plus_s_inv = tf.linalg.cholesky_solve(
+            Lm, tf.eye(tf.shape(self.X_data)[0], dtype=Lm.dtype)
+        )
+
+        M = self.X_data.shape[0]
+        M_dynamic = M is None
 
         tf.debugging.assert_shapes(
             [
@@ -314,7 +380,7 @@ class GPRPosterior(AbstractPosterior):
                 (Kmm, ["M", "M"]),
             ]
         )
-        return (Kmm_plus_s_inv,)
+        return (PrecomputedValue(Kmm_plus_s_inv, (M_dynamic, M_dynamic)),)
 
     def _conditional_fused(
         self, Xnew: TensorType, full_cov: bool = False, full_output_cov: bool = False
@@ -365,7 +431,7 @@ class SGPRPosterior(AbstractPosterior):
         if precompute_cache is not None:
             self.update_cache(precompute_cache)
 
-    def _precompute(self) -> Tuple[tf.Tensor, ...]:
+    def _precompute(self) -> Tuple[PrecomputedValue, ...]:
         # taken directly from the deprecated SGPR implementation
         num_inducing = self.inducing_variable.num_inducing
         assert self.mean_function is not None
@@ -393,7 +459,7 @@ class SGPRPosterior(AbstractPosterior):
         alpha = LinvT @ tf.transpose(LBinv) @ c
         Qinv = LinvT @ tmp @ Linv
 
-        return alpha, Qinv
+        return PrecomputedValue.wrap_alpha_Qinv(alpha, Qinv)
 
     def _conditional_with_precompute(
         self,
@@ -512,18 +578,21 @@ class VGPPosterior(AbstractPosterior):
             white=self.white,
         )
 
-    def _precompute(self) -> Tuple[tf.Tensor, ...]:
+    def _precompute(self) -> Tuple[PrecomputedValue, ...]:
         Kmm = self.kernel(self.X_data) + eye(
             tf.shape(self.X_data)[-2], value=default_jitter(), dtype=self.X_data.dtype
         )  # [..., M, M]
         Lm = tf.linalg.cholesky(Kmm)
 
-        return (Lm,)
+        M = self.X_data.shape[0]
+        M_dynamic = M is None
+
+        return (PrecomputedValue(Lm, (M_dynamic, M_dynamic)),)
 
     def _conditional_fused(
         self, Xnew: TensorType, full_cov: bool = False, full_output_cov: bool = False
     ) -> MeanAndVariance:
-        temp_cache = self._precompute()
+        temp_cache = tuple(c.value for c in self._precompute())
         return self._conditional_with_precompute(temp_cache, Xnew, full_cov, full_output_cov)
 
 
@@ -563,7 +632,7 @@ class BasePosterior(AbstractPosterior):
         else:
             self._q_dist = _MvNormal(q_mu, q_sqrt)
 
-    def _precompute(self) -> Tuple[tf.Tensor, ...]:
+    def _precompute(self) -> Tuple[PrecomputedValue, ...]:
         Kuu = covariances.Kuu(self.X_data, self.kernel, jitter=default_jitter())  # [(R), M, M]
         q_mu = self._q_dist.q_mu
 
@@ -621,7 +690,7 @@ class BasePosterior(AbstractPosterior):
             ]
         )
 
-        return alpha, Qinv
+        return PrecomputedValue.wrap_alpha_Qinv(alpha, Qinv)
 
 
 class IndependentPosterior(BasePosterior):
@@ -635,14 +704,16 @@ class IndependentPosterior(BasePosterior):
         # TODO: this assumes that Xnew has shape [N, D] and no leading dims
 
         if isinstance(self.kernel, (kernels.SeparateIndependent, kernels.IndependentLatent)):
-            # NOTE calling kernel(Xnew, full_cov=full_cov, full_output_cov=False) directly would return
+            # NOTE calling kernel(Xnew, full_cov=full_cov, full_output_cov=False) directly would
+            # return
             # if full_cov: [P, N, N] -- this is what we want
             # else: [N, P] instead of [P, N] as we get from the explicit stack below
             Kff = tf.stack([k(Xnew, full_cov=full_cov) for k in self.kernel.kernels], axis=0)
         elif isinstance(self.kernel, kernels.MultioutputKernel):
             # effectively, SharedIndependent path
             Kff = self.kernel.kernel(Xnew, full_cov=full_cov)
-            # NOTE calling kernel(Xnew, full_cov=full_cov, full_output_cov=False) directly would return
+            # NOTE calling kernel(Xnew, full_cov=full_cov, full_output_cov=False) directly would
+            # return
             # if full_cov: [P, N, N] instead of [N, N]
             # else: [N, P] instead of [N]
         else:
@@ -687,7 +758,8 @@ class IndependentPosteriorSingleOutput(IndependentPosterior):
     def _conditional_fused(
         self, Xnew: TensorType, full_cov: bool = False, full_output_cov: bool = False
     ) -> MeanAndVariance:
-        # same as IndependentPosteriorMultiOutput, Shared~/Shared~ branch, except for following line:
+        # same as IndependentPosteriorMultiOutput, Shared~/Shared~ branch, except for following
+        # line:
         Knn = self.kernel(Xnew, full_cov=full_cov)
 
         Kmm = covariances.Kuu(self.X_data, self.kernel, jitter=default_jitter())  # [M, M]
@@ -717,7 +789,8 @@ class IndependentPosteriorMultiOutput(IndependentPosterior):
                 Kmn, Kmm, Knn, self.q_mu, full_cov=full_cov, q_sqrt=self.q_sqrt, white=self.whiten
             )  # [N, P],  [P, N, N] or [N, P]
         else:
-            # this is the messy thing with tf.map_fn, cleaned up by the st/clean_up_broadcasting_conditionals branch
+            # this is the messy thing with tf.map_fn, cleaned up by the
+            # st/clean_up_broadcasting_conditionals branch
 
             # Following are: [P, M, M]  -  [P, M, N]  -  [P, N](x N)
             Kmms = covariances.Kuu(self.X_data, self.kernel, jitter=default_jitter())  # [P, M, M]

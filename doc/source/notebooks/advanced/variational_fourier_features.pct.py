@@ -331,7 +331,7 @@ class VFFPosterior(gpflow.posteriors.BasePosterior):
 
         Qinv = Kuu.inverse().to_dense() - KuuInv_covu_KuuInv
 
-        return alpha, Qinv
+        return gpflow.posteriors.PrecomputedValue.wrap_alpha_Qinv(alpha, Qinv)
 
     def _conditional_with_precompute(self, cache, Xnew, full_cov, full_output_cov):
         alpha, Qinv = cache
