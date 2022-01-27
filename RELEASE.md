@@ -39,8 +39,12 @@ This release contains contributions from:
 
 ## Breaking Changes
 
-* <DOCUMENT BREAKING CHANGES HERE>
-* <THIS SECTION SHOULD CONTAIN API AND BEHAVIORAL BREAKING CHANGES>
+* Slight change to the API of custom posterior objects.
+  `gpflow.posteriors.AbstractPosterior._precompute` no longer must return an `alpha` and an `Qinv`
+  - instead it returns any arbitrary tuple of tensors.
+  Correspondingly `gpflow.posteriors.AbstractPosterior._conditional_with_precompute` should no
+  longer try to access `self.alpha` and `self.Qinv`, but instead is passed the tuple of tensors
+  returned by `_precompute`, as a parameter. (#1763)
 
 ## Known Caveats
 
