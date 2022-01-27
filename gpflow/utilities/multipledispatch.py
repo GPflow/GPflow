@@ -12,11 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import Any, Callable, Tuple, Type, TypeVar, Union
+
 from multipledispatch import Dispatcher as GeneratorDispatcher
 from multipledispatch.dispatcher import variadic_signature_matches
 from multipledispatch.variadic import isvariadic
 
 __all__ = ["Dispatcher"]
+
+
+_C = TypeVar("_C", bound=Callable[..., Any])
+Types = Union[Type[Any], Tuple[Type[Any], ...]]
 
 
 class Dispatcher(GeneratorDispatcher):
@@ -30,7 +36,11 @@ class Dispatcher(GeneratorDispatcher):
     compilable by AutoGraph.
     """
 
-    def dispatch(self, *types):
+    def register(self, *types: Types, **kwargs: Any) -> Callable[[_C], _C]:
+        # Override to add type hints...
+        return super().register(*types, **kwargs)
+
+    def dispatch(self, *types: Types) -> Callable[..., Any]:
         """
         Returns matching function for `types`; if not existing returns None.
         """
@@ -39,7 +49,7 @@ class Dispatcher(GeneratorDispatcher):
 
         return self.get_first_occurrence(*types)
 
-    def get_first_occurrence(self, *types):
+    def get_first_occurrence(self, *types: Types) -> Callable[..., Any]:
         """
         Returns the first occurrence of a matching function
 

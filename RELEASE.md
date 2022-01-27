@@ -45,6 +45,12 @@ This release contains contributions from:
   Correspondingly `gpflow.posteriors.AbstractPosterior._conditional_with_precompute` should no
   longer try to access `self.alpha` and `self.Qinv`, but instead is passed the tuple of tensors
   returned by `_precompute`, as a parameter. (#1763)
+* Slight change to the API of inducing points.
+  You should no longer override `gpflow.inducing_variables.InducingVariables.__len__`. Override
+  `gpflow.inducing_variables.InducingVariables.num_inducing` instead. `num_inducing` should return a
+  `tf.Tensor` which is consistent with previous behaviour, although the type previously was
+  annotated as `int`. `__len__` has been removed. (#1766)
+
 
 ## Known Caveats
 

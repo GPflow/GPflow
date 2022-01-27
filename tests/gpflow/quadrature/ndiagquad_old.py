@@ -1,12 +1,20 @@
-from collections.abc import Iterable
+from typing import Callable, Iterable, List, Sequence, Tuple, Union, cast
 
 import numpy as np
 import tensorflow as tf
 
+from gpflow.base import TensorType
 from gpflow.quadrature.deprecated import mvhermgauss
 
 
-def ndiagquad(funcs, H: int, Fmu, Fvar, logspace: bool = False, **Ys):
+def ndiagquad(
+    funcs: Union[Callable[..., tf.Tensor], Iterable[Callable[..., tf.Tensor]]],
+    H: int,
+    Fmu: Union[TensorType, List[TensorType], Tuple[TensorType, ...]],
+    Fvar: Union[TensorType, List[TensorType], Tuple[TensorType, ...]],
+    logspace: bool = False,
+    **Ys: TensorType,
+) -> tf.Tensor:
     """
     Computes N Gaussian expectation integrals of one or more functions
     using Gauss-Hermite quadrature. The Gaussians must be independent.
@@ -26,7 +34,7 @@ def ndiagquad(funcs, H: int, Fmu, Fvar, logspace: bool = False, **Ys):
     if isinstance(Fmu, (tuple, list)):
         Din = len(Fmu)
 
-        def unify(f_list):
+        def unify(f_list: Sequence[TensorType]) -> tf.Tensor:
             """Stack a list of means/vars into a full block."""
             return tf.reshape(
                 tensor=tf.concat([tf.reshape(f, shape=(-1, 1)) for f in f_list], axis=1),
@@ -43,6 +51,9 @@ def ndiagquad(funcs, H: int, Fmu, Fvar, logspace: bool = False, **Ys):
         shape = tf.shape(Fmu)
         Fmu, Fvar = [tf.reshape(f, (-1, 1, 1)) for f in [Fmu, Fvar]]
 
+    Fmu = cast(TensorType, Fmu)
+    Fvar = cast(TensorType, Fvar)
+
     xn, wn = mvhermgauss(H, Din)
     # xn: H**Din x Din, wn: H**Din
 
@@ -58,7 +69,7 @@ def ndiagquad(funcs, H: int, Fmu, Fvar, logspace: bool = False, **Ys):
         # without the tiling, some calls such as tf.where() (in bernoulli) fail
         Ys[name] = Y  # now [N, H]**Din
 
-    def eval_func(f):
+    def eval_func(f: Callable[..., tf.Tensor]) -> tf.Tensor:
         feval = f(*Xs, **Ys)  # f should be elementwise: return shape [N, H]**Din
         if logspace:
             log_gh_w = np.log(gh_w.reshape(1, -1))

@@ -26,7 +26,7 @@ if TYPE_CHECKING:
     from IPython.lib import pretty
 
 DType = Union[np.dtype, tf.DType]
-VariableData = Union[List, Tuple, np.ndarray, int, float]  # deprecated
+VariableData = Union[List[Any], Tuple[Any], np.ndarray, int, float]  # deprecated
 Transform = Union[tfp.bijectors.Bijector]
 Prior = Union[tfp.distributions.Distribution]
 
@@ -52,6 +52,12 @@ TensorLike: Final[Tuple[type, ...]] = (object,)
 _NativeScalar = Union[int, float]
 _Array = Sequence[Any]  # a nested array of int, float, bool etc. kept simple for readability
 TensorData = Union[_NativeScalar, _Array, TensorType]
+
+MeanAndVariance = Tuple[tf.Tensor, tf.Tensor]
+
+InputData = Union[TensorType]
+OutputData = Union[TensorType]
+RegressionData = Tuple[InputData, OutputData]
 
 
 def _IS_PARAMETER(o: object) -> bool:

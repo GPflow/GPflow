@@ -47,7 +47,7 @@ ArgumentSpec = Tuple[str, ShapeSpec]
 Shaped = Union[np.ndarray, tf.Tensor]
 
 
-_C = TypeVar("_C", bound=Callable)
+_C = TypeVar("_C", bound=Callable[..., Any])
 
 # The special name used to represent the returned value. `return` is a good choice because we know
 # that no argument can be called `return` because `return` a reserved keyword.
@@ -175,7 +175,7 @@ class _ParsedArgumentSpec:
 
 
 @experimental
-def check_shapes(*specs: ArgumentSpec):
+def check_shapes(*specs: ArgumentSpec) -> Callable[[_C], _C]:
     """
     Decorator that checks the shapes of tensor arguments.
 
@@ -231,7 +231,7 @@ def check_shapes(*specs: ArgumentSpec):
         signature = inspect.signature(func)
 
         @wraps(func)
-        def wrapped(*args, **kwargs):
+        def wrapped(*args: Any, **kwargs: Any) -> Any:
             try:
                 bound_arguments = signature.bind(*args, **kwargs)
             except TypeError:
@@ -264,7 +264,7 @@ def _assert_shapes(
     arg_map: Mapping[str, Any],
     context: Dict[str, Union[int, List[Optional[int]]]],
 ) -> None:
-    def _assert(condition: bool):
+    def _assert(condition: bool) -> None:
         if not condition:
             raise ShapeMismatchError(func, print_specs, arg_map)
 
@@ -364,9 +364,9 @@ def _parse_argument_ref(argument_ref_str: str) -> _ArgumentRef:
         return f"Invalid argument reference: '{argument_ref_str}'."
 
     start = 0
-    match: Optional[Match] = None
+    match: Optional[Match[str]] = None
 
-    def _consume(expression: Pattern) -> None:
+    def _consume(expression: Pattern[str]) -> None:
         nonlocal start, match
         match = expression.match(argument_ref_str, start)
         if match:
@@ -499,7 +499,7 @@ class _InheritCheckShapes:
     See: https://stackoverflow.com/a/54316392 .
     """
 
-    def __init__(self, func):
+    def __init__(self, func: _C) -> None:
         self._func = func
 
     def __set_name__(self, owner: type, name: str) -> None:
@@ -518,6 +518,6 @@ class _InheritCheckShapes:
             f" on class '{owner.__name__}'."
         )
 
-        self._func.class_name = owner.__name__
+        self._func.class_name = owner.__name__  # type: ignore
         wrapped = overridden_check_shapes(self._func)
         setattr(owner, name, wrapped)
