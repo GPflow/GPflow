@@ -38,7 +38,7 @@ requirements.extend(
 )
 
 
-def read_file(filename):
+def read_file(filename: str) -> str:
     with open(filename, encoding="utf-8") as f:
         return f.read().strip()
 

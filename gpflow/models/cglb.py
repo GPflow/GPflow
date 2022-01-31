@@ -17,13 +17,11 @@ from typing import NamedTuple, Union
 
 import tensorflow as tf
 
-from ..base import Parameter
+from ..base import InputData, MeanAndVariance, Parameter, RegressionData
 from ..config import default_float, default_int
 from ..covariances import Kuf
 from ..utilities import add_noise_cov, to_default_float
-from .model import InputData, MeanAndVariance
 from .sgpr import SGPR
-from .training_mixins import RegressionData
 
 
 class CGLB(SGPR):

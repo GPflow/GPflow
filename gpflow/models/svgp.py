@@ -18,11 +18,11 @@ import numpy as np
 import tensorflow as tf
 
 from .. import kullback_leiblers, posteriors
-from ..base import Module, Parameter
+from ..base import InputData, MeanAndVariance, Module, Parameter, RegressionData
 from ..conditionals import conditional
 from ..config import default_float
 from ..utilities import positive, triangular
-from .model import GPModel, InputData, MeanAndVariance, RegressionData
+from .model import GPModel
 from .training_mixins import ExternalDataTrainingLossMixin
 from .util import inducingpoint_wrapper
 

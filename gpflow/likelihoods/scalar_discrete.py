@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import Any, Callable, Tuple
+
 import numpy as np
 import tensorflow as tf
 
@@ -19,7 +21,7 @@ from .. import logdensities
 from ..base import Parameter
 from ..config import default_float
 from ..utilities import positive, to_default_int
-from .base import ScalarLikelihood
+from .base import MeanAndVariance, ScalarLikelihood, TensorType
 from .utils import inv_probit
 
 
@@ -38,21 +40,28 @@ class Poisson(ScalarLikelihood):
     of size 'binsize') and using this Poisson likelihood.
     """
 
-    def __init__(self, invlink=tf.exp, binsize=1.0, **kwargs):
+    def __init__(
+        self,
+        invlink: Callable[[tf.Tensor], tf.Tensor] = tf.exp,
+        binsize: float = 1.0,
+        **kwargs: Any,
+    ) -> None:
         super().__init__(**kwargs)
         self.invlink = invlink
         self.binsize = np.array(binsize, dtype=default_float())
 
-    def _scalar_log_prob(self, F, Y):
+    def _scalar_log_prob(self, F: TensorType, Y: TensorType) -> tf.Tensor:
         return logdensities.poisson(Y, self.invlink(F) * self.binsize)
 
-    def _conditional_variance(self, F):
+    def _conditional_variance(self, F: TensorType) -> tf.Tensor:
         return self.invlink(F) * self.binsize
 
-    def _conditional_mean(self, F):
+    def _conditional_mean(self, F: TensorType) -> tf.Tensor:
         return self.invlink(F) * self.binsize
 
-    def _variational_expectations(self, Fmu, Fvar, Y):
+    def _variational_expectations(
+        self, Fmu: TensorType, Fvar: TensorType, Y: TensorType
+    ) -> tf.Tensor:
         if self.invlink is tf.exp:
             return tf.reduce_sum(
                 Y * Fmu
@@ -65,14 +74,16 @@ class Poisson(ScalarLikelihood):
 
 
 class Bernoulli(ScalarLikelihood):
-    def __init__(self, invlink=inv_probit, **kwargs):
+    def __init__(
+        self, invlink: Callable[[tf.Tensor], tf.Tensor] = inv_probit, **kwargs: Any
+    ) -> None:
         super().__init__(**kwargs)
         self.invlink = invlink
 
-    def _scalar_log_prob(self, F, Y):
+    def _scalar_log_prob(self, F: TensorType, Y: TensorType) -> tf.Tensor:
         return logdensities.bernoulli(Y, self.invlink(F))
 
-    def _predict_mean_and_var(self, Fmu, Fvar):
+    def _predict_mean_and_var(self, Fmu: TensorType, Fvar: TensorType) -> MeanAndVariance:
         if self.invlink is inv_probit:
             p = inv_probit(Fmu / tf.sqrt(1 + Fvar))
             return p, p - tf.square(p)
@@ -80,14 +91,14 @@ class Bernoulli(ScalarLikelihood):
             # for other invlink, use quadrature
             return super()._predict_mean_and_var(Fmu, Fvar)
 
-    def _predict_log_density(self, Fmu, Fvar, Y):
+    def _predict_log_density(self, Fmu: TensorType, Fvar: TensorType, Y: TensorType) -> tf.Tensor:
         p = self.predict_mean_and_var(Fmu, Fvar)[0]
         return tf.reduce_sum(logdensities.bernoulli(Y, p), axis=-1)
 
-    def _conditional_mean(self, F):
+    def _conditional_mean(self, F: TensorType) -> tf.Tensor:
         return self.invlink(F)
 
-    def _conditional_variance(self, F):
+    def _conditional_variance(self, F: TensorType) -> tf.Tensor:
         p = self.conditional_mean(F)
         return p - (p ** 2)
 
@@ -120,7 +131,7 @@ class Ordinal(ScalarLikelihood):
     }
     """
 
-    def __init__(self, bin_edges, **kwargs):
+    def __init__(self, bin_edges: np.ndarray, **kwargs: Any) -> None:
         """
         bin_edges is a numpy array specifying at which function value the
         output label should switch. If the possible Y values are 0...K, then
@@ -131,7 +142,7 @@ class Ordinal(ScalarLikelihood):
         self.num_bins = bin_edges.size + 1
         self.sigma = Parameter(1.0, transform=positive())
 
-    def _scalar_log_prob(self, F, Y):
+    def _scalar_log_prob(self, F: TensorType, Y: TensorType) -> tf.Tensor:
         Y = to_default_int(Y)
         scaled_bins_left = tf.concat([self.bin_edges / self.sigma, np.array([np.inf])], 0)
         scaled_bins_right = tf.concat([np.array([-np.inf]), self.bin_edges / self.sigma], 0)
@@ -144,7 +155,7 @@ class Ordinal(ScalarLikelihood):
             + 1e-6
         )
 
-    def _make_phi(self, F):
+    def _make_phi(self, F: TensorType) -> tf.Tensor:
         """
         A helper function for making predictions. Constructs a probability
         matrix where each row output the probability of the corresponding
@@ -158,12 +169,12 @@ class Ordinal(ScalarLikelihood):
             scaled_bins_right - tf.reshape(F, (-1, 1)) / self.sigma
         )
 
-    def _conditional_mean(self, F):
+    def _conditional_mean(self, F: TensorType) -> tf.Tensor:
         phi = self._make_phi(F)
         Ys = tf.reshape(np.arange(self.num_bins, dtype=default_float()), (-1, 1))
         return tf.reshape(tf.linalg.matmul(phi, Ys), tf.shape(F))
 
-    def _conditional_variance(self, F):
+    def _conditional_variance(self, F: TensorType) -> tf.Tensor:
         phi = self._make_phi(F)
         Ys = tf.reshape(np.arange(self.num_bins, dtype=default_float()), (-1, 1))
         E_y = phi @ Ys

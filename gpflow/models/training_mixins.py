@@ -37,9 +37,8 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.python.data.ops.iterator_ops import OwnedIterator as DatasetOwnedIterator
 
-InputData = Union[tf.Tensor]
-OutputData = Union[tf.Tensor]
-RegressionData = Tuple[InputData, OutputData]
+from ..base import InputData, OutputData, RegressionData
+
 Data = TypeVar("Data", RegressionData, InputData, OutputData)
 
 

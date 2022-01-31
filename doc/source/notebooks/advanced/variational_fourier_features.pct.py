@@ -62,9 +62,10 @@ class FourierFeatures1D(InducingVariables):
         # integer array defining the frequencies, ω_m = 2π (b - a)/m:
         self.ms = np.arange(M)
 
-    def __len__(self):
+    @property
+    def num_inducing(self):
         """ number of inducing variables (defines dimensionality of q(u)) """
-        return 2 * len(self.ms) - 1  # `M` cosine and `M-1` sine components
+        return 2 * tf.shape(self.ms)[0] - 1  # `M` cosine and `M-1` sine components
 
 
 # %% [markdown]

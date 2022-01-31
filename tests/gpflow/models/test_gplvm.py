@@ -58,7 +58,7 @@ def test_bayesian_gplvm_1d():
         kernel,
         inducing_variable=inducing_variable,
     )
-    assert len(m.inducing_variable) == Data.M
+    assert m.inducing_variable.num_inducing == Data.M
 
     elbo_initial = m.elbo()
     opt = gpflow.optimizers.Scipy()

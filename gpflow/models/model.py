@@ -17,14 +17,12 @@ from typing import Optional, Tuple
 
 import tensorflow as tf
 
-from ..base import Module
+from ..base import InputData, MeanAndVariance, Module, RegressionData
 from ..conditionals.util import sample_mvn
 from ..kernels import Kernel, MultioutputKernel
 from ..likelihoods import Likelihood, SwitchedLikelihood
 from ..mean_functions import MeanFunction, Zero
-from ..types import MeanAndVariance
 from ..utilities import to_default_float
-from .training_mixins import InputData, RegressionData
 
 
 class BayesianModel(Module, metaclass=abc.ABCMeta):

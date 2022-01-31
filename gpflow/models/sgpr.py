@@ -21,13 +21,14 @@ import tensorflow as tf
 from gpflow.kernels import Kernel
 
 from .. import likelihoods, posteriors
+from ..base import InputData, MeanAndVariance, RegressionData
 from ..config import default_float, default_jitter
 from ..covariances.dispatch import Kuf, Kuu
 from ..inducing_variables import InducingPoints
 from ..mean_functions import MeanFunction
 from ..utilities import add_noise_cov, to_default_float
-from .model import GPModel, MeanAndVariance
-from .training_mixins import InputData, InternalDataTrainingLossMixin, RegressionData
+from .model import GPModel
+from .training_mixins import InternalDataTrainingLossMixin
 from .util import data_input_to_tensor, inducingpoint_wrapper
 
 
