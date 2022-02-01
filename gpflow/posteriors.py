@@ -355,7 +355,8 @@ class HeteroskedasticGPRPosterior(GPRPosterior):
                  ):
 
         self.likelihood = likelihood
-        super().__init__(kernel, X_data, Y_data, likelihood.constant_variance, mean_function=mean_function, precompute_cache=precompute_cache)
+        data = (X_data, Y_data)
+        super().__init__(kernel, data, likelihood.constant_variance, mean_function=mean_function, precompute_cache=precompute_cache)
 
     def evaluate_linear_noise_variance(self, X: tf.Tensor):
         """ Noise variance contribution. """

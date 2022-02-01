@@ -41,7 +41,6 @@ def plot_distribution(X, Y, mean=None, std=None):
         plt.plot(X, mean, color="black")
     plt.scatter(X, Y, color="gray", alpha=0.8)
     plt.show()
-    plt.close()
 
 
 # plot_distribution(X, Y)

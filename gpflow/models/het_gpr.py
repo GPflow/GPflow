@@ -7,7 +7,7 @@ from ..logdensities import multivariate_normal
 from ..mean_functions import MeanFunction
 from ..models.gpr import GPR_with_posterior
 from ..models.training_mixins import RegressionData, InputData
-from ..types import MeanAndVariance
+from ..base import MeanAndVariance
 from ..utilities import add_linear_noise_cov
 
 
