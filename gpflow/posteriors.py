@@ -39,9 +39,10 @@ from .inducing_variables import (
     SeparateIndependentInducingVariables,
     SharedIndependentInducingVariables,
 )
+from .likelihoods import Likelihood
 from .kernels import Kernel
 from .mean_functions import MeanFunction
-from .utilities import Dispatcher, add_noise_cov
+from .utilities import Dispatcher, add_noise_cov, add_linear_noise_cov
 from .utilities.ops import leading_transpose
 
 
@@ -303,7 +304,7 @@ class GPRPosterior(AbstractPosterior):
 
     def _precompute(self) -> Tuple[tf.Tensor, ...]:
         Kmm = self.kernel(self.X_data)
-        Kmm_plus_s = add_noise_cov(Kmm, self.likelihood_variance)
+        Kmm_plus_s = self.add_noise(Kmm, self.X_data)
 
         Lm = tf.linalg.cholesky(Kmm_plus_s)
         Kmm_plus_s_inv = tf.linalg.cholesky_solve(Lm, tf.eye(self.X_data.shape[0], dtype=Lm.dtype))
@@ -331,11 +332,41 @@ class GPRPosterior(AbstractPosterior):
         Kmm = self.kernel(self.X_data)
         Knn = self.kernel(Xnew, full_cov=full_cov)
         Kmn = self.kernel(self.X_data, Xnew)
-        Kmm_plus_s = add_noise_cov(Kmm, self.likelihood_variance)
+        Kmm_plus_s = self.add_noise(Kmm, self.X_data)
 
         return base_conditional(
             Kmn, Kmm_plus_s, Knn, err, full_cov=full_cov, white=False
         )  # [N, P], [N, P] or [P, N, N]
+
+    def add_noise(self, K: tf.Tensor, X: tf.Tensor):
+        return add_noise_cov(K, self.likelihood_variance)
+
+
+class HeteroskedasticGPRPosterior(GPRPosterior):
+
+    def __init__(self,
+                 kernel,
+                 X_data: tf.Tensor,
+                 Y_data: tf.Tensor,
+                 likelihood: Likelihood,
+                 mean_function: Optional[mean_functions.MeanFunction] = None,
+                 *,
+                 precompute_cache: Optional[PrecomputeCacheType],
+                 ):
+
+        self.likelihood = likelihood
+        data = (X_data, Y_data)
+        super().__init__(kernel, data, likelihood.constant_variance, mean_function=mean_function, precompute_cache=precompute_cache)
+
+    def evaluate_linear_noise_variance(self, X: tf.Tensor):
+        """ Noise variance contribution. """
+
+        return self.likelihood.scale_transform(X)
+
+    def add_noise(self, K: tf.Tensor, X: tf.Tensor):
+
+        noise_variance = self.evaluate_linear_noise_variance(X) + self.likelihood_variance
+        return add_linear_noise_cov(K, noise_variance)
 
 
 class SGPRPosterior(AbstractPosterior):

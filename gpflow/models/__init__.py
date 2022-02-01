@@ -2,6 +2,7 @@ from .cglb import CGLB
 from .gplvm import GPLVM, BayesianGPLVM
 from .gpmc import GPMC
 from .gpr import GPR
+from .het_gpr import het_GPR
 from .model import BayesianModel, GPModel
 from .sgpmc import SGPMC
 from .sgpr import GPRFITC, SGPR
