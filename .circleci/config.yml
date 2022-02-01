@@ -16,25 +16,23 @@ commands:
       - setup_venv
       - run:
           name: Install GPflow
-          command: |
-            source .venv/bin/activate
-            # Ensure consistency between tensorflow and tensorflow-probability
-            pip install --progress-bar=off tensorflow==2.6.* tensorflow-probability==0.14.*
-            pip install --progress-bar=off -e .
-  install_gpflow_tests:
-    steps:
-      - install_gpflow
-      - run:
-          name: Install GPflow tests
-          command: |
-            source .venv/bin/activate
-            pip install --progress-bar=off -r tests_requirements.txt
+          command: "
+            source .venv/bin/activate \n
+            git clone --branch develop https://github.com/GPflow/GPflow.git \n
+            # Everything is installed in one pip command, to allow for better dependency version
+            # resolution. Explicit tensorflow and tensorflow-probability version, to ensure
+            # consistency between them. \n
+            pip install --progress-bar=off
+              -e .
+              -r tests_requirements.txt
+              tensorflow==2.6.* tensorflow-probability==0.14.* \n
+          "
   run_tests:
     parameters:
       pytest_filter:
         type: string
     steps:
-      - install_gpflow_tests
+      - install_gpflow
       - run:
           name: Run tests
           command: |
@@ -65,12 +63,7 @@ jobs:
       - image: cimg/python:3.6
 
     steps:
-      - setup_venv
-      - run:
-          name: Install type checker
-          command: |
-            source .venv/bin/activate
-            pip install --progress-bar=off mypy types-pkg_resources
+      - install_gpflow
       - run:
           name: Run type check
           command: |
@@ -82,12 +75,7 @@ jobs:
       - image: cimg/python:3.6
 
     steps:
-      - setup_venv
-      - run:
-          name: Install black and isort
-          command: |
-            source .venv/bin/activate
-            pip install --progress-bar=off black==20.8b1 isort
+      - install_gpflow
       - run:
           name: Run format check
           command: |

@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import abc
-from typing import Callable, Iterable, Union
+from typing import Any, Callable, Iterable, Tuple, Union
 
 import tensorflow as tf
 
@@ -28,10 +28,17 @@ class GaussianQuadrature:
     """
 
     @abc.abstractmethod
-    def _build_X_W(self, mean: TensorType, var: TensorType):
+    def _build_X_W(self, mean: TensorType, var: TensorType) -> Tuple[tf.Tensor, tf.Tensor]:
         raise NotImplementedError
 
-    def __call__(self, fun, mean, var, *args, **kwargs):
+    def __call__(
+        self,
+        fun: Union[Callable[..., tf.Tensor], Iterable[Callable[..., tf.Tensor]]],
+        mean: TensorType,
+        var: TensorType,
+        *args: Any,
+        **kwargs: Any,
+    ) -> tf.Tensor:
         r"""
         Compute the Gaussian Expectation of a function f:
 
@@ -66,7 +73,14 @@ class GaussianQuadrature:
             return [tf.reduce_sum(f(X, *args, **kwargs) * W, axis=0) for f in fun]
         return tf.reduce_sum(fun(X, *args, **kwargs) * W, axis=0)
 
-    def logspace(self, fun: Union[Callable, Iterable[Callable]], mean, var, *args, **kwargs):
+    def logspace(
+        self,
+        fun: Union[Callable[..., tf.Tensor], Iterable[Callable[..., tf.Tensor]]],
+        mean: TensorType,
+        var: TensorType,
+        *args: Any,
+        **kwargs: Any,
+    ) -> tf.Tensor:
         r"""
         Compute the Gaussian log-Expectation of a the exponential of a function f:
 

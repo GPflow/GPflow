@@ -33,14 +33,24 @@ This release contains contributions from:
 <INSERT>, <NAME>, <HERE>, <USING>, <GITHUB>, <HANDLE>
 
 
-# Release 2.3.1 (next upcoming release in progress)
+# Release 2.3.2 (next upcoming release in progress)
 
 <INSERT SMALL BLURB ABOUT RELEASE FOCUS AREA AND POTENTIAL TOOLCHAIN CHANGES>
 
 ## Breaking Changes
 
-* <DOCUMENT BREAKING CHANGES HERE>
-* <THIS SECTION SHOULD CONTAIN API AND BEHAVIORAL BREAKING CHANGES>
+* Slight change to the API of custom posterior objects.
+  `gpflow.posteriors.AbstractPosterior._precompute` no longer must return an `alpha` and an `Qinv`
+  - instead it returns any arbitrary tuple of tensors.
+  Correspondingly `gpflow.posteriors.AbstractPosterior._conditional_with_precompute` should no
+  longer try to access `self.alpha` and `self.Qinv`, but instead is passed the tuple of tensors
+  returned by `_precompute`, as a parameter. (#1763)
+* Slight change to the API of inducing points.
+  You should no longer override `gpflow.inducing_variables.InducingVariables.__len__`. Override
+  `gpflow.inducing_variables.InducingVariables.num_inducing` instead. `num_inducing` should return a
+  `tf.Tensor` which is consistent with previous behaviour, although the type previously was
+  annotated as `int`. `__len__` has been removed. (#1766)
+
 
 ## Known Caveats
 
@@ -50,27 +60,57 @@ This release contains contributions from:
 
 ## Major Features and Improvements
 
-* <INSERT MAJOR FEATURE HERE, USING MARKDOWN SYNTAX>
-* <IF RELEASE CONTAINS MULTIPLE FEATURES FROM SAME AREA, GROUP THEM TOGETHER>
+* Added `gpflow.experimental.check_shapes` for checking tensor shapes. (#1760)
 
 ## Bug Fixes and Other Changes
 
-* Fixed broken CircleCi build (#1738).
-* Update CircleCi build to use next-gen Docker images (#1740).
-* Fixed broken triggering of docs generation (#1744).
-* Make all slow tests depend on fast tests (#1743).
-* Fixed broken link in `README.md` (#1736).
-* Make `make dev-install` also install the test requirements (#1737).
-* Fix broken build of `cglb.ipynb` (#1742).
-* Fix the calculation in the GPR posterior object (#1734).
-* Make `gpflow.optimizers.Scipy` able to handle unused / unconnected variables. (#1745)
+* <SIMILAR TO ABOVE SECTION, BUT FOR OTHER IMPORTANT CHANGES / BUG FIXES>
+* <IF A CHANGE CLOSES A GITHUB ISSUE, IT SHOULD BE DOCUMENTED HERE>
+* <NOTES SHOULD BE GROUPED PER AREA>
+
+## Thanks to our Contributors
+
+This release contains contributions from:
+
+jesnie
+
+
+# Release 2.3.1
+
+This is a bug-fix release, primarily for the GPR posterior object.
+
+## Bug Fixes and Other Changes
+
+* GPR posterior
+  * Fix the calculation in the GPR posterior object (#1734).
+  * Fixes leading dimension issues with `GPRPosterior._conditional_with_precompute()` (#1747).
+
+* Make `gpflow.optimizers.Scipy` able to handle unused / unconnected variables. (#1745).
+
+* Build
+  * Fixed broken CircleCi build (#1738).
+  * Update CircleCi build to use next-gen Docker images (#1740).
+  * Fixed broken triggering of docs generation (#1744).
+  * Make all slow tests depend on fast tests (#1743).
+  * Make `make dev-install` also install the test requirements (#1737).
+
+* Documentation
+  * Fixed broken link in `README.md` (#1736).
+  * Fix broken build of `cglb.ipynb` (#1742).
+  * Add explanation of how to run notebooks locally (#1729).
+  * Fix formatting in notebook on Heteroskedastic Likelihood (#1727).
+  * Fix broken link in introduction (#1718).
+
+* Test suite
+  * Amends `test_gpr_posterior.py` so it will cover leading dimension uses.
+
 
 
 ## Thanks to our Contributors
 
 This release contains contributions from:
 
-jesnie, johnamcleod
+st--, jesnie, johnamcleod, Andrew878
 
 
 # Release 2.3.0
@@ -172,16 +212,14 @@ stefanosele, johnamcleod, st--
 * Fixes a bug in the un-whitened code path for the fully correlated conditional function (#1662).
 * Fixes a bug in `independent_interdomain_conditional` (#1663).
 * Fixes an issue with the gpflow.config API documentation (#1664).
-* Fixes leading dimension issues with `GPRPosterior._conditional_with_precompute()`
 
 * Test suite
   * Fixes the test suite for TensorFlow 2.4 / TFP 0.12 (#1625).
   * Fixes mypy call (#1637).
   * Fixes a bug in test_method_equivalence.py (#1649).
-  * Amends `test_gpr_posterior.py` so it will cover leading dimension uses.
 
 ## Thanks to our Contributors
 
 This release contains contributions from:
 
-johnamcleod, st--, vatsalaggarwal, sam-willis, vdutor, Andrew878
+johnamcleod, st--, vatsalaggarwal, sam-willis, vdutor

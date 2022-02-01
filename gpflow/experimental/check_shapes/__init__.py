@@ -1,4 +1,4 @@
-# Copyright 2016-2020 The GPflow Contributors. All Rights Reserved.
+# Copyright 2022 The GPflow Contributors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,29 +14,15 @@
 
 # flake8: noqa
 
-from . import (
-    conditionals,
-    config,
-    covariances,
-    expectations,
-    experimental,
-    inducing_variables,
-    kernels,
-    kullback_leiblers,
-    likelihoods,
-    logdensities,
-    mean_functions,
-    models,
-    monitor,
-    optimizers,
-    posteriors,
-    probability_distributions,
-    quadrature,
-    utilities,
+from .check_shapes import (
+    ArgumentReferenceError,
+    ArgumentSpec,
+    DimensionSpec,
+    Shaped,
+    ShapeMismatchError,
+    ShapeSpec,
+    check_shapes,
+    inherit_check_shapes,
 )
-from .base import Module, Parameter
-from .config import default_float, default_int, default_jitter
-from .utilities import set_trainable
-from .versions import __version__
 
 __all__ = [export for export in dir()]

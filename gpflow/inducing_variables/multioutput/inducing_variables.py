@@ -13,6 +13,8 @@
 # limitations under the License.
 from typing import Sequence, Tuple
 
+import tensorflow as tf
+
 from ...base import TensorType
 from ..inducing_variables import InducingVariables
 
@@ -66,7 +68,8 @@ class FallbackSharedIndependentInducingVariables(MultioutputInducingVariables):
         super().__init__()
         self.inducing_variable = inducing_variable
 
-    def __len__(self) -> int:
+    @property
+    def num_inducing(self) -> tf.Tensor:
         return self.inducing_variable.num_inducing
 
     @property
@@ -107,7 +110,8 @@ class FallbackSeparateIndependentInducingVariables(MultioutputInducingVariables)
         super().__init__()
         self.inducing_variable_list = inducing_variable_list
 
-    def __len__(self) -> int:
+    @property
+    def num_inducing(self) -> tf.Tensor:
         # TODO(st--) we should check that they all have the same length...
         return self.inducing_variable_list[0].num_inducing
 

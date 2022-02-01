@@ -26,7 +26,7 @@ from gpflow.inducing_variables import InducingPatches, InducingPoints, Multiscal
 def test_inducing_points_inducing_variable_len(N, D):
     Z = np.random.randn(N, D)
     inducing_variable = InducingPoints(Z)
-    assert_equal(len(inducing_variable), N)
+    assert inducing_variable.num_inducing == N
 
 
 _kernel_setups = [

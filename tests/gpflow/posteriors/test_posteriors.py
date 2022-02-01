@@ -625,8 +625,9 @@ def test_posterior_update_cache_with_variables_no_precompute(
     )
     posterior.update_cache(PrecomputeCacheType.VARIABLE)
 
-    assert isinstance(posterior.alpha, tf.Variable)
-    assert isinstance(posterior.Qinv, tf.Variable)
+    alpha, Qinv = posterior.cache
+    assert isinstance(alpha, tf.Variable)
+    assert isinstance(Qinv, tf.Variable)
 
 
 @pytest.mark.parametrize(
@@ -649,8 +650,8 @@ def test_gpr_posterior_update_cache_with_variables_no_precompute(
     posterior.update_cache(PrecomputeCacheType.VARIABLE)
     register_posterior_test(posterior, GPRPosterior)
 
-    assert isinstance(posterior.alpha, tf.Variable)
-    assert isinstance(posterior.Qinv, tf.Variable)
+    (Kmm_plus_s_inv,) = posterior.cache
+    assert isinstance(Kmm_plus_s_inv, tf.Variable)
 
 
 @pytest.mark.parametrize(
@@ -676,8 +677,9 @@ def test_sgpr_posterior_update_cache_with_variables_no_precompute(
     posterior.update_cache(PrecomputeCacheType.VARIABLE)
     register_posterior_test(posterior, SGPRPosterior)
 
-    assert isinstance(posterior.alpha, tf.Variable)
-    assert isinstance(posterior.Qinv, tf.Variable)
+    alpha, Qinv = posterior.cache
+    assert isinstance(alpha, tf.Variable)
+    assert isinstance(Qinv, tf.Variable)
 
 
 def test_posterior_update_cache_with_variables_update_value(q_sqrt_factory, whiten):
@@ -701,8 +703,7 @@ def test_posterior_update_cache_with_variables_update_value(q_sqrt_factory, whit
         whiten=whiten,
         precompute_cache=PrecomputeCacheType.TENSOR,
     )
-    initial_alpha = posterior.alpha
-    initial_Qinv = posterior.Qinv
+    initial_alpha, initial_Qinv = posterior.cache
 
     posterior.update_cache(PrecomputeCacheType.VARIABLE)
 
@@ -713,9 +714,10 @@ def test_posterior_update_cache_with_variables_update_value(q_sqrt_factory, whit
     posterior.update_cache(PrecomputeCacheType.VARIABLE)
 
     # assert that the values have changed
-    assert not np.allclose(initial_alpha, tf.convert_to_tensor(posterior.alpha))
+    alpha, Qinv = posterior.cache
+    assert not np.allclose(initial_alpha, tf.convert_to_tensor(alpha))
     if initial_q_sqrt is not None:
-        assert not np.allclose(initial_Qinv, tf.convert_to_tensor(posterior.Qinv))
+        assert not np.allclose(initial_Qinv, tf.convert_to_tensor(Qinv))
 
 
 def test_posterior_update_cache_fails_without_argument(q_sqrt_factory, whiten):
@@ -739,28 +741,24 @@ def test_posterior_update_cache_fails_without_argument(q_sqrt_factory, whiten):
         whiten=whiten,
         precompute_cache=None,
     )
-    assert posterior.alpha is None
-    assert posterior.Qinv is None
+    assert posterior.cache is None
 
     with pytest.raises(ValueError):
         posterior.update_cache()
 
     posterior.update_cache(PrecomputeCacheType.TENSOR)
-    assert isinstance(posterior.alpha, tf.Tensor)
-    assert isinstance(posterior.Qinv, tf.Tensor)
+    assert all(isinstance(c, tf.Tensor) for c in posterior.cache)
 
     posterior.update_cache(PrecomputeCacheType.NOCACHE)
     assert posterior._precompute_cache == PrecomputeCacheType.NOCACHE
-    assert posterior.alpha is None
-    assert posterior.Qinv is None
+    assert posterior.cache is None
 
     posterior.update_cache(PrecomputeCacheType.TENSOR)  # set posterior._precompute_cache
     assert posterior._precompute_cache == PrecomputeCacheType.TENSOR
-    posterior.alpha = posterior.Qinv = None  # clear again
 
+    posterior.cache = None  # clear again
     posterior.update_cache()  # does not raise an exception
-    assert isinstance(posterior.alpha, tf.Tensor)
-    assert isinstance(posterior.Qinv, tf.Tensor)
+    assert all(isinstance(c, tf.Tensor) for c in posterior.cache)
 
 
 def test_posterior_create_with_variables_update_cache_works(q_sqrt_factory, whiten):
@@ -784,13 +782,10 @@ def test_posterior_create_with_variables_update_cache_works(q_sqrt_factory, whit
         whiten=whiten,
         precompute_cache=PrecomputeCacheType.VARIABLE,
     )
-    assert isinstance(posterior.alpha, tf.Variable)
-    assert isinstance(posterior.Qinv, tf.Variable)
+    assert all(isinstance(c, tf.Variable) for c in posterior.cache)
 
-    alpha = posterior.alpha
-    Qinv = posterior.Qinv
+    cache = posterior.cache
 
     posterior.update_cache()
 
-    assert posterior.alpha is alpha
-    assert posterior.Qinv is Qinv
+    assert posterior.cache is cache

@@ -19,7 +19,7 @@ import tensorflow as tf
 
 import gpflow
 
-from ..base import Parameter
+from ..base import InputData, MeanAndVariance, Parameter, RegressionData
 from ..conditionals import conditional
 from ..config import default_float, default_jitter
 from ..kernels import Kernel
@@ -27,7 +27,7 @@ from ..kullback_leiblers import gauss_kl
 from ..likelihoods import Likelihood
 from ..mean_functions import MeanFunction, Zero
 from ..utilities import triangular
-from .model import GPModel, InputData, MeanAndVariance, RegressionData
+from .model import GPModel
 from .training_mixins import InternalDataTrainingLossMixin
 from .util import data_input_to_tensor, inducingpoint_wrapper
 
