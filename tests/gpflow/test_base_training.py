@@ -18,7 +18,7 @@ import pytest
 import tensorflow as tf
 
 import gpflow
-from gpflow.utilities import leaf_components, multiple_assign, read_values, set_trainable
+from gpflow.utilities import leaf_components, multiple_assign, read_values
 
 rng = np.random.RandomState(0)
 

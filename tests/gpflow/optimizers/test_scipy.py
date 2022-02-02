@@ -17,11 +17,9 @@ import warnings
 import numpy as np
 import pytest
 import tensorflow as tf
-from numpy.testing import assert_allclose
 
 import gpflow
-from gpflow.config import default_float, default_jitter
-from gpflow.mean_functions import Constant
+from gpflow.config import default_float
 
 rng = np.random.RandomState(0)
 

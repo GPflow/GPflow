@@ -13,11 +13,8 @@
 # limitations under the License.
 
 import numpy as np
-import pytest
 import tensorflow as tf
-import tensorflow_probability as tfp
 
-import gpflow
 from gpflow.likelihoods import HeteroskedasticTFPConditional
 
 tf.random.set_seed(99012)

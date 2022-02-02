@@ -16,7 +16,7 @@ Unit tests for tool for checking the shapes of function using tf Tensors.
 """
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Callable, Mapping, Optional, Tuple
+from typing import Callable, Optional, Tuple
 from unittest.mock import MagicMock
 
 import numpy as np

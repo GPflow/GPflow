@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import abc
-from typing import Optional, Tuple
+from typing import Optional
 
 import tensorflow as tf
 

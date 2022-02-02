@@ -12,13 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Tuple
-
 import numpy as np
 import tensorflow as tf
 
 from .. import kullback_leiblers, posteriors
-from ..base import InputData, MeanAndVariance, Module, Parameter, RegressionData
+from ..base import InputData, MeanAndVariance, Parameter, RegressionData
 from ..conditionals import conditional
 from ..config import default_float
 from ..utilities import positive, triangular

@@ -14,7 +14,6 @@
 
 import numpy as np
 import pytest
-import tensorflow as tf
 from numpy.testing import assert_allclose
 
 import gpflow

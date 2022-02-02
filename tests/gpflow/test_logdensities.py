@@ -15,12 +15,11 @@
 import numpy as np
 import pytest
 import scipy.stats
-import tensorflow as tf
 from numpy.random import randn
 from numpy.testing import assert_allclose
 from scipy.stats import multivariate_normal as mvn
 
-from gpflow import default_float, logdensities
+from gpflow import logdensities
 from gpflow.utilities import to_default_float
 
 rng = np.random.RandomState(1)

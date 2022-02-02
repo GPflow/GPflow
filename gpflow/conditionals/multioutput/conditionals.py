@@ -20,7 +20,6 @@ from ...inducing_variables import (
     SharedIndependentInducingVariables,
 )
 from ...kernels import (
-    Combination,
     IndependentLatent,
     LinearCoregionalization,
     MultioutputKernel,

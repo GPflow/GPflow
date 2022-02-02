@@ -16,7 +16,6 @@ import numpy as np
 import tensorflow as tf
 
 from .base import TensorType
-from .config import default_float
 from .utilities import to_default_float
 
 

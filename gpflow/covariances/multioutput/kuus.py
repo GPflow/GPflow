@@ -20,7 +20,6 @@ from ...inducing_variables import (
     FallbackSeparateIndependentInducingVariables,
     FallbackSharedIndependentInducingVariables,
     InducingPoints,
-    SharedIndependentInducingVariables,
 )
 from ...kernels import (
     IndependentLatent,

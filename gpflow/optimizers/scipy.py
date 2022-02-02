@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import warnings
-from typing import Any, Callable, Iterable, List, Optional, Sequence, Tuple, TypeVar, Union
+from typing import Any, Callable, Iterable, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 import scipy.optimize

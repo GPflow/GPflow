@@ -20,7 +20,6 @@ from numpy.testing import assert_allclose
 import gpflow
 import gpflow.ci_utils
 from gpflow.config import default_float, default_int
-from gpflow.quadrature import ndiagquad
 
 from gpflow.likelihoods import (  # isort:skip
     # classes we cannot test:
