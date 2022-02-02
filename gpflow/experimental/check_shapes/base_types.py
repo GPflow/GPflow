@@ -11,15 +11,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-# flake8: noqa
 """
-Library for annotating and checking the shapes of tensors.
+Definitions of commonly used types.
 """
+from typing import Any, Callable, TypeVar
 
-from .check_shapes import check_shapes
-from .errors import ArgumentReferenceError, ShapeMismatchError
-from .inheritance import inherit_check_shapes
-from .specs import ArgumentSpec, DimensionSpec, ShapeSpec
-
-__all__ = [export for export in dir()]
+C = TypeVar("C", bound=Callable[..., Any])

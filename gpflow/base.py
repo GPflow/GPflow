@@ -31,7 +31,7 @@ Transform = Union[tfp.bijectors.Bijector]
 Prior = Union[tfp.distributions.Distribution]
 
 
-TensorType = Union[tf.Tensor, tf.Variable, "Parameter"]
+TensorType = Union[np.ndarray, tf.Tensor, tf.Variable, "Parameter"]
 """
 Type alias for tensor-like types that are supported by most TensorFlow and GPflow operations.
 
