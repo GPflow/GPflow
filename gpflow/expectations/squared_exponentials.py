@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import Type, Union
+
 import tensorflow as tf
 
 from .. import kernels
@@ -22,11 +24,13 @@ from ..utilities.ops import square_distance
 from . import dispatch
 from .expectations import expectation
 
-NoneType = type(None)
+NoneType: Type[None] = type(None)
 
 
 @dispatch.expectation.register(Gaussian, kernels.SquaredExponential, NoneType, NoneType, NoneType)
-def _E(p, kernel, _, __, ___, nghp=None):
+def _expectation_gaussian_sqe(
+    p: Gaussian, kernel: kernels.SquaredExponential, _: None, __: None, ___: None, nghp: None = None
+) -> tf.Tensor:
     """
     Compute the expectation:
     <diag(K_{X, X})>_p(X)
@@ -40,7 +44,14 @@ def _E(p, kernel, _, __, ___, nghp=None):
 @dispatch.expectation.register(
     Gaussian, kernels.SquaredExponential, InducingPoints, NoneType, NoneType
 )
-def _E(p, kernel, inducing_variable, _, __, nghp=None):
+def _expectation_gaussian_sqe_inducingpoints(
+    p: Gaussian,
+    kernel: kernels.SquaredExponential,
+    inducing_variable: InducingPoints,
+    _: None,
+    __: None,
+    nghp: None = None,
+) -> tf.Tensor:
     """
     Compute the expectation:
     <K_{X, Z}>_p(X)
@@ -78,7 +89,14 @@ def _E(p, kernel, inducing_variable, _, __, nghp=None):
 @dispatch.expectation.register(
     Gaussian, mfn.Identity, NoneType, kernels.SquaredExponential, InducingPoints
 )
-def _E(p, mean, _, kernel, inducing_variable, nghp=None):
+def _expectation_gaussian__sqe_inducingpoints(
+    p: Gaussian,
+    mean: mfn.Identity,
+    _: None,
+    kernel: kernels.SquaredExponential,
+    inducing_variable: InducingPoints,
+    nghp: None = None,
+) -> tf.Tensor:
     """
     Compute the expectation:
     expectation[n] = <x_n K_{x_n, Z}>_p(x_n)
@@ -120,7 +138,14 @@ def _E(p, mean, _, kernel, inducing_variable, nghp=None):
 @dispatch.expectation.register(
     MarkovGaussian, mfn.Identity, NoneType, kernels.SquaredExponential, InducingPoints
 )
-def _E(p, mean, _, kernel, inducing_variable, nghp=None):
+def _expectation_markov__sqe_inducingpoints(
+    p: MarkovGaussian,
+    mean: mfn.Identity,
+    _: None,
+    kernel: kernels.SquaredExponential,
+    inducing_variable: InducingPoints,
+    nghp: None = None,
+) -> tf.Tensor:
     """
     Compute the expectation:
     expectation[n] = <x_{n+1} K_{x_n, Z}>_p(x_{n:n+1})
@@ -166,7 +191,14 @@ def _E(p, mean, _, kernel, inducing_variable, nghp=None):
     kernels.SquaredExponential,
     InducingPoints,
 )
-def _E(p, kern1, feat1, kern2, feat2, nghp=None):
+def _expectation_gaussian_sqe_inducingpoints__sqe_inducingpoints(
+    p: Union[Gaussian, DiagonalGaussian],
+    kern1: kernels.SquaredExponential,
+    feat1: InducingPoints,
+    kern2: kernels.SquaredExponential,
+    feat2: InducingPoints,
+    nghp: None = None,
+) -> tf.Tensor:
     """
     Compute the expectation:
     expectation[n] = <Ka_{Z1, x_n} Kb_{x_n, Z2}>_p(x_n)
