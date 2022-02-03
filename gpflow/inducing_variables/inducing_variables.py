@@ -19,7 +19,6 @@ import tensorflow as tf
 import tensorflow_probability as tfp
 
 from ..base import Module, Parameter, TensorData, TensorType
-from ..config import default_float
 from ..utilities import positive
 
 

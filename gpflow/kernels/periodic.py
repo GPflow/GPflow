@@ -21,7 +21,7 @@ from ..base import Parameter
 from ..utilities import positive
 from ..utilities.ops import difference_matrix
 from .base import Kernel
-from .stationaries import IsotropicStationary, Stationary
+from .stationaries import IsotropicStationary
 
 
 class Periodic(Kernel):

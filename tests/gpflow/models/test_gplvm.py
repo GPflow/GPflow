@@ -12,11 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Optional
-
 import numpy as np
 import pytest
-import tensorflow as tf
 
 import gpflow
 from gpflow.utilities.ops import pca_reduce

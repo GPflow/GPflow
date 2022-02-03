@@ -14,7 +14,7 @@
 
 import enum
 from abc import ABC, abstractmethod
-from typing import Optional, Tuple, Type, Union, cast
+from typing import Optional, Tuple, Type, Union
 
 import tensorflow as tf
 
@@ -22,7 +22,6 @@ from . import covariances, kernels, mean_functions
 from .base import MeanAndVariance, Module, Parameter, RegressionData, TensorType
 from .conditionals.util import (
     base_conditional,
-    base_conditional_with_lm,
     expand_independent_outputs,
     fully_correlated_conditional,
     independent_interdomain_conditional,

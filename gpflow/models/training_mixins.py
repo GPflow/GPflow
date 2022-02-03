@@ -30,10 +30,8 @@ training data (InternalDataTrainingLossMixin), or requires it to be passed in
 to the objective function (ExternalDataTrainingLossMixin).
 """
 
-import abc
-from typing import Callable, Iterator, Optional, Tuple, TypeVar, Union
+from typing import Callable, TypeVar, Union
 
-import numpy as np
 import tensorflow as tf
 from tensorflow.python.data.ops.iterator_ops import OwnedIterator as DatasetOwnedIterator
 

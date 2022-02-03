@@ -12,8 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from collections import namedtuple
-
 import numpy as np
 import pytest
 import tensorflow as tf
@@ -23,7 +21,6 @@ import gpflow
 from gpflow.conditionals import conditional, uncertain_conditional
 from gpflow.config import default_float
 from gpflow.mean_functions import Constant, Linear, Zero
-from gpflow.optimizers import Scipy
 from gpflow.quadrature import mvnquad
 from gpflow.utilities import training_loop
 

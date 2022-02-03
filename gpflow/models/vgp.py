@@ -25,11 +25,11 @@ from ..config import default_float, default_jitter
 from ..kernels import Kernel
 from ..kullback_leiblers import gauss_kl
 from ..likelihoods import Likelihood
-from ..mean_functions import MeanFunction, Zero
+from ..mean_functions import MeanFunction
 from ..utilities import triangular
 from .model import GPModel
 from .training_mixins import InternalDataTrainingLossMixin
-from .util import data_input_to_tensor, inducingpoint_wrapper
+from .util import data_input_to_tensor
 
 
 class VGP(GPModel, InternalDataTrainingLossMixin):

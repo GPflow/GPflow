@@ -54,9 +54,8 @@ integration is done by sampling (can be more suitable when F is higher dimension
 
 import abc
 import warnings
-from typing import Any, Callable, Iterable, Optional, Sequence, Union, cast
+from typing import Any, Callable, Iterable, Optional, Sequence, Union
 
-import numpy as np
 import tensorflow as tf
 
 from ..base import MeanAndVariance, Module, TensorType
