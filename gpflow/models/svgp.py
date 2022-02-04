@@ -154,14 +154,12 @@ class SVGP_deprecated(GPModel, ExternalDataTrainingLossMixin):
         return tf.reduce_sum(var_exp) * scale - kl
 
     def predict_f(self, Xnew: InputData, full_cov=False, full_output_cov=False) -> MeanAndVariance:
-        q_mu = self.q_mu
-        q_sqrt = self.q_sqrt
         mu, var = conditional(
             Xnew,
             self.inducing_variable,
             self.kernel,
-            q_mu,
-            q_sqrt=q_sqrt,
+            self.q_mu,
+            q_sqrt=self.q_sqrt,
             full_cov=full_cov,
             white=self.whiten,
             full_output_cov=full_output_cov,
