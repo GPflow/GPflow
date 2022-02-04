@@ -11,15 +11,19 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-# flake8: noqa
 """
-Library for annotating and checking the shapes of tensors.
+Utilities for testing the `check_shapes` library.
 """
+from typing import Optional
+from unittest.mock import MagicMock
 
-from .check_shapes import check_shapes
-from .errors import ArgumentReferenceError, ShapeMismatchError
-from .inheritance import inherit_check_shapes
-from .specs import ArgumentSpec, DimensionSpec, ShapeSpec
+from gpflow.base import TensorType
 
-__all__ = [export for export in dir()]
+
+def t(*shape: Optional[int]) -> TensorType:
+    """
+    Creates a mock tensor of the given shape.
+    """
+    mock_tensor = MagicMock()
+    mock_tensor.shape = shape
+    return mock_tensor
