@@ -12,14 +12,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import Any, Sequence, Type
+
 import numpy as np
 import pytest
 from numpy.testing import assert_allclose
 
 import gpflow
+from gpflow.base import TensorType
 from gpflow.config import default_int
 from gpflow.inducing_variables import InducingPoints
-from gpflow.mean_functions import Additive, Constant, Linear, Product, SwitchedMeanFunction, Zero
+from gpflow.mean_functions import (
+    Additive,
+    Constant,
+    Linear,
+    MeanFunction,
+    Product,
+    SwitchedMeanFunction,
+    Zero,
+)
 
 rng = np.random.RandomState(99021)
 
@@ -42,7 +53,9 @@ _mean_functions = [
 @pytest.mark.parametrize("mean_function_1", _mean_functions)
 @pytest.mark.parametrize("mean_function_2", _mean_functions)
 @pytest.mark.parametrize("operation", ["+", "*"])
-def test_mean_functions_output_shape(mean_function_1, mean_function_2, operation):
+def test_mean_functions_output_shape(
+    mean_function_1: MeanFunction, mean_function_2: MeanFunction, operation: str
+) -> None:
     """
     Test the output shape for basic and compositional mean functions, also
     check that the combination of mean functions returns the correct class
@@ -67,7 +80,9 @@ def test_mean_functions_output_shape(mean_function_1, mean_function_2, operation
 @pytest.mark.parametrize("mean_function_1", _mean_functions)
 @pytest.mark.parametrize("mean_function_2", _mean_functions)
 @pytest.mark.parametrize("operation", ["+", "*"])
-def test_mean_functions_composite_type(mean_function_1, mean_function_2, operation):
+def test_mean_functions_composite_type(
+    mean_function_1: MeanFunction, mean_function_2: MeanFunction, operation: str
+) -> None:
     if operation == "+":
         mean_composed = mean_function_1 + mean_function_2
         assert isinstance(mean_composed, Additive)
@@ -94,14 +109,16 @@ _constant_functions = [Constant(c=rng.randn(Datum.output_dim, 1).reshape(-1)) fo
 _constant_functions.append(Constant(c=-1.0 * _constant_functions[0].c))
 
 
-def _create_GPR_model_with_bias(X, Y, mean_function):
+def _create_GPR_model_with_bias(
+    X: TensorType, Y: TensorType, mean_function: MeanFunction
+) -> gpflow.models.GPR:
     return gpflow.models.GPR(
         (X, Y), mean_function=mean_function, kernel=gpflow.kernels.Bias(Datum.input_dim)
     )
 
 
 @pytest.mark.parametrize("mean_functions", [_linear_functions, _constant_functions])
-def test_mean_functions_distributive_property(mean_functions):
+def test_mean_functions_distributive_property(mean_functions: Sequence[MeanFunction]) -> None:
     """
     Tests that distributive property of addition and multiplication holds for mean functions
     (both Constant and Linear): A * (B + C) = A * B + A * C
@@ -123,7 +140,7 @@ def test_mean_functions_distributive_property(mean_functions):
 
 
 @pytest.mark.parametrize("mean_functions", [_linear_functions, _constant_functions])
-def test_mean_functions_A_minus_A_equals_zero(mean_functions):
+def test_mean_functions_A_minus_A_equals_zero(mean_functions: Sequence[MeanFunction]) -> None:
     """
     Tests that the addition the inverse of a mean function to itself is equivalent to having a
     Zero mean function: A + (-A) = 0
@@ -145,7 +162,7 @@ def test_mean_functions_A_minus_A_equals_zero(mean_functions):
 
 
 @pytest.mark.parametrize("mean_functions", [_linear_functions])
-def test_linear_mean_functions_associative_property(mean_functions):
+def test_linear_mean_functions_associative_property(mean_functions: Sequence[MeanFunction]) -> None:
     """
     Tests that associative property of addition holds for linear mean functions:
     A + (B + (-A)) = B = (A + B) + (-A)
@@ -172,7 +189,7 @@ def test_linear_mean_functions_associative_property(mean_functions):
 
 
 @pytest.mark.parametrize("N, D", [[10, 3]])
-def test_switched_mean_function(N, D):
+def test_switched_mean_function(N: int, D: int) -> None:
     """
     Test for the SwitchedMeanFunction.
     """
@@ -187,7 +204,7 @@ def test_switched_mean_function(N, D):
     assert_allclose(result, result_ref)
 
 
-def test_bug_277_regression():
+def test_bug_277_regression() -> None:
     """
     See github issue #277. This is a regression test.
     """
@@ -209,7 +226,7 @@ _model_classes = [
 
 
 @pytest.mark.parametrize("model_class", _model_classes)
-def test_models_with_mean_functions_changes(model_class):
+def test_models_with_mean_functions_changes(model_class: Type[Any]) -> None:
     """
     Simply check that all models have a higher prediction with a constant mean
     function than with a zero mean function.

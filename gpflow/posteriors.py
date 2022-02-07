@@ -20,7 +20,6 @@ import tensorflow as tf
 
 from . import covariances, kernels, mean_functions
 from .base import MeanAndVariance, Module, Parameter, RegressionData, TensorType
-from .conditionals.dispatch import conditional
 from .conditionals.util import (
     base_conditional,
     base_conditional_with_lm,

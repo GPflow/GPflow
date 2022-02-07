@@ -1,3 +1,5 @@
+from typing import Any, Tuple, Type
+
 import numpy as np
 import pytest
 import tensorflow as tf
@@ -19,7 +21,7 @@ class Datum:
     lengthscale = 3.3
 
 
-def test_gpr_objective_equivalence():
+def test_gpr_objective_equivalence() -> None:
     """
     In Maximum Likelihood Estimation (MLE), i.e. when there are no priors on
     the parameters, the objective should not depend on any transforms on the
@@ -42,7 +44,7 @@ def test_gpr_objective_equivalence():
     ), "MLE objective should not depend on Parameter transform"
 
 
-def test_log_prior_with_no_prior():
+def test_log_prior_with_no_prior() -> None:
     """
     A parameter without any prior should have zero log-prior,
     even if it has a transform to constrain it.
@@ -51,7 +53,7 @@ def test_log_prior_with_no_prior():
     assert param.log_prior_density().numpy() == 0.0
 
 
-def test_log_prior_for_uniform_prior():
+def test_log_prior_for_uniform_prior() -> None:
     """
     If we assign a Uniform prior to a parameter, we should not expect the value of the prior density
     to change with the parameter value, even if it has a transform associated with it.
@@ -66,7 +68,7 @@ def test_log_prior_for_uniform_prior():
     assert np.isclose(low_value, high_value)
 
 
-def test_log_prior_on_unconstrained():
+def test_log_prior_on_unconstrained() -> None:
     """
     A parameter with an Exp transform, and a uniform prior on its unconstrained, should have a
     prior in the constrained space that scales as 1/value.
@@ -92,7 +94,7 @@ class DummyModel(gpflow.models.BayesianModel):
     value = 3.3
     log_scale = 0.4
 
-    def __init__(self, with_transform):
+    def __init__(self, with_transform: bool) -> None:
         super().__init__()
 
         prior = tfp.distributions.Normal(to_default_float(1.0), to_default_float(1.0))
@@ -107,11 +109,13 @@ class DummyModel(gpflow.models.BayesianModel):
 
         self.theta = gpflow.Parameter(self.value, prior=prior, transform=transform)
 
-    def maximum_log_likelihood_objective(self):
+    def maximum_log_likelihood_objective(self, *args: Any, **kwargs: Any) -> tf.Tensor:
+        assert not args
+        assert not kwargs
         return (self.theta + 5) ** 2
 
 
-def test_map_invariance_to_transform():
+def test_map_invariance_to_transform() -> None:
     m1 = DummyModel(with_transform=True)
     m2 = DummyModel(with_transform=False)
     assert np.allclose(
@@ -119,7 +123,7 @@ def test_map_invariance_to_transform():
     ), "log posterior density should not be affected by a transform"
 
 
-def get_gpmc_model_params():
+def get_gpmc_model_params() -> Tuple[Any, ...]:
     kernel = gpflow.kernels.Matern32()
     likelihood = gpflow.likelihoods.Gaussian()
     data = [np.random.randn(5, 1), np.random.randn(5, 1)]
@@ -133,7 +137,7 @@ def get_gpmc_model_params():
         # (gpflow.models.SGPMC, get_SGPMC_model_params()) # Fails due to inducing_variable=None bug
     ],
 )
-def test_v_prior_dtypes(model_class, args):
+def test_v_prior_dtypes(model_class: Type[Any], args: Tuple[Any, ...]) -> None:
     with gpflow.config.as_context():
         set_default_float(np.float32)
         m = model_class(*args)

@@ -21,11 +21,11 @@ import tensorflow as tf
 import tensorflow_probability as tfp
 
 import gpflow
-from gpflow.base import PriorOn
+from gpflow.base import PriorOn, TensorData
 from gpflow.utilities import positive
 
 
-def test_parameter_assign_validation():
+def test_parameter_assign_validation() -> None:
     with pytest.raises(tf.errors.InvalidArgumentError):
         param = gpflow.Parameter(0.0, transform=positive())
 
@@ -35,7 +35,7 @@ def test_parameter_assign_validation():
         param.assign(0.0)
 
 
-def test_cast_to_dtype_precision_issue():
+def test_cast_to_dtype_precision_issue() -> None:
     """
     TensorFlow's tf.cast(value, dtype) implicitly does a tf.convert_to_tensor(value)
     *before* the cast when the value is not a tensor already. When value is a python float,
@@ -62,11 +62,11 @@ def test_cast_to_dtype_precision_issue():
     assert actual_value == expected_value
 
 
-def test_parameter_saved():
+def test_parameter_saved() -> None:
     dtype = tf.float64
 
     class Model(tf.Module):
-        def __init__(self):
+        def __init__(self) -> None:
             self.p = gpflow.Parameter(0.1, dtype=dtype, transform=gpflow.utilities.positive())
 
         @tf.function(input_signature=[tf.TensorSpec([], dtype=dtype)])
@@ -84,7 +84,7 @@ def test_parameter_saved():
 
 
 @pytest.mark.parametrize("value", [0.0, [1.2, 1.1]])
-def test_construct_parameter_from_existing_parameter_check_value(value):
+def test_construct_parameter_from_existing_parameter_check_value(value: TensorData) -> None:
     initial_parameter = gpflow.Parameter(value)
     new_parameter = gpflow.Parameter(initial_parameter)
 
@@ -92,14 +92,14 @@ def test_construct_parameter_from_existing_parameter_check_value(value):
 
 
 @pytest.mark.parametrize("value", [0.0, [1.2, 1.1]])
-def test_construct_parameter_from_existing_parameter_override_value(value):
+def test_construct_parameter_from_existing_parameter_override_value(value: TensorData) -> None:
     initial_parameter = gpflow.Parameter(value)
     new_parameter = gpflow.Parameter(initial_parameter + 1.0)
 
     np.testing.assert_equal(new_parameter.numpy(), np.array(value) + 1.0)
 
 
-def test_construct_parameter_from_existing_parameter_check_transform():
+def test_construct_parameter_from_existing_parameter_check_transform() -> None:
     transform = tfp.bijectors.Sigmoid(
         tf.constant(0.0, dtype=tf.float64), tf.constant(2.0, dtype=tf.float64)
     )
@@ -109,7 +109,7 @@ def test_construct_parameter_from_existing_parameter_check_transform():
     assert new_parameter.transform == transform
 
 
-def test_construct_parameter_from_existing_parameter_override_transform():
+def test_construct_parameter_from_existing_parameter_override_transform() -> None:
     initial_parameter = gpflow.Parameter([1.2, 1.1])
 
     transform = tfp.bijectors.Sigmoid(
@@ -120,7 +120,7 @@ def test_construct_parameter_from_existing_parameter_override_transform():
     assert new_parameter.transform == transform
 
 
-def test_construct_parameter_from_existing_parameter_check_prior():
+def test_construct_parameter_from_existing_parameter_check_prior() -> None:
     prior = tfp.distributions.Normal(0.0, 1.0)
     initial_parameter = gpflow.Parameter([1.2, 1.1], prior=prior)
     new_parameter = gpflow.Parameter(initial_parameter)
@@ -128,7 +128,7 @@ def test_construct_parameter_from_existing_parameter_check_prior():
     assert new_parameter.prior == prior
 
 
-def test_construct_parameter_from_existing_parameter_override_prior():
+def test_construct_parameter_from_existing_parameter_override_prior() -> None:
     initial_parameter = gpflow.Parameter([1.2, 1.1])
 
     prior = tfp.distributions.Normal(0.0, 1.0)
@@ -138,7 +138,7 @@ def test_construct_parameter_from_existing_parameter_override_prior():
 
 
 @pytest.mark.parametrize("prior_on", [PriorOn.CONSTRAINED, PriorOn.UNCONSTRAINED])
-def test_construct_parameter_from_existing_parameter_check_prior_on(prior_on):
+def test_construct_parameter_from_existing_parameter_check_prior_on(prior_on: PriorOn) -> None:
     initial_parameter = gpflow.Parameter([1.2, 1.1], prior_on=prior_on)
     new_parameter = gpflow.Parameter(initial_parameter)
 
@@ -146,7 +146,7 @@ def test_construct_parameter_from_existing_parameter_check_prior_on(prior_on):
 
 
 @pytest.mark.parametrize("prior_on", [PriorOn.CONSTRAINED, PriorOn.UNCONSTRAINED])
-def test_construct_parameter_from_existing_parameter_override_prior_on(prior_on):
+def test_construct_parameter_from_existing_parameter_override_prior_on(prior_on: PriorOn) -> None:
     initial_parameter = gpflow.Parameter([1.2, 1.1])
     new_parameter = gpflow.Parameter(initial_parameter, prior_on=prior_on)
 
@@ -154,7 +154,7 @@ def test_construct_parameter_from_existing_parameter_override_prior_on(prior_on)
 
 
 @pytest.mark.parametrize("trainable", [True, False])
-def test_construct_parameter_from_existing_parameter_check_trainable(trainable):
+def test_construct_parameter_from_existing_parameter_check_trainable(trainable: bool) -> None:
     initial_parameter = gpflow.Parameter([1.2, 1.1], trainable=trainable)
     new_parameter = gpflow.Parameter(initial_parameter)
 
@@ -162,7 +162,7 @@ def test_construct_parameter_from_existing_parameter_check_trainable(trainable):
 
 
 @pytest.mark.parametrize("trainable", [True, False])
-def test_construct_parameter_from_existing_parameter_override_trainable(trainable):
+def test_construct_parameter_from_existing_parameter_override_trainable(trainable: bool) -> None:
     initial_parameter = gpflow.Parameter([1.2, 1.1], trainable=trainable)
     new_parameter = gpflow.Parameter(initial_parameter, trainable=not trainable)
 
@@ -170,7 +170,7 @@ def test_construct_parameter_from_existing_parameter_override_trainable(trainabl
 
 
 @pytest.mark.parametrize("dtype", [tf.float32, tf.float64])
-def test_construct_parameter_from_existing_parameter_check_dtype(dtype):
+def test_construct_parameter_from_existing_parameter_check_dtype(dtype: tf.DType) -> None:
     initial_parameter = gpflow.Parameter([1.1, 2.1], dtype=dtype)
     new_parameter = gpflow.Parameter(initial_parameter)
 
@@ -178,14 +178,14 @@ def test_construct_parameter_from_existing_parameter_check_dtype(dtype):
 
 
 @pytest.mark.parametrize("dtype", [tf.float32, tf.float64])
-def test_construct_parameter_from_existing_parameter_override_dtype(dtype):
+def test_construct_parameter_from_existing_parameter_override_dtype(dtype: tf.DType) -> None:
     initial_parameter = gpflow.Parameter([1.1, 2.1])
     new_parameter = gpflow.Parameter(initial_parameter, dtype=dtype)
 
     assert new_parameter.dtype == dtype
 
 
-def test_construct_parameter_from_existing_parameter_check_name():
+def test_construct_parameter_from_existing_parameter_check_name() -> None:
     transform = tfp.bijectors.Sigmoid(
         tf.constant(0.0, dtype=tf.float64), tf.constant(2.0, dtype=tf.float64)
     )
@@ -195,7 +195,7 @@ def test_construct_parameter_from_existing_parameter_check_name():
     assert new_parameter.name == transform.name
 
 
-def test_construct_parameter_from_existing_parameter_override_name():
+def test_construct_parameter_from_existing_parameter_override_name() -> None:
     initial_parameter = gpflow.Parameter([1.2, 1.1])
     transform = tfp.bijectors.Sigmoid(
         tf.constant(0.0, dtype=tf.float64), tf.constant(2.0, dtype=tf.float64)
@@ -205,7 +205,7 @@ def test_construct_parameter_from_existing_parameter_override_name():
     assert new_parameter.name == transform.name
 
 
-def test_construct_parameter_from_existing_parameter_value_becomes_invalid():
+def test_construct_parameter_from_existing_parameter_value_becomes_invalid() -> None:
     initial_parameter = gpflow.Parameter(0.0)
     transform = tfp.bijectors.Reciprocal()
 
