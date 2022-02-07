@@ -14,19 +14,23 @@
 
 import tensorflow as tf
 
-from ..base import TensorLike
+from ..base import TensorLike, TensorType
 from ..inducing_variables import InducingPatches, InducingPoints, Multiscale
 from ..kernels import Convolutional, Kernel, SquaredExponential
 from .dispatch import Kuf
 
 
 @Kuf.register(InducingPoints, Kernel, TensorLike)
-def Kuf_kernel_inducingpoints(inducing_variable: InducingPoints, kernel: Kernel, Xnew):
+def Kuf_kernel_inducingpoints(
+    inducing_variable: InducingPoints, kernel: Kernel, Xnew: TensorType
+) -> tf.Tensor:
     return kernel(inducing_variable.Z, Xnew)
 
 
 @Kuf.register(Multiscale, SquaredExponential, TensorLike)
-def Kuf_sqexp_multiscale(inducing_variable: Multiscale, kernel: SquaredExponential, Xnew):
+def Kuf_sqexp_multiscale(
+    inducing_variable: Multiscale, kernel: SquaredExponential, Xnew: TensorType
+) -> tf.Tensor:
     Xnew, _ = kernel.slice(Xnew, None)
     Zmu, Zlen = kernel.slice(inducing_variable.Z, inducing_variable.scales)
     idlengthscales = kernel.lengthscales + Zlen
@@ -37,7 +41,9 @@ def Kuf_sqexp_multiscale(inducing_variable: Multiscale, kernel: SquaredExponenti
 
 
 @Kuf.register(InducingPatches, Convolutional, object)
-def Kuf_conv_patch(inducing_variable, kernel, Xnew):
+def Kuf_conv_patch(
+    inducing_variable: InducingPatches, kernel: Convolutional, Xnew: TensorType
+) -> tf.Tensor:
     Xp = kernel.get_patches(Xnew)  # [N, num_patches, patch_len]
     bigKzx = kernel.base_kernel.K(
         inducing_variable.Z, Xp

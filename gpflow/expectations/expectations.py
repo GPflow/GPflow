@@ -11,12 +11,38 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from typing import Optional, Tuple, Union, cast
 
-from ..probability_distributions import DiagonalGaussian, Gaussian, MarkovGaussian
+import tensorflow as tf
+
+from ..base import TensorType
+from ..inducing_variables import InducingVariables
+from ..kernels import Kernel
+from ..mean_functions import MeanFunction
+from ..probability_distributions import (
+    DiagonalGaussian,
+    Gaussian,
+    MarkovGaussian,
+    ProbabilityDistribution,
+)
 from . import dispatch
 
+ProbabilityDistributionLike = Union[ProbabilityDistribution, Tuple[TensorType, TensorType]]
+"""
+Either a prabability distribution, or a tuple of mean, covariance that is turned into an
+appropriate Gaussian distribution, depending on the shape of the covariance.
+"""
 
-def expectation(p, obj1, obj2=None, nghp=None):
+ExpectationObject = Union[Kernel, MeanFunction, None]
+PackedExpectationObject = Union[ExpectationObject, Tuple[Kernel, InducingVariables]]
+
+
+def expectation(
+    p: ProbabilityDistributionLike,
+    obj1: PackedExpectationObject,
+    obj2: PackedExpectationObject = None,
+    nghp: Optional[int] = None,
+) -> tf.Tensor:
     """
     Compute the expectation <obj1(x) obj2(x)>_p(x)
     Uses multiple-dispatch to select an analytical implementation,
@@ -56,7 +82,12 @@ def expectation(p, obj1, obj2=None, nghp=None):
         return dispatch.quadrature_expectation(p, obj1, feat1, obj2, feat2, nghp=nghp)
 
 
-def quadrature_expectation(p, obj1, obj2=None, nghp=None):
+def quadrature_expectation(
+    p: ProbabilityDistributionLike,
+    obj1: PackedExpectationObject,
+    obj2: PackedExpectationObject = None,
+    nghp: Optional[int] = None,
+) -> tf.Tensor:
     """
     Compute the expectation <obj1(x) obj2(x)>_p(x)
     Uses Gauss-Hermite quadrature for approximate integration.
@@ -73,7 +104,15 @@ def quadrature_expectation(p, obj1, obj2=None, nghp=None):
     return dispatch.quadrature_expectation(p, obj1, feat1, obj2, feat2, nghp=nghp)
 
 
-def _init_expectation(p, obj1, obj2):
+def _init_expectation(
+    p: ProbabilityDistributionLike, obj1: PackedExpectationObject, obj2: PackedExpectationObject
+) -> Tuple[
+    ProbabilityDistribution,
+    ExpectationObject,
+    Optional[InducingVariables],
+    ExpectationObject,
+    Optional[InducingVariables],
+]:
     if isinstance(p, tuple):
         mu, cov = p
         classes = [DiagonalGaussian, Gaussian, MarkovGaussian]
@@ -81,4 +120,10 @@ def _init_expectation(p, obj1, obj2):
 
     obj1, feat1 = obj1 if isinstance(obj1, tuple) else (obj1, None)
     obj2, feat2 = obj2 if isinstance(obj2, tuple) else (obj2, None)
-    return p, obj1, feat1, obj2, feat2
+    return (
+        cast(ProbabilityDistribution, p),
+        cast(ExpectationObject, obj1),
+        cast(Optional[InducingVariables], feat1),
+        cast(ExpectationObject, obj2),
+        cast(Optional[InducingVariables], feat2),
+    )
