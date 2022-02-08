@@ -309,7 +309,7 @@ def set_default_positive_minimum(value: float) -> None:
     set_config(replace(config(), positive_minimum=value))
 
 
-def set_default_summary_fmt(value: str) -> None:
+def set_default_summary_fmt(value: Optional[str]) -> None:
     formats: List[Optional[str]] = list(tabulate.tabulate_formats)
     formats.extend(["notebook", None])
     if value not in formats:
