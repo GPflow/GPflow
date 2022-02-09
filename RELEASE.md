@@ -61,6 +61,8 @@ This release contains contributions from:
 ## Major Features and Improvements
 
 * Add new posterior class to enable faster predictions from the VGP model. (#1761)
+* VGP class bug-fixed to work with variable-sized data. Note you can use
+  `gpflow.models.vgp.update_vgp_data` to ensure variational parameters are updated sanely. (#1774).
 
 * Added `experimental` sub-package for features that are still under developmet.
   * Added `gpflow.experimental.check_shapes` for checking tensor shapes. (#1760)

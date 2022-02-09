@@ -22,7 +22,8 @@ import tensorflow_probability as tfp
 
 import gpflow
 from gpflow.base import PriorOn, TensorData
-from gpflow.utilities import positive
+from gpflow.config import default_float
+from gpflow.utilities import positive, triangular
 
 
 def test_parameter_assign_validation() -> None:
@@ -213,3 +214,38 @@ def test_construct_parameter_from_existing_parameter_value_becomes_invalid() -> 
         gpflow.Parameter(initial_parameter, transform=transform)
 
     assert "gpflow.Parameter" in exc.value.message
+
+
+def test_construct_parameter_with_variable_shape() -> None:
+    parameter = gpflow.Parameter([[1, 2, 3]], shape=[None, None])
+
+    values = [
+        np.ones((0, 0), dtype=default_float()),
+        np.ones((1, 3), dtype=default_float()),
+        np.ones((3, 1), dtype=default_float()),
+        np.ones((3, 4), dtype=default_float()),
+    ]
+
+    for value in values:
+        parameter.assign(value)
+        np.testing.assert_equal(value, parameter.numpy())
+
+
+def test_construct_parameter_with_variable_shape__different_transformed_shape() -> None:
+    parameter = gpflow.Parameter(
+        [[1, 0], [2, 3]],
+        transform=triangular(),
+        pretransformed_shape=[None],
+        transformed_shape=[None, None],
+    )
+
+    values = [
+        # The triangular() transform doesn't appear to support 0x0 matrices.
+        np.tril(np.ones((1, 1), dtype=default_float())),
+        np.tril(np.ones((2, 2), dtype=default_float())),
+        np.tril(np.ones((3, 3), dtype=default_float())),
+    ]
+
+    for value in values:
+        parameter.assign(value)
+        np.testing.assert_equal(value, parameter.numpy())
