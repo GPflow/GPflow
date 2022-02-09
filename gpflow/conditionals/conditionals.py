@@ -14,13 +14,10 @@
 
 import tensorflow as tf
 
-from ..config import default_jitter
 from ..inducing_variables import InducingVariables
 from ..kernels import Kernel
 from ..posteriors import VGPPosterior, get_posterior_class
-from ..utilities.ops import eye
 from .dispatch import conditional
-from .util import base_conditional
 
 
 @conditional._gpflow_internal_register(object, InducingVariables, Kernel, object)

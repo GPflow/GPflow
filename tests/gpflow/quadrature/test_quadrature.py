@@ -86,7 +86,7 @@ def test_ndiagquad_does_not_throw_error() -> None:
     Regression test for https://github.com/GPflow/GPflow/issues/1547.
     """
 
-    @tf.function(autograph=False)  # type: ignore
+    @tf.function(autograph=False)
     def func_ndiagquad_autograph_false() -> tf.Tensor:
         mu = np.array([1.0, 1.3])
         var = np.array([3.0, 3.5])
@@ -105,7 +105,7 @@ def test_quadrature_autograph() -> None:
     """
 
     def compute(autograph: bool) -> np.ndarray:
-        @tf.function(autograph=autograph)  # type: ignore
+        @tf.function(autograph=autograph)
         def func() -> tf.Tensor:
             mu = np.array([1.0, 1.3])
             var = np.array([3.0, 3.5])

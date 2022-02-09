@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from functools import reduce
-from typing import Type, Union
+from typing import Type
 
 import tensorflow as tf
 
