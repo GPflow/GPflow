@@ -19,11 +19,12 @@ from numpy.testing import assert_allclose
 import gpflow
 from gpflow.config import default_jitter
 from gpflow.covariances import Kuf, Kuu
-from gpflow.inducing_variables import InducingPatches, InducingPoints, Multiscale
+from gpflow.inducing_variables import InducingPatches, InducingPoints, InducingVariables, Multiscale
+from gpflow.kernels import Kernel
 
 
 @pytest.mark.parametrize("N, D", [[17, 3], [10, 7]])
-def test_inducing_points_inducing_variable_len(N, D):
+def test_inducing_points_inducing_variable_len(N: int, D: int) -> None:
     Z = np.random.randn(N, D)
     inducing_variable = InducingPoints(Z)
     assert inducing_variable.num_inducing == N
@@ -39,7 +40,7 @@ _kernel_setups = [
 
 @pytest.mark.parametrize("N", [10, 101])
 @pytest.mark.parametrize("kernel", _kernel_setups)
-def test_inducing_equivalence(N, kernel):
+def test_inducing_equivalence(N: int, kernel: Kernel) -> None:
     # Inducing inducing must be the same as the kernel evaluations
     Z = np.random.randn(N, 5)
     inducing_variable = InducingPoints(Z)
@@ -47,7 +48,7 @@ def test_inducing_equivalence(N, kernel):
 
 
 @pytest.mark.parametrize("N, M, D", [[23, 13, 3], [10, 5, 7]])
-def test_multi_scale_inducing_equivalence_inducing_points(N, M, D):
+def test_multi_scale_inducing_equivalence_inducing_points(N: int, M: int, D: int) -> None:
     # Multiscale must be equivalent to inducing points when variance is zero
     Xnew, Z = np.random.randn(N, D), np.random.randn(M, D)
     rbf = gpflow.kernels.SquaredExponential(1.3441, lengthscales=np.random.uniform(0.5, 3.0, D))
@@ -96,7 +97,9 @@ _inducing_variables_and_kernels = [
 
 
 @pytest.mark.parametrize("input_dim, inducing_variable, kernel", _inducing_variables_and_kernels)
-def test_inducing_variables_psd_schur(input_dim, inducing_variable, kernel):
+def test_inducing_variables_psd_schur(
+    input_dim: int, inducing_variable: InducingVariables, kernel: Kernel
+) -> None:
     # Conditional variance must be PSD.
     X = np.random.randn(5, input_dim)
     Kuf_values = Kuf(inducing_variable, kernel, X)

@@ -75,7 +75,9 @@ def match_argument_spec(expected: ParsedArgumentSpec, actual: ParsedArgumentSpec
         ),
     ],
 )
-def test_parse_specs(raw_spec: ArgumentSpec, expected: ParsedArgumentSpec, expected_repr) -> None:
+def test_parse_specs(
+    raw_spec: ArgumentSpec, expected: ParsedArgumentSpec, expected_repr: str
+) -> None:
     (parsed_spec,) = parse_specs([raw_spec])
     match_argument_spec(parsed_spec, expected)
     assert repr(parsed_spec) == expected_repr

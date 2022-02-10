@@ -26,8 +26,7 @@ def context_func() -> None:
 
 def test_argument_reference_error() -> None:
     arg_map = MagicMock()
-    arg_ref = MagicMock()
-    arg_ref.__str__.return_value = "my_argument_reference"
+    arg_ref = MagicMock(__str__=MagicMock(return_value="my_argument_reference"))
 
     error = ArgumentReferenceError(context_func, arg_map, arg_ref)
 

@@ -44,6 +44,10 @@ def test_check_shapes__tensorflow() -> None:
     f(tf.zeros((2, 3)), tf.zeros((2, 4)))  # Don't crash...
 
 
+_F = Callable[[tf.Tensor], tf.Tensor]
+_Loss = Callable[[], tf.Tensor]
+
+
 @pytest.mark.parametrize(
     "f_wrapper,loss_wrapper",
     [
@@ -70,7 +74,7 @@ def test_check_shapes__tensorflow() -> None:
     ],
 )
 def test_check_shapes__tensorflow_compilation(
-    f_wrapper: Callable[[tf.Tensor], tf.Tensor], loss_wrapper: Callable[[], tf.Tensor]
+    f_wrapper: Callable[[_F], _F], loss_wrapper: Callable[[_Loss], _Loss]
 ) -> None:
     target = 0.5
 

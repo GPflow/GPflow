@@ -200,7 +200,7 @@ def test_check_shapes__invalid_argument() -> None:
         return t(3, 4)
 
     with pytest.raises(TypeError):
-        f(c=t(2, 3))
+        f(c=t(2, 3))  # type: ignore  # Intentionally invalid call.
 
 
 def test_check_shapes__argument_refs() -> None:
