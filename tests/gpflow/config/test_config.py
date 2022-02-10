@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import os
+from typing import Any, Callable
 from unittest import mock
 
 import numpy as np
@@ -20,6 +21,7 @@ import pytest
 import tensorflow as tf
 
 import gpflow
+from gpflow.base import TensorData
 from gpflow.config import (
     default_float,
     default_int,
@@ -48,7 +50,7 @@ _env_values = [
 
 
 @pytest.mark.parametrize("attr_name, value, expected_value", _env_values)
-def test_env_variables(attr_name, value, expected_value):
+def test_env_variables(attr_name: str, value: str, expected_value: Any) -> None:
     env_name = f"GPFLOW_{attr_name.upper()}"
     with mock.patch.dict("os.environ", {env_name: value}):
         assert os.environ[env_name] == value
@@ -57,7 +59,7 @@ def test_env_variables(attr_name, value, expected_value):
 
 
 @pytest.mark.parametrize("attr_name", dict.fromkeys(list(zip(*_env_values))[0]).keys())
-def test_env_variables_failures(attr_name):
+def test_env_variables_failures(attr_name: str) -> None:
     if attr_name == "summary_fmt":
         pytest.skip("The `summary_fmt` validation cannot be performed.")
     env_name = f"GPFLOW_{attr_name.upper()}"
@@ -73,7 +75,12 @@ def test_env_variables_failures(attr_name):
         (default_float, set_default_float, tf.float32, np.float64),
     ],
 )
-def test_dtype_setting(getter, setter, valid_type_1, valid_type_2):
+def test_dtype_setting(
+    getter: Callable[[], type],
+    setter: Callable[[type], None],
+    valid_type_1: type,
+    valid_type_2: type,
+) -> None:
     if valid_type_1 == valid_type_2:
         raise ValueError("cannot test config setting/getting when both types are equal")
     setter(valid_type_1)
@@ -91,21 +98,21 @@ def test_dtype_setting(getter, setter, valid_type_1, valid_type_2):
         (set_default_float, tf.int32),
     ],
 )
-def test_dtype_errorcheck(setter, invalid_type):
+def test_dtype_errorcheck(setter: Callable[[type], None], invalid_type: Any) -> None:
     with pytest.raises(TypeError):
         setter(invalid_type)
 
 
-def test_jitter_setting():
+def test_jitter_setting() -> None:
     set_default_jitter(1e-3)
     assert default_jitter() == 1e-3
     set_default_jitter(1e-6)
     assert default_jitter() == 1e-6
 
 
-def test_jitter_errorcheck():
+def test_jitter_errorcheck() -> None:
     with pytest.raises(TypeError):
-        set_default_jitter("not a float")
+        set_default_jitter("not a float")  # type: ignore
     with pytest.raises(ValueError):
         set_default_jitter(-1e-10)
 
@@ -117,25 +124,25 @@ def test_jitter_errorcheck():
         (1.0, r"`1.0` not in set of valid bijectors: \['exp', 'softplus'\]"),
     ],
 )
-def test_positive_bijector_error(value, error_msg):
+def test_positive_bijector_error(value: Any, error_msg: str) -> None:
     with pytest.raises(ValueError, match=error_msg):
         set_default_positive_bijector(value)
 
 
 @pytest.mark.parametrize("value", ["exp", "SoftPlus"])
-def test_positive_bijector_setting(value):
+def test_positive_bijector_setting(value: str) -> None:
     set_default_positive_bijector(value)
     assert default_positive_bijector() == value.lower()
 
 
-def test_default_summary_fmt_setting():
+def test_default_summary_fmt_setting() -> None:
     set_default_summary_fmt("html")
     assert default_summary_fmt() == "html"
     set_default_summary_fmt(None)
     assert default_summary_fmt() is None
 
 
-def test_default_summary_fmt_errorcheck():
+def test_default_summary_fmt_errorcheck() -> None:
     with pytest.raises(ValueError):
         set_default_summary_fmt("this_format_definitely_does_not_exist")
 
@@ -171,7 +178,13 @@ def test_default_summary_fmt_errorcheck():
         ),
     ],
 )
-def test_native_to_default_dtype(setter, getter, converter, dtype, value):
+def test_native_to_default_dtype(
+    setter: Callable[[type], None],
+    getter: Callable[[], type],
+    converter: Callable[[TensorData], tf.Tensor],
+    dtype: type,
+    value: TensorData,
+) -> None:
     with gpflow.config.as_context():
         setter(dtype)
         assert converter(value).dtype == dtype
