@@ -34,6 +34,7 @@ requirements.extend(
         "packaging",
         "deprecated",
         "dataclasses;python_version<'3.7'",
+        "lark>=1.1.0",
     ]
 )
 

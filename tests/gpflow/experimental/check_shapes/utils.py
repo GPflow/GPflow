@@ -14,10 +14,17 @@
 """
 Utilities for testing the `check_shapes` library.
 """
-from typing import Optional
+from typing import Optional, Union
 from unittest.mock import MagicMock
 
 from gpflow.base import TensorType
+from gpflow.experimental.check_shapes.argument_ref import (
+    ArgumentRef,
+    AttributeArgumentRef,
+    IndexArgumentRef,
+    RootArgumentRef,
+)
+from gpflow.experimental.check_shapes.specs import ParsedDimensionSpec, ParsedShapeSpec
 
 
 def t(*shape: Optional[int]) -> TensorType:
@@ -27,3 +34,25 @@ def t(*shape: Optional[int]) -> TensorType:
     mock_tensor = MagicMock()
     mock_tensor.shape = shape
     return mock_tensor
+
+
+def make_shape_spec(
+    leading_dims_variable_name: Optional[str], *dims: Union[int, str]
+) -> ParsedShapeSpec:
+    shape = []
+    for dim in dims:
+        if isinstance(dim, int):
+            shape.append(ParsedDimensionSpec(constant=dim, variable_name=None))
+        else:
+            shape.append(ParsedDimensionSpec(constant=None, variable_name=dim))
+    return ParsedShapeSpec(leading_dims_variable_name, tuple(shape))
+
+
+def make_argument_ref(argument_name: str, *refs: Union[int, str]) -> ArgumentRef:
+    result: ArgumentRef = RootArgumentRef(argument_name)
+    for ref in refs:
+        if isinstance(ref, int):
+            result = IndexArgumentRef(result, ref)
+        else:
+            result = AttributeArgumentRef(result, ref)
+    return result

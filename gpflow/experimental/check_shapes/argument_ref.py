@@ -14,21 +14,16 @@
 """
 Code for (de)referencing arguments.
 """
-import re
 from abc import ABC, abstractmethod
-from typing import Any, Mapping, Match, Optional, Pattern
+from dataclasses import dataclass
+from typing import Any, Mapping
 
 from .base_types import C
 from .errors import ArgumentReferenceError
 
 # The special name used to represent the returned value. `return` is a good choice because we know
-# that no argument can be called `return` because `return` a reserved keyword.
+# that no argument can be called `return` because `return` is a reserved keyword.
 RESULT_TOKEN = "return"
-
-_NAME_RE_STR = "([_a-zA-Z][_a-zA-Z0-9]*)"
-_ROOT_ARGUMENT_RE = re.compile(_NAME_RE_STR)
-_ATTRIBUTE_ARGUMENT_RE = re.compile(f"\\.{_NAME_RE_STR}")
-_INDEX_ARGUMENT_RE = re.compile(r"\[(\d+)\]")
 
 
 class ArgumentRef(ABC):
@@ -38,6 +33,15 @@ class ArgumentRef(ABC):
     @abstractmethod
     def is_result(self) -> bool:
         """ Whether this is a reference to the function result. """
+
+    @property
+    @abstractmethod
+    def root_argument_name(self) -> str:
+        """
+        Name of the argument this reference eventually starts from.
+
+        Returns `RESULT_TOKEN` if this in an argument to the function result.
+        """
 
     def get(self, func: C, arg_map: Mapping[str, Any]) -> Any:
         """ Get the value of this argument from this given map. """
@@ -50,85 +54,73 @@ class ArgumentRef(ABC):
     def _get(self, arg_map: Mapping[str, Any]) -> Any:
         """ Get the value of this argument from this given map. """
 
+    @abstractmethod
+    def __repr__(self) -> str:
+        """ Return a string representation of this reference. """
 
+
+@dataclass(frozen=True)
 class RootArgumentRef(ArgumentRef):
     """ A reference to a single argument. """
 
-    def __init__(self, argument_name: str) -> None:
-        self._argument_name = argument_name
+    argument_name: str
 
     @property
     def is_result(self) -> bool:
-        return self._argument_name == RESULT_TOKEN
+        return self.argument_name == RESULT_TOKEN
+
+    @property
+    def root_argument_name(self) -> str:
+        return self.argument_name
 
     def _get(self, arg_map: Mapping[str, Any]) -> Any:
-        return arg_map[self._argument_name]
+        return arg_map[self.argument_name]
 
     def __repr__(self) -> str:
-        return self._argument_name
+        return self.argument_name
 
 
+@dataclass(frozen=True)
 class AttributeArgumentRef(ArgumentRef):
     """ A reference to an attribute on an argument. """
 
-    def __init__(self, source: ArgumentRef, attribute_name: str) -> None:
-        self._source = source
-        self._attribute_name = attribute_name
+    source: ArgumentRef
+    attribute_name: str
 
     @property
     def is_result(self) -> bool:
-        return self._source.is_result
+        return self.source.is_result
+
+    @property
+    def root_argument_name(self) -> str:
+        return self.source.root_argument_name
 
     def _get(self, arg_map: Mapping[str, Any]) -> Any:
-        return getattr(self._source._get(arg_map), self._attribute_name)
+        # pylint: disable=protected-access
+        return getattr(self.source._get(arg_map), self.attribute_name)
 
     def __repr__(self) -> str:
-        return f"{repr(self._source)}.{self._attribute_name}"
+        return f"{repr(self.source)}.{self.attribute_name}"
 
 
+@dataclass(frozen=True)
 class IndexArgumentRef(ArgumentRef):
     """ A reference to an element in a list. """
 
-    def __init__(self, source: ArgumentRef, index: int) -> None:
-        self._source = source
-        self._index = index
+    source: ArgumentRef
+    index: int
 
     @property
     def is_result(self) -> bool:
-        return self._source.is_result
+        return self.source.is_result
+
+    @property
+    def root_argument_name(self) -> str:
+        return self.source.root_argument_name
 
     def _get(self, arg_map: Mapping[str, Any]) -> Any:
-        return self._source._get(arg_map)[self._index]
+        # pylint: disable=protected-access
+        return self.source._get(arg_map)[self.index]
 
     def __repr__(self) -> str:
-        return f"{repr(self._source)}[{self._index}]"
-
-
-def parse_argument_ref(argument_ref_str: str) -> ArgumentRef:
-    def _create_error_message() -> str:
-        return f"Invalid argument reference: '{argument_ref_str}'."
-
-    start = 0
-    match: Optional[Match[str]] = None
-
-    def _consume(expression: Pattern[str]) -> None:
-        nonlocal start, match
-        match = expression.match(argument_ref_str, start)
-        if match:
-            start = match.end()
-
-    _consume(_ROOT_ARGUMENT_RE)
-    assert match, _create_error_message()
-    result: ArgumentRef = RootArgumentRef(match.group(0))
-    while start < len(argument_ref_str):
-        _consume(_ATTRIBUTE_ARGUMENT_RE)
-        if match:
-            result = AttributeArgumentRef(result, match.group(1))
-            continue
-        _consume(_INDEX_ARGUMENT_RE)
-        if match:
-            result = IndexArgumentRef(result, int(match.group(1)))
-            continue
-        assert False, _create_error_message()
-    assert start == len(argument_ref_str), _create_error_message()
-    return result
+        return f"{repr(self.source)}[{self.index}]"

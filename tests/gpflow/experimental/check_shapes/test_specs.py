@@ -15,41 +15,20 @@ import pytest
 
 from gpflow.experimental.check_shapes.argument_ref import RootArgumentRef
 from gpflow.experimental.check_shapes.specs import (
-    ArgumentSpec,
     ParsedArgumentSpec,
     ParsedDimensionSpec,
     ParsedShapeSpec,
-    parse_specs,
 )
 
 
-def match_dimension_spec(expected: ParsedDimensionSpec, actual: ParsedDimensionSpec) -> None:
-    assert expected.constant == actual.constant
-    assert expected.variable_name == actual.variable_name
-
-
-def match_shape_spec(expected: ParsedShapeSpec, actual: ParsedShapeSpec) -> None:
-    assert expected.leading_dims_variable_name == actual.leading_dims_variable_name
-    assert len(expected.trailing_dims) == len(actual.trailing_dims)
-    for e, a in zip(expected.trailing_dims, actual.trailing_dims):
-        match_dimension_spec(e, a)
-
-
-def match_argument_spec(expected: ParsedArgumentSpec, actual: ParsedArgumentSpec) -> None:
-    assert repr(expected.argument_ref) == repr(actual.argument_ref)
-    match_shape_spec(expected.shape, actual.shape)
-
-
 @pytest.mark.parametrize(
-    "raw_spec,expected,expected_repr",
+    "argument_spec,expected_repr",
     [
         (
-            ("foo", []),
             ParsedArgumentSpec(RootArgumentRef("foo"), ParsedShapeSpec(None, ())),
             "foo: ()",
         ),
         (
-            ("foo", [1, 2]),
             ParsedArgumentSpec(
                 RootArgumentRef("foo"),
                 ParsedShapeSpec(None, (ParsedDimensionSpec(1, None), ParsedDimensionSpec(2, None))),
@@ -57,7 +36,6 @@ def match_argument_spec(expected: ParsedArgumentSpec, actual: ParsedArgumentSpec
             "foo: (1, 2)",
         ),
         (
-            ("foo", ["x", "y"]),
             ParsedArgumentSpec(
                 RootArgumentRef("foo"),
                 ParsedShapeSpec(
@@ -67,7 +45,6 @@ def match_argument_spec(expected: ParsedArgumentSpec, actual: ParsedArgumentSpec
             "foo: (x, y)",
         ),
         (
-            ("foo", ["x...", "y"]),
             ParsedArgumentSpec(
                 RootArgumentRef("foo"), ParsedShapeSpec("x", (ParsedDimensionSpec(None, "y"),))
             ),
@@ -75,9 +52,5 @@ def match_argument_spec(expected: ParsedArgumentSpec, actual: ParsedArgumentSpec
         ),
     ],
 )
-def test_parse_specs(
-    raw_spec: ArgumentSpec, expected: ParsedArgumentSpec, expected_repr: str
-) -> None:
-    (parsed_spec,) = parse_specs([raw_spec])
-    match_argument_spec(parsed_spec, expected)
-    assert repr(parsed_spec) == expected_repr
+def test_specs(argument_spec: ParsedArgumentSpec, expected_repr: str) -> None:
+    assert expected_repr == repr(argument_spec)

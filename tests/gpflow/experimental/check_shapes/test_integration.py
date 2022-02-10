@@ -11,6 +11,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+# pylint: disable=unused-argument  # Bunch of fake functions below has unused arguments.
+# pylint: disable=no-member  # PyLint struggles with TensorFlow.
+
 from typing import Callable, Tuple
 
 import numpy as np
@@ -22,9 +26,9 @@ from gpflow.experimental.check_shapes import check_shapes
 
 def test_check_shapes__numpy() -> None:
     @check_shapes(
-        ("a", ["d1", "d2"]),
-        ("b", ["d1", "d3"]),
-        ("return", ["d2", "d3"]),
+        "a: [d1, d2]",
+        "b: [d1, d3]",
+        "return: [d2, d3]",
     )
     def f(a: np.ndarray, b: np.ndarray) -> np.ndarray:
         return np.zeros((3, 4))
@@ -34,9 +38,9 @@ def test_check_shapes__numpy() -> None:
 
 def test_check_shapes__tensorflow() -> None:
     @check_shapes(
-        ("a", ["d1", "d2"]),
-        ("b", ["d1", "d3"]),
-        ("return", ["d2", "d3"]),
+        "a: [d1, d2]",
+        "b: [d1, d3]",
+        "return: [d2, d3]",
     )
     def f(a: tf.Tensor, b: tf.Tensor) -> tf.Tensor:
         return tf.zeros((3, 4))
@@ -80,8 +84,8 @@ def test_check_shapes__tensorflow_compilation(
 
     @f_wrapper
     @check_shapes(
-        ("x", ["n"]),
-        ("return", ["n"]),
+        "x: [n]",
+        "return: [n]",
     )
     def f(x: tf.Tensor) -> Tuple[tf.Tensor]:
         return (x - target) ** 2
@@ -90,7 +94,7 @@ def test_check_shapes__tensorflow_compilation(
 
     @loss_wrapper
     @check_shapes(
-        ("return", [1]),
+        "return: [1]",
     )
     def loss() -> tf.Tensor:
         # keepdims is just to add an extra dimension to make the check more interesting.
