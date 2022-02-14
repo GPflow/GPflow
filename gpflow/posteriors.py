@@ -941,7 +941,7 @@ def create_posterior(
     whiten: bool,
     mean_function: Optional[MeanFunction] = None,
     precompute_cache: Union[PrecomputeCacheType, str, None] = PrecomputeCacheType.TENSOR,
-) -> Type[AbstractPosterior]:
+) -> AbstractPosterior:
     posterior_class = get_posterior_class(kernel, inducing_variable)
     precompute_cache = _validate_precompute_cache_type(precompute_cache)
     return posterior_class(
