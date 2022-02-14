@@ -11,10 +11,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from _pytest.recwarn import WarningsRecorder
+
 from gpflow.experimental.utils import experimental
 
 
-def test_experimental(recwarn) -> None:
+def test_experimental(recwarn: WarningsRecorder) -> None:
     @experimental
     def f() -> None:
         pass
