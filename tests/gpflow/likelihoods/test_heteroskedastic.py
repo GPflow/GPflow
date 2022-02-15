@@ -28,7 +28,7 @@ class Data:
     f_var = rng.randn(N, 2) ** 2
 
 
-def test_analytic_mean_and_var():
+def test_analytic_mean_and_var() -> None:
     """
     Test that quadrature computation used in HeteroskedasticTFPConditional
     of the predictive mean and variance is close to the analytical version,
