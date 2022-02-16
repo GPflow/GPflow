@@ -42,7 +42,7 @@ from .inducing_variables import (
 from .likelihoods import Likelihood
 from .kernels import Kernel
 from .mean_functions import MeanFunction
-from .utilities import Dispatcher, add_noise_cov, add_linear_noise_cov
+from .utilities import Dispatcher, add_noise_cov, add_het_noise_cov
 from .utilities.ops import leading_transpose
 
 
@@ -356,17 +356,18 @@ class HeteroskedasticGPRPosterior(GPRPosterior):
 
         self.likelihood = likelihood
         data = (X_data, Y_data)
-        super().__init__(kernel, data, likelihood.constant_variance, mean_function=mean_function, precompute_cache=precompute_cache)
+        super().__init__(kernel, data, likelihood_variance=Parameter(1e-6, trainable=False), mean_function=mean_function, precompute_cache=precompute_cache)
 
-    def evaluate_linear_noise_variance(self, X: tf.Tensor):
+    def evaluate_noise_variance(self, X: tf.Tensor):
         """ Noise variance contribution. """
 
-        return self.likelihood.scale_transform(X)
+        noise_scale = self.likelihood.scale_transform(X)
+        return tf.math.square(noise_scale)
 
     def add_noise(self, K: tf.Tensor, X: tf.Tensor):
 
-        noise_variance = self.evaluate_linear_noise_variance(X) + self.likelihood_variance
-        return add_linear_noise_cov(K, noise_variance)
+        noise_variance = self.evaluate_noise_variance(X)
+        return add_het_noise_cov(K, noise_variance)
 
 
 class SGPRPosterior(AbstractPosterior):

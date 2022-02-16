@@ -8,7 +8,7 @@ from ..mean_functions import MeanFunction
 from ..models.gpr import GPR_with_posterior
 from ..models.training_mixins import RegressionData, InputData
 from ..base import MeanAndVariance
-from ..utilities import add_linear_noise_cov
+from ..utilities import add_het_noise_cov
 
 
 class het_GPR(GPR_with_posterior):
@@ -81,10 +81,10 @@ class het_GPR(GPR_with_posterior):
         Returns K + diag(σ²), where σ² is the likelihood noise variance (vector),
         and I is the corresponding identity matrix.
         """
-        dummy_F = tf.zeros_like(X)
-        Fs = tf.concat([dummy_F, X], axis=-1)
+        dummy_f = tf.zeros_like(X)
+        Fs = tf.concat([dummy_f, X], axis=-1)
         variances = self.likelihood.conditional_variance(Fs)
-        return add_linear_noise_cov(K, tf.squeeze(variances))
+        return add_het_noise_cov(K, tf.squeeze(variances))
 
     def log_marginal_likelihood(self) -> tf.Tensor:
         r"""
