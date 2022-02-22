@@ -12,15 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import List, Optional, Union
+from typing import Optional
 
 import numpy as np
 import tensorflow as tf
 
-from ..base import Parameter
+from ..base import Parameter, TensorType
 from ..utilities import positive
 from ..utilities.ops import difference_matrix
-from .base import Kernel
+from .base import ActiveDims, Kernel, NormalizedActiveDims
 from .stationaries import IsotropicStationary
 
 
@@ -52,7 +52,7 @@ class Periodic(Kernel):
         the constructor doesn't have it as an argument.
     """
 
-    def __init__(self, base_kernel: IsotropicStationary, period: Union[float, List[float]] = 1.0):
+    def __init__(self, base_kernel: IsotropicStationary, period: TensorType = 1.0) -> None:
         """
         :param base_kernel: the base kernel to make periodic; must inherit from Stationary
             Note that `active_dims` should be specified in the base kernel.
@@ -69,17 +69,17 @@ class Periodic(Kernel):
         self.base_kernel._validate_ard_active_dims(self.period)
 
     @property
-    def active_dims(self):
+    def active_dims(self) -> NormalizedActiveDims:
         return self.base_kernel.active_dims
 
     @active_dims.setter
-    def active_dims(self, value):
+    def active_dims(self, value: ActiveDims) -> None:
         self.base_kernel.active_dims = value
 
-    def K_diag(self, X: tf.Tensor) -> tf.Tensor:
+    def K_diag(self, X: TensorType) -> tf.Tensor:
         return self.base_kernel.K_diag(X)
 
-    def K(self, X: tf.Tensor, X2: Optional[tf.Tensor] = None) -> tf.Tensor:
+    def K(self, X: TensorType, X2: Optional[TensorType] = None) -> tf.Tensor:
         r = np.pi * (difference_matrix(X, X2)) / self.period
         scaled_sine = tf.sin(r) / self.base_kernel.lengthscales
         if hasattr(self.base_kernel, "K_r"):

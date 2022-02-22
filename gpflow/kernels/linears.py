@@ -12,11 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import Optional
+
 import tensorflow as tf
 
-from ..base import Parameter
+from ..base import Parameter, TensorType
 from ..utilities import positive
-from .base import Kernel
+from .base import ActiveDims, Kernel
 
 
 class Linear(Kernel):
@@ -29,7 +31,9 @@ class Linear(Kernel):
     where σ² is the variance parameter.
     """
 
-    def __init__(self, variance=1.0, active_dims=None):
+    def __init__(
+        self, variance: TensorType = 1.0, active_dims: Optional[ActiveDims] = None
+    ) -> None:
         """
         :param variance: the (initial) value for the variance parameter(s),
             to induce ARD behaviour this must be initialised as an array the same
@@ -47,13 +51,13 @@ class Linear(Kernel):
         """
         return self.variance.shape.ndims > 0
 
-    def K(self, X, X2=None):
+    def K(self, X: TensorType, X2: Optional[TensorType] = None) -> tf.Tensor:
         if X2 is None:
             return tf.matmul(X * self.variance, X, transpose_b=True)
         else:
             return tf.tensordot(X * self.variance, X2, [[-1], [-1]])
 
-    def K_diag(self, X):
+    def K_diag(self, X: TensorType) -> tf.Tensor:
         return tf.reduce_sum(tf.square(X) * self.variance, axis=-1)
 
 
@@ -70,7 +74,13 @@ class Polynomial(Linear):
     d is the degree parameter.
     """
 
-    def __init__(self, degree=3.0, variance=1.0, offset=1.0, active_dims=None):
+    def __init__(
+        self,
+        degree: TensorType = 3.0,
+        variance: TensorType = 1.0,
+        offset: TensorType = 1.0,
+        active_dims: Optional[ActiveDims] = None,
+    ) -> None:
         """
         :param degree: the degree of the polynomial
         :param variance: the (initial) value for the variance parameter(s),
@@ -83,8 +93,8 @@ class Polynomial(Linear):
         self.degree = degree
         self.offset = Parameter(offset, transform=positive())
 
-    def K(self, X, X2=None):
+    def K(self, X: TensorType, X2: Optional[TensorType] = None) -> tf.Tensor:
         return (super().K(X, X2) + self.offset) ** self.degree
 
-    def K_diag(self, X):
+    def K_diag(self, X: TensorType) -> tf.Tensor:
         return (super().K_diag(X) + self.offset) ** self.degree
