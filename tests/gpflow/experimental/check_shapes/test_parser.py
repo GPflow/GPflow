@@ -301,6 +301,33 @@ _TEST_DATA = [
         """,
     ),
     TestData(
+        "no_indent",
+        (
+            "a: [d1, d2]",
+            "b: [d1, d3]",
+            "return: [d2, d3]",
+        ),
+        (
+            ParsedArgumentSpec(
+                make_argument_ref("a"),
+                make_shape_spec(None, "d1", "d2"),
+            ),
+            ParsedArgumentSpec(
+                make_argument_ref("b"),
+                make_shape_spec(None, "d1", "d3"),
+            ),
+            ParsedArgumentSpec(
+                make_argument_ref("return"),
+                make_shape_spec(None, "d2", "d3"),
+            ),
+        ),
+        """:param b: Parameter b.""",
+        """:param b:
+    * **b** has shape [*d1*, *d3*].
+
+    Parameter b.""",
+    ),
+    TestData(
         "other_info_fields",
         (
             "a: [batch..., n_features]",

@@ -13,7 +13,8 @@
 # limitations under the License.
 
 # flake8: noqa
-"""============
+"""
+============
 check_shapes
 ============
 
@@ -138,6 +139,52 @@ actual graphs.  This is considered a feature as that means that :func:`check_sha
 the execution speed of compiled functions. However, it also means that tensor dimensions of dynamic
 size are not verified in compiled mode.
 
+
+Documenting shapes
+++++++++++++++++++
+
+The :func:`check_shapes` decorator rewrites the docstring (`.__doc__`) of the decorated function to
+add information about shapes, in a format compatible with
+`Sphinx <https://www.sphinx-doc.org/en/master/>`_. Only parameters that already have a `:param ...:`
+section will be modified.
+
+For example::
+
+    @tf.function
+    @check_shapes(
+        "features: [batch_shape..., n_features]",
+        "weights: [n_features]",
+        "return: [batch_shape...]",
+    )
+    def linear_model(
+        features: tf.Tensor, weights: tf.Tensor
+    ) -> tf.Tensor:
+        \"\"\"
+        Computes a prediction from a linear model.
+        :param features: Data to make predictions from.
+        :param weights: Model weights.
+        :returns: Model predictions.
+        \"\"\"
+        ...
+
+will have `.__doc__`::
+
+    \"\"\"
+    Computes a prediction from a linear model.
+
+    :param a:
+        * **features** has shape [*batch_shape*..., *n_features*].
+
+        Data to make predictions from.
+    :param b:
+        * **weights** has shape [*n_features*].
+
+        Model weights.
+    :returns:
+        * **return** has shape [*batch_shape*...].
+
+        Model predictions.
+    \"\"\"
 """
 
 from .check_shapes import check_shapes

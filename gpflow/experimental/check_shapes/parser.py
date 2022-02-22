@@ -58,9 +58,6 @@ class _TreeVisitor(ABC):
         assert visit, f"No method found with name {name}."
         return visit(tree, *args, **kwargs)
 
-    def visit_children(self, tree: Tree[Token], *args: Any, **kwargs: Any) -> Tuple[Any, ...]:
-        return tuple(self.visit(child, *args, **kwargs) for child in _tree_children(tree))
-
 
 class _ParseArgumentSpec(_TreeVisitor):
     def argument_spec(self, tree: Tree[Token]) -> ParsedArgumentSpec:
@@ -96,10 +93,7 @@ class _ParseArgumentSpec(_TreeVisitor):
         leading_dims_variable_name: Optional[str] = None
         trailing_dims: List[ParsedDimensionSpec] = []
         for i, dimension_spec in enumerate(_tree_children(dimension_specs)):
-            if dimension_spec is None:
-                # Happens if there are no dim specs.
-                continue
-            elif dimension_spec.data == "dimension_spec_leading_dims_variable":
+            if dimension_spec.data == "dimension_spec_leading_dims_variable":
                 assert i == 0, (
                     "Only the leading dimension can have variable length."
                     f" Found variable length for argument {argument_ref}, dimension {i}."
