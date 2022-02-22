@@ -11,6 +11,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+# pylint: disable=unused-argument  # Bunch of fake functions below has unused arguments.
+
 from abc import ABC, abstractmethod
 
 import pytest
@@ -25,13 +28,13 @@ def test_inherit_check_shapes__defined_in_super_class() -> None:
     class SuperClass(ABC):
         @abstractmethod
         @check_shapes(
-            ("a", [4]),
-            ("return", [1]),
+            "a: [4]",
+            "return: [1]",
         )
         def f(self, a: TensorType) -> TensorType:
             pass
 
-    class MiddleClass(SuperClass):
+    class MiddleClass(SuperClass):  # pylint: disable=abstract-method
         pass
 
     class SubClass(MiddleClass):
@@ -50,8 +53,8 @@ def test_inherit_check_shapes__overridden_with_checks() -> None:
     class SuperClass(ABC):
         @abstractmethod
         @check_shapes(
-            ("a", [4]),
-            ("return", [1]),
+            "a: [4]",
+            "return: [1]",
         )
         def f(self, a: TensorType) -> TensorType:
             pass
@@ -77,8 +80,8 @@ def test_inherit_check_shapes__overridden_without_checks() -> None:
     class SuperClass(ABC):
         @abstractmethod
         @check_shapes(
-            ("a", [4]),
-            ("return", [1]),
+            "a: [4]",
+            "return: [1]",
         )
         def f(self, a: TensorType) -> TensorType:
             pass
@@ -106,8 +109,8 @@ def test_inherit_check_shapes__defined_in_middle_class() -> None:
     class MiddleClass(SuperClass):
         @abstractmethod
         @check_shapes(
-            ("a", [4]),
-            ("return", [1]),
+            "a: [4]",
+            "return: [1]",
         )
         def f(self, a: TensorType) -> TensorType:
             pass
@@ -128,8 +131,8 @@ def test_inherit_check_shapes__multiple_inheritance() -> None:
     class Left(ABC):
         @abstractmethod
         @check_shapes(
-            ("a", [4]),
-            ("return", [1]),
+            "a: [4]",
+            "return: [1]",
         )
         def f(self, a: TensorType) -> TensorType:
             pass
@@ -137,8 +140,8 @@ def test_inherit_check_shapes__multiple_inheritance() -> None:
     class Right(ABC):
         @abstractmethod
         @check_shapes(
-            ("a", [5]),
-            ("return", [1]),
+            "a: [5]",
+            "return: [1]",
         )
         def g(self, a: TensorType) -> TensorType:
             pass
@@ -169,7 +172,50 @@ def test_inherit_check_shapes__undefined() -> None:
 
     with pytest.raises(RuntimeError):
 
+        # pylint: disable=unused-variable
+
         class SubClass(SuperClass):
             @inherit_check_shapes
             def f(self, a: TensorType) -> TensorType:
                 return t(1)
+
+
+def test_inherit_check_shapes__rewrites_docstring() -> None:
+    # Here we're just testing that the rewrite is applied. For tests of formatting, see
+    # test_parser.py
+
+    class SuperClass(ABC):
+        @abstractmethod
+        @check_shapes(
+            "a: [4]",
+            "return: [1]",
+        )
+        def f(self, a: TensorType) -> TensorType:
+            pass
+
+    class SubClass(SuperClass):
+        @inherit_check_shapes
+        def f(self, a: TensorType) -> TensorType:
+            """
+            An inherited method.
+
+            :param a: A parameter.
+            :returns: A result.
+            """
+            return t(1)
+
+    assert (
+        """
+            An inherited method.
+
+            :param a:
+                * **a** has shape [4].
+
+                A parameter.
+            :returns:
+                * **return** has shape [1].
+
+                A result.
+            """
+        == SubClass.f.__doc__
+    )

@@ -24,53 +24,20 @@ from ..utils import experimental
 from .argument_ref import RESULT_TOKEN
 from .base_types import C
 from .errors import ShapeMismatchError
-from .specs import ArgumentSpec, ParsedArgumentSpec, parse_specs
+from .parser import parse_and_rewrite_docstring, parse_argument_spec
+from .specs import ParsedArgumentSpec
 
 
 @experimental
-def check_shapes(*specs: ArgumentSpec) -> Callable[[C], C]:
+def check_shapes(*specs: str) -> Callable[[C], C]:
     """
     Decorator that checks the shapes of tensor arguments.
 
-    This is compatible with both TensorFlow and NumPy.
+    See: `check_shapes`_.
 
-    The specs passed to this decorator are (name, spec) tuples, where:
-        name is a specification of the target to check the shape of.
-            It can be the name of an argument.
-            Or, it can be the special value "return", in which case the return value of the function
-                is checked.
-            Furthermore you can use dotted syntax (`argument.member1.member2`) to check members of
-                objects.
-            You can also use list lookup syntax (`argument[7]`) to access single members of tuples
-                or lists.
-        spec is a definition of the expected shape. spec is a sequence of one of:
-            A constant integer. The corresponding dimension must have exactly this size.
-            A variable name. The corresponding dimension can have any size, but must be the same
-                everywhere that variable name is used.
-            A variable name followed by ellipsis. This matches any number of dimensions. If used
-                this must the first item in the spec sequence.
-
-    Speed and interactions with `tf.function`:
-
-    If you want to wrap your function in both `tf.function` and `check_shapes` it is recommended you
-    put the `tf.function` outermost so that the shape checks are inside `tf.function`.
-    Shape checks are performed while tracing graphs, but *not* compiled into the actual graphs.
-    This is considered a feature as that means that `check_shapes` doesn't impact the execution
-    speed of compiled functions. However, it also means that tensor dimensions of dynamic size are
-    not verified in compiled mode.
-
-    Example:
-
-        @tf.function
-        @check_shapes(
-            ("features", ["batch_shape...", "n_features"]),
-            ("weights", ["n_features"]),
-            ("return", ["batch_shape..."]),
-        )
-        def linear_model(features: tf.Tensor, weights: tf.Tensor) -> tf.Tensor:
-            ...
+    :param spec_strs: Specification of arguments to check. See: `Argument specification`_.
     """
-    parsed_specs = parse_specs(specs)
+    parsed_specs = tuple(parse_argument_spec(spec) for spec in specs)
 
     # We create four groups of specs:
     # * Groups for checking before and after the function is called.
@@ -105,6 +72,7 @@ def check_shapes(*specs: ArgumentSpec) -> Callable[[C], C]:
             return result
 
         wrapped.__check_shapes__ = _check_shapes  # type: ignore
+        wrapped.__doc__ = parse_and_rewrite_docstring(wrapped.__doc__, parsed_specs)
         return cast(C, wrapped)
 
     return _check_shapes

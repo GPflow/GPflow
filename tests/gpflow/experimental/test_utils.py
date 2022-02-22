@@ -21,7 +21,7 @@ def test_experimental(recwarn: WarningsRecorder) -> None:
     def f() -> None:
         pass
 
-    assert len(recwarn) == 0
+    assert len(recwarn) == 0  # pylint: disable=len-as-condition
     f()
     assert len(recwarn) == 1
     f()

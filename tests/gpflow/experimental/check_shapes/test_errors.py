@@ -15,7 +15,7 @@ from unittest.mock import MagicMock
 
 from gpflow.experimental.check_shapes.argument_ref import RESULT_TOKEN
 from gpflow.experimental.check_shapes.errors import ArgumentReferenceError, ShapeMismatchError
-from gpflow.experimental.check_shapes.specs import parse_specs
+from gpflow.experimental.check_shapes.parser import parse_argument_spec
 
 from .utils import t
 
@@ -30,7 +30,7 @@ def test_argument_reference_error() -> None:
 
     error = ArgumentReferenceError(context_func, arg_map, arg_ref)
 
-    assert error.func == context_func
+    assert error.func == context_func  # pylint: disable=comparison-with-callable
     assert error.arg_map == arg_map
     assert error.arg_ref == arg_ref
     assert (
@@ -43,13 +43,11 @@ def test_argument_reference_error() -> None:
 
 
 def test_shape_mismatch_error() -> None:
-    specs = parse_specs(
-        [
-            ("a", ["x", 3]),
-            ("b", [5, "y"]),
-            (RESULT_TOKEN, ["x", "y"]),
-        ]
-    )
+    specs = [
+        parse_argument_spec("a: [x, 3]"),
+        parse_argument_spec("b: [5, y]"),
+        parse_argument_spec("return: [x, y]"),
+    ]
     arg_map = {
         "a": t(2, 3),
         "b": t(5, 6),
@@ -57,7 +55,7 @@ def test_shape_mismatch_error() -> None:
     }
     error = ShapeMismatchError(context_func, specs, arg_map)
 
-    assert error.func == context_func
+    assert error.func == context_func  # pylint: disable=comparison-with-callable
     assert error.specs == specs
     assert error.arg_map == arg_map
     assert (

@@ -24,24 +24,10 @@ from .base_types import C
 @experimental
 def inherit_check_shapes(func: C) -> C:
     """
-    Decorator that inherits the `check_shapes` decoration from any overridden method in a
+    Decorator that inherits the :func:`check_shapes` decoration from any overridden method in a
     super-class.
 
-    Example:
-
-        class SuperClass(ABC):
-            @abstractmethod
-            @check_shapes(
-                ("a", ["batch...", 4]),
-                ("return", ["batch...", 1]),
-            )
-            def f(self, a: tf.Tensor) -> tf.Tensor:
-                ...
-
-        class SubClass(SuperClass):
-            @inherit_check_shapes
-            def f(self, a: tf.Tensor) -> tf.Tensor:
-                ...
+    See: `Class inheritance`_.
     """
     return cast(C, _InheritCheckShapes(func))
 
@@ -50,7 +36,7 @@ class _InheritCheckShapes:
     """
     Implementation of inherit_check_shapes.
 
-    The __set_name__ hack is to get access to the class the method was declared on.
+    The ``__set_name__`` hack is to get access to the class the method was declared on.
     See: https://stackoverflow.com/a/54316392 .
     """
 
