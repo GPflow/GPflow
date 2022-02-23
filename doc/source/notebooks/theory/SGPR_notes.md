@@ -167,7 +167,7 @@ p(\mathbf f^\star) = \mathcal N(\mathbf f^\star\,|\, \mathbf K_{\star u}\mathbf 
 Note from our above definitions we have:
 
 \begin{equation}
-\mathbf K_{uu}^{-1}\mathbf \Lambda \mathbf K_{uu}^{-1} = 
+\mathbf K_{uu}^{-1}\mathbf \Lambda^{-1} \mathbf K_{uu}^{-1} = 
 \mathbf L^{-\top}\mathbf B^{-1}\mathbf L^{-1}
 \end{equation}
 
