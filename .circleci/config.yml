@@ -8,7 +8,7 @@ commands:
           name: Setup virtual environment
           command: |
             # Run in a fresh virtual environment, to avoid conflicts with preinstalled packages.
-            virtualenv -p python3.6 .venv
+            virtualenv -p python3.7 .venv
             source .venv/bin/activate
             pip install --progress-bar=off -U pip
   install_gpflow:
@@ -47,7 +47,7 @@ commands:
 jobs:
   verify-install:
     docker:
-      - image: cimg/python:3.6
+      - image: cimg/python:3.7
 
     steps:
       - install_gpflow
@@ -60,7 +60,7 @@ jobs:
 
   type-check:
     docker:
-      - image: cimg/python:3.6
+      - image: cimg/python:3.7
 
     steps:
       - install_gpflow
@@ -72,7 +72,7 @@ jobs:
 
   format-check:
     docker:
-      - image: cimg/python:3.6
+      - image: cimg/python:3.7
 
     steps:
       - install_gpflow
@@ -84,7 +84,7 @@ jobs:
 
   unit-test:
     docker:
-      - image: cimg/python:3.6
+      - image: cimg/python:3.7
 
     steps:
       - run_tests:
@@ -92,7 +92,7 @@ jobs:
 
   notebook-test:
     docker:
-      - image: cimg/python:3.6
+      - image: cimg/python:3.7
 
     steps:
       - run_tests:
@@ -100,7 +100,7 @@ jobs:
 
   trigger-docs-generation:
     docker:
-      - image: cimg/python:3.6
+      - image: cimg/python:3.7
         environment:
             ORGANIZATION: GPflow
             PROJECT: docs
@@ -119,7 +119,7 @@ jobs:
 
   deploy:
     docker:
-      - image: cimg/python:3.6
+      - image: cimg/python:3.7
     steps:
       - checkout
       - run:
@@ -134,7 +134,7 @@ jobs:
           name: Install twine
           command: |
             # Run in a fresh virtual environment, to avoid conflicts with preinstalled packages.
-            virtualenv -p python3.6 .venv
+            virtualenv -p python3.7 .venv
             source .venv/bin/activate
             pip install --progress-bar=off -U pip
             pip install --progress-bar=off twine

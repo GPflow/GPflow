@@ -34,7 +34,7 @@
 GPflow is a package for building Gaussian process models in Python.
 It implements modern Gaussian process inference for composable kernels and likelihoods.
 
-GPflow 2.1 builds on [TensorFlow 2.2+](http://www.tensorflow.org) and [TensorFlow Probability](https://www.tensorflow.org/probability/) for running computations, which allows fast execution on GPUs.
+GPflow builds on [TensorFlow 2.4+](http://www.tensorflow.org) and [TensorFlow Probability](https://www.tensorflow.org/probability/) for running computations, which allows fast execution on GPUs.
 
 The [online documentation (develop)](http://gpflow.readthedocs.io/en/develop/)/[(master)](http://gpflow.readthedocs.io/en/master/) contains more details.
 
@@ -56,9 +56,9 @@ GPflow would not be the same without the community. **We are grateful to [all co
 
 ### Requirements
 
-GPflow depends on both TensorFlow (TF, version ≥ 2.2) and TensorFlow Probability (TFP, version ≥ 0.10.1). We support Python ≥ 3.6.
+GPflow depends on both TensorFlow (TF, version ≥ 2.4) and TensorFlow Probability (TFP, version ≥ 0.12). We support Python ≥ 3.7.
 
-**NOTE:** TensorFlow Probability releases are tightly coupled to TensorFlow, e.g. TFP 0.12 requires TF>=2.4, TFP 0.11 requires TF>=2.3, and TFP 0.10 requires TF>=2.2. Unfortunately, this is _not_ specified in TFP's dependencies. So if you already have an (older) version of TensorFlow installed, GPflow will pull in the latest TFP, which will be incompatible. If you get errors such as `ImportError: This version of TensorFlow Probability requires TensorFlow version >= 2.4`, you have to either upgrade TensorFlow (`pip install -U tensorflow`) or manually install an older version of the `tensorflow_probability` package.
+**NOTE:** TensorFlow Probability releases are tightly coupled to TensorFlow, e.g. TFP 0.14 requires TF>=2.6, TFP 0.13 requires TF>=2.5, and TFP 0.12 requires TF>=2.4. Unfortunately, this is _not_ specified in TFP's dependencies. So if you already have an (older) version of TensorFlow installed, GPflow will pull in the latest TFP, which will be incompatible. If you get errors such as `ImportError: This version of TensorFlow Probability requires TensorFlow version >= 2.4`, you have to either upgrade TensorFlow (`pip install -U tensorflow`) or manually install an older version of the `tensorflow_probability` package.
 
 ### Latest (stable) release from PyPI
 
