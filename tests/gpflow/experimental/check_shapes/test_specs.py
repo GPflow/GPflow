@@ -13,42 +13,48 @@
 # limitations under the License.
 import pytest
 
-from gpflow.experimental.check_shapes.argument_ref import RootArgumentRef
-from gpflow.experimental.check_shapes.specs import (
-    ParsedArgumentSpec,
-    ParsedDimensionSpec,
-    ParsedShapeSpec,
-)
+from gpflow.experimental.check_shapes.specs import ParsedArgumentSpec
+
+from .utils import make_argument_ref, make_shape_spec, varrank
 
 
 @pytest.mark.parametrize(
     "argument_spec,expected_repr",
     [
         (
-            ParsedArgumentSpec(RootArgumentRef("foo"), ParsedShapeSpec(None, ())),
+            ParsedArgumentSpec(
+                make_argument_ref("foo"),
+                make_shape_spec(),
+            ),
             "foo: ()",
         ),
         (
             ParsedArgumentSpec(
-                RootArgumentRef("foo"),
-                ParsedShapeSpec(None, (ParsedDimensionSpec(1, None), ParsedDimensionSpec(2, None))),
+                make_argument_ref("foo"),
+                make_shape_spec(1, 2),
             ),
             "foo: (1, 2)",
         ),
         (
             ParsedArgumentSpec(
-                RootArgumentRef("foo"),
-                ParsedShapeSpec(
-                    None, (ParsedDimensionSpec(None, "x"), ParsedDimensionSpec(None, "y"))
-                ),
+                make_argument_ref("foo"),
+                make_shape_spec("x", "y"),
             ),
             "foo: (x, y)",
         ),
         (
             ParsedArgumentSpec(
-                RootArgumentRef("foo"), ParsedShapeSpec("x", (ParsedDimensionSpec(None, "y"),))
+                make_argument_ref("foo"),
+                make_shape_spec(varrank("x"), "y"),
             ),
             "foo: (x..., y)",
+        ),
+        (
+            ParsedArgumentSpec(
+                make_argument_ref("foo"),
+                make_shape_spec("x", varrank("y"), "z"),
+            ),
+            "foo: (x, y..., z)",
         ),
     ],
 )

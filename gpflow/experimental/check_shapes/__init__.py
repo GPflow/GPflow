@@ -86,9 +86,8 @@ one of:
     * ``<integer>``, to require that dimension to have that exact size.
     * ``<name>``, to bind that dimension to a variable. Dimensions bound to the same variable must
       have the same size, though that size can be anything.
-    * ``*<name>`` or ``<name>...``, to bind *any* number of leading dimensions to a variable. Again,
-      multiple uses of the same variable name must match the same dimension sizes. Notice this only
-      is valid for leading dimensions.
+    * ``*<name>`` or ``<name>...``, to bind *any* number of dimensions to a variable. Again,
+      multiple uses of the same variable name must match the same dimension sizes.
 
 A scalar shape is specified by ``[]``.
 
@@ -98,7 +97,7 @@ For example::
         "...: []",
         "...: [3, 4]",
         "...: [width, height]",
-        "...: [*batch, n_features]",
+        "...: [n_samples, *batch]",
         "...: [batch..., 2]",
     )
     def f(...):

@@ -98,48 +98,51 @@ def _assert_shapes(
         actual_len = len(actual)
         actual_i = 0
 
-        expected = arg_spec.shape.trailing_dims
+        expected = arg_spec.shape.dims
         expected_len = len(expected)
-        expected_i = 0
 
-        # Handle any leading variable-length check:
-        if arg_spec.shape.leading_dims_variable_name is not None:
-            expected_name = arg_spec.shape.leading_dims_variable_name
-            _assert(expected_len <= actual_len)
-            leading_dims_len = actual_len - expected_len
-            actual_dims = actual[:leading_dims_len]
-            actual_i += leading_dims_len
+        n_variable_rank = sum(dim_spec.variable_rank for dim_spec in expected)
+        assert n_variable_rank <= 1, "At most one variable-rank ParsedDimensionSpec allowed."
+        if n_variable_rank == 0:
+            _assert(expected_len == actual_len)
+        else:
+            _assert(expected_len - n_variable_rank <= actual_len)
 
-            expected_dims = context.get(expected_name)
-            if expected_dims is None:
-                expected_dims = cast(List[Optional[int]], leading_dims_len * [None])
-                context[expected_name] = expected_dims
+        for dim_spec in expected:
 
-            assert isinstance(expected_dims, list)
-            _assert(len(expected_dims) == len(actual_dims))
-            for i, actual_dim in enumerate(actual_dims):
-                if actual_dim is None:
-                    continue
-                if expected_dims[i] is None:
-                    expected_dims[i] = actual_dim
-                else:
-                    _assert(expected_dims[i] == actual_dim)
+            if dim_spec.variable_rank:
+                assert (
+                    dim_spec.variable_name is not None
+                ), "All variable-rank ParsedDimensionSpec must be bound to a variable."
 
-        # Check that remaining number of dimensions is the same:
-        _assert(expected_len - expected_i == actual_len - actual_i)
+                expected_name = dim_spec.variable_name
+                variable_rank_len = actual_len - (expected_len - n_variable_rank)
+                actual_dims = actual[actual_i : actual_i + variable_rank_len]
+                actual_i += variable_rank_len
 
-        # Handle normal single-dimension checks:
-        while expected_i < expected_len:
-            expected_item = expected[expected_i]
-            actual_dim = actual[actual_i]
+                expected_dims = context.get(expected_name)
+                if expected_dims is None:
+                    expected_dims = cast(List[Optional[int]], variable_rank_len * [None])
+                    context[expected_name] = expected_dims
 
-            if actual_dim is not None:
-                if expected_item.constant is not None:
-                    _assert(expected_item.constant == actual_dim)
-                else:
-                    assert expected_item.variable_name is not None
-                    expected_dim = context.setdefault(expected_item.variable_name, actual_dim)
-                    _assert(expected_dim == actual_dim)
+                assert isinstance(expected_dims, list)
 
-            actual_i += 1
-            expected_i += 1
+                _assert(len(expected_dims) == len(actual_dims))
+                for i, actual_dim in enumerate(actual_dims):
+                    if actual_dim is None:
+                        continue
+                    if expected_dims[i] is None:
+                        expected_dims[i] = actual_dim
+                    else:
+                        _assert(expected_dims[i] == actual_dim)
+
+            else:
+                actual_dim = actual[actual_i]
+                if actual_dim is not None:
+                    if dim_spec.constant is not None:
+                        _assert(dim_spec.constant == actual_dim)
+                    else:
+                        assert dim_spec.variable_name is not None
+                        expected_dim = context.setdefault(dim_spec.variable_name, actual_dim)
+                        _assert(expected_dim == actual_dim)
+                actual_i += 1

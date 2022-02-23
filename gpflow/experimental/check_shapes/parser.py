@@ -68,8 +68,8 @@ class _ParseArgumentSpec(_TreeVisitor):
         return ParsedArgumentSpec(argument_ref, shape)
 
     def argument_name(self, tree: Tree[Token]) -> ArgumentRef:
-        (argument_name,) = _token_children(tree)
-        return RootArgumentRef(argument_name)
+        (token,) = _token_children(tree)
+        return RootArgumentRef(token)
 
     def argument_refs(self, tree: Tree[Token], result: ArgumentRef) -> ArgumentRef:
         for argument_ref in _tree_children(tree):
@@ -77,41 +77,31 @@ class _ParseArgumentSpec(_TreeVisitor):
         return result
 
     def argument_ref_attribute(self, tree: Tree[Token], source: ArgumentRef) -> ArgumentRef:
-        (attribute_name,) = _token_children(tree)
-        return AttributeArgumentRef(source, attribute_name)
+        (token,) = _token_children(tree)
+        return AttributeArgumentRef(source, token)
 
     def argument_ref_index(self, tree: Tree[Token], source: ArgumentRef) -> ArgumentRef:
-        (index,) = _token_children(tree)
-        return IndexArgumentRef(source, int(index))
+        (token,) = _token_children(tree)
+        return IndexArgumentRef(source, int(token))
 
     def shape_spec(self, tree: Tree[Token], argument_ref: ArgumentRef) -> ParsedShapeSpec:
-        # This is complicated because of the way `leading_dims_variable_name` is treated in
-        # `ParsedShapeSpec` - it's a dimension_spec, yet it's not. Maybe some day we can refactor
-        # `ParsedShapeSpec` and this can be simplified.
         (dimension_specs,) = _tree_children(tree)
+        return ParsedShapeSpec(self.visit(dimension_specs))
 
-        leading_dims_variable_name: Optional[str] = None
-        trailing_dims: List[ParsedDimensionSpec] = []
-        for i, dimension_spec in enumerate(_tree_children(dimension_specs)):
-            if dimension_spec.data == "dimension_spec_leading_dims_variable":
-                assert i == 0, (
-                    "Only the leading dimension can have variable length."
-                    f" Found variable length for argument {argument_ref}, dimension {i}."
-                )
-                (leading_dims_variable_name,) = _token_children(dimension_spec)
-            elif dimension_spec.data == "dimension_spec_variable":
-                (variable_name,) = _token_children(dimension_spec)
-                trailing_dims.append(
-                    ParsedDimensionSpec(constant=None, variable_name=variable_name)
-                )
-            elif dimension_spec.data == "dimension_spec_constant":
-                (constant,) = _token_children(dimension_spec)
-                trailing_dims.append(
-                    ParsedDimensionSpec(constant=int(constant), variable_name=None)
-                )
-            else:
-                raise AssertionError(f"Invalid dimension specification {dimension_spec}.")
-        return ParsedShapeSpec(leading_dims_variable_name, tuple(trailing_dims))
+    def dimension_specs(self, tree: Tree[Token]) -> Tuple[ParsedDimensionSpec, ...]:
+        return tuple(self.visit(dimension_spec) for dimension_spec in _tree_children(tree))
+
+    def dimension_spec_constant(self, tree: Tree[Token]) -> ParsedDimensionSpec:
+        (token,) = _token_children(tree)
+        return ParsedDimensionSpec(constant=int(token), variable_name=None, variable_rank=False)
+
+    def dimension_spec_variable(self, tree: Tree[Token]) -> ParsedDimensionSpec:
+        (token,) = _token_children(tree)
+        return ParsedDimensionSpec(constant=None, variable_name=token, variable_rank=False)
+
+    def dimension_spec_variable_rank(self, tree: Tree[Token]) -> ParsedDimensionSpec:
+        (token,) = _token_children(tree)
+        return ParsedDimensionSpec(constant=None, variable_name=token, variable_rank=True)
 
 
 class _RewriteDocString(_TreeVisitor):
@@ -143,13 +133,12 @@ class _RewriteDocString(_TreeVisitor):
 
     def _shape_spec_to_sphinx(self, shape_spec: ParsedShapeSpec) -> str:
         out = []
-        if shape_spec.leading_dims_variable_name is not None:
-            out.append(f"*{shape_spec.leading_dims_variable_name}*...")
-        for dim in shape_spec.trailing_dims:
+        for dim in shape_spec.dims:
             if dim.constant is not None:
                 out.append(str(dim.constant))
             if dim.variable_name is not None:
-                out.append(f"*{dim.variable_name}*")
+                suffix = "..." if dim.variable_rank else ""
+                out.append(f"*{dim.variable_name}*{suffix}")
         return ", ".join(out)
 
     def _guess_indent(self, docstring: str) -> Optional[int]:

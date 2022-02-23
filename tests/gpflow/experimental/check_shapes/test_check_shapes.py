@@ -113,46 +113,54 @@ def test_check_shapes__var_rank() -> None:
     @check_shapes(
         "a: [ds...]",
         "b: [ds..., d1]",
+        "c: [d1, ds..., d2]",
+        "d: [d1, ds...]",
         "return: [ds..., d1, d2]",
     )
-    def f(a: TensorType, b: TensorType, leading_dims: int) -> TensorType:
+    def f(
+        a: TensorType, b: TensorType, c: TensorType, d: TensorType, leading_dims: int
+    ) -> TensorType:
         output_shape = leading_dims * (2,) + (3, 4)
         return t(*output_shape)
 
     # Don't crash...
-    f(t(), t(3), leading_dims=0)
-    f(t(2), t(2, 3), leading_dims=1)
-    f(t(2, 2), t(2, 2, 3), leading_dims=2)
-    f(t(None, 2), t(2, 2, 3), leading_dims=2)
-    f(t(2, None), t(2, 2, 3), leading_dims=2)
-    f(t(2, 2), t(None, 2, 3), leading_dims=2)
-    f(t(2, 2), t(2, 2, None), leading_dims=2)
+    f(t(), t(3), t(3, 4), t(3), leading_dims=0)
+    f(t(2), t(2, 3), t(3, 2, 4), t(3, 2), leading_dims=1)
+    f(t(2, 2), t(2, 2, 3), t(3, 2, 2, 4), t(3, 2, 2), leading_dims=2)
+    f(t(None, 2), t(2, 2, 3), t(3, 2, 2, 4), t(3, 2, 2), leading_dims=2)
+    f(t(2, None), t(2, 2, 3), t(3, 2, 2, 4), t(3, 2, 2), leading_dims=2)
+    f(t(2, 2), t(None, 2, 3), t(3, 2, 2, 4), t(3, 2, 2), leading_dims=2)
+    f(t(2, 2), t(2, 2, None), t(3, 2, 2, 4), t(3, 2, 2), leading_dims=2)
 
 
 def test_check_shapes__var_rank__bad_input() -> None:
     @check_shapes(
         "a: [ds...]",
         "b: [ds..., d1]",
+        "c: [d1, ds..., d2]",
+        "d: [d1, ds...]",
         "return: [ds..., d1, d2]",
     )
-    def f(a: TensorType, b: TensorType) -> TensorType:
+    def f(a: TensorType, b: TensorType, c: TensorType, d: TensorType) -> TensorType:
         return t(1, 2, 3)
 
     with pytest.raises(ShapeMismatchError):
-        f(t(1), t(1, 2 + 1))
+        f(t(2), t(2, 3), t(3, 2 + 1, 4), t(3, 2))
 
 
 def test_check_shapes__var_rank__bad_return() -> None:
     @check_shapes(
         "a: [ds...]",
         "b: [ds..., d1]",
+        "c: [d1, ds..., d2]",
+        "d: [d1, ds...]",
         "return: [ds..., d1, d2]",
     )
-    def f(a: TensorType, b: TensorType) -> TensorType:
-        return t(1, 2 + 1, 3)
+    def f(a: TensorType, b: TensorType, c: TensorType, d: TensorType) -> TensorType:
+        return t(2, 3 + 1, 4)
 
     with pytest.raises(ShapeMismatchError):
-        f(t(1), t(1, 2))
+        f(t(2), t(2, 3), t(3, 2, 4), t(3, 2))
 
 
 def test_check_shapes__scalar() -> None:
