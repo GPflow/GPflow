@@ -29,14 +29,15 @@ kernel.K(X, None) is identical to kernel.K(X, X).)
 
 import abc
 from functools import partial, reduce
-from typing import List, Optional, Union
+from typing import Callable, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 import tensorflow as tf
 
-from ..base import Module
+from ..base import Module, TensorType
 
-ActiveDims = Union[slice, list]
+ActiveDims = Union[slice, Sequence[int]]
+NormalizedActiveDims = Union[slice, np.ndarray]
 
 
 class Kernel(Module, metaclass=abc.ABCMeta):
@@ -44,7 +45,9 @@ class Kernel(Module, metaclass=abc.ABCMeta):
     The basic kernel class. Handles active dims.
     """
 
-    def __init__(self, active_dims: Optional[ActiveDims] = None, name: Optional[str] = None):
+    def __init__(
+        self, active_dims: Optional[ActiveDims] = None, name: Optional[str] = None
+    ) -> None:
         """
         :param active_dims: active dimensions, either a slice or list of
             indices into the columns of X.
@@ -54,7 +57,7 @@ class Kernel(Module, metaclass=abc.ABCMeta):
         self._active_dims = self._normalize_active_dims(active_dims)
 
     @staticmethod
-    def _normalize_active_dims(value):
+    def _normalize_active_dims(value: Optional[ActiveDims]) -> NormalizedActiveDims:
         if value is None:
             value = slice(None, None, None)
         if not isinstance(value, slice):
@@ -62,14 +65,14 @@ class Kernel(Module, metaclass=abc.ABCMeta):
         return value
 
     @property
-    def active_dims(self):
+    def active_dims(self) -> NormalizedActiveDims:
         return self._active_dims
 
     @active_dims.setter
-    def active_dims(self, value):
+    def active_dims(self, value: ActiveDims) -> None:
         self._active_dims = self._normalize_active_dims(value)
 
-    def on_separate_dims(self, other):
+    def on_separate_dims(self, other: "Kernel") -> bool:
         """
         Checks if the dimensions, over which the kernels are specified, overlap.
         Returns True if they are defined on different/separate dimensions and False otherwise.
@@ -85,7 +88,7 @@ class Kernel(Module, metaclass=abc.ABCMeta):
         other_dims = other.active_dims.reshape(1, -1)
         return not np.any(this_dims == other_dims)
 
-    def slice(self, X: tf.Tensor, X2: Optional[tf.Tensor] = None):
+    def slice(self, X: TensorType, X2: Optional[TensorType] = None) -> Tuple[tf.Tensor, tf.Tensor]:
         """
         Slice the correct dimensions for use in the kernel, as indicated by `self.active_dims`.
 
@@ -104,7 +107,7 @@ class Kernel(Module, metaclass=abc.ABCMeta):
                 X2 = tf.gather(X2, dims, axis=-1)
         return X, X2
 
-    def slice_cov(self, cov: tf.Tensor) -> tf.Tensor:
+    def slice_cov(self, cov: TensorType) -> tf.Tensor:
         """
         Slice the correct dimensions for use in the kernel, as indicated by
         `self.active_dims` for covariance matrices. This requires slicing the
@@ -135,7 +138,7 @@ class Kernel(Module, metaclass=abc.ABCMeta):
 
         return cov
 
-    def _validate_ard_active_dims(self, ard_parameter):
+    def _validate_ard_active_dims(self, ard_parameter: TensorType) -> None:
         """
         Validate that ARD parameter matches the number of active_dims (provided active_dims
         has been specified as an array).
@@ -151,14 +154,21 @@ class Kernel(Module, metaclass=abc.ABCMeta):
             )
 
     @abc.abstractmethod
-    def K(self, X, X2=None):
+    def K(self, X: TensorType, X2: Optional[TensorType] = None) -> tf.Tensor:
         raise NotImplementedError
 
     @abc.abstractmethod
-    def K_diag(self, X):
+    def K_diag(self, X: TensorType) -> tf.Tensor:
         raise NotImplementedError
 
-    def __call__(self, X, X2=None, *, full_cov=True, presliced=False):
+    def __call__(
+        self,
+        X: TensorType,
+        X2: Optional[TensorType] = None,
+        *,
+        full_cov: bool = True,
+        presliced: bool = False,
+    ) -> tf.Tensor:
         if (not full_cov) and (X2 is not None):
             raise ValueError("Ambiguous inputs: `not full_cov` and `X2` are not compatible.")
 
@@ -172,10 +182,10 @@ class Kernel(Module, metaclass=abc.ABCMeta):
         else:
             return self.K(X, X2)
 
-    def __add__(self, other):
+    def __add__(self, other: "Kernel") -> "Kernel":
         return Sum([self, other])
 
-    def __mul__(self, other):
+    def __mul__(self, other: "Kernel") -> "Kernel":
         return Product([self, other])
 
 
@@ -190,17 +200,18 @@ class Combination(Kernel):
 
     _reduction = None
 
-    def __init__(self, kernels: List[Kernel], name: Optional[str] = None):
+    def __init__(self, kernels: Sequence[Kernel], name: Optional[str] = None) -> None:
         super().__init__(name=name)
 
         if not all(isinstance(k, Kernel) for k in kernels):
             raise TypeError("can only combine Kernel instances")  # pragma: no cover
 
+        self.kernels: List[Kernel] = []
         self._set_kernels(kernels)
 
-    def _set_kernels(self, kernels: List[Kernel]):
+    def _set_kernels(self, kernels: Sequence[Kernel]) -> None:
         # add kernels to a list, flattening out instances of this class therein
-        kernels_list = []
+        kernels_list: List[Kernel] = []
         for k in kernels:
             if isinstance(k, self.__class__):
                 kernels_list.extend(k.kernels)
@@ -209,7 +220,7 @@ class Combination(Kernel):
         self.kernels = kernels_list
 
     @property
-    def on_separate_dimensions(self):
+    def on_separate_dimensions(self) -> bool:
         """
         Checks whether the kernels in the combination act on disjoint subsets
         of dimensions. Currently, it is hard to asses whether two slice objects
@@ -224,38 +235,46 @@ class Combination(Kernel):
             dimlist = [k.active_dims for k in self.kernels]
             overlapping = False
             for i, dims_i in enumerate(dimlist):
+                assert isinstance(dims_i, np.ndarray)
                 for dims_j in dimlist[i + 1 :]:
-                    print(f"dims_i = {type(dims_i)}")
+                    assert isinstance(dims_j, np.ndarray)
                     if np.any(dims_i.reshape(-1, 1) == dims_j.reshape(1, -1)):
                         overlapping = True
             return not overlapping
 
 
 class ReducingCombination(Combination):
-    def __call__(self, X, X2=None, *, full_cov=True, presliced=False):
+    def __call__(
+        self,
+        X: TensorType,
+        X2: Optional[TensorType] = None,
+        *,
+        full_cov: bool = True,
+        presliced: bool = False,
+    ) -> tf.Tensor:
         return self._reduce(
             [k(X, X2, full_cov=full_cov, presliced=presliced) for k in self.kernels]
         )
 
-    def K(self, X: tf.Tensor, X2: Optional[tf.Tensor] = None) -> tf.Tensor:
+    def K(self, X: TensorType, X2: Optional[TensorType] = None) -> tf.Tensor:
         return self._reduce([k.K(X, X2) for k in self.kernels])
 
-    def K_diag(self, X: tf.Tensor) -> tf.Tensor:
+    def K_diag(self, X: TensorType) -> tf.Tensor:
         return self._reduce([k.K_diag(X) for k in self.kernels])
 
     @property
     @abc.abstractmethod
-    def _reduce(self):
+    def _reduce(self) -> Callable[[Sequence[TensorType]], TensorType]:
         pass
 
 
 class Sum(ReducingCombination):
     @property
-    def _reduce(self):
+    def _reduce(self) -> Callable[[Sequence[TensorType]], TensorType]:
         return tf.add_n
 
 
 class Product(ReducingCombination):
     @property
-    def _reduce(self):
+    def _reduce(self) -> Callable[[Sequence[TensorType]], TensorType]:
         return partial(reduce, tf.multiply)

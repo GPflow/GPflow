@@ -12,12 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from collections.abc import Iterable
-from typing import List, Optional, Union
+from typing import Optional, Sequence
 
 import tensorflow as tf
 
-from ..base import Parameter
+from ..base import Parameter, TensorType
 from ..utilities import positive
 from .base import Combination, Kernel
 
@@ -51,9 +50,9 @@ class ChangePoints(Combination):
 
     def __init__(
         self,
-        kernels: List[Kernel],
-        locations: List[float],
-        steepness: Union[float, List[float]] = 1.0,
+        kernels: Sequence[Kernel],
+        locations: TensorType,
+        steepness: TensorType = 1.0,
         name: Optional[str] = None,
     ):
         """
@@ -68,7 +67,7 @@ class ChangePoints(Combination):
                 "changepoint locations ({nl})".format(nk=len(kernels), nl=len(locations))
             )
 
-        if isinstance(steepness, Iterable) and len(steepness) != len(locations):
+        if isinstance(steepness, Sequence) and len(steepness) != len(locations):
             raise ValueError(
                 "Dimension of steepness ({ns}) does not match number of changepoint "
                 "locations ({nl})".format(ns=len(steepness), nl=len(locations))
@@ -79,9 +78,9 @@ class ChangePoints(Combination):
         self.locations = Parameter(locations)
         self.steepness = Parameter(steepness, transform=positive())
 
-    def _set_kernels(self, kernels: List[Kernel]):
+    def _set_kernels(self, kernels: Sequence[Kernel]) -> None:
         # it is not clear how to flatten out nested change-points
-        self.kernels = kernels
+        self.kernels = list(kernels)
 
     def K(self, X: tf.Tensor, X2: Optional[tf.Tensor] = None) -> tf.Tensor:
         sig_X = self._sigmoids(X)  # N1 x 1 x Ncp

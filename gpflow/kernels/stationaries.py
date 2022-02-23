@@ -12,13 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import Any, Optional
+
 import numpy as np
 import tensorflow as tf
 
-from ..base import Parameter
+from ..base import Parameter, TensorType
 from ..utilities import positive
 from ..utilities.ops import difference_matrix, square_distance
-from .base import Kernel
+from .base import ActiveDims, Kernel
 
 
 class Stationary(Kernel):
@@ -32,7 +34,9 @@ class Stationary(Kernel):
     dimension, otherwise the kernel is isotropic (has a single lengthscale).
     """
 
-    def __init__(self, variance=1.0, lengthscales=1.0, **kwargs):
+    def __init__(
+        self, variance: TensorType = 1.0, lengthscales: TensorType = 1.0, **kwargs: Any
+    ) -> None:
         """
         :param variance: the (initial) value for the variance parameter.
         :param lengthscales: the (initial) value for the lengthscale
@@ -60,11 +64,11 @@ class Stationary(Kernel):
         """
         return self.lengthscales.shape.ndims > 0
 
-    def scale(self, X):
+    def scale(self, X: TensorType) -> TensorType:
         X_scaled = X / self.lengthscales if X is not None else X
         return X_scaled
 
-    def K_diag(self, X):
+    def K_diag(self, X: TensorType) -> tf.Tensor:
         return tf.fill(tf.shape(X)[:-1], tf.squeeze(self.variance))
 
 
@@ -84,18 +88,20 @@ class IsotropicStationary(Stationary):
         Euclidean distance. Should operate element-wise on r.
     """
 
-    def K(self, X, X2=None):
+    def K(self, X: TensorType, X2: Optional[TensorType] = None) -> tf.Tensor:
         r2 = self.scaled_squared_euclid_dist(X, X2)
         return self.K_r2(r2)
 
-    def K_r2(self, r2):
+    def K_r2(self, r2: TensorType) -> tf.Tensor:
         if hasattr(self, "K_r"):
             # Clipping around the (single) float precision which is ~1e-45.
             r = tf.sqrt(tf.maximum(r2, 1e-36))
             return self.K_r(r)  # pylint: disable=no-member
         raise NotImplementedError
 
-    def scaled_squared_euclid_dist(self, X, X2=None):
+    def scaled_squared_euclid_dist(
+        self, X: TensorType, X2: Optional[TensorType] = None
+    ) -> tf.Tensor:
         """
         Returns ‖(X - X2ᵀ) / ℓ‖², i.e. the squared L₂-norm.
         """
@@ -115,17 +121,17 @@ class AnisotropicStationary(Stationary):
     input dimension.
     """
 
-    def K(self, X, X2=None):
+    def K(self, X: TensorType, X2: Optional[TensorType] = None) -> tf.Tensor:
         return self.K_d(self.scaled_difference_matrix(X, X2))
 
-    def scaled_difference_matrix(self, X, X2=None):
+    def scaled_difference_matrix(self, X: TensorType, X2: Optional[TensorType] = None) -> tf.Tensor:
         """
         Returns [(X - X2ᵀ) / ℓ]. If X has shape [..., N, D] and
         X2 has shape [..., M, D], the output will have shape [..., N, M, D].
         """
         return difference_matrix(self.scale(X), self.scale(X2))
 
-    def K_d(self, d):
+    def K_d(self, d: TensorType) -> tf.Tensor:
         raise NotImplementedError
 
 
@@ -142,7 +148,7 @@ class SquaredExponential(IsotropicStationary):
     Functions drawn from a GP with this kernel are infinitely differentiable!
     """
 
-    def K_r2(self, r2):
+    def K_r2(self, r2: TensorType) -> tf.Tensor:
         return self.variance * tf.exp(-0.5 * r2)
 
 
@@ -159,11 +165,17 @@ class RationalQuadratic(IsotropicStationary):
     For α → ∞, the RQ kernel becomes equivalent to the squared exponential.
     """
 
-    def __init__(self, variance=1.0, lengthscales=1.0, alpha=1.0, active_dims=None):
+    def __init__(
+        self,
+        variance: TensorType = 1.0,
+        lengthscales: TensorType = 1.0,
+        alpha: TensorType = 1.0,
+        active_dims: Optional[ActiveDims] = None,
+    ) -> None:
         super().__init__(variance=variance, lengthscales=lengthscales, active_dims=active_dims)
         self.alpha = Parameter(alpha, transform=positive())
 
-    def K_r2(self, r2):
+    def K_r2(self, r2: TensorType) -> tf.Tensor:
         return self.variance * (1 + 0.5 * r2 / self.alpha) ** (-self.alpha)
 
 
@@ -172,7 +184,7 @@ class Exponential(IsotropicStationary):
     The Exponential kernel. It is equivalent to a Matern12 kernel with doubled lengthscales.
     """
 
-    def K_r(self, r):
+    def K_r(self, r: TensorType) -> tf.Tensor:
         return self.variance * tf.exp(-0.5 * r)
 
 
@@ -188,7 +200,7 @@ class Matern12(IsotropicStationary):
     σ² is the variance parameter
     """
 
-    def K_r(self, r):
+    def K_r(self, r: TensorType) -> tf.Tensor:
         return self.variance * tf.exp(-r)
 
 
@@ -204,7 +216,7 @@ class Matern32(IsotropicStationary):
     σ² is the variance parameter.
     """
 
-    def K_r(self, r):
+    def K_r(self, r: TensorType) -> tf.Tensor:
         sqrt3 = np.sqrt(3.0)
         return self.variance * (1.0 + sqrt3 * r) * tf.exp(-sqrt3 * r)
 
@@ -221,7 +233,7 @@ class Matern52(IsotropicStationary):
     σ² is the variance parameter.
     """
 
-    def K_r(self, r):
+    def K_r(self, r: TensorType) -> tf.Tensor:
         sqrt5 = np.sqrt(5.0)
         return self.variance * (1.0 + sqrt5 * r + 5.0 / 3.0 * tf.square(r)) * tf.exp(-sqrt5 * r)
 
@@ -239,6 +251,6 @@ class Cosine(AnisotropicStationary):
     σ² is the variance parameter.
     """
 
-    def K_d(self, d):
+    def K_d(self, d: TensorType) -> tf.Tensor:
         d = tf.reduce_sum(d, axis=-1)
         return self.variance * tf.cos(2 * np.pi * d)
