@@ -12,8 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import Optional, Tuple
+
 import tensorflow as tf
 
+from ..base import SamplesMeanAndVariance
 from ..inducing_variables import InducingVariables
 from ..kernels import Kernel
 from .dispatch import conditional, sample_conditional
@@ -28,12 +31,12 @@ def _sample_conditional(
     kernel: Kernel,
     f: tf.Tensor,
     *,
-    full_cov=False,
-    full_output_cov=False,
-    q_sqrt=None,
-    white=False,
-    num_samples=None,
-):
+    full_cov: bool = False,
+    full_output_cov: bool = False,
+    q_sqrt: Optional[tf.Tensor] = None,
+    white: bool = False,
+    num_samples: Optional[int] = None,
+) -> SamplesMeanAndVariance:
     """
     `sample_conditional` will return a sample from the conditional distribution.
     In most cases this means calculating the conditional mean m and variance v and then

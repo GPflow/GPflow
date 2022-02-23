@@ -12,10 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import Optional
+
+import tensorflow as tf
+
+from ...base import MeanAndVariance
 from ...inducing_variables import (
     FallbackSeparateIndependentInducingVariables,
     FallbackSharedIndependentInducingVariables,
     InducingPoints,
+    MultioutputInducingVariables,
     SeparateIndependentInducingVariables,
     SharedIndependentInducingVariables,
 )
@@ -39,16 +45,16 @@ from ..dispatch import conditional
     object, SharedIndependentInducingVariables, SharedIndependent, object
 )
 def shared_independent_conditional(
-    Xnew,
-    inducing_variable,
-    kernel,
-    f,
+    Xnew: tf.Tensor,
+    inducing_variable: SharedIndependentInducingVariables,
+    kernel: SharedIndependent,
+    f: tf.Tensor,
     *,
-    full_cov=False,
-    full_output_cov=False,
-    q_sqrt=None,
-    white=False,
-):
+    full_cov: bool = False,
+    full_output_cov: bool = False,
+    q_sqrt: Optional[tf.Tensor] = None,
+    white: bool = False,
+) -> MeanAndVariance:
     """Multioutput conditional for an independent kernel and shared inducing inducing.
     Same behaviour as conditional with non-multioutput kernels.
     The covariance matrices used to calculate the conditional have the following shape:
@@ -99,16 +105,16 @@ def shared_independent_conditional(
     object, SeparateIndependentInducingVariables, SharedIndependent, object
 )
 def separate_independent_conditional(
-    Xnew,
-    inducing_variable,
-    kernel,
-    f,
+    Xnew: tf.Tensor,
+    inducing_variable: MultioutputInducingVariables,
+    kernel: MultioutputKernel,
+    f: tf.Tensor,
     *,
-    full_cov=False,
-    full_output_cov=False,
-    q_sqrt=None,
-    white=False,
-):
+    full_cov: bool = False,
+    full_output_cov: bool = False,
+    q_sqrt: Optional[tf.Tensor] = None,
+    white: bool = False,
+) -> MeanAndVariance:
     posterior = IndependentPosteriorMultiOutput(
         kernel,
         inducing_variable,
@@ -128,16 +134,16 @@ def separate_independent_conditional(
     object,
 )
 def fallback_independent_latent_conditional(
-    Xnew,
-    inducing_variable,
-    kernel,
-    f,
+    Xnew: tf.Tensor,
+    inducing_variable: MultioutputInducingVariables,
+    kernel: IndependentLatent,
+    f: tf.Tensor,
     *,
-    full_cov=False,
-    full_output_cov=False,
-    q_sqrt=None,
-    white=False,
-):
+    full_cov: bool = False,
+    full_output_cov: bool = False,
+    q_sqrt: Optional[tf.Tensor] = None,
+    white: bool = False,
+) -> MeanAndVariance:
     """Interdomain conditional with independent latents.
     In this case the number of latent GPs (L) will be different than the number of outputs (P)
     The covariance matrices used to calculate the conditional have the following shape:
@@ -166,16 +172,16 @@ def fallback_independent_latent_conditional(
 
 @conditional._gpflow_internal_register(object, InducingPoints, MultioutputKernel, object)
 def inducing_point_conditional(
-    Xnew,
-    inducing_variable,
-    kernel,
-    f,
+    Xnew: tf.Tensor,
+    inducing_variable: InducingPoints,
+    kernel: MultioutputKernel,
+    f: tf.Tensor,
     *,
-    full_cov=False,
-    full_output_cov=False,
-    q_sqrt=None,
-    white=False,
-):
+    full_cov: bool = False,
+    full_output_cov: bool = False,
+    q_sqrt: Optional[tf.Tensor] = None,
+    white: bool = False,
+) -> MeanAndVariance:
     """Multi-output GP with fully correlated inducing variables.
     The inducing variables are shaped in the same way as evaluations of K, to allow a default
     inducing point scheme for multi-output kernels.
@@ -214,16 +220,16 @@ def inducing_point_conditional(
     object,
 )
 def coregionalization_conditional(
-    Xnew,
-    inducing_variable,
-    kernel,
-    f,
+    Xnew: tf.Tensor,
+    inducing_variable: MultioutputInducingVariables,
+    kernel: LinearCoregionalization,
+    f: tf.Tensor,
     *,
-    full_cov=False,
-    full_output_cov=False,
-    q_sqrt=None,
-    white=False,
-):
+    full_cov: bool = False,
+    full_output_cov: bool = False,
+    q_sqrt: Optional[tf.Tensor] = None,
+    white: bool = False,
+) -> MeanAndVariance:
     """Most efficient routine to project L independent latent gps through a mixing matrix W.
     The mixing matrix is a member of the `LinearCoregionalization` and has shape [P, L].
     The covariance matrices used to calculate the conditional have the following shape:
