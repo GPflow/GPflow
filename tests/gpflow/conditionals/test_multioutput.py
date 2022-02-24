@@ -1,12 +1,16 @@
+from typing import Callable, List, Sequence, Tuple
+
 import numpy as np
 import pytest
 import scipy
 import tensorflow as tf
+from _pytest.fixtures import SubRequest
 
 import gpflow
 import gpflow.inducing_variables.multioutput as mf
 import gpflow.kernels.multioutput as mk
 from gpflow import set_trainable
+from gpflow.base import MeanAndVariance, RegressionData
 from gpflow.conditionals import sample_conditional
 from gpflow.conditionals.util import (
     fully_correlated_conditional,
@@ -23,30 +27,26 @@ from gpflow.models import SVGP
 float_type = default_float()
 rng = np.random.RandomState(99201)
 
-
 # ------------------------------------------
 # Helpers
 # ------------------------------------------
 
 
-def predict(model, Xnew, full_cov, full_output_cov):
-    m, v = model.predict_f(Xnew, full_cov=full_cov, full_output_cov=full_output_cov)
-    return [m, v]
-
-
-def predict_all(models, Xnew, full_cov, full_output_cov):
+def predict_all(
+    models: Sequence[SVGP], Xnew: tf.Tensor, full_cov: bool, full_output_cov: bool
+) -> Tuple[List[tf.Tensor], List[tf.Tensor]]:
     """
     Returns the mean and variance of f(Xnew) for each model in `models`.
     """
     ms, vs = [], []
     for model in models:
-        m, v = predict(model, Xnew, full_cov, full_output_cov)
+        m, v = model.predict_f(Xnew, full_cov=full_cov, full_output_cov=full_output_cov)
         ms.append(m)
         vs.append(v)
     return ms, vs
 
 
-def assert_all_array_elements_almost_equal(arr, decimal):
+def assert_all_array_elements_almost_equal(arr: Sequence[tf.Tensor]) -> None:
     """
     Check if consecutive elements of `arr` are almost equal.
     """
@@ -54,7 +54,9 @@ def assert_all_array_elements_almost_equal(arr, decimal):
         np.testing.assert_allclose(arr[i], arr[i + 1], atol=1e-5)
 
 
-def check_equality_predictions(data, models, decimal=3):
+def check_equality_predictions(
+    data: RegressionData, models: Sequence[SVGP], decimal: int = 3
+) -> None:
     """
     Executes a couple of checks to compare the equality of predictions
     of different models. The models should be configured with the same
@@ -71,7 +73,7 @@ def check_equality_predictions(data, models, decimal=3):
     elbos = [m.elbo(data) for m in models]
 
     # Check equality of log likelihood
-    assert_all_array_elements_almost_equal(elbos, decimal=5)
+    assert_all_array_elements_almost_equal(elbos)
 
     # Predict: full_cov = True and full_output_cov = True
     means_tt, vars_tt = predict_all(models, Data.Xs, full_cov=True, full_output_cov=True)
@@ -84,12 +86,12 @@ def check_equality_predictions(data, models, decimal=3):
 
     # check equality of all the means
     all_means = means_tt + means_tf + means_ft + means_ff
-    assert_all_array_elements_almost_equal(all_means, decimal=decimal)
+    assert_all_array_elements_almost_equal(all_means)
 
     # check equality of all the variances within a category
     # (e.g. full_cov=True and full_output_cov=False)
-    all_vars = [vars_tt, vars_tf, vars_ft, vars_ff]
-    _ = [assert_all_array_elements_almost_equal(var, decimal=decimal) for var in all_vars]
+    for var in [vars_tt, vars_tf, vars_ft, vars_ff]:
+        assert_all_array_elements_almost_equal(var)
 
     # Here we check that the variance in different categories are equal
     # after transforming to the right shape.
@@ -113,7 +115,7 @@ def check_equality_predictions(data, models, decimal=3):
     )
 
 
-def expand_cov(q_sqrt, W):
+def expand_cov(q_sqrt: tf.Tensor, W: tf.Tensor) -> tf.Tensor:
     """
     :param G: cholesky of covariance matrices, L x M x M
     :param W: mixing matrix (square),  L x L
@@ -125,7 +127,7 @@ def expand_cov(q_sqrt, W):
     return q_sqrt_expanded[None, ...]
 
 
-def create_q_sqrt(M, L):
+def create_q_sqrt(M: int, L: int) -> np.ndarray:
     """ returns an array of L lower triangular matrices of size M x M """
     return np.array([np.tril(rng.randn(M, M)) for _ in range(L)])  # [L, M, M]
 
@@ -202,7 +204,7 @@ class DataMixedKernel(Data):
 # ------------------------------------------
 
 
-def test_sample_mvn(full_cov):
+def test_sample_mvn(full_cov: bool) -> None:
     """
     Draws 10,000 samples from a distribution
     with known mean and covariance. The test checks
@@ -224,7 +226,7 @@ def test_sample_mvn(full_cov):
     np.testing.assert_array_almost_equal(samples_cov, [[1.0, 0.0], [0.0, 1.0]], decimal=1)
 
 
-def test_sample_conditional(whiten, full_cov, full_output_cov):
+def test_sample_conditional(whiten: bool, full_cov: bool, full_output_cov: bool) -> None:
     if full_cov and full_output_cov:
         return
 
@@ -283,7 +285,7 @@ def test_sample_conditional(whiten, full_cov, full_output_cov):
     np.testing.assert_allclose(var_x, var_f)
 
 
-def test_sample_conditional_mixedkernel():
+def test_sample_conditional_mixedkernel() -> None:
     q_mu = tf.random.uniform((Data.M, Data.L), dtype=tf.float64)  # M x L
     q_sqrt = tf.convert_to_tensor(
         [np.tril(tf.random.uniform((Data.M, Data.M), dtype=tf.float64)) for _ in range(Data.L)]
@@ -317,18 +319,25 @@ def test_sample_conditional_mixedkernel():
     )
 
 
+QSqrtFactory = Callable[[tf.Tensor, int], tf.Tensor]
+
+
 @pytest.fixture(
     name="fully_correlated_q_sqrt_factory",
     params=[lambda _, __: None, lambda LM, R: tf.eye(LM, batch_shape=(R,))],
 )
-def _q_sqrt_factory_fixture(request):
+def _q_sqrt_factory_fixture(request: SubRequest) -> QSqrtFactory:
     return request.param
 
 
 @pytest.mark.parametrize("R", [1, 2, 5])
 def test_fully_correlated_conditional_repeat_shapes_fc_and_foc(
-    R, fully_correlated_q_sqrt_factory, full_cov, full_output_cov, whiten
-):
+    R: int,
+    fully_correlated_q_sqrt_factory: QSqrtFactory,
+    full_cov: bool,
+    full_output_cov: bool,
+    whiten: bool,
+) -> None:
 
     L, M, N, P = Data.L, Data.M, Data.N, Data.P
 
@@ -366,7 +375,7 @@ def test_fully_correlated_conditional_repeat_shapes_fc_and_foc(
     assert v.shape.as_list() == expected_v_shape
 
 
-def test_fully_correlated_conditional_repeat_whiten(whiten):
+def test_fully_correlated_conditional_repeat_whiten(whiten: bool) -> None:
     """
     This test checks the effect of the `white` flag, which changes the projection matrix `A`.
 
@@ -401,8 +410,11 @@ def test_fully_correlated_conditional_repeat_whiten(whiten):
 
 
 def test_fully_correlated_conditional_shapes_fc_and_foc(
-    fully_correlated_q_sqrt_factory, full_cov, full_output_cov, whiten
-):
+    fully_correlated_q_sqrt_factory: QSqrtFactory,
+    full_cov: bool,
+    full_output_cov: bool,
+    whiten: bool,
+) -> None:
     L, M, N, P = Data.L, Data.M, Data.N, Data.P
 
     Kmm = tf.ones((L * M, L * M)) + default_jitter() * tf.eye(L * M)
@@ -444,7 +456,7 @@ def test_fully_correlated_conditional_shapes_fc_and_foc(
 # ------------------------------------------
 
 
-def test_shapes_of_mok():
+def test_shapes_of_mok() -> None:
     data = DataMixedKernel
 
     kern_list = [SquaredExponential() for _ in range(data.L)]
@@ -465,7 +477,7 @@ def test_shapes_of_mok():
 # ------------------------------------------
 
 
-def test_MixedMok_Kgg():
+def test_MixedMok_Kgg() -> None:
     data = DataMixedKernel
     kern_list = [SquaredExponential() for _ in range(data.L)]
     kernel = mk.LinearCoregionalization(kern_list, W=data.W)
@@ -484,7 +496,7 @@ def test_MixedMok_Kgg():
 # ------------------------------------------
 
 
-def test_shared_independent_mok():
+def test_shared_independent_mok() -> None:
     """
     In this test we use the same kernel and the same inducing inducing
     for each of the outputs. The outputs are considered to be uncorrelated.
@@ -580,7 +592,7 @@ def test_shared_independent_mok():
     check_equality_predictions(Data.data, [model_1, model_2, model_3])
 
 
-def test_separate_independent_mok():
+def test_separate_independent_mok() -> None:
     """
     We use different independent kernels for each of the output dimensions.
     We can achieve this in two ways:
@@ -647,7 +659,7 @@ def test_separate_independent_mok():
     check_equality_predictions(Data.data, [model_1, model_2])
 
 
-def test_separate_independent_mof():
+def test_separate_independent_mof() -> None:
     """
     Same test as above but we use different (i.e. separate) inducing inducing
     for each of the output dimensions.
@@ -717,7 +729,7 @@ def test_separate_independent_mof():
     check_equality_predictions(Data.data, [model_1, model_2, model_3])
 
 
-def test_mixed_mok_with_Id_vs_independent_mok():
+def test_mixed_mok_with_Id_vs_independent_mok() -> None:
     data = DataMixedKernelWithEye
     # Independent model
     k1 = mk.SharedIndependent(SquaredExponential(variance=0.5, lengthscales=1.2), data.L)
@@ -751,7 +763,7 @@ def test_mixed_mok_with_Id_vs_independent_mok():
     check_equality_predictions(Data.data, [model_1, model_2])
 
 
-def test_compare_mixed_kernel():
+def test_compare_mixed_kernel() -> None:
     data = DataMixedKernel
 
     kern_list = [SquaredExponential() for _ in range(data.L)]
@@ -767,7 +779,7 @@ def test_compare_mixed_kernel():
     check_equality_predictions(Data.data, [model_1, model_2])
 
 
-def test_multioutput_with_diag_q_sqrt():
+def test_multioutput_with_diag_q_sqrt() -> None:
     data = DataMixedKernel
 
     q_sqrt_diag = np.ones((data.M, data.L)) * 2
@@ -800,7 +812,7 @@ def test_multioutput_with_diag_q_sqrt():
     check_equality_predictions(Data.data, [model_1, model_2])
 
 
-def test_MixedKernelSeparateMof():
+def test_MixedKernelSeparateMof() -> None:
     data = DataMixedKernel
 
     kern_list = [SquaredExponential() for _ in range(data.L)]
@@ -818,7 +830,7 @@ def test_MixedKernelSeparateMof():
     check_equality_predictions(Data.data, [model_1, model_2])
 
 
-def test_separate_independent_conditional_with_q_sqrt_none():
+def test_separate_independent_conditional_with_q_sqrt_none() -> None:
     """
     In response to bug #1523, this test checks that separate_independent_condtional
     does not fail when q_sqrt=None.
@@ -843,7 +855,7 @@ def test_separate_independent_conditional_with_q_sqrt_none():
     )
 
 
-def test_independent_interdomain_conditional_bug_regression():
+def test_independent_interdomain_conditional_bug_regression() -> None:
     """
     Regression test for https://github.com/GPflow/GPflow/issues/818
     Not an exhaustive test
@@ -859,10 +871,10 @@ def test_independent_interdomain_conditional_bug_regression():
     Zs = [np.random.randn(M, D_lat) for _ in range(L)]
     k = gpflow.kernels.SquaredExponential(lengthscales=np.ones(D_lat))
 
-    def compute_Kmn(Z, X):
+    def compute_Kmn(Z: tf.Tensor, X: tf.Tensor) -> tf.Tensor:
         return tf.stack([k(Z, X[:, i * D_lat : (i + 1) * D_lat]) for i in range(P)])
 
-    def compute_Knn(X):
+    def compute_Knn(X: tf.Tensor) -> tf.Tensor:
         return tf.stack([k(X[:, i * D_lat : (i + 1) * D_lat], full_cov=False) for i in range(P)])
 
     Kmm = tf.stack([k(Z) for Z in Zs])  # L x M x M
@@ -886,7 +898,7 @@ def test_independent_interdomain_conditional_bug_regression():
     )
 
 
-def test_independent_interdomain_conditional_whiten(whiten):
+def test_independent_interdomain_conditional_whiten(whiten: bool) -> None:
     """
     This test checks the effect of the `white` flag, which changes the projection matrix `A`.
 

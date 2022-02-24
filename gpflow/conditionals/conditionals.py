@@ -12,8 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import Optional
+
 import tensorflow as tf
 
+from ..base import MeanAndVariance
 from ..inducing_variables import InducingVariables
 from ..kernels import Kernel
 from ..posteriors import VGPPosterior, get_posterior_class
@@ -21,17 +24,17 @@ from .dispatch import conditional
 
 
 @conditional._gpflow_internal_register(object, InducingVariables, Kernel, object)
-def _conditional(
+def _sparse_conditional(
     Xnew: tf.Tensor,
     inducing_variable: InducingVariables,
     kernel: Kernel,
     f: tf.Tensor,
     *,
-    full_cov=False,
-    full_output_cov=False,
-    q_sqrt=None,
-    white=False,
-):
+    full_cov: bool = False,
+    full_output_cov: bool = False,
+    q_sqrt: Optional[tf.Tensor] = None,
+    white: bool = False,
+) -> MeanAndVariance:
     """
     Single-output GP conditional.
 
@@ -42,7 +45,7 @@ def _conditional(
 
     Further reference
     -----------------
-    - See `gpflow.conditionals._conditional` (below) for a detailed explanation of
+    - See `gpflow.conditionals._dense_conditional` (below) for a detailed explanation of
       conditional in the single-output case.
     - See the multiouput notebook for more information about the multiouput framework.
 
@@ -78,17 +81,17 @@ def _conditional(
 
 
 @conditional._gpflow_internal_register(object, object, Kernel, object)
-def _conditional(
+def _dense_conditional(
     Xnew: tf.Tensor,
     X: tf.Tensor,
     kernel: Kernel,
     f: tf.Tensor,
     *,
-    full_cov=False,
-    full_output_cov=False,
-    q_sqrt=None,
-    white=False,
-):
+    full_cov: bool = False,
+    full_output_cov: bool = False,
+    q_sqrt: Optional[tf.Tensor] = None,
+    white: bool = False,
+) -> MeanAndVariance:
     """
     Given f, representing the GP at the points X, produce the mean and
     (co-)variance of the GP at the points Xnew.

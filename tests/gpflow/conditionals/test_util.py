@@ -13,16 +13,19 @@
 # limitations under the License.
 
 
+from typing import Optional, Tuple
+
 import numpy as np
 import pytest
 import tensorflow as tf
+from _pytest.logging import LogCaptureFixture
 from numpy.testing import assert_allclose, assert_equal
 
 from gpflow import default_float
 from gpflow.conditionals.util import leading_transpose, rollaxis_left, rollaxis_right, sample_mvn
 
 
-def test_leading_transpose():
+def test_leading_transpose() -> None:
     dims = [1, 2, 3, 4]
     a = tf.zeros(dims)
     b = leading_transpose(a, [..., -1, -2])
@@ -39,7 +42,7 @@ def test_leading_transpose():
     assert d.shape == e.shape == f.shape
 
 
-def test_leading_transpose_fails():
+def test_leading_transpose_fails() -> None:
     """ Check that error is thrown if `perm` is not compatible with `a` """
     dims = [1, 2, 3, 4]
     a = tf.zeros(dims)
@@ -48,13 +51,14 @@ def test_leading_transpose_fails():
         leading_transpose(a, [-1, -2])
 
 
-def test_leading_transpose_with_tf_function_wrapper(caplog):
+def test_leading_transpose_with_tf_function_wrapper(caplog: LogCaptureFixture) -> None:
     """ Check that no warnings are thrown when compiling `leading_transpose` """
+
     dims = [1, 2, 3, 4]
     a = tf.zeros(dims)
 
     @tf.function
-    def compiled_wrapper():
+    def compiled_wrapper() -> tf.Tensor:
         return leading_transpose(a, [..., -1, -2])
 
     compiled_wrapper()
@@ -68,7 +72,7 @@ def test_leading_transpose_with_tf_function_wrapper(caplog):
 # rollaxis
 @pytest.mark.parametrize("rolls", [1, 2])
 @pytest.mark.parametrize("direction", ["left", "right"])
-def test_rollaxis(rolls, direction):
+def test_rollaxis(rolls: int, direction: str) -> None:
     A = np.random.randn(10, 5, 3)
     A_tf = tf.convert_to_tensor(A)
 
@@ -92,7 +96,7 @@ def test_rollaxis(rolls, direction):
 
 
 @pytest.mark.parametrize("rolls", [1, 2])
-def test_rollaxis_idempotent(rolls):
+def test_rollaxis_idempotent(rolls: int) -> None:
     A = np.random.randn(10, 5, 3, 20, 1)
     A_tf = tf.convert_to_tensor(A)
     A_left_right = rollaxis_left(rollaxis_right(A_tf, 2), 2)
@@ -107,7 +111,9 @@ def test_rollaxis_idempotent(rolls):
 @pytest.mark.parametrize("d", [1, 5])
 @pytest.mark.parametrize("num_samples", [None, 1, 5])
 @pytest.mark.parametrize("full_cov", [True, False])
-def test_sample_mvn_shapes(leading_dims, n, d, num_samples, full_cov):
+def test_sample_mvn_shapes(
+    leading_dims: Tuple[int, ...], n: int, d: int, num_samples: Optional[int], full_cov: bool
+) -> None:
     mean_shape = leading_dims + (n, d)
     means = tf.zeros(mean_shape, dtype=default_float())
 

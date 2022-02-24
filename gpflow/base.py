@@ -54,6 +54,7 @@ _Array = Sequence[Any]  # a nested array of int, float, bool etc. kept simple fo
 TensorData = Union[_NativeScalar, _Array, TensorType]
 
 MeanAndVariance = Tuple[tf.Tensor, tf.Tensor]
+SamplesMeanAndVariance = Tuple[tf.Tensor, tf.Tensor, tf.Tensor]
 
 InputData = Union[TensorType]
 OutputData = Union[TensorType]
