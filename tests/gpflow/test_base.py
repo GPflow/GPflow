@@ -231,12 +231,12 @@ def test_construct_parameter_with_variable_shape() -> None:
         np.testing.assert_equal(value, parameter.numpy())
 
 
-def test_construct_parameter_with_variable_shape__different_transformed_shape() -> None:
+def test_construct_parameter_with_variable_shape__different_constrained_shape() -> None:
     parameter = gpflow.Parameter(
         [[1, 0], [2, 3]],
         transform=triangular(),
-        pretransformed_shape=[None],
-        transformed_shape=[None, None],
+        unconstrained_shape=[None],
+        constrained_shape=[None, None],
     )
 
     values = [

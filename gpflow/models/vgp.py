@@ -73,9 +73,9 @@ class VGP_deprecated(GPModel, InternalDataTrainingLossMixin):
 
         static_num_data = X_data.shape[0]
         if static_num_data is None:
-            q_sqrt_pretransformed_shape = (self.num_latent_gps, None)
+            q_sqrt_unconstrained_shape = (self.num_latent_gps, None)
         else:
-            q_sqrt_pretransformed_shape = (self.num_latent_gps, triangular_size(static_num_data))
+            q_sqrt_unconstrained_shape = (self.num_latent_gps, triangular_size(static_num_data))
         self.num_data = Parameter(tf.shape(X_data)[0], shape=[], dtype=tf.int32, trainable=False)
 
         # Many functions below don't like `Parameter`s:
@@ -89,8 +89,8 @@ class VGP_deprecated(GPModel, InternalDataTrainingLossMixin):
         self.q_sqrt = Parameter(
             q_sqrt,
             transform=triangular(),
-            pretransformed_shape=q_sqrt_pretransformed_shape,
-            transformed_shape=(num_latent_gps, static_num_data, static_num_data),
+            unconstrained_shape=q_sqrt_unconstrained_shape,
+            constrained_shape=(num_latent_gps, static_num_data, static_num_data),
         )
 
     def maximum_log_likelihood_objective(self) -> tf.Tensor:
