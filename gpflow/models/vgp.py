@@ -27,7 +27,7 @@ from ..kernels import Kernel
 from ..kullback_leiblers import gauss_kl
 from ..likelihoods import Likelihood
 from ..mean_functions import MeanFunction
-from ..utilities import triangular
+from ..utilities import is_variable, triangular, triangular_size
 from .model import GPModel
 from .training_mixins import InternalDataTrainingLossMixin
 from .util import data_input_to_tensor
@@ -69,13 +69,29 @@ class VGP_deprecated(GPModel, InternalDataTrainingLossMixin):
         super().__init__(kernel, likelihood, mean_function, num_latent_gps)
 
         self.data = data_input_to_tensor(data)
-        X_data, Y_data = self.data
-        num_data = X_data.shape[0]
-        self.num_data = num_data
+        X_data, _Y_data = self.data
 
-        self.q_mu = Parameter(np.zeros((num_data, self.num_latent_gps)))
-        q_sqrt = np.array([np.eye(num_data) for _ in range(self.num_latent_gps)])
-        self.q_sqrt = Parameter(q_sqrt, transform=triangular())
+        static_num_data = X_data.shape[0]
+        if static_num_data is None:
+            q_sqrt_unconstrained_shape = (self.num_latent_gps, None)
+        else:
+            q_sqrt_unconstrained_shape = (self.num_latent_gps, triangular_size(static_num_data))
+        self.num_data = Parameter(tf.shape(X_data)[0], shape=[], dtype=tf.int32, trainable=False)
+
+        # Many functions below don't like `Parameter`s:
+        dynamic_num_data = tf.convert_to_tensor(self.num_data)
+
+        self.q_mu = Parameter(
+            tf.zeros((dynamic_num_data, self.num_latent_gps)),
+            shape=(static_num_data, num_latent_gps),
+        )
+        q_sqrt = tf.eye(dynamic_num_data, batch_shape=[self.num_latent_gps])
+        self.q_sqrt = Parameter(
+            q_sqrt,
+            transform=triangular(),
+            unconstrained_shape=q_sqrt_unconstrained_shape,
+            constrained_shape=(num_latent_gps, static_num_data, static_num_data),
+        )
 
     def maximum_log_likelihood_objective(self) -> tf.Tensor:
         return self.elbo()
@@ -93,11 +109,13 @@ class VGP_deprecated(GPModel, InternalDataTrainingLossMixin):
 
         """
         X_data, Y_data = self.data
+        num_data = tf.convert_to_tensor(self.num_data)
+
         # Get prior KL.
         KL = gauss_kl(self.q_mu, self.q_sqrt)
 
         # Get conditionals
-        K = self.kernel(X_data) + tf.eye(self.num_data, dtype=default_float()) * default_jitter()
+        K = self.kernel(X_data) + tf.eye(num_data, dtype=default_float()) * default_jitter()
         L = tf.linalg.cholesky(K)
         fmean = tf.linalg.matmul(L, self.q_mu) + self.mean_function(X_data)  # [NN, ND] -> ND
         q_sqrt_dnn = tf.linalg.band_part(self.q_sqrt, -1, 0)  # [D, N, N]
@@ -115,7 +133,7 @@ class VGP_deprecated(GPModel, InternalDataTrainingLossMixin):
     def predict_f(
         self, Xnew: InputData, full_cov: bool = False, full_output_cov: bool = False
     ) -> MeanAndVariance:
-        X_data, _ = self.data
+        X_data, _Y_data = self.data
         mu, var = conditional(
             Xnew,
             X_data,
@@ -153,10 +171,10 @@ class VGP_with_posterior(VGP_deprecated):
           computations when you only want to call the posterior's
           `fused_predict_f` method.
         """
-        X, _ = self.data
+        X_data, _Y_data = self.data
         return posteriors.VGPPosterior(
             self.kernel,
-            X,
+            X_data,
             self.q_mu,
             self.q_sqrt,
             mean_function=self.mean_function,
@@ -179,6 +197,44 @@ class VGP_with_posterior(VGP_deprecated):
 class VGP(VGP_with_posterior):
     # subclassed to ensure __class__ == "VGP"
     pass
+
+
+def update_vgp_data(vgp: VGP_deprecated, new_data: RegressionData) -> None:
+    """
+    Set the data on the given VGP model, and update its variational parameters.
+
+    As opposed to many of the other models the VGP has internal parameters whose shape depends on
+    the shape of the data. This functions updates the internal data of the given vgp, and updates
+    the variational parameters to fit.
+
+    This function requires that the input :param:`vgp` were create with :class:`tf.Variable`s for
+    :param:`data`.
+    """
+    old_X_data, old_Y_data = vgp.data
+    assert is_variable(old_X_data) and is_variable(
+        old_Y_data
+    ), "update_vgp_data requires the model to have been created with variable data."
+
+    new_X_data, new_Y_data = new_data
+    new_num_data = tf.shape(new_X_data)[0]
+    f_mu, f_cov = vgp.predict_f(new_X_data, full_cov=True)  # [N, L], [L, N, N]
+
+    # This model is hard-coded to use the whitened representation, i.e.  q_mu and q_sqrt
+    # parametrize q(v), and u = f(X) = L v, where L = cholesky(K(X, X)) Hence we need to
+    # back-transform from f_mu and f_cov to obtain the updated new_q_mu and new_q_sqrt:
+    Knn = vgp.kernel(new_X_data, full_cov=True)  # [N, N]
+    jitter_mat = default_jitter() * tf.eye(new_num_data, dtype=Knn.dtype)
+    Lnn = tf.linalg.cholesky(Knn + jitter_mat)  # [N, N]
+    new_q_mu = tf.linalg.triangular_solve(Lnn, f_mu)  # [N, L]
+    tmp = tf.linalg.triangular_solve(Lnn[None], f_cov)  # [L, N, N], L⁻¹ f_cov
+    S_v = tf.linalg.triangular_solve(Lnn[None], tf.linalg.matrix_transpose(tmp))  # [L, N, N]
+    new_q_sqrt = tf.linalg.cholesky(S_v + jitter_mat)  # [L, N, N]
+
+    old_X_data.assign(new_X_data)
+    old_Y_data.assign(new_Y_data)
+    vgp.num_data.assign(new_num_data)
+    vgp.q_mu.assign(new_q_mu)
+    vgp.q_sqrt.assign(new_q_sqrt)
 
 
 class VGPOpperArchambeau(GPModel, InternalDataTrainingLossMixin):

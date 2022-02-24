@@ -114,13 +114,23 @@ class Parameter(tfp.util.TransformedVariable):
         trainable: Optional[bool] = None,
         dtype: Optional[DType] = None,
         name: Optional[str] = None,
+        unconstrained_shape: Optional[Sequence[Optional[int]]] = None,
+        constrained_shape: Optional[Sequence[Optional[int]]] = None,
+        shape: Optional[Sequence[Optional[int]]] = None,
     ):
-        """
-        A parameter retains both constrained and unconstrained
-        representations. If no transform is provided, these two values will be the same.
-        It is often challenging to operate with unconstrained parameters. For example, a variance cannot be negative,
-        therefore we need a positive constraint and it is natural to use constrained values.
-        A prior can be imposed either on the constrained version (default) or on the unconstrained version of the parameter.
+        """A parameter retains both constrained and unconstrained representations. If no transform
+        is provided, these two values will be the same.  It is often challenging to operate with
+        unconstrained parameters. For example, a variance cannot be negative, therefore we need a
+        positive constraint and it is natural to use constrained values.  A prior can be imposed
+        either on the constrained version (default) or on the unconstrained version of the
+        parameter.
+
+        :param unconstrained_shape: Declare the shape of the unconstrained / pre-transformed values.
+            Useful for setting dynamic shapes.
+        :param constrained_shape: Declare the shape of the constrained / transformed values. Useful
+            for setting dynamic shapes.
+        :param shape: Convenience shortcut for setting both `unconstrained_shape` and
+            `constrained_shape` to the same value.
         """
         if isinstance(value, Parameter):
             transform = transform or value.transform
@@ -141,9 +151,28 @@ class Parameter(tfp.util.TransformedVariable):
             value = _cast_to_dtype(value, dtype)
 
         _validate_unconstrained_value(value, transform, dtype)
-        super().__init__(value, transform, dtype=value.dtype, trainable=trainable, name=name)
 
-        self.prior = prior  # type: Optional[Prior]
+        if shape is not None:
+            assert unconstrained_shape is None, "Cannot set both `shape` and `unconstrained_shape`."
+            assert constrained_shape is None, "Cannot set both `shape` and `constrained_shape`."
+            unconstrained_shape = shape
+            constrained_shape = shape
+
+        super().__init__(
+            value,
+            transform,
+            dtype=value.dtype,
+            trainable=trainable,
+            name=name,
+            shape=unconstrained_shape,
+        )
+
+        # TransformedVariable.__init__ doesn't allow us to pass an unconstrained / pre-transformed
+        # shape, so we manually override it.
+        if constrained_shape is not None:
+            self._shape = tf.TensorShape(constrained_shape)
+
+        self.prior: Optional[Prior] = prior
         self.prior_on = prior_on  # type: ignore  # see https://github.com/python/mypy/issues/3004
 
     def log_prior_density(self) -> tf.Tensor:
@@ -248,6 +277,8 @@ def _validate_unconstrained_value(
 ) -> tf.Tensor:
     value = _cast_to_dtype(value, dtype)
     unconstrained_value = _to_unconstrained(value, transform)
+    if unconstrained_value.dtype.is_integer:
+        return unconstrained_value
     message = (
         "gpflow.Parameter: the value to be assigned is incompatible with this parameter's "
         "transform (the corresponding unconstrained value has NaN or Inf) and hence cannot be "

@@ -19,7 +19,7 @@ from numpy.testing import assert_allclose
 import gpflow
 from gpflow.config import default_jitter
 from gpflow.mean_functions import Constant
-from gpflow.models import ExternalDataTrainingLossMixin, maximum_log_likelihood_objective
+from gpflow.models import maximum_log_likelihood_objective, training_loss_closure
 
 rng = np.random.RandomState(0)
 
@@ -158,11 +158,7 @@ def test_equivalence(approximate_model):
 
     def optimize(model):
         opt = gpflow.optimizers.Scipy()
-        loss = (
-            model.training_loss_closure(Datum.data)
-            if isinstance(model, ExternalDataTrainingLossMixin)
-            else model.training_loss
-        )
+        loss = training_loss_closure(model, Datum.data)
         opt.minimize(loss, model.trainable_variables, options=dict(maxiter=3000))
         if isinstance(model, gpflow.models.SVGP) and not model.whiten:
             # The (S)VGP model in non-whitened representation has significantly
