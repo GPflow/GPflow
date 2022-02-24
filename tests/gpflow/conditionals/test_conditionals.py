@@ -19,8 +19,10 @@ from numpy.testing import assert_allclose
 
 import gpflow
 from gpflow import Parameter
+from gpflow.base import MeanAndVariance
 from gpflow.conditionals import conditional
 from gpflow.config import default_float
+from gpflow.kernels import Kernel
 from gpflow.utilities.bijectors import triangular
 
 rng = np.random.RandomState(123)
@@ -31,39 +33,47 @@ Mn = 20
 
 
 @pytest.fixture(scope="module")
-def kernel():
+def kernel() -> Kernel:
     k = gpflow.kernels.Matern32() + gpflow.kernels.White()
     k.kernels[1].variance.assign(0.01)
     return k
 
 
 @pytest.fixture(scope="module")
-def Xdata():
+def Xdata() -> tf.Tensor:
     return tf.convert_to_tensor(rng.randn(Nn, 1))
 
 
 @pytest.fixture(scope="module")
-def Xnew():
+def Xnew() -> tf.Tensor:
     return tf.convert_to_tensor(rng.randn(Mn, 1))
 
 
 @pytest.fixture(scope="module")
-def mu():
+def mu() -> tf.Tensor:
     return tf.convert_to_tensor(rng.randn(Nn, Ln))
 
 
 @pytest.fixture(scope="module")
-def sqrt():
+def sqrt() -> tf.Tensor:
     return tf.convert_to_tensor(rng.randn(Nn, Ln))
 
 
 @pytest.fixture(scope="module")
-def chol(sqrt):
+def chol(sqrt: tf.Tensor) -> tf.Tensor:
     return tf.stack([tf.linalg.diag(sqrt[:, i]) for i in range(Ln)])
 
 
 @pytest.mark.parametrize("white", [True, False])
-def test_diag(Xdata, Xnew, kernel, mu, sqrt, chol, white):
+def test_diag(
+    Xdata: tf.Tensor,
+    Xnew: tf.Tensor,
+    kernel: Kernel,
+    mu: tf.Tensor,
+    sqrt: tf.Tensor,
+    chol: tf.Tensor,
+    white: bool,
+) -> None:
     Fstar_mean_1, Fstar_var_1 = conditional(Xnew, Xdata, kernel, mu, q_sqrt=sqrt, white=white)
     Fstar_mean_2, Fstar_var_2 = conditional(Xnew, Xdata, kernel, mu, q_sqrt=chol, white=white)
 
@@ -74,7 +84,9 @@ def test_diag(Xdata, Xnew, kernel, mu, sqrt, chol, white):
     assert_allclose(var_diff, 0)
 
 
-def test_whiten(Xdata, Xnew, kernel, mu, sqrt):
+def test_whiten(
+    Xdata: tf.Tensor, Xnew: tf.Tensor, kernel: Kernel, mu: tf.Tensor, sqrt: tf.Tensor
+) -> None:
     """
     Make sure that predicting using the whitened representation is the
     sameas the non-whitened one.
@@ -90,7 +102,9 @@ def test_whiten(Xdata, Xnew, kernel, mu, sqrt):
     assert_allclose(var1, var2)
 
 
-def test_gaussian_whiten(Xdata, Xnew, kernel, mu, sqrt):
+def test_gaussian_whiten(
+    Xdata: tf.Tensor, Xnew: tf.Tensor, kernel: Kernel, mu: tf.Tensor, sqrt: tf.Tensor
+) -> None:
     """
     Make sure that predicting using the whitened representation is the
     same as the non-whitened one.
@@ -116,7 +130,9 @@ def test_gaussian_whiten(Xdata, Xnew, kernel, mu, sqrt):
 
 
 @pytest.mark.parametrize("white", [True, False])
-def test_q_sqrt_constraints(Xdata, Xnew, kernel, mu, white):
+def test_q_sqrt_constraints(
+    Xdata: tf.Tensor, Xnew: tf.Tensor, kernel: Kernel, mu: tf.Tensor, white: bool
+) -> None:
     """Test that sending in an unconstrained q_sqrt returns the same conditional
     evaluation and gradients. This is important to match the behaviour of the KL, which
     enforces q_sqrt is triangular.
@@ -149,7 +165,7 @@ def test_q_sqrt_constraints(Xdata, Xnew, kernel, mu, white):
 
 @pytest.mark.parametrize("full_cov", [True, False])
 @pytest.mark.parametrize("features_inducing_points", [False, True])
-def test_base_conditional_vs_ref(full_cov, features_inducing_points):
+def test_base_conditional_vs_ref(full_cov: bool, features_inducing_points: bool) -> None:
     """
     Test that conditionals agree with a slow-but-clear numpy implementation
     """
@@ -160,7 +176,9 @@ def test_base_conditional_vs_ref(full_cov, features_inducing_points):
     q_mu = np.random.randn(M, Dy)
     q_sqrt = np.tril(np.random.randn(Dy, M, M), -1)
 
-    def numpy_conditional(X, Z, kern, q_mu, q_sqrt):
+    def numpy_conditional(
+        X: tf.Tensor, Z: tf.Tensor, kern: Kernel, q_mu: tf.Tensor, q_sqrt: tf.Tensor
+    ) -> MeanAndVariance:
         Kmm = kern(Z, Z) + np.eye(M) * gpflow.config.default_jitter()
         Kmn = kern(Z, X)
         Knn = kern(X, X)

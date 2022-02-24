@@ -18,11 +18,12 @@ import tensorflow as tf
 from numpy.testing import assert_allclose
 
 import gpflow.quadrature as quadrature
+from gpflow.base import TensorType
 
 
 @pytest.mark.parametrize("mu", [np.array([1.0, 1.3])])
 @pytest.mark.parametrize("var", [np.array([3.0, 3.5])])
-def test_diagquad_1d(mu, var):
+def test_diagquad_1d(mu: TensorType, var: TensorType) -> None:
     num_gauss_hermite_points = 25
     quad = quadrature.ndiagquad([lambda *X: tf.exp(X[0])], num_gauss_hermite_points, [mu], [var])
     expected = np.exp(mu + var / 2)
@@ -33,7 +34,7 @@ def test_diagquad_1d(mu, var):
 @pytest.mark.parametrize("var1", [np.array([3.0, 3.5])])
 @pytest.mark.parametrize("mu2", [np.array([-2.0, 0.3])])
 @pytest.mark.parametrize("var2", [np.array([4.0, 4.2])])
-def test_diagquad_2d(mu1, var1, mu2, var2):
+def test_diagquad_2d(mu1: TensorType, var1: TensorType, mu2: TensorType, var2: TensorType) -> None:
     alpha = 2.5
     # using logspace=True we can reduce this, see test_diagquad_logspace
     num_gauss_hermite_points = 35
@@ -51,7 +52,9 @@ def test_diagquad_2d(mu1, var1, mu2, var2):
 @pytest.mark.parametrize("var1", [np.array([3.0, 3.5])])
 @pytest.mark.parametrize("mu2", [np.array([-2.0, 0.3])])
 @pytest.mark.parametrize("var2", [np.array([4.0, 4.2])])
-def test_diagquad_logspace(mu1, var1, mu2, var2):
+def test_diagquad_logspace(
+    mu1: TensorType, var1: TensorType, mu2: TensorType, var2: TensorType
+) -> None:
     alpha = 2.5
     num_gauss_hermite_points = 25
     quad = quadrature.ndiagquad(
@@ -67,7 +70,7 @@ def test_diagquad_logspace(mu1, var1, mu2, var2):
 
 @pytest.mark.parametrize("mu1", [np.array([1.0, 1.3])])
 @pytest.mark.parametrize("var1", [np.array([3.0, 3.5])])
-def test_diagquad_with_kwarg(mu1, var1):
+def test_diagquad_with_kwarg(mu1: TensorType, var1: TensorType) -> None:
     alpha = np.array([2.5, -1.3])
     num_gauss_hermite_points = 25
     quad = quadrature.ndiagquad(
@@ -77,14 +80,14 @@ def test_diagquad_with_kwarg(mu1, var1):
     assert_allclose(quad, expected)
 
 
-def test_ndiagquad_does_not_throw_error():
+def test_ndiagquad_does_not_throw_error() -> None:
     """
     Check that the autograph=False for quadrature.ndiagquad does not throw an error.
     Regression test for https://github.com/GPflow/GPflow/issues/1547.
     """
 
     @tf.function(autograph=False)
-    def func_ndiagquad_autograph_false():
+    def func_ndiagquad_autograph_false() -> tf.Tensor:
         mu = np.array([1.0, 1.3])
         var = np.array([3.0, 3.5])
         num_gauss_hermite_points = 25
@@ -95,15 +98,15 @@ def test_ndiagquad_does_not_throw_error():
     func_ndiagquad_autograph_false()
 
 
-def test_quadrature_autograph():
+def test_quadrature_autograph() -> None:
     """
     Check that the return value is equal with and without Autograph
     Regression test for https://github.com/GPflow/GPflow/issues/1547.
     """
 
-    def compute(autograph):
+    def compute(autograph: bool) -> np.ndarray:
         @tf.function(autograph=autograph)
-        def func():
+        def func() -> tf.Tensor:
             mu = np.array([1.0, 1.3])
             var = np.array([3.0, 3.5])
             num_gauss_hermite_points = 25

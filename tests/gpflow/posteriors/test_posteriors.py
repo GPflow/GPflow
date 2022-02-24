@@ -13,23 +13,32 @@
 #  limitations under the License.
 import warnings
 from inspect import isabstract
+from typing import Any, Callable, Iterable, Optional, Set, Type
 
 import numpy as np
 import pytest
 import tensorflow as tf
+from _pytest.fixtures import SubRequest
 
 import gpflow
 import gpflow.ci_utils
+from gpflow.base import TensorType
 from gpflow.conditionals import conditional
+from gpflow.inducing_variables import InducingPoints, InducingVariables
+from gpflow.kernels import Kernel
+from gpflow.mean_functions import Zero
 from gpflow.models.util import inducingpoint_wrapper
 from gpflow.posteriors import (
     AbstractPosterior,
     FallbackIndependentLatentPosterior,
     FullyCorrelatedPosterior,
+    GPRPosterior,
     IndependentPosteriorMultiOutput,
     IndependentPosteriorSingleOutput,
     LinearCoregionalizationPosterior,
     PrecomputeCacheType,
+    SGPRPosterior,
+    VGPPosterior,
     create_posterior,
 )
 
@@ -37,27 +46,30 @@ INPUT_DIMS = 2
 NUM_INDUCING_POINTS = 3
 
 
+QSqrtFactory = Callable[[int, int], Optional[TensorType]]
+
+
 @pytest.fixture(name="q_sqrt_factory", params=[0, 1, 2])
-def _q_sqrt_factory_fixture(request):
+def _q_sqrt_factory_fixture(request: SubRequest) -> QSqrtFactory:
     """
     When upgrading to Python 3.10, this can be replaced with a match-case statement.
     """
     if request.param == 0:
 
-        def fn_0(_, __):
+        def fn_0(n_inducing_points: int, num_latent_gps: int) -> Optional[TensorType]:
             return None
 
         return fn_0
     elif request.param == 1:
 
-        def fn_1(n_inducing_points, num_latent_gps):
+        def fn_1(n_inducing_points: int, num_latent_gps: int) -> Optional[TensorType]:
             # qsqrt: [M, L]
             return tf.random.normal((n_inducing_points, num_latent_gps), dtype=tf.float64) ** 2
 
         return fn_1
     elif request.param == 2:
 
-        def fn_2(n_inducing_points, num_latent_gps):
+        def fn_2(n_inducing_points: int, num_latent_gps: int) -> Optional[TensorType]:
             # qsqrt: [L, M, M]
             shape = (num_latent_gps, n_inducing_points, n_inducing_points)
             return tf.linalg.band_part(tf.random.normal(shape, dtype=tf.float64), -1, 0)
@@ -68,25 +80,25 @@ def _q_sqrt_factory_fixture(request):
 
 
 @pytest.fixture(name="whiten", params=[False, True])
-def _whiten_fixture(request):
+def _whiten_fixture(request: SubRequest) -> bool:
     return request.param
 
 
 @pytest.fixture(name="num_latent_gps", params=[1, 2])
-def _num_latent_gps_fixture(request):
+def _num_latent_gps_fixture(request: SubRequest) -> int:
     return request.param
 
 
 @pytest.fixture(name="output_dims", params=[1, 5])
-def _output_dims_fixture(request):
+def _output_dims_fixture(request: SubRequest) -> int:
     return request.param
 
 
-TESTED_POSTERIORS = set()
+TESTED_POSTERIORS: Set[Type[AbstractPosterior]] = set()
 
 
 @pytest.fixture(scope="module", autouse=True)
-def _ensure_all_posteriors_are_tested_fixture():
+def _ensure_all_posteriors_are_tested_fixture() -> Iterable[None]:
     """
     This fixture ensures that all concrete posteriors have unit tests which compare the predictions
     from the fused and precomputed code paths. When adding a new concrete posterior class to
@@ -115,24 +127,37 @@ def _ensure_all_posteriors_are_tested_fixture():
             warnings.warn(message)
 
 
+# `PosteriorType` really should be something like `Type[AbstractPosterior]`, except mypy doesn't
+# allow passing abstract classes to functions. See: https://github.com/python/mypy/issues/4717
+PosteriorType = Type[Any]
+RegisterPosterior = Callable[[AbstractPosterior, PosteriorType], None]
+
+
 @pytest.fixture(name="register_posterior_test")
-def _register_posterior_test_fixture():
-    def _verify_and_register_posterior_test(posterior, expected_posterior_class):
+def _register_posterior_test_fixture() -> RegisterPosterior:
+    def _verify_and_register_posterior_test(
+        posterior: AbstractPosterior, expected_posterior_class: Type[AbstractPosterior]
+    ) -> None:
         assert isinstance(posterior, expected_posterior_class)
         TESTED_POSTERIORS.add(expected_posterior_class)
 
     return _verify_and_register_posterior_test
 
 
+ConditionalClosure = Callable[..., tf.Tensor]
+
+
 def create_conditional(
     *,
-    kernel,
-    inducing_variable,
-    q_mu,
-    q_sqrt,
-    whiten,
-):
-    def conditional_closure(Xnew, *, full_cov, full_output_cov):
+    kernel: Kernel,
+    inducing_variable: InducingVariables,
+    q_mu: TensorType,
+    q_sqrt: TensorType,
+    whiten: bool,
+) -> ConditionalClosure:
+    def conditional_closure(
+        Xnew: TensorType, *, full_cov: bool, full_output_cov: bool
+    ) -> tf.Tensor:
         return conditional(
             Xnew,
             inducing_variable,
@@ -148,8 +173,11 @@ def create_conditional(
 
 
 def _assert_fused_predict_f_equals_precomputed_predict_f_and_conditional(
-    posterior, conditional_closure, full_cov, full_output_cov
-):
+    posterior: AbstractPosterior,
+    conditional_closure: ConditionalClosure,
+    full_cov: bool,
+    full_output_cov: bool,
+) -> None:
     Xnew = np.random.randn(13, INPUT_DIMS)
 
     fused_f_mean, fused_f_cov = posterior.fused_predict_f(
@@ -171,8 +199,12 @@ def _assert_fused_predict_f_equals_precomputed_predict_f_and_conditional(
 
 
 def test_independent_single_output(
-    register_posterior_test, q_sqrt_factory, whiten, full_cov, full_output_cov
-):
+    register_posterior_test: RegisterPosterior,
+    q_sqrt_factory: QSqrtFactory,
+    whiten: bool,
+    full_cov: bool,
+    full_output_cov: bool,
+) -> None:
     kernel = gpflow.kernels.SquaredExponential()
     inducing_variable = inducingpoint_wrapper(np.random.randn(NUM_INDUCING_POINTS, INPUT_DIMS))
 
@@ -201,13 +233,13 @@ def test_independent_single_output(
 
 
 def test_fully_correlated_multi_output(
-    register_posterior_test,
-    q_sqrt_factory,
-    full_cov,
-    full_output_cov,
-    whiten,
-    output_dims,
-):
+    register_posterior_test: RegisterPosterior,
+    q_sqrt_factory: QSqrtFactory,
+    full_cov: bool,
+    full_output_cov: bool,
+    whiten: bool,
+    output_dims: int,
+) -> None:
     """
     The fully correlated posterior has one latent GP.
     """
@@ -241,14 +273,14 @@ def test_fully_correlated_multi_output(
 
 
 def test_independent_multi_output_shk_shi(
-    register_posterior_test,
-    q_sqrt_factory,
-    full_cov,
-    full_output_cov,
-    whiten,
-    num_latent_gps,
-    output_dims,
-):
+    register_posterior_test: RegisterPosterior,
+    q_sqrt_factory: QSqrtFactory,
+    full_cov: bool,
+    full_output_cov: bool,
+    whiten: bool,
+    num_latent_gps: int,
+    output_dims: int,
+) -> None:
     """
     Independent multi-output posterior with a shared kernel and shared inducing points.
     """
@@ -284,14 +316,14 @@ def test_independent_multi_output_shk_shi(
 
 
 def test_independent_multi_output_shk_sei(
-    register_posterior_test,
-    q_sqrt_factory,
-    full_cov,
-    full_output_cov,
-    whiten,
-    num_latent_gps,
-    output_dims,
-):
+    register_posterior_test: RegisterPosterior,
+    q_sqrt_factory: QSqrtFactory,
+    full_cov: bool,
+    full_output_cov: bool,
+    whiten: bool,
+    num_latent_gps: int,
+    output_dims: int,
+) -> None:
     """
     Independent multi-output posterior with a shared kernel and separate inducing points.
     """
@@ -330,14 +362,14 @@ def test_independent_multi_output_shk_sei(
 
 
 def test_independent_multi_output_sek_shi(
-    register_posterior_test,
-    q_sqrt_factory,
-    full_cov,
-    full_output_cov,
-    whiten,
-    num_latent_gps,
-    output_dims,
-):
+    register_posterior_test: RegisterPosterior,
+    q_sqrt_factory: QSqrtFactory,
+    full_cov: bool,
+    full_output_cov: bool,
+    whiten: bool,
+    num_latent_gps: int,
+    output_dims: int,
+) -> None:
     """
     Independent multi-output posterior with separate independent kernels and shared inducing points.
     """
@@ -373,14 +405,14 @@ def test_independent_multi_output_sek_shi(
 
 
 def test_independent_multi_output_sek_sei(
-    register_posterior_test,
-    q_sqrt_factory,
-    full_cov,
-    full_output_cov,
-    whiten,
-    num_latent_gps,
-    output_dims,
-):
+    register_posterior_test: RegisterPosterior,
+    q_sqrt_factory: QSqrtFactory,
+    full_cov: bool,
+    full_output_cov: bool,
+    whiten: bool,
+    num_latent_gps: int,
+    output_dims: int,
+) -> None:
     """
     Independent multi-output posterior with separate independent kernel and separate inducing points.
     """
@@ -419,13 +451,13 @@ def test_independent_multi_output_sek_sei(
 
 
 def test_fallback_independent_multi_output_sei(
-    register_posterior_test,
-    q_sqrt_factory,
-    full_cov,
-    full_output_cov,
-    whiten,
-    output_dims,
-):
+    register_posterior_test: RegisterPosterior,
+    q_sqrt_factory: QSqrtFactory,
+    full_cov: bool,
+    full_output_cov: bool,
+    whiten: bool,
+    output_dims: int,
+) -> None:
     """
     Fallback posterior with separate independent inducing variables.
 
@@ -464,13 +496,13 @@ def test_fallback_independent_multi_output_sei(
 
 
 def test_fallback_independent_multi_output_shi(
-    register_posterior_test,
-    q_sqrt_factory,
-    full_cov,
-    full_output_cov,
-    whiten,
-    output_dims,
-):
+    register_posterior_test: RegisterPosterior,
+    q_sqrt_factory: QSqrtFactory,
+    full_cov: bool,
+    full_output_cov: bool,
+    whiten: bool,
+    output_dims: int,
+) -> None:
     """
     Fallback posterior with shared independent inducing variables.
 
@@ -509,14 +541,14 @@ def test_fallback_independent_multi_output_shi(
 
 
 def test_linear_coregionalization_sei(
-    register_posterior_test,
-    q_sqrt_factory,
-    full_cov,
-    full_output_cov,
-    whiten,
-    num_latent_gps,
-    output_dims,
-):
+    register_posterior_test: RegisterPosterior,
+    q_sqrt_factory: QSqrtFactory,
+    full_cov: bool,
+    full_output_cov: bool,
+    whiten: bool,
+    num_latent_gps: int,
+    output_dims: int,
+) -> None:
     """
     Linear coregionalization posterior with separate independent inducing variables.
     """
@@ -556,14 +588,14 @@ def test_linear_coregionalization_sei(
 
 
 def test_linear_coregionalization_shi(
-    register_posterior_test,
-    q_sqrt_factory,
-    full_cov,
-    full_output_cov,
-    whiten,
-    num_latent_gps,
-    output_dims,
-):
+    register_posterior_test: RegisterPosterior,
+    q_sqrt_factory: QSqrtFactory,
+    full_cov: bool,
+    full_output_cov: bool,
+    whiten: bool,
+    num_latent_gps: int,
+    output_dims: int,
+) -> None:
     """
     Linear coregionalization with shared independent inducing variables.
     """
@@ -603,8 +635,8 @@ def test_linear_coregionalization_shi(
     "precompute_cache_type", [PrecomputeCacheType.NOCACHE, PrecomputeCacheType.TENSOR]
 )
 def test_posterior_update_cache_with_variables_no_precompute(
-    q_sqrt_factory, whiten, precompute_cache_type
-):
+    q_sqrt_factory: QSqrtFactory, whiten: bool, precompute_cache_type: PrecomputeCacheType
+) -> None:
     kernel = gpflow.kernels.SquaredExponential()
     inducing_variable = inducingpoint_wrapper(np.random.randn(NUM_INDUCING_POINTS, INPUT_DIMS))
 
@@ -621,11 +653,105 @@ def test_posterior_update_cache_with_variables_no_precompute(
     )
     posterior.update_cache(PrecomputeCacheType.VARIABLE)
 
-    assert isinstance(posterior.alpha, tf.Variable)
-    assert isinstance(posterior.Qinv, tf.Variable)
+    assert posterior.cache
+    alpha, Qinv = posterior.cache
+    assert isinstance(alpha, tf.Variable)
+    assert isinstance(Qinv, tf.Variable)
 
 
-def test_posterior_update_cache_with_variables_update_value(q_sqrt_factory, whiten):
+@pytest.mark.parametrize(
+    "precompute_cache_type", [PrecomputeCacheType.NOCACHE, PrecomputeCacheType.TENSOR]
+)
+def test_gpr_posterior_update_cache_with_variables_no_precompute(
+    register_posterior_test: RegisterPosterior,
+    q_sqrt_factory: QSqrtFactory,
+    whiten: bool,
+    precompute_cache_type: PrecomputeCacheType,
+) -> None:
+    kernel = gpflow.kernels.SquaredExponential()
+    X = np.random.randn(NUM_INDUCING_POINTS, INPUT_DIMS)
+    Y = np.random.randn(NUM_INDUCING_POINTS, 1)
+
+    posterior = GPRPosterior(
+        kernel=kernel,
+        data=(X, Y),
+        likelihood_variance=gpflow.Parameter(0.1),
+        precompute_cache=precompute_cache_type,
+        mean_function=Zero(),
+    )
+    posterior.update_cache(PrecomputeCacheType.VARIABLE)
+    register_posterior_test(posterior, GPRPosterior)
+
+    assert posterior.cache
+    (Kmm_plus_s_inv,) = posterior.cache
+    assert isinstance(Kmm_plus_s_inv, tf.Variable)
+
+
+@pytest.mark.parametrize(
+    "precompute_cache_type", [PrecomputeCacheType.NOCACHE, PrecomputeCacheType.TENSOR]
+)
+def test_sgpr_posterior_update_cache_with_variables_no_precompute(
+    register_posterior_test: RegisterPosterior,
+    q_sqrt_factory: QSqrtFactory,
+    whiten: bool,
+    precompute_cache_type: PrecomputeCacheType,
+) -> None:
+    kernel = gpflow.kernels.SquaredExponential()
+    X = np.random.randn(NUM_INDUCING_POINTS, INPUT_DIMS)
+    Y = np.random.randn(NUM_INDUCING_POINTS, 1)
+    Z = np.random.randn(NUM_INDUCING_POINTS, INPUT_DIMS)
+
+    posterior = SGPRPosterior(
+        kernel=kernel,
+        data=(X, Y),
+        inducing_variable=InducingPoints(Z),
+        likelihood_variance=gpflow.Parameter(0.1),
+        num_latent_gps=1,
+        precompute_cache=precompute_cache_type,
+        mean_function=Zero(),
+    )
+    posterior.update_cache(PrecomputeCacheType.VARIABLE)
+    register_posterior_test(posterior, SGPRPosterior)
+
+    assert posterior.cache
+    alpha, Qinv = posterior.cache
+    assert isinstance(alpha, tf.Variable)
+    assert isinstance(Qinv, tf.Variable)
+
+
+@pytest.mark.parametrize(
+    "precompute_cache_type", [PrecomputeCacheType.NOCACHE, PrecomputeCacheType.TENSOR]
+)
+def test_vgp_posterior_update_cache_with_variables_no_precompute(
+    register_posterior_test: RegisterPosterior,
+    q_sqrt_factory: QSqrtFactory,
+    whiten: bool,
+    precompute_cache_type: PrecomputeCacheType,
+) -> None:
+    kernel = gpflow.kernels.SquaredExponential()
+    X = np.random.randn(NUM_INDUCING_POINTS, INPUT_DIMS)
+    q_mu = np.random.randn(NUM_INDUCING_POINTS, 1)
+    q_sqrt = q_sqrt_factory(NUM_INDUCING_POINTS, 1)
+
+    posterior = VGPPosterior(
+        kernel=kernel,
+        X=X,
+        q_mu=q_mu,
+        q_sqrt=q_sqrt,
+        mean_function=Zero(),
+        precompute_cache=precompute_cache_type,
+    )
+    posterior.update_cache(PrecomputeCacheType.VARIABLE)
+    register_posterior_test(posterior, VGPPosterior)
+
+    assert posterior.cache
+    (Lm,) = posterior.cache
+    assert isinstance(Lm, tf.Variable)
+
+
+def test_posterior_update_cache_with_variables_update_value(
+    q_sqrt_factory: QSqrtFactory, whiten: bool
+) -> None:
     # setup posterior
     kernel = gpflow.kernels.SquaredExponential()
     inducing_variable = inducingpoint_wrapper(np.random.randn(NUM_INDUCING_POINTS, INPUT_DIMS))
@@ -646,8 +772,8 @@ def test_posterior_update_cache_with_variables_update_value(q_sqrt_factory, whit
         whiten=whiten,
         precompute_cache=PrecomputeCacheType.TENSOR,
     )
-    initial_alpha = posterior.alpha
-    initial_Qinv = posterior.Qinv
+    assert posterior.cache
+    initial_alpha, initial_Qinv = posterior.cache
 
     posterior.update_cache(PrecomputeCacheType.VARIABLE)
 
@@ -658,12 +784,16 @@ def test_posterior_update_cache_with_variables_update_value(q_sqrt_factory, whit
     posterior.update_cache(PrecomputeCacheType.VARIABLE)
 
     # assert that the values have changed
-    assert not np.allclose(initial_alpha, tf.convert_to_tensor(posterior.alpha))
+    assert posterior.cache
+    alpha, Qinv = posterior.cache
+    assert not np.allclose(initial_alpha, tf.convert_to_tensor(alpha))
     if initial_q_sqrt is not None:
-        assert not np.allclose(initial_Qinv, tf.convert_to_tensor(posterior.Qinv))
+        assert not np.allclose(initial_Qinv, tf.convert_to_tensor(Qinv))
 
 
-def test_posterior_update_cache_fails_without_argument(q_sqrt_factory, whiten):
+def test_posterior_update_cache_fails_without_argument(
+    q_sqrt_factory: QSqrtFactory, whiten: bool
+) -> None:
     # setup posterior
     kernel = gpflow.kernels.SquaredExponential()
     inducing_variable = inducingpoint_wrapper(np.random.randn(NUM_INDUCING_POINTS, INPUT_DIMS))
@@ -684,31 +814,31 @@ def test_posterior_update_cache_fails_without_argument(q_sqrt_factory, whiten):
         whiten=whiten,
         precompute_cache=None,
     )
-    assert posterior.alpha is None
-    assert posterior.Qinv is None
+    assert posterior.cache is None
 
     with pytest.raises(ValueError):
         posterior.update_cache()
 
     posterior.update_cache(PrecomputeCacheType.TENSOR)
-    assert isinstance(posterior.alpha, tf.Tensor)
-    assert isinstance(posterior.Qinv, tf.Tensor)
+    assert posterior.cache
+    assert all(isinstance(c, tf.Tensor) for c in posterior.cache)
 
     posterior.update_cache(PrecomputeCacheType.NOCACHE)
     assert posterior._precompute_cache == PrecomputeCacheType.NOCACHE
-    assert posterior.alpha is None
-    assert posterior.Qinv is None
+    assert posterior.cache is None
 
     posterior.update_cache(PrecomputeCacheType.TENSOR)  # set posterior._precompute_cache
     assert posterior._precompute_cache == PrecomputeCacheType.TENSOR
-    posterior.alpha = posterior.Qinv = None  # clear again
 
+    posterior.cache = None  # clear again
     posterior.update_cache()  # does not raise an exception
-    assert isinstance(posterior.alpha, tf.Tensor)
-    assert isinstance(posterior.Qinv, tf.Tensor)
+    assert posterior.cache
+    assert all(isinstance(c, tf.Tensor) for c in posterior.cache)
 
 
-def test_posterior_create_with_variables_update_cache_works(q_sqrt_factory, whiten):
+def test_posterior_create_with_variables_update_cache_works(
+    q_sqrt_factory: QSqrtFactory, whiten: bool
+) -> None:
     # setup posterior
     kernel = gpflow.kernels.SquaredExponential()
     inducing_variable = inducingpoint_wrapper(np.random.randn(NUM_INDUCING_POINTS, INPUT_DIMS))
@@ -729,13 +859,11 @@ def test_posterior_create_with_variables_update_cache_works(q_sqrt_factory, whit
         whiten=whiten,
         precompute_cache=PrecomputeCacheType.VARIABLE,
     )
-    assert isinstance(posterior.alpha, tf.Variable)
-    assert isinstance(posterior.Qinv, tf.Variable)
+    assert posterior.cache
+    assert all(isinstance(c, tf.Variable) for c in posterior.cache)
 
-    alpha = posterior.alpha
-    Qinv = posterior.Qinv
+    cache = posterior.cache
 
     posterior.update_cache()
 
-    assert posterior.alpha is alpha
-    assert posterior.Qinv is Qinv
+    assert posterior.cache is cache

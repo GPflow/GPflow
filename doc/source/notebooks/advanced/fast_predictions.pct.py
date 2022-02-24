@@ -5,7 +5,7 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.11.2
+#       jupytext_version: 1.9.1
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -52,7 +52,7 @@
 # \end{equation*}
 # and
 # \begin{equation*}
-# \Sigma = K_{nn} - K_{nu}L^{-1}(I - B^{-1})L^{-1}K_{un}
+# \Sigma = K_{nn} - K_{nu}L^{-T}(I - B^{-1})L^{-1}K_{un}
 # \end{equation*}
 #
 # Where the mean function is not the zero function, the predictive mean should have the mean function evaluated at the test points added to it.
@@ -60,9 +60,9 @@
 # + [markdown] id="GX1U-fYPKPrt"
 # ## What can be cached?
 #
-# We cache two separate values: $\alpha$ and $Q^{-1}$. These correspond to the parts of the mean and covariance functions respectively which do not depend upon the test points. Specifically, in the case of the GPR model these are:
+# We cache two separate values: $\alpha$ and $Q^{-1}$. These correspond to the parts of the mean and covariance functions respectively which do not depend upon the test points. In the case of the GPR these are the same value:
 # \begin{equation*}
-#     \alpha = [K_{mm} + \sigma^2I]^{-1}\mathbf{y}\\ Q^{-1} = [K_{mm} + \sigma^2I]^{-1}
+#     \alpha = Q^{-1} = [K_{mm} + \sigma^2I]^{-1}
 # \end{equation*}
 # in the case of the VGP and SVGP model these are:
 # \begin{equation*}
@@ -70,29 +70,32 @@
 # \end{equation*}
 # and in the case of the SGPR model these are:
 # \begin{equation*}
-#     \alpha = L^{-T}L_B^{-T}\mathbf{c}\\ Q^{-1} = L^{-1}(I - B^{-1})L^{-1}
+#     \alpha = L^{-T}L_B^{-T}\mathbf{c}\\ Q^{-1} = L^{-T}(I - B^{-1})L^{-1}
 # \end{equation*}
 #
 #
 # Note that in the (S)VGP case, $\alpha$ is the parameter as proposed by Opper and Archambeau for the mean of the predictive distribution.
 
-# + [markdown] id="FzCgor4nKUcW"
-# ## Example
-#
-# We will construct an SVGP model to demonstrate the faster predictions from using the cached data in the GPFlow posterior classes (subclasses of `gpflow.posteriors.AbstractPosterior`).
-
-# + id="BMnIdXNiKU6t"
+# +
 import gpflow
 import numpy as np
 
-
-model = gpflow.models.SVGP(
-    gpflow.kernels.SquaredExponential(),
-    gpflow.likelihoods.Gaussian(),
-    np.linspace(-1.1, 1.1, 1000)[:, None],
-)
-
+# Create some data
+X = np.linspace(-1.1, 1.1, 1000)[:, None]
+Y = np.sin(X)
 Xnew = np.linspace(-1.1, 1.1, 1000)[:, None]
+
+# + [markdown] id="FzCgor4nKUcW"
+#
+# ## GPR Example
+#
+# We will construct a GPR model to demonstrate the faster predictions from using the cached data in the GPFlow posterior classes (subclasses of `gpflow.posteriors.AbstractPosterior`).
+
+# + id="BMnIdXNiKU6t"
+model = gpflow.models.GPR(
+    (X, Y),
+    gpflow.kernels.SquaredExponential(),
+)
 # -
 
 # The `predict_f` method on the `GPModel` class performs no caching.
@@ -100,7 +103,50 @@ Xnew = np.linspace(-1.1, 1.1, 1000)[:, None]
 # %%timeit
 model.predict_f(Xnew)
 
-# To make use of the caching, first retrieve the posterior class from the model. The posterior class has methods to predict the parameters of marginal distributions at test points, in the same way as the `predict_f` method of the `GPModel` .
+# To make use of the caching, first retrieve the posterior class from the model. The posterior class has methods to predict the parameters of marginal distributions at test points, in the same way as the `predict_f` method of the `GPModel`.
+posterior = model.posterior()
+
+# %%timeit
+posterior.predict_f(Xnew)
+
+# ## SVGP Example
+#
+# Likewise, we will construct an SVGP model to demonstrate the faster predictions from using the cached data in the GPFlow posterior classes.
+
+# + id="BMnIdXNiKU6t"
+model = gpflow.models.SVGP(
+    gpflow.kernels.SquaredExponential(),
+    gpflow.likelihoods.Gaussian(),
+    np.linspace(-1.1, 1.1, 1000)[:, None],
+)
+# -
+
+# The `predict_f` method on the `GPModel` class performs no caching.
+
+# %%timeit
+model.predict_f(Xnew)
+
+# And again using the posterior object and caching
+
+posterior = model.posterior()
+
+# %%timeit
+posterior.predict_f(Xnew)
+
+# ## SGPR Example
+#
+# And finally, we follow the same approach this time for the SGPR case.
+
+model = gpflow.models.SGPR(
+    (X, Y), gpflow.kernels.SquaredExponential(), np.linspace(-1.1, 1.1, 1000)[:, None]
+)
+
+# The predict_f method on the instance performs no caching.
+
+# %%timeit
+model.predict_f(Xnew)
+
+# Using the posterior object instead:
 
 posterior = model.posterior()
 

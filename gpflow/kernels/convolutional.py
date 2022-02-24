@@ -12,10 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import Optional, Sequence
+
 import numpy as np
 import tensorflow as tf
 
-from ..base import Parameter
+from ..base import Parameter, TensorType
 from ..config import default_float
 from ..utilities import to_default_float
 from .base import Kernel
@@ -38,7 +40,14 @@ class Convolutional(Kernel):
     }
     """
 
-    def __init__(self, base_kernel, image_shape, patch_shape, weights=None, colour_channels=1):
+    def __init__(
+        self,
+        base_kernel: Kernel,
+        image_shape: Sequence[int],
+        patch_shape: Sequence[int],
+        weights: Optional[TensorType] = None,
+        colour_channels: int = 1,
+    ) -> None:
         super().__init__()
         self.image_shape = image_shape
         self.patch_shape = patch_shape
@@ -49,7 +58,7 @@ class Convolutional(Kernel):
         )
 
     # @lru_cache() -- Can we do some kind of memoizing with TF2?
-    def get_patches(self, X):
+    def get_patches(self, X: TensorType) -> tf.Tensor:
         """
         Extracts patches from the images X. Patches are extracted separately for each of the colour channels.
         :param X: (N x input_dim)
@@ -74,7 +83,7 @@ class Convolutional(Kernel):
         )
         return to_default_float(reshaped_patches)
 
-    def K(self, X, X2=None):
+    def K(self, X: TensorType, X2: Optional[TensorType] = None) -> tf.Tensor:
         Xp = self.get_patches(X)  # [N, P, patch_len]
         Xp2 = Xp if X2 is None else self.get_patches(X2)
 
@@ -84,18 +93,18 @@ class Convolutional(Kernel):
         W2bigK = bigK * W2[None, :, None, :]
         return tf.reduce_sum(W2bigK, [1, 3]) / self.num_patches ** 2.0
 
-    def K_diag(self, X):
+    def K_diag(self, X: TensorType) -> tf.Tensor:
         Xp = self.get_patches(X)  # N x num_patches x patch_dim
         W2 = self.weights[:, None] * self.weights[None, :]  # [P, P]
         bigK = self.base_kernel.K(Xp)  # [N, P, P]
         return tf.reduce_sum(bigK * W2[None, :, :], [1, 2]) / self.num_patches ** 2.0
 
     @property
-    def patch_len(self):
+    def patch_len(self) -> np.ndarray:
         return np.prod(self.patch_shape)
 
     @property
-    def num_patches(self):
+    def num_patches(self) -> int:
         return (
             (self.image_shape[0] - self.patch_shape[0] + 1)
             * (self.image_shape[1] - self.patch_shape[1] + 1)

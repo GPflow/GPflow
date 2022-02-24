@@ -1,7 +1,9 @@
 import numpy as np
 
 
-def ref_rbf_kernel(X, lengthscales, signal_variance):
+def ref_rbf_kernel(
+    X: np.ndarray, lengthscales: np.ndarray, signal_variance: np.ndarray
+) -> np.ndarray:
     N, _ = X.shape
     kernel = np.zeros((N, N))
     for row_index in range(N):
@@ -16,7 +18,13 @@ def ref_rbf_kernel(X, lengthscales, signal_variance):
     return kernel
 
 
-def ref_arccosine_kernel(X, order, weight_variances, bias_variance, signal_variance):
+def ref_arccosine_kernel(
+    X: np.ndarray,
+    order: np.ndarray,
+    weight_variances: np.ndarray,
+    bias_variance: np.ndarray,
+    signal_variance: np.ndarray,
+) -> np.ndarray:
     num_points = X.shape[0]
     kernel = np.empty((num_points, num_points))
     for row in range(num_points):
@@ -49,7 +57,13 @@ def ref_arccosine_kernel(X, order, weight_variances, bias_variance, signal_varia
     return kernel
 
 
-def ref_periodic_kernel(X, base_name, lengthscales, signal_variance, period):
+def ref_periodic_kernel(
+    X: np.ndarray,
+    base_name: np.ndarray,
+    lengthscales: np.ndarray,
+    signal_variance: np.ndarray,
+    period: np.ndarray,
+) -> np.ndarray:
     """
     Calculates K(X) for the periodic kernel based on various base kernels.
     """

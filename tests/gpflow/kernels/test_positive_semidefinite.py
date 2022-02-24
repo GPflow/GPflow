@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import Type
+
 import numpy as np
 import pytest
 import tensorflow as tf
@@ -30,7 +32,7 @@ KERNEL_CLASSES = [
 rng = np.random.RandomState(42)
 
 
-def pos_semidefinite(kernel):
+def pos_semidefinite(kernel: kernels.Kernel) -> None:
     N, D = 100, 5
     X = rng.randn(N, D)
 
@@ -40,7 +42,7 @@ def pos_semidefinite(kernel):
 
 
 @pytest.mark.parametrize("kernel_class", KERNEL_CLASSES)
-def test_positive_semidefinite(kernel_class):
+def test_positive_semidefinite(kernel_class: Type[kernels.Kernel]) -> None:
     """
     A valid kernel is positive semidefinite. Some kernels are only valid for
     particular input shapes, see https://github.com/GPflow/GPflow/issues/1328
@@ -52,7 +54,7 @@ def test_positive_semidefinite(kernel_class):
 @pytest.mark.parametrize(
     "base_class", [kernel for kernel in gpflow.ci_utils.subclasses(kernels.IsotropicStationary)]
 )
-def test_positive_semidefinite_periodic(base_class):
+def test_positive_semidefinite_periodic(base_class: Type[kernels.IsotropicStationary]) -> None:
     """
     A valid kernel is positive semidefinite. Some kernels are only valid for
     particular input shapes, see https://github.com/GPflow/GPflow/issues/1328

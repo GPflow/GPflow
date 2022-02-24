@@ -55,6 +55,12 @@ IMAGE_SHAPE = [H, W]
 
 
 # %%
+def affine_scalar_bijector(shift=None, scale=None):
+    scale_bijector = tfp.bijectors.Scale(scale) if scale else tfp.bijectors.Identity()
+    shift_bijector = tfp.bijectors.Shift(shift) if shift else tfp.bijectors.Identity()
+    return shift_bijector(scale_bijector)
+
+
 def make_rectangle(arr, x0, y0, x1, y1):
     arr[y0:y1, x0] = 1
     arr[y0:y1, x1] = 1
@@ -136,13 +142,11 @@ print("RBF elbo after training: %.4e" % rbf_elbo())
 
 # %%
 f64 = lambda x: np.array(x, dtype=np.float64)
-positive_with_min = lambda: tfp.bijectors.AffineScalar(shift=f64(1e-4))(tfp.bijectors.Softplus())
-constrained = lambda: tfp.bijectors.AffineScalar(shift=f64(1e-4), scale=f64(100.0))(
+positive_with_min = lambda: affine_scalar_bijector(shift=f64(1e-4))(tfp.bijectors.Softplus())
+constrained = lambda: affine_scalar_bijector(shift=f64(1e-4), scale=f64(100.0))(
     tfp.bijectors.Sigmoid()
 )
-max_abs_1 = lambda: tfp.bijectors.AffineScalar(shift=f64(-2.0), scale=f64(4.0))(
-    tfp.bijectors.Sigmoid()
-)
+max_abs_1 = lambda: affine_scalar_bijector(shift=f64(-2.0), scale=f64(4.0))(tfp.bijectors.Sigmoid())
 
 patch_shape = [3, 3]
 conv_k = gpflow.kernels.Convolutional(gpflow.kernels.SquaredExponential(), IMAGE_SHAPE, patch_shape)

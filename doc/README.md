@@ -39,6 +39,11 @@ To compile the GPflow documentation locally:
 6. Check documentation locally by opening (in a browser) build/html/index.html
 
 
+## Run notebooks locally
+
+The notebooks underneath `source/notebooks` rely on [jupytext](https://github.com/mwouts/jupytext). Make sure to [install the `jupytext` package](https://github.com/mwouts/jupytext#install) before calling `jupyter notebook <notebook_file.pct.py>` (which will automatically create the paired .ipynb file).
+
+
 ## Setup for automatic documentation generation
 
 Upon each merge to the `develop` branch, this repository's [CircleCI configuration](../.circleci/config.yml) runs the `trigger-docs-generation` step

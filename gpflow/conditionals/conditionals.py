@@ -12,29 +12,29 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import Optional
+
 import tensorflow as tf
 
-from ..config import default_jitter
+from ..base import MeanAndVariance
 from ..inducing_variables import InducingVariables
 from ..kernels import Kernel
-from ..posteriors import get_posterior_class
-from ..utilities.ops import eye
+from ..posteriors import VGPPosterior, get_posterior_class
 from .dispatch import conditional
-from .util import base_conditional
 
 
 @conditional._gpflow_internal_register(object, InducingVariables, Kernel, object)
-def _conditional(
+def _sparse_conditional(
     Xnew: tf.Tensor,
     inducing_variable: InducingVariables,
     kernel: Kernel,
     f: tf.Tensor,
     *,
-    full_cov=False,
-    full_output_cov=False,
-    q_sqrt=None,
-    white=False,
-):
+    full_cov: bool = False,
+    full_output_cov: bool = False,
+    q_sqrt: Optional[tf.Tensor] = None,
+    white: bool = False,
+) -> MeanAndVariance:
     """
     Single-output GP conditional.
 
@@ -45,7 +45,7 @@ def _conditional(
 
     Further reference
     -----------------
-    - See `gpflow.conditionals._conditional` (below) for a detailed explanation of
+    - See `gpflow.conditionals._dense_conditional` (below) for a detailed explanation of
       conditional in the single-output case.
     - See the multiouput notebook for more information about the multiouput framework.
 
@@ -81,17 +81,17 @@ def _conditional(
 
 
 @conditional._gpflow_internal_register(object, object, Kernel, object)
-def _conditional(
+def _dense_conditional(
     Xnew: tf.Tensor,
     X: tf.Tensor,
     kernel: Kernel,
     f: tf.Tensor,
     *,
-    full_cov=False,
-    full_output_cov=False,
-    q_sqrt=None,
-    white=False,
-):
+    full_cov: bool = False,
+    full_output_cov: bool = False,
+    q_sqrt: Optional[tf.Tensor] = None,
+    white: bool = False,
+) -> MeanAndVariance:
     """
     Given f, representing the GP at the points X, produce the mean and
     (co-)variance of the GP at the points Xnew.
@@ -126,9 +126,12 @@ def _conditional(
         - mean:     [N, R]
         - variance: [N, R] (full_cov = False), [R, N, N] (full_cov = True)
     """
-    Kmm = kernel(X) + eye(tf.shape(X)[-2], value=default_jitter(), dtype=X.dtype)  # [..., M, M]
-    Kmn = kernel(X, Xnew)  # [M, ..., N]
-    Knn = kernel(Xnew, full_cov=full_cov)  # [..., N] (full_cov = False) or [..., N, N] (True)
-    mean, var = base_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov, q_sqrt=q_sqrt, white=white)
-
-    return mean, var  # [N, R], [N, R] or [R, N, N]
+    posterior = VGPPosterior(
+        kernel=kernel,
+        X=X,
+        q_mu=f,
+        q_sqrt=q_sqrt,
+        white=white,
+        precompute_cache=None,
+    )
+    return posterior.fused_predict_f(Xnew, full_cov=full_cov, full_output_cov=full_output_cov)

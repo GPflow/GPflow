@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from functools import reduce
+from typing import Type
 
 import tensorflow as tf
 
@@ -22,11 +23,13 @@ from ..probability_distributions import DiagonalGaussian
 from . import dispatch
 from .expectations import expectation
 
-NoneType = type(None)
+NoneType: Type[None] = type(None)
 
 
 @dispatch.expectation.register(DiagonalGaussian, kernels.Product, NoneType, NoneType, NoneType)
-def _E(p, kernel, _, __, ___, nghp=None):
+def _expectation_diagonal_product(
+    p: DiagonalGaussian, kernel: kernels.Product, _: None, __: None, ___: None, nghp: None = None
+) -> tf.Tensor:
     r"""
     Compute the expectation:
     <\HadamardProd_i diag(Ki_{X[:, active_dims_i], X[:, active_dims_i]})>_p(X)
@@ -47,7 +50,14 @@ def _E(p, kernel, _, __, ___, nghp=None):
 @dispatch.expectation.register(
     DiagonalGaussian, kernels.Product, InducingPoints, NoneType, NoneType
 )
-def _E(p, kernel, inducing_variable, __, ___, nghp=None):
+def _expectation_diagonal_product_inducingpoints(
+    p: DiagonalGaussian,
+    kernel: kernels.Product,
+    inducing_variable: InducingPoints,
+    __: None,
+    ___: None,
+    nghp: None = None,
+) -> tf.Tensor:
     r"""
     Compute the expectation:
     <\HadamardProd_i Ki_{X[:, active_dims_i], Z[:, active_dims_i]}>_p(X)
@@ -68,7 +78,14 @@ def _E(p, kernel, inducing_variable, __, ___, nghp=None):
 @dispatch.expectation.register(
     DiagonalGaussian, kernels.Product, InducingPoints, kernels.Product, InducingPoints
 )
-def _E(p, kern1, feat1, kern2, feat2, nghp=None):
+def _expectation_diagonal_product_inducingpoints__product_inducingpoints(
+    p: DiagonalGaussian,
+    kern1: kernels.Product,
+    feat1: InducingPoints,
+    kern2: kernels.Product,
+    feat2: InducingPoints,
+    nghp: None = None,
+) -> tf.Tensor:
     r"""
     Compute the expectation:
     expectation[n] = < prodK_{Z, x_n} prodK_{x_n, Z} >_p(x_n)

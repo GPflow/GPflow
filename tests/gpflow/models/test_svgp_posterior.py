@@ -1,5 +1,4 @@
 from itertools import product
-from typing import Tuple
 
 import numpy as np
 import pytest
@@ -63,15 +62,14 @@ def make_models(M=64, D=input_dim, L=3, q_diag=False, whiten=True, mo=None):
         ),
     ],
 )
-def test_old_vs_new_svgp(q_diag, white, multioutput):
+@pytest.mark.parametrize("full_cov", [True, False])
+@pytest.mark.parametrize("full_output_cov", [True, False])
+def test_old_vs_new_svgp(q_diag, white, multioutput, full_cov: bool, full_output_cov: bool):
     mold, mnew = make_models(q_diag=q_diag, whiten=white, mo=multioutput)
 
     X = np.random.randn(100, input_dim)
-    Xt = tf.convert_to_tensor(X)
 
-    for full_cov in (True, False):
-        for full_output_cov in (True, False):
-            mu, var = mnew.predict_f(X, full_cov=full_cov, full_output_cov=full_output_cov)
-            mu2, var2 = mold.predict_f(X, full_cov=full_cov, full_output_cov=full_output_cov)
-            np.testing.assert_allclose(mu, mu2)
-            np.testing.assert_allclose(var, var2)
+    mu, var = mnew.predict_f(X, full_cov=full_cov, full_output_cov=full_output_cov)
+    mu2, var2 = mold.predict_f(X, full_cov=full_cov, full_output_cov=full_output_cov)
+    np.testing.assert_allclose(mu, mu2)
+    np.testing.assert_allclose(var, var2)

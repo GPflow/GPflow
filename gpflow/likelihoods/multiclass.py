@@ -12,11 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import Any, Optional
+
 import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
 
-from ..base import Module, Parameter
+from ..base import MeanAndVariance, Module, Parameter, TensorType
 from ..config import default_float
 from ..quadrature import hermgauss
 from ..utilities import to_default_float, to_default_int
@@ -31,17 +33,17 @@ class Softmax(MonteCarloLikelihood):
     (when using the SVGP model).
     """
 
-    def __init__(self, num_classes, **kwargs):
+    def __init__(self, num_classes: int, **kwargs: Any) -> None:
         super().__init__(latent_dim=num_classes, observation_dim=None, **kwargs)
         self.num_classes = self.latent_dim
 
-    def _log_prob(self, F, Y):
+    def _log_prob(self, F: TensorType, Y: TensorType) -> tf.Tensor:
         return -tf.nn.sparse_softmax_cross_entropy_with_logits(logits=F, labels=Y[:, 0])
 
-    def _conditional_mean(self, F):
+    def _conditional_mean(self, F: TensorType) -> tf.Tensor:
         return tf.nn.softmax(F)
 
-    def _conditional_variance(self, F):
+    def _conditional_variance(self, F: TensorType) -> tf.Tensor:
         p = self.conditional_mean(F)
         return p - p ** 2
 
@@ -61,7 +63,7 @@ class RobustMax(Module):
     where k is the number of classes.
     """
 
-    def __init__(self, num_classes, epsilon=1e-3, **kwargs):
+    def __init__(self, num_classes: int, epsilon: float = 1e-3, **kwargs: Any) -> None:
         """
         `epsilon` represents the fraction of 'errors' in the labels of the
         dataset. This may be a hard parameter to optimize, so by default
@@ -74,20 +76,22 @@ class RobustMax(Module):
         self.num_classes = num_classes
         self._squash = 1e-6
 
-    def __call__(self, F):
+    def __call__(self, F: TensorType) -> tf.Tensor:
         i = tf.argmax(F, 1)
         return tf.one_hot(
             i, self.num_classes, tf.squeeze(1.0 - self.epsilon), tf.squeeze(self.eps_k1)
         )
 
     @property
-    def eps_k1(self):
+    def eps_k1(self) -> tf.Tensor:
         return self.epsilon / (self.num_classes - 1.0)
 
-    def safe_sqrt(self, val):
+    def safe_sqrt(self, val: TensorType) -> tf.Tensor:
         return tf.sqrt(tf.clip_by_value(val, 1e-10, np.inf))
 
-    def prob_is_largest(self, Y, mu, var, gh_x, gh_w):
+    def prob_is_largest(
+        self, Y: TensorType, mu: TensorType, var: TensorType, gh_x: TensorType, gh_w: TensorType
+    ) -> tf.Tensor:
         Y = to_default_int(Y)
         # work out what the mean and variance is of the indicated latent function.
         oh_on = tf.cast(
@@ -120,7 +124,9 @@ class RobustMax(Module):
 
 
 class MultiClass(Likelihood):
-    def __init__(self, num_classes, invlink=None, **kwargs):
+    def __init__(
+        self, num_classes: int, invlink: Optional[RobustMax] = None, **kwargs: Any
+    ) -> None:
         """
         A likelihood for multi-way classification.  Currently the only valid
         choice of inverse-link function (invlink) is an instance of RobustMax.
@@ -140,14 +146,16 @@ class MultiClass(Likelihood):
 
         self.invlink = invlink
 
-    def _log_prob(self, F, Y):
+    def _log_prob(self, F: TensorType, Y: TensorType) -> tf.Tensor:
         hits = tf.equal(tf.expand_dims(tf.argmax(F, 1), 1), tf.cast(Y, tf.int64))
         yes = tf.ones(tf.shape(Y), dtype=default_float()) - self.invlink.epsilon
         no = tf.zeros(tf.shape(Y), dtype=default_float()) + self.invlink.eps_k1
         p = tf.where(hits, yes, no)
         return tf.reduce_sum(tf.math.log(p), axis=-1)
 
-    def _variational_expectations(self, Fmu, Fvar, Y):
+    def _variational_expectations(
+        self, Fmu: TensorType, Fvar: TensorType, Y: TensorType
+    ) -> tf.Tensor:
         gh_x, gh_w = hermgauss(self.num_gauss_hermite_points)
         p = self.invlink.prob_is_largest(Y, Fmu, Fvar, gh_x, gh_w)
         ve = p * tf.math.log(1.0 - self.invlink.epsilon) + (1.0 - p) * tf.math.log(
@@ -155,7 +163,7 @@ class MultiClass(Likelihood):
         )
         return tf.reduce_sum(ve, axis=-1)
 
-    def _predict_mean_and_var(self, Fmu, Fvar):
+    def _predict_mean_and_var(self, Fmu: TensorType, Fvar: TensorType) -> MeanAndVariance:
         possible_outputs = [
             tf.fill(tf.stack([tf.shape(Fmu)[0], 1]), np.array(i, dtype=np.int64))
             for i in range(self.num_classes)
@@ -164,18 +172,20 @@ class MultiClass(Likelihood):
         ps = tf.transpose(tf.stack([tf.reshape(p, (-1,)) for p in ps]))
         return ps, ps - tf.square(ps)
 
-    def _predict_log_density(self, Fmu, Fvar, Y):
+    def _predict_log_density(self, Fmu: TensorType, Fvar: TensorType, Y: TensorType) -> tf.Tensor:
         return tf.reduce_sum(tf.math.log(self._predict_non_logged_density(Fmu, Fvar, Y)), axis=-1)
 
-    def _predict_non_logged_density(self, Fmu, Fvar, Y):
+    def _predict_non_logged_density(
+        self, Fmu: TensorType, Fvar: TensorType, Y: TensorType
+    ) -> tf.Tensor:
         gh_x, gh_w = hermgauss(self.num_gauss_hermite_points)
         p = self.invlink.prob_is_largest(Y, Fmu, Fvar, gh_x, gh_w)
         den = p * (1.0 - self.invlink.epsilon) + (1.0 - p) * (self.invlink.eps_k1)
         return den
 
-    def _conditional_mean(self, F):
+    def _conditional_mean(self, F: TensorType) -> tf.Tensor:
         return self.invlink(F)
 
-    def _conditional_variance(self, F):
+    def _conditional_variance(self, F: TensorType) -> tf.Tensor:
         p = self.conditional_mean(F)
         return p - tf.square(p)

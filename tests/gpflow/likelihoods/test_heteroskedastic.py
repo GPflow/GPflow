@@ -13,11 +13,8 @@
 # limitations under the License.
 
 import numpy as np
-import pytest
 import tensorflow as tf
-import tensorflow_probability as tfp
 
-import gpflow
 from gpflow.likelihoods import HeteroskedasticTFPConditional
 
 tf.random.set_seed(99012)
@@ -31,7 +28,7 @@ class Data:
     f_var = rng.randn(N, 2) ** 2
 
 
-def test_analytic_mean_and_var():
+def test_analytic_mean_and_var() -> None:
     """
     Test that quadrature computation used in HeteroskedasticTFPConditional
     of the predictive mean and variance is close to the analytical version,

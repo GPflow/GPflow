@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from collections import namedtuple
+from typing import Collection, Optional
 
 import numpy as np
 import pytest
@@ -20,10 +20,10 @@ import tensorflow as tf
 from numpy.testing import assert_allclose
 
 import gpflow
+from gpflow.base import MeanAndVariance
 from gpflow.conditionals import conditional, uncertain_conditional
 from gpflow.config import default_float
-from gpflow.mean_functions import Constant, Linear, Zero
-from gpflow.optimizers import Scipy
+from gpflow.mean_functions import Constant, Linear, MeanFunction, Zero
 from gpflow.quadrature import mvnquad
 from gpflow.utilities import training_loop
 
@@ -35,7 +35,9 @@ rng = np.random.RandomState(1)
 
 
 class MomentMatchingSVGP(gpflow.models.SVGP):
-    def uncertain_predict_f_moment_matching(self, Xmu, Xcov):
+    def uncertain_predict_f_moment_matching(
+        self, Xmu: tf.Tensor, Xcov: tf.Tensor
+    ) -> MeanAndVariance:
         return uncertain_conditional(
             Xmu,
             Xcov,
@@ -48,7 +50,9 @@ class MomentMatchingSVGP(gpflow.models.SVGP):
             full_output_cov=self.full_output_cov,
         )
 
-    def uncertain_predict_f_monte_carlo(self, Xmu, Xchol, mc_iter=int(1e6)):
+    def uncertain_predict_f_monte_carlo(
+        self, Xmu: tf.Tensor, Xchol: tf.Tensor, mc_iter: int = int(1e6)
+    ) -> MeanAndVariance:
         D_in = Xchol.shape[0]
         X_samples = Xmu + np.reshape(
             Xchol[None, :, :] @ rng.randn(mc_iter, D_in)[:, :, None], [mc_iter, D_in]
@@ -60,18 +64,20 @@ class MomentMatchingSVGP(gpflow.models.SVGP):
         return mean, covar
 
 
-def gen_L(n, *shape):
+def gen_L(n: int, *shape: int) -> np.ndarray:
     return np.array([np.tril(rng.randn(*shape)) for _ in range(n)])
 
 
-def gen_q_sqrt(D_out, *shape):
+def gen_q_sqrt(D_out: int, *shape: int) -> tf.Tensor:
     return tf.convert_to_tensor(
         np.array([np.tril(rng.randn(*shape)) for _ in range(D_out)]),
         dtype=default_float(),
     )
 
 
-def mean_function_factory(mean_function_name, D_in, D_out):
+def mean_function_factory(
+    mean_function_name: Optional[str], D_in: int, D_out: int
+) -> Optional[MeanFunction]:
     if mean_function_name == "Zero":
         return Zero(output_dim=D_out)
     elif mean_function_name == "Constant":
@@ -131,12 +137,12 @@ class DataQuad:
     q_sqrt = gen_q_sqrt(D_out, num_ind, num_ind)
 
 
-MEANS = ["Constant", "Linear", "Zero", None]
+MEANS: Collection[Optional[str]] = ["Constant", "Linear", "Zero", None]
 
 
 @pytest.mark.parametrize("white", [True, False])
 @pytest.mark.parametrize("mean", MEANS)
-def test_no_uncertainty(white, mean):
+def test_no_uncertainty(white: bool, mean: Optional[str]) -> None:
     mean_function = mean_function_factory(mean, Data.D_in, Data.D_out)
     kernel = gpflow.kernels.SquaredExponential(variance=rng.rand())
     model = MomentMatchingSVGP(
@@ -169,7 +175,7 @@ def test_no_uncertainty(white, mean):
 
 @pytest.mark.parametrize("white", [True, False])
 @pytest.mark.parametrize("mean", MEANS)
-def test_monte_carlo_1_din(white, mean):
+def test_monte_carlo_1_din(white: bool, mean: Optional[str]) -> None:
     kernel = gpflow.kernels.SquaredExponential(variance=rng.rand())
     mean_function = mean_function_factory(mean, DataMC1.D_in, DataMC1.D_out)
     model = MomentMatchingSVGP(
@@ -204,7 +210,7 @@ def test_monte_carlo_1_din(white, mean):
 
 @pytest.mark.parametrize("white", [True, False])
 @pytest.mark.parametrize("mean", MEANS)
-def test_monte_carlo_2_din(white, mean):
+def test_monte_carlo_2_din(white: bool, mean: Optional[str]) -> None:
     kernel = gpflow.kernels.SquaredExponential(variance=rng.rand())
     mean_function = mean_function_factory(mean, DataMC2.D_in, DataMC2.D_out)
     model = MomentMatchingSVGP(
@@ -237,16 +243,16 @@ def test_monte_carlo_2_din(white, mean):
         assert_allclose(var1[n, ...], var2, atol=1e-2)
 
 
-@pytest.mark.parametrize("mean", MEANS)
 @pytest.mark.parametrize("white", [True, False])
-def test_quadrature(white, mean):
+@pytest.mark.parametrize("mean", MEANS)
+def test_quadrature(white: bool, mean: Optional[str]) -> None:
     kernel = gpflow.kernels.SquaredExponential()
     inducing_variable = gpflow.inducing_variables.InducingPoints(DataQuad.Z)
     mean_function = mean_function_factory(mean, DataQuad.D_in, DataQuad.D_out)
 
     effective_mean = mean_function or (lambda X: 0.0)
 
-    def conditional_fn(X):
+    def conditional_fn(X: tf.Tensor) -> MeanAndVariance:
         return conditional(
             X,
             inducing_variable,
@@ -256,10 +262,10 @@ def test_quadrature(white, mean):
             white=white,
         )
 
-    def mean_fn(X):
+    def mean_fn(X: tf.Tensor) -> tf.Tensor:
         return conditional_fn(X)[0] + effective_mean(X)
 
-    def var_fn(X):
+    def var_fn(X: tf.Tensor) -> tf.Tensor:
         return conditional_fn(X)[1]
 
     quad_args = (
@@ -272,7 +278,7 @@ def test_quadrature(white, mean):
     mean_quad = mvnquad(mean_fn, *quad_args)
     var_quad = mvnquad(var_fn, *quad_args)
 
-    def mean_sq_fn(X):
+    def mean_sq_fn(X: tf.Tensor) -> tf.Tensor:
         return mean_fn(X) ** 2
 
     mean_sq_quad = mvnquad(mean_sq_fn, *quad_args)

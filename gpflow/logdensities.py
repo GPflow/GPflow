@@ -15,32 +15,32 @@
 import numpy as np
 import tensorflow as tf
 
-from .config import default_float
+from .base import TensorType
 from .utilities import to_default_float
 
 
-def gaussian(x, mu, var):
+def gaussian(x: TensorType, mu: TensorType, var: TensorType) -> tf.Tensor:
     return -0.5 * (np.log(2 * np.pi) + tf.math.log(var) + tf.square(mu - x) / var)
 
 
-def lognormal(x, mu, var):
+def lognormal(x: TensorType, mu: TensorType, var: TensorType) -> tf.Tensor:
     lnx = tf.math.log(x)
     return gaussian(lnx, mu, var) - lnx
 
 
-def bernoulli(x, p):
+def bernoulli(x: TensorType, p: TensorType) -> tf.Tensor:
     return tf.math.log(tf.where(tf.equal(x, 1), p, 1 - p))
 
 
-def poisson(x, lam):
+def poisson(x: TensorType, lam: TensorType) -> tf.Tensor:
     return x * tf.math.log(lam) - lam - tf.math.lgamma(x + 1.0)
 
 
-def exponential(x, scale):
+def exponential(x: TensorType, scale: TensorType) -> tf.Tensor:
     return -x / scale - tf.math.log(scale)
 
 
-def gamma(x, shape, scale):
+def gamma(x: TensorType, shape: TensorType, scale: TensorType) -> tf.Tensor:
     return (
         -shape * tf.math.log(scale)
         - tf.math.lgamma(shape)
@@ -49,7 +49,7 @@ def gamma(x, shape, scale):
     )
 
 
-def student_t(x, mean, scale, df):
+def student_t(x: TensorType, mean: TensorType, scale: TensorType, df: TensorType) -> tf.Tensor:
     df = to_default_float(df)
     const = (
         tf.math.lgamma((df + 1.0) * 0.5)
@@ -61,7 +61,7 @@ def student_t(x, mean, scale, df):
     )
 
 
-def beta(x, alpha, beta):
+def beta(x: TensorType, alpha: TensorType, beta: TensorType) -> tf.Tensor:
     # need to clip x, since log of 0 is nan...
     x = tf.clip_by_value(x, 1e-6, 1 - 1e-6)
     return (
@@ -73,11 +73,11 @@ def beta(x, alpha, beta):
     )
 
 
-def laplace(x, mu, sigma):
+def laplace(x: TensorType, mu: TensorType, sigma: TensorType) -> tf.Tensor:
     return -tf.abs(mu - x) / sigma - tf.math.log(2.0 * sigma)
 
 
-def multivariate_normal(x, mu, L):
+def multivariate_normal(x: TensorType, mu: TensorType, L: TensorType) -> tf.Tensor:
     """
     Computes the log-density of a multivariate normal.
     :param x  : Dx1 or DxN sample(s) for which we want the density

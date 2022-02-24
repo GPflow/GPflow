@@ -18,14 +18,14 @@ import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
 
-from ..base import Parameter
+from ..base import InputData, MeanAndVariance, Parameter, RegressionData
 from ..conditionals import conditional
 from ..config import default_float, default_jitter
 from ..kernels import Kernel
 from ..likelihoods import Likelihood
 from ..mean_functions import MeanFunction
 from ..utilities import to_default_float
-from .model import GPModel, InputData, MeanAndVariance, RegressionData
+from .model import GPModel
 from .training_mixins import InternalDataTrainingLossMixin
 from .util import data_input_to_tensor
 

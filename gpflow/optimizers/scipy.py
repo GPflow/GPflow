@@ -12,7 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Callable, Iterable, List, Optional, Sequence, Tuple, TypeVar, Union
+import warnings
+from typing import Any, Callable, Iterable, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 import scipy.optimize
@@ -36,7 +37,8 @@ class Scipy:
         method: Optional[str] = "L-BFGS-B",
         step_callback: Optional[StepCallback] = None,
         compile: bool = True,
-        **scipy_kwargs,
+        allow_unused_variables: bool = False,
+        **scipy_kwargs: Any,
     ) -> OptimizeResult:
         """
         Minimize is a wrapper around the `scipy.optimize.minimize` function
@@ -59,7 +61,8 @@ class Scipy:
             compile: If True, wraps the evaluation function (the passed `closure`
                 as well as its gradient computation) inside a `tf.function()`,
                 which will improve optimization speed in most cases.
-
+            allow_unused_variables: Whether to allow variables that are not
+                actually used in the closure.
             scipy_kwargs: Arguments passed through to `scipy.optimize.minimize`
                 Note that Scipy's minimize() takes a `callback` argument, but
                 you probably want to use our wrapper and pass in `step_callback`.
@@ -79,7 +82,9 @@ class Scipy:
             )  # pragma: no cover
         initial_params = self.initial_parameters(variables)
 
-        func = self.eval_func(closure, variables, compile=compile)
+        func = self.eval_func(
+            closure, variables, compile=compile, allow_unused_variables=allow_unused_variables
+        )
         if step_callback is not None:
             if "callback" in scipy_kwargs:
                 raise ValueError("Callback passed both via `step_callback` and `callback`")
@@ -97,13 +102,32 @@ class Scipy:
 
     @classmethod
     def eval_func(
-        cls, closure: LossClosure, variables: Sequence[tf.Variable], compile: bool = True
+        cls,
+        closure: LossClosure,
+        variables: Sequence[tf.Variable],
+        compile: bool = True,
+        allow_unused_variables: bool = False,
     ) -> Callable[[np.ndarray], Tuple[np.ndarray, np.ndarray]]:
+        first_call = True
+
         def _tf_eval(x: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor]:
+            nonlocal first_call
+
             values = cls.unpack_tensors(variables, x)
             cls.assign_tensors(variables, values)
 
-            loss, grads = _compute_loss_and_gradients(closure, variables)
+            if first_call:
+                # Only check for unconnected gradients on the first function evaluation.
+                loss, grads = _compute_loss_and_gradients(
+                    closure, variables, tf.UnconnectedGradients.NONE
+                )
+                grads = cls._filter_unused_variables(variables, grads, allow_unused_variables)
+                first_call = False
+            else:
+                loss, grads = _compute_loss_and_gradients(
+                    closure, variables, tf.UnconnectedGradients.ZERO
+                )
+
             return loss, cls.pack_tensors(grads)
 
         if compile:
@@ -114,6 +138,32 @@ class Scipy:
             return loss.numpy().astype(np.float64), grad.numpy().astype(np.float64)
 
         return _eval
+
+    @staticmethod
+    def _filter_unused_variables(
+        variables: Sequence[tf.Variable], grads: Sequence[tf.Tensor], allow_unused_variables: bool
+    ) -> Sequence[tf.Tensor]:
+        filtered_grads = []
+        unused_variables = []
+        for i, grad in enumerate(grads):
+            if grad is None:
+                variable = variables[i]
+                filtered_grads.append(tf.zeros_like(variable))
+                unused_variables.append(variable.name)
+            else:
+                filtered_grads.append(grad)
+
+        if unused_variables:
+            msg = (
+                "Some variables does not have a gradient, and appear unused in / not connected to"
+                f" the loss closure: {unused_variables}."
+            )
+            if allow_unused_variables:
+                warnings.warn(msg)
+            else:
+                raise ValueError(msg)
+
+        return filtered_grads
 
     @classmethod
     def callback_func(
@@ -165,10 +215,12 @@ class Scipy:
 
 
 def _compute_loss_and_gradients(
-    loss_closure: LossClosure, variables: Sequence[tf.Variable]
+    loss_closure: LossClosure,
+    variables: Sequence[tf.Variable],
+    unconnected_gradients: tf.UnconnectedGradients,
 ) -> Tuple[tf.Tensor, Sequence[tf.Tensor]]:
     with tf.GradientTape(watch_accessed_variables=False) as tape:
         tape.watch(variables)
         loss = loss_closure()
-    grads = tape.gradient(loss, variables)
+    grads = tape.gradient(loss, variables, unconnected_gradients=unconnected_gradients)
     return loss, grads

@@ -12,14 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import abc
-from typing import Callable, Optional, Type
+from typing import Any, Callable, Optional, Type
 
 import tensorflow as tf
 import tensorflow_probability as tfp
 
 from ..utilities import positive
-from .base import QuadratureLikelihood
+from .base import QuadratureLikelihood, TensorType
 
 
 class MultiLatentLikelihood(QuadratureLikelihood):
@@ -31,7 +30,7 @@ class MultiLatentLikelihood(QuadratureLikelihood):
     covariance between outputs.
     """
 
-    def __init__(self, latent_dim: int, **kwargs):
+    def __init__(self, latent_dim: int, **kwargs: Any) -> None:
         super().__init__(
             latent_dim=latent_dim,
             observation_dim=1,
@@ -49,7 +48,7 @@ class MultiLatentTFPConditional(MultiLatentLikelihood):
         self,
         latent_dim: int,
         conditional_distribution: Callable[..., tfp.distributions.Distribution],
-        **kwargs,
+        **kwargs: Any,
     ):
         """
         :param latent_dim: number of arguments to the `conditional_distribution` callable
@@ -59,7 +58,7 @@ class MultiLatentTFPConditional(MultiLatentLikelihood):
         super().__init__(latent_dim, **kwargs)
         self.conditional_distribution = conditional_distribution
 
-    def _log_prob(self, Fs, Y) -> tf.Tensor:
+    def _log_prob(self, Fs: TensorType, Y: TensorType) -> tf.Tensor:
         """
         The log probability density log p(Y|F)
 
@@ -69,7 +68,7 @@ class MultiLatentTFPConditional(MultiLatentLikelihood):
         """
         return tf.squeeze(self.conditional_distribution(Fs).log_prob(Y), -1)
 
-    def _conditional_mean(self, Fs):
+    def _conditional_mean(self, Fs: TensorType) -> tf.Tensor:
         """
         The conditional marginal mean of Y|F: [E(Y₁|F)]
 
@@ -78,7 +77,7 @@ class MultiLatentTFPConditional(MultiLatentLikelihood):
         """
         return self.conditional_distribution(Fs).mean()
 
-    def _conditional_variance(self, Fs):
+    def _conditional_variance(self, Fs: TensorType) -> tf.Tensor:
         """
         The conditional marginal variance of Y|F: [Var(Y₁|F)]
 
@@ -100,8 +99,8 @@ class HeteroskedasticTFPConditional(MultiLatentTFPConditional):
         self,
         distribution_class: Type[tfp.distributions.Distribution] = tfp.distributions.Normal,
         scale_transform: Optional[tfp.bijectors.Bijector] = None,
-        **kwargs,
-    ):
+        **kwargs: Any,
+    ) -> None:
         """
         :param distribution_class: distribution class parameterized by `loc` and `scale`
             as first and second argument, respectively.
@@ -113,7 +112,7 @@ class HeteroskedasticTFPConditional(MultiLatentTFPConditional):
             scale_transform = positive(base="exp")
         self.scale_transform = scale_transform
 
-        def conditional_distribution(Fs) -> tfp.distributions.Distribution:
+        def conditional_distribution(Fs: TensorType) -> tfp.distributions.Distribution:
             tf.debugging.assert_equal(tf.shape(Fs)[-1], 2)
             loc = Fs[..., :1]
             scale = self.scale_transform(Fs[..., 1:])

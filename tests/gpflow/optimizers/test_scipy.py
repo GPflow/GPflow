@@ -12,14 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import warnings
+
 import numpy as np
 import pytest
 import tensorflow as tf
-from numpy.testing import assert_allclose
 
 import gpflow
-from gpflow.config import default_jitter
-from gpflow.mean_functions import Constant
+from gpflow.config import default_float
 
 rng = np.random.RandomState(0)
 
@@ -70,3 +70,83 @@ def test_scipy_jit():
     # due to the changes introduced by PR #1213, which removed some implicit casts
     # to float32. With TF 2.4 / TFP 0.12, we had to further increase atol from 1e-14.
     np.testing.assert_allclose(get_values(m1), get_values(m2), rtol=1e-14, atol=2e-14)
+
+
+@pytest.mark.parametrize("compile", [True, False])
+def test_scipy__optimal(compile: bool) -> None:
+    target1 = [0.2, 0.8]
+    target2 = [0.6]
+    v1 = tf.Variable([0.5, 0.5], dtype=default_float())
+    v2 = tf.Variable([0.5], dtype=default_float())
+    compilation_count = 0
+
+    def f() -> tf.Tensor:
+        nonlocal compilation_count
+        compilation_count += 1
+        return tf.reduce_sum((target1 - v1) ** 2) + tf.reduce_sum((target2 - v2) ** 2)
+
+    opt = gpflow.optimizers.Scipy()
+    result = opt.minimize(f, [v1, v2], compile=compile)
+
+    if compile:
+        assert 1 == compilation_count
+    else:
+        assert 1 < compilation_count
+    assert result.success
+    np.testing.assert_allclose(target1 + target2, result.x)
+    np.testing.assert_allclose(target1, v1)
+    np.testing.assert_allclose(target2, v2)
+
+
+@pytest.mark.parametrize("compile", [True, False])
+def test_scipy__partially_disconnected_variable(compile: bool) -> None:
+    target1 = 0.2
+    target2 = 0.6
+    v1 = tf.Variable([0.5, 0.5], dtype=default_float())
+    v2 = tf.Variable(0.5, dtype=default_float())
+
+    def f() -> tf.Tensor:
+        # v1[1] not used.
+        v10 = v1[0]
+        return (target1 - v10) ** 2 + (target2 - v2) ** 2
+
+    opt = gpflow.optimizers.Scipy()
+    result = opt.minimize(f, [v1, v2], compile=compile)
+
+    assert result.success
+    np.testing.assert_allclose([target1, 0.5, target2], result.x)
+    np.testing.assert_allclose([target1, 0.5], v1)
+    np.testing.assert_allclose(target2, v2)
+
+
+@pytest.mark.parametrize("compile", [True, False])
+@pytest.mark.parametrize("allow_unused_variables", [True, False])
+def test_scipy__disconnected_variable(compile: bool, allow_unused_variables: bool) -> None:
+    target1 = [0.2, 0.8]
+    v1 = tf.Variable([0.5, 0.5], dtype=default_float(), name="v1")
+    v2 = tf.Variable([0.5], dtype=default_float(), name="v2")
+
+    def f() -> tf.Tensor:
+        # v2 not used.
+        return tf.reduce_sum((target1 - v1) ** 2)
+
+    opt = gpflow.optimizers.Scipy()
+
+    if allow_unused_variables:
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            result = opt.minimize(
+                f, [v1, v2], compile=compile, allow_unused_variables=allow_unused_variables
+            )
+
+        (warning,) = w
+        msg = warning.message.args[0]
+        assert v2.name in msg
+
+        assert result.success
+        np.testing.assert_allclose(target1 + [0.5], result.x)
+        np.testing.assert_allclose(target1, v1)
+        np.testing.assert_allclose([0.5], v2)
+    else:
+        with pytest.raises(ValueError, match=v2.name):
+            opt.minimize(f, [v1, v2], allow_unused_variables=allow_unused_variables)

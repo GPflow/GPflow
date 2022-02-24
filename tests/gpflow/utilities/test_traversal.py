@@ -245,7 +245,21 @@ B.var_fixed                          ResourceVariable                        Fal
 
 # Note: we use grid format here because we have a double reference to the same variable
 # which does not render nicely in the table formatting.
-# The internal structure of the Keras model changed in TensorFlow version 2.5.0.
+# The internal structure of the Keras model changed in TensorFlow versions 2.5.0 and 2.6.0.
+example_tf_keras_model_tf_2_6_0 = """\
++-------------------------------+------------------+-------------+---------+-------------+-----------+---------+----------+\n\
+| name                          | class            | transform   | prior   | trainable   | shape     | dtype   | value    |\n\
++===============================+==================+=============+=========+=============+===========+=========+==========+\n\
+| C._trainable_weights[0]       | ResourceVariable |             |         | True        | (2, 2, 1) | float32 | [[[0.... |\n\
+| C.variable                    |                  |             |         |             |           |         |          |\n\
++-------------------------------+------------------+-------------+---------+-------------+-----------+---------+----------+\n\
+| C._trainable_weights[1]       | ResourceVariable |             |         | True        | ()        | float64 | 0.0      |\n\
++-------------------------------+------------------+-------------+---------+-------------+-----------+---------+----------+\n\
+| C._self_tracked_trackables[0] | Parameter        | Identity    |         | True        | ()        | float64 | 0.0      |\n\
+| C.param                       |                  |             |         |             |           |         |          |\n\
++-------------------------------+------------------+-------------+---------+-------------+-----------+---------+----------+"""
+
+
 example_tf_keras_model_tf_2_5_0 = """\
 +-------------------------------+------------------+-------------+---------+-------------+-----------+---------+----------+\n\
 | name                          | class            | transform   | prior   | trainable   | shape     | dtype   | value    |\n\
@@ -267,7 +281,9 @@ example_tf_keras_model = """\
 | C.param                 | Parameter        | Identity    |         | True        | ()        | float64 | 0.0      |\n\
 +-------------------------+------------------+-------------+---------+-------------+-----------+---------+----------+"""
 
-if Version(tf.__version__) >= Version("2.5"):
+if Version(tf.__version__) >= Version("2.6"):
+    example_tf_keras_model = example_tf_keras_model_tf_2_6_0
+elif Version(tf.__version__) >= Version("2.5"):
     example_tf_keras_model = example_tf_keras_model_tf_2_5_0
 
 # ------------------------------------------

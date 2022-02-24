@@ -19,7 +19,6 @@ import tensorflow as tf
 import tensorflow_probability as tfp
 
 from ..base import Module, Parameter, TensorData, TensorType
-from ..config import default_float
 from ..utilities import positive
 
 
@@ -28,17 +27,14 @@ class InducingVariables(Module):
     Abstract base class for inducing variables.
     """
 
+    @property
     @abc.abstractmethod
-    def __len__(self) -> int:
+    def num_inducing(self) -> tf.Tensor:
         """
-        Returns the number of inducing variables, relevant for example
-        to determine the size of the variational distribution.
+        Returns the number of inducing variables, relevant for example to determine the size of the
+        variational distribution.
         """
         raise NotImplementedError
-
-    @property
-    def num_inducing(self) -> int:
-        return self.__len__()
 
 
 class InducingPointsBase(InducingVariables):
@@ -51,7 +47,8 @@ class InducingPointsBase(InducingVariables):
             Z = Parameter(Z)
         self.Z = Z
 
-    def __len__(self) -> int:
+    @property
+    def num_inducing(self) -> Optional[tf.Tensor]:
         return tf.shape(self.Z)[0]
 
 

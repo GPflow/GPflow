@@ -33,14 +33,13 @@ requirements.extend(
         "typing_extensions",
         "packaging",
         "deprecated",
+        "dataclasses;python_version<'3.7'",
+        "lark>=1.1.0",
     ]
 )
 
-if sys.version_info < (3, 7):
-    requirements.append("dataclasses")  # became part of stdlib in python 3.7
 
-
-def read_file(filename):
+def read_file(filename: str) -> str:
     with open(filename, encoding="utf-8") as f:
         return f.read().strip()
 
@@ -66,6 +65,7 @@ setup(
         "Documentation": "https://gpflow.readthedocs.io",
     },
     packages=packages,
+    package_data={"": ["*.lark"]},
     include_package_data=True,
     install_requires=requirements,
     extras_require={"ImageToTensorBoard": ["matplotlib"]},
