@@ -66,7 +66,7 @@ class VGP_deprecated(GPModel, InternalDataTrainingLossMixin):
         """
         if num_latent_gps is None:
             num_latent_gps = self.calc_num_latent_gps_from_data(data, kernel, likelihood)
-        super().__init__(kernel, likelihood, mean_function, num_latent_gps)
+        super().__init__(kernel, likelihood, mean_function, num_latent_gps=num_latent_gps)
 
         self.data = data_input_to_tensor(data)
         X_data, _Y_data = self.data
@@ -278,7 +278,7 @@ class VGPOpperArchambeau(GPModel, InternalDataTrainingLossMixin):
         """
         if num_latent_gps is None:
             num_latent_gps = self.calc_num_latent_gps_from_data(data, kernel, likelihood)
-        super().__init__(kernel, likelihood, mean_function, num_latent_gps)
+        super().__init__(kernel, likelihood, mean_function, num_latent_gps=num_latent_gps)
 
         self.data = data_input_to_tensor(data)
         X_data, Y_data = self.data

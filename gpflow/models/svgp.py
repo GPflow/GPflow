@@ -66,7 +66,7 @@ class SVGP_deprecated(GPModel, ExternalDataTrainingLossMixin):
           (relevant when feeding in external minibatches)
         """
         # init the super class, accept args
-        super().__init__(kernel, likelihood, mean_function, num_latent_gps)
+        super().__init__(kernel, likelihood, mean_function, num_latent_gps=num_latent_gps)
         self.num_data = num_data
         self.q_diag = q_diag
         self.whiten = whiten

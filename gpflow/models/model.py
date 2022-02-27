@@ -98,10 +98,10 @@ class GPModel(BayesianModel):
         kernel: Kernel,
         likelihood: Likelihood,
         mean_function: Optional[MeanFunction] = None,
-        num_latent_gps: int = None,
+        *,
+        num_latent_gps: int,
     ):
         super().__init__()
-        assert num_latent_gps is not None, "GPModel requires specification of num_latent_gps"
         self.num_latent_gps = num_latent_gps
         if mean_function is None:
             mean_function = Zero()
