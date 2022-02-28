@@ -13,7 +13,7 @@
 #  limitations under the License.
 import warnings
 from inspect import isabstract
-from typing import Any, Callable, Iterable, Optional, Set, Type
+from typing import Any, Callable, DefaultDict, Iterable, Optional, Set, Type
 
 import numpy as np
 import pytest
@@ -44,6 +44,25 @@ from gpflow.posteriors import (
 
 INPUT_DIMS = 2
 NUM_INDUCING_POINTS = 3
+
+
+# `PosteriorType` really should be something like `Type[AbstractPosterior]`, except mypy doesn't
+# allow passing abstract classes to functions. See: https://github.com/python/mypy/issues/4717
+PosteriorType = Type[Any]
+RegisterPosterior = Callable[[AbstractPosterior, PosteriorType], None]
+
+
+@pytest.fixture(name="register_posterior_test")
+def _register_posterior_test_fixture(
+    tested_posteriors: DefaultDict[str, Set[Type[AbstractPosterior]]]
+) -> RegisterPosterior:
+    def _verify_and_register_posterior_test(
+        posterior: AbstractPosterior, expected_posterior_class: Type[AbstractPosterior]
+    ) -> None:
+        assert isinstance(posterior, expected_posterior_class)
+        tested_posteriors["test_posteriors.py"].add(expected_posterior_class)
+
+    return _verify_and_register_posterior_test
 
 
 QSqrtFactory = Callable[[int, int], Optional[TensorType]]
@@ -92,56 +111,6 @@ def _num_latent_gps_fixture(request: SubRequest) -> int:
 @pytest.fixture(name="output_dims", params=[1, 5])
 def _output_dims_fixture(request: SubRequest) -> int:
     return request.param
-
-
-TESTED_POSTERIORS: Set[Type[AbstractPosterior]] = set()
-
-
-@pytest.fixture(scope="module", autouse=True)
-def _ensure_all_posteriors_are_tested_fixture() -> Iterable[None]:
-    """
-    This fixture ensures that all concrete posteriors have unit tests which compare the predictions
-    from the fused and precomputed code paths. When adding a new concrete posterior class to
-    GPFlow, ensure that it is also tested in this manner.
-
-    This autouse, module scoped fixture will always be executed when tests in this module are run.
-    """
-    # Code here will be executed before any of the tests in this module.
-
-    yield  # Run tests in this module.
-
-    # Code here will be executed after all of the tests in this module.
-
-    available_posteriors = list(gpflow.ci_utils.subclasses(AbstractPosterior))
-    concrete_posteriors = set([k for k in available_posteriors if not isabstract(k)])
-
-    untested_posteriors = concrete_posteriors - TESTED_POSTERIORS
-
-    if untested_posteriors:
-        message = (
-            f"No tests have been registered for the following posteriors: {untested_posteriors}."
-        )
-        if gpflow.ci_utils.is_continuous_integration():
-            raise AssertionError(message)
-        else:
-            warnings.warn(message)
-
-
-# `PosteriorType` really should be something like `Type[AbstractPosterior]`, except mypy doesn't
-# allow passing abstract classes to functions. See: https://github.com/python/mypy/issues/4717
-PosteriorType = Type[Any]
-RegisterPosterior = Callable[[AbstractPosterior, PosteriorType], None]
-
-
-@pytest.fixture(name="register_posterior_test")
-def _register_posterior_test_fixture() -> RegisterPosterior:
-    def _verify_and_register_posterior_test(
-        posterior: AbstractPosterior, expected_posterior_class: Type[AbstractPosterior]
-    ) -> None:
-        assert isinstance(posterior, expected_posterior_class)
-        TESTED_POSTERIORS.add(expected_posterior_class)
-
-    return _verify_and_register_posterior_test
 
 
 ConditionalClosure = Callable[..., tf.Tensor]
