@@ -26,10 +26,12 @@ allows this to be done whilst additionally learning parameters of the
 parametric function.
 """
 
+from typing import Collection, Optional
+
 import numpy as np
 import tensorflow as tf
 
-from .base import Module, Parameter
+from .base import Module, Parameter, TensorType
 from .config import default_float, default_int
 
 
@@ -45,13 +47,13 @@ class MeanFunction(Module):
     example.
     """
 
-    def __call__(self, X):
+    def __call__(self, X: TensorType) -> tf.Tensor:
         raise NotImplementedError("Implement the __call__ method for this mean function")
 
-    def __add__(self, other):
+    def __add__(self, other: "MeanFunction") -> "MeanFunction":
         return Additive(self, other)
 
-    def __mul__(self, other):
+    def __mul__(self, other: "MeanFunction") -> "MeanFunction":
         return Product(self, other)
 
 
@@ -60,7 +62,7 @@ class Linear(MeanFunction):
     y_i = A x_i + b
     """
 
-    def __init__(self, A=None, b=None):
+    def __init__(self, A: TensorType = None, b: TensorType = None) -> None:
         """
         A is a matrix which maps each element of X to Y, b is an additive
         constant.
@@ -74,7 +76,7 @@ class Linear(MeanFunction):
         self.A = Parameter(np.atleast_2d(A))
         self.b = Parameter(b)
 
-    def __call__(self, X):
+    def __call__(self, X: TensorType) -> tf.Tensor:
         return tf.tensordot(X, self.A, [[-1], [0]]) + self.b
 
 
@@ -83,15 +85,18 @@ class Identity(Linear):
     y_i = x_i
     """
 
-    def __init__(self, input_dim=None):
+    # The many type-ignores in this class is because we replace a field in the super class with a
+    # property, which mypy doesn't like.
+
+    def __init__(self, input_dim: Optional[int] = None) -> None:
         Linear.__init__(self)
         self.input_dim = input_dim
 
-    def __call__(self, X):
+    def __call__(self, X: TensorType) -> tf.Tensor:
         return X
 
     @property
-    def A(self):
+    def A(self) -> tf.Tensor:  # type: ignore
         if self.input_dim is None:
             raise ValueError(
                 "An input_dim needs to be specified when using the "
@@ -100,7 +105,7 @@ class Identity(Linear):
         return tf.eye(self.input_dim, dtype=default_float())
 
     @property
-    def b(self):
+    def b(self) -> tf.Tensor:  # type: ignore
         if self.input_dim is None:
             raise ValueError(
                 "An input_dim needs to be specified when using the "
@@ -109,22 +114,22 @@ class Identity(Linear):
 
         return tf.zeros(self.input_dim, dtype=default_float())
 
-    @A.setter
-    def A(self, A):
+    @A.setter  # type: ignore
+    def A(self, A: tf.Tensor) -> None:
         pass
 
-    @b.setter
-    def b(self, b):
+    @b.setter  # type: ignore
+    def b(self, b: tf.Tensor) -> None:
         pass
 
 
 class Constant(MeanFunction):
-    def __init__(self, c=None):
+    def __init__(self, c: TensorType = None) -> None:
         super().__init__()
         c = np.zeros(1) if c is None else c
         self.c = Parameter(c)
 
-    def __call__(self, X):
+    def __call__(self, X: TensorType) -> tf.Tensor:
         tile_shape = tf.concat(
             [tf.shape(X)[:-1], [1]],
             axis=0,
@@ -137,12 +142,12 @@ class Constant(MeanFunction):
 
 
 class Zero(Constant):
-    def __init__(self, output_dim=1):
+    def __init__(self, output_dim: int = 1) -> None:
         Constant.__init__(self)
         self.output_dim = output_dim
         del self.c
 
-    def __call__(self, X):
+    def __call__(self, X: TensorType) -> tf.Tensor:
         output_shape = tf.concat([tf.shape(X)[:-1], [self.output_dim]], axis=0)
         return tf.zeros(output_shape, dtype=X.dtype)
 
@@ -154,13 +159,13 @@ class SwitchedMeanFunction(MeanFunction):
     We assume the 'label' is stored in the extra column of X.
     """
 
-    def __init__(self, meanfunction_list):
+    def __init__(self, meanfunction_list: Collection[MeanFunction]) -> None:
         super().__init__()
         for m in meanfunction_list:
             assert isinstance(m, MeanFunction)
         self.meanfunctions = meanfunction_list
 
-    def __call__(self, X):
+    def __call__(self, X: TensorType) -> tf.Tensor:
         ind = tf.gather(tf.transpose(X), tf.shape(X)[1] - 1)  # ind = X[:,-1]
         ind = tf.cast(ind, tf.int32)
         X = tf.transpose(
@@ -177,21 +182,21 @@ class SwitchedMeanFunction(MeanFunction):
 
 
 class Additive(MeanFunction):
-    def __init__(self, first_part, second_part):
+    def __init__(self, first_part: MeanFunction, second_part: MeanFunction) -> None:
         MeanFunction.__init__(self)
         self.add_1 = first_part
         self.add_2 = second_part
 
-    def __call__(self, X):
+    def __call__(self, X: TensorType) -> tf.Tensor:
         return tf.add(self.add_1(X), self.add_2(X))
 
 
 class Product(MeanFunction):
-    def __init__(self, first_part, second_part):
+    def __init__(self, first_part: MeanFunction, second_part: MeanFunction):
         MeanFunction.__init__(self)
 
         self.prod_1 = first_part
         self.prod_2 = second_part
 
-    def __call__(self, X):
+    def __call__(self, X: TensorType) -> tf.Tensor:
         return tf.multiply(self.prod_1(X), self.prod_2(X))
