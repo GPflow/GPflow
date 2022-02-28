@@ -24,30 +24,39 @@ from .argument_ref import ArgumentRef
 class ParsedDimensionSpec:
     constant: Optional[int]
     variable_name: Optional[str]
+    variable_rank: bool
 
     def __post_init__(self) -> None:
         assert (self.constant is None) != (
             self.variable_name is None
         ), "Argument must be either constant or variable."
+        if self.variable_rank:
+            assert (
+                self.variable_rank is not None
+            ), "Variable-rank dimensions must be bound to a variable."
+            assert self.constant is None, "Constants cannot have a variable rank."
 
     def __repr__(self) -> str:
         if self.constant is not None:
             return str(self.constant)
         else:
             assert self.variable_name is not None
-            return self.variable_name
+            suffix = "..." if self.variable_rank else ""
+            return self.variable_name + suffix
 
 
 @dataclass(frozen=True)
 class ParsedShapeSpec:
-    leading_dims_variable_name: Optional[str]
-    trailing_dims: Tuple[ParsedDimensionSpec, ...]
+    dims: Tuple[ParsedDimensionSpec, ...]
+
+    def __post_init__(self) -> None:
+        n_variable_rank = sum(dim.variable_rank for dim in self.dims)
+        assert (
+            n_variable_rank <= 1
+        ), f"At most one variable-rank dimension allowed. Found {n_variable_rank} in {self}."
 
     def __repr__(self) -> str:
-        dims = []
-        if self.leading_dims_variable_name:
-            dims.append(f"{self.leading_dims_variable_name}...")
-        dims.extend(repr(dim) for dim in self.trailing_dims)
+        dims = [repr(dim) for dim in self.dims]
         return f"({', '.join(dims)})"
 
 

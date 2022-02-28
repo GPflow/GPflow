@@ -14,6 +14,7 @@
 """
 Utilities for testing the `check_shapes` library.
 """
+from dataclasses import dataclass
 from typing import Optional, Union
 from unittest.mock import MagicMock
 
@@ -36,16 +37,24 @@ def t(*shape: Optional[int]) -> TensorType:
     return mock_tensor
 
 
-def make_shape_spec(
-    leading_dims_variable_name: Optional[str], *dims: Union[int, str]
-) -> ParsedShapeSpec:
+@dataclass
+class varrank:
+    name: str
+
+
+def make_shape_spec(*dims: Union[int, str, varrank]) -> ParsedShapeSpec:
     shape = []
     for dim in dims:
         if isinstance(dim, int):
-            shape.append(ParsedDimensionSpec(constant=dim, variable_name=None))
+            shape.append(ParsedDimensionSpec(constant=dim, variable_name=None, variable_rank=False))
+        elif isinstance(dim, str):
+            shape.append(ParsedDimensionSpec(constant=None, variable_name=dim, variable_rank=False))
         else:
-            shape.append(ParsedDimensionSpec(constant=None, variable_name=dim))
-    return ParsedShapeSpec(leading_dims_variable_name, tuple(shape))
+            assert isinstance(dim, varrank)
+            shape.append(
+                ParsedDimensionSpec(constant=None, variable_name=dim.name, variable_rank=True)
+            )
+    return ParsedShapeSpec(tuple(shape))
 
 
 def make_argument_ref(argument_name: str, *refs: Union[int, str]) -> ArgumentRef:
