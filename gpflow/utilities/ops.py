@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import copy
-from typing import Any, List, Optional, Union
+from typing import Any, Callable, List, Optional, Union
 
 import numpy as np
 import tensorflow as tf
@@ -78,7 +78,9 @@ def leading_transpose(tensor: tf.Tensor, perm: List[Any], leading_dim: int = 0) 
     return tf.transpose(tensor, perm)
 
 
-def broadcasting_elementwise(op, a, b):
+def broadcasting_elementwise(
+    op: Callable[[tf.Tensor, tf.Tensor], tf.Tensor], a: tf.Tensor, b: tf.Tensor
+) -> tf.Tensor:
     """
     Apply binary operation `op` to every pair in tensors `a` and `b`.
 
@@ -91,7 +93,7 @@ def broadcasting_elementwise(op, a, b):
     return tf.reshape(flatres, tf.concat([tf.shape(a), tf.shape(b)], 0))
 
 
-def square_distance(X, X2):
+def square_distance(X: tf.Tensor, X2: Optional[tf.Tensor]) -> tf.Tensor:
     """
     Returns ||X - X2ᵀ||²
     Due to the implementation and floating-point imprecision, the
@@ -116,7 +118,7 @@ def square_distance(X, X2):
     return dist
 
 
-def difference_matrix(X, X2):
+def difference_matrix(X: tf.Tensor, X2: Optional[tf.Tensor]) -> tf.Tensor:
     """
     Returns (X - X2ᵀ)
 

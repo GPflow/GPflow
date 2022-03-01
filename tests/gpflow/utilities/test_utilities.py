@@ -1,12 +1,18 @@
+from types import ModuleType
+
 import numpy as np
+import pytest
 import tensorflow as tf
 import tensorflow_probability as tfp
 
 import gpflow
+import gpflow.utilities.misc as misc
+import gpflow.utilities.traversal as traversal
+import gpflow.utilities.utilities as utilities
 from gpflow.models.util import data_input_to_tensor
 
 
-def test_select_parameters_with_prior():
+def test_select_parameters_with_prior() -> None:
     kernel = gpflow.kernels.SquaredExponential()
     params = gpflow.utilities.select_dict_parameters_with_prior(kernel)
     assert params == {}
@@ -16,7 +22,7 @@ def test_select_parameters_with_prior():
     assert len(params) == 1
 
 
-def test_data_input_to_tensor():
+def test_data_input_to_tensor() -> None:
     input1 = (1.0, (2.0,))
     output1 = data_input_to_tensor(input1)
     assert output1[0].dtype == tf.float64
@@ -32,3 +38,9 @@ def test_data_input_to_tensor():
     assert output3[0].dtype == tf.float64
     assert output3[1][0].dtype == tf.float16
     assert output3[1][1].dtype == tf.float16
+
+
+@pytest.mark.parametrize("module", [misc, traversal])
+def test_utilities_utilities(module: ModuleType) -> None:
+    for d in module.__all__:  # type: ignore  # mypy doesn't seem to know __all__.
+        assert getattr(utilities, d)

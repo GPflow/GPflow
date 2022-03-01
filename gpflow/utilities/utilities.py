@@ -16,6 +16,8 @@
 This module is deprecated, and is only provided for backwards compatibility.
 It will be removed in GPflow 2.3.
 """
+from types import ModuleType
+
 from deprecated import deprecated
 
 from . import misc, traversal
@@ -23,8 +25,8 @@ from . import misc, traversal
 __all__ = []
 
 
-def _create_module_redirects(m):
-    for name in m.__all__:
+def _create_module_redirects(m: ModuleType) -> None:
+    for name in m.__all__:  # type: ignore  # mypy doesn't seem to know __all__.
         func = getattr(m, name)
         assert callable(func), "all names exported by misc and traversal should be functions"
         deprecated_func = deprecated(

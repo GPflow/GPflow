@@ -12,10 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Any, Callable, Tuple, Type, TypeVar, Union
+from typing import Any, Callable, Optional, Tuple, Type, TypeVar, Union
 
 from multipledispatch import Dispatcher as GeneratorDispatcher
-from multipledispatch.dispatcher import variadic_signature_matches
+from multipledispatch.dispatcher import str_signature, variadic_signature_matches
 from multipledispatch.variadic import isvariadic
 
 __all__ = ["Dispatcher"]
@@ -40,7 +40,7 @@ class Dispatcher(GeneratorDispatcher):
         # Override to add type hints...
         return super().register(*types, **kwargs)
 
-    def dispatch(self, *types: Types) -> Callable[..., Any]:
+    def dispatch(self, *types: Types) -> Optional[Callable[..., Any]]:
         """
         Returns matching function for `types`; if not existing returns None.
         """
@@ -49,7 +49,18 @@ class Dispatcher(GeneratorDispatcher):
 
         return self.get_first_occurrence(*types)
 
-    def get_first_occurrence(self, *types: Types) -> Callable[..., Any]:
+    def dispatch_or_raise(self, *types: Types) -> Callable[..., Any]:
+        """
+        Returns matching function for `types`; if not existing raises an error.
+        """
+        f = self.dispatch(*types)
+        if f is None:
+            raise NotImplementedError(
+                f"Could not find signature for {self.name}: <{str_signature(types)}>"
+            )
+        return f
+
+    def get_first_occurrence(self, *types: Types) -> Optional[Callable[..., Any]]:
         """
         Returns the first occurrence of a matching function
 
@@ -61,7 +72,7 @@ class Dispatcher(GeneratorDispatcher):
         """
         n = len(types)
         for signature in self.ordering:
-            if len(signature) == n and all(map(issubclass, types, signature)):
+            if len(signature) == n and all(map(issubclass, types, signature)):  # type: ignore
                 result = self.funcs[signature]
                 return result
             elif len(signature) and isvariadic(signature[-1]):
