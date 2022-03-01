@@ -1,3 +1,5 @@
+from typing import Optional, Type
+
 import numpy as np
 import pytest
 import tensorflow as tf
@@ -15,7 +17,7 @@ from gpflow.utilities import positive, triangular, triangular_size
         (0.3, 0.4),  # ensure local overrides config
     ],
 )
-def test_positive_lower(env_lower, override_lower):
+def test_positive_lower(env_lower: float, override_lower: Optional[float]) -> None:
     expected_lower = override_lower or env_lower
     with as_context(Config(positive_bijector="softplus", positive_minimum=env_lower)):
         bijector = positive(lower=override_lower)
@@ -32,13 +34,17 @@ def test_positive_lower(env_lower, override_lower):
         ("exp", "Softplus", tfp.bijectors.Softplus),
     ],
 )
-def test_positive_bijector(env_bijector, override_bijector, expected_class):
+def test_positive_bijector(
+    env_bijector: str,
+    override_bijector: Optional[str],
+    expected_class: Type[tfp.bijectors.Bijector],
+) -> None:
     with as_context(Config(positive_bijector=env_bijector, positive_minimum=0.0)):
         bijector = positive(base=override_bijector)
         assert isinstance(bijector, expected_class)
 
 
-def test_positive_calculation_order():
+def test_positive_calculation_order() -> None:
     value, lower = -10.0, 10.0
     expected = np.exp(value) + lower
     with as_context(Config(positive_bijector="exp", positive_minimum=lower)):
@@ -47,7 +53,7 @@ def test_positive_calculation_order():
     assert result >= lower
 
 
-def test_triangular():
+def test_triangular() -> None:
     assert isinstance(triangular(), tfp.bijectors.FillTriangular)
 
 

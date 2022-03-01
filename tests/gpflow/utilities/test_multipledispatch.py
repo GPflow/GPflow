@@ -1,12 +1,15 @@
 import re
 import warnings
+from typing import Any, Type
 
 import multipledispatch
 import pytest
 import tensorflow as tf
+from _pytest.capture import CaptureFixture
 from packaging.version import Version
 
 import gpflow
+from gpflow.utilities import Dispatcher
 
 
 class A1:
@@ -25,20 +28,26 @@ class B2(B1):
     pass
 
 
-def test_our_multipledispatch():
-    test_fn = gpflow.utilities.Dispatcher("test_fn")
+def get_test_fn() -> Dispatcher:
+    test_fn = Dispatcher("test_fn")
 
     @test_fn.register(A1, B1)
-    def test_a1_b1(x, y):
+    def test_a1_b1(x: A1, y: B1) -> str:
         return "a1-b1"
 
     @test_fn.register(A2, B1)
-    def test_a2_b1(x, y):
+    def test_a2_b1(x: A2, y: B1) -> str:
         return "a2-b1"
 
     @test_fn.register(A1, B2)
-    def test_a1_b2(x, y):
+    def test_a1_b2(x: A1, y: B2) -> str:
         return "a1-b2"
+
+    return test_fn
+
+
+def test_our_multipledispatch() -> None:
+    test_fn = get_test_fn()
 
     assert test_fn(A1(), B1()) == "a1-b1"
     assert test_fn(A2(), B1()) == "a2-b1"
@@ -57,7 +66,7 @@ def test_our_multipledispatch():
     # test that adding the child-child definition removes ambiguity warning:
 
     @test_fn.register(A2, B2)
-    def test_a2_b2(x, y):
+    def test_a2_b2(x: A2, y: B2) -> str:
         return "a2-b2"
 
     with warnings.catch_warnings(record=True) as w:
@@ -66,6 +75,18 @@ def test_our_multipledispatch():
         assert test_fn(A2(), B2()) == "a2-b2"
 
         assert len(w) == 0
+
+
+def test_dispatcher__no_match() -> None:
+    test_fn = get_test_fn()
+
+    with pytest.raises(NotImplementedError):
+        test_fn(3, "foo")
+
+    assert None is test_fn.dispatch(int, str)
+
+    with pytest.raises(NotImplementedError):
+        test_fn.dispatch_or_raise(int, str)
 
 
 @pytest.mark.parametrize(
@@ -78,7 +99,9 @@ def test_our_multipledispatch():
         (gpflow.utilities.Dispatcher, False),  # no warnings with our custom Dispatcher
     ],
 )
-def test_dispatcher_autograph_warnings(capsys, Dispatcher, expect_autograph_warning):
+def test_dispatcher_autograph_warnings(
+    capsys: CaptureFixture[str], Dispatcher: Type[Any], expect_autograph_warning: bool
+) -> None:
     if Dispatcher is multipledispatch.Dispatcher and (Version(tf.__version__) >= Version("2.3.0")):
         pytest.skip("In TensorFlow >= 2.3, multipledispatch.Dispatcher no longer works at all")
 
@@ -88,7 +111,7 @@ def test_dispatcher_autograph_warnings(capsys, Dispatcher, expect_autograph_warn
 
     # generator would only be invoked when defining for base class...
     @test_fn.register(gpflow.inducing_variables.InducingVariables)
-    def test_iv(x):
+    def test_iv(x: gpflow.inducing_variables.InducingVariables) -> tf.Tensor:
         return tf.reduce_sum(x.Z)
 
     test_fn_compiled = tf.function(test_fn)  # with autograph=True by default

@@ -80,7 +80,7 @@ model_wrong_value = [
 def test_multiple_assign_updates_correct_values(
     model: SVGP, var_update_dict: Mapping[str, Any]
 ) -> None:
-    old_value_dict = leaf_components(model).copy()
+    old_value_dict = leaf_components(model)
     multiple_assign(model, var_update_dict)
     for path, variable in leaf_components(model).items():
         if path in var_update_dict.keys():
