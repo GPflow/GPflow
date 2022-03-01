@@ -11,13 +11,15 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from typing import Tuple
+
 import numpy as np
-import tensorflow as tf
 from numpy.testing import assert_allclose
 
 import gpflow
 from gpflow import set_trainable
 from gpflow.mean_functions import Constant
+from gpflow.models import VGP
 
 rng = np.random.RandomState(0)
 
@@ -47,7 +49,7 @@ class Datum:
     Ytest_augmented1 = np.hstack([Ytest, np.ones((N, 1))])
 
 
-def _prepare_models():
+def _prepare_models() -> Tuple[VGP, VGP, VGP]:
     """
     Prepare models to make sure the coregionalized model with diagonal coregion kernel and
     with fixed lengthscales is equivalent with normal GP regression.
@@ -57,14 +59,14 @@ def _prepare_models():
     set_trainable(k0.lengthscales, False)
     k1 = gpflow.kernels.SquaredExponential()
     set_trainable(k1.lengthscales, False)
-    vgp0 = gpflow.models.VGP(
+    vgp0 = VGP(
         (Datum.X[0], Datum.Y[0]),
         kernel=k0,
         mean_function=Constant(),
         likelihood=gpflow.likelihoods.Gaussian(),
         num_latent_gps=1,
     )
-    vgp1 = gpflow.models.VGP(
+    vgp1 = VGP(
         (Datum.X[1], Datum.Y[1]),
         kernel=k1,
         mean_function=Constant(),
@@ -84,7 +86,7 @@ def _prepare_models():
     mean_c = gpflow.mean_functions.SwitchedMeanFunction(
         [gpflow.mean_functions.Constant(), gpflow.mean_functions.Constant()]
     )
-    cvgp = gpflow.models.VGP(
+    cvgp = VGP(
         (Datum.X_augmented, Datum.Y_augmented),
         kernel=kc * coreg,
         mean_function=mean_c,
@@ -122,7 +124,7 @@ def _prepare_models():
 # ------------------------------------------
 
 
-def test_likelihood_variance():
+def test_likelihood_variance() -> None:
     vgp0, vgp1, cvgp = _prepare_models()
     assert_allclose(
         vgp0.likelihood.variance.numpy(),
@@ -136,7 +138,7 @@ def test_likelihood_variance():
     )
 
 
-def test_kernel_variance():
+def test_kernel_variance() -> None:
     vgp0, vgp1, cvgp = _prepare_models()
     assert_allclose(
         vgp0.kernel.variance.numpy(),
@@ -150,7 +152,7 @@ def test_kernel_variance():
     )
 
 
-def test_mean_values():
+def test_mean_values() -> None:
     vgp0, vgp1, cvgp = _prepare_models()
     assert_allclose(
         vgp0.mean_function.c.numpy(),
@@ -164,7 +166,7 @@ def test_mean_values():
     )
 
 
-def test_predict_f():
+def test_predict_f() -> None:
     vgp0, vgp1, cvgp = _prepare_models()
 
     pred_f0 = vgp0.predict_f(Datum.Xtest)
@@ -181,7 +183,7 @@ def test_predict_f():
     cvgp.predict_f(Datum.Xtest_augmented1, full_cov=True)
 
 
-def test_predict_y():
+def test_predict_y() -> None:
     vgp0, vgp1, cvgp = _prepare_models()
     mu1, var1 = vgp0.predict_y(Datum.Xtest)
     c_mu1, c_var1 = cvgp.predict_y(np.hstack([Datum.Xtest, np.zeros((Datum.Xtest.shape[0], 1))]))
@@ -198,7 +200,7 @@ def test_predict_y():
     assert_allclose(var2, c_var2[:, 1:2], atol=1.0e-4)
 
 
-def test_predict_log_density():
+def test_predict_log_density() -> None:
     vgp0, vgp1, cvgp = _prepare_models()
 
     pred_ydensity0 = vgp0.predict_log_density((Datum.Xtest, Datum.Ytest))
@@ -209,7 +211,7 @@ def test_predict_log_density():
     assert_allclose(pred_ydensity1, pred_ydensity_c1, atol=1e-2)
 
 
-def test_predict_f_samples():
+def test_predict_f_samples() -> None:
     vgp0, vgp1, cvgp = _prepare_models()
     # just check predict_f_samples(self) works
     cvgp.predict_f_samples(Datum.X_augmented0, 1)

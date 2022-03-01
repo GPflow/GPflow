@@ -14,7 +14,7 @@
 
 import abc
 import functools
-from typing import Callable, Optional, Sequence, Tuple, Union
+from typing import Any, Callable, Dict, Optional, Sequence, Tuple, Union
 
 import numpy as np
 import tensorflow as tf
@@ -49,7 +49,7 @@ class XiTransform(metaclass=abc.ABCMeta):
 
     @staticmethod
     @abc.abstractmethod
-    def meanvarsqrt_to_xi(mean, varsqrt):
+    def meanvarsqrt_to_xi(mean: tf.Tensor, varsqrt: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor]:
         """
         Transforms the parameter `mean` and `varsqrt` to `xi1`, `xi2`
 
@@ -60,7 +60,7 @@ class XiTransform(metaclass=abc.ABCMeta):
 
     @staticmethod
     @abc.abstractmethod
-    def xi_to_meanvarsqrt(xi1, xi2):
+    def xi_to_meanvarsqrt(xi1: tf.Tensor, xi2: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor]:
         """
         Transforms the parameter `xi1`, `xi2` to `mean`, `varsqrt`
 
@@ -71,7 +71,7 @@ class XiTransform(metaclass=abc.ABCMeta):
 
     @staticmethod
     @abc.abstractmethod
-    def naturals_to_xi(nat1, nat2):
+    def naturals_to_xi(nat1: tf.Tensor, nat2: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor]:
         """
         Applies the transform so that `nat1`, `nat2` is mapped to `xi1`, `xi2`
 
@@ -89,15 +89,15 @@ class XiNat(XiTransform):
     """
 
     @staticmethod
-    def meanvarsqrt_to_xi(mean, varsqrt):
+    def meanvarsqrt_to_xi(mean: tf.Tensor, varsqrt: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor]:
         return meanvarsqrt_to_natural(mean, varsqrt)
 
     @staticmethod
-    def xi_to_meanvarsqrt(xi1, xi2):
+    def xi_to_meanvarsqrt(xi1: tf.Tensor, xi2: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor]:
         return natural_to_meanvarsqrt(xi1, xi2)
 
     @staticmethod
-    def naturals_to_xi(nat1, nat2):
+    def naturals_to_xi(nat1: tf.Tensor, nat2: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor]:
         return nat1, nat2
 
 
@@ -108,15 +108,15 @@ class XiSqrtMeanVar(XiTransform):
     """
 
     @staticmethod
-    def meanvarsqrt_to_xi(mean, varsqrt):
+    def meanvarsqrt_to_xi(mean: tf.Tensor, varsqrt: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor]:
         return mean, varsqrt
 
     @staticmethod
-    def xi_to_meanvarsqrt(xi1, xi2):
+    def xi_to_meanvarsqrt(xi1: tf.Tensor, xi2: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor]:
         return xi1, xi2
 
     @staticmethod
-    def naturals_to_xi(nat1, nat2):
+    def naturals_to_xi(nat1: tf.Tensor, nat2: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor]:
         return natural_to_meanvarsqrt(nat1, nat2)
 
 
@@ -144,7 +144,9 @@ class NaturalGradient(tf.optimizers.Optimizer):
             year={2018}
     """
 
-    def __init__(self, gamma: Scalar, xi_transform: XiTransform = XiNat(), name=None):
+    def __init__(
+        self, gamma: Scalar, xi_transform: XiTransform = XiNat(), name: Optional[str] = None
+    ) -> None:
         """
         :param gamma: natgrad step length
         :param xi_transform: default ξ transform (can be overridden in the call to minimize())
@@ -159,7 +161,7 @@ class NaturalGradient(tf.optimizers.Optimizer):
         self,
         loss_fn: LossClosure,
         var_list: Sequence[NatGradParameters],
-    ):
+    ) -> None:
         """
         Minimizes objective function of the model.
         Natural Gradient optimizer works with variational parameters only.
@@ -180,14 +182,14 @@ class NaturalGradient(tf.optimizers.Optimizer):
         for parameters. Custom transformations that implement the `XiTransform`
         interface are also possible.
         """
-        parameters = [(v[0], v[1], (v[2] if len(v) > 2 else None)) for v in var_list]
+        parameters = [(v[0], v[1], (v[2] if len(v) > 2 else None)) for v in var_list]  # type: ignore
         self._natgrad_steps(loss_fn, parameters)
 
     def _natgrad_steps(
         self,
         loss_fn: LossClosure,
         parameters: Sequence[Tuple[Parameter, Parameter, Optional[XiTransform]]],
-    ):
+    ) -> None:
         """
         Computes gradients of loss_fn() w.r.t. q_mu and q_sqrt, and updates
         these parameters using the natgrad backwards step, for all sets of
@@ -213,7 +215,7 @@ class NaturalGradient(tf.optimizers.Optimizer):
             ):
                 self._natgrad_apply_gradients(q_mu_grad, q_sqrt_grad, q_mu, q_sqrt, xi_transform)
 
-    def _assert_shapes(self, q_mu, q_sqrt):
+    def _assert_shapes(self, q_mu: tf.Tensor, q_sqrt: tf.Tensor) -> None:
         tf.debugging.assert_shapes(
             [
                 (q_mu, ["M", "L"]),
@@ -228,7 +230,7 @@ class NaturalGradient(tf.optimizers.Optimizer):
         q_mu: Parameter,
         q_sqrt: Parameter,
         xi_transform: Optional[XiTransform] = None,
-    ):
+    ) -> None:
         """
         This function does the backward step on the q_mu and q_sqrt parameters,
         given the gradients of the loss function with respect to their unconstrained
@@ -318,7 +320,7 @@ class NaturalGradient(tf.optimizers.Optimizer):
         q_mu.assign(mean_new)
         q_sqrt.assign(varsqrt_new)
 
-    def get_config(self):
+    def get_config(self) -> Dict[str, Any]:
         config = super().get_config()
         config.update({"gamma": self._serialize_hyperparameter("gamma")})
         return config
@@ -331,7 +333,9 @@ class NaturalGradient(tf.optimizers.Optimizer):
 # [D, N, 1] and [D, N, N], respectively. Return values are also of shapes [D, N, 1] and [D, N, N].
 
 
-def swap_dimensions(method):
+def swap_dimensions(
+    method: Callable[[tf.Tensor, tf.Tensor], Tuple[tf.Tensor, tf.Tensor]]
+) -> Callable[..., Tuple[tf.Tensor, tf.Tensor]]:
     """
     Converts between GPflow indexing and tensorflow indexing
     `method` is a function that broadcasts over the first dimension (i.e. like all tensorflow matrix ops):
@@ -343,7 +347,9 @@ def swap_dimensions(method):
     """
 
     @functools.wraps(method)
-    def wrapper(a_nd, b_dnn, swap=True):
+    def wrapper(
+        a_nd: tf.Tensor, b_dnn: tf.Tensor, swap: bool = True
+    ) -> Tuple[tf.Tensor, tf.Tensor]:
         if swap:
             if a_nd.shape.ndims != 2:  # pragma: no cover
                 raise ValueError("The mean parametrization must have 2 dimensions.")
@@ -360,7 +366,7 @@ def swap_dimensions(method):
 
 
 @swap_dimensions
-def natural_to_meanvarsqrt(nat1: tf.Tensor, nat2: tf.Tensor):
+def natural_to_meanvarsqrt(nat1: tf.Tensor, nat2: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor]:
     var_sqrt_inv = tf.linalg.cholesky(-2 * nat2)
     var_sqrt = _inverse_lower_triangular(var_sqrt_inv)
     S = tf.linalg.matmul(var_sqrt, var_sqrt, transpose_a=True)
@@ -371,37 +377,37 @@ def natural_to_meanvarsqrt(nat1: tf.Tensor, nat2: tf.Tensor):
 
 
 @swap_dimensions
-def meanvarsqrt_to_natural(mu: tf.Tensor, s_sqrt: tf.Tensor):
+def meanvarsqrt_to_natural(mu: tf.Tensor, s_sqrt: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor]:
     s_sqrt_inv = _inverse_lower_triangular(s_sqrt)
     s_inv = tf.linalg.matmul(s_sqrt_inv, s_sqrt_inv, transpose_a=True)
     return tf.linalg.matmul(s_inv, mu), -0.5 * s_inv
 
 
 @swap_dimensions
-def natural_to_expectation(nat1: tf.Tensor, nat2: tf.Tensor):
+def natural_to_expectation(nat1: tf.Tensor, nat2: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor]:
     args = natural_to_meanvarsqrt(nat1, nat2, swap=False)
     return meanvarsqrt_to_expectation(*args, swap=False)
 
 
 @swap_dimensions
-def expectation_to_natural(eta1: tf.Tensor, eta2: tf.Tensor):
+def expectation_to_natural(eta1: tf.Tensor, eta2: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor]:
     args = expectation_to_meanvarsqrt(eta1, eta2, swap=False)
     return meanvarsqrt_to_natural(*args, swap=False)
 
 
 @swap_dimensions
-def expectation_to_meanvarsqrt(eta1: tf.Tensor, eta2: tf.Tensor):
+def expectation_to_meanvarsqrt(eta1: tf.Tensor, eta2: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor]:
     var = eta2 - tf.linalg.matmul(eta1, eta1, transpose_b=True)
     return eta1, tf.linalg.cholesky(var)
 
 
 @swap_dimensions
-def meanvarsqrt_to_expectation(m: tf.Tensor, v_sqrt: tf.Tensor):
+def meanvarsqrt_to_expectation(m: tf.Tensor, v_sqrt: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor]:
     v = tf.linalg.matmul(v_sqrt, v_sqrt, transpose_b=True)
     return m, v + tf.linalg.matmul(m, m, transpose_b=True)
 
 
-def _inverse_lower_triangular(M):
+def _inverse_lower_triangular(M: tf.Tensor) -> tf.Tensor:
     """
     Take inverse of lower triangular (e.g. Cholesky) matrix. This function
     broadcasts over the first index.

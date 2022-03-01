@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import Sequence, Tuple
+
 import numpy as np
 import pytest
 import tensorflow as tf
@@ -19,8 +21,8 @@ from numpy.testing import assert_allclose
 
 import gpflow
 import gpflow.ci_utils
+from gpflow.base import TensorType
 from gpflow.config import default_float, default_int
-from gpflow.quadrature import ndiagquad
 
 from gpflow.likelihoods import (  # isort:skip
     # classes we cannot test:
@@ -58,13 +60,19 @@ class Datum:
 
 
 class LikelihoodSetup(object):
-    def __init__(self, likelihood, Y=Datum.Y, rtol=1e-06, atol=0.0):
+    def __init__(
+        self,
+        likelihood: Likelihood,
+        Y: TensorType = Datum.Y,
+        rtol: float = 1e-06,
+        atol: float = 0.0,
+    ) -> None:
         self.likelihood = likelihood
         self.Y = Y
         self.rtol = rtol
         self.atol = atol
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         name = self.likelihood.__class__.__name__
         return f"{name}-rtol={self.rtol}-atol={self.atol}"
 
@@ -105,14 +113,14 @@ likelihood_setups = scalar_likelihood_setups + [
 ]
 
 
-def filter_analytic_scalar_likelihood(method_name):
+def filter_analytic_scalar_likelihood(method_name: str) -> Sequence[LikelihoodSetup]:
     assert method_name in (
         "_variational_expectations",
         "_predict_log_density",
         "_predict_mean_and_var",
     )
 
-    def is_analytic(likelihood):
+    def is_analytic(likelihood: Likelihood) -> bool:
         assert not isinstance(likelihood, MonteCarloLikelihood)
         assert isinstance(likelihood, ScalarLikelihood)
         quadrature_fallback = getattr(ScalarLikelihood, method_name)
@@ -122,13 +130,13 @@ def filter_analytic_scalar_likelihood(method_name):
     return [l for l in scalar_likelihood_setups if is_analytic(get_likelihood(l))]
 
 
-def get_likelihood(likelihood_setup):
+def get_likelihood(likelihood_setup: LikelihoodSetup) -> Likelihood:
     if isinstance(likelihood_setup, type(pytest.param())):
         (likelihood_setup,) = likelihood_setup.values
     return likelihood_setup.likelihood
 
 
-def test_no_missing_likelihoods():
+def test_no_missing_likelihoods() -> None:
     tested_likelihood_types = [get_likelihood(l).__class__ for l in likelihood_setups]
     for likelihood_class in gpflow.ci_utils.subclasses(Likelihood):
         if likelihood_class in (
@@ -163,7 +171,9 @@ def test_no_missing_likelihoods():
 
 @pytest.mark.parametrize("likelihood_setup", likelihood_setups)
 @pytest.mark.parametrize("mu, var", [[Datum.Fmu, tf.zeros_like(Datum.Fmu)]])
-def test_conditional_mean_and_variance(likelihood_setup, mu, var):
+def test_conditional_mean_and_variance(
+    likelihood_setup: LikelihoodSetup, mu: TensorType, var: TensorType
+) -> None:
     """
     Here we make sure that the conditional_mean and conditional_var functions
     give the same result as the predict_mean_and_var function if the prediction
@@ -177,7 +187,7 @@ def test_conditional_mean_and_variance(likelihood_setup, mu, var):
 
 
 @pytest.mark.parametrize("likelihood_setup", likelihood_setups)
-def test_variational_expectations(likelihood_setup):
+def test_variational_expectations(likelihood_setup: LikelihoodSetup) -> None:
     """
     Here we make sure that the variational_expectations gives the same result
     as log_prob if the latent function has no uncertainty.
@@ -194,7 +204,9 @@ def test_variational_expectations(likelihood_setup):
     "likelihood_setup", filter_analytic_scalar_likelihood("_variational_expectations")
 )
 @pytest.mark.parametrize("mu, var", [[Datum.Fmu, Datum.Fvar]])
-def test_scalar_likelihood_quadrature_variational_expectation(likelihood_setup, mu, var):
+def test_scalar_likelihood_quadrature_variational_expectation(
+    likelihood_setup: LikelihoodSetup, mu: TensorType, var: TensorType
+) -> None:
     """
     Where quadrature methods have been overwritten, make sure the new code
     does something close to the quadrature.
@@ -209,7 +221,9 @@ def test_scalar_likelihood_quadrature_variational_expectation(likelihood_setup, 
     "likelihood_setup", filter_analytic_scalar_likelihood("_predict_log_density")
 )
 @pytest.mark.parametrize("mu, var", [[Datum.Fmu, Datum.Fvar]])
-def test_scalar_likelihood_quadrature_predict_log_density(likelihood_setup, mu, var):
+def test_scalar_likelihood_quadrature_predict_log_density(
+    likelihood_setup: LikelihoodSetup, mu: TensorType, var: TensorType
+) -> None:
     likelihood, y = likelihood_setup.likelihood, likelihood_setup.Y
     F1 = likelihood.predict_log_density(mu, var, y)
     F2 = ScalarLikelihood.predict_log_density(likelihood, mu, var, y)
@@ -220,7 +234,9 @@ def test_scalar_likelihood_quadrature_predict_log_density(likelihood_setup, mu, 
     "likelihood_setup", filter_analytic_scalar_likelihood("_predict_mean_and_var")
 )
 @pytest.mark.parametrize("mu, var", [[Datum.Fmu, Datum.Fvar]])
-def test_scalar_likelihood_quadrature_predict_mean_and_var(likelihood_setup, mu, var):
+def test_scalar_likelihood_quadrature_predict_mean_and_var(
+    likelihood_setup: LikelihoodSetup, mu: TensorType, var: TensorType
+) -> None:
     likelihood = likelihood_setup.likelihood
     F1m, F1v = likelihood.predict_mean_and_var(mu, var)
     F2m, F2v = ScalarLikelihood.predict_mean_and_var(likelihood, mu, var)
@@ -228,13 +244,13 @@ def test_scalar_likelihood_quadrature_predict_mean_and_var(likelihood_setup, mu,
     assert_allclose(F1v, F2v, rtol=likelihood_setup.rtol, atol=likelihood_setup.atol)
 
 
-def _make_montecarlo_mu_var_y():
+def _make_montecarlo_mu_var_y() -> Sequence[tf.Tensor]:
     mu_var_y = [tf.random.normal((3, 10), dtype=tf.float64)] * 3
     mu_var_y[1] = 0.01 * (mu_var_y[1] ** 2)
     return mu_var_y
 
 
-def _make_montecarlo_likelihoods(var):
+def _make_montecarlo_likelihoods(var: TensorType) -> Tuple[GaussianMC, Gaussian]:
     gaussian_mc_likelihood = GaussianMC(var)
     gaussian_mc_likelihood.num_monte_carlo_points = 1000000
     return gaussian_mc_likelihood, Gaussian(var)
@@ -242,7 +258,9 @@ def _make_montecarlo_likelihoods(var):
 
 @pytest.mark.parametrize("likelihood_var", [0.3, 0.5, 1])
 @pytest.mark.parametrize("mu, var, y", [_make_montecarlo_mu_var_y()])
-def test_montecarlo_variational_expectation(likelihood_var, mu, var, y):
+def test_montecarlo_variational_expectation(
+    likelihood_var: float, mu: TensorType, var: TensorType, y: TensorType
+) -> None:
     likelihood_gaussian_mc, likelihood_gaussian = _make_montecarlo_likelihoods(likelihood_var)
     assert_allclose(
         likelihood_gaussian_mc.variational_expectations(mu, var, y),
@@ -254,7 +272,9 @@ def test_montecarlo_variational_expectation(likelihood_var, mu, var, y):
 
 @pytest.mark.parametrize("likelihood_var", [0.3, 0.5, 1.0])
 @pytest.mark.parametrize("mu, var, y", [_make_montecarlo_mu_var_y()])
-def test_montecarlo_predict_log_density(likelihood_var, mu, var, y):
+def test_montecarlo_predict_log_density(
+    likelihood_var: float, mu: TensorType, var: TensorType, y: TensorType
+) -> None:
     likelihood_gaussian_mc, likelihood_gaussian = _make_montecarlo_likelihoods(likelihood_var)
     assert_allclose(
         likelihood_gaussian_mc.predict_log_density(mu, var, y),
@@ -266,7 +286,9 @@ def test_montecarlo_predict_log_density(likelihood_var, mu, var, y):
 
 @pytest.mark.parametrize("likelihood_var", [0.3, 0.5, 1.0])
 @pytest.mark.parametrize("mu, var, y", [_make_montecarlo_mu_var_y()])
-def test_montecarlo_predict_mean_and_var(likelihood_var, mu, var, y):
+def test_montecarlo_predict_mean_and_var(
+    likelihood_var: float, mu: TensorType, var: TensorType, y: TensorType
+) -> None:
     likelihood_gaussian_mc, likelihood_gaussian = _make_montecarlo_likelihoods(likelihood_var)
     mean1, var1 = likelihood_gaussian_mc.predict_mean_and_var(mu, var)
     mean2, var2 = likelihood_gaussian.predict_mean_and_var(mu, var)

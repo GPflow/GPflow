@@ -12,18 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Optional, Tuple
+from typing import Optional
 
 import tensorflow as tf
 
 import gpflow
 
 from .. import posteriors
+from ..base import InputData, MeanAndVariance, RegressionData
 from ..kernels import Kernel
 from ..logdensities import multivariate_normal
 from ..mean_functions import MeanFunction
 from ..utilities.model_utils import add_noise_cov
-from .model import GPModel, InputData, MeanAndVariance, RegressionData
+from .model import GPModel
 from .training_mixins import InternalDataTrainingLossMixin
 from .util import data_input_to_tensor
 

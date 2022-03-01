@@ -17,11 +17,10 @@ import warnings
 import numpy as np
 import pytest
 import tensorflow as tf
-from numpy.testing import assert_allclose
 
 import gpflow
-from gpflow.config import default_float, default_jitter
-from gpflow.mean_functions import Constant
+from gpflow.config import default_float
+from gpflow.models import GPR, GPModel
 
 rng = np.random.RandomState(0)
 
@@ -34,18 +33,18 @@ class Datum:
     data = (X, Y)
 
 
-def _create_full_gp_model():
+def _create_full_gp_model() -> GPModel:
     """
     GP Regression
     """
-    return gpflow.models.GPR(
+    return GPR(
         (Datum.X, Datum.Y),
         kernel=gpflow.kernels.SquaredExponential(),
         mean_function=gpflow.mean_functions.Constant(),
     )
 
 
-def test_scipy_jit():
+def test_scipy_jit() -> None:
     m1 = _create_full_gp_model()
     m2 = _create_full_gp_model()
 
@@ -65,7 +64,7 @@ def test_scipy_jit():
         compile=True,
     )
 
-    def get_values(model):
+    def get_values(model: GPModel) -> np.ndarray:
         return np.array([var.numpy().squeeze() for var in model.trainable_variables])
 
     # The tolerance of the following test had to be loosened slightly from atol=1e-15
@@ -142,7 +141,9 @@ def test_scipy__disconnected_variable(compile: bool, allow_unused_variables: boo
             )
 
         (warning,) = w
-        msg = warning.message.args[0]
+        message = warning.message
+        assert isinstance(message, Warning)
+        msg = message.args[0]
         assert v2.name in msg
 
         assert result.success

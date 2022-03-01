@@ -62,9 +62,10 @@ class FourierFeatures1D(InducingVariables):
         # integer array defining the frequencies, ω_m = 2π (b - a)/m:
         self.ms = np.arange(M)
 
-    def __len__(self):
+    @property
+    def num_inducing(self):
         """ number of inducing variables (defines dimensionality of q(u)) """
-        return 2 * len(self.ms) - 1  # `M` cosine and `M-1` sine components
+        return 2 * tf.shape(self.ms)[0] - 1  # `M` cosine and `M-1` sine components
 
 
 # %% [markdown]
@@ -330,19 +331,21 @@ class VFFPosterior(gpflow.posteriors.BasePosterior):
 
         Qinv = Kuu.inverse().to_dense() - KuuInv_covu_KuuInv
 
-        return alpha, Qinv
+        return gpflow.posteriors.PrecomputedValue.wrap_alpha_Qinv(alpha, Qinv)
 
-    def _conditional_with_precompute(self, Xnew, full_cov, full_output_cov):
+    def _conditional_with_precompute(self, cache, Xnew, full_cov, full_output_cov):
+        alpha, Qinv = cache
+
         if full_output_cov:
             raise NotImplementedError
 
         Kuf = cov.Kuf(self.X_data, self.kernel, Xnew)  # still a Tensor
 
         # construct the conditional mean
-        fmean = tf.matmul(Kuf, self.alpha, transpose_a=True)
+        fmean = tf.matmul(Kuf, alpha, transpose_a=True)
 
-        num_func = tf.shape(self.alpha)[1]  # K
-        Qinv_Kuf = tf.matmul(self.Qinv, Kuf)
+        num_func = tf.shape(alpha)[1]  # K
+        Qinv_Kuf = tf.matmul(Qinv, Kuf)
 
         # compute the covariance due to the conditioning
         if full_cov:

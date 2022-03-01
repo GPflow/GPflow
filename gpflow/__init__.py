@@ -19,6 +19,7 @@ from . import (
     config,
     covariances,
     expectations,
+    experimental,
     inducing_variables,
     kernels,
     kullback_leiblers,

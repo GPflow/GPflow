@@ -3,7 +3,7 @@ import numpy as np
 import gpflow
 
 
-def test_changepoint_with_X1_X2():
+def test_changepoint_with_X1_X2() -> None:
     N = 100
     X = np.linspace(0, 100, N).reshape(N, 1)
     base_k1 = gpflow.kernels.Matern32(lengthscales=0.2)

@@ -18,7 +18,7 @@ import tensorflow as tf
 import gpflow
 
 
-def test_inducing_points_with_variable_shape():
+def test_inducing_points_with_variable_shape() -> None:
     N, M1, D, P = 50, 13, 3, 1
     X, Y = np.random.randn(N, D), np.random.randn(N, P)
 
@@ -37,7 +37,7 @@ def test_inducing_points_with_variable_shape():
     opt = tf.optimizers.Adam()
 
     @tf.function
-    def optimization_step():
+    def optimization_step() -> None:
         opt.minimize(m.training_loss, m.trainable_variables)
 
     optimization_step()
@@ -48,3 +48,16 @@ def test_inducing_points_with_variable_shape():
 
     # Check 3: that we can also optimize with changed Z tensor
     optimization_step()
+
+
+def test_num_inducing() -> None:
+    M = 7
+    D = 3
+    Z = np.random.randn(M, D)
+
+    iv = gpflow.inducing_variables.InducingPoints(
+        tf.Variable(Z, trainable=False, dtype=gpflow.default_float())
+    )
+
+    assert M == iv.num_inducing
+    assert M == len(iv)

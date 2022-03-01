@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import Optional, Type, Union, cast
+
 import tensorflow as tf
 
 from .. import kernels
@@ -19,9 +21,9 @@ from .. import mean_functions as mfn
 from ..inducing_variables import InducingPoints, InducingVariables
 from ..probability_distributions import DiagonalGaussian, Gaussian, MarkovGaussian
 from . import dispatch
-from .expectations import expectation
+from .expectations import ExpectationObject, PackedExpectationObject, expectation
 
-NoneType = type(None)
+NoneType: Type[None] = type(None)
 
 # ================ exKxz transpose and mean function handling =================
 
@@ -29,7 +31,14 @@ NoneType = type(None)
 @dispatch.expectation.register(
     (Gaussian, MarkovGaussian), mfn.Identity, NoneType, kernels.Linear, InducingPoints
 )
-def _E(p, mean, _, kernel, inducing_variable, nghp=None):
+def _expectation_gaussian__linear_inducingpoints(
+    p: Union[Gaussian, MarkovGaussian],
+    mean: mfn.Identity,
+    _: None,
+    kernel: kernels.Linear,
+    inducing_variable: InducingPoints,
+    nghp: None = None,
+) -> tf.Tensor:
     """
     Compute the expectation:
     expectation[n] = <x_n K_{x_n, Z}>_p(x_n)
@@ -44,7 +53,14 @@ def _E(p, mean, _, kernel, inducing_variable, nghp=None):
 @dispatch.expectation.register(
     (Gaussian, MarkovGaussian), kernels.Kernel, InducingVariables, mfn.MeanFunction, NoneType
 )
-def _E(p, kernel, inducing_variable, mean, _, nghp=None):
+def _expectation_gaussian_kernel_inducingvariables__meanfunction(
+    p: Union[Gaussian, MarkovGaussian],
+    kernel: kernels.Kernel,
+    inducing_variable: InducingVariables,
+    mean: mfn.MeanFunction,
+    _: None,
+    nghp: None = None,
+) -> tf.Tensor:
     """
     Compute the expectation:
     expectation[n] = <K_{Z, x_n} m(x_n)>_p(x_n)
@@ -56,7 +72,14 @@ def _E(p, kernel, inducing_variable, mean, _, nghp=None):
 
 
 @dispatch.expectation.register(Gaussian, mfn.Constant, NoneType, kernels.Kernel, InducingPoints)
-def _E(p, constant_mean, _, kernel, inducing_variable, nghp=None):
+def _expectation_gaussian_constant__kernel_inducingpoints(
+    p: Gaussian,
+    constant_mean: mfn.Constant,
+    _: None,
+    kernel: kernels.Kernel,
+    inducing_variable: InducingPoints,
+    nghp: None = None,
+) -> tf.Tensor:
     """
     Compute the expectation:
     expectation[n] = <m(x_n)^T K_{x_n, Z}>_p(x_n)
@@ -72,7 +95,14 @@ def _E(p, constant_mean, _, kernel, inducing_variable, nghp=None):
 
 
 @dispatch.expectation.register(Gaussian, mfn.Linear, NoneType, kernels.Kernel, InducingPoints)
-def _E(p, linear_mean, _, kernel, inducing_variable, nghp=None):
+def _expectation_gaussian_linear__kernel_inducingpoints(
+    p: Gaussian,
+    linear_mean: mfn.Linear,
+    _: None,
+    kernel: kernels.Kernel,
+    inducing_variable: InducingPoints,
+    nghp: None = None,
+) -> tf.Tensor:
     """
     Compute the expectation:
     expectation[n] = <m(x_n)^T K_{x_n, Z}>_p(x_n)
@@ -93,7 +123,14 @@ def _E(p, linear_mean, _, kernel, inducing_variable, nghp=None):
 
 
 @dispatch.expectation.register(Gaussian, mfn.Identity, NoneType, kernels.Kernel, InducingPoints)
-def _E(p, identity_mean, _, kernel, inducing_variable, nghp=None):
+def _expectation_gaussian__kernel_inducingpoints(
+    p: Gaussian,
+    identity_mean: mfn.Identity,
+    _: None,
+    kernel: kernels.Kernel,
+    inducing_variable: InducingPoints,
+    nghp: None = None,
+) -> tf.Tensor:
     """
     This prevents infinite recursion for kernels that don't have specific
     implementations of _expectation(p, identity_mean, None, kernel, inducing_variable).
@@ -112,9 +149,21 @@ def _E(p, identity_mean, _, kernel, inducing_variable, nghp=None):
 @dispatch.expectation.register(
     DiagonalGaussian, object, (InducingVariables, NoneType), object, (InducingVariables, NoneType)
 )
-def _E(p, obj1, feat1, obj2, feat2, nghp=None):
+def _expectation_diagonal_generic(
+    p: DiagonalGaussian,
+    obj1: ExpectationObject,
+    feat1: Optional[InducingVariables],
+    obj2: ExpectationObject,
+    feat2: Optional[InducingVariables],
+    nghp: None = None,
+) -> tf.Tensor:
     gaussian = Gaussian(p.mu, tf.linalg.diag(p.cov))
-    return expectation(gaussian, (obj1, feat1), (obj2, feat2), nghp=nghp)
+    return expectation(
+        gaussian,
+        cast(PackedExpectationObject, (obj1, feat1)),
+        cast(PackedExpectationObject, (obj2, feat2)),
+        nghp=nghp,
+    )
 
 
 # Catching missing MarkovGaussian implementations by converting to Gaussian (when indifferent):
@@ -123,7 +172,14 @@ def _E(p, obj1, feat1, obj2, feat2, nghp=None):
 @dispatch.expectation.register(
     MarkovGaussian, object, (InducingVariables, NoneType), object, (InducingVariables, NoneType)
 )
-def _E(p, obj1, feat1, obj2, feat2, nghp=None):
+def _expectation_markov_generic(
+    p: MarkovGaussian,
+    obj1: ExpectationObject,
+    feat1: Optional[InducingVariables],
+    obj2: ExpectationObject,
+    feat2: Optional[InducingVariables],
+    nghp: None = None,
+) -> tf.Tensor:
     """
     Nota Bene: if only one object is passed, obj1 is
     associated with x_n, whereas obj2 with x_{n+1}
@@ -131,9 +187,14 @@ def _E(p, obj1, feat1, obj2, feat2, nghp=None):
     """
     if obj2 is None:
         gaussian = Gaussian(p.mu[:-1], p.cov[0, :-1])
-        return expectation(gaussian, (obj1, feat1), nghp=nghp)
+        return expectation(gaussian, cast(PackedExpectationObject, (obj1, feat1)), nghp=nghp)
     elif obj1 is None:
         gaussian = Gaussian(p.mu[1:], p.cov[0, 1:])
-        return expectation(gaussian, (obj2, feat2), nghp=nghp)
+        return expectation(gaussian, cast(PackedExpectationObject, (obj2, feat2)), nghp=nghp)
     else:
-        return expectation(p, (obj1, feat1), (obj2, feat2), nghp=nghp)
+        return expectation(
+            p,
+            cast(PackedExpectationObject, (obj1, feat1)),
+            cast(PackedExpectationObject, (obj2, feat2)),
+            nghp=nghp,
+        )

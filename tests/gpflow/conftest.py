@@ -13,18 +13,19 @@
 #  limitations under the License.
 
 import pytest
+from _pytest.fixtures import SubRequest
 
 
 @pytest.fixture(name="full_cov", params=[True, False])
-def _full_cov_fixture(request):
+def _full_cov_fixture(request: SubRequest) -> bool:
     return request.param
 
 
 @pytest.fixture(name="full_output_cov", params=[True, False])
-def _full_output_cov_fixture(request):
+def _full_output_cov_fixture(request: SubRequest) -> bool:
     return request.param
 
 
 @pytest.fixture(name="whiten", params=[True, False])
-def _whiten_fixture(request):
+def _whiten_fixture(request: SubRequest) -> bool:
     return request.param

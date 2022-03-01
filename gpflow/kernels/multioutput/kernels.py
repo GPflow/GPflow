@@ -13,10 +13,11 @@
 # limitations under the License.
 
 import abc
+from typing import Optional, Sequence, Tuple
 
 import tensorflow as tf
 
-from ...base import Parameter
+from ...base import Parameter, TensorType
 from ..base import Combination, Kernel
 
 
@@ -38,18 +39,20 @@ class MultioutputKernel(Kernel):
 
     @property
     @abc.abstractmethod
-    def num_latent_gps(self):
+    def num_latent_gps(self) -> int:
         """The number of latent GPs in the multioutput kernel"""
         raise NotImplementedError
 
     @property
     @abc.abstractmethod
-    def latent_kernels(self):
+    def latent_kernels(self) -> Tuple[Kernel, ...]:
         """The underlying kernels in the multioutput kernel"""
         raise NotImplementedError
 
     @abc.abstractmethod
-    def K(self, X, X2=None, full_output_cov=True):
+    def K(
+        self, X: TensorType, X2: Optional[TensorType] = None, full_output_cov: bool = True
+    ) -> tf.Tensor:
         """
         Returns the correlation of f(X) and f(X2), where f(.) can be multi-dimensional.
         :param X: data matrix, [N1, D]
@@ -62,7 +65,7 @@ class MultioutputKernel(Kernel):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def K_diag(self, X, full_output_cov=True):
+    def K_diag(self, X: TensorType, full_output_cov: bool = True) -> tf.Tensor:
         """
         Returns the correlation of f(X) and f(X), where f(.) can be multi-dimensional.
         :param X: data matrix, [N, D]
@@ -73,7 +76,15 @@ class MultioutputKernel(Kernel):
         """
         raise NotImplementedError
 
-    def __call__(self, X, X2=None, *, full_cov=False, full_output_cov=True, presliced=False):
+    def __call__(
+        self,
+        X: TensorType,
+        X2: Optional[TensorType] = None,
+        *,
+        full_cov: bool = False,
+        full_output_cov: bool = True,
+        presliced: bool = False,
+    ) -> tf.Tensor:
         if not presliced:
             X, X2 = self.slice(X, X2)
         if not full_cov and X2 is not None:
@@ -93,22 +104,24 @@ class SharedIndependent(MultioutputKernel):
     Use `gpflow.kernels` instead for more efficient code.
     """
 
-    def __init__(self, kernel: Kernel, output_dim: int):
+    def __init__(self, kernel: Kernel, output_dim: int) -> None:
         super().__init__()
         self.kernel = kernel
         self.output_dim = output_dim
 
     @property
-    def num_latent_gps(self):
+    def num_latent_gps(self) -> int:
         # In this case number of latent GPs (L) == output_dim (P)
         return self.output_dim
 
     @property
-    def latent_kernels(self):
+    def latent_kernels(self) -> Tuple[Kernel, ...]:
         """The underlying kernels in the multioutput kernel"""
         return (self.kernel,)
 
-    def K(self, X, X2=None, full_output_cov=True):
+    def K(
+        self, X: TensorType, X2: Optional[TensorType] = None, full_output_cov: bool = True
+    ) -> tf.Tensor:
         K = self.kernel.K(X, X2)  # [N, N2]
         if full_output_cov:
             Ks = tf.tile(K[..., None], [1, 1, self.output_dim])  # [N, N2, P]
@@ -116,7 +129,7 @@ class SharedIndependent(MultioutputKernel):
         else:
             return tf.tile(K[None, ...], [self.output_dim, 1, 1])  # [P, N, N2]
 
-    def K_diag(self, X, full_output_cov=True):
+    def K_diag(self, X: TensorType, full_output_cov: bool = True) -> tf.Tensor:
         K = self.kernel.K_diag(X)  # N
         Ks = tf.tile(K[:, None], [1, self.output_dim])  # [N, P]
         return tf.linalg.diag(Ks) if full_output_cov else Ks  # [N, P, P] or [N, P]
@@ -128,26 +141,28 @@ class SeparateIndependent(MultioutputKernel, Combination):
     - Independent: Latents are uncorrelated a priori.
     """
 
-    def __init__(self, kernels, name=None):
+    def __init__(self, kernels: Sequence[Kernel], name: Optional[str] = None) -> None:
         super().__init__(kernels=kernels, name=name)
 
     @property
-    def num_latent_gps(self):
+    def num_latent_gps(self) -> int:
         return len(self.kernels)
 
     @property
-    def latent_kernels(self):
+    def latent_kernels(self) -> Tuple[Kernel, ...]:
         """The underlying kernels in the multioutput kernel"""
         return tuple(self.kernels)
 
-    def K(self, X, X2=None, full_output_cov=True):
+    def K(
+        self, X: TensorType, X2: Optional[TensorType] = None, full_output_cov: bool = True
+    ) -> tf.Tensor:
         if full_output_cov:
             Kxxs = tf.stack([k.K(X, X2) for k in self.kernels], axis=2)  # [N, N2, P]
             return tf.transpose(tf.linalg.diag(Kxxs), [0, 2, 1, 3])  # [N, P, N2, P]
         else:
             return tf.stack([k.K(X, X2) for k in self.kernels], axis=0)  # [P, N, N2]
 
-    def K_diag(self, X, full_output_cov=False):
+    def K_diag(self, X: TensorType, full_output_cov: bool = False) -> tf.Tensor:
         stacked = tf.stack([k.K_diag(X) for k in self.kernels], axis=1)  # [N, P]
         return tf.linalg.diag(stacked) if full_output_cov else stacked  # [N, P, P]  or  [N, P]
 
@@ -167,7 +182,7 @@ class IndependentLatent(MultioutputKernel):
     """
 
     @abc.abstractmethod
-    def Kgg(self, X, X2):
+    def Kgg(self, X: TensorType, X2: TensorType) -> tf.Tensor:
         raise NotImplementedError
 
 
@@ -176,23 +191,25 @@ class LinearCoregionalization(IndependentLatent, Combination):
     Linear mixing of the latent GPs to form the output.
     """
 
-    def __init__(self, kernels, W, name=None):
+    def __init__(self, kernels: Sequence[Kernel], W: TensorType, name: Optional[str] = None):
         Combination.__init__(self, kernels=kernels, name=name)
         self.W = Parameter(W)  # [P, L]
 
     @property
-    def num_latent_gps(self):
+    def num_latent_gps(self) -> int:
         return self.W.shape[-1]  # L
 
     @property
-    def latent_kernels(self):
+    def latent_kernels(self) -> Tuple[Kernel, ...]:
         """The underlying kernels in the multioutput kernel"""
         return tuple(self.kernels)
 
-    def Kgg(self, X, X2):
+    def Kgg(self, X: TensorType, X2: TensorType) -> tf.Tensor:
         return tf.stack([k.K(X, X2) for k in self.kernels], axis=0)  # [L, N, N2]
 
-    def K(self, X, X2=None, full_output_cov=True):
+    def K(
+        self, X: TensorType, X2: Optional[TensorType] = None, full_output_cov: bool = True
+    ) -> tf.Tensor:
         Kxx = self.Kgg(X, X2)  # [L, N, N2]
         KxxW = Kxx[None, :, :, :] * self.W[:, :, None, None]  # [P, L, N, N2]
         if full_output_cov:
@@ -203,7 +220,7 @@ class LinearCoregionalization(IndependentLatent, Combination):
             # return tf.einsum('lnm,kl,kl->knm', Kxx, self.W, self.W)
             return tf.reduce_sum(self.W[:, :, None, None] * KxxW, [1])  # [P, N, N2]
 
-    def K_diag(self, X, full_output_cov=True):
+    def K_diag(self, X: TensorType, full_output_cov: bool = True) -> tf.Tensor:
         K = tf.stack([k.K_diag(X) for k in self.kernels], axis=1)  # [N, L]
         if full_output_cov:
             # Can currently not use einsum due to unknown shape from `tf.stack()`

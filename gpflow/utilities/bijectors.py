@@ -14,12 +14,13 @@
 
 from typing import Optional
 
+import tensorflow as tf
 import tensorflow_probability as tfp
 
 from .. import config
 from .misc import to_default_float
 
-__all__ = ["positive", "triangular"]
+__all__ = ["positive", "triangular", "triangular_size"]
 
 
 def positive(lower: Optional[float] = None, base: Optional[str] = None) -> tfp.bijectors.Bijector:
@@ -48,3 +49,10 @@ def triangular() -> tfp.bijectors.Bijector:
     Returns instance of a triangular bijector.
     """
     return tfp.bijectors.FillTriangular()
+
+
+def triangular_size(n: tf.Tensor) -> tf.Tensor:
+    """
+    Returns the number of non-zero elements in an `n` by `n` triangular matrix.
+    """
+    return n * (n + 1) // 2

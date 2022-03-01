@@ -33,7 +33,7 @@ This release contains contributions from:
 <INSERT>, <NAME>, <HERE>, <USING>, <GITHUB>, <HANDLE>
 
 
-# Release 2.3.2 (next upcoming release in progress)
+# Release 2.4.1 (next upcoming release in progress)
 
 <INSERT SMALL BLURB ABOUT RELEASE FOCUS AREA AND POTENTIAL TOOLCHAIN CHANGES>
 
@@ -64,6 +64,57 @@ This release contains contributions from:
 This release contains contributions from:
 
 <INSERT>, <NAME>, <HERE>, <USING>, <GITHUB>, <HANDLE>
+
+
+# Release 2.4.0
+
+This release mostly focuses on make posterior objects useful for Bayesian Optimisation.
+It also adds a new `experimetal` sub-package, with a tool for annotating tensor shapes.
+
+
+## Breaking Changes
+
+* Slight change to the API of custom posterior objects.
+  `gpflow.posteriors.AbstractPosterior._precompute` no longer must return an `alpha` and an
+  `Qinv` - instead it returns any arbitrary tuple of `PrecomputedValue`s.
+  Correspondingly `gpflow.posteriors.AbstractPosterior._conditional_with_precompute` should no
+  longer try to access `self.alpha` and `self.Qinv`, but instead is passed the tuple of tensors
+  returned by `_precompute`, as a parameter. (#1763, #1767)
+
+* Slight change to the API of inducing points.
+  You should no longer override `gpflow.inducing_variables.InducingVariables.__len__`. Override
+  `gpflow.inducing_variables.InducingVariables.num_inducing` instead. `num_inducing` should return a
+  `tf.Tensor` which is consistent with previous behaviour, although the type previously was
+  annotated as `int`. `__len__` has been deprecated. (#1766, #1792)
+
+## Known Caveats
+
+* Type hints have been added in several places - this may reveal new problems in your code-base if
+  you use a type checker, such as `mypy`.
+  (#1766, #1769, #1771, #1773, #1775, #1777, #1780, #1783, #1787, #1789)
+
+## Major Features and Improvements
+
+* Add new posterior class to enable faster predictions from the VGP model. (#1761)
+* VGP class bug-fixed to work with variable-sized data. Note you can use
+  `gpflow.models.vgp.update_vgp_data` to ensure variational parameters are updated sanely. (#1774).
+* All posterior classes bug-fixed to work with variable data sizes, for Bayesian Optimisation.
+  (#1767)
+
+* Added `experimental` sub-package for features that are still under developmet.
+  * Added `gpflow.experimental.check_shapes` for checking tensor shapes.
+    (#1760, #1768, #1782, #1785, #1788)
+
+## Bug Fixes and Other Changes
+
+* Make `dataclasses` dependency conditional at install time. (#1759)
+* Simplify calculations of some `predict_f`. (#1755)
+
+## Thanks to our Contributors
+
+This release contains contributions from:
+
+jesnie, tmct, joacorapela
 
 
 # Release 2.3.1

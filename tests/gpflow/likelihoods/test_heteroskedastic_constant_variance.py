@@ -18,11 +18,18 @@ import numpy as np
 import pytest
 import tensorflow as tf
 import tensorflow_probability as tfp
+from _pytest.fixtures import SubRequest
 
 import gpflow
+from gpflow.base import TensorType
 from gpflow.likelihoods import HeteroskedasticTFPConditional
 
 tf.random.set_seed(99012)
+
+
+EquivalentLikelihoods = Tuple[
+    gpflow.likelihoods.ScalarLikelihood, gpflow.likelihoods.HeteroskedasticTFPConditional
+]
 
 
 class Data:
@@ -50,16 +57,16 @@ def student_t_class_factory(df: int = 3) -> Type[tfp.distributions.StudentT]:
     """
 
     class _StudentT(tfp.distributions.StudentT):
-        def __init__(self, loc, scale):
+        def __init__(self, loc: TensorType, scale: TensorType) -> None:
             super().__init__(df, loc=loc, scale=scale)
 
     return _StudentT
 
 
 @pytest.fixture(name="equivalent_likelihoods", params=["studentt", "gaussian"])
-def _equivant_likelihoods_fixture(
-    request,
-) -> Tuple[gpflow.likelihoods.ScalarLikelihood, gpflow.likelihoods.HeteroskedasticTFPConditional]:
+def _equivalent_likelihoods_fixture(
+    request: SubRequest,
+) -> EquivalentLikelihoods:
     if request.param == "studentt":
         return (
             gpflow.likelihoods.StudentT(scale=Data.g_var ** 0.5, df=3.0),
@@ -70,9 +77,10 @@ def _equivant_likelihoods_fixture(
             gpflow.likelihoods.Gaussian(variance=Data.g_var),
             HeteroskedasticTFPConditional(distribution_class=tfp.distributions.Normal),
         )
+    assert False, f"Unknown likelihood {request.param}."
 
 
-def test_log_prob(equivalent_likelihoods):
+def test_log_prob(equivalent_likelihoods: EquivalentLikelihoods) -> None:
     """
     heteroskedastic likelihood where the variance parameter is always constant
      giving the same answers for variational_expectations, predict_mean_and_var,
@@ -85,7 +93,7 @@ def test_log_prob(equivalent_likelihoods):
     )
 
 
-def test_variational_expectations(equivalent_likelihoods):
+def test_variational_expectations(equivalent_likelihoods: EquivalentLikelihoods) -> None:
     homoskedastic_likelihood, heteroskedastic_likelihood = equivalent_likelihoods
     np.testing.assert_array_almost_equal(
         homoskedastic_likelihood.variational_expectations(Data.f_mean, Data.f_var, Data.Y),
@@ -94,7 +102,7 @@ def test_variational_expectations(equivalent_likelihoods):
     )
 
 
-def test_predict_mean_and_var(equivalent_likelihoods):
+def test_predict_mean_and_var(equivalent_likelihoods: EquivalentLikelihoods) -> None:
     homoskedastic_likelihood, heteroskedastic_likelihood = equivalent_likelihoods
     np.testing.assert_allclose(
         homoskedastic_likelihood.predict_mean_and_var(Data.f_mean, Data.f_var),
@@ -102,7 +110,7 @@ def test_predict_mean_and_var(equivalent_likelihoods):
     )
 
 
-def test_conditional_mean(equivalent_likelihoods):
+def test_conditional_mean(equivalent_likelihoods: EquivalentLikelihoods) -> None:
     homoskedastic_likelihood, heteroskedastic_likelihood = equivalent_likelihoods
     np.testing.assert_allclose(
         homoskedastic_likelihood.conditional_mean(Data.f_mean),
@@ -110,7 +118,7 @@ def test_conditional_mean(equivalent_likelihoods):
     )
 
 
-def test_conditional_variance(equivalent_likelihoods):
+def test_conditional_variance(equivalent_likelihoods: EquivalentLikelihoods) -> None:
     homoskedastic_likelihood, heteroskedastic_likelihood = equivalent_likelihoods
     np.testing.assert_allclose(
         homoskedastic_likelihood.conditional_variance(Data.f_mean),
@@ -118,7 +126,7 @@ def test_conditional_variance(equivalent_likelihoods):
     )
 
 
-def test_predict_log_density(equivalent_likelihoods):
+def test_predict_log_density(equivalent_likelihoods: EquivalentLikelihoods) -> None:
     homoskedastic_likelihood, heteroskedastic_likelihood = equivalent_likelihoods
     ll1 = homoskedastic_likelihood.predict_log_density(Data.f_mean, Data.f_var, Data.Y)
     ll2 = heteroskedastic_likelihood.predict_log_density(Data.F2_mean, Data.F2_var, Data.Y)

@@ -1,32 +1,32 @@
+from typing import Tuple
+
 import numpy as np
 import pytest
 import tensorflow as tf
 import tensorflow_probability as tfp
-from tensorflow_probability.python.bijectors import Exp
 from tensorflow_probability.python.distributions import Gamma, Uniform
 
 import gpflow
-from gpflow import default_float
 from gpflow.base import PriorOn
-from gpflow.config import set_default_float
+from gpflow.models import GPR
 from gpflow.utilities import to_default_float
 
 np.random.seed(1)
 
 
-def build_data():
+def build_data() -> Tuple[np.ndarray, np.ndarray]:
     N = 30
     X = np.random.rand(N, 1)
     Y = np.sin(12 * X) + 0.66 * np.cos(25 * X) + np.random.randn(N, 1) * 0.1 + 3
     return (X, Y)
 
 
-def build_model(data):
+def build_model(data: Tuple[np.ndarray, np.ndarray]) -> GPR:
 
     kernel = gpflow.kernels.Matern52(lengthscales=0.3)
 
     meanf = gpflow.mean_functions.Linear(1.0, 0.0)
-    model = gpflow.models.GPR(data, kernel, meanf, noise_variance=0.01)
+    model = GPR(data, kernel, meanf, noise_variance=0.01)
 
     for p in model.parameters:
         p.prior = Gamma(to_default_float(1.0), to_default_float(1.0))
@@ -34,8 +34,10 @@ def build_model(data):
     return model
 
 
-def build_model_with_uniform_prior_no_transforms(data, prior_on, prior_width):
-    def parameter(value):
+def build_model_with_uniform_prior_no_transforms(
+    data: Tuple[np.ndarray, np.ndarray], prior_on: PriorOn, prior_width: float
+) -> GPR:
+    def parameter(value: tf.Tensor) -> gpflow.Parameter:
         low_value = -100
         high_value = low_value + prior_width
         prior = Uniform(low=np.float64(low_value), high=np.float64(high_value))
@@ -50,12 +52,12 @@ def build_model_with_uniform_prior_no_transforms(data, prior_on, prior_width):
     mf = gpflow.mean_functions.Linear(1.0, 0.0)
     mf.A = parameter(mf.A)
     mf.b = parameter(mf.b)
-    m = gpflow.models.GPR(data, k, mf, noise_variance=0.01)
+    m = GPR(data, k, mf, noise_variance=0.01)
     m.likelihood.variance = parameter(m.likelihood.variance)
     return m
 
 
-def test_mcmc_helper_parameters():
+def test_mcmc_helper_parameters() -> None:
     data = build_data()
     model = build_model(data)
 
@@ -69,7 +71,7 @@ def test_mcmc_helper_parameters():
         assert model.trainable_parameters[i].unconstrained_variable == hmc_helper.current_state[i]
 
 
-def test_mcmc_helper_target_function_constrained():
+def test_mcmc_helper_target_function_constrained() -> None:
     """Set up priors on the model parameters such that we can
     readily compute their expected values."""
     config = gpflow.config.Config(positive_bijector="exp")
@@ -108,7 +110,7 @@ def test_mcmc_helper_target_function_constrained():
     np.testing.assert_allclose(target_log_prob_fn(), expected_log_prob, rtol=1e-6)
 
 
-def test_mcmc_helper_target_function_unconstrained():
+def test_mcmc_helper_target_function_unconstrained() -> None:
     """
     Verifies the objective for a set of priors which are defined on the unconstrained space.
     """
@@ -117,7 +119,7 @@ def test_mcmc_helper_target_function_unconstrained():
     prior_width = 200.0
 
     data = build_data()
-    model = build_model_with_uniform_prior_no_transforms(data, "unconstrained", prior_width)
+    model = build_model_with_uniform_prior_no_transforms(data, PriorOn.UNCONSTRAINED, prior_width)
 
     hmc_helper = gpflow.optimizers.SamplingHelper(
         model.log_posterior_density, model.trainable_parameters
@@ -133,8 +135,8 @@ def test_mcmc_helper_target_function_unconstrained():
     np.testing.assert_allclose(target_log_prob_fn(), expected_log_prob)
 
 
-@pytest.mark.parametrize("prior_on", ["constrained", "unconstrained"])
-def test_mcmc_helper_target_function_no_transforms(prior_on):
+@pytest.mark.parametrize("prior_on", [PriorOn.CONSTRAINED, PriorOn.UNCONSTRAINED])
+def test_mcmc_helper_target_function_no_transforms(prior_on: PriorOn) -> None:
     """Verifies the objective for a set of priors where no transforms are set."""
     expected_log_prior = 0.0
     prior_width = 200.0
@@ -157,13 +159,13 @@ def test_mcmc_helper_target_function_no_transforms(prior_on):
     np.testing.assert_allclose(target_log_prob_fn(), expected_log_prob)
 
     # Test the wrapped closure
-    log_prob, grad_fn = target_log_prob_fn.__original_wrapped__()
+    log_prob, grad_fn = target_log_prob_fn.__original_wrapped__()  # type: ignore
     grad, nones = grad_fn(1, [None] * len(model.trainable_parameters))
     assert len(grad) == len(model.trainable_parameters)
     assert nones == [None] * len(model.trainable_parameters)
 
 
-def test_mcmc_sampler_integration():
+def test_mcmc_sampler_integration() -> None:
     data = build_data()
     model = build_model(data)
 
@@ -187,7 +189,7 @@ def test_mcmc_sampler_integration():
     num_samples = 5
 
     @tf.function
-    def run_chain_fn():
+    def run_chain_fn() -> tfp.mcmc.StatesAndTrace:
         return tfp.mcmc.sample_chain(
             num_results=num_samples,
             num_burnin_steps=2,
@@ -208,7 +210,7 @@ def test_mcmc_sampler_integration():
         assert hmc_helper._parameters[i].numpy() == parameter_samples[i][-1]
 
 
-def test_helper_with_variables_fails():
+def test_helper_with_variables_fails() -> None:
     variable = tf.Variable(0.1)
     with pytest.raises(
         ValueError, match=r"`parameters` should only contain gpflow.Parameter objects with priors"

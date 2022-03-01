@@ -15,7 +15,7 @@
 import copy
 import re
 from functools import lru_cache
-from typing import Any, Callable, Dict, Optional, Tuple, TypeVar, Union
+from typing import Any, Callable, Dict, Mapping, Optional, Tuple, TypeVar, Union
 
 import numpy as np
 import tensorflow as tf
@@ -46,7 +46,7 @@ Accumulator = Tuple[Path, State]
 TraverseUpdateCallable = Callable[[TraverseInput, Path, State], State]
 
 
-def multiple_assign(module: tf.Module, parameters: Dict[str, tf.Tensor]):
+def multiple_assign(module: tf.Module, parameters: Mapping[str, tf.Tensor]):
     """
     Multiple assign takes a dictionary with new values. Dictionary keys are paths to the
     `tf.Variable`s or `gpflow.Parameter` of the input module.

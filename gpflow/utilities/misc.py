@@ -15,7 +15,9 @@
 from typing import Callable, Iterable, List, Optional, Union
 
 import tensorflow as tf
+import tensorflow_probability as tfp
 
+from ..base import TensorData
 from ..config import default_float, default_int
 from .ops import cast
 
@@ -23,6 +25,7 @@ __all__ = [
     "to_default_float",
     "to_default_int",
     "set_trainable",
+    "is_variable",
     "training_loop",
 ]
 
@@ -45,6 +48,13 @@ def set_trainable(model: Union[tf.Module, Iterable[tf.Module]], flag: bool) -> N
     for mod in modules:
         for variable in mod.variables:
             variable._trainable = flag
+
+
+def is_variable(t: TensorData) -> bool:
+    """
+    Returns whether the `t` is a TensorFlow variable.
+    """
+    return isinstance(t, (tf.Variable, tfp.util.TransformedVariable))
 
 
 def training_loop(

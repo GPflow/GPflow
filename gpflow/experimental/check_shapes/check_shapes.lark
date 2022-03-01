@@ -1,0 +1,27 @@
+// Definition of the Lark grammar of the domain specific language for specifying tensors.
+
+argument_spec: argument_name argument_refs ":" shape_spec
+
+argument_name: CNAME
+
+argument_refs: argument_ref*
+?argument_ref: argument_ref_attribute
+    | argument_ref_index
+argument_ref_attribute: "." CNAME
+argument_ref_index: "[" INT "]"
+
+shape_spec: "[" dimension_specs "]"
+
+dimension_specs: [dimension_spec ("," dimension_spec)* ","?]
+?dimension_spec: dimension_spec_constant
+         | dimension_spec_variable
+         | dimension_spec_variable_rank
+dimension_spec_constant: INT
+dimension_spec_variable: CNAME
+dimension_spec_variable_rank: ("*" CNAME) | (CNAME "...")
+
+%import common.CNAME
+%import common.INT
+%import common.WS
+
+%ignore WS

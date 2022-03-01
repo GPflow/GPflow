@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import warnings
-from typing import Callable, Iterable, List, Optional, Sequence, Tuple, TypeVar, Union
+from typing import Any, Callable, Iterable, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 import scipy.optimize
@@ -38,7 +38,7 @@ class Scipy:
         step_callback: Optional[StepCallback] = None,
         compile: bool = True,
         allow_unused_variables: bool = False,
-        **scipy_kwargs,
+        **scipy_kwargs: Any,
     ) -> OptimizeResult:
         """
         Minimize is a wrapper around the `scipy.optimize.minimize` function

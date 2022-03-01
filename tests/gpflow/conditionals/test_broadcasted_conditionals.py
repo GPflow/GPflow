@@ -24,6 +24,7 @@ from numpy.testing import assert_allclose
 import gpflow
 import gpflow.inducing_variables.multioutput as mf
 import gpflow.kernels.multioutput as mk
+from gpflow.base import SamplesMeanAndVariance
 from gpflow.conditionals import sample_conditional
 from gpflow.conditionals.util import mix_latent_gp
 
@@ -55,7 +56,7 @@ class Data:
 @pytest.mark.parametrize("full_cov", [False, True])
 @pytest.mark.parametrize("white", [True, False])
 @pytest.mark.parametrize("conditional_type", ["mixing", "Z", "inducing_points"])
-def test_conditional_broadcasting(full_cov, white, conditional_type):
+def test_conditional_broadcasting(full_cov: bool, white: bool, conditional_type: str) -> None:
     """
     Test that the `conditional` and `sample_conditional` broadcasts correctly
     over leading dimensions of Xnew. Xnew can be shape [..., N, D],
@@ -89,7 +90,7 @@ def test_conditional_broadcasting(full_cov, white, conditional_type):
 
     num_samples = 5
 
-    def sample_conditional_fn(X):
+    def sample_conditional_fn(X: tf.Tensor) -> SamplesMeanAndVariance:
         return sample_conditional(
             X,
             inducing_variable,
@@ -147,7 +148,7 @@ def test_conditional_broadcasting(full_cov, white, conditional_type):
 # _mix_latent_gps
 @pytest.mark.parametrize("full_cov", [True, False])
 @pytest.mark.parametrize("full_output_cov", [True, False])
-def test_broadcasting_mix_latent_gps(full_cov, full_output_cov):
+def test_broadcasting_mix_latent_gps(full_cov: bool, full_output_cov: bool) -> None:
     S, N = 7, 20  # batch size, num data points
     P, L = 10, 5  # observation dimensionality, num latent GPs
     W = np.random.randn(P, L)  # mixing matrix

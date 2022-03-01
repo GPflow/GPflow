@@ -52,7 +52,7 @@ import contextlib
 import enum
 import os
 from dataclasses import dataclass, field, replace
-from typing import Dict, Optional, Union
+from typing import Any, Dict, Generator, List, Mapping, Optional, Union
 
 import numpy as np
 import tabulate
@@ -79,7 +79,7 @@ __all__ = [
     "positive_bijector_type_map",
 ]
 
-__config = None
+__config: Optional["Config"] = None
 
 
 class _Values(enum.Enum):
@@ -95,16 +95,18 @@ class _Values(enum.Enum):
     JITTER = 1e-6
 
     @property
-    def name(self):
+    def name(self) -> str:  # type: ignore  # name is generated and has weird typing.
         return f"GPFLOW_{super().name}"
 
 
-def _default(value: _Values):
+def _default(value: _Values) -> Any:
     """Checks if value is set in the environment."""
     return os.getenv(value.name, default=value.value)
 
 
-def _default_numeric_type_factory(valid_types, enum_key, type_name):
+def _default_numeric_type_factory(
+    valid_types: Mapping[str, type], enum_key: _Values, type_name: str
+) -> type:
     value = _default(enum_key)
     if value in valid_types.values():
         return value
@@ -113,17 +115,17 @@ def _default_numeric_type_factory(valid_types, enum_key, type_name):
     return valid_types[value]
 
 
-def _default_int_factory():
+def _default_int_factory() -> type:
     valid_types = dict(int16=np.int16, int32=np.int32, int64=np.int64)
     return _default_numeric_type_factory(valid_types, _Values.INT, "int")
 
 
-def _default_float_factory():
+def _default_float_factory() -> type:
     valid_types = dict(float16=np.float16, float32=np.float32, float64=np.float64)
     return _default_numeric_type_factory(valid_types, _Values.FLOAT, "float")
 
 
-def _default_jitter_factory():
+def _default_jitter_factory() -> float:
     value = _default(_Values.JITTER)
     try:
         value = float(value)
@@ -132,7 +134,7 @@ def _default_jitter_factory():
     return value
 
 
-def _default_positive_bijector_factory():
+def _default_positive_bijector_factory() -> str:
     bijector_type = _default(_Values.POSITIVE_BIJECTOR)
     if bijector_type not in positive_bijector_type_map().keys():
         raise TypeError(
@@ -142,7 +144,7 @@ def _default_positive_bijector_factory():
     return bijector_type
 
 
-def _default_positive_minimum_factory():
+def _default_positive_minimum_factory() -> float:
     value = _default(_Values.POSITIVE_MINIMUM)
     try:
         value = float(value)
@@ -151,7 +153,7 @@ def _default_positive_minimum_factory():
     return value
 
 
-def _default_summary_fmt_factory():
+def _default_summary_fmt_factory() -> Optional[str]:
     return _default(_Values.SUMMARY_FMT)
 
 
@@ -181,25 +183,26 @@ class Config:
     jitter: Float = field(default_factory=_default_jitter_factory)
     positive_bijector: str = field(default_factory=_default_positive_bijector_factory)
     positive_minimum: Float = field(default_factory=_default_positive_minimum_factory)
-    summary_fmt: str = field(default_factory=_default_summary_fmt_factory)
+    summary_fmt: Optional[str] = field(default_factory=_default_summary_fmt_factory)
 
 
 def config() -> Config:
     """Returns current active config."""
+    assert __config is not None, "__config is None. This should never happen."
     return __config
 
 
-def default_int():
+def default_int() -> type:
     """Returns default integer type"""
     return config().int
 
 
-def default_float():
+def default_float() -> type:
     """Returns default float type"""
     return config().float
 
 
-def default_jitter():
+def default_jitter() -> float:
     """
     The jitter is a constant that GPflow adds to the diagonal of matrices
     to achieve numerical stability of the system when the condition number
@@ -208,28 +211,28 @@ def default_jitter():
     return config().jitter
 
 
-def default_positive_bijector():
+def default_positive_bijector() -> str:
     """Type of bijector used for positive constraints: exp or softplus."""
     return config().positive_bijector
 
 
-def default_positive_minimum():
+def default_positive_minimum() -> float:
     """Shift constant that GPflow adds to all positive constraints."""
     return config().positive_minimum
 
 
-def default_summary_fmt():
+def default_summary_fmt() -> Optional[str]:
     """Summary printing format as understood by :mod:`tabulate` or a special case "notebook"."""
     return config().summary_fmt
 
 
-def set_config(new_config: Config):
+def set_config(new_config: Config) -> None:
     """Update GPflow config with new settings from `new_config`."""
     global __config
     __config = new_config
 
 
-def set_default_int(value_type):
+def set_default_int(value_type: type) -> None:
     """
     Sets default integer type. Available options are ``np.int16``, ``np.int32``,
     or ``np.int64``.
@@ -245,7 +248,7 @@ def set_default_int(value_type):
     set_config(replace(config(), int=tf_dtype.as_numpy_dtype))
 
 
-def set_default_float(value_type):
+def set_default_float(value_type: type) -> None:
     """
     Sets default float type. Available options are `np.float16`, `np.float32`,
     or `np.float64`.
@@ -261,7 +264,7 @@ def set_default_float(value_type):
     set_config(replace(config(), float=tf_dtype.as_numpy_dtype))
 
 
-def set_default_jitter(value: float):
+def set_default_jitter(value: float) -> None:
     """
     Sets constant jitter value.
     The jitter is a constant that GPflow adds to the diagonal of matrices
@@ -279,7 +282,7 @@ def set_default_jitter(value: float):
     set_config(replace(config(), jitter=value))
 
 
-def set_default_positive_bijector(value: str):
+def set_default_positive_bijector(value: str) -> None:
     """
     Sets positive bijector type.
     There are currently two options implemented: "exp" and "softplus".
@@ -293,7 +296,7 @@ def set_default_positive_bijector(value: str):
     set_config(replace(config(), positive_bijector=value))
 
 
-def set_default_positive_minimum(value: float):
+def set_default_positive_minimum(value: float) -> None:
     """Sets shift constant for positive transformation."""
     if not (
         isinstance(value, (tf.Tensor, np.ndarray)) and len(value.shape) == 0
@@ -306,8 +309,9 @@ def set_default_positive_minimum(value: float):
     set_config(replace(config(), positive_minimum=value))
 
 
-def set_default_summary_fmt(value: str):
-    formats = tabulate.tabulate_formats + ["notebook", None]
+def set_default_summary_fmt(value: Optional[str]) -> None:
+    formats: List[Optional[str]] = list(tabulate.tabulate_formats)
+    formats.extend(["notebook", None])
     if value not in formats:
         raise ValueError(f"Summary does not support '{value}' format")
 
@@ -322,7 +326,7 @@ def positive_bijector_type_map() -> Dict[str, type]:
 
 
 @contextlib.contextmanager
-def as_context(temporary_config: Optional[Config] = None):
+def as_context(temporary_config: Optional[Config] = None) -> Generator[None, None, None]:
     """Ensure that global configs defaults, with a context manager. Useful for testing."""
     current_config = config()
     temporary_config = replace(current_config) if temporary_config is None else temporary_config

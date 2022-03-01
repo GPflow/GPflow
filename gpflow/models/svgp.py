@@ -12,17 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Tuple
-
 import numpy as np
 import tensorflow as tf
 
 from .. import kullback_leiblers, posteriors
-from ..base import Module, Parameter
+from ..base import InputData, MeanAndVariance, Parameter, RegressionData
 from ..conditionals import conditional
 from ..config import default_float
 from ..utilities import positive, triangular
-from .model import GPModel, InputData, MeanAndVariance, RegressionData
+from .model import GPModel
 from .training_mixins import ExternalDataTrainingLossMixin
 from .util import inducingpoint_wrapper
 
@@ -156,14 +154,12 @@ class SVGP_deprecated(GPModel, ExternalDataTrainingLossMixin):
         return tf.reduce_sum(var_exp) * scale - kl
 
     def predict_f(self, Xnew: InputData, full_cov=False, full_output_cov=False) -> MeanAndVariance:
-        q_mu = self.q_mu
-        q_sqrt = self.q_sqrt
         mu, var = conditional(
             Xnew,
             self.inducing_variable,
             self.kernel,
-            q_mu,
-            q_sqrt=q_sqrt,
+            self.q_mu,
+            q_sqrt=self.q_sqrt,
             full_cov=full_cov,
             white=self.whiten,
             full_output_cov=full_output_cov,

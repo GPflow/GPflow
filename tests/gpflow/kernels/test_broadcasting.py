@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import Type
+
 import numpy as np
 import pytest
 import tensorflow as tf
@@ -20,6 +22,7 @@ from numpy.testing import assert_allclose
 import gpflow
 import gpflow.ci_utils
 from gpflow import kernels
+from gpflow.base import TensorType
 
 KERNEL_CLASSES = [
     # Static kernels:
@@ -47,7 +50,7 @@ KERNEL_CLASSES = [
 ]
 
 
-def check_broadcasting(kernel):
+def check_broadcasting(kernel: kernels.Kernel) -> None:
     S, N, M, D = 5, 4, 3, 2
     X1 = np.random.randn(S, N, D)
     X2 = np.random.randn(M, D)
@@ -56,7 +59,7 @@ def check_broadcasting(kernel):
 
 
 @pytest.mark.parametrize("kernel_class", gpflow.ci_utils.subclasses(kernels.Kernel))
-def test_no_kernels_missed(kernel_class):
+def test_no_kernels_missed(kernel_class: Type[kernels.Kernel]) -> None:
     tested_kernel_classes = KERNEL_CLASSES + [kernels.Sum, kernels.Product]
     skipped_kernel_classes = [
         p.values[0] for p in KERNEL_CLASSES if isinstance(p, type(pytest.param()))
@@ -85,7 +88,7 @@ def test_no_kernels_missed(kernel_class):
 
 
 @pytest.mark.parametrize("kernel_class", KERNEL_CLASSES)
-def test_broadcast_no_active_dims(kernel_class):
+def test_broadcast_no_active_dims(kernel_class: Type[kernels.Kernel]) -> None:
     check_broadcasting(kernel_class())
 
 
@@ -93,13 +96,13 @@ def test_broadcast_no_active_dims(kernel_class):
     "base_class",
     [kernel for kernel in gpflow.ci_utils.subclasses(kernels.IsotropicStationary)],
 )
-def test_broadcast_no_active_dims_periodic(base_class):
+def test_broadcast_no_active_dims_periodic(base_class: Type[kernels.IsotropicStationary]) -> None:
     kernel = gpflow.kernels.Periodic(base_class())
     check_broadcasting(kernel)
 
 
-@pytest.mark.parametrize("kernel_class", [gpflow.kernels.SquaredExponential])
-def test_broadcast_slice_active_dims(kernel_class):
+@pytest.mark.parametrize("kernel_class", [kernels.SquaredExponential])
+def test_broadcast_slice_active_dims(kernel_class: Type[kernels.SquaredExponential]) -> None:
     S, N, M, D = 5, 4, 3, 4
     d = 2
     X1 = np.random.randn(S, N, D)
@@ -109,8 +112,8 @@ def test_broadcast_slice_active_dims(kernel_class):
     compare_vs_map(X1, X2, kernel)
 
 
-@pytest.mark.parametrize("kernel_class", [gpflow.kernels.SquaredExponential])
-def test_broadcast_indices_active_dims(kernel_class):
+@pytest.mark.parametrize("kernel_class", [kernels.SquaredExponential])
+def test_broadcast_indices_active_dims(kernel_class: Type[kernels.SquaredExponential]) -> None:
     S, N, M, D = 5, 4, 3, 4
 
     X1 = np.random.randn(S, N, D)
@@ -120,7 +123,7 @@ def test_broadcast_indices_active_dims(kernel_class):
     compare_vs_map(X1, X2, kernel)
 
 
-def compare_vs_map(X1, X2, kernel):
+def compare_vs_map(X1: TensorType, X2: TensorType, kernel: kernels.Kernel) -> None:
     K12_loop = tf.stack([kernel(x, X2) for x in X1])  # [S, N, M]
     K12_native = kernel(X1, X2)  # [S, N, M]
     assert_allclose(K12_loop.numpy(), K12_native.numpy())

@@ -1,11 +1,15 @@
-import os
-from typing import List
+from pathlib import Path
+from typing import Any, List, Optional, Sequence, Union
 
 import numpy as np
 import pytest
 import tensorflow as tf
+from _pytest.capture import CaptureFixture
+from matplotlib.axes import Axes
+from matplotlib.figure import Figure
 
 import gpflow
+from gpflow.models import GPR, GPModel
 from gpflow.monitor import (
     ExecuteCallback,
     ImageToTensorBoard,
@@ -23,42 +27,44 @@ class Data:
 
 
 class DummyTask(MonitorTask):
-    def run(self, **kwargs):
+    def run(self, **kwargs: Any) -> None:
         pass
 
 
 class DummyStepCallback:
     current_step = 0
 
-    def callback(self, step, variables, values):
+    def callback(
+        self, step: int, variables: Sequence[tf.Variable], values: Sequence[tf.Tensor]
+    ) -> None:
         self.current_step = step
 
 
 @pytest.fixture
-def model():
+def model() -> GPModel:
     data = (
         np.random.randn(Data.num_data, 2),  # [N, 2]
         np.random.randn(Data.num_data, 2),  # [N, 1]
     )
     kernel = gpflow.kernels.SquaredExponential(lengthscales=[1.0, 2.0])
-    return gpflow.models.GPR(data, kernel, noise_variance=0.01)
+    return GPR(data, kernel, noise_variance=0.01)
 
 
 @pytest.fixture
-def monitor(model, tmp_path):
-    tmp_path = str(tmp_path)
+def monitor(model: GPModel, tmp_path: Path) -> Monitor:
+    tmp_path_str = str(tmp_path)
 
-    def lml_callback():
+    def lml_callback() -> float:
         return model.log_marginal_likelihood()
 
-    def print_callback():
+    def print_callback() -> None:
         print("foo")
 
     return Monitor(
         MonitorTaskGroup(
             [
-                ModelToTensorBoard(tmp_path, model),
-                ScalarToTensorBoard(tmp_path, lml_callback, "lml"),
+                ModelToTensorBoard(tmp_path_str, model),
+                ScalarToTensorBoard(tmp_path_str, lml_callback, "lml"),
             ],
             period=2,
         ),
@@ -66,17 +72,17 @@ def monitor(model, tmp_path):
     )
 
 
-def _get_size_directory(dir):
+def _get_size_directory(d: Path) -> int:
     """Calculating the size of a directory (in Bytes)."""
-    return sum(d.stat().st_size for d in os.scandir(dir) if d.is_file())
+    return sum(f.stat().st_size for f in d.glob("**/*"))
 
 
 # Smoke tests for the individual tasks
 # #####################################
 
 
-def test_ExecuteCallback():
-    def callback():
+def test_ExecuteCallback() -> None:
+    def callback() -> None:
         print("ExecuteCallback test")
 
     task = ExecuteCallback(callback)
@@ -85,11 +91,11 @@ def test_ExecuteCallback():
     compiled_task(0)
 
 
-def test_ImageToTensorBoard(tmp_path):
+def test_ImageToTensorBoard(tmp_path: Path) -> None:
     """Smoke test `ImageToTensorBoard` in Eager and Compiled mode."""
-    tmp_path = str(tmp_path)
+    tmp_path_str = str(tmp_path)
 
-    def plotting_cb(fig, axes):
+    def plotting_cb(fig: Figure, axes: Axes) -> None:
         axes[0, 0].plot(np.random.randn(2), np.random.randn(2))
         axes[1, 0].plot(np.random.randn(2), np.random.randn(2))
         axes[0, 1].plot(np.random.randn(2), np.random.randn(2))
@@ -98,7 +104,7 @@ def test_ImageToTensorBoard(tmp_path):
     fig_kwargs = dict(figsize=(10, 10))
     subplots_kwargs = dict(sharex=True, nrows=2, ncols=2)
     task = ImageToTensorBoard(
-        tmp_path, plotting_cb, "image", fig_kw=fig_kwargs, subplots_kw=subplots_kwargs
+        tmp_path_str, plotting_cb, "image", fig_kw=fig_kwargs, subplots_kw=subplots_kwargs
     )
 
     task(0)
@@ -106,39 +112,41 @@ def test_ImageToTensorBoard(tmp_path):
     compiled_task(0)
 
 
-def test_ScalarToTensorBoard(tmp_path):
+def test_ScalarToTensorBoard(tmp_path: Path) -> None:
     """Smoke test `ScalarToTensorBoard` in Eager and Compiled mode."""
-    tmp_path = str(tmp_path)
+    tmp_path_str = str(tmp_path)
 
-    def scalar_cb():
+    def scalar_cb() -> float:
         return 0.0
 
-    task = ScalarToTensorBoard(tmp_path, scalar_cb, "scalar")
+    task = ScalarToTensorBoard(tmp_path_str, scalar_cb, "scalar")
     task(0)
     compiled_task = tf.function(task)
     compiled_task(0)
 
 
-def test_ScalarToTensorBoard_with_argument(tmp_path):
+def test_ScalarToTensorBoard_with_argument(tmp_path: Path) -> None:
     """Smoke test `ScalarToTensorBoard` in Eager and Compiled mode."""
-    tmp_path = str(tmp_path)
+    tmp_path_str = str(tmp_path)
 
-    def scalar_cb(x=None):
+    def scalar_cb(x: Optional[float] = None) -> float:
+        assert x is not None
         return 2 * x
 
-    task = ScalarToTensorBoard(tmp_path, scalar_cb, "scalar")
+    task = ScalarToTensorBoard(tmp_path_str, scalar_cb, "scalar")
     compiled_task = tf.function(task)
     task(0, x=1.0)
     compiled_task(0, x=1.0)
 
 
-def test_ScalarToTensorBoard_with_wrong_keyword_argument(tmp_path):
-    tmp_path = str(tmp_path)
+def test_ScalarToTensorBoard_with_wrong_keyword_argument(tmp_path: Path) -> None:
+    tmp_path_str = str(tmp_path)
 
-    def scalar_cb(x=None):
+    def scalar_cb(x: Optional[float] = None) -> float:
+        assert x is not None
         return 2 * x
 
-    task = ScalarToTensorBoard(tmp_path, scalar_cb, "scalar")
+    task = ScalarToTensorBoard(tmp_path_str, scalar_cb, "scalar")
     compiled_task = tf.function(task)
 
     with pytest.raises(TypeError, match=r"got an unexpected keyword argument 'y'"):
@@ -148,24 +156,24 @@ def test_ScalarToTensorBoard_with_wrong_keyword_argument(tmp_path):
         compiled_task(0, y=1.0)
 
 
-def test_ModelToTensorboard(model, tmp_path):
+def test_ModelToTensorboard(model: GPModel, tmp_path: Path) -> None:
     """Smoke test `ModelToTensorBoard` in Eager and Compiled mode."""
-    tmp_path = str(tmp_path)
-    task = ModelToTensorBoard(tmp_path, model)
+    tmp_path_str = str(tmp_path)
+    task = ModelToTensorBoard(tmp_path_str, model)
     task(0)
     compiled_task = tf.function(task)
     compiled_task(0)
 
 
-def test_ExecuteCallback_arguments(capsys):
-    def cb1(x=None, **_):
+def test_ExecuteCallback_arguments(capsys: CaptureFixture[str]) -> None:
+    def cb1(x: Optional[int] = None, **_: Any) -> None:
         assert x is not None
         print(x)
 
-    def cb2(**_):
+    def cb2(**_: Any) -> None:
         print(2)
 
-    def cb3(y=None, **_):
+    def cb3(y: Optional[int] = None, **_: Any) -> None:
         assert y is not None
         print(y)
 
@@ -184,12 +192,12 @@ def test_ExecuteCallback_arguments(capsys):
 @pytest.mark.parametrize(
     "task_or_tasks",
     [
-        ExecuteCallback(lambda: 0.0),
-        [ExecuteCallback(lambda: 0.0)],
-        [ExecuteCallback(lambda: 0.0), ExecuteCallback(lambda: 0.0)],
+        ExecuteCallback(lambda: None),
+        [ExecuteCallback(lambda: None)],
+        [ExecuteCallback(lambda: None), ExecuteCallback(lambda: None)],
     ],
 )
-def test_MonitorTaskGroup_and_Monitor(task_or_tasks):
+def test_MonitorTaskGroup_and_Monitor(task_or_tasks: Union[MonitorTask, List[MonitorTask]]) -> None:
     group = MonitorTaskGroup(task_or_tasks, period=2)
 
     # check that the tasks is actually a list (custom setter)
@@ -207,7 +215,7 @@ def test_MonitorTaskGroup_and_Monitor(task_or_tasks):
     compiled_monitor(0)
 
 
-def test_Monitor(monitor):
+def test_Monitor(monitor: Monitor) -> None:
     monitor(0)
     compiled_monitor = tf.function(monitor)
     compiled_monitor(0)
@@ -217,14 +225,14 @@ def test_Monitor(monitor):
 # ###################
 
 
-def test_compiled_execute_callable(capsys):
+def test_compiled_execute_callable(capsys: CaptureFixture[str]) -> None:
     """
     Test that the `ExecuteCallback` when compiled behaves as expected.
     We test that python prints are not executed anymore.
     """
     string_to_print = "Eager mode"
 
-    def callback():
+    def callback() -> None:
         print(string_to_print)
 
     task = ExecuteCallback(callback)
@@ -245,7 +253,7 @@ def test_compiled_execute_callable(capsys):
     assert out == f"{string_to_print}\n"
 
 
-def test_periodicity_group(capsys):
+def test_periodicity_group(capsys: CaptureFixture[str]) -> None:
     """Test that groups are called at different periods."""
 
     task_a = ExecuteCallback(lambda: print("a", end=" "))
@@ -272,14 +280,12 @@ def test_periodicity_group(capsys):
     assert "a b X"
 
 
-def test_logdir_created(monitor, model, tmp_path):
+def test_logdir_created(monitor: Monitor, model: GPModel, tmp_path: Path) -> None:
     """
     Check that TensorFlow summaries are written.
     """
-    tmp_path = str(tmp_path)
-
     # check existence
-    assert os.path.exists(tmp_path) and os.path.isdir(tmp_path)
+    assert tmp_path.is_dir()
     size_before = _get_size_directory(tmp_path)
     assert size_before > 0
 
@@ -292,11 +298,11 @@ def test_logdir_created(monitor, model, tmp_path):
     assert size_after > size_before
 
 
-def test_compile_monitor(monitor, model):
+def test_compile_monitor(monitor: Monitor, model: GPModel) -> None:
     opt = tf.optimizers.Adam()
 
     @tf.function
-    def tf_func(step):
+    def tf_func(step: tf.Tensor) -> None:
         opt.minimize(model.training_loss, model.trainable_variables)
         monitor(step)
 
@@ -304,13 +310,13 @@ def test_compile_monitor(monitor, model):
         tf_func(step)
 
 
-def test_scipy_monitor(monitor, model):
+def test_scipy_monitor(monitor: Monitor, model: GPModel) -> None:
     opt = gpflow.optimizers.Scipy()
 
     opt.minimize(model.training_loss, model.trainable_variables, step_callback=monitor)
 
 
-def test_scipy_monitor_called(model):
+def test_scipy_monitor_called(model: GPModel) -> None:
     task = DummyTask()
     monitor = Monitor(MonitorTaskGroup(task, period=1))
     opt = gpflow.optimizers.Scipy()
@@ -318,7 +324,7 @@ def test_scipy_monitor_called(model):
     assert task.current_step > 1
 
 
-def test_scipy_step_callback_called(model):
+def test_scipy_step_callback_called(model: GPModel) -> None:
     dsc = DummyStepCallback()
     opt = gpflow.optimizers.Scipy()
     opt.minimize(model.training_loss, model.trainable_variables, step_callback=dsc.callback)
