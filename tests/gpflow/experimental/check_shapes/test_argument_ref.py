@@ -28,15 +28,18 @@ def context_func() -> None:
 
 @dataclass
 class SomeClass:
-    a: str
+    a: Optional[str]
     b: str
 
 
 ARG_MAP: Mapping[str, Any] = {
     "foo": "foo_value",
     "bar": "bar_value",
+    "none": None,
     "some_class": SomeClass("aaa", "bbb"),
+    "some_class_none": SomeClass(None, "bbb"),
     "some_tuple": (42, 69),
+    "some_tuple_none": (None, None),
     RESULT_TOKEN: "return_value",
 }
 
@@ -46,8 +49,17 @@ ARG_MAP: Mapping[str, Any] = {
     [
         (make_argument_ref("foo"), False, "foo", "foo", "foo_value"),
         (make_argument_ref(RESULT_TOKEN), True, RESULT_TOKEN, RESULT_TOKEN, "return_value"),
+        (make_argument_ref("none"), False, "none", "none", None),
         (make_argument_ref("baz"), False, "baz", "baz", ArgumentReferenceError),
         (make_argument_ref("some_class", "b"), False, "some_class", "some_class.b", "bbb"),
+        (make_argument_ref("none", "c"), False, "none", "none.c", None),
+        (
+            make_argument_ref("some_class_none", "a"),
+            False,
+            "some_class_none",
+            "some_class_none.a",
+            None,
+        ),
         (
             make_argument_ref("some_class", "c"),
             False,
@@ -56,6 +68,14 @@ ARG_MAP: Mapping[str, Any] = {
             ArgumentReferenceError,
         ),
         (make_argument_ref("some_tuple", 1), False, "some_tuple", "some_tuple[1]", 69),
+        (make_argument_ref("none", 1), False, "none", "none[1]", None),
+        (
+            make_argument_ref("some_tuple_none", 1),
+            False,
+            "some_tuple_none",
+            "some_tuple_none[1]",
+            None,
+        ),
         (
             make_argument_ref("some_tuple", 2),
             False,

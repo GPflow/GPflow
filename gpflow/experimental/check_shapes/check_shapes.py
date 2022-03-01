@@ -89,7 +89,10 @@ def _assert_shapes(
             raise ShapeMismatchError(func, print_specs, arg_map)
 
     for arg_spec in check_specs:
-        actual_shape = get_shape(arg_spec.argument_ref.get(func, arg_map))
+        arg_value = arg_spec.argument_ref.get(func, arg_map)
+        if arg_value is None:
+            continue
+        actual_shape = get_shape(arg_value)
         if actual_shape is None:
             continue
 

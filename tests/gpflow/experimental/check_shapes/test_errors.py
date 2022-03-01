@@ -47,12 +47,14 @@ def test_shape_mismatch_error() -> None:
         parse_argument_spec("a: [x, 3]"),
         parse_argument_spec("b: [5, y]"),
         parse_argument_spec("c: [x, y]"),
+        parse_argument_spec("d: [x, y]"),
         parse_argument_spec("return: [x, y]"),
     ]
     arg_map = {
         "a": t(2, 3),
-        "b": t(5, 6),
+        "b": t(5, None),
         "c": t_unk(),
+        "d": None,
         RESULT_TOKEN: t(2, 6),
     }
     error = ShapeMismatchError(context_func, specs, arg_map)
@@ -66,7 +68,8 @@ def test_shape_mismatch_error() -> None:
     Function: context_func
     Declared: {__file__}:23
     Argument: a, expected: (x, 3), actual: (2, 3)
-    Argument: b, expected: (5, y), actual: (5, 6)
+    Argument: b, expected: (5, y), actual: (5, None)
     Argument: c, expected: (x, y), actual: <Tensor has unknown shape>
+    Argument: d, expected: (x, y), actual: <Tensor is None>
     Argument: return, expected: (x, y), actual: (2, 6)"""
     )

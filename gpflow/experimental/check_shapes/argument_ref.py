@@ -16,7 +16,7 @@ Code for (de)referencing arguments.
 """
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Any, Mapping
+from typing import Any, Mapping, Optional
 
 from .base_types import C
 from .errors import ArgumentReferenceError
@@ -43,7 +43,7 @@ class ArgumentRef(ABC):
         Returns `RESULT_TOKEN` if this in an argument to the function result.
         """
 
-    def get(self, func: C, arg_map: Mapping[str, Any]) -> Any:
+    def get(self, func: C, arg_map: Mapping[str, Any]) -> Optional[Any]:
         """ Get the value of this argument from this given map. """
         try:
             return self._get(arg_map)
@@ -51,7 +51,7 @@ class ArgumentRef(ABC):
             raise ArgumentReferenceError(func, arg_map, self) from e
 
     @abstractmethod
-    def _get(self, arg_map: Mapping[str, Any]) -> Any:
+    def _get(self, arg_map: Mapping[str, Any]) -> Optional[Any]:
         """ Get the value of this argument from this given map. """
 
     @abstractmethod
@@ -73,7 +73,7 @@ class RootArgumentRef(ArgumentRef):
     def root_argument_name(self) -> str:
         return self.argument_name
 
-    def _get(self, arg_map: Mapping[str, Any]) -> Any:
+    def _get(self, arg_map: Mapping[str, Any]) -> Optional[Any]:
         return arg_map[self.argument_name]
 
     def __repr__(self) -> str:
@@ -95,9 +95,11 @@ class AttributeArgumentRef(ArgumentRef):
     def root_argument_name(self) -> str:
         return self.source.root_argument_name
 
-    def _get(self, arg_map: Mapping[str, Any]) -> Any:
-        # pylint: disable=protected-access
-        return getattr(self.source._get(arg_map), self.attribute_name)
+    def _get(self, arg_map: Mapping[str, Any]) -> Optional[Any]:
+        source = self.source._get(arg_map)  # pylint: disable=protected-access
+        if source is None:
+            return None
+        return getattr(source, self.attribute_name)
 
     def __repr__(self) -> str:
         return f"{repr(self.source)}.{self.attribute_name}"
@@ -119,8 +121,10 @@ class IndexArgumentRef(ArgumentRef):
         return self.source.root_argument_name
 
     def _get(self, arg_map: Mapping[str, Any]) -> Any:
-        # pylint: disable=protected-access
-        return self.source._get(arg_map)[self.index]
+        source = self.source._get(arg_map)  # pylint: disable=protected-access
+        if source is None:
+            return None
+        return source[self.index]
 
     def __repr__(self) -> str:
         return f"{repr(self.source)}[{self.index}]"
