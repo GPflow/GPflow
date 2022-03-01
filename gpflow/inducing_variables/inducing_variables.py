@@ -17,6 +17,7 @@ from typing import Optional
 
 import tensorflow as tf
 import tensorflow_probability as tfp
+from deprecated import deprecated
 
 from ..base import Module, Parameter, TensorData, TensorType
 from ..utilities import positive
@@ -35,6 +36,13 @@ class InducingVariables(Module):
         variational distribution.
         """
         raise NotImplementedError
+
+    @deprecated(
+        reason="len(iv) should return an `int`, but this actually returns a `tf.Tensor`."
+        " Use `iv.num_inducing` instead."
+    )
+    def __len__(self) -> tf.Tensor:
+        return self.num_inducing
 
 
 class InducingPointsBase(InducingVariables):
