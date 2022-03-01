@@ -80,14 +80,15 @@ Shape specification
 
 Shapes are specified by the syntax
 ``[<dimension specifier 1>, <dimension specifer 2>, ..., <dimension specifier n>]``, where
-``<dimension specifier i>`` is
-one of:
+``<dimension specifier i>`` is one of:
 
     * ``<integer>``, to require that dimension to have that exact size.
     * ``<name>``, to bind that dimension to a variable. Dimensions bound to the same variable must
       have the same size, though that size can be anything.
+    * ``None`` or ``.`` to allow exactly one single dimension without constraints.
     * ``*<name>`` or ``<name>...``, to bind *any* number of dimensions to a variable. Again,
       multiple uses of the same variable name must match the same dimension sizes.
+    * ``*`` or ``...``, to allow *any* number of dimensions without constraints.
 
 A scalar shape is specified by ``[]``.
 
@@ -97,8 +98,12 @@ For example::
         "...: []",
         "...: [3, 4]",
         "...: [width, height]",
+        "...: [., height]",
+        "...: [width, None],
         "...: [n_samples, *batch]",
         "...: [batch..., 2]",
+        "...: [n_samples, *]",
+        "...: [..., 2]",
     )
     def f(...):
         ...
@@ -190,4 +195,4 @@ from .check_shapes import check_shapes
 from .errors import ArgumentReferenceError, ShapeMismatchError
 from .inheritance import inherit_check_shapes
 
-__all__ = [export for export in dir()]
+__all__ = list(dir())
