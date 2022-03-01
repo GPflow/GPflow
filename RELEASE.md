@@ -49,7 +49,7 @@ This release contains contributions from:
   You should no longer override `gpflow.inducing_variables.InducingVariables.__len__`. Override
   `gpflow.inducing_variables.InducingVariables.num_inducing` instead. `num_inducing` should return a
   `tf.Tensor` which is consistent with previous behaviour, although the type previously was
-  annotated as `int`. `__len__` has been removed. (#1766)
+  annotated as `int`. `__len__` has been deprecated. (#1766)
 
 
 ## Known Caveats

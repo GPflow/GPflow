@@ -48,3 +48,16 @@ def test_inducing_points_with_variable_shape() -> None:
 
     # Check 3: that we can also optimize with changed Z tensor
     optimization_step()
+
+
+def test_num_inducing() -> None:
+    M = 7
+    D = 3
+    Z = np.random.randn(M, D)
+
+    iv = gpflow.inducing_variables.InducingPoints(
+        tf.Variable(Z, trainable=False, dtype=gpflow.default_float())
+    )
+
+    assert M == iv.num_inducing
+    assert M == len(iv)
