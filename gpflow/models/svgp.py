@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import Optional
+
 import numpy as np
 import tensorflow as tf
 
@@ -19,6 +21,10 @@ from .. import kullback_leiblers, posteriors
 from ..base import InputData, MeanAndVariance, Parameter, RegressionData
 from ..conditionals import conditional
 from ..config import default_float
+from ..inducing_variables import InducingVariables
+from ..kernels import Kernel
+from ..likelihoods import Likelihood
+from ..mean_functions import MeanFunction
 from ..utilities import positive, triangular
 from .model import GPModel
 from .training_mixins import ExternalDataTrainingLossMixin
@@ -42,17 +48,17 @@ class SVGP_deprecated(GPModel, ExternalDataTrainingLossMixin):
 
     def __init__(
         self,
-        kernel,
-        likelihood,
-        inducing_variable,
+        kernel: Kernel,
+        likelihood: Likelihood,
+        inducing_variable: InducingVariables,
         *,
-        mean_function=None,
+        mean_function: Optional[MeanFunction] = None,
         num_latent_gps: int = 1,
         q_diag: bool = False,
-        q_mu=None,
-        q_sqrt=None,
+        q_mu: Optional[tf.Tensor] = None,
+        q_sqrt: Optional[tf.Tensor] = None,
         whiten: bool = True,
-        num_data=None,
+        num_data: Optional[tf.Tensor] = None,
     ):
         """
         - kernel, likelihood, inducing_variables, mean_function are appropriate
@@ -76,29 +82,35 @@ class SVGP_deprecated(GPModel, ExternalDataTrainingLossMixin):
         num_inducing = self.inducing_variable.num_inducing
         self._init_variational_parameters(num_inducing, q_mu, q_sqrt, q_diag)
 
-    def _init_variational_parameters(self, num_inducing, q_mu, q_sqrt, q_diag):
+    def _init_variational_parameters(
+        self,
+        num_inducing: int,
+        q_mu: Optional[np.ndarray],
+        q_sqrt: Optional[np.ndarray],
+        q_diag: bool,
+    ) -> None:
         """
         Constructs the mean and cholesky of the covariance of the variational Gaussian posterior.
         If a user passes values for `q_mu` and `q_sqrt` the routine checks if they have consistent
-        and correct shapes. If a user does not specify any values for `q_mu` and `q_sqrt`, the routine
-        initializes them, their shape depends on `num_inducing` and `q_diag`.
+        and correct shapes. If a user does not specify any values for `q_mu` and `q_sqrt`, the
+        routine initializes them, their shape depends on `num_inducing` and `q_diag`.
 
-        Note: most often the comments refer to the number of observations (=output dimensions) with P,
-        number of latent GPs with L, and number of inducing points M. Typically P equals L,
+        Note: most often the comments refer to the number of observations (=output dimensions) with
+        P, number of latent GPs with L, and number of inducing points M. Typically P equals L,
         but when certain multioutput kernels are used, this can change.
 
         Parameters
         ----------
-        :param num_inducing: int
+        :param num_inducing:
             Number of inducing variables, typically refered to as M.
-        :param q_mu: np.array or None
+        :param q_mu:
             Mean of the variational Gaussian posterior. If None the function will initialise
             the mean with zeros. If not None, the shape of `q_mu` is checked.
-        :param q_sqrt: np.array or None
+        :param q_sqrt:
             Cholesky of the covariance of the variational Gaussian posterior.
             If None the function will initialise `q_sqrt` with identity matrix.
             If not None, the shape of `q_sqrt` is checked, depending on `q_diag`.
-        :param q_diag: bool
+        :param q_diag:
             Used to check if `q_mu` and `q_sqrt` have the correct shape or to
             construct them with the correct shape. If `q_diag` is true,
             `q_sqrt` is two dimensional and only holds the square root of the
@@ -133,7 +145,8 @@ class SVGP_deprecated(GPModel, ExternalDataTrainingLossMixin):
             self.inducing_variable, self.kernel, self.q_mu, self.q_sqrt, whiten=self.whiten
         )
 
-    def maximum_log_likelihood_objective(self, data: RegressionData) -> tf.Tensor:
+    # type-ignore is because of changed method signature:
+    def maximum_log_likelihood_objective(self, data: RegressionData) -> tf.Tensor:  # type: ignore
         return self.elbo(data)
 
     def elbo(self, data: RegressionData) -> tf.Tensor:
@@ -153,7 +166,9 @@ class SVGP_deprecated(GPModel, ExternalDataTrainingLossMixin):
             scale = tf.cast(1.0, kl.dtype)
         return tf.reduce_sum(var_exp) * scale - kl
 
-    def predict_f(self, Xnew: InputData, full_cov=False, full_output_cov=False) -> MeanAndVariance:
+    def predict_f(
+        self, Xnew: InputData, full_cov: bool = False, full_output_cov: bool = False
+    ) -> MeanAndVariance:
         mu, var = conditional(
             Xnew,
             self.inducing_variable,
@@ -184,7 +199,10 @@ class SVGP_with_posterior(SVGP_deprecated):
     This class provides a posterior() method that enables caching for faster subsequent predictions.
     """
 
-    def posterior(self, precompute_cache=posteriors.PrecomputeCacheType.TENSOR):
+    def posterior(
+        self,
+        precompute_cache: posteriors.PrecomputeCacheType = posteriors.PrecomputeCacheType.TENSOR,
+    ) -> posteriors.BasePosterior:
         """
         Create the Posterior object which contains precomputed matrices for
         faster prediction.
@@ -213,7 +231,9 @@ class SVGP_with_posterior(SVGP_deprecated):
             precompute_cache=precompute_cache,
         )
 
-    def predict_f(self, Xnew: InputData, full_cov=False, full_output_cov=False) -> MeanAndVariance:
+    def predict_f(
+        self, Xnew: InputData, full_cov: bool = False, full_output_cov: bool = False
+    ) -> MeanAndVariance:
         """
         For backwards compatibility, SVGP's predict_f uses the fused (no-cache)
         computation, which is more efficient during training.

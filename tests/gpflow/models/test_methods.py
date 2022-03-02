@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from dataclasses import dataclass
+from typing import List
 
 import numpy as np
 import pytest
@@ -39,7 +40,7 @@ class Datum:
 default_datum = Datum()
 
 
-_gp_models = [
+_gp_models: List[gpflow.models.GPModel] = [
     gpflow.models.VGP((default_datum.X, default_datum.Y), default_datum.kernel, default_datum.lik),
     gpflow.models.GPMC((default_datum.X, default_datum.Y), default_datum.kernel, default_datum.lik),
     gpflow.models.SGPMC(
@@ -61,13 +62,13 @@ _gp_models = [
     ),
 ]
 
-_state_less_gp_models = [
+_state_less_gp_models: List[gpflow.models.GPModel] = [
     gpflow.models.SVGP(default_datum.kernel, default_datum.lik, inducing_variable=default_datum.Z)
 ]
 
 
 @pytest.mark.parametrize("model", _state_less_gp_models + _gp_models)
-def test_methods_predict_f(model):
+def test_methods_predict_f(model: gpflow.models.GPModel) -> None:
     mf, vf = model.predict_f(default_datum.Xs)
     assert_array_equal(mf.shape, vf.shape)
     assert_array_equal(mf.shape, (10, 1))
@@ -75,7 +76,7 @@ def test_methods_predict_f(model):
 
 
 @pytest.mark.parametrize("model", _state_less_gp_models + _gp_models)
-def test_methods_predict_y(model):
+def test_methods_predict_y(model: gpflow.models.GPModel) -> None:
     mf, vf = model.predict_y(default_datum.Xs)
     assert_array_equal(mf.shape, vf.shape)
     assert_array_equal(mf.shape, (10, 1))
@@ -83,7 +84,7 @@ def test_methods_predict_y(model):
 
 
 @pytest.mark.parametrize("model", _state_less_gp_models + _gp_models)
-def test_methods_predict_log_density(model):
+def test_methods_predict_log_density(model: gpflow.models.GPModel) -> None:
     rng = Datum().rng
     Ys = rng.randn(10, 1)
     d = model.predict_log_density((default_datum.Xs, Ys))

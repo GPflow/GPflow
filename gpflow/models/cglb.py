@@ -13,11 +13,11 @@
 # limitations under the License.
 
 from collections import namedtuple
-from typing import NamedTuple, Union
+from typing import Any, List, Optional, Tuple
 
 import tensorflow as tf
 
-from ..base import InputData, MeanAndVariance, Parameter, RegressionData
+from ..base import InputData, MeanAndVariance, Parameter, RegressionData, TensorType
 from ..config import default_float, default_int
 from ..covariances import Kuf
 from ..utilities import add_noise_cov, to_default_float
@@ -62,14 +62,14 @@ class CGLB(SGPR):
     def __init__(
         self,
         data: RegressionData,
-        *args,
+        *args: Any,
         cg_tolerance: float = 1.0,
         max_cg_iters: int = 100,
         restart_cg_iters: int = 40,
         v_grad_optimization: bool = False,
-        **kwargs,
-    ):
-        super(CGLB, self).__init__(data, *args, **kwargs)
+        **kwargs: Any,
+    ) -> None:
+        super().__init__(data, *args, **kwargs)
         n, b = self.data[1].shape
         self._v = Parameter(tf.zeros((b, n), dtype=default_float()), trainable=v_grad_optimization)
         self._cg_tolerance = cg_tolerance
@@ -77,10 +77,10 @@ class CGLB(SGPR):
         self._restart_cg_iters = restart_cg_iters
 
     @property
-    def aux_vec(self):
+    def aux_vec(self) -> Parameter:
         return self._v
 
-    def logdet_term(self, common: NamedTuple) -> tf.Tensor:
+    def logdet_term(self, common: SGPR.CommonTensors) -> tf.Tensor:
         """
         Compute a lower bound on -0.5 * log |K + σ²I| based on a
         low-rank approximation to K.
@@ -110,7 +110,7 @@ class CGLB(SGPR):
         logtrace = num_data * tf.math.log(1 + trace / num_data)
         return -output_dim * (logdet_b + 0.5 * logsigma_sq + 0.5 * logtrace)
 
-    def quad_term(self, common: NamedTuple) -> tf.Tensor:
+    def quad_term(self, common: SGPR.CommonTensors) -> tf.Tensor:
         """
         Computes a lower bound on the quadratic term in the log
         marginal likelihood of conjugate GPR. The bound is based on
@@ -168,9 +168,9 @@ class CGLB(SGPR):
     def predict_f(
         self,
         xnew: InputData,
-        full_cov=False,
-        full_output_cov=False,
-        cg_tolerance: Union[float, None] = 1e-3,
+        full_cov: bool = False,
+        full_output_cov: bool = False,
+        cg_tolerance: Optional[float] = 1e-3,
     ) -> MeanAndVariance:
         """
         The posterior mean for CGLB model is given by
@@ -250,7 +250,7 @@ class CGLB(SGPR):
         xnew: InputData,
         full_cov: bool = False,
         full_output_cov: bool = False,
-        cg_tolerance: Union[float, None] = 1e-3,
+        cg_tolerance: Optional[float] = 1e-3,
     ) -> MeanAndVariance:
         """
         Compute the mean and variance of the held-out data at the
@@ -259,7 +259,8 @@ class CGLB(SGPR):
         if full_cov or full_output_cov:
             # See https://github.com/GPflow/GPflow/issues/1461
             raise NotImplementedError(
-                "The predict_y method currently supports only the argument values full_cov=False and full_output_cov=False"
+                "The predict_y method currently supports only the argument values full_cov=False"
+                " and full_output_cov=False"
             )
 
         f_mean, f_var = self.predict_f(
@@ -272,14 +273,15 @@ class CGLB(SGPR):
         data: RegressionData,
         full_cov: bool = False,
         full_output_cov: bool = False,
-        cg_tolerance: Union[float, None] = 1e-3,
+        cg_tolerance: Optional[float] = 1e-3,
     ) -> tf.Tensor:
         """
         Compute the log density of the data at the new data points.
         """
         if full_cov or full_output_cov:
             raise NotImplementedError(
-                "The predict_log_density method currently supports only the argument values full_cov=False and full_output_cov=False"
+                "The predict_log_density method currently supports only the argument values"
+                " full_cov=False and full_output_cov=False"
             )
 
         x, y = data
@@ -296,12 +298,12 @@ class NystromPreconditioner:
     :math:`A = σ⁻²L⁻¹Kᵤₓ` and :math:`B = AAᵀ + I = LᵦLᵦᵀ`
     """
 
-    def __init__(self, A: tf.Tensor, LB: tf.Tensor, sigma_sq: float):
+    def __init__(self, A: tf.Tensor, LB: tf.Tensor, sigma_sq: float) -> None:
         self.A = A
         self.LB = LB
         self.sigma_sq = sigma_sq
 
-    def __call__(self, v):
+    def __call__(self, v: TensorType) -> Tuple[tf.Tensor, tf.Tensor]:
         """
         Computes :math:`vᵀQ^{-1}` and `vᵀQ^{-1}v`. Note that this is
         implemented as multipication of a row vector on the right.
@@ -328,8 +330,14 @@ class NystromPreconditioner:
 
 
 def cglb_conjugate_gradient(
-    K, b, initial, preconditioner, cg_tolerance, max_steps, restart_cg_step
-):
+    K: TensorType,
+    b: TensorType,
+    initial: TensorType,
+    preconditioner: NystromPreconditioner,
+    cg_tolerance: float,
+    max_steps: int,
+    restart_cg_step: int,
+) -> tf.Tensor:
     """
     Conjugate gradient algorithm used in CGLB model. The method of
     conjugate gradient (Hestenes and Stiefel, 1952) produces a
@@ -359,10 +367,10 @@ def cglb_conjugate_gradient(
     """
     CGState = namedtuple("CGState", ["i", "v", "r", "p", "rz"])
 
-    def stopping_criterion(state):
+    def stopping_criterion(state: CGState) -> bool:
         return (0.5 * state.rz > cg_tolerance) and (state.i < max_steps)
 
-    def cg_step(state: CGState):
+    def cg_step(state: CGState) -> List[CGState]:
         Ap = state.p @ K
         denom = tf.reduce_sum(state.p * Ap, axis=-1)
         gamma = state.rz / denom

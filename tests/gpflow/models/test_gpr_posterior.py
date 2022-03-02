@@ -1,3 +1,5 @@
+from typing import Tuple
+
 import numpy as np
 import pytest
 
@@ -6,7 +8,9 @@ from gpflow.models.gpr import GPR_deprecated, GPR_with_posterior
 from gpflow.posteriors import PrecomputeCacheType
 
 
-def make_models(regression_data):
+def make_models(
+    regression_data: gpflow.base.RegressionData,
+) -> Tuple[GPR_deprecated, GPR_with_posterior]:
     """Helper function to create models"""
 
     k = gpflow.kernels.Matern52()
@@ -16,7 +20,7 @@ def make_models(regression_data):
     return mold, mnew
 
 
-def _get_data_for_tests():
+def _get_data_for_tests() -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Helper function to create testing data"""
     X = np.random.randn(5, 6)
     Y = np.random.randn(5, 2)
@@ -24,12 +28,9 @@ def _get_data_for_tests():
     return X, X_new, Y
 
 
-@pytest.mark.parametrize("cache_type", [PrecomputeCacheType.TENSOR, PrecomputeCacheType.VARIABLE])
 @pytest.mark.parametrize("full_cov", [True, False])
 @pytest.mark.parametrize("full_output_cov", [True, False])
-def test_old_vs_new_gp_fused(
-    cache_type: PrecomputeCacheType, full_cov: bool, full_output_cov: bool
-):
+def test_old_vs_new_gp_fused(full_cov: bool, full_output_cov: bool) -> None:
     X, X_new, Y = _get_data_for_tests()
     mold, mnew = make_models((X, Y))
 
@@ -47,7 +48,7 @@ def test_old_vs_new_gp_fused(
 @pytest.mark.parametrize("full_output_cov", [True, False])
 def test_old_vs_new_with_posterior(
     cache_type: PrecomputeCacheType, full_cov: bool, full_output_cov: bool
-):
+) -> None:
     X, X_new, Y = _get_data_for_tests()
     mold, mnew = make_models((X, Y))
 

@@ -65,13 +65,16 @@ class GPMC(GPModel, InternalDataTrainingLossMixin):
             loc=to_default_float(0.0), scale=to_default_float(1.0)
         )
 
-    def log_posterior_density(self) -> tf.Tensor:
+    # type-ignore is because of changed method signature:
+    def log_posterior_density(self) -> tf.Tensor:  # type: ignore
         return self.log_likelihood() + self.log_prior_density()
 
-    def _training_loss(self) -> tf.Tensor:
+    # type-ignore is because of changed method signature:
+    def _training_loss(self) -> tf.Tensor:  # type: ignore
         return -self.log_posterior_density()
 
-    def maximum_log_likelihood_objective(self) -> tf.Tensor:
+    # type-ignore is because of changed method signature:
+    def maximum_log_likelihood_objective(self) -> tf.Tensor:  # type: ignore
         return self.log_likelihood()
 
     def log_likelihood(self) -> tf.Tensor:
@@ -91,7 +94,9 @@ class GPMC(GPModel, InternalDataTrainingLossMixin):
 
         return tf.reduce_sum(self.likelihood.log_prob(F, Y_data))
 
-    def predict_f(self, Xnew: InputData, full_cov=False, full_output_cov=False) -> MeanAndVariance:
+    def predict_f(
+        self, Xnew: InputData, full_cov: bool = False, full_output_cov: bool = False
+    ) -> MeanAndVariance:
         """
         Xnew is a data matrix, point at which we want to predict
 
@@ -102,7 +107,7 @@ class GPMC(GPModel, InternalDataTrainingLossMixin):
         where F* are points on the GP at Xnew, F=LV are points on the GP at X.
 
         """
-        X_data, Y_data = self.data
+        X_data, _Y_data = self.data
         mu, var = conditional(
             Xnew, X_data, self.kernel, self.V, full_cov=full_cov, q_sqrt=None, white=True
         )

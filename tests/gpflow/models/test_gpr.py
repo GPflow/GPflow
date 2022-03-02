@@ -30,7 +30,7 @@ class Data:
     var = 1.0
 
 
-def test_non_trainable_model_objective():
+def test_non_trainable_model_objective() -> None:
     """
     Checks that we can still compute the objective of a model that has no
     trainable parameters whatsoever (regression test for bug in log_prior()).
@@ -48,7 +48,7 @@ def test_non_trainable_model_objective():
     assert model.log_prior_density() == 0.0
 
 
-def test_varying_data():
+def test_varying_data() -> None:
     input_dim = 2
     output_dim = 1
 

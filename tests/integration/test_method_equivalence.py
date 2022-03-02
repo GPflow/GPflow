@@ -12,14 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import Optional, Tuple
+
 import numpy as np
 import pytest
 from numpy.testing import assert_allclose
 
 import gpflow
+from gpflow.base import TensorType
 from gpflow.config import default_jitter
+from gpflow.kernels import Kernel
+from gpflow.likelihoods import Likelihood
 from gpflow.mean_functions import Constant
-from gpflow.models import maximum_log_likelihood_objective, training_loss_closure
+from gpflow.models import GPModel, maximum_log_likelihood_objective, training_loss_closure
 
 rng = np.random.RandomState(0)
 
@@ -45,7 +50,7 @@ class DatumVGP:
     data = (X, Y)
 
 
-def _create_full_gp_model():
+def _create_full_gp_model() -> gpflow.models.GPR:
     """
     GP Regression
     """
@@ -57,7 +62,13 @@ def _create_full_gp_model():
     return full_gp_model
 
 
-def _create_approximate_models():
+def _create_approximate_models() -> Tuple[
+    gpflow.models.VGP,
+    gpflow.models.SVGP,
+    gpflow.models.SVGP,
+    gpflow.models.SGPR,
+    gpflow.models.GPRFITC,
+]:
     """
     1) Variational GP (with the likelihood set to Gaussian)
     2) Sparse variational GP (likelihood is Gaussian, inducing points
@@ -116,7 +127,12 @@ def _create_approximate_models():
     return model_1, model_2, model_3, model_4, model_5
 
 
-def _create_vgp_model(kernel, likelihood, q_mu=None, q_sqrt=None):
+def _create_vgp_model(
+    kernel: Kernel,
+    likelihood: Likelihood,
+    q_mu: Optional[TensorType] = None,
+    q_sqrt: Optional[TensorType] = None,
+) -> gpflow.models.VGP:
     model_vgp = gpflow.models.VGP((DatumVGP.X, DatumVGP.Y), kernel, likelihood)
     if q_mu is not None and q_sqrt is not None:
         model_vgp.q_mu.assign(q_mu)
@@ -124,7 +140,12 @@ def _create_vgp_model(kernel, likelihood, q_mu=None, q_sqrt=None):
     return model_vgp
 
 
-def _create_vgpao_model(kernel, likelihood, q_alpha, q_lambda):
+def _create_vgpao_model(
+    kernel: Kernel,
+    likelihood: Likelihood,
+    q_alpha: Optional[TensorType],
+    q_lambda: Optional[TensorType],
+) -> gpflow.models.VGPOpperArchambeau:
     model_vgpoa = gpflow.models.VGPOpperArchambeau(
         (DatumVGP.X, DatumVGP.Y), kernel, likelihood, num_latent_gps=DatumVGP.DY
     )
@@ -134,7 +155,13 @@ def _create_vgpao_model(kernel, likelihood, q_alpha, q_lambda):
     return model_vgpoa
 
 
-def _create_svgp_model(kernel, likelihood, q_mu, q_sqrt, whiten):
+def _create_svgp_model(
+    kernel: Kernel,
+    likelihood: Likelihood,
+    q_mu: Optional[TensorType],
+    q_sqrt: Optional[TensorType],
+    whiten: bool,
+) -> gpflow.models.SVGP:
     model_svgp = gpflow.models.SVGP(
         kernel,
         likelihood,
@@ -149,14 +176,14 @@ def _create_svgp_model(kernel, likelihood, q_mu, q_sqrt, whiten):
 
 
 @pytest.mark.parametrize("approximate_model", _create_approximate_models())
-def test_equivalence(approximate_model):
+def test_equivalence(approximate_model: GPModel) -> None:
     """
     With a Gaussian likelihood, and inducing points (where appropriate)
     positioned at the data, many of the gpflow methods are equivalent (perhaps
     subject to some optimization).
     """
 
-    def optimize(model):
+    def optimize(model: GPModel) -> None:
         opt = gpflow.optimizers.Scipy()
         loss = training_loss_closure(model, Datum.data)
         opt.minimize(loss, model.trainable_variables, options=dict(maxiter=3000))
@@ -193,7 +220,7 @@ def test_equivalence(approximate_model):
     assert_allclose(gpr_var, approximate_var, 1e-4)
 
 
-def test_equivalence_vgp_and_svgp():
+def test_equivalence_vgp_and_svgp() -> None:
     kernel = gpflow.kernels.Matern52()
     likelihood = gpflow.likelihoods.StudentT()
 
@@ -211,7 +238,7 @@ def test_equivalence_vgp_and_svgp():
     assert_allclose(svgp_var, vgp_var)
 
 
-def test_equivalence_vgp_and_opper_archambeau():
+def test_equivalence_vgp_and_opper_archambeau() -> None:
     kernel = gpflow.kernels.Matern52()
     likelihood = gpflow.likelihoods.StudentT()
 
@@ -262,7 +289,7 @@ class DatumUpper:
     data = (X, Y)
 
 
-def test_upper_bound_few_inducing_points():
+def test_upper_bound_few_inducing_points() -> None:
     """
     Test for upper bound for regression marginal likelihood
     """

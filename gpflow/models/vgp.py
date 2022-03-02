@@ -93,7 +93,8 @@ class VGP_deprecated(GPModel, InternalDataTrainingLossMixin):
             constrained_shape=(num_latent_gps, static_num_data, static_num_data),
         )
 
-    def maximum_log_likelihood_objective(self) -> tf.Tensor:
+    # type-ignore is because of changed method signature:
+    def maximum_log_likelihood_objective(self) -> tf.Tensor:  # type: ignore
         return self.elbo()
 
     def elbo(self) -> tf.Tensor:
@@ -152,7 +153,10 @@ class VGP_with_posterior(VGP_deprecated):
     enables caching for faster subsequent predictions.
     """
 
-    def posterior(self, precompute_cache=posteriors.PrecomputeCacheType.TENSOR):
+    def posterior(
+        self,
+        precompute_cache: posteriors.PrecomputeCacheType = posteriors.PrecomputeCacheType.TENSOR,
+    ) -> posteriors.VGPPosterior:
         """
         Create the Posterior object which contains precomputed matrices for
         faster prediction.
@@ -181,7 +185,9 @@ class VGP_with_posterior(VGP_deprecated):
             precompute_cache=precompute_cache,
         )
 
-    def predict_f(self, Xnew: InputData, full_cov=False, full_output_cov=False) -> MeanAndVariance:
+    def predict_f(
+        self, Xnew: InputData, full_cov: bool = False, full_output_cov: bool = False
+    ) -> MeanAndVariance:
         """
         For backwards compatibility, VGP's predict_f uses the fused (no-cache)
         computation, which is more efficient during training.
@@ -281,14 +287,15 @@ class VGPOpperArchambeau(GPModel, InternalDataTrainingLossMixin):
         super().__init__(kernel, likelihood, mean_function, num_latent_gps)
 
         self.data = data_input_to_tensor(data)
-        X_data, Y_data = self.data
+        X_data, _Y_data = self.data
         self.num_data = X_data.shape[0]
         self.q_alpha = Parameter(np.zeros((self.num_data, self.num_latent_gps)))
         self.q_lambda = Parameter(
             np.ones((self.num_data, self.num_latent_gps)), transform=gpflow.utilities.positive()
         )
 
-    def maximum_log_likelihood_objective(self) -> tf.Tensor:
+    # type-ignore is because of changed method signature:
+    def maximum_log_likelihood_objective(self) -> tf.Tensor:  # type: ignore
         return self.elbo()
 
     def elbo(self) -> tf.Tensor:
