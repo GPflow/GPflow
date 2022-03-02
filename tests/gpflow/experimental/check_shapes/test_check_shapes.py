@@ -22,7 +22,7 @@ import pytest
 from gpflow.base import TensorType
 from gpflow.experimental.check_shapes import ShapeMismatchError, check_shapes
 
-from .utils import t
+from .utils import t, t_unk
 
 
 def test_check_shapes__constant() -> None:
@@ -39,6 +39,8 @@ def test_check_shapes__constant() -> None:
     f(t(None, 3), t(2, 4))
     f(t(2, None), t(2, 4))
     f(t(2, 3), t(None, 4))
+    f(t_unk(), t(2, 4))
+    f(t(2, 3), t_unk())
 
 
 def test_check_shapes__constant__bad_input() -> None:
@@ -81,6 +83,9 @@ def test_check_shapes__var_dim() -> None:
     f(t(None, 3), t(2, 4))
     f(t(2, None), t(2, 4))
     f(t(2, 3), t(None, 4))
+    f(t(2, 3), t(2, None))
+    f(t_unk(), t(2, 4))
+    f(t(2, 3), t_unk())
 
 
 def test_check_shapes__var_dim__bad_input() -> None:
@@ -131,6 +136,10 @@ def test_check_shapes__var_rank() -> None:
     f(t(2, None), t(2, 2, 3), t(3, 2, 2, 4), t(3, 2, 2), leading_dims=2)
     f(t(2, 2), t(None, 2, 3), t(3, 2, 2, 4), t(3, 2, 2), leading_dims=2)
     f(t(2, 2), t(2, 2, None), t(3, 2, 2, 4), t(3, 2, 2), leading_dims=2)
+    f(t_unk(), t(2, 2, 3), t(3, 2, 2, 4), t(3, 2, 2), leading_dims=2)
+    f(t(2, 2), t_unk(), t(3, 2, 2, 4), t(3, 2, 2), leading_dims=2)
+    f(t(2, 2), t(2, 2, 3), t_unk(), t(3, 2, 2), leading_dims=2)
+    f(t(2, 2), t(2, 2, 3), t(3, 2, 2, 4), t_unk(), leading_dims=2)
 
 
 def test_check_shapes__var_rank__bad_input() -> None:

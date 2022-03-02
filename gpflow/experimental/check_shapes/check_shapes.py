@@ -18,13 +18,12 @@ import inspect
 from functools import wraps
 from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence, Union, cast
 
-import tensorflow as tf
-
 from ..utils import experimental
 from .argument_ref import RESULT_TOKEN
 from .base_types import C
 from .errors import ShapeMismatchError
 from .parser import parse_and_rewrite_docstring, parse_argument_spec
+from .shapes import get_shape
 from .specs import ParsedArgumentSpec
 
 
@@ -90,8 +89,8 @@ def _assert_shapes(
             raise ShapeMismatchError(func, print_specs, arg_map)
 
     for arg_spec in check_specs:
-        actual_shape = arg_spec.argument_ref.get(func, arg_map).shape
-        if isinstance(actual_shape, tf.TensorShape) and actual_shape.rank is None:
+        actual_shape = get_shape(arg_spec.argument_ref.get(func, arg_map))
+        if actual_shape is None:
             continue
 
         actual = list(actual_shape)

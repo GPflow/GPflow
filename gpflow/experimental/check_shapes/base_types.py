@@ -14,6 +14,22 @@
 """
 Definitions of commonly used types.
 """
-from typing import Any, Callable, TypeVar
+from typing import Any, Callable, Optional, Tuple, TypeVar
 
 C = TypeVar("C", bound=Callable[..., Any])
+
+ActualDimension = Optional[int]
+"""
+The size of a single observed dimension.
+
+Use `None` if the size of that dimension is unknown.
+"""
+
+ActualShape = Optional[Tuple[ActualDimension, ...]]
+"""
+The complete shape of an observed object.
+
+Use `None` if the object has a shape, but the shape is unknown.
+
+Raise an exception if objects of that type can never have a shape.
+"""

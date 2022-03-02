@@ -17,7 +17,7 @@ from gpflow.experimental.check_shapes.argument_ref import RESULT_TOKEN
 from gpflow.experimental.check_shapes.errors import ArgumentReferenceError, ShapeMismatchError
 from gpflow.experimental.check_shapes.parser import parse_argument_spec
 
-from .utils import t
+from .utils import t, t_unk
 
 
 def context_func() -> None:
@@ -46,11 +46,13 @@ def test_shape_mismatch_error() -> None:
     specs = [
         parse_argument_spec("a: [x, 3]"),
         parse_argument_spec("b: [5, y]"),
+        parse_argument_spec("c: [x, y]"),
         parse_argument_spec("return: [x, y]"),
     ]
     arg_map = {
         "a": t(2, 3),
         "b": t(5, 6),
+        "c": t_unk(),
         RESULT_TOKEN: t(2, 6),
     }
     error = ShapeMismatchError(context_func, specs, arg_map)
@@ -65,5 +67,6 @@ def test_shape_mismatch_error() -> None:
     Declared: {__file__}:23
     Argument: a, expected: (x, 3), actual: (2, 3)
     Argument: b, expected: (5, y), actual: (5, 6)
+    Argument: c, expected: (x, y), actual: <Tensor has unknown shape>
     Argument: return, expected: (x, y), actual: (2, 6)"""
     )

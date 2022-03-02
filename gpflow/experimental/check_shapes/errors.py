@@ -21,9 +21,8 @@ import inspect
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Mapping, Sequence
 
-import tensorflow as tf
-
 from .base_types import C
+from .shapes import get_shape
 
 if TYPE_CHECKING:
     from .argument_ref import ArgumentRef
@@ -65,9 +64,9 @@ class ShapeMismatchError(Exception):
             f"    Declared: {func_info.path_and_line}",
         ]
         for spec in specs:
-            actual_shape = spec.argument_ref.get(func, arg_map).shape
-            if isinstance(actual_shape, tf.TensorShape) and actual_shape.rank is None:
-                actual_str = "<Unknown>"
+            actual_shape = get_shape(spec.argument_ref.get(func, arg_map))
+            if actual_shape is None:
+                actual_str = "<Tensor has unknown shape>"
             else:
                 actual_str = f"({', '.join(str(dim) for dim in actual_shape)})"
             lines.append(
