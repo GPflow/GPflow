@@ -232,7 +232,7 @@ class Parameter(tfp.util.TransformedVariable):
 
         This attribute cannot be set directly. Use :func:`gpflow.set_trainable`.
         """
-        return self.unconstrained_variable.trainable
+        return self.unconstrained_variable.trainable  # type: ignore
 
     def assign(
         self,

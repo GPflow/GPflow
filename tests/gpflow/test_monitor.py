@@ -54,7 +54,7 @@ def model() -> GPModel:
 def monitor(model: GPModel, tmp_path: Path) -> Monitor:
     tmp_path_str = str(tmp_path)
 
-    def lml_callback() -> float:
+    def lml_callback() -> tf.Tensor:
         return model.log_marginal_likelihood()
 
     def print_callback() -> None:

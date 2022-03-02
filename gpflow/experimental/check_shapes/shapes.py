@@ -16,7 +16,7 @@ Code for extracting shapes from object.
 """
 import collections.abc as cabc
 from functools import singledispatch
-from typing import Any, Sequence, Union
+from typing import Any, Sequence, Tuple, Union
 
 import numpy as np
 import tensorflow as tf
@@ -60,7 +60,8 @@ def get_sequence_shape(shaped: Sequence[Any]) -> Shape:
 
 @get_shape.register(np.ndarray)
 def get_ndarray_shape(shaped: AnyNDArray) -> Shape:
-    return shaped.shape
+    result: Tuple[int, ...] = shaped.shape
+    return result
 
 
 @get_shape.register(tf.Tensor)

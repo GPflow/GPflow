@@ -21,7 +21,8 @@ from multipledispatch.variadic import isvariadic
 __all__ = ["Dispatcher"]
 
 
-_C = TypeVar("_C", bound=Callable[..., Any])
+AnyCallable = Callable[..., Any]
+_C = TypeVar("_C", bound=AnyCallable)
 Types = Union[Type[Any], Tuple[Type[Any], ...]]
 
 
@@ -38,18 +39,21 @@ class Dispatcher(GeneratorDispatcher):
 
     def register(self, *types: Types, **kwargs: Any) -> Callable[[_C], _C]:
         # Override to add type hints...
-        return super().register(*types, **kwargs)
+        result: Callable[[_C], _C] = super().register(*types, **kwargs)
+        return result
 
-    def dispatch(self, *types: Types) -> Optional[Callable[..., Any]]:
+    def dispatch(self, *types: Types) -> Optional[AnyCallable]:
         """
         Returns matching function for `types`; if not existing returns None.
         """
+        result: AnyCallable
         if types in self.funcs:
-            return self.funcs[types]
+            result = self.funcs[types]
+            return result
 
         return self.get_first_occurrence(*types)
 
-    def dispatch_or_raise(self, *types: Types) -> Callable[..., Any]:
+    def dispatch_or_raise(self, *types: Types) -> AnyCallable:
         """
         Returns matching function for `types`; if not existing raises an error.
         """
@@ -60,7 +64,7 @@ class Dispatcher(GeneratorDispatcher):
             )
         return f
 
-    def get_first_occurrence(self, *types: Types) -> Optional[Callable[..., Any]]:
+    def get_first_occurrence(self, *types: Types) -> Optional[AnyCallable]:
         """
         Returns the first occurrence of a matching function
 
@@ -71,6 +75,7 @@ class Dispatcher(GeneratorDispatcher):
         `None` is returned.
         """
         n = len(types)
+        result: AnyCallable
         for signature in self.ordering:
             if len(signature) == n and all(map(issubclass, types, signature)):  # type: ignore
                 result = self.funcs[signature]

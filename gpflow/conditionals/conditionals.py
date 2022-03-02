@@ -19,7 +19,7 @@ import tensorflow as tf
 from ..base import MeanAndVariance
 from ..inducing_variables import InducingVariables
 from ..kernels import Kernel
-from ..posteriors import VGPPosterior, get_posterior_class
+from ..posteriors import BasePosterior, VGPPosterior, get_posterior_class
 from .dispatch import conditional
 
 
@@ -68,7 +68,7 @@ def _sparse_conditional(
     """
     posterior_class = get_posterior_class(kernel, inducing_variable)
 
-    posterior = posterior_class(
+    posterior: BasePosterior = posterior_class(
         kernel,
         inducing_variable,
         f,

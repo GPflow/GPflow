@@ -51,10 +51,10 @@ def training_loss_closure(
     model: BayesianModel, data: Data, **closure_kwargs: Any
 ) -> Callable[[], tf.Tensor]:
     if isinstance(model, ExternalDataTrainingLossMixin):
-        return model.training_loss_closure(data, **closure_kwargs)
+        return model.training_loss_closure(data, **closure_kwargs)  # type: ignore
     else:
         _assert_equal_data(model.data, data)
-        return model.training_loss_closure(**closure_kwargs)
+        return model.training_loss_closure(**closure_kwargs)  # type: ignore
 
 
 def training_loss(model: BayesianModel, data: Data) -> tf.Tensor:

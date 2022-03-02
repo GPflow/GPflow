@@ -133,6 +133,7 @@ class GPModel(BayesianModel):
         problematic assumptions re the output dimensions of mean_function.
         See https://github.com/GPflow/GPflow/issues/1343
         """
+        num_latent_gps: int
         if isinstance(kernel, MultioutputKernel):
             # MultioutputKernels already have num_latent_gps attributes
             num_latent_gps = kernel.num_latent_gps

@@ -252,7 +252,7 @@ def test_quadrature(white: bool, mean: Optional[str]) -> None:
 
     effective_mean = mean_function or (lambda X: 0.0)
 
-    def conditional_fn(X: tf.Tensor) -> MeanAndVariance:
+    def conditional_fn(X: tf.Tensor) -> tf.Tensor:
         return conditional(
             X,
             inducing_variable,

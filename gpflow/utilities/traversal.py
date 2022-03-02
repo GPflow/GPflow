@@ -110,12 +110,12 @@ def tabulate_module_summary(module: tf.Module, tablefmt: Optional[str] = None) -
         if hasattr(var, "transform") and var.transform is not None:
             if isinstance(var.transform, tfp.bijectors.Chain):
                 return " + ".join(b.__class__.__name__ for b in var.transform.bijectors[::-1])
-            return var.transform.__class__.__name__
+            return var.transform.__class__.__name__  # type: ignore
         return None
 
     def get_prior(path: Path, var: LeafComponent) -> Optional[str]:
         if hasattr(var, "prior") and var.prior is not None:
-            return var.prior.name
+            return var.prior.name  # type: ignore
         return None
 
     # list of (column_name: str, column_getter: Callable[[tf.Variable], str]) tuples:
@@ -256,10 +256,11 @@ def deepcopy(input_module: M, memo: Optional[Dict[int, Any]] = None) -> M:
     tfp.bijectors.Bijector to allow the deepcopy of the tf.Module.
 
     :param input_module: tf.Module including keras.Model, keras.layers.Layer and gpflow.Module.
-    :param memo: passed through to func:`copy.deepcopy` (see https://docs.python.org/3/library/copy.html).
+    :param memo: passed through to func:`copy.deepcopy`
+        (see https://docs.python.org/3/library/copy.html).
     :return: Returns a deepcopy of an input object.
     """
-    return copy.deepcopy(reset_cache_bijectors(input_module), memo)
+    return copy.deepcopy(reset_cache_bijectors(input_module), memo)  # type: ignore
 
 
 def freeze(input_module: M) -> M:
@@ -282,8 +283,8 @@ def traverse_module(
     target_types: Tuple[Type[Any], ...],
 ) -> State:
     """
-    Recursively traverses `m`, accumulating in `acc` a path and a state until it finds an object of type
-    in `target_types` to apply `update_cb` to update the accumulator `acc` and/or the object.
+    Recursively traverses `m`, accumulating in `acc` a path and a state until it finds an object of
+    type in `target_types` to apply `update_cb` to update the accumulator `acc` and/or the object.
 
     :param m: tf.Module, tf.Variable or gpflow.Parameter
     :param acc: Tuple of path and state

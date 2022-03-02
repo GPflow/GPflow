@@ -1,3 +1,5 @@
+from typing import Union, cast
+
 import numpy as np
 import pytest
 import tensorflow as tf
@@ -7,7 +9,7 @@ from gpflow.base import AnyNDArray
 from gpflow.utilities.ops import difference_matrix
 
 
-def pca_reduce(X: AnyNDArray, Q: int) -> AnyNDArray:
+def pca_reduce(X: Union[AnyNDArray, tf.Tensor], Q: int) -> AnyNDArray:
     """
     A helpful function for linearly reducing the dimensionality of the data X
     to Q.
@@ -19,10 +21,11 @@ def pca_reduce(X: AnyNDArray, Q: int) -> AnyNDArray:
         raise ValueError("Cannot have more latent dimensions than observed")
     if isinstance(X, tf.Tensor):
         X = X.numpy()
-        # TODO why not use tf.linalg.eigh?
+    assert isinstance(X, np.ndarray)  # Hint for numpy
+    # TODO why not use tf.linalg.eigh?
     evals, evecs = np.linalg.eigh(np.cov(X.T))
     W = evecs[:, -Q:]
-    return (X - X.mean(0)).dot(W)
+    return cast(AnyNDArray, (X - X.mean(0)).dot(W))
 
 
 @pytest.mark.parametrize("N", [3, 7])

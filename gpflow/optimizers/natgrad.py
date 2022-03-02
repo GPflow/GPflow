@@ -321,7 +321,7 @@ class NaturalGradient(tf.optimizers.Optimizer):
         q_sqrt.assign(varsqrt_new)
 
     def get_config(self) -> Dict[str, Any]:
-        config = super().get_config()
+        config: Dict[str, Any] = super().get_config()
         config.update({"gamma": self._serialize_hyperparameter("gamma")})
         return config
 

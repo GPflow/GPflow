@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Any, Optional, Sequence, Tuple, Type, Union
+from typing import Any, Optional, Sequence, Tuple, Type, Union, cast
 
 import numpy as np
 import pytest
@@ -79,7 +79,8 @@ def _ref_changepoints(
     stoppers = np.concatenate([stoppers, ones], axis=2)
 
     kernel_stack = np.stack([k(X) for k in kernels], axis=2)
-    return (kernel_stack * starters * stoppers).sum(axis=2)
+
+    return cast(AnyNDArray, (kernel_stack * starters * stoppers).sum(axis=2))
 
 
 @pytest.mark.parametrize("variance, lengthscales", [[2.3, 1.4]])
@@ -318,6 +319,8 @@ def test_conv_diag() -> None:
     kernel_full = np.diagonal(kernel(X, full_cov=True))
     kernel_diag = kernel(X, full_cov=False)
     assert np.allclose(kernel_full, kernel_diag)
+    assert 4 == kernel.patch_len
+    assert 4 == kernel.num_patches
 
 
 # Add a rbf and linear kernel, make sure the result is the same as adding the result of

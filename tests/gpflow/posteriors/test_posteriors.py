@@ -11,7 +11,7 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-from typing import Any, Callable, DefaultDict, Optional, Set, Type
+from typing import Any, Callable, DefaultDict, Optional, Set, Type, cast
 
 import numpy as np
 import pytest
@@ -98,17 +98,17 @@ def _q_sqrt_factory_fixture(request: SubRequest) -> QSqrtFactory:
 
 @pytest.fixture(name="whiten", params=[False, True])
 def _whiten_fixture(request: SubRequest) -> bool:
-    return request.param
+    return cast(bool, request.param)
 
 
 @pytest.fixture(name="num_latent_gps", params=[1, 2])
 def _num_latent_gps_fixture(request: SubRequest) -> int:
-    return request.param
+    return cast(int, request.param)
 
 
 @pytest.fixture(name="output_dims", params=[1, 5])
 def _output_dims_fixture(request: SubRequest) -> int:
-    return request.param
+    return cast(int, request.param)
 
 
 ConditionalClosure = Callable[..., tf.Tensor]

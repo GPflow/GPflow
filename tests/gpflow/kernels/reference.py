@@ -71,6 +71,7 @@ def ref_periodic_kernel(
     """
     sine_arg = np.pi * (X[:, None, :] - X[None, :, :]) / period
     sine_base = np.sin(sine_arg) / lengthscales
+    exp_dist: AnyNDArray
     if base_name in {"RBF", "SquaredExponential"}:
         dist = 0.5 * np.sum(np.square(sine_base), axis=-1)
         exp_dist = np.exp(-dist)
