@@ -18,7 +18,7 @@ import numpy as np
 import tensorflow as tf
 
 from .. import kullback_leiblers, posteriors
-from ..base import InputData, MeanAndVariance, Parameter, RegressionData
+from ..base import AnyNDArray, InputData, MeanAndVariance, Parameter, RegressionData
 from ..conditionals import conditional
 from ..config import default_float
 from ..inducing_variables import InducingVariables
@@ -28,7 +28,7 @@ from ..mean_functions import MeanFunction
 from ..utilities import positive, triangular
 from .model import GPModel
 from .training_mixins import ExternalDataTrainingLossMixin
-from .util import inducingpoint_wrapper
+from .util import InducingVariablesLike, inducingpoint_wrapper
 
 
 class SVGP_deprecated(GPModel, ExternalDataTrainingLossMixin):
@@ -50,7 +50,7 @@ class SVGP_deprecated(GPModel, ExternalDataTrainingLossMixin):
         self,
         kernel: Kernel,
         likelihood: Likelihood,
-        inducing_variable: InducingVariables,
+        inducing_variable: InducingVariablesLike,
         *,
         mean_function: Optional[MeanFunction] = None,
         num_latent_gps: int = 1,
@@ -75,7 +75,7 @@ class SVGP_deprecated(GPModel, ExternalDataTrainingLossMixin):
         super().__init__(kernel, likelihood, mean_function, num_latent_gps)
         self.num_data = num_data
         self.whiten = whiten
-        self.inducing_variable = inducingpoint_wrapper(inducing_variable)
+        self.inducing_variable: InducingVariables = inducingpoint_wrapper(inducing_variable)
 
         # init variational parameters
         num_inducing = self.inducing_variable.num_inducing
@@ -84,8 +84,8 @@ class SVGP_deprecated(GPModel, ExternalDataTrainingLossMixin):
     def _init_variational_parameters(
         self,
         num_inducing: int,
-        q_mu: Optional[np.ndarray],
-        q_sqrt: Optional[np.ndarray],
+        q_mu: Optional[AnyNDArray],
+        q_sqrt: Optional[AnyNDArray],
         q_diag: bool,
     ) -> None:
         """
@@ -120,14 +120,18 @@ class SVGP_deprecated(GPModel, ExternalDataTrainingLossMixin):
 
         if q_sqrt is None:
             if q_diag:
-                ones = np.ones((num_inducing, self.num_latent_gps), dtype=default_float())
+                ones: AnyNDArray = np.ones(
+                    (num_inducing, self.num_latent_gps), dtype=default_float()
+                )
                 self.q_sqrt = Parameter(ones, transform=positive())  # [M, P]
             else:
-                q_sqrt = [
-                    np.eye(num_inducing, dtype=default_float()) for _ in range(self.num_latent_gps)
-                ]
-                q_sqrt = np.array(q_sqrt)
-                self.q_sqrt = Parameter(q_sqrt, transform=triangular())  # [P, M, M]
+                np_q_sqrt: AnyNDArray = np.array(
+                    [
+                        np.eye(num_inducing, dtype=default_float())
+                        for _ in range(self.num_latent_gps)
+                    ]
+                )
+                self.q_sqrt = Parameter(np_q_sqrt, transform=triangular())  # [P, M, M]
         else:
             if q_diag:
                 assert q_sqrt.ndim == 2

@@ -21,7 +21,7 @@ from numpy.testing import assert_allclose
 
 import gpflow
 import gpflow.ci_utils
-from gpflow.base import TensorType
+from gpflow.base import AnyNDArray, TensorType
 from gpflow.config import default_float
 from gpflow.kernels import (
     RBF,
@@ -54,11 +54,11 @@ rng = np.random.RandomState(1)
 
 
 def _ref_changepoints(
-    X: np.ndarray,
+    X: AnyNDArray,
     kernels: Sequence[Kernel],
     locations: Sequence[float],
     steepness: Union[float, Sequence[float]],
-) -> np.ndarray:
+) -> AnyNDArray:
     """
     Calculates K(X) for each kernel in `kernels`, then multiply by sigmoid functions
     in order to smoothly transition betwen them. The sigmoid transitions are defined
@@ -66,11 +66,10 @@ def _ref_changepoints(
     """
     locations = sorted(locations)
     steepness = steepness if isinstance(steepness, Sequence) else [steepness] * len(locations)
-    locations = np.array(locations).reshape((1, 1, -1))
-    steepness = np.array(steepness).reshape((1, 1, -1))
+    np_locations = np.array(locations).reshape((1, 1, -1))
+    np_steepness = np.array(steepness).reshape((1, 1, -1))
 
-    # type-ignore, because numpy handles casting from lists.
-    sig_X = 1.0 / (1.0 + np.exp(-steepness * (X[:, :, None] - locations)))  # type: ignore
+    sig_X = 1.0 / (1.0 + np.exp(-np_steepness * (X[:, :, None] - np_locations)))
 
     starters = sig_X * np.transpose(sig_X, axes=(1, 0, 2))
     stoppers = (1 - sig_X) * np.transpose((1 - sig_X), axes=(1, 0, 2))
@@ -99,7 +98,7 @@ def test_rq_1d(variance: TensorType, lengthscales: TensorType) -> None:
     kSE = SquaredExponential(lengthscales=lengthscales, variance=variance)
     kRQ = RationalQuadratic(lengthscales=lengthscales, variance=variance, alpha=1e8)
     rng = np.random.RandomState(1)
-    X = rng.randn(6, 1).astype(default_float())
+    X: AnyNDArray = rng.randn(6, 1).astype(default_float())
 
     gram_matrix_SE = kSE(X)
     gram_matrix_RQ = kRQ(X)
@@ -257,8 +256,8 @@ def test_coregion_shape(N: int, N2: int, input_dim: int, output_dim: int, rank: 
     X = np.random.randint(0, output_dim, (N, input_dim))
     X2 = np.random.randint(0, output_dim, (N2, input_dim))
     kernel = Coregion(output_dim=output_dim, rank=rank)
-    kernel.W = rng.randn(output_dim, rank)
-    kernel.kappa = rng.randn(output_dim, 1).reshape(-1) + 1.0
+    kernel.W.assign(rng.randn(output_dim, rank))
+    kernel.kappa.assign(np.exp(rng.randn(output_dim, 1).reshape(-1)))
 
     Kff2 = kernel(X, X2)
     assert Kff2.shape == (10, 12)
@@ -270,8 +269,8 @@ def test_coregion_shape(N: int, N2: int, input_dim: int, output_dim: int, rank: 
 def test_coregion_diag(N: int, input_dim: int, output_dim: int, rank: int) -> None:
     X = np.random.randint(0, output_dim, (N, input_dim))
     kernel = Coregion(output_dim=output_dim, rank=rank)
-    kernel.W = rng.randn(output_dim, rank)
-    kernel.kappa = rng.randn(output_dim, 1).reshape(-1) + 1.0
+    kernel.W.assign(rng.randn(output_dim, rank))
+    kernel.kappa.assign(np.exp(rng.randn(output_dim, 1).reshape(-1)))
 
     K = kernel(X)
     Kdiag = kernel.K_diag(X)
@@ -612,10 +611,13 @@ def test_periodic_active_dims_matches() -> None:
 
     assert kernel.active_dims == base_kernel.active_dims
 
-    kernel.active_dims = [2]
+    # type-ignores below, is because mypy doesn't understand that the setter and the getter for
+    # `active_dims` have different types.
+
+    kernel.active_dims = [2]  # type: ignore
     assert kernel.active_dims == base_kernel.active_dims
 
-    base_kernel.active_dims = [3]
+    base_kernel.active_dims = [3]  # type: ignore
     assert kernel.active_dims == base_kernel.active_dims
 
 

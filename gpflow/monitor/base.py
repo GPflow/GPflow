@@ -15,7 +15,7 @@
 """ MonitorTask base classes """
 
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Collection, List, Union
+from typing import Any, Callable, Collection, Union
 
 import tensorflow as tf
 

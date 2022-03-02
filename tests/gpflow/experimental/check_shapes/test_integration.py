@@ -21,6 +21,7 @@ import numpy as np
 import pytest
 import tensorflow as tf
 
+from gpflow.base import AnyNDArray
 from gpflow.experimental.check_shapes import check_shapes
 
 
@@ -30,7 +31,7 @@ def test_check_shapes__numpy() -> None:
         "b: [d1, d3]",
         "return: [d2, d3]",
     )
-    def f(a: np.ndarray, b: np.ndarray) -> np.ndarray:
+    def f(a: AnyNDArray, b: AnyNDArray) -> AnyNDArray:
         return np.zeros((3, 4))
 
     f(np.zeros((2, 3)), np.zeros((2, 4)))  # Don't crash...

@@ -17,7 +17,7 @@ from typing import Optional, Sequence
 import numpy as np
 import tensorflow as tf
 
-from ..base import Parameter, TensorType
+from ..base import AnyNDArray, Parameter, TensorType
 from ..config import default_float
 from ..utilities import to_default_float
 from .base import Kernel
@@ -100,7 +100,7 @@ class Convolutional(Kernel):
         return tf.reduce_sum(bigK * W2[None, :, :], [1, 2]) / self.num_patches ** 2.0
 
     @property
-    def patch_len(self) -> np.ndarray:
+    def patch_len(self) -> AnyNDArray:
         return np.prod(self.patch_shape)
 
     @property

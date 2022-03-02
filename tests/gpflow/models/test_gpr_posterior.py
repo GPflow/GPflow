@@ -4,6 +4,7 @@ import numpy as np
 import pytest
 
 import gpflow
+from gpflow.base import AnyNDArray
 from gpflow.models.gpr import GPR_deprecated, GPR_with_posterior
 from gpflow.posteriors import PrecomputeCacheType
 
@@ -20,7 +21,7 @@ def make_models(
     return mold, mnew
 
 
-def _get_data_for_tests() -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+def _get_data_for_tests() -> Tuple[AnyNDArray, AnyNDArray, AnyNDArray]:
     """Helper function to create testing data"""
     X = np.random.randn(5, 6)
     Y = np.random.randn(5, 2)

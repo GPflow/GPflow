@@ -121,7 +121,8 @@ def _init_expectation(
     obj1, feat1 = obj1 if isinstance(obj1, tuple) else (obj1, None)
     obj2, feat2 = obj2 if isinstance(obj2, tuple) else (obj2, None)
     return (
-        cast(ProbabilityDistribution, p),
+        # type-ignore instead of cast, because it dependes on versions whether a cast is necessary.
+        p,  # type: ignore
         cast(ExpectationObject, obj1),
         cast(Optional[InducingVariables], feat1),
         cast(ExpectationObject, obj2),

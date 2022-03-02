@@ -7,21 +7,21 @@ import tensorflow_probability as tfp
 from tensorflow_probability.python.distributions import Gamma, Uniform
 
 import gpflow
-from gpflow.base import PriorOn
+from gpflow.base import AnyNDArray, PriorOn
 from gpflow.models import GPR
 from gpflow.utilities import to_default_float
 
 np.random.seed(1)
 
 
-def build_data() -> Tuple[np.ndarray, np.ndarray]:
+def build_data() -> Tuple[AnyNDArray, AnyNDArray]:
     N = 30
     X = np.random.rand(N, 1)
     Y = np.sin(12 * X) + 0.66 * np.cos(25 * X) + np.random.randn(N, 1) * 0.1 + 3
     return (X, Y)
 
 
-def build_model(data: Tuple[np.ndarray, np.ndarray]) -> GPR:
+def build_model(data: Tuple[AnyNDArray, AnyNDArray]) -> GPR:
 
     kernel = gpflow.kernels.Matern52(lengthscales=0.3)
 
@@ -35,7 +35,7 @@ def build_model(data: Tuple[np.ndarray, np.ndarray]) -> GPR:
 
 
 def build_model_with_uniform_prior_no_transforms(
-    data: Tuple[np.ndarray, np.ndarray], prior_on: PriorOn, prior_width: float
+    data: Tuple[AnyNDArray, AnyNDArray], prior_on: PriorOn, prior_width: float
 ) -> GPR:
     def parameter(value: tf.Tensor) -> gpflow.Parameter:
         low_value = -100

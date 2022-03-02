@@ -20,14 +20,13 @@ import tensorflow_probability as tfp
 
 from ..base import InputData, MeanAndVariance, Parameter, RegressionData
 from ..conditionals import conditional
-from ..inducing_variables import InducingPoints
 from ..kernels import Kernel
 from ..likelihoods import Likelihood
 from ..mean_functions import MeanFunction
 from ..utilities import to_default_float
 from .model import GPModel
 from .training_mixins import InternalDataTrainingLossMixin
-from .util import data_input_to_tensor, inducingpoint_wrapper
+from .util import InducingPointsLike, data_input_to_tensor, inducingpoint_wrapper
 
 
 class SGPMC(GPModel, InternalDataTrainingLossMixin):
@@ -70,7 +69,7 @@ class SGPMC(GPModel, InternalDataTrainingLossMixin):
         likelihood: Likelihood,
         mean_function: Optional[MeanFunction] = None,
         num_latent_gps: Optional[int] = None,
-        inducing_variable: Optional[InducingPoints] = None,
+        inducing_variable: Optional[InducingPointsLike] = None,
     ):
         """
         data is a tuple of X, Y with X, a data matrix, size [N, D] and Y, a data matrix, size [N, R]

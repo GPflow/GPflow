@@ -21,7 +21,7 @@ from .. import covariances, kernels, likelihoods
 from ..base import Parameter, RegressionData, TensorType
 from ..config import default_float, default_jitter
 from ..expectations import expectation
-from ..inducing_variables import InducingPoints, InducingVariables
+from ..inducing_variables import InducingPoints
 from ..kernels import Kernel
 from ..mean_functions import MeanFunction, Zero
 from ..probability_distributions import DiagonalGaussian
@@ -30,7 +30,7 @@ from ..utilities.ops import pca_reduce
 from .gpr import GPR
 from .model import GPModel, MeanAndVariance
 from .training_mixins import InputData, InternalDataTrainingLossMixin, OutputData
-from .util import data_input_to_tensor, inducingpoint_wrapper
+from .util import InducingVariablesLike, data_input_to_tensor, inducingpoint_wrapper
 
 
 class GPLVM(GPR):
@@ -84,7 +84,7 @@ class BayesianGPLVM(GPModel, InternalDataTrainingLossMixin):
         X_data_var: tf.Tensor,
         kernel: Kernel,
         num_inducing_variables: Optional[int] = None,
-        inducing_variable: Optional[InducingVariables] = None,
+        inducing_variable: Optional[InducingVariablesLike] = None,
         X_prior_mean: Optional[TensorType] = None,
         X_prior_var: Optional[TensorType] = None,
     ):

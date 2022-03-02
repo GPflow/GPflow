@@ -3,10 +3,11 @@ import pytest
 import tensorflow as tf
 
 import gpflow
+from gpflow.base import AnyNDArray
 from gpflow.utilities.ops import difference_matrix
 
 
-def pca_reduce(X: np.ndarray, Q: np.ndarray) -> np.ndarray:
+def pca_reduce(X: AnyNDArray, Q: int) -> AnyNDArray:
     """
     A helpful function for linearly reducing the dimensionality of the data X
     to Q.

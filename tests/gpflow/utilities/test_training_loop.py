@@ -1,3 +1,5 @@
+from typing import Any
+
 import numpy as np
 import tensorflow as tf
 
@@ -21,7 +23,7 @@ def create_model() -> gpflow.models.GPModel:
 
 
 def assert_models_close(
-    m: gpflow.models.GPModel, mref: gpflow.models.GPModel, **tol_kwargs: float
+    m: gpflow.models.GPModel, mref: gpflow.models.GPModel, **tol_kwargs: Any
 ) -> None:
     np.testing.assert_allclose(
         m.kernel.variance.numpy(), mref.kernel.variance.numpy(), **tol_kwargs

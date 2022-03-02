@@ -18,7 +18,7 @@ import tensorflow as tf
 from numpy.testing import assert_allclose
 
 import gpflow.quadrature as quadrature
-from gpflow.base import TensorType
+from gpflow.base import AnyNDArray, TensorType
 
 
 @pytest.mark.parametrize("mu", [np.array([1.0, 1.3])])
@@ -104,7 +104,7 @@ def test_quadrature_autograph() -> None:
     Regression test for https://github.com/GPflow/GPflow/issues/1547.
     """
 
-    def compute(autograph: bool) -> np.ndarray:
+    def compute(autograph: bool) -> AnyNDArray:
         @tf.function(autograph=autograph)
         def func() -> tf.Tensor:
             mu = np.array([1.0, 1.3])

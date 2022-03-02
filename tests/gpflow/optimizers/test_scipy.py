@@ -19,6 +19,7 @@ import pytest
 import tensorflow as tf
 
 import gpflow
+from gpflow.base import AnyNDArray
 from gpflow.config import default_float
 from gpflow.models import GPR, GPModel
 
@@ -64,7 +65,7 @@ def test_scipy_jit() -> None:
         compile=True,
     )
 
-    def get_values(model: GPModel) -> np.ndarray:
+    def get_values(model: GPModel) -> AnyNDArray:
         return np.array([var.numpy().squeeze() for var in model.trainable_variables])
 
     # The tolerance of the following test had to be loosened slightly from atol=1e-15

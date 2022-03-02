@@ -20,6 +20,7 @@ import pytest
 from numpy.testing import assert_array_equal, assert_array_less
 
 import gpflow
+from gpflow.base import AnyNDArray
 
 # ------------------------------------------
 # Data classes: storing constants
@@ -29,10 +30,10 @@ import gpflow
 @dataclass(frozen=True)
 class Datum:
     rng: np.random.RandomState = np.random.RandomState(0)
-    X: np.ndarray = rng.randn(100, 2)
-    Y: np.ndarray = rng.randn(100, 1)
-    Z: np.ndarray = rng.randn(10, 2)
-    Xs: np.ndarray = rng.randn(10, 2)
+    X: AnyNDArray = rng.randn(100, 2)
+    Y: AnyNDArray = rng.randn(100, 1)
+    Z: AnyNDArray = rng.randn(10, 2)
+    Xs: AnyNDArray = rng.randn(10, 2)
     lik = gpflow.likelihoods.Gaussian()
     kernel = gpflow.kernels.Matern32()
 

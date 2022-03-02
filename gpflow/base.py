@@ -26,12 +26,19 @@ if TYPE_CHECKING:
     from IPython.lib import pretty
 
 DType = Union[np.dtype, tf.DType]
-VariableData = Union[List[Any], Tuple[Any], np.ndarray, int, float]  # deprecated
+
+# It would be nice to use something more interesting than `Any` here, but it looks like the
+# infrastructure in the rest of the ecosystem isn't really set up for this yet. Maybe when we
+# get Python 3.11?
+# Also, this type hint is as str, because With numpy < 1.20.0 the other one doesn't work at runtime.
+AnyNDArray = Union["np.ndarray[Any, Any]"]
+
+VariableData = Union[List[Any], Tuple[Any], AnyNDArray, int, float]  # deprecated
 Transform = Union[tfp.bijectors.Bijector]
 Prior = Union[tfp.distributions.Distribution]
 
 
-TensorType = Union[np.ndarray, tf.Tensor, tf.Variable, "Parameter"]
+TensorType = Union[AnyNDArray, tf.Tensor, tf.Variable, "Parameter"]
 """
 Type alias for tensor-like types that are supported by most TensorFlow and GPflow operations.
 

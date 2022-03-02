@@ -23,7 +23,7 @@ from numpy.testing import assert_allclose, assert_almost_equal
 
 import gpflow
 from gpflow import Parameter, default_float, default_jitter
-from gpflow.base import TensorType
+from gpflow.base import AnyNDArray, TensorType
 from gpflow.inducing_variables import InducingPoints
 from gpflow.kernels import Kernel
 from gpflow.kullback_leiblers import gauss_kl, prior_kl
@@ -214,8 +214,8 @@ def test_unknown_size_inputs() -> None:
     one unknown parameter, `gauss_kl` would blow up. This happened because
     `tf.size` can only output types `tf.int32` or `tf.int64`.
     """
-    mu = np.ones([1, 4], dtype=default_float())
-    sqrt = np.ones([4, 1, 1], dtype=default_float())
+    mu: AnyNDArray = np.ones([1, 4], dtype=default_float())
+    sqrt: AnyNDArray = np.ones([4, 1, 1], dtype=default_float())
 
     known_shape = gauss_kl(*map(tf.constant, [mu, sqrt]))
     unknown_shape = gauss_kl(mu, sqrt)
@@ -225,7 +225,7 @@ def test_unknown_size_inputs() -> None:
 
 @pytest.mark.parametrize("white", [True, False])
 def test_q_sqrt_constraints(
-    inducing_points: bool, kernel: Kernel, mu: np.ndarray, white: bool
+    inducing_points: bool, kernel: Kernel, mu: AnyNDArray, white: bool
 ) -> None:
     """Test that sending in an unconstrained q_sqrt returns the same conditional
     evaluation and gradients. This is important to match the behaviour of the KL, which

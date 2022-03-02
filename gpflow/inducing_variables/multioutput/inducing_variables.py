@@ -15,7 +15,6 @@ from typing import Sequence, Tuple
 
 import tensorflow as tf
 
-from ...base import TensorType
 from ..inducing_variables import InducingVariables
 
 
@@ -31,7 +30,7 @@ class MultioutputInducingVariables(InducingVariables):
     """
 
     @property
-    def inducing_variables(self) -> Tuple[TensorType, ...]:
+    def inducing_variables(self) -> Tuple[InducingVariables, ...]:
         raise NotImplementedError
 
 
@@ -64,7 +63,7 @@ class FallbackSharedIndependentInducingVariables(MultioutputInducingVariables):
     processes.
     """
 
-    def __init__(self, inducing_variable: TensorType):
+    def __init__(self, inducing_variable: InducingVariables):
         super().__init__()
         self.inducing_variable = inducing_variable
 
@@ -73,7 +72,7 @@ class FallbackSharedIndependentInducingVariables(MultioutputInducingVariables):
         return self.inducing_variable.num_inducing
 
     @property
-    def inducing_variables(self) -> Tuple[TensorType]:
+    def inducing_variables(self) -> Tuple[InducingVariables]:
         return (self.inducing_variable,)
 
 
@@ -106,7 +105,7 @@ class FallbackSeparateIndependentInducingVariables(MultioutputInducingVariables)
     Note: each object should have the same number of inducing variables, M.
     """
 
-    def __init__(self, inducing_variable_list: Sequence[TensorType]):
+    def __init__(self, inducing_variable_list: Sequence[InducingVariables]):
         super().__init__()
         self.inducing_variable_list = inducing_variable_list
 
@@ -116,7 +115,7 @@ class FallbackSeparateIndependentInducingVariables(MultioutputInducingVariables)
         return self.inducing_variable_list[0].num_inducing
 
     @property
-    def inducing_variables(self) -> Tuple[TensorType, ...]:
+    def inducing_variables(self) -> Tuple[InducingVariables, ...]:
         return tuple(self.inducing_variable_list)
 
 

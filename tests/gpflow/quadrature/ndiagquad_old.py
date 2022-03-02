@@ -32,6 +32,7 @@ def ndiagquad(
     :return: shape is the same as that of the first Fmu
     """
     if isinstance(Fmu, (tuple, list)):
+        assert isinstance(Fvar, (tuple, list))  # Hint for mypy.
         Din = len(Fmu)
 
         def unify(f_list: Sequence[TensorType]) -> tf.Tensor:

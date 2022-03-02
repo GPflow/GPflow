@@ -28,7 +28,7 @@ from ..mean_functions import MeanFunction
 from ..utilities import add_noise_cov, to_default_float
 from .model import GPModel
 from .training_mixins import InternalDataTrainingLossMixin
-from .util import data_input_to_tensor, inducingpoint_wrapper
+from .util import InducingPointsLike, data_input_to_tensor, inducingpoint_wrapper
 
 
 class SGPRBase_deprecated(GPModel, InternalDataTrainingLossMixin):
@@ -41,7 +41,7 @@ class SGPRBase_deprecated(GPModel, InternalDataTrainingLossMixin):
         self,
         data: RegressionData,
         kernel: Kernel,
-        inducing_variable: InducingPoints,
+        inducing_variable: InducingPointsLike,
         *,
         mean_function: Optional[MeanFunction] = None,
         num_latent_gps: Optional[int] = None,
@@ -65,7 +65,7 @@ class SGPRBase_deprecated(GPModel, InternalDataTrainingLossMixin):
         self.data = X_data, Y_data
         self.num_data = X_data.shape[0]
 
-        self.inducing_variable = inducingpoint_wrapper(inducing_variable)
+        self.inducing_variable: InducingPoints = inducingpoint_wrapper(inducing_variable)
 
     def upper_bound(self) -> tf.Tensor:
         """

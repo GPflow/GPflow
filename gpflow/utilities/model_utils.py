@@ -1,9 +1,9 @@
 import tensorflow as tf
 
-from ..base import Parameter
+from ..base import TensorType
 
 
-def add_noise_cov(K: tf.Tensor, likelihood_variance: Parameter) -> tf.Tensor:
+def add_noise_cov(K: tf.Tensor, likelihood_variance: TensorType) -> tf.Tensor:
     """
     Returns K + σ² I, where σ² is the likelihood noise variance (scalar),
     and I is the corresponding identity matrix.
