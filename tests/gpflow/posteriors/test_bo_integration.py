@@ -36,7 +36,7 @@ _MODEL_FACTORIES: Dict[_CreateModel, Mapping[str, Any]] = {}
 
 # This exists to make it easy to disable tf.function, for debugging.
 _COMPILE = True
-_MAXITER = 500
+_MAXITER = 10
 _DEFAULT_ATOL = 1e-10
 _DEFAULT_RTOL = 1e-7
 
@@ -80,7 +80,7 @@ def create_likelihood() -> Likelihood:
 
 def create_inducing_points(data: RegressionData) -> InducingPoints:
     n_features = data[0].shape[1]
-    n_inducing_points = 25
+    n_inducing_points = 5
     rng = np.random.default_rng(20220208)
     Z = tf.constant(rng.random((n_inducing_points, n_features)))
     return InducingPoints(Z)
@@ -107,7 +107,7 @@ def create_sgpr(data: RegressionData) -> SGPR:
     return SGPR(data=data, kernel=create_kernel(), inducing_variable=create_inducing_points(data))
 
 
-@model_factory(rtol=1e-3)
+@model_factory(rtol=5e-3)
 def create_vgp(data: RegressionData) -> VGP:
     return VGP(data=data, kernel=create_kernel(), likelihood=create_likelihood())
 
@@ -253,7 +253,7 @@ def _f(_f_minimum: tf.Tensor) -> Callable[[tf.Tensor], tf.Tensor]:
 def _data(
     _f: Callable[[tf.Tensor], tf.Tensor], _f_minimum: tf.Tensor
 ) -> Tuple[tf.Variable, tf.Variable]:
-    n_initial_data = 10
+    n_initial_data = 3
     n_outputs, n_features = _f_minimum.shape
 
     rng = np.random.default_rng(20220126)
