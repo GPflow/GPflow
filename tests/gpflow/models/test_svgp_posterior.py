@@ -1,4 +1,5 @@
 from itertools import product
+from typing import Optional, Tuple
 
 import numpy as np
 import pytest
@@ -10,7 +11,14 @@ from gpflow.models.svgp import SVGP_deprecated, SVGP_with_posterior
 input_dim = 7
 
 
-def make_models(M=64, D=input_dim, L=3, q_diag=False, whiten=True, mo=None):
+def make_models(
+    M: int = 64,
+    D: int = input_dim,
+    L: int = 3,
+    q_diag: bool = False,
+    whiten: bool = True,
+    mo: Optional[Tuple[str, str]] = None,
+) -> Tuple[SVGP_deprecated, SVGP_with_posterior]:
     if mo is None:
         k = gpflow.kernels.Matern52()
         Z = np.random.randn(M, D)
@@ -64,7 +72,13 @@ def make_models(M=64, D=input_dim, L=3, q_diag=False, whiten=True, mo=None):
 )
 @pytest.mark.parametrize("full_cov", [True, False])
 @pytest.mark.parametrize("full_output_cov", [True, False])
-def test_old_vs_new_svgp(q_diag, white, multioutput, full_cov: bool, full_output_cov: bool):
+def test_old_vs_new_svgp(
+    q_diag: bool,
+    white: bool,
+    multioutput: Optional[Tuple[str, str]],
+    full_cov: bool,
+    full_output_cov: bool,
+) -> None:
     mold, mnew = make_models(q_diag=q_diag, whiten=white, mo=multioutput)
 
     X = np.random.randn(100, input_dim)

@@ -17,6 +17,7 @@ import itertools
 import os
 import sys
 import traceback
+from typing import Sequence
 
 import jupytext
 import nbformat
@@ -27,12 +28,12 @@ from nbconvert.preprocessors.execute import CellExecutionError
 NOTEBOOK_DIR = "../../doc/source/notebooks"
 
 
-def _nbpath():
+def _nbpath() -> str:
     this_dir = os.path.dirname(__file__)
     return os.path.join(this_dir, NOTEBOOK_DIR)
 
 
-def test_notebook_dir_exists():
+def test_notebook_dir_exists() -> None:
     assert os.path.isdir(_nbpath())
 
 
@@ -41,16 +42,16 @@ def test_notebook_dir_exists():
 # several notebooks in different directories with the same base name, they will
 # all get blacklisted (change the blacklisting check to something else in that
 # case, if need be!)
-BLACKLISTED_NOTEBOOKS = []
+BLACKLISTED_NOTEBOOKS: Sequence[str] = []
 
 
-def get_notebooks():
+def get_notebooks() -> Sequence[str]:
     """
     Returns all notebooks in `_nbpath` that are not blacklisted.
     """
 
-    def notebook_blacklisted(nb):
-        blacklisted_notebooks_basename = map(os.path.basename, BLACKLISTED_NOTEBOOKS)
+    def notebook_blacklisted(nb: str) -> bool:
+        blacklisted_notebooks_basename = [os.path.basename(bnb) for bnb in BLACKLISTED_NOTEBOOKS]
         return os.path.basename(nb) in blacklisted_notebooks_basename
 
     # recursively traverse the notebook directory in search for ipython notebooks
@@ -61,12 +62,12 @@ def get_notebooks():
     return notebooks_to_test
 
 
-def _preproc():
+def _preproc() -> ExecutePreprocessor:
     pythonkernel = "python" + str(sys.version_info[0])
     return ExecutePreprocessor(timeout=300, kernel_name=pythonkernel, interrupt_on_timeout=True)
 
 
-def _exec_notebook(notebook_filename):
+def _exec_notebook(notebook_filename: str) -> None:
     with open(notebook_filename) as notebook_file:
         nb = jupytext.read(notebook_file, as_version=nbformat.current_nbformat)
         try:
@@ -80,9 +81,9 @@ def _exec_notebook(notebook_filename):
 
 @pytest.mark.notebooks
 @pytest.mark.parametrize("notebook_file", get_notebooks())
-def test_notebook(notebook_file):
+def test_notebook(notebook_file: str) -> None:
     _exec_notebook(notebook_file)
 
 
-def test_has_notebooks():
+def test_has_notebooks() -> None:
     assert len(get_notebooks()) >= 35, "there are probably some notebooks that were not discovered"

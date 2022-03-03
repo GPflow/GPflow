@@ -88,13 +88,16 @@ class SGPMC(GPModel, InternalDataTrainingLossMixin):
             loc=to_default_float(0.0), scale=to_default_float(1.0)
         )
 
-    def log_posterior_density(self) -> tf.Tensor:
+    # type-ignore is because of changed method signature:
+    def log_posterior_density(self) -> tf.Tensor:  # type: ignore
         return self.log_likelihood_lower_bound() + self.log_prior_density()
 
-    def _training_loss(self) -> tf.Tensor:
+    # type-ignore is because of changed method signature:
+    def _training_loss(self) -> tf.Tensor:  # type: ignore
         return -self.log_posterior_density()
 
-    def maximum_log_likelihood_objective(self) -> tf.Tensor:
+    # type-ignore is because of changed method signature:
+    def maximum_log_likelihood_objective(self) -> tf.Tensor:  # type: ignore
         return self.log_likelihood_lower_bound()
 
     def log_likelihood_lower_bound(self) -> tf.Tensor:
@@ -106,7 +109,9 @@ class SGPMC(GPModel, InternalDataTrainingLossMixin):
         fmean, fvar = self.predict_f(X_data, full_cov=False)
         return tf.reduce_sum(self.likelihood.variational_expectations(fmean, fvar, Y_data))
 
-    def predict_f(self, Xnew: InputData, full_cov=False, full_output_cov=False) -> MeanAndVariance:
+    def predict_f(
+        self, Xnew: InputData, full_cov: bool = False, full_output_cov: bool = False
+    ) -> MeanAndVariance:
         """
         Xnew is a data matrix of the points at which we want to predict
 

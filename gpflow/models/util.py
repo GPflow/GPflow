@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Callable, Union
+from typing import Any, Callable, Sequence, Union
 
 import numpy as np
 import tensorflow as tf
@@ -35,7 +35,9 @@ def inducingpoint_wrapper(
     return inducing_variable
 
 
-def _assert_equal_data(data1, data2):
+def _assert_equal_data(
+    data1: Union[tf.Tensor, Sequence[tf.Tensor]], data2: Union[tf.Tensor, Sequence[tf.Tensor]]
+) -> None:
     if isinstance(data1, tf.Tensor) and isinstance(data2, tf.Tensor):
         tf.debugging.assert_equal(data1, data2)
     else:
@@ -44,7 +46,7 @@ def _assert_equal_data(data1, data2):
 
 
 def training_loss_closure(
-    model: BayesianModel, data: Data, **closure_kwargs
+    model: BayesianModel, data: Data, **closure_kwargs: Any
 ) -> Callable[[], tf.Tensor]:
     if isinstance(model, ExternalDataTrainingLossMixin):
         return model.training_loss_closure(data, **closure_kwargs)
@@ -69,14 +71,16 @@ def maximum_log_likelihood_objective(model: BayesianModel, data: Data) -> tf.Ten
         return model.maximum_log_likelihood_objective()
 
 
-def data_input_to_tensor(structure):
+def data_input_to_tensor(structure: Any) -> Any:
     """
-    Converts non-tensor elements of a structure to TensorFlow tensors retaining the structure itself.
+    Converts non-tensor elements of a structure to TensorFlow tensors retaining the structure
+    itself.
+
     The function doesn't keep original element's dtype and forcefully converts
     them to GPflow's default float type.
     """
 
-    def convert_to_tensor(elem):
+    def convert_to_tensor(elem: Any) -> tf.Tensor:
         if tf.is_tensor(elem):
             return elem
         elif isinstance(elem, np.ndarray):

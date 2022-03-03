@@ -20,7 +20,7 @@ import gpflow
 from gpflow.config import default_float
 
 
-def test_sparse_mcmc_likelihoods_and_gradients():
+def test_sparse_mcmc_likelihoods_and_gradients() -> None:
     """
     This test makes sure that when the inducing points are the same as the data
     points, the sparse mcmc is the same as full mcmc

@@ -31,7 +31,7 @@ class Datum:
     kernel = gpflow.kernels.Matern32()
 
 
-def test_sgpr_qu():
+def test_sgpr_qu() -> None:
     rng = Datum().rng
     X = to_default_float(rng.randn(100, 2))
     Z = to_default_float(rng.randn(20, 2))

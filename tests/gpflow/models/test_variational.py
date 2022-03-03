@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import Tuple
+
 import numpy as np
 import pytest
 from numpy.testing import assert_allclose
@@ -28,24 +30,30 @@ rng = np.random.RandomState(1)
 # ------------------------------------------
 
 
-def univariate_log_marginal_likelihood(y, K, noise_var):
+def univariate_log_marginal_likelihood(y: np.ndarray, K: float, noise_var: float) -> np.ndarray:
     return -0.5 * y * y / (K + noise_var) - 0.5 * np.log(K + noise_var) - 0.5 * np.log(np.pi * 2.0)
 
 
-def univariate_posterior(y, K, noise_var):
+def univariate_posterior(
+    y: np.ndarray, K: float, noise_var: float
+) -> Tuple[np.ndarray, np.ndarray]:
     mean = K * y / (K + noise_var)
     variance = K - K / (K + noise_var)
     return mean, variance
 
 
-def univariate_prior_KL(meanA, meanB, varA, varB):
+def univariate_prior_KL(
+    meanA: np.ndarray, meanB: np.ndarray, varA: np.ndarray, varB: np.ndarray
+) -> np.ndarray:
     # KL[ qA | qB ] = E_{qA} \log [qA / qB] where qA and qB are univariate normal distributions.
     return 0.5 * (
         np.log(varB) - np.log(varA) - 1.0 + varA / varB + (meanB - meanA) * (meanB - meanA) / varB
     )
 
 
-def multivariate_prior_KL(meanA, covA, meanB, covB):
+def multivariate_prior_KL(
+    meanA: np.ndarray, covA: np.ndarray, meanB: np.ndarray, covB: np.ndarray
+) -> np.ndarray:
     # KL[ qA | qB ] = E_{qA} \log [qA / qB] where qA and aB are
     # K dimensional multivariate normal distributions.
     # Analytically tractable and equal to...
@@ -100,7 +108,7 @@ class MultiDatum:
     q_sqrt_full = np.tril(rng.rand(dim, dim))
 
 
-def test_reference_implementation_consistency():
+def test_reference_implementation_consistency() -> None:
     q_mean = rng.rand(1, 1)
     q_cov = rng.rand(1, 1)
     p_mean = rng.rand(1, 1)
@@ -116,7 +124,7 @@ def test_reference_implementation_consistency():
 
 @pytest.mark.parametrize("diag", [True, False])
 @pytest.mark.parametrize("whiten", [True, False])
-def test_variational_univariate_prior_KL(diag, whiten):
+def test_variational_univariate_prior_KL(diag: bool, whiten: bool) -> None:
     reference_kl = univariate_prior_KL(
         Datum.posterior_mean, Datum.zero_mean, Datum.posterior_var, Datum.K
     )
@@ -138,7 +146,7 @@ def test_variational_univariate_prior_KL(diag, whiten):
 
 @pytest.mark.parametrize("diag", [True, False])
 @pytest.mark.parametrize("whiten", [True, False])
-def test_variational_univariate_log_likelihood(diag, whiten):
+def test_variational_univariate_log_likelihood(diag: bool, whiten: bool) -> None:
     # reference marginal likelihood estimate
     reference_log_marginal_likelihood = univariate_log_marginal_likelihood(
         y=Datum.y_data, K=Datum.K, noise_var=Datum.noise_var
@@ -162,7 +170,7 @@ def test_variational_univariate_log_likelihood(diag, whiten):
 
 @pytest.mark.parametrize("diag", [True, False])
 @pytest.mark.parametrize("whiten", [True, False])
-def test_variational_univariate_conditionals(diag, whiten):
+def test_variational_univariate_conditionals(diag: bool, whiten: bool) -> None:
     q_mu = np.ones((1, Datum.num_latent_gps)) * Datum.posterior_mean
     ones = np.ones((1, Datum.num_latent_gps)) if diag else np.ones((1, 1, Datum.num_latent_gps))
     q_sqrt = ones * Datum.posterior_std
@@ -187,7 +195,7 @@ def test_variational_univariate_conditionals(diag, whiten):
 
 
 @pytest.mark.parametrize("whiten", [True, False])
-def test_variational_multivariate_prior_KL_full_q(whiten):
+def test_variational_multivariate_prior_KL_full_q(whiten: bool) -> None:
     cov_q = MultiDatum.q_sqrt_full @ MultiDatum.q_sqrt_full.T
     mean_prior = np.zeros((MultiDatum.dim, 1))
     cov_prior = (

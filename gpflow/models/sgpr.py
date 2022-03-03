@@ -13,18 +13,17 @@
 # limitations under the License.
 
 from collections import namedtuple
-from typing import NamedTuple, Optional, Tuple
+from typing import Optional, Tuple
 
 import numpy as np
 import tensorflow as tf
-
-from gpflow.kernels import Kernel
 
 from .. import likelihoods, posteriors
 from ..base import InputData, MeanAndVariance, RegressionData
 from ..config import default_float, default_jitter
 from ..covariances.dispatch import Kuf, Kuu
 from ..inducing_variables import InducingPoints
+from ..kernels import Kernel
 from ..mean_functions import MeanFunction
 from ..utilities import add_noise_cov, to_default_float
 from .model import GPModel
@@ -151,15 +150,17 @@ class SGPR_deprecated(SGPRBase_deprecated):
 
     CommonTensors = namedtuple("CommonTensors", ["A", "B", "LB", "AAT", "L"])
 
-    def maximum_log_likelihood_objective(self) -> tf.Tensor:
+    # type-ignore is because of changed method signature:
+    def maximum_log_likelihood_objective(self) -> tf.Tensor:  # type: ignore
         return self.elbo()
 
-    def _common_calculation(self):
+    def _common_calculation(self) -> "SGPR.CommonTensors":
         """
         Matrices used in log-det calculation
 
-        :return: A , B, LB, AAT with :math:`LLᵀ = Kᵤᵤ , A = L⁻¹K_{uf}/σ, AAT = AAᵀ, B = AAT+I, LBLBᵀ = B`
-        A is M x N, B is M x M, LB is M x M, AAT is M x M
+        :return: A , B, LB, AAT with :math:`LLᵀ = Kᵤᵤ , A = L⁻¹K_{uf}/σ, AAT = AAᵀ,
+            B = AAT+I, LBLBᵀ = B`
+            A is M x N, B is M x M, LB is M x M, AAT is M x M
         """
         x, _ = self.data
         iv = self.inducing_variable
@@ -178,7 +179,7 @@ class SGPR_deprecated(SGPRBase_deprecated):
 
         return self.CommonTensors(A, B, LB, AAT, L)
 
-    def logdet_term(self, common: NameError):
+    def logdet_term(self, common: "SGPR.CommonTensors") -> tf.Tensor:
         """
         Bound from Jensen's Inequality:
         .. math::
@@ -212,7 +213,7 @@ class SGPR_deprecated(SGPRBase_deprecated):
         logdet_k = -outdim * (half_logdet_b + 0.5 * log_sigma_sq + 0.5 * trace)
         return logdet_k
 
-    def quad_term(self, common: NamedTuple) -> tf.Tensor:
+    def quad_term(self, common: "SGPR.CommonTensors") -> tf.Tensor:
         """
         :param common: A named tuple containing matrices that will be used
         :return: Lower bound on -.5 yᵀ(K + σ²I)⁻¹y
@@ -250,7 +251,9 @@ class SGPR_deprecated(SGPRBase_deprecated):
         quad = self.quad_term(common)
         return const + logdet + quad
 
-    def predict_f(self, Xnew: InputData, full_cov=False, full_output_cov=False) -> MeanAndVariance:
+    def predict_f(
+        self, Xnew: InputData, full_cov: bool = False, full_output_cov: bool = False
+    ) -> MeanAndVariance:
 
         # could copy into posterior into a fused version
         """
@@ -344,7 +347,9 @@ class GPRFITC(SGPRBase_deprecated):
     obviously gradients are automatic in GPflow.
     """
 
-    def common_terms(self):
+    def common_terms(
+        self,
+    ) -> Tuple[tf.Tensor, tf.Tensor, tf.Tensor, tf.Tensor, tf.Tensor, tf.Tensor, tf.Tensor]:
         X_data, Y_data = self.data
         num_inducing = self.inducing_variable.num_inducing
         err = Y_data - self.mean_function(X_data)  # size [N, R]
@@ -369,7 +374,8 @@ class GPRFITC(SGPRBase_deprecated):
 
         return err, nu, Luu, L, alpha, beta, gamma
 
-    def maximum_log_likelihood_objective(self) -> tf.Tensor:
+    # type-ignore is because of changed method signature:
+    def maximum_log_likelihood_objective(self) -> tf.Tensor:  # type: ignore
         return self.fitc_log_marginal_likelihood()
 
     def fitc_log_marginal_likelihood(self) -> tf.Tensor:
@@ -389,14 +395,18 @@ class GPRFITC(SGPRBase_deprecated):
 
         # We need to deal with the matrix inverse term.
         # K_fitc^{-1} = ( Qff + \diag( \nu ) )^{-1}
-        #            = ( V^T V + \diag( \nu ) )^{-1}
+        #             = ( V^T V + \diag( \nu ) )^{-1}
         # Applying the Woodbury identity we obtain
-        #            = \diag( \nu^{-1} ) - \diag( \nu^{-1} ) V^T ( I + V \diag( \nu^{-1} ) V^T )^{-1) V \diag(\nu^{-1} )
+        #             = \diag( \nu^{-1} )
+        #                 - \diag( \nu^{-1} ) V^T ( I + V \diag( \nu^{-1} ) V^T )^{-1}
+        #                     V \diag(\nu^{-1} )
         # Let \beta =  \diag( \nu^{-1} ) err
         # and let \alpha = V \beta
-        # then Mahalanobis term = -0.5* ( \beta^T err - \alpha^T Solve( I + V \diag( \nu^{-1} ) V^T, alpha ) )
+        # then Mahalanobis term = -0.5* (
+        #    \beta^T err - \alpha^T Solve( I + V \diag( \nu^{-1} ) V^T, alpha )
+        # )
 
-        err, nu, Luu, L, alpha, beta, gamma = self.common_terms()
+        err, nu, _Luu, L, _alpha, _beta, gamma = self.common_terms()
 
         mahalanobisTerm = -0.5 * tf.reduce_sum(
             tf.square(err) / tf.expand_dims(nu, 1)
@@ -406,10 +416,12 @@ class GPRFITC(SGPRBase_deprecated):
 
         # We need to deal with the log determinant term.
         # \log \det( K_fitc ) = \log \det( Qff + \diag( \nu ) )
-        #                    = \log \det( V^T V + \diag( \nu ) )
+        #                     = \log \det( V^T V + \diag( \nu ) )
         # Applying the determinant lemma we obtain
-        #                    = \log [ \det \diag( \nu ) \det( I + V \diag( \nu^{-1} ) V^T ) ]
-        #                    = \log [ \det \diag( \nu ) ] + \log [ \det( I + V \diag( \nu^{-1} ) V^T ) ]
+        #                     = \log [ \det \diag( \nu ) \det( I + V \diag( \nu^{-1} ) V^T ) ]
+        #                     = \log [
+        #                        \det \diag( \nu ) ] + \log [ \det( I + V \diag( \nu^{-1} ) V^T )
+        #                     ]
 
         constantTerm = -0.5 * self.num_data * tf.math.log(tf.constant(2.0 * np.pi, default_float()))
         logDeterminantTerm = -0.5 * tf.reduce_sum(tf.math.log(nu)) - tf.reduce_sum(
@@ -419,7 +431,9 @@ class GPRFITC(SGPRBase_deprecated):
 
         return mahalanobisTerm + logNormalizingTerm * self.num_latent_gps
 
-    def predict_f(self, Xnew: InputData, full_cov=False, full_output_cov=False) -> MeanAndVariance:
+    def predict_f(
+        self, Xnew: InputData, full_cov: bool = False, full_output_cov: bool = False
+    ) -> MeanAndVariance:
         """
         Compute the mean and variance of the latent function at some new points
         Xnew.
@@ -457,7 +471,10 @@ class SGPR_with_posterior(SGPR_deprecated):
     enables caching for faster subsequent predictions.
     """
 
-    def posterior(self, precompute_cache=posteriors.PrecomputeCacheType.TENSOR):
+    def posterior(
+        self,
+        precompute_cache: posteriors.PrecomputeCacheType = posteriors.PrecomputeCacheType.TENSOR,
+    ) -> posteriors.SGPRPosterior:
         """
         Create the Posterior object which contains precomputed matrices for
         faster prediction.
@@ -487,7 +504,9 @@ class SGPR_with_posterior(SGPR_deprecated):
             precompute_cache=precompute_cache,
         )
 
-    def predict_f(self, Xnew: InputData, full_cov=False, full_output_cov=False) -> MeanAndVariance:
+    def predict_f(
+        self, Xnew: InputData, full_cov: bool = False, full_output_cov: bool = False
+    ) -> MeanAndVariance:
         """
         For backwards compatibility, GPR's predict_f uses the fused (no-cache)
         computation, which is more efficient during training.

@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import Optional
+
 import numpy as np
 import pytest
 
@@ -36,7 +38,7 @@ class Data:
         gpflow.kernels.Periodic(base_kernel=gpflow.kernels.SquaredExponential()),
     ],
 )
-def test_gplvm_with_kernels(kernel):
+def test_gplvm_with_kernels(kernel: Optional[gpflow.kernels.Kernel]) -> None:
     m = gpflow.models.GPLVM(Data.Y, Data.Q, kernel=kernel)
     lml_initial = m.log_marginal_likelihood()
     opt = gpflow.optimizers.Scipy()
@@ -44,7 +46,7 @@ def test_gplvm_with_kernels(kernel):
     assert m.log_marginal_likelihood() > lml_initial
 
 
-def test_bayesian_gplvm_1d():
+def test_bayesian_gplvm_1d() -> None:
     Q = 1
     kernel = gpflow.kernels.SquaredExponential()
     inducing_variable = np.linspace(0, 1, Data.M)[:, None]
@@ -63,7 +65,7 @@ def test_bayesian_gplvm_1d():
     assert m.elbo() > elbo_initial
 
 
-def test_bayesian_gplvm_2d():
+def test_bayesian_gplvm_2d() -> None:
     Q = 2  # latent dimensions
     X_data_mean = pca_reduce(Data.Y, Q)
     kernel = gpflow.kernels.SquaredExponential()
@@ -87,7 +89,7 @@ def test_bayesian_gplvm_2d():
         np.testing.assert_allclose(var_f[:, i], np.diag(var_fFull[:, :, i]))
 
 
-def test_gplvm_constructor_checks():
+def test_gplvm_constructor_checks() -> None:
     with pytest.raises(ValueError):
         assert Data.X.shape[1] == Data.Q
         latents_wrong_shape = Data.X[:, : Data.Q - 1]
@@ -100,7 +102,7 @@ def test_gplvm_constructor_checks():
         gpflow.models.GPLVM(observations_wrong_shape, Data.Q, X_data_mean=Data.X)
 
 
-def test_bayesian_gplvm_constructor_check():
+def test_bayesian_gplvm_constructor_check() -> None:
     Q = 1
     kernel = gpflow.kernels.SquaredExponential()
     inducing_variable = np.linspace(0, 1, Data.M)[:, None]

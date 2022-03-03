@@ -43,7 +43,7 @@ def _dummy_data() -> Tuple[InputData, InputData, OutputData]:
 
 
 @pytest.fixture(name="sgpr_deprecated_model", scope="module")
-def _sgpr_deprecated_model(dummy_data) -> SGPR_deprecated:
+def _sgpr_deprecated_model(dummy_data: Tuple[InputData, InputData, OutputData]) -> SGPR_deprecated:
     X, _, Y = dummy_data
     return SGPR_deprecated(
         data=(X, Y), kernel=KERNEL, inducing_variable=InducingPoints(Z), mean_function=MEAN_FUNCTION
@@ -51,7 +51,7 @@ def _sgpr_deprecated_model(dummy_data) -> SGPR_deprecated:
 
 
 @pytest.fixture(name="sgpr_model", scope="module")
-def sgpr_model(dummy_data) -> SGPR:
+def sgpr_model(dummy_data: Tuple[InputData, InputData, OutputData]) -> SGPR:
     X, _, Y = dummy_data
     return SGPR(
         data=(X, Y), kernel=KERNEL, inducing_variable=InducingPoints(Z), mean_function=MEAN_FUNCTION
@@ -63,7 +63,7 @@ def sgpr_model(dummy_data) -> SGPR:
 def test_old_vs_new_gp_fused(
     sgpr_deprecated_model: SGPR_deprecated,
     sgpr_model: SGPR,
-    dummy_data,
+    dummy_data: Tuple[InputData, InputData, OutputData],
     full_cov: bool,
     full_output_cov: bool,
 ) -> None:
@@ -88,7 +88,7 @@ def test_old_vs_new_gp_fused(
 def test_old_vs_new_with_posterior(
     sgpr_deprecated_model: SGPR_deprecated,
     sgpr_model: SGPR,
-    dummy_data,
+    dummy_data: Tuple[InputData, InputData, OutputData],
     cache_type: PrecomputeCacheType,
     full_cov: bool,
     full_output_cov: bool,
