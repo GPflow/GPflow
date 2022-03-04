@@ -56,6 +56,7 @@ This release contains contributions from:
 ## Bug Fixes and Other Changes
 
 * Minor improvement to code clarity (variable scoping) in SVGP model (#1800)
+* Improving mathematical formatting in docs (SGPR derivations) (#1806)
 
 ## Thanks to our Contributors
 
