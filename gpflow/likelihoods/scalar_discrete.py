@@ -18,10 +18,10 @@ import numpy as np
 import tensorflow as tf
 
 from .. import logdensities
-from ..base import Parameter
+from ..base import AnyNDArray, MeanAndVariance, Parameter, TensorType
 from ..config import default_float
 from ..utilities import positive, to_default_int
-from .base import MeanAndVariance, ScalarLikelihood, TensorType
+from .base import ScalarLikelihood
 from .utils import inv_probit
 
 
@@ -48,7 +48,7 @@ class Poisson(ScalarLikelihood):
     ) -> None:
         super().__init__(**kwargs)
         self.invlink = invlink
-        self.binsize = np.array(binsize, dtype=default_float())
+        self.binsize: AnyNDArray = np.array(binsize, dtype=default_float())
 
     def _scalar_log_prob(self, F: TensorType, Y: TensorType) -> tf.Tensor:
         return logdensities.poisson(Y, self.invlink(F) * self.binsize)
@@ -131,7 +131,7 @@ class Ordinal(ScalarLikelihood):
     }
     """
 
-    def __init__(self, bin_edges: np.ndarray, **kwargs: Any) -> None:
+    def __init__(self, bin_edges: AnyNDArray, **kwargs: Any) -> None:
         """
         bin_edges is a numpy array specifying at which function value the
         output label should switch. If the possible Y values are 0...K, then

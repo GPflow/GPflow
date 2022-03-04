@@ -20,7 +20,7 @@ import tensorflow as tf
 from numpy.testing import assert_allclose
 
 import gpflow
-from gpflow.base import MeanAndVariance
+from gpflow.base import AnyNDArray, MeanAndVariance
 from gpflow.conditionals import conditional, uncertain_conditional
 from gpflow.config import default_float
 from gpflow.mean_functions import Constant, Linear, MeanFunction, Zero
@@ -64,7 +64,7 @@ class MomentMatchingSVGP(gpflow.models.SVGP):
         return mean, covar
 
 
-def gen_L(n: int, *shape: int) -> np.ndarray:
+def gen_L(n: int, *shape: int) -> AnyNDArray:
     return np.array([np.tril(rng.randn(*shape)) for _ in range(n)])
 
 

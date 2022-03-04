@@ -20,19 +20,19 @@ from typing import Callable, Iterable, List, Optional, Tuple, Union
 import numpy as np
 import tensorflow as tf
 
-from ..base import TensorType
+from ..base import AnyNDArray, TensorType
 from ..config import default_float
 from ..utilities import to_default_float
 from .gauss_hermite import NDiagGHQuadrature
 
 
-def hermgauss(n: int) -> Tuple[np.ndarray, np.ndarray]:
+def hermgauss(n: int) -> Tuple[AnyNDArray, AnyNDArray]:
     x, w = np.polynomial.hermite.hermgauss(n)
     x, w = x.astype(default_float()), w.astype(default_float())
     return x, w
 
 
-def mvhermgauss(H: int, D: int) -> Tuple[np.ndarray, np.ndarray]:
+def mvhermgauss(H: int, D: int) -> Tuple[AnyNDArray, AnyNDArray]:
     """
     Return the evaluation locations 'xn', and weights 'wn' for a multivariate
     Gauss-Hermite quadrature.

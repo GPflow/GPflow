@@ -20,6 +20,7 @@ import scipy.optimize
 import tensorflow as tf
 from scipy.optimize import OptimizeResult
 
+from ..base import AnyNDArray
 from ..monitor.base import Monitor
 
 __all__ = ["Scipy"]
@@ -107,7 +108,7 @@ class Scipy:
         variables: Sequence[tf.Variable],
         compile: bool = True,
         allow_unused_variables: bool = False,
-    ) -> Callable[[np.ndarray], Tuple[np.ndarray, np.ndarray]]:
+    ) -> Callable[[AnyNDArray], Tuple[AnyNDArray, AnyNDArray]]:
         first_call = True
 
         def _tf_eval(x: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor]:
@@ -133,7 +134,7 @@ class Scipy:
         if compile:
             _tf_eval = tf.function(_tf_eval)
 
-        def _eval(x: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+        def _eval(x: AnyNDArray) -> Tuple[AnyNDArray, AnyNDArray]:
             loss, grad = _tf_eval(tf.convert_to_tensor(x))
             return loss.numpy().astype(np.float64), grad.numpy().astype(np.float64)
 
@@ -168,10 +169,10 @@ class Scipy:
     @classmethod
     def callback_func(
         cls, variables: Sequence[tf.Variable], step_callback: StepCallback
-    ) -> Callable[[np.ndarray], None]:
+    ) -> Callable[[AnyNDArray], None]:
         step = 0  # type: int
 
-        def _callback(x: np.ndarray) -> None:
+        def _callback(x: AnyNDArray) -> None:
             nonlocal step
 
             if isinstance(step_callback, Monitor):

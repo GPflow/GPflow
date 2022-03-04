@@ -17,15 +17,17 @@ from typing import Any, Callable, Sequence, Union
 import numpy as np
 import tensorflow as tf
 
+from ..base import AnyNDArray
 from ..config import default_float
 from ..inducing_variables import InducingPoints, InducingVariables
 from .model import BayesianModel
 from .training_mixins import Data, ExternalDataTrainingLossMixin
 
+InducingVariablesLike = Union[InducingVariables, tf.Tensor, AnyNDArray]
+InducingPointsLike = Union[InducingPoints, tf.Tensor, AnyNDArray]
 
-def inducingpoint_wrapper(
-    inducing_variable: Union[InducingVariables, tf.Tensor, np.ndarray]
-) -> InducingVariables:
+
+def inducingpoint_wrapper(inducing_variable: InducingVariablesLike) -> InducingVariables:
     """
     This wrapper allows transparently passing either an InducingVariables
     object or an array specifying InducingPoints positions.

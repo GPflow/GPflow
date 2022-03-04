@@ -14,6 +14,7 @@
 
 
 import tempfile
+from typing import Sequence
 
 import numpy as np
 import pytest
@@ -21,7 +22,7 @@ import tensorflow as tf
 import tensorflow_probability as tfp
 
 import gpflow
-from gpflow.base import PriorOn, TensorData
+from gpflow.base import AnyNDArray, PriorOn, TensorData
 from gpflow.config import default_float
 from gpflow.utilities import positive, triangular
 
@@ -219,7 +220,7 @@ def test_construct_parameter_from_existing_parameter_value_becomes_invalid() -> 
 def test_construct_parameter_with_variable_shape() -> None:
     parameter = gpflow.Parameter([[1, 2, 3]], shape=[None, None])
 
-    values = [
+    values: Sequence[AnyNDArray] = [
         np.ones((0, 0), dtype=default_float()),
         np.ones((1, 3), dtype=default_float()),
         np.ones((3, 1), dtype=default_float()),
@@ -239,7 +240,7 @@ def test_construct_parameter_with_variable_shape__different_constrained_shape() 
         constrained_shape=[None, None],
     )
 
-    values = [
+    values: Sequence[AnyNDArray] = [
         # The triangular() transform doesn't appear to support 0x0 matrices.
         np.tril(np.ones((1, 1), dtype=default_float())),
         np.tril(np.ones((2, 2), dtype=default_float())),

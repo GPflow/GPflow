@@ -17,14 +17,13 @@ import re
 from functools import lru_cache
 from typing import Any, Callable, Dict, Mapping, Optional, Pattern, Tuple, Type, TypeVar, Union
 
-import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
 from packaging.version import Version
 from tabulate import tabulate
 from tensorflow.python.util.object_identity import Reference
 
-from ..base import Parameter
+from ..base import AnyNDArray, Parameter
 from ..config import default_summary_fmt
 
 __all__ = [
@@ -62,7 +61,7 @@ def multiple_assign(module: tf.Module, parameters: Mapping[Path, tf.Tensor]) -> 
         reference_var_dict[path].assign(value)
 
 
-def read_values(module: tf.Module) -> Dict[Path, np.ndarray]:
+def read_values(module: tf.Module) -> Dict[Path, AnyNDArray]:
     """Returns a dictionary of numpy values of the module parameters (variables)."""
     return {k: v.numpy() for k, v in parameter_dict(module).items()}
 
@@ -329,7 +328,7 @@ def _first_three_elements_regexp() -> Pattern[str]:
     return re.compile(pat_re)
 
 
-def _str_tensor_value(value: np.ndarray) -> str:
+def _str_tensor_value(value: AnyNDArray) -> str:
     value_str = str(value)
     if value.size <= 3:
         return value_str

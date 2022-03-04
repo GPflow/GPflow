@@ -12,13 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Tuple
+from typing import Tuple, cast
 
 import numpy as np
 import pytest
 from numpy.testing import assert_allclose
 
 import gpflow
+from gpflow.base import AnyNDArray
 from gpflow.kernels import SquaredExponential
 from gpflow.likelihoods import Gaussian
 from tests.gpflow.kernels.reference import ref_rbf_kernel
@@ -30,30 +31,36 @@ rng = np.random.RandomState(1)
 # ------------------------------------------
 
 
-def univariate_log_marginal_likelihood(y: np.ndarray, K: float, noise_var: float) -> np.ndarray:
+def univariate_log_marginal_likelihood(
+    y: AnyNDArray, K: AnyNDArray, noise_var: AnyNDArray
+) -> AnyNDArray:
     return -0.5 * y * y / (K + noise_var) - 0.5 * np.log(K + noise_var) - 0.5 * np.log(np.pi * 2.0)
 
 
 def univariate_posterior(
-    y: np.ndarray, K: float, noise_var: float
-) -> Tuple[np.ndarray, np.ndarray]:
+    y: AnyNDArray, K: AnyNDArray, noise_var: AnyNDArray
+) -> Tuple[AnyNDArray, AnyNDArray]:
     mean = K * y / (K + noise_var)
     variance = K - K / (K + noise_var)
     return mean, variance
 
 
 def univariate_prior_KL(
-    meanA: np.ndarray, meanB: np.ndarray, varA: np.ndarray, varB: np.ndarray
-) -> np.ndarray:
+    meanA: AnyNDArray, meanB: AnyNDArray, varA: AnyNDArray, varB: AnyNDArray
+) -> AnyNDArray:
     # KL[ qA | qB ] = E_{qA} \log [qA / qB] where qA and qB are univariate normal distributions.
     return 0.5 * (
-        np.log(varB) - np.log(varA) - 1.0 + varA / varB + (meanB - meanA) * (meanB - meanA) / varB
+        np.log(varB)
+        - np.log(varA)
+        - 1.0
+        + varA / varB
+        + cast(AnyNDArray, meanB - meanA) * cast(AnyNDArray, meanB - meanA) / varB
     )
 
 
 def multivariate_prior_KL(
-    meanA: np.ndarray, covA: np.ndarray, meanB: np.ndarray, covB: np.ndarray
-) -> np.ndarray:
+    meanA: AnyNDArray, covA: AnyNDArray, meanB: AnyNDArray, covB: AnyNDArray
+) -> AnyNDArray:
     # KL[ qA | qB ] = E_{qA} \log [qA / qB] where qA and aB are
     # K dimensional multivariate normal distributions.
     # Analytically tractable and equal to...
@@ -61,7 +68,7 @@ def multivariate_prior_KL(
     #        - K + log(det(covB)) - log (det(covA)))
     K = covA.shape[0]
     traceTerm = 0.5 * np.trace(np.linalg.solve(covB, covA))
-    delta = meanB - meanA
+    delta: AnyNDArray = meanB - meanA
     mahalanobisTerm = 0.5 * np.dot(delta.T, np.linalg.solve(covB, delta))
     constantTerm = -0.5 * K
     priorLogDeterminantTerm = 0.5 * np.linalg.slogdet(covB)[1]
@@ -82,13 +89,13 @@ def multivariate_prior_KL(
 
 class Datum:
     num_latent_gps = 1
-    y_data = 2.0
+    y_data = np.array(2.0)
     X = np.atleast_2d(np.array([0.0]))
     Y = np.atleast_2d(np.array([y_data]))
     Z = X.copy()
-    zero_mean = 0.0
-    K = 1.0
-    noise_var = 0.5
+    zero_mean = np.array(0.0)
+    K = np.array(1.0)
+    noise_var = np.array(0.5)
     posterior_mean, posterior_var = univariate_posterior(y=y_data, K=K, noise_var=noise_var)
     posterior_std = np.sqrt(posterior_var)
     data = (X, Y)
@@ -101,8 +108,8 @@ class MultiDatum:
     X = rng.randn(dim, 1)
     Z = X.copy()
     noise_var = 0.5
-    signal_var = 1.5
-    ls = 1.7
+    signal_var = np.array(1.5)
+    ls = np.array(1.7)
     q_mean = rng.randn(dim, num_latent_gps)
     q_sqrt_diag = rng.rand(dim, num_latent_gps)
     q_sqrt_full = np.tril(rng.rand(dim, dim))

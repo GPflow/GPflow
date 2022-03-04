@@ -10,7 +10,7 @@ import gpflow
 import gpflow.inducing_variables.multioutput as mf
 import gpflow.kernels.multioutput as mk
 from gpflow import set_trainable
-from gpflow.base import MeanAndVariance, RegressionData
+from gpflow.base import AnyNDArray, RegressionData
 from gpflow.conditionals import sample_conditional
 from gpflow.conditionals.util import (
     fully_correlated_conditional,
@@ -127,7 +127,7 @@ def expand_cov(q_sqrt: tf.Tensor, W: tf.Tensor) -> tf.Tensor:
     return q_sqrt_expanded[None, ...]
 
 
-def create_q_sqrt(M: int, L: int) -> np.ndarray:
+def create_q_sqrt(M: int, L: int) -> AnyNDArray:
     """ returns an array of L lower triangular matrices of size M x M """
     return np.array([np.tril(rng.randn(M, M)) for _ in range(L)])  # [L, M, M]
 
@@ -236,7 +236,7 @@ def test_sample_conditional(whiten: bool, full_cov: bool, full_output_cov: bool)
     )  # [P, M, M]
 
     Z = Data.X[: Data.M, ...]  # [M, D]
-    Xs = np.ones((Data.N, Data.D), dtype=float_type)
+    Xs: AnyNDArray = np.ones((Data.N, Data.D), dtype=float_type)
 
     inducing_variable = InducingPoints(Z)
     kernel = SquaredExponential()
@@ -293,7 +293,7 @@ def test_sample_conditional_mixedkernel() -> None:
 
     Z = Data.X[: Data.M, ...]  # M x D
     N = int(10e5)
-    Xs = np.ones((N, Data.D), dtype=float_type)
+    Xs: AnyNDArray = np.ones((N, Data.D), dtype=float_type)
 
     # Path 1: mixed kernel: most efficient route
     W = np.random.randn(Data.P, Data.L)

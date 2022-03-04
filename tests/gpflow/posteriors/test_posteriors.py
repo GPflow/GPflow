@@ -11,9 +11,7 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-import warnings
-from inspect import isabstract
-from typing import Any, Callable, DefaultDict, Iterable, Optional, Set, Type
+from typing import Any, Callable, DefaultDict, Optional, Set, Type
 
 import numpy as np
 import pytest

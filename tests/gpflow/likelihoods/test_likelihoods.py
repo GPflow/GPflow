@@ -26,13 +26,13 @@ from gpflow.config import default_float, default_int
 
 from gpflow.likelihoods import (  # isort:skip
     # classes we cannot test:
+    HeteroskedasticTFPConditional,
     Likelihood,
-    QuadratureLikelihood,
-    ScalarLikelihood,
     MonteCarloLikelihood,
     MultiLatentLikelihood,
     MultiLatentTFPConditional,
-    HeteroskedasticTFPConditional,
+    QuadratureLikelihood,
+    ScalarLikelihood,
     # classes we do test in this file:
     Bernoulli,
     Beta,
@@ -250,7 +250,7 @@ def _make_montecarlo_mu_var_y() -> Sequence[tf.Tensor]:
     return mu_var_y
 
 
-def _make_montecarlo_likelihoods(var: TensorType) -> Tuple[GaussianMC, Gaussian]:
+def _make_montecarlo_likelihoods(var: float) -> Tuple[GaussianMC, Gaussian]:
     gaussian_mc_likelihood = GaussianMC(var)
     gaussian_mc_likelihood.num_monte_carlo_points = 1000000
     return gaussian_mc_likelihood, Gaussian(var)

@@ -20,6 +20,7 @@ import pytest
 import gpflow
 from gpflow.inducing_variables import InducingPoints
 from gpflow.kernels import Kernel, Matern32
+from gpflow.models.util import InducingPointsLike
 
 rng = np.random.RandomState(0)
 
@@ -48,7 +49,7 @@ class ModelSetup:
 
     def get_model(
         self,
-        Z: InducingPoints,
+        Z: InducingPointsLike,
         num_latent_gps: int,
         data: Optional[gpflow.base.RegressionData] = None,
     ) -> gpflow.models.GPModel:

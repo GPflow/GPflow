@@ -15,13 +15,14 @@
 import copy
 from typing import Any, Callable, List, Optional, Union
 
-import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
 
+from ..base import AnyNDArray
+
 
 def cast(
-    value: Union[tf.Tensor, np.ndarray], dtype: tf.DType, name: Optional[str] = None
+    value: Union[tf.Tensor, AnyNDArray], dtype: tf.DType, name: Optional[str] = None
 ) -> tf.Tensor:
     if not tf.is_tensor(value):
         # TODO(awav): Release TF2.2 resolves this issue

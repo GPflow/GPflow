@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 
 import gpflow
-from gpflow.base import RegressionData
+from gpflow.base import AnyNDArray, RegressionData
 from gpflow.models.vgp import VGP_deprecated, VGP_with_posterior
 from gpflow.posteriors import PrecomputeCacheType
 
@@ -22,7 +22,7 @@ def make_models(
     return mold, mnew
 
 
-def _get_data_for_tests() -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+def _get_data_for_tests() -> Tuple[AnyNDArray, AnyNDArray, AnyNDArray]:
     """Helper function to create testing data"""
     X = np.random.randn(5, 6)
     Y = np.random.randn(5, 2)

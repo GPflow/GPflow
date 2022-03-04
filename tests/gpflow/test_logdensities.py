@@ -20,6 +20,7 @@ from numpy.testing import assert_allclose
 from scipy.stats import multivariate_normal as mvn
 
 from gpflow import logdensities
+from gpflow.base import AnyNDArray
 from gpflow.utilities import to_default_float
 
 rng = np.random.RandomState(1)
@@ -112,7 +113,7 @@ def test_laplace(x: float, mu: float, sigma: float) -> None:
 @pytest.mark.parametrize("x", [randn(4, 10), randn(4, 1)])
 @pytest.mark.parametrize("mu", [randn(4, 10), randn(4, 1)])
 @pytest.mark.parametrize("cov_sqrt", [randn(4, 4), np.eye(4)])
-def test_multivariate_normal(x: np.ndarray, mu: np.ndarray, cov_sqrt: np.ndarray) -> None:
+def test_multivariate_normal(x: AnyNDArray, mu: AnyNDArray, cov_sqrt: AnyNDArray) -> None:
     cov = np.dot(cov_sqrt, cov_sqrt.T)
     L = np.linalg.cholesky(cov)
 

@@ -1,9 +1,11 @@
 import numpy as np
 
+from gpflow.base import AnyNDArray
+
 
 def ref_rbf_kernel(
-    X: np.ndarray, lengthscales: np.ndarray, signal_variance: np.ndarray
-) -> np.ndarray:
+    X: AnyNDArray, lengthscales: AnyNDArray, signal_variance: AnyNDArray
+) -> AnyNDArray:
     N, _ = X.shape
     kernel = np.zeros((N, N))
     for row_index in range(N):
@@ -19,12 +21,12 @@ def ref_rbf_kernel(
 
 
 def ref_arccosine_kernel(
-    X: np.ndarray,
-    order: np.ndarray,
-    weight_variances: np.ndarray,
-    bias_variance: np.ndarray,
-    signal_variance: np.ndarray,
-) -> np.ndarray:
+    X: AnyNDArray,
+    order: int,
+    weight_variances: AnyNDArray,
+    bias_variance: AnyNDArray,
+    signal_variance: AnyNDArray,
+) -> AnyNDArray:
     num_points = X.shape[0]
     kernel = np.empty((num_points, num_points))
     for row in range(num_points):
@@ -58,12 +60,12 @@ def ref_arccosine_kernel(
 
 
 def ref_periodic_kernel(
-    X: np.ndarray,
-    base_name: np.ndarray,
-    lengthscales: np.ndarray,
-    signal_variance: np.ndarray,
-    period: np.ndarray,
-) -> np.ndarray:
+    X: AnyNDArray,
+    base_name: str,
+    lengthscales: AnyNDArray,
+    signal_variance: AnyNDArray,
+    period: AnyNDArray,
+) -> AnyNDArray:
     """
     Calculates K(X) for the periodic kernel based on various base kernels.
     """
