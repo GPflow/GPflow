@@ -45,17 +45,17 @@ To obtain an efficient and stable evaluation on the bound $\mathcal L$, we first
 Now, to obtain a better conditioned matrix for inversion, we rotate by $\mathbf L$, where $\mathbf L\mathbf L^\top = \mathbf K_{uu}$:
 
 \begin{equation}
-[\mathbf Q_{ff} + \sigma^2 \mathbf I ]^{-1} = \sigma^{-2} \mathbf I - \sigma^{-4} \mathbf K_{fu}\color{red}{\mathbf L^{-\top} \mathbf L^\top}[\mathbf K_{uu} + \mathbf K_{uf}K_{fu}\sigma^{-2}]^{-1}\color{red}{\mathbf L \mathbf L^{-1}}\mathbf K_{uf}
+[\mathbf Q_{ff} + \sigma^2 \mathbf I ]^{-1} = \sigma^{-2} \mathbf I - \sigma^{-4} \mathbf K_{fu}\color{red}{\mathbf L^{-\top} \mathbf L^\top}[\mathbf K_{uu} + \mathbf K_{uf} \mathbf K_{fu}\sigma^{-2}]^{-1}\color{red}{\mathbf L \mathbf L^{-1}}\mathbf K_{uf}
 \end{equation}
 
 This matrix is better conditioned because, for many kernels, it has eigenvalues bounded above and below. For more details, see section 3.4.3 of [Gaussian Processes for Machine Learning](http://www.gaussianprocess.org/gpml/chapters/RW.pdf).
 
 \begin{equation}
-\phantom{[\mathbf Q_{ff} + \sigma^2 \mathbf I ]^{-1}} = \sigma^{-2} \mathbf I - \sigma^{-4} \mathbf K_{fu}\color{red}{\mathbf L^{-\top}} [\color{red}{\mathbf L^{-1}}\mathbf (K_{uu} + \mathbf K_{uf}K_{fu}\sigma^{-2})\color{red}{\mathbf L^{-\top}}]^{-1}\color{red}{ \mathbf L^{-1}}\mathbf K_{uf}
+\phantom{[\mathbf Q_{ff} + \sigma^2 \mathbf I ]^{-1}} = \sigma^{-2} \mathbf I - \sigma^{-4} \mathbf K_{fu}\color{red}{\mathbf L^{-\top}} [\color{red}{\mathbf L^{-1}}(\mathbf K_{uu} + \mathbf K_{uf} \mathbf K_{fu}\sigma^{-2})\color{red}{\mathbf L^{-\top}}]^{-1}\color{red}{ \mathbf L^{-1}}\mathbf K_{uf}
 \end{equation}
 
 \begin{equation}
-\phantom{[\mathbf Q_{ff} + \sigma^2 \mathbf I ]^{-1} }= \sigma^{-2} \mathbf I - \sigma^{-4} \mathbf K_{fu}\color{red}{\mathbf L^{-\top}} [\mathbf I + \color{red}{\mathbf L^{-1}}\mathbf (\mathbf K_{uf}K_{fu})\color{red}{\mathbf L^{-\top}}\sigma^{-2}]^{-1}\color{red}{ \mathbf L^{-1}}\mathbf K_{uf}
+\phantom{[\mathbf Q_{ff} + \sigma^2 \mathbf I ]^{-1} }= \sigma^{-2} \mathbf I - \sigma^{-4} \mathbf K_{fu}\color{red}{\mathbf L^{-\top}} [\mathbf I + \color{red}{\mathbf L^{-1}}\mathbf (\mathbf K_{uf} \mathbf K_{fu})\color{red}{\mathbf L^{-\top}}\sigma^{-2}]^{-1}\color{red}{ \mathbf L^{-1}}\mathbf K_{uf}
 \end{equation}
 
 For notational convenience, we'll define $\mathbf L^{-1}\mathbf K_{uf}\sigma^{-1} \triangleq \mathbf A$, and  $[\mathbf I + \mathbf A\mathbf A^\top]\triangleq \mathbf B$:
