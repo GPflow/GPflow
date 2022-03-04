@@ -74,7 +74,6 @@ class SVGP_deprecated(GPModel, ExternalDataTrainingLossMixin):
         # init the super class, accept args
         super().__init__(kernel, likelihood, mean_function, num_latent_gps)
         self.num_data = num_data
-        self.q_diag = q_diag
         self.whiten = whiten
         self.inducing_variable = inducingpoint_wrapper(inducing_variable)
 
@@ -120,7 +119,7 @@ class SVGP_deprecated(GPModel, ExternalDataTrainingLossMixin):
         self.q_mu = Parameter(q_mu, dtype=default_float())  # [M, P]
 
         if q_sqrt is None:
-            if self.q_diag:
+            if q_diag:
                 ones = np.ones((num_inducing, self.num_latent_gps), dtype=default_float())
                 self.q_sqrt = Parameter(ones, transform=positive())  # [M, P]
             else:
