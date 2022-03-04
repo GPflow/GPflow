@@ -1,14 +1,8 @@
-from types import ModuleType
-
 import numpy as np
-import pytest
 import tensorflow as tf
 import tensorflow_probability as tfp
 
 import gpflow
-import gpflow.utilities.misc as misc
-import gpflow.utilities.traversal as traversal
-import gpflow.utilities.utilities as utilities
 from gpflow.models.util import data_input_to_tensor
 
 
@@ -38,9 +32,3 @@ def test_data_input_to_tensor() -> None:
     assert output3[0].dtype == tf.float64
     assert output3[1][0].dtype == tf.float16
     assert output3[1][1].dtype == tf.float16
-
-
-@pytest.mark.parametrize("module", [misc, traversal])
-def test_utilities_utilities(module: ModuleType) -> None:
-    for d in module.__all__:  # type: ignore  # mypy doesn't seem to know __all__.
-        assert getattr(utilities, d)

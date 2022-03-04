@@ -6,8 +6,7 @@ Release notes for all past releases are available in the ['Releases' section](ht
 
 ## Breaking Changes
 
-* <DOCUMENT BREAKING CHANGES HERE>
-* <THIS SECTION SHOULD CONTAIN API AND BEHAVIORAL BREAKING CHANGES>
+* `gpflow.utilities.utilities` has been removed. It was scheduled for deletion in `2.3.0`. Use `gpflow.utilities` instead.
 
 ## Known Caveats
 
@@ -30,7 +29,7 @@ Release notes for all past releases are available in the ['Releases' section](ht
 
 This release contains contributions from:
 
-<INSERT>, <NAME>, <HERE>, <USING>, <GITHUB>, <HANDLE>
+jesnie
 
 
 # Release 2.4.1 (next upcoming release in progress)
