@@ -32,7 +32,7 @@ This release contains contributions from:
 jesnie
 
 
-# Release 2.4.1 (next upcoming release in progress)
+# Release 2.5.0 (next upcoming release in progress)
 
 <INSERT SMALL BLURB ABOUT RELEASE FOCUS AREA AND POTENTIAL TOOLCHAIN CHANGES>
 
@@ -43,9 +43,8 @@ jesnie
 
 ## Known Caveats
 
-* <CAVEATS REGARDING THE RELEASE (BUT NOT BREAKING CHANGES).>
-* <ADDING/BUMPING DEPENDENCIES SHOULD GO HERE>
-* <KNOWN LACK OF SUPPORT ON SOME PLATFORM SHOULD GO HERE>
+* Dropped support for Python 3.6. New minimum version is 3.7.
+* Dropped support for TensorFlow 2.2 and 2.3. New minimum version is 2.4
 
 ## Major Features and Improvements
 
@@ -61,7 +60,7 @@ jesnie
 
 This release contains contributions from:
 
-ltiao
+ltiao, jesnie
 
 
 # Release 2.4.0

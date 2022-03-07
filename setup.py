@@ -15,8 +15,8 @@ from setuptools import find_packages, setup
 # not to append tensorflow and tensorflow_probability to the requirements:
 if os.environ.get("READTHEDOCS") != "True":
     requirements = [
-        "tensorflow>=2.2.0",
-        "tensorflow-probability>0.10.0",  # tensorflow-probability==0.10.0 doesn't install correctly, https://github.com/tensorflow/probability/issues/991
+        "tensorflow>=2.4.0",
+        "tensorflow-probability>=0.12.0",
         # NOTE: once we require tensorflow-probability>=0.12, we can remove our custom deepcopy handling
         "setuptools>=41.0.0",  # to satisfy dependency constraints
     ]
@@ -33,7 +33,6 @@ requirements.extend(
         "typing_extensions",
         "packaging",
         "deprecated",
-        "dataclasses;python_version<'3.7'",
         "lark>=1.1.0",
     ]
 )
@@ -69,14 +68,14 @@ setup(
     include_package_data=True,
     install_requires=requirements,
     extras_require={"ImageToTensorBoard": ["matplotlib"]},
-    python_requires=">=3.6",
+    python_requires=">=3.7",
     classifiers=[
         "License :: OSI Approved :: Apache Software License",
         "Natural Language :: English",
         "Operating System :: MacOS :: MacOS X",
         "Operating System :: Microsoft :: Windows",
         "Operating System :: POSIX :: Linux",
-        "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.7",
         "Topic :: Scientific/Engineering :: Artificial Intelligence",
     ],
 )
