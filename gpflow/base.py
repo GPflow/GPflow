@@ -139,6 +139,9 @@ class Parameter(tfp.util.TransformedVariable):
         :param shape: Convenience shortcut for setting both `unconstrained_shape` and
             `constrained_shape` to the same value.
         """
+        if transform:
+            name = name or transform.name
+
         if isinstance(value, Parameter):
             transform = transform or value.transform
             prior = prior or value.prior
