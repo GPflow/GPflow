@@ -20,9 +20,9 @@ from typing import Tuple
 import pytest
 
 from gpflow.base import TensorType
-from gpflow.experimental.check_shapes import ShapeMismatchError, check_shapes
+from gpflow.experimental.check_shapes import ShapeMismatchError, check_shapes, get_shape
 
-from .utils import t
+from .utils import t, t_unk
 
 
 def test_check_shapes__constant() -> None:
@@ -39,6 +39,8 @@ def test_check_shapes__constant() -> None:
     f(t(None, 3), t(2, 4))
     f(t(2, None), t(2, 4))
     f(t(2, 3), t(None, 4))
+    f(t_unk(), t(2, 4))
+    f(t(2, 3), t_unk())
 
 
 def test_check_shapes__constant__bad_input() -> None:
@@ -81,6 +83,9 @@ def test_check_shapes__var_dim() -> None:
     f(t(None, 3), t(2, 4))
     f(t(2, None), t(2, 4))
     f(t(2, 3), t(None, 4))
+    f(t(2, 3), t(2, None))
+    f(t_unk(), t(2, 4))
+    f(t(2, 3), t_unk())
 
 
 def test_check_shapes__var_dim__bad_input() -> None:
@@ -131,6 +136,10 @@ def test_check_shapes__var_rank() -> None:
     f(t(2, None), t(2, 2, 3), t(3, 2, 2, 4), t(3, 2, 2), leading_dims=2)
     f(t(2, 2), t(None, 2, 3), t(3, 2, 2, 4), t(3, 2, 2), leading_dims=2)
     f(t(2, 2), t(2, 2, None), t(3, 2, 2, 4), t(3, 2, 2), leading_dims=2)
+    f(t_unk(), t(2, 2, 3), t(3, 2, 2, 4), t(3, 2, 2), leading_dims=2)
+    f(t(2, 2), t_unk(), t(3, 2, 2, 4), t(3, 2, 2), leading_dims=2)
+    f(t(2, 2), t(2, 2, 3), t_unk(), t(3, 2, 2), leading_dims=2)
+    f(t(2, 2), t(2, 2, 3), t(3, 2, 2, 4), t_unk(), leading_dims=2)
 
 
 def test_check_shapes__var_rank__bad_input() -> None:
@@ -161,6 +170,73 @@ def test_check_shapes__var_rank__bad_return() -> None:
 
     with pytest.raises(ShapeMismatchError):
         f(t(2), t(2, 3), t(3, 2, 4), t(3, 2))
+
+
+def test_check_shapes__anonymous() -> None:
+    @check_shapes(
+        "a: [., d1]",
+        "b: [None, d2]",
+        "c: [..., d1]",
+        "d: [*, d2]",
+        "return: [..., d1, d2]",
+    )
+    def f(a: TensorType, b: TensorType, c: TensorType, d: TensorType) -> TensorType:
+        return t(*get_shape(c)[:-1], get_shape(a)[-1], get_shape(b)[-1])  # type: ignore
+
+    f(t(1, 2), t(1, 3), t(2), t(3))
+    f(t(1, 2), t(1, 3), t(1, 2), t(1, 3))
+    f(t(1, 2), t(1, 3), t(1, 1, 2), t(1, 1, 3))
+    f(t(None, 2), t(1, 3), t(2), t(3))
+    f(t(1, None), t(1, 3), t(2), t(3))
+    f(t(1, 2), t(None, 3), t(2), t(3))
+    f(t(1, 2), t(1, None), t(2), t(3))
+    f(t(1, 2), t(1, 3), t(None), t(3))
+    f(t(1, 2), t(1, 3), t(2), t(None))
+
+
+def test_check_shapes__anonymous__bad_imput() -> None:
+    @check_shapes(
+        "a: [., d1]",
+        "b: [None, d2]",
+        "c: [..., d1]",
+        "d: [*, d2]",
+        "return: [..., d1, d2]",
+    )
+    def f(a: TensorType, b: TensorType, c: TensorType, d: TensorType) -> TensorType:
+        return t(*get_shape(c)[:-1], get_shape(a)[-1], get_shape(b)[-1])  # type: ignore
+
+    with pytest.raises(ShapeMismatchError):
+        f(t(2), t(1, 3), t(2), t(3))
+
+    with pytest.raises(ShapeMismatchError):
+        f(t(1, 1, 2), t(1, 3), t(2), t(3))
+
+    with pytest.raises(ShapeMismatchError):
+        f(t(1, 2), t(3), t(2), t(3))
+
+    with pytest.raises(ShapeMismatchError):
+        f(t(1, 2), t(1, 1, 3), t(2), t(3))
+
+    with pytest.raises(ShapeMismatchError):
+        f(t(1, 2), t(1, 3), t(), t(3))
+
+    with pytest.raises(ShapeMismatchError):
+        f(t(1, 2), t(1, 3), t(2), t())
+
+
+def test_check_shapes__anonymous__bad_return() -> None:
+    @check_shapes(
+        "a: [., d1]",
+        "b: [None, d2]",
+        "c: [..., d1]",
+        "d: [*, d2]",
+        "return: [..., d1, d2]",
+    )
+    def f(a: TensorType, b: TensorType, c: TensorType, d: TensorType) -> TensorType:
+        return t(*get_shape(c)[:-1], get_shape(a)[-1] + 1, get_shape(b)[-1])  # type: ignore
+
+    with pytest.raises(ShapeMismatchError):
+        f(t(1, 2), t(1, 3), t(2), t(3))
 
 
 def test_check_shapes__scalar() -> None:

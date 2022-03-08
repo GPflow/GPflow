@@ -27,22 +27,20 @@ class ParsedDimensionSpec:
     variable_rank: bool
 
     def __post_init__(self) -> None:
-        assert (self.constant is None) != (
-            self.variable_name is None
-        ), "Argument must be either constant or variable."
+        assert (
+            self.variable_name is None or self.constant is None
+        ), "Dimension cannot be both constant and variable."
         if self.variable_rank:
-            assert (
-                self.variable_rank is not None
-            ), "Variable-rank dimensions must be bound to a variable."
             assert self.constant is None, "Constants cannot have a variable rank."
 
     def __repr__(self) -> str:
         if self.constant is not None:
             return str(self.constant)
+        elif self.variable_rank:
+            variable_name = self.variable_name or ""
+            return variable_name + "..."
         else:
-            assert self.variable_name is not None
-            suffix = "..." if self.variable_rank else ""
-            return self.variable_name + suffix
+            return self.variable_name or "."
 
 
 @dataclass(frozen=True)

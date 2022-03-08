@@ -99,9 +99,15 @@ class _ParseArgumentSpec(_TreeVisitor):
         (token,) = _token_children(tree)
         return ParsedDimensionSpec(constant=None, variable_name=token, variable_rank=False)
 
+    def dimension_spec_anonymous(self, tree: Tree[Token]) -> ParsedDimensionSpec:
+        return ParsedDimensionSpec(constant=None, variable_name=None, variable_rank=False)
+
     def dimension_spec_variable_rank(self, tree: Tree[Token]) -> ParsedDimensionSpec:
         (token,) = _token_children(tree)
         return ParsedDimensionSpec(constant=None, variable_name=token, variable_rank=True)
+
+    def dimension_spec_anonymous_variable_rank(self, tree: Tree[Token]) -> ParsedDimensionSpec:
+        return ParsedDimensionSpec(constant=None, variable_name=None, variable_rank=True)
 
 
 class _RewriteDocString(_TreeVisitor):
@@ -136,9 +142,11 @@ class _RewriteDocString(_TreeVisitor):
         for dim in shape_spec.dims:
             if dim.constant is not None:
                 out.append(str(dim.constant))
-            if dim.variable_name is not None:
+            elif dim.variable_name is not None:
                 suffix = "..." if dim.variable_rank else ""
                 out.append(f"*{dim.variable_name}*{suffix}")
+            else:
+                out.append("..." if dim.variable_rank else ".")
         return ", ".join(out)
 
     def _guess_indent(self, docstring: str) -> Optional[int]:

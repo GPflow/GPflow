@@ -80,14 +80,15 @@ Shape specification
 
 Shapes are specified by the syntax
 ``[<dimension specifier 1>, <dimension specifer 2>, ..., <dimension specifier n>]``, where
-``<dimension specifier i>`` is
-one of:
+``<dimension specifier i>`` is one of:
 
     * ``<integer>``, to require that dimension to have that exact size.
     * ``<name>``, to bind that dimension to a variable. Dimensions bound to the same variable must
       have the same size, though that size can be anything.
+    * ``None`` or ``.`` to allow exactly one single dimension without constraints.
     * ``*<name>`` or ``<name>...``, to bind *any* number of dimensions to a variable. Again,
       multiple uses of the same variable name must match the same dimension sizes.
+    * ``*`` or ``...``, to allow *any* number of dimensions without constraints.
 
 A scalar shape is specified by ``[]``.
 
@@ -97,8 +98,12 @@ For example::
         "...: []",
         "...: [3, 4]",
         "...: [width, height]",
+        "...: [., height]",
+        "...: [width, None],
         "...: [n_samples, *batch]",
         "...: [batch..., 2]",
+        "...: [n_samples, *]",
+        "...: [..., 2]",
     )
     def f(...):
         ...
@@ -184,10 +189,57 @@ will have `.__doc__`::
 
         Model predictions.
     \"\"\"
+
+
+Shapes of custom objects
+++++++++++++++++++++++++
+
+:mod:`check_shapes` uses the function :func:`get_shape` to extract the shape of an object.
+
+:func:`get_shape` uses :func:`functools.singledispatch` to branch on the type of object to the shape
+from, and you can extend this to extract shapes for you own custom types.
+
+For example::
+
+    import numpy as np
+
+    from gpflow.experimental.check_shapes import Shape, check_shapes, get_shape
+
+
+    class LinearModel:
+        def __init__(self, weights: np.ndarray) -> None:
+            self._weights = weights
+
+        @check_shapes(
+            "self: [n_features, n_labels]",
+            "features: [n_rows, n_features]",
+            "return: [n_rows, n_labels]",
+        )
+        def predict(self, features: np.ndarray) -> None:
+            return features @ self._weights
+
+
+    @get_shape.register(LinearModel)
+    def get_linear_model_shape(model: LinearModel) -> Shape:
+        return model._weights.shape
+
+
+    @check_shapes(
+        "model: [n_features, n_labels]",
+        "test_features: [n_rows, n_features]",
+        "test_labels: [n_rows, n_labels]",
+    )
+    def loss(
+        model: LinearModel, test_features: np.ndarray, test_labels: np.ndarray
+    ) -> None:
+        prediction = model.predict(test_features)
+        return np.mean(np.sqrt(np.mean((prediction - test_labels) ** 2, axis=-1)))
 """
 
+from .base_types import Dimension, Shape
 from .check_shapes import check_shapes
 from .errors import ArgumentReferenceError, ShapeMismatchError
 from .inheritance import inherit_check_shapes
+from .shapes import get_shape
 
-__all__ = [export for export in dir()]
+__all__ = list(dir())

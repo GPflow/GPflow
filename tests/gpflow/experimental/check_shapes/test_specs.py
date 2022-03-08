@@ -56,6 +56,13 @@ from .utils import make_argument_ref, make_shape_spec, varrank
             ),
             "foo: (x, y..., z)",
         ),
+        (
+            ParsedArgumentSpec(
+                make_argument_ref("foo"),
+                make_shape_spec(None, varrank(None), None),
+            ),
+            "foo: (., ..., .)",
+        ),
     ],
 )
 def test_specs(argument_spec: ParsedArgumentSpec, expected_repr: str) -> None:
