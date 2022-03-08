@@ -15,7 +15,7 @@
 # pylint: disable=unused-argument  # Bunch of fake functions below has unused arguments.
 
 from dataclasses import dataclass
-from typing import Tuple
+from typing import Optional, Tuple
 
 import pytest
 
@@ -317,6 +317,29 @@ def test_check_shapes__argument_refs() -> None:
 
     with pytest.raises(ShapeMismatchError):
         f(Input(ins=(t(2, 1, 1), t(1, 1, 2))))
+
+
+def test_check_shapes__none() -> None:
+    @dataclass
+    class Input:
+        ins: Optional[Tuple[Optional[TensorType], ...]]
+
+    @dataclass
+    class Output:
+        out: Optional[TensorType]
+
+    @check_shapes(
+        "x.ins[0]: [1, 2]",
+        "return[0].out: [3, 4]",
+    )
+    def f(x: Optional[Input]) -> Tuple[Output, ...]:
+        return (Output(out=t(3, 4)),)
+
+    # Don't crash...
+    f(Input(ins=(t(1, 2),)))
+    f(None)
+    f(Input(ins=None))
+    f(Input(ins=(None,)))
 
 
 def test_check_shapes__rewrites_docstring() -> None:

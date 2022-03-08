@@ -62,6 +62,8 @@ The ``<argument specifier>`` can then be modified to refer to elements of the ob
 
 We do not support looking up values in a  ``dict``.
 
+If the argument, or any of the looked-up values, are `None` the check is skipped.
+
 For example::
 
     @check_shapes(
