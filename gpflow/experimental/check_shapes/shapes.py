@@ -14,6 +14,7 @@
 """
 Code for extracting shapes from object.
 """
+import collections.abc as cabc
 from functools import singledispatch
 from typing import Any, Sequence, Union
 
@@ -21,11 +22,11 @@ import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
 
-from .base_types import ActualShape
+from .base_types import Shape
 
 
 @singledispatch
-def get_shape(shaped: Any) -> ActualShape:
+def get_shape(shaped: Any) -> Shape:
     """
     Returns the shape of the given object.
 
@@ -39,14 +40,13 @@ def get_shape(shaped: Any) -> ActualShape:
 @get_shape.register(bool)
 @get_shape.register(int)
 @get_shape.register(float)
-def get_scalar_shape(shaped: Any) -> ActualShape:
+@get_shape.register(str)
+def get_scalar_shape(shaped: Any) -> Shape:
     return ()
 
 
-@get_shape.register(Sequence)
-def get_sequence_shape(shaped: Sequence[Any]) -> ActualShape:
-    if isinstance(shaped, str):
-        raise NotImplementedError("Strings do not have shapes.")
+@get_shape.register(cabc.Sequence)
+def get_sequence_shape(shaped: Sequence[Any]) -> Shape:
     if len(shaped) == 0:
         # If the sequence doesn't have any elements we cannot use the first element to determine the
         # shape, and the shape is unknown.
@@ -58,16 +58,14 @@ def get_sequence_shape(shaped: Sequence[Any]) -> ActualShape:
 
 
 @get_shape.register(np.ndarray)
-def get_ndarray_shape(shaped: np.ndarray) -> ActualShape:
+def get_ndarray_shape(shaped: np.ndarray) -> Shape:
     return shaped.shape
 
 
 @get_shape.register(tf.Tensor)
 @get_shape.register(tf.Variable)
 @get_shape.register(tfp.util.DeferredTensor)
-def get_tensorflow_shape(
-    shaped: Union[tf.Tensor, tf.Variable, tfp.util.DeferredTensor]
-) -> ActualShape:
+def get_tensorflow_shape(shaped: Union[tf.Tensor, tf.Variable, tfp.util.DeferredTensor]) -> Shape:
     shape = shaped.shape
     if not shape:
         return None

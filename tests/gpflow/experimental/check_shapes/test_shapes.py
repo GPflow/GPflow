@@ -18,7 +18,7 @@ import pytest
 import tensorflow as tf
 
 from gpflow.base import Parameter
-from gpflow.experimental.check_shapes import ActualShape, get_shape
+from gpflow.experimental.check_shapes import Shape, get_shape
 
 
 @pytest.mark.parametrize(
@@ -28,7 +28,7 @@ from gpflow.experimental.check_shapes import ActualShape, get_shape
         (True, ()),
         (0, ()),
         (0.0, ()),
-        ("foo", NotImplementedError),
+        ("foo", ()),
         ((), None),
         ((0,), (1,)),
         ([[0.1, 0.2]], (1, 2)),
@@ -42,7 +42,7 @@ from gpflow.experimental.check_shapes import ActualShape, get_shape
         (Parameter(np.zeros((4, 2))), (4, 2)),
     ],
 )
-def test_get_shape(shaped: Any, expected_shape: Union[ActualShape, Type[Exception]]) -> None:
+def test_get_shape(shaped: Any, expected_shape: Union[Shape, Type[Exception]]) -> None:
     if isinstance(expected_shape, type) and issubclass(expected_shape, Exception):
 
         with pytest.raises(expected_shape):

@@ -203,7 +203,7 @@ For example::
 
     import numpy as np
 
-    from gpflow.experimental.check_shapes import ActualShape, check_shapes, get_shape
+    from gpflow.experimental.check_shapes import Shape, check_shapes, get_shape
 
 
     class LinearModel:
@@ -220,7 +220,7 @@ For example::
 
 
     @get_shape.register(LinearModel)
-    def get_linear_model_shape(model: LinearModel) -> ActualShape:
+    def get_linear_model_shape(model: LinearModel) -> Shape:
         return model._weights.shape
 
 
@@ -236,7 +236,7 @@ For example::
         return np.mean(np.sqrt(np.mean((prediction - test_labels) ** 2, axis=-1)))
 """
 
-from .base_types import ActualDimension, ActualShape
+from .base_types import Dimension, Shape
 from .check_shapes import check_shapes
 from .errors import ArgumentReferenceError, ShapeMismatchError
 from .inheritance import inherit_check_shapes

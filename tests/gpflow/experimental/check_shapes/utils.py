@@ -18,7 +18,7 @@ from dataclasses import dataclass
 from typing import Union
 
 from gpflow.base import TensorType
-from gpflow.experimental.check_shapes import ActualDimension, ActualShape, get_shape
+from gpflow.experimental.check_shapes import Dimension, Shape, get_shape
 from gpflow.experimental.check_shapes.argument_ref import (
     ArgumentRef,
     AttributeArgumentRef,
@@ -31,11 +31,11 @@ from gpflow.experimental.check_shapes.specs import ParsedDimensionSpec, ParsedSh
 @dataclass(frozen=True)
 class TestShaped:
 
-    test_shape: ActualShape
+    test_shape: Shape
 
 
 @get_shape.register(TestShaped)
-def get_test_shaped_shape(shaped: TestShaped) -> ActualShape:
+def get_test_shaped_shape(shaped: TestShaped) -> Shape:
     return shaped.test_shape
 
 
@@ -46,7 +46,7 @@ def t_unk() -> TestShaped:
     return TestShaped(None)
 
 
-def t(*shape: ActualDimension) -> TensorType:
+def t(*shape: Dimension) -> TensorType:
     """
     Creates an object with the given shape, for testing.
     """

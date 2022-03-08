@@ -18,14 +18,14 @@ from typing import Any, Callable, Optional, Tuple, TypeVar
 
 C = TypeVar("C", bound=Callable[..., Any])
 
-ActualDimension = Optional[int]
+Dimension = Optional[int]
 """
 The size of a single observed dimension.
 
 Use `None` if the size of that dimension is unknown.
 """
 
-ActualShape = Optional[Tuple[ActualDimension, ...]]
+Shape = Optional[Tuple[Dimension, ...]]
 """
 The complete shape of an observed object.
 
