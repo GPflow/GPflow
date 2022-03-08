@@ -22,6 +22,7 @@ import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
 
+from ...base import AnyNDArray
 from .base_types import Shape
 
 
@@ -58,7 +59,7 @@ def get_sequence_shape(shaped: Sequence[Any]) -> Shape:
 
 
 @get_shape.register(np.ndarray)
-def get_ndarray_shape(shaped: np.ndarray) -> Shape:
+def get_ndarray_shape(shaped: AnyNDArray) -> Shape:
     return shaped.shape
 
 

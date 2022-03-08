@@ -15,7 +15,7 @@
 Utilities for testing the `check_shapes` library.
 """
 from dataclasses import dataclass
-from typing import Union
+from typing import Optional, Union
 
 from gpflow.base import TensorType
 from gpflow.experimental.check_shapes import Dimension, Shape, get_shape

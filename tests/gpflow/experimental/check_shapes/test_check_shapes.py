@@ -20,7 +20,7 @@ from typing import Tuple
 import pytest
 
 from gpflow.base import TensorType
-from gpflow.experimental.check_shapes import ShapeMismatchError, check_shapes
+from gpflow.experimental.check_shapes import ShapeMismatchError, check_shapes, get_shape
 
 from .utils import t, t_unk
 
@@ -181,7 +181,7 @@ def test_check_shapes__anonymous() -> None:
         "return: [..., d1, d2]",
     )
     def f(a: TensorType, b: TensorType, c: TensorType, d: TensorType) -> TensorType:
-        return t(*c.shape[:-1], a.shape[-1], b.shape[-1])
+        return t(*get_shape(c)[:-1], get_shape(a)[-1], get_shape(b)[-1])  # type: ignore
 
     f(t(1, 2), t(1, 3), t(2), t(3))
     f(t(1, 2), t(1, 3), t(1, 2), t(1, 3))
@@ -203,7 +203,7 @@ def test_check_shapes__anonymous__bad_imput() -> None:
         "return: [..., d1, d2]",
     )
     def f(a: TensorType, b: TensorType, c: TensorType, d: TensorType) -> TensorType:
-        return t(*c.shape[:-1], a.shape[-1], b.shape[-1])
+        return t(*get_shape(c)[:-1], get_shape(a)[-1], get_shape(b)[-1])  # type: ignore
 
     with pytest.raises(ShapeMismatchError):
         f(t(2), t(1, 3), t(2), t(3))
@@ -233,7 +233,7 @@ def test_check_shapes__anonymous__bad_return() -> None:
         "return: [..., d1, d2]",
     )
     def f(a: TensorType, b: TensorType, c: TensorType, d: TensorType) -> TensorType:
-        return t(*c.shape[:-1], a.shape[-1] + 1, b.shape[-1])
+        return t(*get_shape(c)[:-1], get_shape(a)[-1] + 1, get_shape(b)[-1])  # type: ignore
 
     with pytest.raises(ShapeMismatchError):
         f(t(1, 2), t(1, 3), t(2), t(3))
