@@ -1,19 +1,50 @@
 version: 2.1
 
+parameters:
+  min_py_ver:
+    type: string
+    default: "3.7"
+  max_py_ver:
+    type: string
+    default: "3.10"
+  min_tf_ver:
+    type: string
+    default: "2.4"
+  max_tf_ver:
+    type: string
+    default: "2.8"
+  min_tfp_ver:
+    type: string
+    default: "0.12"
+  max_tfp_ver:
+    type: string
+    default: "0.16"
+
 commands:
   setup_venv:
+    parameters:
+      py_ver:
+        type: string
     steps:
       - checkout
       - run:
           name: Setup virtual environment
           command: |
             # Run in a fresh virtual environment, to avoid conflicts with preinstalled packages.
-            virtualenv -p python3.7 .venv
+            virtualenv -p python<<parameters.py_ver>> .venv
             source .venv/bin/activate
             pip install --progress-bar=off -U pip
   install_gpflow:
+    parameters:
+      py_ver:
+        type: string
+      tf_ver:
+        type: string
+      tfp_ver:
+        type: string
     steps:
-      - setup_venv
+      - setup_venv:
+          py_ver: <<parameters.py_ver>>
       - run:
           name: Install GPflow
           command: "
@@ -25,14 +56,24 @@ commands:
             pip install --progress-bar=off
               -e .
               -r tests_requirements.txt
-              tensorflow==2.6.* tensorflow-probability==0.14.* \n
+              tensorflow==<<parameters.tf_ver>>
+              tensorflow-probability==<<parameters.tfp_ver>> \n
           "
   run_tests:
     parameters:
+      py_ver:
+        type: string
+      tf_ver:
+        type: string
+      tfp_ver:
+        type: string
       pytest_filter:
         type: string
     steps:
-      - install_gpflow
+      - install_gpflow:
+          py_ver: <<parameters.py_ver>>
+          tf_ver: <<parameters.tf_ver>>
+          tfp_ver: <<parameters.tfp_ver>>
       - run:
           name: Run tests
           command: |
@@ -46,11 +87,20 @@ commands:
 
 jobs:
   verify-install:
+    parameters:
+      py_ver:
+        type: string
+      tf_ver:
+        type: string
+      tfp_ver:
+        type: string
     docker:
-      - image: cimg/python:3.7
-
+      - image: cimg/python:<<parameters.py_ver>>
     steps:
-      - install_gpflow
+      - install_gpflow:
+          py_ver: <<parameters.py_ver>>
+          tf_ver: <<parameters.tf_ver>>
+          tfp_ver: <<parameters.tfp_ver>>
       - run:
           name: Check installed dependencies are compatible
           command: |
@@ -59,11 +109,20 @@ jobs:
             python -c "import gpflow"
 
   type-check:
+    parameters:
+      py_ver:
+        type: string
+      tf_ver:
+        type: string
+      tfp_ver:
+        type: string
     docker:
-      - image: cimg/python:3.7
-
+      - image: cimg/python:<<parameters.py_ver>>
     steps:
-      - install_gpflow
+      - install_gpflow:
+          py_ver: <<parameters.py_ver>>
+          tf_ver: <<parameters.tf_ver>>
+          tfp_ver: <<parameters.tfp_ver>>
       - run:
           name: Run type check
           command: |
@@ -71,11 +130,20 @@ jobs:
             mypy gpflow tests
 
   format-check:
+    parameters:
+      py_ver:
+        type: string
+      tf_ver:
+        type: string
+      tfp_ver:
+        type: string
     docker:
-      - image: cimg/python:3.7
-
+      - image: cimg/python:<<parameters.py_ver>>
     steps:
-      - install_gpflow
+      - install_gpflow:
+          py_ver: <<parameters.py_ver>>
+          tf_ver: <<parameters.tf_ver>>
+          tfp_ver: <<parameters.tfp_ver>>
       - run:
           name: Run format check
           command: |
@@ -83,29 +151,46 @@ jobs:
             make format-check
 
   unit-test:
+    parameters:
+      py_ver:
+        type: string
+      tf_ver:
+        type: string
+      tfp_ver:
+        type: string
     docker:
-      - image: cimg/python:3.7
-
+      - image: cimg/python:<<parameters.py_ver>>
     steps:
       - run_tests:
+          py_ver: <<parameters.py_ver>>
+          tf_ver: <<parameters.tf_ver>>
+          tfp_ver: <<parameters.tfp_ver>>
           pytest_filter: not notebooks
 
   notebook-test:
+    parameters:
+      py_ver:
+        type: string
+      tf_ver:
+        type: string
+      tfp_ver:
+        type: string
     docker:
-      - image: cimg/python:3.7
-
+      - image: cimg/python:<<parameters.py_ver>>
     steps:
       - run_tests:
+          py_ver: <<parameters.py_ver>>
+          tf_ver: <<parameters.tf_ver>>
+          tfp_ver: <<parameters.tfp_ver>>
           pytest_filter: notebooks
 
   trigger-docs-generation:
     docker:
-      - image: cimg/python:3.7
+      - image: cimg/python:<<pipeline.parameters.min_py_ver>>
         environment:
             ORGANIZATION: GPflow
             PROJECT: docs
             BRANCH: << pipeline.git.branch >>
-
     steps:
       - run:
           name: Trigger the Build Job in Docs repo
@@ -119,7 +204,7 @@ jobs:
 
   deploy:
     docker:
-      - image: cimg/python:3.7
+      - image: cimg/python:<<pipeline.parameters.min_py_ver>>
     steps:
       - checkout
       - run:
@@ -134,7 +219,7 @@ jobs:
           name: Install twine
           command: |
             # Run in a fresh virtual environment, to avoid conflicts with preinstalled packages.
-            virtualenv -p python3.7 .venv
+            virtualenv -p python<<pipeline.parameters.min_py_ver>> .venv
             source .venv/bin/activate
             pip install --progress-bar=off -U pip
             pip install --progress-bar=off twine
@@ -161,40 +246,125 @@ workflows:
   build_test_and_deploy:
     jobs:
       - verify-install:
+          name: verify-install-min
+          py_ver: <<pipeline.parameters.min_py_ver>>
+          tf_ver: <<pipeline.parameters.min_tf_ver>>
+          tfp_ver: <<pipeline.parameters.min_tfp_ver>>
+          filters:
+            tags:
+              only: /^v[0-9]+(\.[0-9]+)*(-rc[0-9]+)?/
+      - verify-install:
+          name: verify-install-max
+          py_ver: <<pipeline.parameters.max_py_ver>>
+          tf_ver: <<pipeline.parameters.max_tf_ver>>
+          tfp_ver: <<pipeline.parameters.max_tfp_ver>>
           filters:
             tags:
               only: /^v[0-9]+(\.[0-9]+)*(-rc[0-9]+)?/
       - type-check:
+          name: type-check-min
+          py_ver: <<pipeline.parameters.min_py_ver>>
+          tf_ver: <<pipeline.parameters.min_tf_ver>>
+          tfp_ver: <<pipeline.parameters.min_tfp_ver>>
+          filters:
+            tags:
+              only: /^v[0-9]+(\.[0-9]+)*(-rc[0-9]+)?/
+      - type-check:
+          name: type-check-max
+          py_ver: <<pipeline.parameters.max_py_ver>>
+          tf_ver: <<pipeline.parameters.max_tf_ver>>
+          tfp_ver: <<pipeline.parameters.max_tfp_ver>>
           filters:
             tags:
               only: /^v[0-9]+(\.[0-9]+)*(-rc[0-9]+)?/
       - format-check:
+          name: format-check-min
+          py_ver: <<pipeline.parameters.min_py_ver>>
+          tf_ver: <<pipeline.parameters.min_tf_ver>>
+          tfp_ver: <<pipeline.parameters.min_tfp_ver>>
+          filters:
+            tags:
+              only: /^v[0-9]+(\.[0-9]+)*(-rc[0-9]+)?/
+      - format-check:
+          name: format-check-max
+          py_ver: <<pipeline.parameters.max_py_ver>>
+          tf_ver: <<pipeline.parameters.max_tf_ver>>
+          tfp_ver: <<pipeline.parameters.max_tfp_ver>>
           filters:
             tags:
               only: /^v[0-9]+(\.[0-9]+)*(-rc[0-9]+)?/
       - unit-test:
+          name: unit-test-min
+          py_ver: <<pipeline.parameters.min_py_ver>>
+          tf_ver: <<pipeline.parameters.min_tf_ver>>
+          tfp_ver: <<pipeline.parameters.min_tfp_ver>>
           requires:
-            - verify-install
-            - type-check
-            - format-check
+            - verify-install-min
+            - verify-install-max
+            - type-check-min
+            - type-check-max
+            - format-check-min
+            - format-check-max
+          filters:
+            tags:
+              only: /^v[0-9]+(\.[0-9]+)*(-rc[0-9]+)?/
+      - unit-test:
+          name: unit-test-max
+          py_ver: <<pipeline.parameters.max_py_ver>>
+          tf_ver: <<pipeline.parameters.max_tf_ver>>
+          tfp_ver: <<pipeline.parameters.max_tfp_ver>>
+          requires:
+            - verify-install-min
+            - verify-install-max
+            - type-check-min
+            - type-check-max
+            - format-check-min
+            - format-check-max
           filters:
             tags:
               only: /^v[0-9]+(\.[0-9]+)*(-rc[0-9]+)?/
       - notebook-test:
+          name: notebook-test-min
+          py_ver: <<pipeline.parameters.min_py_ver>>
+          tf_ver: <<pipeline.parameters.min_tf_ver>>
+          tfp_ver: <<pipeline.parameters.min_tfp_ver>>
           requires:
-            - verify-install
-            - type-check
-            - format-check
+            - verify-install-min
+            - verify-install-max
+            - type-check-min
+            - type-check-max
+            - format-check-min
+            - format-check-max
+          filters:
+            tags:
+              only: /^v[0-9]+(\.[0-9]+)*(-rc[0-9]+)?/
+      - notebook-test:
+          name: notebook-test-max
+          py_ver: <<pipeline.parameters.max_py_ver>>
+          tf_ver: <<pipeline.parameters.max_tf_ver>>
+          tfp_ver: <<pipeline.parameters.max_tfp_ver>>
+          requires:
+            - verify-install-min
+            - verify-install-max
+            - type-check-min
+            - type-check-max
+            - format-check-min
+            - format-check-max
           filters:
             tags:
               only: /^v[0-9]+(\.[0-9]+)*(-rc[0-9]+)?/
       - trigger-docs-generation:
           requires:
-            - verify-install
-            - type-check
-            - format-check
-            - unit-test
-            - notebook-test
+            - verify-install-min
+            - verify-install-max
+            - type-check-min
+            - type-check-max
+            - format-check-min
+            - format-check-max
+            - unit-test-min
+            - unit-test-max
+            - notebook-test-min
+            - notebook-test-max
           filters:
             branches:
               only:
@@ -202,11 +372,16 @@ workflows:
                 - develop
       - deploy:
           requires:
-            - verify-install
-            - type-check
-            - format-check
-            - unit-test
-            - notebook-test
+            - verify-install-min
+            - verify-install-max
+            - type-check-min
+            - type-check-max
+            - format-check-min
+            - format-check-max
+            - unit-test-min
+            - unit-test-max
+            - notebook-test-min
+            - notebook-test-max
           filters:
             tags:
               only: /^v[0-9]+(\.[0-9]+)*(-rc[0-9]+)?/
