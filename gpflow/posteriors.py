@@ -355,7 +355,7 @@ class GPRPosterior(AbstractPosterior):
             cov = tf.broadcast_to(tf.expand_dims(cov, -3), cov_shape)  # [..., R, N, N]
 
         else:
-            cov = Knn - tf.einsum('ij,jk,ki->i', Knm, Qinv, Kmn)  # [..., N]
+            cov = Knn - tf.einsum("ij,jk,ki->i", Knm, Qinv, Kmn)  # [..., N]
             cov_shape = tf.concat([leading_dims, [num_func, N]], 0)  # [..., R, N]
             cov = tf.broadcast_to(tf.expand_dims(cov, -2), cov_shape)  # [..., R, N]
             cov = tf.linalg.adjoint(cov)
