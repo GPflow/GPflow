@@ -54,14 +54,14 @@ def check_shapes(*specs: str) -> Callable[[C], C]:
         def wrapped(*args: Any, **kwargs: Any) -> Any:
             try:
                 bound_arguments = signature.bind(*args, **kwargs)
-            except TypeError:
+            except TypeError as e:
                 # TypeError is raised if *args and **kwargs don't actually match the arguments of
                 # `func`. In that case we just call `func` normally, which will also result in an
                 # error, but an error with the error message the user is used to.
                 func(*args, **kwargs)
                 raise AssertionError(
                     "The above line should fail so this line should never be reached."
-                )
+                ) from e
             bound_arguments.apply_defaults()
             arg_map = bound_arguments.arguments
             context: Dict[str, Union[int, List[Optional[int]]]] = {}
@@ -111,14 +111,14 @@ def _assert_shapes(
         for dim_spec in expected:
 
             if dim_spec.variable_rank:
-                assert (
-                    dim_spec.variable_name is not None
-                ), "All variable-rank ParsedDimensionSpec must be bound to a variable."
-
-                expected_name = dim_spec.variable_name
                 variable_rank_len = actual_len - (expected_len - n_variable_rank)
                 actual_dims = actual[actual_i : actual_i + variable_rank_len]
                 actual_i += variable_rank_len
+
+                expected_name = dim_spec.variable_name
+                if expected_name is None:
+                    # Anonymous dimension spec - we don't care about the actual values.
+                    continue
 
                 expected_dims = context.get(expected_name)
                 if expected_dims is None:
@@ -141,8 +141,9 @@ def _assert_shapes(
                 if actual_dim is not None:
                     if dim_spec.constant is not None:
                         _assert(dim_spec.constant == actual_dim)
-                    else:
-                        assert dim_spec.variable_name is not None
+                    elif dim_spec.variable_name is not None:
                         expected_dim = context.setdefault(dim_spec.variable_name, actual_dim)
                         _assert(expected_dim == actual_dim)
+                    else:
+                        pass  # Anonymous dimension - we don't care about the actual value.
                 actual_i += 1

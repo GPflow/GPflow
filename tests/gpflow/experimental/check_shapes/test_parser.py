@@ -182,6 +182,67 @@ _TEST_DATA = [
         """,
     ),
     TestData(
+        "anonymous",
+        (
+            "a: [., d1]",
+            "b: [None, d2]",
+            "c: [..., d1]",
+            "d: [*, d2]",
+            "return: [..., d1, d2]",
+        ),
+        (
+            ParsedArgumentSpec(
+                make_argument_ref("a"),
+                make_shape_spec(None, "d1"),
+            ),
+            ParsedArgumentSpec(
+                make_argument_ref("b"),
+                make_shape_spec(None, "d2"),
+            ),
+            ParsedArgumentSpec(
+                make_argument_ref("c"),
+                make_shape_spec(varrank(None), "d1"),
+            ),
+            ParsedArgumentSpec(
+                make_argument_ref("d"),
+                make_shape_spec(varrank(None), "d2"),
+            ),
+            ParsedArgumentSpec(
+                make_argument_ref("return"),
+                make_shape_spec(varrank(None), "d1", "d2"),
+            ),
+        ),
+        """
+        :param a: Parameter a.
+        :param b: Parameter b.
+        :param c: Parameter c.
+        :param d: Parameter d.
+        :returns: Return value.
+        """,
+        """
+        :param a:
+            * **a** has shape [., *d1*].
+
+            Parameter a.
+        :param b:
+            * **b** has shape [., *d2*].
+
+            Parameter b.
+        :param c:
+            * **c** has shape [..., *d1*].
+
+            Parameter c.
+        :param d:
+            * **d** has shape [..., *d2*].
+
+            Parameter d.
+        :returns:
+            * **return** has shape [..., *d1*, *d2*].
+
+            Return value.
+        """,
+    ),
+    TestData(
         "scalars",
         (
             "a: []",

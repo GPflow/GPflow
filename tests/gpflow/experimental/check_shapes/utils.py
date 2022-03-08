@@ -39,15 +39,15 @@ def t(*shape: Optional[int]) -> TensorType:
 
 @dataclass
 class varrank:
-    name: str
+    name: Optional[str]
 
 
-def make_shape_spec(*dims: Union[int, str, varrank]) -> ParsedShapeSpec:
+def make_shape_spec(*dims: Union[int, str, varrank, None]) -> ParsedShapeSpec:
     shape = []
     for dim in dims:
         if isinstance(dim, int):
             shape.append(ParsedDimensionSpec(constant=dim, variable_name=None, variable_rank=False))
-        elif isinstance(dim, str):
+        elif dim is None or isinstance(dim, str):
             shape.append(ParsedDimensionSpec(constant=None, variable_name=dim, variable_rank=False))
         else:
             assert isinstance(dim, varrank)

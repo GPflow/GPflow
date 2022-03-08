@@ -163,6 +163,73 @@ def test_check_shapes__var_rank__bad_return() -> None:
         f(t(2), t(2, 3), t(3, 2, 4), t(3, 2))
 
 
+def test_check_shapes__anonymous() -> None:
+    @check_shapes(
+        "a: [., d1]",
+        "b: [None, d2]",
+        "c: [..., d1]",
+        "d: [*, d2]",
+        "return: [..., d1, d2]",
+    )
+    def f(a: TensorType, b: TensorType, c: TensorType, d: TensorType) -> TensorType:
+        return t(*c.shape[:-1], a.shape[-1], b.shape[-1])
+
+    f(t(1, 2), t(1, 3), t(2), t(3))
+    f(t(1, 2), t(1, 3), t(1, 2), t(1, 3))
+    f(t(1, 2), t(1, 3), t(1, 1, 2), t(1, 1, 3))
+    f(t(None, 2), t(1, 3), t(2), t(3))
+    f(t(1, None), t(1, 3), t(2), t(3))
+    f(t(1, 2), t(None, 3), t(2), t(3))
+    f(t(1, 2), t(1, None), t(2), t(3))
+    f(t(1, 2), t(1, 3), t(None), t(3))
+    f(t(1, 2), t(1, 3), t(2), t(None))
+
+
+def test_check_shapes__anonymous__bad_imput() -> None:
+    @check_shapes(
+        "a: [., d1]",
+        "b: [None, d2]",
+        "c: [..., d1]",
+        "d: [*, d2]",
+        "return: [..., d1, d2]",
+    )
+    def f(a: TensorType, b: TensorType, c: TensorType, d: TensorType) -> TensorType:
+        return t(*c.shape[:-1], a.shape[-1], b.shape[-1])
+
+    with pytest.raises(ShapeMismatchError):
+        f(t(2), t(1, 3), t(2), t(3))
+
+    with pytest.raises(ShapeMismatchError):
+        f(t(1, 1, 2), t(1, 3), t(2), t(3))
+
+    with pytest.raises(ShapeMismatchError):
+        f(t(1, 2), t(3), t(2), t(3))
+
+    with pytest.raises(ShapeMismatchError):
+        f(t(1, 2), t(1, 1, 3), t(2), t(3))
+
+    with pytest.raises(ShapeMismatchError):
+        f(t(1, 2), t(1, 3), t(), t(3))
+
+    with pytest.raises(ShapeMismatchError):
+        f(t(1, 2), t(1, 3), t(2), t())
+
+
+def test_check_shapes__anonymous__bad_return() -> None:
+    @check_shapes(
+        "a: [., d1]",
+        "b: [None, d2]",
+        "c: [..., d1]",
+        "d: [*, d2]",
+        "return: [..., d1, d2]",
+    )
+    def f(a: TensorType, b: TensorType, c: TensorType, d: TensorType) -> TensorType:
+        return t(*c.shape[:-1], a.shape[-1] + 1, b.shape[-1])
+
+    with pytest.raises(ShapeMismatchError):
+        f(t(1, 2), t(1, 3), t(2), t(3))
+
+
 def test_check_shapes__scalar() -> None:
     @check_shapes(
         "a: []",
