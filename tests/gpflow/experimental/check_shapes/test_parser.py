@@ -19,6 +19,7 @@ from typing import Optional, Tuple
 
 import pytest
 
+from gpflow.experimental.check_shapes.config import set_rewrite_docstrings
 from gpflow.experimental.check_shapes.parser import parse_and_rewrite_docstring, parse_argument_spec
 from gpflow.experimental.check_shapes.specs import ParsedArgumentSpec
 
@@ -752,3 +753,11 @@ def test_parse_argument_spec(data: TestData) -> None:
 def test_parse_and_rewrite_docstring(data: TestData) -> None:
     rewritten_docstring = parse_and_rewrite_docstring(data.doc, data.expected_specs)
     assert data.expected_doc == rewritten_docstring
+
+
+@pytest.mark.parametrize("data", _TEST_DATA, ids=str)
+def test_parse_and_rewrite_docstring__disable(data: TestData) -> None:
+    set_rewrite_docstrings(None)
+
+    rewritten_docstring = parse_and_rewrite_docstring(data.doc, data.expected_specs)
+    assert data.doc == rewritten_docstring
