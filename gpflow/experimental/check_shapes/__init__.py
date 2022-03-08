@@ -189,10 +189,57 @@ will have `.__doc__`::
 
         Model predictions.
     \"\"\"
+
+
+Shapes of custom objects
+++++++++++++++++++++++++
+
+:mod:`check_shapes` uses the function :func:`get_shape` to extract the shape of an object.
+
+:func:`get_shape` uses :func:`functools.singledispatch` to branch on the type of object to the shape
+from, and you can extend this to extract shapes for you own custom types.
+
+For example::
+
+    import numpy as np
+
+    from gpflow.experimental.check_shapes import Shape, check_shapes, get_shape
+
+
+    class LinearModel:
+        def __init__(self, weights: np.ndarray) -> None:
+            self._weights = weights
+
+        @check_shapes(
+            "self: [n_features, n_labels]",
+            "features: [n_rows, n_features]",
+            "return: [n_rows, n_labels]",
+        )
+        def predict(self, features: np.ndarray) -> None:
+            return features @ self._weights
+
+
+    @get_shape.register(LinearModel)
+    def get_linear_model_shape(model: LinearModel) -> Shape:
+        return model._weights.shape
+
+
+    @check_shapes(
+        "model: [n_features, n_labels]",
+        "test_features: [n_rows, n_features]",
+        "test_labels: [n_rows, n_labels]",
+    )
+    def loss(
+        model: LinearModel, test_features: np.ndarray, test_labels: np.ndarray
+    ) -> None:
+        prediction = model.predict(test_features)
+        return np.mean(np.sqrt(np.mean((prediction - test_labels) ** 2, axis=-1)))
 """
 
+from .base_types import Dimension, Shape
 from .check_shapes import check_shapes
 from .errors import ArgumentReferenceError, ShapeMismatchError
 from .inheritance import inherit_check_shapes
+from .shapes import get_shape
 
 __all__ = list(dir())

@@ -16,9 +16,9 @@ Utilities for testing the `check_shapes` library.
 """
 from dataclasses import dataclass
 from typing import Optional, Union
-from unittest.mock import MagicMock
 
 from gpflow.base import TensorType
+from gpflow.experimental.check_shapes import Dimension, Shape, get_shape
 from gpflow.experimental.check_shapes.argument_ref import (
     ArgumentRef,
     AttributeArgumentRef,
@@ -28,16 +28,32 @@ from gpflow.experimental.check_shapes.argument_ref import (
 from gpflow.experimental.check_shapes.specs import ParsedDimensionSpec, ParsedShapeSpec
 
 
-def t(*shape: Optional[int]) -> TensorType:
-    """
-    Creates a mock tensor of the given shape.
-    """
-    mock_tensor = MagicMock()
-    mock_tensor.shape = shape
-    return mock_tensor
+@dataclass(frozen=True)
+class TestShaped:
+
+    test_shape: Shape
 
 
-@dataclass
+@get_shape.register(TestShaped)
+def get_test_shaped_shape(shaped: TestShaped) -> Shape:
+    return shaped.test_shape
+
+
+def t_unk() -> TestShaped:
+    """
+    Creates an object with an unknown shape, for testing.
+    """
+    return TestShaped(None)
+
+
+def t(*shape: Dimension) -> TensorType:
+    """
+    Creates an object with the given shape, for testing.
+    """
+    return TestShaped(shape)
+
+
+@dataclass(frozen=True)
 class varrank:
     name: Optional[str]
 
