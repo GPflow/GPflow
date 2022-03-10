@@ -1,13 +1,8 @@
-.. GPflow documentation master file, created by
-   sphinx-quickstart on Mon Jul 25 12:37:37 2016.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
-
 GPflow Documentation
 ==================================
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
    :caption: Intro:
 
    intro
@@ -24,8 +19,8 @@ GPflow Documentation
    derivations
 
 .. toctree::
-   :maxdepth: 3
+   :maxdepth: 1
    :glob:
    :caption: API:
 
-   gpflow/index
+   API reference <api/gpflow/index>
