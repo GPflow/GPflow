@@ -12,8 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from collections import namedtuple
-from typing import Any, List, Optional, Tuple
+from typing import Any, List, NamedTuple, Optional, Tuple
 
 import tensorflow as tf
 
@@ -365,9 +364,15 @@ def cglb_conjugate_gradient(
 
     :return: `v` where `v` approximately satisfies :math:`Kv = b`.
     """
-    CGState = namedtuple("CGState", ["i", "v", "r", "p", "rz"])
 
-    def stopping_criterion(state: CGState) -> bool:
+    class CGState(NamedTuple):
+        i: tf.Tensor
+        v: tf.Tensor
+        r: tf.Tensor
+        p: tf.Tensor
+        rz: tf.Tensor
+
+    def stopping_criterion(state: CGState) -> tf.Tensor:
         return (0.5 * state.rz > cg_tolerance) and (state.i < max_steps)
 
     def cg_step(state: CGState) -> List[CGState]:

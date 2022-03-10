@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import cast
+
 import numpy as np
 import pytest
 import tensorflow as tf
@@ -115,7 +117,7 @@ def test_quadrature_autograph() -> None:
             )
 
         (result,) = func()
-        return result.numpy()
+        return cast(AnyNDArray, result.numpy())
 
     np.testing.assert_equal(
         compute(autograph=True),

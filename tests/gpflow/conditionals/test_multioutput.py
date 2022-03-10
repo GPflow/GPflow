@@ -1,4 +1,4 @@
-from typing import Callable, List, Sequence, Tuple
+from typing import Callable, List, Sequence, Tuple, cast
 
 import numpy as np
 import pytest
@@ -327,7 +327,7 @@ QSqrtFactory = Callable[[tf.Tensor, int], tf.Tensor]
     params=[lambda _, __: None, lambda LM, R: tf.eye(LM, batch_shape=(R,))],
 )
 def _q_sqrt_factory_fixture(request: SubRequest) -> QSqrtFactory:
-    return request.param
+    return cast(QSqrtFactory, request.param)
 
 
 @pytest.mark.parametrize("R", [1, 2, 5])

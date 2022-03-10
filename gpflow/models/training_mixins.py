@@ -68,9 +68,10 @@ class InternalDataTrainingLossMixin:
         :param compile: If `True` (default), compile the training loss function in a TensorFlow
             graph by wrapping it in tf.function()
         """
+        closure = self.training_loss
         if compile:
-            return tf.function(self.training_loss)
-        return self.training_loss
+            closure = tf.function(closure)
+        return closure
 
 
 class ExternalDataTrainingLossMixin:

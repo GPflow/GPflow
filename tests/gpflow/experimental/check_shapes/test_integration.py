@@ -15,7 +15,7 @@
 # pylint: disable=unused-argument  # Bunch of fake functions below has unused arguments.
 # pylint: disable=no-member  # PyLint struggles with TensorFlow.
 
-from typing import Callable, Tuple
+from typing import Callable
 
 import numpy as np
 import pytest
@@ -88,7 +88,7 @@ def test_check_shapes__tensorflow_compilation(
         "x: [n]",
         "return: [n]",
     )
-    def f(x: tf.Tensor) -> Tuple[tf.Tensor]:
+    def f(x: tf.Tensor) -> tf.Tensor:
         return (x - target) ** 2
 
     v = tf.Variable(np.linspace(0.0, 1.0))

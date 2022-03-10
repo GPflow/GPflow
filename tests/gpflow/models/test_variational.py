@@ -34,7 +34,10 @@ rng = np.random.RandomState(1)
 def univariate_log_marginal_likelihood(
     y: AnyNDArray, K: AnyNDArray, noise_var: AnyNDArray
 ) -> AnyNDArray:
-    return -0.5 * y * y / (K + noise_var) - 0.5 * np.log(K + noise_var) - 0.5 * np.log(np.pi * 2.0)
+    return cast(
+        AnyNDArray,
+        -0.5 * y * y / (K + noise_var) - 0.5 * np.log(K + noise_var) - 0.5 * np.log(np.pi * 2.0),
+    )
 
 
 def univariate_posterior(
@@ -49,12 +52,16 @@ def univariate_prior_KL(
     meanA: AnyNDArray, meanB: AnyNDArray, varA: AnyNDArray, varB: AnyNDArray
 ) -> AnyNDArray:
     # KL[ qA | qB ] = E_{qA} \log [qA / qB] where qA and qB are univariate normal distributions.
-    return 0.5 * (
-        np.log(varB)
-        - np.log(varA)
-        - 1.0
-        + varA / varB
-        + cast(AnyNDArray, meanB - meanA) * cast(AnyNDArray, meanB - meanA) / varB
+    return cast(
+        AnyNDArray,
+        0.5
+        * (
+            np.log(varB)
+            - np.log(varA)
+            - 1.0
+            + varA / varB
+            + cast(AnyNDArray, meanB - meanA) * cast(AnyNDArray, meanB - meanA) / varB
+        ),
     )
 
 
@@ -73,12 +80,15 @@ def multivariate_prior_KL(
     constantTerm = -0.5 * K
     priorLogDeterminantTerm = 0.5 * np.linalg.slogdet(covB)[1]
     variationalLogDeterminantTerm = -0.5 * np.linalg.slogdet(covA)[1]
-    return (
-        traceTerm
-        + mahalanobisTerm
-        + constantTerm
-        + priorLogDeterminantTerm
-        + variationalLogDeterminantTerm
+    return cast(
+        AnyNDArray,
+        (
+            traceTerm
+            + mahalanobisTerm
+            + constantTerm
+            + priorLogDeterminantTerm
+            + variationalLogDeterminantTerm
+        ),
     )
 
 

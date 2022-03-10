@@ -107,9 +107,10 @@ def _default(value: _Values) -> Any:
 def _default_numeric_type_factory(
     valid_types: Mapping[str, type], enum_key: _Values, type_name: str
 ) -> type:
-    value = _default(enum_key)
-    if value in valid_types.values():
+    value: Union[str, type] = _default(enum_key)
+    if isinstance(value, type) and (value in valid_types.values()):
         return value
+    assert isinstance(value, str)  # Hint for mypy
     if value not in valid_types:
         raise TypeError(f"Config cannot recognize {type_name} type.")
     return valid_types[value]
@@ -128,14 +129,13 @@ def _default_float_factory() -> type:
 def _default_jitter_factory() -> float:
     value = _default(_Values.JITTER)
     try:
-        value = float(value)
+        return float(value)
     except ValueError:
         raise TypeError("Config cannot set the jitter value with non float type.")
-    return value
 
 
 def _default_positive_bijector_factory() -> str:
-    bijector_type = _default(_Values.POSITIVE_BIJECTOR)
+    bijector_type: str = _default(_Values.POSITIVE_BIJECTOR)
     if bijector_type not in positive_bijector_type_map().keys():
         raise TypeError(
             "Config cannot set the passed value as a default positive bijector."
@@ -147,14 +147,14 @@ def _default_positive_bijector_factory() -> str:
 def _default_positive_minimum_factory() -> float:
     value = _default(_Values.POSITIVE_MINIMUM)
     try:
-        value = float(value)
+        return float(value)
     except ValueError:
         raise TypeError("Config cannot set the positive_minimum value with non float type.")
-    return value
 
 
 def _default_summary_fmt_factory() -> Optional[str]:
-    return _default(_Values.SUMMARY_FMT)
+    result: Optional[str] = _default(_Values.SUMMARY_FMT)
+    return result
 
 
 # The following type alias is for the Config class, to help a static analyser distinguish

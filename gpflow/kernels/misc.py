@@ -79,7 +79,8 @@ class ArcCosine(Kernel):
         """
         Whether ARD behaviour is active.
         """
-        return self.weight_variances.shape.ndims > 0
+        ndims: int = self.weight_variances.shape.ndims
+        return ndims > 0
 
     def _weighted_product(self, X: TensorType, X2: Optional[TensorType] = None) -> tf.Tensor:
         if X2 is None:

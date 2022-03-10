@@ -262,7 +262,7 @@ def parse_argument_spec(argument_spec: str) -> ParsedArgumentSpec:
     Parse a `check_shapes` argument specification.
     """
     tree = _ARGUMENT_SPEC_PARSER.parse(argument_spec)
-    specs = _ParseArgumentSpec().visit(tree)
+    specs: ParsedArgumentSpec = _ParseArgumentSpec().visit(tree)
     return specs
 
 
@@ -277,4 +277,5 @@ def parse_and_rewrite_docstring(
         return None
 
     tree = _DOCSTRING_PARSER.parse(docstring)
-    return _RewriteDocString(docstring, argument_specs).visit(tree)
+    rewritten_docstring: str = _RewriteDocString(docstring, argument_specs).visit(tree)
+    return rewritten_docstring

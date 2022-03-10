@@ -16,6 +16,8 @@ This test suite will check if the conditionals broadcast correctly
 when the input tensors have leading dimensions.
 """
 
+from typing import cast
+
 import numpy as np
 import pytest
 import tensorflow as tf
@@ -91,15 +93,18 @@ def test_conditional_broadcasting(full_cov: bool, white: bool, conditional_type:
     num_samples = 5
 
     def sample_conditional_fn(X: tf.Tensor) -> SamplesMeanAndVariance:
-        return sample_conditional(
-            X,
-            inducing_variable,
-            kernel,
-            tf.convert_to_tensor(q_mu),
-            q_sqrt=tf.convert_to_tensor(q_sqrt),
-            white=white,
-            full_cov=full_cov,
-            num_samples=num_samples,
+        return cast(
+            SamplesMeanAndVariance,
+            sample_conditional(
+                X,
+                inducing_variable,
+                kernel,
+                tf.convert_to_tensor(q_mu),
+                q_sqrt=tf.convert_to_tensor(q_sqrt),
+                white=white,
+                full_cov=full_cov,
+                num_samples=num_samples,
+            ),
         )
 
     samples = np.array([sample_conditional_fn(X)[0] for X in Data.SX])

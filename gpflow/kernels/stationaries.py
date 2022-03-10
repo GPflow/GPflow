@@ -62,7 +62,8 @@ class Stationary(Kernel):
         """
         Whether ARD behaviour is active.
         """
-        return self.lengthscales.shape.ndims > 0
+        ndims: int = self.lengthscales.shape.ndims
+        return ndims > 0
 
     def scale(self, X: TensorType) -> TensorType:
         X_scaled = X / self.lengthscales if X is not None else X

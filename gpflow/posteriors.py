@@ -696,7 +696,7 @@ class BasePosterior(AbstractPosterior):
 class IndependentPosterior(BasePosterior):
     def _post_process_mean_and_cov(
         self, mean: TensorType, cov: TensorType, full_cov: bool, full_output_cov: bool
-    ) -> tf.Tensor:
+    ) -> MeanAndVariance:
         return mean, expand_independent_outputs(cov, full_cov, full_output_cov)
 
     def _get_Kff(self, Xnew: TensorType, full_cov: bool) -> tf.Tensor:
@@ -1017,7 +1017,7 @@ def create_posterior(
 ) -> BasePosterior:
     posterior_class = get_posterior_class(kernel, inducing_variable)
     precompute_cache = _validate_precompute_cache_type(precompute_cache)
-    return posterior_class(
+    return posterior_class(  # type: ignore
         kernel,
         inducing_variable,
         q_mu,
