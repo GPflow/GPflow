@@ -20,9 +20,9 @@ import pytest
 import tensorflow as tf
 
 import gpflow
+from gpflow.base import InputData, OutputData
 from gpflow.inducing_variables import InducingPoints
 from gpflow.models.sgpr import SGPR, SGPR_deprecated
-from gpflow.models.training_mixins import InputData, OutputData
 from gpflow.posteriors import PrecomputeCacheType
 
 INPUT_DIM = 7

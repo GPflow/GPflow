@@ -45,7 +45,7 @@ def mvhermgauss(H: int, D: int) -> Tuple[AnyNDArray, AnyNDArray]:
     :return: eval_locations 'x' (H**DxD), weights 'w' (H**D)
     """
     gh_x, gh_w = hermgauss(H)
-    x = np.array(list(itertools.product(*(gh_x,) * D)))  # H**DxD
+    x: AnyNDArray = np.array(list(itertools.product(*(gh_x,) * D)))  # H**DxD
     w = np.prod(np.array(list(itertools.product(*(gh_w,) * D))), 1)  # H**D
     return x, w
 

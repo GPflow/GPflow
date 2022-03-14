@@ -22,7 +22,8 @@ from _pytest.logging import LogCaptureFixture
 from numpy.testing import assert_allclose, assert_equal
 
 from gpflow import default_float
-from gpflow.conditionals.util import leading_transpose, rollaxis_left, rollaxis_right, sample_mvn
+from gpflow.conditionals.util import rollaxis_left, rollaxis_right, sample_mvn
+from gpflow.utilities.ops import leading_transpose
 
 
 def test_leading_transpose() -> None:

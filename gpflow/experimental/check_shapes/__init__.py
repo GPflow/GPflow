@@ -244,4 +244,19 @@ from .errors import ArgumentReferenceError, ShapeMismatchError
 from .inheritance import inherit_check_shapes
 from .shapes import get_shape
 
-__all__ = list(dir())
+__all__ = [
+    "ArgumentReferenceError",
+    "Dimension",
+    "Shape",
+    "ShapeMismatchError",
+    "argument_ref",
+    "base_types",
+    "check_shapes",
+    "errors",
+    "get_shape",
+    "inherit_check_shapes",
+    "inheritance",
+    "parser",
+    "shapes",
+    "specs",
+]

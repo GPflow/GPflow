@@ -68,7 +68,7 @@ def make_sqrt(N: int, M: int) -> TensorType:
 
 def make_K_batch(N: int, M: int) -> TensorType:
     K_np = rng.randn(N, M, M)
-    beye = np.array([np.eye(M) for _ in range(N)])
+    beye: AnyNDArray = np.array([np.eye(M) for _ in range(N)])
     return 0.1 * (K_np + np.transpose(K_np, (0, 2, 1))) + beye
 
 
@@ -232,7 +232,7 @@ def test_q_sqrt_constraints(
     enforces q_sqrt is triangular.
     """
 
-    tril = np.tril(rng.randn(Ln, Nn, Nn))
+    tril: AnyNDArray = np.tril(rng.randn(Ln, Nn, Nn))
 
     q_sqrt_constrained = Parameter(tril, transform=triangular())
     q_sqrt_unconstrained = Parameter(tril)

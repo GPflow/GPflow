@@ -17,7 +17,7 @@ import pytest
 import tensorflow as tf
 from numpy.testing import assert_allclose
 
-from gpflow.base import TensorType
+from gpflow.base import AnyNDArray, TensorType
 from gpflow.config import default_float, default_int
 from gpflow.likelihoods import Bernoulli, MultiClass, RobustMax, Softmax
 from gpflow.utilities import to_default_float, to_default_int
@@ -47,7 +47,9 @@ def test_softmax_y_shape_assert(num: int, dimF: int, dimY: int) -> None:
 @pytest.mark.parametrize("num", [10, 3])
 @pytest.mark.parametrize("dimF, dimY", [[2, 1]])
 def test_softmax_bernoulli_equivalence(num: int, dimF: int, dimY: int) -> None:
-    dF = np.vstack((np.random.randn(num - 3, dimF), np.array([[-3.0, 0.0], [3, 0.0], [0.0, 0.0]])))
+    dF: AnyNDArray = np.vstack(
+        (np.random.randn(num - 3, dimF), np.array([[-3.0, 0.0], [3, 0.0], [0.0, 0.0]]))
+    )
     dY = np.vstack((np.random.randn(num - 3, dimY), np.ones((3, dimY)))) > 0
     F = to_default_float(dF)
     Fvar = tf.exp(tf.stack([F[:, 1], -10.0 + tf.zeros(F.shape[0], dtype=F.dtype)], axis=1))

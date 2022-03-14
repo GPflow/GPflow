@@ -22,6 +22,7 @@ from numpy.testing import assert_allclose
 
 import gpflow
 from gpflow import set_trainable
+from gpflow.base import AnyNDArray
 from gpflow.models import SVGP
 
 
@@ -171,8 +172,10 @@ def test_stochastic_gradients(
     In this test we substitute a deterministic analogue of the batchs
     sampler for which we can predict the effects of different updates.
     """
+    X: AnyNDArray
+    Y: AnyNDArray
     X, Y = np.atleast_2d(np.array([0.0, 1.0])).T, np.atleast_2d(np.array([-1.0, 3.0])).T
-    Z = np.atleast_2d(np.array([0.5]))
+    Z: AnyNDArray = np.atleast_2d(np.array([0.5]))
 
     def get_model(num_data: int) -> SVGP:
         return SVGP(

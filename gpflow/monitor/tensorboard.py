@@ -29,7 +29,12 @@ if TYPE_CHECKING:
     import matplotlib
 
 
-__all__ = ["ToTensorBoard", "ModelToTensorBoard", "ScalarToTensorBoard", "ImageToTensorBoard"]
+__all__ = [
+    "ImageToTensorBoard",
+    "ModelToTensorBoard",
+    "ScalarToTensorBoard",
+    "ToTensorBoard",
+]
 
 
 class ToTensorBoard(MonitorTask):

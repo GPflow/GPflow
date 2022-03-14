@@ -20,7 +20,7 @@ import tensorflow as tf
 from numpy.testing import assert_allclose
 
 import gpflow
-from gpflow.base import Parameter, TensorType
+from gpflow.base import AnyNDArray, Parameter, TensorType
 from gpflow.inducing_variables import InducingPoints
 from gpflow.likelihoods import Gaussian, StudentT, SwitchedLikelihood
 
@@ -122,7 +122,7 @@ def test_switched_likelihood_with_vgp() -> None:
     """
     X = np.random.randn(12 + 15, 1)
     Y = np.random.randn(12 + 15, 1)
-    idx = np.array([0] * 12 + [1] * 15)
+    idx: AnyNDArray = np.array([0] * 12 + [1] * 15)
     Y_aug = np.c_[Y, idx]
     assert Y_aug.shape == (12 + 15, 2)
 
@@ -143,7 +143,7 @@ def test_switched_likelihood_regression_valid_num_latent_gps(num_latent_gps: int
     latent functions does not match, an exception will be raised.
     """
     x = np.random.randn(100, 1)
-    y = np.hstack((np.random.randn(100, 1), np.random.randint(0, 3, (100, 1))))
+    y: AnyNDArray = np.hstack((np.random.randn(100, 1), np.random.randint(0, 3, (100, 1))))
     data = x, y
 
     Z = InducingPoints(np.random.randn(num_latent_gps, 1))

@@ -27,9 +27,9 @@ NatGradParameters = Union[Tuple[Parameter, Parameter], Tuple[Parameter, Paramete
 
 __all__ = [
     "NaturalGradient",
-    "XiTransform",
     "XiNat",
     "XiSqrtMeanVar",
+    "XiTransform",
 ]
 
 

@@ -18,9 +18,9 @@ import numpy as np
 import tensorflow as tf
 
 from .. import logdensities
-from ..base import Parameter
+from ..base import MeanAndVariance, Parameter, TensorType
 from ..utilities import positive
-from .base import MeanAndVariance, ScalarLikelihood, TensorType
+from .base import ScalarLikelihood
 from .utils import inv_probit
 
 

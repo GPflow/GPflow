@@ -45,6 +45,8 @@ jesnie
 
 * Dropped support for Python 3.6. New minimum version is 3.7.
 * Dropped support for TensorFlow 2.2 and 2.3. New minimum version is 2.4
+* Further improvements to type hints - this may reveal new problems in your code-base if
+  you use a type checker, such as `mypy`.
 
 ## Major Features and Improvements
 

@@ -19,7 +19,12 @@ from typing import Any, Callable, Collection, Union
 
 import tensorflow as tf
 
-__all__ = ["MonitorTask", "ExecuteCallback", "MonitorTaskGroup", "Monitor"]
+__all__ = [
+    "ExecuteCallback",
+    "Monitor",
+    "MonitorTask",
+    "MonitorTaskGroup",
+]
 
 
 class MonitorTask(ABC):
