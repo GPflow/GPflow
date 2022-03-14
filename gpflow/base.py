@@ -142,6 +142,7 @@ class Parameter(tfp.util.TransformedVariable):
         if transform:
             name = name or transform.name
 
+        tensor_value: TensorType
         if isinstance(value, Parameter):
             transform = transform or value.transform
             prior = prior or value.prior
@@ -150,7 +151,9 @@ class Parameter(tfp.util.TransformedVariable):
             trainable = value.trainable if trainable is None else trainable
 
             if dtype:
-                value = _cast_to_dtype(value, dtype)
+                tensor_value = _cast_to_dtype(value, dtype)
+            else:
+                tensor_value = value
         else:
             if transform is None:
                 transform = tfp.bijectors.Identity()
@@ -158,9 +161,9 @@ class Parameter(tfp.util.TransformedVariable):
             prior_on = prior_on if prior_on else PriorOn.CONSTRAINED
             trainable = trainable if trainable is not None else True
 
-            value = _cast_to_dtype(value, dtype)
+            tensor_value = _cast_to_dtype(value, dtype)
 
-        _validate_unconstrained_value(value, transform, dtype)
+        _validate_unconstrained_value(tensor_value, transform, dtype)
 
         if shape is not None:
             assert unconstrained_shape is None, "Cannot set both `shape` and `unconstrained_shape`."
@@ -169,9 +172,9 @@ class Parameter(tfp.util.TransformedVariable):
             constrained_shape = shape
 
         super().__init__(
-            value,
+            tensor_value,
             transform,
-            dtype=value.dtype,
+            dtype=tensor_value.dtype,
             trainable=trainable,
             name=name,
             shape=unconstrained_shape,
