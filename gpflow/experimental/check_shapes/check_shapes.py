@@ -19,6 +19,7 @@ from functools import wraps
 from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence, Union, cast
 
 from ..utils import experimental
+from .accessors import set_check_shapes
 from .argument_ref import RESULT_TOKEN
 from .base_types import C
 from .errors import ShapeMismatchError
@@ -70,7 +71,7 @@ def check_shapes(*specs: str) -> Callable[[C], C]:
             _assert_shapes(func, post_print_specs, post_check_specs, arg_map, context)
             return result
 
-        wrapped.__check_shapes__ = _check_shapes  # type: ignore
+        set_check_shapes(wrapped, _check_shapes)
         wrapped.__doc__ = parse_and_rewrite_docstring(wrapped.__doc__, parsed_specs)
         return cast(C, wrapped)
 

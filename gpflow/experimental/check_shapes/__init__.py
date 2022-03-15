@@ -14,15 +14,11 @@
 
 # flake8: noqa
 """
-============
-check_shapes
-============
-
 A library for annotating and checking the shapes of tensors.
 
 This library is compatible with both TensorFlow and NumPy.
 
-The main entry point is :func:`shape_checking_study.numpy_example_2.check_shapes`.
+The main entry point is :func:`check_shapes.check_shapes`.
 
 For example::
 
@@ -111,8 +107,15 @@ For example::
         ...
 
 
+Shape reuse
++++++++++++
+
+Just like with other code it is useful to be able to define a shape in one place and reuse it.
+In particular this ensures that your code keep having consistent shapes, even if it is refactored.
+
+
 Class inheritance
-+++++++++++++++++
+-----------------
 
 If you have a class hiererchy, you probably want to ensure that derived classes handle tensors with
 the same shapes as the base classes. You can use the :func:`inherit_check_shapes` decorator to
@@ -133,6 +136,49 @@ Example::
         @inherit_check_shapes
         def f(self, a: tf.Tensor) -> tf.Tensor:
             ...
+
+
+Functional programming
+----------------------
+
+If you prefer functional- over object oriented programming, you may have functions that you require
+to handle the same shapes. To do this, remember that in Python a decorator is just a function, and
+functions are objects that can be stored::
+
+    check_my_shapes = check_shapes(
+        ("a", ["batch...", 4]),
+        ("return", ["batch...", 1]),
+    )
+
+    @check_my_shapes
+    def f(a: tf.Tensor) -> tf.Tensor:
+        ...
+
+    @check_my_shapes
+    def g(a: tf.Tensor) -> tf.Tensor:
+        ...
+
+
+Other reuse of shapes
+---------------------
+
+You can use :func:`get_check_shapes` to get, and reuse, the shape definitions from a previously
+declared function. This is particularly useful to ensure fakes in tests use the same shapes as the
+production implementation::
+
+    @check_shapes(
+        ("a", ["batch...", 4]),
+        ("return", ["batch...", 1]),
+    )
+    def f(a: tf.Tensor) -> tf.Tensor:
+        ...
+
+    def test_something() -> None:
+        @get_check_shapes(f)
+        def fake_f(a: tf.Tensor) -> tf.Tensor:
+            ...
+
+        # Test that patches `f` with `fake_f` goes here...
 
 
 Speed, and interactions with `tf.function`
@@ -236,8 +282,10 @@ For example::
     ) -> None:
         prediction = model.predict(test_features)
         return np.mean(np.sqrt(np.mean((prediction - test_labels) ** 2, axis=-1)))
+
 """
 
+from .accessors import get_check_shapes, maybe_get_check_shapes
 from .base_types import Dimension, Shape
 from .check_shapes import check_shapes
 from .errors import ArgumentReferenceError, ShapeMismatchError
@@ -249,13 +297,16 @@ __all__ = [
     "Dimension",
     "Shape",
     "ShapeMismatchError",
+    "accessors",
     "argument_ref",
     "base_types",
     "check_shapes",
     "errors",
+    "get_check_shapes",
     "get_shape",
     "inherit_check_shapes",
     "inheritance",
+    "maybe_get_check_shapes",
     "parser",
     "shapes",
     "specs",

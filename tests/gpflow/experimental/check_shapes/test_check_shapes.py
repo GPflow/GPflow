@@ -20,7 +20,12 @@ from typing import Optional, Tuple
 import pytest
 
 from gpflow.base import TensorType
-from gpflow.experimental.check_shapes import ShapeMismatchError, check_shapes, get_shape
+from gpflow.experimental.check_shapes import (
+    ShapeMismatchError,
+    check_shapes,
+    get_check_shapes,
+    get_shape,
+)
 
 from .utils import t, t_unk
 
@@ -340,6 +345,29 @@ def test_check_shapes__none() -> None:
     f(None)
     f(Input(ins=None))
     f(Input(ins=(None,)))
+
+
+def test_check_shapes__reuse() -> None:
+    check_my_shapes = check_shapes(
+        "a: [d1, d2]",
+        "b: [d1, d3]",
+        "return: [d2, d3]",
+    )
+
+    @check_my_shapes
+    def f(a: TensorType, b: TensorType) -> TensorType:
+        return t(3, 4)
+
+    @check_my_shapes
+    def g(a: TensorType, b: TensorType) -> TensorType:
+        return t(3, 4)
+
+    assert get_check_shapes(f) is check_my_shapes
+    assert get_check_shapes(g) is check_my_shapes
+
+    # Don't crash...
+    f(t(2, 3), t(2, 4))
+    g(t(2, 3), t(2, 4))
 
 
 def test_check_shapes__rewrites_docstring() -> None:

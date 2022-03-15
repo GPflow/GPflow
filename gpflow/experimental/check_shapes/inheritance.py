@@ -18,6 +18,7 @@ import inspect
 from typing import Callable, Optional, cast
 
 from ..utils import experimental
+from .accessors import maybe_get_check_shapes
 from .base_types import C
 
 
@@ -49,7 +50,7 @@ class _InheritCheckShapes:
             overridden_method = getattr(parent, name, None)
             if overridden_method is None:
                 continue
-            overridden_check_shapes = getattr(overridden_method, "__check_shapes__", None)
+            overridden_check_shapes = maybe_get_check_shapes(overridden_method)
             if overridden_check_shapes is None:
                 continue
             break
