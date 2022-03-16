@@ -18,7 +18,7 @@ import tensorflow as tf
 from ndiagquad_old import ndiagquad as ndiagquad_old
 from numpy.testing import assert_allclose
 
-from gpflow.base import TensorType
+from gpflow.base import AnyNDArray, TensorType
 from gpflow.quadrature import ndiagquad
 
 
@@ -83,7 +83,7 @@ def test_diagquad_logspace(
 @pytest.mark.parametrize("mu1", [np.array([1.0, 1.3])])
 @pytest.mark.parametrize("var1", [np.array([3.0, 3.5])])
 def test_diagquad_with_kwarg(mu1: TensorType, var1: TensorType) -> None:
-    alpha = np.array([2.5, -1.3])
+    alpha: AnyNDArray = np.array([2.5, -1.3])
     num_gauss_hermite_points = 25
     quad = ndiagquad(lambda X, Y: tf.exp(X * Y), num_gauss_hermite_points, mu1, var1, Y=alpha)
     quad_old = ndiagquad_old(

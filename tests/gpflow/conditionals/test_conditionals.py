@@ -19,7 +19,7 @@ from numpy.testing import assert_allclose
 
 import gpflow
 from gpflow import Parameter
-from gpflow.base import MeanAndVariance
+from gpflow.base import AnyNDArray, MeanAndVariance
 from gpflow.conditionals import conditional
 from gpflow.config import default_float
 from gpflow.kernels import Kernel
@@ -138,7 +138,7 @@ def test_q_sqrt_constraints(
     enforces q_sqrt is triangular.
     """
 
-    tril = np.tril(rng.randn(Ln, Nn, Nn))
+    tril: AnyNDArray = np.tril(rng.randn(Ln, Nn, Nn))
 
     q_sqrt_constrained = Parameter(tril, transform=triangular())
     q_sqrt_unconstrained = Parameter(tril)
@@ -174,7 +174,7 @@ def test_base_conditional_vs_ref(full_cov: bool, features_inducing_points: bool)
     Z = np.random.randn(M, Dx)
     kern = gpflow.kernels.Matern52(lengthscales=0.5)
     q_mu = np.random.randn(M, Dy)
-    q_sqrt = np.tril(np.random.randn(Dy, M, M), -1)
+    q_sqrt: AnyNDArray = np.tril(np.random.randn(Dy, M, M), -1)
 
     def numpy_conditional(
         X: tf.Tensor, Z: tf.Tensor, kern: Kernel, q_mu: tf.Tensor, q_sqrt: tf.Tensor
@@ -184,8 +184,9 @@ def test_base_conditional_vs_ref(full_cov: bool, features_inducing_points: bool)
         Knn = kern(X, X)
 
         Kmm, Kmn, Knn = [k.numpy() for k in [Kmm, Kmn, Knn]]
+        Knm: AnyNDArray = Kmn.T
 
-        Kmm, Kmn, Knm, Knn = [np.tile(k[None, :, :], [Dy, 1, 1]) for k in [Kmm, Kmn, Kmn.T, Knn]]
+        Kmm, Kmn, Knm, Knn = [np.tile(k[None, :, :], [Dy, 1, 1]) for k in [Kmm, Kmn, Knm, Knn]]
 
         S = q_sqrt @ np.transpose(q_sqrt, [0, 2, 1])
 

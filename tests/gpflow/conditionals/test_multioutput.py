@@ -145,8 +145,8 @@ class Data:
     P = 3  # output dimension
     MAXITER = int(15e2)
     X = tf.random.normal((N,), dtype=tf.float64)[:, None] * 10 - 5
-    G = np.hstack((0.5 * np.sin(3 * X) + X, 3.0 * np.cos(X) - X))
-    Ptrue = np.array([[0.5, -0.3, 1.5], [-0.4, 0.43, 0.0]])  # [L, P]
+    G: AnyNDArray = np.hstack((0.5 * np.sin(3 * X) + X, 3.0 * np.cos(X) - X))
+    Ptrue: AnyNDArray = np.array([[0.5, -0.3, 1.5], [-0.4, 0.43, 0.0]])  # [L, P]
 
     Y = tf.convert_to_tensor(G @ Ptrue)
     G = tf.convert_to_tensor(np.hstack((0.5 * np.sin(3 * X) + X, 3.0 * np.cos(X) - X)))
@@ -162,7 +162,7 @@ class DataMixedKernelWithEye(Data):
     M, L = 4, 3
     W = np.eye(L)
 
-    G = np.hstack(
+    G: AnyNDArray = np.hstack(
         [0.5 * np.sin(3 * Data.X) + Data.X, 3.0 * np.cos(Data.X) - Data.X, 1.0 + Data.X]
     )  # [N, P]
 
@@ -186,7 +186,9 @@ class DataMixedKernel(Data):
     L = 2
     P = 3
     W = rng.randn(P, L)
-    G = np.hstack([0.5 * np.sin(3 * Data.X) + Data.X, 3.0 * np.cos(Data.X) - Data.X])  # [N, L]
+    G: AnyNDArray = np.hstack(
+        [0.5 * np.sin(3 * Data.X) + Data.X, 3.0 * np.cos(Data.X) - Data.X]
+    )  # [N, L]
 
     mu_data = tf.random.normal((M, L), dtype=tf.float64)  # [M, L]
     sqrt_data = create_q_sqrt(M, L)  # [L, M, M]
@@ -391,7 +393,7 @@ def test_fully_correlated_conditional_repeat_whiten(whiten: bool) -> None:
     Kmn = tf.ones((1, N, P))
 
     Knn = tf.ones((N, P))
-    f = np.random.randn(1, 1).astype(np.float32)
+    f: AnyNDArray = np.random.randn(1, 1).astype(np.float32)
 
     mean, _ = fully_correlated_conditional_repeat(
         Kmn,
@@ -537,7 +539,7 @@ def test_shared_independent_mok() -> None:
 
     # Model 2
     q_mu_2 = np.reshape(q_mu_1, [Data.M, Data.P])  # M x P
-    q_sqrt_2 = np.array(
+    q_sqrt_2: AnyNDArray = np.array(
         [np.tril(np.random.randn(Data.M, Data.M)) for _ in range(Data.P)]
     )  # P x M x M
     kernel_2 = SquaredExponential(variance=0.5, lengthscales=1.2)
@@ -563,7 +565,7 @@ def test_shared_independent_mok() -> None:
 
     # Model 3
     q_mu_3 = np.reshape(q_mu_1, [Data.M, Data.P])  # M x P
-    q_sqrt_3 = np.array(
+    q_sqrt_3: AnyNDArray = np.array(
         [np.tril(np.random.randn(Data.M, Data.M)) for _ in range(Data.P)]
     )  # P x M x M
     kernel_3 = mk.SharedIndependent(SquaredExponential(variance=0.5, lengthscales=1.2), Data.P)
@@ -629,7 +631,7 @@ def test_separate_independent_mok() -> None:
 
     # Model 2 (efficient)
     q_mu_2 = np.random.randn(Data.M, Data.P)
-    q_sqrt_2 = np.array(
+    q_sqrt_2: AnyNDArray = np.array(
         [np.tril(np.random.randn(Data.M, Data.M)) for _ in range(Data.P)]
     )  # P x M x M
     kern_list_2 = [SquaredExponential(variance=0.5, lengthscales=1.2) for _ in range(Data.P)]
@@ -686,7 +688,7 @@ def test_separate_independent_mof() -> None:
 
     # Model 2 (efficient)
     q_mu_2 = np.random.randn(Data.M, Data.P)
-    q_sqrt_2 = np.array(
+    q_sqrt_2: AnyNDArray = np.array(
         [np.tril(np.random.randn(Data.M, Data.M)) for _ in range(Data.P)]
     )  # P x M x M
     kernel_2 = mk.SharedIndependent(SquaredExponential(variance=0.5, lengthscales=1.2), Data.P)
@@ -707,7 +709,7 @@ def test_separate_independent_mof() -> None:
     # Model 3 (Inefficient): an idenitical inducing variable is used P times,
     # and treated as a separate one.
     q_mu_3 = np.random.randn(Data.M, Data.P)
-    q_sqrt_3 = np.array(
+    q_sqrt_3: AnyNDArray = np.array(
         [np.tril(np.random.randn(Data.M, Data.M)) for _ in range(Data.P)]
     )  # P x M x M
     kern_list = [SquaredExponential(variance=0.5, lengthscales=1.2) for _ in range(Data.P)]
@@ -914,7 +916,7 @@ def test_independent_interdomain_conditional_whiten(whiten: bool) -> None:
     Kmn = tf.ones((1, 1, N, P))
 
     Knn = tf.ones((N, P))
-    f = np.random.randn(1, 1).astype(np.float32)
+    f: AnyNDArray = np.random.randn(1, 1).astype(np.float32)
 
     mean, _ = independent_interdomain_conditional(
         Kmn,

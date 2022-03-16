@@ -27,16 +27,16 @@ from ..base import AnyNDArray, Parameter
 from ..config import default_summary_fmt
 
 __all__ = [
-    "multiple_assign",
-    "print_summary",
-    "tabulate_module_summary",
     "deepcopy",
     "freeze",
     "leaf_components",
+    "multiple_assign",
     "parameter_dict",
+    "print_summary",
     "read_values",
     "reset_cache_bijectors",
     "select_dict_parameters_with_prior",
+    "tabulate_module_summary",
 ]
 LeafComponent = Union[tf.Variable, tf.Tensor, Parameter]
 LeafVariable = Union[tf.Variable, Parameter]

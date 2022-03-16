@@ -44,7 +44,7 @@ def univariate_posterior(
     y: AnyNDArray, K: AnyNDArray, noise_var: AnyNDArray
 ) -> Tuple[AnyNDArray, AnyNDArray]:
     mean = K * y / (K + noise_var)
-    variance = K - K / (K + noise_var)
+    variance: AnyNDArray = K - K / (K + noise_var)
     return mean, variance
 
 
@@ -99,13 +99,13 @@ def multivariate_prior_KL(
 
 class Datum:
     num_latent_gps = 1
-    y_data = np.array(2.0)
-    X = np.atleast_2d(np.array([0.0]))
-    Y = np.atleast_2d(np.array([y_data]))
+    y_data: AnyNDArray = np.array(2.0)
+    X: AnyNDArray = np.atleast_2d(np.array([0.0]))
+    Y: AnyNDArray = np.atleast_2d(np.array([y_data]))
     Z = X.copy()
-    zero_mean = np.array(0.0)
-    K = np.array(1.0)
-    noise_var = np.array(0.5)
+    zero_mean: AnyNDArray = np.array(0.0)
+    K: AnyNDArray = np.array(1.0)
+    noise_var: AnyNDArray = np.array(0.5)
     posterior_mean, posterior_var = univariate_posterior(y=y_data, K=K, noise_var=noise_var)
     posterior_std = np.sqrt(posterior_var)
     data = (X, Y)
@@ -118,11 +118,11 @@ class MultiDatum:
     X = rng.randn(dim, 1)
     Z = X.copy()
     noise_var = 0.5
-    signal_var = np.array(1.5)
-    ls = np.array(1.7)
+    signal_var: AnyNDArray = np.array(1.5)
+    ls: AnyNDArray = np.array(1.7)
     q_mean = rng.randn(dim, num_latent_gps)
     q_sqrt_diag = rng.rand(dim, num_latent_gps)
-    q_sqrt_full = np.tril(rng.rand(dim, dim))
+    q_sqrt_full: AnyNDArray = np.tril(rng.rand(dim, dim))
 
 
 def test_reference_implementation_consistency() -> None:

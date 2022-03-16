@@ -19,7 +19,7 @@ import pytest
 from numpy.testing import assert_allclose
 
 import gpflow
-from gpflow.base import TensorType
+from gpflow.base import AnyNDArray, TensorType
 from gpflow.config import default_int
 from gpflow.inducing_variables import InducingPoints
 from gpflow.mean_functions import (
@@ -193,11 +193,11 @@ def test_switched_mean_function(N: int, D: int) -> None:
     """
     Test for the SwitchedMeanFunction.
     """
-    X = np.hstack([rng.randn(N, D), 1.0 * rng.randint(0, 2, N).reshape(-1, 1)])
+    X: AnyNDArray = np.hstack([rng.randn(N, D), 1.0 * rng.randint(0, 2, N).reshape(-1, 1)])
     zeros, ones = Constant(np.zeros(1)), Constant(np.ones(1))
     switched_mean = SwitchedMeanFunction([zeros, ones])
 
-    np_list = np.array([0.0, 1.0])
+    np_list: AnyNDArray = np.array([0.0, 1.0])
     result_ref = (np_list[X[:, D].astype(default_int())]).reshape(-1, 1)
     result = switched_mean(X)
 

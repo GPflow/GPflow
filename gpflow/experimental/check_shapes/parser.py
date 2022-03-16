@@ -18,7 +18,9 @@ from abc import ABC
 from functools import lru_cache
 from typing import Any, Collection, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple
 
-from lark import Lark, Token, Tree
+from lark.lark import Lark
+from lark.lexer import Token
+from lark.tree import Tree
 
 from .argument_ref import (
     RESULT_TOKEN,

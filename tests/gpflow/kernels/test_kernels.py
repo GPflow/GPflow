@@ -66,8 +66,8 @@ def _ref_changepoints(
     """
     locations = sorted(locations)
     steepness = steepness if isinstance(steepness, Sequence) else [steepness] * len(locations)
-    np_locations = np.array(locations).reshape((1, 1, -1))
-    np_steepness = np.array(steepness).reshape((1, 1, -1))
+    np_locations: AnyNDArray = np.array(locations).reshape((1, 1, -1))
+    np_steepness: AnyNDArray = np.array(steepness).reshape((1, 1, -1))
 
     sig_X = 1.0 / (1.0 + np.exp(-np_steepness * (X[:, :, None] - np_locations)))
 
@@ -78,7 +78,7 @@ def _ref_changepoints(
     starters = np.concatenate([ones, starters], axis=2)
     stoppers = np.concatenate([stoppers, ones], axis=2)
 
-    kernel_stack = np.stack([k(X) for k in kernels], axis=2)
+    kernel_stack: AnyNDArray = np.stack([k(X) for k in kernels], axis=2)
 
     return cast(AnyNDArray, (kernel_stack * starters * stoppers).sum(axis=2))
 

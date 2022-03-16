@@ -17,8 +17,9 @@ from typing import Any, Callable, Optional, Type
 import tensorflow as tf
 import tensorflow_probability as tfp
 
+from ..base import TensorType
 from ..utilities import positive
-from .base import QuadratureLikelihood, TensorType
+from .base import QuadratureLikelihood
 
 
 class MultiLatentLikelihood(QuadratureLikelihood):

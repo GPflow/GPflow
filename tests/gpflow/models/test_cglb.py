@@ -17,7 +17,7 @@ from typing import Tuple
 import numpy as np
 import tensorflow as tf
 
-from gpflow.base import RegressionData
+from gpflow.base import AnyNDArray, RegressionData
 from gpflow.config import default_float
 from gpflow.kernels import SquaredExponential
 from gpflow.models import CGLB, GPR, SGPR
@@ -32,7 +32,7 @@ def data(rng: np.random.RandomState) -> Tuple[RegressionData, tf.Tensor, tf.Tens
 
     x = rng.randn(n, d)
     xs = rng.randn(t, d)  # test points
-    c = np.array([[-1.4], [0.5]])
+    c: AnyNDArray = np.array([[-1.4], [0.5]])
     y = np.sin(x @ c + 0.5 * rng.randn(n, 1))
     z = rng.randn(10, 2)
 

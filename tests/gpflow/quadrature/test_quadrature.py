@@ -73,7 +73,7 @@ def test_diagquad_logspace(
 @pytest.mark.parametrize("mu1", [np.array([1.0, 1.3])])
 @pytest.mark.parametrize("var1", [np.array([3.0, 3.5])])
 def test_diagquad_with_kwarg(mu1: TensorType, var1: TensorType) -> None:
-    alpha = np.array([2.5, -1.3])
+    alpha: AnyNDArray = np.array([2.5, -1.3])
     num_gauss_hermite_points = 25
     quad = quadrature.ndiagquad(
         lambda X, Y: tf.exp(X * Y), num_gauss_hermite_points, mu1, var1, Y=alpha
@@ -90,8 +90,8 @@ def test_ndiagquad_does_not_throw_error() -> None:
 
     @tf.function(autograph=False)
     def func_ndiagquad_autograph_false() -> tf.Tensor:
-        mu = np.array([1.0, 1.3])
-        var = np.array([3.0, 3.5])
+        mu: AnyNDArray = np.array([1.0, 1.3])
+        var: AnyNDArray = np.array([3.0, 3.5])
         num_gauss_hermite_points = 25
         return quadrature.ndiagquad(
             [lambda *X: tf.exp(X[0])], num_gauss_hermite_points, [mu], [var]
@@ -109,8 +109,8 @@ def test_quadrature_autograph() -> None:
     def compute(autograph: bool) -> AnyNDArray:
         @tf.function(autograph=autograph)
         def func() -> tf.Tensor:
-            mu = np.array([1.0, 1.3])
-            var = np.array([3.0, 3.5])
+            mu: AnyNDArray = np.array([1.0, 1.3])
+            var: AnyNDArray = np.array([3.0, 3.5])
             num_gauss_hermite_points = 25
             return quadrature.ndiagquad(
                 [lambda *X: tf.exp(X[0])], num_gauss_hermite_points, [mu], [var]

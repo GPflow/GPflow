@@ -18,7 +18,7 @@ import numpy as np
 import tensorflow as tf
 
 from .. import covariances, kernels, likelihoods
-from ..base import Parameter, RegressionData, TensorType
+from ..base import InputData, MeanAndVariance, OutputData, Parameter, RegressionData, TensorType
 from ..config import default_float, default_jitter
 from ..expectations import expectation
 from ..inducing_variables import InducingPoints
@@ -28,8 +28,8 @@ from ..probability_distributions import DiagonalGaussian
 from ..utilities import positive, to_default_float
 from ..utilities.ops import pca_reduce
 from .gpr import GPR
-from .model import GPModel, MeanAndVariance
-from .training_mixins import InputData, InternalDataTrainingLossMixin, OutputData
+from .model import GPModel
+from .training_mixins import InternalDataTrainingLossMixin
 from .util import InducingVariablesLike, data_input_to_tensor, inducingpoint_wrapper
 
 
