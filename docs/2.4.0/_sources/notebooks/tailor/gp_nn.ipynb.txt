@@ -1,0 +1,372 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "id": "f1dfea00",
+   "metadata": {},
+   "source": [
+    "# Mixing TensorFlow models with GPflow\n",
+    "\n",
+    "This notebook explores the combination of Keras TensorFlow neural networks with GPflow models."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "id": "241bca32",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-03-18T10:10:38.985956Z",
+     "iopub.status.busy": "2022-03-18T10:10:38.985345Z",
+     "iopub.status.idle": "2022-03-18T10:10:41.182071Z",
+     "shell.execute_reply": "2022-03-18T10:10:41.181590Z"
+    }
+   },
+   "outputs": [],
+   "source": [
+    "import numpy as np\n",
+    "import tensorflow as tf\n",
+    "from matplotlib import pyplot as plt\n",
+    "import gpflow\n",
+    "from gpflow.ci_utils import ci_niter\n",
+    "from scipy.cluster.vq import kmeans2\n",
+    "\n",
+    "from typing import Dict, Optional, Tuple\n",
+    "import tensorflow as tf\n",
+    "import tensorflow_datasets as tfds\n",
+    "import gpflow\n",
+    "from gpflow.utilities import to_default_float\n",
+    "\n",
+    "iterations = ci_niter(100)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "4aa09022",
+   "metadata": {},
+   "source": [
+    "## Convolutional network inside a GPflow model"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "id": "c6154447",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-03-18T10:10:41.184044Z",
+     "iopub.status.busy": "2022-03-18T10:10:41.183935Z",
+     "iopub.status.idle": "2022-03-18T10:10:41.357095Z",
+     "shell.execute_reply": "2022-03-18T10:10:41.356657Z"
+    }
+   },
+   "outputs": [
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "2022-03-18 10:10:41.216207: I tensorflow/stream_executor/cuda/cuda_gpu_executor.cc:936] successful NUMA node read from SysFS had negative value (-1), but there must be at least one NUMA node, so returning NUMA node zero\n",
+      "2022-03-18 10:10:41.219567: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcusolver.so.11'; dlerror: libcusolver.so.11: cannot open shared object file: No such file or directory\n",
+      "2022-03-18 10:10:41.220062: W tensorflow/core/common_runtime/gpu/gpu_device.cc:1850] Cannot dlopen some GPU libraries. Please make sure the missing libraries mentioned above are installed properly if you would like to use GPU. Follow the guide at https://www.tensorflow.org/install/gpu for how to download and setup the required libraries for your platform.\n",
+      "Skipping registering GPU devices...\n",
+      "2022-03-18 10:10:41.220606: I tensorflow/core/platform/cpu_feature_guard.cc:151] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 FMA\n",
+      "To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.\n"
+     ]
+    }
+   ],
+   "source": [
+    "original_dataset, info = tfds.load(name=\"mnist\", split=tfds.Split.TRAIN, with_info=True)\n",
+    "total_num_data = info.splits[\"train\"].num_examples\n",
+    "image_shape = info.features[\"image\"].shape\n",
+    "image_size = tf.reduce_prod(image_shape)\n",
+    "batch_size = 32\n",
+    "\n",
+    "\n",
+    "def map_fn(input_slice: Dict[str, tf.Tensor]):\n",
+    "    updated = input_slice\n",
+    "    image = to_default_float(updated[\"image\"]) / 255.0\n",
+    "    label = to_default_float(updated[\"label\"])\n",
+    "    return tf.reshape(image, [-1, image_size]), label\n",
+    "\n",
+    "\n",
+    "autotune = tf.data.experimental.AUTOTUNE\n",
+    "dataset = (\n",
+    "    original_dataset.shuffle(1024)\n",
+    "    .batch(batch_size, drop_remainder=True)\n",
+    "    .map(map_fn, num_parallel_calls=autotune)\n",
+    "    .prefetch(autotune)\n",
+    "    .repeat()\n",
+    ")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "f4887af8",
+   "metadata": {},
+   "source": [
+    "Here we'll use the GPflow functionality, but put a non-GPflow model inside the kernel.\\\n",
+    "Vanilla ConvNet. This gets 97.3% accuracy on MNIST when used on its own (+ final linear layer) after 20K iterations"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "id": "ec21200b",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-03-18T10:10:41.358776Z",
+     "iopub.status.busy": "2022-03-18T10:10:41.358666Z",
+     "iopub.status.idle": "2022-03-18T10:10:41.364175Z",
+     "shell.execute_reply": "2022-03-18T10:10:41.363852Z"
+    }
+   },
+   "outputs": [],
+   "source": [
+    "class KernelWithConvNN(gpflow.kernels.Kernel):\n",
+    "    def __init__(\n",
+    "        self,\n",
+    "        image_shape: Tuple,\n",
+    "        output_dim: int,\n",
+    "        base_kernel: gpflow.kernels.Kernel,\n",
+    "        batch_size: Optional[int] = None,\n",
+    "    ):\n",
+    "        super().__init__()\n",
+    "        with self.name_scope:\n",
+    "            self.base_kernel = base_kernel\n",
+    "            input_size = int(tf.reduce_prod(image_shape))\n",
+    "            input_shape = (input_size,)\n",
+    "\n",
+    "            self.cnn = tf.keras.Sequential(\n",
+    "                [\n",
+    "                    tf.keras.layers.InputLayer(input_shape=input_shape, batch_size=batch_size),\n",
+    "                    tf.keras.layers.Reshape(image_shape),\n",
+    "                    tf.keras.layers.Conv2D(\n",
+    "                        filters=32, kernel_size=image_shape[:-1], padding=\"same\", activation=\"relu\"\n",
+    "                    ),\n",
+    "                    tf.keras.layers.MaxPool2D(pool_size=(2, 2), strides=2),\n",
+    "                    tf.keras.layers.Conv2D(\n",
+    "                        filters=64, kernel_size=(5, 5), padding=\"same\", activation=\"relu\"\n",
+    "                    ),\n",
+    "                    tf.keras.layers.MaxPool2D(pool_size=(2, 2), strides=2),\n",
+    "                    tf.keras.layers.Flatten(),\n",
+    "                    tf.keras.layers.Dense(output_dim, activation=\"relu\"),\n",
+    "                    tf.keras.layers.Lambda(to_default_float),\n",
+    "                ]\n",
+    "            )\n",
+    "\n",
+    "            self.cnn.build()\n",
+    "\n",
+    "    def K(self, a_input: tf.Tensor, b_input: Optional[tf.Tensor] = None) -> tf.Tensor:\n",
+    "        transformed_a = self.cnn(a_input)\n",
+    "        transformed_b = self.cnn(b_input) if b_input is not None else b_input\n",
+    "        return self.base_kernel.K(transformed_a, transformed_b)\n",
+    "\n",
+    "    def K_diag(self, a_input: tf.Tensor) -> tf.Tensor:\n",
+    "        transformed_a = self.cnn(a_input)\n",
+    "        return self.base_kernel.K_diag(transformed_a)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "eb0ecf39",
+   "metadata": {},
+   "source": [
+    "$K_{uf}$ is in ConvNN output space, therefore we need to update `Kuf` multidispatch."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 4,
+   "id": "772bd7f0",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-03-18T10:10:41.365717Z",
+     "iopub.status.busy": "2022-03-18T10:10:41.365592Z",
+     "iopub.status.idle": "2022-03-18T10:10:41.368901Z",
+     "shell.execute_reply": "2022-03-18T10:10:41.368496Z"
+    }
+   },
+   "outputs": [],
+   "source": [
+    "class KernelSpaceInducingPoints(gpflow.inducing_variables.InducingPoints):\n",
+    "    pass\n",
+    "\n",
+    "\n",
+    "@gpflow.covariances.Kuu.register(KernelSpaceInducingPoints, KernelWithConvNN)\n",
+    "def Kuu(inducing_variable, kernel, jitter=None):\n",
+    "    func = gpflow.covariances.Kuu.dispatch(\n",
+    "        gpflow.inducing_variables.InducingPoints, gpflow.kernels.Kernel\n",
+    "    )\n",
+    "    return func(inducing_variable, kernel.base_kernel, jitter=jitter)\n",
+    "\n",
+    "\n",
+    "@gpflow.covariances.Kuf.register(KernelSpaceInducingPoints, KernelWithConvNN, object)\n",
+    "def Kuf(inducing_variable, kernel, a_input):\n",
+    "    return kernel.base_kernel(inducing_variable.Z, kernel.cnn(a_input))"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "e1c6b0ae",
+   "metadata": {},
+   "source": [
+    "Now we are ready to create and initialize the model:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 5,
+   "id": "362a8803",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-03-18T10:10:41.370506Z",
+     "iopub.status.busy": "2022-03-18T10:10:41.370406Z",
+     "iopub.status.idle": "2022-03-18T10:10:41.740079Z",
+     "shell.execute_reply": "2022-03-18T10:10:41.739637Z"
+    }
+   },
+   "outputs": [
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "2022-03-18 10:10:41.449606: W tensorflow/core/kernels/data/cache_dataset_ops.cc:768] The calling iterator did not fully read the dataset being cached. In order to avoid unexpected truncation of the dataset, the partially cached contents of the dataset  will be discarded. This can happen if you have an input pipeline similar to `dataset.cache().take(k).repeat()`. You should use `dataset.take(k).cache().repeat()` instead.\n"
+     ]
+    }
+   ],
+   "source": [
+    "num_mnist_classes = 10\n",
+    "output_dim = 5\n",
+    "num_inducing_points = 100\n",
+    "images_subset, labels_subset = next(iter(dataset.batch(32)))\n",
+    "images_subset = tf.reshape(images_subset, [-1, image_size])\n",
+    "labels_subset = tf.reshape(labels_subset, [-1, 1])\n",
+    "\n",
+    "kernel = KernelWithConvNN(\n",
+    "    image_shape, output_dim, gpflow.kernels.SquaredExponential(), batch_size=batch_size\n",
+    ")\n",
+    "\n",
+    "likelihood = gpflow.likelihoods.MultiClass(num_mnist_classes)\n",
+    "\n",
+    "inducing_variable_kmeans = kmeans2(images_subset.numpy(), num_inducing_points, minit=\"points\")[0]\n",
+    "inducing_variable_cnn = kernel.cnn(inducing_variable_kmeans)\n",
+    "inducing_variable = KernelSpaceInducingPoints(inducing_variable_cnn)\n",
+    "\n",
+    "model = gpflow.models.SVGP(\n",
+    "    kernel,\n",
+    "    likelihood,\n",
+    "    inducing_variable=inducing_variable,\n",
+    "    num_data=total_num_data,\n",
+    "    num_latent_gps=num_mnist_classes,\n",
+    ")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "eff0b281",
+   "metadata": {},
+   "source": [
+    "And start optimization:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 6,
+   "id": "4592f84f",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-03-18T10:10:41.741902Z",
+     "iopub.status.busy": "2022-03-18T10:10:41.741794Z",
+     "iopub.status.idle": "2022-03-18T10:10:51.882509Z",
+     "shell.execute_reply": "2022-03-18T10:10:51.882153Z"
+    }
+   },
+   "outputs": [
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "2022-03-18 10:10:41.768269: W tensorflow/python/util/util.cc:368] Sets are not currently considered sequences, but this may change in the future, so consider avoiding using them.\n"
+     ]
+    }
+   ],
+   "source": [
+    "data_iterator = iter(dataset)\n",
+    "adam_opt = tf.optimizers.Adam(0.001)\n",
+    "\n",
+    "training_loss = model.training_loss_closure(data_iterator)\n",
+    "\n",
+    "\n",
+    "@tf.function\n",
+    "def optimization_step():\n",
+    "    adam_opt.minimize(training_loss, var_list=model.trainable_variables)\n",
+    "\n",
+    "\n",
+    "for _ in range(iterations):\n",
+    "    optimization_step()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "4908ecc4",
+   "metadata": {},
+   "source": [
+    "Let's do predictions after training. Don't expect that we will get a good accuracy, because we haven't run training for long enough."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 7,
+   "id": "64b77a75",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2022-03-18T10:10:51.884392Z",
+     "iopub.status.busy": "2022-03-18T10:10:51.884251Z",
+     "iopub.status.idle": "2022-03-18T10:10:54.190846Z",
+     "shell.execute_reply": "2022-03-18T10:10:54.190416Z"
+    }
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Accuracy is 42.4805%\n"
+     ]
+    }
+   ],
+   "source": [
+    "m, v = model.predict_y(images_subset)\n",
+    "preds = np.argmax(m, 1).reshape(labels_subset.numpy().shape)\n",
+    "correct = preds == labels_subset.numpy().astype(int)\n",
+    "acc = np.average(correct.astype(float)) * 100.0\n",
+    "\n",
+    "print(\"Accuracy is {:.4f}%\".format(acc))"
+   ]
+  }
+ ],
+ "metadata": {
+  "jupytext": {
+   "formats": "ipynb,.pct.py:percent"
+  },
+  "kernelspec": {
+   "display_name": "Python 3",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.10.2"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 5
+}

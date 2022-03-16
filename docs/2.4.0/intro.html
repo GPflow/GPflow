@@ -1,0 +1,525 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+    <title>Introduction &#8212; GPflow 2.4.0 documentation</title>
+    
+    <link href="_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
+<link href="_static/styles/pydata-sphinx-theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
+  
+    
+    <link rel="stylesheet"
+      href="_static/vendor/fontawesome/5.13.0/css/all.min.css">
+    <link rel="preload" as="font" type="font/woff2" crossorigin
+      href="_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+    <link rel="preload" as="font" type="font/woff2" crossorigin
+      href="_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+  
+    
+      
+  
+    
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/pydata-sphinx-theme.css" />
+    <link rel="stylesheet" type="text/css" href="_static/pydata-custom.css" />
+    
+    <link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf">
+  
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="GPflow manual" href="notebooks/intro.html" />
+    <link rel="prev" title="GPflow Documentation" href="index.html" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="docsearch:language" content="None">
+    
+
+    <!-- Google Analytics -->
+    
+  </head>
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="80">
+    
+    <div class="container-fluid" id="banner"></div>
+
+    
+    <nav class="navbar navbar-light navbar-expand-lg bg-light fixed-top bd-navbar" id="navbar-main"><div class="container-xl">
+
+  <div id="navbar-start">
+    
+    
+
+<a class="navbar-brand" href="index.html">
+  <img src="_static/gpflow_logo.svg" class="logo" alt="logo">
+</a>
+
+
+    
+  </div>
+
+  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar-collapsible" aria-controls="navbar-collapsible" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="navbar-toggler-icon"></span>
+  </button>
+
+  
+  <div id="navbar-collapsible" class="col-lg-9 collapse navbar-collapse">
+    <div id="navbar-center" class="mr-auto">
+      
+      <div class="navbar-center-item">
+        <ul id="navbar-main-elements" class="navbar-nav">
+    <li class="toctree-l1 current active nav-item">
+ <a class="current reference internal nav-link" href="#">
+  Introduction
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="notebooks/intro.html">
+  GPflow manual
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="notebooks/intro_to_gpflow2.html">
+  GPflow with TensorFlow 2
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="notebooks/gpflow2_upgrade_guide.html">
+  GPflow 2 Upgrade Guide
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="notebooks_file.html">
+  Notebooks
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="derivations.html">
+  Derivations
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="api/gpflow/index.html">
+  API reference
+ </a>
+</li>
+
+    
+</ul>
+      </div>
+      
+    </div>
+
+    <div id="navbar-end">
+      
+      <div class="navbar-end-item">
+        <div class="dropdown" id="version_switcher">
+    <button type="button" class="btn btn-primary btn-sm navbar-btn dropdown-toggle" id="version_switcher_button" data-toggle="dropdown">
+        2.4.0  <!-- this text may get changed later by javascript -->
+        <span class="caret"></span>
+    </button>
+    <div id="version_switcher_menu" class="dropdown-menu list-group-flush py-0" aria-labelledby="version_switcher_button">
+    <!-- dropdown will be populated by javascript on page load -->
+    </div>
+</div>
+
+<!-- NOTE: this JS must live here (not in our global JS file) because it relies
+     on being processed by Jinja before it is run (specifically for replacing
+     variables intro and {'json_url': 'https://gpflow.github.io/GPflow/versions.json', 'url_template': 'https://gpflow.github.io/GPflow/{version}/index.html', 'version_match': '2.4.0'}.
+-->
+
+<script type="text/javascript">
+// Construct the target URL from the JSON components
+function buildURL(entry) {
+    var template = "https://gpflow.github.io/GPflow/{version}/index.html";  // supplied by jinja
+    template = template.replace("{version}", entry.version);
+    return template;
+}
+
+// Check if corresponding page path exists in other version of docs
+// and, if so, go there instead of the homepage of the other docs version
+function checkPageExistsAndRedirect(event) {
+    const currentFilePath = "intro.html",
+          tryUrl = event.target.getAttribute("href");
+    let otherDocsHomepage = tryUrl.replace(currentFilePath, "");
+    $.ajax({
+        type: 'HEAD',
+        url: tryUrl,
+        // if the page exists, go there
+        success: function() {
+            location.href = tryUrl;
+        }
+    }).fail(function() {
+        location.href = otherDocsHomepage;
+    });
+    // this prevents the browser from following the href of the clicked node
+    // (which is fine because this function takes care of redirecting)
+    return false;
+}
+
+// Populate the version switcher from the JSON config file
+(function () {
+    $.getJSON("https://gpflow.github.io/GPflow/versions.json", function(data, textStatus, jqXHR) {
+        const currentFilePath = "intro.html";
+        // create links to the corresponding page in the other docs versions
+        $.each(data, function(index, entry) {
+            // if no custom name specified (e.g., "latest"), use version string
+            if (!("name" in entry)) {
+                entry.name = entry.version;
+            }
+            // create the node
+            const node = document.createElement("a");
+            node.setAttribute("class", "list-group-item list-group-item-action py-1");
+            node.textContent = `${entry.name}`;
+            // get the base URL for that doc version, add the current page's
+            // path to it, and set as `href`
+            entry.url = buildURL(entry);
+            node.setAttribute("href", `${entry.url}${currentFilePath}`);
+            // on click, AJAX calls will check if the linked page exists before
+            // trying to redirect, and if not, will redirect to the homepage
+            // for that version of the docs.
+            node.onclick = checkPageExistsAndRedirect;
+            $("#version_switcher_menu").append(node);
+            // replace dropdown button text with the preferred display name of
+            // this version, rather than using sphinx's  variable.
+            // also highlight the dropdown entry for the currently-viewed
+            // version's entry
+            if (entry.version == "2.4.0") {
+                node.classList.add("active");
+                $("#version_switcher_button").text(entry.name);
+            }
+        });
+    });
+})();
+</script>
+      </div>
+      
+    </div>
+  </div>
+</div>
+    </nav>
+    
+
+    <div class="container-xl">
+      <div class="row">
+          
+            
+            <!-- Only show if we have sidebars configured, else just a small margin  -->
+            <div class="col-12 col-md-3 bd-sidebar">
+              <div class="sidebar-start-items"><form class="bd-search d-flex align-items-center" action="search.html" method="get">
+  <i class="icon fas fa-search"></i>
+  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
+</form><nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
+  <div class="bd-toc-item active">
+    
+  </div>
+</nav>
+              </div>
+              <div class="sidebar-end-items">
+              </div>
+            </div>
+            
+          
+
+          
+          <div class="d-none d-xl-block col-xl-2 bd-toc">
+            
+              
+              <div class="toc-item">
+                
+<div class="tocsection onthispage pt-5 pb-3">
+    <i class="fas fa-list"></i> On this page
+</div>
+
+<nav id="bd-toc-nav">
+    <ul class="visible nav section-nav flex-column">
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#install">
+   Install
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#getting-started">
+   Getting Started
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#what-s-the-difference-between-gpy-and-gpflow">
+   What’s the difference between GPy and GPflow?
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#what-models-are-implemented">
+   What models are implemented?
+  </a>
+  <ul class="nav section-nav flex-column">
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#regression">
+     Regression
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#mcmc">
+     MCMC
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#variational-inference">
+     Variational inference
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#interdomain-inference-and-multioutput-gps">
+     Interdomain inference and multioutput GPs
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#gplvm">
+     GPLVM
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#contributing">
+   Contributing
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#citing-gpflow">
+   Citing GPflow
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#references">
+   References
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#acknowledgements">
+   Acknowledgements
+  </a>
+ </li>
+</ul>
+
+</nav>
+              </div>
+              
+              <div class="toc-item">
+                
+              </div>
+              
+            
+          </div>
+          
+
+          
+          
+            
+          
+          <main class="col-12 col-md-9 col-xl-7 py-md-5 pl-md-5 pr-md-4 bd-content" role="main">
+              
+              <div>
+                
+  <section id="introduction">
+<h1>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h1>
+<p>GPflow is a package for building Gaussian process models in python, using <a class="reference external" href="http://www.tensorflow.org">TensorFlow</a>. It was originally created and is now managed by <a class="reference external" href="http://www.lancaster.ac.uk/staff/hensmanj/">James Hensman</a> and <a class="reference external" href="http://mlg.eng.cam.ac.uk/?portfolio=alex-matthews">Alexander G. de G. Matthews</a>.
+The full list of [contributors](<a class="reference external" href="http://github.com/GPflow/GPflow/graphs/contributors">http://github.com/GPflow/GPflow/graphs/contributors</a>) (in alphabetical order) is Alexander G. de G. Matthews, Alexis Boukouvalas, Artem Artemev, Daniel Marthaler, David J. Harris, Hugh Salimbeni, Ivo Couckuyt, James Hensman, Keisuke Fujii, Mark van der Wilk, Mikhail Beck, Pablo Leon-Villagra, Rasmus Bonnevie, ST John, Tom Nickson, Valentine Svensson, Vincent Dutordoir, Zoubin Ghahramani. GPflow is an open source project so if you feel you have some relevant skills and are interested in contributing then please do contact us.</p>
+<section id="install">
+<h2>Install<a class="headerlink" href="#install" title="Permalink to this headline">¶</a></h2>
+<p>GPflow can be installed by cloning the repository and running <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">.</span></code> in the root folder. This also installs required dependencies including TensorFlow, and sets everything up.</p>
+<p>A different installation approach requires installation of TensorFlow first. Please see instructions on the main TensorFlow <a class="reference external" href="https://www.tensorflow.org/versions/r1.0/get_started/get_started">webpage</a>. You will need version 1.0 or higher. We find that for many users pip installation is the fastest way to get going.
+As GPflow is a pure python library for now, you could just add it to your path (we use <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">setup.py</span> <span class="pre">develop</span></code>) or try an install <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">setup.py</span> <span class="pre">install</span></code> (untested). You can run the tests with <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">setup.py</span> <span class="pre">test</span></code>.</p>
+<p>Version history is documented <a class="reference external" href="https://github.com/GPflow/GPflow/blob/master/RELEASE.md">here</a>.</p>
+</section>
+<section id="getting-started">
+<h2>Getting Started<a class="headerlink" href="#getting-started" title="Permalink to this headline">¶</a></h2>
+<p>Get started with our <a class="reference external" href="notebooks/intro.html">examples and tutorials</a>.</p>
+</section>
+<section id="what-s-the-difference-between-gpy-and-gpflow">
+<h2>What’s the difference between GPy and GPflow?<a class="headerlink" href="#what-s-the-difference-between-gpy-and-gpflow" title="Permalink to this headline">¶</a></h2>
+<p>GPflow has origins in <a class="reference external" href="http://github.com/sheffieldml/gpy">GPy</a> by the <a class="reference external" href="https://github.com/SheffieldML/GPy/graphs/contributors">GPy contributors</a>, and much of the interface is intentionally similar for continuity (though some parts of the interface may diverge in future). GPflow has a rather different remit from GPy though:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>GPflow leverages TensorFlow for faster/bigger computation</p></li>
+<li><p>GPflow has much less code than GPy, mostly because all gradient computation is handled by TensorFlow.</p></li>
+<li><p>GPflow focusses on variational inference and MCMC  – there is no expectation propagation or Laplace approximation.</p></li>
+<li><p>GPflow does not have any plotting functionality.</p></li>
+</ul>
+</div></blockquote>
+</section>
+<section id="what-models-are-implemented">
+<span id="implemented-models"></span><h2>What models are implemented?<a class="headerlink" href="#what-models-are-implemented" title="Permalink to this headline">¶</a></h2>
+<p>GPflow has a slew of kernels that can be combined in a straightforward way. See the later section on <cite>Using kernels in GPflow</cite>. As for inference, the options are currently:</p>
+<section id="regression">
+<h3>Regression<a class="headerlink" href="#regression" title="Permalink to this headline">¶</a></h3>
+<p>For GP regression with Gaussian noise, it’s possible to marginalize the function values exactly: you’ll find this in <cite>gpflow.models.GPR</cite>. You can do maximum likelihood or MCMC for the covariance function parameters  (<a class="reference external" href="notebooks/basics/regression.html">notebook</a>).</p>
+<p>It’s also possible to do Sparse GP regression using the <a class="reference internal" href="api/gpflow/models/index.html#gpflow.models.SGPR" title="gpflow.models.SGPR"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.models.SGPR</span></code></a> class. This is based on work by <a class="reference external" href="http://www.jmlr.org/proceedings/papers/v5/titsias09a.html">Michalis Titsias</a> [4].</p>
+</section>
+<section id="mcmc">
+<h3>MCMC<a class="headerlink" href="#mcmc" title="Permalink to this headline">¶</a></h3>
+<p>For non-Gaussian likelihoods, GPflow has a model that can jointly sample over the function values and the covariance parameters: <a class="reference internal" href="api/gpflow/models/index.html#gpflow.models.GPMC" title="gpflow.models.GPMC"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.models.GPMC</span></code></a>. There’s also a sparse equivalent in <a class="reference internal" href="api/gpflow/models/index.html#gpflow.models.SGPMC" title="gpflow.models.SGPMC"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.models.SGPMC</span></code></a>, based on a <a class="reference external" href="https://papers.nips.cc/paper/5875-mcmc-for-variationally-sparse-gaussian-processes">recent paper</a> [1].</p>
+</section>
+<section id="variational-inference">
+<h3>Variational inference<a class="headerlink" href="#variational-inference" title="Permalink to this headline">¶</a></h3>
+<p>It’s often sufficient to approximate the function values as a Gaussian, for which we follow [2] in <a class="reference internal" href="api/gpflow/models/index.html#gpflow.models.VGP" title="gpflow.models.VGP"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.models.VGP</span></code></a>. In addition, there is a sparse version based on [3] in <a class="reference internal" href="api/gpflow/models/index.html#gpflow.models.SVGP" title="gpflow.models.SVGP"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.models.SVGP</span></code></a>. In the Gaussian likelihood case some of the optimization may be done analytically as discussed in [4] and implemented in <a class="reference internal" href="api/gpflow/models/index.html#gpflow.models.SGPR" title="gpflow.models.SGPR"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.models.SGPR</span></code></a> . All of the sparse methods in GPflow are solidified in [5].</p>
+<p>The following table summarizes the model options in GPflow.</p>
+<table class="table">
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 26%" />
+<col style="width: 26%" />
+<col style="width: 28%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"></th>
+<th class="head"><p>Gaussian
+Likelihood</p></th>
+<th class="head"><p>Non-Gaussian (variational)</p></th>
+<th class="head"><p>Non-Gaussian
+(MCMC)</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Full-covariance</p></td>
+<td><p><a class="reference internal" href="api/gpflow/models/index.html#gpflow.models.GPR" title="gpflow.models.GPR"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.models.GPR</span></code></a></p></td>
+<td><p><a class="reference internal" href="api/gpflow/models/index.html#gpflow.models.VGP" title="gpflow.models.VGP"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.models.VGP</span></code></a></p></td>
+<td><p><a class="reference internal" href="api/gpflow/models/index.html#gpflow.models.GPMC" title="gpflow.models.GPMC"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.models.GPMC</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p>Sparse approximation</p></td>
+<td><p><a class="reference internal" href="api/gpflow/models/index.html#gpflow.models.SGPR" title="gpflow.models.SGPR"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.models.SGPR</span></code></a></p></td>
+<td><p><a class="reference internal" href="api/gpflow/models/index.html#gpflow.models.SVGP" title="gpflow.models.SVGP"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.models.SVGP</span></code></a></p></td>
+<td><p><a class="reference internal" href="api/gpflow/models/index.html#gpflow.models.SGPMC" title="gpflow.models.SGPMC"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.models.SGPMC</span></code></a></p></td>
+</tr>
+</tbody>
+</table>
+<p>A unified view of many of the relevant references, along with some extensions, and an early discussion of GPflow itself, is given in the PhD thesis of <a class="reference external" href="http://mlg.eng.cam.ac.uk/matthews/thesis.pdf">Matthews</a> [8].</p>
+</section>
+<section id="interdomain-inference-and-multioutput-gps">
+<h3>Interdomain inference and multioutput GPs<a class="headerlink" href="#interdomain-inference-and-multioutput-gps" title="Permalink to this headline">¶</a></h3>
+<p>GPflow has an extensive and flexible framework for specifying interdomain inducing variables for variational approximations.
+Interdomain variables can greatly improve the effectiveness of a variational approximation, and are used in e.g.
+<a class="reference external" href="notebooks/advanced/convolutional.html">convolutional GPs</a>. In particular, they are crucial for defining sensible sparse
+approximations for <a class="reference external" href="notebooks/advanced/multioutput.html">multioutput GPs</a>.</p>
+<p>GPflow has a unifying design for using multioutput GPs and specifying interdomain approximations. A review of the
+mathematical background and the resulting software design is described in a <a class="reference external" href="https://arxiv.org/abs/2003.01115">paper on arXiv</a> [9].</p>
+</section>
+<section id="gplvm">
+<h3>GPLVM<a class="headerlink" href="#gplvm" title="Permalink to this headline">¶</a></h3>
+<p>For visualisation, the GPLVM [6] and Bayesian GPLVM [7] models are implemented
+in GPflow (<a class="reference external" href="notebooks/basics/GPLVM.html">notebook</a>).</p>
+</section>
+</section>
+<section id="contributing">
+<h2>Contributing<a class="headerlink" href="#contributing" title="Permalink to this headline">¶</a></h2>
+<p>All constructive input is gratefully received. For more information, see the <a class="reference external" href="https://github.com/GPflow/GPflow/blob/master/contributing.md">notes for contributors</a>.</p>
+</section>
+<section id="citing-gpflow">
+<h2>Citing GPflow<a class="headerlink" href="#citing-gpflow" title="Permalink to this headline">¶</a></h2>
+<p>To cite GPflow, please reference the <a class="reference external" href="http://www.jmlr.org/papers/volume18/16-537/16-537.pdf">JMLR paper</a>. Sample BibTeX is given below:</p>
+<div class="highlight-bib notranslate"><div class="highlight"><pre><span></span><span class="nc">@ARTICLE</span><span class="p">{</span><span class="nl">GPflow2017</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="na">author</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">{Matthews, Alexander G. de G. and {van der Wilk}, Mark and Nickson, Tom and Fujii, Keisuke. and {Boukouvalas}, Alexis and {Le{\&#39;o}n-Villagr{\&#39;a}}, Pablo and Ghahramani, Zoubin and Hensman, James}</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="na">title</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&quot;{{GP}flow: A {G}aussian process library using {T}ensor{F}low}&quot;</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="na">journal</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">{Journal of Machine Learning Research}</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="na">year</span><span class="w">    </span><span class="p">=</span><span class="w"> </span><span class="s">{2017}</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="na">month</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">{apr}</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="na">volume</span><span class="w">  </span><span class="p">=</span><span class="w"> </span><span class="s">{18}</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="na">number</span><span class="w">  </span><span class="p">=</span><span class="w"> </span><span class="s">{40}</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="na">pages</span><span class="w">   </span><span class="p">=</span><span class="w"> </span><span class="s">{1-6}</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="na">url</span><span class="w">     </span><span class="p">=</span><span class="w"> </span><span class="s">{http://jmlr.org/papers/v18/16-537.html}</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+</div>
+<p>Since the publication of the GPflow paper, the software has been significantly extended
+with the framework for interdomain approximations and multioutput priors. We review the
+framework and describe the design in an <a class="reference external" href="https://arxiv.org/abs/2003.01115">arXiv paper</a>
+which can be cited by users.</p>
+<div class="highlight-bib notranslate"><div class="highlight"><pre><span></span><span class="nc">@article</span><span class="p">{</span><span class="nl">GPflow2020multioutput</span><span class="p">,</span><span class="w"></span>
+<span class="w">  </span><span class="na">author</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">{{van der Wilk}, Mark and Dutordoir, Vincent and John, ST and</span>
+<span class="s">            Artemev, Artem and Adam, Vincent and Hensman, James}</span><span class="p">,</span><span class="w"></span>
+<span class="w">  </span><span class="na">title</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">{A Framework for Interdomain and Multioutput {G}aussian Processes}</span><span class="p">,</span><span class="w"></span>
+<span class="w">  </span><span class="na">year</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">{2020}</span><span class="p">,</span><span class="w"></span>
+<span class="w">  </span><span class="na">journal</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">{arXiv:2003.01115}</span><span class="p">,</span><span class="w"></span>
+<span class="w">  </span><span class="na">url</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">{https://arxiv.org/abs/2003.01115}</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+</div>
+</section>
+<section id="references">
+<h2>References<a class="headerlink" href="#references" title="Permalink to this headline">¶</a></h2>
+<p>[1] MCMC for Variationally Sparse Gaussian Processes
+J Hensman, A G de G Matthews, M Filippone, Z Ghahramani
+Advances in Neural Information Processing Systems, 1639-1647, 2015.</p>
+<p>[2] The variational Gaussian approximation revisited
+M Opper, C Archambeau
+Neural computation 21 (3), 786-792, 2009.</p>
+<p>[3] Scalable Variational Gaussian Process Classification
+J Hensman, A G de G Matthews, Z Ghahramani
+Proceedings of AISTATS 18, 2015.</p>
+<p>[4] Variational Learning of Inducing Variables in Sparse Gaussian Processes.
+M Titsias
+Proceedings of AISTATS 12, 2009.</p>
+<p>[5] On Sparse variational methods and the Kullback-Leibler divergence between stochastic processes
+A G de G Matthews, J Hensman, R E Turner, Z Ghahramani
+Proceedings of AISTATS 19, 2016.</p>
+<p>[6] Gaussian process latent variable models for visualisation of high dimensional data.
+Lawrence, Neil D.
+Advances in Neural Information Processing Systems, 329-336, 2004.</p>
+<p>[7] Bayesian Gaussian Process Latent Variable Model.
+Titsias, Michalis K., and Neil D. Lawrence.
+Proceedings of AISTATS, 2010.</p>
+<p>[8] Scalable Gaussian process inference using variational methods.
+Alexander G. de G. Matthews.
+PhD Thesis. University of Cambridge, 2016.</p>
+<p>[9] A Framework for Interdomain and Multioutput Gaussian Processes.
+Mark van der Wilk, Vincent Dutordoir, ST John, Artem Artemev, Vincent Adam, James Hensman.
+arXiv. 2020.</p>
+</section>
+<section id="acknowledgements">
+<h2>Acknowledgements<a class="headerlink" href="#acknowledgements" title="Permalink to this headline">¶</a></h2>
+<p>James Hensman was supported by an MRC fellowship and Alexander G. de G. Matthews was supported by EPSRC grants EP/I036575/1 and EP/N014162/1.</p>
+</section>
+</section>
+
+
+              </div>
+              
+              
+          </main>
+          
+
+      </div>
+    </div>
+  
+    <script src="_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf"></script>
+  <footer class="footer mt-5 mt-md-0">
+  <div class="container">
+    
+    <div class="footer-item">
+      <p class="copyright">
+    &copy; Copyright 2022, James Hensman and Alexander G. de G. Matthews and many others.<br>
+</p>
+    </div>
+    
+    <div class="footer-item">
+      <p class="sphinx-version">
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.4.0.<br>
+</p>
+    </div>
+    
+  </div>
+</footer>
+  </body>
+</html>

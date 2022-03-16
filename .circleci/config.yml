@@ -1,0 +1,25 @@
+version: 2.1
+
+
+parameters:
+  py_ver:
+    type: string
+    default: "3.10"
+
+
+jobs:
+  nothing:
+    docker:
+      - image: cimg/python:<<pipeline.parameters.py_ver>>
+    steps:
+      - run:
+          name: Do nothing
+          command: |
+            echo "Nothing to do for the 'gh-pages' branch."
+
+
+workflows:
+  version: 2.1
+  build_test_and_deploy:
+    jobs:
+      - nothing
