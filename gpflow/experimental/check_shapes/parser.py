@@ -15,14 +15,20 @@
 # pylint: disable=unused-argument
 
 from abc import ABC
-from functools import lru_cache
 from typing import Any, Collection, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple
 
+from lark.exceptions import UnexpectedInput
 from lark.lark import Lark
-from lark.lexer import Token
+from lark.lexer import PatternRE, PatternStr, Token
 from lark.tree import Tree
 
 from gpflow.experimental.check_shapes.config import DocstringFormat, get_rewrite_docstrings
+from gpflow.experimental.check_shapes.error_contexts import (
+    ErrorContext,
+    LarkUnexpectedInputContext,
+    StackContext,
+)
+from gpflow.experimental.check_shapes.exceptions import DocstringParseError, SpecificationParseError
 
 from .argument_ref import (
     RESULT_TOKEN,
@@ -107,8 +113,13 @@ class _ParseArgumentSpec(_TreeVisitor):
         return ParsedDimensionSpec(constant=None, variable_name=None, variable_rank=False)
 
     def dimension_spec_variable_rank(self, tree: Tree[Token]) -> ParsedDimensionSpec:
-        (token,) = _token_children(tree)
-        return ParsedDimensionSpec(constant=None, variable_name=token, variable_rank=True)
+        (token1, token2) = _token_children(tree)
+        if token1 == "*":
+            variable_name = token2
+        else:
+            assert token2 == "..."
+            variable_name = token1
+        return ParsedDimensionSpec(constant=None, variable_name=variable_name, variable_rank=True)
 
     def dimension_spec_anonymous_variable_rank(self, tree: Tree[Token]) -> ParsedDimensionSpec:
         return ParsedDimensionSpec(constant=None, variable_name=None, variable_rank=True)
@@ -246,11 +257,6 @@ class _RewritedocString(_TreeVisitor):
         return tokens[-1]
 
 
-_DOCSTRING_PARSER = Lark.open(
-    "docstring.lark", rel_to=__file__, propagate_positions=True, start="docstring"
-)
-
-
 _ARGUMENT_SPEC_PARSER = Lark.open(
     "check_shapes.lark",
     rel_to=__file__,
@@ -258,29 +264,106 @@ _ARGUMENT_SPEC_PARSER = Lark.open(
     start="argument_spec",
     parser="lalr",
 )
+_DOCSTRING_PARSER = Lark.open(
+    "docstring.lark",
+    rel_to=__file__,
+    propagate_positions=True,
+    start="docstring",
+)
 
 
-@lru_cache(maxsize=None)
-def parse_argument_spec(argument_spec: str) -> ParsedArgumentSpec:
+def _create_terminal_descriptions(
+    parser: Lark, re_descriptions: Mapping[str, str]
+) -> Mapping[str, str]:
+    missing = set()
+    unused = dict(re_descriptions)
+    result = {}
+    for terminal in parser.terminals:
+        name = terminal.name
+        pattern = terminal.pattern
+        if isinstance(pattern, PatternStr):
+            description = f'"{pattern.value}"'
+        else:
+            assert isinstance(pattern, PatternRE)
+            unused_description = unused.pop(name, None)
+            if unused_description is None:
+                missing.add(name)
+                description = "ERROR"
+            else:
+                description = f"{re_descriptions[name]} (re={pattern.value})"
+        result[name] = description
+    assert not unused, f"Redundant terminal descriptions were provided: {sorted(unused)}"
+    assert not missing, f"Some RE terminals did not have a description: {sorted(missing)}"
+    return result
+
+
+_ARGUMENT_SPEC_TERMINAL_DESCRIPTIONS = _create_terminal_descriptions(
+    _ARGUMENT_SPEC_PARSER,
+    {
+        "CNAME": "variable name",
+        "INT": "integer",
+        "WS": "whitespace",
+    },
+)
+_DOCSTRING_TERMINAL_DESCRIPTIONS = _create_terminal_descriptions(
+    _DOCSTRING_PARSER,
+    {
+        "ANY": "any text",
+        "CNAME": "variable name",
+        "INFO_FIELD_OTHER": "Sphinx info field",
+        "PARAM": "Sphinx parameter field",
+        "RETURNS": "Sphinx `return` field",
+        "WS": "whitespace",
+    },
+)
+
+
+_ARGUMENT_SPEC_CACHE: Dict[str, ParsedArgumentSpec] = {}
+_SPHINX_DOCSTRING_CACHE: Dict[Tuple[str, Tuple[ParsedArgumentSpec, ...]], str] = {}
+
+
+def parse_argument_spec(argument_spec: str, context: ErrorContext) -> ParsedArgumentSpec:
     """
     Parse a `check_shapes` argument specification.
     """
-    tree = _ARGUMENT_SPEC_PARSER.parse(argument_spec)
+    cached_value = _ARGUMENT_SPEC_CACHE.get(argument_spec)
+    if cached_value is not None:
+        return cached_value
+
+    try:
+        tree = _ARGUMENT_SPEC_PARSER.parse(argument_spec)
+    except UnexpectedInput as e:
+        raise SpecificationParseError(
+            StackContext(
+                context,
+                LarkUnexpectedInputContext(argument_spec, e, _ARGUMENT_SPEC_TERMINAL_DESCRIPTIONS),
+            )
+        ) from e
     specs: ParsedArgumentSpec = _ParseArgumentSpec().visit(tree)
     return specs
 
 
-@lru_cache(maxsize=None)
 def _parse_and_rewrite_sphinx_docstring(
-    docstring: str, argument_specs: Tuple[ParsedArgumentSpec, ...]
+    docstring: str, argument_specs: Tuple[ParsedArgumentSpec, ...], context: ErrorContext
 ) -> str:
-    tree = _DOCSTRING_PARSER.parse(docstring)
+    cached_value = _SPHINX_DOCSTRING_CACHE.get((docstring, argument_specs))
+    if cached_value is not None:
+        return cached_value
+
+    try:
+        tree = _DOCSTRING_PARSER.parse(docstring)
+    except UnexpectedInput as e:
+        raise DocstringParseError(
+            StackContext(
+                context, LarkUnexpectedInputContext(docstring, e, _DOCSTRING_TERMINAL_DESCRIPTIONS)
+            )
+        ) from e
     rewritten_docstring: str = _RewritedocString(docstring, argument_specs).visit(tree)
     return rewritten_docstring
 
 
 def parse_and_rewrite_docstring(
-    docstring: Optional[str], argument_specs: Tuple[ParsedArgumentSpec, ...]
+    docstring: Optional[str], argument_specs: Tuple[ParsedArgumentSpec, ...], context: ErrorContext
 ) -> Optional[str]:
     """
     Rewrite `docstring` to include the shapes specified by the `argument_specs`.
@@ -296,4 +379,4 @@ def parse_and_rewrite_docstring(
         f"Current docstring format is {docstring_format}, but I don't know how to rewrite that."
         " See `gpflow.experimental.check_shapes.config.set_rewrite_docstrings`."
     )
-    return _parse_and_rewrite_sphinx_docstring(docstring, argument_specs)
+    return _parse_and_rewrite_sphinx_docstring(docstring, argument_specs, context)

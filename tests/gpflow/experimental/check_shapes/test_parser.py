@@ -19,11 +19,13 @@ from typing import Optional, Tuple
 
 import pytest
 
+from gpflow.experimental.check_shapes import check_shapes
 from gpflow.experimental.check_shapes.config import set_rewrite_docstrings
+from gpflow.experimental.check_shapes.exceptions import SpecificationParseError
 from gpflow.experimental.check_shapes.parser import parse_and_rewrite_docstring, parse_argument_spec
 from gpflow.experimental.check_shapes.specs import ParsedArgumentSpec
 
-from .utils import make_argument_ref, make_shape_spec, varrank
+from .utils import TestContext, make_argument_ref, make_shape_spec, varrank
 
 
 @dataclass
@@ -745,13 +747,13 @@ Model mean and variance prediction.""",
 
 @pytest.mark.parametrize("data", _TEST_DATA, ids=str)
 def test_parse_argument_spec(data: TestData) -> None:
-    actual_specs = tuple(parse_argument_spec(s) for s in data.argument_spec_strs)
+    actual_specs = tuple(parse_argument_spec(s, TestContext()) for s in data.argument_spec_strs)
     assert data.expected_specs == actual_specs
 
 
 @pytest.mark.parametrize("data", _TEST_DATA, ids=str)
 def test_parse_and_rewrite_docstring(data: TestData) -> None:
-    rewritten_docstring = parse_and_rewrite_docstring(data.doc, data.expected_specs)
+    rewritten_docstring = parse_and_rewrite_docstring(data.doc, data.expected_specs, TestContext())
     assert data.expected_doc == rewritten_docstring
 
 
@@ -759,5 +761,141 @@ def test_parse_and_rewrite_docstring(data: TestData) -> None:
 def test_parse_and_rewrite_docstring__disable(data: TestData) -> None:
     set_rewrite_docstrings(None)
 
-    rewritten_docstring = parse_and_rewrite_docstring(data.doc, data.expected_specs)
+    rewritten_docstring = parse_and_rewrite_docstring(data.doc, data.expected_specs, TestContext())
     assert data.doc == rewritten_docstring
+
+
+_CHECK_SHAPES_LINE = 892
+
+
+@pytest.mark.parametrize(
+    "spec,expected_message",
+    [
+        (
+            "a [batch..., x]",
+            f"""
+Unable to parse shape specification.
+  check_shapes called at: {__file__}:{_CHECK_SHAPES_LINE}
+    Argument number (0-indexed): 0
+      Line:     "a [batch..., x]"
+                    ^
+      Expected: integer (re=(?:[0-9])+)
+""",
+        ),
+        (
+            "a= [batch..., x]",
+            f"""
+Unable to parse shape specification.
+  check_shapes called at: {__file__}:{_CHECK_SHAPES_LINE}
+    Argument number (0-indexed): 0
+      Line: "a= [batch..., x]"
+              ^
+      Found unexpected character.
+""",
+        ),
+        (
+            "a: (batch..., x)",
+            f"""
+Unable to parse shape specification.
+  check_shapes called at: {__file__}:{_CHECK_SHAPES_LINE}
+    Argument number (0-indexed): 0
+      Line: "a: (batch..., x)"
+                ^
+      Found unexpected character.
+""",
+        ),
+        (
+            "a: batch..., x]",
+            f"""
+Unable to parse shape specification.
+  check_shapes called at: {__file__}:{_CHECK_SHAPES_LINE}
+    Argument number (0-indexed): 0
+      Line:     "a: batch..., x]"
+                    ^
+      Expected: "["
+""",
+        ),
+        (
+            "a: [batch... x]",
+            f"""
+Unable to parse shape specification.
+  check_shapes called at: {__file__}:{_CHECK_SHAPES_LINE}
+    Argument number (0-indexed): 0
+      Line:            "a: [batch... x]"
+                                     ^
+      Expected one of: ","
+                       "]"
+""",
+        ),
+        (
+            "a: [batch..., x",
+            f"""
+Unable to parse shape specification.
+  check_shapes called at: {__file__}:{_CHECK_SHAPES_LINE}
+    Argument number (0-indexed): 0
+      Line:            "a: [batch..., x"
+                                      ^
+      Expected one of: ","
+                       "..."
+                       "]"
+""",
+        ),
+        (
+            "a: [, x]",
+            f"""
+Unable to parse shape specification.
+  check_shapes called at: {__file__}:{_CHECK_SHAPES_LINE}
+    Argument number (0-indexed): 0
+      Line:            "a: [, x]"
+                            ^
+      Expected one of: variable name (re=(?:(?:[A-Z]|[a-z])|_)(?:(?:(?:[A-Z]|[a-z])|[0-9]|_))*)
+                       "."
+                       "..."
+                       integer (re=(?:[0-9])+)
+                       "None"
+                       "]"
+                       "*"
+""",
+        ),
+        (
+            "",
+            f"""
+Unable to parse shape specification.
+  check_shapes called at: {__file__}:{_CHECK_SHAPES_LINE}
+    Argument number (0-indexed): 0
+      Line:     ""
+                 ^
+      Expected: variable name (re=(?:(?:[A-Z]|[a-z])|_)(?:(?:(?:[A-Z]|[a-z])|[0-9]|_))*)
+""",
+        ),
+        (
+            """
+  a:
+  [
+    batch...
+    x
+  ]""",
+            f"""
+Unable to parse shape specification.
+  check_shapes called at: {__file__}:{_CHECK_SHAPES_LINE}
+    Argument number (0-indexed): 0
+      Line:            "    x"
+                            ^
+      Expected one of: ","
+                       "]"
+""",
+        ),
+    ],
+)
+def test_parse_argument_spec__error(spec: str, expected_message: str) -> None:
+    with pytest.raises(SpecificationParseError) as e:
+        check_shapes(spec)
+    (message,) = e.value.args
+    assert expected_message == message
+
+
+def test_parse_and_rewrite_docstring__error() -> None:
+    # I don't actually know how to provoke an error from parsing the docstring.
+    # The problem is that *any* string is allow as free-form documentation.
+    # Update this test if you find a good example."
+    assert True

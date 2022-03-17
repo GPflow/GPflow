@@ -19,16 +19,16 @@ from typing import Optional, Tuple
 
 import pytest
 
-from gpflow.base import TensorType
-from gpflow.experimental.check_shapes import (
-    ShapeMismatchError,
-    check_shapes,
-    get_check_shapes,
-    get_shape,
-)
+from gpflow.experimental.check_shapes import ShapeMismatchError, check_shapes, get_check_shapes
 from gpflow.experimental.check_shapes.config import disable_check_shapes
 
-from .utils import t, t_unk
+from .utils import TestShaped, t, t_unk
+
+
+def get_shape(x: TestShaped) -> Tuple[Optional[int], ...]:
+    shape = x.test_shape
+    assert shape is not None
+    return shape
 
 
 def test_check_shapes__constant() -> None:
@@ -37,7 +37,7 @@ def test_check_shapes__constant() -> None:
         "b: [2, 4]",
         "return: [3, 4]",
     )
-    def f(a: TensorType, b: TensorType) -> TensorType:
+    def f(a: TestShaped, b: TestShaped) -> TestShaped:
         return t(3, 4)
 
     # Don't crash...
@@ -55,7 +55,7 @@ def test_check_shapes__constant__bad_input() -> None:
         "b: [2, 4]",
         "return: [3, 4]",
     )
-    def f(a: TensorType, b: TensorType) -> TensorType:
+    def f(a: TestShaped, b: TestShaped) -> TestShaped:
         return t(3, 4)
 
     with pytest.raises(ShapeMismatchError):
@@ -68,7 +68,7 @@ def test_check_shapes__constant__bad_return() -> None:
         "b: [2, 4]",
         "return: [3, 4]",
     )
-    def f(a: TensorType, b: TensorType) -> TensorType:
+    def f(a: TestShaped, b: TestShaped) -> TestShaped:
         return t(3, 4 + 1)
 
     with pytest.raises(ShapeMismatchError):
@@ -81,7 +81,7 @@ def test_check_shapes__var_dim() -> None:
         "b: [d1, d3]",
         "return: [d2, d3]",
     )
-    def f(a: TensorType, b: TensorType) -> TensorType:
+    def f(a: TestShaped, b: TestShaped) -> TestShaped:
         return t(3, 4)
 
     # Don't crash...
@@ -100,7 +100,7 @@ def test_check_shapes__var_dim__bad_input() -> None:
         "b: [d1, d3]",
         "return: [d2, d3]",
     )
-    def f(a: TensorType, b: TensorType) -> TensorType:
+    def f(a: TestShaped, b: TestShaped) -> TestShaped:
         return t(3, 4)
 
     with pytest.raises(ShapeMismatchError):
@@ -113,7 +113,7 @@ def test_check_shapes__var_dim__bad_return() -> None:
         "b: [d1, d3]",
         "return: [d2, d3]",
     )
-    def f(a: TensorType, b: TensorType) -> TensorType:
+    def f(a: TestShaped, b: TestShaped) -> TestShaped:
         return t(3, 4 + 1)
 
     with pytest.raises(ShapeMismatchError):
@@ -129,8 +129,8 @@ def test_check_shapes__var_rank() -> None:
         "return: [ds..., d1, d2]",
     )
     def f(
-        a: TensorType, b: TensorType, c: TensorType, d: TensorType, leading_dims: int
-    ) -> TensorType:
+        a: TestShaped, b: TestShaped, c: TestShaped, d: TestShaped, leading_dims: int
+    ) -> TestShaped:
         output_shape = leading_dims * (2,) + (3, 4)
         return t(*output_shape)
 
@@ -156,7 +156,7 @@ def test_check_shapes__var_rank__bad_input() -> None:
         "d: [d1, ds...]",
         "return: [ds..., d1, d2]",
     )
-    def f(a: TensorType, b: TensorType, c: TensorType, d: TensorType) -> TensorType:
+    def f(a: TestShaped, b: TestShaped, c: TestShaped, d: TestShaped) -> TestShaped:
         return t(1, 2, 3)
 
     with pytest.raises(ShapeMismatchError):
@@ -171,7 +171,7 @@ def test_check_shapes__var_rank__bad_return() -> None:
         "d: [d1, ds...]",
         "return: [ds..., d1, d2]",
     )
-    def f(a: TensorType, b: TensorType, c: TensorType, d: TensorType) -> TensorType:
+    def f(a: TestShaped, b: TestShaped, c: TestShaped, d: TestShaped) -> TestShaped:
         return t(2, 3 + 1, 4)
 
     with pytest.raises(ShapeMismatchError):
@@ -186,8 +186,12 @@ def test_check_shapes__anonymous() -> None:
         "d: [*, d2]",
         "return: [..., d1, d2]",
     )
-    def f(a: TensorType, b: TensorType, c: TensorType, d: TensorType) -> TensorType:
-        return t(*get_shape(c)[:-1], get_shape(a)[-1], get_shape(b)[-1])  # type: ignore
+    def f(a: TestShaped, b: TestShaped, c: TestShaped, d: TestShaped) -> TestShaped:
+        return t(
+            *get_shape(c)[:-1],
+            get_shape(a)[-1],
+            get_shape(b)[-1],
+        )
 
     f(t(1, 2), t(1, 3), t(2), t(3))
     f(t(1, 2), t(1, 3), t(1, 2), t(1, 3))
@@ -208,8 +212,12 @@ def test_check_shapes__anonymous__bad_imput() -> None:
         "d: [*, d2]",
         "return: [..., d1, d2]",
     )
-    def f(a: TensorType, b: TensorType, c: TensorType, d: TensorType) -> TensorType:
-        return t(*get_shape(c)[:-1], get_shape(a)[-1], get_shape(b)[-1])  # type: ignore
+    def f(a: TestShaped, b: TestShaped, c: TestShaped, d: TestShaped) -> TestShaped:
+        return t(
+            *get_shape(c)[:-1],
+            get_shape(a)[-1],
+            get_shape(b)[-1],
+        )
 
     with pytest.raises(ShapeMismatchError):
         f(t(2), t(1, 3), t(2), t(3))
@@ -238,8 +246,12 @@ def test_check_shapes__anonymous__bad_return() -> None:
         "d: [*, d2]",
         "return: [..., d1, d2]",
     )
-    def f(a: TensorType, b: TensorType, c: TensorType, d: TensorType) -> TensorType:
-        return t(*get_shape(c)[:-1], get_shape(a)[-1] + 1, get_shape(b)[-1])  # type: ignore
+    def f(a: TestShaped, b: TestShaped, c: TestShaped, d: TestShaped) -> TestShaped:
+        return t(
+            *get_shape(c)[:-1],
+            get_shape(a)[-1] + 1,  # type: ignore
+            get_shape(b)[-1],
+        )
 
     with pytest.raises(ShapeMismatchError):
         f(t(1, 2), t(1, 3), t(2), t(3))
@@ -251,7 +263,7 @@ def test_check_shapes__scalar() -> None:
         "b: []",
         "return: []",
     )
-    def f(a: TensorType, b: TensorType) -> TensorType:
+    def f(a: TestShaped, b: TestShaped) -> TestShaped:
         return t()
 
     f(t(), t())  # Don't crash...
@@ -263,7 +275,7 @@ def test_check_shapes__scalar__bad_input() -> None:
         "b: []",
         "return: []",
     )
-    def f(a: TensorType, b: TensorType) -> TensorType:
+    def f(a: TestShaped, b: TestShaped) -> TestShaped:
         return t()
 
     with pytest.raises(ShapeMismatchError):
@@ -276,7 +288,7 @@ def test_check_shapes__scalar__bad_return() -> None:
         "b: []",
         "return: []",
     )
-    def f(a: TensorType, b: TensorType) -> TensorType:
+    def f(a: TestShaped, b: TestShaped) -> TestShaped:
         return t(1, 1)
 
     with pytest.raises(ShapeMismatchError):
@@ -289,7 +301,7 @@ def test_check_shapes__invalid_argument() -> None:
         "b: [2, 4]",
         "return: [3, 4]",
     )
-    def f(a: TensorType, b: TensorType) -> TensorType:
+    def f(a: TestShaped, b: TestShaped) -> TestShaped:
         return t(3, 4)
 
     with pytest.raises(TypeError):
@@ -301,11 +313,11 @@ def test_check_shapes__invalid_argument() -> None:
 def test_check_shapes__argument_refs() -> None:
     @dataclass
     class Input:
-        ins: Tuple[TensorType, TensorType]
+        ins: Tuple[TestShaped, TestShaped]
 
     @dataclass
     class Output:
-        out: TensorType
+        out: TestShaped
 
     @check_shapes(
         "x.ins[0]: [a_batch..., 1]",
@@ -328,11 +340,11 @@ def test_check_shapes__argument_refs() -> None:
 def test_check_shapes__none() -> None:
     @dataclass
     class Input:
-        ins: Optional[Tuple[Optional[TensorType], ...]]
+        ins: Optional[Tuple[Optional[TestShaped], ...]]
 
     @dataclass
     class Output:
-        out: Optional[TensorType]
+        out: Optional[TestShaped]
 
     @check_shapes(
         "x.ins[0]: [1, 2]",
@@ -356,11 +368,11 @@ def test_check_shapes__reuse() -> None:
     )
 
     @check_my_shapes
-    def f(a: TensorType, b: TensorType) -> TensorType:
+    def f(a: TestShaped, b: TestShaped) -> TestShaped:
         return t(3, 4)
 
     @check_my_shapes
-    def g(a: TensorType, b: TensorType) -> TensorType:
+    def g(a: TestShaped, b: TestShaped) -> TestShaped:
         return t(3, 4)
 
     assert get_check_shapes(f) is check_my_shapes
@@ -372,7 +384,7 @@ def test_check_shapes__reuse() -> None:
 
 
 def test_check_shapes__disable() -> None:
-    def h(a: TensorType, b: TensorType) -> TensorType:
+    def h(a: TestShaped, b: TestShaped) -> TestShaped:
         return a
 
     with disable_check_shapes():
@@ -382,33 +394,65 @@ def test_check_shapes__disable() -> None:
             "b: [d...]",
             "return: [d...]",
         )
-        def f(a: TensorType, b: TensorType) -> TensorType:
+        def f(a: TestShaped, b: TestShaped) -> TestShaped:
             return a
 
         f(t(2, 3), t(2, 4))  # Wrong shape, but checks disabled.
 
     f(t(2, 3), t(2, 4))  # Wrong shape, but checks were disable when function was created.
-    get_check_shapes(f)(h)  # Don't crash.
+    get_check_shapes(f)(h)  # pylint: disable=not-callable  # Don't crash.
 
     @check_shapes(
         "a: [d...]",
         "b: [d...]",
         "return: [d...]",
     )
-    def g(a: TensorType, b: TensorType) -> TensorType:
+    def g(a: TestShaped, b: TestShaped) -> TestShaped:
         return a
 
     with pytest.raises(ShapeMismatchError):
         g(t(2, 3), t(2, 4))
-        get_check_shapes(g)(h)  # Don't crash.
+        get_check_shapes(g)(h)  # pylint: disable=not-callable    # Don't crash.
 
     with disable_check_shapes():
         g(t(2, 3), t(2, 4))  # Wrong shape, but checks disabled.
-        get_check_shapes(g)(h)  # Don't crash.
+        get_check_shapes(g)(h)  # pylint: disable=not-callable    # Don't crash.
 
     with pytest.raises(ShapeMismatchError):
         g(t(2, 3), t(2, 4))
-        get_check_shapes(g)(h)  # Don't crash.
+        get_check_shapes(g)(h)  # pylint: disable=not-callable    # Don't crash.
+
+
+def test_check_shapes__error_message() -> None:
+    # Here we're just testing that error message formatting is wired together sanely. For more
+    # thorough tests of error formatting, see test_errors.py
+
+    @check_shapes(
+        "a: [d1, d2]",
+        "b: [d1, d3]",
+        "return: [d2, d3]",
+    )
+    def f(a: TestShaped, b: TestShaped) -> TestShaped:
+        return t(3, 4)
+
+    with pytest.raises(ShapeMismatchError) as e:
+        f(t(2, 3), t(3, 4))
+
+    (message,) = e.value.args
+    assert (
+        f"""
+Tensor shape mismatch in call to function.
+  Function: test_check_shapes__error_message.<locals>.f
+    Declared: {__file__}:430
+    Argument: a
+      Expected: [d1, d2]
+      Actual:   [2, 3]
+    Argument: b
+      Expected: [d1, d3]
+      Actual:   [3, 4]
+"""
+        == message
+    )
 
 
 def test_check_shapes__rewrites_docstring() -> None:
@@ -420,7 +464,7 @@ def test_check_shapes__rewrites_docstring() -> None:
         "b: [2, 4]",
         "return: [3, 4]",
     )
-    def f(a: TensorType, b: TensorType) -> TensorType:
+    def f(a: TestShaped, b: TestShaped) -> TestShaped:
         """
         A function for testing shape checking.
 

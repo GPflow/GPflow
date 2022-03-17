@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from typing import Any, Type, Union
+from typing import Any
 
 import numpy as np
 import pytest
@@ -19,12 +19,14 @@ import tensorflow as tf
 
 from gpflow.base import Parameter
 from gpflow.experimental.check_shapes import Shape, get_shape
+from gpflow.experimental.check_shapes.exceptions import NoShapeError
+
+from .utils import TestContext
 
 
 @pytest.mark.parametrize(
     "shaped,expected_shape",
     [
-        (object(), NotImplementedError),
         (True, ()),
         (0, ()),
         (0.0, ()),
@@ -36,28 +38,51 @@ from gpflow.experimental.check_shapes import Shape, get_shape
         (np.zeros((3, 4)), (3, 4)),
         (tf.zeros((4, 3)), (4, 3)),
         (tf.Variable(np.zeros((2, 4))), (2, 4)),
+        # pylint: disable=unexpected-keyword-arg
         (tf.Variable(np.zeros((2, 4)), shape=[2, None]), (2, None)),
         (tf.Variable(np.zeros((2, 4)), shape=tf.TensorShape(None)), None),
         (Parameter(3), ()),
         (Parameter(np.zeros((4, 2))), (4, 2)),
     ],
 )
-def test_get_shape(shaped: Any, expected_shape: Union[Shape, Type[Exception]]) -> None:
-    if isinstance(expected_shape, type) and issubclass(expected_shape, Exception):
+def test_get_shape(shaped: Any, expected_shape: Shape) -> None:
+    actual_shape = get_shape(shaped, TestContext())
 
-        with pytest.raises(expected_shape):
-            get_shape(shaped)
+    # Numpy and tensorflow sometimes like to pretend that objects have another type than they
+    # actually do. Make sure the result actually has the right types:
+    if actual_shape is not None:
+        assert tuple == type(actual_shape)
+        assert all((actual_dim is None) or (int == type(actual_dim)) for actual_dim in actual_shape)
 
-    else:
+    assert expected_shape == actual_shape
 
-        actual_shape = get_shape(shaped)
 
-        # Numpy and tensorflow sometimes like to pretend that objects have another type than they
-        # actually do. Make sure the result actually has the right types:
-        if actual_shape is not None:
-            assert tuple == type(actual_shape)
-            assert all(
-                (actual_dim is None) or (int == type(actual_dim)) for actual_dim in actual_shape
-            )
+@pytest.mark.parametrize(
+    "shaped,expected_message",
+    [
+        (
+            object(),
+            """
+Unable to determine shape of object.
+  Fake test error context.
+    Object type: builtins.object
+""",
+        ),
+        (
+            [[object()]],
+            """
+Unable to determine shape of object.
+  Fake test error context.
+    Index: [0]
+      Index: [0]
+        Object type: builtins.object
+""",
+        ),
+    ],
+)
+def test_get_shape__error(shaped: Any, expected_message: str) -> None:
+    with pytest.raises(NoShapeError) as e:
+        get_shape(shaped, TestContext())
 
-        assert expected_shape == actual_shape
+    (message,) = e.value.args
+    assert expected_message == message

@@ -115,9 +115,14 @@ def test_check_shapes__disable__speed(func_wrapper: Callable[[Any], Any]) -> Non
     x = tf.zeros((3, 4, 5))
     y = tf.ones((3, 4, 5))
 
-    def time_no_checks() -> float:
+    def time_with_checks() -> float:
         before = perf_counter()
 
+        @check_shapes(
+            "a: [d...]",
+            "b: [d...]",
+            "return: [d...]",
+        )
         def f(a: tf.Tensor, b: tf.Tensor) -> tf.Tensor:
             return a + b
 
@@ -147,14 +152,9 @@ def test_check_shapes__disable__speed(func_wrapper: Callable[[Any], Any]) -> Non
             after = perf_counter()
             return after - before
 
-    def time_with_checks() -> float:
+    def time_no_checks() -> float:
         before = perf_counter()
 
-        @check_shapes(
-            "a: [d...]",
-            "b: [d...]",
-            "return: [d...]",
-        )
         def f(a: tf.Tensor, b: tf.Tensor) -> tf.Tensor:
             return a + b
 
@@ -165,9 +165,9 @@ def test_check_shapes__disable__speed(func_wrapper: Callable[[Any], Any]) -> Non
         after = perf_counter()
         return after - before
 
-    t_no_checks = time_no_checks()
-    t_disabled_checks = time_disabled_checks()
     t_with_checks = time_with_checks()
+    t_disabled_checks = time_disabled_checks()
+    t_no_checks = time_no_checks()
 
-    assert t_no_checks < t_with_checks
-    assert t_disabled_checks < t_with_checks
+    assert t_no_checks < t_with_checks * 1.1
+    assert t_disabled_checks < t_with_checks * 1.1

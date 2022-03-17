@@ -17,7 +17,6 @@ Utilities for testing the `check_shapes` library.
 from dataclasses import dataclass
 from typing import Optional, Union
 
-from gpflow.base import TensorType
 from gpflow.experimental.check_shapes import Dimension, Shape, get_shape
 from gpflow.experimental.check_shapes.argument_ref import (
     ArgumentRef,
@@ -25,7 +24,17 @@ from gpflow.experimental.check_shapes.argument_ref import (
     IndexArgumentRef,
     RootArgumentRef,
 )
+from gpflow.experimental.check_shapes.error_contexts import ErrorContext, MessageBuilder
 from gpflow.experimental.check_shapes.specs import ParsedDimensionSpec, ParsedShapeSpec
+
+
+@dataclass(frozen=True)
+class TestContext(ErrorContext):
+
+    message: str = "Fake test error context."
+
+    def format(self, builder: MessageBuilder) -> None:
+        builder.add_line(self.message)
 
 
 @dataclass(frozen=True)
@@ -35,7 +44,7 @@ class TestShaped:
 
 
 @get_shape.register(TestShaped)
-def get_test_shaped_shape(shaped: TestShaped) -> Shape:
+def get_test_shaped_shape(shaped: TestShaped, context: ErrorContext) -> Shape:
     return shaped.test_shape
 
 
@@ -46,7 +55,7 @@ def t_unk() -> TestShaped:
     return TestShaped(None)
 
 
-def t(*shape: Dimension) -> TensorType:
+def t(*shape: Dimension) -> TestShaped:
     """
     Creates an object with the given shape, for testing.
     """
