@@ -15,7 +15,8 @@
 # pylint: disable=unused-argument  # Bunch of fake functions below has unused arguments.
 # pylint: disable=no-member  # PyLint struggles with TensorFlow.
 
-from typing import Callable
+from time import perf_counter
+from typing import Any, Callable
 
 import numpy as np
 import pytest
@@ -23,6 +24,7 @@ import tensorflow as tf
 
 from gpflow.base import AnyNDArray
 from gpflow.experimental.check_shapes import check_shapes
+from gpflow.experimental.check_shapes.config import disable_check_shapes
 
 
 def test_check_shapes__numpy() -> None:
@@ -106,3 +108,66 @@ def test_check_shapes__tensorflow_compilation(
         optimiser.minimize(loss, var_list=[v])
 
     np.testing.assert_allclose(target, v.numpy(), atol=0.01)
+
+
+@pytest.mark.parametrize("func_wrapper", [lambda x: x, tf.function], ids=["none", "tf.function"])
+def test_check_shapes__disable__speed(func_wrapper: Callable[[Any], Any]) -> None:
+    x = tf.zeros((3, 4, 5))
+    y = tf.ones((3, 4, 5))
+
+    def time_no_checks() -> float:
+        before = perf_counter()
+
+        def f(a: tf.Tensor, b: tf.Tensor) -> tf.Tensor:
+            return a + b
+
+        f = func_wrapper(f)
+        for _ in range(10):
+            f(x, y)
+
+        after = perf_counter()
+        return after - before
+
+    def time_disabled_checks() -> float:
+        with disable_check_shapes():
+            before = perf_counter()
+
+            @check_shapes(
+                "a: [d...]",
+                "b: [d...]",
+                "return: [d...]",
+            )
+            def f(a: tf.Tensor, b: tf.Tensor) -> tf.Tensor:
+                return a + b
+
+            f = func_wrapper(f)
+            for _ in range(10):
+                f(x, y)
+
+            after = perf_counter()
+            return after - before
+
+    def time_with_checks() -> float:
+        before = perf_counter()
+
+        @check_shapes(
+            "a: [d...]",
+            "b: [d...]",
+            "return: [d...]",
+        )
+        def f(a: tf.Tensor, b: tf.Tensor) -> tf.Tensor:
+            return a + b
+
+        f = func_wrapper(f)
+        for _ in range(10):
+            f(x, y)
+
+        after = perf_counter()
+        return after - before
+
+    t_no_checks = time_no_checks()
+    t_disabled_checks = time_disabled_checks()
+    t_with_checks = time_with_checks()
+
+    assert t_no_checks < t_with_checks
+    assert t_disabled_checks < t_with_checks

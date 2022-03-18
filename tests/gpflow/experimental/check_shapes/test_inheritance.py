@@ -15,11 +15,14 @@
 # pylint: disable=unused-argument  # Bunch of fake functions below has unused arguments.
 
 from abc import ABC, abstractmethod
+from contextlib import nullcontext  # pylint: disable=no-name-in-module
+from typing import Any, Callable, ContextManager
 
 import pytest
 
 from gpflow.base import TensorType
 from gpflow.experimental.check_shapes import ShapeMismatchError, check_shapes, inherit_check_shapes
+from gpflow.experimental.check_shapes.config import disable_check_shapes
 
 from .utils import t
 
@@ -178,6 +181,52 @@ def test_inherit_check_shapes__undefined() -> None:
             @inherit_check_shapes
             def f(self, a: TensorType) -> TensorType:
                 return t(1)
+
+
+@pytest.mark.parametrize("enable_super", [True, False])
+@pytest.mark.parametrize("enable_sub", [True, False])
+def test_inherit_check_shapes__disable(enable_super: bool, enable_sub: bool) -> None:
+    # Tests interactions between `disable_check_shapes` and `inherit_check_shapes`.
+
+    typed_nullcontext: Callable[[], ContextManager[Any]] = nullcontext
+    super_context: Callable[[], ContextManager[Any]] = (
+        typed_nullcontext if enable_super else disable_check_shapes
+    )
+    sub_context: Callable[[], ContextManager[Any]] = (
+        typed_nullcontext if enable_sub else disable_check_shapes
+    )
+    call_context: Callable[[], ContextManager[Any]] = (
+        (lambda: pytest.raises(ShapeMismatchError))
+        if (enable_super and enable_sub)
+        else typed_nullcontext
+    )
+
+    with super_context():
+
+        class SuperClass(ABC):
+            @abstractmethod
+            @check_shapes(
+                "a: [d...]",
+                "b: [d...]",
+                "return: [d...]",
+            )
+            def f(self, a: TensorType, b: TensorType) -> TensorType:
+                pass
+
+    with sub_context():
+
+        class SubClass(SuperClass):
+            @inherit_check_shapes
+            def f(self, a: TensorType, b: TensorType) -> TensorType:
+                return a
+
+    sub = SubClass()
+
+    with call_context():
+        sub.f(t(2, 3), t(2, 4))  # Wrong shape, checks maybe disabled.
+
+    with disable_check_shapes():
+        sub.f(t(2, 3), t(2, 4))  # Wrong shape, but checks disabled.
 
 
 def test_inherit_check_shapes__rewrites_docstring() -> None:

@@ -26,6 +26,7 @@ from gpflow.experimental.check_shapes import (
     get_check_shapes,
     get_shape,
 )
+from gpflow.experimental.check_shapes.config import disable_check_shapes
 
 from .utils import t, t_unk
 
@@ -368,6 +369,46 @@ def test_check_shapes__reuse() -> None:
     # Don't crash...
     f(t(2, 3), t(2, 4))
     g(t(2, 3), t(2, 4))
+
+
+def test_check_shapes__disable() -> None:
+    def h(a: TensorType, b: TensorType) -> TensorType:
+        return a
+
+    with disable_check_shapes():
+
+        @check_shapes(
+            "a: [d...]",
+            "b: [d...]",
+            "return: [d...]",
+        )
+        def f(a: TensorType, b: TensorType) -> TensorType:
+            return a
+
+        f(t(2, 3), t(2, 4))  # Wrong shape, but checks disabled.
+
+    f(t(2, 3), t(2, 4))  # Wrong shape, but checks were disable when function was created.
+    get_check_shapes(f)(h)  # Don't crash.
+
+    @check_shapes(
+        "a: [d...]",
+        "b: [d...]",
+        "return: [d...]",
+    )
+    def g(a: TensorType, b: TensorType) -> TensorType:
+        return a
+
+    with pytest.raises(ShapeMismatchError):
+        g(t(2, 3), t(2, 4))
+        get_check_shapes(g)(h)  # Don't crash.
+
+    with disable_check_shapes():
+        g(t(2, 3), t(2, 4))  # Wrong shape, but checks disabled.
+        get_check_shapes(g)(h)  # Don't crash.
+
+    with pytest.raises(ShapeMismatchError):
+        g(t(2, 3), t(2, 4))
+        get_check_shapes(g)(h)  # Don't crash.
 
 
 def test_check_shapes__rewrites_docstring() -> None:

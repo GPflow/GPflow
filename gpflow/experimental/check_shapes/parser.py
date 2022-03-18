@@ -22,6 +22,8 @@ from lark.lark import Lark
 from lark.lexer import Token
 from lark.tree import Tree
 
+from gpflow.experimental.check_shapes.config import DocstringFormat, get_rewrite_docstrings
+
 from .argument_ref import (
     RESULT_TOKEN,
     ArgumentRef,
@@ -112,7 +114,7 @@ class _ParseArgumentSpec(_TreeVisitor):
         return ParsedDimensionSpec(constant=None, variable_name=None, variable_rank=True)
 
 
-class _RewriteDocString(_TreeVisitor):
+class _RewritedocString(_TreeVisitor):
     def __init__(self, source: str, argument_specs: Collection[ParsedArgumentSpec]) -> None:
         self._source = source
         self._spec_lines = self._argument_specs_to_sphinx(argument_specs)
@@ -269,6 +271,14 @@ def parse_argument_spec(argument_spec: str) -> ParsedArgumentSpec:
 
 
 @lru_cache(maxsize=None)
+def _parse_and_rewrite_sphinx_docstring(
+    docstring: str, argument_specs: Tuple[ParsedArgumentSpec, ...]
+) -> str:
+    tree = _DOCSTRING_PARSER.parse(docstring)
+    rewritten_docstring: str = _RewritedocString(docstring, argument_specs).visit(tree)
+    return rewritten_docstring
+
+
 def parse_and_rewrite_docstring(
     docstring: Optional[str], argument_specs: Tuple[ParsedArgumentSpec, ...]
 ) -> Optional[str]:
@@ -278,6 +288,12 @@ def parse_and_rewrite_docstring(
     if docstring is None:
         return None
 
-    tree = _DOCSTRING_PARSER.parse(docstring)
-    rewritten_docstring: str = _RewriteDocString(docstring, argument_specs).visit(tree)
-    return rewritten_docstring
+    docstring_format = get_rewrite_docstrings()
+    if docstring_format == DocstringFormat.NONE:
+        return docstring
+
+    assert docstring_format == DocstringFormat.SPHINX, (
+        f"Current docstring format is {docstring_format}, but I don't know how to rewrite that."
+        " See `gpflow.experimental.check_shapes.config.set_rewrite_docstrings`."
+    )
+    return _parse_and_rewrite_sphinx_docstring(docstring, argument_specs)

@@ -191,6 +191,20 @@ actual graphs.  This is considered a feature as that means that :func:`check_sha
 the execution speed of compiled functions. However, it also means that tensor dimensions of dynamic
 size are not verified in compiled mode.
 
+If your code is very performance sensitive and :mod:`check_shapes` is causing an unacceptable
+slowdown it can be disabled. Preferably use :func:`disable_check_shapes`::
+
+    with disable_check_shapes():
+        function_that_is_performance_sensitive()
+
+Alternatively :mod:`check_shapes` can also be disable globally with
+:func:`set_enable_check_shapes`::
+
+    set_enable_check_shapes(False)
+
+Beware that any function declared while shape checking is disabled, will continue not to check
+shapes, even if shape checking is otherwise enabled again.
+
 
 Documenting shapes
 ++++++++++++++++++
@@ -237,6 +251,11 @@ will have `.__doc__`::
 
         Model predictions.
     \"\"\"
+
+if you do not wish to have your docstrings rewritten, you can disable it with
+:func:`set_rewrite_docstrings`::
+
+    set_rewrite_docstrings(None)
 
 
 Shapes of custom objects
@@ -288,6 +307,14 @@ For example::
 from .accessors import get_check_shapes, maybe_get_check_shapes
 from .base_types import Dimension, Shape
 from .check_shapes import check_shapes
+from .config import (
+    DocstringFormat,
+    disable_check_shapes,
+    get_enable_check_shapes,
+    get_rewrite_docstrings,
+    set_enable_check_shapes,
+    set_rewrite_docstrings,
+)
 from .errors import ArgumentReferenceError, ShapeMismatchError
 from .inheritance import inherit_check_shapes
 from .shapes import get_shape
@@ -295,19 +322,26 @@ from .shapes import get_shape
 __all__ = [
     "ArgumentReferenceError",
     "Dimension",
+    "DocstringFormat",
     "Shape",
     "ShapeMismatchError",
     "accessors",
     "argument_ref",
     "base_types",
     "check_shapes",
+    "config",
+    "disable_check_shapes",
     "errors",
     "get_check_shapes",
+    "get_enable_check_shapes",
+    "get_rewrite_docstrings",
     "get_shape",
     "inherit_check_shapes",
     "inheritance",
     "maybe_get_check_shapes",
     "parser",
+    "set_enable_check_shapes",
+    "set_rewrite_docstrings",
     "shapes",
     "specs",
 ]

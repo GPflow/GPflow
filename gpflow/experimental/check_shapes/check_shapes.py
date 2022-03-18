@@ -22,10 +22,22 @@ from ..utils import experimental
 from .accessors import set_check_shapes
 from .argument_ref import RESULT_TOKEN
 from .base_types import C
+from .config import get_enable_check_shapes
 from .errors import ShapeMismatchError
 from .parser import parse_and_rewrite_docstring, parse_argument_spec
 from .shapes import get_shape
 from .specs import ParsedArgumentSpec
+
+
+def null_check_shapes(func: C) -> C:
+    """
+    Annotates the given function so that it looks like it has shape checks, but without actually
+    checking anything.
+
+    This is necessary not to break `@inherit_check_shapes` when shape checking is disabled.
+    """
+    set_check_shapes(func, null_check_shapes)
+    return func
 
 
 @experimental
@@ -37,6 +49,9 @@ def check_shapes(*specs: str) -> Callable[[C], C]:
 
     :param spec_strs: Specification of arguments to check. See: `Argument specification`_.
     """
+    if not get_enable_check_shapes():
+        return null_check_shapes
+
     parsed_specs = tuple(parse_argument_spec(spec) for spec in specs)
 
     # We create four groups of specs:
@@ -52,6 +67,9 @@ def check_shapes(*specs: str) -> Callable[[C], C]:
 
         @wraps(func)
         def wrapped(*args: Any, **kwargs: Any) -> Any:
+            if not get_enable_check_shapes():
+                return func(*args, **kwargs)
+
             try:
                 bound_arguments = signature.bind(*args, **kwargs)
             except TypeError as e:
