@@ -1,0 +1,1301 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+    <title>gpflow.models.sgpr &#8212; GPflow 2.4.0 documentation</title>
+    
+    <link href="../../../../_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
+<link href="../../../../_static/styles/pydata-sphinx-theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
+  
+    
+    <link rel="stylesheet"
+      href="../../../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
+    <link rel="preload" as="font" type="font/woff2" crossorigin
+      href="../../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+    <link rel="preload" as="font" type="font/woff2" crossorigin
+      href="../../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+  
+    
+      
+  
+    
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/styles/pydata-sphinx-theme.css" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pydata-custom.css" />
+    
+    <link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf">
+  
+    <script data-url_root="../../../../" id="documentation_options" src="../../../../_static/documentation_options.js"></script>
+    <script src="../../../../_static/jquery.js"></script>
+    <script src="../../../../_static/underscore.js"></script>
+    <script src="../../../../_static/doctools.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="https://unpkg.com/@jupyter-widgets/html-manager@^0.20.1/dist/embed-amd.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+    <link rel="next" title="gpflow.models.svgp" href="../svgp/index.html" />
+    <link rel="prev" title="gpflow.models.gpr" href="../gpr/index.html" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="docsearch:language" content="None">
+    
+
+    <!-- Google Analytics -->
+    
+  </head>
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="80">
+    
+    <div class="container-fluid" id="banner"></div>
+
+    
+    <nav class="navbar navbar-light navbar-expand-lg bg-light fixed-top bd-navbar" id="navbar-main"><div class="container-xl">
+
+  <div id="navbar-start">
+    
+    
+
+<a class="navbar-brand" href="../../../../index.html">
+  <img src="../../../../_static/gpflow_logo.svg" class="logo" alt="logo">
+</a>
+
+
+    
+  </div>
+
+  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar-collapsible" aria-controls="navbar-collapsible" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="navbar-toggler-icon"></span>
+  </button>
+
+  
+  <div id="navbar-collapsible" class="col-lg-9 collapse navbar-collapse">
+    <div id="navbar-center" class="mr-auto">
+      
+      <div class="navbar-center-item">
+        <ul id="navbar-main-elements" class="navbar-nav">
+    <li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../../intro.html">
+  Introduction
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../../notebooks/intro.html">
+  GPflow manual
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../../notebooks/intro_to_gpflow2.html">
+  GPflow with TensorFlow 2
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../../notebooks/gpflow2_upgrade_guide.html">
+  GPflow 2 Upgrade Guide
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../../notebooks_file.html">
+  Notebooks
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../../derivations.html">
+  Derivations
+ </a>
+</li>
+
+<li class="toctree-l1 current active nav-item">
+ <a class="reference internal nav-link" href="../../index.html">
+  API reference
+ </a>
+</li>
+
+    
+</ul>
+      </div>
+      
+    </div>
+
+    <div id="navbar-end">
+      
+      <div class="navbar-end-item">
+        <div class="dropdown" id="version_switcher">
+    <button type="button" class="btn btn-primary btn-sm navbar-btn dropdown-toggle" id="version_switcher_button" data-toggle="dropdown">
+        develop  <!-- this text may get changed later by javascript -->
+        <span class="caret"></span>
+    </button>
+    <div id="version_switcher_menu" class="dropdown-menu list-group-flush py-0" aria-labelledby="version_switcher_button">
+    <!-- dropdown will be populated by javascript on page load -->
+    </div>
+</div>
+
+<!-- NOTE: this JS must live here (not in our global JS file) because it relies
+     on being processed by Jinja before it is run (specifically for replacing
+     variables api/gpflow/models/sgpr/index and {'json_url': 'https://gpflow.github.io/GPflow/versions.json', 'url_template': 'https://gpflow.github.io/GPflow/{version}/index.html', 'version_match': 'develop'}.
+-->
+
+<script type="text/javascript">
+// Construct the target URL from the JSON components
+function buildURL(entry) {
+    var template = "https://gpflow.github.io/GPflow/{version}/index.html";  // supplied by jinja
+    template = template.replace("{version}", entry.version);
+    return template;
+}
+
+// Check if corresponding page path exists in other version of docs
+// and, if so, go there instead of the homepage of the other docs version
+function checkPageExistsAndRedirect(event) {
+    const currentFilePath = "api/gpflow/models/sgpr/index.html",
+          tryUrl = event.target.getAttribute("href");
+    let otherDocsHomepage = tryUrl.replace(currentFilePath, "");
+    $.ajax({
+        type: 'HEAD',
+        url: tryUrl,
+        // if the page exists, go there
+        success: function() {
+            location.href = tryUrl;
+        }
+    }).fail(function() {
+        location.href = otherDocsHomepage;
+    });
+    // this prevents the browser from following the href of the clicked node
+    // (which is fine because this function takes care of redirecting)
+    return false;
+}
+
+// Populate the version switcher from the JSON config file
+(function () {
+    $.getJSON("https://gpflow.github.io/GPflow/versions.json", function(data, textStatus, jqXHR) {
+        const currentFilePath = "api/gpflow/models/sgpr/index.html";
+        // create links to the corresponding page in the other docs versions
+        $.each(data, function(index, entry) {
+            // if no custom name specified (e.g., "latest"), use version string
+            if (!("name" in entry)) {
+                entry.name = entry.version;
+            }
+            // create the node
+            const node = document.createElement("a");
+            node.setAttribute("class", "list-group-item list-group-item-action py-1");
+            node.textContent = `${entry.name}`;
+            // get the base URL for that doc version, add the current page's
+            // path to it, and set as `href`
+            entry.url = buildURL(entry);
+            node.setAttribute("href", `${entry.url}${currentFilePath}`);
+            // on click, AJAX calls will check if the linked page exists before
+            // trying to redirect, and if not, will redirect to the homepage
+            // for that version of the docs.
+            node.onclick = checkPageExistsAndRedirect;
+            $("#version_switcher_menu").append(node);
+            // replace dropdown button text with the preferred display name of
+            // this version, rather than using sphinx's  variable.
+            // also highlight the dropdown entry for the currently-viewed
+            // version's entry
+            if (entry.version == "develop") {
+                node.classList.add("active");
+                $("#version_switcher_button").text(entry.name);
+            }
+        });
+    });
+})();
+</script>
+      </div>
+      
+    </div>
+  </div>
+</div>
+    </nav>
+    
+
+    <div class="container-xl">
+      <div class="row">
+          
+            
+            <!-- Only show if we have sidebars configured, else just a small margin  -->
+            <div class="col-12 col-md-3 bd-sidebar">
+              <div class="sidebar-start-items"><form class="bd-search d-flex align-items-center" action="../../../../search.html" method="get">
+  <i class="icon fas fa-search"></i>
+  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
+</form><nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
+  <div class="bd-toc-item active">
+    <ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../../base/index.html">
+   gpflow.base
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../../conditionals/index.html">
+   gpflow.conditionals
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/>
+  <label for="toctree-checkbox-1">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2 has-children">
+    <a class="reference internal" href="../../conditionals/multioutput/index.html">
+     gpflow.conditionals.multioutput
+    </a>
+    <input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" type="checkbox"/>
+    <label for="toctree-checkbox-2">
+     <i class="fas fa-chevron-down">
+     </i>
+    </label>
+    <ul>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../conditionals/multioutput/conditionals/index.html">
+       gpflow.conditionals.multioutput.conditionals
+      </a>
+     </li>
+    </ul>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../conditionals/util/index.html">
+     gpflow.conditionals.util
+    </a>
+   </li>
+  </ul>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../../config/index.html">
+   gpflow.config
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../../covariances/index.html">
+   gpflow.covariances
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" type="checkbox"/>
+  <label for="toctree-checkbox-3">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../covariances/kufs/index.html">
+     gpflow.covariances.kufs
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../covariances/kuus/index.html">
+     gpflow.covariances.kuus
+    </a>
+   </li>
+   <li class="toctree-l2 has-children">
+    <a class="reference internal" href="../../covariances/multioutput/index.html">
+     gpflow.covariances.multioutput
+    </a>
+    <input class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" type="checkbox"/>
+    <label for="toctree-checkbox-4">
+     <i class="fas fa-chevron-down">
+     </i>
+    </label>
+    <ul>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../covariances/multioutput/kufs/index.html">
+       gpflow.covariances.multioutput.kufs
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../covariances/multioutput/kuus/index.html">
+       gpflow.covariances.multioutput.kuus
+      </a>
+     </li>
+    </ul>
+   </li>
+  </ul>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../../expectations/index.html">
+   gpflow.expectations
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" type="checkbox"/>
+  <label for="toctree-checkbox-5">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../expectations/quadratures/index.html">
+     gpflow.expectations.quadratures
+    </a>
+   </li>
+  </ul>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../../experimental/index.html">
+   gpflow.experimental
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-6" name="toctree-checkbox-6" type="checkbox"/>
+  <label for="toctree-checkbox-6">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2 has-children">
+    <a class="reference internal" href="../../experimental/check_shapes/index.html">
+     gpflow.experimental.check_shapes
+    </a>
+    <input class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" type="checkbox"/>
+    <label for="toctree-checkbox-7">
+     <i class="fas fa-chevron-down">
+     </i>
+    </label>
+    <ul>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../experimental/check_shapes/accessors/index.html">
+       gpflow.experimental.check_shapes.accessors
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../experimental/check_shapes/argument_ref/index.html">
+       gpflow.experimental.check_shapes.argument_ref
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../experimental/check_shapes/parser/index.html">
+       gpflow.experimental.check_shapes.parser
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../../experimental/check_shapes/shapes/index.html">
+       gpflow.experimental.check_shapes.shapes
+      </a>
+     </li>
+    </ul>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../experimental/utils/index.html">
+     gpflow.experimental.utils
+    </a>
+   </li>
+  </ul>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../../inducing_variables/index.html">
+   gpflow.inducing_variables
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-8" name="toctree-checkbox-8" type="checkbox"/>
+  <label for="toctree-checkbox-8">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../inducing_variables/inducing_variables/index.html">
+     gpflow.inducing_variables.inducing_variables
+    </a>
+   </li>
+  </ul>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../../kernels/index.html">
+   gpflow.kernels
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" type="checkbox"/>
+  <label for="toctree-checkbox-9">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../kernels/base/index.html">
+     gpflow.kernels.base
+    </a>
+   </li>
+  </ul>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../../kullback_leiblers/index.html">
+   gpflow.kullback_leiblers
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../../likelihoods/index.html">
+   gpflow.likelihoods
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-10" name="toctree-checkbox-10" type="checkbox"/>
+  <label for="toctree-checkbox-10">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../likelihoods/utils/index.html">
+     gpflow.likelihoods.utils
+    </a>
+   </li>
+  </ul>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../../logdensities/index.html">
+   gpflow.logdensities
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../../mean_functions/index.html">
+   gpflow.mean_functions
+  </a>
+ </li>
+</ul>
+<ul class="current nav bd-sidenav">
+ <li class="toctree-l1 current active has-children">
+  <a class="reference internal" href="../index.html">
+   gpflow.models
+  </a>
+  <input checked="" class="toctree-checkbox" id="toctree-checkbox-11" name="toctree-checkbox-11" type="checkbox"/>
+  <label for="toctree-checkbox-11">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul class="current">
+   <li class="toctree-l2">
+    <a class="reference internal" href="../cglb/index.html">
+     gpflow.models.cglb
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../gpr/index.html">
+     gpflow.models.gpr
+    </a>
+   </li>
+   <li class="toctree-l2 current active">
+    <a class="current reference internal" href="#">
+     gpflow.models.sgpr
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../svgp/index.html">
+     gpflow.models.svgp
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../vgp/index.html">
+     gpflow.models.vgp
+    </a>
+   </li>
+  </ul>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../../monitor/index.html">
+   gpflow.monitor
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../../optimizers/index.html">
+   gpflow.optimizers
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-12" name="toctree-checkbox-12" type="checkbox"/>
+  <label for="toctree-checkbox-12">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../optimizers/natgrad/index.html">
+     gpflow.optimizers.natgrad
+    </a>
+   </li>
+  </ul>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../../posteriors/index.html">
+   gpflow.posteriors
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../../probability_distributions/index.html">
+   gpflow.probability_distributions
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../../quadrature/index.html">
+   gpflow.quadrature
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-13" name="toctree-checkbox-13" type="checkbox"/>
+  <label for="toctree-checkbox-13">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../quadrature/gauss_hermite/index.html">
+     gpflow.quadrature.gauss_hermite
+    </a>
+   </li>
+  </ul>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../../utilities/index.html">
+   gpflow.utilities
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-14" name="toctree-checkbox-14" type="checkbox"/>
+  <label for="toctree-checkbox-14">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../utilities/misc/index.html">
+     gpflow.utilities.misc
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../utilities/ops/index.html">
+     gpflow.utilities.ops
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../../utilities/traversal/index.html">
+     gpflow.utilities.traversal
+    </a>
+   </li>
+  </ul>
+ </li>
+</ul>
+
+  </div>
+</nav>
+              </div>
+              <div class="sidebar-end-items">
+              </div>
+            </div>
+            
+          
+
+          
+          <div class="d-none d-xl-block col-xl-2 bd-toc">
+            
+              
+              <div class="toc-item">
+                
+<div class="tocsection onthispage pt-5 pb-3">
+    <i class="fas fa-list"></i> On this page
+</div>
+
+<nav id="bd-toc-nav">
+    <ul class="visible nav section-nav flex-column">
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#gpflow-models-sgpr-sgprbase-deprecated">
+   gpflow.models.sgpr.SGPRBase_deprecated
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#gpflow-models-sgpr-sgpr-deprecated">
+   gpflow.models.sgpr.SGPR_deprecated
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#gpflow-models-sgpr-sgpr-with-posterior">
+   gpflow.models.sgpr.SGPR_with_posterior
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#gpflow-models-sgpr-inducingpoint-wrapper">
+   gpflow.models.sgpr.inducingpoint_wrapper
+  </a>
+ </li>
+</ul>
+
+</nav>
+              </div>
+              
+              <div class="toc-item">
+                
+              </div>
+              
+            
+          </div>
+          
+
+          
+          
+            
+          
+          <main class="col-12 col-md-9 col-xl-7 py-md-5 pl-md-5 pr-md-4 bd-content" role="main">
+              
+              <div>
+                
+  <section id="gpflow-models-sgpr">
+<h1>gpflow.models.sgpr<a class="headerlink" href="#gpflow-models-sgpr" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-gpflow.models.sgpr"></span><section id="gpflow-models-sgpr-sgprbase-deprecated">
+<h2>gpflow.models.sgpr.SGPRBase_deprecated<a class="headerlink" href="#gpflow-models-sgpr-sgprbase-deprecated" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="gpflow.models.sgpr.SGPRBase_deprecated">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.models.sgpr.</span></span><span class="sig-name descname"><span class="pre">SGPRBase_deprecated</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean_function</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_latent_gps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">noise_variance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/gpflow/models/sgpr.html#SGPRBase_deprecated"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.sgpr.SGPRBase_deprecated" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="../index.html#gpflow.models.GPModel" title="gpflow.models.model.GPModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.models.model.GPModel</span></code></a>, <a class="reference internal" href="../index.html#gpflow.models.InternalDataTrainingLossMixin" title="gpflow.models.training_mixins.InternalDataTrainingLossMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.models.training_mixins.InternalDataTrainingLossMixin</span></code></a></p>
+<p>Common base class for SGPR and GPRFITC that provides the common __init__
+and upper_bound() methods.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Attributes</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><code class="xref py py-obj docutils literal notranslate"><span class="pre">name</span></code></dt><dd><p>Returns the name of this module as passed or determined in the ctor.</p>
+</dd>
+<dt><code class="xref py py-obj docutils literal notranslate"><span class="pre">name_scope</span></code></dt><dd><p>Returns a <cite>tf.name_scope</cite> instance for this class.</p>
+</dd>
+<dt><code class="xref py py-obj docutils literal notranslate"><span class="pre">non_trainable_variables</span></code></dt><dd><p>Sequence of non-trainable variables owned by this module and its submodules.</p>
+</dd>
+<dt><strong>parameters</strong></dt><dd></dd>
+<dt><code class="xref py py-obj docutils literal notranslate"><span class="pre">submodules</span></code></dt><dd><p>Sequence of all sub-modules.</p>
+</dd>
+<dt><strong>trainable_parameters</strong></dt><dd></dd>
+<dt><code class="xref py py-obj docutils literal notranslate"><span class="pre">trainable_variables</span></code></dt><dd><p>Sequence of trainable variables owned by this module and its submodules.</p>
+</dd>
+<dt><code class="xref py py-obj docutils literal notranslate"><span class="pre">variables</span></code></dt><dd><p>Sequence of variables owned by this module and its submodules.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Methods</p>
+<table class="longtable table autosummary">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">calc_num_latent_gps</span></code>(kernel, likelihood, ...)</p></td>
+<td><p>Calculates the number of latent GPs required given the number of outputs <cite>output_dim</cite> and the type of likelihood and kernel.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">calc_num_latent_gps_from_data</span></code>(data, kernel, ...)</p></td>
+<td><p>Calculates the number of latent GPs required based on the data as well as the type of kernel and likelihood.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">log_posterior_density</span></code>(*args, **kwargs)</p></td>
+<td><p>This may be the posterior with respect to the hyperparameters (e.g.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">log_prior_density</span></code>()</p></td>
+<td><p>Sum of the log prior probability densities of all (constrained) variables in this model.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">maximum_log_likelihood_objective</span></code>(*args, **kwargs)</p></td>
+<td><p>Objective for maximum likelihood estimation.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">predict_f_samples</span></code>(Xnew[, num_samples, ...])</p></td>
+<td><p>Produce samples from the posterior latent function(s) at the input points.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">predict_log_density</span></code>(data[, full_cov, ...])</p></td>
+<td><p>Compute the log density of the data at the new data points.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">predict_y</span></code>(Xnew[, full_cov, full_output_cov])</p></td>
+<td><p>Compute the mean and variance of the held-out data at the input points.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">training_loss</span></code>()</p></td>
+<td><p>Returns the training loss for this model.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">training_loss_closure</span></code>(*[, compile])</p></td>
+<td><p>Convenience method.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#gpflow.models.sgpr.SGPRBase_deprecated.upper_bound" title="gpflow.models.sgpr.SGPRBase_deprecated.upper_bound"><code class="xref py py-obj docutils literal notranslate"><span class="pre">upper_bound</span></code></a>()</p></td>
+<td><p>Upper bound for the sparse GP regression marginal likelihood.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">with_name_scope</span></code>(method)</p></td>
+<td><p>Decorator to automatically enter the module name scope.</p></td>
+</tr>
+</tbody>
+</table>
+<table class="table">
+<colgroup>
+<col style="width: 57%" />
+<col style="width: 43%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><strong>predict_f</strong></p></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>, <a class="reference internal" href="../../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>], <code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>, <a class="reference internal" href="../../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>]]) – </p></li>
+<li><p><strong>kernel</strong> (<a class="reference internal" href="../../kernels/index.html#gpflow.kernels.Kernel" title="gpflow.kernels.base.Kernel"><code class="xref py py-class docutils literal notranslate"><span class="pre">Kernel</span></code></a>) – </p></li>
+<li><p><strong>inducing_variable</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<a class="reference internal" href="../../inducing_variables/index.html#gpflow.inducing_variables.InducingPoints" title="gpflow.inducing_variables.inducing_variables.InducingPoints"><code class="xref py py-class docutils literal notranslate"><span class="pre">InducingPoints</span></code></a>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>]]) – </p></li>
+<li><p><strong>mean_function</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<a class="reference internal" href="../../mean_functions/index.html#gpflow.mean_functions.MeanFunction" title="gpflow.mean_functions.MeanFunction"><code class="xref py py-class docutils literal notranslate"><span class="pre">MeanFunction</span></code></a>]) – </p></li>
+<li><p><strong>num_latent_gps</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>]) – </p></li>
+<li><p><strong>noise_variance</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>) – </p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="gpflow.models.sgpr.SGPRBase_deprecated.upper_bound">
+<span class="sig-name descname"><span class="pre">upper_bound</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/gpflow/models/sgpr.html#SGPRBase_deprecated.upper_bound"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.sgpr.SGPRBase_deprecated.upper_bound" title="Permalink to this definition">¶</a></dt>
+<dd><p>Upper bound for the sparse GP regression marginal likelihood.  Note that
+the same inducing points are used for calculating the upper bound, as are
+used for computing the likelihood approximation. This may not lead to the
+best upper bound. The upper bound can be tightened by optimising Z, just
+like the lower bound. This is especially important in FITC, as FITC is
+known to produce poor inducing point locations. An optimisable upper bound
+can be found in <a class="reference external" href="https://github.com/markvdw/gp_upper">https://github.com/markvdw/gp_upper</a>.</p>
+<p>The key reference is</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nd">@misc</span><span class="p">{</span><span class="n">titsias_2014</span><span class="p">,</span>
+  <span class="n">title</span><span class="o">=</span><span class="p">{</span><span class="n">Variational</span> <span class="n">Inference</span> <span class="k">for</span> <span class="n">Gaussian</span> <span class="ow">and</span> <span class="n">Determinantal</span> <span class="n">Point</span> <span class="n">Processes</span><span class="p">},</span>
+  <span class="n">url</span><span class="o">=</span><span class="p">{</span><span class="n">http</span><span class="p">:</span><span class="o">//</span><span class="n">www2</span><span class="o">.</span><span class="n">aueb</span><span class="o">.</span><span class="n">gr</span><span class="o">/</span><span class="n">users</span><span class="o">/</span><span class="n">mtitsias</span><span class="o">/</span><span class="n">papers</span><span class="o">/</span><span class="n">titsiasNipsVar14</span><span class="o">.</span><span class="n">pdf</span><span class="p">},</span>
+  <span class="n">publisher</span><span class="o">=</span><span class="p">{</span><span class="n">Workshop</span> <span class="n">on</span> <span class="n">Advances</span> <span class="ow">in</span> <span class="n">Variational</span> <span class="n">Inference</span> <span class="p">(</span><span class="n">NIPS</span> <span class="mi">2014</span><span class="p">)},</span>
+  <span class="n">author</span><span class="o">=</span><span class="p">{</span><span class="n">Titsias</span><span class="p">,</span> <span class="n">Michalis</span> <span class="n">K</span><span class="o">.</span><span class="p">},</span>
+  <span class="n">year</span><span class="o">=</span><span class="p">{</span><span class="mi">2014</span><span class="p">},</span>
+  <span class="n">month</span><span class="o">=</span><span class="p">{</span><span class="n">Dec</span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>The key quantity, the trace term, can be computed via</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">_</span><span class="p">,</span> <span class="n">v</span> <span class="o">=</span> <span class="n">conditionals</span><span class="o">.</span><span class="n">conditional</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">inducing_variable</span><span class="o">.</span><span class="n">Z</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">kernel</span><span class="p">,</span>
+<span class="gp">... </span>                                <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">model</span><span class="o">.</span><span class="n">inducing_variable</span><span class="o">.</span><span class="n">num_inducing</span><span class="p">,</span> <span class="mi">1</span><span class="p">)))</span>
+</pre></div>
+</div>
+<p>which computes each individual element of the trace term.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="gpflow-models-sgpr-sgpr-deprecated">
+<h2>gpflow.models.sgpr.SGPR_deprecated<a class="headerlink" href="#gpflow-models-sgpr-sgpr-deprecated" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="gpflow.models.sgpr.SGPR_deprecated">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.models.sgpr.</span></span><span class="sig-name descname"><span class="pre">SGPR_deprecated</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean_function</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_latent_gps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">noise_variance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/gpflow/models/sgpr.html#SGPR_deprecated"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.sgpr.SGPR_deprecated" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#gpflow.models.sgpr.SGPRBase_deprecated" title="gpflow.models.sgpr.SGPRBase_deprecated"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.models.sgpr.SGPRBase_deprecated</span></code></a></p>
+<p>Sparse Variational GP regression. The key reference is</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nd">@inproceedings</span><span class="p">{</span><span class="n">titsias2009variational</span><span class="p">,</span>
+    <span class="n">title</span><span class="o">=</span><span class="p">{</span><span class="n">Variational</span> <span class="n">learning</span> <span class="n">of</span> <span class="n">inducing</span> <span class="n">variables</span> <span class="ow">in</span>
+        <span class="n">sparse</span> <span class="n">Gaussian</span> <span class="n">processes</span><span class="p">},</span>
+    <span class="n">author</span><span class="o">=</span><span class="p">{</span><span class="n">Titsias</span><span class="p">,</span> <span class="n">Michalis</span> <span class="n">K</span><span class="p">},</span>
+    <span class="n">booktitle</span><span class="o">=</span><span class="p">{</span><span class="n">International</span> <span class="n">Conference</span> <span class="n">on</span>
+            <span class="n">Artificial</span> <span class="n">Intelligence</span> <span class="ow">and</span> <span class="n">Statistics</span><span class="p">},</span>
+    <span class="n">pages</span><span class="o">=</span><span class="p">{</span><span class="mi">567</span><span class="o">--</span><span class="mi">574</span><span class="p">},</span>
+    <span class="n">year</span><span class="o">=</span><span class="p">{</span><span class="mi">2009</span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Attributes</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><code class="xref py py-obj docutils literal notranslate"><span class="pre">name</span></code></dt><dd><p>Returns the name of this module as passed or determined in the ctor.</p>
+</dd>
+<dt><code class="xref py py-obj docutils literal notranslate"><span class="pre">name_scope</span></code></dt><dd><p>Returns a <cite>tf.name_scope</cite> instance for this class.</p>
+</dd>
+<dt><code class="xref py py-obj docutils literal notranslate"><span class="pre">non_trainable_variables</span></code></dt><dd><p>Sequence of non-trainable variables owned by this module and its submodules.</p>
+</dd>
+<dt><strong>parameters</strong></dt><dd></dd>
+<dt><code class="xref py py-obj docutils literal notranslate"><span class="pre">submodules</span></code></dt><dd><p>Sequence of all sub-modules.</p>
+</dd>
+<dt><strong>trainable_parameters</strong></dt><dd></dd>
+<dt><code class="xref py py-obj docutils literal notranslate"><span class="pre">trainable_variables</span></code></dt><dd><p>Sequence of trainable variables owned by this module and its submodules.</p>
+</dd>
+<dt><code class="xref py py-obj docutils literal notranslate"><span class="pre">variables</span></code></dt><dd><p>Sequence of variables owned by this module and its submodules.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Methods</p>
+<table class="longtable table autosummary">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#gpflow.models.sgpr.SGPR_deprecated.CommonTensors" title="gpflow.models.sgpr.SGPR_deprecated.CommonTensors"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CommonTensors</span></code></a>(A, B, LB, AAT, L)</p></td>
+<td><p><dl class="field-list simple">
+<dt class="field-odd">Attributes</dt>
+<dd class="field-odd"><p></p></dd>
+</dl>
+</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">calc_num_latent_gps</span></code>(kernel, likelihood, ...)</p></td>
+<td><p>Calculates the number of latent GPs required given the number of outputs <cite>output_dim</cite> and the type of likelihood and kernel.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">calc_num_latent_gps_from_data</span></code>(data, kernel, ...)</p></td>
+<td><p>Calculates the number of latent GPs required based on the data as well as the type of kernel and likelihood.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#gpflow.models.sgpr.SGPR_deprecated.compute_qu" title="gpflow.models.sgpr.SGPR_deprecated.compute_qu"><code class="xref py py-obj docutils literal notranslate"><span class="pre">compute_qu</span></code></a>()</p></td>
+<td><p>Computes the mean and variance of q(u) = N(mu, cov), the variational distribution on inducing outputs.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#gpflow.models.sgpr.SGPR_deprecated.elbo" title="gpflow.models.sgpr.SGPR_deprecated.elbo"><code class="xref py py-obj docutils literal notranslate"><span class="pre">elbo</span></code></a>()</p></td>
+<td><p>Construct a tensorflow function to compute the bound on the marginal likelihood.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">log_posterior_density</span></code>(*args, **kwargs)</p></td>
+<td><p>This may be the posterior with respect to the hyperparameters (e.g.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">log_prior_density</span></code>()</p></td>
+<td><p>Sum of the log prior probability densities of all (constrained) variables in this model.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#gpflow.models.sgpr.SGPR_deprecated.logdet_term" title="gpflow.models.sgpr.SGPR_deprecated.logdet_term"><code class="xref py py-obj docutils literal notranslate"><span class="pre">logdet_term</span></code></a>(common)</p></td>
+<td><p>Bound from Jensen's Inequality: .. math::     log <a href="#id1"><span class="problematic" id="id2">|K + σ²I|</span></a> &lt;= log <a href="#id3"><span class="problematic" id="id4">|Q + σ²I|</span></a> + N * log (1 + tr(K - Q)/(σ²N)).</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#gpflow.models.sgpr.SGPR_deprecated.maximum_log_likelihood_objective" title="gpflow.models.sgpr.SGPR_deprecated.maximum_log_likelihood_objective"><code class="xref py py-obj docutils literal notranslate"><span class="pre">maximum_log_likelihood_objective</span></code></a>()</p></td>
+<td><p>Objective for maximum likelihood estimation.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#gpflow.models.sgpr.SGPR_deprecated.predict_f" title="gpflow.models.sgpr.SGPR_deprecated.predict_f"><code class="xref py py-obj docutils literal notranslate"><span class="pre">predict_f</span></code></a>(Xnew[, full_cov, full_output_cov])</p></td>
+<td><p>Compute the mean and variance of the latent function at some new points Xnew.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">predict_f_samples</span></code>(Xnew[, num_samples, ...])</p></td>
+<td><p>Produce samples from the posterior latent function(s) at the input points.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">predict_log_density</span></code>(data[, full_cov, ...])</p></td>
+<td><p>Compute the log density of the data at the new data points.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">predict_y</span></code>(Xnew[, full_cov, full_output_cov])</p></td>
+<td><p>Compute the mean and variance of the held-out data at the input points.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#gpflow.models.sgpr.SGPR_deprecated.quad_term" title="gpflow.models.sgpr.SGPR_deprecated.quad_term"><code class="xref py py-obj docutils literal notranslate"><span class="pre">quad_term</span></code></a>(common)</p></td>
+<td><p><dl class="field-list simple">
+<dt class="field-odd">type common</dt>
+<dd class="field-odd"><p><a class="reference internal" href="#gpflow.models.sgpr.SGPR_deprecated.CommonTensors" title="gpflow.models.sgpr.CommonTensors"><code class="xref py py-class docutils literal notranslate"><span class="pre">CommonTensors</span></code></a></p>
+</dd>
+</dl>
+</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">training_loss</span></code>()</p></td>
+<td><p>Returns the training loss for this model.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">training_loss_closure</span></code>(*[, compile])</p></td>
+<td><p>Convenience method.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">upper_bound</span></code>()</p></td>
+<td><p>Upper bound for the sparse GP regression marginal likelihood.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">with_name_scope</span></code>(method)</p></td>
+<td><p>Decorator to automatically enter the module name scope.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>, <a class="reference internal" href="../../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>], <code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>, <a class="reference internal" href="../../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>]]) – </p></li>
+<li><p><strong>kernel</strong> (<a class="reference internal" href="../../kernels/index.html#gpflow.kernels.Kernel" title="gpflow.kernels.base.Kernel"><code class="xref py py-class docutils literal notranslate"><span class="pre">Kernel</span></code></a>) – </p></li>
+<li><p><strong>inducing_variable</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<a class="reference internal" href="../../inducing_variables/index.html#gpflow.inducing_variables.InducingPoints" title="gpflow.inducing_variables.inducing_variables.InducingPoints"><code class="xref py py-class docutils literal notranslate"><span class="pre">InducingPoints</span></code></a>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>]]) – </p></li>
+<li><p><strong>mean_function</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<a class="reference internal" href="../../mean_functions/index.html#gpflow.mean_functions.MeanFunction" title="gpflow.mean_functions.MeanFunction"><code class="xref py py-class docutils literal notranslate"><span class="pre">MeanFunction</span></code></a>]) – </p></li>
+<li><p><strong>num_latent_gps</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>]) – </p></li>
+<li><p><strong>noise_variance</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>) – </p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py class">
+<dt class="sig sig-object py" id="gpflow.models.sgpr.SGPR_deprecated.CommonTensors">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">CommonTensors</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">A</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">B</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">LB</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">AAT</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">L</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gpflow.models.sgpr.SGPR_deprecated.CommonTensors" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></p>
+<dl class="field-list simple">
+<dt class="field-odd">Attributes</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>A</strong></dt><dd><p>Alias for field number 0</p>
+</dd>
+<dt><strong>AAT</strong></dt><dd><p>Alias for field number 3</p>
+</dd>
+<dt><strong>B</strong></dt><dd><p>Alias for field number 1</p>
+</dd>
+<dt><strong>L</strong></dt><dd><p>Alias for field number 4</p>
+</dd>
+<dt><strong>LB</strong></dt><dd><p>Alias for field number 2</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Methods</p>
+<table class="longtable table autosummary">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">count</span></code>(value, /)</p></td>
+<td><p>Return number of occurrences of value.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">index</span></code>(value[, start, stop])</p></td>
+<td><p>Return first index of value.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="gpflow.models.sgpr.SGPR_deprecated.CommonTensors.A">
+<span class="sig-name descname"><span class="pre">A</span></span><a class="headerlink" href="#gpflow.models.sgpr.SGPR_deprecated.CommonTensors.A" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 0</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="gpflow.models.sgpr.SGPR_deprecated.CommonTensors.AAT">
+<span class="sig-name descname"><span class="pre">AAT</span></span><a class="headerlink" href="#gpflow.models.sgpr.SGPR_deprecated.CommonTensors.AAT" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 3</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="gpflow.models.sgpr.SGPR_deprecated.CommonTensors.B">
+<span class="sig-name descname"><span class="pre">B</span></span><a class="headerlink" href="#gpflow.models.sgpr.SGPR_deprecated.CommonTensors.B" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 1</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="gpflow.models.sgpr.SGPR_deprecated.CommonTensors.L">
+<span class="sig-name descname"><span class="pre">L</span></span><a class="headerlink" href="#gpflow.models.sgpr.SGPR_deprecated.CommonTensors.L" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 4</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="gpflow.models.sgpr.SGPR_deprecated.CommonTensors.LB">
+<span class="sig-name descname"><span class="pre">LB</span></span><a class="headerlink" href="#gpflow.models.sgpr.SGPR_deprecated.CommonTensors.LB" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 2</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gpflow.models.sgpr.SGPR_deprecated.compute_qu">
+<span class="sig-name descname"><span class="pre">compute_qu</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/gpflow/models/sgpr.html#SGPR_deprecated.compute_qu"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.sgpr.SGPR_deprecated.compute_qu" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes the mean and variance of q(u) = N(mu, cov), the variational distribution on
+inducing outputs. SVGP with this q(u) should predict identically to
+SGPR.
+:rtype: <code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]
+:return: mu, cov</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gpflow.models.sgpr.SGPR_deprecated.elbo">
+<span class="sig-name descname"><span class="pre">elbo</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/gpflow/models/sgpr.html#SGPR_deprecated.elbo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.sgpr.SGPR_deprecated.elbo" title="Permalink to this definition">¶</a></dt>
+<dd><p>Construct a tensorflow function to compute the bound on the marginal
+likelihood. For a derivation of the terms in here, see the associated
+SGPR notebook.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gpflow.models.sgpr.SGPR_deprecated.logdet_term">
+<span class="sig-name descname"><span class="pre">logdet_term</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">common</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/gpflow/models/sgpr.html#SGPR_deprecated.logdet_term"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.sgpr.SGPR_deprecated.logdet_term" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bound from Jensen’s Inequality:
+.. math:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>log |K + σ²I| &lt;= log |Q + σ²I| + N * log (1 + tr(K - Q)/(σ²N))
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>common</strong> (<a class="reference internal" href="#gpflow.models.sgpr.SGPR_deprecated.CommonTensors" title="gpflow.models.sgpr.CommonTensors"><code class="xref py py-class docutils literal notranslate"><span class="pre">CommonTensors</span></code></a>) – A named tuple containing matrices that will be used</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>log_det, lower bound on -.5 * output_dim * log <a href="#id5"><span class="problematic" id="id6">|K + σ²I|</span></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gpflow.models.sgpr.SGPR_deprecated.maximum_log_likelihood_objective">
+<span class="sig-name descname"><span class="pre">maximum_log_likelihood_objective</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/gpflow/models/sgpr.html#SGPR_deprecated.maximum_log_likelihood_objective"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.sgpr.SGPR_deprecated.maximum_log_likelihood_objective" title="Permalink to this definition">¶</a></dt>
+<dd><p>Objective for maximum likelihood estimation. Should be maximized. E.g.
+log-marginal likelihood (hyperparameter likelihood) for GPR, or lower
+bound to the log-marginal likelihood (ELBO) for sparse and variational
+GPs.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gpflow.models.sgpr.SGPR_deprecated.predict_f">
+<span class="sig-name descname"><span class="pre">predict_f</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Xnew</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_output_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/gpflow/models/sgpr.html#SGPR_deprecated.predict_f"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.sgpr.SGPR_deprecated.predict_f" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the mean and variance of the latent function at some new points
+Xnew. For a derivation of the terms in here, see the associated SGPR
+notebook.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>Xnew</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>, <a class="reference internal" href="../../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>]) – </p></li>
+<li><p><strong>full_cov</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – </p></li>
+<li><p><strong>full_output_cov</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gpflow.models.sgpr.SGPR_deprecated.quad_term">
+<span class="sig-name descname"><span class="pre">quad_term</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">common</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/gpflow/models/sgpr.html#SGPR_deprecated.quad_term"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.sgpr.SGPR_deprecated.quad_term" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>common</strong> (<a class="reference internal" href="#gpflow.models.sgpr.SGPR_deprecated.CommonTensors" title="gpflow.models.sgpr.CommonTensors"><code class="xref py py-class docutils literal notranslate"><span class="pre">CommonTensors</span></code></a>) – A named tuple containing matrices that will be used</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>Lower bound on -.5 yᵀ(K + σ²I)⁻¹y</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="gpflow-models-sgpr-sgpr-with-posterior">
+<h2>gpflow.models.sgpr.SGPR_with_posterior<a class="headerlink" href="#gpflow-models-sgpr-sgpr-with-posterior" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="gpflow.models.sgpr.SGPR_with_posterior">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.models.sgpr.</span></span><span class="sig-name descname"><span class="pre">SGPR_with_posterior</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean_function</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_latent_gps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">noise_variance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/gpflow/models/sgpr.html#SGPR_with_posterior"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.sgpr.SGPR_with_posterior" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#gpflow.models.sgpr.SGPR_deprecated" title="gpflow.models.sgpr.SGPR_deprecated"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.models.sgpr.SGPR_deprecated</span></code></a></p>
+<p>This is an implementation of GPR that provides a posterior() method that
+enables caching for faster subsequent predictions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Attributes</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><code class="xref py py-obj docutils literal notranslate"><span class="pre">name</span></code></dt><dd><p>Returns the name of this module as passed or determined in the ctor.</p>
+</dd>
+<dt><code class="xref py py-obj docutils literal notranslate"><span class="pre">name_scope</span></code></dt><dd><p>Returns a <cite>tf.name_scope</cite> instance for this class.</p>
+</dd>
+<dt><code class="xref py py-obj docutils literal notranslate"><span class="pre">non_trainable_variables</span></code></dt><dd><p>Sequence of non-trainable variables owned by this module and its submodules.</p>
+</dd>
+<dt><strong>parameters</strong></dt><dd></dd>
+<dt><code class="xref py py-obj docutils literal notranslate"><span class="pre">submodules</span></code></dt><dd><p>Sequence of all sub-modules.</p>
+</dd>
+<dt><strong>trainable_parameters</strong></dt><dd></dd>
+<dt><code class="xref py py-obj docutils literal notranslate"><span class="pre">trainable_variables</span></code></dt><dd><p>Sequence of trainable variables owned by this module and its submodules.</p>
+</dd>
+<dt><code class="xref py py-obj docutils literal notranslate"><span class="pre">variables</span></code></dt><dd><p>Sequence of variables owned by this module and its submodules.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Methods</p>
+<table class="longtable table autosummary">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">CommonTensors</span></code>(A, B, LB, AAT, L)</p></td>
+<td><p><dl class="field-list simple">
+<dt class="field-odd">Attributes</dt>
+<dd class="field-odd"><p></p></dd>
+</dl>
+</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">calc_num_latent_gps</span></code>(kernel, likelihood, ...)</p></td>
+<td><p>Calculates the number of latent GPs required given the number of outputs <cite>output_dim</cite> and the type of likelihood and kernel.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">calc_num_latent_gps_from_data</span></code>(data, kernel, ...)</p></td>
+<td><p>Calculates the number of latent GPs required based on the data as well as the type of kernel and likelihood.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">compute_qu</span></code>()</p></td>
+<td><p>Computes the mean and variance of q(u) = N(mu, cov), the variational distribution on inducing outputs.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">elbo</span></code>()</p></td>
+<td><p>Construct a tensorflow function to compute the bound on the marginal likelihood.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">log_posterior_density</span></code>(*args, **kwargs)</p></td>
+<td><p>This may be the posterior with respect to the hyperparameters (e.g.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">log_prior_density</span></code>()</p></td>
+<td><p>Sum of the log prior probability densities of all (constrained) variables in this model.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">logdet_term</span></code>(common)</p></td>
+<td><p>Bound from Jensen's Inequality: .. math::     log <a href="#id7"><span class="problematic" id="id8">|K + σ²I|</span></a> &lt;= log <a href="#id9"><span class="problematic" id="id10">|Q + σ²I|</span></a> + N * log (1 + tr(K - Q)/(σ²N)).</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">maximum_log_likelihood_objective</span></code>()</p></td>
+<td><p>Objective for maximum likelihood estimation.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#gpflow.models.sgpr.SGPR_with_posterior.posterior" title="gpflow.models.sgpr.SGPR_with_posterior.posterior"><code class="xref py py-obj docutils literal notranslate"><span class="pre">posterior</span></code></a>([precompute_cache])</p></td>
+<td><p>Create the Posterior object which contains precomputed matrices for faster prediction.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#gpflow.models.sgpr.SGPR_with_posterior.predict_f" title="gpflow.models.sgpr.SGPR_with_posterior.predict_f"><code class="xref py py-obj docutils literal notranslate"><span class="pre">predict_f</span></code></a>(Xnew[, full_cov, full_output_cov])</p></td>
+<td><p>For backwards compatibility, GPR's predict_f uses the fused (no-cache) computation, which is more efficient during training.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">predict_f_samples</span></code>(Xnew[, num_samples, ...])</p></td>
+<td><p>Produce samples from the posterior latent function(s) at the input points.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">predict_log_density</span></code>(data[, full_cov, ...])</p></td>
+<td><p>Compute the log density of the data at the new data points.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">predict_y</span></code>(Xnew[, full_cov, full_output_cov])</p></td>
+<td><p>Compute the mean and variance of the held-out data at the input points.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">quad_term</span></code>(common)</p></td>
+<td><p><dl class="field-list simple">
+<dt class="field-odd">type common</dt>
+<dd class="field-odd"><p><a class="reference internal" href="#gpflow.models.sgpr.SGPR_deprecated.CommonTensors" title="gpflow.models.sgpr.CommonTensors"><code class="xref py py-class docutils literal notranslate"><span class="pre">CommonTensors</span></code></a></p>
+</dd>
+</dl>
+</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">training_loss</span></code>()</p></td>
+<td><p>Returns the training loss for this model.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">training_loss_closure</span></code>(*[, compile])</p></td>
+<td><p>Convenience method.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">upper_bound</span></code>()</p></td>
+<td><p>Upper bound for the sparse GP regression marginal likelihood.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">with_name_scope</span></code>(method)</p></td>
+<td><p>Decorator to automatically enter the module name scope.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>, <a class="reference internal" href="../../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>], <code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>, <a class="reference internal" href="../../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>]]) – </p></li>
+<li><p><strong>kernel</strong> (<a class="reference internal" href="../../kernels/index.html#gpflow.kernels.Kernel" title="gpflow.kernels.base.Kernel"><code class="xref py py-class docutils literal notranslate"><span class="pre">Kernel</span></code></a>) – </p></li>
+<li><p><strong>inducing_variable</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<a class="reference internal" href="../../inducing_variables/index.html#gpflow.inducing_variables.InducingPoints" title="gpflow.inducing_variables.inducing_variables.InducingPoints"><code class="xref py py-class docutils literal notranslate"><span class="pre">InducingPoints</span></code></a>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>]]) – </p></li>
+<li><p><strong>mean_function</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<a class="reference internal" href="../../mean_functions/index.html#gpflow.mean_functions.MeanFunction" title="gpflow.mean_functions.MeanFunction"><code class="xref py py-class docutils literal notranslate"><span class="pre">MeanFunction</span></code></a>]) – </p></li>
+<li><p><strong>num_latent_gps</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>]) – </p></li>
+<li><p><strong>noise_variance</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>) – </p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="gpflow.models.sgpr.SGPR_with_posterior.posterior">
+<span class="sig-name descname"><span class="pre">posterior</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">precompute_cache</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">PrecomputeCacheType.TENSOR</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/gpflow/models/sgpr.html#SGPR_with_posterior.posterior"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.sgpr.SGPR_with_posterior.posterior" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create the Posterior object which contains precomputed matrices for
+faster prediction.</p>
+<p>precompute_cache has three settings:</p>
+<ul class="simple">
+<li><p><cite>PrecomputeCacheType.TENSOR</cite> (or <cite>“tensor”</cite>): Precomputes the cached
+quantities and stores them as tensors (which allows differentiating
+through the prediction). This is the default.</p></li>
+<li><p><cite>PrecomputeCacheType.VARIABLE</cite> (or <cite>“variable”</cite>): Precomputes the cached
+quantities and stores them as variables, which allows for updating
+their values without changing the compute graph (relevant for AOT
+compilation).</p></li>
+<li><p><cite>PrecomputeCacheType.NOCACHE</cite> (or <cite>“nocache”</cite> or <cite>None</cite>): Avoids
+immediate cache computation. This is useful for avoiding extraneous
+computations when you only want to call the posterior’s
+<cite>fused_predict_f</cite> method.</p></li>
+</ul>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>precompute_cache</strong> (<a class="reference internal" href="../../posteriors/index.html#gpflow.posteriors.PrecomputeCacheType" title="gpflow.posteriors.PrecomputeCacheType"><code class="xref py py-class docutils literal notranslate"><span class="pre">PrecomputeCacheType</span></code></a>) – </p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><a class="reference internal" href="../../posteriors/index.html#gpflow.posteriors.SGPRPosterior" title="gpflow.posteriors.SGPRPosterior"><code class="xref py py-class docutils literal notranslate"><span class="pre">SGPRPosterior</span></code></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gpflow.models.sgpr.SGPR_with_posterior.predict_f">
+<span class="sig-name descname"><span class="pre">predict_f</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Xnew</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_output_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/gpflow/models/sgpr.html#SGPR_with_posterior.predict_f"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.sgpr.SGPR_with_posterior.predict_f" title="Permalink to this definition">¶</a></dt>
+<dd><p>For backwards compatibility, GPR’s predict_f uses the fused (no-cache)
+computation, which is more efficient during training.</p>
+<dl class="simple">
+<dt>For faster (cached) prediction, predict directly from the posterior object, i.e.,:</dt><dd><p>model.posterior().predict_f(Xnew, …)</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>Xnew</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>, <a class="reference internal" href="../../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>]) – </p></li>
+<li><p><strong>full_cov</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – </p></li>
+<li><p><strong>full_output_cov</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="gpflow-models-sgpr-inducingpoint-wrapper">
+<h2>gpflow.models.sgpr.inducingpoint_wrapper<a class="headerlink" href="#gpflow-models-sgpr-inducingpoint-wrapper" title="Permalink to this headline">¶</a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="gpflow.models.sgpr.inducingpoint_wrapper">
+<span class="sig-prename descclassname"><span class="pre">gpflow.models.sgpr.</span></span><span class="sig-name descname"><span class="pre">inducingpoint_wrapper</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/gpflow/models/util.html#inducingpoint_wrapper"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.sgpr.inducingpoint_wrapper" title="Permalink to this definition">¶</a></dt>
+<dd><p>This wrapper allows transparently passing either an InducingVariables
+object or an array specifying InducingPoints positions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>inducing_variable</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<a class="reference internal" href="../../inducing_variables/index.html#gpflow.inducing_variables.InducingVariables" title="gpflow.inducing_variables.inducing_variables.InducingVariables"><code class="xref py py-class docutils literal notranslate"><span class="pre">InducingVariables</span></code></a>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>]]) – </p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><a class="reference internal" href="../../inducing_variables/index.html#gpflow.inducing_variables.InducingVariables" title="gpflow.inducing_variables.inducing_variables.InducingVariables"><code class="xref py py-class docutils literal notranslate"><span class="pre">InducingVariables</span></code></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+</section>
+
+
+              </div>
+              
+              
+          </main>
+          
+
+      </div>
+    </div>
+  
+    <script src="../../../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf"></script>
+  <footer class="footer mt-5 mt-md-0">
+  <div class="container">
+    
+    <div class="footer-item">
+      <p class="copyright">
+    &copy; Copyright 2022, James Hensman and Alexander G. de G. Matthews and many others.<br>
+</p>
+    </div>
+    
+    <div class="footer-item">
+      <p class="sphinx-version">
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.4.0.<br>
+</p>
+    </div>
+    
+  </div>
+</footer>
+  </body>
+</html>

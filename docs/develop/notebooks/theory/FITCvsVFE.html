@@ -1,0 +1,959 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+    <title>Comparing FITC approximation to VFE approximation &#8212; GPflow 2.4.0 documentation</title>
+    
+    <link href="../../_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
+  
+    
+    <link rel="stylesheet"
+      href="../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
+    <link rel="preload" as="font" type="font/woff2" crossorigin
+      href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+    <link rel="preload" as="font" type="font/woff2" crossorigin
+      href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+  
+    
+      
+  
+    
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/styles/pydata-sphinx-theme.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/pydata-custom.css" />
+    
+    <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf">
+  
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="https://unpkg.com/@jupyter-widgets/html-manager@^0.20.1/dist/embed-amd.js"></script>
+    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Derivation of SGPR equations" href="SGPR_notes.html" />
+    <link rel="prev" title="Updating model with new data" href="../tailor/updating_models_with_new_data.html" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="docsearch:language" content="None">
+    
+
+    <!-- Google Analytics -->
+    
+  </head>
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="80">
+    
+    <div class="container-fluid" id="banner"></div>
+
+    
+    <nav class="navbar navbar-light navbar-expand-lg bg-light fixed-top bd-navbar" id="navbar-main"><div class="container-xl">
+
+  <div id="navbar-start">
+    
+    
+
+<a class="navbar-brand" href="../../index.html">
+  <img src="../../_static/gpflow_logo.svg" class="logo" alt="logo">
+</a>
+
+
+    
+  </div>
+
+  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar-collapsible" aria-controls="navbar-collapsible" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="navbar-toggler-icon"></span>
+  </button>
+
+  
+  <div id="navbar-collapsible" class="col-lg-9 collapse navbar-collapse">
+    <div id="navbar-center" class="mr-auto">
+      
+      <div class="navbar-center-item">
+        <ul id="navbar-main-elements" class="navbar-nav">
+    <li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../intro.html">
+  Introduction
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../intro.html">
+  GPflow manual
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../intro_to_gpflow2.html">
+  GPflow with TensorFlow 2
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../gpflow2_upgrade_guide.html">
+  GPflow 2 Upgrade Guide
+ </a>
+</li>
+
+<li class="toctree-l1 current active nav-item">
+ <a class="reference internal nav-link" href="../../notebooks_file.html">
+  Notebooks
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../derivations.html">
+  Derivations
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../api/gpflow/index.html">
+  API reference
+ </a>
+</li>
+
+    
+</ul>
+      </div>
+      
+    </div>
+
+    <div id="navbar-end">
+      
+      <div class="navbar-end-item">
+        <div class="dropdown" id="version_switcher">
+    <button type="button" class="btn btn-primary btn-sm navbar-btn dropdown-toggle" id="version_switcher_button" data-toggle="dropdown">
+        develop  <!-- this text may get changed later by javascript -->
+        <span class="caret"></span>
+    </button>
+    <div id="version_switcher_menu" class="dropdown-menu list-group-flush py-0" aria-labelledby="version_switcher_button">
+    <!-- dropdown will be populated by javascript on page load -->
+    </div>
+</div>
+
+<!-- NOTE: this JS must live here (not in our global JS file) because it relies
+     on being processed by Jinja before it is run (specifically for replacing
+     variables notebooks/theory/FITCvsVFE and {'json_url': 'https://gpflow.github.io/GPflow/versions.json', 'url_template': 'https://gpflow.github.io/GPflow/{version}/index.html', 'version_match': 'develop'}.
+-->
+
+<script type="text/javascript">
+// Construct the target URL from the JSON components
+function buildURL(entry) {
+    var template = "https://gpflow.github.io/GPflow/{version}/index.html";  // supplied by jinja
+    template = template.replace("{version}", entry.version);
+    return template;
+}
+
+// Check if corresponding page path exists in other version of docs
+// and, if so, go there instead of the homepage of the other docs version
+function checkPageExistsAndRedirect(event) {
+    const currentFilePath = "notebooks/theory/FITCvsVFE.html",
+          tryUrl = event.target.getAttribute("href");
+    let otherDocsHomepage = tryUrl.replace(currentFilePath, "");
+    $.ajax({
+        type: 'HEAD',
+        url: tryUrl,
+        // if the page exists, go there
+        success: function() {
+            location.href = tryUrl;
+        }
+    }).fail(function() {
+        location.href = otherDocsHomepage;
+    });
+    // this prevents the browser from following the href of the clicked node
+    // (which is fine because this function takes care of redirecting)
+    return false;
+}
+
+// Populate the version switcher from the JSON config file
+(function () {
+    $.getJSON("https://gpflow.github.io/GPflow/versions.json", function(data, textStatus, jqXHR) {
+        const currentFilePath = "notebooks/theory/FITCvsVFE.html";
+        // create links to the corresponding page in the other docs versions
+        $.each(data, function(index, entry) {
+            // if no custom name specified (e.g., "latest"), use version string
+            if (!("name" in entry)) {
+                entry.name = entry.version;
+            }
+            // create the node
+            const node = document.createElement("a");
+            node.setAttribute("class", "list-group-item list-group-item-action py-1");
+            node.textContent = `${entry.name}`;
+            // get the base URL for that doc version, add the current page's
+            // path to it, and set as `href`
+            entry.url = buildURL(entry);
+            node.setAttribute("href", `${entry.url}${currentFilePath}`);
+            // on click, AJAX calls will check if the linked page exists before
+            // trying to redirect, and if not, will redirect to the homepage
+            // for that version of the docs.
+            node.onclick = checkPageExistsAndRedirect;
+            $("#version_switcher_menu").append(node);
+            // replace dropdown button text with the preferred display name of
+            // this version, rather than using sphinx's  variable.
+            // also highlight the dropdown entry for the currently-viewed
+            // version's entry
+            if (entry.version == "develop") {
+                node.classList.add("active");
+                $("#version_switcher_button").text(entry.name);
+            }
+        });
+    });
+})();
+</script>
+      </div>
+      
+    </div>
+  </div>
+</div>
+    </nav>
+    
+
+    <div class="container-xl">
+      <div class="row">
+          
+            
+            <!-- Only show if we have sidebars configured, else just a small margin  -->
+            <div class="col-12 col-md-3 bd-sidebar">
+              <div class="sidebar-start-items"><form class="bd-search d-flex align-items-center" action="../../search.html" method="get">
+  <i class="icon fas fa-search"></i>
+  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
+</form><nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
+  <div class="bd-toc-item active">
+    <ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../basics/GPLVM.html">
+   Bayesian Gaussian process latent variable model (Bayesian GPLVM)
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../basics/classification.html">
+   Basic (binary) GP classification model
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../basics/monitoring.html">
+   Monitoring Optimisation
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../basics/regression.html">
+   Basic (Gaussian likelihood) GP regression model
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../advanced/advanced_many_points.html">
+   More details on models with many observation points
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../advanced/changepoints.html">
+   Change points
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../advanced/convolutional.html">
+   Convolutional Gaussian Processes
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../advanced/coregionalisation.html">
+   A simple demonstration of coregionalization
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../advanced/fast_predictions.html">
+   Faster predictions by caching
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../advanced/gps_for_big_data.html">
+   Stochastic Variational Inference for scalability with SVGP
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../advanced/heteroskedastic.html">
+   Heteroskedastic Likelihood and Multi-Latent GP
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../advanced/kernels.html">
+   Manipulating kernels
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../advanced/mcmc.html">
+   MCMC (Markov Chain Monte Carlo)
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../advanced/multiclass_classification.html">
+   Multiclass classification
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../advanced/multioutput.html">
+   Multi-output Gaussian processes in GPflow
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../advanced/natural_gradients.html">
+   Natural gradients
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../advanced/optimisation.html">
+   Optimizers
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../advanced/ordinal_regression.html">
+   Ordinal regression
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../advanced/variational_fourier_features.html">
+   Variational Fourier Features in the GPflow framework
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../advanced/varying_noise.html">
+   Gaussian process regression with varying output noise
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../tailor/external-mean-function.html">
+   Custom mean functions: metalearning with GPs
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../tailor/gp_nn.html">
+   Mixing TensorFlow models with GPflow
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../tailor/kernel_design.html">
+   Kernel Design
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../tailor/likelihood_design.html">
+   Likelihood Design
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../tailor/mixture_density_network.html">
+   Mixture Density Networks in GPflow
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../tailor/models_with_latent_variables.html">
+   Models with observed and latent variables
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../tailor/updating_models_with_new_data.html">
+   Updating model with new data
+  </a>
+ </li>
+</ul>
+<ul class="current nav bd-sidenav">
+ <li class="toctree-l1 current active">
+  <a class="current reference internal" href="#">
+   Comparing FITC approximation to VFE approximation
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="SGPR_notes.html">
+   Derivation of SGPR equations
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="Sanity_check.html">
+   Sanity checking when model behaviours should overlap
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="upper_bound.html">
+   Discussion of the GP marginal likelihood upper bound
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="vgp_notes.html">
+   Derivation of VGP equations
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../understanding/architecture.html">
+   Architecture
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../understanding/models.html">
+   Manipulating GPflow models
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../understanding/utilities.html">
+   Utilities
+  </a>
+ </li>
+</ul>
+
+  </div>
+</nav>
+              </div>
+              <div class="sidebar-end-items">
+              </div>
+            </div>
+            
+          
+
+          
+          <div class="d-none d-xl-block col-xl-2 bd-toc">
+            
+              
+              <div class="toc-item">
+                
+
+<nav id="bd-toc-nav">
+    
+</nav>
+              </div>
+              
+              <div class="toc-item">
+                
+              </div>
+              
+            
+          </div>
+          
+
+          
+          
+            
+          
+          <main class="col-12 col-md-9 col-xl-7 py-md-5 pl-md-5 pr-md-4 bd-content" role="main">
+              
+              <div>
+                
+  
+<style>
+/* CSS for nbsphinx extension */
+
+/* remove conflicting styling from Sphinx themes */
+div.nbinput.container div.prompt *,
+div.nboutput.container div.prompt *,
+div.nbinput.container div.input_area pre,
+div.nboutput.container div.output_area pre,
+div.nbinput.container div.input_area .highlight,
+div.nboutput.container div.output_area .highlight {
+    border: none;
+    padding: 0;
+    margin: 0;
+    box-shadow: none;
+}
+
+div.nbinput.container > div[class*=highlight],
+div.nboutput.container > div[class*=highlight] {
+    margin: 0;
+}
+
+div.nbinput.container div.prompt *,
+div.nboutput.container div.prompt * {
+    background: none;
+}
+
+div.nboutput.container div.output_area .highlight,
+div.nboutput.container div.output_area pre {
+    background: unset;
+}
+
+div.nboutput.container div.output_area div.highlight {
+    color: unset;  /* override Pygments text color */
+}
+
+/* avoid gaps between output lines */
+div.nboutput.container div[class*=highlight] pre {
+    line-height: normal;
+}
+
+/* input/output containers */
+div.nbinput.container,
+div.nboutput.container {
+    display: -webkit-flex;
+    display: flex;
+    align-items: flex-start;
+    margin: 0;
+    width: 100%;
+}
+@media (max-width: 540px) {
+    div.nbinput.container,
+    div.nboutput.container {
+        flex-direction: column;
+    }
+}
+
+/* input container */
+div.nbinput.container {
+    padding-top: 5px;
+}
+
+/* last container */
+div.nblast.container {
+    padding-bottom: 5px;
+}
+
+/* input prompt */
+div.nbinput.container div.prompt pre {
+    color: #307FC1;
+}
+
+/* output prompt */
+div.nboutput.container div.prompt pre {
+    color: #BF5B3D;
+}
+
+/* all prompts */
+div.nbinput.container div.prompt,
+div.nboutput.container div.prompt {
+    width: 4.5ex;
+    padding-top: 5px;
+    position: relative;
+    user-select: none;
+}
+
+div.nbinput.container div.prompt > div,
+div.nboutput.container div.prompt > div {
+    position: absolute;
+    right: 0;
+    margin-right: 0.3ex;
+}
+
+@media (max-width: 540px) {
+    div.nbinput.container div.prompt,
+    div.nboutput.container div.prompt {
+        width: unset;
+        text-align: left;
+        padding: 0.4em;
+    }
+    div.nboutput.container div.prompt.empty {
+        padding: 0;
+    }
+
+    div.nbinput.container div.prompt > div,
+    div.nboutput.container div.prompt > div {
+        position: unset;
+    }
+}
+
+/* disable scrollbars on prompts */
+div.nbinput.container div.prompt pre,
+div.nboutput.container div.prompt pre {
+    overflow: hidden;
+}
+
+/* input/output area */
+div.nbinput.container div.input_area,
+div.nboutput.container div.output_area {
+    -webkit-flex: 1;
+    flex: 1;
+    overflow: auto;
+}
+@media (max-width: 540px) {
+    div.nbinput.container div.input_area,
+    div.nboutput.container div.output_area {
+        width: 100%;
+    }
+}
+
+/* input area */
+div.nbinput.container div.input_area {
+    border: 1px solid #e0e0e0;
+    border-radius: 2px;
+    /*background: #f5f5f5;*/
+}
+
+/* override MathJax center alignment in output cells */
+div.nboutput.container div[class*=MathJax] {
+    text-align: left !important;
+}
+
+/* override sphinx.ext.imgmath center alignment in output cells */
+div.nboutput.container div.math p {
+    text-align: left;
+}
+
+/* standard error */
+div.nboutput.container div.output_area.stderr {
+    background: #fdd;
+}
+
+/* ANSI colors */
+.ansi-black-fg { color: #3E424D; }
+.ansi-black-bg { background-color: #3E424D; }
+.ansi-black-intense-fg { color: #282C36; }
+.ansi-black-intense-bg { background-color: #282C36; }
+.ansi-red-fg { color: #E75C58; }
+.ansi-red-bg { background-color: #E75C58; }
+.ansi-red-intense-fg { color: #B22B31; }
+.ansi-red-intense-bg { background-color: #B22B31; }
+.ansi-green-fg { color: #00A250; }
+.ansi-green-bg { background-color: #00A250; }
+.ansi-green-intense-fg { color: #007427; }
+.ansi-green-intense-bg { background-color: #007427; }
+.ansi-yellow-fg { color: #DDB62B; }
+.ansi-yellow-bg { background-color: #DDB62B; }
+.ansi-yellow-intense-fg { color: #B27D12; }
+.ansi-yellow-intense-bg { background-color: #B27D12; }
+.ansi-blue-fg { color: #208FFB; }
+.ansi-blue-bg { background-color: #208FFB; }
+.ansi-blue-intense-fg { color: #0065CA; }
+.ansi-blue-intense-bg { background-color: #0065CA; }
+.ansi-magenta-fg { color: #D160C4; }
+.ansi-magenta-bg { background-color: #D160C4; }
+.ansi-magenta-intense-fg { color: #A03196; }
+.ansi-magenta-intense-bg { background-color: #A03196; }
+.ansi-cyan-fg { color: #60C6C8; }
+.ansi-cyan-bg { background-color: #60C6C8; }
+.ansi-cyan-intense-fg { color: #258F8F; }
+.ansi-cyan-intense-bg { background-color: #258F8F; }
+.ansi-white-fg { color: #C5C1B4; }
+.ansi-white-bg { background-color: #C5C1B4; }
+.ansi-white-intense-fg { color: #A1A6B2; }
+.ansi-white-intense-bg { background-color: #A1A6B2; }
+
+.ansi-default-inverse-fg { color: #FFFFFF; }
+.ansi-default-inverse-bg { background-color: #000000; }
+
+.ansi-bold { font-weight: bold; }
+.ansi-underline { text-decoration: underline; }
+
+
+div.nbinput.container div.input_area div[class*=highlight] > pre,
+div.nboutput.container div.output_area div[class*=highlight] > pre,
+div.nboutput.container div.output_area div[class*=highlight].math,
+div.nboutput.container div.output_area.rendered_html,
+div.nboutput.container div.output_area > div.output_javascript,
+div.nboutput.container div.output_area:not(.rendered_html) > img{
+    padding: 5px;
+    margin: 0;
+}
+
+/* fix copybtn overflow problem in chromium (needed for 'sphinx_copybutton') */
+div.nbinput.container div.input_area > div[class^='highlight'],
+div.nboutput.container div.output_area > div[class^='highlight']{
+    overflow-y: hidden;
+}
+
+/* hide copybtn icon on prompts (needed for 'sphinx_copybutton') */
+.prompt .copybtn {
+    display: none;
+}
+
+/* Some additional styling taken form the Jupyter notebook CSS */
+div.rendered_html table {
+  border: none;
+  border-collapse: collapse;
+  border-spacing: 0;
+  color: black;
+  font-size: 12px;
+  table-layout: fixed;
+}
+div.rendered_html thead {
+  border-bottom: 1px solid black;
+  vertical-align: bottom;
+}
+div.rendered_html tr,
+div.rendered_html th,
+div.rendered_html td {
+  text-align: right;
+  vertical-align: middle;
+  padding: 0.5em 0.5em;
+  line-height: normal;
+  white-space: normal;
+  max-width: none;
+  border: none;
+}
+div.rendered_html th {
+  font-weight: bold;
+}
+div.rendered_html tbody tr:nth-child(odd) {
+  background: #f5f5f5;
+}
+div.rendered_html tbody tr:hover {
+  background: rgba(66, 165, 245, 0.2);
+}
+</style>
+<section id="Comparing-FITC-approximation-to-VFE-approximation">
+<h1>Comparing FITC approximation to VFE approximation<a class="headerlink" href="#Comparing-FITC-approximation-to-VFE-approximation" title="Permalink to this headline">¶</a></h1>
+<p>This notebook examines why we prefer the Variational Free Energy (VFE) objective to the Fully Independent Training Conditional (FITC) approximation for our sparse approximations.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">gpflow</span>
+<span class="kn">import</span> <span class="nn">tensorflow</span> <span class="k">as</span> <span class="nn">tf</span>
+<span class="kn">from</span> <span class="nn">gpflow.ci_utils</span> <span class="kn">import</span> <span class="n">ci_niter</span>  <span class="c1"># to speed up automated testing of this notebook</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+
+<span class="o">%</span><span class="k">matplotlib</span> inline
+
+<span class="kn">from</span> <span class="nn">FITCvsVFE</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">getTrainingTestData</span><span class="p">,</span>
+    <span class="n">printModelParameters</span><span class="p">,</span>
+    <span class="n">plotPredictions</span><span class="p">,</span>
+    <span class="n">repeatMinimization</span><span class="p">,</span>
+    <span class="n">stretch</span><span class="p">,</span>
+    <span class="n">plotComparisonFigure</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="kn">import</span> <span class="nn">logging</span>
+
+<span class="c1"># logging.disable(logging.WARN)  # do not clutter up the notebook with optimization warnings</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+2022-03-18 10:54:47.774297: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcudart.so.11.0&#39;; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory
+2022-03-18 10:54:47.774323: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.
+</pre></div></div>
+</div>
+<p>First, we load the training data and plot it together with the exact GP solution (using the <code class="docutils literal notranslate"><span class="pre">GPR</span></code> model):</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Load the training data:</span>
+<span class="n">Xtrain</span><span class="p">,</span> <span class="n">Ytrain</span><span class="p">,</span> <span class="n">Xtest</span><span class="p">,</span> <span class="n">Ytest</span> <span class="o">=</span> <span class="n">getTrainingTestData</span><span class="p">()</span>
+
+
+<span class="k">def</span> <span class="nf">getKernel</span><span class="p">():</span>
+    <span class="k">return</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">SquaredExponential</span><span class="p">()</span>
+
+
+<span class="c1"># Run exact inference on training data:</span>
+<span class="n">exact_model</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">GPR</span><span class="p">((</span><span class="n">Xtrain</span><span class="p">,</span> <span class="n">Ytrain</span><span class="p">),</span> <span class="n">kernel</span><span class="o">=</span><span class="n">getKernel</span><span class="p">())</span>
+
+<span class="n">opt</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">optimizers</span><span class="o">.</span><span class="n">Scipy</span><span class="p">()</span>
+<span class="n">opt</span><span class="o">.</span><span class="n">minimize</span><span class="p">(</span>
+    <span class="n">exact_model</span><span class="o">.</span><span class="n">training_loss</span><span class="p">,</span>
+    <span class="n">exact_model</span><span class="o">.</span><span class="n">trainable_variables</span><span class="p">,</span>
+    <span class="n">method</span><span class="o">=</span><span class="s2">&quot;L-BFGS-B&quot;</span><span class="p">,</span>
+    <span class="n">options</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">maxiter</span><span class="o">=</span><span class="n">ci_niter</span><span class="p">(</span><span class="mi">20000</span><span class="p">)),</span>
+    <span class="n">tol</span><span class="o">=</span><span class="mf">1e-11</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Exact model parameters:&quot;</span><span class="p">)</span>
+<span class="n">printModelParameters</span><span class="p">(</span><span class="n">exact_model</span><span class="p">)</span>
+
+<span class="n">figA</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Xtrain</span><span class="p">,</span> <span class="n">Ytrain</span><span class="p">,</span> <span class="s2">&quot;ro&quot;</span><span class="p">)</span>
+<span class="n">plotPredictions</span><span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="n">exact_model</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;g&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+2022-03-18 10:54:50.537224: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcuda.so.1&#39;; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory
+2022-03-18 10:54:50.537257: W tensorflow/stream_executor/cuda/cuda_driver.cc:269] failed call to cuInit: UNKNOWN ERROR (303)
+2022-03-18 10:54:50.537276: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (b9c0dc116e06): /proc/driver/nvidia/version does not exist
+2022-03-18 10:54:50.537539: I tensorflow/core/platform/cpu_feature_guard.cc:151] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA
+To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.
+2022-03-18 10:54:50.567156: W tensorflow/python/util/util.cc:368] Sets are not currently considered sequences, but this may change in the future, so consider avoiding using them.
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Exact model parameters:
+  Likelihood variance = 0.074285
+  Kernel variance     = 0.90049
+  Kernel lengthscale  = 0.5825
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/notebooks_theory_FITCvsVFE_3_2.png" src="../../_images/notebooks_theory_FITCvsVFE_3_2.png" />
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">initializeHyperparametersFromExactSolution</span><span class="p">(</span><span class="n">sparse_model</span><span class="p">):</span>
+    <span class="n">sparse_model</span><span class="o">.</span><span class="n">likelihood</span><span class="o">.</span><span class="n">variance</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="n">exact_model</span><span class="o">.</span><span class="n">likelihood</span><span class="o">.</span><span class="n">variance</span><span class="p">)</span>
+    <span class="n">sparse_model</span><span class="o">.</span><span class="n">kernel</span><span class="o">.</span><span class="n">variance</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="n">exact_model</span><span class="o">.</span><span class="n">kernel</span><span class="o">.</span><span class="n">variance</span><span class="p">)</span>
+    <span class="n">sparse_model</span><span class="o">.</span><span class="n">kernel</span><span class="o">.</span><span class="n">lengthscales</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="n">exact_model</span><span class="o">.</span><span class="n">kernel</span><span class="o">.</span><span class="n">lengthscales</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>We now construct two sparse model using the VFE (<code class="docutils literal notranslate"><span class="pre">SGPR</span></code> model) and FITC (<code class="docutils literal notranslate"><span class="pre">GPRFITC</span></code> model) optimization objectives, with the inducing points being initialized on top of the training inputs, and the model hyperparameters (kernel variance and lengthscales, and likelihood variance) being initialized to the values obtained in the optimization of the exact <code class="docutils literal notranslate"><span class="pre">GPR</span></code> model:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Train VFE model initialized from the perfect solution.</span>
+<span class="n">VFEmodel</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">SGPR</span><span class="p">((</span><span class="n">Xtrain</span><span class="p">,</span> <span class="n">Ytrain</span><span class="p">),</span> <span class="n">kernel</span><span class="o">=</span><span class="n">getKernel</span><span class="p">(),</span> <span class="n">inducing_variable</span><span class="o">=</span><span class="n">Xtrain</span><span class="o">.</span><span class="n">copy</span><span class="p">())</span>
+
+<span class="n">initializeHyperparametersFromExactSolution</span><span class="p">(</span><span class="n">VFEmodel</span><span class="p">)</span>
+
+<span class="n">VFEcb</span> <span class="o">=</span> <span class="n">repeatMinimization</span><span class="p">(</span><span class="n">VFEmodel</span><span class="p">,</span> <span class="n">Xtest</span><span class="p">,</span> <span class="n">Ytest</span><span class="p">)</span>  <span class="c1"># optimize with several restarts</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Sparse model parameters after VFE optimization:&quot;</span><span class="p">)</span>
+<span class="n">printModelParameters</span><span class="p">(</span><span class="n">VFEmodel</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+WARNING:tensorflow:AutoGraph could not transform &lt;bound method Dispatcher.dispatch of &lt;dispatched Kuf&gt;&gt; and will run it as-is.
+Please report this to the TensorFlow team. When filing the bug, set the verbosity to 10 (on Linux, `export AUTOGRAPH_VERBOSITY=10`) and attach the full output.
+Cause: invalid value for &#34;node&#34;: expected &#34;ast.AST&#34;, got &#34;&lt;class &#39;NoneType&#39;&gt;&#34;; to visit lists of nodes, use &#34;visit_block&#34; instead
+To silence this warning, decorate the function with @tf.autograph.experimental.do_not_convert
+WARNING: AutoGraph could not transform &lt;bound method Dispatcher.dispatch of &lt;dispatched Kuf&gt;&gt; and will run it as-is.
+Please report this to the TensorFlow team. When filing the bug, set the verbosity to 10 (on Linux, `export AUTOGRAPH_VERBOSITY=10`) and attach the full output.
+Cause: invalid value for &#34;node&#34;: expected &#34;ast.AST&#34;, got &#34;&lt;class &#39;NoneType&#39;&gt;&#34;; to visit lists of nodes, use &#34;visit_block&#34; instead
+To silence this warning, decorate the function with @tf.autograph.experimental.do_not_convert
+WARNING:tensorflow:5 out of the last 14 calls to &lt;function Scipy.eval_func.&lt;locals&gt;._tf_eval at 0x7f81281f31c0&gt; triggered tf.function retracing. Tracing is expensive and the excessive number of tracings could be due to (1) creating @tf.function repeatedly in a loop, (2) passing tensors with different shapes, (3) passing Python objects instead of tensors. For (1), please define your @tf.function outside of the loop. For (2), @tf.function has experimental_relax_shapes=True option that relaxes argument shapes that can avoid unnecessary retracing. For (3), please refer to https://www.tensorflow.org/guide/function#controlling_retracing and https://www.tensorflow.org/api_docs/python/tf/function for  more details.
+WARNING:tensorflow:5 out of the last 14 calls to &lt;function Scipy.eval_func.&lt;locals&gt;._tf_eval at 0x7f812016fa30&gt; triggered tf.function retracing. Tracing is expensive and the excessive number of tracings could be due to (1) creating @tf.function repeatedly in a loop, (2) passing tensors with different shapes, (3) passing Python objects instead of tensors. For (1), please define your @tf.function outside of the loop. For (2), @tf.function has experimental_relax_shapes=True option that relaxes argument shapes that can avoid unnecessary retracing. For (3), please refer to https://www.tensorflow.org/guide/function#controlling_retracing and https://www.tensorflow.org/api_docs/python/tf/function for  more details.
+Sparse model parameters after VFE optimization:
+  Likelihood variance = 0.074286
+  Kernel variance     = 0.90049
+  Kernel lengthscale  = 0.5825
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Train FITC model initialized from the perfect solution.</span>
+<span class="n">FITCmodel</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">GPRFITC</span><span class="p">(</span>
+    <span class="p">(</span><span class="n">Xtrain</span><span class="p">,</span> <span class="n">Ytrain</span><span class="p">),</span> <span class="n">kernel</span><span class="o">=</span><span class="n">getKernel</span><span class="p">(),</span> <span class="n">inducing_variable</span><span class="o">=</span><span class="n">Xtrain</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+<span class="p">)</span>
+
+<span class="n">initializeHyperparametersFromExactSolution</span><span class="p">(</span><span class="n">FITCmodel</span><span class="p">)</span>
+
+<span class="n">FITCcb</span> <span class="o">=</span> <span class="n">repeatMinimization</span><span class="p">(</span><span class="n">FITCmodel</span><span class="p">,</span> <span class="n">Xtest</span><span class="p">,</span> <span class="n">Ytest</span><span class="p">)</span>  <span class="c1"># optimize with several restarts</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Sparse model parameters after FITC optimization:&quot;</span><span class="p">)</span>
+<span class="n">printModelParameters</span><span class="p">(</span><span class="n">FITCmodel</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Sparse model parameters after FITC optimization:
+  Likelihood variance = 0.018908
+  Kernel variance     = 1.3343
+  Kernel lengthscale  = 0.61751
+</pre></div></div>
+</div>
+<p>Plotting a comparison of the two algorithms, we see that VFE stays at the optimum of exact GPR, whereas the FITC approximation eventually ends up with several inducing points on top of each other, and a worse fit:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">figB</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">16</span><span class="p">))</span>
+
+<span class="c1"># VFE optimization finishes after 10 iterations, so we stretch out the training and test</span>
+<span class="c1"># log-likelihood traces to make them comparable against FITC:</span>
+<span class="n">VFEiters</span> <span class="o">=</span> <span class="n">FITCcb</span><span class="o">.</span><span class="n">n_iters</span>
+<span class="n">VFElog_likelihoods</span> <span class="o">=</span> <span class="n">stretch</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">VFEiters</span><span class="p">),</span> <span class="n">VFEcb</span><span class="o">.</span><span class="n">log_likelihoods</span><span class="p">)</span>
+<span class="n">VFEhold_out_likelihood</span> <span class="o">=</span> <span class="n">stretch</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">VFEiters</span><span class="p">),</span> <span class="n">VFEcb</span><span class="o">.</span><span class="n">hold_out_likelihood</span><span class="p">)</span>
+
+<span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;VFE&quot;</span><span class="p">,</span> <span class="n">loc</span><span class="o">=</span><span class="s2">&quot;center&quot;</span><span class="p">,</span> <span class="n">fontdict</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;fontsize&quot;</span><span class="p">:</span> <span class="mi">22</span><span class="p">})</span>
+<span class="n">plotComparisonFigure</span><span class="p">(</span>
+    <span class="n">Xtrain</span><span class="p">,</span>
+    <span class="n">VFEmodel</span><span class="p">,</span>
+    <span class="n">exact_model</span><span class="p">,</span>
+    <span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+    <span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+    <span class="n">axes</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+    <span class="n">VFEiters</span><span class="p">,</span>
+    <span class="n">VFElog_likelihoods</span><span class="p">,</span>
+    <span class="n">VFEhold_out_likelihood</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;FITC&quot;</span><span class="p">,</span> <span class="n">loc</span><span class="o">=</span><span class="s2">&quot;center&quot;</span><span class="p">,</span> <span class="n">fontdict</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;fontsize&quot;</span><span class="p">:</span> <span class="mi">22</span><span class="p">})</span>
+<span class="n">plotComparisonFigure</span><span class="p">(</span>
+    <span class="n">Xtrain</span><span class="p">,</span>
+    <span class="n">FITCmodel</span><span class="p">,</span>
+    <span class="n">exact_model</span><span class="p">,</span>
+    <span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+    <span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+    <span class="n">axes</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+    <span class="n">FITCcb</span><span class="o">.</span><span class="n">n_iters</span><span class="p">,</span>
+    <span class="n">FITCcb</span><span class="o">.</span><span class="n">log_likelihoods</span><span class="p">,</span>
+    <span class="n">FITCcb</span><span class="o">.</span><span class="n">hold_out_likelihood</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/notebooks_theory_FITCvsVFE_9_0.png" src="../../_images/notebooks_theory_FITCvsVFE_9_0.png" />
+</div>
+</div>
+<p>A more detailed discussion of the comparison between these sparse approximations can be found in <a class="reference external" href="http://papers.nips.cc/paper/6477-understanding-probabilistic-sparse-gaussian-process-approximations">Understanding Probabilistic Sparse Gaussian Process Approximations</a> by Bauer, van der Wilk, and Rasmussen (2017).</p>
+</section>
+
+
+              </div>
+              
+              
+          </main>
+          
+
+      </div>
+    </div>
+  
+    <script src="../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf"></script>
+  <footer class="footer mt-5 mt-md-0">
+  <div class="container">
+    
+    <div class="footer-item">
+      <p class="copyright">
+    &copy; Copyright 2022, James Hensman and Alexander G. de G. Matthews and many others.<br>
+</p>
+    </div>
+    
+    <div class="footer-item">
+      <p class="sphinx-version">
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.4.0.<br>
+</p>
+    </div>
+    
+  </div>
+</footer>
+  </body>
+</html>

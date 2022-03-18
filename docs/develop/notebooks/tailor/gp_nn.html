@@ -1,0 +1,1050 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+    <title>Mixing TensorFlow models with GPflow &#8212; GPflow 2.4.0 documentation</title>
+    
+    <link href="../../_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
+  
+    
+    <link rel="stylesheet"
+      href="../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
+    <link rel="preload" as="font" type="font/woff2" crossorigin
+      href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+    <link rel="preload" as="font" type="font/woff2" crossorigin
+      href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+  
+    
+      
+  
+    
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/styles/pydata-sphinx-theme.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/pydata-custom.css" />
+    
+    <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf">
+  
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="https://unpkg.com/@jupyter-widgets/html-manager@^0.20.1/dist/embed-amd.js"></script>
+    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Kernel Design" href="kernel_design.html" />
+    <link rel="prev" title="Custom mean functions: metalearning with GPs" href="external-mean-function.html" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="docsearch:language" content="None">
+    
+
+    <!-- Google Analytics -->
+    
+  </head>
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="80">
+    
+    <div class="container-fluid" id="banner"></div>
+
+    
+    <nav class="navbar navbar-light navbar-expand-lg bg-light fixed-top bd-navbar" id="navbar-main"><div class="container-xl">
+
+  <div id="navbar-start">
+    
+    
+
+<a class="navbar-brand" href="../../index.html">
+  <img src="../../_static/gpflow_logo.svg" class="logo" alt="logo">
+</a>
+
+
+    
+  </div>
+
+  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar-collapsible" aria-controls="navbar-collapsible" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="navbar-toggler-icon"></span>
+  </button>
+
+  
+  <div id="navbar-collapsible" class="col-lg-9 collapse navbar-collapse">
+    <div id="navbar-center" class="mr-auto">
+      
+      <div class="navbar-center-item">
+        <ul id="navbar-main-elements" class="navbar-nav">
+    <li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../intro.html">
+  Introduction
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../intro.html">
+  GPflow manual
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../intro_to_gpflow2.html">
+  GPflow with TensorFlow 2
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../gpflow2_upgrade_guide.html">
+  GPflow 2 Upgrade Guide
+ </a>
+</li>
+
+<li class="toctree-l1 current active nav-item">
+ <a class="reference internal nav-link" href="../../notebooks_file.html">
+  Notebooks
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../derivations.html">
+  Derivations
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../api/gpflow/index.html">
+  API reference
+ </a>
+</li>
+
+    
+</ul>
+      </div>
+      
+    </div>
+
+    <div id="navbar-end">
+      
+      <div class="navbar-end-item">
+        <div class="dropdown" id="version_switcher">
+    <button type="button" class="btn btn-primary btn-sm navbar-btn dropdown-toggle" id="version_switcher_button" data-toggle="dropdown">
+        develop  <!-- this text may get changed later by javascript -->
+        <span class="caret"></span>
+    </button>
+    <div id="version_switcher_menu" class="dropdown-menu list-group-flush py-0" aria-labelledby="version_switcher_button">
+    <!-- dropdown will be populated by javascript on page load -->
+    </div>
+</div>
+
+<!-- NOTE: this JS must live here (not in our global JS file) because it relies
+     on being processed by Jinja before it is run (specifically for replacing
+     variables notebooks/tailor/gp_nn and {'json_url': 'https://gpflow.github.io/GPflow/versions.json', 'url_template': 'https://gpflow.github.io/GPflow/{version}/index.html', 'version_match': 'develop'}.
+-->
+
+<script type="text/javascript">
+// Construct the target URL from the JSON components
+function buildURL(entry) {
+    var template = "https://gpflow.github.io/GPflow/{version}/index.html";  // supplied by jinja
+    template = template.replace("{version}", entry.version);
+    return template;
+}
+
+// Check if corresponding page path exists in other version of docs
+// and, if so, go there instead of the homepage of the other docs version
+function checkPageExistsAndRedirect(event) {
+    const currentFilePath = "notebooks/tailor/gp_nn.html",
+          tryUrl = event.target.getAttribute("href");
+    let otherDocsHomepage = tryUrl.replace(currentFilePath, "");
+    $.ajax({
+        type: 'HEAD',
+        url: tryUrl,
+        // if the page exists, go there
+        success: function() {
+            location.href = tryUrl;
+        }
+    }).fail(function() {
+        location.href = otherDocsHomepage;
+    });
+    // this prevents the browser from following the href of the clicked node
+    // (which is fine because this function takes care of redirecting)
+    return false;
+}
+
+// Populate the version switcher from the JSON config file
+(function () {
+    $.getJSON("https://gpflow.github.io/GPflow/versions.json", function(data, textStatus, jqXHR) {
+        const currentFilePath = "notebooks/tailor/gp_nn.html";
+        // create links to the corresponding page in the other docs versions
+        $.each(data, function(index, entry) {
+            // if no custom name specified (e.g., "latest"), use version string
+            if (!("name" in entry)) {
+                entry.name = entry.version;
+            }
+            // create the node
+            const node = document.createElement("a");
+            node.setAttribute("class", "list-group-item list-group-item-action py-1");
+            node.textContent = `${entry.name}`;
+            // get the base URL for that doc version, add the current page's
+            // path to it, and set as `href`
+            entry.url = buildURL(entry);
+            node.setAttribute("href", `${entry.url}${currentFilePath}`);
+            // on click, AJAX calls will check if the linked page exists before
+            // trying to redirect, and if not, will redirect to the homepage
+            // for that version of the docs.
+            node.onclick = checkPageExistsAndRedirect;
+            $("#version_switcher_menu").append(node);
+            // replace dropdown button text with the preferred display name of
+            // this version, rather than using sphinx's  variable.
+            // also highlight the dropdown entry for the currently-viewed
+            // version's entry
+            if (entry.version == "develop") {
+                node.classList.add("active");
+                $("#version_switcher_button").text(entry.name);
+            }
+        });
+    });
+})();
+</script>
+      </div>
+      
+    </div>
+  </div>
+</div>
+    </nav>
+    
+
+    <div class="container-xl">
+      <div class="row">
+          
+            
+            <!-- Only show if we have sidebars configured, else just a small margin  -->
+            <div class="col-12 col-md-3 bd-sidebar">
+              <div class="sidebar-start-items"><form class="bd-search d-flex align-items-center" action="../../search.html" method="get">
+  <i class="icon fas fa-search"></i>
+  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
+</form><nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
+  <div class="bd-toc-item active">
+    <ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../basics/GPLVM.html">
+   Bayesian Gaussian process latent variable model (Bayesian GPLVM)
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../basics/classification.html">
+   Basic (binary) GP classification model
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../basics/monitoring.html">
+   Monitoring Optimisation
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../basics/regression.html">
+   Basic (Gaussian likelihood) GP regression model
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../advanced/advanced_many_points.html">
+   More details on models with many observation points
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../advanced/changepoints.html">
+   Change points
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../advanced/convolutional.html">
+   Convolutional Gaussian Processes
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../advanced/coregionalisation.html">
+   A simple demonstration of coregionalization
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../advanced/fast_predictions.html">
+   Faster predictions by caching
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../advanced/gps_for_big_data.html">
+   Stochastic Variational Inference for scalability with SVGP
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../advanced/heteroskedastic.html">
+   Heteroskedastic Likelihood and Multi-Latent GP
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../advanced/kernels.html">
+   Manipulating kernels
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../advanced/mcmc.html">
+   MCMC (Markov Chain Monte Carlo)
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../advanced/multiclass_classification.html">
+   Multiclass classification
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../advanced/multioutput.html">
+   Multi-output Gaussian processes in GPflow
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../advanced/natural_gradients.html">
+   Natural gradients
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../advanced/optimisation.html">
+   Optimizers
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../advanced/ordinal_regression.html">
+   Ordinal regression
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../advanced/variational_fourier_features.html">
+   Variational Fourier Features in the GPflow framework
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../advanced/varying_noise.html">
+   Gaussian process regression with varying output noise
+  </a>
+ </li>
+</ul>
+<ul class="current nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="external-mean-function.html">
+   Custom mean functions: metalearning with GPs
+  </a>
+ </li>
+ <li class="toctree-l1 current active">
+  <a class="current reference internal" href="#">
+   Mixing TensorFlow models with GPflow
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="kernel_design.html">
+   Kernel Design
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="likelihood_design.html">
+   Likelihood Design
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="mixture_density_network.html">
+   Mixture Density Networks in GPflow
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="models_with_latent_variables.html">
+   Models with observed and latent variables
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="updating_models_with_new_data.html">
+   Updating model with new data
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../theory/FITCvsVFE.html">
+   Comparing FITC approximation to VFE approximation
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../theory/SGPR_notes.html">
+   Derivation of SGPR equations
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../theory/Sanity_check.html">
+   Sanity checking when model behaviours should overlap
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../theory/upper_bound.html">
+   Discussion of the GP marginal likelihood upper bound
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../theory/vgp_notes.html">
+   Derivation of VGP equations
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../understanding/architecture.html">
+   Architecture
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../understanding/models.html">
+   Manipulating GPflow models
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../understanding/utilities.html">
+   Utilities
+  </a>
+ </li>
+</ul>
+
+  </div>
+</nav>
+              </div>
+              <div class="sidebar-end-items">
+              </div>
+            </div>
+            
+          
+
+          
+          <div class="d-none d-xl-block col-xl-2 bd-toc">
+            
+              
+              <div class="toc-item">
+                
+<div class="tocsection onthispage pt-5 pb-3">
+    <i class="fas fa-list"></i> On this page
+</div>
+
+<nav id="bd-toc-nav">
+    <ul class="visible nav section-nav flex-column">
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#Convolutional-network-inside-a-GPflow-model">
+   Convolutional network inside a GPflow model
+  </a>
+ </li>
+</ul>
+
+</nav>
+              </div>
+              
+              <div class="toc-item">
+                
+              </div>
+              
+            
+          </div>
+          
+
+          
+          
+            
+          
+          <main class="col-12 col-md-9 col-xl-7 py-md-5 pl-md-5 pr-md-4 bd-content" role="main">
+              
+              <div>
+                
+  
+<style>
+/* CSS for nbsphinx extension */
+
+/* remove conflicting styling from Sphinx themes */
+div.nbinput.container div.prompt *,
+div.nboutput.container div.prompt *,
+div.nbinput.container div.input_area pre,
+div.nboutput.container div.output_area pre,
+div.nbinput.container div.input_area .highlight,
+div.nboutput.container div.output_area .highlight {
+    border: none;
+    padding: 0;
+    margin: 0;
+    box-shadow: none;
+}
+
+div.nbinput.container > div[class*=highlight],
+div.nboutput.container > div[class*=highlight] {
+    margin: 0;
+}
+
+div.nbinput.container div.prompt *,
+div.nboutput.container div.prompt * {
+    background: none;
+}
+
+div.nboutput.container div.output_area .highlight,
+div.nboutput.container div.output_area pre {
+    background: unset;
+}
+
+div.nboutput.container div.output_area div.highlight {
+    color: unset;  /* override Pygments text color */
+}
+
+/* avoid gaps between output lines */
+div.nboutput.container div[class*=highlight] pre {
+    line-height: normal;
+}
+
+/* input/output containers */
+div.nbinput.container,
+div.nboutput.container {
+    display: -webkit-flex;
+    display: flex;
+    align-items: flex-start;
+    margin: 0;
+    width: 100%;
+}
+@media (max-width: 540px) {
+    div.nbinput.container,
+    div.nboutput.container {
+        flex-direction: column;
+    }
+}
+
+/* input container */
+div.nbinput.container {
+    padding-top: 5px;
+}
+
+/* last container */
+div.nblast.container {
+    padding-bottom: 5px;
+}
+
+/* input prompt */
+div.nbinput.container div.prompt pre {
+    color: #307FC1;
+}
+
+/* output prompt */
+div.nboutput.container div.prompt pre {
+    color: #BF5B3D;
+}
+
+/* all prompts */
+div.nbinput.container div.prompt,
+div.nboutput.container div.prompt {
+    width: 4.5ex;
+    padding-top: 5px;
+    position: relative;
+    user-select: none;
+}
+
+div.nbinput.container div.prompt > div,
+div.nboutput.container div.prompt > div {
+    position: absolute;
+    right: 0;
+    margin-right: 0.3ex;
+}
+
+@media (max-width: 540px) {
+    div.nbinput.container div.prompt,
+    div.nboutput.container div.prompt {
+        width: unset;
+        text-align: left;
+        padding: 0.4em;
+    }
+    div.nboutput.container div.prompt.empty {
+        padding: 0;
+    }
+
+    div.nbinput.container div.prompt > div,
+    div.nboutput.container div.prompt > div {
+        position: unset;
+    }
+}
+
+/* disable scrollbars on prompts */
+div.nbinput.container div.prompt pre,
+div.nboutput.container div.prompt pre {
+    overflow: hidden;
+}
+
+/* input/output area */
+div.nbinput.container div.input_area,
+div.nboutput.container div.output_area {
+    -webkit-flex: 1;
+    flex: 1;
+    overflow: auto;
+}
+@media (max-width: 540px) {
+    div.nbinput.container div.input_area,
+    div.nboutput.container div.output_area {
+        width: 100%;
+    }
+}
+
+/* input area */
+div.nbinput.container div.input_area {
+    border: 1px solid #e0e0e0;
+    border-radius: 2px;
+    /*background: #f5f5f5;*/
+}
+
+/* override MathJax center alignment in output cells */
+div.nboutput.container div[class*=MathJax] {
+    text-align: left !important;
+}
+
+/* override sphinx.ext.imgmath center alignment in output cells */
+div.nboutput.container div.math p {
+    text-align: left;
+}
+
+/* standard error */
+div.nboutput.container div.output_area.stderr {
+    background: #fdd;
+}
+
+/* ANSI colors */
+.ansi-black-fg { color: #3E424D; }
+.ansi-black-bg { background-color: #3E424D; }
+.ansi-black-intense-fg { color: #282C36; }
+.ansi-black-intense-bg { background-color: #282C36; }
+.ansi-red-fg { color: #E75C58; }
+.ansi-red-bg { background-color: #E75C58; }
+.ansi-red-intense-fg { color: #B22B31; }
+.ansi-red-intense-bg { background-color: #B22B31; }
+.ansi-green-fg { color: #00A250; }
+.ansi-green-bg { background-color: #00A250; }
+.ansi-green-intense-fg { color: #007427; }
+.ansi-green-intense-bg { background-color: #007427; }
+.ansi-yellow-fg { color: #DDB62B; }
+.ansi-yellow-bg { background-color: #DDB62B; }
+.ansi-yellow-intense-fg { color: #B27D12; }
+.ansi-yellow-intense-bg { background-color: #B27D12; }
+.ansi-blue-fg { color: #208FFB; }
+.ansi-blue-bg { background-color: #208FFB; }
+.ansi-blue-intense-fg { color: #0065CA; }
+.ansi-blue-intense-bg { background-color: #0065CA; }
+.ansi-magenta-fg { color: #D160C4; }
+.ansi-magenta-bg { background-color: #D160C4; }
+.ansi-magenta-intense-fg { color: #A03196; }
+.ansi-magenta-intense-bg { background-color: #A03196; }
+.ansi-cyan-fg { color: #60C6C8; }
+.ansi-cyan-bg { background-color: #60C6C8; }
+.ansi-cyan-intense-fg { color: #258F8F; }
+.ansi-cyan-intense-bg { background-color: #258F8F; }
+.ansi-white-fg { color: #C5C1B4; }
+.ansi-white-bg { background-color: #C5C1B4; }
+.ansi-white-intense-fg { color: #A1A6B2; }
+.ansi-white-intense-bg { background-color: #A1A6B2; }
+
+.ansi-default-inverse-fg { color: #FFFFFF; }
+.ansi-default-inverse-bg { background-color: #000000; }
+
+.ansi-bold { font-weight: bold; }
+.ansi-underline { text-decoration: underline; }
+
+
+div.nbinput.container div.input_area div[class*=highlight] > pre,
+div.nboutput.container div.output_area div[class*=highlight] > pre,
+div.nboutput.container div.output_area div[class*=highlight].math,
+div.nboutput.container div.output_area.rendered_html,
+div.nboutput.container div.output_area > div.output_javascript,
+div.nboutput.container div.output_area:not(.rendered_html) > img{
+    padding: 5px;
+    margin: 0;
+}
+
+/* fix copybtn overflow problem in chromium (needed for 'sphinx_copybutton') */
+div.nbinput.container div.input_area > div[class^='highlight'],
+div.nboutput.container div.output_area > div[class^='highlight']{
+    overflow-y: hidden;
+}
+
+/* hide copybtn icon on prompts (needed for 'sphinx_copybutton') */
+.prompt .copybtn {
+    display: none;
+}
+
+/* Some additional styling taken form the Jupyter notebook CSS */
+div.rendered_html table {
+  border: none;
+  border-collapse: collapse;
+  border-spacing: 0;
+  color: black;
+  font-size: 12px;
+  table-layout: fixed;
+}
+div.rendered_html thead {
+  border-bottom: 1px solid black;
+  vertical-align: bottom;
+}
+div.rendered_html tr,
+div.rendered_html th,
+div.rendered_html td {
+  text-align: right;
+  vertical-align: middle;
+  padding: 0.5em 0.5em;
+  line-height: normal;
+  white-space: normal;
+  max-width: none;
+  border: none;
+}
+div.rendered_html th {
+  font-weight: bold;
+}
+div.rendered_html tbody tr:nth-child(odd) {
+  background: #f5f5f5;
+}
+div.rendered_html tbody tr:hover {
+  background: rgba(66, 165, 245, 0.2);
+}
+</style>
+<section id="Mixing-TensorFlow-models-with-GPflow">
+<h1>Mixing TensorFlow models with GPflow<a class="headerlink" href="#Mixing-TensorFlow-models-with-GPflow" title="Permalink to this headline">¶</a></h1>
+<p>This notebook explores the combination of Keras TensorFlow neural networks with GPflow models.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">tensorflow</span> <span class="k">as</span> <span class="nn">tf</span>
+<span class="kn">from</span> <span class="nn">matplotlib</span> <span class="kn">import</span> <span class="n">pyplot</span> <span class="k">as</span> <span class="n">plt</span>
+<span class="kn">import</span> <span class="nn">gpflow</span>
+<span class="kn">from</span> <span class="nn">gpflow.ci_utils</span> <span class="kn">import</span> <span class="n">ci_niter</span>
+<span class="kn">from</span> <span class="nn">scipy.cluster.vq</span> <span class="kn">import</span> <span class="n">kmeans2</span>
+
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span>
+<span class="kn">import</span> <span class="nn">tensorflow</span> <span class="k">as</span> <span class="nn">tf</span>
+<span class="kn">import</span> <span class="nn">tensorflow_datasets</span> <span class="k">as</span> <span class="nn">tfds</span>
+<span class="kn">import</span> <span class="nn">gpflow</span>
+<span class="kn">from</span> <span class="nn">gpflow.utilities</span> <span class="kn">import</span> <span class="n">to_default_float</span>
+
+<span class="n">iterations</span> <span class="o">=</span> <span class="n">ci_niter</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+2022-03-18 10:50:51.162774: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcudart.so.11.0&#39;; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory
+2022-03-18 10:50:51.162806: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.
+</pre></div></div>
+</div>
+<section id="Convolutional-network-inside-a-GPflow-model">
+<h2>Convolutional network inside a GPflow model<a class="headerlink" href="#Convolutional-network-inside-a-GPflow-model" title="Permalink to this headline">¶</a></h2>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">original_dataset</span><span class="p">,</span> <span class="n">info</span> <span class="o">=</span> <span class="n">tfds</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;mnist&quot;</span><span class="p">,</span> <span class="n">split</span><span class="o">=</span><span class="n">tfds</span><span class="o">.</span><span class="n">Split</span><span class="o">.</span><span class="n">TRAIN</span><span class="p">,</span> <span class="n">with_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">total_num_data</span> <span class="o">=</span> <span class="n">info</span><span class="o">.</span><span class="n">splits</span><span class="p">[</span><span class="s2">&quot;train&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">num_examples</span>
+<span class="n">image_shape</span> <span class="o">=</span> <span class="n">info</span><span class="o">.</span><span class="n">features</span><span class="p">[</span><span class="s2">&quot;image&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span>
+<span class="n">image_size</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">reduce_prod</span><span class="p">(</span><span class="n">image_shape</span><span class="p">)</span>
+<span class="n">batch_size</span> <span class="o">=</span> <span class="mi">32</span>
+
+
+<span class="k">def</span> <span class="nf">map_fn</span><span class="p">(</span><span class="n">input_slice</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]):</span>
+    <span class="n">updated</span> <span class="o">=</span> <span class="n">input_slice</span>
+    <span class="n">image</span> <span class="o">=</span> <span class="n">to_default_float</span><span class="p">(</span><span class="n">updated</span><span class="p">[</span><span class="s2">&quot;image&quot;</span><span class="p">])</span> <span class="o">/</span> <span class="mf">255.0</span>
+    <span class="n">label</span> <span class="o">=</span> <span class="n">to_default_float</span><span class="p">(</span><span class="n">updated</span><span class="p">[</span><span class="s2">&quot;label&quot;</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">tf</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">image_size</span><span class="p">]),</span> <span class="n">label</span>
+
+
+<span class="n">autotune</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">experimental</span><span class="o">.</span><span class="n">AUTOTUNE</span>
+<span class="n">dataset</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">original_dataset</span><span class="o">.</span><span class="n">shuffle</span><span class="p">(</span><span class="mi">1024</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">batch</span><span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">drop_remainder</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">map_fn</span><span class="p">,</span> <span class="n">num_parallel_calls</span><span class="o">=</span><span class="n">autotune</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">prefetch</span><span class="p">(</span><span class="n">autotune</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">repeat</span><span class="p">()</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+2022-03-18 10:50:54.750521: W tensorflow/core/platform/cloud/google_auth_provider.cc:184] All attempts to get a Google authentication bearer token failed, returning an empty token. Retrieving token from files failed with &#34;NOT_FOUND: Could not locate the credentials file.&#34;. Retrieving token from GCE failed with &#34;FAILED_PRECONDITION: Error executing an HTTP request: libcurl code 6 meaning &#39;Couldn&#39;t resolve host name&#39;, error details: Could not resolve host: metadata&#34;.
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+<span class="ansi-bold">Downloading and preparing dataset 11.06 MiB (download: 11.06 MiB, generated: 21.00 MiB, total: 32.06 MiB) to /home/circleci/tensorflow_datasets/mnist/3.0.1...</span>
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "4595e0063451427082daa279ebb0068b", "version_major": 2, "version_minor": 0}</script></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+<span class="ansi-bold">Dataset mnist downloaded and prepared to /home/circleci/tensorflow_datasets/mnist/3.0.1. Subsequent calls will reuse this data.</span>
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+2022-03-18 10:50:55.751479: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcuda.so.1&#39;; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory
+2022-03-18 10:50:55.751511: W tensorflow/stream_executor/cuda/cuda_driver.cc:269] failed call to cuInit: UNKNOWN ERROR (303)
+2022-03-18 10:50:55.751529: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (b9c0dc116e06): /proc/driver/nvidia/version does not exist
+2022-03-18 10:50:55.751793: I tensorflow/core/platform/cpu_feature_guard.cc:151] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA
+To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.
+</pre></div></div>
+</div>
+<div class="line-block">
+<div class="line">Here we’ll use the GPflow functionality, but put a non-GPflow model inside the kernel.</div>
+<div class="line">Vanilla ConvNet. This gets 97.3% accuracy on MNIST when used on its own (+ final linear layer) after 20K iterations</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">KernelWithConvNN</span><span class="p">(</span><span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">Kernel</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">image_shape</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">,</span>
+        <span class="n">output_dim</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">base_kernel</span><span class="p">:</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">Kernel</span><span class="p">,</span>
+        <span class="n">batch_size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">name_scope</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">base_kernel</span> <span class="o">=</span> <span class="n">base_kernel</span>
+            <span class="n">input_size</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">reduce_prod</span><span class="p">(</span><span class="n">image_shape</span><span class="p">))</span>
+            <span class="n">input_shape</span> <span class="o">=</span> <span class="p">(</span><span class="n">input_size</span><span class="p">,)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">cnn</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">keras</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span>
+                <span class="p">[</span>
+                    <span class="n">tf</span><span class="o">.</span><span class="n">keras</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">InputLayer</span><span class="p">(</span><span class="n">input_shape</span><span class="o">=</span><span class="n">input_shape</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">),</span>
+                    <span class="n">tf</span><span class="o">.</span><span class="n">keras</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">Reshape</span><span class="p">(</span><span class="n">image_shape</span><span class="p">),</span>
+                    <span class="n">tf</span><span class="o">.</span><span class="n">keras</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">Conv2D</span><span class="p">(</span>
+                        <span class="n">filters</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="n">image_shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">padding</span><span class="o">=</span><span class="s2">&quot;same&quot;</span><span class="p">,</span> <span class="n">activation</span><span class="o">=</span><span class="s2">&quot;relu&quot;</span>
+                    <span class="p">),</span>
+                    <span class="n">tf</span><span class="o">.</span><span class="n">keras</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">MaxPool2D</span><span class="p">(</span><span class="n">pool_size</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">strides</span><span class="o">=</span><span class="mi">2</span><span class="p">),</span>
+                    <span class="n">tf</span><span class="o">.</span><span class="n">keras</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">Conv2D</span><span class="p">(</span>
+                        <span class="n">filters</span><span class="o">=</span><span class="mi">64</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">),</span> <span class="n">padding</span><span class="o">=</span><span class="s2">&quot;same&quot;</span><span class="p">,</span> <span class="n">activation</span><span class="o">=</span><span class="s2">&quot;relu&quot;</span>
+                    <span class="p">),</span>
+                    <span class="n">tf</span><span class="o">.</span><span class="n">keras</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">MaxPool2D</span><span class="p">(</span><span class="n">pool_size</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">strides</span><span class="o">=</span><span class="mi">2</span><span class="p">),</span>
+                    <span class="n">tf</span><span class="o">.</span><span class="n">keras</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">Flatten</span><span class="p">(),</span>
+                    <span class="n">tf</span><span class="o">.</span><span class="n">keras</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">Dense</span><span class="p">(</span><span class="n">output_dim</span><span class="p">,</span> <span class="n">activation</span><span class="o">=</span><span class="s2">&quot;relu&quot;</span><span class="p">),</span>
+                    <span class="n">tf</span><span class="o">.</span><span class="n">keras</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">Lambda</span><span class="p">(</span><span class="n">to_default_float</span><span class="p">),</span>
+                <span class="p">]</span>
+            <span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">cnn</span><span class="o">.</span><span class="n">build</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">K</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">a_input</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">b_input</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+        <span class="n">transformed_a</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cnn</span><span class="p">(</span><span class="n">a_input</span><span class="p">)</span>
+        <span class="n">transformed_b</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cnn</span><span class="p">(</span><span class="n">b_input</span><span class="p">)</span> <span class="k">if</span> <span class="n">b_input</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">b_input</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">base_kernel</span><span class="o">.</span><span class="n">K</span><span class="p">(</span><span class="n">transformed_a</span><span class="p">,</span> <span class="n">transformed_b</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">K_diag</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">a_input</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+        <span class="n">transformed_a</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cnn</span><span class="p">(</span><span class="n">a_input</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">base_kernel</span><span class="o">.</span><span class="n">K_diag</span><span class="p">(</span><span class="n">transformed_a</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p><span class="math notranslate nohighlight">\(K_{uf}\)</span> is in ConvNN output space, therefore we need to update <code class="docutils literal notranslate"><span class="pre">Kuf</span></code> multidispatch.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">KernelSpaceInducingPoints</span><span class="p">(</span><span class="n">gpflow</span><span class="o">.</span><span class="n">inducing_variables</span><span class="o">.</span><span class="n">InducingPoints</span><span class="p">):</span>
+    <span class="k">pass</span>
+
+
+<span class="nd">@gpflow</span><span class="o">.</span><span class="n">covariances</span><span class="o">.</span><span class="n">Kuu</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">KernelSpaceInducingPoints</span><span class="p">,</span> <span class="n">KernelWithConvNN</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">Kuu</span><span class="p">(</span><span class="n">inducing_variable</span><span class="p">,</span> <span class="n">kernel</span><span class="p">,</span> <span class="n">jitter</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="n">func</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">covariances</span><span class="o">.</span><span class="n">Kuu</span><span class="o">.</span><span class="n">dispatch</span><span class="p">(</span>
+        <span class="n">gpflow</span><span class="o">.</span><span class="n">inducing_variables</span><span class="o">.</span><span class="n">InducingPoints</span><span class="p">,</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">Kernel</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">func</span><span class="p">(</span><span class="n">inducing_variable</span><span class="p">,</span> <span class="n">kernel</span><span class="o">.</span><span class="n">base_kernel</span><span class="p">,</span> <span class="n">jitter</span><span class="o">=</span><span class="n">jitter</span><span class="p">)</span>
+
+
+<span class="nd">@gpflow</span><span class="o">.</span><span class="n">covariances</span><span class="o">.</span><span class="n">Kuf</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">KernelSpaceInducingPoints</span><span class="p">,</span> <span class="n">KernelWithConvNN</span><span class="p">,</span> <span class="nb">object</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">Kuf</span><span class="p">(</span><span class="n">inducing_variable</span><span class="p">,</span> <span class="n">kernel</span><span class="p">,</span> <span class="n">a_input</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">kernel</span><span class="o">.</span><span class="n">base_kernel</span><span class="p">(</span><span class="n">inducing_variable</span><span class="o">.</span><span class="n">Z</span><span class="p">,</span> <span class="n">kernel</span><span class="o">.</span><span class="n">cnn</span><span class="p">(</span><span class="n">a_input</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<p>Now we are ready to create and initialize the model:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">num_mnist_classes</span> <span class="o">=</span> <span class="mi">10</span>
+<span class="n">output_dim</span> <span class="o">=</span> <span class="mi">5</span>
+<span class="n">num_inducing_points</span> <span class="o">=</span> <span class="mi">100</span>
+<span class="n">images_subset</span><span class="p">,</span> <span class="n">labels_subset</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="n">dataset</span><span class="o">.</span><span class="n">batch</span><span class="p">(</span><span class="mi">32</span><span class="p">)))</span>
+<span class="n">images_subset</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">images_subset</span><span class="p">,</span> <span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">image_size</span><span class="p">])</span>
+<span class="n">labels_subset</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">labels_subset</span><span class="p">,</span> <span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+
+<span class="n">kernel</span> <span class="o">=</span> <span class="n">KernelWithConvNN</span><span class="p">(</span>
+    <span class="n">image_shape</span><span class="p">,</span> <span class="n">output_dim</span><span class="p">,</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">SquaredExponential</span><span class="p">(),</span> <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span>
+<span class="p">)</span>
+
+<span class="n">likelihood</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">likelihoods</span><span class="o">.</span><span class="n">MultiClass</span><span class="p">(</span><span class="n">num_mnist_classes</span><span class="p">)</span>
+
+<span class="n">inducing_variable_kmeans</span> <span class="o">=</span> <span class="n">kmeans2</span><span class="p">(</span><span class="n">images_subset</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="n">num_inducing_points</span><span class="p">,</span> <span class="n">minit</span><span class="o">=</span><span class="s2">&quot;points&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+<span class="n">inducing_variable_cnn</span> <span class="o">=</span> <span class="n">kernel</span><span class="o">.</span><span class="n">cnn</span><span class="p">(</span><span class="n">inducing_variable_kmeans</span><span class="p">)</span>
+<span class="n">inducing_variable</span> <span class="o">=</span> <span class="n">KernelSpaceInducingPoints</span><span class="p">(</span><span class="n">inducing_variable_cnn</span><span class="p">)</span>
+
+<span class="n">model</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">SVGP</span><span class="p">(</span>
+    <span class="n">kernel</span><span class="p">,</span>
+    <span class="n">likelihood</span><span class="p">,</span>
+    <span class="n">inducing_variable</span><span class="o">=</span><span class="n">inducing_variable</span><span class="p">,</span>
+    <span class="n">num_data</span><span class="o">=</span><span class="n">total_num_data</span><span class="p">,</span>
+    <span class="n">num_latent_gps</span><span class="o">=</span><span class="n">num_mnist_classes</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+2022-03-18 10:50:56.085278: W tensorflow/core/kernels/data/cache_dataset_ops.cc:768] The calling iterator did not fully read the dataset being cached. In order to avoid unexpected truncation of the dataset, the partially cached contents of the dataset  will be discarded. This can happen if you have an input pipeline similar to `dataset.cache().take(k).repeat()`. You should use `dataset.take(k).cache().repeat()` instead.
+</pre></div></div>
+</div>
+<p>And start optimization:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">data_iterator</span> <span class="o">=</span> <span class="nb">iter</span><span class="p">(</span><span class="n">dataset</span><span class="p">)</span>
+<span class="n">adam_opt</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">optimizers</span><span class="o">.</span><span class="n">Adam</span><span class="p">(</span><span class="mf">0.001</span><span class="p">)</span>
+
+<span class="n">training_loss</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">training_loss_closure</span><span class="p">(</span><span class="n">data_iterator</span><span class="p">)</span>
+
+
+<span class="nd">@tf</span><span class="o">.</span><span class="n">function</span>
+<span class="k">def</span> <span class="nf">optimization_step</span><span class="p">():</span>
+    <span class="n">adam_opt</span><span class="o">.</span><span class="n">minimize</span><span class="p">(</span><span class="n">training_loss</span><span class="p">,</span> <span class="n">var_list</span><span class="o">=</span><span class="n">model</span><span class="o">.</span><span class="n">trainable_variables</span><span class="p">)</span>
+
+
+<span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">iterations</span><span class="p">):</span>
+    <span class="n">optimization_step</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+2022-03-18 10:50:58.366822: W tensorflow/python/util/util.cc:368] Sets are not currently considered sequences, but this may change in the future, so consider avoiding using them.
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+WARNING:tensorflow:AutoGraph could not transform &lt;bound method Dispatcher.dispatch of &lt;dispatched prior_kl&gt;&gt; and will run it as-is.
+Please report this to the TensorFlow team. When filing the bug, set the verbosity to 10 (on Linux, `export AUTOGRAPH_VERBOSITY=10`) and attach the full output.
+Cause: invalid value for &#34;node&#34;: expected &#34;ast.AST&#34;, got &#34;&lt;class &#39;NoneType&#39;&gt;&#34;; to visit lists of nodes, use &#34;visit_block&#34; instead
+To silence this warning, decorate the function with @tf.autograph.experimental.do_not_convert
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+WARNING:tensorflow:AutoGraph could not transform &lt;bound method Dispatcher.dispatch of &lt;dispatched prior_kl&gt;&gt; and will run it as-is.
+Please report this to the TensorFlow team. When filing the bug, set the verbosity to 10 (on Linux, `export AUTOGRAPH_VERBOSITY=10`) and attach the full output.
+Cause: invalid value for &#34;node&#34;: expected &#34;ast.AST&#34;, got &#34;&lt;class &#39;NoneType&#39;&gt;&#34;; to visit lists of nodes, use &#34;visit_block&#34; instead
+To silence this warning, decorate the function with @tf.autograph.experimental.do_not_convert
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+WARNING: AutoGraph could not transform &lt;bound method Dispatcher.dispatch of &lt;dispatched prior_kl&gt;&gt; and will run it as-is.
+Please report this to the TensorFlow team. When filing the bug, set the verbosity to 10 (on Linux, `export AUTOGRAPH_VERBOSITY=10`) and attach the full output.
+Cause: invalid value for &#34;node&#34;: expected &#34;ast.AST&#34;, got &#34;&lt;class &#39;NoneType&#39;&gt;&#34;; to visit lists of nodes, use &#34;visit_block&#34; instead
+To silence this warning, decorate the function with @tf.autograph.experimental.do_not_convert
+</pre></div></div>
+</div>
+<p>Let’s do predictions after training. Don’t expect that we will get a good accuracy, because we haven’t run training for long enough.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">m</span><span class="p">,</span> <span class="n">v</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">predict_y</span><span class="p">(</span><span class="n">images_subset</span><span class="p">)</span>
+<span class="n">preds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">labels_subset</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+<span class="n">correct</span> <span class="o">=</span> <span class="n">preds</span> <span class="o">==</span> <span class="n">labels_subset</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+<span class="n">acc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">average</span><span class="p">(</span><span class="n">correct</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">))</span> <span class="o">*</span> <span class="mf">100.0</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Accuracy is </span><span class="si">{:.4f}</span><span class="s2">%&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">acc</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Accuracy is 21.7773%
+</pre></div></div>
+</div>
+<script type="application/vnd.jupyter.widget-state+json">
+{"state": {"027625b1e7b54a7ca621ea71d005167c": {"model_module": "@jupyter-widgets/base", "model_module_version": "1.2.0", "model_name": "LayoutModel", "state": {"_model_module": "@jupyter-widgets/base", "_model_module_version": "1.2.0", "_model_name": "LayoutModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "1.2.0", "_view_name": "LayoutView", "align_content": null, "align_items": null, "align_self": null, "border": null, "bottom": null, "display": null, "flex": null, "flex_flow": null, "grid_area": null, "grid_auto_columns": null, "grid_auto_flow": null, "grid_auto_rows": null, "grid_column": null, "grid_gap": null, "grid_row": null, "grid_template_areas": null, "grid_template_columns": null, "grid_template_rows": null, "height": null, "justify_content": null, "justify_items": null, "left": null, "margin": null, "max_height": null, "max_width": null, "min_height": null, "min_width": null, "object_fit": null, "object_position": null, "order": null, "overflow": null, "overflow_x": null, "overflow_y": null, "padding": null, "right": null, "top": null, "visibility": null, "width": null}}, "17b609c282c14160bc109fb06b31c4d3": {"model_module": "@jupyter-widgets/controls", "model_module_version": "1.5.0", "model_name": "FloatProgressModel", "state": {"_dom_classes": [], "_model_module": "@jupyter-widgets/controls", "_model_module_version": "1.5.0", "_model_name": "FloatProgressModel", "_view_count": null, "_view_module": "@jupyter-widgets/controls", "_view_module_version": "1.5.0", "_view_name": "ProgressView", "bar_style": "success", "description": "", "description_tooltip": null, "layout": "IPY_MODEL_f956a088981f4fa69d0ced9699fd542e", "max": 4.0, "min": 0.0, "orientation": "horizontal", "style": "IPY_MODEL_81c3dd19437648da9c25bb9630ce624e", "value": 4.0}}, "32d98c52db444da2b231e31e60e8c0f5": {"model_module": "@jupyter-widgets/controls", "model_module_version": "1.5.0", "model_name": "DescriptionStyleModel", "state": {"_model_module": "@jupyter-widgets/controls", "_model_module_version": "1.5.0", "_model_name": "DescriptionStyleModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "1.2.0", "_view_name": "StyleView", "description_width": ""}}, "4595e0063451427082daa279ebb0068b": {"model_module": "@jupyter-widgets/controls", "model_module_version": "1.5.0", "model_name": "HBoxModel", "state": {"_dom_classes": [], "_model_module": "@jupyter-widgets/controls", "_model_module_version": "1.5.0", "_model_name": "HBoxModel", "_view_count": null, "_view_module": "@jupyter-widgets/controls", "_view_module_version": "1.5.0", "_view_name": "HBoxView", "box_style": "", "children": ["IPY_MODEL_8184a8c9f450468b9c5f9c9f6ecadb00", "IPY_MODEL_17b609c282c14160bc109fb06b31c4d3", "IPY_MODEL_f52d7f1264484b90b34f4af1457c0afd"], "layout": "IPY_MODEL_f066ece7b6d9481b8fcb26dcfcd835f0"}}, "8184a8c9f450468b9c5f9c9f6ecadb00": {"model_module": "@jupyter-widgets/controls", "model_module_version": "1.5.0", "model_name": "HTMLModel", "state": {"_dom_classes": [], "_model_module": "@jupyter-widgets/controls", "_model_module_version": "1.5.0", "_model_name": "HTMLModel", "_view_count": null, "_view_module": "@jupyter-widgets/controls", "_view_module_version": "1.5.0", "_view_name": "HTMLView", "description": "", "description_tooltip": null, "layout": "IPY_MODEL_b0344dd6da4c4a11967a00ea34cf6d90", "placeholder": "\u200b", "style": "IPY_MODEL_32d98c52db444da2b231e31e60e8c0f5", "value": "Dl Completed...: 100%"}}, "81c3dd19437648da9c25bb9630ce624e": {"model_module": "@jupyter-widgets/controls", "model_module_version": "1.5.0", "model_name": "ProgressStyleModel", "state": {"_model_module": "@jupyter-widgets/controls", "_model_module_version": "1.5.0", "_model_name": "ProgressStyleModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "1.2.0", "_view_name": "StyleView", "bar_color": null, "description_width": ""}}, "9e5aaacc0ea448feb1d3fa7fa8a3beeb": {"model_module": "@jupyter-widgets/controls", "model_module_version": "1.5.0", "model_name": "DescriptionStyleModel", "state": {"_model_module": "@jupyter-widgets/controls", "_model_module_version": "1.5.0", "_model_name": "DescriptionStyleModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "1.2.0", "_view_name": "StyleView", "description_width": ""}}, "b0344dd6da4c4a11967a00ea34cf6d90": {"model_module": "@jupyter-widgets/base", "model_module_version": "1.2.0", "model_name": "LayoutModel", "state": {"_model_module": "@jupyter-widgets/base", "_model_module_version": "1.2.0", "_model_name": "LayoutModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "1.2.0", "_view_name": "LayoutView", "align_content": null, "align_items": null, "align_self": null, "border": null, "bottom": null, "display": null, "flex": null, "flex_flow": null, "grid_area": null, "grid_auto_columns": null, "grid_auto_flow": null, "grid_auto_rows": null, "grid_column": null, "grid_gap": null, "grid_row": null, "grid_template_areas": null, "grid_template_columns": null, "grid_template_rows": null, "height": null, "justify_content": null, "justify_items": null, "left": null, "margin": null, "max_height": null, "max_width": null, "min_height": null, "min_width": null, "object_fit": null, "object_position": null, "order": null, "overflow": null, "overflow_x": null, "overflow_y": null, "padding": null, "right": null, "top": null, "visibility": null, "width": null}}, "f066ece7b6d9481b8fcb26dcfcd835f0": {"model_module": "@jupyter-widgets/base", "model_module_version": "1.2.0", "model_name": "LayoutModel", "state": {"_model_module": "@jupyter-widgets/base", "_model_module_version": "1.2.0", "_model_name": "LayoutModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "1.2.0", "_view_name": "LayoutView", "align_content": null, "align_items": null, "align_self": null, "border": null, "bottom": null, "display": null, "flex": null, "flex_flow": null, "grid_area": null, "grid_auto_columns": null, "grid_auto_flow": null, "grid_auto_rows": null, "grid_column": null, "grid_gap": null, "grid_row": null, "grid_template_areas": null, "grid_template_columns": null, "grid_template_rows": null, "height": null, "justify_content": null, "justify_items": null, "left": null, "margin": null, "max_height": null, "max_width": null, "min_height": null, "min_width": null, "object_fit": null, "object_position": null, "order": null, "overflow": null, "overflow_x": null, "overflow_y": null, "padding": null, "right": null, "top": null, "visibility": null, "width": null}}, "f52d7f1264484b90b34f4af1457c0afd": {"model_module": "@jupyter-widgets/controls", "model_module_version": "1.5.0", "model_name": "HTMLModel", "state": {"_dom_classes": [], "_model_module": "@jupyter-widgets/controls", "_model_module_version": "1.5.0", "_model_name": "HTMLModel", "_view_count": null, "_view_module": "@jupyter-widgets/controls", "_view_module_version": "1.5.0", "_view_name": "HTMLView", "description": "", "description_tooltip": null, "layout": "IPY_MODEL_027625b1e7b54a7ca621ea71d005167c", "placeholder": "\u200b", "style": "IPY_MODEL_9e5aaacc0ea448feb1d3fa7fa8a3beeb", "value": " 4/4 [00:00&lt;00:00, 10.78 file/s]"}}, "f956a088981f4fa69d0ced9699fd542e": {"model_module": "@jupyter-widgets/base", "model_module_version": "1.2.0", "model_name": "LayoutModel", "state": {"_model_module": "@jupyter-widgets/base", "_model_module_version": "1.2.0", "_model_name": "LayoutModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "1.2.0", "_view_name": "LayoutView", "align_content": null, "align_items": null, "align_self": null, "border": null, "bottom": null, "display": null, "flex": null, "flex_flow": null, "grid_area": null, "grid_auto_columns": null, "grid_auto_flow": null, "grid_auto_rows": null, "grid_column": null, "grid_gap": null, "grid_row": null, "grid_template_areas": null, "grid_template_columns": null, "grid_template_rows": null, "height": null, "justify_content": null, "justify_items": null, "left": null, "margin": null, "max_height": null, "max_width": null, "min_height": null, "min_width": null, "object_fit": null, "object_position": null, "order": null, "overflow": null, "overflow_x": null, "overflow_y": null, "padding": null, "right": null, "top": null, "visibility": null, "width": null}}}, "version_major": 2, "version_minor": 0}
+</script></section>
+</section>
+
+
+              </div>
+              
+              
+          </main>
+          
+
+      </div>
+    </div>
+  
+    <script src="../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf"></script>
+  <footer class="footer mt-5 mt-md-0">
+  <div class="container">
+    
+    <div class="footer-item">
+      <p class="copyright">
+    &copy; Copyright 2022, James Hensman and Alexander G. de G. Matthews and many others.<br>
+</p>
+    </div>
+    
+    <div class="footer-item">
+      <p class="sphinx-version">
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.4.0.<br>
+</p>
+    </div>
+    
+  </div>
+</footer>
+  </body>
+</html>

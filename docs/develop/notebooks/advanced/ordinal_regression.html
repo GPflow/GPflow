@@ -1,0 +1,1104 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+    <title>Ordinal regression &#8212; GPflow 2.4.0 documentation</title>
+    
+    <link href="../../_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
+  
+    
+    <link rel="stylesheet"
+      href="../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
+    <link rel="preload" as="font" type="font/woff2" crossorigin
+      href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+    <link rel="preload" as="font" type="font/woff2" crossorigin
+      href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+  
+    
+      
+  
+    
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/styles/pydata-sphinx-theme.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/pydata-custom.css" />
+    
+    <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf">
+  
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="https://unpkg.com/@jupyter-widgets/html-manager@^0.20.1/dist/embed-amd.js"></script>
+    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Variational Fourier Features in the GPflow framework" href="variational_fourier_features.html" />
+    <link rel="prev" title="Optimizers" href="optimisation.html" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="docsearch:language" content="None">
+    
+
+    <!-- Google Analytics -->
+    
+  </head>
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="80">
+    
+    <div class="container-fluid" id="banner"></div>
+
+    
+    <nav class="navbar navbar-light navbar-expand-lg bg-light fixed-top bd-navbar" id="navbar-main"><div class="container-xl">
+
+  <div id="navbar-start">
+    
+    
+
+<a class="navbar-brand" href="../../index.html">
+  <img src="../../_static/gpflow_logo.svg" class="logo" alt="logo">
+</a>
+
+
+    
+  </div>
+
+  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar-collapsible" aria-controls="navbar-collapsible" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="navbar-toggler-icon"></span>
+  </button>
+
+  
+  <div id="navbar-collapsible" class="col-lg-9 collapse navbar-collapse">
+    <div id="navbar-center" class="mr-auto">
+      
+      <div class="navbar-center-item">
+        <ul id="navbar-main-elements" class="navbar-nav">
+    <li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../intro.html">
+  Introduction
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../intro.html">
+  GPflow manual
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../intro_to_gpflow2.html">
+  GPflow with TensorFlow 2
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../gpflow2_upgrade_guide.html">
+  GPflow 2 Upgrade Guide
+ </a>
+</li>
+
+<li class="toctree-l1 current active nav-item">
+ <a class="reference internal nav-link" href="../../notebooks_file.html">
+  Notebooks
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../derivations.html">
+  Derivations
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../api/gpflow/index.html">
+  API reference
+ </a>
+</li>
+
+    
+</ul>
+      </div>
+      
+    </div>
+
+    <div id="navbar-end">
+      
+      <div class="navbar-end-item">
+        <div class="dropdown" id="version_switcher">
+    <button type="button" class="btn btn-primary btn-sm navbar-btn dropdown-toggle" id="version_switcher_button" data-toggle="dropdown">
+        develop  <!-- this text may get changed later by javascript -->
+        <span class="caret"></span>
+    </button>
+    <div id="version_switcher_menu" class="dropdown-menu list-group-flush py-0" aria-labelledby="version_switcher_button">
+    <!-- dropdown will be populated by javascript on page load -->
+    </div>
+</div>
+
+<!-- NOTE: this JS must live here (not in our global JS file) because it relies
+     on being processed by Jinja before it is run (specifically for replacing
+     variables notebooks/advanced/ordinal_regression and {'json_url': 'https://gpflow.github.io/GPflow/versions.json', 'url_template': 'https://gpflow.github.io/GPflow/{version}/index.html', 'version_match': 'develop'}.
+-->
+
+<script type="text/javascript">
+// Construct the target URL from the JSON components
+function buildURL(entry) {
+    var template = "https://gpflow.github.io/GPflow/{version}/index.html";  // supplied by jinja
+    template = template.replace("{version}", entry.version);
+    return template;
+}
+
+// Check if corresponding page path exists in other version of docs
+// and, if so, go there instead of the homepage of the other docs version
+function checkPageExistsAndRedirect(event) {
+    const currentFilePath = "notebooks/advanced/ordinal_regression.html",
+          tryUrl = event.target.getAttribute("href");
+    let otherDocsHomepage = tryUrl.replace(currentFilePath, "");
+    $.ajax({
+        type: 'HEAD',
+        url: tryUrl,
+        // if the page exists, go there
+        success: function() {
+            location.href = tryUrl;
+        }
+    }).fail(function() {
+        location.href = otherDocsHomepage;
+    });
+    // this prevents the browser from following the href of the clicked node
+    // (which is fine because this function takes care of redirecting)
+    return false;
+}
+
+// Populate the version switcher from the JSON config file
+(function () {
+    $.getJSON("https://gpflow.github.io/GPflow/versions.json", function(data, textStatus, jqXHR) {
+        const currentFilePath = "notebooks/advanced/ordinal_regression.html";
+        // create links to the corresponding page in the other docs versions
+        $.each(data, function(index, entry) {
+            // if no custom name specified (e.g., "latest"), use version string
+            if (!("name" in entry)) {
+                entry.name = entry.version;
+            }
+            // create the node
+            const node = document.createElement("a");
+            node.setAttribute("class", "list-group-item list-group-item-action py-1");
+            node.textContent = `${entry.name}`;
+            // get the base URL for that doc version, add the current page's
+            // path to it, and set as `href`
+            entry.url = buildURL(entry);
+            node.setAttribute("href", `${entry.url}${currentFilePath}`);
+            // on click, AJAX calls will check if the linked page exists before
+            // trying to redirect, and if not, will redirect to the homepage
+            // for that version of the docs.
+            node.onclick = checkPageExistsAndRedirect;
+            $("#version_switcher_menu").append(node);
+            // replace dropdown button text with the preferred display name of
+            // this version, rather than using sphinx's  variable.
+            // also highlight the dropdown entry for the currently-viewed
+            // version's entry
+            if (entry.version == "develop") {
+                node.classList.add("active");
+                $("#version_switcher_button").text(entry.name);
+            }
+        });
+    });
+})();
+</script>
+      </div>
+      
+    </div>
+  </div>
+</div>
+    </nav>
+    
+
+    <div class="container-xl">
+      <div class="row">
+          
+            
+            <!-- Only show if we have sidebars configured, else just a small margin  -->
+            <div class="col-12 col-md-3 bd-sidebar">
+              <div class="sidebar-start-items"><form class="bd-search d-flex align-items-center" action="../../search.html" method="get">
+  <i class="icon fas fa-search"></i>
+  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
+</form><nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
+  <div class="bd-toc-item active">
+    <ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../basics/GPLVM.html">
+   Bayesian Gaussian process latent variable model (Bayesian GPLVM)
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../basics/classification.html">
+   Basic (binary) GP classification model
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../basics/monitoring.html">
+   Monitoring Optimisation
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../basics/regression.html">
+   Basic (Gaussian likelihood) GP regression model
+  </a>
+ </li>
+</ul>
+<ul class="current nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="advanced_many_points.html">
+   More details on models with many observation points
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="changepoints.html">
+   Change points
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="convolutional.html">
+   Convolutional Gaussian Processes
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="coregionalisation.html">
+   A simple demonstration of coregionalization
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="fast_predictions.html">
+   Faster predictions by caching
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="gps_for_big_data.html">
+   Stochastic Variational Inference for scalability with SVGP
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="heteroskedastic.html">
+   Heteroskedastic Likelihood and Multi-Latent GP
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="kernels.html">
+   Manipulating kernels
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="mcmc.html">
+   MCMC (Markov Chain Monte Carlo)
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="multiclass_classification.html">
+   Multiclass classification
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="multioutput.html">
+   Multi-output Gaussian processes in GPflow
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="natural_gradients.html">
+   Natural gradients
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="optimisation.html">
+   Optimizers
+  </a>
+ </li>
+ <li class="toctree-l1 current active">
+  <a class="current reference internal" href="#">
+   Ordinal regression
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="variational_fourier_features.html">
+   Variational Fourier Features in the GPflow framework
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="varying_noise.html">
+   Gaussian process regression with varying output noise
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../tailor/external-mean-function.html">
+   Custom mean functions: metalearning with GPs
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../tailor/gp_nn.html">
+   Mixing TensorFlow models with GPflow
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../tailor/kernel_design.html">
+   Kernel Design
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../tailor/likelihood_design.html">
+   Likelihood Design
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../tailor/mixture_density_network.html">
+   Mixture Density Networks in GPflow
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../tailor/models_with_latent_variables.html">
+   Models with observed and latent variables
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../tailor/updating_models_with_new_data.html">
+   Updating model with new data
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../theory/FITCvsVFE.html">
+   Comparing FITC approximation to VFE approximation
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../theory/SGPR_notes.html">
+   Derivation of SGPR equations
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../theory/Sanity_check.html">
+   Sanity checking when model behaviours should overlap
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../theory/upper_bound.html">
+   Discussion of the GP marginal likelihood upper bound
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../theory/vgp_notes.html">
+   Derivation of VGP equations
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../understanding/architecture.html">
+   Architecture
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../understanding/models.html">
+   Manipulating GPflow models
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../understanding/utilities.html">
+   Utilities
+  </a>
+ </li>
+</ul>
+
+  </div>
+</nav>
+              </div>
+              <div class="sidebar-end-items">
+              </div>
+            </div>
+            
+          
+
+          
+          <div class="d-none d-xl-block col-xl-2 bd-toc">
+            
+              
+              <div class="toc-item">
+                
+
+<nav id="bd-toc-nav">
+    
+</nav>
+              </div>
+              
+              <div class="toc-item">
+                
+              </div>
+              
+            
+          </div>
+          
+
+          
+          
+            
+          
+          <main class="col-12 col-md-9 col-xl-7 py-md-5 pl-md-5 pr-md-4 bd-content" role="main">
+              
+              <div>
+                
+  
+<style>
+/* CSS for nbsphinx extension */
+
+/* remove conflicting styling from Sphinx themes */
+div.nbinput.container div.prompt *,
+div.nboutput.container div.prompt *,
+div.nbinput.container div.input_area pre,
+div.nboutput.container div.output_area pre,
+div.nbinput.container div.input_area .highlight,
+div.nboutput.container div.output_area .highlight {
+    border: none;
+    padding: 0;
+    margin: 0;
+    box-shadow: none;
+}
+
+div.nbinput.container > div[class*=highlight],
+div.nboutput.container > div[class*=highlight] {
+    margin: 0;
+}
+
+div.nbinput.container div.prompt *,
+div.nboutput.container div.prompt * {
+    background: none;
+}
+
+div.nboutput.container div.output_area .highlight,
+div.nboutput.container div.output_area pre {
+    background: unset;
+}
+
+div.nboutput.container div.output_area div.highlight {
+    color: unset;  /* override Pygments text color */
+}
+
+/* avoid gaps between output lines */
+div.nboutput.container div[class*=highlight] pre {
+    line-height: normal;
+}
+
+/* input/output containers */
+div.nbinput.container,
+div.nboutput.container {
+    display: -webkit-flex;
+    display: flex;
+    align-items: flex-start;
+    margin: 0;
+    width: 100%;
+}
+@media (max-width: 540px) {
+    div.nbinput.container,
+    div.nboutput.container {
+        flex-direction: column;
+    }
+}
+
+/* input container */
+div.nbinput.container {
+    padding-top: 5px;
+}
+
+/* last container */
+div.nblast.container {
+    padding-bottom: 5px;
+}
+
+/* input prompt */
+div.nbinput.container div.prompt pre {
+    color: #307FC1;
+}
+
+/* output prompt */
+div.nboutput.container div.prompt pre {
+    color: #BF5B3D;
+}
+
+/* all prompts */
+div.nbinput.container div.prompt,
+div.nboutput.container div.prompt {
+    width: 4.5ex;
+    padding-top: 5px;
+    position: relative;
+    user-select: none;
+}
+
+div.nbinput.container div.prompt > div,
+div.nboutput.container div.prompt > div {
+    position: absolute;
+    right: 0;
+    margin-right: 0.3ex;
+}
+
+@media (max-width: 540px) {
+    div.nbinput.container div.prompt,
+    div.nboutput.container div.prompt {
+        width: unset;
+        text-align: left;
+        padding: 0.4em;
+    }
+    div.nboutput.container div.prompt.empty {
+        padding: 0;
+    }
+
+    div.nbinput.container div.prompt > div,
+    div.nboutput.container div.prompt > div {
+        position: unset;
+    }
+}
+
+/* disable scrollbars on prompts */
+div.nbinput.container div.prompt pre,
+div.nboutput.container div.prompt pre {
+    overflow: hidden;
+}
+
+/* input/output area */
+div.nbinput.container div.input_area,
+div.nboutput.container div.output_area {
+    -webkit-flex: 1;
+    flex: 1;
+    overflow: auto;
+}
+@media (max-width: 540px) {
+    div.nbinput.container div.input_area,
+    div.nboutput.container div.output_area {
+        width: 100%;
+    }
+}
+
+/* input area */
+div.nbinput.container div.input_area {
+    border: 1px solid #e0e0e0;
+    border-radius: 2px;
+    /*background: #f5f5f5;*/
+}
+
+/* override MathJax center alignment in output cells */
+div.nboutput.container div[class*=MathJax] {
+    text-align: left !important;
+}
+
+/* override sphinx.ext.imgmath center alignment in output cells */
+div.nboutput.container div.math p {
+    text-align: left;
+}
+
+/* standard error */
+div.nboutput.container div.output_area.stderr {
+    background: #fdd;
+}
+
+/* ANSI colors */
+.ansi-black-fg { color: #3E424D; }
+.ansi-black-bg { background-color: #3E424D; }
+.ansi-black-intense-fg { color: #282C36; }
+.ansi-black-intense-bg { background-color: #282C36; }
+.ansi-red-fg { color: #E75C58; }
+.ansi-red-bg { background-color: #E75C58; }
+.ansi-red-intense-fg { color: #B22B31; }
+.ansi-red-intense-bg { background-color: #B22B31; }
+.ansi-green-fg { color: #00A250; }
+.ansi-green-bg { background-color: #00A250; }
+.ansi-green-intense-fg { color: #007427; }
+.ansi-green-intense-bg { background-color: #007427; }
+.ansi-yellow-fg { color: #DDB62B; }
+.ansi-yellow-bg { background-color: #DDB62B; }
+.ansi-yellow-intense-fg { color: #B27D12; }
+.ansi-yellow-intense-bg { background-color: #B27D12; }
+.ansi-blue-fg { color: #208FFB; }
+.ansi-blue-bg { background-color: #208FFB; }
+.ansi-blue-intense-fg { color: #0065CA; }
+.ansi-blue-intense-bg { background-color: #0065CA; }
+.ansi-magenta-fg { color: #D160C4; }
+.ansi-magenta-bg { background-color: #D160C4; }
+.ansi-magenta-intense-fg { color: #A03196; }
+.ansi-magenta-intense-bg { background-color: #A03196; }
+.ansi-cyan-fg { color: #60C6C8; }
+.ansi-cyan-bg { background-color: #60C6C8; }
+.ansi-cyan-intense-fg { color: #258F8F; }
+.ansi-cyan-intense-bg { background-color: #258F8F; }
+.ansi-white-fg { color: #C5C1B4; }
+.ansi-white-bg { background-color: #C5C1B4; }
+.ansi-white-intense-fg { color: #A1A6B2; }
+.ansi-white-intense-bg { background-color: #A1A6B2; }
+
+.ansi-default-inverse-fg { color: #FFFFFF; }
+.ansi-default-inverse-bg { background-color: #000000; }
+
+.ansi-bold { font-weight: bold; }
+.ansi-underline { text-decoration: underline; }
+
+
+div.nbinput.container div.input_area div[class*=highlight] > pre,
+div.nboutput.container div.output_area div[class*=highlight] > pre,
+div.nboutput.container div.output_area div[class*=highlight].math,
+div.nboutput.container div.output_area.rendered_html,
+div.nboutput.container div.output_area > div.output_javascript,
+div.nboutput.container div.output_area:not(.rendered_html) > img{
+    padding: 5px;
+    margin: 0;
+}
+
+/* fix copybtn overflow problem in chromium (needed for 'sphinx_copybutton') */
+div.nbinput.container div.input_area > div[class^='highlight'],
+div.nboutput.container div.output_area > div[class^='highlight']{
+    overflow-y: hidden;
+}
+
+/* hide copybtn icon on prompts (needed for 'sphinx_copybutton') */
+.prompt .copybtn {
+    display: none;
+}
+
+/* Some additional styling taken form the Jupyter notebook CSS */
+div.rendered_html table {
+  border: none;
+  border-collapse: collapse;
+  border-spacing: 0;
+  color: black;
+  font-size: 12px;
+  table-layout: fixed;
+}
+div.rendered_html thead {
+  border-bottom: 1px solid black;
+  vertical-align: bottom;
+}
+div.rendered_html tr,
+div.rendered_html th,
+div.rendered_html td {
+  text-align: right;
+  vertical-align: middle;
+  padding: 0.5em 0.5em;
+  line-height: normal;
+  white-space: normal;
+  max-width: none;
+  border: none;
+}
+div.rendered_html th {
+  font-weight: bold;
+}
+div.rendered_html tbody tr:nth-child(odd) {
+  background: #f5f5f5;
+}
+div.rendered_html tbody tr:hover {
+  background: rgba(66, 165, 245, 0.2);
+}
+</style>
+<section id="Ordinal-regression">
+<h1>Ordinal regression<a class="headerlink" href="#Ordinal-regression" title="Permalink to this headline">¶</a></h1>
+<p>Ordinal regression aims to fit a model to some data <span class="math notranslate nohighlight">\((X, Y)\)</span>, where <span class="math notranslate nohighlight">\(Y\)</span> is an ordinal variable. To do so, we use a <code class="docutils literal notranslate"><span class="pre">VPG</span></code> model with a specific likelihood (<code class="docutils literal notranslate"><span class="pre">gpflow.likelihoods.Ordinal</span></code>).</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">gpflow</span>
+
+<span class="kn">import</span> <span class="nn">tensorflow</span> <span class="k">as</span> <span class="nn">tf</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+
+<span class="o">%</span><span class="k">matplotlib</span> inline
+<span class="n">plt</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s2">&quot;figure.figsize&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">6</span><span class="p">)</span>
+
+<span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">123</span><span class="p">)</span>  <span class="c1"># for reproducibility</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+2022-03-18 10:38:12.838758: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcudart.so.11.0&#39;; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory
+2022-03-18 10:38:12.838785: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># make a one-dimensional ordinal regression problem</span>
+
+<span class="c1"># This function generates a set of inputs X,</span>
+<span class="c1"># quantitative output f (latent) and ordinal values Y</span>
+
+
+<span class="k">def</span> <span class="nf">generate_data</span><span class="p">(</span><span class="n">num_data</span><span class="p">):</span>
+    <span class="c1"># First generate random inputs</span>
+    <span class="n">X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="n">num_data</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+    <span class="c1"># Now generate values of a latent GP</span>
+    <span class="n">kern</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">SquaredExponential</span><span class="p">(</span><span class="n">lengthscales</span><span class="o">=</span><span class="mf">0.1</span><span class="p">)</span>
+    <span class="n">K</span> <span class="o">=</span> <span class="n">kern</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+    <span class="n">f</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">multivariate_normal</span><span class="p">(</span><span class="n">mean</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">num_data</span><span class="p">),</span> <span class="n">cov</span><span class="o">=</span><span class="n">K</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+    <span class="c1"># Finally convert f values into ordinal values Y</span>
+    <span class="n">Y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">((</span><span class="n">f</span> <span class="o">+</span> <span class="n">f</span><span class="o">.</span><span class="n">min</span><span class="p">())</span> <span class="o">*</span> <span class="mi">3</span><span class="p">)</span>
+    <span class="n">Y</span> <span class="o">=</span> <span class="n">Y</span> <span class="o">-</span> <span class="n">Y</span><span class="o">.</span><span class="n">min</span><span class="p">()</span>
+    <span class="n">Y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">Y</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">X</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">Y</span>
+
+
+<span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">num_data</span> <span class="o">=</span> <span class="mi">20</span>
+<span class="n">X</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">Y</span> <span class="o">=</span> <span class="n">generate_data</span><span class="p">(</span><span class="n">num_data</span><span class="p">)</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">11</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="s2">&quot;.&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;latent function value&quot;</span><span class="p">)</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">twinx</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="s2">&quot;kx&quot;</span><span class="p">,</span> <span class="n">mew</span><span class="o">=</span><span class="mf">1.5</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;observed data value&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+2022-03-18 10:38:15.688777: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcuda.so.1&#39;; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory
+2022-03-18 10:38:15.688811: W tensorflow/stream_executor/cuda/cuda_driver.cc:269] failed call to cuInit: UNKNOWN ERROR (303)
+2022-03-18 10:38:15.688831: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (b9c0dc116e06): /proc/driver/nvidia/version does not exist
+2022-03-18 10:38:15.689125: I tensorflow/core/platform/cpu_feature_guard.cc:151] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA
+To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Text(0, 0.5, &#39;observed data value&#39;)
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/notebooks_advanced_ordinal_regression_2_2.png" src="../../_images/notebooks_advanced_ordinal_regression_2_2.png" />
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># construct ordinal likelihood - bin_edges is the same as unique(Y) but centered</span>
+<span class="n">bin_edges</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">Y</span><span class="p">)</span><span class="o">.</span><span class="n">size</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+<span class="n">bin_edges</span> <span class="o">=</span> <span class="n">bin_edges</span> <span class="o">-</span> <span class="n">bin_edges</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+<span class="n">likelihood</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">likelihoods</span><span class="o">.</span><span class="n">Ordinal</span><span class="p">(</span><span class="n">bin_edges</span><span class="p">)</span>
+
+<span class="c1"># build a model with this likelihood</span>
+<span class="n">m</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">VGP</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">),</span> <span class="n">kernel</span><span class="o">=</span><span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">Matern32</span><span class="p">(),</span> <span class="n">likelihood</span><span class="o">=</span><span class="n">likelihood</span><span class="p">)</span>
+
+<span class="c1"># fit the model</span>
+<span class="n">opt</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">optimizers</span><span class="o">.</span><span class="n">Scipy</span><span class="p">()</span>
+<span class="n">opt</span><span class="o">.</span><span class="n">minimize</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">training_loss</span><span class="p">,</span> <span class="n">m</span><span class="o">.</span><span class="n">trainable_variables</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">maxiter</span><span class="o">=</span><span class="mi">100</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+2022-03-18 10:38:15.967582: W tensorflow/python/util/util.cc:368] Sets are not currently considered sequences, but this may change in the future, so consider avoiding using them.
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+      fun: 25.487472966254046
+ hess_inv: &lt;233x233 LbfgsInvHessProduct with dtype=float64&gt;
+      jac: array([-6.69968541e-02, -2.60933722e-02, -3.76472394e-02, -4.30730828e-02,
+       -6.42720353e-02, -2.91999644e-02, -6.93608332e-02, -5.47084217e-04,
+       -1.27057262e-02,  2.08969593e-02,  5.12234629e-03,  1.45715924e-02,
+        6.96556317e-03, -2.54049417e-02, -9.28064513e-03, -2.19096569e-02,
+       -2.09184802e-04, -1.24352961e-02, -2.20876721e-02, -1.66532084e-03,
+        2.76577477e-04, -4.08245076e-04, -5.73654364e-09,  2.48851593e-06,
+       -1.86715166e-09, -7.61020872e-06,  1.96231755e-11, -6.41158027e-03,
+        1.95691072e-08,  2.47310674e-06, -2.30271726e-07, -2.03068652e-05,
+        1.53713830e-04, -3.33960191e-03,  2.67914211e-04,  5.73979647e-05,
+        1.60789687e-04, -2.01166984e-04, -1.50127048e-04,  3.26625440e-04,
+       -2.62458457e-02,  7.40116024e-03, -3.48436701e-09,  1.01831123e-06,
+       -2.08077162e-10,  4.50384636e-04,  1.28244224e-11, -1.32106409e-03,
+        1.41459127e-08,  1.91744926e-07, -4.63119906e-07, -1.68972243e-05,
+        9.67223470e-05,  2.69525929e-03, -1.22150344e-03, -1.31808040e-02,
+        1.59787795e-03, -1.42658436e-03, -3.84711038e-04, -8.29380714e-04,
+        1.35609321e-02,  2.95834481e-02, -1.36828575e-02, -5.81390338e-04,
+       -5.34758934e-03, -2.84964347e-09, -1.52856814e-04, -6.50173780e-07,
+       -8.77391730e-03,  4.66313287e-03, -2.30859985e-02, -9.35725253e-04,
+       -8.04611411e-04, -5.75225256e-05, -4.16490999e-04,  7.44321483e-05,
+       -7.74281696e-03, -3.13949247e-04,  2.45140884e-03,  3.15380200e-03,
+       -2.39490324e-02, -8.47670336e-03, -7.23281514e-02, -1.95990617e-05,
+       -8.28962315e-05, -2.66249037e-08, -2.22094938e-06,  3.83058934e-06,
+       -1.26709582e-04,  7.31964529e-05, -3.69260592e-04, -1.84944474e-05,
+       -1.45387091e-05,  1.74245031e-06, -6.48835306e-06,  1.80378155e-06,
+       -1.20667167e-04, -4.61681886e-06,  3.99297965e-05, -1.93160124e-05,
+        2.31893460e-03, -2.29456825e-02, -3.46928034e-02,  1.16401570e-02,
+        2.41366951e-02, -1.65908361e-09,  4.17630317e-05, -3.24125067e-07,
+        1.78862480e-02,  8.76856874e-04, -5.95111689e-03, -6.28215109e-04,
+       -4.25073465e-03, -2.64646994e-05,  6.11378650e-04,  3.61298355e-04,
+       -5.11669814e-03,  8.74991168e-04, -4.39893494e-03, -1.25006332e-05,
+       -2.79210491e-02, -2.95334941e-02, -6.39448555e-02,  4.72006659e-02,
+       -1.47505293e-02, -1.27150286e-03,  7.44456067e-11,  8.95356237e-05,
+       -2.87972887e-08, -2.56962662e-06,  1.28812075e-06, -3.09827096e-06,
+        2.11392685e-04, -1.20119179e-03,  2.66907530e-04,  7.46624993e-03,
+       -3.08979862e-03, -1.23135573e-02,  3.12013007e-04, -6.57246858e-04,
+       -2.20945940e-02, -7.43907757e-04,  5.26864528e-03, -7.74994711e-03,
+        1.54325698e-02,  1.23124260e-02, -4.67289021e-03,  8.11658276e-09,
+        1.51974295e-02, -8.27218310e-05,  3.72558848e-03,  9.15456425e-04,
+       -3.73150772e-03,  6.95382517e-04,  1.35663339e-03,  7.59295468e-05,
+        1.09075942e-02, -1.19860569e-03,  4.78279309e-03,  6.07755437e-03,
+        1.20499068e-02, -6.87574019e-03, -9.40737646e-03,  2.22659392e-03,
+       -1.28150759e-02,  7.19850945e-03, -2.45314091e-02,  1.15378055e-02,
+        4.09473260e-07, -9.57105901e-05, -6.96863428e-06, -8.81464457e-04,
+        3.20431523e-03, -1.11968438e-02,  4.37899019e-03,  1.40428119e-03,
+        9.95009461e-04, -1.34512799e-03, -1.71307954e-03,  3.31958778e-03,
+        6.94615315e-03,  8.96438954e-06,  3.12231541e-04, -1.47451449e-02,
+       -5.04105491e-03,  8.26771296e-05,  5.92925271e-03,  7.36161129e-03,
+       -9.11268758e-03, -5.98416123e-04,  4.95099429e-03, -2.80972014e-03,
+       -2.15018190e-02,  8.13189492e-06,  3.71001038e-03,  1.90151716e-03,
+       -2.11693015e-02,  5.60032886e-03,  1.16716512e-02, -3.77261974e-03,
+        1.03888161e-03,  6.54996583e-04,  3.67504289e-04,  1.31677520e-02,
+       -3.75289552e-04,  7.37827657e-04, -3.35474995e-04,  2.97081152e-03,
+        1.19147967e-02, -8.36768680e-04,  8.26951309e-04,  1.70672471e-04,
+        8.15108606e-04,  4.28176479e-05, -7.70549705e-05, -6.80469234e-05,
+        1.67496082e-03, -1.66076517e-04, -7.40189729e-04, -2.64937313e-03,
+        6.52390656e-03,  2.51032303e-03, -3.15017300e-04, -7.15148637e-02,
+        1.56647637e-03, -2.06194614e-03,  3.71597620e-03, -7.34945064e-03,
+       -7.51105717e-03, -3.54261017e-04,  1.26699260e-01, -8.48336500e-03,
+       -9.86672903e-03])
+  message: &#39;STOP: TOTAL NO. of ITERATIONS REACHED LIMIT&#39;
+     nfev: 116
+      nit: 100
+     njev: 116
+   status: 1
+  success: False
+        x: array([-1.99982831e+00, -2.36195044e-01, -8.93418187e-04,  7.61977934e-01,
+       -1.98074690e-01, -1.59225396e+00,  7.93690127e-01, -3.86905414e-01,
+       -1.13967356e-01,  3.78625157e-01, -8.97857446e-02,  3.46435877e-01,
+       -7.61952282e-02,  1.59572176e+00, -2.61494025e-01,  8.54417700e-01,
+        6.56727925e-03,  4.45921445e-01, -3.20466373e-01,  6.87140744e-04,
+        9.88815479e-01, -2.80919074e-03,  6.18706659e-08,  1.28584179e-05,
+        1.00541056e-08,  1.33416924e-04,  5.90206021e-11, -6.29047310e-02,
+        7.57553456e-09, -1.38938492e-04, -1.17764644e-05, -7.71299616e-04,
+        2.21521195e-03, -6.31978328e-02,  1.79692468e-03, -3.69467729e-03,
+       -2.79555775e-03,  1.03643731e-05,  4.43843624e-06,  3.13278104e-05,
+        2.24986286e-01,  9.45886881e-01,  3.60343103e-08,  6.94506715e-06,
+        6.70628978e-09,  8.43405531e-03,  3.49596074e-11, -2.24919151e-02,
+        7.54024217e-09, -4.44094694e-05, -4.05087760e-06, -2.51042464e-04,
+        7.33499535e-04,  2.99461675e-02, -3.30789590e-02, -2.28196567e-01,
+        1.38901785e-03, -7.88856926e-04,  1.12788657e-05, -6.28680293e-06,
+       -1.92140881e-02,  1.42008884e-01,  6.14726346e-01, -9.80907228e-03,
+       -1.31932866e-01, -4.48070029e-08, -6.30116085e-04, -1.33371830e-05,
+        1.21172405e-02,  7.00041652e-02, -3.90308114e-01, -3.17408536e-02,
+       -8.18785248e-03, -2.86531324e-04, -3.00557420e-05, -4.76785925e-07,
+        1.74434612e-03, -5.29921282e-05,  2.23622080e-02,  4.28608711e-02,
+       -5.45437067e-03,  3.63459329e-04,  1.37469662e-01,  9.99917286e-01,
+       -2.04399991e-03, -4.50467321e-07, -9.61481741e-06,  3.05045147e-05,
+        1.96943676e-04,  1.07911893e-03, -6.05890368e-03, -4.88528756e-04,
+       -1.28193798e-04,  2.44421442e-05,  2.28457758e-07,  1.20134145e-05,
+        2.73223816e-05, -6.98523531e-07,  3.48295226e-04, -1.75701518e-04,
+       -1.52916873e-01,  3.76466570e-03, -1.23769530e-02,  1.69781747e-01,
+        7.18715882e-01, -1.66897462e-08, -4.40696651e-03, -4.47487240e-06,
+       -4.24393238e-01,  2.30596428e-02, -8.93965966e-02, -1.37475884e-02,
+       -3.75246572e-03, -9.54823868e-05,  3.75187150e-05,  2.32733887e-05,
+        7.90031595e-04,  3.77525697e-05,  4.30311633e-02,  1.76150855e-02,
+        3.15392254e-02, -7.25803476e-04, -6.34091195e-02, -7.06804609e-02,
+        1.09874709e-01,  5.73031783e-01, -2.04451165e-10,  1.13190776e-02,
+       -1.84181082e-08,  2.12033634e-05,  2.17238053e-06,  1.15452897e-04,
+       -2.49117090e-04, -2.39784425e-02, -1.74629020e-01,  4.90989299e-02,
+       -4.30431512e-04, -3.00798978e-01, -9.04015718e-05,  2.22795175e-04,
+       -1.28627707e-02, -1.12391386e-04, -1.25989435e-01,  3.07041128e-02,
+       -1.41188719e-01,  3.20195290e-01,  1.62205599e-01, -2.34513952e-07,
+        5.21935744e-02,  1.25328536e-03, -2.19901347e-03, -9.53738064e-04,
+       -5.52119954e-04,  1.85918715e-05,  7.80768978e-05,  2.12195643e-05,
+        2.00139823e-04,  2.41247238e-05, -1.13171389e-01,  8.95776508e-04,
+        3.52961066e-02, -7.36876500e-04, -2.02147025e-02, -9.81392851e-02,
+       -2.11288294e-01,  1.18272919e-01,  3.07516669e-01,  6.84404452e-01,
+       -2.35112539e-06, -2.49188515e-03, -2.14421144e-04, -1.36710247e-02,
+        3.84301902e-02, -4.85620670e-01,  6.70819188e-03, -3.72225085e-02,
+       -6.34297288e-02,  7.17535765e-03, -3.52376126e-05,  3.23072957e-04,
+       -2.12532215e-01,  4.21365381e-03, -9.00545823e-04, -2.67042735e-01,
+       -9.13223106e-03,  1.82249491e-03,  5.99679133e-02,  4.20802826e-01,
+        2.69420138e-01,  3.30822311e-02, -6.13344459e-02, -2.50637603e-02,
+       -7.38899646e-03, -4.91897278e-05,  2.43280239e-04,  1.14308072e-04,
+        9.26958288e-04,  3.07862939e-04, -2.73143078e-01,  2.97718020e-02,
+       -8.59407162e-02,  5.73031054e-03,  3.07212190e-04,  8.21979877e-03,
+       -6.95087554e-04,  2.04858143e-04, -1.22859870e-02, -5.97410862e-02,
+        9.07757859e-01,  9.94611941e-01,  4.55061758e-02,  5.61422025e-03,
+        1.55819680e-03, -2.06743560e-03,  2.31789323e-05, -1.27968448e-04,
+       -5.97853757e-04,  3.59783540e-05,  5.40420470e-03, -2.59327352e-02,
+       -2.08575832e-01, -4.35766488e-02, -2.05921275e-05, -1.19056236e-02,
+       -1.90801848e-04, -4.23592850e-05, -2.17807230e-04,  5.09705774e-02,
+        2.04348339e-01,  1.67917393e-01, -1.97913885e+00,  5.46655038e+00,
+       -1.44968139e+00])
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># here we&#39;ll plot the expected value of Y +- 2 std deviations, as if the distribution were Gaussian</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">11</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
+<span class="n">X_data</span><span class="p">,</span> <span class="n">Y_data</span> <span class="o">=</span> <span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="n">m</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">numpy</span><span class="p">())</span>
+<span class="n">Xtest</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">X_data</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="n">X_data</span><span class="o">.</span><span class="n">max</span><span class="p">(),</span> <span class="mi">100</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">mu</span><span class="p">,</span> <span class="n">var</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">predict_y</span><span class="p">(</span><span class="n">Xtest</span><span class="p">)</span>
+<span class="p">(</span><span class="n">line</span><span class="p">,)</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Xtest</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">col</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">get_color</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Xtest</span><span class="p">,</span> <span class="n">mu</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">var</span><span class="p">),</span> <span class="s2">&quot;--&quot;</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">col</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Xtest</span><span class="p">,</span> <span class="n">mu</span> <span class="o">-</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">var</span><span class="p">),</span> <span class="s2">&quot;--&quot;</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">col</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">X_data</span><span class="p">,</span> <span class="n">Y_data</span><span class="p">,</span> <span class="s2">&quot;kx&quot;</span><span class="p">,</span> <span class="n">mew</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[&lt;matplotlib.lines.Line2D at 0x7f7c1c3cd5d0&gt;]
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/notebooks_advanced_ordinal_regression_4_1.png" src="../../_images/notebooks_advanced_ordinal_regression_4_1.png" />
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1">## to see the predictive density, try predicting every possible discrete value for Y.</span>
+<span class="k">def</span> <span class="nf">pred_log_density</span><span class="p">(</span><span class="n">m</span><span class="p">):</span>
+    <span class="n">Xtest</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">X_data</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="n">X_data</span><span class="o">.</span><span class="n">max</span><span class="p">(),</span> <span class="mi">100</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">ys</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">Y_data</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">densities</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">ys</span><span class="p">:</span>
+        <span class="n">Ytest</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full_like</span><span class="p">(</span><span class="n">Xtest</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+        <span class="c1"># Predict the log density</span>
+        <span class="n">densities</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">predict_log_density</span><span class="p">((</span><span class="n">Xtest</span><span class="p">,</span> <span class="n">Ytest</span><span class="p">)))</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">(</span><span class="n">densities</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">14</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">pred_log_density</span><span class="p">(</span><span class="n">m</span><span class="p">)),</span>
+    <span class="n">interpolation</span><span class="o">=</span><span class="s2">&quot;nearest&quot;</span><span class="p">,</span>
+    <span class="n">extent</span><span class="o">=</span><span class="p">[</span><span class="n">X_data</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="n">X_data</span><span class="o">.</span><span class="n">max</span><span class="p">(),</span> <span class="o">-</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">Y_data</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">+</span> <span class="mf">0.5</span><span class="p">],</span>
+    <span class="n">origin</span><span class="o">=</span><span class="s2">&quot;lower&quot;</span><span class="p">,</span>
+    <span class="n">aspect</span><span class="o">=</span><span class="s2">&quot;auto&quot;</span><span class="p">,</span>
+    <span class="n">cmap</span><span class="o">=</span><span class="n">plt</span><span class="o">.</span><span class="n">cm</span><span class="o">.</span><span class="n">viridis</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">colorbar</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="s2">&quot;kx&quot;</span><span class="p">,</span> <span class="n">mew</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">scalex</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">scaley</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+[&lt;matplotlib.lines.Line2D at 0x7f7c1c4e3b50&gt;]
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/notebooks_advanced_ordinal_regression_6_1.png" src="../../_images/notebooks_advanced_ordinal_regression_6_1.png" />
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Predictive density for a single input x=0.5</span>
+<span class="n">x_new</span> <span class="o">=</span> <span class="mf">0.5</span>
+<span class="n">Y_new</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">Y_data</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">reshape</span><span class="p">([</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+<span class="n">X_new</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full_like</span><span class="p">(</span><span class="n">Y_new</span><span class="p">,</span> <span class="n">x_new</span><span class="p">)</span>
+<span class="c1"># for predict_log_density x and y need to have the same number of rows</span>
+<span class="n">dens_new</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">predict_log_density</span><span class="p">((</span><span class="n">X_new</span><span class="p">,</span> <span class="n">Y_new</span><span class="p">)))</span>
+<span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">bar</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">Y_new</span><span class="o">.</span><span class="n">flatten</span><span class="p">(),</span> <span class="n">height</span><span class="o">=</span><span class="n">dens_new</span><span class="o">.</span><span class="n">flatten</span><span class="p">())</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&lt;BarContainer object of 8 artists&gt;
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/notebooks_advanced_ordinal_regression_7_1.png" src="../../_images/notebooks_advanced_ordinal_regression_7_1.png" />
+</div>
+</div>
+</section>
+
+
+              </div>
+              
+              
+          </main>
+          
+
+      </div>
+    </div>
+  
+    <script src="../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf"></script>
+  <footer class="footer mt-5 mt-md-0">
+  <div class="container">
+    
+    <div class="footer-item">
+      <p class="copyright">
+    &copy; Copyright 2022, James Hensman and Alexander G. de G. Matthews and many others.<br>
+</p>
+    </div>
+    
+    <div class="footer-item">
+      <p class="sphinx-version">
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.4.0.<br>
+</p>
+    </div>
+    
+  </div>
+</footer>
+  </body>
+</html>

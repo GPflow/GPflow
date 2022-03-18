@@ -1,0 +1,486 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+    <title>Likelihood Design &#8212; GPflow 2.4.0 documentation</title>
+    
+    <link href="../../_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
+  
+    
+    <link rel="stylesheet"
+      href="../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
+    <link rel="preload" as="font" type="font/woff2" crossorigin
+      href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+    <link rel="preload" as="font" type="font/woff2" crossorigin
+      href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+  
+    
+      
+  
+    
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/styles/pydata-sphinx-theme.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/pydata-custom.css" />
+    
+    <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf">
+  
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="https://unpkg.com/@jupyter-widgets/html-manager@^0.20.1/dist/embed-amd.js"></script>
+    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Mixture Density Networks in GPflow" href="mixture_density_network.html" />
+    <link rel="prev" title="Kernel Design" href="kernel_design.html" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="docsearch:language" content="None">
+    
+
+    <!-- Google Analytics -->
+    
+  </head>
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="80">
+    
+    <div class="container-fluid" id="banner"></div>
+
+    
+    <nav class="navbar navbar-light navbar-expand-lg bg-light fixed-top bd-navbar" id="navbar-main"><div class="container-xl">
+
+  <div id="navbar-start">
+    
+    
+
+<a class="navbar-brand" href="../../index.html">
+  <img src="../../_static/gpflow_logo.svg" class="logo" alt="logo">
+</a>
+
+
+    
+  </div>
+
+  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar-collapsible" aria-controls="navbar-collapsible" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="navbar-toggler-icon"></span>
+  </button>
+
+  
+  <div id="navbar-collapsible" class="col-lg-9 collapse navbar-collapse">
+    <div id="navbar-center" class="mr-auto">
+      
+      <div class="navbar-center-item">
+        <ul id="navbar-main-elements" class="navbar-nav">
+    <li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../intro.html">
+  Introduction
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../intro.html">
+  GPflow manual
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../intro_to_gpflow2.html">
+  GPflow with TensorFlow 2
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../gpflow2_upgrade_guide.html">
+  GPflow 2 Upgrade Guide
+ </a>
+</li>
+
+<li class="toctree-l1 current active nav-item">
+ <a class="reference internal nav-link" href="../../notebooks_file.html">
+  Notebooks
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../derivations.html">
+  Derivations
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../api/gpflow/index.html">
+  API reference
+ </a>
+</li>
+
+    
+</ul>
+      </div>
+      
+    </div>
+
+    <div id="navbar-end">
+      
+      <div class="navbar-end-item">
+        <div class="dropdown" id="version_switcher">
+    <button type="button" class="btn btn-primary btn-sm navbar-btn dropdown-toggle" id="version_switcher_button" data-toggle="dropdown">
+        develop  <!-- this text may get changed later by javascript -->
+        <span class="caret"></span>
+    </button>
+    <div id="version_switcher_menu" class="dropdown-menu list-group-flush py-0" aria-labelledby="version_switcher_button">
+    <!-- dropdown will be populated by javascript on page load -->
+    </div>
+</div>
+
+<!-- NOTE: this JS must live here (not in our global JS file) because it relies
+     on being processed by Jinja before it is run (specifically for replacing
+     variables notebooks/tailor/likelihood_design and {'json_url': 'https://gpflow.github.io/GPflow/versions.json', 'url_template': 'https://gpflow.github.io/GPflow/{version}/index.html', 'version_match': 'develop'}.
+-->
+
+<script type="text/javascript">
+// Construct the target URL from the JSON components
+function buildURL(entry) {
+    var template = "https://gpflow.github.io/GPflow/{version}/index.html";  // supplied by jinja
+    template = template.replace("{version}", entry.version);
+    return template;
+}
+
+// Check if corresponding page path exists in other version of docs
+// and, if so, go there instead of the homepage of the other docs version
+function checkPageExistsAndRedirect(event) {
+    const currentFilePath = "notebooks/tailor/likelihood_design.html",
+          tryUrl = event.target.getAttribute("href");
+    let otherDocsHomepage = tryUrl.replace(currentFilePath, "");
+    $.ajax({
+        type: 'HEAD',
+        url: tryUrl,
+        // if the page exists, go there
+        success: function() {
+            location.href = tryUrl;
+        }
+    }).fail(function() {
+        location.href = otherDocsHomepage;
+    });
+    // this prevents the browser from following the href of the clicked node
+    // (which is fine because this function takes care of redirecting)
+    return false;
+}
+
+// Populate the version switcher from the JSON config file
+(function () {
+    $.getJSON("https://gpflow.github.io/GPflow/versions.json", function(data, textStatus, jqXHR) {
+        const currentFilePath = "notebooks/tailor/likelihood_design.html";
+        // create links to the corresponding page in the other docs versions
+        $.each(data, function(index, entry) {
+            // if no custom name specified (e.g., "latest"), use version string
+            if (!("name" in entry)) {
+                entry.name = entry.version;
+            }
+            // create the node
+            const node = document.createElement("a");
+            node.setAttribute("class", "list-group-item list-group-item-action py-1");
+            node.textContent = `${entry.name}`;
+            // get the base URL for that doc version, add the current page's
+            // path to it, and set as `href`
+            entry.url = buildURL(entry);
+            node.setAttribute("href", `${entry.url}${currentFilePath}`);
+            // on click, AJAX calls will check if the linked page exists before
+            // trying to redirect, and if not, will redirect to the homepage
+            // for that version of the docs.
+            node.onclick = checkPageExistsAndRedirect;
+            $("#version_switcher_menu").append(node);
+            // replace dropdown button text with the preferred display name of
+            // this version, rather than using sphinx's  variable.
+            // also highlight the dropdown entry for the currently-viewed
+            // version's entry
+            if (entry.version == "develop") {
+                node.classList.add("active");
+                $("#version_switcher_button").text(entry.name);
+            }
+        });
+    });
+})();
+</script>
+      </div>
+      
+    </div>
+  </div>
+</div>
+    </nav>
+    
+
+    <div class="container-xl">
+      <div class="row">
+          
+            
+            <!-- Only show if we have sidebars configured, else just a small margin  -->
+            <div class="col-12 col-md-3 bd-sidebar">
+              <div class="sidebar-start-items"><form class="bd-search d-flex align-items-center" action="../../search.html" method="get">
+  <i class="icon fas fa-search"></i>
+  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
+</form><nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
+  <div class="bd-toc-item active">
+    <ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../basics/GPLVM.html">
+   Bayesian Gaussian process latent variable model (Bayesian GPLVM)
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../basics/classification.html">
+   Basic (binary) GP classification model
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../basics/monitoring.html">
+   Monitoring Optimisation
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../basics/regression.html">
+   Basic (Gaussian likelihood) GP regression model
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../advanced/advanced_many_points.html">
+   More details on models with many observation points
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../advanced/changepoints.html">
+   Change points
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../advanced/convolutional.html">
+   Convolutional Gaussian Processes
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../advanced/coregionalisation.html">
+   A simple demonstration of coregionalization
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../advanced/fast_predictions.html">
+   Faster predictions by caching
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../advanced/gps_for_big_data.html">
+   Stochastic Variational Inference for scalability with SVGP
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../advanced/heteroskedastic.html">
+   Heteroskedastic Likelihood and Multi-Latent GP
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../advanced/kernels.html">
+   Manipulating kernels
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../advanced/mcmc.html">
+   MCMC (Markov Chain Monte Carlo)
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../advanced/multiclass_classification.html">
+   Multiclass classification
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../advanced/multioutput.html">
+   Multi-output Gaussian processes in GPflow
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../advanced/natural_gradients.html">
+   Natural gradients
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../advanced/optimisation.html">
+   Optimizers
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../advanced/ordinal_regression.html">
+   Ordinal regression
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../advanced/variational_fourier_features.html">
+   Variational Fourier Features in the GPflow framework
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../advanced/varying_noise.html">
+   Gaussian process regression with varying output noise
+  </a>
+ </li>
+</ul>
+<ul class="current nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="external-mean-function.html">
+   Custom mean functions: metalearning with GPs
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="gp_nn.html">
+   Mixing TensorFlow models with GPflow
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="kernel_design.html">
+   Kernel Design
+  </a>
+ </li>
+ <li class="toctree-l1 current active">
+  <a class="current reference internal" href="#">
+   Likelihood Design
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="mixture_density_network.html">
+   Mixture Density Networks in GPflow
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="models_with_latent_variables.html">
+   Models with observed and latent variables
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="updating_models_with_new_data.html">
+   Updating model with new data
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../theory/FITCvsVFE.html">
+   Comparing FITC approximation to VFE approximation
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../theory/SGPR_notes.html">
+   Derivation of SGPR equations
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../theory/Sanity_check.html">
+   Sanity checking when model behaviours should overlap
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../theory/upper_bound.html">
+   Discussion of the GP marginal likelihood upper bound
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../theory/vgp_notes.html">
+   Derivation of VGP equations
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../understanding/architecture.html">
+   Architecture
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../understanding/models.html">
+   Manipulating GPflow models
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../understanding/utilities.html">
+   Utilities
+  </a>
+ </li>
+</ul>
+
+  </div>
+</nav>
+              </div>
+              <div class="sidebar-end-items">
+              </div>
+            </div>
+            
+          
+
+          
+          <div class="d-none d-xl-block col-xl-2 bd-toc">
+            
+              
+              <div class="toc-item">
+                
+
+<nav id="bd-toc-nav">
+    
+</nav>
+              </div>
+              
+              <div class="toc-item">
+                
+              </div>
+              
+            
+          </div>
+          
+
+          
+          
+            
+          
+          <main class="col-12 col-md-9 col-xl-7 py-md-5 pl-md-5 pr-md-4 bd-content" role="main">
+              
+              <div>
+                
+  <section id="Likelihood-Design">
+<h1>Likelihood Design<a class="headerlink" href="#Likelihood-Design" title="Permalink to this headline">¶</a></h1>
+<p>see models.ipynb (2/2), other option is to have heteroscedastic noise.</p>
+</section>
+
+
+              </div>
+              
+              
+          </main>
+          
+
+      </div>
+    </div>
+  
+    <script src="../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf"></script>
+  <footer class="footer mt-5 mt-md-0">
+  <div class="container">
+    
+    <div class="footer-item">
+      <p class="copyright">
+    &copy; Copyright 2022, James Hensman and Alexander G. de G. Matthews and many others.<br>
+</p>
+    </div>
+    
+    <div class="footer-item">
+      <p class="sphinx-version">
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.4.0.<br>
+</p>
+    </div>
+    
+  </div>
+</footer>
+  </body>
+</html>
