@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """
-Code for building our documentation.
+Code for building GPflow's documentation for a specified branch.
 """
 import argparse
 import shutil

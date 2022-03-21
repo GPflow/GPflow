@@ -10,11 +10,11 @@ We serve a version of documentation for the most recent `develop` branch and for
 `2.4.0`. You can find them online here:
 
 * Redirect to most recent release: https://gpflow.github.io/GPflow/
-* `develop` https://gpflow.github.io/GPflow/develop
+* `develop`: https://gpflow.github.io/GPflow/develop
 
 Normally our CircleCI build is responsible for building our documentation whenever there is a merge
-to `develop` or `master`. See the configuration
-[here](https://github.com/GPflow/GPflow/blob/develop/.circleci/config.yml).
+to `develop` or `master`. See the
+[configuration](https://github.com/GPflow/GPflow/blob/develop/.circleci/config.yml) for details.
 
 
 ## Compile documentation locally

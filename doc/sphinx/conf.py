@@ -20,8 +20,8 @@ from typing import Sequence
 # -- Project information -----------------------------------------------------
 
 project = "GPflow"
-copyright = "2022, James Hensman and Alexander G. de G. Matthews and many others"
-author = "James Hensman and Alexander G. de G. Matthews and many others"
+copyright = "2022, The GPflow Contributors"
+author = "The GPflow Contributors"
 
 # The full version, including alpha/beta/rc tags
 release = "2.4.0"
