@@ -49,7 +49,6 @@ commands:
           name: Install GPflow
           command: "
             source .venv/bin/activate \n
-            git clone --branch develop https://github.com/GPflow/GPflow.git \n
             # Everything is installed in one pip command, to allow for better dependency version
             # resolution. Explicit tensorflow and tensorflow-probability version, to ensure
             # consistency between them. \n
@@ -184,23 +183,54 @@ jobs:
           tfp_ver: <<parameters.tfp_ver>>
           pytest_filter: notebooks
 
-  trigger-docs-generation:
+  build-docs:
     docker:
-      - image: cimg/python:<<pipeline.parameters.min_py_ver>>
+      # At the time of writing we cannot generate documentation for type numpy with older versions,
+      # so we need to use `max` versions here.
+      - image: cimg/python:<<pipeline.parameters.max_py_ver>>
         environment:
-            ORGANIZATION: GPflow
-            PROJECT: docs
-            BRANCH: << pipeline.git.branch >>
+          DOCS: True  # This is used in gpflow/ci_utils.py
     steps:
+      - install_gpflow:
+          py_ver: <<pipeline.parameters.max_py_ver>>
+          tf_ver: <<pipeline.parameters.max_tf_ver>>
+          tfp_ver: <<pipeline.parameters.max_tfp_ver>>
       - run:
-          name: Trigger the Build Job in Docs repo
-          # Compiled documentation for readthedocs are built and stored in the https://github.com/GPflow/docs/ repository
-          # For configuration of the doc build, see https://github.com/GPflow/docs/blob/develop/.circleci/config.yml
+          name: Install pandoc
           command: |
-            curl \
-              -u ${DOCS_TOKEN}: \
-              -d 'build_parameters[CIRCLE_JOB]=build' \
-              https://circleci.com/api/v1.1/project/github/GPflow/docs/tree/<< pipeline.git.branch >>
+            sudo apt update
+            sudo apt install pandoc
+      - run:
+          name: Build documentation
+          no_output_timeout: 60m
+          command: |
+            source .venv/bin/activate
+            mkdir docs_tmp
+            time python doc/build_docs.py <<pipeline.git.branch>> docs_tmp
+      - add_ssh_keys:
+          fingerprints:  # Add key to give write-access below
+            - "b5:9b:f3:74:26:00:b3:c3:de:3a:b3:03:ee:0b:0b:64"
+      - run:
+          name: Commit documentation
+          command: |
+            source .venv/bin/activate
+
+            git clone -b gh-pages git@github.com:GPflow/GPflow.git gh-pages
+
+            for version in docs_tmp/*; do
+                rm -rf gh-pages/docs/${version}
+            done
+            cp -r docs_tmp/* gh-pages/docs
+
+            python doc/update_versions.py <<pipeline.git.branch>> gh-pages/docs
+
+            cd gh-pages/docs
+
+            git config user.email "docs.bot@gpflow.com"
+            git config user.name "Docs Bot"
+            git add .
+            git commit -m "Build documentation for <<pipeline.git.branch>> [ci skip]"
+            git push origin gh-pages
 
   deploy:
     docker:
@@ -353,7 +383,7 @@ workflows:
           filters:
             tags:
               only: /^v[0-9]+(\.[0-9]+)*(-rc[0-9]+)?/
-      - trigger-docs-generation:
+      - build-docs:
           requires:
             - verify-install-min
             - verify-install-max

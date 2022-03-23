@@ -3,39 +3,24 @@
 
 # pylint: skip-file
 
-import os
-import sys
-
 from setuptools import find_packages, setup
 
 ##### Dependencies of GPflow
 
-# We do not want to install tensorflow in the readthedocs environment, where we
-# use autodoc_mock_imports instead. Hence we use this flag to decide whether or
-# not to append tensorflow and tensorflow_probability to the requirements:
-if os.environ.get("READTHEDOCS") != "True":
-    requirements = [
-        "tensorflow>=2.4.0",
-        "tensorflow-probability>=0.12.0",
-        # NOTE: once we require tensorflow-probability>=0.12, we can remove our custom deepcopy handling
-        "setuptools>=41.0.0",  # to satisfy dependency constraints
-    ]
-
-else:
-    requirements = []
-
-requirements.extend(
-    [
-        "numpy",
-        "scipy",
-        "multipledispatch>=0.6",
-        "tabulate",
-        "typing_extensions",
-        "packaging",
-        "deprecated",
-        "lark>=1.1.0",
-    ]
-)
+requirements = [
+    "deprecated",
+    "lark>=1.1.0",
+    "multipledispatch>=0.6",
+    "numpy",
+    "packaging",
+    "scipy",
+    "setuptools>=41.0.0",  # to satisfy dependency constraints
+    "tabulate",
+    "tensorflow-probability>=0.12.0",
+    "tensorflow>=2.4.0",
+    # NOTE: once we require tensorflow-probability>=0.12, we can remove our custom deepcopy handling
+    "typing_extensions",
+]
 
 
 def read_file(filename: str) -> str:
@@ -61,7 +46,7 @@ setup(
     url="https://www.gpflow.org",
     project_urls={
         "Source on GitHub": "https://github.com/GPflow/GPflow",
-        "Documentation": "https://gpflow.readthedocs.io",
+        "Documentation": "https://gpflow.github.io/GPflow/",
     },
     packages=packages,
     package_data={"": ["*.lark"]},

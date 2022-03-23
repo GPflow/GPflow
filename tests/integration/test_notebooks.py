@@ -12,12 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import glob
 import itertools
-import os
 import sys
 import traceback
-from typing import Sequence
+from pathlib import Path
+from typing import Sequence, Set
 
 import jupytext
 import nbformat
@@ -25,40 +24,34 @@ import pytest
 from nbconvert.preprocessors import ExecutePreprocessor
 from nbconvert.preprocessors.execute import CellExecutionError
 
-NOTEBOOK_DIR = "../../doc/source/notebooks"
-
-
-def _nbpath() -> str:
-    this_dir = os.path.dirname(__file__)
-    return os.path.join(this_dir, NOTEBOOK_DIR)
+_NOTEBOOK_DIR = (Path(__file__) / "../../../doc/sphinx/notebooks").resolve()
 
 
 def test_notebook_dir_exists() -> None:
-    assert os.path.isdir(_nbpath())
+    assert _NOTEBOOK_DIR.is_dir()
 
 
-# To blacklist a notebook, add its full base name (including .pct.py or .md
+# To ignore a notebook, add its full base name (including .pct.py or .md
 # extension, but without any directory component). NOTE that if there are
 # several notebooks in different directories with the same base name, they will
-# all get blacklisted (change the blacklisting check to something else in that
+# all get ignored (change the ignoring check to something else in that
 # case, if need be!)
-BLACKLISTED_NOTEBOOKS: Sequence[str] = []
+IGNORED_NOTEBOOKS: Set[str] = set()
 
 
-def get_notebooks() -> Sequence[str]:
+def get_notebooks() -> Sequence[Path]:
     """
-    Returns all notebooks in `_nbpath` that are not blacklisted.
+    Returns all notebooks in `_nbpath` that are not ignored.
     """
 
-    def notebook_blacklisted(nb: str) -> bool:
-        blacklisted_notebooks_basename = [os.path.basename(bnb) for bnb in BLACKLISTED_NOTEBOOKS]
-        return os.path.basename(nb) in blacklisted_notebooks_basename
+    def notebook_ignored(nb: Path) -> bool:
+        return nb.name in IGNORED_NOTEBOOKS
 
     # recursively traverse the notebook directory in search for ipython notebooks
-    all_py_notebooks = glob.iglob(os.path.join(_nbpath(), "**", "*.pct.py"), recursive=True)
-    all_md_notebooks = glob.iglob(os.path.join(_nbpath(), "**", "*.md"), recursive=True)
+    all_py_notebooks = _NOTEBOOK_DIR.glob("**/*.pct.py")
+    all_md_notebooks = _NOTEBOOK_DIR.glob("**/*.md")
     all_notebooks = itertools.chain(all_md_notebooks, all_py_notebooks)
-    notebooks_to_test = [nb for nb in all_notebooks if not notebook_blacklisted(nb)]
+    notebooks_to_test = [nb for nb in all_notebooks if not notebook_ignored(nb)]
     return notebooks_to_test
 
 
@@ -67,22 +60,22 @@ def _preproc() -> ExecutePreprocessor:
     return ExecutePreprocessor(timeout=300, kernel_name=pythonkernel, interrupt_on_timeout=True)
 
 
-def _exec_notebook(notebook_filename: str) -> None:
-    with open(notebook_filename) as notebook_file:
+def _exec_notebook(notebook_path: Path) -> None:
+    with notebook_path.open() as notebook_file:
         nb = jupytext.read(notebook_file, as_version=nbformat.current_nbformat)
         try:
-            meta_data = {"path": os.path.dirname(notebook_filename)}
+            meta_data = {"path": str(notebook_path.parent)}
             _preproc().preprocess(nb, {"metadata": meta_data})
         except CellExecutionError as cell_error:
             traceback.print_exc(file=sys.stdout)
             msg = "Error executing the notebook {0}. See above for error.\nCell error: {1}"
-            pytest.fail(msg.format(notebook_filename, str(cell_error)))
+            pytest.fail(msg.format(str(notebook_path), str(cell_error)))
 
 
 @pytest.mark.notebooks
-@pytest.mark.parametrize("notebook_file", get_notebooks())
-def test_notebook(notebook_file: str) -> None:
-    _exec_notebook(notebook_file)
+@pytest.mark.parametrize("notebook_path", get_notebooks(), ids=str)
+def test_notebook(notebook_path: Path) -> None:
+    _exec_notebook(notebook_path)
 
 
 def test_has_notebooks() -> None:

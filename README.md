@@ -4,13 +4,12 @@
 
 [![CircleCI](https://circleci.com/gh/GPflow/GPflow/tree/develop.svg?style=svg)](https://circleci.com/gh/GPflow/GPflow/tree/develop)
 [![Coverage Status](http://codecov.io/github/GPflow/GPflow/coverage.svg?branch=master)](http://codecov.io/github/GPflow/GPflow?branch=master)
-[![Documentation Status](https://readthedocs.org/projects/gpflow/badge/?version=master)](http://gpflow.readthedocs.io/en/master/?badge=master)
 [![Slack Status](https://img.shields.io/badge/slack-gpflow-green.svg?logo=Slack)](https://join.slack.com/t/gpflow/shared_invite/enQtOTE5MDA0Nzg5NjA2LTYwZWI3MzhjYjNlZWI1MWExYzZjMGNhOWIwZWMzMGY0YjVkYzAyYjQ4NjgzNDUyZTgyNzcwYjAyY2QzMWRmYjE)
 
 
 [Website](https://gpflow.org) |
-[Documentation (release)](https://gpflow.readthedocs.io/en/master/) |
-[Documentation (develop)](https://gpflow.readthedocs.io/en/develop/) |
+[Documentation (release)](https://gpflow.github.io/GPflow/) |
+[Documentation (develop)](https://gpflow.github.io/GPflow/develop) |
 [Glossary](GLOSSARY.md)
 
 #### Table of Contents
@@ -36,7 +35,7 @@ It implements modern Gaussian process inference for composable kernels and likel
 
 GPflow builds on [TensorFlow 2.4+](http://www.tensorflow.org) and [TensorFlow Probability](https://www.tensorflow.org/probability/) for running computations, which allows fast execution on GPUs.
 
-The [online documentation (develop)](http://gpflow.readthedocs.io/en/develop/)/[(master)](http://gpflow.readthedocs.io/en/master/) contains more details.
+The [online documentation (latest release)](https://gpflow.github.io/GPflow/)/[(develop)](https://gpflow.github.io/GPflow/develop) contains more details.
 
 
 ### Maintainers
@@ -83,8 +82,8 @@ This will automatically install all required dependencies.
 
 ## Getting Started with GPflow 2.0
 
-There is an ["Intro to GPflow 2.0"](https://gpflow.readthedocs.io/en/develop/notebooks/intro_to_gpflow2.html) Jupyter notebook; check it out for details.
-To convert your code from GPflow 1 check the [GPflow 2 upgrade guide](https://gpflow.readthedocs.io/en/develop/notebooks/gpflow2_upgrade_guide.html).
+There is an ["Intro to GPflow 2.0"](https://gpflow.github.io/GPflow/develop/notebooks/intro_to_gpflow2.html) Jupyter notebook; check it out for details.
+To convert your code from GPflow 1 check the [GPflow 2 upgrade guide](https://gpflow.github.io/GPflow/develop/notebooks/gpflow2_upgrade_guide.html).
 
 
 ## The GPflow Community
