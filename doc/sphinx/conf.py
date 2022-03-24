@@ -38,7 +38,6 @@ extensions = [
     "sphinx.ext.todo",
     "sphinx.ext.mathjax",
     "sphinx.ext.viewcode",
-    "numpydoc",
     "nbsphinx",
     "sphinx_autodoc_typehints",
     "IPython.sphinxext.ipython_console_highlighting",
@@ -48,9 +47,6 @@ set_type_checking_flag = True
 typehints_fully_qualified = False
 always_document_param_types = True
 # autoclass_content = 'both'
-
-# numpydoc_show_class_members = True
-numpydoc_class_members_toctree = False
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]

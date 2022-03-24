@@ -43,14 +43,12 @@ def _sparse_conditional(
     - Kuf: [M, N]
     - Kff: [N, N]
 
-    Further reference
-    -----------------
+    Further reference:
+
     - See `gpflow.conditionals._dense_conditional` (below) for a detailed explanation of
       conditional in the single-output case.
     - See the multiouput notebook for more information about the multiouput framework.
 
-    Parameters
-    ----------
     :param Xnew: data matrix, size [N, D].
     :param f: data matrix, [M, R]
     :param full_cov: return the covariance between the datapoints

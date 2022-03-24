@@ -606,8 +606,8 @@ def separate_independent_conditional_implementation(
     - Kuf: [P, M, N]
     - Kff: [P, N] or [P, N, N]
 
-    Further reference
-    -----------------
+    Further reference:
+
     - See `gpflow.conditionals._conditional` for a detailed explanation of
       conditional in the single-output case.
     - See the multioutput notebook for more information about the multioutput framework.
