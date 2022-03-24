@@ -29,7 +29,7 @@ Release notes for all past releases are available in the ['Releases' section](ht
 
 This release contains contributions from:
 
-jesnie
+<INSERT>, <NAME>, <HERE>, <USING>, <GITHUB>, <HANDLE>
 
 
 # Release 2.5.0 (next upcoming release in progress)
@@ -38,8 +38,8 @@ jesnie
 
 ## Breaking Changes
 
-* <DOCUMENT BREAKING CHANGES HERE>
-* <THIS SECTION SHOULD CONTAIN API AND BEHAVIORAL BREAKING CHANGES>
+* Removed method `Likelihood.predict_density`, which has been deprecated since March 24, 2020.
+* Removed property `ScalarLikelihood.num_gauss_hermite_points`, which has been deprecated since September 30, 2020.
 
 ## Known Caveats
 
