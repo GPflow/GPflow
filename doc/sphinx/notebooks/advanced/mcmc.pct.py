@@ -17,7 +17,7 @@
 # # MCMC (Markov Chain Monte Carlo)
 
 # %% [markdown]
-# GPflow allows you to approximate the posterior over the latent functions of its models (and over the hyperparemeters after setting a prior for those) using Hamiltonian Monte Carlo (HMC)
+# GPflow allows you to approximate the posterior over the latent functions of its models (and over the hyperparameters after setting a prior for those) using Hamiltonian Monte Carlo (HMC)
 
 # %%
 import numpy as np
