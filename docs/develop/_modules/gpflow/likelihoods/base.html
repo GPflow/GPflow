@@ -495,16 +495,6 @@ function checkPageExistsAndRedirect(event) {
     <span class="k">def</span> <span class="nf">_predict_log_density</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Fmu</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">Fvar</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">Y</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span>
 
-<div class="viewcode-block" id="Likelihood.predict_density"><a class="viewcode-back" href="../../../api/gpflow/likelihoods/index.html#gpflow.likelihoods.Likelihood.predict_density">[docs]</a>    <span class="k">def</span> <span class="nf">predict_density</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Fmu</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">Fvar</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">Y</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Deprecated: see `predict_log_density`</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
-            <span class="s2">&quot;predict_density is deprecated and will be removed in GPflow 2.1, use predict_log_density instead&quot;</span><span class="p">,</span>
-            <span class="ne">DeprecationWarning</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">predict_log_density</span><span class="p">(</span><span class="n">Fmu</span><span class="p">,</span> <span class="n">Fvar</span><span class="p">,</span> <span class="n">Y</span><span class="p">)</span></div>
-
 <div class="viewcode-block" id="Likelihood.variational_expectations"><a class="viewcode-back" href="../../../api/gpflow/likelihoods/index.html#gpflow.likelihoods.Likelihood.variational_expectations">[docs]</a>    <span class="k">def</span> <span class="nf">variational_expectations</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">Fmu</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">Fvar</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">Y</span><span class="p">:</span> <span class="n">TensorType</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
@@ -666,32 +656,6 @@ function checkPageExistsAndRedirect(event) {
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">latent_dim</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">observation_dim</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-
-    <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">num_gauss_hermite_points</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
-            <span class="s2">&quot;The num_gauss_hermite_points property is deprecated; access through the `quadrature` attribute instead&quot;</span><span class="p">,</span>
-            <span class="ne">DeprecationWarning</span><span class="p">,</span>
-        <span class="p">)</span>
-
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">quadrature</span><span class="p">,</span> <span class="n">NDiagGHQuadrature</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
-                <span class="s2">&quot;Can only query num_gauss_hermite_points if quadrature is a NDiagGHQuadrature instance&quot;</span>
-            <span class="p">)</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">quadrature</span><span class="o">.</span><span class="n">n_gh</span>
-
-    <span class="nd">@num_gauss_hermite_points</span><span class="o">.</span><span class="n">setter</span>
-    <span class="k">def</span> <span class="nf">num_gauss_hermite_points</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n_gh</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
-            <span class="s2">&quot;The num_gauss_hermite_points setter is deprecated; assign a new GaussianQuadrature instance to the `quadrature` attribute instead&quot;</span><span class="p">,</span>
-            <span class="ne">DeprecationWarning</span><span class="p">,</span>
-        <span class="p">)</span>
-
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">quadrature</span><span class="p">,</span> <span class="n">NDiagGHQuadrature</span><span class="p">)</span> <span class="ow">and</span> <span class="n">n_gh</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">quadrature</span><span class="o">.</span><span class="n">n_gh</span><span class="p">:</span>
-            <span class="k">return</span>  <span class="c1"># nothing to do here</span>
-
-        <span class="k">with</span> <span class="n">tf</span><span class="o">.</span><span class="n">init_scope</span><span class="p">():</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">quadrature</span> <span class="o">=</span> <span class="n">NDiagGHQuadrature</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_quadrature_dim</span><span class="p">,</span> <span class="n">n_gh</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_check_last_dims_valid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">F</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">Y</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
