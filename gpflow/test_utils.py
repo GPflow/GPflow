@@ -1,5 +1,7 @@
 import numpy as np
+
 from .kernels import Kernel
+
 
 def test_kernel(kernel: Kernel, X: np.ndarray, X2: np.ndarray):
     N, D = X.shape
