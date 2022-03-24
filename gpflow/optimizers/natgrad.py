@@ -170,13 +170,13 @@ class NaturalGradient(tf.optimizers.Optimizer):
         :param var_list: List of pair tuples of variational parameters or
             triplet tuple with variational parameters and ξ transformation.
             If ξ is not specified, will use self.xi_transform.
-            For example, `var_list` could be
-            ```
-            var_list = [
-                (q_mu1, q_sqrt1),
-                (q_mu2, q_sqrt2, XiSqrtMeanVar())
-            ]
-            ```
+            For example, `var_list` could be::
+
+                var_list = [
+                    (q_mu1, q_sqrt1),
+                    (q_mu2, q_sqrt2, XiSqrtMeanVar())
+                ]
+
 
         GPflow implements the `XiNat` (default) and `XiSqrtMeanVar` transformations
         for parameters. Custom transformations that implement the `XiTransform`
