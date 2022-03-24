@@ -1,13 +1,14 @@
 import numpy as np
 
+from .base import AnyNDArray
 from .kernels import Kernel
 
 
-def assert_psd_matrix(A: np.ndarray, tol: float = 1e-12):
+def assert_psd_matrix(A: AnyNDArray, tol: float = 1e-12):
     assert np.linalg.eigvals(A).min() > -tol, "test for positive semi definite matrix"
 
 
-def test_kernel(kernel: Kernel, X: np.ndarray, X2: np.ndarray):
+def test_kernel(kernel: Kernel, X: AnyNDArray, X2: AnyNDArray):
     N, D = X.shape
     N2, D2 = X2.shape
     assert D == D2
