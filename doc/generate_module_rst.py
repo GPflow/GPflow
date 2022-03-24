@@ -18,7 +18,7 @@ import inspect
 from datetime import datetime
 from pathlib import Path
 from types import ModuleType
-from typing import Any, Callable, List, Set, Tuple
+from typing import Any, Callable, Dict, List, Set, Tuple, Type
 
 RST_LEVEL_SYMBOLS = ["=", "-", "~", '"', "'", "^"]
 
@@ -40,12 +40,17 @@ This function uses multiple dispatch, which will depend on the type of argument 
 {content}
 """
 
+SPHINX_MULTIDISPATCH_DISPATCH_STRING = """
+    {dispatch_name}( {args} )
+"""[
+    1:-1  # Strip leading and trailing new-lines.
+]
+
 SPHINX_MULTIDISPATCH_COMPONENT_STRING = """
 .. code-block:: python
 
-    {dispatch_name}( {args} )
+{dispatches}
     # dispatch to -> {true_name}(...)
-
 
 .. autofunction:: {true_name}
 """
@@ -153,16 +158,30 @@ def get_multidispatch_string(
     content_list = []
     dispatch_name = f"{module.__name__}.{md_component.name}"  # type: ignore
     level_underline = RST_LEVEL_SYMBOLS[level] * len(dispatch_name)
-    for args, fname in md_component.funcs.items():  # type: ignore
 
-        arg_names = ", ".join([a.__name__ for a in args])
+    by_fname: Dict[Callable[..., Any], List[Type[Any]]] = {}
+    for args, fname in md_component.funcs.items():  # type: ignore
+        by_fname.setdefault(fname, []).append(args)
+
+    for fname, argss in by_fname.items():
         alias_name = f"{fname.__module__}.{fname.__name__}"
 
-        string = SPHINX_MULTIDISPATCH_COMPONENT_STRING.format(
-            dispatch_name=dispatch_name, args=arg_names, true_name=alias_name
+        dispatch_list = []
+        for args in argss:
+            arg_names = ", ".join([a.__name__ for a in args])
+            dispatch_list.append(
+                SPHINX_MULTIDISPATCH_DISPATCH_STRING.format(
+                    dispatch_name=dispatch_name, args=arg_names
+                )
+            )
+        dispatches = "\n".join(dispatch_list)
+        content_list.append(
+            SPHINX_MULTIDISPATCH_COMPONENT_STRING.format(
+                dispatches=dispatches, true_name=alias_name
+            )
         )
-        content_list.append(string)
-    content = "\n".join(content_list)
+    content = "".join(content_list)
+
     return SPHINX_MULTIDISPATCH_STRING.format(
         object_name=dispatch_name, level=level_underline, content=content
     )
