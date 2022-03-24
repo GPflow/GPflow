@@ -247,16 +247,6 @@ class Likelihood(Module, metaclass=abc.ABCMeta):
     def _predict_log_density(self, Fmu: TensorType, Fvar: TensorType, Y: TensorType) -> tf.Tensor:
         raise NotImplementedError
 
-    def predict_density(self, Fmu: TensorType, Fvar: TensorType, Y: TensorType) -> tf.Tensor:
-        """
-        Deprecated: see `predict_log_density`
-        """
-        warnings.warn(
-            "predict_density is deprecated and will be removed in GPflow 2.1, use predict_log_density instead",
-            DeprecationWarning,
-        )
-        return self.predict_log_density(Fmu, Fvar, Y)
-
     def variational_expectations(
         self, Fmu: TensorType, Fvar: TensorType, Y: TensorType
     ) -> tf.Tensor:
@@ -418,32 +408,6 @@ class ScalarLikelihood(QuadratureLikelihood):
 
     def __init__(self, **kwargs: Any) -> None:
         super().__init__(latent_dim=None, observation_dim=None, **kwargs)
-
-    @property
-    def num_gauss_hermite_points(self) -> int:
-        warnings.warn(
-            "The num_gauss_hermite_points property is deprecated; access through the `quadrature` attribute instead",
-            DeprecationWarning,
-        )
-
-        if not isinstance(self.quadrature, NDiagGHQuadrature):
-            raise TypeError(
-                "Can only query num_gauss_hermite_points if quadrature is a NDiagGHQuadrature instance"
-            )
-        return self.quadrature.n_gh
-
-    @num_gauss_hermite_points.setter
-    def num_gauss_hermite_points(self, n_gh: int) -> None:
-        warnings.warn(
-            "The num_gauss_hermite_points setter is deprecated; assign a new GaussianQuadrature instance to the `quadrature` attribute instead",
-            DeprecationWarning,
-        )
-
-        if isinstance(self.quadrature, NDiagGHQuadrature) and n_gh == self.quadrature.n_gh:
-            return  # nothing to do here
-
-        with tf.init_scope():
-            self.quadrature = NDiagGHQuadrature(self._quadrature_dim, n_gh)
 
     def _check_last_dims_valid(self, F: TensorType, Y: TensorType) -> None:
         """
