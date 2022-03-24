@@ -33,8 +33,8 @@ class CheckShapesError(Exception):
         builder = MessageBuilder()
         builder.add_line("")
         builder.add_line(self.error_message)
-        with builder.indent():
-            context.format(builder)
+        with builder.indent() as b:
+            context.print(b)
         super().__init__(builder.build())
 
         self.context = context

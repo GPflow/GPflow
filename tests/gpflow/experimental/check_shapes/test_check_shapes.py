@@ -400,7 +400,7 @@ def test_check_shapes__disable() -> None:
         f(t(2, 3), t(2, 4))  # Wrong shape, but checks disabled.
 
     f(t(2, 3), t(2, 4))  # Wrong shape, but checks were disable when function was created.
-    get_check_shapes(f)(h)  # pylint: disable=not-callable  # Don't crash.
+    get_check_shapes(f)(h)  # Don't crash.
 
     @check_shapes(
         "a: [d...]",
@@ -412,15 +412,15 @@ def test_check_shapes__disable() -> None:
 
     with pytest.raises(ShapeMismatchError):
         g(t(2, 3), t(2, 4))
-        get_check_shapes(g)(h)  # pylint: disable=not-callable    # Don't crash.
+        get_check_shapes(g)(h)  # Don't crash.
 
     with disable_check_shapes():
         g(t(2, 3), t(2, 4))  # Wrong shape, but checks disabled.
-        get_check_shapes(g)(h)  # pylint: disable=not-callable    # Don't crash.
+        get_check_shapes(g)(h)  # Don't crash.
 
     with pytest.raises(ShapeMismatchError):
         g(t(2, 3), t(2, 4))
-        get_check_shapes(g)(h)  # pylint: disable=not-callable    # Don't crash.
+        get_check_shapes(g)(h)  # Don't crash.
 
 
 def test_check_shapes__error_message() -> None:

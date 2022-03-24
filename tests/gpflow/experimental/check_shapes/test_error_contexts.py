@@ -38,7 +38,7 @@ from .utils import TestContext, make_shape_spec
 def to_str(context: ErrorContext) -> str:
     builder = MessageBuilder()
     builder.add_line("")  # Makes multi-line strings easier to read.
-    context.format(builder)
+    context.print(builder)
     return builder.build()
 
 
@@ -91,11 +91,11 @@ def test_message_builder__columns() -> None:
 def test_message_builder__indent() -> None:
     builder = MessageBuilder()
     builder.add_line(11)
-    with builder.indent():
-        builder.add_line(21)
-        with builder.indent():
-            builder.add_line(31)
-        builder.add_line(22)
+    with builder.indent() as b1:
+        b1.add_line(21)
+        with b1.indent() as b2:
+            b2.add_line(31)
+        b1.add_line(22)
     builder.add_line(12)
     assert (
         """
@@ -114,13 +114,13 @@ def test_message_builder__indent() -> None:
 def test_message_builder__indent_columns() -> None:
     builder = MessageBuilder()
     builder.add_columned_line(11, 11111)
-    with builder.indent():
-        builder.add_columned_line(2, 22)
-        with builder.indent():
-            builder.add_columned_line(3, 333)
-        with builder.indent():
-            builder.add_columned_line(444, 4)
-        builder.add_columned_line(2222, 2)
+    with builder.indent() as b1:
+        b1.add_columned_line(2, 22)
+        with b1.indent() as b2:
+            b2.add_columned_line(3, 333)
+        with b1.indent() as b2:
+            b2.add_columned_line(444, 4)
+        b1.add_columned_line(2222, 2)
     builder.add_columned_line(1, 11)
     assert (
         """

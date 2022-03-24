@@ -39,6 +39,9 @@ from .argument_ref import (
 )
 from .specs import ParsedArgumentSpec, ParsedDimensionSpec, ParsedShapeSpec
 
+_VARIABLE_RANK_LEADING_TOKEN = "*"
+_VARIABLE_RANK_TRAILING_TOKEN = "..."
+
 
 def _tree_children(tree: Tree[Token]) -> Iterable[Tree[Token]]:
     """ Return all the children of `tree` that are trees themselves. """
@@ -114,10 +117,10 @@ class _ParseArgumentSpec(_TreeVisitor):
 
     def dimension_spec_variable_rank(self, tree: Tree[Token]) -> ParsedDimensionSpec:
         (token1, token2) = _token_children(tree)
-        if token1 == "*":
+        if token1 == _VARIABLE_RANK_LEADING_TOKEN:
             variable_name = token2
         else:
-            assert token2 == "..."
+            assert token2 == _VARIABLE_RANK_TRAILING_TOKEN
             variable_name = token1
         return ParsedDimensionSpec(constant=None, variable_name=variable_name, variable_rank=True)
 
@@ -340,6 +343,9 @@ def parse_argument_spec(argument_spec: str, context: ErrorContext) -> ParsedArgu
             )
         ) from e
     specs: ParsedArgumentSpec = _ParseArgumentSpec().visit(tree)
+
+    _ARGUMENT_SPEC_CACHE[argument_spec] = specs
+
     return specs
 
 
@@ -359,6 +365,9 @@ def _parse_and_rewrite_sphinx_docstring(
             )
         ) from e
     rewritten_docstring: str = _RewritedocString(docstring, argument_specs).visit(tree)
+
+    _SPHINX_DOCSTRING_CACHE[(docstring, argument_specs)] = rewritten_docstring
+
     return rewritten_docstring
 
 

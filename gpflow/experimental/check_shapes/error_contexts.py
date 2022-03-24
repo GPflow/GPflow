@@ -71,7 +71,6 @@ class MessageBuilder:
         self._indent_str = indent_str
         self._lines: List[Union[str, Tuple[str, ...], "MessageBuilder"]] = []
         self._column_widths: List[int] = []
-        self._delegate: Optional["MessageBuilder"] = None
 
     def add_line(self, text: Any) -> None:
         """
@@ -79,11 +78,8 @@ class MessageBuilder:
 
         Input is converted to a `str` using `str(text)`.
         """
-        if self._delegate:
-            self._delegate.add_line(text)
-        else:
-            text_str = str(text)
-            self._lines.append(text_str)
+        text_str = str(text)
+        self._lines.append(text_str)
 
     def add_columned_line(self, *texts: Any) -> None:
         """
@@ -91,56 +87,48 @@ class MessageBuilder:
 
         Inputs are converted to `str`s using `str(text)`.
         """
-        if self._delegate:
-            self._delegate.add_columned_line(*texts)
-        else:
-            widths = self._column_widths
-            text_strs = tuple(str(t) for t in texts)
-            for i, t in enumerate(text_strs):
-                w = len(t)
-                if i < len(widths):
-                    widths[i] = max(widths[i], w)
-                else:
-                    widths.append(w)
-            self._lines.append(text_strs)
+        widths = self._column_widths
+        text_strs = tuple(str(t) for t in texts)
+        for i, t in enumerate(text_strs):
+            w = len(t)
+            if i < len(widths):
+                widths[i] = max(widths[i], w)
+            else:
+                widths.append(w)
+        self._lines.append(text_strs)
 
     @contextmanager
-    def indent(self) -> Iterator[None]:
+    def indent(self) -> Iterator["MessageBuilder"]:
         """
         Indent text.
         """
-        if self._delegate:
-            with self._delegate.indent():
-                yield
-        else:
-            self._delegate = MessageBuilder(self._indent_str + "  ")
-            yield
-            self._lines.append(self._delegate)
-            self._delegate = None
-
-    def _collect(self, fragments: List[str]) -> None:
-        for line in self._lines:
-            if isinstance(line, str):
-                fragments.append(self._indent_str)
-                fragments.append(line)
-                fragments.append("\n")
-            elif isinstance(line, tuple):
-                fragments.append(self._indent_str)
-                for i, t in enumerate(line):
-                    fragments.append(t)
-                    if i + 1 < len(line):
-                        fragments.append(" " * (self._column_widths[i] - len(t) + 1))
-                fragments.append("\n")
-            else:
-                assert isinstance(line, MessageBuilder)
-                line._collect(fragments)  # pylint: disable=protected-access
+        child = MessageBuilder(self._indent_str + "  ")
+        self._lines.append(child)
+        yield child
 
     def build(self) -> str:
         """
         Compile all collected text into a single string.
         """
         fragments: List[str] = []
-        self._collect(fragments)
+
+        def _collect(builder: "MessageBuilder") -> None:
+            # pylint: disable=protected-access
+            for line in builder._lines:
+                if isinstance(line, str):
+                    fragments.extend((builder._indent_str, line, "\n"))
+                elif isinstance(line, tuple):
+                    fragments.append(builder._indent_str)
+                    for i, t in enumerate(line):
+                        fragments.append(t)
+                        if i + 1 < len(line):
+                            fragments.append(" " * (builder._column_widths[i] - len(t) + 1))
+                    fragments.append("\n")
+                else:
+                    assert isinstance(line, MessageBuilder)
+                    _collect(line)
+
+        _collect(self)
         return "".join(fragments)
 
 
@@ -152,13 +140,13 @@ class ErrorContext(ABC):
     `StackContext` and `ParallelContext`.
 
     The contexts are often created even if an error doesn't actually occur, so they should be cheap
-    to create - prefer to do any slow computation in `format`, rather than in `__init__`.
+    to create - prefer to do any slow computation in `print`, rather than in `__init__`.
 
     Maybe think of an `ErrorContext` as a factory of error messages.
     """
 
     @abstractmethod
-    def format(self, builder: MessageBuilder) -> None:
+    def print(self, builder: MessageBuilder) -> None:
         """
         Print this context to the given `MessageBuilder`.
         """
@@ -173,23 +161,20 @@ class StackContext(ErrorContext):
     parent: ErrorContext
     child: ErrorContext
 
-    def format(self, builder: MessageBuilder) -> None:
-        flat: List[ErrorContext] = []
-        self._flatten(self, flat)
-        self._format(builder, flat, 0)
+    def print(self, builder: MessageBuilder) -> None:
+        def _print(context: ErrorContext) -> None:
+            nonlocal builder
 
-    def _flatten(self, context: ErrorContext, flat: List[ErrorContext]) -> None:
-        if isinstance(context, StackContext):
-            self._flatten(context.parent, flat)
-            self._flatten(context.child, flat)
-        else:
-            flat.append(context)
+            if isinstance(context, StackContext):
+                _print(context.parent)
+                _print(context.child)
+            else:
+                context.print(builder)
 
-    def _format(self, builder: MessageBuilder, flat: Sequence[ErrorContext], i: int) -> None:
-        if i < len(flat):
-            flat[i].format(builder)
-            with builder.indent():
-                self._format(builder, flat, i + 1)
+                with builder.indent() as b:
+                    builder = b
+
+        _print(self)
 
 
 @dataclass(frozen=True)
@@ -200,17 +185,39 @@ class ParallelContext(ErrorContext):
 
     children: Sequence[ErrorContext]
 
-    def format(self, builder: MessageBuilder) -> None:
-        flat: List[ErrorContext] = []
+    def print(self, builder: MessageBuilder) -> None:
         # Merge any nested parallel contexts.
-        self._flatten(self, flat)
+        flat: List[ErrorContext] = []
+
+        def _flatten(context: ErrorContext) -> None:
+            if isinstance(context, ParallelContext):
+                for child in context.children:
+                    _flatten(child)
+            else:
+                flat.append(context)
+
+        _flatten(self)
 
         # If any `StackContexts`s have the same (grand-) parent, merge them, so that we don't repeat
         # stuff in the output.
+        def _split_head(context: StackContext) -> Tuple[ErrorContext, ErrorContext]:
+            parent = context.parent
+            child = context.child
+            if isinstance(parent, StackContext):
+                # Transform:
+                #   /\         /\
+                #  /\ C  -->  A /\
+                # A  B         B  C
+                # So we get:                     /\
+                #             head = A,  body = B  C
+                return _split_head(StackContext(parent.parent, StackContext(parent.child, child)))
+            else:
+                return parent, child
+
         by_head: Dict[ErrorContext, List[ErrorContext]] = {}
         for child in flat:
             if isinstance(child, StackContext):
-                head, body = self._split_head(child)
+                head, body = _split_head(child)
             else:
                 head = child
                 body = None
@@ -219,30 +226,9 @@ class ParallelContext(ErrorContext):
                 bodies.append(body)
 
         for head, bodies in by_head.items():
-            head.format(builder)
-            with builder.indent():
-                ParallelContext(bodies).format(builder)
-
-    def _flatten(self, context: ErrorContext, flat: List[ErrorContext]) -> None:
-        if isinstance(context, ParallelContext):
-            for child in context.children:
-                self._flatten(child, flat)
-        else:
-            flat.append(context)
-
-    def _split_head(self, context: StackContext) -> Tuple[ErrorContext, ErrorContext]:
-        parent = context.parent
-        child = context.child
-        if isinstance(parent, StackContext):
-            # Transform:
-            #   /\         /\
-            #  /\ C  -->  A /\
-            # A  B         B  C
-            # So we get:                     /\
-            #             head = A,  body = B  C
-            return self._split_head(StackContext(parent.parent, StackContext(parent.child, child)))
-        else:
-            return parent, child
+            head.print(builder)
+            with builder.indent() as b:
+                ParallelContext(bodies).print(b)
 
 
 @dataclass(frozen=True)
@@ -282,7 +268,7 @@ class FunctionCallContext(ErrorContext):
 
         return None
 
-    def format(self, builder: MessageBuilder) -> None:
+    def print(self, builder: MessageBuilder) -> None:
         frame = self._get_calling_frame()
         if frame is None:
             path = _UNKNOWN_FILE
@@ -301,7 +287,7 @@ class FunctionDefinitionContext(ErrorContext):
 
     func: Callable[..., Any]
 
-    def format(self, builder: MessageBuilder) -> None:
+    def print(self, builder: MessageBuilder) -> None:
         name = self.func.__qualname__
         try:
             path = inspect.getsourcefile(self.func)
@@ -315,8 +301,8 @@ class FunctionDefinitionContext(ErrorContext):
         path_and_line = f"{path}:{line}"
 
         builder.add_columned_line("Function:", name)
-        with builder.indent():
-            builder.add_columned_line("Declared:", path_and_line)
+        with builder.indent() as b:
+            b.add_columned_line("Declared:", path_and_line)
 
 
 @dataclass(frozen=True)
@@ -328,14 +314,14 @@ class ArgumentContext(ErrorContext):
     name_or_index: Union[str, int]
     value: Any = _NO_VALUE
 
-    def format(self, builder: MessageBuilder) -> None:
+    def print(self, builder: MessageBuilder) -> None:
         if isinstance(self.name_or_index, str):
             builder.add_columned_line("Argument:", self.name_or_index)
         else:
             builder.add_columned_line("Argument number (0-indexed):", self.name_or_index)
         if self.value is not _NO_VALUE:
-            with builder.indent():
-                builder.add_columned_line("Value:", self.value)
+            with builder.indent() as b:
+                b.add_columned_line("Value:", self.value)
 
 
 @dataclass(frozen=True)
@@ -347,11 +333,11 @@ class AttributeContext(ErrorContext):
     name: str
     value: Any = _NO_VALUE
 
-    def format(self, builder: MessageBuilder) -> None:
+    def print(self, builder: MessageBuilder) -> None:
         builder.add_columned_line("Attribute:", f".{self.name}")
         if self.value is not _NO_VALUE:
-            with builder.indent():
-                builder.add_columned_line("Value:", self.value)
+            with builder.indent() as b:
+                b.add_columned_line("Value:", self.value)
 
 
 @dataclass(frozen=True)
@@ -363,11 +349,11 @@ class IndexContext(ErrorContext):
     index: int
     value: Any = _NO_VALUE
 
-    def format(self, builder: MessageBuilder) -> None:
+    def print(self, builder: MessageBuilder) -> None:
         builder.add_columned_line("Index:", f"[{self.index}]")
         if self.value is not _NO_VALUE:
-            with builder.indent():
-                builder.add_columned_line("Value:", self.value)
+            with builder.indent() as b:
+                b.add_columned_line("Value:", self.value)
 
 
 @dataclass(frozen=True)
@@ -379,7 +365,7 @@ class ShapeContext(ErrorContext):
     expected: "ParsedShapeSpec"
     actual: Shape
 
-    def format(self, builder: MessageBuilder) -> None:
+    def print(self, builder: MessageBuilder) -> None:
         if self.actual is None:
             actual_str = _NONE_SHAPE
         else:
@@ -396,7 +382,7 @@ class ObjectTypeContext(ErrorContext):
 
     obj: Any
 
-    def format(self, builder: MessageBuilder) -> None:
+    def print(self, builder: MessageBuilder) -> None:
         t = type(self.obj)
         builder.add_columned_line("Object type:", f"{t.__module__}.{t.__qualname__}")
 
@@ -411,7 +397,7 @@ class LarkUnexpectedInputContext(ErrorContext):
     error: UnexpectedInput
     terminal_descriptions: Mapping[str, str]
 
-    def format(self, builder: MessageBuilder) -> None:
+    def print(self, builder: MessageBuilder) -> None:
         line = getattr(self.error, "line", -1)
         column = getattr(self.error, "column", -1)
         if line > 0:  # Lines are 1-indexed...

@@ -33,7 +33,7 @@ class TestContext(ErrorContext):
 
     message: str = "Fake test error context."
 
-    def format(self, builder: MessageBuilder) -> None:
+    def print(self, builder: MessageBuilder) -> None:
         builder.add_line(self.message)
 
 
