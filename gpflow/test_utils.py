@@ -11,7 +11,7 @@ def test_kernel(kernel: Kernel, X: np.ndarray, X2: np.ndarray):
     N, D = X.shape
     N2, D2 = X2.shape
     assert D == D2
-    assert N1 != N2
+    assert N != N2
 
     kX = kernel(X).numpy()
     assert kX.shape == (N, N)
