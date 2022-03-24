@@ -121,8 +121,8 @@ class Monitor:
     Accepts any number of of `MonitorTaskGroup` instances, and runs them
     according to their specified periodicity.
 
-    Example use-case:
-        ```
+    Example use-case::
+
         # Create some monitor tasks
         log_dir = "logs"
         model_task = ModelToTensorBoard(log_dir, model)
@@ -138,7 +138,6 @@ class Monitor:
 
         # We pass both groups to the `Monitor`
         monitor = Monitor(fast_tasks, slow_tasks)
-        ```
     """
 
     def __init__(self, *task_groups: MonitorTaskGroup) -> None:

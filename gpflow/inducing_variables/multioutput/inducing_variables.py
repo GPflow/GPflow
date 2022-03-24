@@ -38,21 +38,25 @@ class FallbackSharedIndependentInducingVariables(MultioutputInducingVariables):
     """
     Shared definition of inducing variables for each independent latent process.
 
-    This class is designated to be used to
-     - provide a general interface for multioutput kernels
-       constructed from independent latent processes,
-     - only require the specification of Kuu and Kuf.
+    This class is designated to be used to:
+
+    - provide a general interface for multioutput kernels
+      constructed from independent latent processes,
+    - only require the specification of Kuu and Kuf.
+
     All multioutput kernels constructed from independent latent processes allow
     the inducing variables to be specified in the latent processes, and a
     reasonably efficient method (i.e. one that takes advantage of the
     independence in the latent processes) can be specified quite generally by
     only requiring the following covariances:
-     - Kuu: [L, M, M],
-     - Kuf: [L, M, N, P].
-    In `gpflow/conditionals/multioutput/conditionals.py` we define a conditional() implementation for this
-    combination. We specify this code path for all kernels which inherit from
-    `IndependentLatentBase`. This set-up allows inference with any such kernel
-    to be implemented by specifying only `Kuu()` and `Kuf()`.
+
+    - Kuu: [L, M, M],
+    - Kuf: [L, M, N, P].
+
+    In `gpflow/conditionals/multioutput/conditionals.py` we define a conditional() implementation
+    for this combination. We specify this code path for all kernels which inherit from
+    `IndependentLatentBase`. This set-up allows inference with any such kernel to be implemented by
+    specifying only `Kuu()` and `Kuf()`.
 
     We call this the base class, since many multioutput GPs that are constructed
     from independent latent processes acutally allow even more efficient
@@ -80,21 +84,25 @@ class FallbackSeparateIndependentInducingVariables(MultioutputInducingVariables)
     """
     Separate set of inducing variables for each independent latent process.
 
-    This class is designated to be used to
-     - provide a general interface for multioutput kernels
-       constructed from independent latent processes,
-     - only require the specification of Kuu and Kuf.
+    This class is designated to be used to:
+
+    - provide a general interface for multioutput kernels
+      constructed from independent latent processes,
+    - only require the specification of Kuu and Kuf.
+
     All multioutput kernels constructed from independent latent processes allow
     the inducing variables to be specified in the latent processes, and a
     reasonably efficient method (i.e. one that takes advantage of the
     independence in the latent processes) can be specified quite generally by
     only requiring the following covariances:
-     - Kuu: [L, M, M],
-     - Kuf: [L, M, N, P].
+
+    - Kuu: [L, M, M],
+    - Kuf: [L, M, N, P].
+
     In `gpflow/multioutput/conditionals.py` we define a conditional() implementation for this
     combination. We specify this code path for all kernels which inherit from
-    `IndependentLatentBase`. This set-up allows inference with any such kernel
-    to be implemented by specifying only `Kuu()` and `Kuf()`.
+    `IndependentLatentBase`. This set-up allows inference with any such kernel to be implemented by
+    specifying only `Kuu()` and `Kuf()`.
 
     We call this the base class, since many multioutput GPs that are constructed
     from independent latent processes acutally allow even more efficient

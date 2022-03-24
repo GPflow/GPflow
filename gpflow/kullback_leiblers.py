@@ -46,10 +46,12 @@ def gauss_kl(
     q_mu: TensorType, q_sqrt: TensorType, K: TensorType = None, *, K_cholesky: TensorType = None
 ) -> tf.Tensor:
     """
-    Compute the KL divergence KL[q || p] between
+    Compute the KL divergence KL[q || p] between::
 
           q(x) = N(q_mu, q_sqrt^2)
-    and
+
+    and::
+
           p(x) = N(0, K)    if K is not None
           p(x) = N(0, I)    if K is None
 
@@ -59,10 +61,10 @@ def gauss_kl(
 
     q_mu is a matrix ([M, L]), each column contains a mean.
 
-    q_sqrt can be a 3D tensor ([L, M, M]), each matrix within is a lower
-        triangular square-root matrix of the covariance of q.
-    q_sqrt can be a matrix ([M, L]), each column represents the diagonal of a
-        square-root matrix of the covariance of q.
+    - q_sqrt can be a 3D tensor ([L, M, M]), each matrix within is a lower
+      triangular square-root matrix of the covariance of q.
+    - q_sqrt can be a matrix ([M, L]), each column represents the diagonal of a
+      square-root matrix of the covariance of q.
 
     K is the covariance of p (positive-definite matrix).  The K matrix can be
     passed either directly as `K`, or as its Cholesky factor, `K_cholesky`.  In

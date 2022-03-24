@@ -26,11 +26,15 @@ class MultioutputKernel(Kernel):
     Multi Output Kernel class.
     This kernel can represent correlation between outputs of different datapoints.
     Therefore, subclasses of Mok should implement `K` which returns:
+
     - [N, P, N, P] if full_output_cov = True
     - [P, N, N] if full_output_cov = False
+
     and `K_diag` returns:
+
     - [N, P, P] if full_output_cov = True
     - [N, P] if full_output_cov = False
+
     The `full_output_cov` argument holds whether the kernel should calculate
     the covariance between the outputs. In case there is no correlation but
     `full_output_cov` is set to True the covariance matrix will be filled with zeros
@@ -55,12 +59,14 @@ class MultioutputKernel(Kernel):
     ) -> tf.Tensor:
         """
         Returns the correlation of f(X) and f(X2), where f(.) can be multi-dimensional.
+
         :param X: data matrix, [N1, D]
         :param X2: data matrix, [N2, D]
         :param full_output_cov: calculate correlation between outputs.
-        :return: cov[f(X), f(X2)] with shape
-        - [N1, P, N2, P] if `full_output_cov` = True
-        - [P, N1, N2] if `full_output_cov` = False
+        :return: cov[f(X), f(X2)] with shape:
+
+            - [N1, P, N2, P] if `full_output_cov` = True
+            - [P, N1, N2] if `full_output_cov` = False
         """
         raise NotImplementedError
 
@@ -68,11 +74,13 @@ class MultioutputKernel(Kernel):
     def K_diag(self, X: TensorType, full_output_cov: bool = True) -> tf.Tensor:
         """
         Returns the correlation of f(X) and f(X), where f(.) can be multi-dimensional.
+
         :param X: data matrix, [N, D]
         :param full_output_cov: calculate correlation between outputs.
-        :return: var[f(X)] with shape
-        - [N, P, N, P] if `full_output_cov` = True
-        - [N, P] if `full_output_cov` = False
+        :return: var[f(X)] with shape:
+
+            - [N, P, N, P] if `full_output_cov` = True
+            - [N, P] if `full_output_cov` = False
         """
         raise NotImplementedError
 
@@ -100,8 +108,10 @@ class SharedIndependent(MultioutputKernel):
     """
     - Shared: we use the same kernel for each latent GP
     - Independent: Latents are uncorrelated a priori.
-    Note: this class is created only for testing and comparison purposes.
-    Use `gpflow.kernels` instead for more efficient code.
+
+    .. warning::
+       This class is created only for testing and comparison purposes.
+       Use `gpflow.kernels` instead for more efficient code.
     """
 
     def __init__(self, kernel: Kernel, output_dim: int) -> None:

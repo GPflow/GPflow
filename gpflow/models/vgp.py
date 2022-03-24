@@ -213,8 +213,8 @@ def update_vgp_data(vgp: VGP_deprecated, new_data: RegressionData) -> None:
     the shape of the data. This functions updates the internal data of the given vgp, and updates
     the variational parameters to fit.
 
-    This function requires that the input :param:`vgp` were create with :class:`tf.Variable`s for
-    :param:`data`.
+    This function requires that the input `vgp` were create with :class:`tf.Variable`s for
+    `data`.
     """
     old_X_data, old_Y_data = vgp.data
     assert is_variable(old_X_data) and is_variable(
@@ -255,7 +255,9 @@ class VGPOpperArchambeau(GPModel, InternalDataTrainingLossMixin):
     posterior precision shares off-diagonal elements with the prior, so
     only the diagonal elements of the precision need be adjusted.
     The posterior approximation is
+
     .. math::
+
        q(\mathbf f) = N(\mathbf f \,|\, \mathbf K \boldsymbol \alpha,
                          [\mathbf K^{-1} + \textrm{diag}(\boldsymbol \lambda))^2]^{-1})
 
@@ -297,9 +299,18 @@ class VGPOpperArchambeau(GPModel, InternalDataTrainingLossMixin):
         q_alpha, q_lambda are variational parameters, size [N, R]
         This method computes the variational lower bound on the likelihood,
         which is:
-            E_{q(F)} [ \log p(Y|F) ] - KL[ q(F) || p(F)]
+
+        .. math::
+
+           E_{q(F)} [ \log p(Y|F) ] - KL[ q(F) || p(F)]
+
         with
-            q(f) = N(f | K alpha + mean, [K^-1 + diag(square(lambda))]^-1) .
+
+        .. math::
+
+           q(f) = N(f |
+               K \alpha + \textrm{mean},
+               [K^-1 + \textrm{diag}(\textrm{square}(\lambda))]^-1) .
         """
         X_data, Y_data = self.data
 
@@ -341,11 +352,19 @@ class VGPOpperArchambeau(GPModel, InternalDataTrainingLossMixin):
     ) -> MeanAndVariance:
         r"""
         The posterior variance of F is given by
-            q(f) = N(f | K alpha + mean, [K^-1 + diag(lambda**2)]^-1)
+
+        .. math::
+
+           q(f) = N(f |
+               K \alpha + \textrm{mean}, [K^-1 + \textrm{diag}(\lambda**2)]^-1)
+
         Here we project this to F*, the values of the GP at Xnew which is given
         by
-           q(F*) = N ( F* | K_{*F} alpha + mean, K_{**} - K_{*f}[K_{ff} +
-                                           diag(lambda**-2)]^-1 K_{f*} )
+
+        .. math::
+
+           q(F*) = N ( F* | K_{*F} \alpha + \textrm{mean}, K_{**} - K_{*f}[K_{ff} +
+                                           \textrm{diag}(\lambda**-2)]^-1 K_{f*} )
 
         Note: This model currently does not allow full output covariances
         """

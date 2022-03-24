@@ -32,16 +32,19 @@ def base_conditional(
     white: bool = False,
 ) -> MeanAndVariance:
     r"""
-    Given a g1 and g2, and distribution p and q such that
+    Given a g1 and g2, and distribution p and q such that::
+
       p(g2) = N(g2; 0, Kmm)
 
       p(g1) = N(g1; 0, Knn)
       p(g1 | g2) = N(g1; Knm (Kmm⁻¹) g2, Knn - Knm (Kmm⁻¹) Kmn)
 
-    And
+    And::
+
       q(g2) = N(g2; f, q_sqrt q_sqrtᵀ)
 
-    This method computes the mean and (co)variance of
+    This method computes the mean and (co)variance of::
+
       q(g1) = ∫ q(g2) p(g1 | g2)
 
     :param Kmn: [M, ..., N]
@@ -175,12 +178,13 @@ def sample_mvn(
     mean: tf.Tensor, cov: tf.Tensor, full_cov: bool, num_samples: Optional[int] = None
 ) -> tf.Tensor:
     """
-    Returns a sample from a D-dimensional Multivariate Normal distribution
+    Returns a sample from a D-dimensional Multivariate Normal distribution.
+
     :param mean: [..., N, D]
     :param cov: [..., N, D] or [..., N, D, D]
     :param full_cov: if `True` return a "full" covariance matrix, otherwise a "diag":
-    - "full": cov holds the full covariance matrix (without jitter)
-    - "diag": cov holds the diagonal elements of the covariance matrix
+        - "full": cov holds the full covariance matrix (without jitter)
+        - "diag": cov holds the diagonal elements of the covariance matrix
     :return: sample from the MVN of shape [..., (S), N, D], S = num_samples
     """
     shape_constraints = [
@@ -228,14 +232,14 @@ def expand_independent_outputs(fvar: tf.Tensor, full_cov: bool, full_output_cov:
 
     :param fvar: has shape [N, P] (full_cov = False) or [P, N, N] (full_cov = True).
     :return:
-    1. full_cov: True and full_output_cov: True
-       fvar [N, P, N, P]
-    2. full_cov: True and full_output_cov: False
-       fvar [P, N, N]
-    3. full_cov: False and full_output_cov: True
-       fvar [N, P, P]
-    4. full_cov: False and full_output_cov: False
-       fvar [N, P]
+        1. full_cov: True and full_output_cov: True
+           fvar [N, P, N, P]
+        2. full_cov: True and full_output_cov: False
+           fvar [P, N, N]
+        3. full_cov: False and full_output_cov: True
+           fvar [N, P, P]
+        4. full_cov: False and full_output_cov: False
+           fvar [N, P]
     """
     if full_cov and full_output_cov:
         fvar = tf.linalg.diag(tf.transpose(fvar))  # [N, N, P, P]
@@ -263,7 +267,9 @@ def independent_interdomain_conditional(
 ) -> MeanAndVariance:
     """
     The inducing outputs live in the g-space (R^L).
+
     Interdomain conditional calculation.
+
     :param Kmn: [M, L, N, P]
     :param Kmm: [L, M, M]
     :param Knn: [N, P]  or  [N, P, P]  or  [P, N, N]  or  [N, P, N, P]
@@ -367,6 +373,7 @@ def fully_correlated_conditional(
     """
     This function handles conditioning of multi-output GPs in the case where the conditioning
     points are all fully correlated, in both the prior and posterior.
+
     :param Kmn: [M, N, P]
     :param Kmm: [M, M]
     :param Knn: [N, P] or [N, P, N, P]
@@ -407,6 +414,7 @@ def fully_correlated_conditional_repeat(
     This function handles conditioning of multi-output GPs in the case where the conditioning
     points are all fully correlated, in both the prior and posterior.
     Note: This conditional can handle 'repetitions' R, given in `f` and `q_sqrt`.
+
     :param Kmn: [M, N, P]
     :param Kmm: [M, M]
     :param Knn: [N, P] or [N, P, P] or [P, N, N] or [N, P, N, P]
@@ -599,9 +607,12 @@ def separate_independent_conditional_implementation(
     q_sqrt: Optional[tf.Tensor] = None,
     white: bool = False,
 ) -> MeanAndVariance:
-    """Multi-output GP with independent GP priors.
+    """
+    Multi-output GP with independent GP priors.
+
     Number of latent processes equals the number of outputs (L = P).
     The covariance matrices used to calculate the conditional have the following shape:
+
     - Kuu: [P, M, M]
     - Kuf: [P, M, N]
     - Kff: [P, N] or [P, N, N]

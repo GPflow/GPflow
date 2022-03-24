@@ -48,14 +48,15 @@ class SGPRBase_deprecated(GPModel, InternalDataTrainingLossMixin):
         noise_variance: float = 1.0,
     ):
         """
-        `data`:  a tuple of (X, Y), where the inputs X has shape [N, D]
-            and the outputs Y has shape [N, R].
-        `inducing_variable`:  an InducingPoints instance or a matrix of
-            the pseudo inputs Z, of shape [M, D].
-        `kernel`, `mean_function` are appropriate GPflow objects
-
         This method only works with a Gaussian likelihood, its variance is
         initialized to `noise_variance`.
+
+        :param data: a tuple of (X, Y), where the inputs X has shape [N, D]
+            and the outputs Y has shape [N, R].
+        :param inducing_variable:  an InducingPoints instance or a matrix of
+            the pseudo inputs Z, of shape [M, D].
+        :param kernel: An appropriate GPflow kernel object.
+        :param mean_function: An appropriate GPflow mean function object.
         """
         likelihood = likelihoods.Gaussian(noise_variance)
         X_data, Y_data = data_input_to_tensor(data)
@@ -159,13 +160,14 @@ class SGPR_deprecated(SGPRBase_deprecated):
         return self.CommonTensors(A, B, LB, AAT, L)
 
     def logdet_term(self, common: "SGPR.CommonTensors") -> tf.Tensor:
-        """
+        r"""
         Bound from Jensen's Inequality:
+
         .. math::
-            log |K + σ²I| <= log |Q + σ²I| + N * log (1 + tr(K - Q)/(σ²N))
+            \log |K + σ²I| <= \log |Q + σ²I| + N * \log (1 + \textrm{tr}(K - Q)/(σ²N))
 
         :param common: A named tuple containing matrices that will be used
-        :return: log_det, lower bound on -.5 * output_dim * log |K + σ²I|
+        :return: log_det, lower bound on :math:`-.5 * \textrm{output_dim} * \log |K + σ²I|`
         """
         LB = common.LB
         AAT = common.AAT

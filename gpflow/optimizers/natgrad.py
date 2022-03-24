@@ -326,12 +326,16 @@ def swap_dimensions(
 ) -> Callable[..., Tuple[tf.Tensor, tf.Tensor]]:
     """
     Converts between GPflow indexing and tensorflow indexing
-    `method` is a function that broadcasts over the first dimension (i.e. like all tensorflow matrix ops):
-        `method` inputs [D, N, 1], [D, N, N]
-        `method` outputs [D, N, 1], [D, N, N]
+    `method` is a function that broadcasts over the first dimension (i.e. like all tensorflow matrix
+    ops):
+
+    * `method` inputs [D, N, 1], [D, N, N]
+    * `method` outputs [D, N, 1], [D, N, N]
+
     :return: Function that broadcasts over the final dimension (i.e. compatible with GPflow):
-        inputs: [N, D], [D, N, N]
-        outputs: [N, D], [D, N, N]
+
+        * inputs: [N, D], [D, N, N]
+        * outputs: [N, D], [D, N, N]
     """
 
     @functools.wraps(method)

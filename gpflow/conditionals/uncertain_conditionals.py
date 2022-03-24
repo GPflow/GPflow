@@ -41,6 +41,7 @@ def uncertain_conditional(
     """
     Calculates the conditional for uncertain inputs Xnew, p(Xnew) = N(Xnew_mu, Xnew_var).
     See ``conditional`` documentation for further reference.
+
     :param Xnew_mu: mean of the inputs, size [N, D]in
     :param Xnew_var: covariance matrix of the inputs, size [N, n, n]
     :param inducing_variable: gpflow.InducingVariable object, only InducingPoints is supported
@@ -48,11 +49,11 @@ def uncertain_conditional(
     :param q_mu: mean inducing points, size [M, Dout]
     :param q_sqrt: cholesky of the covariance matrix of the inducing points, size [t, M, M]
     :param full_output_cov: boolean wheter to compute covariance between output dimension.
-                            Influences the shape of return value ``fvar``. Default is False
+        Influences the shape of return value ``fvar``. Default is False
     :param white: boolean whether to use whitened representation. Default is False.
     :return fmean, fvar: mean and covariance of the conditional, size ``fmean`` is [N, Dout],
-            size ``fvar`` depends on ``full_output_cov``: if True ``f_var`` is [N, t, t],
-            if False then ``f_var`` is [N, Dout]
+        size ``fvar`` depends on ``full_output_cov``: if True ``f_var`` is [N, t, t],
+        if False then ``f_var`` is [N, Dout]
     """
 
     if not isinstance(inducing_variable, InducingPoints):

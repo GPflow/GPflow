@@ -49,18 +49,26 @@ class Softmax(MonteCarloLikelihood):
 
 
 class RobustMax(Module):
-    """
+    r"""
     This class represent a multi-class inverse-link function. Given a vector
-    f=[f_1, f_2, ... f_k], the result of the mapping is
+    :math:`f=[f_1, f_2, ... f_k]`, the result of the mapping is
 
-    y = [y_1 ... y_k]
+    .. math::
+
+       y = [y_1 ... y_k]
 
     with
 
-    y_i = (1-epsilon)  i == argmax(f)
-          epsilon/(k-1)  otherwise
+    .. math::
 
-    where k is the number of classes.
+       y_i = \left\{
+       \begin{array}{ll}
+           (1-\varepsilon)   & \textrm{if} \ i = \textrm{argmax}(f) \\
+           \varepsilon/(k-1) & \textrm{otherwise}
+       \end{array}
+       \right.
+
+    where :math:`k` is the number of classes.
     """
 
     def __init__(self, num_classes: int, epsilon: float = 1e-3, **kwargs: Any) -> None:

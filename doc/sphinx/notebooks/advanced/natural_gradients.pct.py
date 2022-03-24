@@ -52,7 +52,7 @@ iterations = ci_niter(5)
 autotune = tf.data.experimental.AUTOTUNE
 
 # %% [markdown]
-# ### VGP is a GPR
+# ## VGP is a GPR
 
 # %% [markdown]
 # The following section demonstrates how natural gradients can turn VGP into GPR *in a single step, if the likelihood is Gaussian*.
@@ -100,7 +100,7 @@ natgrad_opt.minimize(vgp.training_loss, var_list=variational_params)
 vgp.elbo().numpy()
 
 # %% [markdown]
-# ### Optimize both variational parameters and kernel hyperparameters together
+# ## Optimize both variational parameters and kernel hyperparameters together
 #
 # In the Gaussian likelihood case we can iterate between an Adam update for the hyperparameters and a NatGrad update for the variational parameters. That way, we achieve optimization of hyperparameters as if the model were a GPR.
 
@@ -136,7 +136,7 @@ print(f"GPR lengthscales = {gpr.kernel.lengthscales.numpy():.04f}")
 print(f"VGP lengthscales = {vgp.kernel.lengthscales.numpy():.04f}")
 
 # %% [markdown]
-# ### Natural gradients also work for the sparse model
+# ## Natural gradients also work for the sparse model
 # Similarly, natural gradients turn SVGP into SGPR in the Gaussian likelihood case. <br>
 # We can again combine natural gradients with Adam to update both variational parameters and hyperparameters too.<br>
 # Here we'll just do a single natural step demonstration.
@@ -177,7 +177,7 @@ natgrad_opt.minimize(svgp.training_loss_closure(data), var_list=variational_para
 svgp.elbo(data).numpy()
 
 # %% [markdown]
-# ### Minibatches
+# ## Minibatches
 # A crucial property of the natural gradient method is that it still works with minibatches.
 # In practice though, we need to use a smaller gamma.
 
@@ -205,9 +205,9 @@ for _ in range(ci_niter(100)):
 np.average([svgp.elbo(next(data_minibatch_it)) for _ in ci_range(100)])
 
 # %% [markdown]
-# ### Comparison with ordinary gradients in the conjugate case
+# ## Comparison with ordinary gradients in the conjugate case
 #
-# ##### (Take home message: natural gradients are always better)
+# (Take home message: natural gradients are always better)
 #
 # Compared to SVGP with ordinary gradients with minibatches, the natural gradient optimizer is much faster in the Gaussian case.
 #
@@ -280,10 +280,11 @@ np.average([svgp_ordinary.elbo(next(data_minibatch_it)) for _ in ci_range(100)])
 np.average([svgp_natgrad.elbo(next(data_minibatch_it)) for _ in ci_range(100)])
 
 # %% [markdown]
-# ### Comparison with ordinary gradients in the non-conjugate case
-# #### Binary classification
+# ## Comparison with ordinary gradients in the non-conjugate case
 #
-# ##### (Take home message: natural gradients are usually better)
+# ### Binary classification
+#
+# (Take home message: natural gradients are usually better)
 #
 # We can use natural gradients even when the likelihood isn't Gaussian. It isn't guaranteed to be better, but it usually is better in practical situations.
 
