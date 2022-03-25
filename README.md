@@ -1,5 +1,5 @@
 <div style="text-align:center">
-<img width="500" height="200" src="https://github.com/GPflow/GPflow/blob/develop/doc/source/_static/gpflow_logo.svg">
+<img width="500" height="200" src="https://github.com/GPflow/GPflow/blob/develop/doc/sphinx/_static/gpflow_logo.svg">
 </div>
 
 [![CircleCI](https://circleci.com/gh/GPflow/GPflow/tree/develop.svg?style=svg)](https://circleci.com/gh/GPflow/GPflow/tree/develop)
@@ -147,7 +147,7 @@ Unfortunately, there is no such thing as backward compatibility for GPflow _mode
 We have stopped development and support for GPflow based on TensorFlow 1.
 The latest release supporting TensorFlow 1 is [v1.5.1](https://github.com/GPflow/GPflow/releases/tag/v1.5.1).
 [Documentation](https://gpflow.readthedocs.io/en/v1.5.1-docs/) and
-[tutorials](https://nbviewer.jupyter.org/github/GPflow/GPflow/blob/v1.5.1/doc/source/notebooks/intro.ipynb)
+[tutorials](https://nbviewer.jupyter.org/github/GPflow/GPflow/blob/v1.5.1/doc/sphinx/notebooks/intro.ipynb)
 will remain available.
 
 
