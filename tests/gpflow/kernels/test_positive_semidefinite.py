@@ -42,7 +42,15 @@ def test_kernel_interface(kernel_class: Type[kernels.Kernel]) -> None:
     X = rng.randn(N, D)
     X2 = rng.randn(N2, D)
     kernel = kernel_class()
-    test_utils.test_kernel(kernel, X, X2)
+
+    if isinstance(kernel, kernels.White):
+        # The White kernel is special in that it is based on indices, not
+        # values, and hence White()(X, X2) is zero everywhere. This means we
+        # need to explicitly check psd-ness of just kernel(X) itself.
+        K = kernel(X)
+        test_utils.assert_psd_matrix(K)
+    else:
+        test_utils.test_kernel(kernel, X, X2)
 
 
 @pytest.mark.parametrize(
