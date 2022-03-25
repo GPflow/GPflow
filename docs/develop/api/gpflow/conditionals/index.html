@@ -723,45 +723,42 @@ triangular) or [M, R] (diagonal)</p></li>
 - Kuu: [M, M]
 - Kuf: [M, N]
 - Kff: [N, N]</p>
-<dl class="field-list">
+<p>Further reference:</p>
+<ul class="simple">
+<li><p>See <cite>gpflow.conditionals._dense_conditional</cite> (below) for a detailed explanation of
+conditional in the single-output case.</p></li>
+<li><p>See the multiouput notebook for more information about the multiouput framework.</p></li>
+</ul>
+<dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl>
-<dt><strong>:param Xnew: data matrix, size [N, D].</strong></dt><dd></dd>
-<dt><strong>:param f: data matrix, [M, R]</strong></dt><dd></dd>
-<dt><strong>:param full_cov: return the covariance between the datapoints</strong></dt><dd></dd>
-<dt><strong>:param full_output_cov: return the covariance between the outputs.</strong></dt><dd><dl class="simple">
-<dt>NOTE: as we are using a single-output kernel with repetitions</dt><dd><p>these covariances will be zero.</p>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>Xnew</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – data matrix, size [N, D].</p></li>
+<li><p><strong>f</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – data matrix, [M, R]</p></li>
+<li><p><strong>full_cov</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – return the covariance between the datapoints</p></li>
+<li><p><strong>full_output_cov</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – <p>return the covariance between the outputs.
+NOTE: as we are using a single-output kernel with repetitions</p>
+<blockquote>
+<div><p>these covariances will be zero.</p>
+</div></blockquote>
+</p></li>
+<li><p><strong>q_sqrt</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]) – matrix of standard-deviations or Cholesky matrices,
+size [M, R] or [R, M, M].</p></li>
+<li><p><strong>white</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – boolean of whether to use the whitened representation</p></li>
+<li><p><strong>inducing_variable</strong> (<a class="reference internal" href="../inducing_variables/index.html#gpflow.inducing_variables.InducingVariables" title="gpflow.inducing_variables.inducing_variables.InducingVariables"><code class="xref py py-class docutils literal notranslate"><span class="pre">InducingVariables</span></code></a>) – </p></li>
+<li><p><strong>kernel</strong> (<a class="reference internal" href="../kernels/index.html#gpflow.kernels.Kernel" title="gpflow.kernels.base.Kernel"><code class="xref py py-class docutils literal notranslate"><span class="pre">Kernel</span></code></a>) – </p></li>
+</ul>
 </dd>
-</dl>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]</p>
 </dd>
-<dt><strong>:param q_sqrt: matrix of standard-deviations or Cholesky matrices,</strong></dt><dd><p>size [M, R] or [R, M, M].</p>
-</dd>
-<dt><strong>:param white: boolean of whether to use the whitened representation</strong></dt><dd></dd>
-<dt><strong>:return:</strong></dt><dd><ul class="simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><ul class="simple">
 <li><p>mean:     [N, R]</p></li>
 <li><p>variance: [N, R], [R, N, N], [N, R, R] or [N, R, N, R]</p></li>
 </ul>
 <p>Please see <cite>gpflow.conditional._expand_independent_outputs</cite> for more information
 about the shape of the variance, depending on <cite>full_cov</cite> and <cite>full_output_cov</cite>.</p>
-</dd>
-</dl>
-</dd>
-</dl>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>Xnew</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – </p></li>
-<li><p><strong>inducing_variable</strong> (<a class="reference internal" href="../inducing_variables/index.html#gpflow.inducing_variables.InducingVariables" title="gpflow.inducing_variables.inducing_variables.InducingVariables"><code class="xref py py-class docutils literal notranslate"><span class="pre">InducingVariables</span></code></a>) – </p></li>
-<li><p><strong>kernel</strong> (<a class="reference internal" href="../kernels/index.html#gpflow.kernels.Kernel" title="gpflow.kernels.base.Kernel"><code class="xref py py-class docutils literal notranslate"><span class="pre">Kernel</span></code></a>) – </p></li>
-<li><p><strong>f</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – </p></li>
-<li><p><strong>full_cov</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – </p></li>
-<li><p><strong>full_output_cov</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – </p></li>
-<li><p><strong>q_sqrt</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]) – </p></li>
-<li><p><strong>white</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – </p></li>
-</ul>
-</dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p><code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]</p>
+</p>
 </dd>
 </dl>
 </dd></dl>
@@ -802,6 +799,8 @@ for R functions.</p></li>
 size [M, R] or [R, M, M].</p></li>
 <li><p><strong>white</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – boolean of whether to use the whitened representation as
 described above.</p></li>
+<li><p><strong>full_cov</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – </p></li>
+<li><p><strong>full_output_cov</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – </p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type</dt>
@@ -813,14 +812,6 @@ described above.</p></li>
 <li><p>variance: [N, R] (full_cov = False), [R, N, N] (full_cov = True)</p></li>
 </ul>
 </p>
-</dd>
-</dl>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>full_cov</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – </p></li>
-<li><p><strong>full_output_cov</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – </p></li>
-</ul>
 </dd>
 </dl>
 </dd></dl>
@@ -838,21 +829,38 @@ The covariance matrices used to calculate the conditional have the following sha
 - Kuu: [M, M]
 - Kuf: [M, N]
 - Kff: N or [N, N]</p>
+<p>Further reference:</p>
+<ul class="simple">
+<li><p>See <cite>gpflow.conditionals._conditional</cite> for a detailed explanation of
+conditional in the single-output case.</p></li>
+<li><p>See the multioutput notebook for more information about the multioutput framework.</p></li>
+</ul>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>Xnew</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – </p></li>
+<li><p><strong>Xnew</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – data matrix, size [N, D].</p></li>
+<li><p><strong>f</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – data matrix, [M, P]</p></li>
+<li><p><strong>full_cov</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – return the covariance between the datapoints</p></li>
+<li><p><strong>full_output_cov</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – return the covariance between the outputs.
+Note: as we are using a independent kernel these covariances will be zero.</p></li>
+<li><p><strong>q_sqrt</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]) – matrix of standard-deviations or Cholesky matrices,
+size [M, P] or [P, M, M].</p></li>
+<li><p><strong>white</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – boolean of whether to use the whitened representation</p></li>
 <li><p><strong>inducing_variable</strong> (<a class="reference internal" href="../inducing_variables/index.html#gpflow.inducing_variables.SharedIndependentInducingVariables" title="gpflow.inducing_variables.multioutput.inducing_variables.SharedIndependentInducingVariables"><code class="xref py py-class docutils literal notranslate"><span class="pre">SharedIndependentInducingVariables</span></code></a>) – </p></li>
 <li><p><strong>kernel</strong> (<a class="reference internal" href="../kernels/index.html#gpflow.kernels.SharedIndependent" title="gpflow.kernels.multioutput.kernels.SharedIndependent"><code class="xref py py-class docutils literal notranslate"><span class="pre">SharedIndependent</span></code></a>) – </p></li>
-<li><p><strong>f</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – </p></li>
-<li><p><strong>full_cov</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – </p></li>
-<li><p><strong>full_output_cov</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – </p></li>
-<li><p><strong>q_sqrt</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]) – </p></li>
-<li><p><strong>white</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – </p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type</dt>
 <dd class="field-even"><p><code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]</p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><ul class="simple">
+<li><p>mean:     [N, P]</p></li>
+<li><p>variance: [N, P], [P, N, N], [N, P, P] or [N, P, N, P]</p></li>
+</ul>
+<p>Please see <cite>gpflow.conditional._expand_independent_outputs</cite> for more information
+about the shape of the variance, depending on <cite>full_cov</cite> and <cite>full_output_cov</cite>.</p>
+</p>
 </dd>
 </dl>
 </dd></dl>
@@ -899,6 +907,13 @@ The covariance matrices used to calculate the conditional have the following sha
 - Kuu: [L, M, M]
 - Kuf: [M, L, N, P]
 - Kff: [N, P, N, P], [N, P, P], [N, P]</p>
+<p>Further reference:</p>
+<ul class="simple">
+<li><p>See <cite>gpflow.conditionals._conditional</cite> for a detailed explanation of
+conditional in the single-output case.</p></li>
+<li><p>See the multioutput notebook for more information about the multioutput framework.</p></li>
+<li><p>See above for the parameters and the return value.</p></li>
+</ul>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -932,24 +947,22 @@ The covariance matrices used to calculate the conditional have the following sha
 - Kuu: [M, L, M, L]
 - Kuf: [M, L, N, P]
 - Kff: [N, P, N, P], [N, P, P], [N, P]</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>:param f: variational mean, [L, 1]</strong></dt><dd></dd>
-<dt><strong>:param q_sqrt: standard-deviations or cholesky, [L, 1]  or  [1, L, L]</strong></dt><dd></dd>
-</dl>
-</dd>
-</dl>
+<p>Further reference:</p>
+<ul class="simple">
+<li><p>See <cite>gpflow.conditionals._conditional</cite> for a detailed explanation of
+conditional in the single-output case.</p></li>
+<li><p>See the multioutput notebook for more information about the multioutput framework.</p></li>
+</ul>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
+<li><p><strong>f</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – variational mean, [L, 1]</p></li>
+<li><p><strong>q_sqrt</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]) – standard-deviations or cholesky, [L, 1]  or  [1, L, L]</p></li>
 <li><p><strong>Xnew</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – </p></li>
 <li><p><strong>inducing_variable</strong> (<a class="reference internal" href="../inducing_variables/index.html#gpflow.inducing_variables.InducingPoints" title="gpflow.inducing_variables.inducing_variables.InducingPoints"><code class="xref py py-class docutils literal notranslate"><span class="pre">InducingPoints</span></code></a>) – </p></li>
 <li><p><strong>kernel</strong> (<a class="reference internal" href="../kernels/index.html#gpflow.kernels.MultioutputKernel" title="gpflow.kernels.multioutput.kernels.MultioutputKernel"><code class="xref py py-class docutils literal notranslate"><span class="pre">MultioutputKernel</span></code></a>) – </p></li>
-<li><p><strong>f</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – </p></li>
 <li><p><strong>full_cov</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – </p></li>
 <li><p><strong>full_output_cov</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – </p></li>
-<li><p><strong>q_sqrt</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]) – </p></li>
 <li><p><strong>white</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – </p></li>
 </ul>
 </dd>
@@ -973,6 +986,12 @@ The covariance matrices used to calculate the conditional have the following sha
 - Kuu: [L, M, M]
 - Kuf: [L, M, N]
 - Kff: [L, N] or [L, N, N]</p>
+<p>Further reference:</p>
+<ul class="simple">
+<li><p>See <cite>gpflow.conditionals._conditional</cite> for a detailed explanation of
+conditional in the single-output case.</p></li>
+<li><p>See the multioutput notebook for more information about the multioutput framework.</p></li>
+</ul>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -1090,23 +1109,19 @@ See <code class="docutils literal notranslate"><span class="pre">conditional</sp
 </div></blockquote>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>white</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – boolean whether to use whitened representation. Default is False.</p>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>white</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – boolean whether to use whitened representation. Default is False.</p></li>
+<li><p><strong>mean_function</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<a class="reference internal" href="../mean_functions/index.html#gpflow.mean_functions.MeanFunction" title="gpflow.mean_functions.MeanFunction"><code class="xref py py-class docutils literal notranslate"><span class="pre">MeanFunction</span></code></a>]) – </p></li>
+<li><p><strong>full_cov</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – </p></li>
+</ul>
 </dd>
 <dt class="field-even">Return fmean, fvar</dt>
 <dd class="field-even"><p>mean and covariance of the conditional, size <code class="docutils literal notranslate"><span class="pre">fmean</span></code> is [N, Dout],
 size <code class="docutils literal notranslate"><span class="pre">fvar</span></code> depends on <code class="docutils literal notranslate"><span class="pre">full_output_cov</span></code>: if True <code class="docutils literal notranslate"><span class="pre">f_var</span></code> is [N, t, t],
 if False then <code class="docutils literal notranslate"><span class="pre">f_var</span></code> is [N, Dout]</p>
 </dd>
-</dl>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>mean_function</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<a class="reference internal" href="../mean_functions/index.html#gpflow.mean_functions.MeanFunction" title="gpflow.mean_functions.MeanFunction"><code class="xref py py-class docutils literal notranslate"><span class="pre">MeanFunction</span></code></a>]) – </p></li>
-<li><p><strong>full_cov</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – </p></li>
-</ul>
-</dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p><code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]</p>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]</p>
 </dd>
 </dl>
 </dd></dl>
