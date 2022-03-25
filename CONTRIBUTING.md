@@ -72,7 +72,7 @@ The main purpose of versioning GPflow is user convenience.
 
 We use the [semantic versioning scheme](https://semver.org/). The semver implies `MAJOR.MINOR.PATCH` version scheme, where `MAJOR` changes when there are incompatibilities in API, `MINOR` means adding functionality without breaking existing API and `PATCH` presumes the code update has backward compatible bug fixes.
 
-When incrementing the version number, this has to be reflected both in `./VERSION` and in `./doc/source/conf.py`.
+When incrementing the version number, this has to be reflected both in `./VERSION` and in `./doc/sphinx/conf.py`.
 
 ### Keeping up with TensorFlow
 
