@@ -50,7 +50,7 @@ from .base_types import Shape
 
 if TYPE_CHECKING:
     from .argument_ref import ArgumentRef
-    from .specs import ParsedShapeSpec
+    from .specs import ParsedNoteSpec, ParsedShapeSpec
 
 _UNKNOWN_FILE = "<Unknown file>"
 _UNKNOWN_LINE = "<Unknown line>"
@@ -372,6 +372,18 @@ class ShapeContext(ErrorContext):
             actual_str = f"[{', '.join(str(dim) for dim in self.actual)}]"
         builder.add_columned_line("Expected:", self.expected)
         builder.add_columned_line("Actual:", actual_str)
+
+
+@dataclass(frozen=True)
+class NoteContext(ErrorContext):
+    """
+    An error occurred in a context where a user has added a note.
+    """
+
+    note: "ParsedNoteSpec"
+
+    def print(self, builder: MessageBuilder) -> None:
+        builder.add_columned_line("Note:", self.note.note)
 
 
 @dataclass(frozen=True)

@@ -13,9 +13,18 @@
 # limitations under the License.
 import pytest
 
-from gpflow.experimental.check_shapes.specs import ParsedArgumentSpec
+from gpflow.experimental.check_shapes.specs import (
+    ParsedArgumentSpec,
+    ParsedFunctionSpec,
+    ParsedNoteSpec,
+)
 
 from .utils import make_argument_ref, make_shape_spec, varrank
+
+
+def test_note_spec() -> None:
+    note_spec = ParsedNoteSpec("foo")
+    assert "# foo" == repr(note_spec)
 
 
 @pytest.mark.parametrize(
@@ -25,6 +34,7 @@ from .utils import make_argument_ref, make_shape_spec, varrank
             ParsedArgumentSpec(
                 make_argument_ref("foo"),
                 make_shape_spec(),
+                note=None,
             ),
             "foo: []",
         ),
@@ -32,6 +42,7 @@ from .utils import make_argument_ref, make_shape_spec, varrank
             ParsedArgumentSpec(
                 make_argument_ref("foo"),
                 make_shape_spec(1, 2),
+                note=None,
             ),
             "foo: [1, 2]",
         ),
@@ -39,6 +50,7 @@ from .utils import make_argument_ref, make_shape_spec, varrank
             ParsedArgumentSpec(
                 make_argument_ref("foo"),
                 make_shape_spec("x", "y"),
+                note=None,
             ),
             "foo: [x, y]",
         ),
@@ -46,6 +58,7 @@ from .utils import make_argument_ref, make_shape_spec, varrank
             ParsedArgumentSpec(
                 make_argument_ref("foo"),
                 make_shape_spec(varrank("x"), "y"),
+                note=None,
             ),
             "foo: [x..., y]",
         ),
@@ -53,6 +66,7 @@ from .utils import make_argument_ref, make_shape_spec, varrank
             ParsedArgumentSpec(
                 make_argument_ref("foo"),
                 make_shape_spec("x", varrank("y"), "z"),
+                note=None,
             ),
             "foo: [x, y..., z]",
         ),
@@ -60,10 +74,66 @@ from .utils import make_argument_ref, make_shape_spec, varrank
             ParsedArgumentSpec(
                 make_argument_ref("foo"),
                 make_shape_spec(None, varrank(None), None),
+                note=None,
             ),
             "foo: [., ..., .]",
         ),
+        (
+            ParsedArgumentSpec(
+                make_argument_ref("foo"),
+                make_shape_spec("x", "y"),
+                note=ParsedNoteSpec("bar"),
+            ),
+            "foo: [x, y]  # bar",
+        ),
     ],
 )
-def test_specs(argument_spec: ParsedArgumentSpec, expected_repr: str) -> None:
+def test_argument_spec(argument_spec: ParsedArgumentSpec, expected_repr: str) -> None:
     assert expected_repr == repr(argument_spec)
+
+
+@pytest.mark.parametrize(
+    "function_spec,expected_repr",
+    [
+        (ParsedFunctionSpec((), ()), ""),
+        (
+            ParsedFunctionSpec(
+                (
+                    ParsedArgumentSpec(
+                        make_argument_ref("foo"),
+                        make_shape_spec("x", "y"),
+                        note=None,
+                    ),
+                ),
+                (ParsedNoteSpec("note 1"),),
+            ),
+            "foo: [x, y]\n# note 1",
+        ),
+        (
+            ParsedFunctionSpec(
+                (
+                    ParsedArgumentSpec(
+                        make_argument_ref("foo"),
+                        make_shape_spec("x", "y"),
+                        note=None,
+                    ),
+                    ParsedArgumentSpec(
+                        make_argument_ref("bar"),
+                        make_shape_spec("x", "z"),
+                        note=ParsedNoteSpec("bar note"),
+                    ),
+                ),
+                (
+                    ParsedNoteSpec("note 1"),
+                    ParsedNoteSpec("note 2"),
+                ),
+            ),
+            """foo: [x, y]
+bar: [x, z]  # bar note
+# note 1
+# note 2""",
+        ),
+    ],
+)
+def test_function_spec(function_spec: ParsedFunctionSpec, expected_repr: str) -> None:
+    assert expected_repr == repr(function_spec)
