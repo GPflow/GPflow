@@ -8,27 +8,24 @@
 
     <title>Derivation of SGPR equations &#8212; GPflow 2.4.0 documentation</title>
     
-    <link href="../../_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
 <link href="../../_static/styles/pydata-sphinx-theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
-  
+
     
-    <link rel="stylesheet"
-      href="../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
-    <link rel="preload" as="font" type="font/woff2" crossorigin
-      href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
-    <link rel="preload" as="font" type="font/woff2" crossorigin
-      href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
-  
-    
-      
-  
-    
+  <link rel="stylesheet"
+    href="../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../../_static/styles/pydata-sphinx-theme.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/pydata-custom.css" />
     
-    <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf">
-  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf">
+
     <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
     <script src="../../_static/jquery.js"></script>
     <script src="../../_static/underscore.js"></script>
@@ -48,7 +45,7 @@
     <!-- Google Analytics -->
     
   </head>
-  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="80">
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="60">
     
     <div class="container-fluid" id="banner"></div>
 
@@ -144,13 +141,6 @@
 -->
 
 <script type="text/javascript">
-// Construct the target URL from the JSON components
-function buildURL(entry) {
-    var template = "https://gpflow.github.io/GPflow/{version}/index.html";  // supplied by jinja
-    template = template.replace("{version}", entry.version);
-    return template;
-}
-
 // Check if corresponding page path exists in other version of docs
 // and, if so, go there instead of the homepage of the other docs version
 function checkPageExistsAndRedirect(event) {
@@ -186,14 +176,16 @@ function checkPageExistsAndRedirect(event) {
             const node = document.createElement("a");
             node.setAttribute("class", "list-group-item list-group-item-action py-1");
             node.textContent = `${entry.name}`;
-            // get the base URL for that doc version, add the current page's
-            // path to it, and set as `href`
-            entry.url = buildURL(entry);
             node.setAttribute("href", `${entry.url}${currentFilePath}`);
             // on click, AJAX calls will check if the linked page exists before
             // trying to redirect, and if not, will redirect to the homepage
             // for that version of the docs.
             node.onclick = checkPageExistsAndRedirect;
+            // Add dataset values for the version and name in case people want
+            // to apply CSS styling based on this information.
+            node.dataset["versionName"] = entry.name;
+            node.dataset["version"] = entry.version;
+
             $("#version_switcher_menu").append(node);
             // replace dropdown button text with the preferred display name of
             // this version, rather than using sphinx's  variable.
@@ -201,7 +193,9 @@ function checkPageExistsAndRedirect(event) {
             // version's entry
             if (entry.version == "develop") {
                 node.classList.add("active");
-                $("#version_switcher_button").text(entry.name);
+                let btn = document.getElementById("version_switcher_button");
+                btn.innerText = btn.dataset["activeVersionName"] = entry.name;
+                btn.dataset["activeVersion"] = entry.version;
             }
         });
     });
@@ -427,7 +421,7 @@ function checkPageExistsAndRedirect(event) {
               
               <div class="toc-item">
                 
-<div class="tocsection onthispage pt-5 pb-3">
+<div class="tocsection onthispage mt-5 pt-1 pb-3">
     <i class="fas fa-list"></i> On this page
 </div>
 
@@ -470,12 +464,12 @@ function checkPageExistsAndRedirect(event) {
               <div>
                 
   <section id="Derivation-of-SGPR-equations">
-<h1>Derivation of SGPR equations<a class="headerlink" href="#Derivation-of-SGPR-equations" title="Permalink to this headline">¶</a></h1>
+<h1>Derivation of SGPR equations<a class="headerlink" href="#Derivation-of-SGPR-equations" title="Permalink to this headline">#</a></h1>
 <p><em>James Hensman, March 2016. Corrections by Alex Matthews, December 2016</em></p>
 <p>This notebook contains a derivation of the form of the equations for the marginal likelihood bound and predictions for the sparse Gaussian process regression model in GPflow, <code class="docutils literal notranslate"><span class="pre">gpflow.models.SGPR</span></code>.</p>
 <p>The primary reference for this work is Titsias 2009 [1], though other works (Hensman et al. 2013 [2], Matthews et al. 2016 [3]) are useful for clarifying the prediction density.</p>
 <section id="Marginal-likelihood-bound">
-<h2>Marginal likelihood bound<a class="headerlink" href="#Marginal-likelihood-bound" title="Permalink to this headline">¶</a></h2>
+<h2>Marginal likelihood bound<a class="headerlink" href="#Marginal-likelihood-bound" title="Permalink to this headline">#</a></h2>
 <p>The bound on the marginal likelihood (Titsias 2009) is:</p>
 <p><span class="math">\begin{equation}
 \log p(\mathbf y) \geq \log \mathcal N(\mathbf y\,|\,\mathbf 0,\, \mathbf Q_{ff} + \sigma^2 \mathbf I) - \tfrac{1}{2} \sigma^{-2}\textrm{tr}(\mathbf K_{ff} - \mathbf Q_{ff}) \triangleq \mathcal L
@@ -555,7 +549,7 @@ function checkPageExistsAndRedirect(event) {
 <p>The <code class="docutils literal notranslate"><span class="pre">SGPR</span></code> code implements this equation with small changes for multiple concurrent outputs (columns of the data matrix Y), and also a prior mean function.</p>
 </section>
 <section id="Prediction">
-<h2>Prediction<a class="headerlink" href="#Prediction" title="Permalink to this headline">¶</a></h2>
+<h2>Prediction<a class="headerlink" href="#Prediction" title="Permalink to this headline">#</a></h2>
 <p>At prediction time, we need to compute the mean and variance of the variational approximation at some new points <span class="math notranslate nohighlight">\(\mathbf X^\star\)</span>.</p>
 <p>Following Hensman et al. (2013), we know that all the information in the posterior approximation is contained in the Gaussian distribution <span class="math notranslate nohighlight">\(q(\mathbf u)\)</span>, which represents the distribution of function values at the inducing points <span class="math notranslate nohighlight">\(\mathbf Z\)</span>. Remember that:</p>
 <p><span class="math">\begin{equation}
@@ -596,7 +590,7 @@ p(\mathbf f^\star) = \mathcal N(\mathbf f^\star\,|\, \mathbf K_{\star u}\mathbf 
 <p>The code in <code class="docutils literal notranslate"><span class="pre">SGPR</span></code> implements this equation, with an additional switch depending on whether the full covariance matrix is required.</p>
 </section>
 <section id="References">
-<h2>References<a class="headerlink" href="#References" title="Permalink to this headline">¶</a></h2>
+<h2>References<a class="headerlink" href="#References" title="Permalink to this headline">#</a></h2>
 <p>[1] Titsias, M: Variational Learning of Inducing Variables in Sparse Gaussian Processes, PMLR 5:567-574, 2009</p>
 <p>[2] Hensman et al: Gaussian Processes for Big Data, UAI, 2013</p>
 <p>[3] Matthews et al: On Sparse Variational Methods and the Kullback-Leibler Divergence between Stochastic Processes, AISTATS, 2016</p>
@@ -613,8 +607,9 @@ p(\mathbf f^\star) = \mathcal N(\mathbf f^\star\,|\, \mathbf K_{\star u}\mathbf 
       </div>
     </div>
   
-    <script src="../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf"></script>
-  <footer class="footer mt-5 mt-md-0">
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf"></script>
+<footer class="footer mt-5 mt-md-0">
   <div class="container">
     
     <div class="footer-item">
@@ -625,7 +620,7 @@ p(\mathbf f^\star) = \mathcal N(\mathbf f^\star\,|\, \mathbf K_{\star u}\mathbf 
     
     <div class="footer-item">
       <p class="sphinx-version">
-Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.4.0.<br>
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.5.0.<br>
 </p>
     </div>
     

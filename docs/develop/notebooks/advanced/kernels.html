@@ -8,27 +8,24 @@
 
     <title>Manipulating kernels &#8212; GPflow 2.4.0 documentation</title>
     
-    <link href="../../_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
 <link href="../../_static/styles/pydata-sphinx-theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
-  
+
     
-    <link rel="stylesheet"
-      href="../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
-    <link rel="preload" as="font" type="font/woff2" crossorigin
-      href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
-    <link rel="preload" as="font" type="font/woff2" crossorigin
-      href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
-  
-    
-      
-  
-    
+  <link rel="stylesheet"
+    href="../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../../_static/styles/pydata-sphinx-theme.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/pydata-custom.css" />
     
-    <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf">
-  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf">
+
     <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
     <script src="../../_static/jquery.js"></script>
     <script src="../../_static/underscore.js"></script>
@@ -48,7 +45,7 @@
     <!-- Google Analytics -->
     
   </head>
-  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="80">
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="60">
     
     <div class="container-fluid" id="banner"></div>
 
@@ -144,13 +141,6 @@
 -->
 
 <script type="text/javascript">
-// Construct the target URL from the JSON components
-function buildURL(entry) {
-    var template = "https://gpflow.github.io/GPflow/{version}/index.html";  // supplied by jinja
-    template = template.replace("{version}", entry.version);
-    return template;
-}
-
 // Check if corresponding page path exists in other version of docs
 // and, if so, go there instead of the homepage of the other docs version
 function checkPageExistsAndRedirect(event) {
@@ -186,14 +176,16 @@ function checkPageExistsAndRedirect(event) {
             const node = document.createElement("a");
             node.setAttribute("class", "list-group-item list-group-item-action py-1");
             node.textContent = `${entry.name}`;
-            // get the base URL for that doc version, add the current page's
-            // path to it, and set as `href`
-            entry.url = buildURL(entry);
             node.setAttribute("href", `${entry.url}${currentFilePath}`);
             // on click, AJAX calls will check if the linked page exists before
             // trying to redirect, and if not, will redirect to the homepage
             // for that version of the docs.
             node.onclick = checkPageExistsAndRedirect;
+            // Add dataset values for the version and name in case people want
+            // to apply CSS styling based on this information.
+            node.dataset["versionName"] = entry.name;
+            node.dataset["version"] = entry.version;
+
             $("#version_switcher_menu").append(node);
             // replace dropdown button text with the preferred display name of
             // this version, rather than using sphinx's  variable.
@@ -201,7 +193,9 @@ function checkPageExistsAndRedirect(event) {
             // version's entry
             if (entry.version == "develop") {
                 node.classList.add("active");
-                $("#version_switcher_button").text(entry.name);
+                let btn = document.getElementById("version_switcher_button");
+                btn.innerText = btn.dataset["activeVersionName"] = entry.name;
+                btn.dataset["activeVersion"] = entry.version;
             }
         });
     });
@@ -427,7 +421,7 @@ function checkPageExistsAndRedirect(event) {
               
               <div class="toc-item">
                 
-<div class="tocsection onthispage pt-5 pb-3">
+<div class="tocsection onthispage mt-5 pt-1 pb-3">
     <i class="fas fa-list"></i> On this page
 </div>
 
@@ -733,7 +727,7 @@ div.rendered_html tbody tr:hover {
 }
 </style>
 <section id="Manipulating-kernels">
-<h1>Manipulating kernels<a class="headerlink" href="#Manipulating-kernels" title="Permalink to this headline">¶</a></h1>
+<h1>Manipulating kernels<a class="headerlink" href="#Manipulating-kernels" title="Permalink to this headline">#</a></h1>
 <p>GPflow comes with a range of kernels. In this notebook, we examine some of them, show how you can combine them to make new kernels, and discuss the <code class="docutils literal notranslate"><span class="pre">active_dims</span></code> feature.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
@@ -755,12 +749,12 @@ div.rendered_html tbody tr:hover {
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2022-03-25 13:03:00.819336: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcudart.so.11.0&#39;; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory
-2022-03-25 13:03:00.819363: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.
+2022-03-29 09:55:53.588866: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcudart.so.11.0&#39;; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory
+2022-03-29 09:55:53.588895: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.
 </pre></div></div>
 </div>
 <section id="Standard-kernels-in-GPflow">
-<h2>Standard kernels in GPflow<a class="headerlink" href="#Standard-kernels-in-GPflow" title="Permalink to this headline">¶</a></h2>
+<h2>Standard kernels in GPflow<a class="headerlink" href="#Standard-kernels-in-GPflow" title="Permalink to this headline">#</a></h2>
 <p>GPflow comes with lots of standard kernels. Some very simple kernels produce constant functions, linear functions, and white noise functions:</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">gpflow.kernels.Constant</span></code></p></li>
@@ -818,10 +812,10 @@ div.rendered_html tbody tr:hover {
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2022-03-25 13:03:03.866258: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcuda.so.1&#39;; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory
-2022-03-25 13:03:03.866294: W tensorflow/stream_executor/cuda/cuda_driver.cc:269] failed call to cuInit: UNKNOWN ERROR (303)
-2022-03-25 13:03:03.866315: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (d396962cedd5): /proc/driver/nvidia/version does not exist
-2022-03-25 13:03:03.866584: I tensorflow/core/platform/cpu_feature_guard.cc:151] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA
+2022-03-29 09:55:57.109441: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcuda.so.1&#39;; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory
+2022-03-29 09:55:57.109477: W tensorflow/stream_executor/cuda/cuda_driver.cc:269] failed call to cuInit: UNKNOWN ERROR (303)
+2022-03-29 09:55:57.109498: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (9da31c79f42f): /proc/driver/nvidia/version does not exist
+2022-03-29 09:55:57.109796: I tensorflow/core/platform/cpu_feature_guard.cc:151] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA
 To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.
 </pre></div></div>
 </div>
@@ -834,7 +828,7 @@ To enable them in other operations, rebuild TensorFlow with the appropriate comp
 </div>
 </section>
 <section id="First-example:-create-a-Matern-3/2-covariance-kernel">
-<h2>First example: create a Matern 3/2 covariance kernel<a class="headerlink" href="#First-example:-create-a-Matern-3/2-covariance-kernel" title="Permalink to this headline">¶</a></h2>
+<h2>First example: create a Matern 3/2 covariance kernel<a class="headerlink" href="#First-example:-create-a-Matern-3/2-covariance-kernel" title="Permalink to this headline">#</a></h2>
 <p>Many kernels have hyperparameters, for example <code class="docutils literal notranslate"><span class="pre">variance</span></code> and <code class="docutils literal notranslate"><span class="pre">lengthscales</span></code>. You can change the value of these parameters from their default value of <code class="docutils literal notranslate"><span class="pre">1.0</span></code>.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
@@ -948,7 +942,7 @@ To enable them in other operations, rebuild TensorFlow with the appropriate comp
 </div>
 </section>
 <section id="Combine-kernels">
-<h2>Combine kernels<a class="headerlink" href="#Combine-kernels" title="Permalink to this headline">¶</a></h2>
+<h2>Combine kernels<a class="headerlink" href="#Combine-kernels" title="Permalink to this headline">#</a></h2>
 <p>Sums and products of kernels are also valid kernels. You can add or multiply instances of kernels to create a new composite kernel with the parameters of the old ones:</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
@@ -1017,7 +1011,7 @@ To enable them in other operations, rebuild TensorFlow with the appropriate comp
 </div>
 </section>
 <section id="Kernels-for-higher-dimensional-input-spaces">
-<h2>Kernels for higher-dimensional input spaces<a class="headerlink" href="#Kernels-for-higher-dimensional-input-spaces" title="Permalink to this headline">¶</a></h2>
+<h2>Kernels for higher-dimensional input spaces<a class="headerlink" href="#Kernels-for-higher-dimensional-input-spaces" title="Permalink to this headline">#</a></h2>
 <p>Kernels generalize to multiple dimensions straightforwardly. Stationary kernels support “Automatic Relevance Determination” (ARD), that is, having a different lengthscale parameter for each input dimension. Simply pass in an array of the same length as the number of input dimensions. <strong>NOTE:</strong> This means that the kernel object is then able to process only inputs of that dimension!</p>
 <p>You can also initialize the lengthscales when the object is created:</p>
 <div class="nbinput docutils container">
@@ -1045,7 +1039,7 @@ To enable them in other operations, rebuild TensorFlow with the appropriate comp
 </div>
 </section>
 <section id="Specify-active-dimensions">
-<h2>Specify active dimensions<a class="headerlink" href="#Specify-active-dimensions" title="Permalink to this headline">¶</a></h2>
+<h2>Specify active dimensions<a class="headerlink" href="#Specify-active-dimensions" title="Permalink to this headline">#</a></h2>
 <p>When combining kernels, it’s often helpful to have bits of the kernel working on different dimensions. For example, to model a function that is linear in the first dimension and smooth in the second, we could use a combination of Linear and Matern52 kernels, one for each dimension.</p>
 <p>To tell GPflow which dimension a kernel applies to, specify a list of integers as the value of the <code class="docutils literal notranslate"><span class="pre">active_dims</span></code> parameter.</p>
 <div class="nbinput nblast docutils container">
@@ -1106,7 +1100,7 @@ To enable them in other operations, rebuild TensorFlow with the appropriate comp
 </div>
 </section>
 <section id="Define-new-covariance-functions">
-<h2>Define new covariance functions<a class="headerlink" href="#Define-new-covariance-functions" title="Permalink to this headline">¶</a></h2>
+<h2>Define new covariance functions<a class="headerlink" href="#Define-new-covariance-functions" title="Permalink to this headline">#</a></h2>
 <p>GPflow makes it easy to define new covariance functions. See <a class="reference internal" href="../tailor/kernel_design.html"><span class="doc">Kernel design</span></a> for more information.</p>
 </section>
 </section>
@@ -1121,8 +1115,9 @@ To enable them in other operations, rebuild TensorFlow with the appropriate comp
       </div>
     </div>
   
-    <script src="../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf"></script>
-  <footer class="footer mt-5 mt-md-0">
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf"></script>
+<footer class="footer mt-5 mt-md-0">
   <div class="container">
     
     <div class="footer-item">
@@ -1133,7 +1128,7 @@ To enable them in other operations, rebuild TensorFlow with the appropriate comp
     
     <div class="footer-item">
       <p class="sphinx-version">
-Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.4.0.<br>
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.5.0.<br>
 </p>
     </div>
     

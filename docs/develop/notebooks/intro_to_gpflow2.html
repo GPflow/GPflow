@@ -8,27 +8,24 @@
 
     <title>GPflow with TensorFlow 2 &#8212; GPflow 2.4.0 documentation</title>
     
-    <link href="../_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
 <link href="../_static/styles/pydata-sphinx-theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
-  
+
     
-    <link rel="stylesheet"
-      href="../_static/vendor/fontawesome/5.13.0/css/all.min.css">
-    <link rel="preload" as="font" type="font/woff2" crossorigin
-      href="../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
-    <link rel="preload" as="font" type="font/woff2" crossorigin
-      href="../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
-  
-    
-      
-  
-    
+  <link rel="stylesheet"
+    href="../_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../_static/styles/pydata-sphinx-theme.css" />
     <link rel="stylesheet" type="text/css" href="../_static/pydata-custom.css" />
     
-    <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf">
-  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf">
+
     <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
     <script src="../_static/jquery.js"></script>
     <script src="../_static/underscore.js"></script>
@@ -48,7 +45,7 @@
     <!-- Google Analytics -->
     
   </head>
-  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="80">
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="60">
     
     <div class="container-fluid" id="banner"></div>
 
@@ -144,13 +141,6 @@
 -->
 
 <script type="text/javascript">
-// Construct the target URL from the JSON components
-function buildURL(entry) {
-    var template = "https://gpflow.github.io/GPflow/{version}/index.html";  // supplied by jinja
-    template = template.replace("{version}", entry.version);
-    return template;
-}
-
 // Check if corresponding page path exists in other version of docs
 // and, if so, go there instead of the homepage of the other docs version
 function checkPageExistsAndRedirect(event) {
@@ -186,14 +176,16 @@ function checkPageExistsAndRedirect(event) {
             const node = document.createElement("a");
             node.setAttribute("class", "list-group-item list-group-item-action py-1");
             node.textContent = `${entry.name}`;
-            // get the base URL for that doc version, add the current page's
-            // path to it, and set as `href`
-            entry.url = buildURL(entry);
             node.setAttribute("href", `${entry.url}${currentFilePath}`);
             // on click, AJAX calls will check if the linked page exists before
             // trying to redirect, and if not, will redirect to the homepage
             // for that version of the docs.
             node.onclick = checkPageExistsAndRedirect;
+            // Add dataset values for the version and name in case people want
+            // to apply CSS styling based on this information.
+            node.dataset["versionName"] = entry.name;
+            node.dataset["version"] = entry.version;
+
             $("#version_switcher_menu").append(node);
             // replace dropdown button text with the preferred display name of
             // this version, rather than using sphinx's  variable.
@@ -201,7 +193,9 @@ function checkPageExistsAndRedirect(event) {
             // version's entry
             if (entry.version == "develop") {
                 node.classList.add("active");
-                $("#version_switcher_button").text(entry.name);
+                let btn = document.getElementById("version_switcher_button");
+                btn.innerText = btn.dataset["activeVersionName"] = entry.name;
+                btn.dataset["activeVersion"] = entry.version;
             }
         });
     });
@@ -242,7 +236,7 @@ function checkPageExistsAndRedirect(event) {
               
               <div class="toc-item">
                 
-<div class="tocsection onthispage pt-5 pb-3">
+<div class="tocsection onthispage mt-5 pt-1 pb-3">
     <i class="fas fa-list"></i> On this page
 </div>
 
@@ -594,9 +588,9 @@ div.rendered_html tbody tr:hover {
 }
 </style>
 <section id="GPflow-with-TensorFlow-2">
-<h1>GPflow with TensorFlow 2<a class="headerlink" href="#GPflow-with-TensorFlow-2" title="Permalink to this headline">¶</a></h1>
+<h1>GPflow with TensorFlow 2<a class="headerlink" href="#GPflow-with-TensorFlow-2" title="Permalink to this headline">#</a></h1>
 <section id="Small-steps-big-changes">
-<h2>Small steps big changes<a class="headerlink" href="#Small-steps-big-changes" title="Permalink to this headline">¶</a></h2>
+<h2>Small steps big changes<a class="headerlink" href="#Small-steps-big-changes" title="Permalink to this headline">#</a></h2>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
@@ -628,8 +622,8 @@ div.rendered_html tbody tr:hover {
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2022-03-25 12:54:28.944450: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcudart.so.11.0&#39;; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory
-2022-03-25 12:54:28.944478: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.
+2022-03-29 09:48:35.620312: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcudart.so.11.0&#39;; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory
+2022-03-29 09:48:35.620352: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.
 </pre></div></div>
 </div>
 <p>Make <code class="docutils literal notranslate"><span class="pre">tensorboard</span></code> work inside notebook:</p>
@@ -665,7 +659,7 @@ div.rendered_html tbody tr:hover {
 </div>
 </div>
 <section id="Loading-data-using-TensorFlow-Datasets">
-<h3>Loading data using TensorFlow Datasets<a class="headerlink" href="#Loading-data-using-TensorFlow-Datasets" title="Permalink to this headline">¶</a></h3>
+<h3>Loading data using TensorFlow Datasets<a class="headerlink" href="#Loading-data-using-TensorFlow-Datasets" title="Permalink to this headline">#</a></h3>
 <p>For this example, we create a synthetic dataset (noisy sine function):</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
@@ -695,10 +689,10 @@ div.rendered_html tbody tr:hover {
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2022-03-25 12:54:31.467903: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcuda.so.1&#39;; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory
-2022-03-25 12:54:31.467940: W tensorflow/stream_executor/cuda/cuda_driver.cc:269] failed call to cuInit: UNKNOWN ERROR (303)
-2022-03-25 12:54:31.467962: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (d396962cedd5): /proc/driver/nvidia/version does not exist
-2022-03-25 12:54:31.468353: I tensorflow/core/platform/cpu_feature_guard.cc:151] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA
+2022-03-29 09:48:38.575679: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcuda.so.1&#39;; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory
+2022-03-29 09:48:38.575720: W tensorflow/stream_executor/cuda/cuda_driver.cc:269] failed call to cuInit: UNKNOWN ERROR (303)
+2022-03-29 09:48:38.575742: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (9da31c79f42f): /proc/driver/nvidia/version does not exist
+2022-03-29 09:48:38.576463: I tensorflow/core/platform/cpu_feature_guard.cc:151] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA
 To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.
 </pre></div></div>
 </div>
@@ -749,7 +743,7 @@ num_batches_per_epoch=3
 </div>
 </section>
 <section id="Define-a-GP-model">
-<h3>Define a GP model<a class="headerlink" href="#Define-a-GP-model" title="Permalink to this headline">¶</a></h3>
+<h3>Define a GP model<a class="headerlink" href="#Define-a-GP-model" title="Permalink to this headline">#</a></h3>
 <p>In GPflow 2.0, we use <code class="docutils literal notranslate"><span class="pre">tf.Module</span></code> (or the very thin <code class="docutils literal notranslate"><span class="pre">gpflow.base.Module</span></code> wrapper) to build all our models, as well as their components (kernels, likelihoods, parameters, and so on).</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
@@ -785,7 +779,7 @@ num_batches_per_epoch=3
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2022-03-25 12:54:31.961901: W tensorflow/python/util/util.cc:368] Sets are not currently considered sequences, but this may change in the future, so consider avoiding using them.
+2022-03-29 09:48:39.111570: W tensorflow/python/util/util.cc:368] Sets are not currently considered sequences, but this may change in the future, so consider avoiding using them.
 </pre></div></div>
 </div>
 <p>We can use <code class="docutils literal notranslate"><span class="pre">param.assign(value)</span></code> to assign a value to a parameter:</p>
@@ -882,7 +876,7 @@ num_batches_per_epoch=3
 </pre></div>
 </div>
 <div class="output_area rendered_html docutils container">
-&lt;gpflow.models.svgp.SVGP object at 0x7fa1642c5bd0&gt;
+&lt;gpflow.models.svgp.SVGP object at 0x7f6bf9799c60&gt;
 <table>
 <thead>
 <tr><th>name                    </th><th>class    </th><th>transform       </th><th>prior  </th><th>trainable  </th><th>shape      </th><th>dtype  </th><th>value           </th></tr>
@@ -899,10 +893,10 @@ num_batches_per_epoch=3
 </div>
 </section>
 <section id="Training-using-training_loss-and-training_loss_closure">
-<h3>Training using training_loss and training_loss_closure<a class="headerlink" href="#Training-using-training_loss-and-training_loss_closure" title="Permalink to this headline">¶</a></h3>
+<h3>Training using training_loss and training_loss_closure<a class="headerlink" href="#Training-using-training_loss-and-training_loss_closure" title="Permalink to this headline">#</a></h3>
 <p>GPflow models come with training_loss and training_loss_closure methods to make it easy to train your models. There is a slight difference between models that own their own data (most of them, e.g. GPR, VGP, …) and models that do not own the data (SVGP).</p>
 <section id="Model-internal-data">
-<h4>Model-internal data<a class="headerlink" href="#Model-internal-data" title="Permalink to this headline">¶</a></h4>
+<h4>Model-internal data<a class="headerlink" href="#Model-internal-data" title="Permalink to this headline">#</a></h4>
 <p>For models that own their own data (inheriting from InternalDataTrainingLossMixin), data is provided at model construction time. In this case, model.training_loss does not take any arguments, and can be directly passed to an optimizer’s <code class="docutils literal notranslate"><span class="pre">minimize()</span></code> method:</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
@@ -975,12 +969,12 @@ num_batches_per_epoch=3
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-&lt;bound method InternalDataTrainingLossMixin.training_loss of &lt;gpflow.models.vgp.VGP object at 0x7fa164468850&gt;&gt;
+&lt;bound method InternalDataTrainingLossMixin.training_loss of &lt;gpflow.models.vgp.VGP object at 0x7f6c000ff190&gt;&gt;
 </pre></div></div>
 </div>
 </section>
 <section id="External-data">
-<h4>External data<a class="headerlink" href="#External-data" title="Permalink to this headline">¶</a></h4>
+<h4>External data<a class="headerlink" href="#External-data" title="Permalink to this headline">#</a></h4>
 <p>The SVGP model inherits from ExternalDataTrainingLossMixin and expects the data to be passed to training_loss(). For SVGP as for the other regression models, <code class="docutils literal notranslate"><span class="pre">data</span></code> is a two-tuple of <code class="docutils literal notranslate"><span class="pre">(X,</span> <span class="pre">Y)</span></code>, where <code class="docutils literal notranslate"><span class="pre">X</span></code> is an array/tensor with shape <code class="docutils literal notranslate"><span class="pre">(num_data,</span> <span class="pre">input_dim)</span></code> and <code class="docutils literal notranslate"><span class="pre">Y</span></code> is an array/tensor with shape <code class="docutils literal notranslate"><span class="pre">(num_data,</span> <span class="pre">output_dim)</span></code>:</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
@@ -1063,7 +1057,7 @@ To silence this warning, decorate the function with @tf.autograph.experimental.d
 </section>
 </section>
 <section id="Training-using-Gradient-Tapes">
-<h3>Training using Gradient Tapes<a class="headerlink" href="#Training-using-Gradient-Tapes" title="Permalink to this headline">¶</a></h3>
+<h3>Training using Gradient Tapes<a class="headerlink" href="#Training-using-Gradient-Tapes" title="Permalink to this headline">#</a></h3>
 <p>For a more elaborate example of a gradient update we can define an <code class="docutils literal notranslate"><span class="pre">optimization_step</span></code> that explicitly computes and applies gradients to the model. In TensorFlow 2, we can optimize (trainable) model parameters with TensorFlow optimizers using <code class="docutils literal notranslate"><span class="pre">tf.GradientTape</span></code>. In this simple example, we perform one gradient update of the Adam optimizer to minimize the training_loss (in this case the negative ELBO) of our model. The <code class="docutils literal notranslate"><span class="pre">optimization_step</span></code> can (and should) be wrapped in <code class="docutils literal notranslate"><span class="pre">tf.function</span></code> to be
 compiled to a graph if executing it many times.</p>
 <div class="nbinput nblast docutils container">
@@ -1121,7 +1115,7 @@ Epoch 10: ELBO (train) -7059.201134038565
 </div>
 </section>
 <section id="Monitoring">
-<h3>Monitoring<a class="headerlink" href="#Monitoring" title="Permalink to this headline">¶</a></h3>
+<h3>Monitoring<a class="headerlink" href="#Monitoring" title="Permalink to this headline">#</a></h3>
 <p><code class="docutils literal notranslate"><span class="pre">gpflow.monitor</span></code> provides a thin wrapper on top of tf.summary that makes it easy to monitor the training procedure. For a more detailed tutorial see the <a class="reference external" href="./basics/monitoring.pct.py">monitoring notebook</a>.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
@@ -1243,9 +1237,9 @@ Epoch 901: ELBO (train) 34.817422699172191
 </div>
 </section>
 <section id="Saving-and-loading-models">
-<h3>Saving and loading models<a class="headerlink" href="#Saving-and-loading-models" title="Permalink to this headline">¶</a></h3>
+<h3>Saving and loading models<a class="headerlink" href="#Saving-and-loading-models" title="Permalink to this headline">#</a></h3>
 <section id="Checkpointing">
-<h4>Checkpointing<a class="headerlink" href="#Checkpointing" title="Permalink to this headline">¶</a></h4>
+<h4>Checkpointing<a class="headerlink" href="#Checkpointing" title="Permalink to this headline">#</a></h4>
 <p>With the help of <code class="docutils literal notranslate"><span class="pre">tf.train.CheckpointManager</span></code> and <code class="docutils literal notranslate"><span class="pre">tf.train.Checkpoint</span></code>, we can checkpoint the model throughout the training procedure. Let’s start with a simple example using checkpointing to save and load a <code class="docutils literal notranslate"><span class="pre">tf.Variable</span></code>:</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[24]:
@@ -1403,7 +1397,7 @@ Epoch 1000: ELBO (train) 50.19449339619858, saved at /tmp/tensorboard/0/ckpt-10
 </div>
 </section>
 <section id="Copying-(hyper)parameter-values-between-models">
-<h4>Copying (hyper)parameter values between models<a class="headerlink" href="#Copying-(hyper)parameter-values-between-models" title="Permalink to this headline">¶</a></h4>
+<h4>Copying (hyper)parameter values between models<a class="headerlink" href="#Copying-(hyper)parameter-values-between-models" title="Permalink to this headline">#</a></h4>
 <p>It is easy to interact with the set of all parameters of a model or a subcomponent programmatically.</p>
 <p>The following returns a dictionary of all parameters within</p>
 <div class="nbinput nblast docutils container">
@@ -1456,7 +1450,7 @@ Epoch 1000: ELBO (train) 50.19449339619858, saved at /tmp/tensorboard/0/ckpt-10
 </div>
 </section>
 <section id="TensorFlow-saved_model">
-<h4>TensorFlow <code class="docutils literal notranslate"><span class="pre">saved_model</span></code><a class="headerlink" href="#TensorFlow-saved_model" title="Permalink to this headline">¶</a></h4>
+<h4>TensorFlow <code class="docutils literal notranslate"><span class="pre">saved_model</span></code><a class="headerlink" href="#TensorFlow-saved_model" title="Permalink to this headline">#</a></h4>
 <p>In order to save the model we need to explicitly store the <code class="docutils literal notranslate"><span class="pre">tf.function</span></code>-compiled functions that we wish to export:</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[34]:
@@ -1547,7 +1541,7 @@ INFO:tensorflow:Assets written to: /tmp/assets
 </section>
 </section>
 <section id="User-config-update">
-<h3>User config update<a class="headerlink" href="#User-config-update" title="Permalink to this headline">¶</a></h3>
+<h3>User config update<a class="headerlink" href="#User-config-update" title="Permalink to this headline">#</a></h3>
 <p>In this notebook, we used a lot <code class="docutils literal notranslate"><span class="pre">gpflow.config</span></code> methods for setting and getting default attributes from global configuration. However, GPflow provides a way for local config modification without updating values in global. As you can see below, using <code class="docutils literal notranslate"><span class="pre">gpflow.config.as_context</span></code> replaces temporarily global config with your instance. At creation time, custom config instance uses standard values from the global config:</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[38]:
@@ -1616,8 +1610,9 @@ Global config   &lt;Parameter: name=softplus, dtype=float64, shape=[], fn=&#34;s
       </div>
     </div>
   
-    <script src="../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf"></script>
-  <footer class="footer mt-5 mt-md-0">
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf"></script>
+<footer class="footer mt-5 mt-md-0">
   <div class="container">
     
     <div class="footer-item">
@@ -1628,7 +1623,7 @@ Global config   &lt;Parameter: name=softplus, dtype=float64, shape=[], fn=&#34;s
     
     <div class="footer-item">
       <p class="sphinx-version">
-Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.4.0.<br>
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.5.0.<br>
 </p>
     </div>
     

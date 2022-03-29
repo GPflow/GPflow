@@ -8,27 +8,24 @@
 
     <title>Basic (binary) GP classification model &#8212; GPflow 2.4.0 documentation</title>
     
-    <link href="../../_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
 <link href="../../_static/styles/pydata-sphinx-theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
-  
+
     
-    <link rel="stylesheet"
-      href="../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
-    <link rel="preload" as="font" type="font/woff2" crossorigin
-      href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
-    <link rel="preload" as="font" type="font/woff2" crossorigin
-      href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
-  
-    
-      
-  
-    
+  <link rel="stylesheet"
+    href="../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../../_static/styles/pydata-sphinx-theme.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/pydata-custom.css" />
     
-    <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf">
-  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf">
+
     <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
     <script src="../../_static/jquery.js"></script>
     <script src="../../_static/underscore.js"></script>
@@ -48,7 +45,7 @@
     <!-- Google Analytics -->
     
   </head>
-  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="80">
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="60">
     
     <div class="container-fluid" id="banner"></div>
 
@@ -144,13 +141,6 @@
 -->
 
 <script type="text/javascript">
-// Construct the target URL from the JSON components
-function buildURL(entry) {
-    var template = "https://gpflow.github.io/GPflow/{version}/index.html";  // supplied by jinja
-    template = template.replace("{version}", entry.version);
-    return template;
-}
-
 // Check if corresponding page path exists in other version of docs
 // and, if so, go there instead of the homepage of the other docs version
 function checkPageExistsAndRedirect(event) {
@@ -186,14 +176,16 @@ function checkPageExistsAndRedirect(event) {
             const node = document.createElement("a");
             node.setAttribute("class", "list-group-item list-group-item-action py-1");
             node.textContent = `${entry.name}`;
-            // get the base URL for that doc version, add the current page's
-            // path to it, and set as `href`
-            entry.url = buildURL(entry);
             node.setAttribute("href", `${entry.url}${currentFilePath}`);
             // on click, AJAX calls will check if the linked page exists before
             // trying to redirect, and if not, will redirect to the homepage
             // for that version of the docs.
             node.onclick = checkPageExistsAndRedirect;
+            // Add dataset values for the version and name in case people want
+            // to apply CSS styling based on this information.
+            node.dataset["versionName"] = entry.name;
+            node.dataset["version"] = entry.version;
+
             $("#version_switcher_menu").append(node);
             // replace dropdown button text with the preferred display name of
             // this version, rather than using sphinx's  variable.
@@ -201,7 +193,9 @@ function checkPageExistsAndRedirect(event) {
             // version's entry
             if (entry.version == "develop") {
                 node.classList.add("active");
-                $("#version_switcher_button").text(entry.name);
+                let btn = document.getElementById("version_switcher_button");
+                btn.innerText = btn.dataset["activeVersionName"] = entry.name;
+                btn.dataset["activeVersion"] = entry.version;
             }
         });
     });
@@ -427,7 +421,7 @@ function checkPageExistsAndRedirect(event) {
               
               <div class="toc-item">
                 
-<div class="tocsection onthispage pt-5 pb-3">
+<div class="tocsection onthispage mt-5 pt-1 pb-3">
     <i class="fas fa-list"></i> On this page
 </div>
 
@@ -740,7 +734,7 @@ div.rendered_html tbody tr:hover {
 }
 </style>
 <section id="Basic-(binary)-GP-classification-model">
-<h1>Basic (binary) GP classification model<a class="headerlink" href="#Basic-(binary)-GP-classification-model" title="Permalink to this headline">¶</a></h1>
+<h1>Basic (binary) GP classification model<a class="headerlink" href="#Basic-(binary)-GP-classification-model" title="Permalink to this headline">#</a></h1>
 <p>This notebook shows how to build a GP classification model using variational inference. Here we consider binary (two-class, 0 vs. 1) classification only (there is a separate notebook on <a class="reference internal" href="../advanced/multiclass_classification.html"><span class="doc">multiclass classification</span></a>). We first look at a one-dimensional example, and then show how you can adapt this when the input space is two-dimensional.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
@@ -763,12 +757,12 @@ div.rendered_html tbody tr:hover {
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2022-03-25 13:16:11.054260: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcudart.so.11.0&#39;; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory
-2022-03-25 13:16:11.054286: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.
+2022-03-29 10:10:00.490398: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcudart.so.11.0&#39;; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory
+2022-03-29 10:10:00.490425: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.
 </pre></div></div>
 </div>
 <section id="One-dimensional-example">
-<h2>One-dimensional example<a class="headerlink" href="#One-dimensional-example" title="Permalink to this headline">¶</a></h2>
+<h2>One-dimensional example<a class="headerlink" href="#One-dimensional-example" title="Permalink to this headline">#</a></h2>
 <p>First of all, let’s have a look at the data. <code class="docutils literal notranslate"><span class="pre">X</span></code> and <code class="docutils literal notranslate"><span class="pre">Y</span></code> denote the input and output values. <strong>NOTE:</strong> <code class="docutils literal notranslate"><span class="pre">X</span></code> and <code class="docutils literal notranslate"><span class="pre">Y</span></code> must be two-dimensional NumPy arrays, <span class="math notranslate nohighlight">\(N \times 1\)</span> or <span class="math notranslate nohighlight">\(N \times D\)</span>, where <span class="math notranslate nohighlight">\(D\)</span> is the number of input dimensions/features, with the same number of rows as <span class="math notranslate nohighlight">\(N\)</span> (one for each data point):</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
@@ -790,7 +784,7 @@ div.rendered_html tbody tr:hover {
 </div>
 </div>
 <section id="Reminders-on-GP-classification">
-<h3>Reminders on GP classification<a class="headerlink" href="#Reminders-on-GP-classification" title="Permalink to this headline">¶</a></h3>
+<h3>Reminders on GP classification<a class="headerlink" href="#Reminders-on-GP-classification" title="Permalink to this headline">#</a></h3>
 <p>For a binary classification model using GPs, we can simply use a <code class="docutils literal notranslate"><span class="pre">Bernoulli</span></code> likelihood. The details of the generative model are as follows:</p>
 <p><strong>1. Define the latent GP:</strong> we start from a Gaussian process <span class="math notranslate nohighlight">\(f \sim \mathcal{GP}(0, k(\cdot, \cdot'))\)</span>:</p>
 <div class="nbinput docutils container">
@@ -817,10 +811,10 @@ div.rendered_html tbody tr:hover {
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2022-03-25 13:16:14.001513: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcuda.so.1&#39;; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory
-2022-03-25 13:16:14.001549: W tensorflow/stream_executor/cuda/cuda_driver.cc:269] failed call to cuInit: UNKNOWN ERROR (303)
-2022-03-25 13:16:14.001571: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (d396962cedd5): /proc/driver/nvidia/version does not exist
-2022-03-25 13:16:14.001878: I tensorflow/core/platform/cpu_feature_guard.cc:151] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA
+2022-03-29 10:10:03.190086: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcuda.so.1&#39;; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory
+2022-03-29 10:10:03.190114: W tensorflow/stream_executor/cuda/cuda_driver.cc:269] failed call to cuInit: UNKNOWN ERROR (303)
+2022-03-29 10:10:03.190132: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (9da31c79f42f): /proc/driver/nvidia/version does not exist
+2022-03-29 10:10:03.190400: I tensorflow/core/platform/cpu_feature_guard.cc:151] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA
 To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.
 </pre></div></div>
 </div>
@@ -883,7 +877,7 @@ another function as the <code class="docutils literal notranslate"><span class="
 </div>
 </section>
 <section id="Implementation-with-GPflow">
-<h3>Implementation with GPflow<a class="headerlink" href="#Implementation-with-GPflow" title="Permalink to this headline">¶</a></h3>
+<h3>Implementation with GPflow<a class="headerlink" href="#Implementation-with-GPflow" title="Permalink to this headline">#</a></h3>
 <p>For the model described above, the posterior <span class="math notranslate nohighlight">\(f(x)|Y\)</span> (say <span class="math notranslate nohighlight">\(p\)</span>) is not Gaussian any more and does not have a closed-form expression. A common approach is then to look for the best approximation of this posterior by a tractable distribution (say <span class="math notranslate nohighlight">\(q\)</span>) such as a Gaussian distribution. In variational inference, the quality of an approximation is measured by the Kullback-Leibler divergence <span class="math notranslate nohighlight">\(\mathrm{KL}[q \| p]\)</span>. For more details on this model, see Nickisch and Rasmussen
 (2008).</p>
 <p>The inference problem is thus turned into an optimization problem: finding the best parameters for <span class="math notranslate nohighlight">\(q\)</span>. In our case, we introduce <span class="math notranslate nohighlight">\(U \sim \mathcal{N}(q_\mu, q_\Sigma)\)</span>, and we choose <span class="math notranslate nohighlight">\(q\)</span> to have the same distribution as <span class="math notranslate nohighlight">\(f | f(X) = U\)</span>. The parameters <span class="math notranslate nohighlight">\(q_\mu\)</span> and <span class="math notranslate nohighlight">\(q_\Sigma\)</span> can be seen as parameters of <span class="math notranslate nohighlight">\(q\)</span>, which can be optimized in order to minimise <span class="math notranslate nohighlight">\(\mathrm{KL}[q \| p]\)</span>.</p>
@@ -906,7 +900,7 @@ another function as the <code class="docutils literal notranslate"><span class="
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2022-03-25 13:16:14.993836: W tensorflow/python/util/util.cc:368] Sets are not currently considered sequences, but this may change in the future, so consider avoiding using them.
+2022-03-29 10:10:03.769622: W tensorflow/python/util/util.cc:368] Sets are not currently considered sequences, but this may change in the future, so consider avoiding using them.
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -959,7 +953,7 @@ another function as the <code class="docutils literal notranslate"><span class="
 <p>For more details on how to handle models in GPflow (getting and setting parameters, fixing some of them during optimization, using priors, and so on), see <a class="reference internal" href="../understanding/models.html"><span class="doc">Manipulating GPflow models</span></a>.</p>
 </section>
 <section id="Predictions">
-<h3>Predictions<a class="headerlink" href="#Predictions" title="Permalink to this headline">¶</a></h3>
+<h3>Predictions<a class="headerlink" href="#Predictions" title="Permalink to this headline">#</a></h3>
 <p>Finally, we will see how to use model predictions to plot the resulting model. We will replicate the figures of the generative model above, but using the approximate posterior distribution given by the model.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
@@ -1013,7 +1007,7 @@ another function as the <code class="docutils literal notranslate"><span class="
 </section>
 </section>
 <section id="Two-dimensional-example">
-<h2>Two-dimensional example<a class="headerlink" href="#Two-dimensional-example" title="Permalink to this headline">¶</a></h2>
+<h2>Two-dimensional example<a class="headerlink" href="#Two-dimensional-example" title="Permalink to this headline">#</a></h2>
 <p>In this section we will use the following data:</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
@@ -1108,13 +1102,13 @@ another function as the <code class="docutils literal notranslate"><span class="
 </div>
 </section>
 <section id="Further-reading">
-<h2>Further reading<a class="headerlink" href="#Further-reading" title="Permalink to this headline">¶</a></h2>
+<h2>Further reading<a class="headerlink" href="#Further-reading" title="Permalink to this headline">#</a></h2>
 <p>There are dedicated notebooks giving more details on how to manipulate <a class="reference internal" href="../understanding/models.html"><span class="doc">models</span></a> and <a class="reference internal" href="../advanced/kernels.html"><span class="doc">kernels</span></a>.</p>
 <p>This notebook covers only very basic classification models. You might also be interested in: * <a class="reference internal" href="../advanced/multiclass_classification.html"><span class="doc">Multiclass classification</span></a> if you have more than two classes. * <a class="reference internal" href="../advanced/gps_for_big_data.html"><span class="doc">Sparse models</span></a>. The models above have one inducing variable <span class="math notranslate nohighlight">\(U_i\)</span> per observation point <span class="math notranslate nohighlight">\(X_i\)</span>, which does not scale to large datasets. Sparse Variational GP (SVGP) is an efficient alternative where the variables <span class="math notranslate nohighlight">\(U_i\)</span> are defined at
 some inducing input locations <span class="math notranslate nohighlight">\(Z_i\)</span> that can also be optimized. * <a class="reference internal" href="../advanced/mcmc.html"><span class="doc">Exact inference</span></a>. We have seen that variational inference provides an approximation to the posterior. GPflow also supports exact inference using Markov Chain Monte Carlo (MCMC) methods, and the kernel parameters can also be assigned prior distributions in order to avoid point estimates.</p>
 </section>
 <section id="References">
-<h2>References<a class="headerlink" href="#References" title="Permalink to this headline">¶</a></h2>
+<h2>References<a class="headerlink" href="#References" title="Permalink to this headline">#</a></h2>
 <p>Hannes Nickisch and Carl Edward Rasmussen. ‘Approximations for binary Gaussian process classification’. <em>Journal of Machine Learning Research</em> 9(Oct):2035–2078, 2008.</p>
 </section>
 </section>
@@ -1129,8 +1123,9 @@ some inducing input locations <span class="math notranslate nohighlight">\(Z_i\)
       </div>
     </div>
   
-    <script src="../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf"></script>
-  <footer class="footer mt-5 mt-md-0">
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf"></script>
+<footer class="footer mt-5 mt-md-0">
   <div class="container">
     
     <div class="footer-item">
@@ -1141,7 +1136,7 @@ some inducing input locations <span class="math notranslate nohighlight">\(Z_i\)
     
     <div class="footer-item">
       <p class="sphinx-version">
-Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.4.0.<br>
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.5.0.<br>
 </p>
     </div>
     

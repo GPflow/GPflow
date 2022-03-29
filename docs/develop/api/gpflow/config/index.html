@@ -8,27 +8,24 @@
 
     <title>gpflow.config &#8212; GPflow 2.4.0 documentation</title>
     
-    <link href="../../../_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
 <link href="../../../_static/styles/pydata-sphinx-theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
-  
+
     
-    <link rel="stylesheet"
-      href="../../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
-    <link rel="preload" as="font" type="font/woff2" crossorigin
-      href="../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
-    <link rel="preload" as="font" type="font/woff2" crossorigin
-      href="../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
-  
-    
-      
-  
-    
+  <link rel="stylesheet"
+    href="../../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../../../_static/styles/pydata-sphinx-theme.css" />
     <link rel="stylesheet" type="text/css" href="../../../_static/pydata-custom.css" />
     
-    <link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf">
-  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf">
+
     <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
     <script src="../../../_static/jquery.js"></script>
     <script src="../../../_static/underscore.js"></script>
@@ -46,7 +43,7 @@
     <!-- Google Analytics -->
     
   </head>
-  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="80">
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="60">
     
     <div class="container-fluid" id="banner"></div>
 
@@ -142,13 +139,6 @@
 -->
 
 <script type="text/javascript">
-// Construct the target URL from the JSON components
-function buildURL(entry) {
-    var template = "https://gpflow.github.io/GPflow/{version}/index.html";  // supplied by jinja
-    template = template.replace("{version}", entry.version);
-    return template;
-}
-
 // Check if corresponding page path exists in other version of docs
 // and, if so, go there instead of the homepage of the other docs version
 function checkPageExistsAndRedirect(event) {
@@ -184,14 +174,16 @@ function checkPageExistsAndRedirect(event) {
             const node = document.createElement("a");
             node.setAttribute("class", "list-group-item list-group-item-action py-1");
             node.textContent = `${entry.name}`;
-            // get the base URL for that doc version, add the current page's
-            // path to it, and set as `href`
-            entry.url = buildURL(entry);
             node.setAttribute("href", `${entry.url}${currentFilePath}`);
             // on click, AJAX calls will check if the linked page exists before
             // trying to redirect, and if not, will redirect to the homepage
             // for that version of the docs.
             node.onclick = checkPageExistsAndRedirect;
+            // Add dataset values for the version and name in case people want
+            // to apply CSS styling based on this information.
+            node.dataset["versionName"] = entry.name;
+            node.dataset["version"] = entry.version;
+
             $("#version_switcher_menu").append(node);
             // replace dropdown button text with the preferred display name of
             // this version, rather than using sphinx's  variable.
@@ -199,7 +191,9 @@ function checkPageExistsAndRedirect(event) {
             // version's entry
             if (entry.version == "develop") {
                 node.classList.add("active");
-                $("#version_switcher_button").text(entry.name);
+                let btn = document.getElementById("version_switcher_button");
+                btn.innerText = btn.dataset["activeVersionName"] = entry.name;
+                btn.dataset["activeVersion"] = entry.version;
             }
         });
     });
@@ -611,7 +605,7 @@ function checkPageExistsAndRedirect(event) {
               
               <div class="toc-item">
                 
-<div class="tocsection onthispage pt-5 pb-3">
+<div class="tocsection onthispage mt-5 pt-1 pb-3">
     <i class="fas fa-list"></i> On this page
 </div>
 
@@ -704,7 +698,7 @@ function checkPageExistsAndRedirect(event) {
               <div>
                 
   <section id="gpflow-config">
-<h1>gpflow.config<a class="headerlink" href="#gpflow-config" title="Permalink to this headline">¶</a></h1>
+<h1>gpflow.config<a class="headerlink" href="#gpflow-config" title="Permalink to this headline">#</a></h1>
 <span class="target" id="module-gpflow.config"></span><p>This is a private module that manages GPflow configuration.</p>
 <p>The module provides functions to modify default settings of GPflow, such as:
 - the standard float precision and integer type
@@ -737,10 +731,10 @@ manager <a class="reference internal" href="#gpflow.config.as_context" title="gp
 </pre></div>
 </div>
 <section id="gpflow-config-config">
-<h2>gpflow.config.Config<a class="headerlink" href="#gpflow-config-config" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.config.Config<a class="headerlink" href="#gpflow-config-config" title="Permalink to this headline">#</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="gpflow.config.Config">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.config.</span></span><span class="sig-name descname"><span class="pre">Config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">int=&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">float=&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">jitter=&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">positive_bijector=&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">positive_minimum=&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">summary_fmt=&lt;factory&gt;</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/config/__config__.html#Config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.config.Config" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.config.</span></span><span class="sig-name descname"><span class="pre">Config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">int=&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">float=&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">jitter=&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">positive_bijector=&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">positive_minimum=&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">summary_fmt=&lt;factory&gt;</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/config/__config__.html#Config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.config.Config" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Immutable object for storing global GPflow settings</p>
 <dl>
@@ -774,10 +768,10 @@ summary_fmt: Summary format for module printing.</p>
 
 </section>
 <section id="gpflow-config-as-context">
-<h2>gpflow.config.as_context<a class="headerlink" href="#gpflow-config-as-context" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.config.as_context<a class="headerlink" href="#gpflow-config-as-context" title="Permalink to this headline">#</a></h2>
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.config.as_context">
-<span class="sig-prename descclassname"><span class="pre">gpflow.config.</span></span><span class="sig-name descname"><span class="pre">as_context</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">temporary_config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/config/__config__.html#as_context"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.config.as_context" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">gpflow.config.</span></span><span class="sig-name descname"><span class="pre">as_context</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">temporary_config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/config/__config__.html#as_context"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.config.as_context" title="Permalink to this definition">#</a></dt>
 <dd><p>Ensure that global configs defaults, with a context manager. Useful for testing.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -791,10 +785,10 @@ summary_fmt: Summary format for module printing.</p>
 
 </section>
 <section id="id1">
-<h2>gpflow.config.config<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.config.config<a class="headerlink" href="#id1" title="Permalink to this headline">#</a></h2>
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.config.config">
-<span class="sig-prename descclassname"><span class="pre">gpflow.config.</span></span><span class="sig-name descname"><span class="pre">config</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/config/__config__.html#config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.config.config" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">gpflow.config.</span></span><span class="sig-name descname"><span class="pre">config</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/config/__config__.html#config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.config.config" title="Permalink to this definition">#</a></dt>
 <dd><p>Returns current active config.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
@@ -805,10 +799,10 @@ summary_fmt: Summary format for module printing.</p>
 
 </section>
 <section id="gpflow-config-default-positive-bijector">
-<h2>gpflow.config.default_positive_bijector<a class="headerlink" href="#gpflow-config-default-positive-bijector" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.config.default_positive_bijector<a class="headerlink" href="#gpflow-config-default-positive-bijector" title="Permalink to this headline">#</a></h2>
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.config.default_positive_bijector">
-<span class="sig-prename descclassname"><span class="pre">gpflow.config.</span></span><span class="sig-name descname"><span class="pre">default_positive_bijector</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/config/__config__.html#default_positive_bijector"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.config.default_positive_bijector" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">gpflow.config.</span></span><span class="sig-name descname"><span class="pre">default_positive_bijector</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/config/__config__.html#default_positive_bijector"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.config.default_positive_bijector" title="Permalink to this definition">#</a></dt>
 <dd><p>Type of bijector used for positive constraints: exp or softplus.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
@@ -819,10 +813,10 @@ summary_fmt: Summary format for module printing.</p>
 
 </section>
 <section id="gpflow-config-default-positive-minimum">
-<h2>gpflow.config.default_positive_minimum<a class="headerlink" href="#gpflow-config-default-positive-minimum" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.config.default_positive_minimum<a class="headerlink" href="#gpflow-config-default-positive-minimum" title="Permalink to this headline">#</a></h2>
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.config.default_positive_minimum">
-<span class="sig-prename descclassname"><span class="pre">gpflow.config.</span></span><span class="sig-name descname"><span class="pre">default_positive_minimum</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/config/__config__.html#default_positive_minimum"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.config.default_positive_minimum" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">gpflow.config.</span></span><span class="sig-name descname"><span class="pre">default_positive_minimum</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/config/__config__.html#default_positive_minimum"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.config.default_positive_minimum" title="Permalink to this definition">#</a></dt>
 <dd><p>Shift constant that GPflow adds to all positive constraints.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
@@ -833,10 +827,10 @@ summary_fmt: Summary format for module printing.</p>
 
 </section>
 <section id="gpflow-config-positive-bijector-type-map">
-<h2>gpflow.config.positive_bijector_type_map<a class="headerlink" href="#gpflow-config-positive-bijector-type-map" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.config.positive_bijector_type_map<a class="headerlink" href="#gpflow-config-positive-bijector-type-map" title="Permalink to this headline">#</a></h2>
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.config.positive_bijector_type_map">
-<span class="sig-prename descclassname"><span class="pre">gpflow.config.</span></span><span class="sig-name descname"><span class="pre">positive_bijector_type_map</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/config/__config__.html#positive_bijector_type_map"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.config.positive_bijector_type_map" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">gpflow.config.</span></span><span class="sig-name descname"><span class="pre">positive_bijector_type_map</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/config/__config__.html#positive_bijector_type_map"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.config.positive_bijector_type_map" title="Permalink to this definition">#</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">type</span></code>]</p>
@@ -846,10 +840,10 @@ summary_fmt: Summary format for module printing.</p>
 
 </section>
 <section id="gpflow-config-set-config">
-<h2>gpflow.config.set_config<a class="headerlink" href="#gpflow-config-set-config" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.config.set_config<a class="headerlink" href="#gpflow-config-set-config" title="Permalink to this headline">#</a></h2>
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.config.set_config">
-<span class="sig-prename descclassname"><span class="pre">gpflow.config.</span></span><span class="sig-name descname"><span class="pre">set_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">new_config</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/config/__config__.html#set_config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.config.set_config" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">gpflow.config.</span></span><span class="sig-name descname"><span class="pre">set_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">new_config</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/config/__config__.html#set_config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.config.set_config" title="Permalink to this definition">#</a></dt>
 <dd><p>Update GPflow config with new settings from <cite>new_config</cite>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -863,10 +857,10 @@ summary_fmt: Summary format for module printing.</p>
 
 </section>
 <section id="gpflow-config-set-default-float">
-<h2>gpflow.config.set_default_float<a class="headerlink" href="#gpflow-config-set-default-float" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.config.set_default_float<a class="headerlink" href="#gpflow-config-set-default-float" title="Permalink to this headline">#</a></h2>
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.config.set_default_float">
-<span class="sig-prename descclassname"><span class="pre">gpflow.config.</span></span><span class="sig-name descname"><span class="pre">set_default_float</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value_type</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/config/__config__.html#set_default_float"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.config.set_default_float" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">gpflow.config.</span></span><span class="sig-name descname"><span class="pre">set_default_float</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value_type</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/config/__config__.html#set_default_float"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.config.set_default_float" title="Permalink to this definition">#</a></dt>
 <dd><p>Sets default float type. Available options are <cite>np.float16</cite>, <cite>np.float32</cite>,
 or <cite>np.float64</cite>.</p>
 <dl class="field-list simple">
@@ -881,10 +875,10 @@ or <cite>np.float64</cite>.</p>
 
 </section>
 <section id="gpflow-config-set-default-int">
-<h2>gpflow.config.set_default_int<a class="headerlink" href="#gpflow-config-set-default-int" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.config.set_default_int<a class="headerlink" href="#gpflow-config-set-default-int" title="Permalink to this headline">#</a></h2>
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.config.set_default_int">
-<span class="sig-prename descclassname"><span class="pre">gpflow.config.</span></span><span class="sig-name descname"><span class="pre">set_default_int</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value_type</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/config/__config__.html#set_default_int"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.config.set_default_int" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">gpflow.config.</span></span><span class="sig-name descname"><span class="pre">set_default_int</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value_type</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/config/__config__.html#set_default_int"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.config.set_default_int" title="Permalink to this definition">#</a></dt>
 <dd><p>Sets default integer type. Available options are <code class="docutils literal notranslate"><span class="pre">np.int16</span></code>, <code class="docutils literal notranslate"><span class="pre">np.int32</span></code>,
 or <code class="docutils literal notranslate"><span class="pre">np.int64</span></code>.</p>
 <dl class="field-list simple">
@@ -899,10 +893,10 @@ or <code class="docutils literal notranslate"><span class="pre">np.int64</span><
 
 </section>
 <section id="gpflow-config-set-default-jitter">
-<h2>gpflow.config.set_default_jitter<a class="headerlink" href="#gpflow-config-set-default-jitter" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.config.set_default_jitter<a class="headerlink" href="#gpflow-config-set-default-jitter" title="Permalink to this headline">#</a></h2>
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.config.set_default_jitter">
-<span class="sig-prename descclassname"><span class="pre">gpflow.config.</span></span><span class="sig-name descname"><span class="pre">set_default_jitter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/config/__config__.html#set_default_jitter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.config.set_default_jitter" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">gpflow.config.</span></span><span class="sig-name descname"><span class="pre">set_default_jitter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/config/__config__.html#set_default_jitter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.config.set_default_jitter" title="Permalink to this definition">#</a></dt>
 <dd><p>Sets constant jitter value.
 The jitter is a constant that GPflow adds to the diagonal of matrices
 to achieve numerical stability of the system when the condition number
@@ -919,10 +913,10 @@ of the associated matrices is large, and therefore the matrices nearly singular.
 
 </section>
 <section id="gpflow-config-set-default-positive-bijector">
-<h2>gpflow.config.set_default_positive_bijector<a class="headerlink" href="#gpflow-config-set-default-positive-bijector" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.config.set_default_positive_bijector<a class="headerlink" href="#gpflow-config-set-default-positive-bijector" title="Permalink to this headline">#</a></h2>
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.config.set_default_positive_bijector">
-<span class="sig-prename descclassname"><span class="pre">gpflow.config.</span></span><span class="sig-name descname"><span class="pre">set_default_positive_bijector</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/config/__config__.html#set_default_positive_bijector"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.config.set_default_positive_bijector" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">gpflow.config.</span></span><span class="sig-name descname"><span class="pre">set_default_positive_bijector</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/config/__config__.html#set_default_positive_bijector"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.config.set_default_positive_bijector" title="Permalink to this definition">#</a></dt>
 <dd><p>Sets positive bijector type.
 There are currently two options implemented: “exp” and “softplus”.</p>
 <dl class="field-list simple">
@@ -937,10 +931,10 @@ There are currently two options implemented: “exp” and “softplus”.</p>
 
 </section>
 <section id="gpflow-config-set-default-positive-minimum">
-<h2>gpflow.config.set_default_positive_minimum<a class="headerlink" href="#gpflow-config-set-default-positive-minimum" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.config.set_default_positive_minimum<a class="headerlink" href="#gpflow-config-set-default-positive-minimum" title="Permalink to this headline">#</a></h2>
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.config.set_default_positive_minimum">
-<span class="sig-prename descclassname"><span class="pre">gpflow.config.</span></span><span class="sig-name descname"><span class="pre">set_default_positive_minimum</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/config/__config__.html#set_default_positive_minimum"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.config.set_default_positive_minimum" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">gpflow.config.</span></span><span class="sig-name descname"><span class="pre">set_default_positive_minimum</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/config/__config__.html#set_default_positive_minimum"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.config.set_default_positive_minimum" title="Permalink to this definition">#</a></dt>
 <dd><p>Sets shift constant for positive transformation.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -954,10 +948,10 @@ There are currently two options implemented: “exp” and “softplus”.</p>
 
 </section>
 <section id="gpflow-config-set-default-summary-fmt">
-<h2>gpflow.config.set_default_summary_fmt<a class="headerlink" href="#gpflow-config-set-default-summary-fmt" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.config.set_default_summary_fmt<a class="headerlink" href="#gpflow-config-set-default-summary-fmt" title="Permalink to this headline">#</a></h2>
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.config.set_default_summary_fmt">
-<span class="sig-prename descclassname"><span class="pre">gpflow.config.</span></span><span class="sig-name descname"><span class="pre">set_default_summary_fmt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/config/__config__.html#set_default_summary_fmt"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.config.set_default_summary_fmt" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">gpflow.config.</span></span><span class="sig-name descname"><span class="pre">set_default_summary_fmt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/config/__config__.html#set_default_summary_fmt"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.config.set_default_summary_fmt" title="Permalink to this definition">#</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>value</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>]) – </p>
@@ -981,8 +975,9 @@ There are currently two options implemented: “exp” and “softplus”.</p>
       </div>
     </div>
   
-    <script src="../../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf"></script>
-  <footer class="footer mt-5 mt-md-0">
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf"></script>
+<footer class="footer mt-5 mt-md-0">
   <div class="container">
     
     <div class="footer-item">
@@ -993,7 +988,7 @@ There are currently two options implemented: “exp” and “softplus”.</p>
     
     <div class="footer-item">
       <p class="sphinx-version">
-Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.4.0.<br>
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.5.0.<br>
 </p>
     </div>
     

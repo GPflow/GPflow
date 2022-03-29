@@ -8,27 +8,24 @@
 
     <title>Natural gradients &#8212; GPflow 2.4.0 documentation</title>
     
-    <link href="../../_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
 <link href="../../_static/styles/pydata-sphinx-theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
-  
+
     
-    <link rel="stylesheet"
-      href="../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
-    <link rel="preload" as="font" type="font/woff2" crossorigin
-      href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
-    <link rel="preload" as="font" type="font/woff2" crossorigin
-      href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
-  
-    
-      
-  
-    
+  <link rel="stylesheet"
+    href="../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../../_static/styles/pydata-sphinx-theme.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/pydata-custom.css" />
     
-    <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf">
-  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf">
+
     <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
     <script src="../../_static/jquery.js"></script>
     <script src="../../_static/underscore.js"></script>
@@ -48,7 +45,7 @@
     <!-- Google Analytics -->
     
   </head>
-  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="80">
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="60">
     
     <div class="container-fluid" id="banner"></div>
 
@@ -144,13 +141,6 @@
 -->
 
 <script type="text/javascript">
-// Construct the target URL from the JSON components
-function buildURL(entry) {
-    var template = "https://gpflow.github.io/GPflow/{version}/index.html";  // supplied by jinja
-    template = template.replace("{version}", entry.version);
-    return template;
-}
-
 // Check if corresponding page path exists in other version of docs
 // and, if so, go there instead of the homepage of the other docs version
 function checkPageExistsAndRedirect(event) {
@@ -186,14 +176,16 @@ function checkPageExistsAndRedirect(event) {
             const node = document.createElement("a");
             node.setAttribute("class", "list-group-item list-group-item-action py-1");
             node.textContent = `${entry.name}`;
-            // get the base URL for that doc version, add the current page's
-            // path to it, and set as `href`
-            entry.url = buildURL(entry);
             node.setAttribute("href", `${entry.url}${currentFilePath}`);
             // on click, AJAX calls will check if the linked page exists before
             // trying to redirect, and if not, will redirect to the homepage
             // for that version of the docs.
             node.onclick = checkPageExistsAndRedirect;
+            // Add dataset values for the version and name in case people want
+            // to apply CSS styling based on this information.
+            node.dataset["versionName"] = entry.name;
+            node.dataset["version"] = entry.version;
+
             $("#version_switcher_menu").append(node);
             // replace dropdown button text with the preferred display name of
             // this version, rather than using sphinx's  variable.
@@ -201,7 +193,9 @@ function checkPageExistsAndRedirect(event) {
             // version's entry
             if (entry.version == "develop") {
                 node.classList.add("active");
-                $("#version_switcher_button").text(entry.name);
+                let btn = document.getElementById("version_switcher_button");
+                btn.innerText = btn.dataset["activeVersionName"] = entry.name;
+                btn.dataset["activeVersion"] = entry.version;
             }
         });
     });
@@ -427,7 +421,7 @@ function checkPageExistsAndRedirect(event) {
               
               <div class="toc-item">
                 
-<div class="tocsection onthispage pt-5 pb-3">
+<div class="tocsection onthispage mt-5 pt-1 pb-3">
     <i class="fas fa-list"></i> On this page
 </div>
 
@@ -747,7 +741,7 @@ div.rendered_html tbody tr:hover {
 }
 </style>
 <section id="Natural-gradients">
-<h1>Natural gradients<a class="headerlink" href="#Natural-gradients" title="Permalink to this headline">¶</a></h1>
+<h1>Natural gradients<a class="headerlink" href="#Natural-gradients" title="Permalink to this headline">#</a></h1>
 <p>This notebook shows some basic usage of the natural gradient optimizer, both on its own and in combination with Adam optimizer.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
@@ -792,17 +786,17 @@ div.rendered_html tbody tr:hover {
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2022-03-25 13:06:50.375587: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcudart.so.11.0&#39;; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory
-2022-03-25 13:06:50.375639: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.
-2022-03-25 13:06:53.463637: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcuda.so.1&#39;; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory
-2022-03-25 13:06:53.463682: W tensorflow/stream_executor/cuda/cuda_driver.cc:269] failed call to cuInit: UNKNOWN ERROR (303)
-2022-03-25 13:06:53.463704: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (d396962cedd5): /proc/driver/nvidia/version does not exist
-2022-03-25 13:06:53.464020: I tensorflow/core/platform/cpu_feature_guard.cc:151] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA
+2022-03-29 10:00:16.081078: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcudart.so.11.0&#39;; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory
+2022-03-29 10:00:16.081106: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.
+2022-03-29 10:00:18.709247: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcuda.so.1&#39;; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory
+2022-03-29 10:00:18.709281: W tensorflow/stream_executor/cuda/cuda_driver.cc:269] failed call to cuInit: UNKNOWN ERROR (303)
+2022-03-29 10:00:18.709301: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (9da31c79f42f): /proc/driver/nvidia/version does not exist
+2022-03-29 10:00:18.709574: I tensorflow/core/platform/cpu_feature_guard.cc:151] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA
 To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.
 </pre></div></div>
 </div>
 <section id="VGP-is-a-GPR">
-<h2>VGP is a GPR<a class="headerlink" href="#VGP-is-a-GPR" title="Permalink to this headline">¶</a></h2>
+<h2>VGP is a GPR<a class="headerlink" href="#VGP-is-a-GPR" title="Permalink to this headline">#</a></h2>
 <p>The following section demonstrates how natural gradients can turn VGP into GPR <em>in a single step, if the likelihood is Gaussian</em>.</p>
 <p>Let’s start by first creating a standard GPR model with Gaussian likelihood:</p>
 <div class="nbinput nblast docutils container">
@@ -876,7 +870,7 @@ To enable them in other operations, rebuild TensorFlow with the appropriate comp
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2022-03-25 13:06:53.640419: W tensorflow/python/util/util.cc:368] Sets are not currently considered sequences, but this may change in the future, so consider avoiding using them.
+2022-03-29 10:00:18.855764: W tensorflow/python/util/util.cc:368] Sets are not currently considered sequences, but this may change in the future, so consider avoiding using them.
 </pre></div></div>
 </div>
 <p>The ELBO of the approximate GP model after a single NatGrad step:</p>
@@ -899,7 +893,7 @@ To enable them in other operations, rebuild TensorFlow with the appropriate comp
 </div>
 </section>
 <section id="Optimize-both-variational-parameters-and-kernel-hyperparameters-together">
-<h2>Optimize both variational parameters and kernel hyperparameters together<a class="headerlink" href="#Optimize-both-variational-parameters-and-kernel-hyperparameters-together" title="Permalink to this headline">¶</a></h2>
+<h2>Optimize both variational parameters and kernel hyperparameters together<a class="headerlink" href="#Optimize-both-variational-parameters-and-kernel-hyperparameters-together" title="Permalink to this headline">#</a></h2>
 <p>In the Gaussian likelihood case we can iterate between an Adam update for the hyperparameters and a NatGrad update for the variational parameters. That way, we achieve optimization of hyperparameters as if the model were a GPR.</p>
 <p>The trick is to forbid Adam from updating the variational parameters by setting them to not trainable.</p>
 <div class="nbinput nblast docutils container">
@@ -983,7 +977,7 @@ VGP lengthscales = 0.9687
 </div>
 </section>
 <section id="Natural-gradients-also-work-for-the-sparse-model">
-<h2>Natural gradients also work for the sparse model<a class="headerlink" href="#Natural-gradients-also-work-for-the-sparse-model" title="Permalink to this headline">¶</a></h2>
+<h2>Natural gradients also work for the sparse model<a class="headerlink" href="#Natural-gradients-also-work-for-the-sparse-model" title="Permalink to this headline">#</a></h2>
 <p>Similarly, natural gradients turn SVGP into SGPR in the Gaussian likelihood case. We can again combine natural gradients with Adam to update both variational parameters and hyperparameters too. Here we’ll just do a single natural step demonstration.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
@@ -1068,7 +1062,7 @@ VGP lengthscales = 0.9687
 </div>
 </section>
 <section id="Minibatches">
-<h2>Minibatches<a class="headerlink" href="#Minibatches" title="Permalink to this headline">¶</a></h2>
+<h2>Minibatches<a class="headerlink" href="#Minibatches" title="Permalink to this headline">#</a></h2>
 <p>A crucial property of the natural gradient method is that it still works with minibatches. In practice though, we need to use a smaller gamma.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
@@ -1127,9 +1121,9 @@ To silence this warning, decorate the function with @tf.autograph.experimental.d
 </div>
 </section>
 <section id="Comparison-with-ordinary-gradients-in-the-conjugate-case">
-<h2>Comparison with ordinary gradients in the conjugate case<a class="headerlink" href="#Comparison-with-ordinary-gradients-in-the-conjugate-case" title="Permalink to this headline">¶</a></h2>
+<h2>Comparison with ordinary gradients in the conjugate case<a class="headerlink" href="#Comparison-with-ordinary-gradients-in-the-conjugate-case" title="Permalink to this headline">#</a></h2>
 <section id="(Take-home-message:-natural-gradients-are-always-better)">
-<h3>(Take home message: natural gradients are always better)<a class="headerlink" href="#(Take-home-message:-natural-gradients-are-always-better)" title="Permalink to this headline">¶</a></h3>
+<h3>(Take home message: natural gradients are always better)<a class="headerlink" href="#(Take-home-message:-natural-gradients-are-always-better)" title="Permalink to this headline">#</a></h3>
 <p>Compared to SVGP with ordinary gradients with minibatches, the natural gradient optimizer is much faster in the Gaussian case.</p>
 <p>Here we’ll do hyperparameter learning together with optimization of the variational parameters, comparing the interleaved natural gradient approach and the one using ordinary gradients for the hyperparameters and variational parameters jointly.</p>
 <p><strong>NOTE:</strong> Again we need to compromise for smaller gamma value, which we’ll keep <em>fixed</em> during the optimization.</p>
@@ -1232,9 +1226,9 @@ To silence this warning, decorate the function with @tf.autograph.experimental.d
 </section>
 </section>
 <section id="Comparison-with-ordinary-gradients-in-the-non-conjugate-case">
-<h2>Comparison with ordinary gradients in the non-conjugate case<a class="headerlink" href="#Comparison-with-ordinary-gradients-in-the-non-conjugate-case" title="Permalink to this headline">¶</a></h2>
+<h2>Comparison with ordinary gradients in the non-conjugate case<a class="headerlink" href="#Comparison-with-ordinary-gradients-in-the-non-conjugate-case" title="Permalink to this headline">#</a></h2>
 <section id="(Take-home-message:-natural-gradients-are-usually-better)">
-<h3>(Take home message: natural gradients are usually better)<a class="headerlink" href="#(Take-home-message:-natural-gradients-are-usually-better)" title="Permalink to this headline">¶</a></h3>
+<h3>(Take home message: natural gradients are usually better)<a class="headerlink" href="#(Take-home-message:-natural-gradients-are-usually-better)" title="Permalink to this headline">#</a></h3>
 <p>We can use natural gradients even when the likelihood isn’t Gaussian. It isn’t guaranteed to be better, but it usually is better in practical situations.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[23]:
@@ -1397,8 +1391,9 @@ WARNING:tensorflow:Calling GradientTape.gradient on a persistent tape inside its
       </div>
     </div>
   
-    <script src="../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf"></script>
-  <footer class="footer mt-5 mt-md-0">
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf"></script>
+<footer class="footer mt-5 mt-md-0">
   <div class="container">
     
     <div class="footer-item">
@@ -1409,7 +1404,7 @@ WARNING:tensorflow:Calling GradientTape.gradient on a persistent tape inside its
     
     <div class="footer-item">
       <p class="sphinx-version">
-Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.4.0.<br>
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.5.0.<br>
 </p>
     </div>
     

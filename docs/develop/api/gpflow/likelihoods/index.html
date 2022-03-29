@@ -8,27 +8,24 @@
 
     <title>gpflow.likelihoods &#8212; GPflow 2.4.0 documentation</title>
     
-    <link href="../../../_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
 <link href="../../../_static/styles/pydata-sphinx-theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
-  
+
     
-    <link rel="stylesheet"
-      href="../../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
-    <link rel="preload" as="font" type="font/woff2" crossorigin
-      href="../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
-    <link rel="preload" as="font" type="font/woff2" crossorigin
-      href="../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
-  
-    
-      
-  
-    
+  <link rel="stylesheet"
+    href="../../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../../../_static/styles/pydata-sphinx-theme.css" />
     <link rel="stylesheet" type="text/css" href="../../../_static/pydata-custom.css" />
     
-    <link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf">
-  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf">
+
     <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
     <script src="../../../_static/jquery.js"></script>
     <script src="../../../_static/underscore.js"></script>
@@ -46,7 +43,7 @@
     <!-- Google Analytics -->
     
   </head>
-  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="80">
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="60">
     
     <div class="container-fluid" id="banner"></div>
 
@@ -142,13 +139,6 @@
 -->
 
 <script type="text/javascript">
-// Construct the target URL from the JSON components
-function buildURL(entry) {
-    var template = "https://gpflow.github.io/GPflow/{version}/index.html";  // supplied by jinja
-    template = template.replace("{version}", entry.version);
-    return template;
-}
-
 // Check if corresponding page path exists in other version of docs
 // and, if so, go there instead of the homepage of the other docs version
 function checkPageExistsAndRedirect(event) {
@@ -184,14 +174,16 @@ function checkPageExistsAndRedirect(event) {
             const node = document.createElement("a");
             node.setAttribute("class", "list-group-item list-group-item-action py-1");
             node.textContent = `${entry.name}`;
-            // get the base URL for that doc version, add the current page's
-            // path to it, and set as `href`
-            entry.url = buildURL(entry);
             node.setAttribute("href", `${entry.url}${currentFilePath}`);
             // on click, AJAX calls will check if the linked page exists before
             // trying to redirect, and if not, will redirect to the homepage
             // for that version of the docs.
             node.onclick = checkPageExistsAndRedirect;
+            // Add dataset values for the version and name in case people want
+            // to apply CSS styling based on this information.
+            node.dataset["versionName"] = entry.name;
+            node.dataset["version"] = entry.version;
+
             $("#version_switcher_menu").append(node);
             // replace dropdown button text with the preferred display name of
             // this version, rather than using sphinx's  variable.
@@ -199,7 +191,9 @@ function checkPageExistsAndRedirect(event) {
             // version's entry
             if (entry.version == "develop") {
                 node.classList.add("active");
-                $("#version_switcher_button").text(entry.name);
+                let btn = document.getElementById("version_switcher_button");
+                btn.innerText = btn.dataset["activeVersionName"] = entry.name;
+                btn.dataset["activeVersion"] = entry.version;
             }
         });
     });
@@ -611,7 +605,7 @@ function checkPageExistsAndRedirect(event) {
               
               <div class="toc-item">
                 
-<div class="tocsection onthispage pt-5 pb-3">
+<div class="tocsection onthispage mt-5 pt-1 pb-3">
     <i class="fas fa-list"></i> On this page
 </div>
 
@@ -744,12 +738,12 @@ function checkPageExistsAndRedirect(event) {
               <div>
                 
   <section id="gpflow-likelihoods">
-<h1>gpflow.likelihoods<a class="headerlink" href="#gpflow-likelihoods" title="Permalink to this headline">¶</a></h1>
+<h1>gpflow.likelihoods<a class="headerlink" href="#gpflow-likelihoods" title="Permalink to this headline">#</a></h1>
 <span class="target" id="module-gpflow.likelihoods"></span><section id="gpflow-likelihoods-bernoulli">
-<h2>gpflow.likelihoods.Bernoulli<a class="headerlink" href="#gpflow-likelihoods-bernoulli" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.likelihoods.Bernoulli<a class="headerlink" href="#gpflow-likelihoods-bernoulli" title="Permalink to this headline">#</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="gpflow.likelihoods.Bernoulli">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.likelihoods.</span></span><span class="sig-name descname"><span class="pre">Bernoulli</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">invlink=&lt;function</span> <span class="pre">inv_probit&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">**kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/likelihoods/scalar_discrete.html#Bernoulli"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.likelihoods.Bernoulli" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.likelihoods.</span></span><span class="sig-name descname"><span class="pre">Bernoulli</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">invlink=&lt;function</span> <span class="pre">inv_probit&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">**kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/likelihoods/scalar_discrete.html#Bernoulli"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.likelihoods.Bernoulli" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#gpflow.likelihoods.ScalarLikelihood" title="gpflow.likelihoods.base.ScalarLikelihood"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.likelihoods.base.ScalarLikelihood</span></code></a></p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -763,10 +757,10 @@ function checkPageExistsAndRedirect(event) {
 
 </section>
 <section id="gpflow-likelihoods-beta">
-<h2>gpflow.likelihoods.Beta<a class="headerlink" href="#gpflow-likelihoods-beta" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.likelihoods.Beta<a class="headerlink" href="#gpflow-likelihoods-beta" title="Permalink to this headline">#</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="gpflow.likelihoods.Beta">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.likelihoods.</span></span><span class="sig-name descname"><span class="pre">Beta</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">invlink=&lt;function</span> <span class="pre">inv_probit&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale=1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">**kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/likelihoods/scalar_continuous.html#Beta"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.likelihoods.Beta" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.likelihoods.</span></span><span class="sig-name descname"><span class="pre">Beta</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">invlink=&lt;function</span> <span class="pre">inv_probit&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale=1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">**kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/likelihoods/scalar_continuous.html#Beta"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.likelihoods.Beta" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#gpflow.likelihoods.ScalarLikelihood" title="gpflow.likelihoods.base.ScalarLikelihood"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.likelihoods.base.ScalarLikelihood</span></code></a></p>
 <p>This uses a reparameterisation of the Beta density. We have the mean of the
 Beta distribution given by the transformed process:</p>
@@ -796,10 +790,10 @@ scale = α + β</p>
 
 </section>
 <section id="gpflow-likelihoods-exponential">
-<h2>gpflow.likelihoods.Exponential<a class="headerlink" href="#gpflow-likelihoods-exponential" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.likelihoods.Exponential<a class="headerlink" href="#gpflow-likelihoods-exponential" title="Permalink to this headline">#</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="gpflow.likelihoods.Exponential">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.likelihoods.</span></span><span class="sig-name descname"><span class="pre">Exponential</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">invlink=&lt;function</span> <span class="pre">exp&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">**kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/likelihoods/scalar_continuous.html#Exponential"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.likelihoods.Exponential" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.likelihoods.</span></span><span class="sig-name descname"><span class="pre">Exponential</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">invlink=&lt;function</span> <span class="pre">exp&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">**kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/likelihoods/scalar_continuous.html#Exponential"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.likelihoods.Exponential" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#gpflow.likelihoods.ScalarLikelihood" title="gpflow.likelihoods.base.ScalarLikelihood"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.likelihoods.base.ScalarLikelihood</span></code></a></p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -813,10 +807,10 @@ scale = α + β</p>
 
 </section>
 <section id="gpflow-likelihoods-gamma">
-<h2>gpflow.likelihoods.Gamma<a class="headerlink" href="#gpflow-likelihoods-gamma" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.likelihoods.Gamma<a class="headerlink" href="#gpflow-likelihoods-gamma" title="Permalink to this headline">#</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="gpflow.likelihoods.Gamma">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.likelihoods.</span></span><span class="sig-name descname"><span class="pre">Gamma</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">invlink=&lt;function</span> <span class="pre">exp&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">**kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/likelihoods/scalar_continuous.html#Gamma"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.likelihoods.Gamma" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.likelihoods.</span></span><span class="sig-name descname"><span class="pre">Gamma</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">invlink=&lt;function</span> <span class="pre">exp&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">**kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/likelihoods/scalar_continuous.html#Gamma"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.likelihoods.Gamma" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#gpflow.likelihoods.ScalarLikelihood" title="gpflow.likelihoods.base.ScalarLikelihood"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.likelihoods.base.ScalarLikelihood</span></code></a></p>
 <p>Use the transformed GP to give the <em>scale</em> (inverse rate) of the Gamma</p>
 <dl class="field-list simple">
@@ -831,10 +825,10 @@ scale = α + β</p>
 
 </section>
 <section id="gpflow-likelihoods-gaussian">
-<h2>gpflow.likelihoods.Gaussian<a class="headerlink" href="#gpflow-likelihoods-gaussian" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.likelihoods.Gaussian<a class="headerlink" href="#gpflow-likelihoods-gaussian" title="Permalink to this headline">#</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="gpflow.likelihoods.Gaussian">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.likelihoods.</span></span><span class="sig-name descname"><span class="pre">Gaussian</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">variance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">variance_lower_bound</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-06</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/likelihoods/scalar_continuous.html#Gaussian"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.likelihoods.Gaussian" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.likelihoods.</span></span><span class="sig-name descname"><span class="pre">Gaussian</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">variance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">variance_lower_bound</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-06</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/likelihoods/scalar_continuous.html#Gaussian"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.likelihoods.Gaussian" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#gpflow.likelihoods.ScalarLikelihood" title="gpflow.likelihoods.base.ScalarLikelihood"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.likelihoods.base.ScalarLikelihood</span></code></a></p>
 <p>The Gaussian likelihood is appropriate where uncertainties associated with
 the data are believed to follow a normal distribution, with constant
@@ -855,10 +849,10 @@ likelihood variance by default.</p>
 
 </section>
 <section id="gpflow-likelihoods-gaussianmc">
-<h2>gpflow.likelihoods.GaussianMC<a class="headerlink" href="#gpflow-likelihoods-gaussianmc" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.likelihoods.GaussianMC<a class="headerlink" href="#gpflow-likelihoods-gaussianmc" title="Permalink to this headline">#</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="gpflow.likelihoods.GaussianMC">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.likelihoods.</span></span><span class="sig-name descname"><span class="pre">GaussianMC</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/likelihoods/misc.html#GaussianMC"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.likelihoods.GaussianMC" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.likelihoods.</span></span><span class="sig-name descname"><span class="pre">GaussianMC</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/likelihoods/misc.html#GaussianMC"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.likelihoods.GaussianMC" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#gpflow.likelihoods.MonteCarloLikelihood" title="gpflow.likelihoods.base.MonteCarloLikelihood"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.likelihoods.base.MonteCarloLikelihood</span></code></a>, <a class="reference internal" href="#gpflow.likelihoods.Gaussian" title="gpflow.likelihoods.scalar_continuous.Gaussian"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.likelihoods.scalar_continuous.Gaussian</span></code></a></p>
 <p>Stochastic version of Gaussian likelihood for demonstration purposes only.</p>
 <dl class="field-list simple">
@@ -873,10 +867,10 @@ likelihood variance by default.</p>
 
 </section>
 <section id="gpflow-likelihoods-heteroskedastictfpconditional">
-<h2>gpflow.likelihoods.HeteroskedasticTFPConditional<a class="headerlink" href="#gpflow-likelihoods-heteroskedastictfpconditional" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.likelihoods.HeteroskedasticTFPConditional<a class="headerlink" href="#gpflow-likelihoods-heteroskedastictfpconditional" title="Permalink to this headline">#</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="gpflow.likelihoods.HeteroskedasticTFPConditional">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.likelihoods.</span></span><span class="sig-name descname"><span class="pre">HeteroskedasticTFPConditional</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">distribution_class=&lt;class</span> <span class="pre">'tensorflow_probability.python.distributions.normal.Normal'&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale_transform=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">**kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/likelihoods/multilatent.html#HeteroskedasticTFPConditional"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.likelihoods.HeteroskedasticTFPConditional" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.likelihoods.</span></span><span class="sig-name descname"><span class="pre">HeteroskedasticTFPConditional</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">distribution_class=&lt;class</span> <span class="pre">'tensorflow_probability.python.distributions.normal.Normal'&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale_transform=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">**kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/likelihoods/multilatent.html#HeteroskedasticTFPConditional"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.likelihoods.HeteroskedasticTFPConditional" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#gpflow.likelihoods.MultiLatentTFPConditional" title="gpflow.likelihoods.multilatent.MultiLatentTFPConditional"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.likelihoods.multilatent.MultiLatentTFPConditional</span></code></a></p>
 <p>Heteroskedastic Likelihood where the conditional distribution
 is given by a TensorFlow Probability Distribution.
@@ -895,10 +889,10 @@ two-dimensional multi-output GP.</p>
 
 </section>
 <section id="gpflow-likelihoods-likelihood">
-<h2>gpflow.likelihoods.Likelihood<a class="headerlink" href="#gpflow-likelihoods-likelihood" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.likelihoods.Likelihood<a class="headerlink" href="#gpflow-likelihoods-likelihood" title="Permalink to this headline">#</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="gpflow.likelihoods.Likelihood">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.likelihoods.</span></span><span class="sig-name descname"><span class="pre">Likelihood</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">latent_dim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">observation_dim</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/likelihoods/base.html#Likelihood"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.likelihoods.Likelihood" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.likelihoods.</span></span><span class="sig-name descname"><span class="pre">Likelihood</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">latent_dim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">observation_dim</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/likelihoods/base.html#Likelihood"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.likelihoods.Likelihood" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="../index.html#gpflow.Module" title="gpflow.base.Module"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.base.Module</span></code></a></p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -910,7 +904,7 @@ two-dimensional multi-output GP.</p>
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="gpflow.likelihoods.Likelihood.conditional_mean">
-<span class="sig-name descname"><span class="pre">conditional_mean</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">F</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/likelihoods/base.html#Likelihood.conditional_mean"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.likelihoods.Likelihood.conditional_mean" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">conditional_mean</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">F</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/likelihoods/base.html#Likelihood.conditional_mean"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.likelihoods.Likelihood.conditional_mean" title="Permalink to this definition">#</a></dt>
 <dd><p>The conditional mean of Y|F: [E[Y₁|F], …, E[Yₖ|F]]
 where K = observation_dim</p>
 <dl class="field-list simple">
@@ -928,7 +922,7 @@ where K = observation_dim</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="gpflow.likelihoods.Likelihood.conditional_variance">
-<span class="sig-name descname"><span class="pre">conditional_variance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">F</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/likelihoods/base.html#Likelihood.conditional_variance"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.likelihoods.Likelihood.conditional_variance" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">conditional_variance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">F</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/likelihoods/base.html#Likelihood.conditional_variance"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.likelihoods.Likelihood.conditional_variance" title="Permalink to this definition">#</a></dt>
 <dd><p>The conditional marginal variance of Y|F: [var(Y₁|F), …, var(Yₖ|F)]
 where K = observation_dim</p>
 <dl class="field-list simple">
@@ -946,7 +940,7 @@ where K = observation_dim</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="gpflow.likelihoods.Likelihood.log_prob">
-<span class="sig-name descname"><span class="pre">log_prob</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">F</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Y</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/likelihoods/base.html#Likelihood.log_prob"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.likelihoods.Likelihood.log_prob" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">log_prob</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">F</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Y</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/likelihoods/base.html#Likelihood.log_prob"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.likelihoods.Likelihood.log_prob" title="Permalink to this definition">#</a></dt>
 <dd><p>The log probability density log p(Y|F)</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -966,7 +960,7 @@ where K = observation_dim</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="gpflow.likelihoods.Likelihood.predict_log_density">
-<span class="sig-name descname"><span class="pre">predict_log_density</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Fmu</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Fvar</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Y</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/likelihoods/base.html#Likelihood.predict_log_density"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.likelihoods.Likelihood.predict_log_density" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">predict_log_density</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Fmu</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Fvar</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Y</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/likelihoods/base.html#Likelihood.predict_log_density"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.likelihoods.Likelihood.predict_log_density" title="Permalink to this definition">#</a></dt>
 <dd><p>Given a Normal distribution for the latent function, and a datum Y,
 compute the log predictive density of Y,</p>
 <dl class="simple">
@@ -1000,7 +994,7 @@ compute the log predictive density of Y,</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="gpflow.likelihoods.Likelihood.predict_mean_and_var">
-<span class="sig-name descname"><span class="pre">predict_mean_and_var</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Fmu</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Fvar</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/likelihoods/base.html#Likelihood.predict_mean_and_var"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.likelihoods.Likelihood.predict_mean_and_var" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">predict_mean_and_var</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Fmu</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Fvar</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/likelihoods/base.html#Likelihood.predict_mean_and_var"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.likelihoods.Likelihood.predict_mean_and_var" title="Permalink to this definition">#</a></dt>
 <dd><p>Given a Normal distribution for the latent function,
 return the mean and marginal variance of Y,</p>
 <dl class="simple">
@@ -1037,7 +1031,7 @@ return the mean and marginal variance of Y,</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="gpflow.likelihoods.Likelihood.variational_expectations">
-<span class="sig-name descname"><span class="pre">variational_expectations</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Fmu</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Fvar</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Y</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/likelihoods/base.html#Likelihood.variational_expectations"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.likelihoods.Likelihood.variational_expectations" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">variational_expectations</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Fmu</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Fvar</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Y</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/likelihoods/base.html#Likelihood.variational_expectations"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.likelihoods.Likelihood.variational_expectations" title="Permalink to this definition">#</a></dt>
 <dd><p>Compute the expected log density of the data, given a Gaussian
 distribution for the function values,</p>
 <dl class="simple">
@@ -1075,10 +1069,10 @@ are broadcastable with that of the data Y.</p>
 
 </section>
 <section id="gpflow-likelihoods-montecarlolikelihood">
-<h2>gpflow.likelihoods.MonteCarloLikelihood<a class="headerlink" href="#gpflow-likelihoods-montecarlolikelihood" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.likelihoods.MonteCarloLikelihood<a class="headerlink" href="#gpflow-likelihoods-montecarlolikelihood" title="Permalink to this headline">#</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="gpflow.likelihoods.MonteCarloLikelihood">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.likelihoods.</span></span><span class="sig-name descname"><span class="pre">MonteCarloLikelihood</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/likelihoods/base.html#MonteCarloLikelihood"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.likelihoods.MonteCarloLikelihood" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.likelihoods.</span></span><span class="sig-name descname"><span class="pre">MonteCarloLikelihood</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/likelihoods/base.html#MonteCarloLikelihood"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.likelihoods.MonteCarloLikelihood" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#gpflow.likelihoods.Likelihood" title="gpflow.likelihoods.base.Likelihood"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.likelihoods.base.Likelihood</span></code></a></p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -1092,10 +1086,10 @@ are broadcastable with that of the data Y.</p>
 
 </section>
 <section id="gpflow-likelihoods-multiclass">
-<h2>gpflow.likelihoods.MultiClass<a class="headerlink" href="#gpflow-likelihoods-multiclass" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.likelihoods.MultiClass<a class="headerlink" href="#gpflow-likelihoods-multiclass" title="Permalink to this headline">#</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="gpflow.likelihoods.MultiClass">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.likelihoods.</span></span><span class="sig-name descname"><span class="pre">MultiClass</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num_classes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">invlink</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/likelihoods/multiclass.html#MultiClass"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.likelihoods.MultiClass" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.likelihoods.</span></span><span class="sig-name descname"><span class="pre">MultiClass</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num_classes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">invlink</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/likelihoods/multiclass.html#MultiClass"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.likelihoods.MultiClass" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#gpflow.likelihoods.Likelihood" title="gpflow.likelihoods.base.Likelihood"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.likelihoods.base.Likelihood</span></code></a></p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -1110,10 +1104,10 @@ are broadcastable with that of the data Y.</p>
 
 </section>
 <section id="gpflow-likelihoods-multilatentlikelihood">
-<h2>gpflow.likelihoods.MultiLatentLikelihood<a class="headerlink" href="#gpflow-likelihoods-multilatentlikelihood" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.likelihoods.MultiLatentLikelihood<a class="headerlink" href="#gpflow-likelihoods-multilatentlikelihood" title="Permalink to this headline">#</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="gpflow.likelihoods.MultiLatentLikelihood">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.likelihoods.</span></span><span class="sig-name descname"><span class="pre">MultiLatentLikelihood</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">latent_dim</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/likelihoods/multilatent.html#MultiLatentLikelihood"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.likelihoods.MultiLatentLikelihood" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.likelihoods.</span></span><span class="sig-name descname"><span class="pre">MultiLatentLikelihood</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">latent_dim</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/likelihoods/multilatent.html#MultiLatentLikelihood"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.likelihoods.MultiLatentLikelihood" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#gpflow.likelihoods.QuadratureLikelihood" title="gpflow.likelihoods.base.QuadratureLikelihood"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.likelihoods.base.QuadratureLikelihood</span></code></a></p>
 <p>A Likelihood which assumes that a single dimensional observation is driven
 by multiple latent GPs.</p>
@@ -1131,10 +1125,10 @@ covariance between outputs.</p>
 
 </section>
 <section id="gpflow-likelihoods-multilatenttfpconditional">
-<h2>gpflow.likelihoods.MultiLatentTFPConditional<a class="headerlink" href="#gpflow-likelihoods-multilatenttfpconditional" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.likelihoods.MultiLatentTFPConditional<a class="headerlink" href="#gpflow-likelihoods-multilatenttfpconditional" title="Permalink to this headline">#</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="gpflow.likelihoods.MultiLatentTFPConditional">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.likelihoods.</span></span><span class="sig-name descname"><span class="pre">MultiLatentTFPConditional</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">latent_dim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conditional_distribution</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/likelihoods/multilatent.html#MultiLatentTFPConditional"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.likelihoods.MultiLatentTFPConditional" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.likelihoods.</span></span><span class="sig-name descname"><span class="pre">MultiLatentTFPConditional</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">latent_dim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conditional_distribution</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/likelihoods/multilatent.html#MultiLatentTFPConditional"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.likelihoods.MultiLatentTFPConditional" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#gpflow.likelihoods.MultiLatentLikelihood" title="gpflow.likelihoods.multilatent.MultiLatentLikelihood"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.likelihoods.multilatent.MultiLatentLikelihood</span></code></a></p>
 <p>MultiLatent likelihood where the conditional distribution
 is given by a TensorFlow Probability Distribution.</p>
@@ -1151,10 +1145,10 @@ is given by a TensorFlow Probability Distribution.</p>
 
 </section>
 <section id="gpflow-likelihoods-ordinal">
-<h2>gpflow.likelihoods.Ordinal<a class="headerlink" href="#gpflow-likelihoods-ordinal" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.likelihoods.Ordinal<a class="headerlink" href="#gpflow-likelihoods-ordinal" title="Permalink to this headline">#</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="gpflow.likelihoods.Ordinal">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.likelihoods.</span></span><span class="sig-name descname"><span class="pre">Ordinal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bin_edges</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/likelihoods/scalar_discrete.html#Ordinal"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.likelihoods.Ordinal" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.likelihoods.</span></span><span class="sig-name descname"><span class="pre">Ordinal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bin_edges</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/likelihoods/scalar_discrete.html#Ordinal"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.likelihoods.Ordinal" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#gpflow.likelihoods.ScalarLikelihood" title="gpflow.likelihoods.base.ScalarLikelihood"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.likelihoods.base.ScalarLikelihood</span></code></a></p>
 <p>A likelihood for doing ordinal regression.</p>
 <p>The data are integer values from 0 to k, and the user must specify (k-1)
@@ -1190,10 +1184,10 @@ year={2005}</p>
 
 </section>
 <section id="gpflow-likelihoods-poisson">
-<h2>gpflow.likelihoods.Poisson<a class="headerlink" href="#gpflow-likelihoods-poisson" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.likelihoods.Poisson<a class="headerlink" href="#gpflow-likelihoods-poisson" title="Permalink to this headline">#</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="gpflow.likelihoods.Poisson">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.likelihoods.</span></span><span class="sig-name descname"><span class="pre">Poisson</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">invlink=&lt;function</span> <span class="pre">exp&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">binsize=1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">**kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/likelihoods/scalar_discrete.html#Poisson"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.likelihoods.Poisson" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.likelihoods.</span></span><span class="sig-name descname"><span class="pre">Poisson</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">invlink=&lt;function</span> <span class="pre">exp&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">binsize=1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">**kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/likelihoods/scalar_discrete.html#Poisson"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.likelihoods.Poisson" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#gpflow.likelihoods.ScalarLikelihood" title="gpflow.likelihoods.base.ScalarLikelihood"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.likelihoods.base.ScalarLikelihood</span></code></a></p>
 <p>Poisson likelihood for use with count data, where the rate is given by the (transformed) GP.</p>
 <p>let g(.) be the inverse-link function, then this likelihood represents</p>
@@ -1216,10 +1210,10 @@ of size ‘binsize’) and using this Poisson likelihood.</p>
 
 </section>
 <section id="gpflow-likelihoods-quadraturelikelihood">
-<h2>gpflow.likelihoods.QuadratureLikelihood<a class="headerlink" href="#gpflow-likelihoods-quadraturelikelihood" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.likelihoods.QuadratureLikelihood<a class="headerlink" href="#gpflow-likelihoods-quadraturelikelihood" title="Permalink to this headline">#</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="gpflow.likelihoods.QuadratureLikelihood">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.likelihoods.</span></span><span class="sig-name descname"><span class="pre">QuadratureLikelihood</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">latent_dim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">observation_dim</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quadrature</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/likelihoods/base.html#QuadratureLikelihood"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.likelihoods.QuadratureLikelihood" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.likelihoods.</span></span><span class="sig-name descname"><span class="pre">QuadratureLikelihood</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">latent_dim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">observation_dim</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quadrature</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/likelihoods/base.html#QuadratureLikelihood"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.likelihoods.QuadratureLikelihood" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#gpflow.likelihoods.Likelihood" title="gpflow.likelihoods.base.Likelihood"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.likelihoods.base.Likelihood</span></code></a></p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -1234,10 +1228,10 @@ of size ‘binsize’) and using this Poisson likelihood.</p>
 
 </section>
 <section id="gpflow-likelihoods-robustmax">
-<h2>gpflow.likelihoods.RobustMax<a class="headerlink" href="#gpflow-likelihoods-robustmax" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.likelihoods.RobustMax<a class="headerlink" href="#gpflow-likelihoods-robustmax" title="Permalink to this headline">#</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="gpflow.likelihoods.RobustMax">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.likelihoods.</span></span><span class="sig-name descname"><span class="pre">RobustMax</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num_classes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epsilon</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.001</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/likelihoods/multiclass.html#RobustMax"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.likelihoods.RobustMax" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.likelihoods.</span></span><span class="sig-name descname"><span class="pre">RobustMax</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num_classes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epsilon</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.001</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/likelihoods/multiclass.html#RobustMax"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.likelihoods.RobustMax" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="../index.html#gpflow.Module" title="gpflow.base.Module"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.base.Module</span></code></a></p>
 <p>This class represent a multi-class inverse-link function. Given a vector
 f=[f_1, f_2, … f_k], the result of the mapping is</p>
@@ -1261,10 +1255,10 @@ f=[f_1, f_2, … f_k], the result of the mapping is</p>
 
 </section>
 <section id="gpflow-likelihoods-scalarlikelihood">
-<h2>gpflow.likelihoods.ScalarLikelihood<a class="headerlink" href="#gpflow-likelihoods-scalarlikelihood" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.likelihoods.ScalarLikelihood<a class="headerlink" href="#gpflow-likelihoods-scalarlikelihood" title="Permalink to this headline">#</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="gpflow.likelihoods.ScalarLikelihood">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.likelihoods.</span></span><span class="sig-name descname"><span class="pre">ScalarLikelihood</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/likelihoods/base.html#ScalarLikelihood"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.likelihoods.ScalarLikelihood" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.likelihoods.</span></span><span class="sig-name descname"><span class="pre">ScalarLikelihood</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/likelihoods/base.html#ScalarLikelihood"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.likelihoods.ScalarLikelihood" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#gpflow.likelihoods.QuadratureLikelihood" title="gpflow.likelihoods.base.QuadratureLikelihood"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.likelihoods.base.QuadratureLikelihood</span></code></a></p>
 <p>A likelihood class that helps with scalar likelihood functions: likelihoods where
 each scalar latent function is associated with a single scalar observation variable.</p>
@@ -1292,10 +1286,10 @@ integrals are available in closed form.</p>
 
 </section>
 <section id="gpflow-likelihoods-softmax">
-<h2>gpflow.likelihoods.Softmax<a class="headerlink" href="#gpflow-likelihoods-softmax" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.likelihoods.Softmax<a class="headerlink" href="#gpflow-likelihoods-softmax" title="Permalink to this headline">#</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="gpflow.likelihoods.Softmax">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.likelihoods.</span></span><span class="sig-name descname"><span class="pre">Softmax</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num_classes</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/likelihoods/multiclass.html#Softmax"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.likelihoods.Softmax" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.likelihoods.</span></span><span class="sig-name descname"><span class="pre">Softmax</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num_classes</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/likelihoods/multiclass.html#Softmax"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.likelihoods.Softmax" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#gpflow.likelihoods.MonteCarloLikelihood" title="gpflow.likelihoods.base.MonteCarloLikelihood"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.likelihoods.base.MonteCarloLikelihood</span></code></a></p>
 <p>The soft-max multi-class likelihood.  It can only provide a stochastic
 Monte-Carlo estimate of the variational expectations term, but this
@@ -1313,10 +1307,10 @@ added variance tends to be small compared to that due to mini-batching
 
 </section>
 <section id="gpflow-likelihoods-studentt">
-<h2>gpflow.likelihoods.StudentT<a class="headerlink" href="#gpflow-likelihoods-studentt" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.likelihoods.StudentT<a class="headerlink" href="#gpflow-likelihoods-studentt" title="Permalink to this headline">#</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="gpflow.likelihoods.StudentT">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.likelihoods.</span></span><span class="sig-name descname"><span class="pre">StudentT</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3.0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/likelihoods/scalar_continuous.html#StudentT"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.likelihoods.StudentT" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.likelihoods.</span></span><span class="sig-name descname"><span class="pre">StudentT</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3.0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/likelihoods/scalar_continuous.html#StudentT"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.likelihoods.StudentT" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#gpflow.likelihoods.ScalarLikelihood" title="gpflow.likelihoods.base.ScalarLikelihood"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.likelihoods.base.ScalarLikelihood</span></code></a></p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -1331,10 +1325,10 @@ added variance tends to be small compared to that due to mini-batching
 
 </section>
 <section id="gpflow-likelihoods-switchedlikelihood">
-<h2>gpflow.likelihoods.SwitchedLikelihood<a class="headerlink" href="#gpflow-likelihoods-switchedlikelihood" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.likelihoods.SwitchedLikelihood<a class="headerlink" href="#gpflow-likelihoods-switchedlikelihood" title="Permalink to this headline">#</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="gpflow.likelihoods.SwitchedLikelihood">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.likelihoods.</span></span><span class="sig-name descname"><span class="pre">SwitchedLikelihood</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">likelihood_list</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/likelihoods/base.html#SwitchedLikelihood"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.likelihoods.SwitchedLikelihood" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.likelihoods.</span></span><span class="sig-name descname"><span class="pre">SwitchedLikelihood</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">likelihood_list</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/likelihoods/base.html#SwitchedLikelihood"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.likelihoods.SwitchedLikelihood" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#gpflow.likelihoods.ScalarLikelihood" title="gpflow.likelihoods.base.ScalarLikelihood"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.likelihoods.base.ScalarLikelihood</span></code></a></p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -1348,7 +1342,7 @@ added variance tends to be small compared to that due to mini-batching
 
 </section>
 <section id="gpflow-likelihoods-utils">
-<h2>gpflow.likelihoods.utils<a class="headerlink" href="#gpflow-likelihoods-utils" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.likelihoods.utils<a class="headerlink" href="#gpflow-likelihoods-utils" title="Permalink to this headline">#</a></h2>
 <div class="toctree-wrapper compound">
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="utils/index.html">gpflow.likelihoods.utils</a></li>
@@ -1367,8 +1361,9 @@ added variance tends to be small compared to that due to mini-batching
       </div>
     </div>
   
-    <script src="../../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf"></script>
-  <footer class="footer mt-5 mt-md-0">
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf"></script>
+<footer class="footer mt-5 mt-md-0">
   <div class="container">
     
     <div class="footer-item">
@@ -1379,7 +1374,7 @@ added variance tends to be small compared to that due to mini-batching
     
     <div class="footer-item">
       <p class="sphinx-version">
-Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.4.0.<br>
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.5.0.<br>
 </p>
     </div>
     

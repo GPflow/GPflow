@@ -8,27 +8,24 @@
 
     <title>gpflow.models.sgpr &#8212; GPflow 2.4.0 documentation</title>
     
-    <link href="../../../../_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../../_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
 <link href="../../../../_static/styles/pydata-sphinx-theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
-  
+
     
-    <link rel="stylesheet"
-      href="../../../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
-    <link rel="preload" as="font" type="font/woff2" crossorigin
-      href="../../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
-    <link rel="preload" as="font" type="font/woff2" crossorigin
-      href="../../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
-  
-    
-      
-  
-    
+  <link rel="stylesheet"
+    href="../../../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
     <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../../../../_static/styles/pydata-sphinx-theme.css" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/pydata-custom.css" />
     
-    <link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf">
-  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf">
+
     <script data-url_root="../../../../" id="documentation_options" src="../../../../_static/documentation_options.js"></script>
     <script src="../../../../_static/jquery.js"></script>
     <script src="../../../../_static/underscore.js"></script>
@@ -46,7 +43,7 @@
     <!-- Google Analytics -->
     
   </head>
-  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="80">
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="60">
     
     <div class="container-fluid" id="banner"></div>
 
@@ -142,13 +139,6 @@
 -->
 
 <script type="text/javascript">
-// Construct the target URL from the JSON components
-function buildURL(entry) {
-    var template = "https://gpflow.github.io/GPflow/{version}/index.html";  // supplied by jinja
-    template = template.replace("{version}", entry.version);
-    return template;
-}
-
 // Check if corresponding page path exists in other version of docs
 // and, if so, go there instead of the homepage of the other docs version
 function checkPageExistsAndRedirect(event) {
@@ -184,14 +174,16 @@ function checkPageExistsAndRedirect(event) {
             const node = document.createElement("a");
             node.setAttribute("class", "list-group-item list-group-item-action py-1");
             node.textContent = `${entry.name}`;
-            // get the base URL for that doc version, add the current page's
-            // path to it, and set as `href`
-            entry.url = buildURL(entry);
             node.setAttribute("href", `${entry.url}${currentFilePath}`);
             // on click, AJAX calls will check if the linked page exists before
             // trying to redirect, and if not, will redirect to the homepage
             // for that version of the docs.
             node.onclick = checkPageExistsAndRedirect;
+            // Add dataset values for the version and name in case people want
+            // to apply CSS styling based on this information.
+            node.dataset["versionName"] = entry.name;
+            node.dataset["version"] = entry.version;
+
             $("#version_switcher_menu").append(node);
             // replace dropdown button text with the preferred display name of
             // this version, rather than using sphinx's  variable.
@@ -199,7 +191,9 @@ function checkPageExistsAndRedirect(event) {
             // version's entry
             if (entry.version == "develop") {
                 node.classList.add("active");
-                $("#version_switcher_button").text(entry.name);
+                let btn = document.getElementById("version_switcher_button");
+                btn.innerText = btn.dataset["activeVersionName"] = entry.name;
+                btn.dataset["activeVersion"] = entry.version;
             }
         });
     });
@@ -611,7 +605,7 @@ function checkPageExistsAndRedirect(event) {
               
               <div class="toc-item">
                 
-<div class="tocsection onthispage pt-5 pb-3">
+<div class="tocsection onthispage mt-5 pt-1 pb-3">
     <i class="fas fa-list"></i> On this page
 </div>
 
@@ -659,12 +653,12 @@ function checkPageExistsAndRedirect(event) {
               <div>
                 
   <section id="gpflow-models-sgpr">
-<h1>gpflow.models.sgpr<a class="headerlink" href="#gpflow-models-sgpr" title="Permalink to this headline">¶</a></h1>
+<h1>gpflow.models.sgpr<a class="headerlink" href="#gpflow-models-sgpr" title="Permalink to this headline">#</a></h1>
 <span class="target" id="module-gpflow.models.sgpr"></span><section id="gpflow-models-sgpr-sgprbase-deprecated">
-<h2>gpflow.models.sgpr.SGPRBase_deprecated<a class="headerlink" href="#gpflow-models-sgpr-sgprbase-deprecated" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.models.sgpr.SGPRBase_deprecated<a class="headerlink" href="#gpflow-models-sgpr-sgprbase-deprecated" title="Permalink to this headline">#</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="gpflow.models.sgpr.SGPRBase_deprecated">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.models.sgpr.</span></span><span class="sig-name descname"><span class="pre">SGPRBase_deprecated</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean_function</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_latent_gps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">noise_variance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/gpflow/models/sgpr.html#SGPRBase_deprecated"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.sgpr.SGPRBase_deprecated" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.models.sgpr.</span></span><span class="sig-name descname"><span class="pre">SGPRBase_deprecated</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean_function</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_latent_gps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">noise_variance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/gpflow/models/sgpr.html#SGPRBase_deprecated"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.sgpr.SGPRBase_deprecated" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="../index.html#gpflow.models.GPModel" title="gpflow.models.model.GPModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.models.model.GPModel</span></code></a>, <a class="reference internal" href="../index.html#gpflow.models.InternalDataTrainingLossMixin" title="gpflow.models.training_mixins.InternalDataTrainingLossMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.models.training_mixins.InternalDataTrainingLossMixin</span></code></a></p>
 <p>Common base class for SGPR and GPRFITC that provides the common __init__
 and upper_bound() methods.</p>
@@ -682,7 +676,7 @@ and upper_bound() methods.</p>
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="gpflow.models.sgpr.SGPRBase_deprecated.upper_bound">
-<span class="sig-name descname"><span class="pre">upper_bound</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/gpflow/models/sgpr.html#SGPRBase_deprecated.upper_bound"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.sgpr.SGPRBase_deprecated.upper_bound" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">upper_bound</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/gpflow/models/sgpr.html#SGPRBase_deprecated.upper_bound"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.sgpr.SGPRBase_deprecated.upper_bound" title="Permalink to this definition">#</a></dt>
 <dd><p>Upper bound for the sparse GP regression marginal likelihood.  Note that
 the same inducing points are used for calculating the upper bound, as are
 used for computing the likelihood approximation. This may not lead to the
@@ -718,10 +712,10 @@ can be found in <a class="reference external" href="https://github.com/markvdw/g
 
 </section>
 <section id="gpflow-models-sgpr-sgpr-deprecated">
-<h2>gpflow.models.sgpr.SGPR_deprecated<a class="headerlink" href="#gpflow-models-sgpr-sgpr-deprecated" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.models.sgpr.SGPR_deprecated<a class="headerlink" href="#gpflow-models-sgpr-sgpr-deprecated" title="Permalink to this headline">#</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="gpflow.models.sgpr.SGPR_deprecated">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.models.sgpr.</span></span><span class="sig-name descname"><span class="pre">SGPR_deprecated</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean_function</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_latent_gps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">noise_variance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/gpflow/models/sgpr.html#SGPR_deprecated"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.sgpr.SGPR_deprecated" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.models.sgpr.</span></span><span class="sig-name descname"><span class="pre">SGPR_deprecated</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean_function</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_latent_gps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">noise_variance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/gpflow/models/sgpr.html#SGPR_deprecated"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.sgpr.SGPR_deprecated" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#gpflow.models.sgpr.SGPRBase_deprecated" title="gpflow.models.sgpr.SGPRBase_deprecated"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.models.sgpr.SGPRBase_deprecated</span></code></a></p>
 <p>Sparse Variational GP regression. The key reference is</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nd">@inproceedings</span><span class="p">{</span><span class="n">titsias2009variational</span><span class="p">,</span>
@@ -749,35 +743,35 @@ can be found in <a class="reference external" href="https://github.com/markvdw/g
 </dl>
 <dl class="py class">
 <dt class="sig sig-object py" id="gpflow.models.sgpr.SGPR_deprecated.CommonTensors">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">CommonTensors</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">A</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">B</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">LB</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">AAT</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">L</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gpflow.models.sgpr.SGPR_deprecated.CommonTensors" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">CommonTensors</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">A</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">B</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">LB</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">AAT</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">L</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#gpflow.models.sgpr.SGPR_deprecated.CommonTensors" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="gpflow.models.sgpr.SGPR_deprecated.CommonTensors.A">
-<span class="sig-name descname"><span class="pre">A</span></span><a class="headerlink" href="#gpflow.models.sgpr.SGPR_deprecated.CommonTensors.A" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">A</span></span><a class="headerlink" href="#gpflow.models.sgpr.SGPR_deprecated.CommonTensors.A" title="Permalink to this definition">#</a></dt>
 <dd><p>Alias for field number 0</p>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="gpflow.models.sgpr.SGPR_deprecated.CommonTensors.AAT">
-<span class="sig-name descname"><span class="pre">AAT</span></span><a class="headerlink" href="#gpflow.models.sgpr.SGPR_deprecated.CommonTensors.AAT" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">AAT</span></span><a class="headerlink" href="#gpflow.models.sgpr.SGPR_deprecated.CommonTensors.AAT" title="Permalink to this definition">#</a></dt>
 <dd><p>Alias for field number 3</p>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="gpflow.models.sgpr.SGPR_deprecated.CommonTensors.B">
-<span class="sig-name descname"><span class="pre">B</span></span><a class="headerlink" href="#gpflow.models.sgpr.SGPR_deprecated.CommonTensors.B" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">B</span></span><a class="headerlink" href="#gpflow.models.sgpr.SGPR_deprecated.CommonTensors.B" title="Permalink to this definition">#</a></dt>
 <dd><p>Alias for field number 1</p>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="gpflow.models.sgpr.SGPR_deprecated.CommonTensors.L">
-<span class="sig-name descname"><span class="pre">L</span></span><a class="headerlink" href="#gpflow.models.sgpr.SGPR_deprecated.CommonTensors.L" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">L</span></span><a class="headerlink" href="#gpflow.models.sgpr.SGPR_deprecated.CommonTensors.L" title="Permalink to this definition">#</a></dt>
 <dd><p>Alias for field number 4</p>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="gpflow.models.sgpr.SGPR_deprecated.CommonTensors.LB">
-<span class="sig-name descname"><span class="pre">LB</span></span><a class="headerlink" href="#gpflow.models.sgpr.SGPR_deprecated.CommonTensors.LB" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">LB</span></span><a class="headerlink" href="#gpflow.models.sgpr.SGPR_deprecated.CommonTensors.LB" title="Permalink to this definition">#</a></dt>
 <dd><p>Alias for field number 2</p>
 </dd></dl>
 
@@ -785,7 +779,7 @@ can be found in <a class="reference external" href="https://github.com/markvdw/g
 
 <dl class="py method">
 <dt class="sig sig-object py" id="gpflow.models.sgpr.SGPR_deprecated.compute_qu">
-<span class="sig-name descname"><span class="pre">compute_qu</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/gpflow/models/sgpr.html#SGPR_deprecated.compute_qu"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.sgpr.SGPR_deprecated.compute_qu" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">compute_qu</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/gpflow/models/sgpr.html#SGPR_deprecated.compute_qu"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.sgpr.SGPR_deprecated.compute_qu" title="Permalink to this definition">#</a></dt>
 <dd><p>Computes the mean and variance of q(u) = N(mu, cov), the variational distribution on
 inducing outputs. SVGP with this q(u) should predict identically to
 SGPR.
@@ -795,7 +789,7 @@ SGPR.
 
 <dl class="py method">
 <dt class="sig sig-object py" id="gpflow.models.sgpr.SGPR_deprecated.elbo">
-<span class="sig-name descname"><span class="pre">elbo</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/gpflow/models/sgpr.html#SGPR_deprecated.elbo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.sgpr.SGPR_deprecated.elbo" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">elbo</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/gpflow/models/sgpr.html#SGPR_deprecated.elbo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.sgpr.SGPR_deprecated.elbo" title="Permalink to this definition">#</a></dt>
 <dd><p>Construct a tensorflow function to compute the bound on the marginal
 likelihood. For a derivation of the terms in here, see the associated
 SGPR notebook.</p>
@@ -808,7 +802,7 @@ SGPR notebook.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="gpflow.models.sgpr.SGPR_deprecated.logdet_term">
-<span class="sig-name descname"><span class="pre">logdet_term</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">common</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/gpflow/models/sgpr.html#SGPR_deprecated.logdet_term"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.sgpr.SGPR_deprecated.logdet_term" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">logdet_term</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">common</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/gpflow/models/sgpr.html#SGPR_deprecated.logdet_term"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.sgpr.SGPR_deprecated.logdet_term" title="Permalink to this definition">#</a></dt>
 <dd><p>Bound from Jensen’s Inequality:
 .. math:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>log |K + σ²I| &lt;= log |Q + σ²I| + N * log (1 + tr(K - Q)/(σ²N))
@@ -829,7 +823,7 @@ SGPR notebook.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="gpflow.models.sgpr.SGPR_deprecated.maximum_log_likelihood_objective">
-<span class="sig-name descname"><span class="pre">maximum_log_likelihood_objective</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/gpflow/models/sgpr.html#SGPR_deprecated.maximum_log_likelihood_objective"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.sgpr.SGPR_deprecated.maximum_log_likelihood_objective" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">maximum_log_likelihood_objective</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/gpflow/models/sgpr.html#SGPR_deprecated.maximum_log_likelihood_objective"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.sgpr.SGPR_deprecated.maximum_log_likelihood_objective" title="Permalink to this definition">#</a></dt>
 <dd><p>Objective for maximum likelihood estimation. Should be maximized. E.g.
 log-marginal likelihood (hyperparameter likelihood) for GPR, or lower
 bound to the log-marginal likelihood (ELBO) for sparse and variational
@@ -843,7 +837,7 @@ GPs.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="gpflow.models.sgpr.SGPR_deprecated.predict_f">
-<span class="sig-name descname"><span class="pre">predict_f</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Xnew</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_output_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/gpflow/models/sgpr.html#SGPR_deprecated.predict_f"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.sgpr.SGPR_deprecated.predict_f" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">predict_f</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Xnew</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_output_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/gpflow/models/sgpr.html#SGPR_deprecated.predict_f"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.sgpr.SGPR_deprecated.predict_f" title="Permalink to this definition">#</a></dt>
 <dd><p>Compute the mean and variance of the latent function at some new points
 Xnew. For a derivation of the terms in here, see the associated SGPR
 notebook.</p>
@@ -863,7 +857,7 @@ notebook.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="gpflow.models.sgpr.SGPR_deprecated.quad_term">
-<span class="sig-name descname"><span class="pre">quad_term</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">common</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/gpflow/models/sgpr.html#SGPR_deprecated.quad_term"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.sgpr.SGPR_deprecated.quad_term" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">quad_term</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">common</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/gpflow/models/sgpr.html#SGPR_deprecated.quad_term"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.sgpr.SGPR_deprecated.quad_term" title="Permalink to this definition">#</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>common</strong> (<a class="reference internal" href="#gpflow.models.sgpr.SGPR_deprecated.CommonTensors" title="gpflow.models.sgpr.CommonTensors"><code class="xref py py-class docutils literal notranslate"><span class="pre">CommonTensors</span></code></a>) – A named tuple containing matrices that will be used</p>
@@ -881,10 +875,10 @@ notebook.</p>
 
 </section>
 <section id="gpflow-models-sgpr-sgpr-with-posterior">
-<h2>gpflow.models.sgpr.SGPR_with_posterior<a class="headerlink" href="#gpflow-models-sgpr-sgpr-with-posterior" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.models.sgpr.SGPR_with_posterior<a class="headerlink" href="#gpflow-models-sgpr-sgpr-with-posterior" title="Permalink to this headline">#</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="gpflow.models.sgpr.SGPR_with_posterior">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.models.sgpr.</span></span><span class="sig-name descname"><span class="pre">SGPR_with_posterior</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean_function</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_latent_gps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">noise_variance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/gpflow/models/sgpr.html#SGPR_with_posterior"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.sgpr.SGPR_with_posterior" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.models.sgpr.</span></span><span class="sig-name descname"><span class="pre">SGPR_with_posterior</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean_function</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_latent_gps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">noise_variance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/gpflow/models/sgpr.html#SGPR_with_posterior"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.sgpr.SGPR_with_posterior" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#gpflow.models.sgpr.SGPR_deprecated" title="gpflow.models.sgpr.SGPR_deprecated"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.models.sgpr.SGPR_deprecated</span></code></a></p>
 <p>This is an implementation of GPR that provides a posterior() method that
 enables caching for faster subsequent predictions.</p>
@@ -902,7 +896,7 @@ enables caching for faster subsequent predictions.</p>
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="gpflow.models.sgpr.SGPR_with_posterior.posterior">
-<span class="sig-name descname"><span class="pre">posterior</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">precompute_cache</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">PrecomputeCacheType.TENSOR</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/gpflow/models/sgpr.html#SGPR_with_posterior.posterior"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.sgpr.SGPR_with_posterior.posterior" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">posterior</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">precompute_cache</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">PrecomputeCacheType.TENSOR</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/gpflow/models/sgpr.html#SGPR_with_posterior.posterior"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.sgpr.SGPR_with_posterior.posterior" title="Permalink to this definition">#</a></dt>
 <dd><p>Create the Posterior object which contains precomputed matrices for
 faster prediction.</p>
 <p>precompute_cache has three settings:</p>
@@ -931,7 +925,7 @@ computations when you only want to call the posterior’s
 
 <dl class="py method">
 <dt class="sig sig-object py" id="gpflow.models.sgpr.SGPR_with_posterior.predict_f">
-<span class="sig-name descname"><span class="pre">predict_f</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Xnew</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_output_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/gpflow/models/sgpr.html#SGPR_with_posterior.predict_f"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.sgpr.SGPR_with_posterior.predict_f" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">predict_f</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Xnew</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_output_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/gpflow/models/sgpr.html#SGPR_with_posterior.predict_f"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.sgpr.SGPR_with_posterior.predict_f" title="Permalink to this definition">#</a></dt>
 <dd><p>For backwards compatibility, GPR’s predict_f uses the fused (no-cache)
 computation, which is more efficient during training.</p>
 <dl class="simple">
@@ -956,10 +950,10 @@ computation, which is more efficient during training.</p>
 
 </section>
 <section id="gpflow-models-sgpr-inducingpoint-wrapper">
-<h2>gpflow.models.sgpr.inducingpoint_wrapper<a class="headerlink" href="#gpflow-models-sgpr-inducingpoint-wrapper" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.models.sgpr.inducingpoint_wrapper<a class="headerlink" href="#gpflow-models-sgpr-inducingpoint-wrapper" title="Permalink to this headline">#</a></h2>
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.models.sgpr.inducingpoint_wrapper">
-<span class="sig-prename descclassname"><span class="pre">gpflow.models.sgpr.</span></span><span class="sig-name descname"><span class="pre">inducingpoint_wrapper</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/gpflow/models/util.html#inducingpoint_wrapper"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.sgpr.inducingpoint_wrapper" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">gpflow.models.sgpr.</span></span><span class="sig-name descname"><span class="pre">inducingpoint_wrapper</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/gpflow/models/util.html#inducingpoint_wrapper"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.sgpr.inducingpoint_wrapper" title="Permalink to this definition">#</a></dt>
 <dd><p>This wrapper allows transparently passing either an InducingVariables
 object or an array specifying InducingPoints positions.</p>
 <dl class="field-list simple">
@@ -985,8 +979,9 @@ object or an array specifying InducingPoints positions.</p>
       </div>
     </div>
   
-    <script src="../../../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf"></script>
-  <footer class="footer mt-5 mt-md-0">
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf"></script>
+<footer class="footer mt-5 mt-md-0">
   <div class="container">
     
     <div class="footer-item">
@@ -997,7 +992,7 @@ object or an array specifying InducingPoints positions.</p>
     
     <div class="footer-item">
       <p class="sphinx-version">
-Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.4.0.<br>
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.5.0.<br>
 </p>
     </div>
     

@@ -8,27 +8,24 @@
 
     <title>Convolutional Gaussian Processes &#8212; GPflow 2.4.0 documentation</title>
     
-    <link href="../../_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
 <link href="../../_static/styles/pydata-sphinx-theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
-  
+
     
-    <link rel="stylesheet"
-      href="../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
-    <link rel="preload" as="font" type="font/woff2" crossorigin
-      href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
-    <link rel="preload" as="font" type="font/woff2" crossorigin
-      href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
-  
-    
-      
-  
-    
+  <link rel="stylesheet"
+    href="../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../../_static/styles/pydata-sphinx-theme.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/pydata-custom.css" />
     
-    <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf">
-  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf">
+
     <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
     <script src="../../_static/jquery.js"></script>
     <script src="../../_static/underscore.js"></script>
@@ -48,7 +45,7 @@
     <!-- Google Analytics -->
     
   </head>
-  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="80">
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="60">
     
     <div class="container-fluid" id="banner"></div>
 
@@ -144,13 +141,6 @@
 -->
 
 <script type="text/javascript">
-// Construct the target URL from the JSON components
-function buildURL(entry) {
-    var template = "https://gpflow.github.io/GPflow/{version}/index.html";  // supplied by jinja
-    template = template.replace("{version}", entry.version);
-    return template;
-}
-
 // Check if corresponding page path exists in other version of docs
 // and, if so, go there instead of the homepage of the other docs version
 function checkPageExistsAndRedirect(event) {
@@ -186,14 +176,16 @@ function checkPageExistsAndRedirect(event) {
             const node = document.createElement("a");
             node.setAttribute("class", "list-group-item list-group-item-action py-1");
             node.textContent = `${entry.name}`;
-            // get the base URL for that doc version, add the current page's
-            // path to it, and set as `href`
-            entry.url = buildURL(entry);
             node.setAttribute("href", `${entry.url}${currentFilePath}`);
             // on click, AJAX calls will check if the linked page exists before
             // trying to redirect, and if not, will redirect to the homepage
             // for that version of the docs.
             node.onclick = checkPageExistsAndRedirect;
+            // Add dataset values for the version and name in case people want
+            // to apply CSS styling based on this information.
+            node.dataset["versionName"] = entry.name;
+            node.dataset["version"] = entry.version;
+
             $("#version_switcher_menu").append(node);
             // replace dropdown button text with the preferred display name of
             // this version, rather than using sphinx's  variable.
@@ -201,7 +193,9 @@ function checkPageExistsAndRedirect(event) {
             // version's entry
             if (entry.version == "develop") {
                 node.classList.add("active");
-                $("#version_switcher_button").text(entry.name);
+                let btn = document.getElementById("version_switcher_button");
+                btn.innerText = btn.dataset["activeVersionName"] = entry.name;
+                btn.dataset["activeVersion"] = entry.version;
             }
         });
     });
@@ -427,7 +421,7 @@ function checkPageExistsAndRedirect(event) {
               
               <div class="toc-item">
                 
-<div class="tocsection onthispage pt-5 pb-3">
+<div class="tocsection onthispage mt-5 pt-1 pb-3">
     <i class="fas fa-list"></i> On this page
 </div>
 
@@ -723,12 +717,12 @@ div.rendered_html tbody tr:hover {
 }
 </style>
 <section id="Convolutional-Gaussian-Processes">
-<h1>Convolutional Gaussian Processes<a class="headerlink" href="#Convolutional-Gaussian-Processes" title="Permalink to this headline">¶</a></h1>
+<h1>Convolutional Gaussian Processes<a class="headerlink" href="#Convolutional-Gaussian-Processes" title="Permalink to this headline">#</a></h1>
 <p>Mark van der Wilk (July 2019)</p>
 <p>Here we show a simple example of the rectangles experiment, where we compare a normal squared exponential GP, and a convolutional GP. This is similar to the experiment in [1].</p>
 <p>[1] Van der Wilk, Rasmussen, Hensman (2017). Convolutional Gaussian Processes. <em>Advances in Neural Information Processing Systems 30</em>.</p>
 <section id="Generate-dataset">
-<h2>Generate dataset<a class="headerlink" href="#Generate-dataset" title="Permalink to this headline">¶</a></h2>
+<h2>Generate dataset<a class="headerlink" href="#Generate-dataset" title="Permalink to this headline">#</a></h2>
 <p>Generate a simple dataset of rectangles. We want to classify whether they are tall or wide. <strong>NOTE:</strong> Here we take care to make sure that the rectangles don’t touch the edge, which is different to the original paper. We do this to avoid needing to use patch weights, which are needed to correctly account for edge effects.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
@@ -768,8 +762,8 @@ div.rendered_html tbody tr:hover {
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2022-03-25 12:55:08.975108: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcudart.so.11.0&#39;; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory
-2022-03-25 12:55:08.975138: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.
+2022-03-29 09:49:23.703939: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcudart.so.11.0&#39;; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory
+2022-03-29 09:49:23.703971: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.
 </pre></div></div>
 </div>
 <div class="nbinput nblast docutils container">
@@ -846,7 +840,7 @@ div.rendered_html tbody tr:hover {
 </div>
 </section>
 <section id="Squared-Exponential-kernel">
-<h2>Squared Exponential kernel<a class="headerlink" href="#Squared-Exponential-kernel" title="Permalink to this headline">¶</a></h2>
+<h2>Squared Exponential kernel<a class="headerlink" href="#Squared-Exponential-kernel" title="Permalink to this headline">#</a></h2>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
@@ -864,10 +858,10 @@ div.rendered_html tbody tr:hover {
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2022-03-25 12:55:11.228212: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcuda.so.1&#39;; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory
-2022-03-25 12:55:11.228240: W tensorflow/stream_executor/cuda/cuda_driver.cc:269] failed call to cuInit: UNKNOWN ERROR (303)
-2022-03-25 12:55:11.228259: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (d396962cedd5): /proc/driver/nvidia/version does not exist
-2022-03-25 12:55:11.228542: I tensorflow/core/platform/cpu_feature_guard.cc:151] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA
+2022-03-29 09:49:26.201985: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcuda.so.1&#39;; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory
+2022-03-29 09:49:26.202017: W tensorflow/stream_executor/cuda/cuda_driver.cc:269] failed call to cuInit: UNKNOWN ERROR (303)
+2022-03-29 09:49:26.202038: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (9da31c79f42f): /proc/driver/nvidia/version does not exist
+2022-03-29 09:49:26.202329: I tensorflow/core/platform/cpu_feature_guard.cc:151] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA
 To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.
 </pre></div></div>
 </div>
@@ -901,7 +895,7 @@ To silence this warning, decorate the function with @tf.autograph.experimental.d
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2022-03-25 12:55:15.142980: W tensorflow/python/util/util.cc:368] Sets are not currently considered sequences, but this may change in the future, so consider avoiding using them.
+2022-03-29 09:49:29.488280: W tensorflow/python/util/util.cc:368] Sets are not currently considered sequences, but this may change in the future, so consider avoiding using them.
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -1022,7 +1016,7 @@ At iterate   38    f=  6.03714D+01    |proj g|=  3.14405D-04
 
 At iterate   39    f=  6.03714D+01    |proj g|=  2.42994D-04
 
-35.337 iter/sAt iterate   40    f=  6.03714D+01    |proj g|=  5.85343D-04
+At iterate   40    f=  6.03714D+01    |proj g|=  5.85343D-04
 
            * * *
 
@@ -1041,7 +1035,7 @@ F     = final function value
   F =   60.371382131218276
 
 CONVERGENCE: REL_REDUCTION_OF_F_&lt;=_FACTR*EPSMCH
-
+35.047 iter/s
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -1075,7 +1069,7 @@ RBF elbo after training: -6.0371e+01
 </div>
 </section>
 <section id="Convolutional-kernel">
-<h2>Convolutional kernel<a class="headerlink" href="#Convolutional-kernel" title="Permalink to this headline">¶</a></h2>
+<h2>Convolutional kernel<a class="headerlink" href="#Convolutional-kernel" title="Permalink to this headline">#</a></h2>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
@@ -1192,6 +1186,7 @@ At iterate    8    f=  6.49795D+01    |proj g|=  9.75563D-01
 
 At iterate    9    f=  6.48808D+01    |proj g|=  9.60694D-01
 
+6.669 iter/s
 At iterate   10    f=  6.48453D+01    |proj g|=  1.39257D+00
 
            * * *
@@ -1211,7 +1206,6 @@ F     = final function value
   F =   64.845328136876148
 
 STOP: TOTAL NO. of ITERATIONS REACHED LIMIT
-6.996 iter/s
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
@@ -1498,14 +1492,6 @@ conv elbo after training: -2.6752e+01
 <div class="nboutput docutils container">
 <div class="prompt empty docutils container">
 </div>
-<div class="output_area stderr docutils container">
-<div class="highlight"><pre>
- This problem is unconstrained.
-</pre></div></div>
-</div>
-<div class="nboutput nblast docutils container">
-<div class="prompt empty docutils container">
-</div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
 RUNNING THE L-BFGS-B CODE
@@ -1522,6 +1508,21 @@ At iterate    0    f=  2.67525D+01    |proj g|=  6.68318D-01
 At iterate    1    f=  2.67522D+01    |proj g|=  3.27002D-01
 
 At iterate    2    f=  2.67522D+01    |proj g|=  3.31661D-02
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+ This problem is unconstrained.
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
 
 At iterate    3    f=  2.67521D+01    |proj g|=  6.80577D-02
 
@@ -1762,14 +1763,6 @@ conv elbo after training: -2.6739e+01
 <div class="nboutput docutils container">
 <div class="prompt empty docutils container">
 </div>
-<div class="output_area stderr docutils container">
-<div class="highlight"><pre>
- This problem is unconstrained.
-</pre></div></div>
-</div>
-<div class="nboutput nblast docutils container">
-<div class="prompt empty docutils container">
-</div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
 RUNNING THE L-BFGS-B CODE
@@ -1784,6 +1777,21 @@ At X0         0 variables are exactly at the bounds
 At iterate    0    f=  2.67388D+01    |proj g|=  3.16606D-01
 
 At iterate    1    f=  2.67198D+01    |proj g|=  5.35704D+00
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+ This problem is unconstrained.
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
 
 At iterate    2    f=  2.65476D+01    |proj g|=  8.50611D+00
 
@@ -2058,7 +2066,7 @@ conv elbo after training: -1.7142e+01
 </div>
 </section>
 <section id="Conclusion">
-<h2>Conclusion<a class="headerlink" href="#Conclusion" title="Permalink to this headline">¶</a></h2>
+<h2>Conclusion<a class="headerlink" href="#Conclusion" title="Permalink to this headline">#</a></h2>
 <p>The convolutional kernel performs much better in this simple task. It demonstrates non-local generalization of the strong assumptions in the kernel.</p>
 </section>
 </section>
@@ -2073,8 +2081,9 @@ conv elbo after training: -1.7142e+01
       </div>
     </div>
   
-    <script src="../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf"></script>
-  <footer class="footer mt-5 mt-md-0">
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf"></script>
+<footer class="footer mt-5 mt-md-0">
   <div class="container">
     
     <div class="footer-item">
@@ -2085,7 +2094,7 @@ conv elbo after training: -1.7142e+01
     
     <div class="footer-item">
       <p class="sphinx-version">
-Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.4.0.<br>
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.5.0.<br>
 </p>
     </div>
     

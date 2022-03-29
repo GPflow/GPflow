@@ -8,27 +8,24 @@
 
     <title>gpflow.posteriors &#8212; GPflow 2.4.0 documentation</title>
     
-    <link href="../../../_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
 <link href="../../../_static/styles/pydata-sphinx-theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
-  
+
     
-    <link rel="stylesheet"
-      href="../../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
-    <link rel="preload" as="font" type="font/woff2" crossorigin
-      href="../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
-    <link rel="preload" as="font" type="font/woff2" crossorigin
-      href="../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
-  
-    
-      
-  
-    
+  <link rel="stylesheet"
+    href="../../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../../../_static/styles/pydata-sphinx-theme.css" />
     <link rel="stylesheet" type="text/css" href="../../../_static/pydata-custom.css" />
     
-    <link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf">
-  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf">
+
     <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
     <script src="../../../_static/jquery.js"></script>
     <script src="../../../_static/underscore.js"></script>
@@ -46,7 +43,7 @@
     <!-- Google Analytics -->
     
   </head>
-  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="80">
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="60">
     
     <div class="container-fluid" id="banner"></div>
 
@@ -142,13 +139,6 @@
 -->
 
 <script type="text/javascript">
-// Construct the target URL from the JSON components
-function buildURL(entry) {
-    var template = "https://gpflow.github.io/GPflow/{version}/index.html";  // supplied by jinja
-    template = template.replace("{version}", entry.version);
-    return template;
-}
-
 // Check if corresponding page path exists in other version of docs
 // and, if so, go there instead of the homepage of the other docs version
 function checkPageExistsAndRedirect(event) {
@@ -184,14 +174,16 @@ function checkPageExistsAndRedirect(event) {
             const node = document.createElement("a");
             node.setAttribute("class", "list-group-item list-group-item-action py-1");
             node.textContent = `${entry.name}`;
-            // get the base URL for that doc version, add the current page's
-            // path to it, and set as `href`
-            entry.url = buildURL(entry);
             node.setAttribute("href", `${entry.url}${currentFilePath}`);
             // on click, AJAX calls will check if the linked page exists before
             // trying to redirect, and if not, will redirect to the homepage
             // for that version of the docs.
             node.onclick = checkPageExistsAndRedirect;
+            // Add dataset values for the version and name in case people want
+            // to apply CSS styling based on this information.
+            node.dataset["versionName"] = entry.name;
+            node.dataset["version"] = entry.version;
+
             $("#version_switcher_menu").append(node);
             // replace dropdown button text with the preferred display name of
             // this version, rather than using sphinx's  variable.
@@ -199,7 +191,9 @@ function checkPageExistsAndRedirect(event) {
             // version's entry
             if (entry.version == "develop") {
                 node.classList.add("active");
-                $("#version_switcher_button").text(entry.name);
+                let btn = document.getElementById("version_switcher_button");
+                btn.innerText = btn.dataset["activeVersionName"] = entry.name;
+                btn.dataset["activeVersion"] = entry.version;
             }
         });
     });
@@ -611,7 +605,7 @@ function checkPageExistsAndRedirect(event) {
               
               <div class="toc-item">
                 
-<div class="tocsection onthispage pt-5 pb-3">
+<div class="tocsection onthispage mt-5 pt-1 pb-3">
     <i class="fas fa-list"></i> On this page
 </div>
 
@@ -759,12 +753,12 @@ function checkPageExistsAndRedirect(event) {
               <div>
                 
   <section id="gpflow-posteriors">
-<h1>gpflow.posteriors<a class="headerlink" href="#gpflow-posteriors" title="Permalink to this headline">¶</a></h1>
+<h1>gpflow.posteriors<a class="headerlink" href="#gpflow-posteriors" title="Permalink to this headline">#</a></h1>
 <span class="target" id="module-gpflow.posteriors"></span><section id="gpflow-posteriors-abstractposterior">
-<h2>gpflow.posteriors.AbstractPosterior<a class="headerlink" href="#gpflow-posteriors-abstractposterior" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.posteriors.AbstractPosterior<a class="headerlink" href="#gpflow-posteriors-abstractposterior" title="Permalink to this headline">#</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="gpflow.posteriors.AbstractPosterior">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.posteriors.</span></span><span class="sig-name descname"><span class="pre">AbstractPosterior</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">X_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cache</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean_function</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/posteriors.html#AbstractPosterior"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.posteriors.AbstractPosterior" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.posteriors.</span></span><span class="sig-name descname"><span class="pre">AbstractPosterior</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">X_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cache</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean_function</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/posteriors.html#AbstractPosterior"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.posteriors.AbstractPosterior" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="../index.html#gpflow.Module" title="gpflow.base.Module"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.base.Module</span></code></a>, <code class="xref py py-class docutils literal notranslate"><span class="pre">abc.ABC</span></code></p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -778,7 +772,7 @@ function checkPageExistsAndRedirect(event) {
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="gpflow.posteriors.AbstractPosterior.fused_predict_f">
-<span class="sig-name descname"><span class="pre">fused_predict_f</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Xnew</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_output_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/posteriors.html#AbstractPosterior.fused_predict_f"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.posteriors.AbstractPosterior.fused_predict_f" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">fused_predict_f</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Xnew</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_output_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/posteriors.html#AbstractPosterior.fused_predict_f"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.posteriors.AbstractPosterior.fused_predict_f" title="Permalink to this definition">#</a></dt>
 <dd><p>Computes predictive mean and (co)variance at Xnew, including mean_function
 Does not make use of caching</p>
 <dl class="field-list simple">
@@ -797,7 +791,7 @@ Does not make use of caching</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="gpflow.posteriors.AbstractPosterior.predict_f">
-<span class="sig-name descname"><span class="pre">predict_f</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Xnew</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_output_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/posteriors.html#AbstractPosterior.predict_f"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.posteriors.AbstractPosterior.predict_f" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">predict_f</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Xnew</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_output_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/posteriors.html#AbstractPosterior.predict_f"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.posteriors.AbstractPosterior.predict_f" title="Permalink to this definition">#</a></dt>
 <dd><p>Computes predictive mean and (co)variance at Xnew, including mean_function.
 Relies on precomputed alpha and Qinv (see _precompute method)</p>
 <dl class="field-list simple">
@@ -816,7 +810,7 @@ Relies on precomputed alpha and Qinv (see _precompute method)</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="gpflow.posteriors.AbstractPosterior.update_cache">
-<span class="sig-name descname"><span class="pre">update_cache</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">precompute_cache</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/posteriors.html#AbstractPosterior.update_cache"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.posteriors.AbstractPosterior.update_cache" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">update_cache</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">precompute_cache</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/posteriors.html#AbstractPosterior.update_cache"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.posteriors.AbstractPosterior.update_cache" title="Permalink to this definition">#</a></dt>
 <dd><p>Sets the cache depending on the value of <cite>precompute_cache</cite> to a
 <cite>tf.Tensor</cite>, <cite>tf.Variable</cite>, or clears the cache. If <cite>precompute_cache</cite>
 is not given, the setting defaults to the most-recently-used one.</p>
@@ -834,10 +828,10 @@ is not given, the setting defaults to the most-recently-used one.</p>
 
 </section>
 <section id="gpflow-posteriors-baseposterior">
-<h2>gpflow.posteriors.BasePosterior<a class="headerlink" href="#gpflow-posteriors-baseposterior" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.posteriors.BasePosterior<a class="headerlink" href="#gpflow-posteriors-baseposterior" title="Permalink to this headline">#</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="gpflow.posteriors.BasePosterior">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.posteriors.</span></span><span class="sig-name descname"><span class="pre">BasePosterior</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_mu</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_sqrt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">whiten</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean_function</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">precompute_cache</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/posteriors.html#BasePosterior"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.posteriors.BasePosterior" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.posteriors.</span></span><span class="sig-name descname"><span class="pre">BasePosterior</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_mu</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_sqrt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">whiten</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean_function</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">precompute_cache</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/posteriors.html#BasePosterior"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.posteriors.BasePosterior" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#gpflow.posteriors.AbstractPosterior" title="gpflow.posteriors.AbstractPosterior"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.posteriors.AbstractPosterior</span></code></a></p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -856,10 +850,10 @@ is not given, the setting defaults to the most-recently-used one.</p>
 
 </section>
 <section id="gpflow-posteriors-fallbackindependentlatentposterior">
-<h2>gpflow.posteriors.FallbackIndependentLatentPosterior<a class="headerlink" href="#gpflow-posteriors-fallbackindependentlatentposterior" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.posteriors.FallbackIndependentLatentPosterior<a class="headerlink" href="#gpflow-posteriors-fallbackindependentlatentposterior" title="Permalink to this headline">#</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="gpflow.posteriors.FallbackIndependentLatentPosterior">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.posteriors.</span></span><span class="sig-name descname"><span class="pre">FallbackIndependentLatentPosterior</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_mu</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_sqrt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">whiten</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean_function</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">precompute_cache</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/posteriors.html#FallbackIndependentLatentPosterior"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.posteriors.FallbackIndependentLatentPosterior" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.posteriors.</span></span><span class="sig-name descname"><span class="pre">FallbackIndependentLatentPosterior</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_mu</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_sqrt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">whiten</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean_function</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">precompute_cache</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/posteriors.html#FallbackIndependentLatentPosterior"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.posteriors.FallbackIndependentLatentPosterior" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#gpflow.posteriors.FullyCorrelatedPosterior" title="gpflow.posteriors.FullyCorrelatedPosterior"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.posteriors.FullyCorrelatedPosterior</span></code></a></p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -878,10 +872,10 @@ is not given, the setting defaults to the most-recently-used one.</p>
 
 </section>
 <section id="gpflow-posteriors-fullycorrelatedposterior">
-<h2>gpflow.posteriors.FullyCorrelatedPosterior<a class="headerlink" href="#gpflow-posteriors-fullycorrelatedposterior" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.posteriors.FullyCorrelatedPosterior<a class="headerlink" href="#gpflow-posteriors-fullycorrelatedposterior" title="Permalink to this headline">#</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="gpflow.posteriors.FullyCorrelatedPosterior">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.posteriors.</span></span><span class="sig-name descname"><span class="pre">FullyCorrelatedPosterior</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_mu</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_sqrt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">whiten</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean_function</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">precompute_cache</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/posteriors.html#FullyCorrelatedPosterior"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.posteriors.FullyCorrelatedPosterior" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.posteriors.</span></span><span class="sig-name descname"><span class="pre">FullyCorrelatedPosterior</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_mu</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_sqrt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">whiten</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean_function</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">precompute_cache</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/posteriors.html#FullyCorrelatedPosterior"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.posteriors.FullyCorrelatedPosterior" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#gpflow.posteriors.BasePosterior" title="gpflow.posteriors.BasePosterior"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.posteriors.BasePosterior</span></code></a></p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -900,10 +894,10 @@ is not given, the setting defaults to the most-recently-used one.</p>
 
 </section>
 <section id="gpflow-posteriors-gprposterior">
-<h2>gpflow.posteriors.GPRPosterior<a class="headerlink" href="#gpflow-posteriors-gprposterior" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.posteriors.GPRPosterior<a class="headerlink" href="#gpflow-posteriors-gprposterior" title="Permalink to this headline">#</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="gpflow.posteriors.GPRPosterior">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.posteriors.</span></span><span class="sig-name descname"><span class="pre">GPRPosterior</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">likelihood_variance</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean_function</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">precompute_cache</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/posteriors.html#GPRPosterior"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.posteriors.GPRPosterior" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.posteriors.</span></span><span class="sig-name descname"><span class="pre">GPRPosterior</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">likelihood_variance</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean_function</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">precompute_cache</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/posteriors.html#GPRPosterior"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.posteriors.GPRPosterior" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#gpflow.posteriors.AbstractPosterior" title="gpflow.posteriors.AbstractPosterior"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.posteriors.AbstractPosterior</span></code></a></p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -920,10 +914,10 @@ is not given, the setting defaults to the most-recently-used one.</p>
 
 </section>
 <section id="gpflow-posteriors-independentposterior">
-<h2>gpflow.posteriors.IndependentPosterior<a class="headerlink" href="#gpflow-posteriors-independentposterior" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.posteriors.IndependentPosterior<a class="headerlink" href="#gpflow-posteriors-independentposterior" title="Permalink to this headline">#</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="gpflow.posteriors.IndependentPosterior">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.posteriors.</span></span><span class="sig-name descname"><span class="pre">IndependentPosterior</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_mu</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_sqrt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">whiten</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean_function</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">precompute_cache</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/posteriors.html#IndependentPosterior"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.posteriors.IndependentPosterior" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.posteriors.</span></span><span class="sig-name descname"><span class="pre">IndependentPosterior</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_mu</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_sqrt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">whiten</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean_function</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">precompute_cache</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/posteriors.html#IndependentPosterior"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.posteriors.IndependentPosterior" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#gpflow.posteriors.BasePosterior" title="gpflow.posteriors.BasePosterior"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.posteriors.BasePosterior</span></code></a></p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -942,10 +936,10 @@ is not given, the setting defaults to the most-recently-used one.</p>
 
 </section>
 <section id="gpflow-posteriors-independentposteriormultioutput">
-<h2>gpflow.posteriors.IndependentPosteriorMultiOutput<a class="headerlink" href="#gpflow-posteriors-independentposteriormultioutput" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.posteriors.IndependentPosteriorMultiOutput<a class="headerlink" href="#gpflow-posteriors-independentposteriormultioutput" title="Permalink to this headline">#</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="gpflow.posteriors.IndependentPosteriorMultiOutput">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.posteriors.</span></span><span class="sig-name descname"><span class="pre">IndependentPosteriorMultiOutput</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_mu</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_sqrt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">whiten</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean_function</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">precompute_cache</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/posteriors.html#IndependentPosteriorMultiOutput"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.posteriors.IndependentPosteriorMultiOutput" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.posteriors.</span></span><span class="sig-name descname"><span class="pre">IndependentPosteriorMultiOutput</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_mu</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_sqrt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">whiten</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean_function</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">precompute_cache</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/posteriors.html#IndependentPosteriorMultiOutput"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.posteriors.IndependentPosteriorMultiOutput" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#gpflow.posteriors.IndependentPosterior" title="gpflow.posteriors.IndependentPosterior"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.posteriors.IndependentPosterior</span></code></a></p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -964,10 +958,10 @@ is not given, the setting defaults to the most-recently-used one.</p>
 
 </section>
 <section id="gpflow-posteriors-independentposteriorsingleoutput">
-<h2>gpflow.posteriors.IndependentPosteriorSingleOutput<a class="headerlink" href="#gpflow-posteriors-independentposteriorsingleoutput" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.posteriors.IndependentPosteriorSingleOutput<a class="headerlink" href="#gpflow-posteriors-independentposteriorsingleoutput" title="Permalink to this headline">#</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="gpflow.posteriors.IndependentPosteriorSingleOutput">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.posteriors.</span></span><span class="sig-name descname"><span class="pre">IndependentPosteriorSingleOutput</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_mu</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_sqrt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">whiten</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean_function</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">precompute_cache</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/posteriors.html#IndependentPosteriorSingleOutput"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.posteriors.IndependentPosteriorSingleOutput" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.posteriors.</span></span><span class="sig-name descname"><span class="pre">IndependentPosteriorSingleOutput</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_mu</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_sqrt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">whiten</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean_function</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">precompute_cache</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/posteriors.html#IndependentPosteriorSingleOutput"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.posteriors.IndependentPosteriorSingleOutput" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#gpflow.posteriors.IndependentPosterior" title="gpflow.posteriors.IndependentPosterior"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.posteriors.IndependentPosterior</span></code></a></p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -986,10 +980,10 @@ is not given, the setting defaults to the most-recently-used one.</p>
 
 </section>
 <section id="gpflow-posteriors-linearcoregionalizationposterior">
-<h2>gpflow.posteriors.LinearCoregionalizationPosterior<a class="headerlink" href="#gpflow-posteriors-linearcoregionalizationposterior" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.posteriors.LinearCoregionalizationPosterior<a class="headerlink" href="#gpflow-posteriors-linearcoregionalizationposterior" title="Permalink to this headline">#</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="gpflow.posteriors.LinearCoregionalizationPosterior">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.posteriors.</span></span><span class="sig-name descname"><span class="pre">LinearCoregionalizationPosterior</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_mu</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_sqrt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">whiten</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean_function</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">precompute_cache</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/posteriors.html#LinearCoregionalizationPosterior"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.posteriors.LinearCoregionalizationPosterior" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.posteriors.</span></span><span class="sig-name descname"><span class="pre">LinearCoregionalizationPosterior</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_mu</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_sqrt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">whiten</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean_function</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">precompute_cache</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/posteriors.html#LinearCoregionalizationPosterior"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.posteriors.LinearCoregionalizationPosterior" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#gpflow.posteriors.IndependentPosteriorMultiOutput" title="gpflow.posteriors.IndependentPosteriorMultiOutput"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.posteriors.IndependentPosteriorMultiOutput</span></code></a></p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -1008,10 +1002,10 @@ is not given, the setting defaults to the most-recently-used one.</p>
 
 </section>
 <section id="gpflow-posteriors-precomputecachetype">
-<h2>gpflow.posteriors.PrecomputeCacheType<a class="headerlink" href="#gpflow-posteriors-precomputecachetype" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.posteriors.PrecomputeCacheType<a class="headerlink" href="#gpflow-posteriors-precomputecachetype" title="Permalink to this headline">#</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="gpflow.posteriors.PrecomputeCacheType">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.posteriors.</span></span><span class="sig-name descname"><span class="pre">PrecomputeCacheType</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/posteriors.html#PrecomputeCacheType"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.posteriors.PrecomputeCacheType" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.posteriors.</span></span><span class="sig-name descname"><span class="pre">PrecomputeCacheType</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/posteriors.html#PrecomputeCacheType"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.posteriors.PrecomputeCacheType" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">enum.Enum</span></code></p>
 <ul class="simple">
 <li><p><cite>PrecomputeCacheType.TENSOR</cite> (or <cite>“tensor”</cite>): Precomputes the cached
@@ -1030,10 +1024,10 @@ computations when you only want to call the posterior’s
 
 </section>
 <section id="gpflow-posteriors-precomputedvalue">
-<h2>gpflow.posteriors.PrecomputedValue<a class="headerlink" href="#gpflow-posteriors-precomputedvalue" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.posteriors.PrecomputedValue<a class="headerlink" href="#gpflow-posteriors-precomputedvalue" title="Permalink to this headline">#</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="gpflow.posteriors.PrecomputedValue">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.posteriors.</span></span><span class="sig-name descname"><span class="pre">PrecomputedValue</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axis_dynamic</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/posteriors.html#PrecomputedValue"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.posteriors.PrecomputedValue" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.posteriors.</span></span><span class="sig-name descname"><span class="pre">PrecomputedValue</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axis_dynamic</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/posteriors.html#PrecomputedValue"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.posteriors.PrecomputedValue" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -1045,20 +1039,20 @@ computations when you only want to call the posterior’s
 </dl>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="gpflow.posteriors.PrecomputedValue.axis_dynamic">
-<span class="sig-name descname"><span class="pre">axis_dynamic</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#gpflow.posteriors.PrecomputedValue.axis_dynamic" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">axis_dynamic</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#gpflow.posteriors.PrecomputedValue.axis_dynamic" title="Permalink to this definition">#</a></dt>
 <dd><p>A tuple with one element per dimension of <cite>value</cite>. That element is <cite>True</cite> if that dimension
 of <cite>value</cite> might change size.</p>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="gpflow.posteriors.PrecomputedValue.value">
-<span class="sig-name descname"><span class="pre">value</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">tensorflow.python.framework.ops.Tensor</span></em><a class="headerlink" href="#gpflow.posteriors.PrecomputedValue.value" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">value</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">tensorflow.python.framework.ops.Tensor</span></em><a class="headerlink" href="#gpflow.posteriors.PrecomputedValue.value" title="Permalink to this definition">#</a></dt>
 <dd><p>The precomputed value itself.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="gpflow.posteriors.PrecomputedValue.wrap_alpha_Qinv">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">wrap_alpha_Qinv</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">alpha</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Qinv</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/posteriors.html#PrecomputedValue.wrap_alpha_Qinv"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.posteriors.PrecomputedValue.wrap_alpha_Qinv" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">wrap_alpha_Qinv</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">alpha</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Qinv</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/posteriors.html#PrecomputedValue.wrap_alpha_Qinv"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.posteriors.PrecomputedValue.wrap_alpha_Qinv" title="Permalink to this definition">#</a></dt>
 <dd><p>Wraps <cite>alpha</cite> and <cite>Qinv</cite> in <a href="#id1"><span class="problematic" id="id2">`</span></a>PrecomputedValue`s.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -1077,10 +1071,10 @@ of <cite>value</cite> might change size.</p>
 
 </section>
 <section id="gpflow-posteriors-sgprposterior">
-<h2>gpflow.posteriors.SGPRPosterior<a class="headerlink" href="#gpflow-posteriors-sgprposterior" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.posteriors.SGPRPosterior<a class="headerlink" href="#gpflow-posteriors-sgprposterior" title="Permalink to this headline">#</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="gpflow.posteriors.SGPRPosterior">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.posteriors.</span></span><span class="sig-name descname"><span class="pre">SGPRPosterior</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">likelihood_variance</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_latent_gps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean_function</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">precompute_cache</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/posteriors.html#SGPRPosterior"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.posteriors.SGPRPosterior" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.posteriors.</span></span><span class="sig-name descname"><span class="pre">SGPRPosterior</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">likelihood_variance</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_latent_gps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean_function</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">precompute_cache</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/posteriors.html#SGPRPosterior"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.posteriors.SGPRPosterior" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#gpflow.posteriors.AbstractPosterior" title="gpflow.posteriors.AbstractPosterior"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.posteriors.AbstractPosterior</span></code></a></p>
 <p>This class represents posteriors which can be derived from SGPR
 models to compute faster predictions on unseen points.</p>
@@ -1101,10 +1095,10 @@ models to compute faster predictions on unseen points.</p>
 
 </section>
 <section id="gpflow-posteriors-vgpposterior">
-<h2>gpflow.posteriors.VGPPosterior<a class="headerlink" href="#gpflow-posteriors-vgpposterior" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.posteriors.VGPPosterior<a class="headerlink" href="#gpflow-posteriors-vgpposterior" title="Permalink to this headline">#</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="gpflow.posteriors.VGPPosterior">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.posteriors.</span></span><span class="sig-name descname"><span class="pre">VGPPosterior</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_mu</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_sqrt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean_function</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">white</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">precompute_cache</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/posteriors.html#VGPPosterior"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.posteriors.VGPPosterior" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.posteriors.</span></span><span class="sig-name descname"><span class="pre">VGPPosterior</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_mu</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_sqrt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean_function</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">white</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">precompute_cache</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/posteriors.html#VGPPosterior"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.posteriors.VGPPosterior" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#gpflow.posteriors.AbstractPosterior" title="gpflow.posteriors.AbstractPosterior"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.posteriors.AbstractPosterior</span></code></a></p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -1123,10 +1117,10 @@ models to compute faster predictions on unseen points.</p>
 
 </section>
 <section id="gpflow-posteriors-add-noise-cov">
-<h2>gpflow.posteriors.add_noise_cov<a class="headerlink" href="#gpflow-posteriors-add-noise-cov" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.posteriors.add_noise_cov<a class="headerlink" href="#gpflow-posteriors-add-noise-cov" title="Permalink to this headline">#</a></h2>
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.posteriors.add_noise_cov">
-<span class="sig-prename descclassname"><span class="pre">gpflow.posteriors.</span></span><span class="sig-name descname"><span class="pre">add_noise_cov</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">K</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">likelihood_variance</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/utilities/model_utils.html#add_noise_cov"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.posteriors.add_noise_cov" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">gpflow.posteriors.</span></span><span class="sig-name descname"><span class="pre">add_noise_cov</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">K</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">likelihood_variance</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/utilities/model_utils.html#add_noise_cov"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.posteriors.add_noise_cov" title="Permalink to this definition">#</a></dt>
 <dd><p>Returns K + σ² I, where σ² is the likelihood noise variance (scalar),
 and I is the corresponding identity matrix.</p>
 <dl class="field-list simple">
@@ -1144,10 +1138,10 @@ and I is the corresponding identity matrix.</p>
 
 </section>
 <section id="gpflow-posteriors-base-conditional-with-lm">
-<h2>gpflow.posteriors.base_conditional_with_lm<a class="headerlink" href="#gpflow-posteriors-base-conditional-with-lm" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.posteriors.base_conditional_with_lm<a class="headerlink" href="#gpflow-posteriors-base-conditional-with-lm" title="Permalink to this headline">#</a></h2>
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.posteriors.base_conditional_with_lm">
-<span class="sig-prename descclassname"><span class="pre">gpflow.posteriors.</span></span><span class="sig-name descname"><span class="pre">base_conditional_with_lm</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Kmn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Lm</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Knn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_sqrt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">white</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/conditionals/util.html#base_conditional_with_lm"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.posteriors.base_conditional_with_lm" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">gpflow.posteriors.</span></span><span class="sig-name descname"><span class="pre">base_conditional_with_lm</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Kmn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Lm</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Knn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_sqrt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">white</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/conditionals/util.html#base_conditional_with_lm"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.posteriors.base_conditional_with_lm" title="Permalink to this definition">#</a></dt>
 <dd><p>Has the same functionality as the <cite>base_conditional</cite> function, except that instead of
 <cite>Kmm</cite> this function accepts <cite>Lm</cite>, which is the Cholesky decomposition of <cite>Kmm</cite>.</p>
 <p>This allows <cite>Lm</cite> to be precomputed, which can improve performance.</p>
@@ -1171,10 +1165,10 @@ and I is the corresponding identity matrix.</p>
 
 </section>
 <section id="gpflow-posteriors-create-posterior">
-<h2>gpflow.posteriors.create_posterior<a class="headerlink" href="#gpflow-posteriors-create-posterior" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.posteriors.create_posterior<a class="headerlink" href="#gpflow-posteriors-create-posterior" title="Permalink to this headline">#</a></h2>
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.posteriors.create_posterior">
-<span class="sig-prename descclassname"><span class="pre">gpflow.posteriors.</span></span><span class="sig-name descname"><span class="pre">create_posterior</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_mu</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_sqrt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">whiten</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean_function</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">precompute_cache</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">PrecomputeCacheType.TENSOR</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/posteriors.html#create_posterior"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.posteriors.create_posterior" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">gpflow.posteriors.</span></span><span class="sig-name descname"><span class="pre">create_posterior</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_mu</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_sqrt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">whiten</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean_function</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">precompute_cache</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">PrecomputeCacheType.TENSOR</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/posteriors.html#create_posterior"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.posteriors.create_posterior" title="Permalink to this definition">#</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -1195,10 +1189,10 @@ and I is the corresponding identity matrix.</p>
 
 </section>
 <section id="gpflow-posteriors-expand-independent-outputs">
-<h2>gpflow.posteriors.expand_independent_outputs<a class="headerlink" href="#gpflow-posteriors-expand-independent-outputs" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.posteriors.expand_independent_outputs<a class="headerlink" href="#gpflow-posteriors-expand-independent-outputs" title="Permalink to this headline">#</a></h2>
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.posteriors.expand_independent_outputs">
-<span class="sig-prename descclassname"><span class="pre">gpflow.posteriors.</span></span><span class="sig-name descname"><span class="pre">expand_independent_outputs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fvar</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_cov</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_output_cov</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/conditionals/util.html#expand_independent_outputs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.posteriors.expand_independent_outputs" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">gpflow.posteriors.</span></span><span class="sig-name descname"><span class="pre">expand_independent_outputs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fvar</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_cov</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_output_cov</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/conditionals/util.html#expand_independent_outputs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.posteriors.expand_independent_outputs" title="Permalink to this definition">#</a></dt>
 <dd><p>Reshapes fvar to the correct shape, specified by <cite>full_cov</cite> and <cite>full_output_cov</cite>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -1233,10 +1227,10 @@ fvar [N, P]</p></li>
 
 </section>
 <section id="gpflow-posteriors-eye">
-<h2>gpflow.posteriors.eye<a class="headerlink" href="#gpflow-posteriors-eye" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.posteriors.eye<a class="headerlink" href="#gpflow-posteriors-eye" title="Permalink to this headline">#</a></h2>
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.posteriors.eye">
-<span class="sig-prename descclassname"><span class="pre">gpflow.posteriors.</span></span><span class="sig-name descname"><span class="pre">eye</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dtype</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/utilities/ops.html#eye"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.posteriors.eye" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">gpflow.posteriors.</span></span><span class="sig-name descname"><span class="pre">eye</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dtype</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/utilities/ops.html#eye"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.posteriors.eye" title="Permalink to this definition">#</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -1253,10 +1247,10 @@ fvar [N, P]</p></li>
 
 </section>
 <section id="gpflow-posteriors-fully-correlated-conditional">
-<h2>gpflow.posteriors.fully_correlated_conditional<a class="headerlink" href="#gpflow-posteriors-fully-correlated-conditional" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.posteriors.fully_correlated_conditional<a class="headerlink" href="#gpflow-posteriors-fully-correlated-conditional" title="Permalink to this headline">#</a></h2>
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.posteriors.fully_correlated_conditional">
-<span class="sig-prename descclassname"><span class="pre">gpflow.posteriors.</span></span><span class="sig-name descname"><span class="pre">fully_correlated_conditional</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Kmn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Kmm</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Knn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_output_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_sqrt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">white</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/conditionals/util.html#fully_correlated_conditional"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.posteriors.fully_correlated_conditional" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">gpflow.posteriors.</span></span><span class="sig-name descname"><span class="pre">fully_correlated_conditional</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Kmn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Kmm</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Knn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_output_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_sqrt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">white</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/conditionals/util.html#fully_correlated_conditional"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.posteriors.fully_correlated_conditional" title="Permalink to this definition">#</a></dt>
 <dd><p>This function handles conditioning of multi-output GPs in the case where the conditioning
 points are all fully correlated, in both the prior and posterior.
 :type Kmn: <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>
@@ -1287,7 +1281,7 @@ points are all fully correlated, in both the prior and posterior.
 
 </section>
 <section id="gpflow-posteriors-get-posterior-class">
-<h2>gpflow.posteriors.get_posterior_class<a class="headerlink" href="#gpflow-posteriors-get-posterior-class" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.posteriors.get_posterior_class<a class="headerlink" href="#gpflow-posteriors-get-posterior-class" title="Permalink to this headline">#</a></h2>
 <p>This function uses multiple dispatch, which will depend on the type of argument passed in:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">gpflow</span><span class="o">.</span><span class="n">posteriors</span><span class="o">.</span><span class="n">get_posterior_class</span><span class="p">(</span> <span class="n">Kernel</span><span class="p">,</span> <span class="n">InducingVariables</span> <span class="p">)</span>
 <span class="c1"># dispatch to -&gt; gpflow.posteriors._get_posterior_base_case(...)</span>
@@ -1295,7 +1289,7 @@ points are all fully correlated, in both the prior and posterior.
 </div>
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.posteriors._get_posterior_base_case">
-<span class="sig-prename descclassname"><span class="pre">gpflow.posteriors.</span></span><span class="sig-name descname"><span class="pre">_get_posterior_base_case</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/posteriors.html#_get_posterior_base_case"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.posteriors._get_posterior_base_case" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">gpflow.posteriors.</span></span><span class="sig-name descname"><span class="pre">_get_posterior_base_case</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/posteriors.html#_get_posterior_base_case"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.posteriors._get_posterior_base_case" title="Permalink to this definition">#</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -1315,7 +1309,7 @@ points are all fully correlated, in both the prior and posterior.
 </div>
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.posteriors._get_posterior_fully_correlated_mo">
-<span class="sig-prename descclassname"><span class="pre">gpflow.posteriors.</span></span><span class="sig-name descname"><span class="pre">_get_posterior_fully_correlated_mo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/posteriors.html#_get_posterior_fully_correlated_mo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.posteriors._get_posterior_fully_correlated_mo" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">gpflow.posteriors.</span></span><span class="sig-name descname"><span class="pre">_get_posterior_fully_correlated_mo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/posteriors.html#_get_posterior_fully_correlated_mo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.posteriors._get_posterior_fully_correlated_mo" title="Permalink to this definition">#</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -1338,7 +1332,7 @@ points are all fully correlated, in both the prior and posterior.
 </div>
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.posteriors._get_posterior_independent_mo">
-<span class="sig-prename descclassname"><span class="pre">gpflow.posteriors.</span></span><span class="sig-name descname"><span class="pre">_get_posterior_independent_mo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/posteriors.html#_get_posterior_independent_mo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.posteriors._get_posterior_independent_mo" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">gpflow.posteriors.</span></span><span class="sig-name descname"><span class="pre">_get_posterior_independent_mo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/posteriors.html#_get_posterior_independent_mo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.posteriors._get_posterior_independent_mo" title="Permalink to this definition">#</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -1359,7 +1353,7 @@ points are all fully correlated, in both the prior and posterior.
 </div>
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.posteriors._get_posterior_independentlatent_mo_fallback">
-<span class="sig-prename descclassname"><span class="pre">gpflow.posteriors.</span></span><span class="sig-name descname"><span class="pre">_get_posterior_independentlatent_mo_fallback</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/posteriors.html#_get_posterior_independentlatent_mo_fallback"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.posteriors._get_posterior_independentlatent_mo_fallback" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">gpflow.posteriors.</span></span><span class="sig-name descname"><span class="pre">_get_posterior_independentlatent_mo_fallback</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/posteriors.html#_get_posterior_independentlatent_mo_fallback"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.posteriors._get_posterior_independentlatent_mo_fallback" title="Permalink to this definition">#</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -1380,7 +1374,7 @@ points are all fully correlated, in both the prior and posterior.
 </div>
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.posteriors._get_posterior_linearcoregionalization_mo_efficient">
-<span class="sig-prename descclassname"><span class="pre">gpflow.posteriors.</span></span><span class="sig-name descname"><span class="pre">_get_posterior_linearcoregionalization_mo_efficient</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/posteriors.html#_get_posterior_linearcoregionalization_mo_efficient"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.posteriors._get_posterior_linearcoregionalization_mo_efficient" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">gpflow.posteriors.</span></span><span class="sig-name descname"><span class="pre">_get_posterior_linearcoregionalization_mo_efficient</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/posteriors.html#_get_posterior_linearcoregionalization_mo_efficient"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.posteriors._get_posterior_linearcoregionalization_mo_efficient" title="Permalink to this definition">#</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -1396,10 +1390,10 @@ points are all fully correlated, in both the prior and posterior.
 
 </section>
 <section id="gpflow-posteriors-independent-interdomain-conditional">
-<h2>gpflow.posteriors.independent_interdomain_conditional<a class="headerlink" href="#gpflow-posteriors-independent-interdomain-conditional" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.posteriors.independent_interdomain_conditional<a class="headerlink" href="#gpflow-posteriors-independent-interdomain-conditional" title="Permalink to this headline">#</a></h2>
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.posteriors.independent_interdomain_conditional">
-<span class="sig-prename descclassname"><span class="pre">gpflow.posteriors.</span></span><span class="sig-name descname"><span class="pre">independent_interdomain_conditional</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Kmn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Kmm</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Knn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_output_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_sqrt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">white</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/conditionals/util.html#independent_interdomain_conditional"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.posteriors.independent_interdomain_conditional" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">gpflow.posteriors.</span></span><span class="sig-name descname"><span class="pre">independent_interdomain_conditional</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Kmn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Kmm</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Knn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_output_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_sqrt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">white</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/conditionals/util.html#independent_interdomain_conditional"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.posteriors.independent_interdomain_conditional" title="Permalink to this definition">#</a></dt>
 <dd><p>The inducing outputs live in the g-space (R^L).
 Interdomain conditional calculation.
 :type Kmn: <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>
@@ -1430,10 +1424,10 @@ Interdomain conditional calculation.
 
 </section>
 <section id="gpflow-posteriors-leading-transpose">
-<h2>gpflow.posteriors.leading_transpose<a class="headerlink" href="#gpflow-posteriors-leading-transpose" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.posteriors.leading_transpose<a class="headerlink" href="#gpflow-posteriors-leading-transpose" title="Permalink to this headline">#</a></h2>
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.posteriors.leading_transpose">
-<span class="sig-prename descclassname"><span class="pre">gpflow.posteriors.</span></span><span class="sig-name descname"><span class="pre">leading_transpose</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">perm</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">leading_dim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/utilities/ops.html#leading_transpose"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.posteriors.leading_transpose" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">gpflow.posteriors.</span></span><span class="sig-name descname"><span class="pre">leading_transpose</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">perm</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">leading_dim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/utilities/ops.html#leading_transpose"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.posteriors.leading_transpose" title="Permalink to this definition">#</a></dt>
 <dd><p>Transposes tensors with leading dimensions. Leading dimensions in
 permutation list represented via ellipsis <cite>…</cite> and is of type List[Union[int, type(…)]
 (please note, due to mypy issues, List[Any] is used instead).
@@ -1483,10 +1477,10 @@ output&gt; (6, 4, 1, 2, 3, 5)</p>
 
 </section>
 <section id="gpflow-posteriors-mix-latent-gp">
-<h2>gpflow.posteriors.mix_latent_gp<a class="headerlink" href="#gpflow-posteriors-mix-latent-gp" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.posteriors.mix_latent_gp<a class="headerlink" href="#gpflow-posteriors-mix-latent-gp" title="Permalink to this headline">#</a></h2>
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.posteriors.mix_latent_gp">
-<span class="sig-prename descclassname"><span class="pre">gpflow.posteriors.</span></span><span class="sig-name descname"><span class="pre">mix_latent_gp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">W</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">g_mean</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">g_var</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_cov</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_output_cov</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/conditionals/util.html#mix_latent_gp"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.posteriors.mix_latent_gp" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">gpflow.posteriors.</span></span><span class="sig-name descname"><span class="pre">mix_latent_gp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">W</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">g_mean</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">g_var</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_cov</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_output_cov</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/conditionals/util.html#mix_latent_gp"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.posteriors.mix_latent_gp" title="Permalink to this definition">#</a></dt>
 <dd><p>Takes the mean and variance of an uncorrelated L-dimensional latent GP
 and returns the mean and the variance of the mixed GP, <cite>f = W g</cite>,
 where both f and g are GPs, with W having a shape [P, L]</p>
@@ -1511,10 +1505,10 @@ where both f and g are GPs, with W having a shape [P, L]</p>
 
 </section>
 <section id="gpflow-posteriors-separate-independent-conditional-implementation">
-<h2>gpflow.posteriors.separate_independent_conditional_implementation<a class="headerlink" href="#gpflow-posteriors-separate-independent-conditional-implementation" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.posteriors.separate_independent_conditional_implementation<a class="headerlink" href="#gpflow-posteriors-separate-independent-conditional-implementation" title="Permalink to this headline">#</a></h2>
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.posteriors.separate_independent_conditional_implementation">
-<span class="sig-prename descclassname"><span class="pre">gpflow.posteriors.</span></span><span class="sig-name descname"><span class="pre">separate_independent_conditional_implementation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Kmns</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Kmms</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Knns</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_sqrt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">white</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/conditionals/util.html#separate_independent_conditional_implementation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.posteriors.separate_independent_conditional_implementation" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">gpflow.posteriors.</span></span><span class="sig-name descname"><span class="pre">separate_independent_conditional_implementation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Kmns</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Kmms</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Knns</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_sqrt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">white</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/conditionals/util.html#separate_independent_conditional_implementation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.posteriors.separate_independent_conditional_implementation" title="Permalink to this definition">#</a></dt>
 <dd><p>Multi-output GP with independent GP priors.
 Number of latent processes equals the number of outputs (L = P).
 The covariance matrices used to calculate the conditional have the following shape:
@@ -1559,8 +1553,9 @@ conditional in the single-output case.</p></li>
       </div>
     </div>
   
-    <script src="../../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf"></script>
-  <footer class="footer mt-5 mt-md-0">
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf"></script>
+<footer class="footer mt-5 mt-md-0">
   <div class="container">
     
     <div class="footer-item">
@@ -1571,7 +1566,7 @@ conditional in the single-output case.</p></li>
     
     <div class="footer-item">
       <p class="sphinx-version">
-Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.4.0.<br>
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.5.0.<br>
 </p>
     </div>
     

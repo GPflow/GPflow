@@ -8,27 +8,24 @@
 
     <title>gpflow.conditionals.util &#8212; GPflow 2.4.0 documentation</title>
     
-    <link href="../../../../_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../../_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
 <link href="../../../../_static/styles/pydata-sphinx-theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
-  
+
     
-    <link rel="stylesheet"
-      href="../../../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
-    <link rel="preload" as="font" type="font/woff2" crossorigin
-      href="../../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
-    <link rel="preload" as="font" type="font/woff2" crossorigin
-      href="../../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
-  
-    
-      
-  
-    
+  <link rel="stylesheet"
+    href="../../../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
     <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../../../../_static/styles/pydata-sphinx-theme.css" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/pydata-custom.css" />
     
-    <link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf">
-  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf">
+
     <script data-url_root="../../../../" id="documentation_options" src="../../../../_static/documentation_options.js"></script>
     <script src="../../../../_static/jquery.js"></script>
     <script src="../../../../_static/underscore.js"></script>
@@ -46,7 +43,7 @@
     <!-- Google Analytics -->
     
   </head>
-  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="80">
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="60">
     
     <div class="container-fluid" id="banner"></div>
 
@@ -142,13 +139,6 @@
 -->
 
 <script type="text/javascript">
-// Construct the target URL from the JSON components
-function buildURL(entry) {
-    var template = "https://gpflow.github.io/GPflow/{version}/index.html";  // supplied by jinja
-    template = template.replace("{version}", entry.version);
-    return template;
-}
-
 // Check if corresponding page path exists in other version of docs
 // and, if so, go there instead of the homepage of the other docs version
 function checkPageExistsAndRedirect(event) {
@@ -184,14 +174,16 @@ function checkPageExistsAndRedirect(event) {
             const node = document.createElement("a");
             node.setAttribute("class", "list-group-item list-group-item-action py-1");
             node.textContent = `${entry.name}`;
-            // get the base URL for that doc version, add the current page's
-            // path to it, and set as `href`
-            entry.url = buildURL(entry);
             node.setAttribute("href", `${entry.url}${currentFilePath}`);
             // on click, AJAX calls will check if the linked page exists before
             // trying to redirect, and if not, will redirect to the homepage
             // for that version of the docs.
             node.onclick = checkPageExistsAndRedirect;
+            // Add dataset values for the version and name in case people want
+            // to apply CSS styling based on this information.
+            node.dataset["versionName"] = entry.name;
+            node.dataset["version"] = entry.version;
+
             $("#version_switcher_menu").append(node);
             // replace dropdown button text with the preferred display name of
             // this version, rather than using sphinx's  variable.
@@ -199,7 +191,9 @@ function checkPageExistsAndRedirect(event) {
             // version's entry
             if (entry.version == "develop") {
                 node.classList.add("active");
-                $("#version_switcher_button").text(entry.name);
+                let btn = document.getElementById("version_switcher_button");
+                btn.innerText = btn.dataset["activeVersionName"] = entry.name;
+                btn.dataset["activeVersion"] = entry.version;
             }
         });
     });
@@ -611,7 +605,7 @@ function checkPageExistsAndRedirect(event) {
               
               <div class="toc-item">
                 
-<div class="tocsection onthispage pt-5 pb-3">
+<div class="tocsection onthispage mt-5 pt-1 pb-3">
     <i class="fas fa-list"></i> On this page
 </div>
 
@@ -659,12 +653,12 @@ function checkPageExistsAndRedirect(event) {
               <div>
                 
   <section id="gpflow-conditionals-util">
-<h1>gpflow.conditionals.util<a class="headerlink" href="#gpflow-conditionals-util" title="Permalink to this headline">¶</a></h1>
+<h1>gpflow.conditionals.util<a class="headerlink" href="#gpflow-conditionals-util" title="Permalink to this headline">#</a></h1>
 <span class="target" id="module-gpflow.conditionals.util"></span><section id="gpflow-conditionals-util-fully-correlated-conditional-repeat">
-<h2>gpflow.conditionals.util.fully_correlated_conditional_repeat<a class="headerlink" href="#gpflow-conditionals-util-fully-correlated-conditional-repeat" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.conditionals.util.fully_correlated_conditional_repeat<a class="headerlink" href="#gpflow-conditionals-util-fully-correlated-conditional-repeat" title="Permalink to this headline">#</a></h2>
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.conditionals.util.fully_correlated_conditional_repeat">
-<span class="sig-prename descclassname"><span class="pre">gpflow.conditionals.util.</span></span><span class="sig-name descname"><span class="pre">fully_correlated_conditional_repeat</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Kmn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Kmm</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Knn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_output_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_sqrt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">white</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/gpflow/conditionals/util.html#fully_correlated_conditional_repeat"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.conditionals.util.fully_correlated_conditional_repeat" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">gpflow.conditionals.util.</span></span><span class="sig-name descname"><span class="pre">fully_correlated_conditional_repeat</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Kmn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Kmm</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Knn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_output_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_sqrt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">white</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/gpflow/conditionals/util.html#fully_correlated_conditional_repeat"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.conditionals.util.fully_correlated_conditional_repeat" title="Permalink to this definition">#</a></dt>
 <dd><p>This function handles conditioning of multi-output GPs in the case where the conditioning
 points are all fully correlated, in both the prior and posterior.
 Note: This conditional can handle ‘repetitions’ R, given in <cite>f</cite> and <cite>q_sqrt</cite>.
@@ -696,10 +690,10 @@ Note: This conditional can handle ‘repetitions’ R, given in <cite>f</cite> a
 
 </section>
 <section id="gpflow-conditionals-util-rollaxis-left">
-<h2>gpflow.conditionals.util.rollaxis_left<a class="headerlink" href="#gpflow-conditionals-util-rollaxis-left" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.conditionals.util.rollaxis_left<a class="headerlink" href="#gpflow-conditionals-util-rollaxis-left" title="Permalink to this headline">#</a></h2>
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.conditionals.util.rollaxis_left">
-<span class="sig-prename descclassname"><span class="pre">gpflow.conditionals.util.</span></span><span class="sig-name descname"><span class="pre">rollaxis_left</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">A</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_rolls</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/gpflow/conditionals/util.html#rollaxis_left"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.conditionals.util.rollaxis_left" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">gpflow.conditionals.util.</span></span><span class="sig-name descname"><span class="pre">rollaxis_left</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">A</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_rolls</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/gpflow/conditionals/util.html#rollaxis_left"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.conditionals.util.rollaxis_left" title="Permalink to this definition">#</a></dt>
 <dd><p>Roll the tensor <cite>A</cite> backwards <cite>num_rolls</cite> times.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -716,10 +710,10 @@ Note: This conditional can handle ‘repetitions’ R, given in <cite>f</cite> a
 
 </section>
 <section id="gpflow-conditionals-util-rollaxis-right">
-<h2>gpflow.conditionals.util.rollaxis_right<a class="headerlink" href="#gpflow-conditionals-util-rollaxis-right" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.conditionals.util.rollaxis_right<a class="headerlink" href="#gpflow-conditionals-util-rollaxis-right" title="Permalink to this headline">#</a></h2>
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.conditionals.util.rollaxis_right">
-<span class="sig-prename descclassname"><span class="pre">gpflow.conditionals.util.</span></span><span class="sig-name descname"><span class="pre">rollaxis_right</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">A</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_rolls</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/gpflow/conditionals/util.html#rollaxis_right"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.conditionals.util.rollaxis_right" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">gpflow.conditionals.util.</span></span><span class="sig-name descname"><span class="pre">rollaxis_right</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">A</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_rolls</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/gpflow/conditionals/util.html#rollaxis_right"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.conditionals.util.rollaxis_right" title="Permalink to this definition">#</a></dt>
 <dd><p>Roll the tensor <cite>A</cite> forward <cite>num_rolls</cite> times.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -736,10 +730,10 @@ Note: This conditional can handle ‘repetitions’ R, given in <cite>f</cite> a
 
 </section>
 <section id="gpflow-conditionals-util-sample-mvn">
-<h2>gpflow.conditionals.util.sample_mvn<a class="headerlink" href="#gpflow-conditionals-util-sample-mvn" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.conditionals.util.sample_mvn<a class="headerlink" href="#gpflow-conditionals-util-sample-mvn" title="Permalink to this headline">#</a></h2>
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.conditionals.util.sample_mvn">
-<span class="sig-prename descclassname"><span class="pre">gpflow.conditionals.util.</span></span><span class="sig-name descname"><span class="pre">sample_mvn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mean</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cov</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_cov</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_samples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/gpflow/conditionals/util.html#sample_mvn"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.conditionals.util.sample_mvn" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">gpflow.conditionals.util.</span></span><span class="sig-name descname"><span class="pre">sample_mvn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mean</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cov</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_cov</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_samples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/gpflow/conditionals/util.html#sample_mvn"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.conditionals.util.sample_mvn" title="Permalink to this definition">#</a></dt>
 <dd><p>Returns a sample from a D-dimensional Multivariate Normal distribution
 :type mean: <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>
 :param mean: […, N, D]
@@ -771,8 +765,9 @@ Note: This conditional can handle ‘repetitions’ R, given in <cite>f</cite> a
       </div>
     </div>
   
-    <script src="../../../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf"></script>
-  <footer class="footer mt-5 mt-md-0">
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf"></script>
+<footer class="footer mt-5 mt-md-0">
   <div class="container">
     
     <div class="footer-item">
@@ -783,7 +778,7 @@ Note: This conditional can handle ‘repetitions’ R, given in <cite>f</cite> a
     
     <div class="footer-item">
       <p class="sphinx-version">
-Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.4.0.<br>
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.5.0.<br>
 </p>
     </div>
     

@@ -8,27 +8,24 @@
 
     <title>Mixture Density Networks in GPflow &#8212; GPflow 2.4.0 documentation</title>
     
-    <link href="../../_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
 <link href="../../_static/styles/pydata-sphinx-theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
-  
+
     
-    <link rel="stylesheet"
-      href="../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
-    <link rel="preload" as="font" type="font/woff2" crossorigin
-      href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
-    <link rel="preload" as="font" type="font/woff2" crossorigin
-      href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
-  
-    
-      
-  
-    
+  <link rel="stylesheet"
+    href="../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../../_static/styles/pydata-sphinx-theme.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/pydata-custom.css" />
     
-    <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf">
-  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf">
+
     <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
     <script src="../../_static/jquery.js"></script>
     <script src="../../_static/underscore.js"></script>
@@ -48,7 +45,7 @@
     <!-- Google Analytics -->
     
   </head>
-  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="80">
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="60">
     
     <div class="container-fluid" id="banner"></div>
 
@@ -144,13 +141,6 @@
 -->
 
 <script type="text/javascript">
-// Construct the target URL from the JSON components
-function buildURL(entry) {
-    var template = "https://gpflow.github.io/GPflow/{version}/index.html";  // supplied by jinja
-    template = template.replace("{version}", entry.version);
-    return template;
-}
-
 // Check if corresponding page path exists in other version of docs
 // and, if so, go there instead of the homepage of the other docs version
 function checkPageExistsAndRedirect(event) {
@@ -186,14 +176,16 @@ function checkPageExistsAndRedirect(event) {
             const node = document.createElement("a");
             node.setAttribute("class", "list-group-item list-group-item-action py-1");
             node.textContent = `${entry.name}`;
-            // get the base URL for that doc version, add the current page's
-            // path to it, and set as `href`
-            entry.url = buildURL(entry);
             node.setAttribute("href", `${entry.url}${currentFilePath}`);
             // on click, AJAX calls will check if the linked page exists before
             // trying to redirect, and if not, will redirect to the homepage
             // for that version of the docs.
             node.onclick = checkPageExistsAndRedirect;
+            // Add dataset values for the version and name in case people want
+            // to apply CSS styling based on this information.
+            node.dataset["versionName"] = entry.name;
+            node.dataset["version"] = entry.version;
+
             $("#version_switcher_menu").append(node);
             // replace dropdown button text with the preferred display name of
             // this version, rather than using sphinx's  variable.
@@ -201,7 +193,9 @@ function checkPageExistsAndRedirect(event) {
             // version's entry
             if (entry.version == "develop") {
                 node.classList.add("active");
-                $("#version_switcher_button").text(entry.name);
+                let btn = document.getElementById("version_switcher_button");
+                btn.innerText = btn.dataset["activeVersionName"] = entry.name;
+                btn.dataset["activeVersion"] = entry.version;
             }
         });
     });
@@ -427,7 +421,7 @@ function checkPageExistsAndRedirect(event) {
               
               <div class="toc-item">
                 
-<div class="tocsection onthispage pt-5 pb-3">
+<div class="tocsection onthispage mt-5 pt-1 pb-3">
     <i class="fas fa-list"></i> On this page
 </div>
 
@@ -740,12 +734,12 @@ div.rendered_html tbody tr:hover {
 }
 </style>
 <section id="Mixture-Density-Networks-in-GPflow">
-<h1>Mixture Density Networks in GPflow<a class="headerlink" href="#Mixture-Density-Networks-in-GPflow" title="Permalink to this headline">¶</a></h1>
+<h1>Mixture Density Networks in GPflow<a class="headerlink" href="#Mixture-Density-Networks-in-GPflow" title="Permalink to this headline">#</a></h1>
 <p>In this notebook we explain how to implement a Mixture Density Network (MDN) [1] using GPflow. In theory, this is similar to <a class="reference external" href="http://blog.otoro.net/2015/11/24/mixture-density-networks-with-tensorflow/">this blog post</a> from 2015, but instead of using TensorFlow directly we’ll use GPflow. GPflow is typically used for building Gaussian Process-based models, but the framework contains many useful methods and classes that can be used to quickly prototype a wide variety of ML algorithms. Excellent
 for doing research!</p>
 <p>We start by explaining why MDNs can be useful. We then examine a GPflow implementation of the model and use it for a couple of toy experiments.</p>
 <section id="Conditional-Density-Estimation-models">
-<h2>Conditional Density Estimation models<a class="headerlink" href="#Conditional-Density-Estimation-models" title="Permalink to this headline">¶</a></h2>
+<h2>Conditional Density Estimation models<a class="headerlink" href="#Conditional-Density-Estimation-models" title="Permalink to this headline">#</a></h2>
 <p>Imagine we are interested in performing regression on the following dataset.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
@@ -799,7 +793,7 @@ output value for every input.</p>
 passengers need to go to different destinations (airport/city center/suburbs and so on) and the density depends on the starting location [2].</p>
 </section>
 <section id="Mixture-Density-Network-models">
-<h2>Mixture Density Network models<a class="headerlink" href="#Mixture-Density-Network-models" title="Permalink to this headline">¶</a></h2>
+<h2>Mixture Density Network models<a class="headerlink" href="#Mixture-Density-Network-models" title="Permalink to this headline">#</a></h2>
 <p>Mixture Density Networks (MDNs) are a parametric class of models that allow for conditional density estimation. They consist of two parts: a neural net and a Mixture of Gaussians (MoG). The neural net is responsible for producing the characteristics of the MoG. In practice, given that the MoG consists of <span class="math notranslate nohighlight">\(M\)</span> Gaussians, the neural net will output a collection of <span class="math notranslate nohighlight">\(M\)</span> means, variances and weights <span class="math notranslate nohighlight">\(\{\mu_m, \sigma_m^2, \pi_m\}_{m=1}^M\)</span>. These means, variances and weights are used
 to define the conditional probability distribution function: <span class="math">\begin{equation}
 p(Y = y\,|\,X = x) = \sum_{m=1}^{M} \pi_{m}(x)\,\mathcal{N}\big(y\, \left|\,\mu_{m}(x), \sigma_{m}^2(x)\big)\right.
@@ -811,7 +805,7 @@ p(Y = y\,|\,X = x) = \sum_{m=1}^{M} \pi_{m}(x)\,\mathcal{N}\big(y\, \left|\,\mu_
 <p>where <span class="math notranslate nohighlight">\(\Theta\)</span> collects the neural net’s weights and biases and <span class="math notranslate nohighlight">\(\{x_n, y_n\}_{n=1}^N\)</span> represents our training dataset.</p>
 </section>
 <section id="A-GPflow-MDN-implementation">
-<h2>A GPflow MDN implementation<a class="headerlink" href="#A-GPflow-MDN-implementation" title="Permalink to this headline">¶</a></h2>
+<h2>A GPflow MDN implementation<a class="headerlink" href="#A-GPflow-MDN-implementation" title="Permalink to this headline">#</a></h2>
 <p>GPflow doesn’t reinvent the wheel; most of what follows is just plain Python/TensorFlow code. We choose to use GPflow, however, because it provides us with functionality to easily define a model. Once we have a GPflow model, we can specify its objective function, parameters and dataset. This extra layer of abstraction makes interacting with the model much easier, for example optimizing or performing inference.</p>
 <p>We begin by importing the required packages from TensorFlow and GPflow.</p>
 <div class="nbinput docutils container">
@@ -827,8 +821,8 @@ p(Y = y\,|\,X = x) = \sum_{m=1}^{M} \pi_{m}(x)\,\mathcal{N}\big(y\, \left|\,\mu_
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2022-03-25 13:22:09.225444: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcudart.so.11.0&#39;; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory
-2022-03-25 13:22:09.225470: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.
+2022-03-29 10:16:00.325786: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcudart.so.11.0&#39;; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory
+2022-03-29 10:16:00.325813: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.
 </pre></div></div>
 </div>
 <div class="nbinput nblast docutils container">
@@ -897,7 +891,7 @@ p(Y = y\,|\,X = x) = \sum_{m=1}^{M} \pi_{m}(x)\,\mathcal{N}\big(y\, \left|\,\mu_
 </div>
 </div>
 <section id="Notes">
-<h3>Notes<a class="headerlink" href="#Notes" title="Permalink to this headline">¶</a></h3>
+<h3>Notes<a class="headerlink" href="#Notes" title="Permalink to this headline">#</a></h3>
 <ul class="simple">
 <li><p>Given we are dealing with a MoG, the neural net output must comply with the following restrictions: <span class="math">\begin{equation}
 \sum_{m=1}^{M} \pi_{m}(x) = 1, \pi_m \ge 0\ \text{and}\ \sigma_m\ \forall\ m
@@ -908,7 +902,7 @@ p(Y = y\,|\,X = x) = \sum_{m=1}^{M} \pi_{m}(x)\,\mathcal{N}\big(y\, \left|\,\mu_
 </section>
 </section>
 <section id="Experiment-1:-The-sinusoidal-dataset">
-<h2>Experiment 1: The sinusoidal dataset<a class="headerlink" href="#Experiment-1:-The-sinusoidal-dataset" title="Permalink to this headline">¶</a></h2>
+<h2>Experiment 1: The sinusoidal dataset<a class="headerlink" href="#Experiment-1:-The-sinusoidal-dataset" title="Permalink to this headline">#</a></h2>
 <p>Let’s see how our model works in practice with the sinusoidal dataset presented earlier. We do this by initializing a new instance of our MDN model, and then specifying the dataset <span class="math notranslate nohighlight">\((X, Y)\)</span>, the number of hidden units of the MDN’s neural net, and the number of mixture components <span class="math notranslate nohighlight">\(M\)</span>.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
@@ -949,10 +943,10 @@ p(Y = y\,|\,X = x) = \sum_{m=1}^{M} \pi_{m}(x)\,\mathcal{N}\big(y\, \left|\,\mu_
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2022-03-25 13:22:11.507207: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcuda.so.1&#39;; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory
-2022-03-25 13:22:11.507246: W tensorflow/stream_executor/cuda/cuda_driver.cc:269] failed call to cuInit: UNKNOWN ERROR (303)
-2022-03-25 13:22:11.507269: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (d396962cedd5): /proc/driver/nvidia/version does not exist
-2022-03-25 13:22:11.507602: I tensorflow/core/platform/cpu_feature_guard.cc:151] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA
+2022-03-29 10:16:02.471351: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcuda.so.1&#39;; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory
+2022-03-29 10:16:02.471382: W tensorflow/stream_executor/cuda/cuda_driver.cc:269] failed call to cuInit: UNKNOWN ERROR (303)
+2022-03-29 10:16:02.471403: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (9da31c79f42f): /proc/driver/nvidia/version does not exist
+2022-03-29 10:16:02.471680: I tensorflow/core/platform/cpu_feature_guard.cc:151] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA
 To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.
 </pre></div></div>
 </div>
@@ -980,7 +974,7 @@ To enable them in other operations, rebuild TensorFlow with the appropriate comp
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2022-03-25 13:22:11.552409: W tensorflow/python/util/util.cc:368] Sets are not currently considered sequences, but this may change in the future, so consider avoiding using them.
+2022-03-29 10:16:02.510388: W tensorflow/python/util/util.cc:368] Sets are not currently considered sequences, but this may change in the future, so consider avoiding using them.
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -1019,7 +1013,7 @@ Final Likelihood -131.58194782932202
 </div>
 </section>
 <section id="Experiment-2:-The-half-moon-dataset">
-<h2>Experiment 2: The half moon dataset<a class="headerlink" href="#Experiment-2:-The-half-moon-dataset" title="Permalink to this headline">¶</a></h2>
+<h2>Experiment 2: The half moon dataset<a class="headerlink" href="#Experiment-2:-The-half-moon-dataset" title="Permalink to this headline">#</a></h2>
 <p>The half moon dataset is available in the <code class="docutils literal notranslate"><span class="pre">scikit-learn</span></code> package.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
@@ -1105,7 +1099,7 @@ Final Likelihood 183.9142768444019
 </div>
 </section>
 <section id="References">
-<h2>References<a class="headerlink" href="#References" title="Permalink to this headline">¶</a></h2>
+<h2>References<a class="headerlink" href="#References" title="Permalink to this headline">#</a></h2>
 <p>[1] Bishop, Christopher M. Mixture density networks. Technical Report NCRG/4288, Aston University, Birmingham, UK, 1994.</p>
 <p>[2] Dutordoir, Vincent, et al. “Gaussian Process Conditional Density Estimation.” Advances in Neural Information Processing Systems. 2018.</p>
 </section>
@@ -1121,8 +1115,9 @@ Final Likelihood 183.9142768444019
       </div>
     </div>
   
-    <script src="../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf"></script>
-  <footer class="footer mt-5 mt-md-0">
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf"></script>
+<footer class="footer mt-5 mt-md-0">
   <div class="container">
     
     <div class="footer-item">
@@ -1133,7 +1128,7 @@ Final Likelihood 183.9142768444019
     
     <div class="footer-item">
       <p class="sphinx-version">
-Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.4.0.<br>
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.5.0.<br>
 </p>
     </div>
     

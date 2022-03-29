@@ -8,27 +8,24 @@
 
     <title>gpflow.inducing_variables &#8212; GPflow 2.4.0 documentation</title>
     
-    <link href="../../../_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
 <link href="../../../_static/styles/pydata-sphinx-theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
-  
+
     
-    <link rel="stylesheet"
-      href="../../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
-    <link rel="preload" as="font" type="font/woff2" crossorigin
-      href="../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
-    <link rel="preload" as="font" type="font/woff2" crossorigin
-      href="../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
-  
-    
-      
-  
-    
+  <link rel="stylesheet"
+    href="../../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../../../_static/styles/pydata-sphinx-theme.css" />
     <link rel="stylesheet" type="text/css" href="../../../_static/pydata-custom.css" />
     
-    <link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf">
-  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf">
+
     <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
     <script src="../../../_static/jquery.js"></script>
     <script src="../../../_static/underscore.js"></script>
@@ -46,7 +43,7 @@
     <!-- Google Analytics -->
     
   </head>
-  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="80">
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="60">
     
     <div class="container-fluid" id="banner"></div>
 
@@ -142,13 +139,6 @@
 -->
 
 <script type="text/javascript">
-// Construct the target URL from the JSON components
-function buildURL(entry) {
-    var template = "https://gpflow.github.io/GPflow/{version}/index.html";  // supplied by jinja
-    template = template.replace("{version}", entry.version);
-    return template;
-}
-
 // Check if corresponding page path exists in other version of docs
 // and, if so, go there instead of the homepage of the other docs version
 function checkPageExistsAndRedirect(event) {
@@ -184,14 +174,16 @@ function checkPageExistsAndRedirect(event) {
             const node = document.createElement("a");
             node.setAttribute("class", "list-group-item list-group-item-action py-1");
             node.textContent = `${entry.name}`;
-            // get the base URL for that doc version, add the current page's
-            // path to it, and set as `href`
-            entry.url = buildURL(entry);
             node.setAttribute("href", `${entry.url}${currentFilePath}`);
             // on click, AJAX calls will check if the linked page exists before
             // trying to redirect, and if not, will redirect to the homepage
             // for that version of the docs.
             node.onclick = checkPageExistsAndRedirect;
+            // Add dataset values for the version and name in case people want
+            // to apply CSS styling based on this information.
+            node.dataset["versionName"] = entry.name;
+            node.dataset["version"] = entry.version;
+
             $("#version_switcher_menu").append(node);
             // replace dropdown button text with the preferred display name of
             // this version, rather than using sphinx's  variable.
@@ -199,7 +191,9 @@ function checkPageExistsAndRedirect(event) {
             // version's entry
             if (entry.version == "develop") {
                 node.classList.add("active");
-                $("#version_switcher_button").text(entry.name);
+                let btn = document.getElementById("version_switcher_button");
+                btn.innerText = btn.dataset["activeVersionName"] = entry.name;
+                btn.dataset["activeVersion"] = entry.version;
             }
         });
     });
@@ -611,7 +605,7 @@ function checkPageExistsAndRedirect(event) {
               
               <div class="toc-item">
                 
-<div class="tocsection onthispage pt-5 pb-3">
+<div class="tocsection onthispage mt-5 pt-1 pb-3">
     <i class="fas fa-list"></i> On this page
 </div>
 
@@ -694,12 +688,12 @@ function checkPageExistsAndRedirect(event) {
               <div>
                 
   <section id="gpflow-inducing-variables">
-<h1>gpflow.inducing_variables<a class="headerlink" href="#gpflow-inducing-variables" title="Permalink to this headline">¶</a></h1>
+<h1>gpflow.inducing_variables<a class="headerlink" href="#gpflow-inducing-variables" title="Permalink to this headline">#</a></h1>
 <span class="target" id="module-gpflow.inducing_variables"></span><section id="gpflow-inducing-variables-fallbackseparateindependentinducingvariables">
-<h2>gpflow.inducing_variables.FallbackSeparateIndependentInducingVariables<a class="headerlink" href="#gpflow-inducing-variables-fallbackseparateindependentinducingvariables" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.inducing_variables.FallbackSeparateIndependentInducingVariables<a class="headerlink" href="#gpflow-inducing-variables-fallbackseparateindependentinducingvariables" title="Permalink to this headline">#</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="gpflow.inducing_variables.FallbackSeparateIndependentInducingVariables">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.inducing_variables.</span></span><span class="sig-name descname"><span class="pre">FallbackSeparateIndependentInducingVariables</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inducing_variable_list</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/inducing_variables/multioutput/inducing_variables.html#FallbackSeparateIndependentInducingVariables"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.inducing_variables.FallbackSeparateIndependentInducingVariables" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.inducing_variables.</span></span><span class="sig-name descname"><span class="pre">FallbackSeparateIndependentInducingVariables</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inducing_variable_list</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/inducing_variables/multioutput/inducing_variables.html#FallbackSeparateIndependentInducingVariables"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.inducing_variables.FallbackSeparateIndependentInducingVariables" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#gpflow.inducing_variables.MultioutputInducingVariables" title="gpflow.inducing_variables.multioutput.inducing_variables.MultioutputInducingVariables"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.inducing_variables.multioutput.inducing_variables.MultioutputInducingVariables</span></code></a></p>
 <p>Separate set of inducing variables for each independent latent process.</p>
 <dl class="simple">
@@ -738,7 +732,7 @@ Note: each object should have the same number of inducing variables, M.</p>
 </dl>
 <dl class="py property">
 <dt class="sig sig-object py" id="gpflow.inducing_variables.FallbackSeparateIndependentInducingVariables.num_inducing">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">num_inducing</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">tensorflow.python.framework.ops.Tensor</span></em><a class="headerlink" href="#gpflow.inducing_variables.FallbackSeparateIndependentInducingVariables.num_inducing" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">num_inducing</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">tensorflow.python.framework.ops.Tensor</span></em><a class="headerlink" href="#gpflow.inducing_variables.FallbackSeparateIndependentInducingVariables.num_inducing" title="Permalink to this definition">#</a></dt>
 <dd><p>Returns the number of inducing variables, relevant for example to determine the size of the
 variational distribution.</p>
 <dl class="field-list simple">
@@ -752,10 +746,10 @@ variational distribution.</p>
 
 </section>
 <section id="gpflow-inducing-variables-fallbacksharedindependentinducingvariables">
-<h2>gpflow.inducing_variables.FallbackSharedIndependentInducingVariables<a class="headerlink" href="#gpflow-inducing-variables-fallbacksharedindependentinducingvariables" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.inducing_variables.FallbackSharedIndependentInducingVariables<a class="headerlink" href="#gpflow-inducing-variables-fallbacksharedindependentinducingvariables" title="Permalink to this headline">#</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="gpflow.inducing_variables.FallbackSharedIndependentInducingVariables">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.inducing_variables.</span></span><span class="sig-name descname"><span class="pre">FallbackSharedIndependentInducingVariables</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/inducing_variables/multioutput/inducing_variables.html#FallbackSharedIndependentInducingVariables"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.inducing_variables.FallbackSharedIndependentInducingVariables" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.inducing_variables.</span></span><span class="sig-name descname"><span class="pre">FallbackSharedIndependentInducingVariables</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/inducing_variables/multioutput/inducing_variables.html#FallbackSharedIndependentInducingVariables"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.inducing_variables.FallbackSharedIndependentInducingVariables" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#gpflow.inducing_variables.MultioutputInducingVariables" title="gpflow.inducing_variables.multioutput.inducing_variables.MultioutputInducingVariables"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.inducing_variables.multioutput.inducing_variables.MultioutputInducingVariables</span></code></a></p>
 <p>Shared definition of inducing variables for each independent latent process.</p>
 <dl class="simple">
@@ -794,7 +788,7 @@ processes.</p>
 </dl>
 <dl class="py property">
 <dt class="sig sig-object py" id="gpflow.inducing_variables.FallbackSharedIndependentInducingVariables.num_inducing">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">num_inducing</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">tensorflow.python.framework.ops.Tensor</span></em><a class="headerlink" href="#gpflow.inducing_variables.FallbackSharedIndependentInducingVariables.num_inducing" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">num_inducing</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">tensorflow.python.framework.ops.Tensor</span></em><a class="headerlink" href="#gpflow.inducing_variables.FallbackSharedIndependentInducingVariables.num_inducing" title="Permalink to this definition">#</a></dt>
 <dd><p>Returns the number of inducing variables, relevant for example to determine the size of the
 variational distribution.</p>
 <dl class="field-list simple">
@@ -808,10 +802,10 @@ variational distribution.</p>
 
 </section>
 <section id="gpflow-inducing-variables-inducingpatches">
-<h2>gpflow.inducing_variables.InducingPatches<a class="headerlink" href="#gpflow-inducing-variables-inducingpatches" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.inducing_variables.InducingPatches<a class="headerlink" href="#gpflow-inducing-variables-inducingpatches" title="Permalink to this headline">#</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="gpflow.inducing_variables.InducingPatches">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.inducing_variables.</span></span><span class="sig-name descname"><span class="pre">InducingPatches</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Z</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/inducing_variables/inducing_patch.html#InducingPatches"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.inducing_variables.InducingPatches" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.inducing_variables.</span></span><span class="sig-name descname"><span class="pre">InducingPatches</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Z</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/inducing_variables/inducing_patch.html#InducingPatches"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.inducing_variables.InducingPatches" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#gpflow.inducing_variables.InducingPoints" title="gpflow.inducing_variables.inducing_variables.InducingPoints"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.inducing_variables.inducing_variables.InducingPoints</span></code></a></p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -825,10 +819,10 @@ variational distribution.</p>
 
 </section>
 <section id="gpflow-inducing-variables-inducingpoints">
-<h2>gpflow.inducing_variables.InducingPoints<a class="headerlink" href="#gpflow-inducing-variables-inducingpoints" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.inducing_variables.InducingPoints<a class="headerlink" href="#gpflow-inducing-variables-inducingpoints" title="Permalink to this headline">#</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="gpflow.inducing_variables.InducingPoints">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.inducing_variables.</span></span><span class="sig-name descname"><span class="pre">InducingPoints</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Z</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/inducing_variables/inducing_variables.html#InducingPoints"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.inducing_variables.InducingPoints" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.inducing_variables.</span></span><span class="sig-name descname"><span class="pre">InducingPoints</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Z</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/inducing_variables/inducing_variables.html#InducingPoints"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.inducing_variables.InducingPoints" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="inducing_variables/index.html#gpflow.inducing_variables.inducing_variables.InducingPointsBase" title="gpflow.inducing_variables.inducing_variables.InducingPointsBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.inducing_variables.inducing_variables.InducingPointsBase</span></code></a></p>
 <p>Real-space inducing points</p>
 <dl class="field-list simple">
@@ -843,15 +837,15 @@ variational distribution.</p>
 
 </section>
 <section id="gpflow-inducing-variables-inducingvariables">
-<h2>gpflow.inducing_variables.InducingVariables<a class="headerlink" href="#gpflow-inducing-variables-inducingvariables" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.inducing_variables.InducingVariables<a class="headerlink" href="#gpflow-inducing-variables-inducingvariables" title="Permalink to this headline">#</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="gpflow.inducing_variables.InducingVariables">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.inducing_variables.</span></span><span class="sig-name descname"><span class="pre">InducingVariables</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/inducing_variables/inducing_variables.html#InducingVariables"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.inducing_variables.InducingVariables" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.inducing_variables.</span></span><span class="sig-name descname"><span class="pre">InducingVariables</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/inducing_variables/inducing_variables.html#InducingVariables"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.inducing_variables.InducingVariables" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="../index.html#gpflow.Module" title="gpflow.base.Module"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.base.Module</span></code></a></p>
 <p>Abstract base class for inducing variables.</p>
 <dl class="py property">
 <dt class="sig sig-object py" id="gpflow.inducing_variables.InducingVariables.num_inducing">
-<em class="property"><span class="pre">abstract</span><span class="w"> </span><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">num_inducing</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">tensorflow.python.framework.ops.Tensor</span></em><a class="headerlink" href="#gpflow.inducing_variables.InducingVariables.num_inducing" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">abstract</span><span class="w"> </span><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">num_inducing</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">tensorflow.python.framework.ops.Tensor</span></em><a class="headerlink" href="#gpflow.inducing_variables.InducingVariables.num_inducing" title="Permalink to this definition">#</a></dt>
 <dd><p>Returns the number of inducing variables, relevant for example to determine the size of the
 variational distribution.</p>
 <dl class="field-list simple">
@@ -865,10 +859,10 @@ variational distribution.</p>
 
 </section>
 <section id="gpflow-inducing-variables-multioutputinducingvariables">
-<h2>gpflow.inducing_variables.MultioutputInducingVariables<a class="headerlink" href="#gpflow-inducing-variables-multioutputinducingvariables" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.inducing_variables.MultioutputInducingVariables<a class="headerlink" href="#gpflow-inducing-variables-multioutputinducingvariables" title="Permalink to this headline">#</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="gpflow.inducing_variables.MultioutputInducingVariables">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.inducing_variables.</span></span><span class="sig-name descname"><span class="pre">MultioutputInducingVariables</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/inducing_variables/multioutput/inducing_variables.html#MultioutputInducingVariables"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.inducing_variables.MultioutputInducingVariables" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.inducing_variables.</span></span><span class="sig-name descname"><span class="pre">MultioutputInducingVariables</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/inducing_variables/multioutput/inducing_variables.html#MultioutputInducingVariables"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.inducing_variables.MultioutputInducingVariables" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#gpflow.inducing_variables.InducingVariables" title="gpflow.inducing_variables.inducing_variables.InducingVariables"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.inducing_variables.inducing_variables.InducingVariables</span></code></a></p>
 <p>Multioutput Inducing Variables
 Base class for methods which define a collection of inducing variables which
@@ -881,10 +875,10 @@ LinearCoregionalization).</p>
 
 </section>
 <section id="gpflow-inducing-variables-multiscale">
-<h2>gpflow.inducing_variables.Multiscale<a class="headerlink" href="#gpflow-inducing-variables-multiscale" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.inducing_variables.Multiscale<a class="headerlink" href="#gpflow-inducing-variables-multiscale" title="Permalink to this headline">#</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="gpflow.inducing_variables.Multiscale">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.inducing_variables.</span></span><span class="sig-name descname"><span class="pre">Multiscale</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Z</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scales</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/inducing_variables/inducing_variables.html#Multiscale"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.inducing_variables.Multiscale" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.inducing_variables.</span></span><span class="sig-name descname"><span class="pre">Multiscale</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Z</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scales</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/inducing_variables/inducing_variables.html#Multiscale"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.inducing_variables.Multiscale" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="inducing_variables/index.html#gpflow.inducing_variables.inducing_variables.InducingPointsBase" title="gpflow.inducing_variables.inducing_variables.InducingPointsBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.inducing_variables.inducing_variables.InducingPointsBase</span></code></a></p>
 <p>Multi-scale inducing variables</p>
 <p>Originally proposed in</p>
@@ -908,10 +902,10 @@ LinearCoregionalization).</p>
 
 </section>
 <section id="gpflow-inducing-variables-separateindependentinducingvariables">
-<h2>gpflow.inducing_variables.SeparateIndependentInducingVariables<a class="headerlink" href="#gpflow-inducing-variables-separateindependentinducingvariables" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.inducing_variables.SeparateIndependentInducingVariables<a class="headerlink" href="#gpflow-inducing-variables-separateindependentinducingvariables" title="Permalink to this headline">#</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="gpflow.inducing_variables.SeparateIndependentInducingVariables">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.inducing_variables.</span></span><span class="sig-name descname"><span class="pre">SeparateIndependentInducingVariables</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inducing_variable_list</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/inducing_variables/multioutput/inducing_variables.html#SeparateIndependentInducingVariables"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.inducing_variables.SeparateIndependentInducingVariables" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.inducing_variables.</span></span><span class="sig-name descname"><span class="pre">SeparateIndependentInducingVariables</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inducing_variable_list</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/inducing_variables/multioutput/inducing_variables.html#SeparateIndependentInducingVariables"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.inducing_variables.SeparateIndependentInducingVariables" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#gpflow.inducing_variables.FallbackSeparateIndependentInducingVariables" title="gpflow.inducing_variables.multioutput.inducing_variables.FallbackSeparateIndependentInducingVariables"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.inducing_variables.multioutput.inducing_variables.FallbackSeparateIndependentInducingVariables</span></code></a></p>
 <p>Here, we define the same inducing variables as in the base class. However,
 this class is intended to be used without the constraints on the shapes that
@@ -926,10 +920,10 @@ the most efficient implementation.</p>
 
 </section>
 <section id="gpflow-inducing-variables-sharedindependentinducingvariables">
-<h2>gpflow.inducing_variables.SharedIndependentInducingVariables<a class="headerlink" href="#gpflow-inducing-variables-sharedindependentinducingvariables" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.inducing_variables.SharedIndependentInducingVariables<a class="headerlink" href="#gpflow-inducing-variables-sharedindependentinducingvariables" title="Permalink to this headline">#</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="gpflow.inducing_variables.SharedIndependentInducingVariables">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.inducing_variables.</span></span><span class="sig-name descname"><span class="pre">SharedIndependentInducingVariables</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/inducing_variables/multioutput/inducing_variables.html#SharedIndependentInducingVariables"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.inducing_variables.SharedIndependentInducingVariables" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.inducing_variables.</span></span><span class="sig-name descname"><span class="pre">SharedIndependentInducingVariables</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/inducing_variables/multioutput/inducing_variables.html#SharedIndependentInducingVariables"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.inducing_variables.SharedIndependentInducingVariables" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#gpflow.inducing_variables.FallbackSharedIndependentInducingVariables" title="gpflow.inducing_variables.multioutput.inducing_variables.FallbackSharedIndependentInducingVariables"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.inducing_variables.multioutput.inducing_variables.FallbackSharedIndependentInducingVariables</span></code></a></p>
 <p>Here, we define the same inducing variables as in the base class. However,
 this class is intended to be used without the constraints on the shapes that
@@ -944,7 +938,7 @@ the most efficient implementation.</p>
 
 </section>
 <section id="gpflow-inducing-variables-inducing-variables">
-<h2>gpflow.inducing_variables.inducing_variables<a class="headerlink" href="#gpflow-inducing-variables-inducing-variables" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.inducing_variables.inducing_variables<a class="headerlink" href="#gpflow-inducing-variables-inducing-variables" title="Permalink to this headline">#</a></h2>
 <div class="toctree-wrapper compound">
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="inducing_variables/index.html">gpflow.inducing_variables.inducing_variables</a></li>
@@ -952,7 +946,7 @@ the most efficient implementation.</p>
 </div>
 </section>
 <section id="gpflow-inducing-variables-multioutput">
-<h2>gpflow.inducing_variables.multioutput<a class="headerlink" href="#gpflow-inducing-variables-multioutput" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.inducing_variables.multioutput<a class="headerlink" href="#gpflow-inducing-variables-multioutput" title="Permalink to this headline">#</a></h2>
 <div class="toctree-wrapper compound">
 </div>
 </section>
@@ -968,8 +962,9 @@ the most efficient implementation.</p>
       </div>
     </div>
   
-    <script src="../../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf"></script>
-  <footer class="footer mt-5 mt-md-0">
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf"></script>
+<footer class="footer mt-5 mt-md-0">
   <div class="container">
     
     <div class="footer-item">
@@ -980,7 +975,7 @@ the most efficient implementation.</p>
     
     <div class="footer-item">
       <p class="sphinx-version">
-Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.4.0.<br>
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.5.0.<br>
 </p>
     </div>
     

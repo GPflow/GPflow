@@ -8,27 +8,24 @@
 
     <title>MCMC (Markov Chain Monte Carlo) &#8212; GPflow 2.4.0 documentation</title>
     
-    <link href="../../_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
 <link href="../../_static/styles/pydata-sphinx-theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
-  
+
     
-    <link rel="stylesheet"
-      href="../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
-    <link rel="preload" as="font" type="font/woff2" crossorigin
-      href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
-    <link rel="preload" as="font" type="font/woff2" crossorigin
-      href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
-  
-    
-      
-  
-    
+  <link rel="stylesheet"
+    href="../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../../_static/styles/pydata-sphinx-theme.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/pydata-custom.css" />
     
-    <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf">
-  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf">
+
     <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
     <script src="../../_static/jquery.js"></script>
     <script src="../../_static/underscore.js"></script>
@@ -48,7 +45,7 @@
     <!-- Google Analytics -->
     
   </head>
-  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="80">
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="60">
     
     <div class="container-fluid" id="banner"></div>
 
@@ -144,13 +141,6 @@
 -->
 
 <script type="text/javascript">
-// Construct the target URL from the JSON components
-function buildURL(entry) {
-    var template = "https://gpflow.github.io/GPflow/{version}/index.html";  // supplied by jinja
-    template = template.replace("{version}", entry.version);
-    return template;
-}
-
 // Check if corresponding page path exists in other version of docs
 // and, if so, go there instead of the homepage of the other docs version
 function checkPageExistsAndRedirect(event) {
@@ -186,14 +176,16 @@ function checkPageExistsAndRedirect(event) {
             const node = document.createElement("a");
             node.setAttribute("class", "list-group-item list-group-item-action py-1");
             node.textContent = `${entry.name}`;
-            // get the base URL for that doc version, add the current page's
-            // path to it, and set as `href`
-            entry.url = buildURL(entry);
             node.setAttribute("href", `${entry.url}${currentFilePath}`);
             // on click, AJAX calls will check if the linked page exists before
             // trying to redirect, and if not, will redirect to the homepage
             // for that version of the docs.
             node.onclick = checkPageExistsAndRedirect;
+            // Add dataset values for the version and name in case people want
+            // to apply CSS styling based on this information.
+            node.dataset["versionName"] = entry.name;
+            node.dataset["version"] = entry.version;
+
             $("#version_switcher_menu").append(node);
             // replace dropdown button text with the preferred display name of
             // this version, rather than using sphinx's  variable.
@@ -201,7 +193,9 @@ function checkPageExistsAndRedirect(event) {
             // version's entry
             if (entry.version == "develop") {
                 node.classList.add("active");
-                $("#version_switcher_button").text(entry.name);
+                let btn = document.getElementById("version_switcher_button");
+                btn.innerText = btn.dataset["activeVersionName"] = entry.name;
+                btn.dataset["activeVersion"] = entry.version;
             }
         });
     });
@@ -427,7 +421,7 @@ function checkPageExistsAndRedirect(event) {
               
               <div class="toc-item">
                 
-<div class="tocsection onthispage pt-5 pb-3">
+<div class="tocsection onthispage mt-5 pt-1 pb-3">
     <i class="fas fa-list"></i> On this page
 </div>
 
@@ -745,7 +739,7 @@ div.rendered_html tbody tr:hover {
 }
 </style>
 <section id="MCMC-(Markov-Chain-Monte-Carlo)">
-<h1>MCMC (Markov Chain Monte Carlo)<a class="headerlink" href="#MCMC-(Markov-Chain-Monte-Carlo)" title="Permalink to this headline">¶</a></h1>
+<h1>MCMC (Markov Chain Monte Carlo)<a class="headerlink" href="#MCMC-(Markov-Chain-Monte-Carlo)" title="Permalink to this headline">#</a></h1>
 <p>GPflow allows you to approximate the posterior over the latent functions of its models (and over the hyperparameters after setting a prior for those) using Hamiltonian Monte Carlo (HMC)</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
@@ -780,8 +774,8 @@ div.rendered_html tbody tr:hover {
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2022-03-25 13:03:20.679506: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcudart.so.11.0&#39;; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory
-2022-03-25 13:03:20.679533: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.
+2022-03-29 09:56:47.512996: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcudart.so.11.0&#39;; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory
+2022-03-29 09:56:47.513023: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.
 </pre></div></div>
 </div>
 <p>In this notebook, we provide three examples:</p>
@@ -791,14 +785,14 @@ div.rendered_html tbody tr:hover {
 <li><p><a class="reference external" href="#Example-3:-Fully-Bayesian-inference-for-generalized-GP-models-with-HMC">Example 3</a>: Full Bayesian inference for Gaussian process models</p></li>
 </ul>
 <section id="Example-1:-GP-regression">
-<h2>Example 1: GP regression<a class="headerlink" href="#Example-1:-GP-regression" title="Permalink to this headline">¶</a></h2>
+<h2>Example 1: GP regression<a class="headerlink" href="#Example-1:-GP-regression" title="Permalink to this headline">#</a></h2>
 <p>We first consider the GP regression (with Gaussian noise) for which the marginal likelihood <span class="math notranslate nohighlight">\(p(\mathbf y\,|\,\theta)\)</span> can be computed exactly.</p>
 <p>The GPR model parameterized by <span class="math notranslate nohighlight">\(\theta = [\tau]\)</span> is given by <span class="math">\begin{equation}
 Y_i = f(X_i) + \varepsilon_i
 \end{equation}</span> where <span class="math notranslate nohighlight">\(f \sim \mathcal{GP}(\mu(.), k(., .))\)</span>, and <span class="math notranslate nohighlight">\(\varepsilon \sim \mathcal{N}(0, \tau^2 I)\)</span>.</p>
 <p>See the <a class="reference internal" href="../basics/regression.html"><span class="doc">Basic (Gaussian likelihood) GP regression model</span></a> for more details on GPR and for a treatment of the direct likelihood maximization.</p>
 <section id="Data-for-a-one-dimensional-regression-problem">
-<h3>Data for a one-dimensional regression problem<a class="headerlink" href="#Data-for-a-one-dimensional-regression-problem" title="Permalink to this headline">¶</a></h3>
+<h3>Data for a one-dimensional regression problem<a class="headerlink" href="#Data-for-a-one-dimensional-regression-problem" title="Permalink to this headline">#</a></h3>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
@@ -834,7 +828,7 @@ Y_i = f(X_i) + \varepsilon_i
 </div>
 </section>
 <section id="MCMC-for-hyperparameters-\theta">
-<h3>MCMC for hyperparameters <span class="math notranslate nohighlight">\(\theta\)</span><a class="headerlink" href="#MCMC-for-hyperparameters-\theta" title="Permalink to this headline">¶</a></h3>
+<h3>MCMC for hyperparameters <span class="math notranslate nohighlight">\(\theta\)</span><a class="headerlink" href="#MCMC-for-hyperparameters-\theta" title="Permalink to this headline">#</a></h3>
 <p>We now want to sample from the posterior over <span class="math notranslate nohighlight">\(\theta\)</span>: <span class="math">\begin{equation}
 p(\theta|\mathbf{y}) \propto p(\mathbf{y}|\theta)p(\theta)
 \end{equation}</span></p>
@@ -854,10 +848,10 @@ p(\theta|\mathbf{y}) \propto p(\mathbf{y}|\theta)p(\theta)
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2022-03-25 13:03:22.885381: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcuda.so.1&#39;; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory
-2022-03-25 13:03:22.885413: W tensorflow/stream_executor/cuda/cuda_driver.cc:269] failed call to cuInit: UNKNOWN ERROR (303)
-2022-03-25 13:03:22.885432: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (d396962cedd5): /proc/driver/nvidia/version does not exist
-2022-03-25 13:03:22.885695: I tensorflow/core/platform/cpu_feature_guard.cc:151] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA
+2022-03-29 09:56:49.797841: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcuda.so.1&#39;; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory
+2022-03-29 09:56:49.797869: W tensorflow/stream_executor/cuda/cuda_driver.cc:269] failed call to cuInit: UNKNOWN ERROR (303)
+2022-03-29 09:56:49.797891: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (9da31c79f42f): /proc/driver/nvidia/version does not exist
+2022-03-29 09:56:49.798157: I tensorflow/core/platform/cpu_feature_guard.cc:151] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA
 To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.
 </pre></div></div>
 </div>
@@ -878,7 +872,7 @@ To enable them in other operations, rebuild TensorFlow with the appropriate comp
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2022-03-25 13:03:22.922771: W tensorflow/python/util/util.cc:368] Sets are not currently considered sequences, but this may change in the future, so consider avoiding using them.
+2022-03-29 09:56:49.836880: W tensorflow/python/util/util.cc:368] Sets are not currently considered sequences, but this may change in the future, so consider avoiding using them.
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -1123,7 +1117,7 @@ log posterior density at optimum: -2.4371366970713524
 </section>
 </section>
 <section id="Example-2:-Sparse-MC-for-multiclass-classification">
-<h2>Example 2: Sparse MC for multiclass classification<a class="headerlink" href="#Example-2:-Sparse-MC-for-multiclass-classification" title="Permalink to this headline">¶</a></h2>
+<h2>Example 2: Sparse MC for multiclass classification<a class="headerlink" href="#Example-2:-Sparse-MC-for-multiclass-classification" title="Permalink to this headline">#</a></h2>
 <p>We now consider the multiclass classification problem (see the <a class="reference internal" href="multiclass_classification.html"><span class="doc">Multiclass classification</span></a> notebook). Here the marginal likelihood is not available in closed form. Instead we use a sparse variational approximation where we approximate the posterior for each GP as <span class="math notranslate nohighlight">\(q(f_c) \propto p(f_c|\mathbf{u}_c)q(\mathbf{u}_c)\)</span></p>
 <p>In the standard Sparse Variational GP (SVGP) formulation, <span class="math notranslate nohighlight">\(q(\mathbf{u_c})\)</span> is parameterized as a multivariate Gaussian.</p>
 <p>An alternative is to directly sample from the optimal <span class="math notranslate nohighlight">\(q(\mathbf{u}_c)\)</span>; this is what Sparse Variational GP using MCMC (SGPMC) does.</p>
@@ -1334,7 +1328,7 @@ log posterior density at optimum: -79.76549027468613
 </div>
 </section>
 <section id="Example-3:-Fully-Bayesian-inference-for-generalized-GP-models-with-HMC">
-<h2>Example 3: Fully Bayesian inference for generalized GP models with HMC<a class="headerlink" href="#Example-3:-Fully-Bayesian-inference-for-generalized-GP-models-with-HMC" title="Permalink to this headline">¶</a></h2>
+<h2>Example 3: Fully Bayesian inference for generalized GP models with HMC<a class="headerlink" href="#Example-3:-Fully-Bayesian-inference-for-generalized-GP-models-with-HMC" title="Permalink to this headline">#</a></h2>
 <p>You can construct very flexible models with Gaussian processes by combining them with different likelihoods (sometimes called ‘families’ in the GLM literature). This makes inference of the GP intractable because the likelihoods are not generally conjugate to the Gaussian process. The general form of the model is <span class="math">\begin{align}
 \theta &\sim p(\theta) \\
 f &\sim \mathcal {GP}(m(x; \theta),\, k(x, x'; \theta)) \\
@@ -1350,7 +1344,7 @@ y_i &\sim p(y | g(f(x_i))\,.
 \end{align}</span></p>
 <p>Joint HMC over <span class="math notranslate nohighlight">\(v\)</span> and the function values is not widely adopted in the literature because of the difficulty in differentiating <span class="math notranslate nohighlight">\(LL^\top=K\)</span>. We’ve made this derivative available in TensorFlow, and so application of HMC is relatively straightforward.</p>
 <section id="Exponential-Regression">
-<h3>Exponential Regression<a class="headerlink" href="#Exponential-Regression" title="Permalink to this headline">¶</a></h3>
+<h3>Exponential Regression<a class="headerlink" href="#Exponential-Regression" title="Permalink to this headline">#</a></h3>
 <p>We consider an exponential regression model: <span class="math">\begin{align}
 \theta &\sim p(\theta) \\
 f &\sim \mathcal {GP}(0, k(x, x'; \theta)) \\
@@ -1576,7 +1570,7 @@ y_i &\sim \mathcal {Exp} (e^{f_i})
 </section>
 </section>
 <section id="Prior-on-constrained-and-unconstrained-parameters">
-<h2>Prior on constrained and unconstrained parameters<a class="headerlink" href="#Prior-on-constrained-and-unconstrained-parameters" title="Permalink to this headline">¶</a></h2>
+<h2>Prior on constrained and unconstrained parameters<a class="headerlink" href="#Prior-on-constrained-and-unconstrained-parameters" title="Permalink to this headline">#</a></h2>
 <p>GPflow’s <code class="docutils literal notranslate"><span class="pre">Parameter</span></code> class provides options for setting a prior. <code class="docutils literal notranslate"><span class="pre">Parameter</span></code> wraps a constrained tensor and provides computation of the gradient with respect to unconstrained transformation of that tensor. The user can set a prior either in <strong>constrained</strong> space or <strong>unconstrained</strong> space.</p>
 <p>By default, the prior for the <code class="docutils literal notranslate"><span class="pre">Parameter</span></code> is set on the <em>constrained</em> space. To explicitly set the space on which the prior is defined, use the <code class="docutils literal notranslate"><span class="pre">prior_on</span></code> keyword argument:</p>
 <div class="nbinput nblast docutils container">
@@ -1702,8 +1696,9 @@ y_i &\sim \mathcal {Exp} (e^{f_i})
       </div>
     </div>
   
-    <script src="../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf"></script>
-  <footer class="footer mt-5 mt-md-0">
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf"></script>
+<footer class="footer mt-5 mt-md-0">
   <div class="container">
     
     <div class="footer-item">
@@ -1714,7 +1709,7 @@ y_i &\sim \mathcal {Exp} (e^{f_i})
     
     <div class="footer-item">
       <p class="sphinx-version">
-Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.4.0.<br>
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.5.0.<br>
 </p>
     </div>
     

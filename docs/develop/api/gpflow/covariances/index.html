@@ -8,27 +8,24 @@
 
     <title>gpflow.covariances &#8212; GPflow 2.4.0 documentation</title>
     
-    <link href="../../../_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
 <link href="../../../_static/styles/pydata-sphinx-theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
-  
+
     
-    <link rel="stylesheet"
-      href="../../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
-    <link rel="preload" as="font" type="font/woff2" crossorigin
-      href="../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
-    <link rel="preload" as="font" type="font/woff2" crossorigin
-      href="../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
-  
-    
-      
-  
-    
+  <link rel="stylesheet"
+    href="../../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../../../_static/styles/pydata-sphinx-theme.css" />
     <link rel="stylesheet" type="text/css" href="../../../_static/pydata-custom.css" />
     
-    <link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf">
-  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf">
+
     <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
     <script src="../../../_static/jquery.js"></script>
     <script src="../../../_static/underscore.js"></script>
@@ -46,7 +43,7 @@
     <!-- Google Analytics -->
     
   </head>
-  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="80">
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="60">
     
     <div class="container-fluid" id="banner"></div>
 
@@ -142,13 +139,6 @@
 -->
 
 <script type="text/javascript">
-// Construct the target URL from the JSON components
-function buildURL(entry) {
-    var template = "https://gpflow.github.io/GPflow/{version}/index.html";  // supplied by jinja
-    template = template.replace("{version}", entry.version);
-    return template;
-}
-
 // Check if corresponding page path exists in other version of docs
 // and, if so, go there instead of the homepage of the other docs version
 function checkPageExistsAndRedirect(event) {
@@ -184,14 +174,16 @@ function checkPageExistsAndRedirect(event) {
             const node = document.createElement("a");
             node.setAttribute("class", "list-group-item list-group-item-action py-1");
             node.textContent = `${entry.name}`;
-            // get the base URL for that doc version, add the current page's
-            // path to it, and set as `href`
-            entry.url = buildURL(entry);
             node.setAttribute("href", `${entry.url}${currentFilePath}`);
             // on click, AJAX calls will check if the linked page exists before
             // trying to redirect, and if not, will redirect to the homepage
             // for that version of the docs.
             node.onclick = checkPageExistsAndRedirect;
+            // Add dataset values for the version and name in case people want
+            // to apply CSS styling based on this information.
+            node.dataset["versionName"] = entry.name;
+            node.dataset["version"] = entry.version;
+
             $("#version_switcher_menu").append(node);
             // replace dropdown button text with the preferred display name of
             // this version, rather than using sphinx's  variable.
@@ -199,7 +191,9 @@ function checkPageExistsAndRedirect(event) {
             // version's entry
             if (entry.version == "develop") {
                 node.classList.add("active");
-                $("#version_switcher_button").text(entry.name);
+                let btn = document.getElementById("version_switcher_button");
+                btn.innerText = btn.dataset["activeVersionName"] = entry.name;
+                btn.dataset["activeVersion"] = entry.version;
             }
         });
     });
@@ -611,7 +605,7 @@ function checkPageExistsAndRedirect(event) {
               
               <div class="toc-item">
                 
-<div class="tocsection onthispage pt-5 pb-3">
+<div class="tocsection onthispage mt-5 pt-1 pb-3">
     <i class="fas fa-list"></i> On this page
 </div>
 
@@ -664,9 +658,9 @@ function checkPageExistsAndRedirect(event) {
               <div>
                 
   <section id="gpflow-covariances">
-<h1>gpflow.covariances<a class="headerlink" href="#gpflow-covariances" title="Permalink to this headline">¶</a></h1>
+<h1>gpflow.covariances<a class="headerlink" href="#gpflow-covariances" title="Permalink to this headline">#</a></h1>
 <span class="target" id="module-gpflow.covariances"></span><section id="gpflow-covariances-kuf">
-<h2>gpflow.covariances.Kuf<a class="headerlink" href="#gpflow-covariances-kuf" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.covariances.Kuf<a class="headerlink" href="#gpflow-covariances-kuf" title="Permalink to this headline">#</a></h2>
 <p>This function uses multiple dispatch, which will depend on the type of argument passed in:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">gpflow</span><span class="o">.</span><span class="n">covariances</span><span class="o">.</span><span class="n">Kuf</span><span class="p">(</span> <span class="n">InducingPoints</span><span class="p">,</span> <span class="n">Kernel</span><span class="p">,</span> <span class="nb">object</span> <span class="p">)</span>
 <span class="c1"># dispatch to -&gt; gpflow.covariances.kufs.Kuf_kernel_inducingpoints(...)</span>
@@ -674,7 +668,7 @@ function checkPageExistsAndRedirect(event) {
 </div>
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.covariances.kufs.Kuf_kernel_inducingpoints">
-<span class="sig-prename descclassname"><span class="pre">gpflow.covariances.kufs.</span></span><span class="sig-name descname"><span class="pre">Kuf_kernel_inducingpoints</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Xnew</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/covariances/kufs.html#Kuf_kernel_inducingpoints"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.covariances.kufs.Kuf_kernel_inducingpoints" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">gpflow.covariances.kufs.</span></span><span class="sig-name descname"><span class="pre">Kuf_kernel_inducingpoints</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Xnew</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/covariances/kufs.html#Kuf_kernel_inducingpoints"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.covariances.kufs.Kuf_kernel_inducingpoints" title="Permalink to this definition">#</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -695,7 +689,7 @@ function checkPageExistsAndRedirect(event) {
 </div>
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.covariances.kufs.Kuf_sqexp_multiscale">
-<span class="sig-prename descclassname"><span class="pre">gpflow.covariances.kufs.</span></span><span class="sig-name descname"><span class="pre">Kuf_sqexp_multiscale</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Xnew</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/covariances/kufs.html#Kuf_sqexp_multiscale"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.covariances.kufs.Kuf_sqexp_multiscale" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">gpflow.covariances.kufs.</span></span><span class="sig-name descname"><span class="pre">Kuf_sqexp_multiscale</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Xnew</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/covariances/kufs.html#Kuf_sqexp_multiscale"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.covariances.kufs.Kuf_sqexp_multiscale" title="Permalink to this definition">#</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -716,7 +710,7 @@ function checkPageExistsAndRedirect(event) {
 </div>
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.covariances.kufs.Kuf_conv_patch">
-<span class="sig-prename descclassname"><span class="pre">gpflow.covariances.kufs.</span></span><span class="sig-name descname"><span class="pre">Kuf_conv_patch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Xnew</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/covariances/kufs.html#Kuf_conv_patch"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.covariances.kufs.Kuf_conv_patch" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">gpflow.covariances.kufs.</span></span><span class="sig-name descname"><span class="pre">Kuf_conv_patch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Xnew</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/covariances/kufs.html#Kuf_conv_patch"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.covariances.kufs.Kuf_conv_patch" title="Permalink to this definition">#</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -737,7 +731,7 @@ function checkPageExistsAndRedirect(event) {
 </div>
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.covariances.multioutput.kufs.Kuf_generic">
-<span class="sig-prename descclassname"><span class="pre">gpflow.covariances.multioutput.kufs.</span></span><span class="sig-name descname"><span class="pre">Kuf_generic</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Xnew</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/covariances/multioutput/kufs.html#Kuf_generic"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.covariances.multioutput.kufs.Kuf_generic" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">gpflow.covariances.multioutput.kufs.</span></span><span class="sig-name descname"><span class="pre">Kuf_generic</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Xnew</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/covariances/multioutput/kufs.html#Kuf_generic"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.covariances.multioutput.kufs.Kuf_generic" title="Permalink to this definition">#</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -758,7 +752,7 @@ function checkPageExistsAndRedirect(event) {
 </div>
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.covariances.multioutput.kufs.Kuf_shared_shared">
-<span class="sig-prename descclassname"><span class="pre">gpflow.covariances.multioutput.kufs.</span></span><span class="sig-name descname"><span class="pre">Kuf_shared_shared</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Xnew</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/covariances/multioutput/kufs.html#Kuf_shared_shared"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.covariances.multioutput.kufs.Kuf_shared_shared" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">gpflow.covariances.multioutput.kufs.</span></span><span class="sig-name descname"><span class="pre">Kuf_shared_shared</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Xnew</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/covariances/multioutput/kufs.html#Kuf_shared_shared"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.covariances.multioutput.kufs.Kuf_shared_shared" title="Permalink to this definition">#</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -779,7 +773,7 @@ function checkPageExistsAndRedirect(event) {
 </div>
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.covariances.multioutput.kufs.Kuf_separate_shared">
-<span class="sig-prename descclassname"><span class="pre">gpflow.covariances.multioutput.kufs.</span></span><span class="sig-name descname"><span class="pre">Kuf_separate_shared</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Xnew</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/covariances/multioutput/kufs.html#Kuf_separate_shared"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.covariances.multioutput.kufs.Kuf_separate_shared" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">gpflow.covariances.multioutput.kufs.</span></span><span class="sig-name descname"><span class="pre">Kuf_separate_shared</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Xnew</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/covariances/multioutput/kufs.html#Kuf_separate_shared"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.covariances.multioutput.kufs.Kuf_separate_shared" title="Permalink to this definition">#</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -800,7 +794,7 @@ function checkPageExistsAndRedirect(event) {
 </div>
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.covariances.multioutput.kufs.Kuf_shared_separate">
-<span class="sig-prename descclassname"><span class="pre">gpflow.covariances.multioutput.kufs.</span></span><span class="sig-name descname"><span class="pre">Kuf_shared_separate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Xnew</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/covariances/multioutput/kufs.html#Kuf_shared_separate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.covariances.multioutput.kufs.Kuf_shared_separate" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">gpflow.covariances.multioutput.kufs.</span></span><span class="sig-name descname"><span class="pre">Kuf_shared_separate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Xnew</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/covariances/multioutput/kufs.html#Kuf_shared_separate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.covariances.multioutput.kufs.Kuf_shared_separate" title="Permalink to this definition">#</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -821,7 +815,7 @@ function checkPageExistsAndRedirect(event) {
 </div>
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.covariances.multioutput.kufs.Kuf_separate_separate">
-<span class="sig-prename descclassname"><span class="pre">gpflow.covariances.multioutput.kufs.</span></span><span class="sig-name descname"><span class="pre">Kuf_separate_separate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Xnew</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/covariances/multioutput/kufs.html#Kuf_separate_separate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.covariances.multioutput.kufs.Kuf_separate_separate" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">gpflow.covariances.multioutput.kufs.</span></span><span class="sig-name descname"><span class="pre">Kuf_separate_separate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Xnew</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/covariances/multioutput/kufs.html#Kuf_separate_separate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.covariances.multioutput.kufs.Kuf_separate_separate" title="Permalink to this definition">#</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -842,7 +836,7 @@ function checkPageExistsAndRedirect(event) {
 </div>
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.covariances.multioutput.kufs.Kuf_fallback_separate_linear_coregionalization">
-<span class="sig-prename descclassname"><span class="pre">gpflow.covariances.multioutput.kufs.</span></span><span class="sig-name descname"><span class="pre">Kuf_fallback_separate_linear_coregionalization</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Xnew</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/covariances/multioutput/kufs.html#Kuf_fallback_separate_linear_coregionalization"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.covariances.multioutput.kufs.Kuf_fallback_separate_linear_coregionalization" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">gpflow.covariances.multioutput.kufs.</span></span><span class="sig-name descname"><span class="pre">Kuf_fallback_separate_linear_coregionalization</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Xnew</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/covariances/multioutput/kufs.html#Kuf_fallback_separate_linear_coregionalization"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.covariances.multioutput.kufs.Kuf_fallback_separate_linear_coregionalization" title="Permalink to this definition">#</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -863,7 +857,7 @@ function checkPageExistsAndRedirect(event) {
 </div>
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.covariances.multioutput.kufs.Kuf_fallback_shared_linear_coregionalization">
-<span class="sig-prename descclassname"><span class="pre">gpflow.covariances.multioutput.kufs.</span></span><span class="sig-name descname"><span class="pre">Kuf_fallback_shared_linear_coregionalization</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Xnew</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/covariances/multioutput/kufs.html#Kuf_fallback_shared_linear_coregionalization"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.covariances.multioutput.kufs.Kuf_fallback_shared_linear_coregionalization" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">gpflow.covariances.multioutput.kufs.</span></span><span class="sig-name descname"><span class="pre">Kuf_fallback_shared_linear_coregionalization</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Xnew</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/covariances/multioutput/kufs.html#Kuf_fallback_shared_linear_coregionalization"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.covariances.multioutput.kufs.Kuf_fallback_shared_linear_coregionalization" title="Permalink to this definition">#</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -884,7 +878,7 @@ function checkPageExistsAndRedirect(event) {
 </div>
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.covariances.multioutput.kufs.Kuf_shared_linear_coregionalization">
-<span class="sig-prename descclassname"><span class="pre">gpflow.covariances.multioutput.kufs.</span></span><span class="sig-name descname"><span class="pre">Kuf_shared_linear_coregionalization</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Xnew</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/covariances/multioutput/kufs.html#Kuf_shared_linear_coregionalization"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.covariances.multioutput.kufs.Kuf_shared_linear_coregionalization" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">gpflow.covariances.multioutput.kufs.</span></span><span class="sig-name descname"><span class="pre">Kuf_shared_linear_coregionalization</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Xnew</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/covariances/multioutput/kufs.html#Kuf_shared_linear_coregionalization"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.covariances.multioutput.kufs.Kuf_shared_linear_coregionalization" title="Permalink to this definition">#</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -905,7 +899,7 @@ function checkPageExistsAndRedirect(event) {
 </div>
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.covariances.multioutput.kufs.Kuf_separate_linear_coregionalization">
-<span class="sig-prename descclassname"><span class="pre">gpflow.covariances.multioutput.kufs.</span></span><span class="sig-name descname"><span class="pre">Kuf_separate_linear_coregionalization</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Xnew</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/covariances/multioutput/kufs.html#Kuf_separate_linear_coregionalization"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.covariances.multioutput.kufs.Kuf_separate_linear_coregionalization" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">gpflow.covariances.multioutput.kufs.</span></span><span class="sig-name descname"><span class="pre">Kuf_separate_linear_coregionalization</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Xnew</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/covariances/multioutput/kufs.html#Kuf_separate_linear_coregionalization"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.covariances.multioutput.kufs.Kuf_separate_linear_coregionalization" title="Permalink to this definition">#</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -922,7 +916,7 @@ function checkPageExistsAndRedirect(event) {
 
 </section>
 <section id="gpflow-covariances-kuu">
-<h2>gpflow.covariances.Kuu<a class="headerlink" href="#gpflow-covariances-kuu" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.covariances.Kuu<a class="headerlink" href="#gpflow-covariances-kuu" title="Permalink to this headline">#</a></h2>
 <p>This function uses multiple dispatch, which will depend on the type of argument passed in:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">gpflow</span><span class="o">.</span><span class="n">covariances</span><span class="o">.</span><span class="n">Kuu</span><span class="p">(</span> <span class="n">InducingPoints</span><span class="p">,</span> <span class="n">Kernel</span> <span class="p">)</span>
 <span class="c1"># dispatch to -&gt; gpflow.covariances.kuus.Kuu_kernel_inducingpoints(...)</span>
@@ -930,7 +924,7 @@ function checkPageExistsAndRedirect(event) {
 </div>
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.covariances.kuus.Kuu_kernel_inducingpoints">
-<span class="sig-prename descclassname"><span class="pre">gpflow.covariances.kuus.</span></span><span class="sig-name descname"><span class="pre">Kuu_kernel_inducingpoints</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">jitter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/covariances/kuus.html#Kuu_kernel_inducingpoints"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.covariances.kuus.Kuu_kernel_inducingpoints" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">gpflow.covariances.kuus.</span></span><span class="sig-name descname"><span class="pre">Kuu_kernel_inducingpoints</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">jitter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/covariances/kuus.html#Kuu_kernel_inducingpoints"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.covariances.kuus.Kuu_kernel_inducingpoints" title="Permalink to this definition">#</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -951,7 +945,7 @@ function checkPageExistsAndRedirect(event) {
 </div>
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.covariances.kuus.Kuu_sqexp_multiscale">
-<span class="sig-prename descclassname"><span class="pre">gpflow.covariances.kuus.</span></span><span class="sig-name descname"><span class="pre">Kuu_sqexp_multiscale</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">jitter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/covariances/kuus.html#Kuu_sqexp_multiscale"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.covariances.kuus.Kuu_sqexp_multiscale" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">gpflow.covariances.kuus.</span></span><span class="sig-name descname"><span class="pre">Kuu_sqexp_multiscale</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">jitter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/covariances/kuus.html#Kuu_sqexp_multiscale"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.covariances.kuus.Kuu_sqexp_multiscale" title="Permalink to this definition">#</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -972,7 +966,7 @@ function checkPageExistsAndRedirect(event) {
 </div>
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.covariances.kuus.Kuu_conv_patch">
-<span class="sig-prename descclassname"><span class="pre">gpflow.covariances.kuus.</span></span><span class="sig-name descname"><span class="pre">Kuu_conv_patch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">jitter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/covariances/kuus.html#Kuu_conv_patch"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.covariances.kuus.Kuu_conv_patch" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">gpflow.covariances.kuus.</span></span><span class="sig-name descname"><span class="pre">Kuu_conv_patch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">jitter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/covariances/kuus.html#Kuu_conv_patch"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.covariances.kuus.Kuu_conv_patch" title="Permalink to this definition">#</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -993,7 +987,7 @@ function checkPageExistsAndRedirect(event) {
 </div>
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.covariances.multioutput.kuus.Kuu_generic">
-<span class="sig-prename descclassname"><span class="pre">gpflow.covariances.multioutput.kuus.</span></span><span class="sig-name descname"><span class="pre">Kuu_generic</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">jitter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/covariances/multioutput/kuus.html#Kuu_generic"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.covariances.multioutput.kuus.Kuu_generic" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">gpflow.covariances.multioutput.kuus.</span></span><span class="sig-name descname"><span class="pre">Kuu_generic</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">jitter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/covariances/multioutput/kuus.html#Kuu_generic"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.covariances.multioutput.kuus.Kuu_generic" title="Permalink to this definition">#</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -1014,7 +1008,7 @@ function checkPageExistsAndRedirect(event) {
 </div>
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.covariances.multioutput.kuus.Kuu_shared_shared">
-<span class="sig-prename descclassname"><span class="pre">gpflow.covariances.multioutput.kuus.</span></span><span class="sig-name descname"><span class="pre">Kuu_shared_shared</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">jitter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/covariances/multioutput/kuus.html#Kuu_shared_shared"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.covariances.multioutput.kuus.Kuu_shared_shared" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">gpflow.covariances.multioutput.kuus.</span></span><span class="sig-name descname"><span class="pre">Kuu_shared_shared</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">jitter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/covariances/multioutput/kuus.html#Kuu_shared_shared"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.covariances.multioutput.kuus.Kuu_shared_shared" title="Permalink to this definition">#</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -1036,7 +1030,7 @@ function checkPageExistsAndRedirect(event) {
 </div>
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.covariances.multioutput.kuus.Kuu_fallback_shared">
-<span class="sig-prename descclassname"><span class="pre">gpflow.covariances.multioutput.kuus.</span></span><span class="sig-name descname"><span class="pre">Kuu_fallback_shared</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">jitter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/covariances/multioutput/kuus.html#Kuu_fallback_shared"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.covariances.multioutput.kuus.Kuu_fallback_shared" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">gpflow.covariances.multioutput.kuus.</span></span><span class="sig-name descname"><span class="pre">Kuu_fallback_shared</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">jitter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/covariances/multioutput/kuus.html#Kuu_fallback_shared"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.covariances.multioutput.kuus.Kuu_fallback_shared" title="Permalink to this definition">#</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -1057,7 +1051,7 @@ function checkPageExistsAndRedirect(event) {
 </div>
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.covariances.multioutput.kuus.Kuu_fallback_separate_shared">
-<span class="sig-prename descclassname"><span class="pre">gpflow.covariances.multioutput.kuus.</span></span><span class="sig-name descname"><span class="pre">Kuu_fallback_separate_shared</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">jitter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/covariances/multioutput/kuus.html#Kuu_fallback_separate_shared"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.covariances.multioutput.kuus.Kuu_fallback_separate_shared" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">gpflow.covariances.multioutput.kuus.</span></span><span class="sig-name descname"><span class="pre">Kuu_fallback_separate_shared</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">jitter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/covariances/multioutput/kuus.html#Kuu_fallback_separate_shared"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.covariances.multioutput.kuus.Kuu_fallback_separate_shared" title="Permalink to this definition">#</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -1079,7 +1073,7 @@ function checkPageExistsAndRedirect(event) {
 </div>
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.covariances.multioutput.kuus.Kuu_fallbace_separate">
-<span class="sig-prename descclassname"><span class="pre">gpflow.covariances.multioutput.kuus.</span></span><span class="sig-name descname"><span class="pre">Kuu_fallbace_separate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">jitter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/covariances/multioutput/kuus.html#Kuu_fallbace_separate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.covariances.multioutput.kuus.Kuu_fallbace_separate" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">gpflow.covariances.multioutput.kuus.</span></span><span class="sig-name descname"><span class="pre">Kuu_fallbace_separate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">jitter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/covariances/multioutput/kuus.html#Kuu_fallbace_separate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.covariances.multioutput.kuus.Kuu_fallbace_separate" title="Permalink to this definition">#</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -1096,7 +1090,7 @@ function checkPageExistsAndRedirect(event) {
 
 </section>
 <section id="gpflow-covariances-kufs">
-<h2>gpflow.covariances.kufs<a class="headerlink" href="#gpflow-covariances-kufs" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.covariances.kufs<a class="headerlink" href="#gpflow-covariances-kufs" title="Permalink to this headline">#</a></h2>
 <div class="toctree-wrapper compound">
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="kufs/index.html">gpflow.covariances.kufs</a></li>
@@ -1104,7 +1098,7 @@ function checkPageExistsAndRedirect(event) {
 </div>
 </section>
 <section id="gpflow-covariances-kuus">
-<h2>gpflow.covariances.kuus<a class="headerlink" href="#gpflow-covariances-kuus" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.covariances.kuus<a class="headerlink" href="#gpflow-covariances-kuus" title="Permalink to this headline">#</a></h2>
 <div class="toctree-wrapper compound">
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="kuus/index.html">gpflow.covariances.kuus</a></li>
@@ -1112,7 +1106,7 @@ function checkPageExistsAndRedirect(event) {
 </div>
 </section>
 <section id="gpflow-covariances-multioutput">
-<h2>gpflow.covariances.multioutput<a class="headerlink" href="#gpflow-covariances-multioutput" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.covariances.multioutput<a class="headerlink" href="#gpflow-covariances-multioutput" title="Permalink to this headline">#</a></h2>
 <div class="toctree-wrapper compound">
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="multioutput/index.html">gpflow.covariances.multioutput</a></li>
@@ -1131,8 +1125,9 @@ function checkPageExistsAndRedirect(event) {
       </div>
     </div>
   
-    <script src="../../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf"></script>
-  <footer class="footer mt-5 mt-md-0">
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf"></script>
+<footer class="footer mt-5 mt-md-0">
   <div class="container">
     
     <div class="footer-item">
@@ -1143,7 +1138,7 @@ function checkPageExistsAndRedirect(event) {
     
     <div class="footer-item">
       <p class="sphinx-version">
-Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.4.0.<br>
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.5.0.<br>
 </p>
     </div>
     

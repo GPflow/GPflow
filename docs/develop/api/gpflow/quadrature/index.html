@@ -8,27 +8,24 @@
 
     <title>gpflow.quadrature &#8212; GPflow 2.4.0 documentation</title>
     
-    <link href="../../../_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
 <link href="../../../_static/styles/pydata-sphinx-theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
-  
+
     
-    <link rel="stylesheet"
-      href="../../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
-    <link rel="preload" as="font" type="font/woff2" crossorigin
-      href="../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
-    <link rel="preload" as="font" type="font/woff2" crossorigin
-      href="../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
-  
-    
-      
-  
-    
+  <link rel="stylesheet"
+    href="../../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../../../_static/styles/pydata-sphinx-theme.css" />
     <link rel="stylesheet" type="text/css" href="../../../_static/pydata-custom.css" />
     
-    <link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf">
-  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf">
+
     <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
     <script src="../../../_static/jquery.js"></script>
     <script src="../../../_static/underscore.js"></script>
@@ -46,7 +43,7 @@
     <!-- Google Analytics -->
     
   </head>
-  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="80">
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="60">
     
     <div class="container-fluid" id="banner"></div>
 
@@ -142,13 +139,6 @@
 -->
 
 <script type="text/javascript">
-// Construct the target URL from the JSON components
-function buildURL(entry) {
-    var template = "https://gpflow.github.io/GPflow/{version}/index.html";  // supplied by jinja
-    template = template.replace("{version}", entry.version);
-    return template;
-}
-
 // Check if corresponding page path exists in other version of docs
 // and, if so, go there instead of the homepage of the other docs version
 function checkPageExistsAndRedirect(event) {
@@ -184,14 +174,16 @@ function checkPageExistsAndRedirect(event) {
             const node = document.createElement("a");
             node.setAttribute("class", "list-group-item list-group-item-action py-1");
             node.textContent = `${entry.name}`;
-            // get the base URL for that doc version, add the current page's
-            // path to it, and set as `href`
-            entry.url = buildURL(entry);
             node.setAttribute("href", `${entry.url}${currentFilePath}`);
             // on click, AJAX calls will check if the linked page exists before
             // trying to redirect, and if not, will redirect to the homepage
             // for that version of the docs.
             node.onclick = checkPageExistsAndRedirect;
+            // Add dataset values for the version and name in case people want
+            // to apply CSS styling based on this information.
+            node.dataset["versionName"] = entry.name;
+            node.dataset["version"] = entry.version;
+
             $("#version_switcher_menu").append(node);
             // replace dropdown button text with the preferred display name of
             // this version, rather than using sphinx's  variable.
@@ -199,7 +191,9 @@ function checkPageExistsAndRedirect(event) {
             // version's entry
             if (entry.version == "develop") {
                 node.classList.add("active");
-                $("#version_switcher_button").text(entry.name);
+                let btn = document.getElementById("version_switcher_button");
+                btn.innerText = btn.dataset["activeVersionName"] = entry.name;
+                btn.dataset["activeVersion"] = entry.version;
             }
         });
     });
@@ -611,7 +605,7 @@ function checkPageExistsAndRedirect(event) {
               
               <div class="toc-item">
                 
-<div class="tocsection onthispage pt-5 pb-3">
+<div class="tocsection onthispage mt-5 pt-1 pb-3">
     <i class="fas fa-list"></i> On this page
 </div>
 
@@ -684,19 +678,19 @@ function checkPageExistsAndRedirect(event) {
               <div>
                 
   <section id="gpflow-quadrature">
-<h1>gpflow.quadrature<a class="headerlink" href="#gpflow-quadrature" title="Permalink to this headline">¶</a></h1>
+<h1>gpflow.quadrature<a class="headerlink" href="#gpflow-quadrature" title="Permalink to this headline">#</a></h1>
 <span class="target" id="module-gpflow.quadrature"></span><section id="gpflow-quadrature-gaussianquadrature">
-<h2>gpflow.quadrature.GaussianQuadrature<a class="headerlink" href="#gpflow-quadrature-gaussianquadrature" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.quadrature.GaussianQuadrature<a class="headerlink" href="#gpflow-quadrature-gaussianquadrature" title="Permalink to this headline">#</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="gpflow.quadrature.GaussianQuadrature">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.quadrature.</span></span><span class="sig-name descname"><span class="pre">GaussianQuadrature</span></span><a class="reference internal" href="../../../_modules/gpflow/quadrature/base.html#GaussianQuadrature"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.quadrature.GaussianQuadrature" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.quadrature.</span></span><span class="sig-name descname"><span class="pre">GaussianQuadrature</span></span><a class="reference internal" href="../../../_modules/gpflow/quadrature/base.html#GaussianQuadrature"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.quadrature.GaussianQuadrature" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Abstract class implementing quadrature methods to compute Gaussian Expectations.
 Inheriting classes must provide the method _build_X_W to create points and weights
 to be used for quadrature.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="gpflow.quadrature.GaussianQuadrature.logspace">
-<span class="sig-name descname"><span class="pre">logspace</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fun</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">var</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/quadrature/base.html#GaussianQuadrature.logspace"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.quadrature.GaussianQuadrature.logspace" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">logspace</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fun</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">var</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/quadrature/base.html#GaussianQuadrature.logspace"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.quadrature.GaussianQuadrature.logspace" title="Permalink to this definition">#</a></dt>
 <dd><p>Compute the Gaussian log-Expectation of a the exponential of a function f:</p>
 <blockquote>
 <div><p>X ~ N(mean, var)
@@ -749,10 +743,10 @@ usually [N, d] or [N, 1]</p>
 
 </section>
 <section id="gpflow-quadrature-ndiagghquadrature">
-<h2>gpflow.quadrature.NDiagGHQuadrature<a class="headerlink" href="#gpflow-quadrature-ndiagghquadrature" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.quadrature.NDiagGHQuadrature<a class="headerlink" href="#gpflow-quadrature-ndiagghquadrature" title="Permalink to this headline">#</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="gpflow.quadrature.NDiagGHQuadrature">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.quadrature.</span></span><span class="sig-name descname"><span class="pre">NDiagGHQuadrature</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_gh</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/quadrature/gauss_hermite.html#NDiagGHQuadrature"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.quadrature.NDiagGHQuadrature" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.quadrature.</span></span><span class="sig-name descname"><span class="pre">NDiagGHQuadrature</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_gh</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/quadrature/gauss_hermite.html#NDiagGHQuadrature"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.quadrature.NDiagGHQuadrature" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#gpflow.quadrature.GaussianQuadrature" title="gpflow.quadrature.base.GaussianQuadrature"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.quadrature.base.GaussianQuadrature</span></code></a></p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -766,10 +760,10 @@ usually [N, d] or [N, 1]</p>
 
 </section>
 <section id="gpflow-quadrature-hermgauss">
-<h2>gpflow.quadrature.hermgauss<a class="headerlink" href="#gpflow-quadrature-hermgauss" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.quadrature.hermgauss<a class="headerlink" href="#gpflow-quadrature-hermgauss" title="Permalink to this headline">#</a></h2>
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.quadrature.hermgauss">
-<span class="sig-prename descclassname"><span class="pre">gpflow.quadrature.</span></span><span class="sig-name descname"><span class="pre">hermgauss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/quadrature/deprecated.html#hermgauss"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.quadrature.hermgauss" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">gpflow.quadrature.</span></span><span class="sig-name descname"><span class="pre">hermgauss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/quadrature/deprecated.html#hermgauss"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.quadrature.hermgauss" title="Permalink to this definition">#</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>n</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>) – </p>
@@ -782,10 +776,10 @@ usually [N, d] or [N, 1]</p>
 
 </section>
 <section id="gpflow-quadrature-mvhermgauss">
-<h2>gpflow.quadrature.mvhermgauss<a class="headerlink" href="#gpflow-quadrature-mvhermgauss" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.quadrature.mvhermgauss<a class="headerlink" href="#gpflow-quadrature-mvhermgauss" title="Permalink to this headline">#</a></h2>
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.quadrature.mvhermgauss">
-<span class="sig-prename descclassname"><span class="pre">gpflow.quadrature.</span></span><span class="sig-name descname"><span class="pre">mvhermgauss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">H</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">D</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/quadrature/deprecated.html#mvhermgauss"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.quadrature.mvhermgauss" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">gpflow.quadrature.</span></span><span class="sig-name descname"><span class="pre">mvhermgauss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">H</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">D</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/quadrature/deprecated.html#mvhermgauss"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.quadrature.mvhermgauss" title="Permalink to this definition">#</a></dt>
 <dd><p>Return the evaluation locations ‘xn’, and weights ‘wn’ for a multivariate
 Gauss-Hermite quadrature.</p>
 <p>The outputs can be used to approximate the following type of integral:
@@ -808,10 +802,10 @@ int exp(-x)*f(x) dx ~ sum_i w[i,:]*f(x[i,:])</p>
 
 </section>
 <section id="gpflow-quadrature-mvnquad">
-<h2>gpflow.quadrature.mvnquad<a class="headerlink" href="#gpflow-quadrature-mvnquad" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.quadrature.mvnquad<a class="headerlink" href="#gpflow-quadrature-mvnquad" title="Permalink to this headline">#</a></h2>
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.quadrature.mvnquad">
-<span class="sig-prename descclassname"><span class="pre">gpflow.quadrature.</span></span><span class="sig-name descname"><span class="pre">mvnquad</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">func</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">means</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">covs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">H</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Din</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Dout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/quadrature/deprecated.html#mvnquad"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.quadrature.mvnquad" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">gpflow.quadrature.</span></span><span class="sig-name descname"><span class="pre">mvnquad</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">func</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">means</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">covs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">H</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Din</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Dout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/quadrature/deprecated.html#mvnquad"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.quadrature.mvnquad" title="Permalink to this definition">#</a></dt>
 <dd><p>Computes N Gaussian expectation integrals of a single function ‘f’
 using Gauss-Hermite quadrature.
 :param f: integrand function. Takes one input of shape ?xD.
@@ -837,10 +831,10 @@ to leave out the item index, i.e. f actually maps (?xD)-&gt;(?x*Dout).
 
 </section>
 <section id="gpflow-quadrature-ndiag-mc">
-<h2>gpflow.quadrature.ndiag_mc<a class="headerlink" href="#gpflow-quadrature-ndiag-mc" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.quadrature.ndiag_mc<a class="headerlink" href="#gpflow-quadrature-ndiag-mc" title="Permalink to this headline">#</a></h2>
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.quadrature.ndiag_mc">
-<span class="sig-prename descclassname"><span class="pre">gpflow.quadrature.</span></span><span class="sig-name descname"><span class="pre">ndiag_mc</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">funcs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">S</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Fmu</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Fvar</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logspace</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epsilon</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">Ys</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/quadrature/deprecated.html#ndiag_mc"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.quadrature.ndiag_mc" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">gpflow.quadrature.</span></span><span class="sig-name descname"><span class="pre">ndiag_mc</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">funcs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">S</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Fmu</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Fvar</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logspace</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epsilon</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">Ys</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/quadrature/deprecated.html#ndiag_mc"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.quadrature.ndiag_mc" title="Permalink to this definition">#</a></dt>
 <dd><p>Computes N Gaussian expectation integrals of one or more functions
 using Monte Carlo samples. The Gaussians must be independent.</p>
 <dl class="field-list simple">
@@ -873,10 +867,10 @@ the log-expectation of exp(funcs)</p></li>
 
 </section>
 <section id="gpflow-quadrature-ndiagquad">
-<h2>gpflow.quadrature.ndiagquad<a class="headerlink" href="#gpflow-quadrature-ndiagquad" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.quadrature.ndiagquad<a class="headerlink" href="#gpflow-quadrature-ndiagquad" title="Permalink to this headline">#</a></h2>
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.quadrature.ndiagquad">
-<span class="sig-prename descclassname"><span class="pre">gpflow.quadrature.</span></span><span class="sig-name descname"><span class="pre">ndiagquad</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">funcs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">H</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Fmu</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Fvar</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logspace</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">Ys</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/quadrature/deprecated.html#ndiagquad"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.quadrature.ndiagquad" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">gpflow.quadrature.</span></span><span class="sig-name descname"><span class="pre">ndiagquad</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">funcs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">H</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Fmu</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Fvar</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logspace</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">Ys</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/quadrature/deprecated.html#ndiagquad"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.quadrature.ndiagquad" title="Permalink to this definition">#</a></dt>
 <dd><p>Computes N Gaussian expectation integrals of one or more functions
 using Gauss-Hermite quadrature. The Gaussians must be independent.</p>
 <p>The means and variances of the Gaussians are specified by Fmu and Fvar.
@@ -908,12 +902,12 @@ the log-expectation of exp(funcs)</p></li>
 
 </section>
 <section id="gpflow-quadrature-deprecated">
-<h2>gpflow.quadrature.deprecated<a class="headerlink" href="#gpflow-quadrature-deprecated" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.quadrature.deprecated<a class="headerlink" href="#gpflow-quadrature-deprecated" title="Permalink to this headline">#</a></h2>
 <div class="toctree-wrapper compound">
 </div>
 </section>
 <section id="gpflow-quadrature-gauss-hermite">
-<h2>gpflow.quadrature.gauss_hermite<a class="headerlink" href="#gpflow-quadrature-gauss-hermite" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.quadrature.gauss_hermite<a class="headerlink" href="#gpflow-quadrature-gauss-hermite" title="Permalink to this headline">#</a></h2>
 <div class="toctree-wrapper compound">
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="gauss_hermite/index.html">gpflow.quadrature.gauss_hermite</a></li>
@@ -932,8 +926,9 @@ the log-expectation of exp(funcs)</p></li>
       </div>
     </div>
   
-    <script src="../../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf"></script>
-  <footer class="footer mt-5 mt-md-0">
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf"></script>
+<footer class="footer mt-5 mt-md-0">
   <div class="container">
     
     <div class="footer-item">
@@ -944,7 +939,7 @@ the log-expectation of exp(funcs)</p></li>
     
     <div class="footer-item">
       <p class="sphinx-version">
-Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.4.0.<br>
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.5.0.<br>
 </p>
     </div>
     

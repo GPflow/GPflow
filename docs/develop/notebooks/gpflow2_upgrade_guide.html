@@ -8,27 +8,24 @@
 
     <title>GPflow 2 Upgrade Guide &#8212; GPflow 2.4.0 documentation</title>
     
-    <link href="../_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
 <link href="../_static/styles/pydata-sphinx-theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
-  
+
     
-    <link rel="stylesheet"
-      href="../_static/vendor/fontawesome/5.13.0/css/all.min.css">
-    <link rel="preload" as="font" type="font/woff2" crossorigin
-      href="../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
-    <link rel="preload" as="font" type="font/woff2" crossorigin
-      href="../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
-  
-    
-      
-  
-    
+  <link rel="stylesheet"
+    href="../_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../_static/styles/pydata-sphinx-theme.css" />
     <link rel="stylesheet" type="text/css" href="../_static/pydata-custom.css" />
     
-    <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf">
-  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf">
+
     <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
     <script src="../_static/jquery.js"></script>
     <script src="../_static/underscore.js"></script>
@@ -48,7 +45,7 @@
     <!-- Google Analytics -->
     
   </head>
-  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="80">
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="60">
     
     <div class="container-fluid" id="banner"></div>
 
@@ -144,13 +141,6 @@
 -->
 
 <script type="text/javascript">
-// Construct the target URL from the JSON components
-function buildURL(entry) {
-    var template = "https://gpflow.github.io/GPflow/{version}/index.html";  // supplied by jinja
-    template = template.replace("{version}", entry.version);
-    return template;
-}
-
 // Check if corresponding page path exists in other version of docs
 // and, if so, go there instead of the homepage of the other docs version
 function checkPageExistsAndRedirect(event) {
@@ -186,14 +176,16 @@ function checkPageExistsAndRedirect(event) {
             const node = document.createElement("a");
             node.setAttribute("class", "list-group-item list-group-item-action py-1");
             node.textContent = `${entry.name}`;
-            // get the base URL for that doc version, add the current page's
-            // path to it, and set as `href`
-            entry.url = buildURL(entry);
             node.setAttribute("href", `${entry.url}${currentFilePath}`);
             // on click, AJAX calls will check if the linked page exists before
             // trying to redirect, and if not, will redirect to the homepage
             // for that version of the docs.
             node.onclick = checkPageExistsAndRedirect;
+            // Add dataset values for the version and name in case people want
+            // to apply CSS styling based on this information.
+            node.dataset["versionName"] = entry.name;
+            node.dataset["version"] = entry.version;
+
             $("#version_switcher_menu").append(node);
             // replace dropdown button text with the preferred display name of
             // this version, rather than using sphinx's  variable.
@@ -201,7 +193,9 @@ function checkPageExistsAndRedirect(event) {
             // version's entry
             if (entry.version == "develop") {
                 node.classList.add("active");
-                $("#version_switcher_button").text(entry.name);
+                let btn = document.getElementById("version_switcher_button");
+                btn.innerText = btn.dataset["activeVersionName"] = entry.name;
+                btn.dataset["activeVersion"] = entry.version;
             }
         });
     });
@@ -242,7 +236,7 @@ function checkPageExistsAndRedirect(event) {
               
               <div class="toc-item">
                 
-<div class="tocsection onthispage pt-5 pb-3">
+<div class="tocsection onthispage mt-5 pt-1 pb-3">
     <i class="fas fa-list"></i> On this page
 </div>
 
@@ -400,10 +394,10 @@ function checkPageExistsAndRedirect(event) {
               <div>
                 
   <section id="GPflow-2-Upgrade-Guide">
-<h1>GPflow 2 Upgrade Guide<a class="headerlink" href="#GPflow-2-Upgrade-Guide" title="Permalink to this headline">¶</a></h1>
+<h1>GPflow 2 Upgrade Guide<a class="headerlink" href="#GPflow-2-Upgrade-Guide" title="Permalink to this headline">#</a></h1>
 <p>This is a basic guide for people who have GPflow 1 code that needs to be upgraded to GPflow 2. Also see the <a class="reference internal" href="intro_to_gpflow2.html"><span class="doc">Intro to GPflow with TensorFlow 2 notebook</span></a>.</p>
 <section id="Kernel-Input-Dims">
-<h2>Kernel Input Dims<a class="headerlink" href="#Kernel-Input-Dims" title="Permalink to this headline">¶</a></h2>
+<h2>Kernel Input Dims<a class="headerlink" href="#Kernel-Input-Dims" title="Permalink to this headline">#</a></h2>
 <p>The <code class="docutils literal notranslate"><span class="pre">input_dim</span></code> parameter has been removed from the <code class="docutils literal notranslate"><span class="pre">Kernel</span></code> class’s initialiser. Therefore all calls to create a kernel must be changed to remove the <code class="docutils literal notranslate"><span class="pre">input_dim</span></code> parameter.</p>
 <p>For example:</p>
 <div class="highlight-diff notranslate"><div class="highlight"><pre><span></span><span class="gd">-gpflow.kernels.SquaredExponential(1, variance=1.0, lengthscales=0.5)</span><span class="w"></span>
@@ -413,13 +407,13 @@ function checkPageExistsAndRedirect(event) {
 <p><strong>Note</strong>: old code may still run without obvious errors against GPflow, since many kernels take an optional numerical value as their first parameter. You may not get the result you expect though!</p>
 </section>
 <section id="Parameter-and-tf.Variable">
-<h2>Parameter and tf.Variable<a class="headerlink" href="#Parameter-and-tf.Variable" title="Permalink to this headline">¶</a></h2>
+<h2>Parameter and tf.Variable<a class="headerlink" href="#Parameter-and-tf.Variable" title="Permalink to this headline">#</a></h2>
 <p>The <code class="docutils literal notranslate"><span class="pre">Parameter</span></code> class in GPflow 1 was a separate class from <code class="docutils literal notranslate"><span class="pre">tf.Variable</span></code>. The <code class="docutils literal notranslate"><span class="pre">params_as_tensors</span></code> decorator or the <code class="docutils literal notranslate"><span class="pre">params_as_tensors_for</span></code> context manager were required to turn them into a tensor that could be consumed by TensorFlow operations.</p>
 <p>In GPflow 2, <code class="docutils literal notranslate"><span class="pre">Parameter</span></code> inherits from <code class="docutils literal notranslate"><span class="pre">gpflow.Module</span></code> (a <code class="docutils literal notranslate"><span class="pre">tf.Module</span></code> subclass) that wraps a <code class="docutils literal notranslate"><span class="pre">tf.Variable</span></code>, and can directly be used in place of a tensor, so no such conversion is necessary.</p>
 <p>References to <code class="docutils literal notranslate"><span class="pre">params_as_tensors</span></code> and <code class="docutils literal notranslate"><span class="pre">params_as_tensors_for</span></code> can simply be removed.</p>
 </section>
 <section id="Parameter-Assignment">
-<h2>Parameter Assignment<a class="headerlink" href="#Parameter-Assignment" title="Permalink to this headline">¶</a></h2>
+<h2>Parameter Assignment<a class="headerlink" href="#Parameter-Assignment" title="Permalink to this headline">#</a></h2>
 <p>In GPflow 2 the semantics of assigning values to parameters has changed. It is now necessary to use the Parameter.assign method rather than assigning values directly to parameters. For example:</p>
 <div class="highlight-diff notranslate"><div class="highlight"><pre><span></span><span class="w"> </span># Initializations:<span class="w"></span>
 <span class="gd">-likelihood.scale = 0.1</span><span class="w"></span>
@@ -431,7 +425,7 @@ function checkPageExistsAndRedirect(event) {
 <p>To change other properties of the parameter (for example, to change transforms etc) you may need to replace the entire parameter object. See <a class="reference internal" href="understanding/models.html#Constraints-and-trainable-variables"><span class="std std-ref">this notebook</span></a> for further details.</p>
 </section>
 <section id="Parameter-trainable-status">
-<h2>Parameter trainable status<a class="headerlink" href="#Parameter-trainable-status" title="Permalink to this headline">¶</a></h2>
+<h2>Parameter trainable status<a class="headerlink" href="#Parameter-trainable-status" title="Permalink to this headline">#</a></h2>
 <p>A parameter’s <code class="docutils literal notranslate"><span class="pre">trainable</span></code> attribute cannot be set. Instead, use <code class="docutils literal notranslate"><span class="pre">gpflow.set_trainable()</span></code>. E.g.:</p>
 <div class="highlight-diff notranslate"><div class="highlight"><pre><span></span><span class="gd">-likelihood.trainable = False</span><span class="w"></span>
 <span class="gi">+gpflow.set_trainable(likelihood, False)</span><span class="w"></span>
@@ -439,7 +433,7 @@ function checkPageExistsAndRedirect(event) {
 </div>
 </section>
 <section id="SciPy-Optimizer">
-<h2>SciPy Optimizer<a class="headerlink" href="#SciPy-Optimizer" title="Permalink to this headline">¶</a></h2>
+<h2>SciPy Optimizer<a class="headerlink" href="#SciPy-Optimizer" title="Permalink to this headline">#</a></h2>
 <p>Usage of GPflow’s Scipy optimizer has changed. It has been renamed from <code class="docutils literal notranslate"><span class="pre">gpflow.train.ScipyOptimizer</span></code> to <code class="docutils literal notranslate"><span class="pre">gpflow.optimizers.Scipy</span></code> and its <code class="docutils literal notranslate"><span class="pre">minimize</span></code> method has changed in the following ways:</p>
 <ul class="simple">
 <li><p>Instead of a GPflow model, the method now takes a zero-argument function that returns the loss to be minimised (most GPflow models provide a <code class="docutils literal notranslate"><span class="pre">model.training_loss</span></code> method for this use-case; gpflow.models.SVGP does not encapsulate data and provides a <code class="docutils literal notranslate"><span class="pre">model.training_loss_closure(data)</span></code> closure generating method instead), as well as the variables to be optimised (typically <code class="docutils literal notranslate"><span class="pre">model.trainable_variables</span></code>).</p></li>
@@ -459,7 +453,7 @@ function checkPageExistsAndRedirect(event) {
 <p>Any additional keyword arguments that are passed to the <code class="docutils literal notranslate"><span class="pre">minimize</span></code> method are passed directly through to the <a class="reference external" href="https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize.html">SciPy optimizer’s minimize method</a>.</p>
 </section>
 <section id="Model-Initialisers">
-<h2>Model Initialisers<a class="headerlink" href="#Model-Initialisers" title="Permalink to this headline">¶</a></h2>
+<h2>Model Initialisers<a class="headerlink" href="#Model-Initialisers" title="Permalink to this headline">#</a></h2>
 <p>In many cases the initialiser for the model will have changed. Typical changes include:</p>
 <ul class="simple">
 <li><p>Instead of separate parameters for <code class="docutils literal notranslate"><span class="pre">X</span></code> and <code class="docutils literal notranslate"><span class="pre">Y</span></code>, some models now require a single <code class="docutils literal notranslate"><span class="pre">data</span></code> parameter containing a tuple of the X and Y data.</p></li>
@@ -473,37 +467,37 @@ function checkPageExistsAndRedirect(event) {
 <p>Models that do not take a <code class="docutils literal notranslate"><span class="pre">likelihood</span></code> argument because they hard-code a Gaussian likelihood (GPR, SGPR) now take a <code class="docutils literal notranslate"><span class="pre">noise_variance</span></code> argument that sets the initial value of the likelihood variance.</p>
 </section>
 <section id="SVGP-Initialiser">
-<h2>SVGP Initialiser<a class="headerlink" href="#SVGP-Initialiser" title="Permalink to this headline">¶</a></h2>
+<h2>SVGP Initialiser<a class="headerlink" href="#SVGP-Initialiser" title="Permalink to this headline">#</a></h2>
 <p>The SVGP model’s initialiser no longer accepts X and Y data. Instead this data must be passed to the various computation methods of the model (<code class="docutils literal notranslate"><span class="pre">elbo</span></code>, <code class="docutils literal notranslate"><span class="pre">training_loss</span></code> etc).</p>
 <p>In the <a class="reference internal" href="intro_to_gpflow2.html"><span class="doc">Introduction to GPflow 2 notebook</span></a> there is an example of how to use SVGP with optimisation using mini-batches of data.</p>
 <p>In addition, SVGP’s <code class="docutils literal notranslate"><span class="pre">Z</span></code> parameter has been removed. To pass-in inducing points use the <code class="docutils literal notranslate"><span class="pre">inducing_variable</span></code> parameter. Also <code class="docutils literal notranslate"><span class="pre">SVGP</span></code>’s <code class="docutils literal notranslate"><span class="pre">feature</span></code> attribute has been renamed to <code class="docutils literal notranslate"><span class="pre">inducing_variable</span></code>.</p>
 </section>
 <section id="Autoflow">
-<h2>Autoflow<a class="headerlink" href="#Autoflow" title="Permalink to this headline">¶</a></h2>
+<h2>Autoflow<a class="headerlink" href="#Autoflow" title="Permalink to this headline">#</a></h2>
 <p>The <code class="docutils literal notranslate"><span class="pre">&#64;autoflow</span></code> decorator has been removed. Since eager execution is the default in TensorFlow 2 this is no longer necessary.</p>
 <p>You may wish to consider wrapping functions that were previously wrapped in the <code class="docutils literal notranslate"><span class="pre">&#64;autoflow</span></code> decorator in the <code class="docutils literal notranslate"><span class="pre">tf.function</span></code> decorator instead, to improve performance (but this is not necessary from a functionality point of view).</p>
 </section>
 <section id="Use-of-tf.function">
-<h2>Use of tf.function<a class="headerlink" href="#Use-of-tf.function" title="Permalink to this headline">¶</a></h2>
+<h2>Use of tf.function<a class="headerlink" href="#Use-of-tf.function" title="Permalink to this headline">#</a></h2>
 <p>Wrapping compute-heavy operations such as calculating a model objective or even the optimizer steps (such as <code class="docutils literal notranslate"><span class="pre">tf.optimizers.Adam().minimize()</span></code>) with <code class="docutils literal notranslate"><span class="pre">tf.function</span></code> is crucial for efficient computation.</p>
 <p><strong>Note</strong>: you should ensure that functions wrapped in <code class="docutils literal notranslate"><span class="pre">tf.function</span></code> are only passed <strong>tensors</strong> (not numpy arrays or other data structures, with the exception of a small number of bool or enum-style flags), or the decorator will re-compile the graph each time the function is passed new objects as its arguments. See the <a class="reference external" href="https://www.tensorflow.org/guide/function#re-tracing">TensorFlow documentation on re-tracing</a> for further details.</p>
 <p>You can convert a numpy array to a tensor by using <code class="docutils literal notranslate"><span class="pre">tf.constant</span></code>. For example: <code class="docutils literal notranslate"><span class="pre">compiled_function(tf.constant(numpy_array))</span></code>.</p>
 </section>
 <section id="Model-Compilation">
-<h2>Model Compilation<a class="headerlink" href="#Model-Compilation" title="Permalink to this headline">¶</a></h2>
+<h2>Model Compilation<a class="headerlink" href="#Model-Compilation" title="Permalink to this headline">#</a></h2>
 <p>Models no longer need to be compiled before use. Remove all calls to the <code class="docutils literal notranslate"><span class="pre">compile</span></code> method.</p>
 </section>
 <section id="Sessions-and-Graphs">
-<h2>Sessions and Graphs<a class="headerlink" href="#Sessions-and-Graphs" title="Permalink to this headline">¶</a></h2>
+<h2>Sessions and Graphs<a class="headerlink" href="#Sessions-and-Graphs" title="Permalink to this headline">#</a></h2>
 <p>GPflow only supports eager execution, which is the default in TensorFlow 2. It does not support graph mode, which was the default execution mode in TensorFlow 1. Therefore all references to Sessions and Graphs should be removed. You should also remove references to the <code class="docutils literal notranslate"><span class="pre">gpflow.reset_default_graph_and_session</span></code> function.</p>
 <p><strong>Warning</strong>: code that creates graphs (for example <code class="docutils literal notranslate"><span class="pre">tf.Graph().as_default()</span></code>) will disable eager execution, which will not work well with GPflow 2. If you get errors like “‘Tensor’ object has no attribute ‘numpy’” then you may not have removed all references to graphs and sessions in your code.</p>
 </section>
 <section id="Defer-Build">
-<h2>Defer Build<a class="headerlink" href="#Defer-Build" title="Permalink to this headline">¶</a></h2>
+<h2>Defer Build<a class="headerlink" href="#Defer-Build" title="Permalink to this headline">#</a></h2>
 <p>The <code class="docutils literal notranslate"><span class="pre">defer_build</span></code> context manager has been removed. References to it can simply be removed.</p>
 </section>
 <section id="Return-Types-from-Auto-flowed-Methods">
-<h2>Return Types from Auto-flowed Methods<a class="headerlink" href="#Return-Types-from-Auto-flowed-Methods" title="Permalink to this headline">¶</a></h2>
+<h2>Return Types from Auto-flowed Methods<a class="headerlink" href="#Return-Types-from-Auto-flowed-Methods" title="Permalink to this headline">#</a></h2>
 <p>GPflow methods that used the <code class="docutils literal notranslate"><span class="pre">&#64;autoflow</span></code> decorator, like for example <code class="docutils literal notranslate"><span class="pre">predict_f</span></code> and <code class="docutils literal notranslate"><span class="pre">predict_y</span></code>, will previously have returned NumPy Arrays. These now return TensorFlow tensors. In many cases these can be used like NumPy arrays (they can be passed directly to many of NumPy’s functions and even be plotted by matplotlib), but to actually turn them into numpy arrays you will need to call <code class="docutils literal notranslate"><span class="pre">.numpy()</span></code> on them.</p>
 <p>For example:</p>
 <div class="highlight-diff notranslate"><div class="highlight"><pre><span></span><span class="w"> </span>def _predict(self, features: np.ndarray) -&gt; Tuple[np.ndarray, np.ndarray]:<span class="w"></span>
@@ -514,7 +508,7 @@ function checkPageExistsAndRedirect(event) {
 </div>
 </section>
 <section id="Parameter-Values">
-<h2>Parameter Values<a class="headerlink" href="#Parameter-Values" title="Permalink to this headline">¶</a></h2>
+<h2>Parameter Values<a class="headerlink" href="#Parameter-Values" title="Permalink to this headline">#</a></h2>
 <p>In GPflow 1, <code class="docutils literal notranslate"><span class="pre">Parameter.value</span></code> was a property that returned the numpy (<code class="docutils literal notranslate"><span class="pre">np.ndarray</span></code>) representation of the value of the Parameter.</p>
 <p>In GPflow 2, <code class="docutils literal notranslate"><span class="pre">Parameter</span></code> behaves similar to TensorFlow’s <code class="docutils literal notranslate"><span class="pre">tf.Variable</span></code>: <code class="docutils literal notranslate"><span class="pre">Parameter.value()</span></code> is a method that returns a constant tf.Tensor with the current (constrained) value of the Parameter. To obtain the <em>numpy</em> representation, use the <code class="docutils literal notranslate"><span class="pre">Parameter.numpy()</span></code> method:</p>
 <p>For example:</p>
@@ -524,11 +518,11 @@ function checkPageExistsAndRedirect(event) {
 </div>
 </section>
 <section id="Model-Class">
-<h2>Model Class<a class="headerlink" href="#Model-Class" title="Permalink to this headline">¶</a></h2>
+<h2>Model Class<a class="headerlink" href="#Model-Class" title="Permalink to this headline">#</a></h2>
 <p>The <code class="docutils literal notranslate"><span class="pre">Model</span></code> class has been removed. A suitable replacement, for those models that do not wish to inherit from <code class="docutils literal notranslate"><span class="pre">GPModel</span></code>, may be <code class="docutils literal notranslate"><span class="pre">BayesianModel</span></code>.</p>
 </section>
 <section id="Periodic-Base-Kernel">
-<h2>Periodic Base Kernel<a class="headerlink" href="#Periodic-Base-Kernel" title="Permalink to this headline">¶</a></h2>
+<h2>Periodic Base Kernel<a class="headerlink" href="#Periodic-Base-Kernel" title="Permalink to this headline">#</a></h2>
 <p>The base kernel for the <code class="docutils literal notranslate"><span class="pre">Periodic</span></code> kernel must now be specified explicitly. Previously the default was <code class="docutils literal notranslate"><span class="pre">SquaredExponential</span></code>, so to maintain the same behaviour as before this must be passed-in to the <code class="docutils literal notranslate"><span class="pre">Periodic</span></code> kernel’s initialiser (note that <code class="docutils literal notranslate"><span class="pre">active_dims</span></code> is specified in the base kernel).</p>
 <p>For example:</p>
 <div class="highlight-diff notranslate"><div class="highlight"><pre><span></span><span class="gd">-Periodic(1, active_dims=[2])</span><span class="w"></span>
@@ -537,7 +531,7 @@ function checkPageExistsAndRedirect(event) {
 </div>
 </section>
 <section id="Predict-Full-Covariance">
-<h2>Predict Full Covariance<a class="headerlink" href="#Predict-Full-Covariance" title="Permalink to this headline">¶</a></h2>
+<h2>Predict Full Covariance<a class="headerlink" href="#Predict-Full-Covariance" title="Permalink to this headline">#</a></h2>
 <p>The <code class="docutils literal notranslate"><span class="pre">predict_f_full_cov</span></code> method has been removed from <code class="docutils literal notranslate"><span class="pre">GPModel</span></code>. Instead, pass <code class="docutils literal notranslate"><span class="pre">full_cov=True</span></code> to the <code class="docutils literal notranslate"><span class="pre">predict_f</span></code> method.</p>
 <p>For example:</p>
 <div class="highlight-diff notranslate"><div class="highlight"><pre><span></span><span class="gd">-f_mean, f_cov = model.predict_f_full_cov(X)</span><span class="w"></span>
@@ -546,18 +540,18 @@ function checkPageExistsAndRedirect(event) {
 </div>
 </section>
 <section id="Predictive-(log)density">
-<h2>Predictive (log)density<a class="headerlink" href="#Predictive-(log)density" title="Permalink to this headline">¶</a></h2>
+<h2>Predictive (log)density<a class="headerlink" href="#Predictive-(log)density" title="Permalink to this headline">#</a></h2>
 <p>The <code class="docutils literal notranslate"><span class="pre">predict_density</span></code> method of GPModels and Likelihoods has been renamed to <code class="docutils literal notranslate"><span class="pre">predict_log_density</span></code>. (It always returned the predictive <em>log</em>-density, so no change in behaviour.)</p>
 </section>
 <section id="Settings-/-Configuration">
-<h2>Settings / Configuration<a class="headerlink" href="#Settings-/-Configuration" title="Permalink to this headline">¶</a></h2>
+<h2>Settings / Configuration<a class="headerlink" href="#Settings-/-Configuration" title="Permalink to this headline">#</a></h2>
 <p>In GPflow 2, the <code class="docutils literal notranslate"><span class="pre">gpflow.settings</span></code> module and the <code class="docutils literal notranslate"><span class="pre">gpflowrc</span></code> file have been removed. Instead, there is <code class="docutils literal notranslate"><span class="pre">gpflow.config</span></code>.</p>
 <p><code class="docutils literal notranslate"><span class="pre">gpflow.settings.float_type</span></code> has changed to <code class="docutils literal notranslate"><span class="pre">gpflow.default_float()</span></code> and <code class="docutils literal notranslate"><span class="pre">gpflow.settings.int_type</span></code> has changed to <code class="docutils literal notranslate"><span class="pre">gpflow.default_int()</span></code>. <code class="docutils literal notranslate"><span class="pre">gpflow.settings.jitter</span></code>/<code class="docutils literal notranslate"><span class="pre">gpflow.settings.numerics.jitter_level</span></code> has changed to <code class="docutils literal notranslate"><span class="pre">gpflow.default_jitter()</span></code>.</p>
 <p>These default settings can be changed using environment variables (<code class="docutils literal notranslate"><span class="pre">GPFLOW_FLOAT</span></code>, <code class="docutils literal notranslate"><span class="pre">GPFLOW_INT</span></code>, <code class="docutils literal notranslate"><span class="pre">GPFLOW_JITTER</span></code>, etc.) or function calls (<code class="docutils literal notranslate"><span class="pre">gpflow.config.set_default_float()</span></code> etc.). There is also a <code class="docutils literal notranslate"><span class="pre">gpflow.config.as_context()</span></code> context manager for temporarily changing settings for only part of the code.</p>
 <p>See the <code class="docutils literal notranslate"><span class="pre">gpflow.config</span></code> API documentation for more details.</p>
 </section>
 <section id="Data-Types">
-<h2>Data Types<a class="headerlink" href="#Data-Types" title="Permalink to this headline">¶</a></h2>
+<h2>Data Types<a class="headerlink" href="#Data-Types" title="Permalink to this headline">#</a></h2>
 <p>In some cases TensorFlow will try to figure out an appropriate data type for certain variables. If Python floats have been used, TensorFlow may default these variables to <code class="docutils literal notranslate"><span class="pre">float32</span></code>, which can cause incompatibilities with GPflow, which defaults to using <code class="docutils literal notranslate"><span class="pre">float64</span></code>.</p>
 <p>To resolve this you can use <code class="docutils literal notranslate"><span class="pre">tf.constant</span></code> instead of a Python float, and explicitly specify the data type, e.g.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">tf</span><span class="o">.</span><span class="n">constant</span><span class="p">(</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">gpflow</span><span class="o">.</span><span class="n">default_float</span><span class="p">())</span>
@@ -565,31 +559,31 @@ function checkPageExistsAndRedirect(event) {
 </div>
 </section>
 <section id="Transforms">
-<h2>Transforms<a class="headerlink" href="#Transforms" title="Permalink to this headline">¶</a></h2>
+<h2>Transforms<a class="headerlink" href="#Transforms" title="Permalink to this headline">#</a></h2>
 <p>These have been removed in favour of the tools in <code class="docutils literal notranslate"><span class="pre">tensorflow_probability.bijectors</span></code>. See for example <a class="reference external" href="https://stackoverflow.com/q/58903446/5986907">this Stackoverflow post</a>.</p>
 <p>GPflow 2 still provides the <code class="docutils literal notranslate"><span class="pre">gpflow.utilities.triangular</span></code> alias for <code class="docutils literal notranslate"><span class="pre">tfp.bijectors.FillTriangular</span></code>.</p>
 <p>To constrain parameters to be positive, there is <code class="docutils literal notranslate"><span class="pre">gpflow.utilities.positive</span></code> which is configurable to be either softplus or exp, with an optional shift to ensure a lower bound that is larger than zero. Note that the default lower bound used to be <code class="docutils literal notranslate"><span class="pre">1e-6</span></code>; by default, the lower bound if not specified explicitly is now <code class="docutils literal notranslate"><span class="pre">0.0</span></code>. Revert the previous behaviour using <code class="docutils literal notranslate"><span class="pre">gpflow.config.set_default_positive_minimum(1e-6)</span></code>.</p>
 </section>
 <section id="Stationary-kernel-subclasses">
-<h2>Stationary kernel subclasses<a class="headerlink" href="#Stationary-kernel-subclasses" title="Permalink to this headline">¶</a></h2>
+<h2>Stationary kernel subclasses<a class="headerlink" href="#Stationary-kernel-subclasses" title="Permalink to this headline">#</a></h2>
 <p>Most stationary kernels are actually <em>isotropic</em>-stationary kernels, and should now subclass from <code class="docutils literal notranslate"><span class="pre">gpflow.kernels.IsotropicStationary</span></code> instead of <code class="docutils literal notranslate"><span class="pre">gpflow.kernels.Stationary</span></code>. (The <code class="docutils literal notranslate"><span class="pre">Cosine</span></code> kernel is an example of a non-isotropic stationary kernel that depends on the direction, not just the norm, of <span class="math notranslate nohighlight">\(\mathbf{x} - \mathbf{x}'\)</span>.)</p>
 </section>
 <section id="Likelihoods">
-<h2>Likelihoods<a class="headerlink" href="#Likelihoods" title="Permalink to this headline">¶</a></h2>
+<h2>Likelihoods<a class="headerlink" href="#Likelihoods" title="Permalink to this headline">#</a></h2>
 <p>We cleaned up the likelihood API. Likelihoods now explicitly define the expected number of outputs (<code class="docutils literal notranslate"><span class="pre">observation_dim</span></code>) and latent functions (<code class="docutils literal notranslate"><span class="pre">latent_dim</span></code>), and shape-checking is in place by default.</p>
 <p>Most of the likelihoods simply broadcasted over outputs; these have now been grouped to subclass from <code class="docutils literal notranslate"><span class="pre">gpflow.likelihoods.ScalarLikelihood</span></code>, and implementations have been moved to leading-underscore functions. <code class="docutils literal notranslate"><span class="pre">ScalarLikelihood</span></code> subclasses need to implement at least <code class="docutils literal notranslate"><span class="pre">_scalar_log_prob</span></code> (previously <code class="docutils literal notranslate"><span class="pre">logp</span></code>), <code class="docutils literal notranslate"><span class="pre">_conditional_mean</span></code>, and <code class="docutils literal notranslate"><span class="pre">_conditional_variance</span></code>.</p>
 <p>The likelihood <code class="docutils literal notranslate"><span class="pre">log_prob</span></code>, <code class="docutils literal notranslate"><span class="pre">predict_log_density</span></code>, and <code class="docutils literal notranslate"><span class="pre">variational_expectations</span></code> methods now return a single value per data row; for <code class="docutils literal notranslate"><span class="pre">ScalarLikelihood</span></code> subclasses this means these methods effectively sum over the observation dimension (multiple outputs for the same input).</p>
 </section>
 <section id="Priors">
-<h2>Priors<a class="headerlink" href="#Priors" title="Permalink to this headline">¶</a></h2>
+<h2>Priors<a class="headerlink" href="#Priors" title="Permalink to this headline">#</a></h2>
 <p>Priors used to be defined on the <em>unconstrained</em> variable. The default has changed to the prior to be defined on the <em>constrained</em> parameter value; this can be changed by passing the <code class="docutils literal notranslate"><span class="pre">prior_on</span></code> argument to <code class="docutils literal notranslate"><span class="pre">gpflow.Parameter()</span></code>. See the <a class="reference internal" href="advanced/mcmc.html"><span class="doc">MCMC notebook</span></a> for more details.</p>
 </section>
 <section id="Name-Scoping">
-<h2>Name Scoping<a class="headerlink" href="#Name-Scoping" title="Permalink to this headline">¶</a></h2>
+<h2>Name Scoping<a class="headerlink" href="#Name-Scoping" title="Permalink to this headline">#</a></h2>
 <p>The <code class="docutils literal notranslate"><span class="pre">name_scope</span></code> decorator does not exist in GPflow 2 anymore. Use TensorFlow’s <code class="docutils literal notranslate"><span class="pre">`name_scope</span></code> &lt;<a class="reference external" href="https://www.tensorflow.org/api_docs/python/tf/name_scope?version=stable">https://www.tensorflow.org/api_docs/python/tf/name_scope?version=stable</a>&gt;`__ context manager instead.</p>
 </section>
 <section id="Model-Persistence">
-<h2>Model Persistence<a class="headerlink" href="#Model-Persistence" title="Permalink to this headline">¶</a></h2>
+<h2>Model Persistence<a class="headerlink" href="#Model-Persistence" title="Permalink to this headline">#</a></h2>
 <p>Model persistence with <code class="docutils literal notranslate"><span class="pre">gpflow.saver</span></code> has been removed in GPflow 2, in favour of TensorFlow 2’s <a class="reference external" href="https://www.tensorflow.org/guide/checkpoint">checkpointing</a> and <a class="reference external" href="https://www.tensorflow.org/guide/saved_model">model persistence using the SavedModel format</a>.</p>
 <p>There is currently a bug in saving GPflow models with TensorFlow’s model persistence (SavedModels). See <a class="reference external" href="https://github.com/GPflow/GPflow/issues/1127">https://github.com/GPflow/GPflow/issues/1127</a> for more details; a workaround is to replace all trainable parameters with constants using <code class="docutils literal notranslate"><span class="pre">gpflow.utilities.freeze(model)</span></code>.</p>
 <p>Checkpointing works fine.</p>
@@ -606,8 +600,9 @@ function checkPageExistsAndRedirect(event) {
       </div>
     </div>
   
-    <script src="../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf"></script>
-  <footer class="footer mt-5 mt-md-0">
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf"></script>
+<footer class="footer mt-5 mt-md-0">
   <div class="container">
     
     <div class="footer-item">
@@ -618,7 +613,7 @@ function checkPageExistsAndRedirect(event) {
     
     <div class="footer-item">
       <p class="sphinx-version">
-Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.4.0.<br>
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.5.0.<br>
 </p>
     </div>
     

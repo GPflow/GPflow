@@ -8,27 +8,24 @@
 
     <title>gpflow.utilities &#8212; GPflow 2.4.0 documentation</title>
     
-    <link href="../../../_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
 <link href="../../../_static/styles/pydata-sphinx-theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
-  
+
     
-    <link rel="stylesheet"
-      href="../../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
-    <link rel="preload" as="font" type="font/woff2" crossorigin
-      href="../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
-    <link rel="preload" as="font" type="font/woff2" crossorigin
-      href="../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
-  
-    
-      
-  
-    
+  <link rel="stylesheet"
+    href="../../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../../../_static/styles/pydata-sphinx-theme.css" />
     <link rel="stylesheet" type="text/css" href="../../../_static/pydata-custom.css" />
     
-    <link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf">
-  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf">
+
     <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
     <script src="../../../_static/jquery.js"></script>
     <script src="../../../_static/underscore.js"></script>
@@ -46,7 +43,7 @@
     <!-- Google Analytics -->
     
   </head>
-  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="80">
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="60">
     
     <div class="container-fluid" id="banner"></div>
 
@@ -142,13 +139,6 @@
 -->
 
 <script type="text/javascript">
-// Construct the target URL from the JSON components
-function buildURL(entry) {
-    var template = "https://gpflow.github.io/GPflow/{version}/index.html";  // supplied by jinja
-    template = template.replace("{version}", entry.version);
-    return template;
-}
-
 // Check if corresponding page path exists in other version of docs
 // and, if so, go there instead of the homepage of the other docs version
 function checkPageExistsAndRedirect(event) {
@@ -184,14 +174,16 @@ function checkPageExistsAndRedirect(event) {
             const node = document.createElement("a");
             node.setAttribute("class", "list-group-item list-group-item-action py-1");
             node.textContent = `${entry.name}`;
-            // get the base URL for that doc version, add the current page's
-            // path to it, and set as `href`
-            entry.url = buildURL(entry);
             node.setAttribute("href", `${entry.url}${currentFilePath}`);
             // on click, AJAX calls will check if the linked page exists before
             // trying to redirect, and if not, will redirect to the homepage
             // for that version of the docs.
             node.onclick = checkPageExistsAndRedirect;
+            // Add dataset values for the version and name in case people want
+            // to apply CSS styling based on this information.
+            node.dataset["versionName"] = entry.name;
+            node.dataset["version"] = entry.version;
+
             $("#version_switcher_menu").append(node);
             // replace dropdown button text with the preferred display name of
             // this version, rather than using sphinx's  variable.
@@ -199,7 +191,9 @@ function checkPageExistsAndRedirect(event) {
             // version's entry
             if (entry.version == "develop") {
                 node.classList.add("active");
-                $("#version_switcher_button").text(entry.name);
+                let btn = document.getElementById("version_switcher_button");
+                btn.innerText = btn.dataset["activeVersionName"] = entry.name;
+                btn.dataset["activeVersion"] = entry.version;
             }
         });
     });
@@ -611,7 +605,7 @@ function checkPageExistsAndRedirect(event) {
               
               <div class="toc-item">
                 
-<div class="tocsection onthispage pt-5 pb-3">
+<div class="tocsection onthispage mt-5 pt-1 pb-3">
     <i class="fas fa-list"></i> On this page
 </div>
 
@@ -739,12 +733,12 @@ function checkPageExistsAndRedirect(event) {
               <div>
                 
   <section id="gpflow-utilities">
-<h1>gpflow.utilities<a class="headerlink" href="#gpflow-utilities" title="Permalink to this headline">¶</a></h1>
+<h1>gpflow.utilities<a class="headerlink" href="#gpflow-utilities" title="Permalink to this headline">#</a></h1>
 <span class="target" id="module-gpflow.utilities"></span><section id="gpflow-utilities-deepcopy">
-<h2>gpflow.utilities.deepcopy<a class="headerlink" href="#gpflow-utilities-deepcopy" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.utilities.deepcopy<a class="headerlink" href="#gpflow-utilities-deepcopy" title="Permalink to this headline">#</a></h2>
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.utilities.deepcopy">
-<span class="sig-prename descclassname"><span class="pre">gpflow.utilities.</span></span><span class="sig-name descname"><span class="pre">deepcopy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">memo</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/utilities/traversal.html#deepcopy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.utilities.deepcopy" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">gpflow.utilities.</span></span><span class="sig-name descname"><span class="pre">deepcopy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">memo</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/utilities/traversal.html#deepcopy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.utilities.deepcopy" title="Permalink to this definition">#</a></dt>
 <dd><p>Returns a deepcopy of the input tf.Module. To do that first resets the caches stored inside each
 tfp.bijectors.Bijector to allow the deepcopy of the tf.Module.</p>
 <dl class="field-list simple">
@@ -766,10 +760,10 @@ tfp.bijectors.Bijector to allow the deepcopy of the tf.Module.</p>
 
 </section>
 <section id="gpflow-utilities-freeze">
-<h2>gpflow.utilities.freeze<a class="headerlink" href="#gpflow-utilities-freeze" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.utilities.freeze<a class="headerlink" href="#gpflow-utilities-freeze" title="Permalink to this headline">#</a></h2>
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.utilities.freeze">
-<span class="sig-prename descclassname"><span class="pre">gpflow.utilities.</span></span><span class="sig-name descname"><span class="pre">freeze</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/utilities/traversal.html#freeze"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.utilities.freeze" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">gpflow.utilities.</span></span><span class="sig-name descname"><span class="pre">freeze</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/utilities/traversal.html#freeze"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.utilities.freeze" title="Permalink to this definition">#</a></dt>
 <dd><p>Returns a deepcopy of the input tf.Module with constants instead of variables and parameters.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -786,10 +780,10 @@ tfp.bijectors.Bijector to allow the deepcopy of the tf.Module.</p>
 
 </section>
 <section id="gpflow-utilities-is-variable">
-<h2>gpflow.utilities.is_variable<a class="headerlink" href="#gpflow-utilities-is-variable" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.utilities.is_variable<a class="headerlink" href="#gpflow-utilities-is-variable" title="Permalink to this headline">#</a></h2>
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.utilities.is_variable">
-<span class="sig-prename descclassname"><span class="pre">gpflow.utilities.</span></span><span class="sig-name descname"><span class="pre">is_variable</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/utilities/misc.html#is_variable"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.utilities.is_variable" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">gpflow.utilities.</span></span><span class="sig-name descname"><span class="pre">is_variable</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/utilities/misc.html#is_variable"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.utilities.is_variable" title="Permalink to this definition">#</a></dt>
 <dd><p>Returns whether the <cite>t</cite> is a TensorFlow variable.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -803,10 +797,10 @@ tfp.bijectors.Bijector to allow the deepcopy of the tf.Module.</p>
 
 </section>
 <section id="gpflow-utilities-leaf-components">
-<h2>gpflow.utilities.leaf_components<a class="headerlink" href="#gpflow-utilities-leaf-components" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.utilities.leaf_components<a class="headerlink" href="#gpflow-utilities-leaf-components" title="Permalink to this headline">#</a></h2>
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.utilities.leaf_components">
-<span class="sig-prename descclassname"><span class="pre">gpflow.utilities.</span></span><span class="sig-name descname"><span class="pre">leaf_components</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/utilities/traversal.html#leaf_components"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.utilities.leaf_components" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">gpflow.utilities.</span></span><span class="sig-name descname"><span class="pre">leaf_components</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/utilities/traversal.html#leaf_components"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.utilities.leaf_components" title="Permalink to this definition">#</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>input</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code>) – </p>
@@ -819,10 +813,10 @@ tfp.bijectors.Bijector to allow the deepcopy of the tf.Module.</p>
 
 </section>
 <section id="gpflow-utilities-multiple-assign">
-<h2>gpflow.utilities.multiple_assign<a class="headerlink" href="#gpflow-utilities-multiple-assign" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.utilities.multiple_assign<a class="headerlink" href="#gpflow-utilities-multiple-assign" title="Permalink to this headline">#</a></h2>
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.utilities.multiple_assign">
-<span class="sig-prename descclassname"><span class="pre">gpflow.utilities.</span></span><span class="sig-name descname"><span class="pre">multiple_assign</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parameters</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/utilities/traversal.html#multiple_assign"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.utilities.multiple_assign" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">gpflow.utilities.</span></span><span class="sig-name descname"><span class="pre">multiple_assign</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parameters</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/utilities/traversal.html#multiple_assign"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.utilities.multiple_assign" title="Permalink to this definition">#</a></dt>
 <dd><p>Multiple assign takes a dictionary with new values. Dictionary keys are paths to the
 <cite>tf.Variable`s or `gpflow.Parameter</cite> of the input module.</p>
 <dl class="field-list simple">
@@ -840,10 +834,10 @@ tfp.bijectors.Bijector to allow the deepcopy of the tf.Module.</p>
 
 </section>
 <section id="gpflow-utilities-parameter-dict">
-<h2>gpflow.utilities.parameter_dict<a class="headerlink" href="#gpflow-utilities-parameter-dict" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.utilities.parameter_dict<a class="headerlink" href="#gpflow-utilities-parameter-dict" title="Permalink to this headline">#</a></h2>
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.utilities.parameter_dict">
-<span class="sig-prename descclassname"><span class="pre">gpflow.utilities.</span></span><span class="sig-name descname"><span class="pre">parameter_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/utilities/traversal.html#parameter_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.utilities.parameter_dict" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">gpflow.utilities.</span></span><span class="sig-name descname"><span class="pre">parameter_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/utilities/traversal.html#parameter_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.utilities.parameter_dict" title="Permalink to this definition">#</a></dt>
 <dd><p>Returns a dictionary of parameters (variables) for the <cite>tf.Module</cite> component.
 Dictionary keys are relative paths to the attributes to which parameters (variables) assigned to.</p>
 <blockquote>
@@ -879,10 +873,10 @@ params = parameter_dict(m)
 
 </section>
 <section id="gpflow-utilities-positive">
-<h2>gpflow.utilities.positive<a class="headerlink" href="#gpflow-utilities-positive" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.utilities.positive<a class="headerlink" href="#gpflow-utilities-positive" title="Permalink to this headline">#</a></h2>
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.utilities.positive">
-<span class="sig-prename descclassname"><span class="pre">gpflow.utilities.</span></span><span class="sig-name descname"><span class="pre">positive</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lower</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/utilities/bijectors.html#positive"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.utilities.positive" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">gpflow.utilities.</span></span><span class="sig-name descname"><span class="pre">positive</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lower</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/utilities/bijectors.html#positive"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.utilities.positive" title="Permalink to this definition">#</a></dt>
 <dd><p>Returns a positive bijector (a reversible transformation from real to positive numbers).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -904,10 +898,10 @@ params = parameter_dict(m)
 
 </section>
 <section id="gpflow-utilities-print-summary">
-<h2>gpflow.utilities.print_summary<a class="headerlink" href="#gpflow-utilities-print-summary" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.utilities.print_summary<a class="headerlink" href="#gpflow-utilities-print-summary" title="Permalink to this headline">#</a></h2>
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.utilities.print_summary">
-<span class="sig-prename descclassname"><span class="pre">gpflow.utilities.</span></span><span class="sig-name descname"><span class="pre">print_summary</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fmt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/utilities/traversal.html#print_summary"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.utilities.print_summary" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">gpflow.utilities.</span></span><span class="sig-name descname"><span class="pre">print_summary</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fmt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/utilities/traversal.html#print_summary"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.utilities.print_summary" title="Permalink to this definition">#</a></dt>
 <dd><p>Prints a summary of the parameters and variables contained in a tf.Module.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -924,10 +918,10 @@ params = parameter_dict(m)
 
 </section>
 <section id="gpflow-utilities-read-values">
-<h2>gpflow.utilities.read_values<a class="headerlink" href="#gpflow-utilities-read-values" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.utilities.read_values<a class="headerlink" href="#gpflow-utilities-read-values" title="Permalink to this headline">#</a></h2>
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.utilities.read_values">
-<span class="sig-prename descclassname"><span class="pre">gpflow.utilities.</span></span><span class="sig-name descname"><span class="pre">read_values</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/utilities/traversal.html#read_values"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.utilities.read_values" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">gpflow.utilities.</span></span><span class="sig-name descname"><span class="pre">read_values</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/utilities/traversal.html#read_values"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.utilities.read_values" title="Permalink to this definition">#</a></dt>
 <dd><p>Returns a dictionary of numpy values of the module parameters (variables).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -941,10 +935,10 @@ params = parameter_dict(m)
 
 </section>
 <section id="gpflow-utilities-reset-cache-bijectors">
-<h2>gpflow.utilities.reset_cache_bijectors<a class="headerlink" href="#gpflow-utilities-reset-cache-bijectors" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.utilities.reset_cache_bijectors<a class="headerlink" href="#gpflow-utilities-reset-cache-bijectors" title="Permalink to this headline">#</a></h2>
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.utilities.reset_cache_bijectors">
-<span class="sig-prename descclassname"><span class="pre">gpflow.utilities.</span></span><span class="sig-name descname"><span class="pre">reset_cache_bijectors</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/utilities/traversal.html#reset_cache_bijectors"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.utilities.reset_cache_bijectors" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">gpflow.utilities.</span></span><span class="sig-name descname"><span class="pre">reset_cache_bijectors</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/utilities/traversal.html#reset_cache_bijectors"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.utilities.reset_cache_bijectors" title="Permalink to this definition">#</a></dt>
 <dd><p>Recursively finds tfp.bijectors.Bijector-s inside the components of the tf.Module using <cite>traverse_component</cite>.
 Resets the caches stored inside each tfp.bijectors.Bijector.</p>
 <dl class="field-list simple">
@@ -962,10 +956,10 @@ Resets the caches stored inside each tfp.bijectors.Bijector.</p>
 
 </section>
 <section id="gpflow-utilities-select-dict-parameters-with-prior">
-<h2>gpflow.utilities.select_dict_parameters_with_prior<a class="headerlink" href="#gpflow-utilities-select-dict-parameters-with-prior" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.utilities.select_dict_parameters_with_prior<a class="headerlink" href="#gpflow-utilities-select-dict-parameters-with-prior" title="Permalink to this headline">#</a></h2>
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.utilities.select_dict_parameters_with_prior">
-<span class="sig-prename descclassname"><span class="pre">gpflow.utilities.</span></span><span class="sig-name descname"><span class="pre">select_dict_parameters_with_prior</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/utilities/traversal.html#select_dict_parameters_with_prior"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.utilities.select_dict_parameters_with_prior" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">gpflow.utilities.</span></span><span class="sig-name descname"><span class="pre">select_dict_parameters_with_prior</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/utilities/traversal.html#select_dict_parameters_with_prior"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.utilities.select_dict_parameters_with_prior" title="Permalink to this definition">#</a></dt>
 <dd><p>Collects parameters with prior into a dictionary.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -979,10 +973,10 @@ Resets the caches stored inside each tfp.bijectors.Bijector.</p>
 
 </section>
 <section id="gpflow-utilities-tabulate-module-summary">
-<h2>gpflow.utilities.tabulate_module_summary<a class="headerlink" href="#gpflow-utilities-tabulate-module-summary" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.utilities.tabulate_module_summary<a class="headerlink" href="#gpflow-utilities-tabulate-module-summary" title="Permalink to this headline">#</a></h2>
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.utilities.tabulate_module_summary">
-<span class="sig-prename descclassname"><span class="pre">gpflow.utilities.</span></span><span class="sig-name descname"><span class="pre">tabulate_module_summary</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tablefmt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/utilities/traversal.html#tabulate_module_summary"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.utilities.tabulate_module_summary" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">gpflow.utilities.</span></span><span class="sig-name descname"><span class="pre">tabulate_module_summary</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tablefmt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/utilities/traversal.html#tabulate_module_summary"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.utilities.tabulate_module_summary" title="Permalink to this definition">#</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -998,10 +992,10 @@ Resets the caches stored inside each tfp.bijectors.Bijector.</p>
 
 </section>
 <section id="gpflow-utilities-to-default-int">
-<h2>gpflow.utilities.to_default_int<a class="headerlink" href="#gpflow-utilities-to-default-int" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.utilities.to_default_int<a class="headerlink" href="#gpflow-utilities-to-default-int" title="Permalink to this headline">#</a></h2>
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.utilities.to_default_int">
-<span class="sig-prename descclassname"><span class="pre">gpflow.utilities.</span></span><span class="sig-name descname"><span class="pre">to_default_int</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/utilities/misc.html#to_default_int"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.utilities.to_default_int" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">gpflow.utilities.</span></span><span class="sig-name descname"><span class="pre">to_default_int</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/utilities/misc.html#to_default_int"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.utilities.to_default_int" title="Permalink to this definition">#</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>x</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Sequence</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>, <a class="reference internal" href="../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>]) – </p>
@@ -1014,10 +1008,10 @@ Resets the caches stored inside each tfp.bijectors.Bijector.</p>
 
 </section>
 <section id="gpflow-utilities-training-loop">
-<h2>gpflow.utilities.training_loop<a class="headerlink" href="#gpflow-utilities-training-loop" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.utilities.training_loop<a class="headerlink" href="#gpflow-utilities-training-loop" title="Permalink to this headline">#</a></h2>
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.utilities.training_loop">
-<span class="sig-prename descclassname"><span class="pre">gpflow.utilities.</span></span><span class="sig-name descname"><span class="pre">training_loop</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">closure</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">optimizer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">var_list</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maxiter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">compile</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/utilities/misc.html#training_loop"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.utilities.training_loop" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">gpflow.utilities.</span></span><span class="sig-name descname"><span class="pre">training_loop</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">closure</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">optimizer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">var_list</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maxiter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">compile</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/utilities/misc.html#training_loop"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.utilities.training_loop" title="Permalink to this definition">#</a></dt>
 <dd><p>Simple generic training loop. At each iteration uses a GradientTape to compute
 the gradients of a loss function with respect to a set of variables.</p>
 <dl class="field-list simple">
@@ -1042,10 +1036,10 @@ corresponding loss gradients. Adam is a default optimizer with default settings.
 
 </section>
 <section id="gpflow-utilities-triangular">
-<h2>gpflow.utilities.triangular<a class="headerlink" href="#gpflow-utilities-triangular" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.utilities.triangular<a class="headerlink" href="#gpflow-utilities-triangular" title="Permalink to this headline">#</a></h2>
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.utilities.triangular">
-<span class="sig-prename descclassname"><span class="pre">gpflow.utilities.</span></span><span class="sig-name descname"><span class="pre">triangular</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/utilities/bijectors.html#triangular"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.utilities.triangular" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">gpflow.utilities.</span></span><span class="sig-name descname"><span class="pre">triangular</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/utilities/bijectors.html#triangular"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.utilities.triangular" title="Permalink to this definition">#</a></dt>
 <dd><p>Returns instance of a triangular bijector.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
@@ -1056,10 +1050,10 @@ corresponding loss gradients. Adam is a default optimizer with default settings.
 
 </section>
 <section id="gpflow-utilities-triangular-size">
-<h2>gpflow.utilities.triangular_size<a class="headerlink" href="#gpflow-utilities-triangular-size" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.utilities.triangular_size<a class="headerlink" href="#gpflow-utilities-triangular-size" title="Permalink to this headline">#</a></h2>
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.utilities.triangular_size">
-<span class="sig-prename descclassname"><span class="pre">gpflow.utilities.</span></span><span class="sig-name descname"><span class="pre">triangular_size</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/utilities/bijectors.html#triangular_size"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.utilities.triangular_size" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">gpflow.utilities.</span></span><span class="sig-name descname"><span class="pre">triangular_size</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/utilities/bijectors.html#triangular_size"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.utilities.triangular_size" title="Permalink to this definition">#</a></dt>
 <dd><p>Returns the number of non-zero elements in an <cite>n</cite> by <cite>n</cite> triangular matrix.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -1073,12 +1067,12 @@ corresponding loss gradients. Adam is a default optimizer with default settings.
 
 </section>
 <section id="gpflow-utilities-bijectors">
-<h2>gpflow.utilities.bijectors<a class="headerlink" href="#gpflow-utilities-bijectors" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.utilities.bijectors<a class="headerlink" href="#gpflow-utilities-bijectors" title="Permalink to this headline">#</a></h2>
 <div class="toctree-wrapper compound">
 </div>
 </section>
 <section id="gpflow-utilities-misc">
-<h2>gpflow.utilities.misc<a class="headerlink" href="#gpflow-utilities-misc" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.utilities.misc<a class="headerlink" href="#gpflow-utilities-misc" title="Permalink to this headline">#</a></h2>
 <div class="toctree-wrapper compound">
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="misc/index.html">gpflow.utilities.misc</a></li>
@@ -1086,7 +1080,7 @@ corresponding loss gradients. Adam is a default optimizer with default settings.
 </div>
 </section>
 <section id="gpflow-utilities-ops">
-<h2>gpflow.utilities.ops<a class="headerlink" href="#gpflow-utilities-ops" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.utilities.ops<a class="headerlink" href="#gpflow-utilities-ops" title="Permalink to this headline">#</a></h2>
 <div class="toctree-wrapper compound">
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="ops/index.html">gpflow.utilities.ops</a></li>
@@ -1094,7 +1088,7 @@ corresponding loss gradients. Adam is a default optimizer with default settings.
 </div>
 </section>
 <section id="gpflow-utilities-traversal">
-<h2>gpflow.utilities.traversal<a class="headerlink" href="#gpflow-utilities-traversal" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.utilities.traversal<a class="headerlink" href="#gpflow-utilities-traversal" title="Permalink to this headline">#</a></h2>
 <div class="toctree-wrapper compound">
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="traversal/index.html">gpflow.utilities.traversal</a></li>
@@ -1113,8 +1107,9 @@ corresponding loss gradients. Adam is a default optimizer with default settings.
       </div>
     </div>
   
-    <script src="../../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf"></script>
-  <footer class="footer mt-5 mt-md-0">
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf"></script>
+<footer class="footer mt-5 mt-md-0">
   <div class="container">
     
     <div class="footer-item">
@@ -1125,7 +1120,7 @@ corresponding loss gradients. Adam is a default optimizer with default settings.
     
     <div class="footer-item">
       <p class="sphinx-version">
-Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.4.0.<br>
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.5.0.<br>
 </p>
     </div>
     

@@ -8,27 +8,24 @@
 
     <title>gpflow.experimental.check_shapes.argument_ref &#8212; GPflow 2.4.0 documentation</title>
     
-    <link href="../../../../../_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../../../_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
 <link href="../../../../../_static/styles/pydata-sphinx-theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
-  
+
     
-    <link rel="stylesheet"
-      href="../../../../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
-    <link rel="preload" as="font" type="font/woff2" crossorigin
-      href="../../../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
-    <link rel="preload" as="font" type="font/woff2" crossorigin
-      href="../../../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
-  
-    
-      
-  
-    
+  <link rel="stylesheet"
+    href="../../../../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
     <link rel="stylesheet" type="text/css" href="../../../../../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../../../../../_static/styles/pydata-sphinx-theme.css" />
     <link rel="stylesheet" type="text/css" href="../../../../../_static/pydata-custom.css" />
     
-    <link rel="preload" as="script" href="../../../../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf">
-  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf">
+
     <script data-url_root="../../../../../" id="documentation_options" src="../../../../../_static/documentation_options.js"></script>
     <script src="../../../../../_static/jquery.js"></script>
     <script src="../../../../../_static/underscore.js"></script>
@@ -46,7 +43,7 @@
     <!-- Google Analytics -->
     
   </head>
-  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="80">
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="60">
     
     <div class="container-fluid" id="banner"></div>
 
@@ -142,13 +139,6 @@
 -->
 
 <script type="text/javascript">
-// Construct the target URL from the JSON components
-function buildURL(entry) {
-    var template = "https://gpflow.github.io/GPflow/{version}/index.html";  // supplied by jinja
-    template = template.replace("{version}", entry.version);
-    return template;
-}
-
 // Check if corresponding page path exists in other version of docs
 // and, if so, go there instead of the homepage of the other docs version
 function checkPageExistsAndRedirect(event) {
@@ -184,14 +174,16 @@ function checkPageExistsAndRedirect(event) {
             const node = document.createElement("a");
             node.setAttribute("class", "list-group-item list-group-item-action py-1");
             node.textContent = `${entry.name}`;
-            // get the base URL for that doc version, add the current page's
-            // path to it, and set as `href`
-            entry.url = buildURL(entry);
             node.setAttribute("href", `${entry.url}${currentFilePath}`);
             // on click, AJAX calls will check if the linked page exists before
             // trying to redirect, and if not, will redirect to the homepage
             // for that version of the docs.
             node.onclick = checkPageExistsAndRedirect;
+            // Add dataset values for the version and name in case people want
+            // to apply CSS styling based on this information.
+            node.dataset["versionName"] = entry.name;
+            node.dataset["version"] = entry.version;
+
             $("#version_switcher_menu").append(node);
             // replace dropdown button text with the preferred display name of
             // this version, rather than using sphinx's  variable.
@@ -199,7 +191,9 @@ function checkPageExistsAndRedirect(event) {
             // version's entry
             if (entry.version == "develop") {
                 node.classList.add("active");
-                $("#version_switcher_button").text(entry.name);
+                let btn = document.getElementById("version_switcher_button");
+                btn.innerText = btn.dataset["activeVersionName"] = entry.name;
+                btn.dataset["activeVersion"] = entry.version;
             }
         });
     });
@@ -611,7 +605,7 @@ function checkPageExistsAndRedirect(event) {
               
               <div class="toc-item">
                 
-<div class="tocsection onthispage pt-5 pb-3">
+<div class="tocsection onthispage mt-5 pt-1 pb-3">
     <i class="fas fa-list"></i> On this page
 </div>
 
@@ -659,18 +653,18 @@ function checkPageExistsAndRedirect(event) {
               <div>
                 
   <section id="gpflow-experimental-check-shapes-argument-ref">
-<h1>gpflow.experimental.check_shapes.argument_ref<a class="headerlink" href="#gpflow-experimental-check-shapes-argument-ref" title="Permalink to this headline">¶</a></h1>
+<h1>gpflow.experimental.check_shapes.argument_ref<a class="headerlink" href="#gpflow-experimental-check-shapes-argument-ref" title="Permalink to this headline">#</a></h1>
 <span class="target" id="module-gpflow.experimental.check_shapes.argument_ref"></span><p>Code for (de)referencing arguments.</p>
 <section id="gpflow-experimental-check-shapes-argument-ref-argumentref">
-<h2>gpflow.experimental.check_shapes.argument_ref.ArgumentRef<a class="headerlink" href="#gpflow-experimental-check-shapes-argument-ref-argumentref" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.experimental.check_shapes.argument_ref.ArgumentRef<a class="headerlink" href="#gpflow-experimental-check-shapes-argument-ref-argumentref" title="Permalink to this headline">#</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="gpflow.experimental.check_shapes.argument_ref.ArgumentRef">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.experimental.check_shapes.argument_ref.</span></span><span class="sig-name descname"><span class="pre">ArgumentRef</span></span><a class="reference internal" href="../../../../../_modules/gpflow/experimental/check_shapes/argument_ref.html#ArgumentRef"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.experimental.check_shapes.argument_ref.ArgumentRef" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.experimental.check_shapes.argument_ref.</span></span><span class="sig-name descname"><span class="pre">ArgumentRef</span></span><a class="reference internal" href="../../../../../_modules/gpflow/experimental/check_shapes/argument_ref.html#ArgumentRef"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.experimental.check_shapes.argument_ref.ArgumentRef" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">abc.ABC</span></code></p>
 <p>A reference to an argument.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="gpflow.experimental.check_shapes.argument_ref.ArgumentRef.get">
-<span class="sig-name descname"><span class="pre">get</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">func</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">arg_map</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/gpflow/experimental/check_shapes/argument_ref.html#ArgumentRef.get"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.experimental.check_shapes.argument_ref.ArgumentRef.get" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">get</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">func</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">arg_map</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/gpflow/experimental/check_shapes/argument_ref.html#ArgumentRef.get"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.experimental.check_shapes.argument_ref.ArgumentRef.get" title="Permalink to this definition">#</a></dt>
 <dd><p>Get the value of this argument from this given map.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -687,7 +681,7 @@ function checkPageExistsAndRedirect(event) {
 
 <dl class="py property">
 <dt class="sig sig-object py" id="gpflow.experimental.check_shapes.argument_ref.ArgumentRef.is_result">
-<em class="property"><span class="pre">abstract</span><span class="w"> </span><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">is_result</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#gpflow.experimental.check_shapes.argument_ref.ArgumentRef.is_result" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">abstract</span><span class="w"> </span><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">is_result</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#gpflow.experimental.check_shapes.argument_ref.ArgumentRef.is_result" title="Permalink to this definition">#</a></dt>
 <dd><p>Whether this is a reference to the function result.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
@@ -698,7 +692,7 @@ function checkPageExistsAndRedirect(event) {
 
 <dl class="py property">
 <dt class="sig sig-object py" id="gpflow.experimental.check_shapes.argument_ref.ArgumentRef.root_argument_name">
-<em class="property"><span class="pre">abstract</span><span class="w"> </span><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">root_argument_name</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#gpflow.experimental.check_shapes.argument_ref.ArgumentRef.root_argument_name" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">abstract</span><span class="w"> </span><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">root_argument_name</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#gpflow.experimental.check_shapes.argument_ref.ArgumentRef.root_argument_name" title="Permalink to this definition">#</a></dt>
 <dd><p>Name of the argument this reference eventually starts from.</p>
 <p>Returns <cite>RESULT_TOKEN</cite> if this in an argument to the function result.</p>
 <dl class="field-list simple">
@@ -712,10 +706,10 @@ function checkPageExistsAndRedirect(event) {
 
 </section>
 <section id="gpflow-experimental-check-shapes-argument-ref-attributeargumentref">
-<h2>gpflow.experimental.check_shapes.argument_ref.AttributeArgumentRef<a class="headerlink" href="#gpflow-experimental-check-shapes-argument-ref-attributeargumentref" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.experimental.check_shapes.argument_ref.AttributeArgumentRef<a class="headerlink" href="#gpflow-experimental-check-shapes-argument-ref-attributeargumentref" title="Permalink to this headline">#</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="gpflow.experimental.check_shapes.argument_ref.AttributeArgumentRef">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.experimental.check_shapes.argument_ref.</span></span><span class="sig-name descname"><span class="pre">AttributeArgumentRef</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">attribute_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/gpflow/experimental/check_shapes/argument_ref.html#AttributeArgumentRef"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.experimental.check_shapes.argument_ref.AttributeArgumentRef" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.experimental.check_shapes.argument_ref.</span></span><span class="sig-name descname"><span class="pre">AttributeArgumentRef</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">attribute_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/gpflow/experimental/check_shapes/argument_ref.html#AttributeArgumentRef"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.experimental.check_shapes.argument_ref.AttributeArgumentRef" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#gpflow.experimental.check_shapes.argument_ref.ArgumentRef" title="gpflow.experimental.check_shapes.argument_ref.ArgumentRef"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.experimental.check_shapes.argument_ref.ArgumentRef</span></code></a></p>
 <p>A reference to an attribute on an argument.</p>
 <dl class="field-list simple">
@@ -728,7 +722,7 @@ function checkPageExistsAndRedirect(event) {
 </dl>
 <dl class="py property">
 <dt class="sig sig-object py" id="gpflow.experimental.check_shapes.argument_ref.AttributeArgumentRef.is_result">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">is_result</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#gpflow.experimental.check_shapes.argument_ref.AttributeArgumentRef.is_result" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">is_result</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#gpflow.experimental.check_shapes.argument_ref.AttributeArgumentRef.is_result" title="Permalink to this definition">#</a></dt>
 <dd><p>Whether this is a reference to the function result.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
@@ -739,7 +733,7 @@ function checkPageExistsAndRedirect(event) {
 
 <dl class="py property">
 <dt class="sig sig-object py" id="gpflow.experimental.check_shapes.argument_ref.AttributeArgumentRef.root_argument_name">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">root_argument_name</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#gpflow.experimental.check_shapes.argument_ref.AttributeArgumentRef.root_argument_name" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">root_argument_name</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#gpflow.experimental.check_shapes.argument_ref.AttributeArgumentRef.root_argument_name" title="Permalink to this definition">#</a></dt>
 <dd><p>Name of the argument this reference eventually starts from.</p>
 <p>Returns <cite>RESULT_TOKEN</cite> if this in an argument to the function result.</p>
 <dl class="field-list simple">
@@ -753,10 +747,10 @@ function checkPageExistsAndRedirect(event) {
 
 </section>
 <section id="gpflow-experimental-check-shapes-argument-ref-indexargumentref">
-<h2>gpflow.experimental.check_shapes.argument_ref.IndexArgumentRef<a class="headerlink" href="#gpflow-experimental-check-shapes-argument-ref-indexargumentref" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.experimental.check_shapes.argument_ref.IndexArgumentRef<a class="headerlink" href="#gpflow-experimental-check-shapes-argument-ref-indexargumentref" title="Permalink to this headline">#</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="gpflow.experimental.check_shapes.argument_ref.IndexArgumentRef">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.experimental.check_shapes.argument_ref.</span></span><span class="sig-name descname"><span class="pre">IndexArgumentRef</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">index</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/gpflow/experimental/check_shapes/argument_ref.html#IndexArgumentRef"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.experimental.check_shapes.argument_ref.IndexArgumentRef" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.experimental.check_shapes.argument_ref.</span></span><span class="sig-name descname"><span class="pre">IndexArgumentRef</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">index</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/gpflow/experimental/check_shapes/argument_ref.html#IndexArgumentRef"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.experimental.check_shapes.argument_ref.IndexArgumentRef" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#gpflow.experimental.check_shapes.argument_ref.ArgumentRef" title="gpflow.experimental.check_shapes.argument_ref.ArgumentRef"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.experimental.check_shapes.argument_ref.ArgumentRef</span></code></a></p>
 <p>A reference to an element in a list.</p>
 <dl class="field-list simple">
@@ -769,7 +763,7 @@ function checkPageExistsAndRedirect(event) {
 </dl>
 <dl class="py property">
 <dt class="sig sig-object py" id="gpflow.experimental.check_shapes.argument_ref.IndexArgumentRef.is_result">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">is_result</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#gpflow.experimental.check_shapes.argument_ref.IndexArgumentRef.is_result" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">is_result</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#gpflow.experimental.check_shapes.argument_ref.IndexArgumentRef.is_result" title="Permalink to this definition">#</a></dt>
 <dd><p>Whether this is a reference to the function result.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
@@ -780,7 +774,7 @@ function checkPageExistsAndRedirect(event) {
 
 <dl class="py property">
 <dt class="sig sig-object py" id="gpflow.experimental.check_shapes.argument_ref.IndexArgumentRef.root_argument_name">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">root_argument_name</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#gpflow.experimental.check_shapes.argument_ref.IndexArgumentRef.root_argument_name" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">root_argument_name</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#gpflow.experimental.check_shapes.argument_ref.IndexArgumentRef.root_argument_name" title="Permalink to this definition">#</a></dt>
 <dd><p>Name of the argument this reference eventually starts from.</p>
 <p>Returns <cite>RESULT_TOKEN</cite> if this in an argument to the function result.</p>
 <dl class="field-list simple">
@@ -794,10 +788,10 @@ function checkPageExistsAndRedirect(event) {
 
 </section>
 <section id="gpflow-experimental-check-shapes-argument-ref-rootargumentref">
-<h2>gpflow.experimental.check_shapes.argument_ref.RootArgumentRef<a class="headerlink" href="#gpflow-experimental-check-shapes-argument-ref-rootargumentref" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.experimental.check_shapes.argument_ref.RootArgumentRef<a class="headerlink" href="#gpflow-experimental-check-shapes-argument-ref-rootargumentref" title="Permalink to this headline">#</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="gpflow.experimental.check_shapes.argument_ref.RootArgumentRef">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.experimental.check_shapes.argument_ref.</span></span><span class="sig-name descname"><span class="pre">RootArgumentRef</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">argument_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/gpflow/experimental/check_shapes/argument_ref.html#RootArgumentRef"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.experimental.check_shapes.argument_ref.RootArgumentRef" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.experimental.check_shapes.argument_ref.</span></span><span class="sig-name descname"><span class="pre">RootArgumentRef</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">argument_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/gpflow/experimental/check_shapes/argument_ref.html#RootArgumentRef"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.experimental.check_shapes.argument_ref.RootArgumentRef" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#gpflow.experimental.check_shapes.argument_ref.ArgumentRef" title="gpflow.experimental.check_shapes.argument_ref.ArgumentRef"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.experimental.check_shapes.argument_ref.ArgumentRef</span></code></a></p>
 <p>A reference to a single argument.</p>
 <dl class="field-list simple">
@@ -807,7 +801,7 @@ function checkPageExistsAndRedirect(event) {
 </dl>
 <dl class="py property">
 <dt class="sig sig-object py" id="gpflow.experimental.check_shapes.argument_ref.RootArgumentRef.is_result">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">is_result</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#gpflow.experimental.check_shapes.argument_ref.RootArgumentRef.is_result" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">is_result</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#gpflow.experimental.check_shapes.argument_ref.RootArgumentRef.is_result" title="Permalink to this definition">#</a></dt>
 <dd><p>Whether this is a reference to the function result.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
@@ -818,7 +812,7 @@ function checkPageExistsAndRedirect(event) {
 
 <dl class="py property">
 <dt class="sig sig-object py" id="gpflow.experimental.check_shapes.argument_ref.RootArgumentRef.root_argument_name">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">root_argument_name</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#gpflow.experimental.check_shapes.argument_ref.RootArgumentRef.root_argument_name" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">root_argument_name</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#gpflow.experimental.check_shapes.argument_ref.RootArgumentRef.root_argument_name" title="Permalink to this definition">#</a></dt>
 <dd><p>Name of the argument this reference eventually starts from.</p>
 <p>Returns <cite>RESULT_TOKEN</cite> if this in an argument to the function result.</p>
 <dl class="field-list simple">
@@ -843,8 +837,9 @@ function checkPageExistsAndRedirect(event) {
       </div>
     </div>
   
-    <script src="../../../../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf"></script>
-  <footer class="footer mt-5 mt-md-0">
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../../../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf"></script>
+<footer class="footer mt-5 mt-md-0">
   <div class="container">
     
     <div class="footer-item">
@@ -855,7 +850,7 @@ function checkPageExistsAndRedirect(event) {
     
     <div class="footer-item">
       <p class="sphinx-version">
-Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.4.0.<br>
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.5.0.<br>
 </p>
     </div>
     

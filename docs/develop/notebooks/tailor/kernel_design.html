@@ -8,27 +8,24 @@
 
     <title>Kernel Design &#8212; GPflow 2.4.0 documentation</title>
     
-    <link href="../../_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
 <link href="../../_static/styles/pydata-sphinx-theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
-  
+
     
-    <link rel="stylesheet"
-      href="../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
-    <link rel="preload" as="font" type="font/woff2" crossorigin
-      href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
-    <link rel="preload" as="font" type="font/woff2" crossorigin
-      href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
-  
-    
-      
-  
-    
+  <link rel="stylesheet"
+    href="../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../../_static/styles/pydata-sphinx-theme.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/pydata-custom.css" />
     
-    <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf">
-  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf">
+
     <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
     <script src="../../_static/jquery.js"></script>
     <script src="../../_static/underscore.js"></script>
@@ -48,7 +45,7 @@
     <!-- Google Analytics -->
     
   </head>
-  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="80">
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="60">
     
     <div class="container-fluid" id="banner"></div>
 
@@ -144,13 +141,6 @@
 -->
 
 <script type="text/javascript">
-// Construct the target URL from the JSON components
-function buildURL(entry) {
-    var template = "https://gpflow.github.io/GPflow/{version}/index.html";  // supplied by jinja
-    template = template.replace("{version}", entry.version);
-    return template;
-}
-
 // Check if corresponding page path exists in other version of docs
 // and, if so, go there instead of the homepage of the other docs version
 function checkPageExistsAndRedirect(event) {
@@ -186,14 +176,16 @@ function checkPageExistsAndRedirect(event) {
             const node = document.createElement("a");
             node.setAttribute("class", "list-group-item list-group-item-action py-1");
             node.textContent = `${entry.name}`;
-            // get the base URL for that doc version, add the current page's
-            // path to it, and set as `href`
-            entry.url = buildURL(entry);
             node.setAttribute("href", `${entry.url}${currentFilePath}`);
             // on click, AJAX calls will check if the linked page exists before
             // trying to redirect, and if not, will redirect to the homepage
             // for that version of the docs.
             node.onclick = checkPageExistsAndRedirect;
+            // Add dataset values for the version and name in case people want
+            // to apply CSS styling based on this information.
+            node.dataset["versionName"] = entry.name;
+            node.dataset["version"] = entry.version;
+
             $("#version_switcher_menu").append(node);
             // replace dropdown button text with the preferred display name of
             // this version, rather than using sphinx's  variable.
@@ -201,7 +193,9 @@ function checkPageExistsAndRedirect(event) {
             // version's entry
             if (entry.version == "develop") {
                 node.classList.add("active");
-                $("#version_switcher_button").text(entry.name);
+                let btn = document.getElementById("version_switcher_button");
+                btn.innerText = btn.dataset["activeVersionName"] = entry.name;
+                btn.dataset["activeVersion"] = entry.version;
             }
         });
     });
@@ -427,7 +421,7 @@ function checkPageExistsAndRedirect(event) {
               
               <div class="toc-item">
                 
-<div class="tocsection onthispage pt-5 pb-3">
+<div class="tocsection onthispage mt-5 pt-1 pb-3">
     <i class="fas fa-list"></i> On this page
 </div>
 
@@ -742,7 +736,7 @@ div.rendered_html tbody tr:hover {
 }
 </style>
 <section id="Kernel-Design">
-<h1>Kernel Design<a class="headerlink" href="#Kernel-Design" title="Permalink to this headline">¶</a></h1>
+<h1>Kernel Design<a class="headerlink" href="#Kernel-Design" title="Permalink to this headline">#</a></h1>
 <p>It’s easy to make new kernels in GPflow. To demonstrate, we’ll have a look at the Brownian motion kernel, whose function is <span class="math">\begin{equation}
 k(x, x') = \sigma^2 \text{min}(x, x')
 \end{equation}</span> where <span class="math notranslate nohighlight">\(\sigma^2\)</span> is a variance parameter.</p>
@@ -766,24 +760,24 @@ k(x, x') = \sigma^2 \text{min}(x, x')
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2022-03-25 13:21:49.055157: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcudart.so.11.0&#39;; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory
-2022-03-25 13:21:49.055196: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.
+2022-03-29 10:15:46.145889: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcudart.so.11.0&#39;; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory
+2022-03-29 10:15:46.145914: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.
 </pre></div></div>
 </div>
 <p>To make this new kernel class, we inherit from the base class <code class="docutils literal notranslate"><span class="pre">gpflow.kernels.Kernel</span></code> and implement the three functions below. <strong>NOTE:</strong> Depending on the kernel to be implemented, other classes can be more adequate. For example, if the kernel to be implemented is isotropic stationary, you can immediately subclass <code class="docutils literal notranslate"><span class="pre">gpflow.kernels.IsotropicStationary</span></code> (at which point you only have to override <code class="docutils literal notranslate"><span class="pre">K_r</span></code> or <code class="docutils literal notranslate"><span class="pre">K_r2</span></code>; see the <code class="docutils literal notranslate"><span class="pre">IsotropicStationary</span></code> class docstring). Stationary but anisotropic
 kernels should subclass <code class="docutils literal notranslate"><span class="pre">gpflow.kernels.AnisotropicStationary</span></code> and override <code class="docutils literal notranslate"><span class="pre">K_d</span></code>.</p>
 <section id="__init__">
-<h2><code class="docutils literal notranslate"><span class="pre">__init__</span></code><a class="headerlink" href="#__init__" title="Permalink to this headline">¶</a></h2>
+<h2><code class="docutils literal notranslate"><span class="pre">__init__</span></code><a class="headerlink" href="#__init__" title="Permalink to this headline">#</a></h2>
 <p>In this simple example, the constructor takes no argument (though it could, if that was convenient, for example to pass in an initial value for <code class="docutils literal notranslate"><span class="pre">variance</span></code>). It <em>must</em> call the constructor of the superclass with appropriate arguments. Brownian motion is only defined in one dimension, and we’ll assume that the <code class="docutils literal notranslate"><span class="pre">active_dims</span></code> are <code class="docutils literal notranslate"><span class="pre">[0]</span></code>, for simplicity.</p>
 <p>We’ve added a parameter to the kernel using the <code class="docutils literal notranslate"><span class="pre">Parameter</span></code> class. Using this class lets the parameter be used in computing the kernel function, and it will automatically be recognised for optimization (or MCMC). Here, the variance parameter is initialized at 1, and constrained to be positive.</p>
 </section>
 <section id="K">
-<h2><code class="docutils literal notranslate"><span class="pre">K</span></code><a class="headerlink" href="#K" title="Permalink to this headline">¶</a></h2>
+<h2><code class="docutils literal notranslate"><span class="pre">K</span></code><a class="headerlink" href="#K" title="Permalink to this headline">#</a></h2>
 <p>This is where you implement the kernel function itself. This takes two arguments, <code class="docutils literal notranslate"><span class="pre">X</span></code> and <code class="docutils literal notranslate"><span class="pre">X2</span></code>. By convention, we make the second argument optional (it defaults to <code class="docutils literal notranslate"><span class="pre">None</span></code>).</p>
 <p>Inside <code class="docutils literal notranslate"><span class="pre">K</span></code>, all the computation must be done with TensorFlow - here we’ve used <code class="docutils literal notranslate"><span class="pre">tf.minimum</span></code>. When GPflow executes the <code class="docutils literal notranslate"><span class="pre">K</span></code> function, <code class="docutils literal notranslate"><span class="pre">X</span></code> and <code class="docutils literal notranslate"><span class="pre">X2</span></code> will be TensorFlow tensors, and parameters such as <code class="docutils literal notranslate"><span class="pre">self.variance</span></code> behave like TensorFlow tensors as well.</p>
 </section>
 <section id="K_diag">
-<h2><code class="docutils literal notranslate"><span class="pre">K_diag</span></code><a class="headerlink" href="#K_diag" title="Permalink to this headline">¶</a></h2>
+<h2><code class="docutils literal notranslate"><span class="pre">K_diag</span></code><a class="headerlink" href="#K_diag" title="Permalink to this headline">#</a></h2>
 <p>This convenience function allows GPflow to save memory at predict time. It’s simply the diagonal of the <code class="docutils literal notranslate"><span class="pre">K</span></code> function, in the case where <code class="docutils literal notranslate"><span class="pre">X2</span></code> is <code class="docutils literal notranslate"><span class="pre">None</span></code>. It must return a one-dimensional vector, so we use TensorFlow’s reshape command.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
@@ -813,10 +807,10 @@ kernels should subclass <code class="docutils literal notranslate"><span class="
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2022-03-25 13:21:52.036313: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcuda.so.1&#39;; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory
-2022-03-25 13:21:52.036347: W tensorflow/stream_executor/cuda/cuda_driver.cc:269] failed call to cuInit: UNKNOWN ERROR (303)
-2022-03-25 13:21:52.036365: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (d396962cedd5): /proc/driver/nvidia/version does not exist
-2022-03-25 13:21:52.036641: I tensorflow/core/platform/cpu_feature_guard.cc:151] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA
+2022-03-29 10:15:49.073194: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcuda.so.1&#39;; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory
+2022-03-29 10:15:49.073228: W tensorflow/stream_executor/cuda/cuda_driver.cc:269] failed call to cuInit: UNKNOWN ERROR (303)
+2022-03-29 10:15:49.073247: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (9da31c79f42f): /proc/driver/nvidia/version does not exist
+2022-03-29 10:15:49.073525: I tensorflow/core/platform/cpu_feature_guard.cc:151] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA
 To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.
 </pre></div></div>
 </div>
@@ -868,7 +862,7 @@ To enable them in other operations, rebuild TensorFlow with the appropriate comp
 </div>
 </div>
 <section id="Using-the-kernel-in-a-model">
-<h3>Using the kernel in a model<a class="headerlink" href="#Using-the-kernel-in-a-model" title="Permalink to this headline">¶</a></h3>
+<h3>Using the kernel in a model<a class="headerlink" href="#Using-the-kernel-in-a-model" title="Permalink to this headline">#</a></h3>
 <p>Because we’ve inherited from the <code class="docutils literal notranslate"><span class="pre">Kernel</span></code> base class, this new kernel has all the properties needed to be used in GPflow. It also has some convenience features such as allowing the user to call</p>
 <p><code class="docutils literal notranslate"><span class="pre">k(X,</span> <span class="pre">X2)</span></code></p>
 <p>which computes the kernel matrix.</p>
@@ -911,7 +905,7 @@ To enable them in other operations, rebuild TensorFlow with the appropriate comp
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2022-03-25 13:21:59.476021: W tensorflow/python/util/util.cc:368] Sets are not currently considered sequences, but this may change in the future, so consider avoiding using them.
+2022-03-29 10:15:50.867384: W tensorflow/python/util/util.cc:368] Sets are not currently considered sequences, but this may change in the future, so consider avoiding using them.
 </pre></div></div>
 </div>
 <div class="nboutput docutils container">
@@ -938,7 +932,7 @@ To enable them in other operations, rebuild TensorFlow with the appropriate comp
 </div>
 </section>
 <section id="See-also">
-<h3>See also<a class="headerlink" href="#See-also" title="Permalink to this headline">¶</a></h3>
+<h3>See also<a class="headerlink" href="#See-also" title="Permalink to this headline">#</a></h3>
 <p>For more details on how to manipulate existing kernels (or the one you just created!), we refer to the <a class="reference internal" href="../advanced/kernels.html"><span class="doc">Manipulating kernels</span></a> notebook.</p>
 </section>
 </section>
@@ -954,8 +948,9 @@ To enable them in other operations, rebuild TensorFlow with the appropriate comp
       </div>
     </div>
   
-    <script src="../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf"></script>
-  <footer class="footer mt-5 mt-md-0">
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf"></script>
+<footer class="footer mt-5 mt-md-0">
   <div class="container">
     
     <div class="footer-item">
@@ -966,7 +961,7 @@ To enable them in other operations, rebuild TensorFlow with the appropriate comp
     
     <div class="footer-item">
       <p class="sphinx-version">
-Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.4.0.<br>
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.5.0.<br>
 </p>
     </div>
     

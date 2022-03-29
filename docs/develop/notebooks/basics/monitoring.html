@@ -8,27 +8,24 @@
 
     <title>Monitoring Optimisation &#8212; GPflow 2.4.0 documentation</title>
     
-    <link href="../../_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
 <link href="../../_static/styles/pydata-sphinx-theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
-  
+
     
-    <link rel="stylesheet"
-      href="../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
-    <link rel="preload" as="font" type="font/woff2" crossorigin
-      href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
-    <link rel="preload" as="font" type="font/woff2" crossorigin
-      href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
-  
-    
-      
-  
-    
+  <link rel="stylesheet"
+    href="../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../../_static/styles/pydata-sphinx-theme.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/pydata-custom.css" />
     
-    <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf">
-  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf">
+
     <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
     <script src="../../_static/jquery.js"></script>
     <script src="../../_static/underscore.js"></script>
@@ -48,7 +45,7 @@
     <!-- Google Analytics -->
     
   </head>
-  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="80">
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="60">
     
     <div class="container-fluid" id="banner"></div>
 
@@ -144,13 +141,6 @@
 -->
 
 <script type="text/javascript">
-// Construct the target URL from the JSON components
-function buildURL(entry) {
-    var template = "https://gpflow.github.io/GPflow/{version}/index.html";  // supplied by jinja
-    template = template.replace("{version}", entry.version);
-    return template;
-}
-
 // Check if corresponding page path exists in other version of docs
 // and, if so, go there instead of the homepage of the other docs version
 function checkPageExistsAndRedirect(event) {
@@ -186,14 +176,16 @@ function checkPageExistsAndRedirect(event) {
             const node = document.createElement("a");
             node.setAttribute("class", "list-group-item list-group-item-action py-1");
             node.textContent = `${entry.name}`;
-            // get the base URL for that doc version, add the current page's
-            // path to it, and set as `href`
-            entry.url = buildURL(entry);
             node.setAttribute("href", `${entry.url}${currentFilePath}`);
             // on click, AJAX calls will check if the linked page exists before
             // trying to redirect, and if not, will redirect to the homepage
             // for that version of the docs.
             node.onclick = checkPageExistsAndRedirect;
+            // Add dataset values for the version and name in case people want
+            // to apply CSS styling based on this information.
+            node.dataset["versionName"] = entry.name;
+            node.dataset["version"] = entry.version;
+
             $("#version_switcher_menu").append(node);
             // replace dropdown button text with the preferred display name of
             // this version, rather than using sphinx's  variable.
@@ -201,7 +193,9 @@ function checkPageExistsAndRedirect(event) {
             // version's entry
             if (entry.version == "develop") {
                 node.classList.add("active");
-                $("#version_switcher_button").text(entry.name);
+                let btn = document.getElementById("version_switcher_button");
+                btn.innerText = btn.dataset["activeVersionName"] = entry.name;
+                btn.dataset["activeVersion"] = entry.version;
             }
         });
     });
@@ -427,7 +421,7 @@ function checkPageExistsAndRedirect(event) {
               
               <div class="toc-item">
                 
-<div class="tocsection onthispage pt-5 pb-3">
+<div class="tocsection onthispage mt-5 pt-1 pb-3">
     <i class="fas fa-list"></i> On this page
 </div>
 
@@ -736,10 +730,10 @@ div.rendered_html tbody tr:hover {
 }
 </style>
 <section id="Monitoring-Optimisation">
-<h1>Monitoring Optimisation<a class="headerlink" href="#Monitoring-Optimisation" title="Permalink to this headline">¶</a></h1>
+<h1>Monitoring Optimisation<a class="headerlink" href="#Monitoring-Optimisation" title="Permalink to this headline">#</a></h1>
 <p>In this notebook we cover how to monitor the model and certain metrics during optimisation.</p>
 <section id="Setup">
-<h2>Setup<a class="headerlink" href="#Setup" title="Permalink to this headline">¶</a></h2>
+<h2>Setup<a class="headerlink" href="#Setup" title="Permalink to this headline">#</a></h2>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
@@ -760,8 +754,8 @@ div.rendered_html tbody tr:hover {
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2022-03-25 13:16:31.655729: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcudart.so.11.0&#39;; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory
-2022-03-25 13:16:31.655759: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.
+2022-03-29 10:10:19.092454: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcudart.so.11.0&#39;; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory
+2022-03-29 10:10:19.092482: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.
 </pre></div></div>
 </div>
 <p>The monitoring functionality lives in <code class="docutils literal notranslate"><span class="pre">gpflow.monitor</span></code>. For now, we import <code class="docutils literal notranslate"><span class="pre">ModelToTensorBoard</span></code>, <code class="docutils literal notranslate"><span class="pre">ImageToTensorBoard</span></code>, <code class="docutils literal notranslate"><span class="pre">ScalarToTensorBoard</span></code> monitoring tasks and <code class="docutils literal notranslate"><span class="pre">MonitorTaskGroup</span></code> and <code class="docutils literal notranslate"><span class="pre">Monitor</span></code>.</p>
@@ -781,7 +775,7 @@ div.rendered_html tbody tr:hover {
 </div>
 </section>
 <section id="Set-up-data-and-model">
-<h2>Set up data and model<a class="headerlink" href="#Set-up-data-and-model" title="Permalink to this headline">¶</a></h2>
+<h2>Set up data and model<a class="headerlink" href="#Set-up-data-and-model" title="Permalink to this headline">#</a></h2>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
@@ -812,7 +806,7 @@ div.rendered_html tbody tr:hover {
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-[&lt;matplotlib.lines.Line2D at 0x7fe2eabe2d40&gt;]
+[&lt;matplotlib.lines.Line2D at 0x7fe66e5c9930&gt;]
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -839,10 +833,10 @@ div.rendered_html tbody tr:hover {
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2022-03-25 13:16:33.775293: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcuda.so.1&#39;; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory
-2022-03-25 13:16:33.775321: W tensorflow/stream_executor/cuda/cuda_driver.cc:269] failed call to cuInit: UNKNOWN ERROR (303)
-2022-03-25 13:16:33.775339: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (d396962cedd5): /proc/driver/nvidia/version does not exist
-2022-03-25 13:16:33.775607: I tensorflow/core/platform/cpu_feature_guard.cc:151] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA
+2022-03-29 10:10:21.131823: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcuda.so.1&#39;; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory
+2022-03-29 10:10:21.131851: W tensorflow/stream_executor/cuda/cuda_driver.cc:269] failed call to cuInit: UNKNOWN ERROR (303)
+2022-03-29 10:10:21.131872: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (9da31c79f42f): /proc/driver/nvidia/version does not exist
+2022-03-29 10:10:21.132159: I tensorflow/core/platform/cpu_feature_guard.cc:151] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA
 To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.
 </pre></div></div>
 </div>
@@ -851,7 +845,7 @@ To enable them in other operations, rebuild TensorFlow with the appropriate comp
 </pre></div>
 </div>
 <div class="output_area rendered_html docutils container">
-&lt;gpflow.models.gpr.GPR object at 0x7fe2eaa463b0&gt;
+&lt;gpflow.models.gpr.GPR object at 0x7fe66c419330&gt;
 <table>
 <thead>
 <tr><th>name                              </th><th>class    </th><th>transform       </th><th>prior  </th><th>trainable  </th><th>shape  </th><th>dtype  </th><th>value               </th></tr>
@@ -896,7 +890,7 @@ To enable them in other operations, rebuild TensorFlow with the appropriate comp
 </div>
 </section>
 <section id="Set-up-monitoring-tasks">
-<h2>Set up monitoring tasks<a class="headerlink" href="#Set-up-monitoring-tasks" title="Permalink to this headline">¶</a></h2>
+<h2>Set up monitoring tasks<a class="headerlink" href="#Set-up-monitoring-tasks" title="Permalink to this headline">#</a></h2>
 <p>We now define the <code class="docutils literal notranslate"><span class="pre">MonitorTask</span></code>s that will be executed during the optimisation. For this tutorial we set up three tasks: - <code class="docutils literal notranslate"><span class="pre">ModelToTensorBoard</span></code>: writes the models hyper-parameters such as <code class="docutils literal notranslate"><span class="pre">likelihood.variance</span></code> and <code class="docutils literal notranslate"><span class="pre">kernel.lengthscales</span></code> to a TensorBoard. - <code class="docutils literal notranslate"><span class="pre">ImageToTensorBoard</span></code>: writes custom matplotlib images to a TensorBoard. - <code class="docutils literal notranslate"><span class="pre">ScalarToTensorBoard</span></code>: writes any scalar value to a TensorBoard. Here, we use it to write the model’s training objective.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
@@ -947,12 +941,12 @@ To enable them in other operations, rebuild TensorFlow with the appropriate comp
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2022-03-25 13:16:34.113780: W tensorflow/python/util/util.cc:368] Sets are not currently considered sequences, but this may change in the future, so consider avoiding using them.
+2022-03-29 10:10:21.516646: W tensorflow/python/util/util.cc:368] Sets are not currently considered sequences, but this may change in the future, so consider avoiding using them.
 </pre></div></div>
 </div>
 <p>TensorBoard is accessible through the browser, after launching the server by running <code class="docutils literal notranslate"><span class="pre">tensorboard</span> <span class="pre">--logdir</span> <span class="pre">${logdir}</span></code>. See the <a class="reference external" href="https://www.tensorflow.org/tensorboard/get_started">TensorFlow documentation on TensorBoard</a> for more information.</p>
 <section id="For-optimal-performance,-we-can-also-wrap-the-monitor-call-inside-tf.function:">
-<h3>For optimal performance, we can also wrap the monitor call inside <code class="docutils literal notranslate"><span class="pre">tf.function</span></code>:<a class="headerlink" href="#For-optimal-performance,-we-can-also-wrap-the-monitor-call-inside-tf.function:" title="Permalink to this headline">¶</a></h3>
+<h3>For optimal performance, we can also wrap the monitor call inside <code class="docutils literal notranslate"><span class="pre">tf.function</span></code>:<a class="headerlink" href="#For-optimal-performance,-we-can-also-wrap-the-monitor-call-inside-tf.function:" title="Permalink to this headline">#</a></h3>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
 </pre></div>
@@ -989,7 +983,7 @@ To enable them in other operations, rebuild TensorFlow with the appropriate comp
 <p>When opening TensorBoard, you may need to use the command <code class="docutils literal notranslate"><span class="pre">tensorboard</span> <span class="pre">--logdir</span> <span class="pre">.</span> <span class="pre">--reload_multifile=true</span></code>, as multiple <code class="docutils literal notranslate"><span class="pre">FileWriter</span></code> objects are used.</p>
 </section>
 <section id="Scipy-Optimization-monitoring">
-<h3>Scipy Optimization monitoring<a class="headerlink" href="#Scipy-Optimization-monitoring" title="Permalink to this headline">¶</a></h3>
+<h3>Scipy Optimization monitoring<a class="headerlink" href="#Scipy-Optimization-monitoring" title="Permalink to this headline">#</a></h3>
 <p>Note that if you want to use the <code class="docutils literal notranslate"><span class="pre">Scipy</span></code> optimizer provided by GPflow, and want to monitor the training progress, then you need to simply replace the optimization loop with a single call to its <code class="docutils literal notranslate"><span class="pre">minimize</span></code> method and pass in the monitor as a <code class="docutils literal notranslate"><span class="pre">step_callback</span></code> keyword argument:</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
@@ -1058,8 +1052,9 @@ To enable them in other operations, rebuild TensorFlow with the appropriate comp
       </div>
     </div>
   
-    <script src="../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf"></script>
-  <footer class="footer mt-5 mt-md-0">
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf"></script>
+<footer class="footer mt-5 mt-md-0">
   <div class="container">
     
     <div class="footer-item">
@@ -1070,7 +1065,7 @@ To enable them in other operations, rebuild TensorFlow with the appropriate comp
     
     <div class="footer-item">
       <p class="sphinx-version">
-Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.4.0.<br>
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.5.0.<br>
 </p>
     </div>
     

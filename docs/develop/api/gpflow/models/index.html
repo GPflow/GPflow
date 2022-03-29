@@ -8,27 +8,24 @@
 
     <title>gpflow.models &#8212; GPflow 2.4.0 documentation</title>
     
-    <link href="../../../_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
 <link href="../../../_static/styles/pydata-sphinx-theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
-  
+
     
-    <link rel="stylesheet"
-      href="../../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
-    <link rel="preload" as="font" type="font/woff2" crossorigin
-      href="../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
-    <link rel="preload" as="font" type="font/woff2" crossorigin
-      href="../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
-  
-    
-      
-  
-    
+  <link rel="stylesheet"
+    href="../../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../../../_static/styles/pydata-sphinx-theme.css" />
     <link rel="stylesheet" type="text/css" href="../../../_static/pydata-custom.css" />
     
-    <link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf">
-  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf">
+
     <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
     <script src="../../../_static/jquery.js"></script>
     <script src="../../../_static/underscore.js"></script>
@@ -48,7 +45,7 @@
     <!-- Google Analytics -->
     
   </head>
-  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="80">
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="60">
     
     <div class="container-fluid" id="banner"></div>
 
@@ -144,13 +141,6 @@
 -->
 
 <script type="text/javascript">
-// Construct the target URL from the JSON components
-function buildURL(entry) {
-    var template = "https://gpflow.github.io/GPflow/{version}/index.html";  // supplied by jinja
-    template = template.replace("{version}", entry.version);
-    return template;
-}
-
 // Check if corresponding page path exists in other version of docs
 // and, if so, go there instead of the homepage of the other docs version
 function checkPageExistsAndRedirect(event) {
@@ -186,14 +176,16 @@ function checkPageExistsAndRedirect(event) {
             const node = document.createElement("a");
             node.setAttribute("class", "list-group-item list-group-item-action py-1");
             node.textContent = `${entry.name}`;
-            // get the base URL for that doc version, add the current page's
-            // path to it, and set as `href`
-            entry.url = buildURL(entry);
             node.setAttribute("href", `${entry.url}${currentFilePath}`);
             // on click, AJAX calls will check if the linked page exists before
             // trying to redirect, and if not, will redirect to the homepage
             // for that version of the docs.
             node.onclick = checkPageExistsAndRedirect;
+            // Add dataset values for the version and name in case people want
+            // to apply CSS styling based on this information.
+            node.dataset["versionName"] = entry.name;
+            node.dataset["version"] = entry.version;
+
             $("#version_switcher_menu").append(node);
             // replace dropdown button text with the preferred display name of
             // this version, rather than using sphinx's  variable.
@@ -201,7 +193,9 @@ function checkPageExistsAndRedirect(event) {
             // version's entry
             if (entry.version == "develop") {
                 node.classList.add("active");
-                $("#version_switcher_button").text(entry.name);
+                let btn = document.getElementById("version_switcher_button");
+                btn.innerText = btn.dataset["activeVersionName"] = entry.name;
+                btn.dataset["activeVersion"] = entry.version;
             }
         });
     });
@@ -613,7 +607,7 @@ function checkPageExistsAndRedirect(event) {
               
               <div class="toc-item">
                 
-<div class="tocsection onthispage pt-5 pb-3">
+<div class="tocsection onthispage mt-5 pt-1 pb-3">
     <i class="fas fa-list"></i> On this page
 </div>
 
@@ -761,12 +755,12 @@ function checkPageExistsAndRedirect(event) {
               <div>
                 
   <section id="gpflow-models">
-<h1>gpflow.models<a class="headerlink" href="#gpflow-models" title="Permalink to this headline">¶</a></h1>
+<h1>gpflow.models<a class="headerlink" href="#gpflow-models" title="Permalink to this headline">#</a></h1>
 <span class="target" id="module-gpflow.models"></span><section id="gpflow-models-bayesiangplvm">
-<h2>gpflow.models.BayesianGPLVM<a class="headerlink" href="#gpflow-models-bayesiangplvm" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.models.BayesianGPLVM<a class="headerlink" href="#gpflow-models-bayesiangplvm" title="Permalink to this headline">#</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="gpflow.models.BayesianGPLVM">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.models.</span></span><span class="sig-name descname"><span class="pre">BayesianGPLVM</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">X_data_mean</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">X_data_var</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_inducing_variables</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">X_prior_mean</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">X_prior_var</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/gplvm.html#BayesianGPLVM"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.BayesianGPLVM" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.models.</span></span><span class="sig-name descname"><span class="pre">BayesianGPLVM</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">X_data_mean</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">X_data_var</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_inducing_variables</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">X_prior_mean</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">X_prior_var</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/gplvm.html#BayesianGPLVM"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.BayesianGPLVM" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#gpflow.models.GPModel" title="gpflow.models.model.GPModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.models.model.GPModel</span></code></a>, <a class="reference internal" href="#gpflow.models.InternalDataTrainingLossMixin" title="gpflow.models.training_mixins.InternalDataTrainingLossMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.models.training_mixins.InternalDataTrainingLossMixin</span></code></a></p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -784,7 +778,7 @@ function checkPageExistsAndRedirect(event) {
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="gpflow.models.BayesianGPLVM.elbo">
-<span class="sig-name descname"><span class="pre">elbo</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/gplvm.html#BayesianGPLVM.elbo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.BayesianGPLVM.elbo" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">elbo</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/gplvm.html#BayesianGPLVM.elbo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.BayesianGPLVM.elbo" title="Permalink to this definition">#</a></dt>
 <dd><p>Construct a tensorflow function to compute the bound on the marginal
 likelihood.</p>
 <dl class="field-list simple">
@@ -796,7 +790,7 @@ likelihood.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="gpflow.models.BayesianGPLVM.maximum_log_likelihood_objective">
-<span class="sig-name descname"><span class="pre">maximum_log_likelihood_objective</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/gplvm.html#BayesianGPLVM.maximum_log_likelihood_objective"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.BayesianGPLVM.maximum_log_likelihood_objective" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">maximum_log_likelihood_objective</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/gplvm.html#BayesianGPLVM.maximum_log_likelihood_objective"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.BayesianGPLVM.maximum_log_likelihood_objective" title="Permalink to this definition">#</a></dt>
 <dd><p>Objective for maximum likelihood estimation. Should be maximized. E.g.
 log-marginal likelihood (hyperparameter likelihood) for GPR, or lower
 bound to the log-marginal likelihood (ELBO) for sparse and variational
@@ -810,7 +804,7 @@ GPs.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="gpflow.models.BayesianGPLVM.predict_f">
-<span class="sig-name descname"><span class="pre">predict_f</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Xnew</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_output_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/gplvm.html#BayesianGPLVM.predict_f"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.BayesianGPLVM.predict_f" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">predict_f</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Xnew</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_output_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/gplvm.html#BayesianGPLVM.predict_f"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.BayesianGPLVM.predict_f" title="Permalink to this definition">#</a></dt>
 <dd><p>Compute the mean and variance of the latent function at some new points.
 Note that this is very similar to the SGPR prediction, for which
 there are notes in the SGPR notebook.</p>
@@ -831,7 +825,7 @@ there are notes in the SGPR notebook.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="gpflow.models.BayesianGPLVM.predict_log_density">
-<span class="sig-name descname"><span class="pre">predict_log_density</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_output_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/gplvm.html#BayesianGPLVM.predict_log_density"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.BayesianGPLVM.predict_log_density" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">predict_log_density</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_output_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/gplvm.html#BayesianGPLVM.predict_log_density"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.BayesianGPLVM.predict_log_density" title="Permalink to this definition">#</a></dt>
 <dd><p>Compute the log density of the data at the new data points.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -851,15 +845,15 @@ there are notes in the SGPR notebook.</p>
 
 </section>
 <section id="gpflow-models-bayesianmodel">
-<h2>gpflow.models.BayesianModel<a class="headerlink" href="#gpflow-models-bayesianmodel" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.models.BayesianModel<a class="headerlink" href="#gpflow-models-bayesianmodel" title="Permalink to this headline">#</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="gpflow.models.BayesianModel">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.models.</span></span><span class="sig-name descname"><span class="pre">BayesianModel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/model.html#BayesianModel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.BayesianModel" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.models.</span></span><span class="sig-name descname"><span class="pre">BayesianModel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/model.html#BayesianModel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.BayesianModel" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="../index.html#gpflow.Module" title="gpflow.base.Module"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.base.Module</span></code></a></p>
 <p>Bayesian model.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="gpflow.models.BayesianModel.log_posterior_density">
-<span class="sig-name descname"><span class="pre">log_posterior_density</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/model.html#BayesianModel.log_posterior_density"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.BayesianModel.log_posterior_density" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">log_posterior_density</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/model.html#BayesianModel.log_posterior_density"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.BayesianModel.log_posterior_density" title="Permalink to this definition">#</a></dt>
 <dd><p>This may be the posterior with respect to the hyperparameters (e.g. for
 GPR) or the posterior with respect to the function (e.g. for GPMC and
 SGPMC). It assumes that maximum_log_likelihood_objective() is defined
@@ -879,7 +873,7 @@ sensibly.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="gpflow.models.BayesianModel.log_prior_density">
-<span class="sig-name descname"><span class="pre">log_prior_density</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/model.html#BayesianModel.log_prior_density"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.BayesianModel.log_prior_density" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">log_prior_density</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/model.html#BayesianModel.log_prior_density"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.BayesianModel.log_prior_density" title="Permalink to this definition">#</a></dt>
 <dd><p>Sum of the log prior probability densities of all (constrained) variables in this model.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
@@ -890,7 +884,7 @@ sensibly.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="gpflow.models.BayesianModel.maximum_log_likelihood_objective">
-<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">maximum_log_likelihood_objective</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/model.html#BayesianModel.maximum_log_likelihood_objective"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.BayesianModel.maximum_log_likelihood_objective" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">maximum_log_likelihood_objective</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/model.html#BayesianModel.maximum_log_likelihood_objective"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.BayesianModel.maximum_log_likelihood_objective" title="Permalink to this definition">#</a></dt>
 <dd><p>Objective for maximum likelihood estimation. Should be maximized. E.g.
 log-marginal likelihood (hyperparameter likelihood) for GPR, or lower
 bound to the log-marginal likelihood (ELBO) for sparse and variational
@@ -912,10 +906,10 @@ GPs.</p>
 
 </section>
 <section id="gpflow-models-cglb">
-<h2>gpflow.models.CGLB<a class="headerlink" href="#gpflow-models-cglb" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.models.CGLB<a class="headerlink" href="#gpflow-models-cglb" title="Permalink to this headline">#</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="gpflow.models.CGLB">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.models.</span></span><span class="sig-name descname"><span class="pre">CGLB</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cg_tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_cg_iters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">restart_cg_iters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">40</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v_grad_optimization</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/cglb.html#CGLB"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.CGLB" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.models.</span></span><span class="sig-name descname"><span class="pre">CGLB</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cg_tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_cg_iters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">restart_cg_iters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">40</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v_grad_optimization</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/cglb.html#CGLB"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.CGLB" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#gpflow.models.SGPR" title="gpflow.models.sgpr.SGPR"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.models.sgpr.SGPR</span></code></a></p>
 <p>Conjugate Gradient Lower Bound. The key reference is</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nd">@InProceedings</span><span class="p">{</span><span class="n">pmlr</span><span class="o">-</span><span class="n">v139</span><span class="o">-</span><span class="n">artemev21a</span><span class="p">,</span>
@@ -953,7 +947,7 @@ be optimized jointly with other parameters.</p></li>
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="gpflow.models.CGLB.logdet_term">
-<span class="sig-name descname"><span class="pre">logdet_term</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">common</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/cglb.html#CGLB.logdet_term"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.CGLB.logdet_term" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">logdet_term</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">common</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/cglb.html#CGLB.logdet_term"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.CGLB.logdet_term" title="Permalink to this definition">#</a></dt>
 <dd><p>Compute a lower bound on -0.5 * log <a href="#id8"><span class="problematic" id="id9">|K + σ²I|</span></a> based on a
 low-rank approximation to K.
 ..  math:</p>
@@ -978,7 +972,7 @@ low-rank approximation to K.
 
 <dl class="py method">
 <dt class="sig sig-object py" id="gpflow.models.CGLB.predict_f">
-<span class="sig-name descname"><span class="pre">predict_f</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">xnew</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_output_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cg_tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.001</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/cglb.html#CGLB.predict_f"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.CGLB.predict_f" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">predict_f</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">xnew</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_output_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cg_tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.001</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/cglb.html#CGLB.predict_f"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.CGLB.predict_f" title="Permalink to this definition">#</a></dt>
 <dd><p>The posterior mean for CGLB model is given by</p>
 <p>where <span class="math notranslate nohighlight">\(r = y - K v\)</span>  is the residual from CG.</p>
 <p>Note that when <span class="math notranslate nohighlight">\(v=0\)</span>, this agree with the SGPR mean,
@@ -1002,7 +996,7 @@ GP mean is recovered.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="gpflow.models.CGLB.predict_log_density">
-<span class="sig-name descname"><span class="pre">predict_log_density</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_output_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cg_tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.001</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/cglb.html#CGLB.predict_log_density"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.CGLB.predict_log_density" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">predict_log_density</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_output_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cg_tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.001</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/cglb.html#CGLB.predict_log_density"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.CGLB.predict_log_density" title="Permalink to this definition">#</a></dt>
 <dd><p>Compute the log density of the data at the new data points.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -1021,7 +1015,7 @@ GP mean is recovered.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="gpflow.models.CGLB.predict_y">
-<span class="sig-name descname"><span class="pre">predict_y</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">xnew</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_output_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cg_tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.001</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/cglb.html#CGLB.predict_y"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.CGLB.predict_y" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">predict_y</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">xnew</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_output_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cg_tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.001</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/cglb.html#CGLB.predict_y"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.CGLB.predict_y" title="Permalink to this definition">#</a></dt>
 <dd><p>Compute the mean and variance of the held-out data at the
 input points.</p>
 <dl class="field-list simple">
@@ -1041,7 +1035,7 @@ input points.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="gpflow.models.CGLB.quad_term">
-<span class="sig-name descname"><span class="pre">quad_term</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">common</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/cglb.html#CGLB.quad_term"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.CGLB.quad_term" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">quad_term</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">common</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/cglb.html#CGLB.quad_term"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.CGLB.quad_term" title="Permalink to this definition">#</a></dt>
 <dd><p>Computes a lower bound on the quadratic term in the log
 marginal likelihood of conjugate GPR. The bound is based on
 an auxiliary vector, v. For <span class="math notranslate nohighlight">\(Q ≺ K\)</span> and <span class="math notranslate nohighlight">\(r=y - Kv\)</span></p>
@@ -1069,10 +1063,10 @@ more than <span class="math notranslate nohighlight">\(ϵ\)</span>. The <span cl
 
 </section>
 <section id="gpflow-models-externaldatatraininglossmixin">
-<h2>gpflow.models.ExternalDataTrainingLossMixin<a class="headerlink" href="#gpflow-models-externaldatatraininglossmixin" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.models.ExternalDataTrainingLossMixin<a class="headerlink" href="#gpflow-models-externaldatatraininglossmixin" title="Permalink to this headline">#</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="gpflow.models.ExternalDataTrainingLossMixin">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.models.</span></span><span class="sig-name descname"><span class="pre">ExternalDataTrainingLossMixin</span></span><a class="reference internal" href="../../../_modules/gpflow/models/training_mixins.html#ExternalDataTrainingLossMixin"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.ExternalDataTrainingLossMixin" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.models.</span></span><span class="sig-name descname"><span class="pre">ExternalDataTrainingLossMixin</span></span><a class="reference internal" href="../../../_modules/gpflow/models/training_mixins.html#ExternalDataTrainingLossMixin"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.ExternalDataTrainingLossMixin" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Mixin utility for training loss methods for models that do <strong>not</strong> own their own data.
 It provides</p>
@@ -1088,7 +1082,7 @@ various optimizers, namely <a class="reference internal" href="../optimizers/ind
 their own data.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="gpflow.models.ExternalDataTrainingLossMixin.training_loss">
-<span class="sig-name descname"><span class="pre">training_loss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/training_mixins.html#ExternalDataTrainingLossMixin.training_loss"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.ExternalDataTrainingLossMixin.training_loss" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">training_loss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/training_mixins.html#ExternalDataTrainingLossMixin.training_loss"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.ExternalDataTrainingLossMixin.training_loss" title="Permalink to this definition">#</a></dt>
 <dd><p>Returns the training loss for this model.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -1102,7 +1096,7 @@ their own data.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="gpflow.models.ExternalDataTrainingLossMixin.training_loss_closure">
-<span class="sig-name descname"><span class="pre">training_loss_closure</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">compile</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/training_mixins.html#ExternalDataTrainingLossMixin.training_loss_closure"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.ExternalDataTrainingLossMixin.training_loss_closure" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">training_loss_closure</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">compile</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/training_mixins.html#ExternalDataTrainingLossMixin.training_loss_closure"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.ExternalDataTrainingLossMixin.training_loss_closure" title="Permalink to this definition">#</a></dt>
 <dd><p>Returns a closure that computes the training loss, which by default is
 wrapped in tf.function(). This can be disabled by passing <cite>compile=False</cite>.</p>
 <dl class="field-list simple">
@@ -1125,10 +1119,10 @@ tf.data.Dataset.</p></li>
 
 </section>
 <section id="gpflow-models-gplvm">
-<h2>gpflow.models.GPLVM<a class="headerlink" href="#gpflow-models-gplvm" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.models.GPLVM<a class="headerlink" href="#gpflow-models-gplvm" title="Permalink to this headline">#</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="gpflow.models.GPLVM">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.models.</span></span><span class="sig-name descname"><span class="pre">GPLVM</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">latent_dim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">X_data_mean</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean_function</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/gplvm.html#GPLVM"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.GPLVM" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.models.</span></span><span class="sig-name descname"><span class="pre">GPLVM</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">latent_dim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">X_data_mean</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean_function</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/gplvm.html#GPLVM"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.GPLVM" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#gpflow.models.GPR" title="gpflow.models.gpr.GPR"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.models.gpr.GPR</span></code></a></p>
 <p>Standard GPLVM where the likelihood can be optimised with respect to the latent X.</p>
 <dl class="field-list simple">
@@ -1146,10 +1140,10 @@ tf.data.Dataset.</p></li>
 
 </section>
 <section id="gpflow-models-gpmc">
-<h2>gpflow.models.GPMC<a class="headerlink" href="#gpflow-models-gpmc" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.models.GPMC<a class="headerlink" href="#gpflow-models-gpmc" title="Permalink to this headline">#</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="gpflow.models.GPMC">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.models.</span></span><span class="sig-name descname"><span class="pre">GPMC</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">likelihood</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean_function</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_latent_gps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/gpmc.html#GPMC"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.GPMC" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.models.</span></span><span class="sig-name descname"><span class="pre">GPMC</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">likelihood</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean_function</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_latent_gps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/gpmc.html#GPMC"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.GPMC" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#gpflow.models.GPModel" title="gpflow.models.model.GPModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.models.model.GPModel</span></code></a>, <a class="reference internal" href="#gpflow.models.InternalDataTrainingLossMixin" title="gpflow.models.training_mixins.InternalDataTrainingLossMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.models.training_mixins.InternalDataTrainingLossMixin</span></code></a></p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -1164,7 +1158,7 @@ tf.data.Dataset.</p></li>
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="gpflow.models.GPMC.log_likelihood">
-<span class="sig-name descname"><span class="pre">log_likelihood</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/gpmc.html#GPMC.log_likelihood"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.GPMC.log_likelihood" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">log_likelihood</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/gpmc.html#GPMC.log_likelihood"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.GPMC.log_likelihood" title="Permalink to this definition">#</a></dt>
 <dd><p>Construct a tf function to compute the likelihood of a general GP
 model.</p>
 <blockquote>
@@ -1179,7 +1173,7 @@ model.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="gpflow.models.GPMC.log_posterior_density">
-<span class="sig-name descname"><span class="pre">log_posterior_density</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/gpmc.html#GPMC.log_posterior_density"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.GPMC.log_posterior_density" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">log_posterior_density</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/gpmc.html#GPMC.log_posterior_density"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.GPMC.log_posterior_density" title="Permalink to this definition">#</a></dt>
 <dd><p>This may be the posterior with respect to the hyperparameters (e.g. for
 GPR) or the posterior with respect to the function (e.g. for GPMC and
 SGPMC). It assumes that maximum_log_likelihood_objective() is defined
@@ -1193,7 +1187,7 @@ sensibly.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="gpflow.models.GPMC.maximum_log_likelihood_objective">
-<span class="sig-name descname"><span class="pre">maximum_log_likelihood_objective</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/gpmc.html#GPMC.maximum_log_likelihood_objective"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.GPMC.maximum_log_likelihood_objective" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">maximum_log_likelihood_objective</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/gpmc.html#GPMC.maximum_log_likelihood_objective"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.GPMC.maximum_log_likelihood_objective" title="Permalink to this definition">#</a></dt>
 <dd><p>Objective for maximum likelihood estimation. Should be maximized. E.g.
 log-marginal likelihood (hyperparameter likelihood) for GPR, or lower
 bound to the log-marginal likelihood (ELBO) for sparse and variational
@@ -1207,7 +1201,7 @@ GPs.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="gpflow.models.GPMC.predict_f">
-<span class="sig-name descname"><span class="pre">predict_f</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Xnew</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_output_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/gpmc.html#GPMC.predict_f"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.GPMC.predict_f" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">predict_f</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Xnew</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_output_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/gpmc.html#GPMC.predict_f"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.GPMC.predict_f" title="Permalink to this definition">#</a></dt>
 <dd><p>Xnew is a data matrix, point at which we want to predict</p>
 <p>This method computes</p>
 <blockquote>
@@ -1232,10 +1226,10 @@ GPs.</p>
 
 </section>
 <section id="gpflow-models-gpmodel">
-<h2>gpflow.models.GPModel<a class="headerlink" href="#gpflow-models-gpmodel" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.models.GPModel<a class="headerlink" href="#gpflow-models-gpmodel" title="Permalink to this headline">#</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="gpflow.models.GPModel">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.models.</span></span><span class="sig-name descname"><span class="pre">GPModel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">likelihood</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean_function</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_latent_gps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/model.html#GPModel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.GPModel" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.models.</span></span><span class="sig-name descname"><span class="pre">GPModel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">likelihood</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean_function</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_latent_gps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/model.html#GPModel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.GPModel" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#gpflow.models.BayesianModel" title="gpflow.models.model.BayesianModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.models.model.BayesianModel</span></code></a></p>
 <p>A stateless base class for Gaussian process models, that is, those of the
 form</p>
@@ -1266,7 +1260,7 @@ self.predict_f_samples.</p>
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="gpflow.models.GPModel.calc_num_latent_gps">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">calc_num_latent_gps</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">likelihood</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_dim</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/model.html#GPModel.calc_num_latent_gps"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.GPModel.calc_num_latent_gps" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">calc_num_latent_gps</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">likelihood</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_dim</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/model.html#GPModel.calc_num_latent_gps"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.GPModel.calc_num_latent_gps" title="Permalink to this definition">#</a></dt>
 <dd><p>Calculates the number of latent GPs required given the number of
 outputs <cite>output_dim</cite> and the type of likelihood and kernel.</p>
 <p>Note: It’s not nice for <cite>GPModel</cite> to need to be aware of specific
@@ -1290,7 +1284,7 @@ See <a class="reference external" href="https://github.com/GPflow/GPflow/issues/
 
 <dl class="py method">
 <dt class="sig sig-object py" id="gpflow.models.GPModel.calc_num_latent_gps_from_data">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">calc_num_latent_gps_from_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">likelihood</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/model.html#GPModel.calc_num_latent_gps_from_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.GPModel.calc_num_latent_gps_from_data" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">calc_num_latent_gps_from_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">likelihood</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/model.html#GPModel.calc_num_latent_gps_from_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.GPModel.calc_num_latent_gps_from_data" title="Permalink to this definition">#</a></dt>
 <dd><p>Calculates the number of latent GPs required based on the data as well
 as the type of kernel and likelihood.</p>
 <dl class="field-list simple">
@@ -1309,7 +1303,7 @@ as the type of kernel and likelihood.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="gpflow.models.GPModel.predict_f_samples">
-<span class="sig-name descname"><span class="pre">predict_f_samples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Xnew</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_samples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_output_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/model.html#GPModel.predict_f_samples"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.GPModel.predict_f_samples" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">predict_f_samples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Xnew</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_samples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_output_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/model.html#GPModel.predict_f_samples"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.GPModel.predict_f_samples" title="Permalink to this definition">#</a></dt>
 <dd><p>Produce samples from the posterior latent function(s) at the input points.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -1339,7 +1333,7 @@ If False, draw samples that are uncorrelated over the outputs.</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="gpflow.models.GPModel.predict_log_density">
-<span class="sig-name descname"><span class="pre">predict_log_density</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_output_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/model.html#GPModel.predict_log_density"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.GPModel.predict_log_density" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">predict_log_density</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_output_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/model.html#GPModel.predict_log_density"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.GPModel.predict_log_density" title="Permalink to this definition">#</a></dt>
 <dd><p>Compute the log density of the data at the new data points.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -1357,7 +1351,7 @@ If False, draw samples that are uncorrelated over the outputs.</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="gpflow.models.GPModel.predict_y">
-<span class="sig-name descname"><span class="pre">predict_y</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Xnew</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_output_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/model.html#GPModel.predict_y"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.GPModel.predict_y" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">predict_y</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Xnew</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_output_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/model.html#GPModel.predict_y"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.GPModel.predict_y" title="Permalink to this definition">#</a></dt>
 <dd><p>Compute the mean and variance of the held-out data at the input points.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -1377,10 +1371,10 @@ If False, draw samples that are uncorrelated over the outputs.</p></li>
 
 </section>
 <section id="gpflow-models-gpr">
-<h2>gpflow.models.GPR<a class="headerlink" href="#gpflow-models-gpr" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.models.GPR<a class="headerlink" href="#gpflow-models-gpr" title="Permalink to this headline">#</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="gpflow.models.GPR">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.models.</span></span><span class="sig-name descname"><span class="pre">GPR</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean_function</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">noise_variance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/gpr.html#GPR"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.GPR" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.models.</span></span><span class="sig-name descname"><span class="pre">GPR</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean_function</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">noise_variance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/gpr.html#GPR"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.GPR" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="gpr/index.html#gpflow.models.gpr.GPR_with_posterior" title="gpflow.models.gpr.GPR_with_posterior"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.models.gpr.GPR_with_posterior</span></code></a></p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -1396,10 +1390,10 @@ If False, draw samples that are uncorrelated over the outputs.</p></li>
 
 </section>
 <section id="gpflow-models-gprfitc">
-<h2>gpflow.models.GPRFITC<a class="headerlink" href="#gpflow-models-gprfitc" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.models.GPRFITC<a class="headerlink" href="#gpflow-models-gprfitc" title="Permalink to this headline">#</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="gpflow.models.GPRFITC">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.models.</span></span><span class="sig-name descname"><span class="pre">GPRFITC</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean_function</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_latent_gps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">noise_variance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/sgpr.html#GPRFITC"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.GPRFITC" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.models.</span></span><span class="sig-name descname"><span class="pre">GPRFITC</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean_function</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_latent_gps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">noise_variance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/sgpr.html#GPRFITC"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.GPRFITC" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="sgpr/index.html#gpflow.models.sgpr.SGPRBase_deprecated" title="gpflow.models.sgpr.SGPRBase_deprecated"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.models.sgpr.SGPRBase_deprecated</span></code></a></p>
 <p>This implements GP regression with the FITC approximation.
 The key reference is</p>
@@ -1429,7 +1423,7 @@ obviously gradients are automatic in GPflow.</p>
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="gpflow.models.GPRFITC.fitc_log_marginal_likelihood">
-<span class="sig-name descname"><span class="pre">fitc_log_marginal_likelihood</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/sgpr.html#GPRFITC.fitc_log_marginal_likelihood"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.GPRFITC.fitc_log_marginal_likelihood" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">fitc_log_marginal_likelihood</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/sgpr.html#GPRFITC.fitc_log_marginal_likelihood"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.GPRFITC.fitc_log_marginal_likelihood" title="Permalink to this definition">#</a></dt>
 <dd><p>Construct a tensorflow function to compute the bound on the marginal
 likelihood.</p>
 <dl class="field-list simple">
@@ -1441,7 +1435,7 @@ likelihood.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="gpflow.models.GPRFITC.maximum_log_likelihood_objective">
-<span class="sig-name descname"><span class="pre">maximum_log_likelihood_objective</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/sgpr.html#GPRFITC.maximum_log_likelihood_objective"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.GPRFITC.maximum_log_likelihood_objective" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">maximum_log_likelihood_objective</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/sgpr.html#GPRFITC.maximum_log_likelihood_objective"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.GPRFITC.maximum_log_likelihood_objective" title="Permalink to this definition">#</a></dt>
 <dd><p>Objective for maximum likelihood estimation. Should be maximized. E.g.
 log-marginal likelihood (hyperparameter likelihood) for GPR, or lower
 bound to the log-marginal likelihood (ELBO) for sparse and variational
@@ -1455,7 +1449,7 @@ GPs.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="gpflow.models.GPRFITC.predict_f">
-<span class="sig-name descname"><span class="pre">predict_f</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Xnew</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_output_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/sgpr.html#GPRFITC.predict_f"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.GPRFITC.predict_f" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">predict_f</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Xnew</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_output_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/sgpr.html#GPRFITC.predict_f"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.GPRFITC.predict_f" title="Permalink to this definition">#</a></dt>
 <dd><p>Compute the mean and variance of the latent function at some new points
 Xnew.</p>
 <dl class="field-list simple">
@@ -1476,10 +1470,10 @@ Xnew.</p>
 
 </section>
 <section id="gpflow-models-internaldatatraininglossmixin">
-<h2>gpflow.models.InternalDataTrainingLossMixin<a class="headerlink" href="#gpflow-models-internaldatatraininglossmixin" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.models.InternalDataTrainingLossMixin<a class="headerlink" href="#gpflow-models-internaldatatraininglossmixin" title="Permalink to this headline">#</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="gpflow.models.InternalDataTrainingLossMixin">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.models.</span></span><span class="sig-name descname"><span class="pre">InternalDataTrainingLossMixin</span></span><a class="reference internal" href="../../../_modules/gpflow/models/training_mixins.html#InternalDataTrainingLossMixin"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.InternalDataTrainingLossMixin" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.models.</span></span><span class="sig-name descname"><span class="pre">InternalDataTrainingLossMixin</span></span><a class="reference internal" href="../../../_modules/gpflow/models/training_mixins.html#InternalDataTrainingLossMixin"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.InternalDataTrainingLossMixin" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Mixin utility for training loss methods for models that own their own data. It provides</p>
 <blockquote>
@@ -1494,7 +1488,7 @@ various optimizers, namely <a class="reference internal" href="../optimizers/ind
 own their own data.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="gpflow.models.InternalDataTrainingLossMixin.training_loss">
-<span class="sig-name descname"><span class="pre">training_loss</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/training_mixins.html#InternalDataTrainingLossMixin.training_loss"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.InternalDataTrainingLossMixin.training_loss" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">training_loss</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/training_mixins.html#InternalDataTrainingLossMixin.training_loss"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.InternalDataTrainingLossMixin.training_loss" title="Permalink to this definition">#</a></dt>
 <dd><p>Returns the training loss for this model.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
@@ -1505,7 +1499,7 @@ own their own data.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="gpflow.models.InternalDataTrainingLossMixin.training_loss_closure">
-<span class="sig-name descname"><span class="pre">training_loss_closure</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">compile</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/training_mixins.html#InternalDataTrainingLossMixin.training_loss_closure"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.InternalDataTrainingLossMixin.training_loss_closure" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">training_loss_closure</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">compile</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/training_mixins.html#InternalDataTrainingLossMixin.training_loss_closure"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.InternalDataTrainingLossMixin.training_loss_closure" title="Permalink to this definition">#</a></dt>
 <dd><p>Convenience method. Returns a closure which itself returns the training loss. This closure
 can be passed to the minimize methods on <a class="reference internal" href="../optimizers/index.html#gpflow.optimizers.Scipy" title="gpflow.optimizers.Scipy"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.optimizers.Scipy</span></code></a> and subclasses of
 <cite>tf.optimizers.Optimizer</cite>.</p>
@@ -1524,10 +1518,10 @@ graph by wrapping it in tf.function()</p>
 
 </section>
 <section id="gpflow-models-sgpmc">
-<h2>gpflow.models.SGPMC<a class="headerlink" href="#gpflow-models-sgpmc" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.models.SGPMC<a class="headerlink" href="#gpflow-models-sgpmc" title="Permalink to this headline">#</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="gpflow.models.SGPMC">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.models.</span></span><span class="sig-name descname"><span class="pre">SGPMC</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">likelihood</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean_function</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_latent_gps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/sgpmc.html#SGPMC"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.SGPMC" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.models.</span></span><span class="sig-name descname"><span class="pre">SGPMC</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">likelihood</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean_function</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_latent_gps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/sgpmc.html#SGPMC"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.SGPMC" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#gpflow.models.GPModel" title="gpflow.models.model.GPModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.models.model.GPModel</span></code></a>, <a class="reference internal" href="#gpflow.models.InternalDataTrainingLossMixin" title="gpflow.models.training_mixins.InternalDataTrainingLossMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.models.training_mixins.InternalDataTrainingLossMixin</span></code></a></p>
 <p>This is the Sparse Variational GP using MCMC (SGPMC). The key reference is</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nd">@inproceedings</span><span class="p">{</span><span class="n">hensman2015mcmc</span><span class="p">,</span>
@@ -1562,7 +1556,7 @@ graph by wrapping it in tf.function()</p>
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="gpflow.models.SGPMC.log_likelihood_lower_bound">
-<span class="sig-name descname"><span class="pre">log_likelihood_lower_bound</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/sgpmc.html#SGPMC.log_likelihood_lower_bound"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.SGPMC.log_likelihood_lower_bound" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">log_likelihood_lower_bound</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/sgpmc.html#SGPMC.log_likelihood_lower_bound"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.SGPMC.log_likelihood_lower_bound" title="Permalink to this definition">#</a></dt>
 <dd><p>This function computes the optimal density for v, q*(v), up to a constant</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
@@ -1573,7 +1567,7 @@ graph by wrapping it in tf.function()</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="gpflow.models.SGPMC.log_posterior_density">
-<span class="sig-name descname"><span class="pre">log_posterior_density</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/sgpmc.html#SGPMC.log_posterior_density"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.SGPMC.log_posterior_density" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">log_posterior_density</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/sgpmc.html#SGPMC.log_posterior_density"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.SGPMC.log_posterior_density" title="Permalink to this definition">#</a></dt>
 <dd><p>This may be the posterior with respect to the hyperparameters (e.g. for
 GPR) or the posterior with respect to the function (e.g. for GPMC and
 SGPMC). It assumes that maximum_log_likelihood_objective() is defined
@@ -1587,7 +1581,7 @@ sensibly.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="gpflow.models.SGPMC.maximum_log_likelihood_objective">
-<span class="sig-name descname"><span class="pre">maximum_log_likelihood_objective</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/sgpmc.html#SGPMC.maximum_log_likelihood_objective"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.SGPMC.maximum_log_likelihood_objective" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">maximum_log_likelihood_objective</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/sgpmc.html#SGPMC.maximum_log_likelihood_objective"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.SGPMC.maximum_log_likelihood_objective" title="Permalink to this definition">#</a></dt>
 <dd><p>Objective for maximum likelihood estimation. Should be maximized. E.g.
 log-marginal likelihood (hyperparameter likelihood) for GPR, or lower
 bound to the log-marginal likelihood (ELBO) for sparse and variational
@@ -1601,7 +1595,7 @@ GPs.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="gpflow.models.SGPMC.predict_f">
-<span class="sig-name descname"><span class="pre">predict_f</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Xnew</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_output_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/sgpmc.html#SGPMC.predict_f"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.SGPMC.predict_f" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">predict_f</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Xnew</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_output_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/sgpmc.html#SGPMC.predict_f"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.SGPMC.predict_f" title="Permalink to this definition">#</a></dt>
 <dd><p>Xnew is a data matrix of the points at which we want to predict</p>
 <p>This method computes</p>
 <blockquote>
@@ -1626,10 +1620,10 @@ GPs.</p>
 
 </section>
 <section id="gpflow-models-sgpr">
-<h2>gpflow.models.SGPR<a class="headerlink" href="#gpflow-models-sgpr" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.models.SGPR<a class="headerlink" href="#gpflow-models-sgpr" title="Permalink to this headline">#</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="gpflow.models.SGPR">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.models.</span></span><span class="sig-name descname"><span class="pre">SGPR</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean_function</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_latent_gps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">noise_variance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/sgpr.html#SGPR"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.SGPR" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.models.</span></span><span class="sig-name descname"><span class="pre">SGPR</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean_function</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_latent_gps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">noise_variance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/sgpr.html#SGPR"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.SGPR" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="sgpr/index.html#gpflow.models.sgpr.SGPR_with_posterior" title="gpflow.models.sgpr.SGPR_with_posterior"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.models.sgpr.SGPR_with_posterior</span></code></a></p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -1647,10 +1641,10 @@ GPs.</p>
 
 </section>
 <section id="gpflow-models-svgp">
-<h2>gpflow.models.SVGP<a class="headerlink" href="#gpflow-models-svgp" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.models.SVGP<a class="headerlink" href="#gpflow-models-svgp" title="Permalink to this headline">#</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="gpflow.models.SVGP">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.models.</span></span><span class="sig-name descname"><span class="pre">SVGP</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">likelihood</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean_function</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_latent_gps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_diag</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_mu</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_sqrt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">whiten</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/svgp.html#SVGP"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.SVGP" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.models.</span></span><span class="sig-name descname"><span class="pre">SVGP</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">likelihood</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean_function</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_latent_gps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_diag</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_mu</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_sqrt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">whiten</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/svgp.html#SVGP"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.SVGP" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="svgp/index.html#gpflow.models.svgp.SVGP_with_posterior" title="gpflow.models.svgp.SVGP_with_posterior"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.models.svgp.SVGP_with_posterior</span></code></a></p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -1672,10 +1666,10 @@ GPs.</p>
 
 </section>
 <section id="gpflow-models-vgp">
-<h2>gpflow.models.VGP<a class="headerlink" href="#gpflow-models-vgp" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.models.VGP<a class="headerlink" href="#gpflow-models-vgp" title="Permalink to this headline">#</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="gpflow.models.VGP">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.models.</span></span><span class="sig-name descname"><span class="pre">VGP</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">likelihood</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean_function</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_latent_gps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/vgp.html#VGP"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.VGP" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.models.</span></span><span class="sig-name descname"><span class="pre">VGP</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">likelihood</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean_function</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_latent_gps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/vgp.html#VGP"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.VGP" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="vgp/index.html#gpflow.models.vgp.VGP_with_posterior" title="gpflow.models.vgp.VGP_with_posterior"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.models.vgp.VGP_with_posterior</span></code></a></p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -1692,10 +1686,10 @@ GPs.</p>
 
 </section>
 <section id="gpflow-models-vgpopperarchambeau">
-<h2>gpflow.models.VGPOpperArchambeau<a class="headerlink" href="#gpflow-models-vgpopperarchambeau" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.models.VGPOpperArchambeau<a class="headerlink" href="#gpflow-models-vgpopperarchambeau" title="Permalink to this headline">#</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="gpflow.models.VGPOpperArchambeau">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.models.</span></span><span class="sig-name descname"><span class="pre">VGPOpperArchambeau</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">likelihood</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean_function</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_latent_gps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/vgp.html#VGPOpperArchambeau"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.VGPOpperArchambeau" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.models.</span></span><span class="sig-name descname"><span class="pre">VGPOpperArchambeau</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">likelihood</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean_function</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_latent_gps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/vgp.html#VGPOpperArchambeau"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.VGPOpperArchambeau" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#gpflow.models.GPModel" title="gpflow.models.model.GPModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.models.model.GPModel</span></code></a>, <a class="reference internal" href="#gpflow.models.InternalDataTrainingLossMixin" title="gpflow.models.training_mixins.InternalDataTrainingLossMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.models.training_mixins.InternalDataTrainingLossMixin</span></code></a></p>
 <p>This method approximates the Gaussian process posterior using a multivariate Gaussian.
 The key reference is:</p>
@@ -1734,7 +1728,7 @@ but the optimization is non-convex and in practice may cause difficulty.</p>
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="gpflow.models.VGPOpperArchambeau.elbo">
-<span class="sig-name descname"><span class="pre">elbo</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/vgp.html#VGPOpperArchambeau.elbo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.VGPOpperArchambeau.elbo" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">elbo</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/vgp.html#VGPOpperArchambeau.elbo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.VGPOpperArchambeau.elbo" title="Permalink to this definition">#</a></dt>
 <dd><p>q_alpha, q_lambda are variational parameters, size [N, R]
 This method computes the variational lower bound on the likelihood,
 which is:</p>
@@ -1754,7 +1748,7 @@ which is:</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="gpflow.models.VGPOpperArchambeau.maximum_log_likelihood_objective">
-<span class="sig-name descname"><span class="pre">maximum_log_likelihood_objective</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/vgp.html#VGPOpperArchambeau.maximum_log_likelihood_objective"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.VGPOpperArchambeau.maximum_log_likelihood_objective" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">maximum_log_likelihood_objective</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/vgp.html#VGPOpperArchambeau.maximum_log_likelihood_objective"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.VGPOpperArchambeau.maximum_log_likelihood_objective" title="Permalink to this definition">#</a></dt>
 <dd><p>Objective for maximum likelihood estimation. Should be maximized. E.g.
 log-marginal likelihood (hyperparameter likelihood) for GPR, or lower
 bound to the log-marginal likelihood (ELBO) for sparse and variational
@@ -1768,7 +1762,7 @@ GPs.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="gpflow.models.VGPOpperArchambeau.predict_f">
-<span class="sig-name descname"><span class="pre">predict_f</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Xnew</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_output_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/vgp.html#VGPOpperArchambeau.predict_f"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.VGPOpperArchambeau.predict_f" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">predict_f</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Xnew</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_output_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/vgp.html#VGPOpperArchambeau.predict_f"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.VGPOpperArchambeau.predict_f" title="Permalink to this definition">#</a></dt>
 <dd><dl class="simple">
 <dt>The posterior variance of F is given by</dt><dd><p>q(f) = N(f | K alpha + mean, [K^-1 + diag(lambda**2)]^-1)</p>
 </dd>
@@ -1800,10 +1794,10 @@ by</p>
 
 </section>
 <section id="gpflow-models-maximum-log-likelihood-objective">
-<h2>gpflow.models.maximum_log_likelihood_objective<a class="headerlink" href="#gpflow-models-maximum-log-likelihood-objective" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.models.maximum_log_likelihood_objective<a class="headerlink" href="#gpflow-models-maximum-log-likelihood-objective" title="Permalink to this headline">#</a></h2>
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.models.maximum_log_likelihood_objective">
-<span class="sig-prename descclassname"><span class="pre">gpflow.models.</span></span><span class="sig-name descname"><span class="pre">maximum_log_likelihood_objective</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/util.html#maximum_log_likelihood_objective"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.maximum_log_likelihood_objective" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">gpflow.models.</span></span><span class="sig-name descname"><span class="pre">maximum_log_likelihood_objective</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/util.html#maximum_log_likelihood_objective"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.maximum_log_likelihood_objective" title="Permalink to this definition">#</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -1819,10 +1813,10 @@ by</p>
 
 </section>
 <section id="gpflow-models-training-loss">
-<h2>gpflow.models.training_loss<a class="headerlink" href="#gpflow-models-training-loss" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.models.training_loss<a class="headerlink" href="#gpflow-models-training-loss" title="Permalink to this headline">#</a></h2>
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.models.training_loss">
-<span class="sig-prename descclassname"><span class="pre">gpflow.models.</span></span><span class="sig-name descname"><span class="pre">training_loss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/util.html#training_loss"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.training_loss" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">gpflow.models.</span></span><span class="sig-name descname"><span class="pre">training_loss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/util.html#training_loss"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.training_loss" title="Permalink to this definition">#</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -1838,10 +1832,10 @@ by</p>
 
 </section>
 <section id="gpflow-models-training-loss-closure">
-<h2>gpflow.models.training_loss_closure<a class="headerlink" href="#gpflow-models-training-loss-closure" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.models.training_loss_closure<a class="headerlink" href="#gpflow-models-training-loss-closure" title="Permalink to this headline">#</a></h2>
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.models.training_loss_closure">
-<span class="sig-prename descclassname"><span class="pre">gpflow.models.</span></span><span class="sig-name descname"><span class="pre">training_loss_closure</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">closure_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/util.html#training_loss_closure"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.training_loss_closure" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">gpflow.models.</span></span><span class="sig-name descname"><span class="pre">training_loss_closure</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">closure_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/util.html#training_loss_closure"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.training_loss_closure" title="Permalink to this definition">#</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -1858,7 +1852,7 @@ by</p>
 
 </section>
 <section id="id3">
-<h2>gpflow.models.cglb<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.models.cglb<a class="headerlink" href="#id3" title="Permalink to this headline">#</a></h2>
 <div class="toctree-wrapper compound">
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="cglb/index.html">gpflow.models.cglb</a></li>
@@ -1866,7 +1860,7 @@ by</p>
 </div>
 </section>
 <section id="id4">
-<h2>gpflow.models.gpr<a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.models.gpr<a class="headerlink" href="#id4" title="Permalink to this headline">#</a></h2>
 <div class="toctree-wrapper compound">
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="gpr/index.html">gpflow.models.gpr</a></li>
@@ -1874,7 +1868,7 @@ by</p>
 </div>
 </section>
 <section id="id5">
-<h2>gpflow.models.sgpr<a class="headerlink" href="#id5" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.models.sgpr<a class="headerlink" href="#id5" title="Permalink to this headline">#</a></h2>
 <div class="toctree-wrapper compound">
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="sgpr/index.html">gpflow.models.sgpr</a></li>
@@ -1882,7 +1876,7 @@ by</p>
 </div>
 </section>
 <section id="id6">
-<h2>gpflow.models.svgp<a class="headerlink" href="#id6" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.models.svgp<a class="headerlink" href="#id6" title="Permalink to this headline">#</a></h2>
 <div class="toctree-wrapper compound">
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="svgp/index.html">gpflow.models.svgp</a></li>
@@ -1890,12 +1884,12 @@ by</p>
 </div>
 </section>
 <section id="gpflow-models-util">
-<h2>gpflow.models.util<a class="headerlink" href="#gpflow-models-util" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.models.util<a class="headerlink" href="#gpflow-models-util" title="Permalink to this headline">#</a></h2>
 <div class="toctree-wrapper compound">
 </div>
 </section>
 <section id="id7">
-<h2>gpflow.models.vgp<a class="headerlink" href="#id7" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.models.vgp<a class="headerlink" href="#id7" title="Permalink to this headline">#</a></h2>
 <div class="toctree-wrapper compound">
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="vgp/index.html">gpflow.models.vgp</a></li>
@@ -1914,8 +1908,9 @@ by</p>
       </div>
     </div>
   
-    <script src="../../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf"></script>
-  <footer class="footer mt-5 mt-md-0">
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf"></script>
+<footer class="footer mt-5 mt-md-0">
   <div class="container">
     
     <div class="footer-item">
@@ -1926,7 +1921,7 @@ by</p>
     
     <div class="footer-item">
       <p class="sphinx-version">
-Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.4.0.<br>
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.5.0.<br>
 </p>
     </div>
     

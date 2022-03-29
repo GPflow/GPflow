@@ -8,27 +8,24 @@
 
     <title>gpflow &#8212; GPflow 2.4.0 documentation</title>
     
-    <link href="../../_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
 <link href="../../_static/styles/pydata-sphinx-theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
-  
+
     
-    <link rel="stylesheet"
-      href="../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
-    <link rel="preload" as="font" type="font/woff2" crossorigin
-      href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
-    <link rel="preload" as="font" type="font/woff2" crossorigin
-      href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
-  
-    
-      
-  
-    
+  <link rel="stylesheet"
+    href="../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../../_static/styles/pydata-sphinx-theme.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/pydata-custom.css" />
     
-    <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf">
-  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf">
+
     <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
     <script src="../../_static/jquery.js"></script>
     <script src="../../_static/underscore.js"></script>
@@ -46,7 +43,7 @@
     <!-- Google Analytics -->
     
   </head>
-  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="80">
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="60">
     
     <div class="container-fluid" id="banner"></div>
 
@@ -142,13 +139,6 @@
 -->
 
 <script type="text/javascript">
-// Construct the target URL from the JSON components
-function buildURL(entry) {
-    var template = "https://gpflow.github.io/GPflow/{version}/index.html";  // supplied by jinja
-    template = template.replace("{version}", entry.version);
-    return template;
-}
-
 // Check if corresponding page path exists in other version of docs
 // and, if so, go there instead of the homepage of the other docs version
 function checkPageExistsAndRedirect(event) {
@@ -184,14 +174,16 @@ function checkPageExistsAndRedirect(event) {
             const node = document.createElement("a");
             node.setAttribute("class", "list-group-item list-group-item-action py-1");
             node.textContent = `${entry.name}`;
-            // get the base URL for that doc version, add the current page's
-            // path to it, and set as `href`
-            entry.url = buildURL(entry);
             node.setAttribute("href", `${entry.url}${currentFilePath}`);
             // on click, AJAX calls will check if the linked page exists before
             // trying to redirect, and if not, will redirect to the homepage
             // for that version of the docs.
             node.onclick = checkPageExistsAndRedirect;
+            // Add dataset values for the version and name in case people want
+            // to apply CSS styling based on this information.
+            node.dataset["versionName"] = entry.name;
+            node.dataset["version"] = entry.version;
+
             $("#version_switcher_menu").append(node);
             // replace dropdown button text with the preferred display name of
             // this version, rather than using sphinx's  variable.
@@ -199,7 +191,9 @@ function checkPageExistsAndRedirect(event) {
             // version's entry
             if (entry.version == "develop") {
                 node.classList.add("active");
-                $("#version_switcher_button").text(entry.name);
+                let btn = document.getElementById("version_switcher_button");
+                btn.innerText = btn.dataset["activeVersionName"] = entry.name;
+                btn.dataset["activeVersion"] = entry.version;
             }
         });
     });
@@ -611,7 +605,7 @@ function checkPageExistsAndRedirect(event) {
               
               <div class="toc-item">
                 
-<div class="tocsection onthispage pt-5 pb-3">
+<div class="tocsection onthispage mt-5 pt-1 pb-3">
     <i class="fas fa-list"></i> On this page
 </div>
 
@@ -764,21 +758,21 @@ function checkPageExistsAndRedirect(event) {
               <div>
                 
   <section id="gpflow">
-<h1>gpflow<a class="headerlink" href="#gpflow" title="Permalink to this headline">¶</a></h1>
+<h1>gpflow<a class="headerlink" href="#gpflow" title="Permalink to this headline">#</a></h1>
 <span class="target" id="module-gpflow"></span><section id="gpflow-module">
-<h2>gpflow.Module<a class="headerlink" href="#gpflow-module" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.Module<a class="headerlink" href="#gpflow-module" title="Permalink to this headline">#</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="gpflow.Module">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.</span></span><span class="sig-name descname"><span class="pre">Module</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/gpflow/base.html#Module"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.Module" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.</span></span><span class="sig-name descname"><span class="pre">Module</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/gpflow/base.html#Module"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.Module" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">tensorflow.python.module.module.Module</span></code></p>
 </dd></dl>
 
 </section>
 <section id="gpflow-parameter">
-<h2>gpflow.Parameter<a class="headerlink" href="#gpflow-parameter" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.Parameter<a class="headerlink" href="#gpflow-parameter" title="Permalink to this headline">#</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="gpflow.Parameter">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.</span></span><span class="sig-name descname"><span class="pre">Parameter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transform</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prior</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prior_on</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trainable</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dtype</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unconstrained_shape</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">constrained_shape</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shape</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/gpflow/base.html#Parameter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.Parameter" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.</span></span><span class="sig-name descname"><span class="pre">Parameter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transform</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prior</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prior_on</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trainable</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dtype</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unconstrained_shape</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">constrained_shape</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shape</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/gpflow/base.html#Parameter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.Parameter" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">tensorflow_probability.python.util.deferred_tensor.TransformedVariable</span></code></p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -798,7 +792,7 @@ function checkPageExistsAndRedirect(event) {
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="gpflow.Parameter.assign">
-<span class="sig-name descname"><span class="pre">assign</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_locking</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">read_value</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/gpflow/base.html#Parameter.assign"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.Parameter.assign" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">assign</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_locking</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">read_value</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/gpflow/base.html#Parameter.assign"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.Parameter.assign" title="Permalink to this definition">#</a></dt>
 <dd><p>Assigns constrained <cite>value</cite> to the unconstrained parameter’s variable.
 It passes constrained value through parameter’s transform first.</p>
 <dl>
@@ -829,7 +823,7 @@ value of the variable; if False will return the assign op.</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="gpflow.Parameter.log_prior_density">
-<span class="sig-name descname"><span class="pre">log_prior_density</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/gpflow/base.html#Parameter.log_prior_density"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.Parameter.log_prior_density" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">log_prior_density</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/gpflow/base.html#Parameter.log_prior_density"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.Parameter.log_prior_density" title="Permalink to this definition">#</a></dt>
 <dd><p>Log of the prior probability density of the constrained variable.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
@@ -840,7 +834,7 @@ value of the variable; if False will return the assign op.</p></li>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="gpflow.Parameter.trainable">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">trainable</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#gpflow.Parameter.trainable" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">trainable</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#gpflow.Parameter.trainable" title="Permalink to this definition">#</a></dt>
 <dd><p><cite>True</cite> if this instance is trainable, else <cite>False</cite>.</p>
 <p>This attribute cannot be set directly. Use <a class="reference internal" href="#gpflow.set_trainable" title="gpflow.set_trainable"><code class="xref py py-func docutils literal notranslate"><span class="pre">gpflow.set_trainable()</span></code></a>.</p>
 <dl class="field-list simple">
@@ -854,10 +848,10 @@ value of the variable; if False will return the assign op.</p></li>
 
 </section>
 <section id="gpflow-default-float">
-<h2>gpflow.default_float<a class="headerlink" href="#gpflow-default-float" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.default_float<a class="headerlink" href="#gpflow-default-float" title="Permalink to this headline">#</a></h2>
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.default_float">
-<span class="sig-prename descclassname"><span class="pre">gpflow.</span></span><span class="sig-name descname"><span class="pre">default_float</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/gpflow/config/__config__.html#default_float"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.default_float" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">gpflow.</span></span><span class="sig-name descname"><span class="pre">default_float</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/gpflow/config/__config__.html#default_float"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.default_float" title="Permalink to this definition">#</a></dt>
 <dd><p>Returns default float type</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
@@ -868,10 +862,10 @@ value of the variable; if False will return the assign op.</p></li>
 
 </section>
 <section id="gpflow-default-int">
-<h2>gpflow.default_int<a class="headerlink" href="#gpflow-default-int" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.default_int<a class="headerlink" href="#gpflow-default-int" title="Permalink to this headline">#</a></h2>
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.default_int">
-<span class="sig-prename descclassname"><span class="pre">gpflow.</span></span><span class="sig-name descname"><span class="pre">default_int</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/gpflow/config/__config__.html#default_int"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.default_int" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">gpflow.</span></span><span class="sig-name descname"><span class="pre">default_int</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/gpflow/config/__config__.html#default_int"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.default_int" title="Permalink to this definition">#</a></dt>
 <dd><p>Returns default integer type</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
@@ -882,10 +876,10 @@ value of the variable; if False will return the assign op.</p></li>
 
 </section>
 <section id="gpflow-default-jitter">
-<h2>gpflow.default_jitter<a class="headerlink" href="#gpflow-default-jitter" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.default_jitter<a class="headerlink" href="#gpflow-default-jitter" title="Permalink to this headline">#</a></h2>
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.default_jitter">
-<span class="sig-prename descclassname"><span class="pre">gpflow.</span></span><span class="sig-name descname"><span class="pre">default_jitter</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/gpflow/config/__config__.html#default_jitter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.default_jitter" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">gpflow.</span></span><span class="sig-name descname"><span class="pre">default_jitter</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/gpflow/config/__config__.html#default_jitter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.default_jitter" title="Permalink to this definition">#</a></dt>
 <dd><p>The jitter is a constant that GPflow adds to the diagonal of matrices
 to achieve numerical stability of the system when the condition number
 of the associated matrices is large, and therefore the matrices nearly singular.</p>
@@ -898,10 +892,10 @@ of the associated matrices is large, and therefore the matrices nearly singular.
 
 </section>
 <section id="gpflow-set-trainable">
-<h2>gpflow.set_trainable<a class="headerlink" href="#gpflow-set-trainable" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.set_trainable<a class="headerlink" href="#gpflow-set-trainable" title="Permalink to this headline">#</a></h2>
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.set_trainable">
-<span class="sig-prename descclassname"><span class="pre">gpflow.</span></span><span class="sig-name descname"><span class="pre">set_trainable</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flag</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/gpflow/utilities/misc.html#set_trainable"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.set_trainable" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">gpflow.</span></span><span class="sig-name descname"><span class="pre">set_trainable</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flag</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/gpflow/utilities/misc.html#set_trainable"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.set_trainable" title="Permalink to this definition">#</a></dt>
 <dd><p>Set trainable flag for all <cite>tf.Variable`s and `gpflow.Parameter`s in a `tf.Module</cite> or collection
 of <a href="#id7"><span class="problematic" id="id8">`</span></a>tf.Module`s.</p>
 <dl class="field-list simple">
@@ -919,7 +913,7 @@ of <a href="#id7"><span class="problematic" id="id8">`</span></a>tf.Module`s.</p
 
 </section>
 <section id="gpflow-base">
-<h2>gpflow.base<a class="headerlink" href="#gpflow-base" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.base<a class="headerlink" href="#gpflow-base" title="Permalink to this headline">#</a></h2>
 <div class="toctree-wrapper compound">
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="base/index.html">gpflow.base</a></li>
@@ -927,7 +921,7 @@ of <a href="#id7"><span class="problematic" id="id8">`</span></a>tf.Module`s.</p
 </div>
 </section>
 <section id="gpflow-conditionals">
-<h2>gpflow.conditionals<a class="headerlink" href="#gpflow-conditionals" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.conditionals<a class="headerlink" href="#gpflow-conditionals" title="Permalink to this headline">#</a></h2>
 <div class="toctree-wrapper compound">
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="conditionals/index.html">gpflow.conditionals</a></li>
@@ -935,7 +929,7 @@ of <a href="#id7"><span class="problematic" id="id8">`</span></a>tf.Module`s.</p
 </div>
 </section>
 <section id="gpflow-config">
-<h2>gpflow.config<a class="headerlink" href="#gpflow-config" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.config<a class="headerlink" href="#gpflow-config" title="Permalink to this headline">#</a></h2>
 <div class="toctree-wrapper compound">
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="config/index.html">gpflow.config</a></li>
@@ -943,7 +937,7 @@ of <a href="#id7"><span class="problematic" id="id8">`</span></a>tf.Module`s.</p
 </div>
 </section>
 <section id="gpflow-covariances">
-<h2>gpflow.covariances<a class="headerlink" href="#gpflow-covariances" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.covariances<a class="headerlink" href="#gpflow-covariances" title="Permalink to this headline">#</a></h2>
 <div class="toctree-wrapper compound">
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="covariances/index.html">gpflow.covariances</a></li>
@@ -951,7 +945,7 @@ of <a href="#id7"><span class="problematic" id="id8">`</span></a>tf.Module`s.</p
 </div>
 </section>
 <section id="gpflow-expectations">
-<h2>gpflow.expectations<a class="headerlink" href="#gpflow-expectations" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.expectations<a class="headerlink" href="#gpflow-expectations" title="Permalink to this headline">#</a></h2>
 <div class="toctree-wrapper compound">
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="expectations/index.html">gpflow.expectations</a></li>
@@ -959,7 +953,7 @@ of <a href="#id7"><span class="problematic" id="id8">`</span></a>tf.Module`s.</p
 </div>
 </section>
 <section id="gpflow-experimental">
-<h2>gpflow.experimental<a class="headerlink" href="#gpflow-experimental" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.experimental<a class="headerlink" href="#gpflow-experimental" title="Permalink to this headline">#</a></h2>
 <div class="toctree-wrapper compound">
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="experimental/index.html">gpflow.experimental</a></li>
@@ -967,7 +961,7 @@ of <a href="#id7"><span class="problematic" id="id8">`</span></a>tf.Module`s.</p
 </div>
 </section>
 <section id="gpflow-inducing-variables">
-<h2>gpflow.inducing_variables<a class="headerlink" href="#gpflow-inducing-variables" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.inducing_variables<a class="headerlink" href="#gpflow-inducing-variables" title="Permalink to this headline">#</a></h2>
 <div class="toctree-wrapper compound">
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="inducing_variables/index.html">gpflow.inducing_variables</a></li>
@@ -975,7 +969,7 @@ of <a href="#id7"><span class="problematic" id="id8">`</span></a>tf.Module`s.</p
 </div>
 </section>
 <section id="gpflow-kernels">
-<h2>gpflow.kernels<a class="headerlink" href="#gpflow-kernels" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.kernels<a class="headerlink" href="#gpflow-kernels" title="Permalink to this headline">#</a></h2>
 <div class="toctree-wrapper compound">
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="kernels/index.html">gpflow.kernels</a></li>
@@ -983,7 +977,7 @@ of <a href="#id7"><span class="problematic" id="id8">`</span></a>tf.Module`s.</p
 </div>
 </section>
 <section id="gpflow-kullback-leiblers">
-<h2>gpflow.kullback_leiblers<a class="headerlink" href="#gpflow-kullback-leiblers" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.kullback_leiblers<a class="headerlink" href="#gpflow-kullback-leiblers" title="Permalink to this headline">#</a></h2>
 <div class="toctree-wrapper compound">
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="kullback_leiblers/index.html">gpflow.kullback_leiblers</a></li>
@@ -991,7 +985,7 @@ of <a href="#id7"><span class="problematic" id="id8">`</span></a>tf.Module`s.</p
 </div>
 </section>
 <section id="gpflow-likelihoods">
-<h2>gpflow.likelihoods<a class="headerlink" href="#gpflow-likelihoods" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.likelihoods<a class="headerlink" href="#gpflow-likelihoods" title="Permalink to this headline">#</a></h2>
 <div class="toctree-wrapper compound">
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="likelihoods/index.html">gpflow.likelihoods</a></li>
@@ -999,7 +993,7 @@ of <a href="#id7"><span class="problematic" id="id8">`</span></a>tf.Module`s.</p
 </div>
 </section>
 <section id="gpflow-logdensities">
-<h2>gpflow.logdensities<a class="headerlink" href="#gpflow-logdensities" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.logdensities<a class="headerlink" href="#gpflow-logdensities" title="Permalink to this headline">#</a></h2>
 <div class="toctree-wrapper compound">
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="logdensities/index.html">gpflow.logdensities</a></li>
@@ -1007,7 +1001,7 @@ of <a href="#id7"><span class="problematic" id="id8">`</span></a>tf.Module`s.</p
 </div>
 </section>
 <section id="gpflow-mean-functions">
-<h2>gpflow.mean_functions<a class="headerlink" href="#gpflow-mean-functions" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.mean_functions<a class="headerlink" href="#gpflow-mean-functions" title="Permalink to this headline">#</a></h2>
 <div class="toctree-wrapper compound">
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="mean_functions/index.html">gpflow.mean_functions</a></li>
@@ -1015,7 +1009,7 @@ of <a href="#id7"><span class="problematic" id="id8">`</span></a>tf.Module`s.</p
 </div>
 </section>
 <section id="gpflow-models">
-<h2>gpflow.models<a class="headerlink" href="#gpflow-models" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.models<a class="headerlink" href="#gpflow-models" title="Permalink to this headline">#</a></h2>
 <div class="toctree-wrapper compound">
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="models/index.html">gpflow.models</a></li>
@@ -1023,7 +1017,7 @@ of <a href="#id7"><span class="problematic" id="id8">`</span></a>tf.Module`s.</p
 </div>
 </section>
 <section id="gpflow-monitor">
-<h2>gpflow.monitor<a class="headerlink" href="#gpflow-monitor" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.monitor<a class="headerlink" href="#gpflow-monitor" title="Permalink to this headline">#</a></h2>
 <div class="toctree-wrapper compound">
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="monitor/index.html">gpflow.monitor</a></li>
@@ -1031,7 +1025,7 @@ of <a href="#id7"><span class="problematic" id="id8">`</span></a>tf.Module`s.</p
 </div>
 </section>
 <section id="gpflow-optimizers">
-<h2>gpflow.optimizers<a class="headerlink" href="#gpflow-optimizers" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.optimizers<a class="headerlink" href="#gpflow-optimizers" title="Permalink to this headline">#</a></h2>
 <div class="toctree-wrapper compound">
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="optimizers/index.html">gpflow.optimizers</a></li>
@@ -1039,7 +1033,7 @@ of <a href="#id7"><span class="problematic" id="id8">`</span></a>tf.Module`s.</p
 </div>
 </section>
 <section id="gpflow-posteriors">
-<h2>gpflow.posteriors<a class="headerlink" href="#gpflow-posteriors" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.posteriors<a class="headerlink" href="#gpflow-posteriors" title="Permalink to this headline">#</a></h2>
 <div class="toctree-wrapper compound">
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="posteriors/index.html">gpflow.posteriors</a></li>
@@ -1047,7 +1041,7 @@ of <a href="#id7"><span class="problematic" id="id8">`</span></a>tf.Module`s.</p
 </div>
 </section>
 <section id="gpflow-probability-distributions">
-<h2>gpflow.probability_distributions<a class="headerlink" href="#gpflow-probability-distributions" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.probability_distributions<a class="headerlink" href="#gpflow-probability-distributions" title="Permalink to this headline">#</a></h2>
 <div class="toctree-wrapper compound">
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="probability_distributions/index.html">gpflow.probability_distributions</a></li>
@@ -1055,7 +1049,7 @@ of <a href="#id7"><span class="problematic" id="id8">`</span></a>tf.Module`s.</p
 </div>
 </section>
 <section id="gpflow-quadrature">
-<h2>gpflow.quadrature<a class="headerlink" href="#gpflow-quadrature" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.quadrature<a class="headerlink" href="#gpflow-quadrature" title="Permalink to this headline">#</a></h2>
 <div class="toctree-wrapper compound">
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="quadrature/index.html">gpflow.quadrature</a></li>
@@ -1063,7 +1057,7 @@ of <a href="#id7"><span class="problematic" id="id8">`</span></a>tf.Module`s.</p
 </div>
 </section>
 <section id="gpflow-utilities">
-<h2>gpflow.utilities<a class="headerlink" href="#gpflow-utilities" title="Permalink to this headline">¶</a></h2>
+<h2>gpflow.utilities<a class="headerlink" href="#gpflow-utilities" title="Permalink to this headline">#</a></h2>
 <div class="toctree-wrapper compound">
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="utilities/index.html">gpflow.utilities</a></li>
@@ -1082,8 +1076,9 @@ of <a href="#id7"><span class="problematic" id="id8">`</span></a>tf.Module`s.</p
       </div>
     </div>
   
-    <script src="../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf"></script>
-  <footer class="footer mt-5 mt-md-0">
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf"></script>
+<footer class="footer mt-5 mt-md-0">
   <div class="container">
     
     <div class="footer-item">
@@ -1094,7 +1089,7 @@ of <a href="#id7"><span class="problematic" id="id8">`</span></a>tf.Module`s.</p
     
     <div class="footer-item">
       <p class="sphinx-version">
-Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.4.0.<br>
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.5.0.<br>
 </p>
     </div>
     
