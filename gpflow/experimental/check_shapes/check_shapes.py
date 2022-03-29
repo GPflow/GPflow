@@ -16,14 +16,23 @@ Tool for checking the shapes of function using tf Tensors.
 """
 import inspect
 from functools import wraps
-from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence, Union, cast
+from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence, Tuple, Union, cast
 
 from ..utils import experimental
 from .accessors import set_check_shapes
 from .argument_ref import RESULT_TOKEN
-from .base_types import C
+from .base_types import C, Shape
 from .config import get_enable_check_shapes
-from .errors import ShapeMismatchError
+from .error_contexts import (
+    ArgumentContext,
+    ErrorContext,
+    FunctionCallContext,
+    FunctionDefinitionContext,
+    ParallelContext,
+    ShapeContext,
+    StackContext,
+)
+from .exceptions import ShapeMismatchError
 from .parser import parse_and_rewrite_docstring, parse_argument_spec
 from .shapes import get_shape
 from .specs import ParsedArgumentSpec
@@ -52,17 +61,18 @@ def check_shapes(*specs: str) -> Callable[[C], C]:
     if not get_enable_check_shapes():
         return null_check_shapes
 
-    parsed_specs = tuple(parse_argument_spec(spec) for spec in specs)
+    unbound_error_context = FunctionCallContext(check_shapes)
 
-    # We create four groups of specs:
-    # * Groups for checking before and after the function is called.
-    # * Specs for printing in error message and specs for actually checking.
-    pre_print_specs = [spec for spec in parsed_specs if not spec.argument_ref.is_result]
-    post_print_specs = parsed_specs
-    pre_check_specs = pre_print_specs
-    post_check_specs = [spec for spec in parsed_specs if spec.argument_ref.is_result]
+    parsed_specs = tuple(
+        parse_argument_spec(spec, StackContext(unbound_error_context, ArgumentContext(i)))
+        for i, spec in enumerate(specs)
+    )
+
+    pre_specs = [spec for spec in parsed_specs if not spec.argument_ref.is_result]
+    post_specs = [spec for spec in parsed_specs if spec.argument_ref.is_result]
 
     def _check_shapes(func: C) -> C:
+        bound_error_context = FunctionDefinitionContext(func)
         signature = inspect.signature(func)
 
         @wraps(func)
@@ -82,40 +92,61 @@ def check_shapes(*specs: str) -> Callable[[C], C]:
                 ) from e
             bound_arguments.apply_defaults()
             arg_map = bound_arguments.arguments
-            context: Dict[str, Union[int, List[Optional[int]]]] = {}
-            _assert_shapes(func, pre_print_specs, pre_check_specs, arg_map, context)
+            shape_context: List[Tuple[ParsedArgumentSpec, Shape]] = []
+            dim_context: Dict[str, Union[int, List[Optional[int]]]] = {}
+            _assert_shapes(pre_specs, arg_map, shape_context, dim_context, bound_error_context)
             result = func(*args, **kwargs)
             arg_map[RESULT_TOKEN] = result
-            _assert_shapes(func, post_print_specs, post_check_specs, arg_map, context)
+            _assert_shapes(post_specs, arg_map, shape_context, dim_context, bound_error_context)
             return result
 
         set_check_shapes(wrapped, _check_shapes)
-        wrapped.__doc__ = parse_and_rewrite_docstring(wrapped.__doc__, parsed_specs)
+        wrapped.__doc__ = parse_and_rewrite_docstring(
+            wrapped.__doc__, parsed_specs, bound_error_context
+        )
         return cast(C, wrapped)
 
     return _check_shapes
 
 
 def _assert_shapes(
-    func: C,
-    print_specs: Sequence[ParsedArgumentSpec],
-    check_specs: Sequence[ParsedArgumentSpec],
+    specs: Sequence[ParsedArgumentSpec],
     arg_map: Mapping[str, Any],
-    context: Dict[str, Union[int, List[Optional[int]]]],
+    shape_context: List[Tuple[ParsedArgumentSpec, Shape]],
+    dim_context: Dict[str, Union[int, List[Optional[int]]]],
+    error_context: ErrorContext,
 ) -> None:
     def _assert(condition: bool) -> None:
         if not condition:
-            raise ShapeMismatchError(func, print_specs, arg_map)
+            raise ShapeMismatchError(
+                StackContext(
+                    error_context,
+                    ParallelContext(
+                        [
+                            StackContext(
+                                spec.argument_ref.error_context, ShapeContext(spec.shape, actual)
+                            )
+                            for spec, actual in shape_context
+                        ]
+                    ),
+                )
+            )
 
-    for arg_spec in check_specs:
-        arg_value = arg_spec.argument_ref.get(func, arg_map)
+    new_shape_context = []
+    for arg_spec in specs:
+        arg_value = arg_spec.argument_ref.get(arg_map, error_context)
+        actual: Shape
         if arg_value is None:
-            continue
-        actual_shape = get_shape(arg_value)
-        if actual_shape is None:
-            continue
+            actual = None
+        else:
+            actual = get_shape(
+                arg_value, StackContext(error_context, arg_spec.argument_ref.error_context)
+            )
+        shape_context.append((arg_spec, actual))
+        if actual is not None:
+            new_shape_context.append((arg_spec, actual))
 
-        actual = list(actual_shape)
+    for arg_spec, actual in new_shape_context:
         actual_len = len(actual)
         actual_i = 0
 
@@ -141,10 +172,10 @@ def _assert_shapes(
                     # Anonymous dimension spec - we don't care about the actual values.
                     continue
 
-                expected_dims = context.get(expected_name)
+                expected_dims = dim_context.get(expected_name)
                 if expected_dims is None:
                     expected_dims = cast(List[Optional[int]], variable_rank_len * [None])
-                    context[expected_name] = expected_dims
+                    dim_context[expected_name] = expected_dims
 
                 assert isinstance(expected_dims, list)
 
@@ -163,7 +194,7 @@ def _assert_shapes(
                     if dim_spec.constant is not None:
                         _assert(dim_spec.constant == actual_dim)
                     elif dim_spec.variable_name is not None:
-                        expected_dim = context.setdefault(dim_spec.variable_name, actual_dim)
+                        expected_dim = dim_context.setdefault(dim_spec.variable_name, actual_dim)
                         _assert(expected_dim == actual_dim)
                     else:
                         pass  # Anonymous dimension - we don't care about the actual value.

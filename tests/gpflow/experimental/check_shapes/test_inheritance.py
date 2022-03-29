@@ -20,11 +20,10 @@ from typing import Any, Callable, ContextManager
 
 import pytest
 
-from gpflow.base import TensorType
 from gpflow.experimental.check_shapes import ShapeMismatchError, check_shapes, inherit_check_shapes
 from gpflow.experimental.check_shapes.config import disable_check_shapes
 
-from .utils import t
+from .utils import TestShaped, t
 
 
 def test_inherit_check_shapes__defined_in_super_class() -> None:
@@ -34,7 +33,7 @@ def test_inherit_check_shapes__defined_in_super_class() -> None:
             "a: [4]",
             "return: [1]",
         )
-        def f(self, a: TensorType) -> TensorType:
+        def f(self, a: TestShaped) -> TestShaped:
             pass
 
     class MiddleClass(SuperClass):  # pylint: disable=abstract-method
@@ -42,7 +41,7 @@ def test_inherit_check_shapes__defined_in_super_class() -> None:
 
     class SubClass(MiddleClass):
         @inherit_check_shapes
-        def f(self, a: TensorType) -> TensorType:
+        def f(self, a: TestShaped) -> TestShaped:
             return t(1)
 
     sub = SubClass()
@@ -59,17 +58,17 @@ def test_inherit_check_shapes__overridden_with_checks() -> None:
             "a: [4]",
             "return: [1]",
         )
-        def f(self, a: TensorType) -> TensorType:
+        def f(self, a: TestShaped) -> TestShaped:
             pass
 
     class MiddleClass(SuperClass):
         @inherit_check_shapes
-        def f(self, a: TensorType) -> TensorType:
+        def f(self, a: TestShaped) -> TestShaped:
             return t(2)
 
     class SubClass(MiddleClass):
         @inherit_check_shapes
-        def f(self, a: TensorType) -> TensorType:
+        def f(self, a: TestShaped) -> TestShaped:
             return t(1)
 
     sub = SubClass()
@@ -86,16 +85,16 @@ def test_inherit_check_shapes__overridden_without_checks() -> None:
             "a: [4]",
             "return: [1]",
         )
-        def f(self, a: TensorType) -> TensorType:
+        def f(self, a: TestShaped) -> TestShaped:
             pass
 
     class MiddleClass(SuperClass):
-        def f(self, a: TensorType) -> TensorType:
+        def f(self, a: TestShaped) -> TestShaped:
             return t(2)
 
     class SubClass(MiddleClass):
         @inherit_check_shapes
-        def f(self, a: TensorType) -> TensorType:
+        def f(self, a: TestShaped) -> TestShaped:
             return t(1)
 
     sub = SubClass()
@@ -115,12 +114,12 @@ def test_inherit_check_shapes__defined_in_middle_class() -> None:
             "a: [4]",
             "return: [1]",
         )
-        def f(self, a: TensorType) -> TensorType:
+        def f(self, a: TestShaped) -> TestShaped:
             pass
 
     class SubClass(MiddleClass):
         @inherit_check_shapes
-        def f(self, a: TensorType) -> TensorType:
+        def f(self, a: TestShaped) -> TestShaped:
             return t(1)
 
     sub = SubClass()
@@ -137,7 +136,7 @@ def test_inherit_check_shapes__multiple_inheritance() -> None:
             "a: [4]",
             "return: [1]",
         )
-        def f(self, a: TensorType) -> TensorType:
+        def f(self, a: TestShaped) -> TestShaped:
             pass
 
     class Right(ABC):
@@ -146,16 +145,16 @@ def test_inherit_check_shapes__multiple_inheritance() -> None:
             "a: [5]",
             "return: [1]",
         )
-        def g(self, a: TensorType) -> TensorType:
+        def g(self, a: TestShaped) -> TestShaped:
             pass
 
     class SubClass(Left, Right):
         @inherit_check_shapes
-        def f(self, a: TensorType) -> TensorType:
+        def f(self, a: TestShaped) -> TestShaped:
             return t(1)
 
         @inherit_check_shapes
-        def g(self, a: TensorType) -> TensorType:
+        def g(self, a: TestShaped) -> TestShaped:
             return t(1)
 
     sub = SubClass()
@@ -179,7 +178,7 @@ def test_inherit_check_shapes__undefined() -> None:
 
         class SubClass(SuperClass):
             @inherit_check_shapes
-            def f(self, a: TensorType) -> TensorType:
+            def f(self, a: TestShaped) -> TestShaped:
                 return t(1)
 
 
@@ -210,14 +209,14 @@ def test_inherit_check_shapes__disable(enable_super: bool, enable_sub: bool) -> 
                 "b: [d...]",
                 "return: [d...]",
             )
-            def f(self, a: TensorType, b: TensorType) -> TensorType:
+            def f(self, a: TestShaped, b: TestShaped) -> TestShaped:
                 pass
 
     with sub_context():
 
         class SubClass(SuperClass):
             @inherit_check_shapes
-            def f(self, a: TensorType, b: TensorType) -> TensorType:
+            def f(self, a: TestShaped, b: TestShaped) -> TestShaped:
                 return a
 
     sub = SubClass()
@@ -239,12 +238,12 @@ def test_inherit_check_shapes__rewrites_docstring() -> None:
             "a: [4]",
             "return: [1]",
         )
-        def f(self, a: TensorType) -> TensorType:
+        def f(self, a: TestShaped) -> TestShaped:
             pass
 
     class SubClass(SuperClass):
         @inherit_check_shapes
-        def f(self, a: TensorType) -> TensorType:
+        def f(self, a: TestShaped) -> TestShaped:
             """
             An inherited method.
 

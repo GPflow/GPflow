@@ -165,8 +165,13 @@ def test_check_shapes__disable__speed(func_wrapper: Callable[[Any], Any]) -> Non
         after = perf_counter()
         return after - before
 
+    time_no_checks()  # Warm-up.
     t_no_checks = time_no_checks()
+
+    time_disabled_checks()  # Warm-up.
     t_disabled_checks = time_disabled_checks()
+
+    time_with_checks()  # Warm-up.
     t_with_checks = time_with_checks()
 
     assert t_no_checks < t_with_checks

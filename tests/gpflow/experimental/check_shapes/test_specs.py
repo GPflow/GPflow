@@ -26,42 +26,42 @@ from .utils import make_argument_ref, make_shape_spec, varrank
                 make_argument_ref("foo"),
                 make_shape_spec(),
             ),
-            "foo: ()",
+            "foo: []",
         ),
         (
             ParsedArgumentSpec(
                 make_argument_ref("foo"),
                 make_shape_spec(1, 2),
             ),
-            "foo: (1, 2)",
+            "foo: [1, 2]",
         ),
         (
             ParsedArgumentSpec(
                 make_argument_ref("foo"),
                 make_shape_spec("x", "y"),
             ),
-            "foo: (x, y)",
+            "foo: [x, y]",
         ),
         (
             ParsedArgumentSpec(
                 make_argument_ref("foo"),
                 make_shape_spec(varrank("x"), "y"),
             ),
-            "foo: (x..., y)",
+            "foo: [x..., y]",
         ),
         (
             ParsedArgumentSpec(
                 make_argument_ref("foo"),
                 make_shape_spec("x", varrank("y"), "z"),
             ),
-            "foo: (x, y..., z)",
+            "foo: [x, y..., z]",
         ),
         (
             ParsedArgumentSpec(
                 make_argument_ref("foo"),
                 make_shape_spec(None, varrank(None), None),
             ),
-            "foo: (., ..., .)",
+            "foo: [., ..., .]",
         ),
     ],
 )

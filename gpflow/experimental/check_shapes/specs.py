@@ -55,7 +55,7 @@ class ParsedShapeSpec:
 
     def __repr__(self) -> str:
         dims = [repr(dim) for dim in self.dims]
-        return f"({', '.join(dims)})"
+        return f"[{', '.join(dims)}]"
 
 
 @dataclass(frozen=True)
