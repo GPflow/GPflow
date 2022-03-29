@@ -19,8 +19,12 @@ from typing import Optional, Tuple
 
 import pytest
 
-from gpflow.experimental.check_shapes import ShapeMismatchError, check_shapes, get_check_shapes
-from gpflow.experimental.check_shapes.config import disable_check_shapes
+from gpflow.experimental.check_shapes import (
+    ShapeMismatchError,
+    check_shapes,
+    disable_check_shapes,
+    get_check_shapes,
+)
 
 from .utils import TestShaped, current_line, t, t_unk
 
@@ -445,7 +449,7 @@ def test_check_shapes__error_message() -> None:
     (message,) = e.value.args
     assert (
         f"""
-Tensor shape mismatch in call to function.
+Tensor shape mismatch.
   Function: test_check_shapes__error_message.<locals>.f
     Declared: {__file__}:{def_line}
     Note:     Some note on f

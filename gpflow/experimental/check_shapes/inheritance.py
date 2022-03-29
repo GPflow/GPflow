@@ -20,8 +20,8 @@ from typing import Callable, Optional, cast
 from ..utils import experimental
 from .accessors import maybe_get_check_shapes
 from .base_types import C
-from .check_shapes import null_check_shapes
 from .config import get_enable_check_shapes
+from .decorator import null_check_shapes
 
 
 @experimental

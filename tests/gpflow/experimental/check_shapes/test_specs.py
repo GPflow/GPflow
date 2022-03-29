@@ -19,7 +19,7 @@ from gpflow.experimental.check_shapes.specs import (
     ParsedNoteSpec,
 )
 
-from .utils import make_argument_ref, make_shape_spec, varrank
+from .utils import make_arg_spec, make_argument_ref, make_shape_spec, varrank
 
 
 def test_note_spec() -> None:
@@ -31,7 +31,7 @@ def test_note_spec() -> None:
     "argument_spec,expected_repr",
     [
         (
-            ParsedArgumentSpec(
+            make_arg_spec(
                 make_argument_ref("foo"),
                 make_shape_spec(),
                 note=None,
@@ -39,7 +39,7 @@ def test_note_spec() -> None:
             "foo: []",
         ),
         (
-            ParsedArgumentSpec(
+            make_arg_spec(
                 make_argument_ref("foo"),
                 make_shape_spec(1, 2),
                 note=None,
@@ -47,7 +47,7 @@ def test_note_spec() -> None:
             "foo: [1, 2]",
         ),
         (
-            ParsedArgumentSpec(
+            make_arg_spec(
                 make_argument_ref("foo"),
                 make_shape_spec("x", "y"),
                 note=None,
@@ -55,7 +55,7 @@ def test_note_spec() -> None:
             "foo: [x, y]",
         ),
         (
-            ParsedArgumentSpec(
+            make_arg_spec(
                 make_argument_ref("foo"),
                 make_shape_spec(varrank("x"), "y"),
                 note=None,
@@ -63,7 +63,7 @@ def test_note_spec() -> None:
             "foo: [x..., y]",
         ),
         (
-            ParsedArgumentSpec(
+            make_arg_spec(
                 make_argument_ref("foo"),
                 make_shape_spec("x", varrank("y"), "z"),
                 note=None,
@@ -71,7 +71,7 @@ def test_note_spec() -> None:
             "foo: [x, y..., z]",
         ),
         (
-            ParsedArgumentSpec(
+            make_arg_spec(
                 make_argument_ref("foo"),
                 make_shape_spec(None, varrank(None), None),
                 note=None,
@@ -79,7 +79,7 @@ def test_note_spec() -> None:
             "foo: [., ..., .]",
         ),
         (
-            ParsedArgumentSpec(
+            make_arg_spec(
                 make_argument_ref("foo"),
                 make_shape_spec("x", "y"),
                 note=ParsedNoteSpec("bar"),
@@ -99,7 +99,7 @@ def test_argument_spec(argument_spec: ParsedArgumentSpec, expected_repr: str) ->
         (
             ParsedFunctionSpec(
                 (
-                    ParsedArgumentSpec(
+                    make_arg_spec(
                         make_argument_ref("foo"),
                         make_shape_spec("x", "y"),
                         note=None,
@@ -112,12 +112,12 @@ def test_argument_spec(argument_spec: ParsedArgumentSpec, expected_repr: str) ->
         (
             ParsedFunctionSpec(
                 (
-                    ParsedArgumentSpec(
+                    make_arg_spec(
                         make_argument_ref("foo"),
                         make_shape_spec("x", "y"),
                         note=None,
                     ),
-                    ParsedArgumentSpec(
+                    make_arg_spec(
                         make_argument_ref("bar"),
                         make_shape_spec("x", "z"),
                         note=ParsedNoteSpec("bar note"),

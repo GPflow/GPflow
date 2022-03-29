@@ -23,13 +23,16 @@ from gpflow.experimental.check_shapes import check_shapes
 from gpflow.experimental.check_shapes.config import set_rewrite_docstrings
 from gpflow.experimental.check_shapes.exceptions import SpecificationParseError
 from gpflow.experimental.check_shapes.parser import parse_and_rewrite_docstring, parse_function_spec
-from gpflow.experimental.check_shapes.specs import (
-    ParsedArgumentSpec,
-    ParsedFunctionSpec,
-    ParsedNoteSpec,
-)
+from gpflow.experimental.check_shapes.specs import ParsedFunctionSpec, ParsedNoteSpec
 
-from .utils import TestContext, current_line, make_argument_ref, make_shape_spec, varrank
+from .utils import (
+    TestContext,
+    current_line,
+    make_arg_spec,
+    make_argument_ref,
+    make_shape_spec,
+    varrank,
+)
 
 
 @dataclass
@@ -54,17 +57,17 @@ _TEST_DATA = [
         ),
         ParsedFunctionSpec(
             (
-                ParsedArgumentSpec(
+                make_arg_spec(
                     make_argument_ref("a"),
                     make_shape_spec(2, 3),
                     note=None,
                 ),
-                ParsedArgumentSpec(
+                make_arg_spec(
                     make_argument_ref("b"),
                     make_shape_spec(2, 4),
                     note=None,
                 ),
-                ParsedArgumentSpec(
+                make_arg_spec(
                     make_argument_ref("return"),
                     make_shape_spec(3, 4),
                     note=None,
@@ -101,17 +104,17 @@ _TEST_DATA = [
         ),
         ParsedFunctionSpec(
             (
-                ParsedArgumentSpec(
+                make_arg_spec(
                     make_argument_ref("a"),
                     make_shape_spec("d1", "d2"),
                     note=None,
                 ),
-                ParsedArgumentSpec(
+                make_arg_spec(
                     make_argument_ref("b"),
                     make_shape_spec("d1", "d3"),
                     note=None,
                 ),
-                ParsedArgumentSpec(
+                make_arg_spec(
                     make_argument_ref("return"),
                     make_shape_spec("d2", "d3"),
                     note=None,
@@ -150,27 +153,27 @@ _TEST_DATA = [
         ),
         ParsedFunctionSpec(
             (
-                ParsedArgumentSpec(
+                make_arg_spec(
                     make_argument_ref("a"),
                     make_shape_spec(varrank("ds")),
                     note=None,
                 ),
-                ParsedArgumentSpec(
+                make_arg_spec(
                     make_argument_ref("b"),
                     make_shape_spec(varrank("ds"), "d1"),
                     note=None,
                 ),
-                ParsedArgumentSpec(
+                make_arg_spec(
                     make_argument_ref("c"),
                     make_shape_spec("d1", varrank("ds"), "d2"),
                     note=None,
                 ),
-                ParsedArgumentSpec(
+                make_arg_spec(
                     make_argument_ref("d"),
                     make_shape_spec("d1", varrank("ds")),
                     note=None,
                 ),
-                ParsedArgumentSpec(
+                make_arg_spec(
                     make_argument_ref("return"),
                     make_shape_spec(varrank("ds"), "d1", "d2"),
                     note=None,
@@ -219,27 +222,27 @@ _TEST_DATA = [
         ),
         ParsedFunctionSpec(
             (
-                ParsedArgumentSpec(
+                make_arg_spec(
                     make_argument_ref("a"),
                     make_shape_spec(None, "d1"),
                     note=None,
                 ),
-                ParsedArgumentSpec(
+                make_arg_spec(
                     make_argument_ref("b"),
                     make_shape_spec(None, "d2"),
                     note=None,
                 ),
-                ParsedArgumentSpec(
+                make_arg_spec(
                     make_argument_ref("c"),
                     make_shape_spec(varrank(None), "d1"),
                     note=None,
                 ),
-                ParsedArgumentSpec(
+                make_arg_spec(
                     make_argument_ref("d"),
                     make_shape_spec(varrank(None), "d2"),
                     note=None,
                 ),
-                ParsedArgumentSpec(
+                make_arg_spec(
                     make_argument_ref("return"),
                     make_shape_spec(varrank(None), "d1", "d2"),
                     note=None,
@@ -286,17 +289,17 @@ _TEST_DATA = [
         ),
         ParsedFunctionSpec(
             (
-                ParsedArgumentSpec(
+                make_arg_spec(
                     make_argument_ref("a"),
                     make_shape_spec(),
                     note=None,
                 ),
-                ParsedArgumentSpec(
+                make_arg_spec(
                     make_argument_ref("b"),
                     make_shape_spec(),
                     note=None,
                 ),
-                ParsedArgumentSpec(
+                make_arg_spec(
                     make_argument_ref("return"),
                     make_shape_spec(),
                     note=None,
@@ -334,22 +337,22 @@ _TEST_DATA = [
         ),
         ParsedFunctionSpec(
             (
-                ParsedArgumentSpec(
+                make_arg_spec(
                     make_argument_ref("x", "ins", 0),
                     make_shape_spec(varrank("a_batch"), 1),
                     note=None,
                 ),
-                ParsedArgumentSpec(
+                make_arg_spec(
                     make_argument_ref("x", "ins", 1),
                     make_shape_spec(varrank("b_batch"), 2),
                     note=None,
                 ),
-                ParsedArgumentSpec(
+                make_arg_spec(
                     make_argument_ref("return", 0, "out"),
                     make_shape_spec(varrank("a_batch"), 3),
                     note=None,
                 ),
-                ParsedArgumentSpec(
+                make_arg_spec(
                     make_argument_ref("return", 1, "out"),
                     make_shape_spec(varrank("b_batch"), 4),
                     note=None,
@@ -385,17 +388,17 @@ _TEST_DATA = [
         ),
         ParsedFunctionSpec(
             (
-                ParsedArgumentSpec(
+                make_arg_spec(
                     make_argument_ref("a"),
                     make_shape_spec("d1", "d2"),
                     note=None,
                 ),
-                ParsedArgumentSpec(
+                make_arg_spec(
                     make_argument_ref("b"),
                     make_shape_spec("d1", "d3"),
                     note=ParsedNoteSpec("Some note on B."),
                 ),
-                ParsedArgumentSpec(
+                make_arg_spec(
                     make_argument_ref("return"),
                     make_shape_spec("d2", "d3"),
                     note=ParsedNoteSpec("Some note on the result."),
@@ -443,17 +446,17 @@ _TEST_DATA = [
         ),
         ParsedFunctionSpec(
             (
-                ParsedArgumentSpec(
+                make_arg_spec(
                     make_argument_ref("a"),
                     make_shape_spec("d1", "d2"),
                     note=None,
                 ),
-                ParsedArgumentSpec(
+                make_arg_spec(
                     make_argument_ref("b"),
                     make_shape_spec("d1", "d3"),
                     note=None,
                 ),
-                ParsedArgumentSpec(
+                make_arg_spec(
                     make_argument_ref("return"),
                     make_shape_spec("d2", "d3"),
                     note=None,
@@ -473,17 +476,17 @@ _TEST_DATA = [
         ),
         ParsedFunctionSpec(
             (
-                ParsedArgumentSpec(
+                make_arg_spec(
                     make_argument_ref("a"),
                     make_shape_spec("d1", "d2"),
                     note=None,
                 ),
-                ParsedArgumentSpec(
+                make_arg_spec(
                     make_argument_ref("b"),
                     make_shape_spec("d1", "d3"),
                     note=None,
                 ),
-                ParsedArgumentSpec(
+                make_arg_spec(
                     make_argument_ref("return"),
                     make_shape_spec("d2", "d3"),
                     note=None,
@@ -510,17 +513,17 @@ _TEST_DATA = [
         ),
         ParsedFunctionSpec(
             (
-                ParsedArgumentSpec(
+                make_arg_spec(
                     make_argument_ref("a"),
                     make_shape_spec("d1", "d2"),
                     note=None,
                 ),
-                ParsedArgumentSpec(
+                make_arg_spec(
                     make_argument_ref("b"),
                     make_shape_spec("d1", "d3"),
                     note=None,
                 ),
-                ParsedArgumentSpec(
+                make_arg_spec(
                     make_argument_ref("return"),
                     make_shape_spec("d2", "d3"),
                     note=None,
@@ -542,12 +545,12 @@ _TEST_DATA = [
         ),
         ParsedFunctionSpec(
             (
-                ParsedArgumentSpec(
+                make_arg_spec(
                     make_argument_ref("a"),
                     make_shape_spec(varrank("batch"), "n_features"),
                     note=None,
                 ),
-                ParsedArgumentSpec(
+                make_arg_spec(
                     make_argument_ref("return"),
                     make_shape_spec(varrank("batch"), 1),
                     note=None,
@@ -590,12 +593,12 @@ _TEST_DATA = [
         ),
         ParsedFunctionSpec(
             (
-                ParsedArgumentSpec(
+                make_arg_spec(
                     make_argument_ref("a"),
                     make_shape_spec(varrank("batch"), "n_features"),
                     note=None,
                 ),
-                ParsedArgumentSpec(
+                make_arg_spec(
                     make_argument_ref("return"),
                     make_shape_spec(varrank("batch"), 1),
                     note=None,
@@ -638,27 +641,27 @@ _TEST_DATA = [
         ),
         ParsedFunctionSpec(
             (
-                ParsedArgumentSpec(
+                make_arg_spec(
                     make_argument_ref("train", "features"),
                     make_shape_spec(varrank("train_batch"), "n_features"),
                     note=None,
                 ),
-                ParsedArgumentSpec(
+                make_arg_spec(
                     make_argument_ref("train", "labels"),
                     make_shape_spec(varrank("train_batch"), "n_labels"),
                     note=ParsedNoteSpec("Label note."),
                 ),
-                ParsedArgumentSpec(
+                make_arg_spec(
                     make_argument_ref("test_features"),
                     make_shape_spec(varrank("test_batch"), "n_features"),
                     note=None,
                 ),
-                ParsedArgumentSpec(
+                make_arg_spec(
                     make_argument_ref("return", 0),
                     make_shape_spec(varrank("test_batch"), "n_labels"),
                     note=None,
                 ),
-                ParsedArgumentSpec(
+                make_arg_spec(
                     make_argument_ref("return", 1),
                     make_shape_spec(varrank("test_batch"), "n_labels"),
                     note=None,
@@ -717,27 +720,27 @@ _TEST_DATA = [
         ),
         ParsedFunctionSpec(
             (
-                ParsedArgumentSpec(
+                make_arg_spec(
                     make_argument_ref("train", "features"),
                     make_shape_spec(varrank("train_batch"), "n_features"),
                     note=None,
                 ),
-                ParsedArgumentSpec(
+                make_arg_spec(
                     make_argument_ref("train", "labels"),
                     make_shape_spec(varrank("train_batch"), "n_labels"),
                     note=ParsedNoteSpec("Label note."),
                 ),
-                ParsedArgumentSpec(
+                make_arg_spec(
                     make_argument_ref("test_features"),
                     make_shape_spec(varrank("test_batch"), "n_features"),
                     note=None,
                 ),
-                ParsedArgumentSpec(
+                make_arg_spec(
                     make_argument_ref("return", 0),
                     make_shape_spec(varrank("test_batch"), "n_labels"),
                     note=None,
                 ),
-                ParsedArgumentSpec(
+                make_arg_spec(
                     make_argument_ref("return", 1),
                     make_shape_spec(varrank("test_batch"), "n_labels"),
                     note=None,
@@ -785,27 +788,27 @@ _TEST_DATA = [
         ),
         ParsedFunctionSpec(
             (
-                ParsedArgumentSpec(
+                make_arg_spec(
                     make_argument_ref("train", "features"),
                     make_shape_spec(varrank("train_batch"), "n_features"),
                     note=None,
                 ),
-                ParsedArgumentSpec(
+                make_arg_spec(
                     make_argument_ref("train", "labels"),
                     make_shape_spec(varrank("train_batch"), "n_labels"),
                     note=ParsedNoteSpec("Label note."),
                 ),
-                ParsedArgumentSpec(
+                make_arg_spec(
                     make_argument_ref("test_features"),
                     make_shape_spec(varrank("test_batch"), "n_features"),
                     note=None,
                 ),
-                ParsedArgumentSpec(
+                make_arg_spec(
                     make_argument_ref("return", 0),
                     make_shape_spec(varrank("test_batch"), "n_labels"),
                     note=None,
                 ),
-                ParsedArgumentSpec(
+                make_arg_spec(
                     make_argument_ref("return", 1),
                     make_shape_spec(varrank("test_batch"), "n_labels"),
                     note=None,
@@ -858,27 +861,27 @@ _TEST_DATA = [
         ),
         ParsedFunctionSpec(
             (
-                ParsedArgumentSpec(
+                make_arg_spec(
                     make_argument_ref("train", "features"),
                     make_shape_spec(varrank("train_batch"), "n_features"),
                     note=None,
                 ),
-                ParsedArgumentSpec(
+                make_arg_spec(
                     make_argument_ref("train", "labels"),
                     make_shape_spec(varrank("train_batch"), "n_labels"),
                     note=ParsedNoteSpec("Label note."),
                 ),
-                ParsedArgumentSpec(
+                make_arg_spec(
                     make_argument_ref("test_features"),
                     make_shape_spec(varrank("test_batch"), "n_features"),
                     note=None,
                 ),
-                ParsedArgumentSpec(
+                make_arg_spec(
                     make_argument_ref("return", 0),
                     make_shape_spec(varrank("test_batch"), "n_labels"),
                     note=None,
                 ),
-                ParsedArgumentSpec(
+                make_arg_spec(
                     make_argument_ref("return", 1),
                     make_shape_spec(varrank("test_batch"), "n_labels"),
                     note=None,
