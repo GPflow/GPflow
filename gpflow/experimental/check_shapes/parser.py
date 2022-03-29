@@ -15,7 +15,7 @@
 # pylint: disable=unused-argument
 
 from abc import ABC
-from typing import Any, Collection, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple
+from typing import Any, Collection, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple, Union
 
 from lark.exceptions import UnexpectedInput
 from lark.lark import Lark
@@ -24,6 +24,7 @@ from lark.tree import Tree
 
 from gpflow.experimental.check_shapes.config import DocstringFormat, get_rewrite_docstrings
 from gpflow.experimental.check_shapes.error_contexts import (
+    ArgumentContext,
     ErrorContext,
     LarkUnexpectedInputContext,
     StackContext,
@@ -37,7 +38,13 @@ from .argument_ref import (
     IndexArgumentRef,
     RootArgumentRef,
 )
-from .specs import ParsedArgumentSpec, ParsedDimensionSpec, ParsedShapeSpec
+from .specs import (
+    ParsedArgumentSpec,
+    ParsedDimensionSpec,
+    ParsedFunctionSpec,
+    ParsedNoteSpec,
+    ParsedShapeSpec,
+)
 
 _VARIABLE_RANK_LEADING_TOKEN = "*"
 _VARIABLE_RANK_TRAILING_TOKEN = "..."
@@ -74,11 +81,16 @@ class _TreeVisitor(ABC):
 
 class _ParseArgumentSpec(_TreeVisitor):
     def argument_spec(self, tree: Tree[Token]) -> ParsedArgumentSpec:
-        argument_name, argument_refs, shape_spec = _tree_children(tree)
+        argument_name, argument_refs, shape_spec, *note_specs = _tree_children(tree)
         root_argument_ref = self.visit(argument_name)
         argument_ref = self.visit(argument_refs, root_argument_ref)
         shape = self.visit(shape_spec, argument_ref)
-        return ParsedArgumentSpec(argument_ref, shape)
+        if note_specs:
+            (note_spec,) = note_specs
+            note = self.visit(note_spec)
+        else:
+            note = None
+        return ParsedArgumentSpec(argument_ref, shape, note=note)
 
     def argument_name(self, tree: Tree[Token]) -> ArgumentRef:
         (token,) = _token_children(tree)
@@ -127,11 +139,16 @@ class _ParseArgumentSpec(_TreeVisitor):
     def dimension_spec_anonymous_variable_rank(self, tree: Tree[Token]) -> ParsedDimensionSpec:
         return ParsedDimensionSpec(constant=None, variable_name=None, variable_rank=True)
 
+    def note_spec(self, tree: Tree[Token]) -> ParsedNoteSpec:
+        _hash_token, *note_tokens = _token_children(tree)
+        return ParsedNoteSpec(" ".join(token.strip() for token in note_tokens))
+
 
 class _RewritedocString(_TreeVisitor):
-    def __init__(self, source: str, argument_specs: Collection[ParsedArgumentSpec]) -> None:
+    def __init__(self, source: str, function_spec: ParsedFunctionSpec) -> None:
         self._source = source
-        self._spec_lines = self._argument_specs_to_sphinx(argument_specs)
+        self._spec_lines = self._argument_specs_to_sphinx(function_spec.arguments)
+        self._notes = tuple(note.note for note in function_spec.notes)
         self._indent = self._guess_indent(source)
 
     def _argument_specs_to_sphinx(
@@ -153,6 +170,9 @@ class _RewritedocString(_TreeVisitor):
         out.append(" has shape [")
         out.append(self._shape_spec_to_sphinx(argument_spec.shape))
         out.append("].")
+        if argument_spec.note is not None:
+            out.append(" ")
+            out.append(argument_spec.note.note)
         return "".join(out)
 
     def _shape_spec_to_sphinx(self, shape_spec: ParsedShapeSpec) -> str:
@@ -223,9 +243,19 @@ class _RewritedocString(_TreeVisitor):
         #   and `self._source[pos:]` still needs to be added.
         # * When visiting children we pass `out` and `pos`, and the children add content to `out`
         #   and return a new `pos`.
-        _docs, info_fields = _tree_children(tree)
+        docs, info_fields = _tree_children(tree)
         out: List[str] = []
         pos = 0
+
+        if self._notes:
+            out.append(self._source[pos : docs.meta.end_pos])
+            pos = docs.meta.end_pos
+            indent = self._indent or 0
+            indent_str = "\n\n" + indent * " "
+            for note in self._notes:
+                out.append(indent_str)
+                out.append(note)
+
         pos = self.visit(info_fields, out, pos)
         out.append(self._source[pos:])
         return "".join(out)
@@ -264,7 +294,7 @@ _ARGUMENT_SPEC_PARSER = Lark.open(
     "check_shapes.lark",
     rel_to=__file__,
     propagate_positions=True,
-    start="argument_spec",
+    start="argument_or_note_spec",
     parser="lalr",
 )
 _DOCSTRING_PARSER = Lark.open(
@@ -303,6 +333,7 @@ def _create_terminal_descriptions(
 _ARGUMENT_SPEC_TERMINAL_DESCRIPTIONS = _create_terminal_descriptions(
     _ARGUMENT_SPEC_PARSER,
     {
+        "NOTE_TEXT": "note / comment text",
         "CNAME": "variable name",
         "INT": "integer",
         "WS": "whitespace",
@@ -321,13 +352,15 @@ _DOCSTRING_TERMINAL_DESCRIPTIONS = _create_terminal_descriptions(
 )
 
 
-_ARGUMENT_SPEC_CACHE: Dict[str, ParsedArgumentSpec] = {}
-_SPHINX_DOCSTRING_CACHE: Dict[Tuple[str, Tuple[ParsedArgumentSpec, ...]], str] = {}
+_ARGUMENT_SPEC_CACHE: Dict[str, Union[ParsedArgumentSpec, ParsedNoteSpec]] = {}
+_SPHINX_DOCSTRING_CACHE: Dict[Tuple[str, ParsedFunctionSpec], str] = {}
 
 
-def parse_argument_spec(argument_spec: str, context: ErrorContext) -> ParsedArgumentSpec:
+def _parse_argument_spec(
+    argument_spec: str, context: ErrorContext
+) -> Union[ParsedArgumentSpec, ParsedNoteSpec]:
     """
-    Parse a `check_shapes` argument specification.
+    Parse a `check_shapes` argument or note specification.
     """
     cached_value = _ARGUMENT_SPEC_CACHE.get(argument_spec)
     if cached_value is not None:
@@ -342,17 +375,34 @@ def parse_argument_spec(argument_spec: str, context: ErrorContext) -> ParsedArgu
                 LarkUnexpectedInputContext(argument_spec, e, _ARGUMENT_SPEC_TERMINAL_DESCRIPTIONS),
             )
         ) from e
-    specs: ParsedArgumentSpec = _ParseArgumentSpec().visit(tree)
+    parsed_spec: Union[ParsedArgumentSpec, ParsedNoteSpec] = _ParseArgumentSpec().visit(tree)
 
-    _ARGUMENT_SPEC_CACHE[argument_spec] = specs
+    _ARGUMENT_SPEC_CACHE[argument_spec] = parsed_spec
 
-    return specs
+    return parsed_spec
+
+
+def parse_function_spec(function_spec: Sequence[str], context: ErrorContext) -> ParsedFunctionSpec:
+    """
+    Parse all `check_shapes` argument or note specification for a single function.
+    """
+    arguments = []
+    notes = []
+    for i, spec in enumerate(function_spec):
+        argument_context = StackContext(context, ArgumentContext(i))
+        parsed_spec = _parse_argument_spec(spec, argument_context)
+        if isinstance(parsed_spec, ParsedArgumentSpec):
+            arguments.append(parsed_spec)
+        else:
+            assert isinstance(parsed_spec, ParsedNoteSpec)
+            notes.append(parsed_spec)
+    return ParsedFunctionSpec(tuple(arguments), tuple(notes))
 
 
 def _parse_and_rewrite_sphinx_docstring(
-    docstring: str, argument_specs: Tuple[ParsedArgumentSpec, ...], context: ErrorContext
+    docstring: str, function_spec: ParsedFunctionSpec, context: ErrorContext
 ) -> str:
-    cached_value = _SPHINX_DOCSTRING_CACHE.get((docstring, argument_specs))
+    cached_value = _SPHINX_DOCSTRING_CACHE.get((docstring, function_spec))
     if cached_value is not None:
         return cached_value
 
@@ -364,15 +414,15 @@ def _parse_and_rewrite_sphinx_docstring(
                 context, LarkUnexpectedInputContext(docstring, e, _DOCSTRING_TERMINAL_DESCRIPTIONS)
             )
         ) from e
-    rewritten_docstring: str = _RewritedocString(docstring, argument_specs).visit(tree)
+    rewritten_docstring: str = _RewritedocString(docstring, function_spec).visit(tree)
 
-    _SPHINX_DOCSTRING_CACHE[(docstring, argument_specs)] = rewritten_docstring
+    _SPHINX_DOCSTRING_CACHE[(docstring, function_spec)] = rewritten_docstring
 
     return rewritten_docstring
 
 
 def parse_and_rewrite_docstring(
-    docstring: Optional[str], argument_specs: Tuple[ParsedArgumentSpec, ...], context: ErrorContext
+    docstring: Optional[str], function_spec: ParsedFunctionSpec, context: ErrorContext
 ) -> Optional[str]:
     """
     Rewrite `docstring` to include the shapes specified by the `argument_specs`.
@@ -388,4 +438,4 @@ def parse_and_rewrite_docstring(
         f"Current docstring format is {docstring_format}, but I don't know how to rewrite that."
         " See `gpflow.experimental.check_shapes.config.set_rewrite_docstrings`."
     )
-    return _parse_and_rewrite_sphinx_docstring(docstring, argument_specs, context)
+    return _parse_and_rewrite_sphinx_docstring(docstring, function_spec, context)

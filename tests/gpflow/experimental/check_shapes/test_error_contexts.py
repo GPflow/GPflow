@@ -26,11 +26,13 @@ from gpflow.experimental.check_shapes.error_contexts import (
     IndexContext,
     LarkUnexpectedInputContext,
     MessageBuilder,
+    NoteContext,
     ObjectTypeContext,
     ParallelContext,
     ShapeContext,
     StackContext,
 )
+from gpflow.experimental.check_shapes.specs import ParsedNoteSpec
 
 from .utils import TestContext, make_shape_spec
 
@@ -304,7 +306,7 @@ def test_function_call_context() -> None:
 
     assert (
         f"""
-f called at: {__file__}:305
+f called at: {__file__}:307
 """
         == f()
     )
@@ -324,7 +326,7 @@ def test_function_call_context__wrapping() -> None:
 
     assert (
         f"""
-f called at: {__file__}:325
+f called at: {__file__}:327
 """
         == f3()
     )
@@ -336,7 +338,7 @@ def test_function_definition_context() -> None:
 
     assert f"""
 Function: test_function_definition_context.<locals>.f
-  Declared: {__file__}:334
+  Declared: {__file__}:336
 """ == to_str(
         FunctionDefinitionContext(f)
     )
@@ -472,6 +474,14 @@ Actual:   <Tensor has unknown shape>
 )
 def test_shape_context(context: ErrorContext, expected: str) -> None:
     assert expected == to_str(context)
+
+
+def test_note_context() -> None:
+    assert """
+Note: Some note.
+""" == to_str(
+        NoteContext(ParsedNoteSpec("Some note."))
+    )
 
 
 @pytest.mark.parametrize(
