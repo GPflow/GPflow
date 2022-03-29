@@ -14,6 +14,7 @@
 """
 Utilities for testing the `check_shapes` library.
 """
+import inspect
 from dataclasses import dataclass
 from typing import Optional, Union
 
@@ -90,3 +91,11 @@ def make_argument_ref(argument_name: str, *refs: Union[int, str]) -> ArgumentRef
         else:
             result = AttributeArgumentRef(result, ref)
     return result
+
+
+def current_line() -> int:
+    """
+    Returns the line number of the line that called this function.
+    """
+    stack = inspect.stack()
+    return stack[1].lineno
