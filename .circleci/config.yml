@@ -270,6 +270,12 @@ jobs:
             source .venv/bin/activate
             twine upload dist/*
 
+  noop:
+    docker:
+      - image: cimg/python:<<pipeline.parameters.min_py_ver>>
+    steps:
+      - run: echo ok
+
 
 workflows:
   version: 2.1
@@ -323,11 +329,8 @@ workflows:
           filters:
             tags:
               only: /^v[0-9]+(\.[0-9]+)*(-rc[0-9]+)?/
-      - unit-test:
-          name: unit-test-min
-          py_ver: <<pipeline.parameters.min_py_ver>>
-          tf_ver: <<pipeline.parameters.min_tf_ver>>
-          tfp_ver: <<pipeline.parameters.min_tfp_ver>>
+      - noop:
+          name: fast-tests
           requires:
             - verify-install-min
             - verify-install-max
@@ -335,6 +338,13 @@ workflows:
             - type-check-max
             - format-check-min
             - format-check-max
+      - unit-test:
+          name: unit-test-min
+          py_ver: <<pipeline.parameters.min_py_ver>>
+          tf_ver: <<pipeline.parameters.min_tf_ver>>
+          tfp_ver: <<pipeline.parameters.min_tfp_ver>>
+          requires:
+            - fast-tests
           filters:
             tags:
               only: /^v[0-9]+(\.[0-9]+)*(-rc[0-9]+)?/
@@ -344,12 +354,7 @@ workflows:
           tf_ver: <<pipeline.parameters.max_tf_ver>>
           tfp_ver: <<pipeline.parameters.max_tfp_ver>>
           requires:
-            - verify-install-min
-            - verify-install-max
-            - type-check-min
-            - type-check-max
-            - format-check-min
-            - format-check-max
+            - fast-tests
           filters:
             tags:
               only: /^v[0-9]+(\.[0-9]+)*(-rc[0-9]+)?/
@@ -359,12 +364,7 @@ workflows:
           tf_ver: <<pipeline.parameters.min_tf_ver>>
           tfp_ver: <<pipeline.parameters.min_tfp_ver>>
           requires:
-            - verify-install-min
-            - verify-install-max
-            - type-check-min
-            - type-check-max
-            - format-check-min
-            - format-check-max
+            - fast-tests
           filters:
             tags:
               only: /^v[0-9]+(\.[0-9]+)*(-rc[0-9]+)?/
@@ -374,27 +374,21 @@ workflows:
           tf_ver: <<pipeline.parameters.max_tf_ver>>
           tfp_ver: <<pipeline.parameters.max_tfp_ver>>
           requires:
-            - verify-install-min
-            - verify-install-max
-            - type-check-min
-            - type-check-max
-            - format-check-min
-            - format-check-max
+            - fast-tests
           filters:
             tags:
               only: /^v[0-9]+(\.[0-9]+)*(-rc[0-9]+)?/
-      - build-docs:
+      - noop:
+          name: all-tests
           requires:
-            - verify-install-min
-            - verify-install-max
-            - type-check-min
-            - type-check-max
-            - format-check-min
-            - format-check-max
+            - fast-tests
             - unit-test-min
             - unit-test-max
             - notebook-test-min
             - notebook-test-max
+      - build-docs:
+          requires:
+            - all-tests
           filters:
             branches:
               only:
@@ -402,16 +396,7 @@ workflows:
                 - develop
       - deploy:
           requires:
-            - verify-install-min
-            - verify-install-max
-            - type-check-min
-            - type-check-max
-            - format-check-min
-            - format-check-max
-            - unit-test-min
-            - unit-test-max
-            - notebook-test-min
-            - notebook-test-max
+            - all-tests
           filters:
             tags:
               only: /^v[0-9]+(\.[0-9]+)*(-rc[0-9]+)?/
