@@ -19,18 +19,24 @@ from typing import Optional, Tuple
 
 import pytest
 
+from gpflow.experimental.check_shapes import check_shapes
 from gpflow.experimental.check_shapes.config import set_rewrite_docstrings
-from gpflow.experimental.check_shapes.parser import parse_and_rewrite_docstring, parse_argument_spec
-from gpflow.experimental.check_shapes.specs import ParsedArgumentSpec
+from gpflow.experimental.check_shapes.exceptions import SpecificationParseError
+from gpflow.experimental.check_shapes.parser import parse_and_rewrite_docstring, parse_function_spec
+from gpflow.experimental.check_shapes.specs import (
+    ParsedArgumentSpec,
+    ParsedFunctionSpec,
+    ParsedNoteSpec,
+)
 
-from .utils import make_argument_ref, make_shape_spec, varrank
+from .utils import TestContext, make_argument_ref, make_shape_spec, varrank
 
 
 @dataclass
 class TestData:
     test_id: str
-    argument_spec_strs: Tuple[str, ...]
-    expected_specs: Tuple[ParsedArgumentSpec, ...]
+    function_spec_strs: Tuple[str, ...]
+    expected_function_spec: ParsedFunctionSpec
     doc: Optional[str]
     expected_doc: Optional[str]
 
@@ -46,19 +52,25 @@ _TEST_DATA = [
             "b: [2, 4]",
             "return: [3, 4]",
         ),
-        (
-            ParsedArgumentSpec(
-                make_argument_ref("a"),
-                make_shape_spec(2, 3),
+        ParsedFunctionSpec(
+            (
+                ParsedArgumentSpec(
+                    make_argument_ref("a"),
+                    make_shape_spec(2, 3),
+                    note=None,
+                ),
+                ParsedArgumentSpec(
+                    make_argument_ref("b"),
+                    make_shape_spec(2, 4),
+                    note=None,
+                ),
+                ParsedArgumentSpec(
+                    make_argument_ref("return"),
+                    make_shape_spec(3, 4),
+                    note=None,
+                ),
             ),
-            ParsedArgumentSpec(
-                make_argument_ref("b"),
-                make_shape_spec(2, 4),
-            ),
-            ParsedArgumentSpec(
-                make_argument_ref("return"),
-                make_shape_spec(3, 4),
-            ),
+            (),
         ),
         """
         :param a: Parameter a.
@@ -87,19 +99,25 @@ _TEST_DATA = [
             "b: [d1, d3]",
             "return: [d2, d3]",
         ),
-        (
-            ParsedArgumentSpec(
-                make_argument_ref("a"),
-                make_shape_spec("d1", "d2"),
+        ParsedFunctionSpec(
+            (
+                ParsedArgumentSpec(
+                    make_argument_ref("a"),
+                    make_shape_spec("d1", "d2"),
+                    note=None,
+                ),
+                ParsedArgumentSpec(
+                    make_argument_ref("b"),
+                    make_shape_spec("d1", "d3"),
+                    note=None,
+                ),
+                ParsedArgumentSpec(
+                    make_argument_ref("return"),
+                    make_shape_spec("d2", "d3"),
+                    note=None,
+                ),
             ),
-            ParsedArgumentSpec(
-                make_argument_ref("b"),
-                make_shape_spec("d1", "d3"),
-            ),
-            ParsedArgumentSpec(
-                make_argument_ref("return"),
-                make_shape_spec("d2", "d3"),
-            ),
+            (),
         ),
         """
         :param a: Parameter a.
@@ -130,27 +148,35 @@ _TEST_DATA = [
             "d: [d1, ds...]",
             "return: [*ds, d1, d2]",
         ),
-        (
-            ParsedArgumentSpec(
-                make_argument_ref("a"),
-                make_shape_spec(varrank("ds")),
+        ParsedFunctionSpec(
+            (
+                ParsedArgumentSpec(
+                    make_argument_ref("a"),
+                    make_shape_spec(varrank("ds")),
+                    note=None,
+                ),
+                ParsedArgumentSpec(
+                    make_argument_ref("b"),
+                    make_shape_spec(varrank("ds"), "d1"),
+                    note=None,
+                ),
+                ParsedArgumentSpec(
+                    make_argument_ref("c"),
+                    make_shape_spec("d1", varrank("ds"), "d2"),
+                    note=None,
+                ),
+                ParsedArgumentSpec(
+                    make_argument_ref("d"),
+                    make_shape_spec("d1", varrank("ds")),
+                    note=None,
+                ),
+                ParsedArgumentSpec(
+                    make_argument_ref("return"),
+                    make_shape_spec(varrank("ds"), "d1", "d2"),
+                    note=None,
+                ),
             ),
-            ParsedArgumentSpec(
-                make_argument_ref("b"),
-                make_shape_spec(varrank("ds"), "d1"),
-            ),
-            ParsedArgumentSpec(
-                make_argument_ref("c"),
-                make_shape_spec("d1", varrank("ds"), "d2"),
-            ),
-            ParsedArgumentSpec(
-                make_argument_ref("d"),
-                make_shape_spec("d1", varrank("ds")),
-            ),
-            ParsedArgumentSpec(
-                make_argument_ref("return"),
-                make_shape_spec(varrank("ds"), "d1", "d2"),
-            ),
+            (),
         ),
         """
         :param a: Parameter a.
@@ -191,27 +217,35 @@ _TEST_DATA = [
             "d: [*, d2]",
             "return: [..., d1, d2]",
         ),
-        (
-            ParsedArgumentSpec(
-                make_argument_ref("a"),
-                make_shape_spec(None, "d1"),
+        ParsedFunctionSpec(
+            (
+                ParsedArgumentSpec(
+                    make_argument_ref("a"),
+                    make_shape_spec(None, "d1"),
+                    note=None,
+                ),
+                ParsedArgumentSpec(
+                    make_argument_ref("b"),
+                    make_shape_spec(None, "d2"),
+                    note=None,
+                ),
+                ParsedArgumentSpec(
+                    make_argument_ref("c"),
+                    make_shape_spec(varrank(None), "d1"),
+                    note=None,
+                ),
+                ParsedArgumentSpec(
+                    make_argument_ref("d"),
+                    make_shape_spec(varrank(None), "d2"),
+                    note=None,
+                ),
+                ParsedArgumentSpec(
+                    make_argument_ref("return"),
+                    make_shape_spec(varrank(None), "d1", "d2"),
+                    note=None,
+                ),
             ),
-            ParsedArgumentSpec(
-                make_argument_ref("b"),
-                make_shape_spec(None, "d2"),
-            ),
-            ParsedArgumentSpec(
-                make_argument_ref("c"),
-                make_shape_spec(varrank(None), "d1"),
-            ),
-            ParsedArgumentSpec(
-                make_argument_ref("d"),
-                make_shape_spec(varrank(None), "d2"),
-            ),
-            ParsedArgumentSpec(
-                make_argument_ref("return"),
-                make_shape_spec(varrank(None), "d1", "d2"),
-            ),
+            (),
         ),
         """
         :param a: Parameter a.
@@ -250,19 +284,25 @@ _TEST_DATA = [
             "b: []",
             "return: []",
         ),
-        (
-            ParsedArgumentSpec(
-                make_argument_ref("a"),
-                make_shape_spec(),
+        ParsedFunctionSpec(
+            (
+                ParsedArgumentSpec(
+                    make_argument_ref("a"),
+                    make_shape_spec(),
+                    note=None,
+                ),
+                ParsedArgumentSpec(
+                    make_argument_ref("b"),
+                    make_shape_spec(),
+                    note=None,
+                ),
+                ParsedArgumentSpec(
+                    make_argument_ref("return"),
+                    make_shape_spec(),
+                    note=None,
+                ),
             ),
-            ParsedArgumentSpec(
-                make_argument_ref("b"),
-                make_shape_spec(),
-            ),
-            ParsedArgumentSpec(
-                make_argument_ref("return"),
-                make_shape_spec(),
-            ),
+            (),
         ),
         """
         :param a: Parameter a.
@@ -292,23 +332,30 @@ _TEST_DATA = [
             "return[0].out: [a_batch..., 3]",
             "return[1].out: [b_batch..., 4]",
         ),
-        (
-            ParsedArgumentSpec(
-                make_argument_ref("x", "ins", 0),
-                make_shape_spec(varrank("a_batch"), 1),
+        ParsedFunctionSpec(
+            (
+                ParsedArgumentSpec(
+                    make_argument_ref("x", "ins", 0),
+                    make_shape_spec(varrank("a_batch"), 1),
+                    note=None,
+                ),
+                ParsedArgumentSpec(
+                    make_argument_ref("x", "ins", 1),
+                    make_shape_spec(varrank("b_batch"), 2),
+                    note=None,
+                ),
+                ParsedArgumentSpec(
+                    make_argument_ref("return", 0, "out"),
+                    make_shape_spec(varrank("a_batch"), 3),
+                    note=None,
+                ),
+                ParsedArgumentSpec(
+                    make_argument_ref("return", 1, "out"),
+                    make_shape_spec(varrank("b_batch"), 4),
+                    note=None,
+                ),
             ),
-            ParsedArgumentSpec(
-                make_argument_ref("x", "ins", 1),
-                make_shape_spec(varrank("b_batch"), 2),
-            ),
-            ParsedArgumentSpec(
-                make_argument_ref("return", 0, "out"),
-                make_shape_spec(varrank("a_batch"), 3),
-            ),
-            ParsedArgumentSpec(
-                make_argument_ref("return", 1, "out"),
-                make_shape_spec(varrank("b_batch"), 4),
-            ),
+            (),
         ),
         """
         :param x: Parameter x.
@@ -328,25 +375,91 @@ _TEST_DATA = [
         """,
     ),
     TestData(
+        "notes",
+        (
+            "a: [d1, d2]",
+            "# Some generic note.",
+            "b: [d1, d3]  #   Some note \n on B. \n  ",
+            "return: [d2, d3]#Some note on the result.",
+            "# Some other\ngeneric note.",
+        ),
+        ParsedFunctionSpec(
+            (
+                ParsedArgumentSpec(
+                    make_argument_ref("a"),
+                    make_shape_spec("d1", "d2"),
+                    note=None,
+                ),
+                ParsedArgumentSpec(
+                    make_argument_ref("b"),
+                    make_shape_spec("d1", "d3"),
+                    note=ParsedNoteSpec("Some note on B."),
+                ),
+                ParsedArgumentSpec(
+                    make_argument_ref("return"),
+                    make_shape_spec("d2", "d3"),
+                    note=ParsedNoteSpec("Some note on the result."),
+                ),
+            ),
+            (
+                ParsedNoteSpec("Some generic note."),
+                ParsedNoteSpec("Some other generic note."),
+            ),
+        ),
+        """
+        Some doctring.
+
+        :param a: Parameter a.
+        :param b: Parameter b.
+        :returns: Return value.
+        """,
+        """
+        Some doctring.
+
+        Some generic note.
+
+        Some other generic note.
+
+        :param a:
+            * **a** has shape [*d1*, *d2*].
+
+            Parameter a.
+        :param b:
+            * **b** has shape [*d1*, *d3*]. Some note on B.
+
+            Parameter b.
+        :returns:
+            * **return** has shape [*d2*, *d3*]. Some note on the result.
+
+            Return value.
+        """,
+    ),
+    TestData(
         "no_docstring",
         (
             "a: [d1, d2]",
             "b: [d1, d3]",
             "return: [d2, d3]",
         ),
-        (
-            ParsedArgumentSpec(
-                make_argument_ref("a"),
-                make_shape_spec("d1", "d2"),
+        ParsedFunctionSpec(
+            (
+                ParsedArgumentSpec(
+                    make_argument_ref("a"),
+                    make_shape_spec("d1", "d2"),
+                    note=None,
+                ),
+                ParsedArgumentSpec(
+                    make_argument_ref("b"),
+                    make_shape_spec("d1", "d3"),
+                    note=None,
+                ),
+                ParsedArgumentSpec(
+                    make_argument_ref("return"),
+                    make_shape_spec("d2", "d3"),
+                    note=None,
+                ),
             ),
-            ParsedArgumentSpec(
-                make_argument_ref("b"),
-                make_shape_spec("d1", "d3"),
-            ),
-            ParsedArgumentSpec(
-                make_argument_ref("return"),
-                make_shape_spec("d2", "d3"),
-            ),
+            (),
         ),
         None,
         None,
@@ -358,19 +471,25 @@ _TEST_DATA = [
             "b: [d1, d3]",
             "return: [d2, d3]",
         ),
-        (
-            ParsedArgumentSpec(
-                make_argument_ref("a"),
-                make_shape_spec("d1", "d2"),
+        ParsedFunctionSpec(
+            (
+                ParsedArgumentSpec(
+                    make_argument_ref("a"),
+                    make_shape_spec("d1", "d2"),
+                    note=None,
+                ),
+                ParsedArgumentSpec(
+                    make_argument_ref("b"),
+                    make_shape_spec("d1", "d3"),
+                    note=None,
+                ),
+                ParsedArgumentSpec(
+                    make_argument_ref("return"),
+                    make_shape_spec("d2", "d3"),
+                    note=None,
+                ),
             ),
-            ParsedArgumentSpec(
-                make_argument_ref("b"),
-                make_shape_spec("d1", "d3"),
-            ),
-            ParsedArgumentSpec(
-                make_argument_ref("return"),
-                make_shape_spec("d2", "d3"),
-            ),
+            (),
         ),
         """
         :param b: Parameter b.
@@ -389,19 +508,25 @@ _TEST_DATA = [
             "b: [d1, d3]",
             "return: [d2, d3]",
         ),
-        (
-            ParsedArgumentSpec(
-                make_argument_ref("a"),
-                make_shape_spec("d1", "d2"),
+        ParsedFunctionSpec(
+            (
+                ParsedArgumentSpec(
+                    make_argument_ref("a"),
+                    make_shape_spec("d1", "d2"),
+                    note=None,
+                ),
+                ParsedArgumentSpec(
+                    make_argument_ref("b"),
+                    make_shape_spec("d1", "d3"),
+                    note=None,
+                ),
+                ParsedArgumentSpec(
+                    make_argument_ref("return"),
+                    make_shape_spec("d2", "d3"),
+                    note=None,
+                ),
             ),
-            ParsedArgumentSpec(
-                make_argument_ref("b"),
-                make_shape_spec("d1", "d3"),
-            ),
-            ParsedArgumentSpec(
-                make_argument_ref("return"),
-                make_shape_spec("d2", "d3"),
-            ),
+            (),
         ),
         """:param b: Parameter b.""",
         """:param b:
@@ -415,15 +540,20 @@ _TEST_DATA = [
             "a: [batch..., n_features]",
             "return: [batch..., 1]",
         ),
-        (
-            ParsedArgumentSpec(
-                make_argument_ref("a"),
-                make_shape_spec(varrank("batch"), "n_features"),
+        ParsedFunctionSpec(
+            (
+                ParsedArgumentSpec(
+                    make_argument_ref("a"),
+                    make_shape_spec(varrank("batch"), "n_features"),
+                    note=None,
+                ),
+                ParsedArgumentSpec(
+                    make_argument_ref("return"),
+                    make_shape_spec(varrank("batch"), 1),
+                    note=None,
+                ),
             ),
-            ParsedArgumentSpec(
-                make_argument_ref("return"),
-                make_shape_spec(varrank("batch"), 1),
-            ),
+            (),
         ),
         """
         This is a boring docstring.
@@ -458,15 +588,20 @@ _TEST_DATA = [
             "a: [batch..., n_features]",
             "return: [batch..., 1]",
         ),
-        (
-            ParsedArgumentSpec(
-                make_argument_ref("a"),
-                make_shape_spec(varrank("batch"), "n_features"),
+        ParsedFunctionSpec(
+            (
+                ParsedArgumentSpec(
+                    make_argument_ref("a"),
+                    make_shape_spec(varrank("batch"), "n_features"),
+                    note=None,
+                ),
+                ParsedArgumentSpec(
+                    make_argument_ref("return"),
+                    make_shape_spec(varrank("batch"), 1),
+                    note=None,
+                ),
             ),
-            ParsedArgumentSpec(
-                make_argument_ref("return"),
-                make_shape_spec(varrank("batch"), 1),
-            ),
+            (),
         ),
         """
         This: is a docstring, :: with some extra :s in it.
@@ -495,32 +630,41 @@ _TEST_DATA = [
         "funny_formatting_1",
         (
             "train.features: [train_batch..., n_features]",
-            "train.labels: [train_batch..., n_labels]",
+            "train.labels: [train_batch..., n_labels]  # Label note.",
             "test_features: [test_batch..., n_features]",
             "return[0]: [test_batch..., n_labels]",
             "return[1]: [test_batch..., n_labels]",
+            "# Function note.",
         ),
-        (
-            ParsedArgumentSpec(
-                make_argument_ref("train", "features"),
-                make_shape_spec(varrank("train_batch"), "n_features"),
+        ParsedFunctionSpec(
+            (
+                ParsedArgumentSpec(
+                    make_argument_ref("train", "features"),
+                    make_shape_spec(varrank("train_batch"), "n_features"),
+                    note=None,
+                ),
+                ParsedArgumentSpec(
+                    make_argument_ref("train", "labels"),
+                    make_shape_spec(varrank("train_batch"), "n_labels"),
+                    note=ParsedNoteSpec("Label note."),
+                ),
+                ParsedArgumentSpec(
+                    make_argument_ref("test_features"),
+                    make_shape_spec(varrank("test_batch"), "n_features"),
+                    note=None,
+                ),
+                ParsedArgumentSpec(
+                    make_argument_ref("return", 0),
+                    make_shape_spec(varrank("test_batch"), "n_labels"),
+                    note=None,
+                ),
+                ParsedArgumentSpec(
+                    make_argument_ref("return", 1),
+                    make_shape_spec(varrank("test_batch"), "n_labels"),
+                    note=None,
+                ),
             ),
-            ParsedArgumentSpec(
-                make_argument_ref("train", "labels"),
-                make_shape_spec(varrank("train_batch"), "n_labels"),
-            ),
-            ParsedArgumentSpec(
-                make_argument_ref("test_features"),
-                make_shape_spec(varrank("test_batch"), "n_features"),
-            ),
-            ParsedArgumentSpec(
-                make_argument_ref("return", 0),
-                make_shape_spec(varrank("test_batch"), "n_labels"),
-            ),
-            ParsedArgumentSpec(
-                make_argument_ref("return", 1),
-                make_shape_spec(varrank("test_batch"), "n_labels"),
-            ),
+            (ParsedNoteSpec("Function note."),),
         ),
         """
         Predict mean and variance from some test features.
@@ -541,9 +685,11 @@ _TEST_DATA = [
 
         First trains a model an `train`, then makes a prediction from the model and `test`.
 
+        Function note.
+
         :param train:
             * **train.features** has shape [*train_batch*..., *n_features*].
-            * **train.labels** has shape [*train_batch*..., *n_labels*].
+            * **train.labels** has shape [*train_batch*..., *n_labels*]. Label note.
 
             Data to train on.
 
@@ -563,32 +709,41 @@ _TEST_DATA = [
         "funny_formatting_2",
         (
             "train.features: [train_batch..., n_features]",
-            "train.labels: [train_batch..., n_labels]",
+            "train.labels: [train_batch..., n_labels]  # Label note.",
             "test_features: [test_batch..., n_features]",
             "return[0]: [test_batch..., n_labels]",
             "return[1]: [test_batch..., n_labels]",
+            "# Function note.",
         ),
-        (
-            ParsedArgumentSpec(
-                make_argument_ref("train", "features"),
-                make_shape_spec(varrank("train_batch"), "n_features"),
+        ParsedFunctionSpec(
+            (
+                ParsedArgumentSpec(
+                    make_argument_ref("train", "features"),
+                    make_shape_spec(varrank("train_batch"), "n_features"),
+                    note=None,
+                ),
+                ParsedArgumentSpec(
+                    make_argument_ref("train", "labels"),
+                    make_shape_spec(varrank("train_batch"), "n_labels"),
+                    note=ParsedNoteSpec("Label note."),
+                ),
+                ParsedArgumentSpec(
+                    make_argument_ref("test_features"),
+                    make_shape_spec(varrank("test_batch"), "n_features"),
+                    note=None,
+                ),
+                ParsedArgumentSpec(
+                    make_argument_ref("return", 0),
+                    make_shape_spec(varrank("test_batch"), "n_labels"),
+                    note=None,
+                ),
+                ParsedArgumentSpec(
+                    make_argument_ref("return", 1),
+                    make_shape_spec(varrank("test_batch"), "n_labels"),
+                    note=None,
+                ),
             ),
-            ParsedArgumentSpec(
-                make_argument_ref("train", "labels"),
-                make_shape_spec(varrank("train_batch"), "n_labels"),
-            ),
-            ParsedArgumentSpec(
-                make_argument_ref("test_features"),
-                make_shape_spec(varrank("test_batch"), "n_features"),
-            ),
-            ParsedArgumentSpec(
-                make_argument_ref("return", 0),
-                make_shape_spec(varrank("test_batch"), "n_labels"),
-            ),
-            ParsedArgumentSpec(
-                make_argument_ref("return", 1),
-                make_shape_spec(varrank("test_batch"), "n_labels"),
-            ),
+            (ParsedNoteSpec("Function note."),),
         ),
         """
         Predict mean and variance from some test features.
@@ -600,9 +755,11 @@ _TEST_DATA = [
         """
         Predict mean and variance from some test features.
         First trains a model an `train`, then makes a prediction from the model and `test`.
+
+        Function note.
         :param train:
             * **train.features** has shape [*train_batch*..., *n_features*].
-            * **train.labels** has shape [*train_batch*..., *n_labels*].
+            * **train.labels** has shape [*train_batch*..., *n_labels*]. Label note.
 
             Data to train on.
         :param test_features:
@@ -620,32 +777,41 @@ _TEST_DATA = [
         "funny_formatting_3",
         (
             "train.features: [train_batch..., n_features]",
-            "train.labels: [train_batch..., n_labels]",
+            "train.labels: [train_batch..., n_labels]  # Label note.",
             "test_features: [test_batch..., n_features]",
             "return[0]: [test_batch..., n_labels]",
             "return[1]: [test_batch..., n_labels]",
+            "# Function note.",
         ),
-        (
-            ParsedArgumentSpec(
-                make_argument_ref("train", "features"),
-                make_shape_spec(varrank("train_batch"), "n_features"),
+        ParsedFunctionSpec(
+            (
+                ParsedArgumentSpec(
+                    make_argument_ref("train", "features"),
+                    make_shape_spec(varrank("train_batch"), "n_features"),
+                    note=None,
+                ),
+                ParsedArgumentSpec(
+                    make_argument_ref("train", "labels"),
+                    make_shape_spec(varrank("train_batch"), "n_labels"),
+                    note=ParsedNoteSpec("Label note."),
+                ),
+                ParsedArgumentSpec(
+                    make_argument_ref("test_features"),
+                    make_shape_spec(varrank("test_batch"), "n_features"),
+                    note=None,
+                ),
+                ParsedArgumentSpec(
+                    make_argument_ref("return", 0),
+                    make_shape_spec(varrank("test_batch"), "n_labels"),
+                    note=None,
+                ),
+                ParsedArgumentSpec(
+                    make_argument_ref("return", 1),
+                    make_shape_spec(varrank("test_batch"), "n_labels"),
+                    note=None,
+                ),
             ),
-            ParsedArgumentSpec(
-                make_argument_ref("train", "labels"),
-                make_shape_spec(varrank("train_batch"), "n_labels"),
-            ),
-            ParsedArgumentSpec(
-                make_argument_ref("test_features"),
-                make_shape_spec(varrank("test_batch"), "n_features"),
-            ),
-            ParsedArgumentSpec(
-                make_argument_ref("return", 0),
-                make_shape_spec(varrank("test_batch"), "n_labels"),
-            ),
-            ParsedArgumentSpec(
-                make_argument_ref("return", 1),
-                make_shape_spec(varrank("test_batch"), "n_labels"),
-            ),
+            (ParsedNoteSpec("Function note."),),
         ),
         """Predict mean and variance from some test features.
 
@@ -661,9 +827,11 @@ _TEST_DATA = [
         """Predict mean and variance from some test features.
 
         First trains a model an `train`, then makes a prediction from the model and `test`.
+
+        Function note.
         :param train:
         * **train.features** has shape [*train_batch*..., *n_features*].
-        * **train.labels** has shape [*train_batch*..., *n_labels*].
+        * **train.labels** has shape [*train_batch*..., *n_labels*]. Label note.
 
         Data to train on.
         And another line.
@@ -682,32 +850,41 @@ _TEST_DATA = [
         "funny_formatting_4",
         (
             "train.features: [train_batch..., n_features]",
-            "train.labels: [train_batch..., n_labels]",
+            "train.labels: [train_batch..., n_labels]  # Label note.",
             "test_features: [test_batch..., n_features]",
             "return[0]: [test_batch..., n_labels]",
             "return[1]: [test_batch..., n_labels]",
+            "# Function note.",
         ),
-        (
-            ParsedArgumentSpec(
-                make_argument_ref("train", "features"),
-                make_shape_spec(varrank("train_batch"), "n_features"),
+        ParsedFunctionSpec(
+            (
+                ParsedArgumentSpec(
+                    make_argument_ref("train", "features"),
+                    make_shape_spec(varrank("train_batch"), "n_features"),
+                    note=None,
+                ),
+                ParsedArgumentSpec(
+                    make_argument_ref("train", "labels"),
+                    make_shape_spec(varrank("train_batch"), "n_labels"),
+                    note=ParsedNoteSpec("Label note."),
+                ),
+                ParsedArgumentSpec(
+                    make_argument_ref("test_features"),
+                    make_shape_spec(varrank("test_batch"), "n_features"),
+                    note=None,
+                ),
+                ParsedArgumentSpec(
+                    make_argument_ref("return", 0),
+                    make_shape_spec(varrank("test_batch"), "n_labels"),
+                    note=None,
+                ),
+                ParsedArgumentSpec(
+                    make_argument_ref("return", 1),
+                    make_shape_spec(varrank("test_batch"), "n_labels"),
+                    note=None,
+                ),
             ),
-            ParsedArgumentSpec(
-                make_argument_ref("train", "labels"),
-                make_shape_spec(varrank("train_batch"), "n_labels"),
-            ),
-            ParsedArgumentSpec(
-                make_argument_ref("test_features"),
-                make_shape_spec(varrank("test_batch"), "n_features"),
-            ),
-            ParsedArgumentSpec(
-                make_argument_ref("return", 0),
-                make_shape_spec(varrank("test_batch"), "n_labels"),
-            ),
-            ParsedArgumentSpec(
-                make_argument_ref("return", 1),
-                make_shape_spec(varrank("test_batch"), "n_labels"),
-            ),
+            (ParsedNoteSpec("Function note."),),
         ),
         """Predict mean and variance from some test features.
 
@@ -723,9 +900,11 @@ Model mean and variance prediction.""",
         """Predict mean and variance from some test features.
 
 First trains a model an `train`, then makes a prediction from the model and `test`.
+
+Function note.
 :param train:
 * **train.features** has shape [*train_batch*..., *n_features*].
-* **train.labels** has shape [*train_batch*..., *n_labels*].
+* **train.labels** has shape [*train_batch*..., *n_labels*]. Label note.
 
 Data to train on.
 And another line.
@@ -744,14 +923,16 @@ Model mean and variance prediction.""",
 
 
 @pytest.mark.parametrize("data", _TEST_DATA, ids=str)
-def test_parse_argument_spec(data: TestData) -> None:
-    actual_specs = tuple(parse_argument_spec(s) for s in data.argument_spec_strs)
-    assert data.expected_specs == actual_specs
+def test_parse_function_spec(data: TestData) -> None:
+    actual_spec = parse_function_spec(data.function_spec_strs, TestContext())
+    assert data.expected_function_spec == actual_spec
 
 
 @pytest.mark.parametrize("data", _TEST_DATA, ids=str)
 def test_parse_and_rewrite_docstring(data: TestData) -> None:
-    rewritten_docstring = parse_and_rewrite_docstring(data.doc, data.expected_specs)
+    rewritten_docstring = parse_and_rewrite_docstring(
+        data.doc, data.expected_function_spec, TestContext()
+    )
     assert data.expected_doc == rewritten_docstring
 
 
@@ -759,5 +940,146 @@ def test_parse_and_rewrite_docstring(data: TestData) -> None:
 def test_parse_and_rewrite_docstring__disable(data: TestData) -> None:
     set_rewrite_docstrings(None)
 
-    rewritten_docstring = parse_and_rewrite_docstring(data.doc, data.expected_specs)
+    rewritten_docstring = parse_and_rewrite_docstring(
+        data.doc, data.expected_function_spec, TestContext()
+    )
     assert data.doc == rewritten_docstring
+
+
+_CHECK_SHAPES_LINE = 1076
+
+
+@pytest.mark.parametrize(
+    "spec,expected_message",
+    [
+        (
+            "a [batch..., x]",
+            f"""
+Unable to parse shape specification.
+  check_shapes called at: {__file__}:{_CHECK_SHAPES_LINE}
+    Argument number (0-indexed): 0
+      Line:     "a [batch..., x]"
+                    ^
+      Expected: integer (re=(?:[0-9])+)
+""",
+        ),
+        (
+            "a= [batch..., x]",
+            f"""
+Unable to parse shape specification.
+  check_shapes called at: {__file__}:{_CHECK_SHAPES_LINE}
+    Argument number (0-indexed): 0
+      Line:            "a= [batch..., x]"
+                         ^
+      Expected one of: ":"
+                       "."
+                       "["
+""",
+        ),
+        (
+            "a: (batch..., x)",
+            f"""
+Unable to parse shape specification.
+  check_shapes called at: {__file__}:{_CHECK_SHAPES_LINE}
+    Argument number (0-indexed): 0
+      Line:     "a: (batch..., x)"
+                    ^
+      Expected: "["
+""",
+        ),
+        (
+            "a: batch..., x]",
+            f"""
+Unable to parse shape specification.
+  check_shapes called at: {__file__}:{_CHECK_SHAPES_LINE}
+    Argument number (0-indexed): 0
+      Line:     "a: batch..., x]"
+                    ^
+      Expected: "["
+""",
+        ),
+        (
+            "a: [batch... x]",
+            f"""
+Unable to parse shape specification.
+  check_shapes called at: {__file__}:{_CHECK_SHAPES_LINE}
+    Argument number (0-indexed): 0
+      Line:            "a: [batch... x]"
+                                     ^
+      Expected one of: ","
+                       "]"
+""",
+        ),
+        (
+            "a: [batch..., x",
+            f"""
+Unable to parse shape specification.
+  check_shapes called at: {__file__}:{_CHECK_SHAPES_LINE}
+    Argument number (0-indexed): 0
+      Line:            "a: [batch..., x"
+                                      ^
+      Expected one of: ","
+                       "..."
+                       "]"
+""",
+        ),
+        (
+            "a: [, x]",
+            f"""
+Unable to parse shape specification.
+  check_shapes called at: {__file__}:{_CHECK_SHAPES_LINE}
+    Argument number (0-indexed): 0
+      Line:            "a: [, x]"
+                            ^
+      Expected one of: variable name (re=(?:(?:[A-Z]|[a-z])|_)(?:(?:(?:[A-Z]|[a-z])|[0-9]|_))*)
+                       "."
+                       "..."
+                       integer (re=(?:[0-9])+)
+                       "None"
+                       "]"
+                       "*"
+""",
+        ),
+        (
+            "",
+            f"""
+Unable to parse shape specification.
+  check_shapes called at: {__file__}:{_CHECK_SHAPES_LINE}
+    Argument number (0-indexed): 0
+      Line:            ""
+                        ^
+      Expected one of: variable name (re=(?:(?:[A-Z]|[a-z])|_)(?:(?:(?:[A-Z]|[a-z])|[0-9]|_))*)
+                       "#"
+""",
+        ),
+        (
+            """
+  a:
+  [
+    batch...
+    x
+  ]""",
+            f"""
+Unable to parse shape specification.
+  check_shapes called at: {__file__}:{_CHECK_SHAPES_LINE}
+    Argument number (0-indexed): 0
+      Line:            "    x"
+                            ^
+      Expected one of: ","
+                       "]"
+""",
+        ),
+    ],
+)
+def test_parse_argument_spec__error(spec: str, expected_message: str) -> None:
+    with pytest.raises(SpecificationParseError) as e:
+        check_shapes(spec)
+    (message,) = e.value.args
+    assert expected_message == message
+
+
+def test_parse_and_rewrite_docstring__error() -> None:
+    # I don't actually know how to provoke an error from parsing the docstring.
+    # The problem is that *any* string is allow as free-form documentation.
+    # Update this test if you find a good example."
+    assert True

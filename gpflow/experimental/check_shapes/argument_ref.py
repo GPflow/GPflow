@@ -18,8 +18,14 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any, Mapping, Optional
 
-from .base_types import C
-from .errors import ArgumentReferenceError
+from .error_contexts import (
+    ArgumentContext,
+    AttributeContext,
+    ErrorContext,
+    IndexContext,
+    StackContext,
+)
+from .exceptions import ArgumentReferenceError
 
 # The special name used to represent the returned value. `return` is a good choice because we know
 # that no argument can be called `return` because `return` is a reserved keyword.
@@ -43,15 +49,15 @@ class ArgumentRef(ABC):
         Returns `RESULT_TOKEN` if this in an argument to the function result.
         """
 
-    def get(self, func: C, arg_map: Mapping[str, Any]) -> Optional[Any]:
-        """ Get the value of this argument from this given map. """
-        try:
-            return self._get(arg_map)
-        except Exception as e:
-            raise ArgumentReferenceError(func, arg_map, self) from e
+    @property
+    @abstractmethod
+    def error_context(self) -> ErrorContext:
+        """
+        Return an error context for the value of this argument.
+        """
 
     @abstractmethod
-    def _get(self, arg_map: Mapping[str, Any]) -> Optional[Any]:
+    def get(self, arg_map: Mapping[str, Any], context: ErrorContext) -> Optional[Any]:
         """ Get the value of this argument from this given map. """
 
     @abstractmethod
@@ -73,8 +79,15 @@ class RootArgumentRef(ArgumentRef):
     def root_argument_name(self) -> str:
         return self.argument_name
 
-    def _get(self, arg_map: Mapping[str, Any]) -> Optional[Any]:
-        return arg_map[self.argument_name]
+    @property
+    def error_context(self) -> ErrorContext:
+        return ArgumentContext(self.argument_name)
+
+    def get(self, arg_map: Mapping[str, Any], context: ErrorContext) -> Optional[Any]:
+        try:
+            return arg_map[self.argument_name]
+        except Exception as e:
+            raise ArgumentReferenceError(StackContext(context, self.error_context)) from e
 
     def __repr__(self) -> str:
         return self.argument_name
@@ -95,11 +108,19 @@ class AttributeArgumentRef(ArgumentRef):
     def root_argument_name(self) -> str:
         return self.source.root_argument_name
 
-    def _get(self, arg_map: Mapping[str, Any]) -> Optional[Any]:
-        source = self.source._get(arg_map)  # pylint: disable=protected-access
+    @property
+    def error_context(self) -> ErrorContext:
+        return StackContext(self.source.error_context, AttributeContext(self.attribute_name))
+
+    def get(self, arg_map: Mapping[str, Any], context: ErrorContext) -> Optional[Any]:
+        source = self.source.get(arg_map, context)
         if source is None:
             return None
-        return getattr(source, self.attribute_name)
+
+        try:
+            return getattr(source, self.attribute_name)
+        except Exception as e:
+            raise ArgumentReferenceError(StackContext(context, self.error_context)) from e
 
     def __repr__(self) -> str:
         return f"{repr(self.source)}.{self.attribute_name}"
@@ -120,11 +141,19 @@ class IndexArgumentRef(ArgumentRef):
     def root_argument_name(self) -> str:
         return self.source.root_argument_name
 
-    def _get(self, arg_map: Mapping[str, Any]) -> Any:
-        source = self.source._get(arg_map)  # pylint: disable=protected-access
+    @property
+    def error_context(self) -> ErrorContext:
+        return StackContext(self.source.error_context, IndexContext(self.index))
+
+    def get(self, arg_map: Mapping[str, Any], context: ErrorContext) -> Optional[Any]:
+        source = self.source.get(arg_map, context)
         if source is None:
             return None
-        return source[self.index]
+
+        try:
+            return source[self.index]  # type: ignore
+        except Exception as e:
+            raise ArgumentReferenceError(StackContext(context, self.error_context)) from e
 
     def __repr__(self) -> str:
         return f"{repr(self.source)}[{self.index}]"

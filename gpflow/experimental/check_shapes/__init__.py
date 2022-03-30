@@ -40,7 +40,7 @@ Check specification
 The shapes to check are specified by the arguments to :func:`check_shapes`. Each argument is a
 string of the format::
 
-    <argument specifier>: <shape specifier>
+    <argument specifier>: <shape specifier> [# <note>]
 
 
 Argument specification
@@ -102,6 +102,29 @@ For example::
         "...: [batch..., 2]",
         "...: [n_samples, *]",
         "...: [..., 2]",
+    )
+    def f(...):
+        ...
+
+
+Note specification
+------------------
+
+You can add notes to your specifications using a `#` followed by the note. These notes will be
+appended to relevant error messages and appear in rewritten docstrings. You can add notes in two
+places:
+
+    * After the specification of a single argument, to add a note to that argument only.
+    * On a single line by itself, to add a note to the entire function.
+
+For example::
+
+    @tf.function
+    @check_shapes(
+        "features: [batch_shape..., n_features]",
+        "weights: [n_features]  # A note about the shape of `weights`.",
+        "return: [batch_shape...]",
+        "# A note about `f`.",
     )
     def f(...):
         ...
@@ -315,23 +338,61 @@ from .config import (
     set_enable_check_shapes,
     set_rewrite_docstrings,
 )
-from .errors import ArgumentReferenceError, ShapeMismatchError
+from .error_contexts import (
+    ArgumentContext,
+    AttributeContext,
+    ErrorContext,
+    FunctionCallContext,
+    FunctionDefinitionContext,
+    IndexContext,
+    LarkUnexpectedInputContext,
+    MessageBuilder,
+    ObjectTypeContext,
+    ParallelContext,
+    ShapeContext,
+    StackContext,
+)
+from .exceptions import (
+    ArgumentReferenceError,
+    CheckShapesError,
+    DocstringParseError,
+    NoShapeError,
+    ShapeMismatchError,
+    SpecificationParseError,
+)
 from .inheritance import inherit_check_shapes
 from .shapes import get_shape
 
 __all__ = [
+    "ArgumentContext",
     "ArgumentReferenceError",
+    "AttributeContext",
+    "CheckShapesError",
     "Dimension",
     "DocstringFormat",
+    "DocstringParseError",
+    "ErrorContext",
+    "FunctionCallContext",
+    "FunctionDefinitionContext",
+    "IndexContext",
+    "LarkUnexpectedInputContext",
+    "MessageBuilder",
+    "NoShapeError",
+    "ObjectTypeContext",
+    "ParallelContext",
     "Shape",
+    "ShapeContext",
     "ShapeMismatchError",
+    "SpecificationParseError",
+    "StackContext",
     "accessors",
     "argument_ref",
     "base_types",
     "check_shapes",
     "config",
     "disable_check_shapes",
-    "errors",
+    "error_contexts",
+    "exceptions",
     "get_check_shapes",
     "get_enable_check_shapes",
     "get_rewrite_docstrings",
