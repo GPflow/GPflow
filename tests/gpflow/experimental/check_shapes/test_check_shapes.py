@@ -22,7 +22,7 @@ import pytest
 from gpflow.experimental.check_shapes import ShapeMismatchError, check_shapes, get_check_shapes
 from gpflow.experimental.check_shapes.config import disable_check_shapes
 
-from .utils import TestShaped, t, t_unk
+from .utils import TestShaped, current_line, t, t_unk
 
 
 def get_shape(x: TestShaped) -> Tuple[Optional[int], ...]:
@@ -427,6 +427,8 @@ def test_check_shapes__error_message() -> None:
     # Here we're just testing that error message formatting is wired together sanely. For more
     # thorough tests of error formatting, see test_error_contexts.py and test_exceptions.py
 
+    def_line = current_line() + 2
+
     @check_shapes(
         "a: [d1, d2]",
         "b: [d1, d3]  # Some note on b",
@@ -445,7 +447,7 @@ def test_check_shapes__error_message() -> None:
         f"""
 Tensor shape mismatch in call to function.
   Function: test_check_shapes__error_message.<locals>.f
-    Declared: {__file__}:430
+    Declared: {__file__}:{def_line}
     Note:     Some note on f
     Note:     Some other note on f
     Argument: a

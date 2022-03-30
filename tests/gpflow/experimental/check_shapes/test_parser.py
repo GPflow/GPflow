@@ -29,7 +29,7 @@ from gpflow.experimental.check_shapes.specs import (
     ParsedNoteSpec,
 )
 
-from .utils import TestContext, make_argument_ref, make_shape_spec, varrank
+from .utils import TestContext, current_line, make_argument_ref, make_shape_spec, varrank
 
 
 @dataclass
@@ -946,17 +946,14 @@ def test_parse_and_rewrite_docstring__disable(data: TestData) -> None:
     assert data.doc == rewritten_docstring
 
 
-_CHECK_SHAPES_LINE = 1076
-
-
 @pytest.mark.parametrize(
     "spec,expected_message",
     [
         (
             "a [batch..., x]",
-            f"""
+            """
 Unable to parse shape specification.
-  check_shapes called at: {__file__}:{_CHECK_SHAPES_LINE}
+  check_shapes called at: __check_shapes_path_and_line__
     Argument number (0-indexed): 0
       Line:     "a [batch..., x]"
                     ^
@@ -965,9 +962,9 @@ Unable to parse shape specification.
         ),
         (
             "a= [batch..., x]",
-            f"""
+            """
 Unable to parse shape specification.
-  check_shapes called at: {__file__}:{_CHECK_SHAPES_LINE}
+  check_shapes called at: __check_shapes_path_and_line__
     Argument number (0-indexed): 0
       Line:            "a= [batch..., x]"
                          ^
@@ -978,9 +975,9 @@ Unable to parse shape specification.
         ),
         (
             "a: (batch..., x)",
-            f"""
+            """
 Unable to parse shape specification.
-  check_shapes called at: {__file__}:{_CHECK_SHAPES_LINE}
+  check_shapes called at: __check_shapes_path_and_line__
     Argument number (0-indexed): 0
       Line:     "a: (batch..., x)"
                     ^
@@ -989,9 +986,9 @@ Unable to parse shape specification.
         ),
         (
             "a: batch..., x]",
-            f"""
+            """
 Unable to parse shape specification.
-  check_shapes called at: {__file__}:{_CHECK_SHAPES_LINE}
+  check_shapes called at: __check_shapes_path_and_line__
     Argument number (0-indexed): 0
       Line:     "a: batch..., x]"
                     ^
@@ -1000,9 +997,9 @@ Unable to parse shape specification.
         ),
         (
             "a: [batch... x]",
-            f"""
+            """
 Unable to parse shape specification.
-  check_shapes called at: {__file__}:{_CHECK_SHAPES_LINE}
+  check_shapes called at: __check_shapes_path_and_line__
     Argument number (0-indexed): 0
       Line:            "a: [batch... x]"
                                      ^
@@ -1012,9 +1009,9 @@ Unable to parse shape specification.
         ),
         (
             "a: [batch..., x",
-            f"""
+            """
 Unable to parse shape specification.
-  check_shapes called at: {__file__}:{_CHECK_SHAPES_LINE}
+  check_shapes called at: __check_shapes_path_and_line__
     Argument number (0-indexed): 0
       Line:            "a: [batch..., x"
                                       ^
@@ -1025,9 +1022,9 @@ Unable to parse shape specification.
         ),
         (
             "a: [, x]",
-            f"""
+            """
 Unable to parse shape specification.
-  check_shapes called at: {__file__}:{_CHECK_SHAPES_LINE}
+  check_shapes called at: __check_shapes_path_and_line__
     Argument number (0-indexed): 0
       Line:            "a: [, x]"
                             ^
@@ -1042,9 +1039,9 @@ Unable to parse shape specification.
         ),
         (
             "",
-            f"""
+            """
 Unable to parse shape specification.
-  check_shapes called at: {__file__}:{_CHECK_SHAPES_LINE}
+  check_shapes called at: __check_shapes_path_and_line__
     Argument number (0-indexed): 0
       Line:            ""
                         ^
@@ -1059,9 +1056,9 @@ Unable to parse shape specification.
     batch...
     x
   ]""",
-            f"""
+            """
 Unable to parse shape specification.
-  check_shapes called at: {__file__}:{_CHECK_SHAPES_LINE}
+  check_shapes called at: __check_shapes_path_and_line__
     Argument number (0-indexed): 0
       Line:            "    x"
                             ^
@@ -1072,9 +1069,13 @@ Unable to parse shape specification.
     ],
 )
 def test_parse_argument_spec__error(spec: str, expected_message: str) -> None:
+    check_shapes_path_and_line = f"{__file__}:{current_line() + 2}"
     with pytest.raises(SpecificationParseError) as e:
         check_shapes(spec)
     (message,) = e.value.args
+    expected_message = expected_message.replace(
+        "__check_shapes_path_and_line__", check_shapes_path_and_line
+    )
     assert expected_message == message
 
 
