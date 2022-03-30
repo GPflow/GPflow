@@ -50,7 +50,7 @@ This release contains contributions from:
 
 ## Major Features and Improvements
 
-* Testing: new `test_utils` submodule that provides a `test_kernel` function that does basic correctness checks of custom `Kernel` implementations
+* Testing: new `test_utils` submodule that provides a `check_kernel_interface` function that does basic correctness checks of custom `Kernel` implementations
 
 ## Bug Fixes and Other Changes
 
