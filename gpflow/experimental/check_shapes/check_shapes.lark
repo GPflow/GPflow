@@ -1,6 +1,9 @@
 // Definition of the Lark grammar of the domain specific language for specifying tensors.
 
-argument_spec: argument_name argument_refs ":" shape_spec
+?argument_or_note_spec: argument_spec
+                      | note_spec
+
+argument_spec: argument_name argument_refs ":" shape_spec note_spec?
 
 argument_name: CNAME
 
@@ -21,9 +24,19 @@ dimension_specs: [dimension_spec ("," dimension_spec)* ","?]
 
 dimension_spec_constant: INT
 dimension_spec_variable: CNAME
-dimension_spec_anonymous: "." | "None"
-dimension_spec_variable_rank: ("*" CNAME) | (CNAME "...")
-dimension_spec_anonymous_variable_rank: "*" | "..."
+dimension_spec_anonymous: DOT | NONE
+dimension_spec_variable_rank: (STAR CNAME) | (CNAME ELLIPSIS)
+dimension_spec_anonymous_variable_rank: STAR | ELLIPSIS
+
+note_spec: HASH NOTE_TEXT*
+
+HASH: "#"
+DOT: "."
+NONE: "None"
+STAR: "*"
+ELLIPSIS: "..."
+
+NOTE_TEXT: /.+/
 
 %import common.CNAME
 %import common.INT

@@ -21,6 +21,14 @@ from .argument_ref import ArgumentRef
 
 
 @dataclass(frozen=True)
+class ParsedNoteSpec:
+    note: str
+
+    def __repr__(self) -> str:
+        return f"# {self.note}"
+
+
+@dataclass(frozen=True)
 class ParsedDimensionSpec:
     constant: Optional[int]
     variable_name: Optional[str]
@@ -55,13 +63,27 @@ class ParsedShapeSpec:
 
     def __repr__(self) -> str:
         dims = [repr(dim) for dim in self.dims]
-        return f"({', '.join(dims)})"
+        return f"[{', '.join(dims)}]"
 
 
 @dataclass(frozen=True)
 class ParsedArgumentSpec:
     argument_ref: ArgumentRef
     shape: ParsedShapeSpec
+    note: Optional[ParsedNoteSpec]
 
     def __repr__(self) -> str:
-        return f"{self.argument_ref}: {self.shape}"
+        note_str = f"  {self.note}" if self.note is not None else ""
+        return f"{self.argument_ref}: {self.shape}{note_str}"
+
+
+@dataclass(frozen=True)
+class ParsedFunctionSpec:
+    arguments: Tuple[ParsedArgumentSpec, ...]
+    notes: Tuple[ParsedNoteSpec, ...]
+
+    def __repr__(self) -> str:
+        lines = [repr(argument) for argument in self.arguments] + [
+            repr(note) for note in self.notes
+        ]
+        return "\n".join(lines)

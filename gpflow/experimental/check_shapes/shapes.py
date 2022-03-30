@@ -24,10 +24,12 @@ import tensorflow_probability as tfp
 
 from ...base import AnyNDArray
 from .base_types import Shape
+from .error_contexts import ErrorContext, IndexContext, ObjectTypeContext, StackContext
+from .exceptions import NoShapeError
 
 
 @singledispatch
-def get_shape(shaped: Any) -> Shape:
+def get_shape(shaped: Any, context: ErrorContext) -> Shape:
     """
     Returns the shape of the given object.
 
@@ -35,31 +37,31 @@ def get_shape(shaped: Any) -> Shape:
 
     Raises an exception if objects of that type do not have shapes.
     """
-    raise NotImplementedError(f"Do not know how to get shape of object of type {type(shaped)}.")
+    raise NoShapeError(StackContext(context, ObjectTypeContext(shaped)))
 
 
 @get_shape.register(bool)
 @get_shape.register(int)
 @get_shape.register(float)
 @get_shape.register(str)
-def get_scalar_shape(shaped: Any) -> Shape:
+def get_scalar_shape(shaped: Any, context: ErrorContext) -> Shape:
     return ()
 
 
 @get_shape.register(cabc.Sequence)
-def get_sequence_shape(shaped: Sequence[Any]) -> Shape:
+def get_sequence_shape(shaped: Sequence[Any], context: ErrorContext) -> Shape:
     if len(shaped) == 0:
         # If the sequence doesn't have any elements we cannot use the first element to determine the
         # shape, and the shape is unknown.
         return None
-    child_shape = get_shape(shaped[0])
+    child_shape = get_shape(shaped[0], StackContext(context, IndexContext(0)))
     if child_shape is None:
         return None
     return (len(shaped),) + child_shape
 
 
 @get_shape.register(np.ndarray)
-def get_ndarray_shape(shaped: AnyNDArray) -> Shape:
+def get_ndarray_shape(shaped: AnyNDArray, context: ErrorContext) -> Shape:
     result: Tuple[int, ...] = shaped.shape
     return result
 
@@ -67,7 +69,9 @@ def get_ndarray_shape(shaped: AnyNDArray) -> Shape:
 @get_shape.register(tf.Tensor)
 @get_shape.register(tf.Variable)
 @get_shape.register(tfp.util.DeferredTensor)
-def get_tensorflow_shape(shaped: Union[tf.Tensor, tf.Variable, tfp.util.DeferredTensor]) -> Shape:
+def get_tensorflow_shape(
+    shaped: Union[tf.Tensor, tf.Variable, tfp.util.DeferredTensor], context: ErrorContext
+) -> Shape:
     shape = shaped.shape
     if not shape:
         return None

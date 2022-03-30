@@ -196,7 +196,7 @@ try:
     from mdn_plotting import plot
 except:
     # VS CODE's root directory is GPflow's top-level directory
-    from doc.source.notebooks.tailor.mdn_plotting import plot
+    from doc.sphinx.notebooks.tailor.mdn_plotting import plot
 
 fig, axes = plt.subplots(1, 2, figsize=(12, 6))
 for a in axes:
