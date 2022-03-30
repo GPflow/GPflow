@@ -50,7 +50,7 @@ def test_kernel_interface(kernel_class: Type[kernels.Kernel]) -> None:
         K = kernel(X)
         test_utils.assert_psd_matrix(K)
     else:
-        test_utils.test_kernel(kernel, X, X2)
+        test_utils.check_kernel_interface(kernel, X, X2)
 
 
 @pytest.mark.parametrize(
@@ -66,4 +66,4 @@ def test_positive_semidefinite_periodic(base_class: Type[kernels.IsotropicStatio
     N, N2, D = 101, 103, 5
     X = rng.randn(N, D)
     X2 = rng.randn(N2, D)
-    test_utils.test_kernel(kernel, X, X2)
+    test_utils.check_kernel_interface(kernel, X, X2)
