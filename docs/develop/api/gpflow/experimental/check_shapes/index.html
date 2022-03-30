@@ -365,6 +365,11 @@ function checkPageExistsAndRedirect(event) {
       </a>
      </li>
      <li class="toctree-l3">
+      <a class="reference internal" href="error_contexts/index.html">
+       gpflow.experimental.check_shapes.error_contexts
+      </a>
+     </li>
+     <li class="toctree-l3">
       <a class="reference internal" href="parser/index.html">
        gpflow.experimental.check_shapes.parser
       </a>
@@ -626,6 +631,11 @@ function checkPageExistsAndRedirect(event) {
      Shape specification
     </a>
    </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#note-specification">
+     Note specification
+    </a>
+   </li>
   </ul>
  </li>
  <li class="toc-h2 nav-item toc-entry">
@@ -829,6 +839,11 @@ function checkPageExistsAndRedirect(event) {
   </a>
  </li>
  <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#gpflow-experimental-check-shapes-error-contexts">
+   gpflow.experimental.check_shapes.error_contexts
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
   <a class="reference internal nav-link" href="#gpflow-experimental-check-shapes-parser">
    gpflow.experimental.check_shapes.parser
   </a>
@@ -886,7 +901,7 @@ function checkPageExistsAndRedirect(event) {
 <h2>Check specification<a class="headerlink" href="#check-specification" title="Permalink to this headline">#</a></h2>
 <p>The shapes to check are specified by the arguments to <a class="reference internal" href="#gpflow.experimental.check_shapes.check_shapes" title="gpflow.experimental.check_shapes.check_shapes"><code class="xref py py-func docutils literal notranslate"><span class="pre">check_shapes()</span></code></a>. Each argument is a
 string of the format:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">&lt;</span><span class="n">argument</span> <span class="n">specifier</span><span class="o">&gt;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">shape</span> <span class="n">specifier</span><span class="o">&gt;</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">&lt;</span><span class="n">argument</span> <span class="n">specifier</span><span class="o">&gt;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">shape</span> <span class="n">specifier</span><span class="o">&gt;</span> <span class="p">[</span><span class="c1"># &lt;note&gt;]</span>
 </pre></div>
 </div>
 <section id="argument-specification">
@@ -945,6 +960,30 @@ multiple uses of the same variable name must match the same dimension sizes.</p>
     <span class="s2">&quot;...: [batch..., 2]&quot;</span><span class="p">,</span>
     <span class="s2">&quot;...: [n_samples, *]&quot;</span><span class="p">,</span>
     <span class="s2">&quot;...: [..., 2]&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="k">def</span> <span class="nf">f</span><span class="p">(</span><span class="o">...</span><span class="p">):</span>
+    <span class="o">...</span>
+</pre></div>
+</div>
+</section>
+<section id="note-specification">
+<h3>Note specification<a class="headerlink" href="#note-specification" title="Permalink to this headline">#</a></h3>
+<p>You can add notes to your specifications using a <cite>#</cite> followed by the note. These notes will be
+appended to relevant error messages and appear in rewritten docstrings. You can add notes in two
+places:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>After the specification of a single argument, to add a note to that argument only.</p></li>
+<li><p>On a single line by itself, to add a note to the entire function.</p></li>
+</ul>
+</div></blockquote>
+<p>For example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nd">@tf</span><span class="o">.</span><span class="n">function</span>
+<span class="nd">@check_shapes</span><span class="p">(</span>
+    <span class="s2">&quot;features: [batch_shape..., n_features]&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;weights: [n_features]  # A note about the shape of `weights`.&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;return: [batch_shape...]&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;# A note about `f`.&quot;</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="k">def</span> <span class="nf">f</span><span class="p">(</span><span class="o">...</span><span class="p">):</span>
     <span class="o">...</span>
@@ -1855,6 +1894,14 @@ disable it.</p>
 <section id="gpflow-experimental-check-shapes-config">
 <h2>gpflow.experimental.check_shapes.config<a class="headerlink" href="#gpflow-experimental-check-shapes-config" title="Permalink to this headline">#</a></h2>
 <div class="toctree-wrapper compound">
+</div>
+</section>
+<section id="gpflow-experimental-check-shapes-error-contexts">
+<h2>gpflow.experimental.check_shapes.error_contexts<a class="headerlink" href="#gpflow-experimental-check-shapes-error-contexts" title="Permalink to this headline">#</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="error_contexts/index.html">gpflow.experimental.check_shapes.error_contexts</a></li>
+</ul>
 </div>
 </section>
 <section id="gpflow-experimental-check-shapes-parser">

@@ -266,18 +266,18 @@ function checkPageExistsAndRedirect(event) {
 <span class="kn">from</span> <span class="nn">.base_types</span> <span class="kn">import</span> <span class="n">C</span><span class="p">,</span> <span class="n">Shape</span>
 <span class="kn">from</span> <span class="nn">.config</span> <span class="kn">import</span> <span class="n">get_enable_check_shapes</span>
 <span class="kn">from</span> <span class="nn">.error_contexts</span> <span class="kn">import</span> <span class="p">(</span>
-    <span class="n">ArgumentContext</span><span class="p">,</span>
     <span class="n">ErrorContext</span><span class="p">,</span>
     <span class="n">FunctionCallContext</span><span class="p">,</span>
     <span class="n">FunctionDefinitionContext</span><span class="p">,</span>
+    <span class="n">NoteContext</span><span class="p">,</span>
     <span class="n">ParallelContext</span><span class="p">,</span>
     <span class="n">ShapeContext</span><span class="p">,</span>
     <span class="n">StackContext</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="kn">from</span> <span class="nn">.exceptions</span> <span class="kn">import</span> <span class="n">ShapeMismatchError</span>
-<span class="kn">from</span> <span class="nn">.parser</span> <span class="kn">import</span> <span class="n">parse_and_rewrite_docstring</span><span class="p">,</span> <span class="n">parse_argument_spec</span>
+<span class="kn">from</span> <span class="nn">.parser</span> <span class="kn">import</span> <span class="n">parse_and_rewrite_docstring</span><span class="p">,</span> <span class="n">parse_function_spec</span>
 <span class="kn">from</span> <span class="nn">.shapes</span> <span class="kn">import</span> <span class="n">get_shape</span>
-<span class="kn">from</span> <span class="nn">.specs</span> <span class="kn">import</span> <span class="n">ParsedArgumentSpec</span>
+<span class="kn">from</span> <span class="nn">.specs</span> <span class="kn">import</span> <span class="n">ParsedArgumentSpec</span><span class="p">,</span> <span class="n">ParsedNoteSpec</span>
 
 
 <span class="k">def</span> <span class="nf">null_check_shapes</span><span class="p">(</span><span class="n">func</span><span class="p">:</span> <span class="n">C</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">C</span><span class="p">:</span>
@@ -305,13 +305,11 @@ function checkPageExistsAndRedirect(event) {
 
     <span class="n">unbound_error_context</span> <span class="o">=</span> <span class="n">FunctionCallContext</span><span class="p">(</span><span class="n">check_shapes</span><span class="p">)</span>
 
-    <span class="n">parsed_specs</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span>
-        <span class="n">parse_argument_spec</span><span class="p">(</span><span class="n">spec</span><span class="p">,</span> <span class="n">StackContext</span><span class="p">(</span><span class="n">unbound_error_context</span><span class="p">,</span> <span class="n">ArgumentContext</span><span class="p">(</span><span class="n">i</span><span class="p">)))</span>
-        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">spec</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">specs</span><span class="p">)</span>
-    <span class="p">)</span>
+    <span class="n">func_spec</span> <span class="o">=</span> <span class="n">parse_function_spec</span><span class="p">(</span><span class="n">specs</span><span class="p">,</span> <span class="n">unbound_error_context</span><span class="p">)</span>
 
-    <span class="n">pre_specs</span> <span class="o">=</span> <span class="p">[</span><span class="n">spec</span> <span class="k">for</span> <span class="n">spec</span> <span class="ow">in</span> <span class="n">parsed_specs</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">spec</span><span class="o">.</span><span class="n">argument_ref</span><span class="o">.</span><span class="n">is_result</span><span class="p">]</span>
-    <span class="n">post_specs</span> <span class="o">=</span> <span class="p">[</span><span class="n">spec</span> <span class="k">for</span> <span class="n">spec</span> <span class="ow">in</span> <span class="n">parsed_specs</span> <span class="k">if</span> <span class="n">spec</span><span class="o">.</span><span class="n">argument_ref</span><span class="o">.</span><span class="n">is_result</span><span class="p">]</span>
+    <span class="n">pre_specs</span> <span class="o">=</span> <span class="p">[</span><span class="n">spec</span> <span class="k">for</span> <span class="n">spec</span> <span class="ow">in</span> <span class="n">func_spec</span><span class="o">.</span><span class="n">arguments</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">spec</span><span class="o">.</span><span class="n">argument_ref</span><span class="o">.</span><span class="n">is_result</span><span class="p">]</span>
+    <span class="n">post_specs</span> <span class="o">=</span> <span class="p">[</span><span class="n">spec</span> <span class="k">for</span> <span class="n">spec</span> <span class="ow">in</span> <span class="n">func_spec</span><span class="o">.</span><span class="n">arguments</span> <span class="k">if</span> <span class="n">spec</span><span class="o">.</span><span class="n">argument_ref</span><span class="o">.</span><span class="n">is_result</span><span class="p">]</span>
+    <span class="n">note_specs</span> <span class="o">=</span> <span class="n">func_spec</span><span class="o">.</span><span class="n">notes</span>
 
     <span class="k">def</span> <span class="nf">_check_shapes</span><span class="p">(</span><span class="n">func</span><span class="p">:</span> <span class="n">C</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">C</span><span class="p">:</span>
         <span class="n">bound_error_context</span> <span class="o">=</span> <span class="n">FunctionDefinitionContext</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
@@ -336,15 +334,19 @@ function checkPageExistsAndRedirect(event) {
             <span class="n">arg_map</span> <span class="o">=</span> <span class="n">bound_arguments</span><span class="o">.</span><span class="n">arguments</span>
             <span class="n">shape_context</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">ParsedArgumentSpec</span><span class="p">,</span> <span class="n">Shape</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[]</span>
             <span class="n">dim_context</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]]]]</span> <span class="o">=</span> <span class="p">{}</span>
-            <span class="n">_assert_shapes</span><span class="p">(</span><span class="n">pre_specs</span><span class="p">,</span> <span class="n">arg_map</span><span class="p">,</span> <span class="n">shape_context</span><span class="p">,</span> <span class="n">dim_context</span><span class="p">,</span> <span class="n">bound_error_context</span><span class="p">)</span>
+            <span class="n">_assert_shapes</span><span class="p">(</span>
+                <span class="n">pre_specs</span><span class="p">,</span> <span class="n">note_specs</span><span class="p">,</span> <span class="n">arg_map</span><span class="p">,</span> <span class="n">shape_context</span><span class="p">,</span> <span class="n">dim_context</span><span class="p">,</span> <span class="n">bound_error_context</span>
+            <span class="p">)</span>
             <span class="n">result</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
             <span class="n">arg_map</span><span class="p">[</span><span class="n">RESULT_TOKEN</span><span class="p">]</span> <span class="o">=</span> <span class="n">result</span>
-            <span class="n">_assert_shapes</span><span class="p">(</span><span class="n">post_specs</span><span class="p">,</span> <span class="n">arg_map</span><span class="p">,</span> <span class="n">shape_context</span><span class="p">,</span> <span class="n">dim_context</span><span class="p">,</span> <span class="n">bound_error_context</span><span class="p">)</span>
+            <span class="n">_assert_shapes</span><span class="p">(</span>
+                <span class="n">post_specs</span><span class="p">,</span> <span class="n">note_specs</span><span class="p">,</span> <span class="n">arg_map</span><span class="p">,</span> <span class="n">shape_context</span><span class="p">,</span> <span class="n">dim_context</span><span class="p">,</span> <span class="n">bound_error_context</span>
+            <span class="p">)</span>
             <span class="k">return</span> <span class="n">result</span>
 
         <span class="n">set_check_shapes</span><span class="p">(</span><span class="n">wrapped</span><span class="p">,</span> <span class="n">_check_shapes</span><span class="p">)</span>
         <span class="n">wrapped</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">=</span> <span class="n">parse_and_rewrite_docstring</span><span class="p">(</span>
-            <span class="n">wrapped</span><span class="o">.</span><span class="vm">__doc__</span><span class="p">,</span> <span class="n">parsed_specs</span><span class="p">,</span> <span class="n">bound_error_context</span>
+            <span class="n">wrapped</span><span class="o">.</span><span class="vm">__doc__</span><span class="p">,</span> <span class="n">func_spec</span><span class="p">,</span> <span class="n">bound_error_context</span>
         <span class="p">)</span>
         <span class="k">return</span> <span class="n">cast</span><span class="p">(</span><span class="n">C</span><span class="p">,</span> <span class="n">wrapped</span><span class="p">)</span>
 
@@ -352,7 +354,8 @@ function checkPageExistsAndRedirect(event) {
 
 
 <span class="k">def</span> <span class="nf">_assert_shapes</span><span class="p">(</span>
-    <span class="n">specs</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">ParsedArgumentSpec</span><span class="p">],</span>
+    <span class="n">arg_specs</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">ParsedArgumentSpec</span><span class="p">],</span>
+    <span class="n">note_specs</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">ParsedNoteSpec</span><span class="p">],</span>
     <span class="n">arg_map</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
     <span class="n">shape_context</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">ParsedArgumentSpec</span><span class="p">,</span> <span class="n">Shape</span><span class="p">]],</span>
     <span class="n">dim_context</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]]]],</span>
@@ -360,22 +363,19 @@ function checkPageExistsAndRedirect(event) {
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
     <span class="k">def</span> <span class="nf">_assert</span><span class="p">(</span><span class="n">condition</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">condition</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">ShapeMismatchError</span><span class="p">(</span>
-                <span class="n">StackContext</span><span class="p">(</span>
-                    <span class="n">error_context</span><span class="p">,</span>
-                    <span class="n">ParallelContext</span><span class="p">(</span>
-                        <span class="p">[</span>
-                            <span class="n">StackContext</span><span class="p">(</span>
-                                <span class="n">spec</span><span class="o">.</span><span class="n">argument_ref</span><span class="o">.</span><span class="n">error_context</span><span class="p">,</span> <span class="n">ShapeContext</span><span class="p">(</span><span class="n">spec</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">actual</span><span class="p">)</span>
-                            <span class="p">)</span>
-                            <span class="k">for</span> <span class="n">spec</span><span class="p">,</span> <span class="n">actual</span> <span class="ow">in</span> <span class="n">shape_context</span>
-                        <span class="p">]</span>
-                    <span class="p">),</span>
-                <span class="p">)</span>
-            <span class="p">)</span>
+            <span class="n">contexts</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">ErrorContext</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">contexts</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">NoteContext</span><span class="p">(</span><span class="n">note</span><span class="p">)</span> <span class="k">for</span> <span class="n">note</span> <span class="ow">in</span> <span class="n">note_specs</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">spec</span><span class="p">,</span> <span class="n">actual</span> <span class="ow">in</span> <span class="n">shape_context</span><span class="p">:</span>
+                <span class="n">shape_error_context</span><span class="p">:</span> <span class="n">ErrorContext</span> <span class="o">=</span> <span class="n">ShapeContext</span><span class="p">(</span><span class="n">spec</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">actual</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">spec</span><span class="o">.</span><span class="n">note</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">shape_error_context</span> <span class="o">=</span> <span class="n">ParallelContext</span><span class="p">(</span>
+                        <span class="p">[</span><span class="n">NoteContext</span><span class="p">(</span><span class="n">spec</span><span class="o">.</span><span class="n">note</span><span class="p">),</span> <span class="n">shape_error_context</span><span class="p">]</span>
+                    <span class="p">)</span>
+                <span class="n">contexts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">StackContext</span><span class="p">(</span><span class="n">spec</span><span class="o">.</span><span class="n">argument_ref</span><span class="o">.</span><span class="n">error_context</span><span class="p">,</span> <span class="n">shape_error_context</span><span class="p">))</span>
+            <span class="k">raise</span> <span class="n">ShapeMismatchError</span><span class="p">(</span><span class="n">StackContext</span><span class="p">(</span><span class="n">error_context</span><span class="p">,</span> <span class="n">ParallelContext</span><span class="p">(</span><span class="n">contexts</span><span class="p">)))</span>
 
     <span class="n">new_shape_context</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="k">for</span> <span class="n">arg_spec</span> <span class="ow">in</span> <span class="n">specs</span><span class="p">:</span>
+    <span class="k">for</span> <span class="n">arg_spec</span> <span class="ow">in</span> <span class="n">arg_specs</span><span class="p">:</span>
         <span class="n">arg_value</span> <span class="o">=</span> <span class="n">arg_spec</span><span class="o">.</span><span class="n">argument_ref</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">arg_map</span><span class="p">,</span> <span class="n">error_context</span><span class="p">)</span>
         <span class="n">actual</span><span class="p">:</span> <span class="n">Shape</span>
         <span class="k">if</span> <span class="n">arg_value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>

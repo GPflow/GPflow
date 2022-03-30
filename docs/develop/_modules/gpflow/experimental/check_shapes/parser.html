@@ -257,7 +257,7 @@ function checkPageExistsAndRedirect(event) {
 <span class="c1"># pylint: disable=unused-argument</span>
 
 <span class="kn">from</span> <span class="nn">abc</span> <span class="kn">import</span> <span class="n">ABC</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Collection</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">Tuple</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Collection</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
 
 <span class="kn">from</span> <span class="nn">lark.exceptions</span> <span class="kn">import</span> <span class="n">UnexpectedInput</span>
 <span class="kn">from</span> <span class="nn">lark.lark</span> <span class="kn">import</span> <span class="n">Lark</span>
@@ -266,6 +266,7 @@ function checkPageExistsAndRedirect(event) {
 
 <span class="kn">from</span> <span class="nn">gpflow.experimental.check_shapes.config</span> <span class="kn">import</span> <span class="n">DocstringFormat</span><span class="p">,</span> <span class="n">get_rewrite_docstrings</span>
 <span class="kn">from</span> <span class="nn">gpflow.experimental.check_shapes.error_contexts</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">ArgumentContext</span><span class="p">,</span>
     <span class="n">ErrorContext</span><span class="p">,</span>
     <span class="n">LarkUnexpectedInputContext</span><span class="p">,</span>
     <span class="n">StackContext</span><span class="p">,</span>
@@ -279,7 +280,13 @@ function checkPageExistsAndRedirect(event) {
     <span class="n">IndexArgumentRef</span><span class="p">,</span>
     <span class="n">RootArgumentRef</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="kn">from</span> <span class="nn">.specs</span> <span class="kn">import</span> <span class="n">ParsedArgumentSpec</span><span class="p">,</span> <span class="n">ParsedDimensionSpec</span><span class="p">,</span> <span class="n">ParsedShapeSpec</span>
+<span class="kn">from</span> <span class="nn">.specs</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">ParsedArgumentSpec</span><span class="p">,</span>
+    <span class="n">ParsedDimensionSpec</span><span class="p">,</span>
+    <span class="n">ParsedFunctionSpec</span><span class="p">,</span>
+    <span class="n">ParsedNoteSpec</span><span class="p">,</span>
+    <span class="n">ParsedShapeSpec</span><span class="p">,</span>
+<span class="p">)</span>
 
 <span class="n">_VARIABLE_RANK_LEADING_TOKEN</span> <span class="o">=</span> <span class="s2">&quot;*&quot;</span>
 <span class="n">_VARIABLE_RANK_TRAILING_TOKEN</span> <span class="o">=</span> <span class="s2">&quot;...&quot;</span>
@@ -316,11 +323,16 @@ function checkPageExistsAndRedirect(event) {
 
 <span class="k">class</span> <span class="nc">_ParseArgumentSpec</span><span class="p">(</span><span class="n">_TreeVisitor</span><span class="p">):</span>
     <span class="k">def</span> <span class="nf">argument_spec</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tree</span><span class="p">:</span> <span class="n">Tree</span><span class="p">[</span><span class="n">Token</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">ParsedArgumentSpec</span><span class="p">:</span>
-        <span class="n">argument_name</span><span class="p">,</span> <span class="n">argument_refs</span><span class="p">,</span> <span class="n">shape_spec</span> <span class="o">=</span> <span class="n">_tree_children</span><span class="p">(</span><span class="n">tree</span><span class="p">)</span>
+        <span class="n">argument_name</span><span class="p">,</span> <span class="n">argument_refs</span><span class="p">,</span> <span class="n">shape_spec</span><span class="p">,</span> <span class="o">*</span><span class="n">note_specs</span> <span class="o">=</span> <span class="n">_tree_children</span><span class="p">(</span><span class="n">tree</span><span class="p">)</span>
         <span class="n">root_argument_ref</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">argument_name</span><span class="p">)</span>
         <span class="n">argument_ref</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">argument_refs</span><span class="p">,</span> <span class="n">root_argument_ref</span><span class="p">)</span>
         <span class="n">shape</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">shape_spec</span><span class="p">,</span> <span class="n">argument_ref</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">ParsedArgumentSpec</span><span class="p">(</span><span class="n">argument_ref</span><span class="p">,</span> <span class="n">shape</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">note_specs</span><span class="p">:</span>
+            <span class="p">(</span><span class="n">note_spec</span><span class="p">,)</span> <span class="o">=</span> <span class="n">note_specs</span>
+            <span class="n">note</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">note_spec</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">note</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="n">ParsedArgumentSpec</span><span class="p">(</span><span class="n">argument_ref</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">note</span><span class="o">=</span><span class="n">note</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">argument_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tree</span><span class="p">:</span> <span class="n">Tree</span><span class="p">[</span><span class="n">Token</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">ArgumentRef</span><span class="p">:</span>
         <span class="p">(</span><span class="n">token</span><span class="p">,)</span> <span class="o">=</span> <span class="n">_token_children</span><span class="p">(</span><span class="n">tree</span><span class="p">)</span>
@@ -369,11 +381,16 @@ function checkPageExistsAndRedirect(event) {
     <span class="k">def</span> <span class="nf">dimension_spec_anonymous_variable_rank</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tree</span><span class="p">:</span> <span class="n">Tree</span><span class="p">[</span><span class="n">Token</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">ParsedDimensionSpec</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">ParsedDimensionSpec</span><span class="p">(</span><span class="n">constant</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">variable_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">variable_rank</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
+    <span class="k">def</span> <span class="nf">note_spec</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tree</span><span class="p">:</span> <span class="n">Tree</span><span class="p">[</span><span class="n">Token</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">ParsedNoteSpec</span><span class="p">:</span>
+        <span class="n">_hash_token</span><span class="p">,</span> <span class="o">*</span><span class="n">note_tokens</span> <span class="o">=</span> <span class="n">_token_children</span><span class="p">(</span><span class="n">tree</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">ParsedNoteSpec</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">token</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">token</span> <span class="ow">in</span> <span class="n">note_tokens</span><span class="p">))</span>
+
 
 <span class="k">class</span> <span class="nc">_RewritedocString</span><span class="p">(</span><span class="n">_TreeVisitor</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">argument_specs</span><span class="p">:</span> <span class="n">Collection</span><span class="p">[</span><span class="n">ParsedArgumentSpec</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">function_spec</span><span class="p">:</span> <span class="n">ParsedFunctionSpec</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_source</span> <span class="o">=</span> <span class="n">source</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_spec_lines</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_argument_specs_to_sphinx</span><span class="p">(</span><span class="n">argument_specs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_spec_lines</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_argument_specs_to_sphinx</span><span class="p">(</span><span class="n">function_spec</span><span class="o">.</span><span class="n">arguments</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_notes</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">note</span><span class="o">.</span><span class="n">note</span> <span class="k">for</span> <span class="n">note</span> <span class="ow">in</span> <span class="n">function_spec</span><span class="o">.</span><span class="n">notes</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_indent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_guess_indent</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_argument_specs_to_sphinx</span><span class="p">(</span>
@@ -395,6 +412,9 @@ function checkPageExistsAndRedirect(event) {
         <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot; has shape [&quot;</span><span class="p">)</span>
         <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_shape_spec_to_sphinx</span><span class="p">(</span><span class="n">argument_spec</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
         <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;].&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">argument_spec</span><span class="o">.</span><span class="n">note</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">)</span>
+            <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">argument_spec</span><span class="o">.</span><span class="n">note</span><span class="o">.</span><span class="n">note</span><span class="p">)</span>
         <span class="k">return</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">out</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_shape_spec_to_sphinx</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">shape_spec</span><span class="p">:</span> <span class="n">ParsedShapeSpec</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
@@ -465,9 +485,19 @@ function checkPageExistsAndRedirect(event) {
         <span class="c1">#   and `self._source[pos:]` still needs to be added.</span>
         <span class="c1"># * When visiting children we pass `out` and `pos`, and the children add content to `out`</span>
         <span class="c1">#   and return a new `pos`.</span>
-        <span class="n">_docs</span><span class="p">,</span> <span class="n">info_fields</span> <span class="o">=</span> <span class="n">_tree_children</span><span class="p">(</span><span class="n">tree</span><span class="p">)</span>
+        <span class="n">docs</span><span class="p">,</span> <span class="n">info_fields</span> <span class="o">=</span> <span class="n">_tree_children</span><span class="p">(</span><span class="n">tree</span><span class="p">)</span>
         <span class="n">out</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">pos</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_notes</span><span class="p">:</span>
+            <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_source</span><span class="p">[</span><span class="n">pos</span> <span class="p">:</span> <span class="n">docs</span><span class="o">.</span><span class="n">meta</span><span class="o">.</span><span class="n">end_pos</span><span class="p">])</span>
+            <span class="n">pos</span> <span class="o">=</span> <span class="n">docs</span><span class="o">.</span><span class="n">meta</span><span class="o">.</span><span class="n">end_pos</span>
+            <span class="n">indent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_indent</span> <span class="ow">or</span> <span class="mi">0</span>
+            <span class="n">indent_str</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="n">indent</span> <span class="o">*</span> <span class="s2">&quot; &quot;</span>
+            <span class="k">for</span> <span class="n">note</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_notes</span><span class="p">:</span>
+                <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">indent_str</span><span class="p">)</span>
+                <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">note</span><span class="p">)</span>
+
         <span class="n">pos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">info_fields</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">pos</span><span class="p">)</span>
         <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_source</span><span class="p">[</span><span class="n">pos</span><span class="p">:])</span>
         <span class="k">return</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">out</span><span class="p">)</span>
@@ -506,7 +536,7 @@ function checkPageExistsAndRedirect(event) {
     <span class="s2">&quot;check_shapes.lark&quot;</span><span class="p">,</span>
     <span class="n">rel_to</span><span class="o">=</span><span class="vm">__file__</span><span class="p">,</span>
     <span class="n">propagate_positions</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-    <span class="n">start</span><span class="o">=</span><span class="s2">&quot;argument_spec&quot;</span><span class="p">,</span>
+    <span class="n">start</span><span class="o">=</span><span class="s2">&quot;argument_or_note_spec&quot;</span><span class="p">,</span>
     <span class="n">parser</span><span class="o">=</span><span class="s2">&quot;lalr&quot;</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="n">_DOCSTRING_PARSER</span> <span class="o">=</span> <span class="n">Lark</span><span class="o">.</span><span class="n">open</span><span class="p">(</span>
@@ -545,6 +575,7 @@ function checkPageExistsAndRedirect(event) {
 <span class="n">_ARGUMENT_SPEC_TERMINAL_DESCRIPTIONS</span> <span class="o">=</span> <span class="n">_create_terminal_descriptions</span><span class="p">(</span>
     <span class="n">_ARGUMENT_SPEC_PARSER</span><span class="p">,</span>
     <span class="p">{</span>
+        <span class="s2">&quot;NOTE_TEXT&quot;</span><span class="p">:</span> <span class="s2">&quot;note / comment text&quot;</span><span class="p">,</span>
         <span class="s2">&quot;CNAME&quot;</span><span class="p">:</span> <span class="s2">&quot;variable name&quot;</span><span class="p">,</span>
         <span class="s2">&quot;INT&quot;</span><span class="p">:</span> <span class="s2">&quot;integer&quot;</span><span class="p">,</span>
         <span class="s2">&quot;WS&quot;</span><span class="p">:</span> <span class="s2">&quot;whitespace&quot;</span><span class="p">,</span>
@@ -563,13 +594,15 @@ function checkPageExistsAndRedirect(event) {
 <span class="p">)</span>
 
 
-<span class="n">_ARGUMENT_SPEC_CACHE</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">ParsedArgumentSpec</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
-<span class="n">_SPHINX_DOCSTRING_CACHE</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">ParsedArgumentSpec</span><span class="p">,</span> <span class="o">...</span><span class="p">]],</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="n">_ARGUMENT_SPEC_CACHE</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="n">ParsedArgumentSpec</span><span class="p">,</span> <span class="n">ParsedNoteSpec</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="n">_SPHINX_DOCSTRING_CACHE</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">ParsedFunctionSpec</span><span class="p">],</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
 
 
-<div class="viewcode-block" id="parse_argument_spec"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/parser/index.html#gpflow.experimental.check_shapes.parser.parse_argument_spec">[docs]</a><span class="k">def</span> <span class="nf">parse_argument_spec</span><span class="p">(</span><span class="n">argument_spec</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="n">ErrorContext</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ParsedArgumentSpec</span><span class="p">:</span>
+<span class="k">def</span> <span class="nf">_parse_argument_spec</span><span class="p">(</span>
+    <span class="n">argument_spec</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="n">ErrorContext</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">ParsedArgumentSpec</span><span class="p">,</span> <span class="n">ParsedNoteSpec</span><span class="p">]:</span>
     <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Parse a `check_shapes` argument specification.</span>
+<span class="sd">    Parse a `check_shapes` argument or note specification.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">cached_value</span> <span class="o">=</span> <span class="n">_ARGUMENT_SPEC_CACHE</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">argument_spec</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">cached_value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -584,17 +617,34 @@ function checkPageExistsAndRedirect(event) {
                 <span class="n">LarkUnexpectedInputContext</span><span class="p">(</span><span class="n">argument_spec</span><span class="p">,</span> <span class="n">e</span><span class="p">,</span> <span class="n">_ARGUMENT_SPEC_TERMINAL_DESCRIPTIONS</span><span class="p">),</span>
             <span class="p">)</span>
         <span class="p">)</span> <span class="kn">from</span> <span class="nn">e</span>
-    <span class="n">specs</span><span class="p">:</span> <span class="n">ParsedArgumentSpec</span> <span class="o">=</span> <span class="n">_ParseArgumentSpec</span><span class="p">()</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">tree</span><span class="p">)</span>
+    <span class="n">parsed_spec</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">ParsedArgumentSpec</span><span class="p">,</span> <span class="n">ParsedNoteSpec</span><span class="p">]</span> <span class="o">=</span> <span class="n">_ParseArgumentSpec</span><span class="p">()</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">tree</span><span class="p">)</span>
 
-    <span class="n">_ARGUMENT_SPEC_CACHE</span><span class="p">[</span><span class="n">argument_spec</span><span class="p">]</span> <span class="o">=</span> <span class="n">specs</span>
+    <span class="n">_ARGUMENT_SPEC_CACHE</span><span class="p">[</span><span class="n">argument_spec</span><span class="p">]</span> <span class="o">=</span> <span class="n">parsed_spec</span>
 
-    <span class="k">return</span> <span class="n">specs</span></div>
+    <span class="k">return</span> <span class="n">parsed_spec</span>
+
+
+<div class="viewcode-block" id="parse_function_spec"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/parser/index.html#gpflow.experimental.check_shapes.parser.parse_function_spec">[docs]</a><span class="k">def</span> <span class="nf">parse_function_spec</span><span class="p">(</span><span class="n">function_spec</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">context</span><span class="p">:</span> <span class="n">ErrorContext</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ParsedFunctionSpec</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Parse all `check_shapes` argument or note specification for a single function.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">arguments</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">notes</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">spec</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">function_spec</span><span class="p">):</span>
+        <span class="n">argument_context</span> <span class="o">=</span> <span class="n">StackContext</span><span class="p">(</span><span class="n">context</span><span class="p">,</span> <span class="n">ArgumentContext</span><span class="p">(</span><span class="n">i</span><span class="p">))</span>
+        <span class="n">parsed_spec</span> <span class="o">=</span> <span class="n">_parse_argument_spec</span><span class="p">(</span><span class="n">spec</span><span class="p">,</span> <span class="n">argument_context</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">parsed_spec</span><span class="p">,</span> <span class="n">ParsedArgumentSpec</span><span class="p">):</span>
+            <span class="n">arguments</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">parsed_spec</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">parsed_spec</span><span class="p">,</span> <span class="n">ParsedNoteSpec</span><span class="p">)</span>
+            <span class="n">notes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">parsed_spec</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">ParsedFunctionSpec</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="n">arguments</span><span class="p">),</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">notes</span><span class="p">))</span></div>
 
 
 <span class="k">def</span> <span class="nf">_parse_and_rewrite_sphinx_docstring</span><span class="p">(</span>
-    <span class="n">docstring</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">argument_specs</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">ParsedArgumentSpec</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="n">context</span><span class="p">:</span> <span class="n">ErrorContext</span>
+    <span class="n">docstring</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">function_spec</span><span class="p">:</span> <span class="n">ParsedFunctionSpec</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="n">ErrorContext</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-    <span class="n">cached_value</span> <span class="o">=</span> <span class="n">_SPHINX_DOCSTRING_CACHE</span><span class="o">.</span><span class="n">get</span><span class="p">((</span><span class="n">docstring</span><span class="p">,</span> <span class="n">argument_specs</span><span class="p">))</span>
+    <span class="n">cached_value</span> <span class="o">=</span> <span class="n">_SPHINX_DOCSTRING_CACHE</span><span class="o">.</span><span class="n">get</span><span class="p">((</span><span class="n">docstring</span><span class="p">,</span> <span class="n">function_spec</span><span class="p">))</span>
     <span class="k">if</span> <span class="n">cached_value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">cached_value</span>
 
@@ -606,15 +656,15 @@ function checkPageExistsAndRedirect(event) {
                 <span class="n">context</span><span class="p">,</span> <span class="n">LarkUnexpectedInputContext</span><span class="p">(</span><span class="n">docstring</span><span class="p">,</span> <span class="n">e</span><span class="p">,</span> <span class="n">_DOCSTRING_TERMINAL_DESCRIPTIONS</span><span class="p">)</span>
             <span class="p">)</span>
         <span class="p">)</span> <span class="kn">from</span> <span class="nn">e</span>
-    <span class="n">rewritten_docstring</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">_RewritedocString</span><span class="p">(</span><span class="n">docstring</span><span class="p">,</span> <span class="n">argument_specs</span><span class="p">)</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">tree</span><span class="p">)</span>
+    <span class="n">rewritten_docstring</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">_RewritedocString</span><span class="p">(</span><span class="n">docstring</span><span class="p">,</span> <span class="n">function_spec</span><span class="p">)</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">tree</span><span class="p">)</span>
 
-    <span class="n">_SPHINX_DOCSTRING_CACHE</span><span class="p">[(</span><span class="n">docstring</span><span class="p">,</span> <span class="n">argument_specs</span><span class="p">)]</span> <span class="o">=</span> <span class="n">rewritten_docstring</span>
+    <span class="n">_SPHINX_DOCSTRING_CACHE</span><span class="p">[(</span><span class="n">docstring</span><span class="p">,</span> <span class="n">function_spec</span><span class="p">)]</span> <span class="o">=</span> <span class="n">rewritten_docstring</span>
 
     <span class="k">return</span> <span class="n">rewritten_docstring</span>
 
 
 <div class="viewcode-block" id="parse_and_rewrite_docstring"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/parser/index.html#gpflow.experimental.check_shapes.parser.parse_and_rewrite_docstring">[docs]</a><span class="k">def</span> <span class="nf">parse_and_rewrite_docstring</span><span class="p">(</span>
-    <span class="n">docstring</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">argument_specs</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">ParsedArgumentSpec</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="n">context</span><span class="p">:</span> <span class="n">ErrorContext</span>
+    <span class="n">docstring</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">function_spec</span><span class="p">:</span> <span class="n">ParsedFunctionSpec</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="n">ErrorContext</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Rewrite `docstring` to include the shapes specified by the `argument_specs`.</span>
@@ -630,7 +680,7 @@ function checkPageExistsAndRedirect(event) {
         <span class="sa">f</span><span class="s2">&quot;Current docstring format is </span><span class="si">{</span><span class="n">docstring_format</span><span class="si">}</span><span class="s2">, but I don&#39;t know how to rewrite that.&quot;</span>
         <span class="s2">&quot; See `gpflow.experimental.check_shapes.config.set_rewrite_docstrings`.&quot;</span>
     <span class="p">)</span>
-    <span class="k">return</span> <span class="n">_parse_and_rewrite_sphinx_docstring</span><span class="p">(</span><span class="n">docstring</span><span class="p">,</span> <span class="n">argument_specs</span><span class="p">,</span> <span class="n">context</span><span class="p">)</span></div>
+    <span class="k">return</span> <span class="n">_parse_and_rewrite_sphinx_docstring</span><span class="p">(</span><span class="n">docstring</span><span class="p">,</span> <span class="n">function_spec</span><span class="p">,</span> <span class="n">context</span><span class="p">)</span></div>
 </pre></div>
 
               </div>
