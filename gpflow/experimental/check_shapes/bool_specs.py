@@ -93,10 +93,8 @@ class ParsedArgumentRefBoolSpec(ParsedBoolSpec):
     argument_ref: ArgumentRef
 
     def get(self, arg_map: Mapping[str, Any], context: ErrorContext) -> Tuple[bool, ErrorContext]:
-        arg_value = self.argument_ref.get(arg_map, context)
-        return bool(arg_value), StackContext(
-            self.argument_ref.error_context, ObjectValueContext(arg_value)
-        )
+        ((arg_value, relative_context),) = self.argument_ref.get(arg_map, context)
+        return bool(arg_value), StackContext(relative_context, ObjectValueContext(arg_value))
 
     def __repr__(self) -> str:
         return repr(self.argument_ref)

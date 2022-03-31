@@ -26,7 +26,10 @@ from gpflow.experimental.check_shapes.error_contexts import (
     FunctionDefinitionContext,
     IndexContext,
     LarkUnexpectedInputContext,
+    MappingKeyContext,
+    MappingValueContext,
     MessageBuilder,
+    MultipleElementBoolContext,
     NoteContext,
     ObjectTypeContext,
     ObjectValueContext,
@@ -485,6 +488,62 @@ def test_index_context(context: ErrorContext, expected: str) -> None:
     assert expected == to_str(context)
 
 
+@pytest.mark.parametrize(
+    "context,expected",
+    [
+        (
+            MappingKeyContext(2),
+            """
+Map key: [2]
+""",
+        ),
+        (
+            MappingKeyContext("foo"),
+            """
+Map key: ['foo']
+""",
+        ),
+        (
+            MappingKeyContext(None),
+            """
+Map key: [None]
+""",
+        ),
+    ],
+)
+def test_mapping_key_context(context: ErrorContext, expected: str) -> None:
+    assert expected == to_str(context)
+
+
+@pytest.mark.parametrize(
+    "context,expected",
+    [
+        (
+            MappingValueContext(2),
+            """
+Map value, of key: [2]
+""",
+        ),
+        (
+            MappingValueContext("foo", value=3),
+            """
+Map value, of key: ['foo']
+  Value: 3
+""",
+        ),
+        (
+            MappingValueContext(None, value=None),
+            """
+Map value, of key: [None]
+  Value: None
+""",
+        ),
+    ],
+)
+def test_mapping_value_context(context: ErrorContext, expected: str) -> None:
+    assert expected == to_str(context)
+
+
 def test_condition_context() -> None:
     assert """
 Condition: foo or (not bar)
@@ -704,4 +763,40 @@ Broadcasting not supported for non-leading variable-rank variables.
     ],
 )
 def test_trailing_broadcast_varrank_context(context: ErrorContext, expected: str) -> None:
+    assert expected == to_str(context)
+
+
+@pytest.mark.parametrize(
+    "context,expected",
+    [
+        (
+            MultipleElementBoolContext("foo bar", 1, 5),
+            """
+Line: "foo bar"
+           ^
+Argument references that evaluate to multiple values are not supported for boolean expressions.
+""",
+        ),
+        (
+            MultipleElementBoolContext("foo bar", 0, 5),
+            """
+Argument references that evaluate to multiple values are not supported for boolean expressions.
+""",
+        ),
+        (
+            MultipleElementBoolContext("foo bar", 1, 0),
+            """
+Line: "foo bar"
+Argument references that evaluate to multiple values are not supported for boolean expressions.
+""",
+        ),
+        (
+            MultipleElementBoolContext("foo bar", 0, 0),
+            """
+Argument references that evaluate to multiple values are not supported for boolean expressions.
+""",
+        ),
+    ],
+)
+def test_multiple_elements_bool_context(context: ErrorContext, expected: str) -> None:
     assert expected == to_str(context)

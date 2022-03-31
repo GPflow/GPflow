@@ -15,7 +15,7 @@
 # pylint: disable=unused-argument  # Bunch of fake functions below has unused arguments.
 
 from dataclasses import dataclass
-from typing import Optional, Tuple
+from typing import Mapping, Optional, Sequence, Tuple
 
 import pytest
 
@@ -503,6 +503,38 @@ def test_check_shapes__argument_refs() -> None:
 
     with pytest.raises(ShapeMismatchError):
         f(Input(ins=(t(2, 1, 1), t(1, 1, 2))))
+
+
+def test_check_shapes__argument_refs__collections() -> None:
+    @check_shapes(
+        "x.keys(): [., w]",
+        "x.values(): [., h]",
+        "return[all]: [w, h]",
+    )
+    def f(x: Mapping[TestShaped, TestShaped]) -> Sequence[TestShaped]:
+        result = []
+        for k, v in x.items():
+            _, w = get_shape(k)
+            _, h = get_shape(v)
+            result.append(t(w, h))
+        return result
+
+    # Don't crash...
+    f({})
+    f(
+        {
+            t(1, 2): t(3, 4),
+            t(5, 2): t(5, 4),
+        }
+    )
+
+    with pytest.raises(ShapeMismatchError):
+        f(
+            {
+                t(1, 2): t(3, 4),
+                t(5, 3): t(5, 4),
+            }
+        )
 
 
 def test_check_shapes__none() -> None:

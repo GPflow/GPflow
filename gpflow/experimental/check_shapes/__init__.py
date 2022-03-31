@@ -53,6 +53,9 @@ The ``<argument specifier>`` can then be modified to refer to elements of the ob
 * Use ``.<name>`` to refer to attributes of the object.
 * Use ``[<index>]`` to refer to elements of a sequence. This is particularly useful if your
   function returns a tuple of values.
+* Use ``[all]`` to select all elements in a collection.
+* Use ``.keys()`` to select all keys in a mapping.
+* Use ``.values()`` to select all values in a mapping.
 
 We do not support looking up values in a  ``dict``.
 
@@ -65,7 +68,10 @@ For example::
         "data.training_data: ...",
         "return: ...",
         "return[0]: ...",
-        "something[0].foo.bar[23]: ...",
+        "data_list[all]: ...",
+        "data_dict.keys(): ...",
+        "data_dict.values(): ...",
+        "something[all].foo[0].bar.values(): ...",
     )
     def f(...):
         ...
@@ -123,8 +129,9 @@ You can use the optional `if <condition>` syntax to conditionally evaluate shape
 <condition>` is used, the specification is only appplied if `<condition>` evaluates to `True`. This
 is useful if shapes depend on other input parameters. Valid conditions are:
 
-* ``<argument specifier>``, with the same syntax and rules as above, uses the `bool` built-in to
-  convert the value of the argument to a `bool`.
+* ``<argument specifier>``, with the same syntax and rules as above, except that constructions that
+  evaluates to multiple elements are disallowed. Uses the `bool` built-in to convert the value of
+  the argument to a `bool`.
 * ``<left> or <right>``, evaluates to `True` if any of `<left>` or `<right>` evaluates to `True`
   and to `False` otherwise.
 * ``<left> and <right>``, evaluates to `False` if any of `<left>` or `<right>` evaluates to
@@ -431,7 +438,10 @@ from .error_contexts import (
     FunctionDefinitionContext,
     IndexContext,
     LarkUnexpectedInputContext,
+    MappingKeyContext,
+    MappingValueContext,
     MessageBuilder,
+    MultipleElementBoolContext,
     ObjectTypeContext,
     ObjectValueContext,
     ParallelContext,
@@ -466,7 +476,10 @@ __all__ = [
     "FunctionDefinitionContext",
     "IndexContext",
     "LarkUnexpectedInputContext",
+    "MappingKeyContext",
+    "MappingValueContext",
     "MessageBuilder",
+    "MultipleElementBoolContext",
     "NoShapeError",
     "ObjectTypeContext",
     "ObjectValueContext",

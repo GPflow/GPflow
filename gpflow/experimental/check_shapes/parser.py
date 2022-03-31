@@ -25,10 +25,13 @@ from lark.tree import Tree
 
 from .argument_ref import (
     RESULT_TOKEN,
+    AllElementsRef,
     ArgumentRef,
     AttributeArgumentRef,
     IndexArgumentRef,
+    KeysRef,
     RootArgumentRef,
+    ValuesRef,
 )
 from .bool_specs import (
     ParsedAndBoolSpec,
@@ -42,6 +45,7 @@ from .error_contexts import (
     ArgumentContext,
     ErrorContext,
     LarkUnexpectedInputContext,
+    MultipleElementBoolContext,
     StackContext,
     TrailingBroadcastVarrankContext,
 )
@@ -94,7 +98,7 @@ class _ParseSpec(_TreeVisitor):
 
     def argument_spec(self, tree: Tree[Token]) -> ParsedArgumentSpec:
         argument_ref, shape_spec, *other_specs = _tree_children(tree)
-        argument = self.visit(argument_ref)
+        argument = self.visit(argument_ref, False)
         shape = self.visit(shape_spec)
         condition = None
         note = None
@@ -124,21 +128,45 @@ class _ParseSpec(_TreeVisitor):
 
     def bool_spec_argument_ref(self, tree: Tree[Token]) -> ParsedBoolSpec:
         (argument_ref,) = _tree_children(tree)
-        return ParsedArgumentRefBoolSpec(self.visit(argument_ref))
+        return ParsedArgumentRefBoolSpec(self.visit(argument_ref, True))
 
-    def argument_ref_root(self, tree: Tree[Token]) -> ArgumentRef:
+    def argument_ref_root(self, tree: Tree[Token], is_for_bool_spec: bool) -> ArgumentRef:
         (token,) = _token_children(tree)
         return RootArgumentRef(token)
 
-    def argument_ref_attribute(self, tree: Tree[Token]) -> ArgumentRef:
+    def argument_ref_attribute(self, tree: Tree[Token], is_for_bool_spec: bool) -> ArgumentRef:
         (source,) = _tree_children(tree)
         (token,) = _token_children(tree)
-        return AttributeArgumentRef(self.visit(source), token)
+        return AttributeArgumentRef(self.visit(source, is_for_bool_spec), token)
 
-    def argument_ref_index(self, tree: Tree[Token]) -> ArgumentRef:
+    def argument_ref_index(self, tree: Tree[Token], is_for_bool_spec: bool) -> ArgumentRef:
         (source,) = _tree_children(tree)
         (token,) = _token_children(tree)
-        return IndexArgumentRef(self.visit(source), int(token))
+        return IndexArgumentRef(self.visit(source, is_for_bool_spec), int(token))
+
+    def argument_ref_all(self, tree: Tree[Token], is_for_bool_spec: bool) -> ArgumentRef:
+        (source,) = _tree_children(tree)
+        self._disallow_multiple_element_bool_spec(source, is_for_bool_spec)
+        return AllElementsRef(self.visit(source, is_for_bool_spec))
+
+    def argument_ref_keys(self, tree: Tree[Token], is_for_bool_spec: bool) -> ArgumentRef:
+        (source,) = _tree_children(tree)
+        self._disallow_multiple_element_bool_spec(source, is_for_bool_spec)
+        return KeysRef(self.visit(source, is_for_bool_spec))
+
+    def argument_ref_values(self, tree: Tree[Token], is_for_bool_spec: bool) -> ArgumentRef:
+        (source,) = _tree_children(tree)
+        self._disallow_multiple_element_bool_spec(source, is_for_bool_spec)
+        return ValuesRef(self.visit(source, is_for_bool_spec))
+
+    def _disallow_multiple_element_bool_spec(
+        self, source: Tree[Token], is_for_bool_spec: bool
+    ) -> None:
+        if is_for_bool_spec:
+            meta = source.meta
+            raise SpecificationParseError(
+                MultipleElementBoolContext(self._source, meta.end_line, meta.end_column)
+            )
 
     def tensor_spec(self, tree: Tree[Token]) -> ParsedTensorSpec:
         shape_spec, *note_specs = _tree_children(tree)

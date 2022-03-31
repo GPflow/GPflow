@@ -16,14 +16,18 @@ Utilities for testing the `check_shapes` library.
 """
 import inspect
 from dataclasses import dataclass
+from enum import Enum
 from typing import Optional, Union
 
 from gpflow.experimental.check_shapes import Dimension, Shape, get_shape
 from gpflow.experimental.check_shapes.argument_ref import (
+    AllElementsRef,
     ArgumentRef,
     AttributeArgumentRef,
     IndexArgumentRef,
+    KeysRef,
     RootArgumentRef,
+    ValuesRef,
 )
 from gpflow.experimental.check_shapes.bool_specs import (
     ParsedAndBoolSpec,
@@ -76,13 +80,33 @@ def t(*shape: Dimension) -> TestShaped:
     return TestShaped(shape)
 
 
-def make_argument_ref(argument_name: str, *refs: Union[int, str]) -> ArgumentRef:
+class ArgumentRefConstant(Enum):
+    ALL = "all"
+    KEYS = "keys"
+    VALUES = "values"
+
+
+all_ref = ArgumentRefConstant.ALL
+keys_ref = ArgumentRefConstant.KEYS
+values_ref = ArgumentRefConstant.VALUES
+
+
+def make_argument_ref(
+    argument_name: str, *refs: Union[int, str, ArgumentRefConstant]
+) -> ArgumentRef:
     result: ArgumentRef = RootArgumentRef(argument_name)
     for ref in refs:
         if isinstance(ref, int):
             result = IndexArgumentRef(result, ref)
-        else:
+        elif isinstance(ref, str):
             result = AttributeArgumentRef(result, ref)
+        elif ref == all_ref:
+            result = AllElementsRef(result)
+        elif ref == keys_ref:
+            result = KeysRef(result)
+        else:
+            assert ref == values_ref
+            result = ValuesRef(result)
     return result
 
 
