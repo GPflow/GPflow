@@ -18,11 +18,12 @@ from typing import TYPE_CHECKING, Any, List, Optional, Sequence, Tuple, Union
 import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
+from packaging.version import Version
 from typing_extensions import Final
 
 from .config import default_float, default_summary_fmt
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from IPython.lib import pretty
 
 DType = Union[np.dtype, tf.DType]
@@ -30,21 +31,16 @@ DType = Union[np.dtype, tf.DType]
 # It would be nice to use something more interesting than `Any` here, but it looks like the
 # infrastructure in the rest of the ecosystem isn't really set up for this yet. Maybe when we
 # get Python 3.11?
-# Also, this type hint is as str, because With numpy < 1.20.0 the other one doesn't work at runtime.
-AnyNDArray = Union["np.ndarray[Any, Any]"]
+if TYPE_CHECKING:  # pragma: no cover
+    AnyNDArray = Union["np.ndarray[Any, Any]"]
+elif Version(np.__version__) < Version("1.20.0"):
+    AnyNDArray = np.ndarray
+else:
+    AnyNDArray = np.ndarray[Any, Any]
 
 VariableData = Union[List[Any], Tuple[Any], AnyNDArray, int, float]  # deprecated
 Transform = Union[tfp.bijectors.Bijector]
 Prior = Union[tfp.distributions.Distribution]
-
-
-TensorType = Union[AnyNDArray, tf.Tensor, tf.Variable, "Parameter"]
-"""
-Type alias for tensor-like types that are supported by most TensorFlow and GPflow operations.
-
-NOTE: Union types like this do not work with the `register` method of `multipledispatch`'s
-`Dispatcher` class. Instead use `TensorLike`.
-"""
 
 
 # We've left this as object until we've tested the performance consequences of using the full set
@@ -58,14 +54,9 @@ TensorLike: Final[Tuple[type, ...]] = (object,)
 
 _NativeScalar = Union[int, float]
 _Array = Sequence[Any]  # a nested array of int, float, bool etc. kept simple for readability
-TensorData = Union[_NativeScalar, _Array, TensorType]
 
 MeanAndVariance = Tuple[tf.Tensor, tf.Tensor]
 SamplesMeanAndVariance = Tuple[tf.Tensor, tf.Tensor, tf.Tensor]
-
-InputData = Union[TensorType]
-OutputData = Union[TensorType]
-RegressionData = Tuple[InputData, OutputData]
 
 
 def _IS_PARAMETER(o: object) -> bool:
@@ -113,7 +104,7 @@ class PriorOn(Enum):
 class Parameter(tfp.util.TransformedVariable):
     def __init__(
         self,
-        value: Union[TensorData, "Parameter"],
+        value: "TensorData",
         *,
         transform: Optional[Transform] = None,
         prior: Optional[Prior] = None,
@@ -239,7 +230,7 @@ class Parameter(tfp.util.TransformedVariable):
 
     def assign(
         self,
-        value: TensorData,
+        value: "TensorData",
         use_locking: bool = False,
         name: Optional[str] = None,
         read_value: bool = True,
@@ -268,6 +259,22 @@ class Parameter(tfp.util.TransformedVariable):
         return self.unconstrained_variable.assign(
             unconstrained_value, use_locking=use_locking, name=name, read_value=read_value
         )
+
+
+# These types are defined after "Parameter" to avoid forward references that breaks our
+# documentation build:
+TensorType = Union[AnyNDArray, tf.Tensor, tf.Variable, Parameter]
+"""
+Type alias for tensor-like types that are supported by most TensorFlow and GPflow operations.
+
+NOTE: Union types like this do not work with the `register` method of `multipledispatch`'s
+`Dispatcher` class. Instead use `TensorLike`.
+"""
+
+TensorData = Union[_NativeScalar, _Array, TensorType]
+InputData = Union[TensorType]
+OutputData = Union[TensorType]
+RegressionData = Tuple[InputData, OutputData]
 
 
 def _cast_to_dtype(
