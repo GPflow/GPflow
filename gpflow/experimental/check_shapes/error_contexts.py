@@ -48,7 +48,7 @@ from lark.exceptions import UnexpectedCharacters, UnexpectedEOF, UnexpectedInput
 
 from .base_types import Shape
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from .argument_ref import ArgumentRef
     from .specs import ParsedNoteSpec, ParsedShapeSpec
 

@@ -16,10 +16,9 @@ To be run by the CI system to update docs.
 """
 import inspect
 from dataclasses import dataclass
-from io import TextIOWrapper
 from pathlib import Path
 from types import ModuleType
-from typing import Any, Callable, Deque, Dict, List, Mapping, Optional, Set, Type, Union
+from typing import Any, Callable, Deque, Dict, List, Mapping, Optional, Set, TextIO, Type, Union
 
 from gpflow.utilities import Dispatcher
 
@@ -50,7 +49,7 @@ class DocumentableDispatcher:
             implementations.setdefault(impl, []).append(args)
         return implementations
 
-    def write(self, out: TextIOWrapper) -> None:
+    def write(self, out: TextIO) -> None:
         out.write(
             f"""
 {_header(self.name, 2)}
@@ -84,7 +83,7 @@ class DocumentableClass:
     name: str
     obj: Type[Any]
 
-    def write(self, out: TextIOWrapper) -> None:
+    def write(self, out: TextIO) -> None:
         out.write(
             f"""
 {_header(self.name, 2)}
@@ -102,7 +101,7 @@ class DocumentableFunction:
     name: str
     obj: Callable[..., Any]
 
-    def write(self, out: TextIOWrapper) -> None:
+    def write(self, out: TextIO) -> None:
         out.write(
             f"""
 {_header(self.name, 2)}
@@ -215,7 +214,7 @@ class DocumentableModule:
         self.prune_duplicates()
         self.prune_empty_modules()
 
-    def write_modules(self, out: TextIOWrapper) -> None:
+    def write_modules(self, out: TextIO) -> None:
         if not self.modules:
             return
 
@@ -231,7 +230,7 @@ class DocumentableModule:
         for module in self.modules:
             out.write(f"   {module.name} <{module.name.split('.')[-1]}/index>\n")
 
-    def write_classes(self, out: TextIOWrapper) -> None:
+    def write_classes(self, out: TextIO) -> None:
         if not self.classes:
             return
 
@@ -243,7 +242,7 @@ class DocumentableModule:
         for cls in self.classes:
             cls.write(out)
 
-    def write_functions(self, out: TextIOWrapper) -> None:
+    def write_functions(self, out: TextIO) -> None:
         if not self.functions:
             return
 

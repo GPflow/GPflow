@@ -25,7 +25,7 @@ from ..models import BayesianModel
 from ..utilities import parameter_dict
 from .base import MonitorTask
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     import matplotlib
 
 
