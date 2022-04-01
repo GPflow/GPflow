@@ -260,11 +260,12 @@ function checkPageExistsAndRedirect(event) {
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">tensorflow</span> <span class="k">as</span> <span class="nn">tf</span>
 <span class="kn">import</span> <span class="nn">tensorflow_probability</span> <span class="k">as</span> <span class="nn">tfp</span>
+<span class="kn">from</span> <span class="nn">packaging.version</span> <span class="kn">import</span> <span class="n">Version</span>
 <span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Final</span>
 
 <span class="kn">from</span> <span class="nn">.config</span> <span class="kn">import</span> <span class="n">default_float</span><span class="p">,</span> <span class="n">default_summary_fmt</span>
 
-<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>  <span class="c1"># pragma: no cover</span>
     <span class="kn">from</span> <span class="nn">IPython.lib</span> <span class="kn">import</span> <span class="n">pretty</span>
 
 <span class="n">DType</span> <span class="o">=</span> <span class="n">Union</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">DType</span><span class="p">]</span>
@@ -272,21 +273,16 @@ function checkPageExistsAndRedirect(event) {
 <span class="c1"># It would be nice to use something more interesting than `Any` here, but it looks like the</span>
 <span class="c1"># infrastructure in the rest of the ecosystem isn&#39;t really set up for this yet. Maybe when we</span>
 <span class="c1"># get Python 3.11?</span>
-<span class="c1"># Also, this type hint is as str, because With numpy &lt; 1.20.0 the other one doesn&#39;t work at runtime.</span>
-<span class="n">AnyNDArray</span> <span class="o">=</span> <span class="n">Union</span><span class="p">[</span><span class="s2">&quot;np.ndarray[Any, Any]&quot;</span><span class="p">]</span>
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>  <span class="c1"># pragma: no cover</span>
+    <span class="n">AnyNDArray</span> <span class="o">=</span> <span class="n">Union</span><span class="p">[</span><span class="s2">&quot;np.ndarray[Any, Any]&quot;</span><span class="p">]</span>
+<span class="k">elif</span> <span class="n">Version</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">__version__</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">Version</span><span class="p">(</span><span class="s2">&quot;1.20.0&quot;</span><span class="p">):</span>
+    <span class="n">AnyNDArray</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="n">AnyNDArray</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
 
 <span class="n">VariableData</span> <span class="o">=</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span> <span class="n">AnyNDArray</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span>  <span class="c1"># deprecated</span>
 <span class="n">Transform</span> <span class="o">=</span> <span class="n">Union</span><span class="p">[</span><span class="n">tfp</span><span class="o">.</span><span class="n">bijectors</span><span class="o">.</span><span class="n">Bijector</span><span class="p">]</span>
 <span class="n">Prior</span> <span class="o">=</span> <span class="n">Union</span><span class="p">[</span><span class="n">tfp</span><span class="o">.</span><span class="n">distributions</span><span class="o">.</span><span class="n">Distribution</span><span class="p">]</span>
-
-
-<span class="n">TensorType</span> <span class="o">=</span> <span class="n">Union</span><span class="p">[</span><span class="n">AnyNDArray</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">Variable</span><span class="p">,</span> <span class="s2">&quot;Parameter&quot;</span><span class="p">]</span>
-<span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">Type alias for tensor-like types that are supported by most TensorFlow and GPflow operations.</span>
-
-<span class="sd">NOTE: Union types like this do not work with the `register` method of `multipledispatch`&#39;s</span>
-<span class="sd">`Dispatcher` class. Instead use `TensorLike`.</span>
-<span class="sd">&quot;&quot;&quot;</span>
 
 
 <span class="c1"># We&#39;ve left this as object until we&#39;ve tested the performance consequences of using the full set</span>
@@ -300,14 +296,9 @@ function checkPageExistsAndRedirect(event) {
 
 <span class="n">_NativeScalar</span> <span class="o">=</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span>
 <span class="n">_Array</span> <span class="o">=</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span>  <span class="c1"># a nested array of int, float, bool etc. kept simple for readability</span>
-<span class="n">TensorData</span> <span class="o">=</span> <span class="n">Union</span><span class="p">[</span><span class="n">_NativeScalar</span><span class="p">,</span> <span class="n">_Array</span><span class="p">,</span> <span class="n">TensorType</span><span class="p">]</span>
 
 <span class="n">MeanAndVariance</span> <span class="o">=</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span>
 <span class="n">SamplesMeanAndVariance</span> <span class="o">=</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span>
-
-<span class="n">InputData</span> <span class="o">=</span> <span class="n">Union</span><span class="p">[</span><span class="n">TensorType</span><span class="p">]</span>
-<span class="n">OutputData</span> <span class="o">=</span> <span class="n">Union</span><span class="p">[</span><span class="n">TensorType</span><span class="p">]</span>
-<span class="n">RegressionData</span> <span class="o">=</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">InputData</span><span class="p">,</span> <span class="n">OutputData</span><span class="p">]</span>
 
 
 <span class="k">def</span> <span class="nf">_IS_PARAMETER</span><span class="p">(</span><span class="n">o</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
@@ -355,7 +346,7 @@ function checkPageExistsAndRedirect(event) {
 <div class="viewcode-block" id="Parameter"><a class="viewcode-back" href="../../api/gpflow/index.html#gpflow.base.Parameter">[docs]</a><span class="k">class</span> <span class="nc">Parameter</span><span class="p">(</span><span class="n">tfp</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">TransformedVariable</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">value</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">TensorData</span><span class="p">,</span> <span class="s2">&quot;Parameter&quot;</span><span class="p">],</span>
+        <span class="n">value</span><span class="p">:</span> <span class="s2">&quot;TensorData&quot;</span><span class="p">,</span>
         <span class="o">*</span><span class="p">,</span>
         <span class="n">transform</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Transform</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">prior</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Prior</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -481,7 +472,7 @@ function checkPageExistsAndRedirect(event) {
 
 <div class="viewcode-block" id="Parameter.assign"><a class="viewcode-back" href="../../api/gpflow/index.html#gpflow.base.Parameter.assign">[docs]</a>    <span class="k">def</span> <span class="nf">assign</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">value</span><span class="p">:</span> <span class="n">TensorData</span><span class="p">,</span>
+        <span class="n">value</span><span class="p">:</span> <span class="s2">&quot;TensorData&quot;</span><span class="p">,</span>
         <span class="n">use_locking</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
         <span class="n">name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">read_value</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
@@ -510,6 +501,22 @@ function checkPageExistsAndRedirect(event) {
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">unconstrained_variable</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span>
             <span class="n">unconstrained_value</span><span class="p">,</span> <span class="n">use_locking</span><span class="o">=</span><span class="n">use_locking</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">read_value</span><span class="o">=</span><span class="n">read_value</span>
         <span class="p">)</span></div></div>
+
+
+<span class="c1"># These types are defined after &quot;Parameter&quot; to avoid forward references that breaks our</span>
+<span class="c1"># documentation build:</span>
+<span class="n">TensorType</span> <span class="o">=</span> <span class="n">Union</span><span class="p">[</span><span class="n">AnyNDArray</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">Variable</span><span class="p">,</span> <span class="n">Parameter</span><span class="p">]</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Type alias for tensor-like types that are supported by most TensorFlow and GPflow operations.</span>
+
+<span class="sd">NOTE: Union types like this do not work with the `register` method of `multipledispatch`&#39;s</span>
+<span class="sd">`Dispatcher` class. Instead use `TensorLike`.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="n">TensorData</span> <span class="o">=</span> <span class="n">Union</span><span class="p">[</span><span class="n">_NativeScalar</span><span class="p">,</span> <span class="n">_Array</span><span class="p">,</span> <span class="n">TensorType</span><span class="p">]</span>
+<span class="n">InputData</span> <span class="o">=</span> <span class="n">Union</span><span class="p">[</span><span class="n">TensorType</span><span class="p">]</span>
+<span class="n">OutputData</span> <span class="o">=</span> <span class="n">Union</span><span class="p">[</span><span class="n">TensorType</span><span class="p">]</span>
+<span class="n">RegressionData</span> <span class="o">=</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">InputData</span><span class="p">,</span> <span class="n">OutputData</span><span class="p">]</span>
 
 
 <span class="k">def</span> <span class="nf">_cast_to_dtype</span><span class="p">(</span>
