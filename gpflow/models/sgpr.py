@@ -77,18 +77,7 @@ class SGPRBase_deprecated(GPModel, InternalDataTrainingLossMixin):
         known to produce poor inducing point locations. An optimisable upper bound
         can be found in https://github.com/markvdw/gp_upper.
 
-        The key reference is
-
-        ::
-
-          @misc{titsias_2014,
-            title={Variational Inference for Gaussian and Determinantal Point Processes},
-            url={http://www2.aueb.gr/users/mtitsias/papers/titsiasNipsVar14.pdf},
-            publisher={Workshop on Advances in Variational Inference (NIPS 2014)},
-            author={Titsias, Michalis K.},
-            year={2014},
-            month={Dec}
-          }
+        The key reference is :cite:t:`titsias_2014`.
 
         The key quantity, the trace term, can be computed via
 
@@ -133,19 +122,9 @@ class SGPRBase_deprecated(GPModel, InternalDataTrainingLossMixin):
 
 class SGPR_deprecated(SGPRBase_deprecated):
     """
-    Sparse Variational GP regression. The key reference is
+    Sparse Variational GP regression.
 
-    ::
-
-        @inproceedings{titsias2009variational,
-            title={Variational learning of inducing variables in
-                sparse Gaussian processes},
-            author={Titsias, Michalis K},
-            booktitle={International Conference on
-                    Artificial Intelligence and Statistics},
-            pages={567--574},
-            year={2009}
-        }
+    The key reference is :cite:t:`titsias2009variational`.
     """
 
     CommonTensors = namedtuple("CommonTensors", ["A", "B", "LB", "AAT", "L"])
@@ -330,18 +309,8 @@ class SGPR_deprecated(SGPRBase_deprecated):
 class GPRFITC(SGPRBase_deprecated):
     """
     This implements GP regression with the FITC approximation.
-    The key reference is
 
-    ::
-
-      @inproceedings{Snelson06sparsegaussian,
-        author = {Edward Snelson and Zoubin Ghahramani},
-        title = {Sparse Gaussian Processes using Pseudo-inputs},
-        booktitle = {Advances In Neural Information Processing Systems},
-        year = {2006},
-        pages = {1257--1264},
-        publisher = {MIT press}
-      }
+    The key reference is :cite:t:`Snelson06sparsegaussian`.
 
     Implementation loosely based on code from GPML matlab library although
     obviously gradients are automatic in GPflow.

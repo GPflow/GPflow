@@ -39,13 +39,7 @@ class ChangePoints(Combination):
 
     parameterized by location "x₀" and steepness "s".
 
-    @incollection{lloyd2014,
-      author = {Lloyd, James Robert et al},
-      title = {Automatic Construction and Natural-language Description of Nonparametric Regression Models},
-      booktitle = {Proceedings of the Twenty-Eighth AAAI Conference on Artificial Intelligence},
-      year = {2014},
-      url = {http://dl.acm.org/citation.cfm?id=2893873.2894066},
-    }
+    The key reference is :cite:t:`lloyd2014`.
     """
 
     def __init__(

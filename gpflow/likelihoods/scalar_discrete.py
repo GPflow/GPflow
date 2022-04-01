@@ -118,17 +118,9 @@ class Ordinal(ScalarLikelihood):
     p(Y=K|F) = 1 - ɸ((aₖ₋₁ - F) / σ)
 
     where ɸ is the cumulative density function of a Gaussian (the inverse probit
-    function) and σ is a parameter to be learned. A reference is:
+    function) and σ is a parameter to be learned.
 
-    @article{chu2005gaussian,
-      title={Gaussian processes for ordinal regression},
-      author={Chu, Wei and Ghahramani, Zoubin},
-      journal={Journal of Machine Learning Research},
-      volume={6},
-      number={Jul},
-      pages={1019--1041},
-      year={2005}
-    }
+    A reference is :cite:t:`chu2005gaussian`.
     """
 
     def __init__(self, bin_edges: AnyNDArray, **kwargs: Any) -> None:

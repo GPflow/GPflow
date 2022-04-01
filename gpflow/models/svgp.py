@@ -33,17 +33,9 @@ from .util import InducingVariablesLike, inducingpoint_wrapper
 
 class SVGP_deprecated(GPModel, ExternalDataTrainingLossMixin):
     """
-    This is the Sparse Variational GP (SVGP). The key reference is
+    This is the Sparse Variational GP (SVGP).
 
-    ::
-
-      @inproceedings{hensman2014scalable,
-        title={Scalable Variational Gaussian Process Classification},
-        author={Hensman, James and Matthews, Alexander G. de G. and Ghahramani, Zoubin},
-        booktitle={Proceedings of AISTATS},
-        year={2015}
-      }
-
+    The key reference is :cite:t:`hensman2014scalable`.
     """
 
     def __init__(
@@ -188,16 +180,9 @@ class SVGP_deprecated(GPModel, ExternalDataTrainingLossMixin):
 
 class SVGP_with_posterior(SVGP_deprecated):
     """
-    This is the Sparse Variational GP (SVGP). The key reference is
+    This is the Sparse Variational GP (SVGP).
 
-    ::
-
-      @inproceedings{hensman2014scalable,
-        title={Scalable Variational Gaussian Process Classification},
-        author={Hensman, James and Matthews, Alexander G. de G. and Ghahramani, Zoubin},
-        booktitle={Proceedings of AISTATS},
-        year={2015}
-      }
+    The key reference is :cite:t:`hensman2014scalable`.
 
     This class provides a posterior() method that enables caching for faster subsequent predictions.
     """

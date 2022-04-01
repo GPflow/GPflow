@@ -246,15 +246,9 @@ def update_vgp_data(vgp: VGP_deprecated, new_data: RegressionData) -> None:
 class VGPOpperArchambeau(GPModel, InternalDataTrainingLossMixin):
     r"""
     This method approximates the Gaussian process posterior using a multivariate Gaussian.
-    The key reference is:
-    ::
-      @article{Opper:2009,
-          title = {The Variational Gaussian Approximation Revisited},
-          author = {Opper, Manfred and Archambeau, Cedric},
-          journal = {Neural Comput.},
-          year = {2009},
-          pages = {786--792},
-      }
+
+    The key reference is :cite:t:`Opper:2009`.
+
     The idea is that the posterior over the function-value vector F is
     approximated by a Gaussian, and the KL divergence is minimised between
     the approximation and the posterior. It turns out that the optimal
