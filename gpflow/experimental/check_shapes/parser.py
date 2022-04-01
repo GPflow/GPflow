@@ -15,7 +15,7 @@
 # pylint: disable=unused-argument
 
 from abc import ABC
-from typing import Any, Collection, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple, Union
+from typing import Any, Collection, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple, Type
 
 from lark.exceptions import UnexpectedInput
 from lark.lark import Lark
@@ -29,7 +29,11 @@ from gpflow.experimental.check_shapes.error_contexts import (
     LarkUnexpectedInputContext,
     StackContext,
 )
-from gpflow.experimental.check_shapes.exceptions import DocstringParseError, SpecificationParseError
+from gpflow.experimental.check_shapes.exceptions import (
+    CheckShapesError,
+    DocstringParseError,
+    SpecificationParseError,
+)
 
 from .argument_ref import (
     RESULT_TOKEN,
@@ -79,12 +83,12 @@ class _TreeVisitor(ABC):
         return visit(tree, *args, **kwargs)
 
 
-class _ParseArgumentSpec(_TreeVisitor):
+class _ParseSpec(_TreeVisitor):
     def argument_spec(self, tree: Tree[Token]) -> ParsedArgumentSpec:
         argument_name, argument_refs, shape_spec, *note_specs = _tree_children(tree)
         root_argument_ref = self.visit(argument_name)
         argument_ref = self.visit(argument_refs, root_argument_ref)
-        shape = self.visit(shape_spec, argument_ref)
+        shape = self.visit(shape_spec)
         if note_specs:
             (note_spec,) = note_specs
             note = self.visit(note_spec)
@@ -109,7 +113,7 @@ class _ParseArgumentSpec(_TreeVisitor):
         (token,) = _token_children(tree)
         return IndexArgumentRef(source, int(token))
 
-    def shape_spec(self, tree: Tree[Token], argument_ref: ArgumentRef) -> ParsedShapeSpec:
+    def shape_spec(self, tree: Tree[Token]) -> ParsedShapeSpec:
         (dimension_specs,) = _tree_children(tree)
         return ParsedShapeSpec(self.visit(dimension_specs))
 
@@ -290,58 +294,92 @@ class _RewritedocString(_TreeVisitor):
         return tokens[-1]
 
 
-_ARGUMENT_SPEC_PARSER = Lark.open(
-    "check_shapes.lark",
-    rel_to=__file__,
-    propagate_positions=True,
-    start="argument_or_note_spec",
-    parser="lalr",
-)
-_DOCSTRING_PARSER = Lark.open(
-    "docstring.lark",
-    rel_to=__file__,
-    propagate_positions=True,
-    start="docstring",
-)
+class _CachedParser:
+    """
+    Small wrapper around Lark so that we can reuse as much code as possible between the different
+    things we parse.
+    """
 
+    def __init__(
+        self,
+        grammar_filename: str,
+        start_symbol: str,
+        parser_name: str,
+        re_terminal_descriptions: Mapping[str, str],
+        transformer_class: Type[_TreeVisitor],
+        exception_class: Type[CheckShapesError],
+    ) -> None:
+        self._cache: Dict[Tuple[str, Tuple[Any, ...]], Any] = {}
+        self._parser = Lark.open(
+            grammar_filename,
+            rel_to=__file__,
+            propagate_positions=True,
+            start=start_symbol,
+            parser=parser_name,
+        )
+        self._terminal_descriptions = {}
+        self._transformer_class = transformer_class
+        self._exception_class = exception_class
 
-def _create_terminal_descriptions(
-    parser: Lark, re_descriptions: Mapping[str, str]
-) -> Mapping[str, str]:
-    missing = set()
-    unused = dict(re_descriptions)
-    result = {}
-    for terminal in parser.terminals:
-        name = terminal.name
-        pattern = terminal.pattern
-        if isinstance(pattern, PatternStr):
-            description = f'"{pattern.value}"'
-        else:
-            assert isinstance(pattern, PatternRE)
-            unused_description = unused.pop(name, None)
-            if unused_description is None:
-                missing.add(name)
-                description = "ERROR"
+        # Pre-compute nice terminal descriptions for our error messages:
+        missing = set()
+        unused = dict(re_terminal_descriptions)
+        for terminal in self._parser.terminals:
+            name = terminal.name
+            pattern = terminal.pattern
+            if isinstance(pattern, PatternStr):
+                description = f'"{pattern.value}"'
             else:
-                description = f"{re_descriptions[name]} (re={pattern.value})"
-        result[name] = description
-    assert not unused, f"Redundant terminal descriptions were provided: {sorted(unused)}"
-    assert not missing, f"Some RE terminals did not have a description: {sorted(missing)}"
-    return result
+                assert isinstance(pattern, PatternRE)
+                unused_description = unused.pop(name, None)
+                # If we enter this `if` then the parser is misconfigured, so we never get here, even
+                # during tests.
+                if unused_description is None:  # pragma: no cover
+                    missing.add(name)
+                    description = "ERROR"
+                else:
+                    description = f"{re_terminal_descriptions[name]} (re={pattern.value})"
+            self._terminal_descriptions[name] = description
+        assert not unused, f"Redundant terminal descriptions were provided: {sorted(unused)}"
+        assert not missing, f"Some RE terminals did not have a description: {sorted(missing)}"
+
+    def parse(self, text: str, transformer_args: Tuple[Any, ...], context: ErrorContext) -> Any:
+        sentinel = object()
+        cache_key = (text, transformer_args)
+        result = self._cache.get(cache_key, sentinel)
+        if result is sentinel:
+            try:
+                tree = self._parser.parse(text)
+            except UnexpectedInput as e:
+                raise self._exception_class(
+                    StackContext(
+                        context, LarkUnexpectedInputContext(text, e, self._terminal_descriptions)
+                    )
+                ) from e
+
+            result = self._transformer_class(*transformer_args).visit(tree)
+            self._cache[cache_key] = result
+        return result
 
 
-_ARGUMENT_SPEC_TERMINAL_DESCRIPTIONS = _create_terminal_descriptions(
-    _ARGUMENT_SPEC_PARSER,
-    {
+_ARGUMENT_SPEC_PARSER = _CachedParser(
+    grammar_filename="check_shapes.lark",
+    start_symbol="argument_or_note_spec",
+    parser_name="lalr",
+    re_terminal_descriptions={
         "NOTE_TEXT": "note / comment text",
         "CNAME": "variable name",
         "INT": "integer",
         "WS": "whitespace",
     },
+    transformer_class=_ParseSpec,
+    exception_class=SpecificationParseError,
 )
-_DOCSTRING_TERMINAL_DESCRIPTIONS = _create_terminal_descriptions(
-    _DOCSTRING_PARSER,
-    {
+_SPHINX_DOCSTRING_PARSER = _CachedParser(
+    grammar_filename="docstring.lark",
+    start_symbol="docstring",
+    parser_name="earley",
+    re_terminal_descriptions={
         "ANY": "any text",
         "CNAME": "variable name",
         "INFO_FIELD_OTHER": "Sphinx info field",
@@ -349,37 +387,9 @@ _DOCSTRING_TERMINAL_DESCRIPTIONS = _create_terminal_descriptions(
         "RETURNS": "Sphinx `return` field",
         "WS": "whitespace",
     },
+    transformer_class=_RewritedocString,
+    exception_class=DocstringParseError,
 )
-
-
-_ARGUMENT_SPEC_CACHE: Dict[str, Union[ParsedArgumentSpec, ParsedNoteSpec]] = {}
-_SPHINX_DOCSTRING_CACHE: Dict[Tuple[str, ParsedFunctionSpec], str] = {}
-
-
-def _parse_argument_spec(
-    argument_spec: str, context: ErrorContext
-) -> Union[ParsedArgumentSpec, ParsedNoteSpec]:
-    """
-    Parse a `check_shapes` argument or note specification.
-    """
-    cached_value = _ARGUMENT_SPEC_CACHE.get(argument_spec)
-    if cached_value is not None:
-        return cached_value
-
-    try:
-        tree = _ARGUMENT_SPEC_PARSER.parse(argument_spec)
-    except UnexpectedInput as e:
-        raise SpecificationParseError(
-            StackContext(
-                context,
-                LarkUnexpectedInputContext(argument_spec, e, _ARGUMENT_SPEC_TERMINAL_DESCRIPTIONS),
-            )
-        ) from e
-    parsed_spec: Union[ParsedArgumentSpec, ParsedNoteSpec] = _ParseArgumentSpec().visit(tree)
-
-    _ARGUMENT_SPEC_CACHE[argument_spec] = parsed_spec
-
-    return parsed_spec
 
 
 def parse_function_spec(function_spec: Sequence[str], context: ErrorContext) -> ParsedFunctionSpec:
@@ -390,35 +400,13 @@ def parse_function_spec(function_spec: Sequence[str], context: ErrorContext) -> 
     notes = []
     for i, spec in enumerate(function_spec):
         argument_context = StackContext(context, ArgumentContext(i))
-        parsed_spec = _parse_argument_spec(spec, argument_context)
+        parsed_spec = _ARGUMENT_SPEC_PARSER.parse(spec, (), argument_context)
         if isinstance(parsed_spec, ParsedArgumentSpec):
             arguments.append(parsed_spec)
         else:
             assert isinstance(parsed_spec, ParsedNoteSpec)
             notes.append(parsed_spec)
     return ParsedFunctionSpec(tuple(arguments), tuple(notes))
-
-
-def _parse_and_rewrite_sphinx_docstring(
-    docstring: str, function_spec: ParsedFunctionSpec, context: ErrorContext
-) -> str:
-    cached_value = _SPHINX_DOCSTRING_CACHE.get((docstring, function_spec))
-    if cached_value is not None:
-        return cached_value
-
-    try:
-        tree = _DOCSTRING_PARSER.parse(docstring)
-    except UnexpectedInput as e:
-        raise DocstringParseError(
-            StackContext(
-                context, LarkUnexpectedInputContext(docstring, e, _DOCSTRING_TERMINAL_DESCRIPTIONS)
-            )
-        ) from e
-    rewritten_docstring: str = _RewritedocString(docstring, function_spec).visit(tree)
-
-    _SPHINX_DOCSTRING_CACHE[(docstring, function_spec)] = rewritten_docstring
-
-    return rewritten_docstring
 
 
 def parse_and_rewrite_docstring(
@@ -438,4 +426,6 @@ def parse_and_rewrite_docstring(
         f"Current docstring format is {docstring_format}, but I don't know how to rewrite that."
         " See `gpflow.experimental.check_shapes.config.set_rewrite_docstrings`."
     )
-    return _parse_and_rewrite_sphinx_docstring(docstring, function_spec, context)
+    result = _SPHINX_DOCSTRING_PARSER.parse(docstring, (docstring, function_spec), context)
+    assert isinstance(result, str)
+    return result
