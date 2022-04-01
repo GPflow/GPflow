@@ -112,6 +112,14 @@ def test_check_shapes__tensorflow_compilation(
 
 @pytest.mark.parametrize("func_wrapper", [lambda x: x, tf.function], ids=["none", "tf.function"])
 def test_check_shapes__disable__speed(func_wrapper: Callable[[Any], Any]) -> None:
+    if func_wrapper is tf.function:
+        pytest.skip(
+            "This test is super flaky with tf.function, because the overhead of compiling"
+            " seems to dominate any difference caused by check_shapes. However we probably"
+            " do want some kind of test of the speed with tf.function, so we keep this"
+            " skipped test around to remind us."
+        )
+
     x = tf.zeros((3, 4, 5))
     y = tf.ones((3, 4, 5))
 
