@@ -22,19 +22,6 @@ from lark.lark import Lark
 from lark.lexer import PatternRE, PatternStr, Token
 from lark.tree import Tree
 
-from gpflow.experimental.check_shapes.config import DocstringFormat, get_rewrite_docstrings
-from gpflow.experimental.check_shapes.error_contexts import (
-    ArgumentContext,
-    ErrorContext,
-    LarkUnexpectedInputContext,
-    StackContext,
-)
-from gpflow.experimental.check_shapes.exceptions import (
-    CheckShapesError,
-    DocstringParseError,
-    SpecificationParseError,
-)
-
 from .argument_ref import (
     RESULT_TOKEN,
     ArgumentRef,
@@ -42,6 +29,9 @@ from .argument_ref import (
     IndexArgumentRef,
     RootArgumentRef,
 )
+from .config import DocstringFormat, get_rewrite_docstrings
+from .error_contexts import ArgumentContext, ErrorContext, LarkUnexpectedInputContext, StackContext
+from .exceptions import CheckShapesError, DocstringParseError, SpecificationParseError
 from .specs import (
     ParsedArgumentSpec,
     ParsedDimensionSpec,

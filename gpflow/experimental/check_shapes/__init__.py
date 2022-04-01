@@ -11,8 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-# flake8: noqa
 """
 A library for annotating and checking the shapes of tensors.
 
@@ -149,8 +147,8 @@ Example::
     class SuperClass(ABC):
         @abstractmethod
         @check_shapes(
-            ("a", ["batch...", 4]),
-            ("return", ["batch...", 1]),
+            "a: [batch..., 4]",
+            "return: [batch..., 1]",
         )
         def f(self, a: tf.Tensor) -> tf.Tensor:
             ...
@@ -169,8 +167,8 @@ to handle the same shapes. To do this, remember that in Python a decorator is ju
 functions are objects that can be stored::
 
     check_my_shapes = check_shapes(
-        ("a", ["batch...", 4]),
-        ("return", ["batch...", 1]),
+        "a: [batch..., 4]",
+        "return: [batch..., 1]",
     )
 
     @check_my_shapes
@@ -190,8 +188,8 @@ declared function. This is particularly useful to ensure fakes in tests use the 
 production implementation::
 
     @check_shapes(
-        ("a", ["batch...", 4]),
-        ("return", ["batch...", 1]),
+        "a: [batch..., 4]",
+        "return: [batch..., 1]",
     )
     def f(a: tf.Tensor) -> tf.Tensor:
         ...
