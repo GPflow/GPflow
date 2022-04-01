@@ -8,3 +8,18 @@ from .multioutput import (
     SeparateIndependentInducingVariables,
     SharedIndependentInducingVariables,
 )
+
+__all__ = [
+    "FallbackSeparateIndependentInducingVariables",
+    "FallbackSharedIndependentInducingVariables",
+    "InducingPatches",
+    "InducingPoints",
+    "InducingVariables",
+    "MultioutputInducingVariables",
+    "Multiscale",
+    "SeparateIndependentInducingVariables",
+    "SharedIndependentInducingVariables",
+    "inducing_patch",
+    "inducing_variables",
+    "multioutput",
+]

@@ -17,8 +17,9 @@
 import tensorflow as tf
 from packaging.version import Version
 
+from .base import TensorType
 from .config import default_float, default_jitter
-from .covariances.kuus import Kuu
+from .covariances import Kuu
 from .inducing_variables import InducingVariables
 from .kernels import Kernel
 from .utilities import Dispatcher, to_default_float
@@ -27,7 +28,13 @@ prior_kl = Dispatcher("prior_kl")
 
 
 @prior_kl.register(InducingVariables, Kernel, object, object)
-def _(inducing_variable, kernel, q_mu, q_sqrt, whiten=False):
+def _(
+    inducing_variable: InducingVariables,
+    kernel: Kernel,
+    q_mu: TensorType,
+    q_sqrt: TensorType,
+    whiten: bool = False,
+) -> tf.Tensor:
     if whiten:
         return gauss_kl(q_mu, q_sqrt, None)
     else:
@@ -35,7 +42,9 @@ def _(inducing_variable, kernel, q_mu, q_sqrt, whiten=False):
         return gauss_kl(q_mu, q_sqrt, K)
 
 
-def gauss_kl(q_mu, q_sqrt, K=None, *, K_cholesky=None):
+def gauss_kl(
+    q_mu: TensorType, q_sqrt: TensorType, K: TensorType = None, *, K_cholesky: TensorType = None
+) -> tf.Tensor:
     """
     Compute the KL divergence KL[q || p] between
 

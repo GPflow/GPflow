@@ -14,23 +14,25 @@
 
 import itertools
 import warnings
-from collections.abc import Iterable
+from functools import wraps
+from typing import Callable, Iterable, List, Optional, Tuple, Union
 
 import numpy as np
 import tensorflow as tf
 
+from ..base import AnyNDArray, TensorType
 from ..config import default_float
 from ..utilities import to_default_float
 from .gauss_hermite import NDiagGHQuadrature
 
 
-def hermgauss(n: int):
+def hermgauss(n: int) -> Tuple[AnyNDArray, AnyNDArray]:
     x, w = np.polynomial.hermite.hermgauss(n)
     x, w = x.astype(default_float()), w.astype(default_float())
     return x, w
 
 
-def mvhermgauss(H: int, D: int):
+def mvhermgauss(H: int, D: int) -> Tuple[AnyNDArray, AnyNDArray]:
     """
     Return the evaluation locations 'xn', and weights 'wn' for a multivariate
     Gauss-Hermite quadrature.
@@ -43,12 +45,19 @@ def mvhermgauss(H: int, D: int):
     :return: eval_locations 'x' (H**DxD), weights 'w' (H**D)
     """
     gh_x, gh_w = hermgauss(H)
-    x = np.array(list(itertools.product(*(gh_x,) * D)))  # H**DxD
+    x: AnyNDArray = np.array(list(itertools.product(*(gh_x,) * D)))  # H**DxD
     w = np.prod(np.array(list(itertools.product(*(gh_w,) * D))), 1)  # H**D
     return x, w
 
 
-def mvnquad(func, means, covs, H: int, Din: int = None, Dout=None):
+def mvnquad(
+    func: Callable[[tf.Tensor], tf.Tensor],
+    means: TensorType,
+    covs: TensorType,
+    H: int,
+    Din: Optional[int] = None,
+    Dout: Optional[Tuple[int, ...]] = None,
+) -> tf.Tensor:
     """
     Computes N Gaussian expectation integrals of a single function 'f'
     using Gauss-Hermite quadrature.
@@ -106,7 +115,14 @@ def mvnquad(func, means, covs, H: int, Din: int = None, Dout=None):
     return tf.reduce_sum(fX * wr, 0)
 
 
-def ndiagquad(funcs, H: int, Fmu, Fvar, logspace: bool = False, **Ys):
+def ndiagquad(
+    funcs: Union[Callable[..., tf.Tensor], Iterable[Callable[..., tf.Tensor]]],
+    H: int,
+    Fmu: Union[TensorType, Tuple[TensorType, ...], List[TensorType]],
+    Fvar: Union[TensorType, Tuple[TensorType, ...], List[TensorType]],
+    logspace: bool = False,
+    **Ys: TensorType,
+) -> tf.Tensor:
     """
     Computes N Gaussian expectation integrals of one or more functions
     using Gauss-Hermite quadrature. The Gaussians must be independent.
@@ -147,8 +163,9 @@ def ndiagquad(funcs, H: int, Fmu, Fvar, logspace: bool = False, **Ys):
 
     Ys = {Yname: tf.reshape(Y, (-1, 1)) for Yname, Y in Ys.items()}
 
-    def wrapper(old_fun):
-        def new_fun(X, **Ys):
+    def wrapper(old_fun: Callable[..., tf.Tensor]) -> Callable[..., tf.Tensor]:
+        @wraps(old_fun)
+        def new_fun(X: TensorType, **Ys: TensorType) -> tf.Tensor:
             Xs = tf.unstack(tf.expand_dims(X, axis=-2), axis=-1)
             fun_eval = old_fun(*Xs, **Ys)
             return tf.cond(
@@ -178,7 +195,15 @@ def ndiagquad(funcs, H: int, Fmu, Fvar, logspace: bool = False, **Ys):
     return result
 
 
-def ndiag_mc(funcs, S: int, Fmu, Fvar, logspace: bool = False, epsilon=None, **Ys):
+def ndiag_mc(
+    funcs: Union[Callable[..., tf.Tensor], Iterable[Callable[..., tf.Tensor]]],
+    S: int,
+    Fmu: TensorType,
+    Fvar: TensorType,
+    logspace: bool = False,
+    epsilon: Optional[TensorType] = None,
+    **Ys: TensorType,
+) -> tf.Tensor:
     """
     Computes N Gaussian expectation integrals of one or more functions
     using Monte Carlo samples. The Gaussians must be independent.
@@ -209,7 +234,7 @@ def ndiag_mc(funcs, S: int, Fmu, Fvar, logspace: bool = False, epsilon=None, **Y
         mc_Yr = tf.tile(Y[None, ...], [S, 1, 1])  # [S, N, D]_out
         Ys[name] = tf.reshape(mc_Yr, (S * N, D_out))  # S * [N, _]out
 
-    def eval_func(func):
+    def eval_func(func: Callable[..., tf.Tensor]) -> tf.Tensor:
         feval = func(mc_Xr, **Ys)
         feval = tf.reshape(feval, (S, N, -1))
         if logspace:

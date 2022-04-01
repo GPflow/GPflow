@@ -12,12 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import Sequence
+
 import numpy as np
 import pytest
 import tensorflow as tf
 from numpy.testing import assert_allclose
 
 import gpflow
+from gpflow.base import AnyNDArray, Parameter, TensorType
 from gpflow.inducing_variables import InducingPoints
 from gpflow.likelihoods import Gaussian, StudentT, SwitchedLikelihood
 
@@ -26,7 +29,12 @@ from gpflow.likelihoods import Gaussian, StudentT, SwitchedLikelihood
 @pytest.mark.parametrize("F_list", [[tf.random.normal((i, 2)) for i in range(3, 6)]])
 @pytest.mark.parametrize("Fvar_list", [[tf.exp(tf.random.normal((i, 2))) for i in range(3, 6)]])
 @pytest.mark.parametrize("Y_label", [[tf.ones((i, 2)) * (i - 3.0) for i in range(3, 6)]])
-def test_switched_likelihood_log_prob(Y_list, F_list, Fvar_list, Y_label):
+def test_switched_likelihood_log_prob(
+    Y_list: Sequence[TensorType],
+    F_list: Sequence[TensorType],
+    Fvar_list: Sequence[TensorType],
+    Y_label: Sequence[TensorType],
+) -> None:
     """
     SwitchedLikelihood is separately tested here.
     Here, we make sure the partition-stitch works fine.
@@ -38,7 +46,7 @@ def test_switched_likelihood_log_prob(Y_list, F_list, Fvar_list, Y_label):
     F_sw = np.concatenate(F_list)[Y_perm, :]
     likelihoods = [Gaussian()] * 3
     for lik in likelihoods:
-        lik.variance = np.exp(np.random.randn(1)).squeeze().astype(np.float32)
+        lik.variance = Parameter(np.exp(np.random.randn()), dtype=np.float32)
     switched_likelihood = SwitchedLikelihood(likelihoods)
 
     switched_results = switched_likelihood.log_prob(F_sw, Y_sw)
@@ -51,7 +59,12 @@ def test_switched_likelihood_log_prob(Y_list, F_list, Fvar_list, Y_label):
 @pytest.mark.parametrize("F_list", [[tf.random.normal((i, 2)) for i in range(3, 6)]])
 @pytest.mark.parametrize("Fvar_list", [[tf.exp(tf.random.normal((i, 2))) for i in range(3, 6)]])
 @pytest.mark.parametrize("Y_label", [[tf.ones((i, 2)) * (i - 3.0) for i in range(3, 6)]])
-def test_switched_likelihood_predict_log_density(Y_list, F_list, Fvar_list, Y_label):
+def test_switched_likelihood_predict_log_density(
+    Y_list: Sequence[TensorType],
+    F_list: Sequence[TensorType],
+    Fvar_list: Sequence[TensorType],
+    Y_label: Sequence[TensorType],
+) -> None:
     Y_perm = list(range(3 + 4 + 5))
     np.random.shuffle(Y_perm)
     # shuffle the original data
@@ -61,7 +74,7 @@ def test_switched_likelihood_predict_log_density(Y_list, F_list, Fvar_list, Y_la
 
     likelihoods = [Gaussian()] * 3
     for lik in likelihoods:
-        lik.variance = np.exp(np.random.randn(1)).squeeze().astype(np.float32)
+        lik.variance = Parameter(np.exp(np.random.randn()), dtype=np.float32)
     switched_likelihood = SwitchedLikelihood(likelihoods)
 
     switched_results = switched_likelihood.predict_log_density(F_sw, Fvar_sw, Y_sw)
@@ -77,7 +90,12 @@ def test_switched_likelihood_predict_log_density(Y_list, F_list, Fvar_list, Y_la
 @pytest.mark.parametrize("F_list", [[tf.random.normal((i, 2)) for i in range(3, 6)]])
 @pytest.mark.parametrize("Fvar_list", [[tf.exp(tf.random.normal((i, 2))) for i in range(3, 6)]])
 @pytest.mark.parametrize("Y_label", [[tf.ones((i, 2)) * (i - 3.0) for i in range(3, 6)]])
-def test_switched_likelihood_variational_expectations(Y_list, F_list, Fvar_list, Y_label):
+def test_switched_likelihood_variational_expectations(
+    Y_list: Sequence[TensorType],
+    F_list: Sequence[TensorType],
+    Fvar_list: Sequence[TensorType],
+    Y_label: Sequence[TensorType],
+) -> None:
     Y_perm = list(range(3 + 4 + 5))
     np.random.shuffle(Y_perm)
     # shuffle the original data
@@ -87,7 +105,7 @@ def test_switched_likelihood_variational_expectations(Y_list, F_list, Fvar_list,
 
     likelihoods = [Gaussian()] * 3
     for lik in likelihoods:
-        lik.variance = np.exp(np.random.randn(1)).squeeze().astype(np.float32)
+        lik.variance = Parameter(np.exp(np.random.randn()), dtype=np.float32)
     switched_likelihood = SwitchedLikelihood(likelihoods)
 
     switched_results = switched_likelihood.variational_expectations(F_sw, Fvar_sw, Y_sw)
@@ -98,13 +116,13 @@ def test_switched_likelihood_variational_expectations(Y_list, F_list, Fvar_list,
     assert_allclose(switched_results, np.concatenate(results)[Y_perm])
 
 
-def test_switched_likelihood_with_vgp():
+def test_switched_likelihood_with_vgp() -> None:
     """
     Reproduces the bug in https://github.com/GPflow/GPflow/issues/951
     """
     X = np.random.randn(12 + 15, 1)
     Y = np.random.randn(12 + 15, 1)
-    idx = np.array([0] * 12 + [1] * 15)
+    idx: AnyNDArray = np.array([0] * 12 + [1] * 15)
     Y_aug = np.c_[Y, idx]
     assert Y_aug.shape == (12 + 15, 2)
 
@@ -117,7 +135,7 @@ def test_switched_likelihood_with_vgp():
 
 
 @pytest.mark.parametrize("num_latent_gps", [1, 2])
-def test_switched_likelihood_regression_valid_num_latent_gps(num_latent_gps):
+def test_switched_likelihood_regression_valid_num_latent_gps(num_latent_gps: int) -> None:
     """
     A Regression test when using Switched likelihood: the number of latent
     functions in a GP model must be equal to the number of columns in Y minus
@@ -125,7 +143,7 @@ def test_switched_likelihood_regression_valid_num_latent_gps(num_latent_gps):
     latent functions does not match, an exception will be raised.
     """
     x = np.random.randn(100, 1)
-    y = np.hstack((np.random.randn(100, 1), np.random.randint(0, 3, (100, 1))))
+    y: AnyNDArray = np.hstack((np.random.randn(100, 1), np.random.randint(0, 3, (100, 1))))
     data = x, y
 
     Z = InducingPoints(np.random.randn(num_latent_gps, 1))

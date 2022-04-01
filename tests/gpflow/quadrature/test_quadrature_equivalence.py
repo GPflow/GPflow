@@ -18,12 +18,13 @@ import tensorflow as tf
 from ndiagquad_old import ndiagquad as ndiagquad_old
 from numpy.testing import assert_allclose
 
+from gpflow.base import AnyNDArray, TensorType
 from gpflow.quadrature import ndiagquad
 
 
 @pytest.mark.parametrize("mu", [np.array([1.0, 1.3])])
 @pytest.mark.parametrize("var", [np.array([3.0, 3.5])])
-def test_diagquad_1d(mu, var):
+def test_diagquad_1d(mu: TensorType, var: TensorType) -> None:
     num_gauss_hermite_points = 25
     quad = ndiagquad([lambda *X: tf.exp(X[0])], num_gauss_hermite_points, [mu], [var])
     quad_old = ndiagquad_old([lambda *X: tf.exp(X[0])], num_gauss_hermite_points, [mu], [var])
@@ -34,7 +35,7 @@ def test_diagquad_1d(mu, var):
 @pytest.mark.parametrize("var1", [np.array([3.0, 3.5])])
 @pytest.mark.parametrize("mu2", [np.array([-2.0, 0.3])])
 @pytest.mark.parametrize("var2", [np.array([4.0, 4.2])])
-def test_diagquad_2d(mu1, var1, mu2, var2):
+def test_diagquad_2d(mu1: TensorType, var1: TensorType, mu2: TensorType, var2: TensorType) -> None:
     alpha = 2.5
     # using logspace=True we can reduce this, see test_diagquad_logspace
     num_gauss_hermite_points = 35
@@ -57,7 +58,9 @@ def test_diagquad_2d(mu1, var1, mu2, var2):
 @pytest.mark.parametrize("var1", [np.array([3.0, 3.5])])
 @pytest.mark.parametrize("mu2", [np.array([-2.0, 0.3])])
 @pytest.mark.parametrize("var2", [np.array([4.0, 4.2])])
-def test_diagquad_logspace(mu1, var1, mu2, var2):
+def test_diagquad_logspace(
+    mu1: TensorType, var1: TensorType, mu2: TensorType, var2: TensorType
+) -> None:
     alpha = 2.5
     num_gauss_hermite_points = 25
     quad = ndiagquad(
@@ -79,8 +82,8 @@ def test_diagquad_logspace(mu1, var1, mu2, var2):
 
 @pytest.mark.parametrize("mu1", [np.array([1.0, 1.3])])
 @pytest.mark.parametrize("var1", [np.array([3.0, 3.5])])
-def test_diagquad_with_kwarg(mu1, var1):
-    alpha = np.array([2.5, -1.3])
+def test_diagquad_with_kwarg(mu1: TensorType, var1: TensorType) -> None:
+    alpha: AnyNDArray = np.array([2.5, -1.3])
     num_gauss_hermite_points = 25
     quad = ndiagquad(lambda X, Y: tf.exp(X * Y), num_gauss_hermite_points, mu1, var1, Y=alpha)
     quad_old = ndiagquad_old(

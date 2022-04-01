@@ -1,3 +1,5 @@
+from typing import Callable, Sequence
+
 import numpy as np
 import pytest
 import tensorflow as tf
@@ -5,8 +7,9 @@ import tensorflow as tf
 import gpflow
 import gpflow.inducing_variables.multioutput as mf
 import gpflow.kernels.multioutput as mk
-from gpflow.covariances.multioutput import kufs as mo_kufs
-from gpflow.covariances.multioutput import kuus as mo_kuus
+from gpflow import covariances
+from gpflow.inducing_variables import InducingVariables
+from gpflow.kernels import Kernel
 
 rng = np.random.RandomState(9911)
 
@@ -15,20 +18,20 @@ rng = np.random.RandomState(9911)
 # ------------------------------------------
 
 
-def make_kernel():
+def make_kernel() -> Kernel:
     return gpflow.kernels.SquaredExponential()
 
 
-def make_kernels(num):
+def make_kernels(num: int) -> Sequence[Kernel]:
     return [make_kernel() for _ in range(num)]
 
 
-def make_ip():
+def make_ip() -> InducingVariables:
     X = rng.permutation(Datum.X)
     return gpflow.inducing_variables.InducingPoints(X[: Datum.M, ...])
 
 
-def make_ips(num):
+def make_ips(num: int) -> Sequence[InducingVariables]:
     return [make_ip() for _ in range(num)]
 
 
@@ -67,8 +70,8 @@ multioutput_kernel_list = [
 
 @pytest.mark.parametrize("inducing_variable", multioutput_inducing_variable_list)
 @pytest.mark.parametrize("kernel", multioutput_kernel_list)
-def test_kuu_shape(inducing_variable, kernel):
-    Kuu = mo_kuus.Kuu(inducing_variable, kernel, jitter=1e-9)
+def test_kuu_shape(inducing_variable: InducingVariables, kernel: Kernel) -> None:
+    Kuu = covariances.Kuu(inducing_variable, kernel, jitter=1e-9)
     t = tf.linalg.cholesky(Kuu)
 
     if isinstance(kernel, mk.SharedIndependent):
@@ -82,8 +85,8 @@ def test_kuu_shape(inducing_variable, kernel):
 
 @pytest.mark.parametrize("inducing_variable", multioutput_inducing_variable_list)
 @pytest.mark.parametrize("kernel", multioutput_kernel_list)
-def test_kuf_shape(inducing_variable, kernel):
-    Kuf = mo_kufs.Kuf(inducing_variable, kernel, Datum.Xnew)
+def test_kuf_shape(inducing_variable: InducingVariables, kernel: Kernel) -> None:
+    Kuf = covariances.Kuf(inducing_variable, kernel, Datum.Xnew)
 
     if isinstance(kernel, mk.SharedIndependent):
         if isinstance(inducing_variable, mf.SeparateIndependentInducingVariables):
@@ -95,18 +98,18 @@ def test_kuf_shape(inducing_variable, kernel):
 
 
 @pytest.mark.parametrize("inducing_variable", multioutput_fallback_inducing_variable_list)
-def test_kuf_fallback_shared_inducing_variables_shape(inducing_variable):
+def test_kuf_fallback_shared_inducing_variables_shape(inducing_variable: InducingVariables) -> None:
     kernel = mk.LinearCoregionalization(make_kernels(Datum.L), Datum.W)
-    Kuf = mo_kufs.Kuf(inducing_variable, kernel, Datum.Xnew)
+    Kuf = covariances.Kuf(inducing_variable, kernel, Datum.Xnew)
 
     assert Kuf.shape == (10, 2, 100, 3)
 
 
-@pytest.mark.parametrize("fun", [mo_kuus.Kuu, mo_kufs.Kuf])
-def test_mixed_shared_shape(fun):
+@pytest.mark.parametrize("fun", [covariances.Kuu, covariances.Kuf])
+def test_mixed_shared_shape(fun: Callable[..., tf.Tensor]) -> None:
     inducing_variable = mf.SharedIndependentInducingVariables(make_ip())
     kernel = mk.LinearCoregionalization(make_kernels(Datum.L), Datum.W)
-    if fun is mo_kuus.Kuu:
+    if fun is covariances.Kuu:
         t = tf.linalg.cholesky(fun(inducing_variable, kernel, jitter=1e-9))
         assert t.shape == (2, 10, 10)
     else:

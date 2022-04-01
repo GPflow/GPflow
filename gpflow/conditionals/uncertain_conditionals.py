@@ -12,9 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import Optional
+
 import tensorflow as tf
 
 from .. import covariances, mean_functions
+from ..base import MeanAndVariance
 from ..config import default_float, default_jitter
 from ..expectations import expectation
 from ..inducing_variables import InducingPoints, InducingVariables
@@ -27,14 +30,14 @@ def uncertain_conditional(
     Xnew_var: tf.Tensor,
     inducing_variable: InducingVariables,
     kernel: Kernel,
-    q_mu,
-    q_sqrt,
+    q_mu: tf.Tensor,
+    q_sqrt: tf.Tensor,
     *,
-    mean_function=None,
-    full_output_cov=False,
-    full_cov=False,
-    white=False,
-):
+    mean_function: Optional[mean_functions.MeanFunction] = None,
+    full_output_cov: bool = False,
+    full_cov: bool = False,
+    white: bool = False,
+) -> MeanAndVariance:
     """
     Calculates the conditional for uncertain inputs Xnew, p(Xnew) = N(Xnew_mu, Xnew_var).
     See ``conditional`` documentation for further reference.

@@ -18,16 +18,15 @@ import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
 
-from ..base import Parameter
+from ..base import InputData, MeanAndVariance, Parameter, RegressionData
 from ..conditionals import conditional
-from ..inducing_variables import InducingPoints
 from ..kernels import Kernel
 from ..likelihoods import Likelihood
 from ..mean_functions import MeanFunction
 from ..utilities import to_default_float
-from .model import GPModel, InputData, MeanAndVariance, RegressionData
+from .model import GPModel
 from .training_mixins import InternalDataTrainingLossMixin
-from .util import data_input_to_tensor, inducingpoint_wrapper
+from .util import InducingPointsLike, data_input_to_tensor, inducingpoint_wrapper
 
 
 class SGPMC(GPModel, InternalDataTrainingLossMixin):
@@ -70,7 +69,7 @@ class SGPMC(GPModel, InternalDataTrainingLossMixin):
         likelihood: Likelihood,
         mean_function: Optional[MeanFunction] = None,
         num_latent_gps: Optional[int] = None,
-        inducing_variable: Optional[InducingPoints] = None,
+        inducing_variable: Optional[InducingPointsLike] = None,
     ):
         """
         data is a tuple of X, Y with X, a data matrix, size [N, D] and Y, a data matrix, size [N, R]
@@ -88,13 +87,16 @@ class SGPMC(GPModel, InternalDataTrainingLossMixin):
             loc=to_default_float(0.0), scale=to_default_float(1.0)
         )
 
-    def log_posterior_density(self) -> tf.Tensor:
+    # type-ignore is because of changed method signature:
+    def log_posterior_density(self) -> tf.Tensor:  # type: ignore
         return self.log_likelihood_lower_bound() + self.log_prior_density()
 
-    def _training_loss(self) -> tf.Tensor:
+    # type-ignore is because of changed method signature:
+    def _training_loss(self) -> tf.Tensor:  # type: ignore
         return -self.log_posterior_density()
 
-    def maximum_log_likelihood_objective(self) -> tf.Tensor:
+    # type-ignore is because of changed method signature:
+    def maximum_log_likelihood_objective(self) -> tf.Tensor:  # type: ignore
         return self.log_likelihood_lower_bound()
 
     def log_likelihood_lower_bound(self) -> tf.Tensor:
@@ -106,7 +108,9 @@ class SGPMC(GPModel, InternalDataTrainingLossMixin):
         fmean, fvar = self.predict_f(X_data, full_cov=False)
         return tf.reduce_sum(self.likelihood.variational_expectations(fmean, fvar, Y_data))
 
-    def predict_f(self, Xnew: InputData, full_cov=False, full_output_cov=False) -> MeanAndVariance:
+    def predict_f(
+        self, Xnew: InputData, full_cov: bool = False, full_output_cov: bool = False
+    ) -> MeanAndVariance:
         """
         Xnew is a data matrix of the points at which we want to predict
 

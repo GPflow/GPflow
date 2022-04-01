@@ -16,6 +16,8 @@ This test suite will check if the conditionals broadcast correctly
 when the input tensors have leading dimensions.
 """
 
+from typing import cast
+
 import numpy as np
 import pytest
 import tensorflow as tf
@@ -24,6 +26,7 @@ from numpy.testing import assert_allclose
 import gpflow
 import gpflow.inducing_variables.multioutput as mf
 import gpflow.kernels.multioutput as mk
+from gpflow.base import AnyNDArray, SamplesMeanAndVariance
 from gpflow.conditionals import sample_conditional
 from gpflow.conditionals.util import mix_latent_gp
 
@@ -55,14 +58,14 @@ class Data:
 @pytest.mark.parametrize("full_cov", [False, True])
 @pytest.mark.parametrize("white", [True, False])
 @pytest.mark.parametrize("conditional_type", ["mixing", "Z", "inducing_points"])
-def test_conditional_broadcasting(full_cov, white, conditional_type):
+def test_conditional_broadcasting(full_cov: bool, white: bool, conditional_type: str) -> None:
     """
     Test that the `conditional` and `sample_conditional` broadcasts correctly
     over leading dimensions of Xnew. Xnew can be shape [..., N, D],
     and conditional should broadcast over the [...].
     """
     q_mu = np.random.randn(Data.M, Data.Dy)
-    q_sqrt = np.tril(np.random.randn(Data.Dy, Data.M, Data.M), -1)
+    q_sqrt: AnyNDArray = np.tril(np.random.randn(Data.Dy, Data.M, Data.M), -1)
 
     if conditional_type == "Z":
         inducing_variable = Data.Z
@@ -89,21 +92,24 @@ def test_conditional_broadcasting(full_cov, white, conditional_type):
 
     num_samples = 5
 
-    def sample_conditional_fn(X):
-        return sample_conditional(
-            X,
-            inducing_variable,
-            kernel,
-            tf.convert_to_tensor(q_mu),
-            q_sqrt=tf.convert_to_tensor(q_sqrt),
-            white=white,
-            full_cov=full_cov,
-            num_samples=num_samples,
+    def sample_conditional_fn(X: tf.Tensor) -> SamplesMeanAndVariance:
+        return cast(
+            SamplesMeanAndVariance,
+            sample_conditional(
+                X,
+                inducing_variable,
+                kernel,
+                tf.convert_to_tensor(q_mu),
+                q_sqrt=tf.convert_to_tensor(q_sqrt),
+                white=white,
+                full_cov=full_cov,
+                num_samples=num_samples,
+            ),
         )
 
-    samples = np.array([sample_conditional_fn(X)[0] for X in Data.SX])
-    means = np.array([sample_conditional_fn(X)[1] for X in Data.SX])
-    variables = np.array([sample_conditional_fn(X)[2] for X in Data.SX])
+    samples: AnyNDArray = np.array([sample_conditional_fn(X)[0] for X in Data.SX])
+    means: AnyNDArray = np.array([sample_conditional_fn(X)[1] for X in Data.SX])
+    variables: AnyNDArray = np.array([sample_conditional_fn(X)[2] for X in Data.SX])
 
     samples_S12, means_S12, vars_S12 = sample_conditional(
         Data.SX,
@@ -147,13 +153,13 @@ def test_conditional_broadcasting(full_cov, white, conditional_type):
 # _mix_latent_gps
 @pytest.mark.parametrize("full_cov", [True, False])
 @pytest.mark.parametrize("full_output_cov", [True, False])
-def test_broadcasting_mix_latent_gps(full_cov, full_output_cov):
+def test_broadcasting_mix_latent_gps(full_cov: bool, full_output_cov: bool) -> None:
     S, N = 7, 20  # batch size, num data points
     P, L = 10, 5  # observation dimensionality, num latent GPs
     W = np.random.randn(P, L)  # mixing matrix
     g_mu = np.random.randn(S, N, L)  # mean of the L latent GPs
 
-    g_sqrt_diag = np.tril(np.random.randn(S * L, N, N), -1)  # [L*S, N, N]
+    g_sqrt_diag: AnyNDArray = np.tril(np.random.randn(S * L, N, N), -1)  # [L*S, N, N]
     g_sqrt_diag = np.reshape(g_sqrt_diag, [L, S, N, N])
     g_var_diag = g_sqrt_diag @ np.transpose(g_sqrt_diag, [0, 1, 3, 2])  # [L, S, N, N]
     g_var = np.zeros([S, N, L, N, L])

@@ -13,7 +13,8 @@
 # limitations under the License.
 from typing import Sequence, Tuple
 
-from ...base import TensorType
+import tensorflow as tf
+
 from ..inducing_variables import InducingVariables
 
 
@@ -29,7 +30,7 @@ class MultioutputInducingVariables(InducingVariables):
     """
 
     @property
-    def inducing_variables(self) -> Tuple[TensorType, ...]:
+    def inducing_variables(self) -> Tuple[InducingVariables, ...]:
         raise NotImplementedError
 
 
@@ -62,15 +63,16 @@ class FallbackSharedIndependentInducingVariables(MultioutputInducingVariables):
     processes.
     """
 
-    def __init__(self, inducing_variable: TensorType):
+    def __init__(self, inducing_variable: InducingVariables):
         super().__init__()
         self.inducing_variable = inducing_variable
 
-    def __len__(self) -> int:
+    @property
+    def num_inducing(self) -> tf.Tensor:
         return self.inducing_variable.num_inducing
 
     @property
-    def inducing_variables(self) -> Tuple[TensorType]:
+    def inducing_variables(self) -> Tuple[InducingVariables]:
         return (self.inducing_variable,)
 
 
@@ -103,16 +105,17 @@ class FallbackSeparateIndependentInducingVariables(MultioutputInducingVariables)
     Note: each object should have the same number of inducing variables, M.
     """
 
-    def __init__(self, inducing_variable_list: Sequence[TensorType]):
+    def __init__(self, inducing_variable_list: Sequence[InducingVariables]):
         super().__init__()
         self.inducing_variable_list = inducing_variable_list
 
-    def __len__(self) -> int:
+    @property
+    def num_inducing(self) -> tf.Tensor:
         # TODO(st--) we should check that they all have the same length...
         return self.inducing_variable_list[0].num_inducing
 
     @property
-    def inducing_variables(self) -> Tuple[TensorType, ...]:
+    def inducing_variables(self) -> Tuple[InducingVariables, ...]:
         return tuple(self.inducing_variable_list)
 
 

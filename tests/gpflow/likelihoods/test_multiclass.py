@@ -17,7 +17,7 @@ import pytest
 import tensorflow as tf
 from numpy.testing import assert_allclose
 
-import gpflow
+from gpflow.base import AnyNDArray, TensorType
 from gpflow.config import default_float, default_int
 from gpflow.likelihoods import Bernoulli, MultiClass, RobustMax, Softmax
 from gpflow.utilities import to_default_float, to_default_int
@@ -27,7 +27,7 @@ tf.random.set_seed(99012)
 
 @pytest.mark.parametrize("num, dimF", [[10, 5], [3, 2]])
 @pytest.mark.parametrize("dimY", [10, 2, 1])
-def test_softmax_y_shape_assert(num, dimF, dimY):
+def test_softmax_y_shape_assert(num: int, dimF: int, dimY: int) -> None:
     """
     SoftMax assumes the class is given as a label (not, e.g., one-hot
     encoded), and hence just uses the first column of Y. To prevent
@@ -46,8 +46,10 @@ def test_softmax_y_shape_assert(num, dimF, dimY):
 
 @pytest.mark.parametrize("num", [10, 3])
 @pytest.mark.parametrize("dimF, dimY", [[2, 1]])
-def test_softmax_bernoulli_equivalence(num, dimF, dimY):
-    dF = np.vstack((np.random.randn(num - 3, dimF), np.array([[-3.0, 0.0], [3, 0.0], [0.0, 0.0]])))
+def test_softmax_bernoulli_equivalence(num: int, dimF: int, dimY: int) -> None:
+    dF: AnyNDArray = np.vstack(
+        (np.random.randn(num - 3, dimF), np.array([[-3.0, 0.0], [3, 0.0], [0.0, 0.0]]))
+    )
     dY = np.vstack((np.random.randn(num - 3, dimY), np.ones((3, dimY)))) > 0
     F = to_default_float(dF)
     Fvar = tf.exp(tf.stack([F[:, 1], -10.0 + tf.zeros(F.shape[0], dtype=F.dtype)], axis=1))
@@ -90,7 +92,9 @@ def test_softmax_bernoulli_equivalence(num, dimF, dimY):
 
 @pytest.mark.parametrize("num_classes, num_points", [[10, 3]])
 @pytest.mark.parametrize("tol, epsilon", [[1e-4, 1e-3]])
-def test_robust_max_multiclass_symmetric(num_classes, num_points, tol, epsilon):
+def test_robust_max_multiclass_symmetric(
+    num_classes: int, num_points: int, tol: float, epsilon: float
+) -> None:
     """
     This test is based on the observation that for
     symmetric inputs the class predictions must have equal probability.
@@ -137,10 +141,22 @@ def test_robust_max_multiclass_symmetric(num_classes, num_points, tol, epsilon):
     ],
 )
 def test_robust_max_multiclass_predict_log_density(
-    num_classes, num_points, mock_prob, expected_prediction, tol, epsilon
-):
+    num_classes: int,
+    num_points: int,
+    mock_prob: float,
+    expected_prediction: float,
+    tol: float,
+    epsilon: float,
+) -> None:
     class MockRobustMax(RobustMax):
-        def prob_is_largest(self, Y, Fmu, Fvar, gh_x, gh_w):
+        def prob_is_largest(
+            self,
+            Y: TensorType,
+            Fmu: TensorType,
+            Fvar: TensorType,
+            gh_x: TensorType,
+            gh_w: TensorType,
+        ) -> tf.Tensor:
             return tf.ones((num_points, 1), dtype=default_float()) * mock_prob
 
     likelihood = MultiClass(num_classes, invlink=MockRobustMax(num_classes, epsilon))
@@ -154,7 +170,9 @@ def test_robust_max_multiclass_predict_log_density(
 
 @pytest.mark.parametrize("num_classes", [5, 100])
 @pytest.mark.parametrize("initial_epsilon, new_epsilon", [[1e-3, 0.412]])
-def test_robust_max_multiclass_eps_k1_changes(num_classes, initial_epsilon, new_epsilon):
+def test_robust_max_multiclass_eps_k1_changes(
+    num_classes: int, initial_epsilon: float, new_epsilon: float
+) -> None:
     """
     Checks that eps K1 changes when epsilon changes. This used to not happen and had to be
     manually changed.
@@ -173,19 +191,19 @@ def test_robust_max_multiclass_eps_k1_changes(num_classes, initial_epsilon, new_
 @pytest.mark.skip(
     "ndiagquad cannot handle MultiClass (see https://github.com/GPflow/GPflow/issues/1091"
 )
-def test_multiclass_quadrature_variational_expectations():
+def test_multiclass_quadrature_variational_expectations() -> None:
     pass
 
 
 @pytest.mark.skip(
     "ndiagquad cannot handle MultiClass (see https://github.com/GPflow/GPflow/issues/1091"
 )
-def test_multiclass_quadrature_predict_log_density():
+def test_multiclass_quadrature_predict_log_density() -> None:
     pass
 
 
 @pytest.mark.skip(
     "ndiagquad cannot handle MultiClass (see https://github.com/GPflow/GPflow/issues/1091"
 )
-def test_multiclass_quadrature_predict_mean_and_var():
+def test_multiclass_quadrature_predict_mean_and_var() -> None:
     pass

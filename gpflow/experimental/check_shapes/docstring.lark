@@ -1,0 +1,37 @@
+// Definition of the Lark grammar of Sphinx docstrings.
+//
+// We use this to parse, and then rewrite, the docstrings of annotated functions.
+
+docstring: docs info_fields
+
+info_fields.1: info_field*
+?info_field.1: info_field_param
+             | info_field_returns
+             | info_field_other
+info_field_param.1: ":" PARAM info_field_args ":" docs
+info_field_returns.1: ":" RETURNS ":" docs
+info_field_other.0: ":" INFO_FIELD_OTHER info_field_args ":" docs
+
+info_field_args: CNAME*
+
+docs.0: ANY*
+
+// The info fields are defined here:
+// https://www.sphinx-doc.org/en/master/usage/restructuredtext/domains.html#info-field-lists
+
+INFO_FIELD_OTHER: TYPE | RAISES | VAR | VARTYPE | RTYPE | META
+PARAM: "param" | "parameter" | "arg" | "argument" | "key" | "keyword"
+TYPE: "type"
+RAISES: "raises" | "raise" | "except" | "exception"
+VAR: "var" | "ivar" | "cvar"
+VARTYPE: "vartype"
+RETURNS: "returns" | "return"
+RTYPE: "rtype"
+META: "meta"
+
+ANY: /.+/
+
+%import common.CNAME
+%import common.WS
+
+%ignore WS

@@ -13,15 +13,17 @@
 # limitations under the License.
 
 from dataclasses import dataclass
+from typing import Sequence
 
 import numpy as np
 import pytest
 import tensorflow as tf
-from numpy.testing import assert_allclose, assert_array_equal, assert_array_less
+from numpy.testing import assert_allclose
 
 import gpflow
 from gpflow import set_trainable
-from gpflow.config import default_float
+from gpflow.base import AnyNDArray
+from gpflow.models import SVGP
 
 
 @dataclass(frozen=True)
@@ -39,12 +41,12 @@ class DatumSVGP:
 default_datum_svgp = DatumSVGP()
 
 
-def test_svgp_fixing_q_sqrt():
+def test_svgp_fixing_q_sqrt() -> None:
     """
     In response to bug #46, we need to make sure that the q_sqrt matrix can be fixed
     """
     num_latent_gps = default_datum_svgp.Y.shape[1]
-    model = gpflow.models.SVGP(
+    model = SVGP(
         kernel=gpflow.kernels.SquaredExponential(),
         likelihood=default_datum_svgp.lik,
         q_diag=True,
@@ -57,13 +59,13 @@ def test_svgp_fixing_q_sqrt():
     assert len(model.trainable_variables) == default_num_trainable_variables - 1
 
 
-def test_svgp_white():
+def test_svgp_white() -> None:
     """
     Tests that the SVGP bound on the likelihood is the same when using
     with and without diagonals when whitening.
     """
     num_latent_gps = default_datum_svgp.Y.shape[1]
-    model_1 = gpflow.models.SVGP(
+    model_1 = SVGP(
         kernel=gpflow.kernels.SquaredExponential(),
         likelihood=default_datum_svgp.lik,
         q_diag=True,
@@ -71,7 +73,7 @@ def test_svgp_white():
         inducing_variable=default_datum_svgp.Z,
         whiten=True,
     )
-    model_2 = gpflow.models.SVGP(
+    model_2 = SVGP(
         kernel=gpflow.kernels.SquaredExponential(),
         likelihood=default_datum_svgp.lik,
         q_diag=False,
@@ -93,13 +95,13 @@ def test_svgp_white():
     assert_allclose(model_1.elbo(default_datum_svgp.data), model_2.elbo(default_datum_svgp.data))
 
 
-def test_svgp_non_white():
+def test_svgp_non_white() -> None:
     """
     Tests that the SVGP bound on the likelihood is the same when using
     with and without diagonals when whitening is not used.
     """
     num_latent_gps = default_datum_svgp.Y.shape[1]
-    model_1 = gpflow.models.SVGP(
+    model_1 = SVGP(
         kernel=gpflow.kernels.SquaredExponential(),
         likelihood=default_datum_svgp.lik,
         q_diag=True,
@@ -107,7 +109,7 @@ def test_svgp_non_white():
         inducing_variable=default_datum_svgp.Z,
         whiten=False,
     )
-    model_2 = gpflow.models.SVGP(
+    model_2 = SVGP(
         kernel=gpflow.kernels.SquaredExponential(),
         likelihood=default_datum_svgp.lik,
         q_diag=False,
@@ -129,7 +131,7 @@ def test_svgp_non_white():
     assert_allclose(model_1.elbo(default_datum_svgp.data), model_2.elbo(default_datum_svgp.data))
 
 
-def _check_models_close(m1, m2, tolerance=1e-2):
+def _check_models_close(m1: SVGP, m2: SVGP, tolerance: float = 1e-2) -> bool:
     m1_params = {p.name: p for p in list(m1.trainable_parameters)}
     m2_params = {p.name: p for p in list(m2.trainable_parameters)}
     if set(m2_params.keys()) != set(m2_params.keys()):
@@ -150,7 +152,13 @@ def _check_models_close(m1, m2, tolerance=1e-2):
         [[0, 0], [0, 1], 1, 1, 2],
     ],
 )
-def test_stochastic_gradients(indices_1, indices_2, num_data1, num_data2, max_iter):
+def test_stochastic_gradients(
+    indices_1: Sequence[int],
+    indices_2: Sequence[int],
+    num_data1: int,
+    num_data2: int,
+    max_iter: int,
+) -> None:
     """
     In response to bug #281, we need to make sure stochastic update
     happens correctly in tf optimizer mode.
@@ -164,18 +172,20 @@ def test_stochastic_gradients(indices_1, indices_2, num_data1, num_data2, max_it
     In this test we substitute a deterministic analogue of the batchs
     sampler for which we can predict the effects of different updates.
     """
+    X: AnyNDArray
+    Y: AnyNDArray
     X, Y = np.atleast_2d(np.array([0.0, 1.0])).T, np.atleast_2d(np.array([-1.0, 3.0])).T
-    Z = np.atleast_2d(np.array([0.5]))
+    Z: AnyNDArray = np.atleast_2d(np.array([0.5]))
 
-    def get_model(num_data):
-        return gpflow.models.SVGP(
+    def get_model(num_data: int) -> SVGP:
+        return SVGP(
             kernel=gpflow.kernels.SquaredExponential(),
             num_data=num_data,
             likelihood=gpflow.likelihoods.Gaussian(),
             inducing_variable=Z,
         )
 
-    def training_loop(indices, num_data, max_iter):
+    def training_loop(indices: Sequence[int], num_data: int, max_iter: int) -> SVGP:
         model = get_model(num_data)
         opt = tf.optimizers.SGD(learning_rate=0.001)
         data = X[indices], Y[indices]

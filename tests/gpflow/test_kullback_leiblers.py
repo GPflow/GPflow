@@ -23,7 +23,9 @@ from numpy.testing import assert_allclose, assert_almost_equal
 
 import gpflow
 from gpflow import Parameter, default_float, default_jitter
+from gpflow.base import AnyNDArray, TensorType
 from gpflow.inducing_variables import InducingPoints
+from gpflow.kernels import Kernel
 from gpflow.kullback_leiblers import gauss_kl, prior_kl
 from gpflow.utilities.bijectors import triangular
 
@@ -39,19 +41,19 @@ Mn = 50
 
 
 @pytest.fixture(scope="module")
-def kernel():
+def kernel() -> Kernel:
     k = gpflow.kernels.Matern32() + gpflow.kernels.White()
     k.kernels[1].variance.assign(0.01)
     return k
 
 
 @pytest.fixture(scope="module")
-def inducing_points():
+def inducing_points() -> InducingPoints:
     return InducingPoints(rng.randn(Nn, 1))
 
 
 @pytest.fixture(scope="module")
-def mu():
+def mu() -> Parameter:
     return Parameter(rng.randn(Nn, Ln))
 
 
@@ -60,17 +62,17 @@ def mu():
 # ------------------------------------------
 
 
-def make_sqrt(N, M):
+def make_sqrt(N: int, M: int) -> TensorType:
     return np.array([np.tril(rng.randn(M, M)) for _ in range(N)])  # [N, M, M]
 
 
-def make_K_batch(N, M):
+def make_K_batch(N: int, M: int) -> TensorType:
     K_np = rng.randn(N, M, M)
-    beye = np.array([np.eye(M) for _ in range(N)])
+    beye: AnyNDArray = np.array([np.eye(M) for _ in range(N)])
     return 0.1 * (K_np + np.transpose(K_np, (0, 2, 1))) + beye
 
 
-def compute_kl_1d(q_mu, q_sigma, p_var=1.0):
+def compute_kl_1d(q_mu: TensorType, q_sigma: TensorType, p_var: TensorType = 1.0) -> TensorType:
     p_var = tf.ones_like(q_sigma) if p_var is None else p_var
     q_var = tf.square(q_sigma)
     kl = 0.5 * (q_var / p_var + tf.square(q_mu) / p_var - 1 + tf.math.log(p_var / q_var))
@@ -96,7 +98,7 @@ class Datum:
 
 
 @pytest.mark.parametrize("diag", [True, False])
-def test_kl_k_cholesky(diag):
+def test_kl_k_cholesky(diag: bool) -> None:
     """
     Test that passing K or K_cholesky yield the same answer
     """
@@ -109,7 +111,7 @@ def test_kl_k_cholesky(diag):
 
 
 @pytest.mark.parametrize("white", [True, False])
-def test_diags(white):
+def test_diags(white: bool) -> None:
     """
     The covariance of q(x) can be Cholesky matrices or diagonal matrices.
     Here we make sure the behaviours overlap.
@@ -125,7 +127,7 @@ def test_diags(white):
 
 
 @pytest.mark.parametrize("diag", [True, False])
-def test_whitened(diag):
+def test_whitened(diag: bool) -> None:
     """
     Check that K=Identity and K=None give same answer
     """
@@ -142,7 +144,7 @@ def test_whitened(diag):
 
 @pytest.mark.parametrize("shared_k", [True, False])
 @pytest.mark.parametrize("diag", [True, False])
-def test_sumkl_equals_batchkl(shared_k, diag):
+def test_sumkl_equals_batchkl(shared_k: bool, diag: bool) -> None:
     """
     gauss_kl implicitely performs a sum of KL divergences
     This test checks that doing the sum outside of the function is equivalent
@@ -169,7 +171,7 @@ def test_sumkl_equals_batchkl(shared_k, diag):
 
 
 @patch("tensorflow.__version__", "2.1.0")
-def test_sumkl_equals_batchkl_shared_k_not_diag_mocked_tf21():
+def test_sumkl_equals_batchkl_shared_k_not_diag_mocked_tf21() -> None:
     """
     Version of test_sumkl_equals_batchkl with shared_k=True and diag=False
     that tests the TensorFlow < 2.2 workaround with tiling still works.
@@ -189,7 +191,7 @@ def test_sumkl_equals_batchkl_shared_k_not_diag_mocked_tf21():
 
 @pytest.mark.parametrize("dim", [0, 1])
 @pytest.mark.parametrize("white", [True, False])
-def test_oned(white, dim):
+def test_oned(white: bool, dim: bool) -> None:
     """
     Check that the KL divergence matches a 1D by-hand calculation.
     """
@@ -206,14 +208,14 @@ def test_oned(white, dim):
     np.testing.assert_allclose(kl, kl_1d)
 
 
-def test_unknown_size_inputs():
+def test_unknown_size_inputs() -> None:
     """
     Test for #725 and #734. When the shape of the Gaussian's mean had at least
     one unknown parameter, `gauss_kl` would blow up. This happened because
     `tf.size` can only output types `tf.int32` or `tf.int64`.
     """
-    mu = np.ones([1, 4], dtype=default_float())
-    sqrt = np.ones([4, 1, 1], dtype=default_float())
+    mu: AnyNDArray = np.ones([1, 4], dtype=default_float())
+    sqrt: AnyNDArray = np.ones([4, 1, 1], dtype=default_float())
 
     known_shape = gauss_kl(*map(tf.constant, [mu, sqrt]))
     unknown_shape = gauss_kl(mu, sqrt)
@@ -222,13 +224,15 @@ def test_unknown_size_inputs():
 
 
 @pytest.mark.parametrize("white", [True, False])
-def test_q_sqrt_constraints(inducing_points, kernel, mu, white):
+def test_q_sqrt_constraints(
+    inducing_points: bool, kernel: Kernel, mu: AnyNDArray, white: bool
+) -> None:
     """Test that sending in an unconstrained q_sqrt returns the same conditional
     evaluation and gradients. This is important to match the behaviour of the KL, which
     enforces q_sqrt is triangular.
     """
 
-    tril = np.tril(rng.randn(Ln, Nn, Nn))
+    tril: AnyNDArray = np.tril(rng.randn(Ln, Nn, Nn))
 
     q_sqrt_constrained = Parameter(tril, transform=triangular())
     q_sqrt_unconstrained = Parameter(tril)

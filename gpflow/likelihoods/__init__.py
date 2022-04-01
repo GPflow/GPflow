@@ -28,3 +28,33 @@ from .multilatent import (
 )
 from .scalar_continuous import Beta, Exponential, Gamma, Gaussian, StudentT
 from .scalar_discrete import Bernoulli, Ordinal, Poisson
+
+__all__ = [
+    "Bernoulli",
+    "Beta",
+    "Exponential",
+    "Gamma",
+    "Gaussian",
+    "GaussianMC",
+    "HeteroskedasticTFPConditional",
+    "Likelihood",
+    "MonteCarloLikelihood",
+    "MultiClass",
+    "MultiLatentLikelihood",
+    "MultiLatentTFPConditional",
+    "Ordinal",
+    "Poisson",
+    "QuadratureLikelihood",
+    "RobustMax",
+    "ScalarLikelihood",
+    "Softmax",
+    "StudentT",
+    "SwitchedLikelihood",
+    "base",
+    "misc",
+    "multiclass",
+    "multilatent",
+    "scalar_continuous",
+    "scalar_discrete",
+    "utils",
+]

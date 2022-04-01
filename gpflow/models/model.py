@@ -13,18 +13,16 @@
 # limitations under the License.
 
 import abc
-from typing import Optional, Tuple
+from typing import Any, Optional
 
 import tensorflow as tf
 
-from ..base import Module
+from ..base import InputData, MeanAndVariance, Module, RegressionData
 from ..conditionals.util import sample_mvn
 from ..kernels import Kernel, MultioutputKernel
 from ..likelihoods import Likelihood, SwitchedLikelihood
 from ..mean_functions import MeanFunction, Zero
-from ..types import MeanAndVariance
 from ..utilities import to_default_float
-from .training_mixins import InputData, RegressionData
 
 
 class BayesianModel(Module, metaclass=abc.ABCMeta):
@@ -39,7 +37,7 @@ class BayesianModel(Module, metaclass=abc.ABCMeta):
         else:
             return to_default_float(0.0)
 
-    def log_posterior_density(self, *args, **kwargs) -> tf.Tensor:
+    def log_posterior_density(self, *args: Any, **kwargs: Any) -> tf.Tensor:
         """
         This may be the posterior with respect to the hyperparameters (e.g. for
         GPR) or the posterior with respect to the function (e.g. for GPMC and
@@ -48,7 +46,7 @@ class BayesianModel(Module, metaclass=abc.ABCMeta):
         """
         return self.maximum_log_likelihood_objective(*args, **kwargs) + self.log_prior_density()
 
-    def _training_loss(self, *args, **kwargs) -> tf.Tensor:
+    def _training_loss(self, *args: Any, **kwargs: Any) -> tf.Tensor:
         """
         Training loss definition. To allow MAP (maximum a-posteriori) estimation,
         adds the log density of all priors to maximum_log_likelihood_objective().
@@ -56,7 +54,7 @@ class BayesianModel(Module, metaclass=abc.ABCMeta):
         return -(self.maximum_log_likelihood_objective(*args, **kwargs) + self.log_prior_density())
 
     @abc.abstractmethod
-    def maximum_log_likelihood_objective(self, *args, **kwargs) -> tf.Tensor:
+    def maximum_log_likelihood_objective(self, *args: Any, **kwargs: Any) -> tf.Tensor:
         """
         Objective for maximum likelihood estimation. Should be maximized. E.g.
         log-marginal likelihood (hyperparameter likelihood) for GPR, or lower
@@ -100,7 +98,7 @@ class GPModel(BayesianModel):
         kernel: Kernel,
         likelihood: Likelihood,
         mean_function: Optional[MeanFunction] = None,
-        num_latent_gps: int = None,
+        num_latent_gps: Optional[int] = None,
     ):
         super().__init__()
         assert num_latent_gps is not None, "GPModel requires specification of num_latent_gps"
@@ -112,7 +110,9 @@ class GPModel(BayesianModel):
         self.likelihood = likelihood
 
     @staticmethod
-    def calc_num_latent_gps_from_data(data, kernel: Kernel, likelihood: Likelihood) -> int:
+    def calc_num_latent_gps_from_data(
+        data: RegressionData, kernel: Kernel, likelihood: Likelihood
+    ) -> int:
         """
         Calculates the number of latent GPs required based on the data as well
         as the type of kernel and likelihood.
@@ -133,6 +133,7 @@ class GPModel(BayesianModel):
         problematic assumptions re the output dimensions of mean_function.
         See https://github.com/GPflow/GPflow/issues/1343
         """
+        num_latent_gps: int
         if isinstance(kernel, MultioutputKernel):
             # MultioutputKernels already have num_latent_gps attributes
             num_latent_gps = kernel.num_latent_gps
@@ -213,7 +214,8 @@ class GPModel(BayesianModel):
         if full_cov or full_output_cov:
             # See https://github.com/GPflow/GPflow/issues/1461
             raise NotImplementedError(
-                "The predict_y method currently supports only the argument values full_cov=False and full_output_cov=False"
+                "The predict_y method currently supports only the argument values full_cov=False"
+                " and full_output_cov=False"
             )
 
         f_mean, f_var = self.predict_f(Xnew, full_cov=full_cov, full_output_cov=full_output_cov)
@@ -228,7 +230,8 @@ class GPModel(BayesianModel):
         if full_cov or full_output_cov:
             # See https://github.com/GPflow/GPflow/issues/1461
             raise NotImplementedError(
-                "The predict_log_density method currently supports only the argument values full_cov=False and full_output_cov=False"
+                "The predict_log_density method currently supports only the argument values"
+                " full_cov=False and full_output_cov=False"
             )
 
         X, Y = data

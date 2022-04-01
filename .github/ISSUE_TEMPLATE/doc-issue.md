@@ -15,5 +15,5 @@ about: Let us know what would make the GPflow documentation better
 
 
 Links:
-* [latest GPflow documentation](https://gpflow.readthedocs.io/en/develop/)
-* [latest GPflow tutorial notebooks](https://gpflow.readthedocs.io/en/develop/notebooks_file.html)
+* [latest GPflow documentation](https://gpflow.github.io/GPflow/develop/)
+* [latest GPflow tutorial notebooks](https://gpflow.github.io/GPflow/develop/notebooks_file.html)

@@ -5,3 +5,12 @@ from .kernels import (
     SeparateIndependent,
     SharedIndependent,
 )
+
+__all__ = [
+    "IndependentLatent",
+    "LinearCoregionalization",
+    "MultioutputKernel",
+    "SeparateIndependent",
+    "SharedIndependent",
+    "kernels",
+]

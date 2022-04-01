@@ -2,49 +2,46 @@
 
 ## Read documentation online
 
-[![Documentation Status (master)](https://readthedocs.org/projects/gpflow/badge/?version=master)](http://gpflow.readthedocs.io/en/master/?badge=master)
-[![Documentation Status (develop)](https://readthedocs.org/projects/gpflow/badge/?version=develop)](http://gpflow.readthedocs.io/en/develop/?badge=develop)
+The documentation is stored in a special branch
+[`gp-pages`](https://github.com/GPflow/GPflow/tree/gh-pages) and served by
+[GitHub Pages](https://pages.github.com/).
 
-We use readthedocs to build the online documentation, and have separate versions for the `master` and `develop` branches:
-https://gpflow.readthedocs.io/en/master/ (for the latest official release e.g. on PyPI) and
-https://gpflow.readthedocs.io/en/develop/ (for the latest cutting-edge code available from the develop branch on github).
+We serve a version of documentation for the most recent `develop` branch and for all releases since
+`2.4.0`. You can find them online here:
+
+* Redirect to most recent release: https://gpflow.github.io/GPflow/
+* `develop`: https://gpflow.github.io/GPflow/develop
+
+Normally our CircleCI build is responsible for building our documentation whenever there is a merge
+to `develop` or `master`. See the
+[configuration](https://github.com/GPflow/GPflow/blob/develop/.circleci/config.yml) for details.
 
 
 ## Compile documentation locally
 
 To compile the GPflow documentation locally:
 
-1. Change to this directory (e.g. `cd doc` if you are in the GPflow git repository's base directory)
+1. Change to the GPflow source directory.
 
-2. Install doc dependencies
-   ```
-   pip install sphinx sphinx_rtd_theme numpydoc nbsphinx sphinx_autodoc_typehints ipython jupytext jupyter_client ipywidgets
-   ```
-
-3. Install pandoc
-   ```
-   pip install pandoc
-   ```
-   If pandoc does not install via pip, or step 5 does not work, go to pandoc.org/installing.html (the PyPI package depends on the external system-wide installation of pandoc executables)
-
-4. Generate auto-generated files
-   * Notebooks (.ipynb): run `make -C source/notebooks -j 4` (here with 4 parallel threads)
-   * API documentation (.rst): run `python source/generate_module_rst.py`
-
-5. Compile the documentation
-   ```
-   make html
+2. Install dev dependencies
+   ```bash
+   make dev-install
    ```
 
-6. Check documentation locally by opening (in a browser) build/html/index.html
+   If pandoc does not install via pip, or step 4 does not work, go to pandoc.org/installing.html (the PyPI package depends on the external system-wide installation of pandoc executables)
+
+3. Generate auto-generated files
+   ```bash
+   doc_build_dir="/tmp/gpflow_docs"
+   python doc/build_docs.py develop ${doc_build_dir}
+   ```
+
+6. Check documentation locally by opening (in a browser) `${doc_build_dir}/develop/index.html`.
 
 
-## Setup for automatic documentation generation
+## Run notebooks locally
 
-Upon each merge to the `develop` branch, this repository's [CircleCI configuration](../.circleci/config.yml) runs the `trigger-docs-generation` step
-which triggers a CircleCI build on the [GPflow/docs repository](https://github.com/GPflow/docs).
-This clones the latest GPflow develop branch and compiles all notebooks from jupytext to .ipynb
-(setting the `DOCS` environment variable so that notebook optimisations are run to convergence)
-and runs the `generate_module_rst.py` script as above to generate the .rst files for API documentation.
-(This script is run on CircleCI, instead of ReadTheDocs, as it requires gpflow and hence `tensorflow` and `tensorflow_probability` to be installed, but TensorFlow is too large to be installed inside the ReadTheDocs docker images.)
-ReadTheDocs then pulls in these auto-generated files as well as all other files within this doc/ directory to actually build the documentation using Sphinx.
+The notebooks underneath `source/notebooks` rely on [jupytext](https://github.com/mwouts/jupytext).
+Make sure to [install the `jupytext` package](https://github.com/mwouts/jupytext#install) before
+calling `jupyter notebook <notebook_file.pct.py>`
+(which will automatically create the paired .ipynb file).

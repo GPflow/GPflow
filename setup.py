@@ -3,44 +3,27 @@
 
 # pylint: skip-file
 
-import os
-import sys
-
 from setuptools import find_packages, setup
 
 ##### Dependencies of GPflow
 
-# We do not want to install tensorflow in the readthedocs environment, where we
-# use autodoc_mock_imports instead. Hence we use this flag to decide whether or
-# not to append tensorflow and tensorflow_probability to the requirements:
-if os.environ.get("READTHEDOCS") != "True":
-    requirements = [
-        "tensorflow>=2.2.0",
-        "tensorflow-probability>0.10.0",  # tensorflow-probability==0.10.0 doesn't install correctly, https://github.com/tensorflow/probability/issues/991
-        # NOTE: once we require tensorflow-probability>=0.12, we can remove our custom deepcopy handling
-        "setuptools>=41.0.0",  # to satisfy dependency constraints
-    ]
-
-else:
-    requirements = []
-
-requirements.extend(
-    [
-        "numpy",
-        "scipy",
-        "multipledispatch>=0.6",
-        "tabulate",
-        "typing_extensions",
-        "packaging",
-        "deprecated",
-    ]
-)
-
-if sys.version_info < (3, 7):
-    requirements.append("dataclasses")  # became part of stdlib in python 3.7
+requirements = [
+    "deprecated",
+    "lark>=1.1.0",
+    "multipledispatch>=0.6",
+    "numpy",
+    "packaging",
+    "scipy",
+    "setuptools>=41.0.0",  # to satisfy dependency constraints
+    "tabulate",
+    "tensorflow-probability>=0.12.0",
+    "tensorflow>=2.4.0",
+    # NOTE: once we require tensorflow-probability>=0.12, we can remove our custom deepcopy handling
+    "typing_extensions",
+]
 
 
-def read_file(filename):
+def read_file(filename: str) -> str:
     with open(filename, encoding="utf-8") as f:
         return f.read().strip()
 
@@ -63,20 +46,30 @@ setup(
     url="https://www.gpflow.org",
     project_urls={
         "Source on GitHub": "https://github.com/GPflow/GPflow",
-        "Documentation": "https://gpflow.readthedocs.io",
+        "Documentation": "https://gpflow.github.io/GPflow/",
     },
     packages=packages,
+    package_data={"": ["*.lark"]},
     include_package_data=True,
     install_requires=requirements,
     extras_require={"ImageToTensorBoard": ["matplotlib"]},
-    python_requires=">=3.6",
+    python_requires=">=3.7",
     classifiers=[
+        "Development Status :: 5 - Production/Stable",
+        "Environment :: GPU :: NVIDIA CUDA",
+        "Intended Audience :: Developers",
+        "Intended Audience :: Education",
+        "Intended Audience :: Science/Research",
         "License :: OSI Approved :: Apache Software License",
         "Natural Language :: English",
         "Operating System :: MacOS :: MacOS X",
         "Operating System :: Microsoft :: Windows",
         "Operating System :: POSIX :: Linux",
-        "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
         "Topic :: Scientific/Engineering :: Artificial Intelligence",
+        "Typing :: Typed",
     ],
 )

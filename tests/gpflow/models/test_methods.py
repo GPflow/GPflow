@@ -13,14 +13,14 @@
 # limitations under the License.
 
 from dataclasses import dataclass
+from typing import List
 
 import numpy as np
 import pytest
-import tensorflow as tf
-from numpy.testing import assert_allclose, assert_array_equal, assert_array_less
+from numpy.testing import assert_array_equal, assert_array_less
 
 import gpflow
-from gpflow.config import default_float
+from gpflow.base import AnyNDArray
 
 # ------------------------------------------
 # Data classes: storing constants
@@ -30,10 +30,10 @@ from gpflow.config import default_float
 @dataclass(frozen=True)
 class Datum:
     rng: np.random.RandomState = np.random.RandomState(0)
-    X: np.ndarray = rng.randn(100, 2)
-    Y: np.ndarray = rng.randn(100, 1)
-    Z: np.ndarray = rng.randn(10, 2)
-    Xs: np.ndarray = rng.randn(10, 2)
+    X: AnyNDArray = rng.randn(100, 2)
+    Y: AnyNDArray = rng.randn(100, 1)
+    Z: AnyNDArray = rng.randn(10, 2)
+    Xs: AnyNDArray = rng.randn(10, 2)
     lik = gpflow.likelihoods.Gaussian()
     kernel = gpflow.kernels.Matern32()
 
@@ -41,7 +41,7 @@ class Datum:
 default_datum = Datum()
 
 
-_gp_models = [
+_gp_models: List[gpflow.models.GPModel] = [
     gpflow.models.VGP((default_datum.X, default_datum.Y), default_datum.kernel, default_datum.lik),
     gpflow.models.GPMC((default_datum.X, default_datum.Y), default_datum.kernel, default_datum.lik),
     gpflow.models.SGPMC(
@@ -63,13 +63,13 @@ _gp_models = [
     ),
 ]
 
-_state_less_gp_models = [
+_state_less_gp_models: List[gpflow.models.GPModel] = [
     gpflow.models.SVGP(default_datum.kernel, default_datum.lik, inducing_variable=default_datum.Z)
 ]
 
 
 @pytest.mark.parametrize("model", _state_less_gp_models + _gp_models)
-def test_methods_predict_f(model):
+def test_methods_predict_f(model: gpflow.models.GPModel) -> None:
     mf, vf = model.predict_f(default_datum.Xs)
     assert_array_equal(mf.shape, vf.shape)
     assert_array_equal(mf.shape, (10, 1))
@@ -77,7 +77,7 @@ def test_methods_predict_f(model):
 
 
 @pytest.mark.parametrize("model", _state_less_gp_models + _gp_models)
-def test_methods_predict_y(model):
+def test_methods_predict_y(model: gpflow.models.GPModel) -> None:
     mf, vf = model.predict_y(default_datum.Xs)
     assert_array_equal(mf.shape, vf.shape)
     assert_array_equal(mf.shape, (10, 1))
@@ -85,7 +85,7 @@ def test_methods_predict_y(model):
 
 
 @pytest.mark.parametrize("model", _state_less_gp_models + _gp_models)
-def test_methods_predict_log_density(model):
+def test_methods_predict_log_density(model: gpflow.models.GPModel) -> None:
     rng = Datum().rng
     Ys = rng.randn(10, 1)
     d = model.predict_log_density((default_datum.Xs, Ys))

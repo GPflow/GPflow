@@ -15,23 +15,26 @@
 from typing import Callable, Iterable, List, Optional, Union
 
 import tensorflow as tf
+import tensorflow_probability as tfp
 
+from ..base import TensorData
 from ..config import default_float, default_int
 from .ops import cast
 
 __all__ = [
+    "is_variable",
+    "set_trainable",
     "to_default_float",
     "to_default_int",
-    "set_trainable",
     "training_loop",
 ]
 
 
-def to_default_int(x):
+def to_default_int(x: TensorData) -> tf.Tensor:
     return cast(x, dtype=default_int())
 
 
-def to_default_float(x):
+def to_default_float(x: TensorData) -> tf.Tensor:
     return cast(x, dtype=default_float())
 
 
@@ -47,13 +50,20 @@ def set_trainable(model: Union[tf.Module, Iterable[tf.Module]], flag: bool) -> N
             variable._trainable = flag
 
 
+def is_variable(t: TensorData) -> bool:
+    """
+    Returns whether the `t` is a TensorFlow variable.
+    """
+    return isinstance(t, (tf.Variable, tfp.util.TransformedVariable))
+
+
 def training_loop(
     closure: Callable[[], tf.Tensor],
     optimizer: Optional[tf.optimizers.Optimizer] = None,
-    var_list: List[tf.Variable] = None,
-    maxiter=1e3,
-    compile=False,
-):
+    var_list: Optional[List[tf.Variable]] = None,
+    maxiter: int = 1_000,
+    compile: bool = False,
+) -> None:
     """
     Simple generic training loop. At each iteration uses a GradientTape to compute
     the gradients of a loss function with respect to a set of variables.
@@ -66,17 +76,18 @@ def training_loop(
     :return:
     """
 
-    optimizer = tf.optimizers.Adam() if optimizer is None else optimizer
+    safe_optimizer = tf.optimizers.Adam() if optimizer is None else optimizer
+    safe_var_list = [] if var_list is None else var_list
 
-    def optimization_step():
+    def optimization_step() -> None:
         with tf.GradientTape(watch_accessed_variables=False) as tape:
-            tape.watch(var_list)
+            tape.watch(safe_var_list)
             loss = closure()
-        grads = tape.gradient(loss, var_list)
-        optimizer.apply_gradients(zip(grads, var_list))
+        grads = tape.gradient(loss, safe_var_list)
+        safe_optimizer.apply_gradients(zip(grads, safe_var_list))
 
     if compile:
         optimization_step = tf.function(optimization_step)
 
-    for _ in range(int(maxiter)):
+    for _ in range(maxiter):
         optimization_step()

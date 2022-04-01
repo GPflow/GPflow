@@ -19,6 +19,7 @@ from . import (
     config,
     covariances,
     expectations,
+    experimental,
     inducing_variables,
     kernels,
     kullback_leiblers,
@@ -38,4 +39,33 @@ from .config import default_float, default_int, default_jitter
 from .utilities import set_trainable
 from .versions import __version__
 
-__all__ = [export for export in dir()]
+__all__ = [
+    "Module",
+    "Parameter",
+    "__version__",
+    "base",
+    "ci_utils",
+    "conditionals",
+    "config",
+    "covariances",
+    "default_float",
+    "default_int",
+    "default_jitter",
+    "expectations",
+    "experimental",
+    "inducing_variables",
+    "kernels",
+    "kullback_leiblers",
+    "likelihoods",
+    "logdensities",
+    "mean_functions",
+    "models",
+    "monitor",
+    "optimizers",
+    "posteriors",
+    "probability_distributions",
+    "quadrature",
+    "set_trainable",
+    "utilities",
+    "versions",
+]

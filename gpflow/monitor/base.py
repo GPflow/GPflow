@@ -15,11 +15,16 @@
 """ MonitorTask base classes """
 
 from abc import ABC, abstractmethod
-from typing import Callable, List, Union
+from typing import Any, Callable, Collection, Union
 
 import tensorflow as tf
 
-__all__ = ["MonitorTask", "ExecuteCallback", "MonitorTaskGroup", "Monitor"]
+__all__ = [
+    "ExecuteCallback",
+    "Monitor",
+    "MonitorTask",
+    "MonitorTaskGroup",
+]
 
 
 class MonitorTask(ABC):
@@ -30,7 +35,7 @@ class MonitorTask(ABC):
     A descendant class must implement the `run` method, which is the body of the monitoring task.
     """
 
-    def __call__(self, step: int, **kwargs):
+    def __call__(self, step: int, **kwargs: Any) -> None:
         """
         It calls the 'run' function and sets the current step.
 
@@ -43,7 +48,7 @@ class MonitorTask(ABC):
         self.run(**kwargs)
 
     @abstractmethod
-    def run(self, **kwargs):
+    def run(self, **kwargs: Any) -> None:
         """
         Implements the task to be executed on __call__.
         The current step is available through `self.current_step`.
@@ -56,7 +61,7 @@ class MonitorTask(ABC):
 class ExecuteCallback(MonitorTask):
     """ Executes a callback as task """
 
-    def __init__(self, callback: Callable[..., None]):
+    def __init__(self, callback: Callable[..., None]) -> None:
         """
         :param callback: callable to be executed during the task.
             Arguments can be passed using keyword arguments.
@@ -64,7 +69,7 @@ class ExecuteCallback(MonitorTask):
         super().__init__()
         self.callback = callback
 
-    def run(self, **kwargs):
+    def run(self, **kwargs: Any) -> None:
         self.callback(**kwargs)
 
 
@@ -77,7 +82,9 @@ class MonitorTaskGroup:
     `MonitorTask` instances.
     """
 
-    def __init__(self, task_or_tasks: Union[List[MonitorTask], MonitorTask], period: int = 1):
+    def __init__(
+        self, task_or_tasks: Union[Collection[MonitorTask], MonitorTask], period: int = 1
+    ) -> None:
         """
         :param task_or_tasks: a single instance or a list of `MonitorTask` instances.
             Each `MonitorTask` in the list will be run with the given `period`.
@@ -85,22 +92,24 @@ class MonitorTaskGroup:
             For large values of `period` the tasks will be less frequently run. Defaults to
             running at every step (`period = 1`).
         """
-        self.tasks = task_or_tasks
+        self._tasks: Collection[MonitorTask] = []
+        self.tasks = task_or_tasks  # type: ignore
         self._period = period
 
     @property
-    def tasks(self) -> List[MonitorTask]:
+    def tasks(self) -> Collection[MonitorTask]:
         return self._tasks
 
     @tasks.setter
-    def tasks(self, task_or_tasks: Union[List[MonitorTask], MonitorTask]) -> None:
+    def tasks(self, task_or_tasks: Union[Collection[MonitorTask], MonitorTask]) -> None:
         """Ensures the tasks are stored as a list. Even if there is only a single task."""
-        if not isinstance(task_or_tasks, List):
+        if isinstance(task_or_tasks, MonitorTask):
             self._tasks = [task_or_tasks]
         else:
-            self._tasks = task_or_tasks
+            assert isinstance(task_or_tasks, Collection)
+            self._tasks = list(task_or_tasks)
 
-    def __call__(self, step, **kwargs):
+    def __call__(self, step: int, **kwargs: Any) -> None:
         """Call each task in the group."""
         if step % self._period == 0:
             for task in self.tasks:
@@ -132,12 +141,12 @@ class Monitor:
         ```
     """
 
-    def __init__(self, *task_groups: MonitorTaskGroup):
+    def __init__(self, *task_groups: MonitorTaskGroup) -> None:
         """
         :param task_groups: a list of `MonitorTaskGroup`s to be executed.
         """
         self.task_groups = task_groups
 
-    def __call__(self, step, **kwargs):
+    def __call__(self, step: int, **kwargs: Any) -> None:
         for group in self.task_groups:
             group(step, **kwargs)

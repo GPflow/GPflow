@@ -1,100 +1,240 @@
-runtest: &runtest
-  steps:
-    - checkout
-    - run:
-        name: Install GPflow
-        command: |
-          pip install -U pip
-          pip install -e .
-          pip install -r tests_requirements.txt
-    - run:
-        name: Run tests
-        command: |
-          pytest -v -W ignore::UserWarning --durations=10 -m "${PYTEST_FILTER}" --cov=./gpflow ./tests
-    - run:
-        name: Upload coverage report
-        command: |
-          bash <(curl -s https://codecov.io/bash) -t "${CODECOV_TOKEN}"
-
 version: 2.1
 
-jobs:
-  verify-install:
-    docker:
-      - image: circleci/python:3.6-buster
+parameters:
+  min_py_ver:
+    type: string
+    default: "3.7"
+  max_py_ver:
+    type: string
+    default: "3.10"
+  min_tf_ver:
+    type: string
+    default: "2.4"
+  max_tf_ver:
+    type: string
+    default: "2.8"
+  min_tfp_ver:
+    type: string
+    default: "0.12"
+  max_tfp_ver:
+    type: string
+    default: "0.16"
 
+commands:
+  setup_venv:
+    parameters:
+      py_ver:
+        type: string
     steps:
       - checkout
       - run:
+          name: Setup virtual environment
+          command: |
+            # Run in a fresh virtual environment, to avoid conflicts with preinstalled packages.
+            virtualenv -p python<<parameters.py_ver>> .venv
+            source .venv/bin/activate
+            pip install --progress-bar=off -U pip
+  install_gpflow:
+    parameters:
+      py_ver:
+        type: string
+      tf_ver:
+        type: string
+      tfp_ver:
+        type: string
+    steps:
+      - setup_venv:
+          py_ver: <<parameters.py_ver>>
+      - run:
+          name: Install GPflow
+          command: "
+            source .venv/bin/activate \n
+            # Everything is installed in one pip command, to allow for better dependency version
+            # resolution. Explicit tensorflow and tensorflow-probability version, to ensure
+            # consistency between them. \n
+            pip install --progress-bar=off
+              -e .
+              -r tests_requirements.txt
+              tensorflow==<<parameters.tf_ver>>
+              tensorflow-probability==<<parameters.tfp_ver>> \n
+          "
+  run_tests:
+    parameters:
+      py_ver:
+        type: string
+      tf_ver:
+        type: string
+      tfp_ver:
+        type: string
+      pytest_filter:
+        type: string
+    steps:
+      - install_gpflow:
+          py_ver: <<parameters.py_ver>>
+          tf_ver: <<parameters.tf_ver>>
+          tfp_ver: <<parameters.tfp_ver>>
+      - run:
+          name: Run tests
+          command: |
+            source .venv/bin/activate
+            pytest -v -W ignore::UserWarning --durations=10 -m "<<parameters.pytest_filter>>" --cov=./gpflow ./tests
+      - run:
+          name: Upload coverage report
+          command: |
+            source .venv/bin/activate
+            bash <(curl -s https://codecov.io/bash) -t "${CODECOV_TOKEN}"
+
+jobs:
+  verify-install:
+    parameters:
+      py_ver:
+        type: string
+      tf_ver:
+        type: string
+      tfp_ver:
+        type: string
+    docker:
+      - image: cimg/python:<<parameters.py_ver>>
+    steps:
+      - install_gpflow:
+          py_ver: <<parameters.py_ver>>
+          tf_ver: <<parameters.tf_ver>>
+          tfp_ver: <<parameters.tfp_ver>>
+      - run:
           name: Check installed dependencies are compatible
           command: |
-            pip install --progress-bar=off -e .
+            source .venv/bin/activate
             pip check -vvv
             python -c "import gpflow"
 
   type-check:
+    parameters:
+      py_ver:
+        type: string
+      tf_ver:
+        type: string
+      tfp_ver:
+        type: string
     docker:
-      - image: circleci/python:3.6-buster
-
+      - image: cimg/python:<<parameters.py_ver>>
     steps:
-      - checkout
+      - install_gpflow:
+          py_ver: <<parameters.py_ver>>
+          tf_ver: <<parameters.tf_ver>>
+          tfp_ver: <<parameters.tfp_ver>>
       - run:
-          name: Install type checker
-          command: pip install mypy types-pkg_resources
-      - run:
-          name: Run type checker
-          command: mypy gpflow tests
-
-  unit-test:
-    <<: *runtest
-    docker:
-      - image: circleci/python:3.6-buster
-        environment:
-          PYTEST_FILTER: not notebooks
-
-  notebook-test:
-    <<: *runtest
-    docker:
-      - image: circleci/python:3.6-buster
-        environment:
-          PYTEST_FILTER: notebooks
-
-  format-checker:
-    docker:
-      - image: circleci/python:3.6-buster
-
-    steps:
-      - checkout
-      - run:
-          name: Install black and isort
+          name: Run type check
           command: |
-            pip install black==20.8b1 isort
+            source .venv/bin/activate
+            mypy gpflow tests
+
+  format-check:
+    parameters:
+      py_ver:
+        type: string
+      tf_ver:
+        type: string
+      tfp_ver:
+        type: string
+    docker:
+      - image: cimg/python:<<parameters.py_ver>>
+    steps:
+      - install_gpflow:
+          py_ver: <<parameters.py_ver>>
+          tf_ver: <<parameters.tf_ver>>
+          tfp_ver: <<parameters.tfp_ver>>
       - run:
           name: Run format check
           command: |
+            source .venv/bin/activate
             make format-check
 
-  trigger-docs-generation:
+  unit-test:
+    parameters:
+      py_ver:
+        type: string
+      tf_ver:
+        type: string
+      tfp_ver:
+        type: string
     docker:
-      - image: circleci/python:3.6-buster
-        environment:
-            ORGANIZATION: GPflow
-            PROJECT: docs
-            BRANCH: << pipeline.git.branch >>
-
+      - image: cimg/python:<<parameters.py_ver>>
     steps:
+      - run_tests:
+          py_ver: <<parameters.py_ver>>
+          tf_ver: <<parameters.tf_ver>>
+          tfp_ver: <<parameters.tfp_ver>>
+          pytest_filter: not notebooks
+
+  notebook-test:
+    parameters:
+      py_ver:
+        type: string
+      tf_ver:
+        type: string
+      tfp_ver:
+        type: string
+    docker:
+      - image: cimg/python:<<parameters.py_ver>>
+    steps:
+      - run_tests:
+          py_ver: <<parameters.py_ver>>
+          tf_ver: <<parameters.tf_ver>>
+          tfp_ver: <<parameters.tfp_ver>>
+          pytest_filter: notebooks
+
+  build-docs:
+    docker:
+      # At the time of writing we cannot generate documentation for type numpy with older versions,
+      # so we need to use `max` versions here.
+      - image: cimg/python:<<pipeline.parameters.max_py_ver>>
+        environment:
+          DOCS: True  # This is used in gpflow/ci_utils.py
+    steps:
+      - install_gpflow:
+          py_ver: <<pipeline.parameters.max_py_ver>>
+          tf_ver: <<pipeline.parameters.max_tf_ver>>
+          tfp_ver: <<pipeline.parameters.max_tfp_ver>>
       - run:
-          name: Trigger the Build Job in Docs repo
-          # Compiled documentation for readthedocs are built and stored in the https://github.com/GPflow/docs/ repository
-          # For configuration of the doc build, see https://github.com/GPflow/docs/blob/develop/.circleci/config.yml
+          name: Install pandoc
           command: |
-            BUILD_INFO=$(curl -X POST -H -d \
-                "{}" \
-                "https://circleci.com/api/v1/project/$ORGANIZATION/$PROJECT/tree/$BRANCH?circle-token=$DOCS_TOKEN")
+            sudo apt update
+            sudo apt install pandoc
+      - run:
+          name: Build documentation
+          no_output_timeout: 60m
+          command: |
+            source .venv/bin/activate
+            mkdir docs_tmp
+            time python doc/build_docs.py <<pipeline.git.branch>> docs_tmp
+      - add_ssh_keys:
+          fingerprints:  # Add key to give write-access below
+            - "b5:9b:f3:74:26:00:b3:c3:de:3a:b3:03:ee:0b:0b:64"
+      - run:
+          name: Commit documentation
+          command: |
+            source .venv/bin/activate
+
+            git clone -b gh-pages git@github.com:GPflow/GPflow.git gh-pages
+
+            for version in docs_tmp/*; do
+                rm -rf gh-pages/docs/${version}
+            done
+            cp -r docs_tmp/* gh-pages/docs
+
+            python doc/update_versions.py <<pipeline.git.branch>> gh-pages/docs
+
+            cd gh-pages/docs
+
+            git config user.email "docs.bot@gpflow.com"
+            git config user.name "Docs Bot"
+            git add .
+            git commit -m "Build documentation for <<pipeline.git.branch>> [ci skip]"
+            git push origin gh-pages
 
   deploy:
     docker:
-      - image: circleci/python:3.6-buster
+      - image: cimg/python:<<pipeline.parameters.min_py_ver>>
     steps:
       - checkout
       - run:
@@ -108,7 +248,11 @@ jobs:
       - run:
           name: Install twine
           command: |
-            pip install twine
+            # Run in a fresh virtual environment, to avoid conflicts with preinstalled packages.
+            virtualenv -p python<<pipeline.parameters.min_py_ver>> .venv
+            source .venv/bin/activate
+            pip install --progress-bar=off -U pip
+            pip install --progress-bar=off twine
       - run:
           name: Init .pypirc
           command: |
@@ -118,11 +262,19 @@ jobs:
       - run:
           name: Create pip package
           command: |
+            source .venv/bin/activate
             python setup.py bdist_wheel sdist
       - run:
           name: Upload to PyPI
           command: |
+            source .venv/bin/activate
             twine upload dist/*
+
+  noop:
+    docker:
+      - image: cimg/python:<<pipeline.parameters.min_py_ver>>
+    steps:
+      - run: echo ok
 
 
 workflows:
@@ -130,33 +282,113 @@ workflows:
   build_test_and_deploy:
     jobs:
       - verify-install:
+          name: verify-install-min
+          py_ver: <<pipeline.parameters.min_py_ver>>
+          tf_ver: <<pipeline.parameters.min_tf_ver>>
+          tfp_ver: <<pipeline.parameters.min_tfp_ver>>
+          filters:
+            tags:
+              only: /^v[0-9]+(\.[0-9]+)*(-rc[0-9]+)?/
+      - verify-install:
+          name: verify-install-max
+          py_ver: <<pipeline.parameters.max_py_ver>>
+          tf_ver: <<pipeline.parameters.max_tf_ver>>
+          tfp_ver: <<pipeline.parameters.max_tfp_ver>>
           filters:
             tags:
               only: /^v[0-9]+(\.[0-9]+)*(-rc[0-9]+)?/
       - type-check:
+          name: type-check-min
+          py_ver: <<pipeline.parameters.min_py_ver>>
+          tf_ver: <<pipeline.parameters.min_tf_ver>>
+          tfp_ver: <<pipeline.parameters.min_tfp_ver>>
           filters:
             tags:
               only: /^v[0-9]+(\.[0-9]+)*(-rc[0-9]+)?/
-      - format-checker:
+      - type-check:
+          name: type-check-max
+          py_ver: <<pipeline.parameters.max_py_ver>>
+          tf_ver: <<pipeline.parameters.max_tf_ver>>
+          tfp_ver: <<pipeline.parameters.max_tfp_ver>>
+          filters:
+            tags:
+              only: /^v[0-9]+(\.[0-9]+)*(-rc[0-9]+)?/
+      - format-check:
+          name: format-check-min
+          py_ver: <<pipeline.parameters.min_py_ver>>
+          tf_ver: <<pipeline.parameters.min_tf_ver>>
+          tfp_ver: <<pipeline.parameters.min_tfp_ver>>
+          filters:
+            tags:
+              only: /^v[0-9]+(\.[0-9]+)*(-rc[0-9]+)?/
+      - format-check:
+          name: format-check-max
+          py_ver: <<pipeline.parameters.max_py_ver>>
+          tf_ver: <<pipeline.parameters.max_tf_ver>>
+          tfp_ver: <<pipeline.parameters.max_tfp_ver>>
+          filters:
+            tags:
+              only: /^v[0-9]+(\.[0-9]+)*(-rc[0-9]+)?/
+      - noop:
+          name: fast-tests
+          requires:
+            - verify-install-min
+            - verify-install-max
+            - type-check-min
+            - type-check-max
+            - format-check-min
+            - format-check-max
+      - unit-test:
+          name: unit-test-min
+          py_ver: <<pipeline.parameters.min_py_ver>>
+          tf_ver: <<pipeline.parameters.min_tf_ver>>
+          tfp_ver: <<pipeline.parameters.min_tfp_ver>>
+          requires:
+            - fast-tests
           filters:
             tags:
               only: /^v[0-9]+(\.[0-9]+)*(-rc[0-9]+)?/
       - unit-test:
+          name: unit-test-max
+          py_ver: <<pipeline.parameters.max_py_ver>>
+          tf_ver: <<pipeline.parameters.max_tf_ver>>
+          tfp_ver: <<pipeline.parameters.max_tfp_ver>>
           requires:
-            - format-checker
+            - fast-tests
           filters:
             tags:
               only: /^v[0-9]+(\.[0-9]+)*(-rc[0-9]+)?/
       - notebook-test:
+          name: notebook-test-min
+          py_ver: <<pipeline.parameters.min_py_ver>>
+          tf_ver: <<pipeline.parameters.min_tf_ver>>
+          tfp_ver: <<pipeline.parameters.min_tfp_ver>>
           requires:
-            - format-checker
+            - fast-tests
           filters:
             tags:
               only: /^v[0-9]+(\.[0-9]+)*(-rc[0-9]+)?/
-      - trigger-docs-generation:
+      - notebook-test:
+          name: notebook-test-max
+          py_ver: <<pipeline.parameters.max_py_ver>>
+          tf_ver: <<pipeline.parameters.max_tf_ver>>
+          tfp_ver: <<pipeline.parameters.max_tfp_ver>>
           requires:
-            - unit-test
-            - notebook-test
+            - fast-tests
+          filters:
+            tags:
+              only: /^v[0-9]+(\.[0-9]+)*(-rc[0-9]+)?/
+      - noop:
+          name: all-tests
+          requires:
+            - fast-tests
+            - unit-test-min
+            - unit-test-max
+            - notebook-test-min
+            - notebook-test-max
+      - build-docs:
+          requires:
+            - all-tests
           filters:
             branches:
               only:
@@ -164,8 +396,7 @@ workflows:
                 - develop
       - deploy:
           requires:
-            - unit-test
-            - notebook-test
+            - all-tests
           filters:
             tags:
               only: /^v[0-9]+(\.[0-9]+)*(-rc[0-9]+)?/

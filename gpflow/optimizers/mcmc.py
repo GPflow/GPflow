@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Callable, Optional, Sequence
+from typing import Callable, Optional, Sequence, Tuple
 
 import tensorflow as tf
 
@@ -47,7 +47,7 @@ class SamplingHelper:
 
     def __init__(
         self, target_log_prob_fn: Callable[[], tf.Tensor], parameters: Sequence[Parameter]
-    ):
+    ) -> None:
         """
         :param target_log_prob_fn: a callable which returns the log-density of the model
             under the target distribution; needs to implicitly depend on the `parameters`.
@@ -66,13 +66,15 @@ class SamplingHelper:
         self._variables = [p.unconstrained_variable for p in parameters]
 
     @property
-    def current_state(self):
+    def current_state(self) -> Sequence[tf.Variable]:
         """Return the current state of the unconstrained variables, used in HMC."""
 
         return self._variables
 
     @property
-    def target_log_prob_fn(self):
+    def target_log_prob_fn(
+        self,
+    ) -> Callable[..., Tuple[tf.Tensor, Callable[..., Tuple[tf.Tensor, Sequence[None]]]]]:
         """
         The target log probability, adjusted to allow for optimisation to occur on the tracked
         unconstrained underlying variables.
@@ -80,7 +82,9 @@ class SamplingHelper:
         variables_list = self.current_state
 
         @tf.custom_gradient
-        def _target_log_prob_fn_closure(*variables):
+        def _target_log_prob_fn_closure(
+            *variables: tf.Variable,
+        ) -> Tuple[tf.Tensor, Callable[..., Tuple[tf.Tensor, Sequence[None]]]]:
             for v_old, v_new in zip(variables_list, variables):
                 v_old.assign(v_new)
 
@@ -98,15 +102,19 @@ class SamplingHelper:
                         log_prob += tf.reduce_sum(log_det_jacobian)
 
             @tf.function
-            def grad_fn(dy, variables: Optional[tf.Tensor] = None):
+            def grad_fn(
+                dy: tf.Tensor, variables: Optional[tf.Tensor] = None
+            ) -> Tuple[tf.Tensor, Sequence[None]]:
                 grad = tape.gradient(log_prob, variables_list)
-                return grad, [None] * len(variables)
+                return grad, [None] * len(variables_list)
 
             return log_prob, grad_fn
 
-        return _target_log_prob_fn_closure
+        return _target_log_prob_fn_closure  # type: ignore
 
-    def convert_to_constrained_values(self, hmc_samples):
+    def convert_to_constrained_values(
+        self, hmc_samples: Sequence[tf.Tensor]
+    ) -> Sequence[tf.Tensor]:
         """
         Converts list of unconstrained values in `hmc_samples` to constrained
         versions. Each value in the list corresponds to an entry in parameters

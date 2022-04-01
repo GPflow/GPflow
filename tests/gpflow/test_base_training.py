@@ -13,12 +13,15 @@
 # limitations under the License.
 
 
+from typing import Any, Mapping
+
 import numpy as np
 import pytest
 import tensorflow as tf
 
 import gpflow
-from gpflow.utilities import leaf_components, multiple_assign, read_values, set_trainable
+from gpflow.models import SVGP
+from gpflow.utilities import leaf_components, multiple_assign, read_values
 
 rng = np.random.RandomState(0)
 
@@ -41,8 +44,8 @@ class Data:
 
 
 @pytest.fixture
-def model():
-    return gpflow.models.SVGP(
+def model() -> SVGP:
+    return SVGP(
         kernel=gpflow.kernels.SquaredExponential(lengthscales=Data.ls, variance=Data.var),
         likelihood=gpflow.likelihoods.Gaussian(),
         inducing_variable=Data.Z,
@@ -74,8 +77,10 @@ model_wrong_value = [
 
 
 @pytest.mark.parametrize("var_update_dict", [model_param_updates])
-def test_multiple_assign_updates_correct_values(model, var_update_dict):
-    old_value_dict = leaf_components(model).copy()
+def test_multiple_assign_updates_correct_values(
+    model: SVGP, var_update_dict: Mapping[str, Any]
+) -> None:
+    old_value_dict = leaf_components(model)
     multiple_assign(model, var_update_dict)
     for path, variable in leaf_components(model).items():
         if path in var_update_dict.keys():
@@ -85,29 +90,33 @@ def test_multiple_assign_updates_correct_values(model, var_update_dict):
 
 
 @pytest.mark.parametrize("wrong_var_update_dict", model_wrong_path)
-def test_multiple_assign_fails_with_invalid_path(model, wrong_var_update_dict):
+def test_multiple_assign_fails_with_invalid_path(
+    model: SVGP, wrong_var_update_dict: Mapping[str, Any]
+) -> None:
     with pytest.raises(KeyError):
         multiple_assign(model, wrong_var_update_dict)
 
 
 @pytest.mark.parametrize("wrong_var_update_dict", model_wrong_value)
-def test_multiple_assign_fails_with_invalid_values(model, wrong_var_update_dict):
+def test_multiple_assign_fails_with_invalid_values(
+    model: SVGP, wrong_var_update_dict: Mapping[str, Any]
+) -> None:
     with pytest.raises(ValueError):
         multiple_assign(model, wrong_var_update_dict)
 
 
-def test_dict_utilities(model):
+def test_dict_utilities(model: SVGP) -> None:
     """
     Test both `parameter_dict()` and `read_values()`
     """
 
     class SubModule(tf.Module):
-        def __init__(self):
+        def __init__(self) -> None:
             self.parameter = gpflow.Parameter(1.0)
             self.variable = tf.Variable(1.0)
 
     class Module(tf.Module):
-        def __init__(self):
+        def __init__(self) -> None:
             self.submodule = SubModule()
             self.top_parameter = gpflow.Parameter(3.0)
 

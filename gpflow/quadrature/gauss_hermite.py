@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import List
+from typing import List, Tuple
 
 import numpy as np
 import tensorflow as tf
@@ -22,7 +22,7 @@ from ..config import default_float
 from .base import GaussianQuadrature
 
 
-def gh_points_and_weights(n_gh: int):
+def gh_points_and_weights(n_gh: int) -> Tuple[tf.Tensor, tf.Tensor]:
     r"""
     Given the number of Gauss-Hermite points n_gh,
     returns the points z and the weights dz to perform the following
@@ -42,7 +42,7 @@ def gh_points_and_weights(n_gh: int):
     return tf.convert_to_tensor(z), tf.convert_to_tensor(dz)
 
 
-def list_to_flat_grid(xs: List[TensorType]):
+def list_to_flat_grid(xs: List[TensorType]) -> tf.Tensor:
     """
     :param xs: List with d rank-1 Tensors, with shapes N1, N2, ..., Nd
     :return: Tensor with shape [N1*N2*...*Nd, d] representing the flattened
@@ -51,7 +51,7 @@ def list_to_flat_grid(xs: List[TensorType]):
     return tf.reshape(tf.stack(tf.meshgrid(*xs), axis=-1), (-1, len(xs)))
 
 
-def reshape_Z_dZ(zs: List[TensorType], dzs: List[TensorType]):
+def reshape_Z_dZ(zs: List[TensorType], dzs: List[TensorType]) -> tf.Tensor:
     """
     :param zs: List with d rank-1 Tensors, with shapes N1, N2, ..., Nd
     :param dzs: List with d rank-1 Tensors, with shapes N1, N2, ..., Nd
@@ -63,7 +63,7 @@ def reshape_Z_dZ(zs: List[TensorType], dzs: List[TensorType]):
     return Z, dZ
 
 
-def repeat_as_list(x: TensorType, n: int):
+def repeat_as_list(x: TensorType, n: int) -> tf.Tensor:
     """
     :param x: Array/Tensor to be repeated
     :param n: Integer with the number of repetitions
@@ -72,7 +72,7 @@ def repeat_as_list(x: TensorType, n: int):
     return [x for _ in range(n)]
 
 
-def ndgh_points_and_weights(dim: int, n_gh: int):
+def ndgh_points_and_weights(dim: int, n_gh: int) -> tf.Tensor:
     r"""
     :param dim: dimension of the multivariate normal
     :param n_gh: number of Gauss-Hermite points per dimension
@@ -86,7 +86,7 @@ def ndgh_points_and_weights(dim: int, n_gh: int):
 
 
 class NDiagGHQuadrature(GaussianQuadrature):
-    def __init__(self, dim: int, n_gh: int):
+    def __init__(self, dim: int, n_gh: int) -> None:
         """
         :param dim: dimension of the multivariate normal
         :param n_gh: number of Gauss-Hermite points per dimension
@@ -98,7 +98,7 @@ class NDiagGHQuadrature(GaussianQuadrature):
         self.Z = tf.ensure_shape(Z, (self.n_gh_total, self.dim))
         self.dZ = tf.ensure_shape(dZ, (self.n_gh_total, 1))
 
-    def _build_X_W(self, mean: TensorType, var: TensorType):
+    def _build_X_W(self, mean: TensorType, var: TensorType) -> Tuple[tf.Tensor, tf.Tensor]:
         """
         :param mean: Array/Tensor with shape [b1, b2, ..., bX, dim], usually [N, dim],
             representing the mean of a dim-Variate Gaussian distribution

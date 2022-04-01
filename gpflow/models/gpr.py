@@ -12,18 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Optional, Tuple
+from typing import Optional
 
 import tensorflow as tf
 
 import gpflow
 
 from .. import posteriors
+from ..base import InputData, MeanAndVariance, RegressionData
 from ..kernels import Kernel
 from ..logdensities import multivariate_normal
 from ..mean_functions import MeanFunction
 from ..utilities.model_utils import add_noise_cov
-from .model import GPModel, InputData, MeanAndVariance, RegressionData
+from .model import GPModel
 from .training_mixins import InternalDataTrainingLossMixin
 from .util import data_input_to_tensor
 
@@ -63,7 +64,8 @@ class GPR_deprecated(GPModel, InternalDataTrainingLossMixin):
         super().__init__(kernel, likelihood, mean_function, num_latent_gps=Y_data.shape[-1])
         self.data = data_input_to_tensor(data)
 
-    def maximum_log_likelihood_objective(self) -> tf.Tensor:
+    # type-ignore is because of changed method signature:
+    def maximum_log_likelihood_objective(self) -> tf.Tensor:  # type: ignore
         return self.log_marginal_likelihood()
 
     def _add_noise_cov(self, K: tf.Tensor) -> tf.Tensor:
@@ -100,7 +102,8 @@ class GPR_deprecated(GPModel, InternalDataTrainingLossMixin):
         .. math::
             p(F* | Y)
 
-        where F* are points on the GP at new data points, Y are noisy observations at training data points.
+        where F* are points on the GP at new data points, Y are noisy observations at training data
+        points.
         """
         X, Y = self.data
         err = Y - self.mean_function(X)
@@ -124,7 +127,10 @@ class GPR_with_posterior(GPR_deprecated):
     enables caching for faster subsequent predictions.
     """
 
-    def posterior(self, precompute_cache=posteriors.PrecomputeCacheType.TENSOR):
+    def posterior(
+        self,
+        precompute_cache: posteriors.PrecomputeCacheType = posteriors.PrecomputeCacheType.TENSOR,
+    ) -> posteriors.GPRPosterior:
         """
         Create the Posterior object which contains precomputed matrices for
         faster prediction.
@@ -144,18 +150,17 @@ class GPR_with_posterior(GPR_deprecated):
           `fused_predict_f` method.
         """
 
-        X, Y = self.data
-
         return posteriors.GPRPosterior(
             kernel=self.kernel,
-            X_data=X,
-            Y_data=Y,
+            data=self.data,
             likelihood_variance=self.likelihood.variance,
             mean_function=self.mean_function,
             precompute_cache=precompute_cache,
         )
 
-    def predict_f(self, Xnew: InputData, full_cov=False, full_output_cov=False) -> MeanAndVariance:
+    def predict_f(
+        self, Xnew: InputData, full_cov: bool = False, full_output_cov: bool = False
+    ) -> MeanAndVariance:
         """
         For backwards compatibility, GPR's predict_f uses the fused (no-cache)
         computation, which is more efficient during training.

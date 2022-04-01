@@ -12,19 +12,22 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+from typing import cast
+
 import pytest
+from _pytest.fixtures import SubRequest
 
 
 @pytest.fixture(name="full_cov", params=[True, False])
-def _full_cov_fixture(request):
-    return request.param
+def _full_cov_fixture(request: SubRequest) -> bool:
+    return cast(bool, request.param)
 
 
 @pytest.fixture(name="full_output_cov", params=[True, False])
-def _full_output_cov_fixture(request):
-    return request.param
+def _full_output_cov_fixture(request: SubRequest) -> bool:
+    return cast(bool, request.param)
 
 
 @pytest.fixture(name="whiten", params=[True, False])
-def _whiten_fixture(request):
-    return request.param
+def _whiten_fixture(request: SubRequest) -> bool:
+    return cast(bool, request.param)

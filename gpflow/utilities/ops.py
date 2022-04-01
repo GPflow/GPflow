@@ -13,17 +13,16 @@
 # limitations under the License.
 
 import copy
-from typing import List, Optional, Union
+from typing import Any, Callable, List, Optional, Union
 
-import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
 
-EllipsisType = type(...)
+from ..base import AnyNDArray
 
 
 def cast(
-    value: Union[tf.Tensor, np.ndarray], dtype: tf.DType, name: Optional[str] = None
+    value: Union[tf.Tensor, AnyNDArray], dtype: tf.DType, name: Optional[str] = None
 ) -> tf.Tensor:
     if not tf.is_tensor(value):
         # TODO(awav): Release TF2.2 resolves this issue
@@ -38,12 +37,11 @@ def eye(num: int, value: tf.Tensor, dtype: Optional[tf.DType] = None) -> tf.Tens
     return tf.linalg.diag(tf.fill([num], value))
 
 
-def leading_transpose(
-    tensor: tf.Tensor, perm: List[Union[int, EllipsisType]], leading_dim: int = 0
-) -> tf.Tensor:
+def leading_transpose(tensor: tf.Tensor, perm: List[Any], leading_dim: int = 0) -> tf.Tensor:
     """
     Transposes tensors with leading dimensions. Leading dimensions in
-    permutation list represented via ellipsis `...`.
+    permutation list represented via ellipsis `...` and is of type List[Union[int, type(...)]
+    (please note, due to mypy issues, List[Any] is used instead).
     When leading dimensions are found, `transpose` method
     considers them as a single grouped element indexed by 0 in `perm` list. So, passing
     `perm=[-2, ..., -1]`, you assume that your input tensor has [..., A, B] shape,
@@ -81,7 +79,9 @@ def leading_transpose(
     return tf.transpose(tensor, perm)
 
 
-def broadcasting_elementwise(op, a, b):
+def broadcasting_elementwise(
+    op: Callable[[tf.Tensor, tf.Tensor], tf.Tensor], a: tf.Tensor, b: tf.Tensor
+) -> tf.Tensor:
     """
     Apply binary operation `op` to every pair in tensors `a` and `b`.
 
@@ -94,7 +94,7 @@ def broadcasting_elementwise(op, a, b):
     return tf.reshape(flatres, tf.concat([tf.shape(a), tf.shape(b)], 0))
 
 
-def square_distance(X, X2):
+def square_distance(X: tf.Tensor, X2: Optional[tf.Tensor]) -> tf.Tensor:
     """
     Returns ||X - X2ᵀ||²
     Due to the implementation and floating-point imprecision, the
@@ -119,7 +119,7 @@ def square_distance(X, X2):
     return dist
 
 
-def difference_matrix(X, X2):
+def difference_matrix(X: tf.Tensor, X2: Optional[tf.Tensor]) -> tf.Tensor:
     """
     Returns (X - X2ᵀ)
 

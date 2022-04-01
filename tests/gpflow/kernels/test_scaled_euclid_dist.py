@@ -37,7 +37,7 @@ kernel_list = [
 
 
 @pytest.mark.parametrize("kernel", kernel_list)
-def test_kernel_euclidean_distance(kernel):
+def test_kernel_euclidean_distance(kernel: kernels.Kernel) -> None:
     """
     Tests output & gradients of kernels that are a function of the (scaled) euclidean distance
     of the points. We test on a high dimensional space, which can generate very small distances

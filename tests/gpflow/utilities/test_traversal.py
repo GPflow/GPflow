@@ -12,9 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import Any, Callable, Mapping, Optional, Type
+
 import numpy as np
 import pytest
 import tensorflow as tf
+from _pytest.fixtures import SubRequest
 from packaging.version import Version
 
 import gpflow
@@ -45,14 +48,14 @@ class Data:
 
 
 class A(tf.Module):
-    def __init__(self, name=None):
+    def __init__(self, name: Optional[str] = None) -> None:
         super().__init__(name)
         self.var_trainable = tf.Variable(tf.zeros((2, 2, 1)), trainable=True)
         self.var_fixed = tf.Variable(tf.ones((2, 2, 1)), trainable=False)
 
 
 class B(tf.Module):
-    def __init__(self, name=None):
+    def __init__(self, name: Optional[str] = None) -> None:
         super().__init__(name)
         self.submodule_list = [A(), A()]
         self.submodule_dict = dict(a=A(), b=A())
@@ -61,20 +64,20 @@ class B(tf.Module):
 
 
 class C(tf.keras.Model):
-    def __init__(self, name=None):
+    def __init__(self, name: Optional[str] = None) -> None:
         super().__init__(name)
         self.variable = tf.Variable(tf.zeros((2, 2, 1)), trainable=True)
         self.param = gpflow.Parameter(0.0)
         self.dense = tf.keras.layers.Dense(5)
 
 
-def create_kernel():
+def create_kernel() -> gpflow.kernels.Kernel:
     kern = gpflow.kernels.SquaredExponential(lengthscales=Data.ls, variance=Data.var)
     set_trainable(kern.lengthscales, False)
     return kern
 
 
-def create_compose_kernel():
+def create_compose_kernel() -> gpflow.kernels.Kernel:
     kernel = gpflow.kernels.Product(
         [
             gpflow.kernels.Sum([create_kernel(), create_kernel()]),
@@ -84,7 +87,7 @@ def create_compose_kernel():
     return kernel
 
 
-def create_model():
+def create_model() -> gpflow.models.GPModel:
     kernel = create_kernel()
     model = gpflow.models.SVGP(
         kernel=kernel,
@@ -245,7 +248,21 @@ B.var_fixed                          ResourceVariable                        Fal
 
 # Note: we use grid format here because we have a double reference to the same variable
 # which does not render nicely in the table formatting.
-# The internal structure of the Keras model changed in TensorFlow version 2.5.0.
+# The internal structure of the Keras model changed in TensorFlow versions 2.5.0 and 2.6.0.
+example_tf_keras_model_tf_2_6_0 = """\
++-------------------------------+------------------+-------------+---------+-------------+-----------+---------+----------+\n\
+| name                          | class            | transform   | prior   | trainable   | shape     | dtype   | value    |\n\
++===============================+==================+=============+=========+=============+===========+=========+==========+\n\
+| C._trainable_weights[0]       | ResourceVariable |             |         | True        | (2, 2, 1) | float32 | [[[0.... |\n\
+| C.variable                    |                  |             |         |             |           |         |          |\n\
++-------------------------------+------------------+-------------+---------+-------------+-----------+---------+----------+\n\
+| C._trainable_weights[1]       | ResourceVariable |             |         | True        | ()        | float64 | 0.0      |\n\
++-------------------------------+------------------+-------------+---------+-------------+-----------+---------+----------+\n\
+| C._self_tracked_trackables[0] | Parameter        | Identity    |         | True        | ()        | float64 | 0.0      |\n\
+| C.param                       |                  |             |         |             |           |         |          |\n\
++-------------------------------+------------------+-------------+---------+-------------+-----------+---------+----------+"""
+
+
 example_tf_keras_model_tf_2_5_0 = """\
 +-------------------------------+------------------+-------------+---------+-------------+-----------+---------+----------+\n\
 | name                          | class            | transform   | prior   | trainable   | shape     | dtype   | value    |\n\
@@ -267,7 +284,9 @@ example_tf_keras_model = """\
 | C.param                 | Parameter        | Identity    |         | True        | ()        | float64 | 0.0      |\n\
 +-------------------------+------------------+-------------+---------+-------------+-----------+---------+----------+"""
 
-if Version(tf.__version__) >= Version("2.5"):
+if Version(tf.__version__) >= Version("2.6"):
+    example_tf_keras_model = example_tf_keras_model_tf_2_6_0
+elif Version(tf.__version__) >= Version("2.5"):
     example_tf_keras_model = example_tf_keras_model_tf_2_5_0
 
 # ------------------------------------------
@@ -276,12 +295,12 @@ if Version(tf.__version__) >= Version("2.5"):
 
 
 @pytest.fixture(params=[A, B, create_kernel, create_model])
-def module(request):
+def module(request: SubRequest) -> Any:
     return request.param()
 
 
 @pytest.fixture
-def dag_module():
+def dag_module() -> gpflow.models.GPModel:
     dag = create_model()
     dag.kernel.variance = dag.kernel.lengthscales
     return dag
@@ -292,7 +311,7 @@ def dag_module():
 # ------------------------------------------
 
 
-def test_leaf_components_only_returns_parameters_and_variables(module):
+def test_leaf_components_only_returns_parameters_and_variables(module: Any) -> None:
     for path, variable in leaf_components(module).items():
         assert isinstance(variable, tf.Variable) or isinstance(variable, gpflow.Parameter)
 
@@ -301,7 +320,9 @@ def test_leaf_components_only_returns_parameters_and_variables(module):
     "module_callable, expected_param_dicts",
     [(create_kernel, kernel_param_dict), (create_model, model_gp_param_dict)],
 )
-def test_leaf_components_registers_variable_properties(module_callable, expected_param_dicts):
+def test_leaf_components_registers_variable_properties(
+    module_callable: Callable[[], Any], expected_param_dicts: Mapping[str, Any]
+) -> None:
     module = module_callable()
     for path, variable in leaf_components(module).items():
         param_name = path.split(".")[-2] + "." + path.split(".")[-1]
@@ -318,8 +339,8 @@ def test_leaf_components_registers_variable_properties(module_callable, expected
     ],
 )
 def test_leaf_components_registers_compose_kernel_variable_properties(
-    module_callable, expected_param_dicts
-):
+    module_callable: Callable[[], Any], expected_param_dicts: Mapping[str, Any]
+) -> None:
     module = module_callable()
     leaf_components_dict = leaf_components(module)
     assert len(leaf_components_dict) > 0
@@ -339,7 +360,9 @@ def test_leaf_components_registers_compose_kernel_variable_properties(
         (B, example_module_list_variable_dict),
     ],
 )
-def test_leaf_components_registers_param_properties(module_class, expected_var_dicts):
+def test_leaf_components_registers_param_properties(
+    module_class: Type[Any], expected_var_dicts: Mapping[str, Any]
+) -> None:
     module = module_class()
     for path, variable in leaf_components(module).items():
         var_name = path.split(".")[-2] + "." + path.split(".")[-1]
@@ -350,7 +373,9 @@ def test_leaf_components_registers_param_properties(module_class, expected_var_d
 
 
 @pytest.mark.parametrize("expected_var_dicts", [example_dag_module_param_dict])
-def test_merge_leaf_components_merges_keys_with_same_values(dag_module, expected_var_dicts):
+def test_merge_leaf_components_merges_keys_with_same_values(
+    dag_module: Any, expected_var_dicts: Mapping[str, Any]
+) -> None:
     leaf_components_dict = leaf_components(dag_module)
     for path, variable in _merge_leaf_components(leaf_components_dict).items():
         assert path in expected_var_dicts
@@ -369,23 +394,25 @@ def test_merge_leaf_components_merges_keys_with_same_values(dag_module, expected
         (B, example_module_list_variable_print_string),
     ],
 )
-def test_print_summary_output_string(module_callable, expected_param_print_string):
+def test_print_summary_output_string(
+    module_callable: Callable[[], Any], expected_param_print_string: str
+) -> None:
     with as_context(Config(positive_minimum=0.0)):
         assert tabulate_module_summary(module_callable()) == expected_param_print_string
 
 
-def test_print_summary_output_string_with_positive_minimum():
+def test_print_summary_output_string_with_positive_minimum() -> None:
     with as_context(Config(positive_minimum=1e-6)):
         assert tabulate_module_summary(create_kernel()) == kernel_param_print_string_with_shift
 
 
-def test_print_summary_for_keras_model():
+def test_print_summary_for_keras_model() -> None:
     # Note: best to use `grid` formatting for `tf.keras.Model` printing
     # because of the duplicates in the references to the variables.
     assert tabulate_module_summary(C(), tablefmt="grid") == example_tf_keras_model
 
 
-def test_leaf_components_combination_kernel():
+def test_leaf_components_combination_kernel() -> None:
     """
     Regression test for kernel compositions - output for printing should not be empty (issue #1066).
     """
@@ -393,7 +420,7 @@ def test_leaf_components_combination_kernel():
     assert leaf_components(k), "Combination kernel should have non-empty leaf components"
 
 
-def test_module_parameters_return_iterators_not_generators():
+def test_module_parameters_return_iterators_not_generators() -> None:
     """
     Regression test: Ensure that gpflow.Module parameters return iterators like in TF2, not
     generators.

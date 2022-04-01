@@ -6,8 +6,7 @@ Release notes for all past releases are available in the ['Releases' section](ht
 
 ## Breaking Changes
 
-* <DOCUMENT BREAKING CHANGES HERE>
-* <THIS SECTION SHOULD CONTAIN API AND BEHAVIORAL BREAKING CHANGES>
+* `gpflow.utilities.utilities` has been removed. It was scheduled for deletion in `2.3.0`. Use `gpflow.utilities` instead.
 
 ## Known Caveats
 
@@ -33,33 +32,150 @@ This release contains contributions from:
 <INSERT>, <NAME>, <HERE>, <USING>, <GITHUB>, <HANDLE>
 
 
-# Release 2.2.2 (next upcoming release in progress)
+# Release 2.5.0 (next upcoming release in progress)
 
 <INSERT SMALL BLURB ABOUT RELEASE FOCUS AREA AND POTENTIAL TOOLCHAIN CHANGES>
 
+## Breaking Changes
+
+* Removed method `Likelihood.predict_density`, which has been deprecated since March 24, 2020.
+* Removed property `ScalarLikelihood.num_gauss_hermite_points`, which has been deprecated since September 30, 2020.
+
 ## Known Caveats
 
-* <CAVEATS REGARDING THE RELEASE (BUT NOT BREAKING CHANGES).>
-* <ADDING/BUMPING DEPENDENCIES SHOULD GO HERE>
-* <KNOWN LACK OF SUPPORT ON SOME PLATFORM SHOULD GO HERE>
+* Dropped support for Python 3.6. New minimum version is 3.7.
+* Dropped support for TensorFlow 2.2 and 2.3. New minimum version is 2.4
+* Further improvements to type hints - this may reveal new problems in your code-base if
+  you use a type checker, such as `mypy`.
+
+## Major Features and Improvements
+
+* <INSERT MAJOR FEATURE HERE, USING MARKDOWN SYNTAX>
+* <IF RELEASE CONTAINS MULTIPLE FEATURES FROM SAME AREA, GROUP THEM TOGETHER>
+
+## Bug Fixes and Other Changes
+
+* Minor improvement to code clarity (variable scoping) in SVGP model (#1800)
+* Improving mathematical formatting in docs (SGPR derivations) (#1806)
+
+## Thanks to our Contributors
+
+This release contains contributions from:
+
+ltiao, jesnie
+
+
+# Release 2.4.0
+
+This release mostly focuses on make posterior objects useful for Bayesian Optimisation.
+It also adds a new `experimetal` sub-package, with a tool for annotating tensor shapes.
+
+
+## Breaking Changes
+
+* Slight change to the API of custom posterior objects.
+  `gpflow.posteriors.AbstractPosterior._precompute` no longer must return an `alpha` and an
+  `Qinv` - instead it returns any arbitrary tuple of `PrecomputedValue`s.
+  Correspondingly `gpflow.posteriors.AbstractPosterior._conditional_with_precompute` should no
+  longer try to access `self.alpha` and `self.Qinv`, but instead is passed the tuple of tensors
+  returned by `_precompute`, as a parameter. (#1763, #1767)
+
+* Slight change to the API of inducing points.
+  You should no longer override `gpflow.inducing_variables.InducingVariables.__len__`. Override
+  `gpflow.inducing_variables.InducingVariables.num_inducing` instead. `num_inducing` should return a
+  `tf.Tensor` which is consistent with previous behaviour, although the type previously was
+  annotated as `int`. `__len__` has been deprecated. (#1766, #1792)
+
+## Known Caveats
+
+* Type hints have been added in several places - this may reveal new problems in your code-base if
+  you use a type checker, such as `mypy`.
+  (#1766, #1769, #1771, #1773, #1775, #1777, #1780, #1783, #1787, #1789)
+
+## Major Features and Improvements
+
+* Add new posterior class to enable faster predictions from the VGP model. (#1761)
+* VGP class bug-fixed to work with variable-sized data. Note you can use
+  `gpflow.models.vgp.update_vgp_data` to ensure variational parameters are updated sanely. (#1774).
+* All posterior classes bug-fixed to work with variable data sizes, for Bayesian Optimisation.
+  (#1767)
+
+* Added `experimental` sub-package for features that are still under developmet.
+  * Added `gpflow.experimental.check_shapes` for checking tensor shapes.
+    (#1760, #1768, #1782, #1785, #1788)
+
+## Bug Fixes and Other Changes
+
+* Make `dataclasses` dependency conditional at install time. (#1759)
+* Simplify calculations of some `predict_f`. (#1755)
+
+## Thanks to our Contributors
+
+This release contains contributions from:
+
+jesnie, tmct, joacorapela
+
+
+# Release 2.3.1
+
+This is a bug-fix release, primarily for the GPR posterior object.
+
+## Bug Fixes and Other Changes
+
+* GPR posterior
+  * Fix the calculation in the GPR posterior object (#1734).
+  * Fixes leading dimension issues with `GPRPosterior._conditional_with_precompute()` (#1747).
+
+* Make `gpflow.optimizers.Scipy` able to handle unused / unconnected variables. (#1745).
+
+* Build
+  * Fixed broken CircleCi build (#1738).
+  * Update CircleCi build to use next-gen Docker images (#1740).
+  * Fixed broken triggering of docs generation (#1744).
+  * Make all slow tests depend on fast tests (#1743).
+  * Make `make dev-install` also install the test requirements (#1737).
+
+* Documentation
+  * Fixed broken link in `README.md` (#1736).
+  * Fix broken build of `cglb.ipynb` (#1742).
+  * Add explanation of how to run notebooks locally (#1729).
+  * Fix formatting in notebook on Heteroskedastic Likelihood (#1727).
+  * Fix broken link in introduction (#1718).
+
+* Test suite
+  * Amends `test_gpr_posterior.py` so it will cover leading dimension uses.
+
+
+
+## Thanks to our Contributors
+
+This release contains contributions from:
+
+st--, jesnie, johnamcleod, Andrew878
+
+
+# Release 2.3.0
 
 ## Major Features and Improvements
 
 * Refactor posterior base class to support other model types. (#1695)
-* Add new posterior class to enable faster predictions from the GPR model. (#1696)
+* Add new posterior class to enable faster predictions from the GPR/SGPR models. (#1696, #1711)
 * Construct Parameters from other Parameters and retain properties. (#1699)
+* Add CGLB model (#1706)
 
 ## Bug Fixes and Other Changes
 
 * Fix unit test failure when using TensorFlow 2.5.0 (#1684)
 * Upgrade black formatter to version 20.8b1 (#1694)
 * Remove erroneous DeprecationWarnings (#1693)
+* Fix SGPR derivation (#1688)
+* Fix tests which fail with TensorFlow 2.6.0 (#1714)
 
 ## Thanks to our Contributors
 
 This release contains contributions from:
 
-johnamcleod, st--, Andrew878
+johnamcleod, st--, Andrew878, tadejkrivec, awav, avullo
 
 
 # Release 2.2.1

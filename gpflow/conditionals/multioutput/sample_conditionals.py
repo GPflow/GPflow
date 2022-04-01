@@ -12,8 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import Optional
+
 import tensorflow as tf
 
+from ...base import SamplesMeanAndVariance
 from ...inducing_variables import (
     SeparateIndependentInducingVariables,
     SharedIndependentInducingVariables,
@@ -27,17 +30,17 @@ from ..util import mix_latent_gp, sample_mvn
     object, SharedIndependentInducingVariables, LinearCoregionalization, object
 )
 def _sample_conditional(
-    Xnew,
-    inducing_variable,
-    kernel,
-    f,
+    Xnew: tf.Tensor,
+    inducing_variable: SharedIndependentInducingVariables,
+    kernel: LinearCoregionalization,
+    f: tf.Tensor,
     *,
-    full_cov=False,
-    full_output_cov=False,
-    q_sqrt=None,
-    white=False,
-    num_samples=None,
-):
+    full_cov: bool = False,
+    full_output_cov: bool = False,
+    q_sqrt: Optional[tf.Tensor] = None,
+    white: bool = False,
+    num_samples: Optional[int] = None,
+) -> SamplesMeanAndVariance:
     """
     `sample_conditional` will return a sample from the conditinoal distribution.
     In most cases this means calculating the conditional mean m and variance v and then
@@ -51,7 +54,7 @@ def _sample_conditional(
     if full_output_cov:
         raise NotImplementedError("full_output_cov not yet implemented")
 
-    ind_conditional = conditional.dispatch(
+    ind_conditional = conditional.dispatch_or_raise(
         object, SeparateIndependentInducingVariables, SeparateIndependent, object
     )
     g_mu, g_var = ind_conditional(

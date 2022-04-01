@@ -1,7 +1,11 @@
 import numpy as np
 
+from gpflow.base import AnyNDArray
 
-def ref_rbf_kernel(X, lengthscales, signal_variance):
+
+def ref_rbf_kernel(
+    X: AnyNDArray, lengthscales: AnyNDArray, signal_variance: AnyNDArray
+) -> AnyNDArray:
     N, _ = X.shape
     kernel = np.zeros((N, N))
     for row_index in range(N):
@@ -16,7 +20,13 @@ def ref_rbf_kernel(X, lengthscales, signal_variance):
     return kernel
 
 
-def ref_arccosine_kernel(X, order, weight_variances, bias_variance, signal_variance):
+def ref_arccosine_kernel(
+    X: AnyNDArray,
+    order: int,
+    weight_variances: AnyNDArray,
+    bias_variance: AnyNDArray,
+    signal_variance: AnyNDArray,
+) -> AnyNDArray:
     num_points = X.shape[0]
     kernel = np.empty((num_points, num_points))
     for row in range(num_points):
@@ -49,12 +59,19 @@ def ref_arccosine_kernel(X, order, weight_variances, bias_variance, signal_varia
     return kernel
 
 
-def ref_periodic_kernel(X, base_name, lengthscales, signal_variance, period):
+def ref_periodic_kernel(
+    X: AnyNDArray,
+    base_name: str,
+    lengthscales: AnyNDArray,
+    signal_variance: AnyNDArray,
+    period: AnyNDArray,
+) -> AnyNDArray:
     """
     Calculates K(X) for the periodic kernel based on various base kernels.
     """
     sine_arg = np.pi * (X[:, None, :] - X[None, :, :]) / period
     sine_base = np.sin(sine_arg) / lengthscales
+    exp_dist: AnyNDArray
     if base_name in {"RBF", "SquaredExponential"}:
         dist = 0.5 * np.sum(np.square(sine_base), axis=-1)
         exp_dist = np.exp(-dist)

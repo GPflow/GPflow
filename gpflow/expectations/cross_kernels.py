@@ -12,9 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import Union, cast
+
 import tensorflow as tf
 
 from .. import kernels
+from ..base import TensorType
 from ..inducing_variables import InducingPoints
 from ..probability_distributions import DiagonalGaussian, Gaussian
 from . import dispatch
@@ -28,7 +31,14 @@ from .expectations import expectation
     kernels.Linear,
     InducingPoints,
 )
-def _E(p, sqexp_kern, feat1, lin_kern, feat2, nghp=None):
+def _expectation_gaussian_sqe_inducingpoints__linear_inducingpoints(
+    p: Union[Gaussian, DiagonalGaussian],
+    sqexp_kern: kernels.SquaredExponential,
+    feat1: InducingPoints,
+    lin_kern: kernels.Linear,
+    feat2: InducingPoints,
+    nghp: None = None,
+) -> tf.Tensor:
     """
     Compute the expectation:
     expectation[n] = <Ka_{Z1, x_n} Kb_{x_n, Z2}>_p(x_n)
@@ -59,7 +69,7 @@ def _E(p, sqexp_kern, feat1, lin_kern, feat2, nghp=None):
     N = tf.shape(Xmu)[0]
     D = tf.shape(Xmu)[1]
 
-    def take_with_ard(value):
+    def take_with_ard(value: TensorType) -> TensorType:
         if not sqexp_kern.ard:
             return tf.zeros((D,), dtype=value.dtype) + value
         return value
@@ -94,7 +104,8 @@ def _E(p, sqexp_kern, feat1, lin_kern, feat2, nghp=None):
     )  # NxMxD
 
     cross_eKzxKxz = tf.linalg.cholesky_solve(
-        chol_L_plus_Xcov, (lin_kern_variances * sqexp_kern_lengthscales ** 2.0)[..., None] * tiled_Z
+        chol_L_plus_Xcov,
+        cast(tf.Tensor, (lin_kern_variances * sqexp_kern_lengthscales ** 2.0))[..., None] * tiled_Z,
     )  # NxDxM
 
     cross_eKzxKxz = tf.linalg.matmul(
@@ -110,7 +121,14 @@ def _E(p, sqexp_kern, feat1, lin_kern, feat2, nghp=None):
     kernels.SquaredExponential,
     InducingPoints,
 )
-def _E(p, lin_kern, feat1, sqexp_kern, feat2, nghp=None):
+def _expectation_gaussian_linear_inducingpoints__sqe_inducingpoints(
+    p: Union[Gaussian, DiagonalGaussian],
+    lin_kern: kernels.Linear,
+    feat1: InducingPoints,
+    sqexp_kern: kernels.SquaredExponential,
+    feat2: InducingPoints,
+    nghp: None = None,
+) -> tf.Tensor:
     """
     Compute the expectation:
     expectation[n] = <Ka_{Z1, x_n} Kb_{x_n, Z2}>_p(x_n)

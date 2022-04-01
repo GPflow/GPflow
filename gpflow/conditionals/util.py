@@ -12,10 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Optional
+from typing import Callable, Optional, Tuple
 
 import tensorflow as tf
 
+from ..base import MeanAndVariance
 from ..config import default_float, default_jitter
 from ..utilities.ops import leading_transpose
 
@@ -26,10 +27,10 @@ def base_conditional(
     Knn: tf.Tensor,
     f: tf.Tensor,
     *,
-    full_cov=False,
+    full_cov: bool = False,
     q_sqrt: Optional[tf.Tensor] = None,
-    white=False,
-):
+    white: bool = False,
+) -> MeanAndVariance:
     r"""
     Given a g1 and g2, and distribution p and q such that
       p(g2) = N(g2; 0, Kmm)
@@ -65,10 +66,10 @@ def base_conditional_with_lm(
     Knn: tf.Tensor,
     f: tf.Tensor,
     *,
-    full_cov=False,
+    full_cov: bool = False,
     q_sqrt: Optional[tf.Tensor] = None,
-    white=False,
-):
+    white: bool = False,
+) -> MeanAndVariance:
     r"""
     Has the same functionality as the `base_conditional` function, except that instead of
     `Kmm` this function accepts `Lm`, which is the Cholesky decomposition of `Kmm`.
@@ -170,7 +171,9 @@ def base_conditional_with_lm(
     return fmean, fvar
 
 
-def sample_mvn(mean, cov, full_cov, num_samples=None):
+def sample_mvn(
+    mean: tf.Tensor, cov: tf.Tensor, full_cov: bool, num_samples: Optional[int] = None
+) -> tf.Tensor:
     """
     Returns a sample from a D-dimensional Multivariate Normal distribution
     :param mean: [..., N, D]
@@ -219,7 +222,7 @@ def sample_mvn(mean, cov, full_cov, num_samples=None):
     return samples  # [..., S, N, D]
 
 
-def expand_independent_outputs(fvar, full_cov, full_output_cov):
+def expand_independent_outputs(fvar: tf.Tensor, full_cov: bool, full_output_cov: bool) -> tf.Tensor:
     """
     Reshapes fvar to the correct shape, specified by `full_cov` and `full_output_cov`.
 
@@ -248,8 +251,16 @@ def expand_independent_outputs(fvar, full_cov, full_output_cov):
 
 
 def independent_interdomain_conditional(
-    Kmn, Kmm, Knn, f, *, full_cov=False, full_output_cov=False, q_sqrt=None, white=False
-):
+    Kmn: tf.Tensor,
+    Kmm: tf.Tensor,
+    Knn: tf.Tensor,
+    f: tf.Tensor,
+    *,
+    full_cov: bool = False,
+    full_output_cov: bool = False,
+    q_sqrt: Optional[tf.Tensor] = None,
+    white: bool = False,
+) -> MeanAndVariance:
     """
     The inducing outputs live in the g-space (R^L).
     Interdomain conditional calculation.
@@ -273,7 +284,9 @@ def independent_interdomain_conditional(
         (f, ["M", "L"]),
     ]
     if q_sqrt is not None:
-        shape_constraints.append((q_sqrt, "ML" if q_sqrt.shape.ndims == 2 else "LMM"))
+        shape_constraints.append(
+            (q_sqrt, ["M", "L"] if q_sqrt.shape.ndims == 2 else ["L", "M", "M"])
+        )
 
     Lm = tf.linalg.cholesky(Kmm)  # [L, M, M]
 
@@ -341,8 +354,16 @@ def independent_interdomain_conditional(
 
 
 def fully_correlated_conditional(
-    Kmn, Kmm, Knn, f, *, full_cov=False, full_output_cov=False, q_sqrt=None, white=False
-):
+    Kmn: tf.Tensor,
+    Kmm: tf.Tensor,
+    Knn: tf.Tensor,
+    f: tf.Tensor,
+    *,
+    full_cov: bool = False,
+    full_output_cov: bool = False,
+    q_sqrt: Optional[tf.Tensor] = None,
+    white: bool = False,
+) -> MeanAndVariance:
     """
     This function handles conditioning of multi-output GPs in the case where the conditioning
     points are all fully correlated, in both the prior and posterior.
@@ -372,8 +393,16 @@ def fully_correlated_conditional(
 
 
 def fully_correlated_conditional_repeat(
-    Kmn, Kmm, Knn, f, *, full_cov=False, full_output_cov=False, q_sqrt=None, white=False
-):
+    Kmn: tf.Tensor,
+    Kmm: tf.Tensor,
+    Knn: tf.Tensor,
+    f: tf.Tensor,
+    *,
+    full_cov: bool = False,
+    full_output_cov: bool = False,
+    q_sqrt: Optional[tf.Tensor] = None,
+    white: bool = False,
+) -> MeanAndVariance:
     """
     This function handles conditioning of multi-output GPs in the case where the conditioning
     points are all fully correlated, in both the prior and posterior.
@@ -480,7 +509,7 @@ def fully_correlated_conditional_repeat(
     return fmean, fvar
 
 
-def rollaxis_left(A, num_rolls):
+def rollaxis_left(A: tf.Tensor, num_rolls: int) -> tf.Tensor:
     """Roll the tensor `A` backwards `num_rolls` times."""
     assert num_rolls > 0
     rank = tf.rank(A)
@@ -488,7 +517,7 @@ def rollaxis_left(A, num_rolls):
     return tf.transpose(A, perm)
 
 
-def rollaxis_right(A, num_rolls):
+def rollaxis_right(A: tf.Tensor, num_rolls: int) -> tf.Tensor:
     """Roll the tensor `A` forward `num_rolls` times."""
     assert num_rolls > 0
     rank = tf.rank(A)
@@ -496,7 +525,9 @@ def rollaxis_right(A, num_rolls):
     return tf.transpose(A, perm)
 
 
-def mix_latent_gp(W, g_mean, g_var, full_cov, full_output_cov):
+def mix_latent_gp(
+    W: tf.Tensor, g_mean: tf.Tensor, g_var: tf.Tensor, full_cov: bool, full_output_cov: bool
+) -> MeanAndVariance:
     r"""Takes the mean and variance of an uncorrelated L-dimensional latent GP
     and returns the mean and the variance of the mixed GP, `f = W g`,
     where both f and g are GPs, with W having a shape [P, L]
@@ -559,8 +590,15 @@ def mix_latent_gp(W, g_mean, g_var, full_cov, full_output_cov):
 
 
 def separate_independent_conditional_implementation(
-    Kmns, Kmms, Knns, f, *, full_cov=False, q_sqrt=None, white=False
-):
+    Kmns: tf.Tensor,
+    Kmms: tf.Tensor,
+    Knns: tf.Tensor,
+    f: tf.Tensor,
+    *,
+    full_cov: bool = False,
+    q_sqrt: Optional[tf.Tensor] = None,
+    white: bool = False,
+) -> MeanAndVariance:
     """Multi-output GP with independent GP priors.
     Number of latent processes equals the number of outputs (L = P).
     The covariance matrices used to calculate the conditional have the following shape:
@@ -568,8 +606,8 @@ def separate_independent_conditional_implementation(
     - Kuf: [P, M, N]
     - Kff: [P, N] or [P, N, N]
 
-    Further reference
-    -----------------
+    Further reference:
+
     - See `gpflow.conditionals._conditional` for a detailed explanation of
       conditional in the single-output case.
     - See the multioutput notebook for more information about the multioutput framework.
@@ -578,20 +616,27 @@ def separate_independent_conditional_implementation(
     fs = tf.transpose(f)[:, :, None]  # [P, M, 1]
     # [P, 1, M, M]  or  [P, M, 1]
 
+    base_conditional_args_to_map: Tuple[tf.Tensor, ...]
+    single_gp_conditional: Callable[[Tuple[tf.Tensor, ...]], MeanAndVariance]
+
     if q_sqrt is not None:
         q_sqrts = (
             tf.transpose(q_sqrt)[:, :, None] if q_sqrt.shape.ndims == 2 else q_sqrt[:, None, :, :]
         )
         base_conditional_args_to_map = (Kmms, Kmns, Knns, fs, q_sqrts)
 
-        def single_gp_conditional(t):  # pragma: no cover - tf.map_fn is invisible to codecov
+        def single_gp_conditional(
+            t: Tuple[tf.Tensor, ...]
+        ) -> MeanAndVariance:  # pragma: no cover - tf.map_fn is invisible to codecov
             Kmm, Kmn, Knn, f, q_sqrt = t
             return base_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov, q_sqrt=q_sqrt, white=white)
 
     else:
         base_conditional_args_to_map = (Kmms, Kmns, Knns, fs)
 
-        def single_gp_conditional(t):  # pragma: no cover - tf.map_fn is invisible to codecov
+        def single_gp_conditional(
+            t: Tuple[tf.Tensor, ...]
+        ) -> MeanAndVariance:  # pragma: no cover - tf.map_fn is invisible to codecov
             Kmm, Kmn, Knn, f = t
             return base_conditional(Kmn, Kmm, Knn, f, full_cov=full_cov, q_sqrt=q_sqrt, white=white)
 

@@ -12,11 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import Optional
+
 import tensorflow as tf
 
-from ..base import Parameter
+from ..base import Parameter, TensorType
 from ..utilities import positive
-from .base import Kernel
+from .base import ActiveDims, Kernel
 
 
 class Static(Kernel):
@@ -25,11 +27,13 @@ class Static(Kernel):
     parameter is a variance, σ².
     """
 
-    def __init__(self, variance=1.0, active_dims=None):
+    def __init__(
+        self, variance: TensorType = 1.0, active_dims: Optional[ActiveDims] = None
+    ) -> None:
         super().__init__(active_dims)
         self.variance = Parameter(variance, transform=positive())
 
-    def K_diag(self, X):
+    def K_diag(self, X: TensorType) -> tf.Tensor:
         return tf.fill(tf.shape(X)[:-1], tf.squeeze(self.variance))
 
 
@@ -44,7 +48,7 @@ class White(Static):
     σ²  is the variance parameter.
     """
 
-    def K(self, X, X2=None):
+    def K(self, X: TensorType, X2: Optional[TensorType] = None) -> tf.Tensor:
         if X2 is None:
             d = tf.fill(tf.shape(X)[:-1], tf.squeeze(self.variance))
             return tf.linalg.diag(d)
@@ -64,7 +68,7 @@ class Constant(Static):
     σ²  is the variance parameter.
     """
 
-    def K(self, X, X2=None):
+    def K(self, X: TensorType, X2: Optional[TensorType] = None) -> tf.Tensor:
         if X2 is None:
             shape = tf.concat(
                 [

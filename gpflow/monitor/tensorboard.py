@@ -15,7 +15,7 @@
 """ Tasks that write to TensorBoard """
 
 from io import BytesIO
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Union
 
 import numpy as np
 import tensorflow as tf
@@ -25,13 +25,22 @@ from ..models import BayesianModel
 from ..utilities import parameter_dict
 from .base import MonitorTask
 
-__all__ = ["ToTensorBoard", "ModelToTensorBoard", "ScalarToTensorBoard", "ImageToTensorBoard"]
+if TYPE_CHECKING:  # pragma: no cover
+    import matplotlib
+
+
+__all__ = [
+    "ImageToTensorBoard",
+    "ModelToTensorBoard",
+    "ScalarToTensorBoard",
+    "ToTensorBoard",
+]
 
 
 class ToTensorBoard(MonitorTask):
-    writers = {}
+    writers: Dict[str, tf.summary.SummaryWriter] = {}
 
-    def __init__(self, log_dir: str):
+    def __init__(self, log_dir: str) -> None:
         """
         :param log_dir: directory in which to store the tensorboard files.
             Can be nested, e.g. ./logs/my_run/
@@ -41,7 +50,7 @@ class ToTensorBoard(MonitorTask):
             self.writers[log_dir] = tf.summary.create_file_writer(log_dir)
         self.file_writer = self.writers[log_dir]
 
-    def __call__(self, step, **kwargs):
+    def __call__(self, step: int, **kwargs: Any) -> None:
         with self.file_writer.as_default():
             super().__call__(step, **kwargs)
         self.file_writer.flush()
@@ -66,7 +75,7 @@ class ModelToTensorBoard(ToTensorBoard):
         max_size: int = 3,
         keywords_to_monitor: List[str] = ["kernel", "likelihood"],
         left_strip_character: str = ".",
-    ):
+    ) -> None:
         """
         :param log_dir: directory in which to store the tensorboard files.
             Can be a nested: for example, './logs/my_run/'.
@@ -93,7 +102,7 @@ class ModelToTensorBoard(ToTensorBoard):
         self.summarize_all = "*" in self.keywords_to_monitor
         self.left_strip_character = left_strip_character
 
-    def run(self, **unused_kwargs):
+    def run(self, **unused_kwargs: Any) -> None:
         for name, parameter in parameter_dict(self.model).items():
             # check if the parameter name matches any of the specified keywords
             if self.summarize_all or any(keyword in name for keyword in self.keywords_to_monitor):
@@ -101,7 +110,7 @@ class ModelToTensorBoard(ToTensorBoard):
                 name = name.lstrip(self.left_strip_character)
                 self._summarize_parameter(name, parameter)
 
-    def _summarize_parameter(self, name: str, param: Union[Parameter, tf.Variable]):
+    def _summarize_parameter(self, name: str, param: Union[Parameter, tf.Variable]) -> None:
         """
         :param name: identifier used in tensorboard
         :param param: parameter to be stored in tensorboard
@@ -128,7 +137,7 @@ class ModelToTensorBoard(ToTensorBoard):
 class ScalarToTensorBoard(ToTensorBoard):
     """Stores the return value of a callback in a TensorBoard."""
 
-    def __init__(self, log_dir: str, callback: Callable[[], float], name: str):
+    def __init__(self, log_dir: str, callback: Callable[[], float], name: str) -> None:
         """
         :param log_dir: directory in which to store the tensorboard files.
             For example, './logs/my_run/'.
@@ -149,7 +158,7 @@ class ScalarToTensorBoard(ToTensorBoard):
         self.name = name
         self.callback = callback
 
-    def run(self, **kwargs):
+    def run(self, **kwargs: Any) -> None:
         tf.summary.scalar(self.name, self.callback(**kwargs), step=self.current_step)
 
 
@@ -164,7 +173,7 @@ class ImageToTensorBoard(ToTensorBoard):
         *,
         fig_kw: Optional[Dict[str, Any]] = None,
         subplots_kw: Optional[Dict[str, Any]] = None,
-    ):
+    ) -> None:
         """
         :param log_dir: directory in which to store the tensorboard files.
             Can be nested: for example, './logs/my_run/'.
@@ -192,14 +201,14 @@ class ImageToTensorBoard(ToTensorBoard):
         else:
             self.axes = self.fig.add_subplot(111)
 
-    def _clear_axes(self):
+    def _clear_axes(self) -> None:
         if isinstance(self.axes, np.ndarray):
             for ax in self.axes.flatten():
                 ax.clear()
         else:
             self.axes.clear()
 
-    def run(self, **unused_kwargs):
+    def run(self, **unused_kwargs: Any) -> None:
         from matplotlib.backends.backend_agg import FigureCanvasAgg
 
         self._clear_axes()
