@@ -257,7 +257,7 @@ function checkPageExistsAndRedirect(event) {
 <span class="c1"># pylint: disable=unused-argument</span>
 
 <span class="kn">from</span> <span class="nn">abc</span> <span class="kn">import</span> <span class="n">ABC</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Collection</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Collection</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Type</span>
 
 <span class="kn">from</span> <span class="nn">lark.exceptions</span> <span class="kn">import</span> <span class="n">UnexpectedInput</span>
 <span class="kn">from</span> <span class="nn">lark.lark</span> <span class="kn">import</span> <span class="n">Lark</span>
@@ -271,7 +271,11 @@ function checkPageExistsAndRedirect(event) {
     <span class="n">LarkUnexpectedInputContext</span><span class="p">,</span>
     <span class="n">StackContext</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="kn">from</span> <span class="nn">gpflow.experimental.check_shapes.exceptions</span> <span class="kn">import</span> <span class="n">DocstringParseError</span><span class="p">,</span> <span class="n">SpecificationParseError</span>
+<span class="kn">from</span> <span class="nn">gpflow.experimental.check_shapes.exceptions</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">CheckShapesError</span><span class="p">,</span>
+    <span class="n">DocstringParseError</span><span class="p">,</span>
+    <span class="n">SpecificationParseError</span><span class="p">,</span>
+<span class="p">)</span>
 
 <span class="kn">from</span> <span class="nn">.argument_ref</span> <span class="kn">import</span> <span class="p">(</span>
     <span class="n">RESULT_TOKEN</span><span class="p">,</span>
@@ -321,12 +325,12 @@ function checkPageExistsAndRedirect(event) {
         <span class="k">return</span> <span class="n">visit</span><span class="p">(</span><span class="n">tree</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
 
-<span class="k">class</span> <span class="nc">_ParseArgumentSpec</span><span class="p">(</span><span class="n">_TreeVisitor</span><span class="p">):</span>
+<span class="k">class</span> <span class="nc">_ParseSpec</span><span class="p">(</span><span class="n">_TreeVisitor</span><span class="p">):</span>
     <span class="k">def</span> <span class="nf">argument_spec</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tree</span><span class="p">:</span> <span class="n">Tree</span><span class="p">[</span><span class="n">Token</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">ParsedArgumentSpec</span><span class="p">:</span>
         <span class="n">argument_name</span><span class="p">,</span> <span class="n">argument_refs</span><span class="p">,</span> <span class="n">shape_spec</span><span class="p">,</span> <span class="o">*</span><span class="n">note_specs</span> <span class="o">=</span> <span class="n">_tree_children</span><span class="p">(</span><span class="n">tree</span><span class="p">)</span>
         <span class="n">root_argument_ref</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">argument_name</span><span class="p">)</span>
         <span class="n">argument_ref</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">argument_refs</span><span class="p">,</span> <span class="n">root_argument_ref</span><span class="p">)</span>
-        <span class="n">shape</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">shape_spec</span><span class="p">,</span> <span class="n">argument_ref</span><span class="p">)</span>
+        <span class="n">shape</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">shape_spec</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">note_specs</span><span class="p">:</span>
             <span class="p">(</span><span class="n">note_spec</span><span class="p">,)</span> <span class="o">=</span> <span class="n">note_specs</span>
             <span class="n">note</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">note_spec</span><span class="p">)</span>
@@ -351,7 +355,7 @@ function checkPageExistsAndRedirect(event) {
         <span class="p">(</span><span class="n">token</span><span class="p">,)</span> <span class="o">=</span> <span class="n">_token_children</span><span class="p">(</span><span class="n">tree</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">IndexArgumentRef</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">token</span><span class="p">))</span>
 
-    <span class="k">def</span> <span class="nf">shape_spec</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tree</span><span class="p">:</span> <span class="n">Tree</span><span class="p">[</span><span class="n">Token</span><span class="p">],</span> <span class="n">argument_ref</span><span class="p">:</span> <span class="n">ArgumentRef</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ParsedShapeSpec</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">shape_spec</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tree</span><span class="p">:</span> <span class="n">Tree</span><span class="p">[</span><span class="n">Token</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">ParsedShapeSpec</span><span class="p">:</span>
         <span class="p">(</span><span class="n">dimension_specs</span><span class="p">,)</span> <span class="o">=</span> <span class="n">_tree_children</span><span class="p">(</span><span class="n">tree</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">ParsedShapeSpec</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">dimension_specs</span><span class="p">))</span>
 
@@ -532,58 +536,92 @@ function checkPageExistsAndRedirect(event) {
         <span class="k">return</span> <span class="n">tokens</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
 
 
-<span class="n">_ARGUMENT_SPEC_PARSER</span> <span class="o">=</span> <span class="n">Lark</span><span class="o">.</span><span class="n">open</span><span class="p">(</span>
-    <span class="s2">&quot;check_shapes.lark&quot;</span><span class="p">,</span>
-    <span class="n">rel_to</span><span class="o">=</span><span class="vm">__file__</span><span class="p">,</span>
-    <span class="n">propagate_positions</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-    <span class="n">start</span><span class="o">=</span><span class="s2">&quot;argument_or_note_spec&quot;</span><span class="p">,</span>
-    <span class="n">parser</span><span class="o">=</span><span class="s2">&quot;lalr&quot;</span><span class="p">,</span>
-<span class="p">)</span>
-<span class="n">_DOCSTRING_PARSER</span> <span class="o">=</span> <span class="n">Lark</span><span class="o">.</span><span class="n">open</span><span class="p">(</span>
-    <span class="s2">&quot;docstring.lark&quot;</span><span class="p">,</span>
-    <span class="n">rel_to</span><span class="o">=</span><span class="vm">__file__</span><span class="p">,</span>
-    <span class="n">propagate_positions</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-    <span class="n">start</span><span class="o">=</span><span class="s2">&quot;docstring&quot;</span><span class="p">,</span>
-<span class="p">)</span>
+<span class="k">class</span> <span class="nc">_CachedParser</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Small wrapper around Lark so that we can reuse as much code as possible between the different</span>
+<span class="sd">    things we parse.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">grammar_filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">start_symbol</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">parser_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">re_terminal_descriptions</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
+        <span class="n">transformer_class</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">_TreeVisitor</span><span class="p">],</span>
+        <span class="n">exception_class</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">CheckShapesError</span><span class="p">],</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cache</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="o">...</span><span class="p">]],</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_parser</span> <span class="o">=</span> <span class="n">Lark</span><span class="o">.</span><span class="n">open</span><span class="p">(</span>
+            <span class="n">grammar_filename</span><span class="p">,</span>
+            <span class="n">rel_to</span><span class="o">=</span><span class="vm">__file__</span><span class="p">,</span>
+            <span class="n">propagate_positions</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">start</span><span class="o">=</span><span class="n">start_symbol</span><span class="p">,</span>
+            <span class="n">parser</span><span class="o">=</span><span class="n">parser_name</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_terminal_descriptions</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_transformer_class</span> <span class="o">=</span> <span class="n">transformer_class</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_exception_class</span> <span class="o">=</span> <span class="n">exception_class</span>
 
-<span class="k">def</span> <span class="nf">_create_terminal_descriptions</span><span class="p">(</span>
-    <span class="n">parser</span><span class="p">:</span> <span class="n">Lark</span><span class="p">,</span> <span class="n">re_descriptions</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
-    <span class="n">missing</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
-    <span class="n">unused</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">re_descriptions</span><span class="p">)</span>
-    <span class="n">result</span> <span class="o">=</span> <span class="p">{}</span>
-    <span class="k">for</span> <span class="n">terminal</span> <span class="ow">in</span> <span class="n">parser</span><span class="o">.</span><span class="n">terminals</span><span class="p">:</span>
-        <span class="n">name</span> <span class="o">=</span> <span class="n">terminal</span><span class="o">.</span><span class="n">name</span>
-        <span class="n">pattern</span> <span class="o">=</span> <span class="n">terminal</span><span class="o">.</span><span class="n">pattern</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">PatternStr</span><span class="p">):</span>
-            <span class="n">description</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;&quot;</span><span class="si">{</span><span class="n">pattern</span><span class="o">.</span><span class="n">value</span><span class="si">}</span><span class="s1">&quot;&#39;</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">PatternRE</span><span class="p">)</span>
-            <span class="n">unused_description</span> <span class="o">=</span> <span class="n">unused</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">unused_description</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">missing</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
-                <span class="n">description</span> <span class="o">=</span> <span class="s2">&quot;ERROR&quot;</span>
+        <span class="c1"># Pre-compute nice terminal descriptions for our error messages:</span>
+        <span class="n">missing</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="n">unused</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">re_terminal_descriptions</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">terminal</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parser</span><span class="o">.</span><span class="n">terminals</span><span class="p">:</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="n">terminal</span><span class="o">.</span><span class="n">name</span>
+            <span class="n">pattern</span> <span class="o">=</span> <span class="n">terminal</span><span class="o">.</span><span class="n">pattern</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">PatternStr</span><span class="p">):</span>
+                <span class="n">description</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;&quot;</span><span class="si">{</span><span class="n">pattern</span><span class="o">.</span><span class="n">value</span><span class="si">}</span><span class="s1">&quot;&#39;</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">description</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">re_descriptions</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="si">}</span><span class="s2"> (re=</span><span class="si">{</span><span class="n">pattern</span><span class="o">.</span><span class="n">value</span><span class="si">}</span><span class="s2">)&quot;</span>
-        <span class="n">result</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">description</span>
-    <span class="k">assert</span> <span class="ow">not</span> <span class="n">unused</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Redundant terminal descriptions were provided: </span><span class="si">{</span><span class="nb">sorted</span><span class="p">(</span><span class="n">unused</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
-    <span class="k">assert</span> <span class="ow">not</span> <span class="n">missing</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Some RE terminals did not have a description: </span><span class="si">{</span><span class="nb">sorted</span><span class="p">(</span><span class="n">missing</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
-    <span class="k">return</span> <span class="n">result</span>
+                <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">PatternRE</span><span class="p">)</span>
+                <span class="n">unused_description</span> <span class="o">=</span> <span class="n">unused</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+                <span class="c1"># If we enter this `if` then the parser is misconfigured, so we never get here, even</span>
+                <span class="c1"># during tests.</span>
+                <span class="k">if</span> <span class="n">unused_description</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># pragma: no cover</span>
+                    <span class="n">missing</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+                    <span class="n">description</span> <span class="o">=</span> <span class="s2">&quot;ERROR&quot;</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">description</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">re_terminal_descriptions</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="si">}</span><span class="s2"> (re=</span><span class="si">{</span><span class="n">pattern</span><span class="o">.</span><span class="n">value</span><span class="si">}</span><span class="s2">)&quot;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_terminal_descriptions</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">description</span>
+        <span class="k">assert</span> <span class="ow">not</span> <span class="n">unused</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Redundant terminal descriptions were provided: </span><span class="si">{</span><span class="nb">sorted</span><span class="p">(</span><span class="n">unused</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">assert</span> <span class="ow">not</span> <span class="n">missing</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Some RE terminals did not have a description: </span><span class="si">{</span><span class="nb">sorted</span><span class="p">(</span><span class="n">missing</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+
+    <span class="k">def</span> <span class="nf">parse</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">transformer_args</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="n">context</span><span class="p">:</span> <span class="n">ErrorContext</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+        <span class="n">sentinel</span> <span class="o">=</span> <span class="nb">object</span><span class="p">()</span>
+        <span class="n">cache_key</span> <span class="o">=</span> <span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">transformer_args</span><span class="p">)</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cache</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">cache_key</span><span class="p">,</span> <span class="n">sentinel</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">result</span> <span class="ow">is</span> <span class="n">sentinel</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">tree</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parser</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+            <span class="k">except</span> <span class="n">UnexpectedInput</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">_exception_class</span><span class="p">(</span>
+                    <span class="n">StackContext</span><span class="p">(</span>
+                        <span class="n">context</span><span class="p">,</span> <span class="n">LarkUnexpectedInputContext</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">e</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_terminal_descriptions</span><span class="p">)</span>
+                    <span class="p">)</span>
+                <span class="p">)</span> <span class="kn">from</span> <span class="nn">e</span>
+
+            <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_transformer_class</span><span class="p">(</span><span class="o">*</span><span class="n">transformer_args</span><span class="p">)</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">tree</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_cache</span><span class="p">[</span><span class="n">cache_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">result</span>
+        <span class="k">return</span> <span class="n">result</span>
 
 
-<span class="n">_ARGUMENT_SPEC_TERMINAL_DESCRIPTIONS</span> <span class="o">=</span> <span class="n">_create_terminal_descriptions</span><span class="p">(</span>
-    <span class="n">_ARGUMENT_SPEC_PARSER</span><span class="p">,</span>
-    <span class="p">{</span>
+<span class="n">_ARGUMENT_SPEC_PARSER</span> <span class="o">=</span> <span class="n">_CachedParser</span><span class="p">(</span>
+    <span class="n">grammar_filename</span><span class="o">=</span><span class="s2">&quot;check_shapes.lark&quot;</span><span class="p">,</span>
+    <span class="n">start_symbol</span><span class="o">=</span><span class="s2">&quot;argument_or_note_spec&quot;</span><span class="p">,</span>
+    <span class="n">parser_name</span><span class="o">=</span><span class="s2">&quot;lalr&quot;</span><span class="p">,</span>
+    <span class="n">re_terminal_descriptions</span><span class="o">=</span><span class="p">{</span>
         <span class="s2">&quot;NOTE_TEXT&quot;</span><span class="p">:</span> <span class="s2">&quot;note / comment text&quot;</span><span class="p">,</span>
         <span class="s2">&quot;CNAME&quot;</span><span class="p">:</span> <span class="s2">&quot;variable name&quot;</span><span class="p">,</span>
         <span class="s2">&quot;INT&quot;</span><span class="p">:</span> <span class="s2">&quot;integer&quot;</span><span class="p">,</span>
         <span class="s2">&quot;WS&quot;</span><span class="p">:</span> <span class="s2">&quot;whitespace&quot;</span><span class="p">,</span>
     <span class="p">},</span>
+    <span class="n">transformer_class</span><span class="o">=</span><span class="n">_ParseSpec</span><span class="p">,</span>
+    <span class="n">exception_class</span><span class="o">=</span><span class="n">SpecificationParseError</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="n">_DOCSTRING_TERMINAL_DESCRIPTIONS</span> <span class="o">=</span> <span class="n">_create_terminal_descriptions</span><span class="p">(</span>
-    <span class="n">_DOCSTRING_PARSER</span><span class="p">,</span>
-    <span class="p">{</span>
+<span class="n">_SPHINX_DOCSTRING_PARSER</span> <span class="o">=</span> <span class="n">_CachedParser</span><span class="p">(</span>
+    <span class="n">grammar_filename</span><span class="o">=</span><span class="s2">&quot;docstring.lark&quot;</span><span class="p">,</span>
+    <span class="n">start_symbol</span><span class="o">=</span><span class="s2">&quot;docstring&quot;</span><span class="p">,</span>
+    <span class="n">parser_name</span><span class="o">=</span><span class="s2">&quot;earley&quot;</span><span class="p">,</span>
+    <span class="n">re_terminal_descriptions</span><span class="o">=</span><span class="p">{</span>
         <span class="s2">&quot;ANY&quot;</span><span class="p">:</span> <span class="s2">&quot;any text&quot;</span><span class="p">,</span>
         <span class="s2">&quot;CNAME&quot;</span><span class="p">:</span> <span class="s2">&quot;variable name&quot;</span><span class="p">,</span>
         <span class="s2">&quot;INFO_FIELD_OTHER&quot;</span><span class="p">:</span> <span class="s2">&quot;Sphinx info field&quot;</span><span class="p">,</span>
@@ -591,37 +629,9 @@ function checkPageExistsAndRedirect(event) {
         <span class="s2">&quot;RETURNS&quot;</span><span class="p">:</span> <span class="s2">&quot;Sphinx `return` field&quot;</span><span class="p">,</span>
         <span class="s2">&quot;WS&quot;</span><span class="p">:</span> <span class="s2">&quot;whitespace&quot;</span><span class="p">,</span>
     <span class="p">},</span>
+    <span class="n">transformer_class</span><span class="o">=</span><span class="n">_RewritedocString</span><span class="p">,</span>
+    <span class="n">exception_class</span><span class="o">=</span><span class="n">DocstringParseError</span><span class="p">,</span>
 <span class="p">)</span>
-
-
-<span class="n">_ARGUMENT_SPEC_CACHE</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="n">ParsedArgumentSpec</span><span class="p">,</span> <span class="n">ParsedNoteSpec</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
-<span class="n">_SPHINX_DOCSTRING_CACHE</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">ParsedFunctionSpec</span><span class="p">],</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
-
-
-<span class="k">def</span> <span class="nf">_parse_argument_spec</span><span class="p">(</span>
-    <span class="n">argument_spec</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="n">ErrorContext</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">ParsedArgumentSpec</span><span class="p">,</span> <span class="n">ParsedNoteSpec</span><span class="p">]:</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Parse a `check_shapes` argument or note specification.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">cached_value</span> <span class="o">=</span> <span class="n">_ARGUMENT_SPEC_CACHE</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">argument_spec</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">cached_value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">cached_value</span>
-
-    <span class="k">try</span><span class="p">:</span>
-        <span class="n">tree</span> <span class="o">=</span> <span class="n">_ARGUMENT_SPEC_PARSER</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">argument_spec</span><span class="p">)</span>
-    <span class="k">except</span> <span class="n">UnexpectedInput</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="n">SpecificationParseError</span><span class="p">(</span>
-            <span class="n">StackContext</span><span class="p">(</span>
-                <span class="n">context</span><span class="p">,</span>
-                <span class="n">LarkUnexpectedInputContext</span><span class="p">(</span><span class="n">argument_spec</span><span class="p">,</span> <span class="n">e</span><span class="p">,</span> <span class="n">_ARGUMENT_SPEC_TERMINAL_DESCRIPTIONS</span><span class="p">),</span>
-            <span class="p">)</span>
-        <span class="p">)</span> <span class="kn">from</span> <span class="nn">e</span>
-    <span class="n">parsed_spec</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">ParsedArgumentSpec</span><span class="p">,</span> <span class="n">ParsedNoteSpec</span><span class="p">]</span> <span class="o">=</span> <span class="n">_ParseArgumentSpec</span><span class="p">()</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">tree</span><span class="p">)</span>
-
-    <span class="n">_ARGUMENT_SPEC_CACHE</span><span class="p">[</span><span class="n">argument_spec</span><span class="p">]</span> <span class="o">=</span> <span class="n">parsed_spec</span>
-
-    <span class="k">return</span> <span class="n">parsed_spec</span>
 
 
 <div class="viewcode-block" id="parse_function_spec"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/parser/index.html#gpflow.experimental.check_shapes.parser.parse_function_spec">[docs]</a><span class="k">def</span> <span class="nf">parse_function_spec</span><span class="p">(</span><span class="n">function_spec</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">context</span><span class="p">:</span> <span class="n">ErrorContext</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ParsedFunctionSpec</span><span class="p">:</span>
@@ -632,35 +642,13 @@ function checkPageExistsAndRedirect(event) {
     <span class="n">notes</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">spec</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">function_spec</span><span class="p">):</span>
         <span class="n">argument_context</span> <span class="o">=</span> <span class="n">StackContext</span><span class="p">(</span><span class="n">context</span><span class="p">,</span> <span class="n">ArgumentContext</span><span class="p">(</span><span class="n">i</span><span class="p">))</span>
-        <span class="n">parsed_spec</span> <span class="o">=</span> <span class="n">_parse_argument_spec</span><span class="p">(</span><span class="n">spec</span><span class="p">,</span> <span class="n">argument_context</span><span class="p">)</span>
+        <span class="n">parsed_spec</span> <span class="o">=</span> <span class="n">_ARGUMENT_SPEC_PARSER</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">spec</span><span class="p">,</span> <span class="p">(),</span> <span class="n">argument_context</span><span class="p">)</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">parsed_spec</span><span class="p">,</span> <span class="n">ParsedArgumentSpec</span><span class="p">):</span>
             <span class="n">arguments</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">parsed_spec</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">parsed_spec</span><span class="p">,</span> <span class="n">ParsedNoteSpec</span><span class="p">)</span>
             <span class="n">notes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">parsed_spec</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">ParsedFunctionSpec</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="n">arguments</span><span class="p">),</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">notes</span><span class="p">))</span></div>
-
-
-<span class="k">def</span> <span class="nf">_parse_and_rewrite_sphinx_docstring</span><span class="p">(</span>
-    <span class="n">docstring</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">function_spec</span><span class="p">:</span> <span class="n">ParsedFunctionSpec</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="n">ErrorContext</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-    <span class="n">cached_value</span> <span class="o">=</span> <span class="n">_SPHINX_DOCSTRING_CACHE</span><span class="o">.</span><span class="n">get</span><span class="p">((</span><span class="n">docstring</span><span class="p">,</span> <span class="n">function_spec</span><span class="p">))</span>
-    <span class="k">if</span> <span class="n">cached_value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">cached_value</span>
-
-    <span class="k">try</span><span class="p">:</span>
-        <span class="n">tree</span> <span class="o">=</span> <span class="n">_DOCSTRING_PARSER</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">docstring</span><span class="p">)</span>
-    <span class="k">except</span> <span class="n">UnexpectedInput</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="n">DocstringParseError</span><span class="p">(</span>
-            <span class="n">StackContext</span><span class="p">(</span>
-                <span class="n">context</span><span class="p">,</span> <span class="n">LarkUnexpectedInputContext</span><span class="p">(</span><span class="n">docstring</span><span class="p">,</span> <span class="n">e</span><span class="p">,</span> <span class="n">_DOCSTRING_TERMINAL_DESCRIPTIONS</span><span class="p">)</span>
-            <span class="p">)</span>
-        <span class="p">)</span> <span class="kn">from</span> <span class="nn">e</span>
-    <span class="n">rewritten_docstring</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">_RewritedocString</span><span class="p">(</span><span class="n">docstring</span><span class="p">,</span> <span class="n">function_spec</span><span class="p">)</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">tree</span><span class="p">)</span>
-
-    <span class="n">_SPHINX_DOCSTRING_CACHE</span><span class="p">[(</span><span class="n">docstring</span><span class="p">,</span> <span class="n">function_spec</span><span class="p">)]</span> <span class="o">=</span> <span class="n">rewritten_docstring</span>
-
-    <span class="k">return</span> <span class="n">rewritten_docstring</span>
 
 
 <div class="viewcode-block" id="parse_and_rewrite_docstring"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/parser/index.html#gpflow.experimental.check_shapes.parser.parse_and_rewrite_docstring">[docs]</a><span class="k">def</span> <span class="nf">parse_and_rewrite_docstring</span><span class="p">(</span>
@@ -680,7 +668,9 @@ function checkPageExistsAndRedirect(event) {
         <span class="sa">f</span><span class="s2">&quot;Current docstring format is </span><span class="si">{</span><span class="n">docstring_format</span><span class="si">}</span><span class="s2">, but I don&#39;t know how to rewrite that.&quot;</span>
         <span class="s2">&quot; See `gpflow.experimental.check_shapes.config.set_rewrite_docstrings`.&quot;</span>
     <span class="p">)</span>
-    <span class="k">return</span> <span class="n">_parse_and_rewrite_sphinx_docstring</span><span class="p">(</span><span class="n">docstring</span><span class="p">,</span> <span class="n">function_spec</span><span class="p">,</span> <span class="n">context</span><span class="p">)</span></div>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">_SPHINX_DOCSTRING_PARSER</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">docstring</span><span class="p">,</span> <span class="p">(</span><span class="n">docstring</span><span class="p">,</span> <span class="n">function_spec</span><span class="p">),</span> <span class="n">context</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">result</span></div>
 </pre></div>
 
               </div>

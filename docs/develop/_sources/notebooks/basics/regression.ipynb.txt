@@ -2,7 +2,7 @@
  "cells": [
   {
    "cell_type": "markdown",
-   "id": "7da9a17a",
+   "id": "47e0ffee",
    "metadata": {},
    "source": [
     "# Basic (Gaussian likelihood) GP regression model\n",
@@ -23,13 +23,13 @@
   {
    "cell_type": "code",
    "execution_count": 1,
-   "id": "b1a01881",
+   "id": "96d33c49",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-04-01T08:35:49.802242Z",
-     "iopub.status.busy": "2022-04-01T08:35:49.801965Z",
-     "iopub.status.idle": "2022-04-01T08:35:52.814811Z",
-     "shell.execute_reply": "2022-04-01T08:35:52.814265Z"
+     "iopub.execute_input": "2022-04-01T13:48:44.551177Z",
+     "iopub.status.busy": "2022-04-01T13:48:44.550928Z",
+     "iopub.status.idle": "2022-04-01T13:48:47.646908Z",
+     "shell.execute_reply": "2022-04-01T13:48:47.646415Z"
     }
    },
    "outputs": [
@@ -37,8 +37,8 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2022-04-01 08:35:49.993961: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcudart.so.11.0'; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory\n",
-      "2022-04-01 08:35:49.993988: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.\n"
+      "2022-04-01 13:48:44.742319: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcudart.so.11.0'; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory\n",
+      "2022-04-01 13:48:44.742349: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.\n"
      ]
     }
    ],
@@ -56,7 +56,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "a575f9f4",
+   "id": "f539c433",
    "metadata": {},
    "source": [
     "`X` and `Y` denote the input and output values. **NOTE:** `X` and `Y` must be two-dimensional NumPy arrays, $N \\times 1$ or $N \\times D$, where $D$ is the number of input dimensions/features, with the same number of rows as $N$ (one for each data point):"
@@ -65,13 +65,13 @@
   {
    "cell_type": "code",
    "execution_count": 2,
-   "id": "911c8d18",
+   "id": "75da55b5",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-04-01T08:35:52.817831Z",
-     "iopub.status.busy": "2022-04-01T08:35:52.817555Z",
-     "iopub.status.idle": "2022-04-01T08:35:52.925573Z",
-     "shell.execute_reply": "2022-04-01T08:35:52.924931Z"
+     "iopub.execute_input": "2022-04-01T13:48:47.649830Z",
+     "iopub.status.busy": "2022-04-01T13:48:47.649587Z",
+     "iopub.status.idle": "2022-04-01T13:48:47.752723Z",
+     "shell.execute_reply": "2022-04-01T13:48:47.752255Z"
     }
    },
    "outputs": [
@@ -98,7 +98,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "86fb626a",
+   "id": "6d68de0a",
    "metadata": {},
    "source": [
     "We will consider the following probabilistic model:\n",
@@ -110,7 +110,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "685bc675",
+   "id": "fa10aa24",
    "metadata": {},
    "source": [
     "## Choose a kernel\n",
@@ -120,13 +120,13 @@
   {
    "cell_type": "code",
    "execution_count": 3,
-   "id": "9ad9f0f4",
+   "id": "84c411de",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-04-01T08:35:52.928173Z",
-     "iopub.status.busy": "2022-04-01T08:35:52.927934Z",
-     "iopub.status.idle": "2022-04-01T08:35:52.950084Z",
-     "shell.execute_reply": "2022-04-01T08:35:52.949365Z"
+     "iopub.execute_input": "2022-04-01T13:48:47.755145Z",
+     "iopub.status.busy": "2022-04-01T13:48:47.754931Z",
+     "iopub.status.idle": "2022-04-01T13:48:47.774989Z",
+     "shell.execute_reply": "2022-04-01T13:48:47.774438Z"
     }
    },
    "outputs": [
@@ -134,10 +134,10 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2022-04-01 08:35:52.929923: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcuda.so.1'; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory\n",
-      "2022-04-01 08:35:52.929958: W tensorflow/stream_executor/cuda/cuda_driver.cc:269] failed call to cuInit: UNKNOWN ERROR (303)\n",
-      "2022-04-01 08:35:52.929979: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (952aeac3a0ae): /proc/driver/nvidia/version does not exist\n",
-      "2022-04-01 08:35:52.930271: I tensorflow/core/platform/cpu_feature_guard.cc:151] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA\n",
+      "2022-04-01 13:48:47.756825: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcuda.so.1'; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory\n",
+      "2022-04-01 13:48:47.756859: W tensorflow/stream_executor/cuda/cuda_driver.cc:269] failed call to cuInit: UNKNOWN ERROR (303)\n",
+      "2022-04-01 13:48:47.756878: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (0e95ed28bc95): /proc/driver/nvidia/version does not exist\n",
+      "2022-04-01 13:48:47.757147: I tensorflow/core/platform/cpu_feature_guard.cc:151] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA\n",
       "To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.\n"
      ]
     }
@@ -148,7 +148,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "d9189d0e",
+   "id": "dade1c31",
    "metadata": {},
    "source": [
     "For more advanced kernels see the [advanced kernel notebook](../advanced/kernels.ipynb) (including kernels defined on subspaces). A summary of the kernel can be obtained by"
@@ -157,13 +157,13 @@
   {
    "cell_type": "code",
    "execution_count": 4,
-   "id": "2360cb13",
+   "id": "c3c1ad66",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-04-01T08:35:52.952624Z",
-     "iopub.status.busy": "2022-04-01T08:35:52.952372Z",
-     "iopub.status.idle": "2022-04-01T08:35:52.959943Z",
-     "shell.execute_reply": "2022-04-01T08:35:52.959299Z"
+     "iopub.execute_input": "2022-04-01T13:48:47.777373Z",
+     "iopub.status.busy": "2022-04-01T13:48:47.777159Z",
+     "iopub.status.idle": "2022-04-01T13:48:47.784143Z",
+     "shell.execute_reply": "2022-04-01T13:48:47.783648Z"
     }
    },
    "outputs": [
@@ -187,7 +187,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "6d94a831",
+   "id": "84132dea",
    "metadata": {},
    "source": [
     "The Matern 5/2 kernel has two parameters: `lengthscales`, which encodes the \"wiggliness\" of the GP, and `variance`, which tunes the amplitude. They are both set to 1.0 as the default value. For more details on the meaning of the other columns, see [Manipulating kernels](../advanced/kernels.ipynb)."
@@ -195,7 +195,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "00c1290d",
+   "id": "c0ff3597",
    "metadata": {},
    "source": [
     "## Choose a mean function (optional)\n",
@@ -210,7 +210,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "582139a0",
+   "id": "f516e04e",
    "metadata": {},
    "source": [
     "## Construct a model\n",
@@ -220,13 +220,13 @@
   {
    "cell_type": "code",
    "execution_count": 5,
-   "id": "20b0df54",
+   "id": "ab620b32",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-04-01T08:35:52.962628Z",
-     "iopub.status.busy": "2022-04-01T08:35:52.962361Z",
-     "iopub.status.idle": "2022-04-01T08:35:52.979980Z",
-     "shell.execute_reply": "2022-04-01T08:35:52.979387Z"
+     "iopub.execute_input": "2022-04-01T13:48:47.787439Z",
+     "iopub.status.busy": "2022-04-01T13:48:47.787229Z",
+     "iopub.status.idle": "2022-04-01T13:48:47.803728Z",
+     "shell.execute_reply": "2022-04-01T13:48:47.803221Z"
     }
    },
    "outputs": [],
@@ -236,7 +236,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "e2284eff",
+   "id": "d009c6b3",
    "metadata": {},
    "source": [
     "A summary of the model can be obtained by"
@@ -245,13 +245,13 @@
   {
    "cell_type": "code",
    "execution_count": 6,
-   "id": "c7343752",
+   "id": "1f15d047",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-04-01T08:35:52.982745Z",
-     "iopub.status.busy": "2022-04-01T08:35:52.982501Z",
-     "iopub.status.idle": "2022-04-01T08:35:52.991414Z",
-     "shell.execute_reply": "2022-04-01T08:35:52.990849Z"
+     "iopub.execute_input": "2022-04-01T13:48:47.807247Z",
+     "iopub.status.busy": "2022-04-01T13:48:47.807033Z",
+     "iopub.status.idle": "2022-04-01T13:48:47.815242Z",
+     "shell.execute_reply": "2022-04-01T13:48:47.814601Z"
     }
    },
    "outputs": [
@@ -277,7 +277,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "7aa077b2",
+   "id": "1a9adfd1",
    "metadata": {},
    "source": [
     "The first two lines correspond to the kernel parameters, and the third one gives the likelihood parameter (the noise variance $\\tau^2$ in our model).\n",
@@ -288,13 +288,13 @@
   {
    "cell_type": "code",
    "execution_count": 7,
-   "id": "b46e7fa3",
+   "id": "4c1404b7",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-04-01T08:35:52.993800Z",
-     "iopub.status.busy": "2022-04-01T08:35:52.993555Z",
-     "iopub.status.idle": "2022-04-01T08:35:53.002556Z",
-     "shell.execute_reply": "2022-04-01T08:35:53.001974Z"
+     "iopub.execute_input": "2022-04-01T13:48:47.818425Z",
+     "iopub.status.busy": "2022-04-01T13:48:47.818214Z",
+     "iopub.status.idle": "2022-04-01T13:48:47.825685Z",
+     "shell.execute_reply": "2022-04-01T13:48:47.825265Z"
     }
    },
    "outputs": [
@@ -316,7 +316,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "0d00359a",
+   "id": "72e781e1",
    "metadata": {},
    "source": [
     "## Optimize the model parameters\n",
@@ -329,13 +329,13 @@
   {
    "cell_type": "code",
    "execution_count": 8,
-   "id": "a5d50607",
+   "id": "55751206",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-04-01T08:35:53.005018Z",
-     "iopub.status.busy": "2022-04-01T08:35:53.004787Z",
-     "iopub.status.idle": "2022-04-01T08:35:53.007861Z",
-     "shell.execute_reply": "2022-04-01T08:35:53.007363Z"
+     "iopub.execute_input": "2022-04-01T13:48:47.828566Z",
+     "iopub.status.busy": "2022-04-01T13:48:47.828357Z",
+     "iopub.status.idle": "2022-04-01T13:48:47.831244Z",
+     "shell.execute_reply": "2022-04-01T13:48:47.830605Z"
     },
     "lines_to_next_cell": 2
    },
@@ -346,7 +346,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "495a0056",
+   "id": "bacfb668",
    "metadata": {},
    "source": [
     "In order to train the model, we need to maximize the log marginal likelihood.\n",
@@ -359,13 +359,13 @@
   {
    "cell_type": "code",
    "execution_count": 9,
-   "id": "6f3fd1f8",
+   "id": "39face36",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-04-01T08:35:53.010092Z",
-     "iopub.status.busy": "2022-04-01T08:35:53.009875Z",
-     "iopub.status.idle": "2022-04-01T08:35:54.551110Z",
-     "shell.execute_reply": "2022-04-01T08:35:54.550597Z"
+     "iopub.execute_input": "2022-04-01T13:48:47.833754Z",
+     "iopub.status.busy": "2022-04-01T13:48:47.833559Z",
+     "iopub.status.idle": "2022-04-01T13:48:49.624231Z",
+     "shell.execute_reply": "2022-04-01T13:48:49.623667Z"
     }
    },
    "outputs": [
@@ -373,7 +373,7 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2022-04-01 08:35:53.014892: W tensorflow/python/util/util.cc:368] Sets are not currently considered sequences, but this may change in the future, so consider avoiding using them.\n"
+      "2022-04-01 13:48:47.977097: W tensorflow/python/util/util.cc:368] Sets are not currently considered sequences, but this may change in the future, so consider avoiding using them.\n"
      ]
     },
     {
@@ -399,7 +399,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "3d07cd78",
+   "id": "89e82f97",
    "metadata": {},
    "source": [
     "Notice how the value column has changed.\n",
@@ -415,7 +415,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "2de969ef",
+   "id": "2d3d3e8b",
    "metadata": {},
    "source": [
     " - `m.predict_f` returns the mean and marginal variance of $f$ at the points `Xnew`.\n",
@@ -434,13 +434,13 @@
   {
    "cell_type": "code",
    "execution_count": 10,
-   "id": "90a17abc",
+   "id": "7cc58910",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-04-01T08:35:54.553517Z",
-     "iopub.status.busy": "2022-04-01T08:35:54.553295Z",
-     "iopub.status.idle": "2022-04-01T08:35:54.755766Z",
-     "shell.execute_reply": "2022-04-01T08:35:54.755233Z"
+     "iopub.execute_input": "2022-04-01T13:48:49.627729Z",
+     "iopub.status.busy": "2022-04-01T13:48:49.627493Z",
+     "iopub.status.idle": "2022-04-01T13:48:49.841995Z",
+     "shell.execute_reply": "2022-04-01T13:48:49.841399Z"
     },
     "lines_to_next_cell": 2
    },
@@ -487,7 +487,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "7694bc12",
+   "id": "2c11ff8d",
    "metadata": {
     "lines_to_next_cell": 2
    },
@@ -499,7 +499,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "bbcb747b",
+   "id": "cce7979c",
    "metadata": {},
    "source": [
     "## Further reading\n",
