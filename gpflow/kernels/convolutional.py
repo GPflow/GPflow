@@ -31,13 +31,7 @@ class Convolutional(Kernel):
       f(x) = \sum_p x^{[p]}
     where x^{[p]} is the pth patch in the image.
 
-    @incollection{vdw2017convgp,
-      title = {Convolutional Gaussian Processes},
-      author = {van der Wilk, Mark and Rasmussen, Carl Edward and Hensman, James},
-      booktitle = {Advances in Neural Information Processing Systems 30},
-      year = {2017},
-      url = {http://papers.nips.cc/paper/6877-convolutional-gaussian-processes.pdf}
-    }
+    The key reference is :cite:t:`vdw2017convgp`.
     """
 
     def __init__(
