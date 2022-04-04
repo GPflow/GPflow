@@ -286,6 +286,7 @@ function checkPageExistsAndRedirect(event) {
     <span class="n">ParsedFunctionSpec</span><span class="p">,</span>
     <span class="n">ParsedNoteSpec</span><span class="p">,</span>
     <span class="n">ParsedShapeSpec</span><span class="p">,</span>
+    <span class="n">ParsedTensorSpec</span><span class="p">,</span>
 <span class="p">)</span>
 
 <span class="n">_VARIABLE_RANK_LEADING_TOKEN</span> <span class="o">=</span> <span class="s2">&quot;*&quot;</span>
@@ -323,16 +324,11 @@ function checkPageExistsAndRedirect(event) {
 
 <span class="k">class</span> <span class="nc">_ParseSpec</span><span class="p">(</span><span class="n">_TreeVisitor</span><span class="p">):</span>
     <span class="k">def</span> <span class="nf">argument_spec</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tree</span><span class="p">:</span> <span class="n">Tree</span><span class="p">[</span><span class="n">Token</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">ParsedArgumentSpec</span><span class="p">:</span>
-        <span class="n">argument_name</span><span class="p">,</span> <span class="n">argument_refs</span><span class="p">,</span> <span class="n">shape_spec</span><span class="p">,</span> <span class="o">*</span><span class="n">note_specs</span> <span class="o">=</span> <span class="n">_tree_children</span><span class="p">(</span><span class="n">tree</span><span class="p">)</span>
+        <span class="n">argument_name</span><span class="p">,</span> <span class="n">argument_refs</span><span class="p">,</span> <span class="n">tensor_spec</span> <span class="o">=</span> <span class="n">_tree_children</span><span class="p">(</span><span class="n">tree</span><span class="p">)</span>
         <span class="n">root_argument_ref</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">argument_name</span><span class="p">)</span>
         <span class="n">argument_ref</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">argument_refs</span><span class="p">,</span> <span class="n">root_argument_ref</span><span class="p">)</span>
-        <span class="n">shape</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">shape_spec</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">note_specs</span><span class="p">:</span>
-            <span class="p">(</span><span class="n">note_spec</span><span class="p">,)</span> <span class="o">=</span> <span class="n">note_specs</span>
-            <span class="n">note</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">note_spec</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">note</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="k">return</span> <span class="n">ParsedArgumentSpec</span><span class="p">(</span><span class="n">argument_ref</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">note</span><span class="o">=</span><span class="n">note</span><span class="p">)</span>
+        <span class="n">tensor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">tensor_spec</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">ParsedArgumentSpec</span><span class="p">(</span><span class="n">argument_ref</span><span class="p">,</span> <span class="n">tensor</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">argument_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tree</span><span class="p">:</span> <span class="n">Tree</span><span class="p">[</span><span class="n">Token</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">ArgumentRef</span><span class="p">:</span>
         <span class="p">(</span><span class="n">token</span><span class="p">,)</span> <span class="o">=</span> <span class="n">_token_children</span><span class="p">(</span><span class="n">tree</span><span class="p">)</span>
@@ -350,6 +346,16 @@ function checkPageExistsAndRedirect(event) {
     <span class="k">def</span> <span class="nf">argument_ref_index</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tree</span><span class="p">:</span> <span class="n">Tree</span><span class="p">[</span><span class="n">Token</span><span class="p">],</span> <span class="n">source</span><span class="p">:</span> <span class="n">ArgumentRef</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ArgumentRef</span><span class="p">:</span>
         <span class="p">(</span><span class="n">token</span><span class="p">,)</span> <span class="o">=</span> <span class="n">_token_children</span><span class="p">(</span><span class="n">tree</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">IndexArgumentRef</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">token</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">tensor_spec</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tree</span><span class="p">:</span> <span class="n">Tree</span><span class="p">[</span><span class="n">Token</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">ParsedTensorSpec</span><span class="p">:</span>
+        <span class="n">shape_spec</span><span class="p">,</span> <span class="o">*</span><span class="n">note_specs</span> <span class="o">=</span> <span class="n">_tree_children</span><span class="p">(</span><span class="n">tree</span><span class="p">)</span>
+        <span class="n">shape</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">shape_spec</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">note_specs</span><span class="p">:</span>
+            <span class="p">(</span><span class="n">note_spec</span><span class="p">,)</span> <span class="o">=</span> <span class="n">note_specs</span>
+            <span class="n">note</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">note_spec</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">note</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="n">ParsedTensorSpec</span><span class="p">(</span><span class="n">shape</span><span class="p">,</span> <span class="n">note</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">shape_spec</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tree</span><span class="p">:</span> <span class="n">Tree</span><span class="p">[</span><span class="n">Token</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">ParsedShapeSpec</span><span class="p">:</span>
         <span class="p">(</span><span class="n">dimension_specs</span><span class="p">,)</span> <span class="o">=</span> <span class="n">_tree_children</span><span class="p">(</span><span class="n">tree</span><span class="p">)</span>
@@ -407,14 +413,17 @@ function checkPageExistsAndRedirect(event) {
         <span class="k">return</span> <span class="n">result</span>
 
     <span class="k">def</span> <span class="nf">_argument_spec_to_sphinx</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">argument_spec</span><span class="p">:</span> <span class="n">ParsedArgumentSpec</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="n">tensor_spec</span> <span class="o">=</span> <span class="n">argument_spec</span><span class="o">.</span><span class="n">tensor</span>
+        <span class="n">shape_spec</span> <span class="o">=</span> <span class="n">tensor_spec</span><span class="o">.</span><span class="n">shape</span>
         <span class="n">out</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;* **</span><span class="si">{</span><span class="nb">repr</span><span class="p">(</span><span class="n">argument_spec</span><span class="o">.</span><span class="n">argument_ref</span><span class="p">)</span><span class="si">}</span><span class="s2">**&quot;</span><span class="p">)</span>
         <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot; has shape [&quot;</span><span class="p">)</span>
-        <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_shape_spec_to_sphinx</span><span class="p">(</span><span class="n">argument_spec</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
+        <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_shape_spec_to_sphinx</span><span class="p">(</span><span class="n">shape_spec</span><span class="p">))</span>
         <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;].&quot;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">argument_spec</span><span class="o">.</span><span class="n">note</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">tensor_spec</span><span class="o">.</span><span class="n">note</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">note_spec</span> <span class="o">=</span> <span class="n">tensor_spec</span><span class="o">.</span><span class="n">note</span>
             <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">)</span>
-            <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">argument_spec</span><span class="o">.</span><span class="n">note</span><span class="o">.</span><span class="n">note</span><span class="p">)</span>
+            <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">note_spec</span><span class="o">.</span><span class="n">note</span><span class="p">)</span>
         <span class="k">return</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">out</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_shape_spec_to_sphinx</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">shape_spec</span><span class="p">:</span> <span class="n">ParsedShapeSpec</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
@@ -600,6 +609,19 @@ function checkPageExistsAndRedirect(event) {
         <span class="k">return</span> <span class="n">result</span>
 
 
+<span class="n">_TENSOR_SPEC_PARSER</span> <span class="o">=</span> <span class="n">_CachedParser</span><span class="p">(</span>
+    <span class="n">grammar_filename</span><span class="o">=</span><span class="s2">&quot;check_shapes.lark&quot;</span><span class="p">,</span>
+    <span class="n">start_symbol</span><span class="o">=</span><span class="s2">&quot;tensor_spec&quot;</span><span class="p">,</span>
+    <span class="n">parser_name</span><span class="o">=</span><span class="s2">&quot;lalr&quot;</span><span class="p">,</span>
+    <span class="n">re_terminal_descriptions</span><span class="o">=</span><span class="p">{</span>
+        <span class="s2">&quot;NOTE_TEXT&quot;</span><span class="p">:</span> <span class="s2">&quot;note / comment text&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;CNAME&quot;</span><span class="p">:</span> <span class="s2">&quot;variable name&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;INT&quot;</span><span class="p">:</span> <span class="s2">&quot;integer&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;WS&quot;</span><span class="p">:</span> <span class="s2">&quot;whitespace&quot;</span><span class="p">,</span>
+    <span class="p">},</span>
+    <span class="n">transformer_class</span><span class="o">=</span><span class="n">_ParseSpec</span><span class="p">,</span>
+    <span class="n">exception_class</span><span class="o">=</span><span class="n">SpecificationParseError</span><span class="p">,</span>
+<span class="p">)</span>
 <span class="n">_ARGUMENT_SPEC_PARSER</span> <span class="o">=</span> <span class="n">_CachedParser</span><span class="p">(</span>
     <span class="n">grammar_filename</span><span class="o">=</span><span class="s2">&quot;check_shapes.lark&quot;</span><span class="p">,</span>
     <span class="n">start_symbol</span><span class="o">=</span><span class="s2">&quot;argument_or_note_spec&quot;</span><span class="p">,</span>
@@ -630,7 +652,17 @@ function checkPageExistsAndRedirect(event) {
 <span class="p">)</span>
 
 
-<div class="viewcode-block" id="parse_function_spec"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/parser/index.html#gpflow.experimental.check_shapes.parser.parse_function_spec">[docs]</a><span class="k">def</span> <span class="nf">parse_function_spec</span><span class="p">(</span><span class="n">function_spec</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">context</span><span class="p">:</span> <span class="n">ErrorContext</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ParsedFunctionSpec</span><span class="p">:</span>
+<div class="viewcode-block" id="parse_tensor_spec"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/checker/index.html#gpflow.experimental.check_shapes.checker.parse_tensor_spec">[docs]</a><span class="k">def</span> <span class="nf">parse_tensor_spec</span><span class="p">(</span><span class="n">tensor_spec</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="n">ErrorContext</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ParsedTensorSpec</span><span class="p">:</span>
+
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Parse a `check_shapes` tensor specification.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">_TENSOR_SPEC_PARSER</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">tensor_spec</span><span class="p">,</span> <span class="p">(),</span> <span class="n">context</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">ParsedTensorSpec</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">result</span></div>
+
+
+<div class="viewcode-block" id="parse_function_spec"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/decorator/index.html#gpflow.experimental.check_shapes.checker.parse_function_spec">[docs]</a><span class="k">def</span> <span class="nf">parse_function_spec</span><span class="p">(</span><span class="n">function_spec</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">context</span><span class="p">:</span> <span class="n">ErrorContext</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ParsedFunctionSpec</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Parse all `check_shapes` argument or note specification for a single function.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -647,7 +679,7 @@ function checkPageExistsAndRedirect(event) {
     <span class="k">return</span> <span class="n">ParsedFunctionSpec</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="n">arguments</span><span class="p">),</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">notes</span><span class="p">))</span></div>
 
 
-<div class="viewcode-block" id="parse_and_rewrite_docstring"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/parser/index.html#gpflow.experimental.check_shapes.parser.parse_and_rewrite_docstring">[docs]</a><span class="k">def</span> <span class="nf">parse_and_rewrite_docstring</span><span class="p">(</span>
+<div class="viewcode-block" id="parse_and_rewrite_docstring"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/decorator/index.html#gpflow.experimental.check_shapes.checker.parse_and_rewrite_docstring">[docs]</a><span class="k">def</span> <span class="nf">parse_and_rewrite_docstring</span><span class="p">(</span>
     <span class="n">docstring</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">function_spec</span><span class="p">:</span> <span class="n">ParsedFunctionSpec</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="n">ErrorContext</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
     <span class="sd">&quot;&quot;&quot;</span>
