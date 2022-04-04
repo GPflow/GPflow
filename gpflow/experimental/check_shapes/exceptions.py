@@ -69,7 +69,7 @@ class ShapeMismatchError(CheckShapesError):
     Error raised if a function is called with tensors of the wrong shape.
     """
 
-    error_message = "Tensor shape mismatch in call to function."
+    error_message = "Tensor shape mismatch."
 
 
 class NoShapeError(CheckShapesError):

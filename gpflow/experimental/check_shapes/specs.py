@@ -67,14 +67,22 @@ class ParsedShapeSpec:
 
 
 @dataclass(frozen=True)
-class ParsedArgumentSpec:
-    argument_ref: ArgumentRef
+class ParsedTensorSpec:
     shape: ParsedShapeSpec
     note: Optional[ParsedNoteSpec]
 
     def __repr__(self) -> str:
         note_str = f"  {self.note}" if self.note is not None else ""
-        return f"{self.argument_ref}: {self.shape}{note_str}"
+        return f"{self.shape}{note_str}"
+
+
+@dataclass(frozen=True)
+class ParsedArgumentSpec:
+    argument_ref: ArgumentRef
+    tensor: ParsedTensorSpec
+
+    def __repr__(self) -> str:
+        return f"{self.argument_ref}: {self.tensor}"
 
 
 @dataclass(frozen=True)

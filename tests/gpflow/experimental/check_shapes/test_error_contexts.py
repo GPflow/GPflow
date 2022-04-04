@@ -334,6 +334,20 @@ f called at: {__file__}:{call_line}
     )
 
 
+def test_function_call_context__precompute() -> None:
+    def f() -> ErrorContext:
+        return FunctionCallContext(f).precompute()
+
+    call_line = current_line() + 1
+    context = f()
+
+    assert f"""
+f called at: {__file__}:{call_line}
+""" == to_str(
+        context
+    )
+
+
 def test_function_definition_context() -> None:
     def_line = current_line() + 2
 

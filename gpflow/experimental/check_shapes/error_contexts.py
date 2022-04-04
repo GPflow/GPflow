@@ -235,9 +235,13 @@ class ParallelContext(ErrorContext):
 class FunctionCallContext(ErrorContext):
     """
     An error occured inside a function that was called.
+
+    Normally `print` should be called from within the called function: `func`.
+    If that is impossible, first call `precompute` from within `func`.
     """
 
     func: Callable[..., Any]
+    path_and_line: Optional[str] = None
 
     def _get_target(self) -> Optional[Tuple[str, str]]:
         func = inspect.unwrap(self.func)
@@ -268,7 +272,10 @@ class FunctionCallContext(ErrorContext):
 
         return None
 
-    def print(self, builder: MessageBuilder) -> None:
+    def _compute(self) -> str:
+        if self.path_and_line is not None:
+            return self.path_and_line
+
         frame = self._get_calling_frame()
         if frame is None:
             path = _UNKNOWN_FILE
@@ -276,7 +283,22 @@ class FunctionCallContext(ErrorContext):
         else:
             path = frame.filename
             line = str(frame.lineno)
-        builder.add_columned_line(f"{self.func.__name__} called at:", f"{path}:{line}")
+
+        return f"{path}:{line}"
+
+    def print(self, builder: MessageBuilder) -> None:
+        builder.add_columned_line(f"{self.func.__name__} called at:", self._compute())
+
+    def precompute(self) -> "FunctionCallContext":
+        """
+        Precompute the values to print.
+
+        This is useful to capture the position of the stack of the relevant call, if this object is
+        saved for later use.
+
+        :returns: A new instance with precomptued values.
+        """
+        return FunctionCallContext(self.func, self._compute())
 
 
 @dataclass(frozen=True)

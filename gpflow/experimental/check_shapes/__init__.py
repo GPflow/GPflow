@@ -202,6 +202,19 @@ production implementation::
         # Test that patches `f` with `fake_f` goes here...
 
 
+Checking shapes without a decorator
++++++++++++++++++++++++++++++++++++
+
+While the :func:`check_shapes` decorator is the recommend way to use this library, it is possible to
+use it without the decorator. In fact the decorator is just a wrapper around the class
+:class:`ShapeChecker`, which can be used to check shapes directly. For example::
+
+    shape_checker = ShapeChecker()
+    shape_checker.check_shape(weights, "[n_features, n_labels]")
+    shape_checker.check_shape(features, "[n_rows, n_features]")
+    prediction = shape_checker.check_shape(features @ weights, "[n_rows, n_labels]")
+
+
 Speed, and interactions with `tf.function`
 ++++++++++++++++++++++++++++++++++++++++++
 
@@ -327,7 +340,7 @@ For example::
 
 from .accessors import get_check_shapes, maybe_get_check_shapes
 from .base_types import Dimension, Shape
-from .check_shapes import check_shapes
+from .checker import ShapeChecker
 from .config import (
     DocstringFormat,
     disable_check_shapes,
@@ -336,6 +349,7 @@ from .config import (
     set_enable_check_shapes,
     set_rewrite_docstrings,
 )
+from .decorator import check_shapes
 from .error_contexts import (
     ArgumentContext,
     AttributeContext,
@@ -379,6 +393,7 @@ __all__ = [
     "ObjectTypeContext",
     "ParallelContext",
     "Shape",
+    "ShapeChecker",
     "ShapeContext",
     "ShapeMismatchError",
     "SpecificationParseError",
@@ -387,7 +402,9 @@ __all__ = [
     "argument_ref",
     "base_types",
     "check_shapes",
+    "checker",
     "config",
+    "decorator",
     "disable_check_shapes",
     "error_contexts",
     "exceptions",
