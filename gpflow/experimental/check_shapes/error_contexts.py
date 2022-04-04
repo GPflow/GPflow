@@ -421,24 +421,37 @@ class ObjectTypeContext(ErrorContext):
         builder.add_columned_line("Object type:", f"{t.__module__}.{t.__qualname__}")
 
 
+@dataclass(frozen=True)  # type: ignore  # mypy doesn't like abstract `dataclasses`.
+class ParserInputContext(ErrorContext, ABC):
+    """
+    Abstract base class for contexts that relate to parser input.
+    """
+
+    text: str
+
+    def print_line(self, builder: MessageBuilder, line: int, column: int) -> None:
+        if line > 0:
+            line_content = self.text.split("\n")[line - 1]
+            builder.add_columned_line("Line:", f'"{line_content}"')
+            if column > 0:
+                builder.add_columned_line("", " " * column + "^")
+
+
 @dataclass(frozen=True)
-class LarkUnexpectedInputContext(ErrorContext):
+class LarkUnexpectedInputContext(ParserInputContext):
     """
     An error was caused by an `UnexpectedInput` error from `Lark`.
     """
 
-    text: str
     error: UnexpectedInput
     terminal_descriptions: Mapping[str, str]
 
     def print(self, builder: MessageBuilder) -> None:
-        line = getattr(self.error, "line", -1)
-        column = getattr(self.error, "column", -1)
-        if line > 0:  # Lines are 1-indexed...
-            line_content = self.text.split("\n")[line - 1]
-            builder.add_columned_line("Line:", f'"{line_content}"')
-            if column > 0:  # Columns are 1-indexed too...
-                builder.add_columned_line("", " " * column + "^")
+        self.print_line(
+            builder,
+            getattr(self.error, "line", -1),
+            getattr(self.error, "column", -1),
+        )
 
         expected: Sequence[str] = getattr(self.error, "accepts", [])
         if not expected:
@@ -454,3 +467,20 @@ class LarkUnexpectedInputContext(ErrorContext):
             builder.add_line("Found unexpected character.")
         if isinstance(self.error, UnexpectedEOF):
             builder.add_line("Found unexpected end of input.")
+
+
+@dataclass(frozen=True)
+class TrailingBroadcastVarrankContext(ParserInputContext):
+    """
+    An error was caused by trying to broadcast a trailing variable-rank variable.
+    """
+
+    line: int
+    column: int
+    variable: Optional[str]
+
+    def print(self, builder: MessageBuilder) -> None:
+        self.print_line(builder, self.line, self.column)
+        if self.variable is not None:
+            builder.add_columned_line("Variable", self.variable)
+        builder.add_line("Broadcasting not supported for non-leading variable-rank variables.")

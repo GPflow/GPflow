@@ -32,11 +32,16 @@ tensor_spec: shape_spec note_spec?
 shape_spec: "[" dimension_specs "]"
 
 dimension_specs: [dimension_spec ("," dimension_spec)* ","?]
-?dimension_spec: dimension_spec_constant
-               | dimension_spec_variable
-               | dimension_spec_anonymous
-               | dimension_spec_variable_rank
-               | dimension_spec_anonymous_variable_rank
+?dimension_spec: dimension_spec_broadcast
+               | dimension_spec_broadcastable
+
+dimension_spec_broadcast: BROADCAST dimension_spec_broadcastable
+
+?dimension_spec_broadcastable: dimension_spec_constant
+                             | dimension_spec_variable
+                             | dimension_spec_anonymous
+                             | dimension_spec_variable_rank
+                             | dimension_spec_anonymous_variable_rank
 
 dimension_spec_constant: INT
 dimension_spec_variable: CNAME
@@ -46,6 +51,7 @@ dimension_spec_anonymous_variable_rank: STAR | ELLIPSIS
 
 note_spec: HASH NOTE_TEXT*
 
+BROADCAST: "broadcast"
 HASH: "#"
 DOT: "."
 NONE: "None"

@@ -33,6 +33,7 @@ class ParsedDimensionSpec:
     constant: Optional[int]
     variable_name: Optional[str]
     variable_rank: bool
+    broadcastable: bool
 
     def __post_init__(self) -> None:
         assert (
@@ -42,13 +43,23 @@ class ParsedDimensionSpec:
             assert self.constant is None, "Constants cannot have a variable rank."
 
     def __repr__(self) -> str:
+        tokens = []
+
+        if self.broadcastable:
+            tokens.append("broadcast ")
+
         if self.constant is not None:
-            return str(self.constant)
-        elif self.variable_rank:
-            variable_name = self.variable_name or ""
-            return variable_name + "..."
+            tokens.append(str(self.constant))
+        elif self.variable_name:
+            tokens.append(self.variable_name)
         else:
-            return self.variable_name or "."
+            if not self.variable_rank:
+                tokens.append(".")
+
+        if self.variable_rank:
+            tokens.append("...")
+
+        return "".join(tokens)
 
 
 @dataclass(frozen=True)
@@ -60,6 +71,10 @@ class ParsedShapeSpec:
         assert (
             n_variable_rank <= 1
         ), f"At most one variable-rank dimension allowed. Found {n_variable_rank} in {self}."
+        for dim in self.dims[1:]:
+            assert (not dim.broadcastable) or (
+                not dim.variable_rank
+            ), f"Only leading variable-rank dimensions can be broadcast. Found {self}."
 
     def __repr__(self) -> str:
         dims = [repr(dim) for dim in self.dims]

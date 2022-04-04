@@ -104,6 +104,17 @@ For example::
     def f(...):
         ...
 
+Any of the above can be prefixed with the keyword ``broadcast``, to allow any value that broadcasts
+to the specification. For example::
+
+    @check_shapes(
+        "a: [broadcast batch...]",
+        "b: [broadcast batch...]",
+        "return: [batch...]",
+    )
+    def add(a: AnyNDArray, b: AnyNDArray) -> AnyNDArray:
+        return a + b
+
 
 Note specification
 ------------------
@@ -335,7 +346,6 @@ For example::
     ) -> None:
         prediction = model.predict(test_features)
         return np.mean(np.sqrt(np.mean((prediction - test_labels) ** 2, axis=-1)))
-
 """
 
 from .accessors import get_check_shapes, maybe_get_check_shapes
