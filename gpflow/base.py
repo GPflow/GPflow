@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import sys
 from enum import Enum
 from typing import TYPE_CHECKING, Any, List, Optional, Sequence, Tuple, Union
 
@@ -33,7 +34,7 @@ DType = Union[np.dtype, tf.DType]
 # get Python 3.11?
 if TYPE_CHECKING:  # pragma: no cover
     AnyNDArray = Union["np.ndarray[Any, Any]"]
-elif Version(np.__version__) < Version("1.20.0"):
+elif (sys.version_info < (3, 9)) or (Version(np.__version__) < Version("1.20.0")):
     AnyNDArray = np.ndarray
 else:
     AnyNDArray = np.ndarray[Any, Any]
