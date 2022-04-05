@@ -31,11 +31,13 @@ from gpflow.experimental.check_shapes.error_contexts import (
     ParallelContext,
     ShapeContext,
     StackContext,
+    TensorSpecContext,
     TrailingBroadcastVarrankContext,
+    VariableContext,
 )
 from gpflow.experimental.check_shapes.specs import ParsedNoteSpec
 
-from .utils import TestContext, current_line, make_shape_spec
+from .utils import TestContext, current_line, make_shape_spec, make_tensor_spec
 
 
 def to_str(context: ErrorContext) -> str:
@@ -369,6 +371,22 @@ Function: str
   Declared: <Unknown file>:<Unknown line>
 """ == to_str(
         FunctionDefinitionContext(str)
+    )
+
+
+def test_variable_context() -> None:
+    assert """
+Variable: foo
+""" == to_str(
+        VariableContext("foo")
+    )
+
+
+def test_tensor_spec_context() -> None:
+    assert """
+Specification: [a, 1]
+""" == to_str(
+        TensorSpecContext(make_tensor_spec(make_shape_spec("a", 1), None))
     )
 
 
