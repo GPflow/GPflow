@@ -14,6 +14,7 @@
 """
 Utilities for testing the `check_shapes` library.
 """
+import inspect
 from dataclasses import dataclass
 from typing import Optional, Union
 
@@ -25,7 +26,13 @@ from gpflow.experimental.check_shapes.argument_ref import (
     RootArgumentRef,
 )
 from gpflow.experimental.check_shapes.error_contexts import ErrorContext, MessageBuilder
-from gpflow.experimental.check_shapes.specs import ParsedDimensionSpec, ParsedShapeSpec
+from gpflow.experimental.check_shapes.specs import (
+    ParsedArgumentSpec,
+    ParsedDimensionSpec,
+    ParsedNoteSpec,
+    ParsedShapeSpec,
+    ParsedTensorSpec,
+)
 
 
 @dataclass(frozen=True)
@@ -67,6 +74,26 @@ class varrank:
     name: Optional[str]
 
 
+def make_argument_ref(argument_name: str, *refs: Union[int, str]) -> ArgumentRef:
+    result: ArgumentRef = RootArgumentRef(argument_name)
+    for ref in refs:
+        if isinstance(ref, int):
+            result = IndexArgumentRef(result, ref)
+        else:
+            result = AttributeArgumentRef(result, ref)
+    return result
+
+
+def make_note_spec(note: Union[ParsedNoteSpec, str, None]) -> Optional[ParsedNoteSpec]:
+    if isinstance(note, ParsedNoteSpec):
+        return note
+    elif isinstance(note, str):
+        return ParsedNoteSpec(note)
+    else:
+        assert note is None
+        return None
+
+
 def make_shape_spec(*dims: Union[int, str, varrank, None]) -> ParsedShapeSpec:
     shape = []
     for dim in dims:
@@ -82,11 +109,21 @@ def make_shape_spec(*dims: Union[int, str, varrank, None]) -> ParsedShapeSpec:
     return ParsedShapeSpec(tuple(shape))
 
 
-def make_argument_ref(argument_name: str, *refs: Union[int, str]) -> ArgumentRef:
-    result: ArgumentRef = RootArgumentRef(argument_name)
-    for ref in refs:
-        if isinstance(ref, int):
-            result = IndexArgumentRef(result, ref)
-        else:
-            result = AttributeArgumentRef(result, ref)
-    return result
+def make_tensor_spec(
+    shape_spec: ParsedShapeSpec, note: Union[ParsedNoteSpec, str, None]
+) -> ParsedTensorSpec:
+    return ParsedTensorSpec(shape_spec, make_note_spec(note))
+
+
+def make_arg_spec(
+    argument_ref: ArgumentRef, shape_spec: ParsedShapeSpec, note: Union[ParsedNoteSpec, str, None]
+) -> ParsedArgumentSpec:
+    return ParsedArgumentSpec(argument_ref, make_tensor_spec(shape_spec, note))
+
+
+def current_line() -> int:
+    """
+    Returns the line number of the line that called this function.
+    """
+    stack = inspect.stack()
+    return stack[1].lineno

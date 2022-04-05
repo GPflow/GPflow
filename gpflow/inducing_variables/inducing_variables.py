@@ -70,16 +70,7 @@ class Multiscale(InducingPointsBase):
     r"""
     Multi-scale inducing variables
 
-    Originally proposed in
-
-    ::
-
-      @incollection{NIPS2009_3876,
-        title = {Inter-domain Gaussian Processes for Sparse Inference using Inducing Features},
-        author = {Miguel L\'{a}zaro-Gredilla and An\'{\i}bal Figueiras-Vidal},
-        booktitle = {Advances in Neural Information Processing Systems 22},
-        year = {2009},
-      }
+    Originally proposed in :cite:t:`NIPS2009_3876`.
     """
 
     def __init__(self, Z: TensorData, scales: TensorData):

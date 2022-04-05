@@ -34,7 +34,7 @@ from gpflow.experimental.check_shapes.error_contexts import (
 )
 from gpflow.experimental.check_shapes.specs import ParsedNoteSpec
 
-from .utils import TestContext, make_shape_spec
+from .utils import TestContext, current_line, make_shape_spec
 
 
 def to_str(context: ErrorContext) -> str:
@@ -304,9 +304,10 @@ def test_function_call_context() -> None:
     def f() -> str:
         return to_str(FunctionCallContext(f))
 
+    call_line = current_line() + 1
     assert (
         f"""
-f called at: {__file__}:307
+f called at: {__file__}:{call_line}
 """
         == f()
     )
@@ -324,21 +325,38 @@ def test_function_call_context__wrapping() -> None:
     def f3() -> str:
         return f2()
 
+    call_line = current_line() + 1
     assert (
         f"""
-f called at: {__file__}:327
+f called at: {__file__}:{call_line}
 """
         == f3()
     )
 
 
+def test_function_call_context__precompute() -> None:
+    def f() -> ErrorContext:
+        return FunctionCallContext(f).precompute()
+
+    call_line = current_line() + 1
+    context = f()
+
+    assert f"""
+f called at: {__file__}:{call_line}
+""" == to_str(
+        context
+    )
+
+
 def test_function_definition_context() -> None:
+    def_line = current_line() + 2
+
     def f() -> None:
         ...
 
     assert f"""
 Function: test_function_definition_context.<locals>.f
-  Declared: {__file__}:336
+  Declared: {__file__}:{def_line}
 """ == to_str(
         FunctionDefinitionContext(f)
     )

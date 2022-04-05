@@ -13,14 +13,13 @@ GPflow Documentation
 .. toctree::
    :maxdepth: 1
    :caption: Examples:
-   :glob:
 
    notebooks_file
    derivations
 
 .. toctree::
    :maxdepth: 1
-   :glob:
-   :caption: API:
+   :caption: References:
 
    API reference <api/gpflow/index>
+   bibliography
