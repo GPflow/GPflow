@@ -41,7 +41,7 @@ class Stationary(Kernel):
         :param variance: the (initial) value for the variance parameter.
         :param lengthscales: the (initial) value for the lengthscale
             parameter(s), to induce ARD behaviour this must be initialised as
-            an array the same length as the the number of active dimensions
+            an array the same length as the number of active dimensions
             e.g. [1., 1., 1.]. If only a single value is passed, this value
             is used as the lengthscale of each dimension.
         :param kwargs: accepts `name` and `active_dims`, which is a list or
@@ -122,7 +122,21 @@ class AnisotropicStationary(Stationary):
     input dimension.
     """
 
-    def __init__(self, variance=1.0, lengthscales=1.0, **kwargs):
+    def __init__(
+        self, variance: TensorType = 1.0, lengthscales: TensorType = 1.0, **kwargs: Any
+    ) -> None:
+        """
+        :param variance: the (initial) value for the variance parameter.
+        :param lengthscales: the (initial) value for the lengthscale
+            parameter(s), to induce ARD behaviour this must be initialised as
+            an array the same length as the number of active dimensions
+            e.g. [1., 1., 1.]. Note that anisotropic kernels can possess
+            negative lengthscales. If only a single value is passed, this
+            value is used as the lengthscale of each dimension.
+        :param kwargs: accepts `name` and `active_dims`, which is a list or
+            slice of indices which controls which columns of X are used (by
+            default, all columns are used).
+        """
         super().__init__(variance, lengthscales, **kwargs)
 
         if self.ard:
