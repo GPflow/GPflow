@@ -31,17 +31,9 @@ from .util import InducingPointsLike, data_input_to_tensor, inducingpoint_wrappe
 
 class SGPMC(GPModel, InternalDataTrainingLossMixin):
     r"""
-    This is the Sparse Variational GP using MCMC (SGPMC). The key reference is
+    This is the Sparse Variational GP using MCMC (SGPMC).
 
-    ::
-
-      @inproceedings{hensman2015mcmc,
-        title={MCMC for Variatinoally Sparse Gaussian Processes},
-        author={Hensman, James and Matthews, Alexander G. de G.
-                and Filippone, Maurizio and Ghahramani, Zoubin},
-        booktitle={Proceedings of NIPS},
-        year={2015}
-      }
+    The key reference is :cite:t:`hensman2015mcmc`.
 
     The latent function values are represented by centered
     (whitened) variables, so

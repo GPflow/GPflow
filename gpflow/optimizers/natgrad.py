@@ -135,13 +135,7 @@ class NaturalGradient(tf.optimizers.Optimizer):
     Note furthermore that the natural gradients are implemented only for the
     full covariance case (i.e., q_diag=True is NOT supported).
 
-    When using in your work, please cite
-
-        @inproceedings{salimbeni18,
-            title={Natural Gradients in Practice: Non-Conjugate Variational Inference in Gaussian Process Models},
-            author={Salimbeni, Hugh and Eleftheriadis, Stefanos and Hensman, James},
-            booktitle={AISTATS},
-            year={2018}
+    When using in your work, please cite :cite:t:`salimbeni18`.
     """
 
     def __init__(
@@ -242,13 +236,7 @@ class NaturalGradient(tf.optimizers.Optimizer):
 
         (Note that tape.gradient() returns the gradients in *unconstrained* space!)
 
-        Implements equation [10] from
-
-        @inproceedings{salimbeni18,
-            title={Natural Gradients in Practice: Non-Conjugate Variational Inference in Gaussian Process Models},
-            author={Salimbeni, Hugh and Eleftheriadis, Stefanos and Hensman, James},
-            booktitle={AISTATS},
-            year={2018}
+        Implements equation [10] from :cite:t:`salimbeni18`.
 
         In addition, for convenience with the rest of GPflow, this code computes ∂L/∂η using
         the chain rule (the following assumes a numerator layout where the gradient is a row

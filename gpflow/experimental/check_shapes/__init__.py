@@ -11,8 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-# flake8: noqa
 """
 A library for annotating and checking the shapes of tensors.
 
@@ -149,8 +147,8 @@ Example::
     class SuperClass(ABC):
         @abstractmethod
         @check_shapes(
-            ("a", ["batch...", 4]),
-            ("return", ["batch...", 1]),
+            "a: [batch..., 4]",
+            "return: [batch..., 1]",
         )
         def f(self, a: tf.Tensor) -> tf.Tensor:
             ...
@@ -169,8 +167,8 @@ to handle the same shapes. To do this, remember that in Python a decorator is ju
 functions are objects that can be stored::
 
     check_my_shapes = check_shapes(
-        ("a", ["batch...", 4]),
-        ("return", ["batch...", 1]),
+        "a: [batch..., 4]",
+        "return: [batch..., 1]",
     )
 
     @check_my_shapes
@@ -190,8 +188,8 @@ declared function. This is particularly useful to ensure fakes in tests use the 
 production implementation::
 
     @check_shapes(
-        ("a", ["batch...", 4]),
-        ("return", ["batch...", 1]),
+        "a: [batch..., 4]",
+        "return: [batch..., 1]",
     )
     def f(a: tf.Tensor) -> tf.Tensor:
         ...
@@ -202,6 +200,19 @@ production implementation::
             ...
 
         # Test that patches `f` with `fake_f` goes here...
+
+
+Checking shapes without a decorator
++++++++++++++++++++++++++++++++++++
+
+While the :func:`check_shapes` decorator is the recommend way to use this library, it is possible to
+use it without the decorator. In fact the decorator is just a wrapper around the class
+:class:`ShapeChecker`, which can be used to check shapes directly. For example::
+
+    shape_checker = ShapeChecker()
+    shape_checker.check_shape(weights, "[n_features, n_labels]")
+    shape_checker.check_shape(features, "[n_rows, n_features]")
+    prediction = shape_checker.check_shape(features @ weights, "[n_rows, n_labels]")
 
 
 Speed, and interactions with `tf.function`
@@ -329,7 +340,7 @@ For example::
 
 from .accessors import get_check_shapes, maybe_get_check_shapes
 from .base_types import Dimension, Shape
-from .check_shapes import check_shapes
+from .checker import ShapeChecker
 from .config import (
     DocstringFormat,
     disable_check_shapes,
@@ -338,6 +349,7 @@ from .config import (
     set_enable_check_shapes,
     set_rewrite_docstrings,
 )
+from .decorator import check_shapes
 from .error_contexts import (
     ArgumentContext,
     AttributeContext,
@@ -381,6 +393,7 @@ __all__ = [
     "ObjectTypeContext",
     "ParallelContext",
     "Shape",
+    "ShapeChecker",
     "ShapeContext",
     "ShapeMismatchError",
     "SpecificationParseError",
@@ -389,7 +402,9 @@ __all__ = [
     "argument_ref",
     "base_types",
     "check_shapes",
+    "checker",
     "config",
+    "decorator",
     "disable_check_shapes",
     "error_contexts",
     "exceptions",

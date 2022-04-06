@@ -27,17 +27,9 @@ class ArcCosine(Kernel):
     The Arc-cosine family of kernels which mimics the computation in neural
     networks. The order parameter specifies the assumed activation function.
     The Multi Layer Perceptron (MLP) kernel is closely related to the ArcCosine
-    kernel of order 0. The key reference is
+    kernel of order 0.
 
-    ::
-
-        @incollection{NIPS2009_3628,
-            title = {Kernel Methods for Deep Learning},
-            author = {Youngmin Cho and Lawrence K. Saul},
-            booktitle = {Advances in Neural Information Processing Systems 22},
-            year = {2009},
-            url = {http://papers.nips.cc/paper/3628-kernel-methods-for-deep-learning.pdf}
-        }
+    The key reference is :cite:t:`NIPS2009_3628`.
     """
 
     implemented_orders = {0, 1, 2}

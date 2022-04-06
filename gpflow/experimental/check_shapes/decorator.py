@@ -1,0 +1,120 @@
+# Copyright 2022 The GPflow Contributors. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+"""
+Decorator for checking the shapes of function using tf Tensors.
+"""
+import inspect
+from functools import wraps
+from typing import Any, Callable, cast
+
+from ..utils import experimental
+from .accessors import set_check_shapes
+from .argument_ref import RESULT_TOKEN
+from .base_types import C
+from .checker import ShapeChecker
+from .config import get_enable_check_shapes
+from .error_contexts import (
+    FunctionCallContext,
+    FunctionDefinitionContext,
+    NoteContext,
+    StackContext,
+)
+from .parser import parse_and_rewrite_docstring, parse_function_spec
+
+
+def null_check_shapes(func: C) -> C:
+    """
+    Annotates the given function so that it looks like it has shape checks, but without actually
+    checking anything.
+
+    This is necessary not to break `@inherit_check_shapes` when shape checking is disabled.
+    """
+    set_check_shapes(func, null_check_shapes)
+    return func
+
+
+@experimental
+def check_shapes(*specs: str) -> Callable[[C], C]:
+    """
+    Decorator that checks the shapes of tensor arguments.
+
+    :param specs: Specification of arguments to check. See: `Check specification`_.
+    """
+    if not get_enable_check_shapes():
+        return null_check_shapes
+
+    unbound_error_context = FunctionCallContext(check_shapes)
+
+    func_spec = parse_function_spec(specs, unbound_error_context)
+
+    pre_specs = [spec for spec in func_spec.arguments if not spec.argument_ref.is_result]
+    post_specs = [spec for spec in func_spec.arguments if spec.argument_ref.is_result]
+    note_specs = func_spec.notes
+
+    def _check_shapes(func: C) -> C:
+        bound_error_context = FunctionDefinitionContext(func)
+        signature = inspect.signature(func)
+
+        @wraps(func)
+        def wrapped(*args: Any, **kwargs: Any) -> Any:
+            if not get_enable_check_shapes():
+                return func(*args, **kwargs)
+
+            try:
+                bound_arguments = signature.bind(*args, **kwargs)
+            except TypeError as e:
+                # TypeError is raised if *args and **kwargs don't actually match the arguments of
+                # `func`. In that case we just call `func` normally, which will also result in an
+                # error, but an error with the error message the user is used to.
+                func(*args, **kwargs)
+                raise AssertionError(
+                    "The above line should fail so this line should never be reached."
+                ) from e
+            bound_arguments.apply_defaults()
+            arg_map = bound_arguments.arguments
+
+            checker = ShapeChecker()
+            for note_spec in note_specs:
+                checker.add_context(StackContext(bound_error_context, NoteContext(note_spec)))
+
+            checker.check_shapes(
+                (
+                    arg_spec.argument_ref.get(arg_map, bound_error_context),
+                    arg_spec.tensor,
+                    StackContext(bound_error_context, arg_spec.argument_ref.error_context),
+                )
+                for arg_spec in pre_specs
+            )
+
+            result = func(*args, **kwargs)
+            arg_map[RESULT_TOKEN] = result
+
+            checker.check_shapes(
+                (
+                    arg_spec.argument_ref.get(arg_map, bound_error_context),
+                    arg_spec.tensor,
+                    StackContext(bound_error_context, arg_spec.argument_ref.error_context),
+                )
+                for arg_spec in post_specs
+            )
+
+            return result
+
+        set_check_shapes(wrapped, _check_shapes)
+        wrapped.__doc__ = parse_and_rewrite_docstring(
+            wrapped.__doc__, func_spec, bound_error_context
+        )
+        return cast(C, wrapped)
+
+    return _check_shapes

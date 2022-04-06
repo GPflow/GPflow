@@ -22,19 +22,6 @@ from lark.lark import Lark
 from lark.lexer import PatternRE, PatternStr, Token
 from lark.tree import Tree
 
-from gpflow.experimental.check_shapes.config import DocstringFormat, get_rewrite_docstrings
-from gpflow.experimental.check_shapes.error_contexts import (
-    ArgumentContext,
-    ErrorContext,
-    LarkUnexpectedInputContext,
-    StackContext,
-)
-from gpflow.experimental.check_shapes.exceptions import (
-    CheckShapesError,
-    DocstringParseError,
-    SpecificationParseError,
-)
-
 from .argument_ref import (
     RESULT_TOKEN,
     ArgumentRef,
@@ -42,12 +29,16 @@ from .argument_ref import (
     IndexArgumentRef,
     RootArgumentRef,
 )
+from .config import DocstringFormat, get_rewrite_docstrings
+from .error_contexts import ArgumentContext, ErrorContext, LarkUnexpectedInputContext, StackContext
+from .exceptions import CheckShapesError, DocstringParseError, SpecificationParseError
 from .specs import (
     ParsedArgumentSpec,
     ParsedDimensionSpec,
     ParsedFunctionSpec,
     ParsedNoteSpec,
     ParsedShapeSpec,
+    ParsedTensorSpec,
 )
 
 _VARIABLE_RANK_LEADING_TOKEN = "*"
@@ -85,16 +76,11 @@ class _TreeVisitor(ABC):
 
 class _ParseSpec(_TreeVisitor):
     def argument_spec(self, tree: Tree[Token]) -> ParsedArgumentSpec:
-        argument_name, argument_refs, shape_spec, *note_specs = _tree_children(tree)
+        argument_name, argument_refs, tensor_spec = _tree_children(tree)
         root_argument_ref = self.visit(argument_name)
         argument_ref = self.visit(argument_refs, root_argument_ref)
-        shape = self.visit(shape_spec)
-        if note_specs:
-            (note_spec,) = note_specs
-            note = self.visit(note_spec)
-        else:
-            note = None
-        return ParsedArgumentSpec(argument_ref, shape, note=note)
+        tensor = self.visit(tensor_spec)
+        return ParsedArgumentSpec(argument_ref, tensor)
 
     def argument_name(self, tree: Tree[Token]) -> ArgumentRef:
         (token,) = _token_children(tree)
@@ -112,6 +98,16 @@ class _ParseSpec(_TreeVisitor):
     def argument_ref_index(self, tree: Tree[Token], source: ArgumentRef) -> ArgumentRef:
         (token,) = _token_children(tree)
         return IndexArgumentRef(source, int(token))
+
+    def tensor_spec(self, tree: Tree[Token]) -> ParsedTensorSpec:
+        shape_spec, *note_specs = _tree_children(tree)
+        shape = self.visit(shape_spec)
+        if note_specs:
+            (note_spec,) = note_specs
+            note = self.visit(note_spec)
+        else:
+            note = None
+        return ParsedTensorSpec(shape, note)
 
     def shape_spec(self, tree: Tree[Token]) -> ParsedShapeSpec:
         (dimension_specs,) = _tree_children(tree)
@@ -169,14 +165,17 @@ class _RewritedocString(_TreeVisitor):
         return result
 
     def _argument_spec_to_sphinx(self, argument_spec: ParsedArgumentSpec) -> str:
+        tensor_spec = argument_spec.tensor
+        shape_spec = tensor_spec.shape
         out = []
         out.append(f"* **{repr(argument_spec.argument_ref)}**")
         out.append(" has shape [")
-        out.append(self._shape_spec_to_sphinx(argument_spec.shape))
+        out.append(self._shape_spec_to_sphinx(shape_spec))
         out.append("].")
-        if argument_spec.note is not None:
+        if tensor_spec.note is not None:
+            note_spec = tensor_spec.note
             out.append(" ")
-            out.append(argument_spec.note.note)
+            out.append(note_spec.note)
         return "".join(out)
 
     def _shape_spec_to_sphinx(self, shape_spec: ParsedShapeSpec) -> str:
@@ -362,6 +361,19 @@ class _CachedParser:
         return result
 
 
+_TENSOR_SPEC_PARSER = _CachedParser(
+    grammar_filename="check_shapes.lark",
+    start_symbol="tensor_spec",
+    parser_name="lalr",
+    re_terminal_descriptions={
+        "NOTE_TEXT": "note / comment text",
+        "CNAME": "variable name",
+        "INT": "integer",
+        "WS": "whitespace",
+    },
+    transformer_class=_ParseSpec,
+    exception_class=SpecificationParseError,
+)
 _ARGUMENT_SPEC_PARSER = _CachedParser(
     grammar_filename="check_shapes.lark",
     start_symbol="argument_or_note_spec",
@@ -390,6 +402,16 @@ _SPHINX_DOCSTRING_PARSER = _CachedParser(
     transformer_class=_RewritedocString,
     exception_class=DocstringParseError,
 )
+
+
+def parse_tensor_spec(tensor_spec: str, context: ErrorContext) -> ParsedTensorSpec:
+
+    """
+    Parse a `check_shapes` tensor specification.
+    """
+    result = _TENSOR_SPEC_PARSER.parse(tensor_spec, (), context)
+    assert isinstance(result, ParsedTensorSpec)
+    return result
 
 
 def parse_function_spec(function_spec: Sequence[str], context: ErrorContext) -> ParsedFunctionSpec:

@@ -25,18 +25,9 @@ from .sgpr import SGPR
 
 class CGLB(SGPR):
     """
-    Conjugate Gradient Lower Bound. The key reference is
+    Conjugate Gradient Lower Bound.
 
-    ::
-
-        @InProceedings{pmlr-v139-artemev21a,
-            title = {Tighter Bounds on the Log Marginal Likelihood of
-            Gaussian Process Regression Using Conjugate Gradients},
-            author = {Artemev, Artem and Burt, David R. and van der Wilk, Mark},
-            booktitle = {Proceedings of the 38th International Conference on Machine Learning},
-            pages = {362--372},
-            year = {2021}
-        }
+    The key reference is :cite:t:`pmlr-v139-artemev21a`.
 
     :param cg_tolerance: Determines accuracy to which conjugate
         gradient is run when evaluating the elbo. Running more
