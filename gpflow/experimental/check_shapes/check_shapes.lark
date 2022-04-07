@@ -17,15 +17,15 @@
 ?argument_or_note_spec: argument_spec
                       | note_spec
 
-argument_spec: argument_name argument_refs ":" tensor_spec
+argument_spec: argument_ref ":" tensor_spec
 
-argument_name: CNAME
-
-argument_refs: argument_ref*
-?argument_ref: argument_ref_attribute
+?argument_ref: argument_ref_root
+             | argument_ref_attribute
              | argument_ref_index
-argument_ref_attribute: "." CNAME
-argument_ref_index: "[" INT "]"
+
+argument_ref_root: CNAME
+argument_ref_attribute: argument_ref "." CNAME
+argument_ref_index: argument_ref "[" INT "]"
 
 tensor_spec: shape_spec note_spec?
 
