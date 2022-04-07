@@ -86,28 +86,24 @@ class _ParseSpec(_TreeVisitor):
         self._source = source
 
     def argument_spec(self, tree: Tree[Token]) -> ParsedArgumentSpec:
-        argument_name, argument_refs, tensor_spec = _tree_children(tree)
-        root_argument_ref = self.visit(argument_name)
-        argument_ref = self.visit(argument_refs, root_argument_ref)
+        argument_ref, tensor_spec = _tree_children(tree)
+        argument = self.visit(argument_ref)
         tensor = self.visit(tensor_spec)
-        return ParsedArgumentSpec(argument_ref, tensor)
+        return ParsedArgumentSpec(argument, tensor)
 
-    def argument_name(self, tree: Tree[Token]) -> ArgumentRef:
+    def argument_ref_root(self, tree: Tree[Token]) -> ArgumentRef:
         (token,) = _token_children(tree)
         return RootArgumentRef(token)
 
-    def argument_refs(self, tree: Tree[Token], result: ArgumentRef) -> ArgumentRef:
-        for argument_ref in _tree_children(tree):
-            result = self.visit(argument_ref, result)
-        return result
-
-    def argument_ref_attribute(self, tree: Tree[Token], source: ArgumentRef) -> ArgumentRef:
+    def argument_ref_attribute(self, tree: Tree[Token]) -> ArgumentRef:
+        (source,) = _tree_children(tree)
         (token,) = _token_children(tree)
-        return AttributeArgumentRef(source, token)
+        return AttributeArgumentRef(self.visit(source), token)
 
-    def argument_ref_index(self, tree: Tree[Token], source: ArgumentRef) -> ArgumentRef:
+    def argument_ref_index(self, tree: Tree[Token]) -> ArgumentRef:
+        (source,) = _tree_children(tree)
         (token,) = _token_children(tree)
-        return IndexArgumentRef(source, int(token))
+        return IndexArgumentRef(self.visit(source), int(token))
 
     def tensor_spec(self, tree: Tree[Token]) -> ParsedTensorSpec:
         shape_spec, *note_specs = _tree_children(tree)
