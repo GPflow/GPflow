@@ -2,7 +2,7 @@
  "cells": [
   {
    "cell_type": "markdown",
-   "id": "4b4157e3",
+   "id": "01efec9d",
    "metadata": {},
    "source": [
     "# Custom mean functions: metalearning with GPs\n",
@@ -16,13 +16,13 @@
   {
    "cell_type": "code",
    "execution_count": 1,
-   "id": "41b26a13",
+   "id": "709060bb",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-04-07T15:10:33.784378Z",
-     "iopub.status.busy": "2022-04-07T15:10:33.783920Z",
-     "iopub.status.idle": "2022-04-07T15:10:37.633562Z",
-     "shell.execute_reply": "2022-04-07T15:10:37.632972Z"
+     "iopub.execute_input": "2022-04-07T15:47:50.224637Z",
+     "iopub.status.busy": "2022-04-07T15:47:50.224263Z",
+     "iopub.status.idle": "2022-04-07T15:47:53.436789Z",
+     "shell.execute_reply": "2022-04-07T15:47:53.436071Z"
     }
    },
    "outputs": [
@@ -30,8 +30,8 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2022-04-07 15:10:34.202041: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcudart.so.11.0'; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory\n",
-      "2022-04-07 15:10:34.202071: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.\n"
+      "2022-04-07 15:47:50.638041: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcudart.so.11.0'; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory\n",
+      "2022-04-07 15:47:50.638068: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.\n"
      ]
     }
    ],
@@ -58,7 +58,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "bb92fa5a",
+   "id": "dea84880",
    "metadata": {
     "lines_to_next_cell": 2
    },
@@ -70,13 +70,13 @@
   {
    "cell_type": "code",
    "execution_count": 2,
-   "id": "258c57ad",
+   "id": "cefd2326",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-04-07T15:10:37.636569Z",
-     "iopub.status.busy": "2022-04-07T15:10:37.636344Z",
-     "iopub.status.idle": "2022-04-07T15:10:37.641154Z",
-     "shell.execute_reply": "2022-04-07T15:10:37.640486Z"
+     "iopub.execute_input": "2022-04-07T15:47:53.439530Z",
+     "iopub.status.busy": "2022-04-07T15:47:53.439319Z",
+     "iopub.status.idle": "2022-04-07T15:47:53.443958Z",
+     "shell.execute_reply": "2022-04-07T15:47:53.443451Z"
     }
    },
    "outputs": [],
@@ -101,7 +101,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "261d3dac",
+   "id": "8cd1e4fb",
    "metadata": {},
    "source": [
     "We generate 10 tasks for illustration."
@@ -110,13 +110,13 @@
   {
    "cell_type": "code",
    "execution_count": 3,
-   "id": "bc953086",
+   "id": "2a3b3c44",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-04-07T15:10:37.643616Z",
-     "iopub.status.busy": "2022-04-07T15:10:37.643406Z",
-     "iopub.status.idle": "2022-04-07T15:10:39.284619Z",
-     "shell.execute_reply": "2022-04-07T15:10:39.283684Z"
+     "iopub.execute_input": "2022-04-07T15:47:53.446190Z",
+     "iopub.status.busy": "2022-04-07T15:47:53.445991Z",
+     "iopub.status.idle": "2022-04-07T15:47:53.892749Z",
+     "shell.execute_reply": "2022-04-07T15:47:53.892028Z"
     }
    },
    "outputs": [
@@ -124,10 +124,10 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2022-04-07 15:10:37.645424: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcuda.so.1'; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory\n",
-      "2022-04-07 15:10:37.645456: W tensorflow/stream_executor/cuda/cuda_driver.cc:269] failed call to cuInit: UNKNOWN ERROR (303)\n",
-      "2022-04-07 15:10:37.645475: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (94e42e34a5cd): /proc/driver/nvidia/version does not exist\n",
-      "2022-04-07 15:10:37.645735: I tensorflow/core/platform/cpu_feature_guard.cc:151] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA\n",
+      "2022-04-07 15:47:53.448030: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcuda.so.1'; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory\n",
+      "2022-04-07 15:47:53.448063: W tensorflow/stream_executor/cuda/cuda_driver.cc:269] failed call to cuInit: UNKNOWN ERROR (303)\n",
+      "2022-04-07 15:47:53.448087: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (24083d71d288): /proc/driver/nvidia/version does not exist\n",
+      "2022-04-07 15:47:53.448384: I tensorflow/core/platform/cpu_feature_guard.cc:151] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA\n",
       "To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.\n"
      ]
     }
@@ -139,13 +139,13 @@
   {
    "cell_type": "code",
    "execution_count": 4,
-   "id": "4482b078",
+   "id": "9939e134",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-04-07T15:10:39.369638Z",
-     "iopub.status.busy": "2022-04-07T15:10:39.369350Z",
-     "iopub.status.idle": "2022-04-07T15:10:39.525877Z",
-     "shell.execute_reply": "2022-04-07T15:10:39.525363Z"
+     "iopub.execute_input": "2022-04-07T15:47:53.896232Z",
+     "iopub.status.busy": "2022-04-07T15:47:53.896002Z",
+     "iopub.status.idle": "2022-04-07T15:47:54.042561Z",
+     "shell.execute_reply": "2022-04-07T15:47:54.041996Z"
     }
    },
    "outputs": [
@@ -168,7 +168,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "616210df",
+   "id": "12c7b2c3",
    "metadata": {
     "lines_to_next_cell": 2
    },
@@ -179,13 +179,13 @@
   {
    "cell_type": "code",
    "execution_count": 5,
-   "id": "e694877d",
+   "id": "d987b3d0",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-04-07T15:10:39.528686Z",
-     "iopub.status.busy": "2022-04-07T15:10:39.528460Z",
-     "iopub.status.idle": "2022-04-07T15:10:39.534505Z",
-     "shell.execute_reply": "2022-04-07T15:10:39.534071Z"
+     "iopub.execute_input": "2022-04-07T15:47:54.045343Z",
+     "iopub.status.busy": "2022-04-07T15:47:54.045075Z",
+     "iopub.status.idle": "2022-04-07T15:47:54.052626Z",
+     "shell.execute_reply": "2022-04-07T15:47:54.052193Z"
     }
    },
    "outputs": [],
@@ -238,13 +238,13 @@
   {
    "cell_type": "code",
    "execution_count": 6,
-   "id": "e90985d0",
+   "id": "d65d82aa",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-04-07T15:10:39.536837Z",
-     "iopub.status.busy": "2022-04-07T15:10:39.536609Z",
-     "iopub.status.idle": "2022-04-07T15:10:41.574356Z",
-     "shell.execute_reply": "2022-04-07T15:10:41.573547Z"
+     "iopub.execute_input": "2022-04-07T15:47:54.054872Z",
+     "iopub.status.busy": "2022-04-07T15:47:54.054612Z",
+     "iopub.status.idle": "2022-04-07T15:47:54.293500Z",
+     "shell.execute_reply": "2022-04-07T15:47:54.292773Z"
     }
    },
    "outputs": [],
@@ -262,7 +262,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "5b58dff6",
+   "id": "4a3e8ca3",
    "metadata": {},
    "source": [
     "## Create the mean function\n",
@@ -272,13 +272,13 @@
   {
    "cell_type": "code",
    "execution_count": 7,
-   "id": "248faa8e",
+   "id": "7f549a9b",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-04-07T15:10:41.580038Z",
-     "iopub.status.busy": "2022-04-07T15:10:41.579754Z",
-     "iopub.status.idle": "2022-04-07T15:10:41.585535Z",
-     "shell.execute_reply": "2022-04-07T15:10:41.584973Z"
+     "iopub.execute_input": "2022-04-07T15:47:54.297367Z",
+     "iopub.status.busy": "2022-04-07T15:47:54.297145Z",
+     "iopub.status.idle": "2022-04-07T15:47:54.301209Z",
+     "shell.execute_reply": "2022-04-07T15:47:54.300764Z"
     }
    },
    "outputs": [],
@@ -299,7 +299,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "b4cce2d5",
+   "id": "4f25fff3",
    "metadata": {},
    "source": [
     "## Build the GP metamodel\n",
@@ -313,13 +313,13 @@
   {
    "cell_type": "code",
    "execution_count": 8,
-   "id": "34d89915",
+   "id": "3bab6019",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-04-07T15:10:41.587876Z",
-     "iopub.status.busy": "2022-04-07T15:10:41.587641Z",
-     "iopub.status.idle": "2022-04-07T15:10:41.591411Z",
-     "shell.execute_reply": "2022-04-07T15:10:41.590836Z"
+     "iopub.execute_input": "2022-04-07T15:47:54.303314Z",
+     "iopub.status.busy": "2022-04-07T15:47:54.303113Z",
+     "iopub.status.idle": "2022-04-07T15:47:54.307313Z",
+     "shell.execute_reply": "2022-04-07T15:47:54.306035Z"
     }
    },
    "outputs": [],
@@ -338,13 +338,13 @@
   {
    "cell_type": "code",
    "execution_count": 9,
-   "id": "e3940528",
+   "id": "3b588535",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-04-07T15:10:41.593842Z",
-     "iopub.status.busy": "2022-04-07T15:10:41.593560Z",
-     "iopub.status.idle": "2022-04-07T15:10:41.599290Z",
-     "shell.execute_reply": "2022-04-07T15:10:41.598779Z"
+     "iopub.execute_input": "2022-04-07T15:47:54.309491Z",
+     "iopub.status.busy": "2022-04-07T15:47:54.309305Z",
+     "iopub.status.idle": "2022-04-07T15:47:54.314798Z",
+     "shell.execute_reply": "2022-04-07T15:47:54.314317Z"
     }
    },
    "outputs": [],
@@ -383,7 +383,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "3c2f6e1c",
+   "id": "c2c4646d",
    "metadata": {},
    "source": [
     "Next, we define the training loop for metalearning."
@@ -392,13 +392,13 @@
   {
    "cell_type": "code",
    "execution_count": 10,
-   "id": "32644fc6",
+   "id": "2d2529f2",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-04-07T15:10:41.601561Z",
-     "iopub.status.busy": "2022-04-07T15:10:41.601344Z",
-     "iopub.status.idle": "2022-04-07T15:15:52.534050Z",
-     "shell.execute_reply": "2022-04-07T15:15:52.533500Z"
+     "iopub.execute_input": "2022-04-07T15:47:54.316967Z",
+     "iopub.status.busy": "2022-04-07T15:47:54.316712Z",
+     "iopub.status.idle": "2022-04-07T15:52:53.427289Z",
+     "shell.execute_reply": "2022-04-07T15:52:53.426751Z"
     }
    },
    "outputs": [
@@ -413,14 +413,14 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2022-04-07 15:10:41.815597: W tensorflow/python/util/util.cc:368] Sets are not currently considered sequences, but this may change in the future, so consider avoiding using them.\n"
+      "2022-04-07 15:47:54.518089: W tensorflow/python/util/util.cc:368] Sets are not currently considered sequences, but this may change in the future, so consider avoiding using them.\n"
      ]
     },
     {
      "name": "stdout",
      "output_type": "stream",
      "text": [
-      ">>>> iteration took 66.18 s\n",
+      ">>>> iteration took 58.62 s\n",
       "Currently in meta-iteration/epoch 1\n"
      ]
     },
@@ -428,7 +428,7 @@
      "name": "stdout",
      "output_type": "stream",
      "text": [
-      ">>>> iteration took 62.26 s\n",
+      ">>>> iteration took 59.23 s\n",
       "Currently in meta-iteration/epoch 2\n"
      ]
     },
@@ -436,7 +436,7 @@
      "name": "stdout",
      "output_type": "stream",
      "text": [
-      ">>>> iteration took 62.59 s\n",
+      ">>>> iteration took 60.55 s\n",
       "Currently in meta-iteration/epoch 3\n"
      ]
     },
@@ -444,7 +444,7 @@
      "name": "stdout",
      "output_type": "stream",
      "text": [
-      ">>>> iteration took 59.30 s\n",
+      ">>>> iteration took 60.62 s\n",
       "Currently in meta-iteration/epoch 4\n"
      ]
     },
@@ -452,7 +452,7 @@
      "name": "stdout",
      "output_type": "stream",
      "text": [
-      ">>>> iteration took 60.40 s\n"
+      ">>>> iteration took 59.92 s\n"
      ]
     }
    ],
@@ -489,7 +489,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "23021874",
+   "id": "d6a5d56f",
    "metadata": {},
    "source": [
     "Finally, we use the optimized mean function for all of the test tasks. **NOTE:** We do not do any further optimization for the hyperparameters in this step."
@@ -498,13 +498,13 @@
   {
    "cell_type": "code",
    "execution_count": 11,
-   "id": "76b57c9b",
+   "id": "a386885e",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-04-07T15:15:52.538233Z",
-     "iopub.status.busy": "2022-04-07T15:15:52.537988Z",
-     "iopub.status.idle": "2022-04-07T15:15:52.706872Z",
-     "shell.execute_reply": "2022-04-07T15:15:52.706329Z"
+     "iopub.execute_input": "2022-04-07T15:52:53.431381Z",
+     "iopub.status.busy": "2022-04-07T15:52:53.431159Z",
+     "iopub.status.idle": "2022-04-07T15:52:53.591480Z",
+     "shell.execute_reply": "2022-04-07T15:52:53.590980Z"
     }
    },
    "outputs": [],
@@ -514,7 +514,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "88a06292",
+   "id": "d616194a",
    "metadata": {
     "lines_to_next_cell": 2
    },
@@ -526,13 +526,13 @@
   {
    "cell_type": "code",
    "execution_count": 12,
-   "id": "bb32eb47",
+   "id": "199ec764",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-04-07T15:15:52.709614Z",
-     "iopub.status.busy": "2022-04-07T15:15:52.709392Z",
-     "iopub.status.idle": "2022-04-07T15:15:52.712356Z",
-     "shell.execute_reply": "2022-04-07T15:15:52.711850Z"
+     "iopub.execute_input": "2022-04-07T15:52:53.594174Z",
+     "iopub.status.busy": "2022-04-07T15:52:53.593962Z",
+     "iopub.status.idle": "2022-04-07T15:52:53.596794Z",
+     "shell.execute_reply": "2022-04-07T15:52:53.596356Z"
     }
    },
    "outputs": [],
@@ -544,13 +544,13 @@
   {
    "cell_type": "code",
    "execution_count": 13,
-   "id": "b13d093f",
+   "id": "895b82fc",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-04-07T15:15:52.714624Z",
-     "iopub.status.busy": "2022-04-07T15:15:52.714415Z",
-     "iopub.status.idle": "2022-04-07T15:15:54.269071Z",
-     "shell.execute_reply": "2022-04-07T15:15:54.268484Z"
+     "iopub.execute_input": "2022-04-07T15:52:53.598893Z",
+     "iopub.status.busy": "2022-04-07T15:52:53.598703Z",
+     "iopub.status.idle": "2022-04-07T15:52:55.045340Z",
+     "shell.execute_reply": "2022-04-07T15:52:55.044870Z"
     }
    },
    "outputs": [
@@ -702,13 +702,13 @@
   {
    "cell_type": "code",
    "execution_count": 14,
-   "id": "d9e26cb2",
+   "id": "0ee90c2a",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-04-07T15:15:54.271737Z",
-     "iopub.status.busy": "2022-04-07T15:15:54.271479Z",
-     "iopub.status.idle": "2022-04-07T15:15:54.275429Z",
-     "shell.execute_reply": "2022-04-07T15:15:54.274917Z"
+     "iopub.execute_input": "2022-04-07T15:52:55.048709Z",
+     "iopub.status.busy": "2022-04-07T15:52:55.048491Z",
+     "iopub.status.idle": "2022-04-07T15:52:55.052177Z",
+     "shell.execute_reply": "2022-04-07T15:52:55.051720Z"
     }
    },
    "outputs": [
@@ -728,7 +728,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "eb879174",
+   "id": "e9b96d48",
    "metadata": {},
    "source": [
     "We achieve comparable results to those reported in the paper.\n",
@@ -738,7 +738,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "387809fa",
+   "id": "71395539",
    "metadata": {},
    "source": [
     "## References\n",
