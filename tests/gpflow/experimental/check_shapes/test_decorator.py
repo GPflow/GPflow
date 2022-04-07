@@ -21,6 +21,7 @@ import pytest
 
 from gpflow.experimental.check_shapes import (
     ShapeMismatchError,
+    check_shape,
     check_shapes,
     disable_check_shapes,
     get_check_shapes,
@@ -548,6 +549,46 @@ def test_check_shapes__reuse() -> None:
     # Don't crash...
     f(t(2, 3), t(2, 4))
     g(t(2, 3), t(2, 4))
+
+
+def test_check_shapes__check_shape() -> None:
+
+    def_line = current_line() + 3
+    call_line = current_line() + 8
+
+    @check_shapes(
+        "a: [d1, d2]",
+        "b: [d1, d3]",
+        "return: [d2, d3]",
+    )
+    def f(a: TestShaped, b: TestShaped) -> TestShaped:
+        check_shape(t(4, 3), "[d3, d2]")
+        return t(3, 4)
+
+    # Don't crash...
+    f(t(2, 3), t(2, 4))
+
+    with pytest.raises(ShapeMismatchError) as e:
+        f(t(2, 3), t(2, 5))
+
+    (message,) = e.value.args
+    assert (
+        f"""
+Tensor shape mismatch.
+  Function:              test_check_shapes__check_shape.<locals>.f
+    Declared: {__file__}:{def_line}
+    Argument: a
+      Expected: [d1, d2]
+      Actual:   [2, 3]
+    Argument: b
+      Expected: [d1, d3]
+      Actual:   [2, 5]
+  check_shape called at: {__file__}:{call_line}
+    Expected: [d3, d2]
+    Actual:   [4, 3]
+"""
+        == message
+    )
 
 
 def test_check_shapes__disable() -> None:
