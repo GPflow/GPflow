@@ -20,6 +20,7 @@ from lark.exceptions import UnexpectedCharacters, UnexpectedEOF, UnexpectedToken
 from gpflow.experimental.check_shapes.error_contexts import (
     ArgumentContext,
     AttributeContext,
+    ConditionContext,
     ErrorContext,
     FunctionCallContext,
     FunctionDefinitionContext,
@@ -28,6 +29,7 @@ from gpflow.experimental.check_shapes.error_contexts import (
     MessageBuilder,
     NoteContext,
     ObjectTypeContext,
+    ObjectValueContext,
     ParallelContext,
     ShapeContext,
     StackContext,
@@ -37,7 +39,7 @@ from gpflow.experimental.check_shapes.error_contexts import (
 )
 from gpflow.experimental.check_shapes.specs import ParsedNoteSpec
 
-from .utils import TestContext, current_line, make_shape_spec, make_tensor_spec
+from .utils import TestContext, barg, bnot, bor, current_line, make_shape_spec, make_tensor_spec
 
 
 def to_str(context: ErrorContext) -> str:
@@ -216,16 +218,16 @@ def test_stack_context(context: ErrorContext, expected: str) -> None:
     "context,expected",
     [
         (
-            ParallelContext([]),
+            ParallelContext(()),
             """
 """,
         ),
         (
             ParallelContext(
-                [
+                (
                     TestContext("A"),
                     TestContext("B"),
-                ]
+                )
             ),
             """
 A
@@ -234,23 +236,23 @@ B
         ),
         (
             ParallelContext(
-                [
+                (
                     TestContext("A"),
                     ParallelContext(
-                        [
+                        (
                             TestContext("B"),
                             TestContext("C"),
-                        ]
+                        )
                     ),
                     TestContext("D"),
                     ParallelContext(
-                        [
+                        (
                             TestContext("E"),
                             TestContext("F"),
-                        ]
+                        )
                     ),
                     TestContext("G"),
-                ]
+                )
             ),
             """
 A
@@ -264,7 +266,7 @@ G
         ),
         (
             ParallelContext(
-                [
+                (
                     StackContext(
                         TestContext("A"),
                         StackContext(
@@ -286,7 +288,7 @@ G
                             TestContext("C1"),
                         ),
                     ),
-                ]
+                )
             ),
             """
 A
@@ -483,6 +485,14 @@ def test_index_context(context: ErrorContext, expected: str) -> None:
     assert expected == to_str(context)
 
 
+def test_condition_context() -> None:
+    assert """
+Condition: foo or (not bar)
+""" == to_str(
+        ConditionContext(bor(barg("foo"), bnot(barg("bar"))))
+    )
+
+
 @pytest.mark.parametrize(
     "context,expected",
     [
@@ -519,6 +529,33 @@ Note: Some note.
 """ == to_str(
         NoteContext(ParsedNoteSpec("Some note."))
     )
+
+
+@pytest.mark.parametrize(
+    "context,expected",
+    [
+        (
+            ObjectValueContext(None),
+            """
+Value: None
+""",
+        ),
+        (
+            ObjectValueContext(7),
+            """
+Value: 7
+""",
+        ),
+        (
+            ObjectValueContext("foo"),
+            """
+Value: 'foo'
+""",
+        ),
+    ],
+)
+def test_object_value_context(context: ErrorContext, expected: str) -> None:
+    assert expected == to_str(context)
 
 
 @pytest.mark.parametrize(

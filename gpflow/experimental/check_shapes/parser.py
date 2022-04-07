@@ -30,6 +30,13 @@ from .argument_ref import (
     IndexArgumentRef,
     RootArgumentRef,
 )
+from .bool_specs import (
+    ParsedAndBoolSpec,
+    ParsedArgumentRefBoolSpec,
+    ParsedBoolSpec,
+    ParsedNotBoolSpec,
+    ParsedOrBoolSpec,
+)
 from .config import DocstringFormat, get_rewrite_docstrings
 from .error_contexts import (
     ArgumentContext,
@@ -86,10 +93,38 @@ class _ParseSpec(_TreeVisitor):
         self._source = source
 
     def argument_spec(self, tree: Tree[Token]) -> ParsedArgumentSpec:
-        argument_ref, tensor_spec = _tree_children(tree)
+        argument_ref, shape_spec, *other_specs = _tree_children(tree)
         argument = self.visit(argument_ref)
-        tensor = self.visit(tensor_spec)
-        return ParsedArgumentSpec(argument, tensor)
+        shape = self.visit(shape_spec)
+        condition = None
+        note = None
+        for other_spec in other_specs:
+            other = self.visit(other_spec)
+            if isinstance(other, ParsedBoolSpec):
+                assert condition is None
+                condition = other
+            else:
+                assert isinstance(other, ParsedNoteSpec)
+                assert note is None
+                note = other
+        tensor = ParsedTensorSpec(shape, note)
+        return ParsedArgumentSpec(argument, tensor, condition)
+
+    def bool_spec_or(self, tree: Tree[Token]) -> ParsedBoolSpec:
+        left, right = _tree_children(tree)
+        return ParsedOrBoolSpec(self.visit(left), self.visit(right))
+
+    def bool_spec_and(self, tree: Tree[Token]) -> ParsedBoolSpec:
+        left, right = _tree_children(tree)
+        return ParsedAndBoolSpec(self.visit(left), self.visit(right))
+
+    def bool_spec_not(self, tree: Tree[Token]) -> ParsedBoolSpec:
+        (right,) = _tree_children(tree)
+        return ParsedNotBoolSpec(self.visit(right))
+
+    def bool_spec_argument_ref(self, tree: Tree[Token]) -> ParsedBoolSpec:
+        (argument_ref,) = _tree_children(tree)
+        return ParsedArgumentRefBoolSpec(self.visit(argument_ref))
 
     def argument_ref_root(self, tree: Tree[Token]) -> ArgumentRef:
         (token,) = _token_children(tree)
@@ -204,12 +239,43 @@ class _RewritedocString(_TreeVisitor):
         out.append(f"* **{repr(argument_spec.argument_ref)}**")
         out.append(" has shape [")
         out.append(self._shape_spec_to_sphinx(shape_spec))
-        out.append("].")
+        out.append("]")
+
+        if argument_spec.condition is not None:
+            out.append(" if ")
+            out.append(self._bool_spec_to_sphinx(argument_spec.condition, False))
+
+        out.append(".")
+
         if tensor_spec.note is not None:
             note_spec = tensor_spec.note
             out.append(" ")
             out.append(note_spec.note)
         return "".join(out)
+
+    def _bool_spec_to_sphinx(self, bool_spec: ParsedBoolSpec, paren_wrap: bool) -> str:
+        if isinstance(bool_spec, ParsedOrBoolSpec):
+            result = (
+                self._bool_spec_to_sphinx(bool_spec.left, True)
+                + " or "
+                + self._bool_spec_to_sphinx(bool_spec.right, True)
+            )
+        elif isinstance(bool_spec, ParsedAndBoolSpec):
+            result = (
+                self._bool_spec_to_sphinx(bool_spec.left, True)
+                + " and "
+                + self._bool_spec_to_sphinx(bool_spec.right, True)
+            )
+        elif isinstance(bool_spec, ParsedNotBoolSpec):
+            result = "not " + self._bool_spec_to_sphinx(bool_spec.right, True)
+        else:
+            assert isinstance(bool_spec, ParsedArgumentRefBoolSpec)
+            return f"*{bool_spec.argument_ref!r}*"
+
+        if paren_wrap:
+            result = f"({result})"
+
+        return result
 
     def _shape_spec_to_sphinx(self, shape_spec: ParsedShapeSpec) -> str:
         return ", ".join(self._dim_spec_to_sphinx(dim) for dim in shape_spec.dims)

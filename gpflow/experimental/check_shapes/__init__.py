@@ -38,7 +38,7 @@ Check specification
 The shapes to check are specified by the arguments to :func:`check_shapes`. Each argument is a
 string of the format::
 
-    <argument specifier>: <shape specifier> [# <note>]
+    <argument specifier>: <shape specifier> [if <condition>] [# <note>]
 
 
 Argument specification
@@ -50,9 +50,9 @@ function.
 
 The ``<argument specifier>`` can then be modified to refer to elements of the object in two ways:
 
-    * Use ``.<name>`` to refer to attributes of the object.
-    * Use ``[<index>]`` to refer to elements of a sequence. This is particularly useful if your
-      function returns a tuple of values.
+* Use ``.<name>`` to refer to attributes of the object.
+* Use ``[<index>]`` to refer to elements of a sequence. This is particularly useful if your
+  function returns a tuple of values.
 
 We do not support looking up values in a  ``dict``.
 
@@ -78,13 +78,13 @@ Shapes are specified by the syntax
 ``[<dimension specifier 1>, <dimension specifer 2>, ..., <dimension specifier n>]``, where
 ``<dimension specifier i>`` is one of:
 
-    * ``<integer>``, to require that dimension to have that exact size.
-    * ``<name>``, to bind that dimension to a variable. Dimensions bound to the same variable must
-      have the same size, though that size can be anything.
-    * ``None`` or ``.`` to allow exactly one single dimension without constraints.
-    * ``*<name>`` or ``<name>...``, to bind *any* number of dimensions to a variable. Again,
-      multiple uses of the same variable name must match the same dimension sizes.
-    * ``*`` or ``...``, to allow *any* number of dimensions without constraints.
+* ``<integer>``, to require that dimension to have that exact size.
+* ``<name>``, to bind that dimension to a variable. Dimensions bound to the same variable must
+  have the same size, though that size can be anything.
+* ``None`` or ``.`` to allow exactly one single dimension without constraints.
+* ``*<name>`` or ``<name>...``, to bind *any* number of dimensions to a variable. Again,
+  multiple uses of the same variable name must match the same dimension sizes.
+* ``*`` or ``...``, to allow *any* number of dimensions without constraints.
 
 A scalar shape is specified by ``[]``.
 
@@ -116,6 +116,40 @@ to the specification. For example::
         return a + b
 
 
+Condition specification
+-----------------------
+
+You can use the optional `if <condition>` syntax to conditionally evaluate shapes. If an `if
+<condition>` is used, the specification is only appplied if `<condition>` evaluates to `True`. This
+is useful if shapes depend on other input parameters. Valid conditions are:
+
+* ``<argument specifier>``, with the same syntax and rules as above, uses the `bool` built-in to
+  convert the value of the argument to a `bool`.
+* ``<left> or <right>``, evaluates to `True` if any of `<left>` or `<right>` evaluates to `True`
+  and to `False` otherwise.
+* ``<left> and <right>``, evaluates to `False` if any of `<left>` or `<right>` evaluates to
+  `False` and to `True` otherwise.
+* ``not <right>``, evaluates to the opposite value of `<right>`.
+* ``(<exp>)``, uses parenthesis to change operator precedence, as usual.
+
+.. note::
+
+   All specifications with either no `if` syntax or a `<condition>` that evaluates to `True` will be
+   applied. It is possible for multiple specifications to apply to the same value.
+
+For example::
+
+    @check_shapes(
+        "X: [n_rows, n_inputs]",
+        "return: [n_rows, n_outputs, n_rows, n_outputs] if full_input_cov and full_output_cov",
+        "return: [n_outputs, n_rows, n_rows] if full_input_cov and (not full_output_cov)",
+        "return: [n_rows, n_outputs, n_outputs] if (not full_input_cov) and full_output_cov",
+        "return: [n_rows, n_outputs] if (not full_input_cov) and (not full_output_cov)",
+    )
+    def kernel(X: tf.Tensor, full_input_cov: bool, full_output_cov: bool) -> tf.Tensor:
+        ...
+
+
 Note specification
 ------------------
 
@@ -123,8 +157,8 @@ You can add notes to your specifications using a `#` followed by the note. These
 appended to relevant error messages and appear in rewritten docstrings. You can add notes in two
 places:
 
-    * After the specification of a single argument, to add a note to that argument only.
-    * On a single line by itself, to add a note to the entire function.
+* After the specification of a single argument, to add a note to that argument only.
+* On a single line by itself, to add a note to the entire function.
 
 For example::
 
@@ -391,6 +425,7 @@ from .decorator import check_shapes
 from .error_contexts import (
     ArgumentContext,
     AttributeContext,
+    ConditionContext,
     ErrorContext,
     FunctionCallContext,
     FunctionDefinitionContext,
@@ -398,6 +433,7 @@ from .error_contexts import (
     LarkUnexpectedInputContext,
     MessageBuilder,
     ObjectTypeContext,
+    ObjectValueContext,
     ParallelContext,
     ShapeContext,
     StackContext,
@@ -421,6 +457,7 @@ __all__ = [
     "ArgumentReferenceError",
     "AttributeContext",
     "CheckShapesError",
+    "ConditionContext",
     "Dimension",
     "DocstringFormat",
     "DocstringParseError",
@@ -432,6 +469,7 @@ __all__ = [
     "MessageBuilder",
     "NoShapeError",
     "ObjectTypeContext",
+    "ObjectValueContext",
     "ParallelContext",
     "Shape",
     "ShapeChecker",
@@ -445,6 +483,7 @@ __all__ = [
     "accessors",
     "argument_ref",
     "base_types",
+    "bool_specs",
     "check_shape",
     "check_shapes",
     "checker",

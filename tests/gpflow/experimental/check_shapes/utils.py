@@ -25,6 +25,13 @@ from gpflow.experimental.check_shapes.argument_ref import (
     IndexArgumentRef,
     RootArgumentRef,
 )
+from gpflow.experimental.check_shapes.bool_specs import (
+    ParsedAndBoolSpec,
+    ParsedArgumentRefBoolSpec,
+    ParsedBoolSpec,
+    ParsedNotBoolSpec,
+    ParsedOrBoolSpec,
+)
 from gpflow.experimental.check_shapes.error_contexts import ErrorContext, MessageBuilder
 from gpflow.experimental.check_shapes.specs import (
     ParsedArgumentSpec,
@@ -77,6 +84,22 @@ def make_argument_ref(argument_name: str, *refs: Union[int, str]) -> ArgumentRef
         else:
             result = AttributeArgumentRef(result, ref)
     return result
+
+
+def barg(name: str) -> ParsedBoolSpec:
+    return ParsedArgumentRefBoolSpec(RootArgumentRef(name))
+
+
+def bor(left: ParsedBoolSpec, right: ParsedBoolSpec) -> ParsedBoolSpec:
+    return ParsedOrBoolSpec(left, right)
+
+
+def band(left: ParsedBoolSpec, right: ParsedBoolSpec) -> ParsedBoolSpec:
+    return ParsedAndBoolSpec(left, right)
+
+
+def bnot(right: ParsedBoolSpec) -> ParsedBoolSpec:
+    return ParsedNotBoolSpec(right)
 
 
 def make_note_spec(note: Union[ParsedNoteSpec, str, None]) -> Optional[ParsedNoteSpec]:
@@ -139,15 +162,19 @@ def make_shape_spec(*dims: Union[int, str, varrank, bc, None]) -> ParsedShapeSpe
 
 
 def make_tensor_spec(
-    shape_spec: ParsedShapeSpec, note: Union[ParsedNoteSpec, str, None]
+    shape_spec: ParsedShapeSpec, note: Union[ParsedNoteSpec, str, None] = None
 ) -> ParsedTensorSpec:
     return ParsedTensorSpec(shape_spec, make_note_spec(note))
 
 
 def make_arg_spec(
-    argument_ref: ArgumentRef, shape_spec: ParsedShapeSpec, note: Union[ParsedNoteSpec, str, None]
+    argument_ref: ArgumentRef,
+    shape_spec: ParsedShapeSpec,
+    *,
+    condition: Optional[ParsedBoolSpec] = None,
+    note: Union[ParsedNoteSpec, str, None] = None,
 ) -> ParsedArgumentSpec:
-    return ParsedArgumentSpec(argument_ref, make_tensor_spec(shape_spec, note))
+    return ParsedArgumentSpec(argument_ref, make_tensor_spec(shape_spec, note), condition)
 
 
 def current_line() -> int:

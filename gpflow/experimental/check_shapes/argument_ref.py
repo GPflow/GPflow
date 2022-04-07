@@ -58,7 +58,7 @@ class ArgumentRef(ABC):
 
     @abstractmethod
     def get(self, arg_map: Mapping[str, Any], context: ErrorContext) -> Optional[Any]:
-        """ Get the value of this argument from this given map. """
+        """ Get the value of this argument from the given argument map. """
 
     @abstractmethod
     def __repr__(self) -> str:

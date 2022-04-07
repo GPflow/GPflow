@@ -17,7 +17,22 @@
 ?argument_or_note_spec: argument_spec
                       | note_spec
 
-argument_spec: argument_ref ":" tensor_spec
+argument_spec: argument_ref ":" shape_spec ("if" bool_spec)? note_spec?
+
+?bool_spec: bool_spec_1
+          | bool_spec_or
+
+?bool_spec_1: bool_spec_2
+            | bool_spec_and
+
+?bool_spec_2: "(" bool_spec ")"
+            | bool_spec_not
+            | bool_spec_argument_ref
+
+bool_spec_or: bool_spec "or" bool_spec_1
+bool_spec_and: bool_spec_1 "and" bool_spec_2
+bool_spec_not: "not" bool_spec_2
+bool_spec_argument_ref: argument_ref
 
 ?argument_ref: argument_ref_root
              | argument_ref_attribute

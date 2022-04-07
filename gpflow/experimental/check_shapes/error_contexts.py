@@ -50,6 +50,7 @@ from .base_types import Shape
 
 if TYPE_CHECKING:  # pragma: no cover
     from .argument_ref import ArgumentRef
+    from .bools import ParsedBoolSpec
     from .specs import ParsedNoteSpec, ParsedShapeSpec, ParsedTensorSpec
 
 _UNKNOWN_FILE = "<Unknown file>"
@@ -183,7 +184,7 @@ class ParallelContext(ErrorContext):
     Error context with many contexts in parallel.
     """
 
-    children: Sequence[ErrorContext]
+    children: Tuple[ErrorContext, ...]
 
     def print(self, builder: MessageBuilder) -> None:
         # Merge any nested parallel contexts.
@@ -228,7 +229,7 @@ class ParallelContext(ErrorContext):
         for head, bodies in by_head.items():
             head.print(builder)
             with builder.indent() as b:
-                ParallelContext(bodies).print(b)
+                ParallelContext(tuple(bodies)).print(b)
 
 
 @dataclass(frozen=True)
@@ -403,6 +404,18 @@ class IndexContext(ErrorContext):
 
 
 @dataclass(frozen=True)
+class ConditionContext(ErrorContext):
+    """
+    An error occurred in a conditional context.
+    """
+
+    condition: "ParsedBoolSpec"
+
+    def print(self, builder: MessageBuilder) -> None:
+        builder.add_columned_line("Condition:", self.condition)
+
+
+@dataclass(frozen=True)
 class ShapeContext(ErrorContext):
     """
     An error occurred in the context of the shapes of function arguments.
@@ -430,6 +443,18 @@ class NoteContext(ErrorContext):
 
     def print(self, builder: MessageBuilder) -> None:
         builder.add_columned_line("Note:", self.note.note)
+
+
+@dataclass(frozen=True)
+class ObjectValueContext(ErrorContext):
+    """
+    An error was caused by the value of an object.
+    """
+
+    obj: Any
+
+    def print(self, builder: MessageBuilder) -> None:
+        builder.add_columned_line("Value:", repr(self.obj))
 
 
 @dataclass(frozen=True)
