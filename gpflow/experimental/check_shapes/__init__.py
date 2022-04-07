@@ -373,6 +373,8 @@ from .error_contexts import (
     ParallelContext,
     ShapeContext,
     StackContext,
+    TensorSpecContext,
+    VariableContext,
 )
 from .exceptions import (
     ArgumentReferenceError,
@@ -381,6 +383,7 @@ from .exceptions import (
     NoShapeError,
     ShapeMismatchError,
     SpecificationParseError,
+    VariableTypeError,
 )
 from .inheritance import inherit_check_shapes
 from .shapes import get_shape
@@ -408,6 +411,9 @@ __all__ = [
     "ShapeMismatchError",
     "SpecificationParseError",
     "StackContext",
+    "TensorSpecContext",
+    "VariableContext",
+    "VariableTypeError",
     "accessors",
     "argument_ref",
     "base_types",

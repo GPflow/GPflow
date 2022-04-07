@@ -50,7 +50,7 @@ from .base_types import Shape
 
 if TYPE_CHECKING:  # pragma: no cover
     from .argument_ref import ArgumentRef
-    from .specs import ParsedNoteSpec, ParsedShapeSpec
+    from .specs import ParsedNoteSpec, ParsedShapeSpec, ParsedTensorSpec
 
 _UNKNOWN_FILE = "<Unknown file>"
 _UNKNOWN_LINE = "<Unknown line>"
@@ -328,9 +328,33 @@ class FunctionDefinitionContext(ErrorContext):
 
 
 @dataclass(frozen=True)
+class VariableContext(ErrorContext):
+    """
+    An error occurred in the context of a shape specification variable.
+    """
+
+    variable_name: str
+
+    def print(self, builder: MessageBuilder) -> None:
+        builder.add_columned_line("Variable:", self.variable_name)
+
+
+@dataclass(frozen=True)
+class TensorSpecContext(ErrorContext):
+    """
+    An error occurred in the context of a tensor specification.
+    """
+
+    spec: "ParsedTensorSpec"
+
+    def print(self, builder: MessageBuilder) -> None:
+        builder.add_columned_line("Specification:", self.spec)
+
+
+@dataclass(frozen=True)
 class ArgumentContext(ErrorContext):
     """
-    An error occurent in the context of an argument to a function.
+    An error occurred in the context of an argument to a function.
     """
 
     name_or_index: Union[str, int]
@@ -349,7 +373,7 @@ class ArgumentContext(ErrorContext):
 @dataclass(frozen=True)
 class AttributeContext(ErrorContext):
     """
-    An error occurent in the context of an attribute on an object.
+    An error occurred in the context of an attribute on an object.
     """
 
     name: str
@@ -365,7 +389,7 @@ class AttributeContext(ErrorContext):
 @dataclass(frozen=True)
 class IndexContext(ErrorContext):
     """
-    An error occurent in the context of an index in a sequence.
+    An error occurred in the context of an index in a sequence.
     """
 
     index: int

@@ -20,7 +20,12 @@ from typing import Any, Sequence, Tuple
 
 import pytest
 
-from gpflow.experimental.check_shapes import ShapeChecker, ShapeMismatchError, disable_check_shapes
+from gpflow.experimental.check_shapes import (
+    ShapeChecker,
+    ShapeMismatchError,
+    VariableTypeError,
+    disable_check_shapes,
+)
 from gpflow.experimental.check_shapes.checker import TensorSpecLike
 
 from .utils import TestContext, current_line, make_shape_spec, make_tensor_spec, t, t_unk
@@ -512,6 +517,49 @@ Tensor shape mismatch.
     Index: [1]
       Expected: [d4, d5]
       Actual:   [5, 4]
+"""
+        == message
+    )
+
+
+def test_shape_checker__error_message__variable_type() -> None:
+    checker = ShapeChecker()
+
+    call_1_line = current_line() + 1
+    checker.check_shape(t(1), "[d1]")
+
+    call_2_line = current_line() + 1
+    checker.check_shape(t(2, 2), "[d2...]")
+
+    # How line numbers are determined has changed with Python versions. We can remove this if we
+    # bump the minimum version of Python to >= 3.8:
+    call_offset = 4 if sys.version_info < (3, 8) else 1
+
+    with pytest.raises(VariableTypeError) as e:
+        call_3_line = current_line() + call_offset
+        checker.check_shapes(
+            [
+                (t(2), "[d2]"),
+                (t(1, 1), "[d1...]"),
+            ]
+        )
+
+    (message,) = e.value.args
+    assert (
+        f"""
+Cannot use the same variable to bind both a single dimension and a variable number of dimensions.
+  Variable: d1
+    check_shape called at:  {__file__}:{call_1_line}
+      Specification: [d1]
+    check_shapes called at: {__file__}:{call_3_line}
+      Index: [1]
+        Specification: [d1...]
+  Variable: d2
+    check_shape called at:  {__file__}:{call_2_line}
+      Specification: [d2...]
+    check_shapes called at: {__file__}:{call_3_line}
+      Index: [0]
+        Specification: [d2]
 """
         == message
     )

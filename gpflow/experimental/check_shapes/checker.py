@@ -15,7 +15,7 @@
 Class responsible for remembering and checking shapes.
 """
 from dataclasses import dataclass
-from typing import Any, Dict, Iterable, List, Optional, Tuple, TypeVar, Union
+from typing import Any, Dict, Iterable, List, Optional, Set, Tuple, TypeVar, Union
 
 from ..utils import experimental
 from .base_types import Shape
@@ -28,8 +28,10 @@ from .error_contexts import (
     ParallelContext,
     ShapeContext,
     StackContext,
+    TensorSpecContext,
+    VariableContext,
 )
-from .exceptions import ShapeMismatchError
+from .exceptions import ShapeMismatchError, VariableTypeError
 from .parser import parse_tensor_spec
 from .shapes import get_shape
 from .specs import ParsedDimensionSpec, ParsedShapeSpec, ParsedTensorSpec
@@ -152,6 +154,11 @@ class ShapeChecker:
     @experimental
     def __init__(self) -> None:
         self._seen_shapes: List[Tuple[Shape, ParsedTensorSpec, ErrorContext]] = []
+
+        # Here we're (ab-)using `Dict[ , None]` instead of `set`, because `dict`s retain ordering.
+        self._specs_by_variable: Dict[str, Dict[Tuple[ParsedTensorSpec, ErrorContext], None]] = {}
+        self._rank1_variables: Set[str] = set()
+        self._varrank_variables: Set[str] = set()
         self._additional_context: List[ErrorContext] = []
         self._seen_dims: Dict[str, Union[_ObservedDim, _ObservedDims]] = {}
 
@@ -210,6 +217,7 @@ class ShapeChecker:
             return
 
         new_shapes = []
+        new_variables = set()
         call_context: Optional[ErrorContext] = None
         for i, check in enumerate(checks):
             shaped, tensor_spec, *contexts = check
@@ -228,6 +236,35 @@ class ShapeChecker:
             self._seen_shapes.append((shape, parsed_tensor_check, context))
             if shape is not None:
                 new_shapes.append((shape, parsed_tensor_check))
+
+            for dim_spec in parsed_tensor_check.shape.dims:
+                if dim_spec.variable_name is None:
+                    continue
+                self._specs_by_variable.setdefault(dim_spec.variable_name, {})[
+                    (parsed_tensor_check, context)
+                ] = None
+                if dim_spec.variable_rank:
+                    self._varrank_variables.add(dim_spec.variable_name)
+                else:
+                    self._rank1_variables.add(dim_spec.variable_name)
+                new_variables.add(dim_spec.variable_name)
+
+        new_variable_error_contexts = []
+        for variable in sorted(new_variables):
+            if (variable in self._rank1_variables) and (variable in self._varrank_variables):
+                new_variable_error_contexts.append(
+                    StackContext(
+                        VariableContext(variable),
+                        ParallelContext(
+                            [
+                                StackContext(c, TensorSpecContext(s))
+                                for s, c in self._specs_by_variable[variable]
+                            ]
+                        ),
+                    )
+                )
+        if new_variable_error_contexts:
+            raise VariableTypeError(ParallelContext(new_variable_error_contexts))
 
         def _assert(condition: bool) -> None:
             if not condition:
