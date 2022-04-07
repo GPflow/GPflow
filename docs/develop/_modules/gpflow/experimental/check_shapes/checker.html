@@ -263,7 +263,7 @@ function checkPageExistsAndRedirect(event) {
 <span class="sd">Class responsible for remembering and checking shapes.</span>
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">TypeVar</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Set</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">TypeVar</span><span class="p">,</span> <span class="n">Union</span>
 
 <span class="kn">from</span> <span class="nn">..utils</span> <span class="kn">import</span> <span class="n">experimental</span>
 <span class="kn">from</span> <span class="nn">.base_types</span> <span class="kn">import</span> <span class="n">Shape</span>
@@ -276,8 +276,10 @@ function checkPageExistsAndRedirect(event) {
     <span class="n">ParallelContext</span><span class="p">,</span>
     <span class="n">ShapeContext</span><span class="p">,</span>
     <span class="n">StackContext</span><span class="p">,</span>
+    <span class="n">TensorSpecContext</span><span class="p">,</span>
+    <span class="n">VariableContext</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="kn">from</span> <span class="nn">.exceptions</span> <span class="kn">import</span> <span class="n">ShapeMismatchError</span>
+<span class="kn">from</span> <span class="nn">.exceptions</span> <span class="kn">import</span> <span class="n">ShapeMismatchError</span><span class="p">,</span> <span class="n">VariableTypeError</span>
 <span class="kn">from</span> <span class="nn">.parser</span> <span class="kn">import</span> <span class="n">parse_tensor_spec</span>
 <span class="kn">from</span> <span class="nn">.shapes</span> <span class="kn">import</span> <span class="n">get_shape</span>
 <span class="kn">from</span> <span class="nn">.specs</span> <span class="kn">import</span> <span class="n">ParsedDimensionSpec</span><span class="p">,</span> <span class="n">ParsedShapeSpec</span><span class="p">,</span> <span class="n">ParsedTensorSpec</span>
@@ -400,6 +402,11 @@ function checkPageExistsAndRedirect(event) {
     <span class="nd">@experimental</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_seen_shapes</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">Shape</span><span class="p">,</span> <span class="n">ParsedTensorSpec</span><span class="p">,</span> <span class="n">ErrorContext</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="c1"># Here we&#39;re (ab-)using `Dict[ , None]` instead of `set`, because `dict`s retain ordering.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_specs_by_variable</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">ParsedTensorSpec</span><span class="p">,</span> <span class="n">ErrorContext</span><span class="p">],</span> <span class="kc">None</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_rank1_variables</span><span class="p">:</span> <span class="n">Set</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_varrank_variables</span><span class="p">:</span> <span class="n">Set</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_additional_context</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">ErrorContext</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_seen_dims</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="n">_ObservedDim</span><span class="p">,</span> <span class="n">_ObservedDims</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
 
@@ -458,6 +465,7 @@ function checkPageExistsAndRedirect(event) {
             <span class="k">return</span>
 
         <span class="n">new_shapes</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">new_variables</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
         <span class="n">call_context</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">ErrorContext</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">check</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">checks</span><span class="p">):</span>
             <span class="n">shaped</span><span class="p">,</span> <span class="n">tensor_spec</span><span class="p">,</span> <span class="o">*</span><span class="n">contexts</span> <span class="o">=</span> <span class="n">check</span>
@@ -476,6 +484,35 @@ function checkPageExistsAndRedirect(event) {
             <span class="bp">self</span><span class="o">.</span><span class="n">_seen_shapes</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">shape</span><span class="p">,</span> <span class="n">parsed_tensor_check</span><span class="p">,</span> <span class="n">context</span><span class="p">))</span>
             <span class="k">if</span> <span class="n">shape</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">new_shapes</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">shape</span><span class="p">,</span> <span class="n">parsed_tensor_check</span><span class="p">))</span>
+
+            <span class="k">for</span> <span class="n">dim_spec</span> <span class="ow">in</span> <span class="n">parsed_tensor_check</span><span class="o">.</span><span class="n">shape</span><span class="o">.</span><span class="n">dims</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">dim_spec</span><span class="o">.</span><span class="n">variable_name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="k">continue</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_specs_by_variable</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">dim_spec</span><span class="o">.</span><span class="n">variable_name</span><span class="p">,</span> <span class="p">{})[</span>
+                    <span class="p">(</span><span class="n">parsed_tensor_check</span><span class="p">,</span> <span class="n">context</span><span class="p">)</span>
+                <span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="k">if</span> <span class="n">dim_spec</span><span class="o">.</span><span class="n">variable_rank</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_varrank_variables</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">dim_spec</span><span class="o">.</span><span class="n">variable_name</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_rank1_variables</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">dim_spec</span><span class="o">.</span><span class="n">variable_name</span><span class="p">)</span>
+                <span class="n">new_variables</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">dim_spec</span><span class="o">.</span><span class="n">variable_name</span><span class="p">)</span>
+
+        <span class="n">new_variable_error_contexts</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">variable</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">new_variables</span><span class="p">):</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">variable</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rank1_variables</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">variable</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_varrank_variables</span><span class="p">):</span>
+                <span class="n">new_variable_error_contexts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                    <span class="n">StackContext</span><span class="p">(</span>
+                        <span class="n">VariableContext</span><span class="p">(</span><span class="n">variable</span><span class="p">),</span>
+                        <span class="n">ParallelContext</span><span class="p">(</span>
+                            <span class="p">[</span>
+                                <span class="n">StackContext</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">TensorSpecContext</span><span class="p">(</span><span class="n">s</span><span class="p">))</span>
+                                <span class="k">for</span> <span class="n">s</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_specs_by_variable</span><span class="p">[</span><span class="n">variable</span><span class="p">]</span>
+                            <span class="p">]</span>
+                        <span class="p">),</span>
+                    <span class="p">)</span>
+                <span class="p">)</span>
+        <span class="k">if</span> <span class="n">new_variable_error_contexts</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">VariableTypeError</span><span class="p">(</span><span class="n">ParallelContext</span><span class="p">(</span><span class="n">new_variable_error_contexts</span><span class="p">))</span>
 
         <span class="k">def</span> <span class="nf">_assert</span><span class="p">(</span><span class="n">condition</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">condition</span><span class="p">:</span>

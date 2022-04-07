@@ -298,7 +298,7 @@ function checkPageExistsAndRedirect(event) {
 
 <span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>  <span class="c1"># pragma: no cover</span>
     <span class="kn">from</span> <span class="nn">.argument_ref</span> <span class="kn">import</span> <span class="n">ArgumentRef</span>
-    <span class="kn">from</span> <span class="nn">.specs</span> <span class="kn">import</span> <span class="n">ParsedNoteSpec</span><span class="p">,</span> <span class="n">ParsedShapeSpec</span>
+    <span class="kn">from</span> <span class="nn">.specs</span> <span class="kn">import</span> <span class="n">ParsedNoteSpec</span><span class="p">,</span> <span class="n">ParsedShapeSpec</span><span class="p">,</span> <span class="n">ParsedTensorSpec</span>
 
 <span class="n">_UNKNOWN_FILE</span> <span class="o">=</span> <span class="s2">&quot;&lt;Unknown file&gt;&quot;</span>
 <span class="n">_UNKNOWN_LINE</span> <span class="o">=</span> <span class="s2">&quot;&lt;Unknown line&gt;&quot;</span>
@@ -575,10 +575,34 @@ function checkPageExistsAndRedirect(event) {
             <span class="n">b</span><span class="o">.</span><span class="n">add_columned_line</span><span class="p">(</span><span class="s2">&quot;Declared:&quot;</span><span class="p">,</span> <span class="n">path_and_line</span><span class="p">)</span></div></div>
 
 
+<div class="viewcode-block" id="VariableContext"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/index.html#gpflow.experimental.check_shapes.checker.VariableContext">[docs]</a><span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">VariableContext</span><span class="p">(</span><span class="n">ErrorContext</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    An error occurred in the context of a shape specification variable.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">variable_name</span><span class="p">:</span> <span class="nb">str</span>
+
+<div class="viewcode-block" id="VariableContext.print"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/index.html#gpflow.experimental.check_shapes.checker.VariableContext.print">[docs]</a>    <span class="k">def</span> <span class="nf">print</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">builder</span><span class="p">:</span> <span class="n">MessageBuilder</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">builder</span><span class="o">.</span><span class="n">add_columned_line</span><span class="p">(</span><span class="s2">&quot;Variable:&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">variable_name</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="TensorSpecContext"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/index.html#gpflow.experimental.check_shapes.checker.TensorSpecContext">[docs]</a><span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">TensorSpecContext</span><span class="p">(</span><span class="n">ErrorContext</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    An error occurred in the context of a tensor specification.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">spec</span><span class="p">:</span> <span class="s2">&quot;ParsedTensorSpec&quot;</span>
+
+<div class="viewcode-block" id="TensorSpecContext.print"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/index.html#gpflow.experimental.check_shapes.checker.TensorSpecContext.print">[docs]</a>    <span class="k">def</span> <span class="nf">print</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">builder</span><span class="p">:</span> <span class="n">MessageBuilder</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">builder</span><span class="o">.</span><span class="n">add_columned_line</span><span class="p">(</span><span class="s2">&quot;Specification:&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">spec</span><span class="p">)</span></div></div>
+
+
 <div class="viewcode-block" id="ArgumentContext"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/index.html#gpflow.experimental.check_shapes.checker.ArgumentContext">[docs]</a><span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">class</span> <span class="nc">ArgumentContext</span><span class="p">(</span><span class="n">ErrorContext</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    An error occurent in the context of an argument to a function.</span>
+<span class="sd">    An error occurred in the context of an argument to a function.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">name_or_index</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span>
@@ -597,7 +621,7 @@ function checkPageExistsAndRedirect(event) {
 <div class="viewcode-block" id="AttributeContext"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/index.html#gpflow.experimental.check_shapes.checker.AttributeContext">[docs]</a><span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">class</span> <span class="nc">AttributeContext</span><span class="p">(</span><span class="n">ErrorContext</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    An error occurent in the context of an attribute on an object.</span>
+<span class="sd">    An error occurred in the context of an attribute on an object.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
@@ -613,7 +637,7 @@ function checkPageExistsAndRedirect(event) {
 <div class="viewcode-block" id="IndexContext"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/index.html#gpflow.experimental.check_shapes.checker.IndexContext">[docs]</a><span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">class</span> <span class="nc">IndexContext</span><span class="p">(</span><span class="n">ErrorContext</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    An error occurent in the context of an index in a sequence.</span>
+<span class="sd">    An error occurred in the context of an index in a sequence.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">index</span><span class="p">:</span> <span class="nb">int</span>
