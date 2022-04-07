@@ -104,6 +104,17 @@ For example::
     def f(...):
         ...
 
+Any of the above can be prefixed with the keyword ``broadcast``, to allow any value that broadcasts
+to the specification. For example::
+
+    @check_shapes(
+        "a: [broadcast batch...]",
+        "b: [broadcast batch...]",
+        "return: [batch...]",
+    )
+    def add(a: AnyNDArray, b: AnyNDArray) -> AnyNDArray:
+        return a + b
+
 
 Note specification
 ------------------
@@ -117,7 +128,6 @@ places:
 
 For example::
 
-    @tf.function
     @check_shapes(
         "features: [batch_shape..., n_features]",
         "weights: [n_features]  # A note about the shape of `weights`.",
@@ -128,11 +138,36 @@ For example::
         ...
 
 
+Checking intermediate results
+-----------------------------
+
+You can use the function :func:`check_shape` to check the shape of an intermediate result. This
+function will use the same namespace as the immediately surrounding :func:`check_shapes` decorator,
+and should only be called within functions that has such a decorator. For example::
+
+    @check_shapes(
+        "weights: [n_features, n_labels]",
+        "test_features: [n_rows, n_features]",
+        "test_labels: [n_rows, n_labels]",
+        "return: []",
+    )
+    def loss(
+        weights: np.ndarray, test_features: np.ndarray, test_labels: np.ndarray
+    ) -> np.ndarray:
+        prediction = check_shape(test_features @ weights, "[n_rows, n_labels]")
+        error = check_shape(prediction - test_labels, "[n_rows, n_labels]")
+        square_error = check_shape(error ** 2, "[n_rows, n_labels]")
+        mean_square_error = check_shape(np.mean(square_error, axis=-1), "[n_rows]")
+        root_mean_square_error = check_shape(np.sqrt(mean_square_error), "[n_rows]")
+        return np.mean(root_mean_square_error)
+
+
 Shape reuse
 +++++++++++
 
-Just like with other code it is useful to be able to define a shape in one place and reuse it.
-In particular this ensures that your code keep having consistent shapes, even if it is refactored.
+Just like with other code it is useful to be able to specify a shape in one place and reuse the
+specification. In particular this ensures that your code keep having consistent shapes, even if it
+is refactored.
 
 
 Class inheritance
@@ -214,6 +249,9 @@ use it without the decorator. In fact the decorator is just a wrapper around the
     shape_checker.check_shape(features, "[n_rows, n_features]")
     prediction = shape_checker.check_shape(features @ weights, "[n_rows, n_labels]")
 
+You can use the function :func:`get_shape_checker` to get the :class:`ShapeChecker` used by any
+immediately surrounding :func:`check_shapes` decorator.
+
 
 Speed, and interactions with `tf.function`
 ++++++++++++++++++++++++++++++++++++++++++
@@ -292,13 +330,13 @@ if you do not wish to have your docstrings rewritten, you can disable it with
     set_rewrite_docstrings(None)
 
 
-Shapes of custom objects
-++++++++++++++++++++++++
+Shapes of custom types
+++++++++++++++++++++++
 
 :mod:`check_shapes` uses the function :func:`get_shape` to extract the shape of an object.
 
-:func:`get_shape` uses :func:`functools.singledispatch` to branch on the type of object to the shape
-from, and you can extend this to extract shapes for you own custom types.
+:func:`get_shape` uses :func:`functools.singledispatch` to branch on the type of object to get the
+shape from, and you can extend this to extract shapes for you own custom types.
 
 For example::
 
@@ -332,15 +370,15 @@ For example::
     )
     def loss(
         model: LinearModel, test_features: np.ndarray, test_labels: np.ndarray
-    ) -> None:
+    ) -> np.ndarray:
         prediction = model.predict(test_features)
         return np.mean(np.sqrt(np.mean((prediction - test_labels) ** 2, axis=-1)))
-
 """
 
 from .accessors import get_check_shapes, maybe_get_check_shapes
 from .base_types import Dimension, Shape
 from .checker import ShapeChecker
+from .checker_context import check_shape, get_shape_checker
 from .config import (
     DocstringFormat,
     disable_check_shapes,
@@ -363,6 +401,8 @@ from .error_contexts import (
     ParallelContext,
     ShapeContext,
     StackContext,
+    TensorSpecContext,
+    VariableContext,
 )
 from .exceptions import (
     ArgumentReferenceError,
@@ -371,6 +411,7 @@ from .exceptions import (
     NoShapeError,
     ShapeMismatchError,
     SpecificationParseError,
+    VariableTypeError,
 )
 from .inheritance import inherit_check_shapes
 from .shapes import get_shape
@@ -398,11 +439,16 @@ __all__ = [
     "ShapeMismatchError",
     "SpecificationParseError",
     "StackContext",
+    "TensorSpecContext",
+    "VariableContext",
+    "VariableTypeError",
     "accessors",
     "argument_ref",
     "base_types",
+    "check_shape",
     "check_shapes",
     "checker",
+    "checker_context",
     "config",
     "decorator",
     "disable_check_shapes",
@@ -412,6 +458,7 @@ __all__ = [
     "get_enable_check_shapes",
     "get_rewrite_docstrings",
     "get_shape",
+    "get_shape_checker",
     "inherit_check_shapes",
     "inheritance",
     "maybe_get_check_shapes",

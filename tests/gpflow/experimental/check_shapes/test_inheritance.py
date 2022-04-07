@@ -20,10 +20,15 @@ from typing import Any, Callable, ContextManager
 
 import pytest
 
-from gpflow.experimental.check_shapes import ShapeMismatchError, check_shapes, inherit_check_shapes
-from gpflow.experimental.check_shapes.config import disable_check_shapes
+from gpflow.experimental.check_shapes import (
+    ShapeMismatchError,
+    check_shape,
+    check_shapes,
+    disable_check_shapes,
+    inherit_check_shapes,
+)
 
-from .utils import TestShaped, t
+from .utils import TestShaped, current_line, t
 
 
 def test_inherit_check_shapes__defined_in_super_class() -> None:
@@ -182,6 +187,48 @@ def test_inherit_check_shapes__undefined() -> None:
                 return t(1)
 
 
+def test_inherit_check_shapes__check_shape() -> None:
+    class SuperClass(ABC):
+        @abstractmethod
+        @check_shapes(
+            "a: [d]",
+            "return: [1]",
+        )
+        def f(self, a: TestShaped) -> TestShaped:
+            pass
+
+    def_line = current_line() + 4
+    call_line = current_line() + 5
+
+    class SubClass(SuperClass):
+        @inherit_check_shapes
+        def f(self, a: TestShaped) -> TestShaped:
+            check_shape(t(3), "[d]")
+            return t(1)
+
+    sub = SubClass()
+    sub.f(t(3))  # Don't crash...
+
+    with pytest.raises(ShapeMismatchError) as e:
+        sub.f(t(5))
+
+    (message,) = e.value.args
+    assert (
+        f"""
+Tensor shape mismatch.
+  Function:              test_inherit_check_shapes__check_shape.<locals>.SubClass.f
+    Declared: {__file__}:{def_line}
+    Argument: a
+      Expected: [d]
+      Actual:   [5]
+  check_shape called at: {__file__}:{call_line}
+    Expected: [d]
+    Actual:   [3]
+"""
+        == message
+    )
+
+
 @pytest.mark.parametrize("enable_super", [True, False])
 @pytest.mark.parametrize("enable_sub", [True, False])
 def test_inherit_check_shapes__disable(enable_super: bool, enable_sub: bool) -> None:
@@ -226,6 +273,56 @@ def test_inherit_check_shapes__disable(enable_super: bool, enable_sub: bool) -> 
 
     with disable_check_shapes():
         sub.f(t(2, 3), t(2, 4))  # Wrong shape, but checks disabled.
+
+
+def test_inherit_check_shapes__error_message() -> None:
+    # Here we're just testing that error message formatting is wired together sanely. For more
+    # thorough tests of error formatting, see test_error_contexts.py and test_exceptions.py
+
+    def_line = current_line() + 2
+
+    class SuperClass(ABC):
+        @abstractmethod
+        @check_shapes(
+            "a: [d1, d2]",
+            "b: [d1, d3]  # Some note on b",
+            "return: [d2, d3]",
+            "# Some note on f",
+            "# Some other note on f",
+        )
+        def f(self, a: TestShaped, b: TestShaped) -> TestShaped:
+            pass
+
+    def_line = current_line() + 3
+
+    class SubClass(SuperClass):
+        @inherit_check_shapes
+        def f(self, a: TestShaped, b: TestShaped) -> TestShaped:
+            return t(3, 4)
+
+    sub = SubClass()
+
+    with pytest.raises(ShapeMismatchError) as e:
+        sub.f(t(2, 3), t(3, 4))
+
+    (message,) = e.value.args
+    assert (
+        f"""
+Tensor shape mismatch.
+  Function: test_inherit_check_shapes__error_message.<locals>.SubClass.f
+    Declared: {__file__}:{def_line}
+    Note:     Some note on f
+    Note:     Some other note on f
+    Argument: a
+      Expected: [d1, d2]
+      Actual:   [2, 3]
+    Argument: b
+      Note:     Some note on b
+      Expected: [d1, d3]
+      Actual:   [3, 4]
+"""
+        == message
+    )
 
 
 def test_inherit_check_shapes__rewrites_docstring() -> None:

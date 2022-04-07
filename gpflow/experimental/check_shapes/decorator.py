@@ -23,6 +23,7 @@ from .accessors import set_check_shapes
 from .argument_ref import RESULT_TOKEN
 from .base_types import C
 from .checker import ShapeChecker
+from .checker_context import set_shape_checker
 from .config import get_enable_check_shapes
 from .error_contexts import (
     FunctionCallContext,
@@ -97,7 +98,8 @@ def check_shapes(*specs: str) -> Callable[[C], C]:
                 for arg_spec in pre_specs
             )
 
-            result = func(*args, **kwargs)
+            with set_shape_checker(checker):
+                result = func(*args, **kwargs)
             arg_map[RESULT_TOKEN] = result
 
             checker.check_shapes(

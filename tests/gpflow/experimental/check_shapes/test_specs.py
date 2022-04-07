@@ -19,7 +19,7 @@ from gpflow.experimental.check_shapes.specs import (
     ParsedNoteSpec,
 )
 
-from .utils import make_arg_spec, make_argument_ref, make_shape_spec, varrank
+from .utils import bc, make_arg_spec, make_argument_ref, make_shape_spec, varrank
 
 
 def test_note_spec() -> None:
@@ -77,6 +77,22 @@ def test_note_spec() -> None:
                 note=None,
             ),
             "foo: [., ..., .]",
+        ),
+        (
+            make_arg_spec(
+                make_argument_ref("foo"),
+                make_shape_spec(bc(varrank("y")), bc(3), bc("x")),
+                note=None,
+            ),
+            "foo: [broadcast y..., broadcast 3, broadcast x]",
+        ),
+        (
+            make_arg_spec(
+                make_argument_ref("foo"),
+                make_shape_spec(bc(varrank(None)), bc(None)),
+                note=None,
+            ),
+            "foo: [broadcast ..., broadcast .]",
         ),
         (
             make_arg_spec(

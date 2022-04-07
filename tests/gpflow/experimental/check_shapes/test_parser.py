@@ -27,6 +27,7 @@ from gpflow.experimental.check_shapes.specs import ParsedFunctionSpec, ParsedNot
 
 from .utils import (
     TestContext,
+    bc,
     current_line,
     make_arg_spec,
     make_argument_ref,
@@ -276,6 +277,75 @@ _TEST_DATA = [
             Parameter d.
         :returns:
             * **return** has shape [..., *d1*, *d2*].
+
+            Return value.
+        """,
+    ),
+    TestData(
+        "broadcasting",
+        (
+            "a: [d1, broadcast 3]",
+            "b: [broadcast d1, d2]",
+            "c: [d1, broadcast ., d2]",
+            "d: [broadcast *ds]",
+            "return: [broadcast ...]",
+        ),
+        ParsedFunctionSpec(
+            (
+                make_arg_spec(
+                    make_argument_ref("a"),
+                    make_shape_spec("d1", bc(3)),
+                    note=None,
+                ),
+                make_arg_spec(
+                    make_argument_ref("b"),
+                    make_shape_spec(bc("d1"), "d2"),
+                    note=None,
+                ),
+                make_arg_spec(
+                    make_argument_ref("c"),
+                    make_shape_spec("d1", bc(None), "d2"),
+                    note=None,
+                ),
+                make_arg_spec(
+                    make_argument_ref("d"),
+                    make_shape_spec(bc(varrank("ds"))),
+                    note=None,
+                ),
+                make_arg_spec(
+                    make_argument_ref("return"),
+                    make_shape_spec(bc(varrank(None))),
+                    note=None,
+                ),
+            ),
+            (),
+        ),
+        """
+        :param a: Parameter a.
+        :param b: Parameter b.
+        :param c: Parameter c.
+        :param d: Parameter d.
+        :returns: Return value.
+        """,
+        """
+        :param a:
+            * **a** has shape [*d1*, broadcast 3].
+
+            Parameter a.
+        :param b:
+            * **b** has shape [broadcast *d1*, *d2*].
+
+            Parameter b.
+        :param c:
+            * **c** has shape [*d1*, broadcast ., *d2*].
+
+            Parameter c.
+        :param d:
+            * **d** has shape [broadcast *ds*...].
+
+            Parameter d.
+        :returns:
+            * **return** has shape [broadcast ...].
 
             Return value.
         """,
@@ -1031,13 +1101,26 @@ Unable to parse shape specification.
     Argument number (0-indexed): 0
       Line:            "a: [, x]"
                             ^
-      Expected one of: variable name (re=(?:(?:[A-Z]|[a-z])|_)(?:(?:(?:[A-Z]|[a-z])|[0-9]|_))*)
+      Expected one of: "broadcast"
+                       variable name (re=(?:(?:[A-Z]|[a-z])|_)(?:(?:(?:[A-Z]|[a-z])|[0-9]|_))*)
                        "."
                        "..."
                        integer (re=(?:[0-9])+)
                        "None"
                        "]"
                        "*"
+""",
+        ),
+        (
+            "a: [x, broadcast y..., z]",
+            """
+Unable to parse shape specification.
+  check_shapes called at: __check_shapes_path_and_line__
+    Argument number (0-indexed): 0
+      Line:    "a: [x, broadcast y..., z]"
+                                 ^
+      Variable y
+      Broadcasting not supported for non-leading variable-rank variables.
 """,
         ),
         (

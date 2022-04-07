@@ -20,7 +20,12 @@ from typing import Any, Sequence, Tuple
 
 import pytest
 
-from gpflow.experimental.check_shapes import ShapeChecker, ShapeMismatchError, disable_check_shapes
+from gpflow.experimental.check_shapes import (
+    ShapeChecker,
+    ShapeMismatchError,
+    VariableTypeError,
+    disable_check_shapes,
+)
 from gpflow.experimental.check_shapes.checker import TensorSpecLike
 
 from .utils import TestContext, current_line, make_shape_spec, make_tensor_spec, t, t_unk
@@ -101,6 +106,20 @@ TESTS = [
         [
             (t(2, 3), "[d1, d2]"),
             (t(3, 4), "[d1, d3]"),
+        ],
+        False,
+    ),
+    ShapeCheckerTest(
+        "var_dim_reuse",
+        [
+            (t(3, 3), "[d1, d1]"),
+        ],
+        True,
+    ),
+    ShapeCheckerTest(
+        "var_dim_reuse_bad",
+        [
+            (t(3, 4), "[d1, d1]"),
         ],
         False,
     ),
@@ -236,6 +255,140 @@ TESTS = [
     ShapeCheckerTest("anonymous_dot_bad_too_long", [(t(1, 2, 3), "[., 3]")], False),
     ShapeCheckerTest("anonymous_dot_bad_too_short", [(t(3), "[., 3]")], False),
     ShapeCheckerTest("anonymous_ellipsis_too_short", [(t(), "[..., 3]")], False),
+    ShapeCheckerTest(
+        "broadcast_constant",
+        [
+            (t(1, 3), "[broadcast 2, broadcast 3]"),
+        ],
+        True,
+    ),
+    ShapeCheckerTest(
+        "broadcast_constant_bad",
+        [
+            (t(1, 4), "[broadcast 2, broadcast 3]"),
+        ],
+        False,
+    ),
+    ShapeCheckerTest(
+        "broadcast_neither_1",
+        [
+            (t(2, 3, 4), "[broadcast a, b, broadcast c]"),
+            (t(2, 3, 4), "[a, broadcast b, broadcast c]"),
+        ],
+        True,
+    ),
+    ShapeCheckerTest(
+        "broadcast_broadcast_1",
+        [
+            (t(1, 3, 1, 5), "[broadcast a, b, broadcast c, broadcast d]"),
+            (t(2, 1, 4, 1), "[a, broadcast b, broadcast c, broadcast d]"),
+        ],
+        True,
+    ),
+    ShapeCheckerTest(
+        "broadcast_both_1",
+        [
+            (t(1, 1, 1), "[broadcast a, b, broadcast c]"),
+            (t(1, 1, 1), "[a, broadcast b, broadcast c]"),
+        ],
+        True,
+    ),
+    ShapeCheckerTest(
+        "broadcast_mismatch_1",
+        [
+            (t(2), "[broadcast a]"),
+            (t(3), "[a]"),
+        ],
+        False,
+    ),
+    ShapeCheckerTest(
+        "broadcast_mismatch_2",
+        [
+            (t(2), "[a]"),
+            (t(3), "[broadcast a]"),
+        ],
+        False,
+    ),
+    ShapeCheckerTest(
+        "broadcast_variable_rank_first",
+        [
+            (t(1, 1, 3), "[broadcast a...]"),
+            (t(1, 2, 3), "[a...]"),
+        ],
+        True,
+    ),
+    ShapeCheckerTest(
+        "broadcast_variable_rank_second",
+        [
+            (t(1, 2, 3), "[a...]"),
+            (t(1, 1, 3), "[broadcast a...]"),
+        ],
+        True,
+    ),
+    ShapeCheckerTest(
+        "broadcast_variable_rank_short_first",
+        [
+            (t(1, 1, 3), "[broadcast a...]"),
+            (t(4, 4, 1, 2, 3), "[a...]"),
+        ],
+        True,
+    ),
+    ShapeCheckerTest(
+        "broadcast_variable_rank_short_second",
+        [
+            (t(4, 4, 1, 2, 3), "[a...]"),
+            (t(1, 1, 3), "[broadcast a...]"),
+        ],
+        True,
+    ),
+    ShapeCheckerTest(
+        "broadcast_variable_rank_empty_first",
+        [
+            (t(), "[broadcast a...]"),
+            (t(1, 2, 3), "[a...]"),
+        ],
+        True,
+    ),
+    ShapeCheckerTest(
+        "broadcast_variable_rank_empty_second",
+        [
+            (t(1, 2, 3), "[a...]"),
+            (t(), "[broadcast a...]"),
+        ],
+        True,
+    ),
+    ShapeCheckerTest(
+        "broadcast_variable_rank_mismatch_first",
+        [
+            (t(1, 4, 3), "[broadcast a...]"),
+            (t(1, 2, 3), "[a...]"),
+        ],
+        False,
+    ),
+    ShapeCheckerTest(
+        "broadcast_variable_rank_mismatch_second",
+        [
+            (t(1, 2, 3), "[a...]"),
+            (t(1, 4, 3), "[broadcast a...]"),
+        ],
+        False,
+    ),
+    ShapeCheckerTest(
+        "broadcast_variable_rank_long_first",
+        [
+            (t(1, 2, 3), "[broadcast a...]"),
+            (t(2, 3), "[a...]"),
+        ],
+        False,
+    ),
+    ShapeCheckerTest(
+        "broadcast_variable_rank_long_second",
+        [
+            (t(2, 3), "[a...]"),
+            (t(1, 2, 3), "[broadcast a...]"),
+        ],
+        False,
+    ),
     ShapeCheckerTest("None", [(None, "[2, 3]")], True),
     ShapeCheckerTest(
         "parsed_tensor_spec",
@@ -364,6 +517,49 @@ Tensor shape mismatch.
     Index: [1]
       Expected: [d4, d5]
       Actual:   [5, 4]
+"""
+        == message
+    )
+
+
+def test_shape_checker__error_message__variable_type() -> None:
+    checker = ShapeChecker()
+
+    call_1_line = current_line() + 1
+    checker.check_shape(t(1), "[d1]")
+
+    call_2_line = current_line() + 1
+    checker.check_shape(t(2, 2), "[d2...]")
+
+    # How line numbers are determined has changed with Python versions. We can remove this if we
+    # bump the minimum version of Python to >= 3.8:
+    call_offset = 4 if sys.version_info < (3, 8) else 1
+
+    with pytest.raises(VariableTypeError) as e:
+        call_3_line = current_line() + call_offset
+        checker.check_shapes(
+            [
+                (t(2), "[d2]"),
+                (t(1, 1), "[d1...]"),
+            ]
+        )
+
+    (message,) = e.value.args
+    assert (
+        f"""
+Cannot use the same variable to bind both a single dimension and a variable number of dimensions.
+  Variable: d1
+    check_shape called at:  {__file__}:{call_1_line}
+      Specification: [d1]
+    check_shapes called at: {__file__}:{call_3_line}
+      Index: [1]
+        Specification: [d1...]
+  Variable: d2
+    check_shape called at:  {__file__}:{call_2_line}
+      Specification: [d2...]
+    check_shapes called at: {__file__}:{call_3_line}
+      Index: [0]
+        Specification: [d2]
 """
         == message
     )

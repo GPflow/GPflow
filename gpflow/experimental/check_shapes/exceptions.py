@@ -40,6 +40,17 @@ class CheckShapesError(Exception):
         self.context = context
 
 
+class VariableTypeError(CheckShapesError):
+    """
+    Error raised if a variable is used both as a rank-1 and a variable-rank variable.
+    """
+
+    error_message = (
+        "Cannot use the same variable to bind both a single dimension"
+        " and a variable number of dimensions."
+    )
+
+
 class SpecificationParseError(CheckShapesError):
     """
     Error raised if there was an error parsing the shape specification.
