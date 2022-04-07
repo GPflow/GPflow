@@ -325,6 +325,11 @@ function checkPageExistsAndRedirect(event) {
       </a>
      </li>
      <li class="toctree-l3">
+      <a class="reference internal" href="error_contexts/index.html">
+       gpflow.experimental.check_shapes.error_contexts
+      </a>
+     </li>
+     <li class="toctree-l3">
       <a class="reference internal" href="parser/index.html">
        gpflow.experimental.check_shapes.parser
       </a>
@@ -898,6 +903,17 @@ multiple uses of the same variable name must match the same dimension sizes.</p>
     <span class="o">...</span>
 </pre></div>
 </div>
+<p>Any of the above can be prefixed with the keyword <code class="docutils literal notranslate"><span class="pre">broadcast</span></code>, to allow any value that broadcasts
+to the specification. For example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nd">@check_shapes</span><span class="p">(</span>
+    <span class="s2">&quot;a: [broadcast batch...]&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;b: [broadcast batch...]&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;return: [batch...]&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="n">AnyNDArray</span><span class="p">,</span> <span class="n">b</span><span class="p">:</span> <span class="n">AnyNDArray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AnyNDArray</span><span class="p">:</span>
+    <span class="k">return</span> <span class="n">a</span> <span class="o">+</span> <span class="n">b</span>
+</pre></div>
+</div>
 </section>
 <section id="note-specification">
 <h3>Note specification<a class="headerlink" href="#note-specification" title="Permalink to this headline">#</a></h3>
@@ -1126,6 +1142,7 @@ from, and you can extend this to extract shapes for you own custom types.</p>
 <li class="toctree-l1"><a class="reference internal" href="argument_ref/index.html">gpflow.experimental.check_shapes.argument_ref</a></li>
 <li class="toctree-l1"><a class="reference internal" href="checker/index.html">gpflow.experimental.check_shapes.checker</a></li>
 <li class="toctree-l1"><a class="reference internal" href="decorator/index.html">gpflow.experimental.check_shapes.decorator</a></li>
+<li class="toctree-l1"><a class="reference internal" href="error_contexts/index.html">gpflow.experimental.check_shapes.error_contexts</a></li>
 <li class="toctree-l1"><a class="reference internal" href="parser/index.html">gpflow.experimental.check_shapes.parser</a></li>
 <li class="toctree-l1"><a class="reference internal" href="shapes/index.html">gpflow.experimental.check_shapes.shapes</a></li>
 </ul>
@@ -1409,7 +1426,7 @@ saved for later use.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="gpflow.experimental.check_shapes.LarkUnexpectedInputContext">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.experimental.check_shapes.</span></span><span class="sig-name descname"><span class="pre">LarkUnexpectedInputContext</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">error</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">terminal_descriptions</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/gpflow/experimental/check_shapes/error_contexts.html#LarkUnexpectedInputContext"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.experimental.check_shapes.LarkUnexpectedInputContext" title="Permalink to this definition">#</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#gpflow.experimental.check_shapes.ErrorContext" title="gpflow.experimental.check_shapes.error_contexts.ErrorContext"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.experimental.check_shapes.error_contexts.ErrorContext</span></code></a></p>
+<dd><p>Bases: <a class="reference internal" href="error_contexts/index.html#gpflow.experimental.check_shapes.error_contexts.ParserInputContext" title="gpflow.experimental.check_shapes.error_contexts.ParserInputContext"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.experimental.check_shapes.error_contexts.ParserInputContext</span></code></a></p>
 <p>An error was caused by an <cite>UnexpectedInput</cite> error from <cite>Lark</cite>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>

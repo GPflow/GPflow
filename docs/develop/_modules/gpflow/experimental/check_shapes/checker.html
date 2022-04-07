@@ -262,7 +262,8 @@ function checkPageExistsAndRedirect(event) {
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">Class responsible for remembering and checking shapes.</span>
 <span class="sd">&quot;&quot;&quot;</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">TypeVar</span><span class="p">,</span> <span class="n">Union</span><span class="p">,</span> <span class="n">cast</span>
+<span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">TypeVar</span><span class="p">,</span> <span class="n">Union</span>
 
 <span class="kn">from</span> <span class="nn">..utils</span> <span class="kn">import</span> <span class="n">experimental</span>
 <span class="kn">from</span> <span class="nn">.base_types</span> <span class="kn">import</span> <span class="n">Shape</span>
@@ -297,15 +298,95 @@ function checkPageExistsAndRedirect(event) {
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">tensor_spec</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
             <span class="k">for</span> <span class="n">dim</span> <span class="ow">in</span> <span class="n">tensor_spec</span><span class="p">:</span>
                 <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dim</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
-                    <span class="n">dimension_specs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ParsedDimensionSpec</span><span class="p">(</span><span class="n">dim</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">False</span><span class="p">))</span>
+                    <span class="n">dimension_specs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ParsedDimensionSpec</span><span class="p">(</span><span class="n">dim</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="kc">False</span><span class="p">))</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="k">assert</span> <span class="n">dim</span> <span class="ow">is</span> <span class="kc">None</span>
-                    <span class="n">dimension_specs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ParsedDimensionSpec</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">False</span><span class="p">))</span>
+                    <span class="n">dimension_specs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ParsedDimensionSpec</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="kc">False</span><span class="p">))</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">assert</span> <span class="n">tensor_spec</span> <span class="ow">is</span> <span class="kc">None</span>
-            <span class="n">dimension_specs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ParsedDimensionSpec</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">True</span><span class="p">))</span>
+            <span class="n">dimension_specs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ParsedDimensionSpec</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="kc">False</span><span class="p">))</span>
         <span class="n">shape</span> <span class="o">=</span> <span class="n">ParsedShapeSpec</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="n">dimension_specs</span><span class="p">))</span>
         <span class="k">return</span> <span class="n">ParsedTensorSpec</span><span class="p">(</span><span class="n">shape</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+
+<span class="nd">@dataclass</span>
+<span class="k">class</span> <span class="nc">_ObservedDim</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Storage of observed size of a single dimension variable.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="nf">check_and_update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">actual</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">broadcast</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Attempt to merge new data into this observation.</span>
+
+<span class="sd">        Returns whether the new data is compatible with existing observations.  If this returns</span>
+<span class="sd">        `False` it may have been left in an invalid state and should not be used again.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">actual</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">broadcast</span> <span class="ow">and</span> <span class="n">actual</span> <span class="o">==</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="c1"># Update contains no information. Nothing to do.</span>
+            <span class="k">return</span> <span class="kc">True</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">size</span> <span class="o">=</span> <span class="n">actual</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="n">actual</span>
+
+
+<span class="nd">@dataclass</span>
+<span class="k">class</span> <span class="nc">_ObservedDims</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Storage of observed sizes of a var-rank / batch variable.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">sizes</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">_ObservedDim</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">known_rank</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="k">def</span> <span class="nf">check_and_update</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">actual</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="o">...</span><span class="p">]],</span> <span class="n">broadcast</span><span class="p">:</span> <span class="nb">bool</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Attempt to merge new data into this observation.</span>
+
+<span class="sd">        Returns whether the new data is compatible with existing observations.  If this returns</span>
+<span class="sd">        `False` it may have been left in an invalid state and should not be used again.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">actual</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># Update contains no information. Nothing to do.</span>
+            <span class="k">return</span> <span class="kc">True</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sizes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sizes</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">assert</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">known_rank</span>
+
+        <span class="c1"># First make sure lengths are set up and matches.</span>
+        <span class="n">longer</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sizes</span><span class="p">)</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">actual</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">known_rank</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">broadcast</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">longer</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="kc">False</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">longer</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">longer</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">sizes</span> <span class="o">=</span> <span class="p">[</span><span class="n">_ObservedDim</span><span class="p">()</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="o">-</span><span class="n">longer</span><span class="p">)]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">sizes</span>
+                <span class="n">longer</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">if</span> <span class="n">broadcast</span><span class="p">:</span>
+                <span class="k">pass</span>  <span class="c1"># We don&#39;t know anything about total rank.</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">longer</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="kc">False</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">known_rank</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">assert</span> <span class="n">longer</span> <span class="o">&gt;=</span> <span class="mi">0</span>
+
+        <span class="c1"># Then match individual dimensions.</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">actual_dim</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">actual</span><span class="p">):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">sizes</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="n">longer</span><span class="p">]</span><span class="o">.</span><span class="n">check_and_update</span><span class="p">(</span><span class="n">actual_dim</span><span class="p">,</span> <span class="n">broadcast</span><span class="p">):</span>
+                <span class="k">return</span> <span class="kc">False</span>
+
+        <span class="k">return</span> <span class="kc">True</span>
 
 
 <div class="viewcode-block" id="ShapeChecker"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/index.html#gpflow.experimental.check_shapes.ShapeChecker">[docs]</a><span class="k">class</span> <span class="nc">ShapeChecker</span><span class="p">:</span>
@@ -320,7 +401,7 @@ function checkPageExistsAndRedirect(event) {
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_seen_shapes</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">Shape</span><span class="p">,</span> <span class="n">ParsedTensorSpec</span><span class="p">,</span> <span class="n">ErrorContext</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_additional_context</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">ErrorContext</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_seen_dims</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]]]]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_seen_dims</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="n">_ObservedDim</span><span class="p">,</span> <span class="n">_ObservedDims</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
 
 <div class="viewcode-block" id="ShapeChecker.add_context"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/index.html#gpflow.experimental.check_shapes.ShapeChecker.add_context">[docs]</a>    <span class="k">def</span> <span class="nf">add_context</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="n">ErrorContext</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -437,35 +518,28 @@ function checkPageExistsAndRedirect(event) {
                         <span class="c1"># Anonymous dimension spec - we don&#39;t care about the actual values.</span>
                         <span class="k">continue</span>
 
-                    <span class="n">expected_dims</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_seen_dims</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">expected_name</span><span class="p">)</span>
-                    <span class="k">if</span> <span class="n">expected_dims</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                        <span class="n">expected_dims</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="n">List</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]],</span> <span class="n">variable_rank_len</span> <span class="o">*</span> <span class="p">[</span><span class="kc">None</span><span class="p">])</span>
-                        <span class="bp">self</span><span class="o">.</span><span class="n">_seen_dims</span><span class="p">[</span><span class="n">expected_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">expected_dims</span>
-
-                    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">expected_dims</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span>
-
-                    <span class="n">_assert</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">expected_dims</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">actual_dims</span><span class="p">))</span>
-                    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">actual_dim</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">actual_dims</span><span class="p">):</span>
-                        <span class="k">if</span> <span class="n">actual_dim</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                            <span class="k">continue</span>
-                        <span class="k">if</span> <span class="n">expected_dims</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                            <span class="n">expected_dims</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">actual_dim</span>
-                        <span class="k">else</span><span class="p">:</span>
-                            <span class="n">_assert</span><span class="p">(</span><span class="n">expected_dims</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="n">actual_dim</span><span class="p">)</span>
+                    <span class="n">expected_dims</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_seen_dims</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">expected_name</span><span class="p">,</span> <span class="n">_ObservedDims</span><span class="p">())</span>
+                    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">expected_dims</span><span class="p">,</span> <span class="n">_ObservedDims</span><span class="p">)</span>
+                    <span class="n">_assert</span><span class="p">(</span><span class="n">expected_dims</span><span class="o">.</span><span class="n">check_and_update</span><span class="p">(</span><span class="n">actual_dims</span><span class="p">,</span> <span class="n">dim_spec</span><span class="o">.</span><span class="n">broadcastable</span><span class="p">))</span>
 
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">actual_dim</span> <span class="o">=</span> <span class="n">actual</span><span class="p">[</span><span class="n">actual_i</span><span class="p">]</span>
-                    <span class="k">if</span> <span class="n">actual_dim</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                        <span class="k">if</span> <span class="n">dim_spec</span><span class="o">.</span><span class="n">constant</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                            <span class="n">_assert</span><span class="p">(</span><span class="n">dim_spec</span><span class="o">.</span><span class="n">constant</span> <span class="o">==</span> <span class="n">actual_dim</span><span class="p">)</span>
-                        <span class="k">elif</span> <span class="n">dim_spec</span><span class="o">.</span><span class="n">variable_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                            <span class="n">expected_dim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_seen_dims</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span>
-                                <span class="n">dim_spec</span><span class="o">.</span><span class="n">variable_name</span><span class="p">,</span> <span class="n">actual_dim</span>
-                            <span class="p">)</span>
-                            <span class="n">_assert</span><span class="p">(</span><span class="n">expected_dim</span> <span class="o">==</span> <span class="n">actual_dim</span><span class="p">)</span>
-                        <span class="k">else</span><span class="p">:</span>
-                            <span class="k">pass</span>  <span class="c1"># Anonymous dimension - we don&#39;t care about the actual value.</span>
-                    <span class="n">actual_i</span> <span class="o">+=</span> <span class="mi">1</span></div></div>
+                    <span class="n">actual_i</span> <span class="o">+=</span> <span class="mi">1</span>
+                    <span class="k">if</span> <span class="n">actual_dim</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="k">continue</span>
+
+                    <span class="n">expected_dim</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">_ObservedDim</span><span class="p">,</span> <span class="n">_ObservedDims</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="n">dim_spec</span><span class="o">.</span><span class="n">constant</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="n">expected_dim</span> <span class="o">=</span> <span class="n">_ObservedDim</span><span class="p">()</span>
+                        <span class="k">assert</span> <span class="n">expected_dim</span><span class="o">.</span><span class="n">check_and_update</span><span class="p">(</span><span class="n">dim_spec</span><span class="o">.</span><span class="n">constant</span><span class="p">,</span> <span class="n">broadcast</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+                    <span class="k">elif</span> <span class="n">dim_spec</span><span class="o">.</span><span class="n">variable_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="n">expected_name</span> <span class="o">=</span> <span class="n">dim_spec</span><span class="o">.</span><span class="n">variable_name</span>
+                        <span class="n">expected_dim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_seen_dims</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">expected_name</span><span class="p">,</span> <span class="n">_ObservedDim</span><span class="p">())</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="c1"># Anonymous dimension - we don&#39;t care about the actual value.</span>
+                        <span class="k">continue</span>
+                    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">expected_dim</span><span class="p">,</span> <span class="n">_ObservedDim</span><span class="p">)</span>
+                    <span class="n">_assert</span><span class="p">(</span><span class="n">expected_dim</span><span class="o">.</span><span class="n">check_and_update</span><span class="p">(</span><span class="n">actual_dim</span><span class="p">,</span> <span class="n">dim_spec</span><span class="o">.</span><span class="n">broadcastable</span><span class="p">))</span></div></div>
 </pre></div>
 
               </div>

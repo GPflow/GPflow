@@ -669,24 +669,37 @@ function checkPageExistsAndRedirect(event) {
         <span class="n">builder</span><span class="o">.</span><span class="n">add_columned_line</span><span class="p">(</span><span class="s2">&quot;Object type:&quot;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">t</span><span class="o">.</span><span class="vm">__module__</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">t</span><span class="o">.</span><span class="vm">__qualname__</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div></div>
 
 
+<div class="viewcode-block" id="ParserInputContext"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/error_contexts/index.html#gpflow.experimental.check_shapes.checker.ParserInputContext">[docs]</a><span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># type: ignore  # mypy doesn&#39;t like abstract `dataclasses`.</span>
+<span class="k">class</span> <span class="nc">ParserInputContext</span><span class="p">(</span><span class="n">ErrorContext</span><span class="p">,</span> <span class="n">ABC</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Abstract base class for contexts that relate to parser input.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">text</span><span class="p">:</span> <span class="nb">str</span>
+
+    <span class="k">def</span> <span class="nf">print_line</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">builder</span><span class="p">:</span> <span class="n">MessageBuilder</span><span class="p">,</span> <span class="n">line</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">column</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">line</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">line_content</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)[</span><span class="n">line</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>
+            <span class="n">builder</span><span class="o">.</span><span class="n">add_columned_line</span><span class="p">(</span><span class="s2">&quot;Line:&quot;</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;&quot;</span><span class="si">{</span><span class="n">line_content</span><span class="si">}</span><span class="s1">&quot;&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">column</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">builder</span><span class="o">.</span><span class="n">add_columned_line</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot; &quot;</span> <span class="o">*</span> <span class="n">column</span> <span class="o">+</span> <span class="s2">&quot;^&quot;</span><span class="p">)</span></div>
+
+
 <div class="viewcode-block" id="LarkUnexpectedInputContext"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/index.html#gpflow.experimental.check_shapes.checker.LarkUnexpectedInputContext">[docs]</a><span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="k">class</span> <span class="nc">LarkUnexpectedInputContext</span><span class="p">(</span><span class="n">ErrorContext</span><span class="p">):</span>
+<span class="k">class</span> <span class="nc">LarkUnexpectedInputContext</span><span class="p">(</span><span class="n">ParserInputContext</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    An error was caused by an `UnexpectedInput` error from `Lark`.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="n">text</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">error</span><span class="p">:</span> <span class="n">UnexpectedInput</span>
     <span class="n">terminal_descriptions</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span>
 
 <div class="viewcode-block" id="LarkUnexpectedInputContext.print"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/index.html#gpflow.experimental.check_shapes.checker.LarkUnexpectedInputContext.print">[docs]</a>    <span class="k">def</span> <span class="nf">print</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">builder</span><span class="p">:</span> <span class="n">MessageBuilder</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">line</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">error</span><span class="p">,</span> <span class="s2">&quot;line&quot;</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
-        <span class="n">column</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">error</span><span class="p">,</span> <span class="s2">&quot;column&quot;</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">line</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>  <span class="c1"># Lines are 1-indexed...</span>
-            <span class="n">line_content</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)[</span><span class="n">line</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>
-            <span class="n">builder</span><span class="o">.</span><span class="n">add_columned_line</span><span class="p">(</span><span class="s2">&quot;Line:&quot;</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;&quot;</span><span class="si">{</span><span class="n">line_content</span><span class="si">}</span><span class="s1">&quot;&#39;</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">column</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>  <span class="c1"># Columns are 1-indexed too...</span>
-                <span class="n">builder</span><span class="o">.</span><span class="n">add_columned_line</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot; &quot;</span> <span class="o">*</span> <span class="n">column</span> <span class="o">+</span> <span class="s2">&quot;^&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">print_line</span><span class="p">(</span>
+            <span class="n">builder</span><span class="p">,</span>
+            <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">error</span><span class="p">,</span> <span class="s2">&quot;line&quot;</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">),</span>
+            <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">error</span><span class="p">,</span> <span class="s2">&quot;column&quot;</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">),</span>
+        <span class="p">)</span>
 
         <span class="n">expected</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">error</span><span class="p">,</span> <span class="s2">&quot;accepts&quot;</span><span class="p">,</span> <span class="p">[])</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">expected</span><span class="p">:</span>
@@ -702,6 +715,23 @@ function checkPageExistsAndRedirect(event) {
             <span class="n">builder</span><span class="o">.</span><span class="n">add_line</span><span class="p">(</span><span class="s2">&quot;Found unexpected character.&quot;</span><span class="p">)</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">error</span><span class="p">,</span> <span class="n">UnexpectedEOF</span><span class="p">):</span>
             <span class="n">builder</span><span class="o">.</span><span class="n">add_line</span><span class="p">(</span><span class="s2">&quot;Found unexpected end of input.&quot;</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="TrailingBroadcastVarrankContext"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/error_contexts/index.html#gpflow.experimental.check_shapes.checker.TrailingBroadcastVarrankContext">[docs]</a><span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">TrailingBroadcastVarrankContext</span><span class="p">(</span><span class="n">ParserInputContext</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    An error was caused by trying to broadcast a trailing variable-rank variable.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">line</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">column</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">variable</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
+
+<div class="viewcode-block" id="TrailingBroadcastVarrankContext.print"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/error_contexts/index.html#gpflow.experimental.check_shapes.checker.TrailingBroadcastVarrankContext.print">[docs]</a>    <span class="k">def</span> <span class="nf">print</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">builder</span><span class="p">:</span> <span class="n">MessageBuilder</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">print_line</span><span class="p">(</span><span class="n">builder</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">line</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">column</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">variable</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">builder</span><span class="o">.</span><span class="n">add_columned_line</span><span class="p">(</span><span class="s2">&quot;Variable&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">variable</span><span class="p">)</span>
+        <span class="n">builder</span><span class="o">.</span><span class="n">add_line</span><span class="p">(</span><span class="s2">&quot;Broadcasting not supported for non-leading variable-rank variables.&quot;</span><span class="p">)</span></div></div>
 </pre></div>
 
               </div>

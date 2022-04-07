@@ -34,8 +34,8 @@
     <script src="https://unpkg.com/@jupyter-widgets/html-manager@^0.20.1/dist/embed-amd.js"></script>
     <link rel="index" title="Index" href="../../../../../genindex.html" />
     <link rel="search" title="Search" href="../../../../../search.html" />
-    <link rel="next" title="gpflow.experimental.check_shapes.inheritance" href="../inheritance/index.html" />
-    <link rel="prev" title="gpflow.experimental.check_shapes.argument_ref" href="../argument_ref/index.html" />
+    <link rel="next" title="gpflow.experimental.check_shapes.parser" href="../parser/index.html" />
+    <link rel="prev" title="gpflow.experimental.check_shapes.decorator" href="../decorator/index.html" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="docsearch:language" content="None">
     
@@ -314,14 +314,19 @@ function checkPageExistsAndRedirect(event) {
        gpflow.experimental.check_shapes.argument_ref
       </a>
      </li>
-     <li class="toctree-l3 current active">
-      <a class="current reference internal" href="#">
-       gpflow.experimental.check_shapes.error_contexts
+     <li class="toctree-l3">
+      <a class="reference internal" href="../checker/index.html">
+       gpflow.experimental.check_shapes.checker
       </a>
      </li>
      <li class="toctree-l3">
-      <a class="reference internal" href="../inheritance/index.html">
-       gpflow.experimental.check_shapes.inheritance
+      <a class="reference internal" href="../decorator/index.html">
+       gpflow.experimental.check_shapes.decorator
+      </a>
+     </li>
+     <li class="toctree-l3 current active">
+      <a class="current reference internal" href="#">
+       gpflow.experimental.check_shapes.error_contexts
       </a>
      </li>
      <li class="toctree-l3">
@@ -561,8 +566,13 @@ function checkPageExistsAndRedirect(event) {
   </a>
   <ul class="nav section-nav flex-column">
    <li class="toc-h3 nav-item toc-entry">
-    <a class="reference internal nav-link" href="#gpflow-experimental-check-shapes-error-contexts-notecontext">
-     gpflow.experimental.check_shapes.error_contexts.NoteContext
+    <a class="reference internal nav-link" href="#gpflow-experimental-check-shapes-error-contexts-parserinputcontext">
+     gpflow.experimental.check_shapes.error_contexts.ParserInputContext
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#gpflow-experimental-check-shapes-error-contexts-trailingbroadcastvarrankcontext">
+     gpflow.experimental.check_shapes.error_contexts.TrailingBroadcastVarrankContext
     </a>
    </li>
   </ul>
@@ -598,21 +608,41 @@ written to a <cite>MessageBuilder</cite>.</p>
 <p>This allows reusable error messages in a consistent format.</p>
 <section id="classes">
 <h2>Classes<a class="headerlink" href="#classes" title="Permalink to this headline">#</a></h2>
-<section id="gpflow-experimental-check-shapes-error-contexts-notecontext">
-<h3>gpflow.experimental.check_shapes.error_contexts.NoteContext<a class="headerlink" href="#gpflow-experimental-check-shapes-error-contexts-notecontext" title="Permalink to this headline">#</a></h3>
+<section id="gpflow-experimental-check-shapes-error-contexts-parserinputcontext">
+<h3>gpflow.experimental.check_shapes.error_contexts.ParserInputContext<a class="headerlink" href="#gpflow-experimental-check-shapes-error-contexts-parserinputcontext" title="Permalink to this headline">#</a></h3>
 <dl class="py class">
-<dt class="sig sig-object py" id="gpflow.experimental.check_shapes.error_contexts.NoteContext">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.experimental.check_shapes.error_contexts.</span></span><span class="sig-name descname"><span class="pre">NoteContext</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">note</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/gpflow/experimental/check_shapes/error_contexts.html#NoteContext"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.experimental.check_shapes.error_contexts.NoteContext" title="Permalink to this definition">#</a></dt>
-<dd><p>Bases: <a class="reference internal" href="../index.html#gpflow.experimental.check_shapes.ErrorContext" title="gpflow.experimental.check_shapes.error_contexts.ErrorContext"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.experimental.check_shapes.error_contexts.ErrorContext</span></code></a></p>
-<p>An error occurred in a context where a user has added a note.</p>
+<dt class="sig sig-object py" id="gpflow.experimental.check_shapes.error_contexts.ParserInputContext">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.experimental.check_shapes.error_contexts.</span></span><span class="sig-name descname"><span class="pre">ParserInputContext</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/gpflow/experimental/check_shapes/error_contexts.html#ParserInputContext"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.experimental.check_shapes.error_contexts.ParserInputContext" title="Permalink to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference internal" href="../index.html#gpflow.experimental.check_shapes.ErrorContext" title="gpflow.experimental.check_shapes.error_contexts.ErrorContext"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.experimental.check_shapes.error_contexts.ErrorContext</span></code></a>, <code class="xref py py-class docutils literal notranslate"><span class="pre">abc.ABC</span></code></p>
+<p>Abstract base class for contexts that relate to parser input.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>note</strong> (<a class="reference internal" href="../parser/index.html#gpflow.experimental.check_shapes.parser.ParsedNoteSpec" title="gpflow.experimental.check_shapes.specs.ParsedNoteSpec"><code class="xref py py-class docutils literal notranslate"><span class="pre">ParsedNoteSpec</span></code></a>) – </p>
+<dd class="field-odd"><p><strong>text</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>) – </p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="gpflow-experimental-check-shapes-error-contexts-trailingbroadcastvarrankcontext">
+<h3>gpflow.experimental.check_shapes.error_contexts.TrailingBroadcastVarrankContext<a class="headerlink" href="#gpflow-experimental-check-shapes-error-contexts-trailingbroadcastvarrankcontext" title="Permalink to this headline">#</a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="gpflow.experimental.check_shapes.error_contexts.TrailingBroadcastVarrankContext">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.experimental.check_shapes.error_contexts.</span></span><span class="sig-name descname"><span class="pre">TrailingBroadcastVarrankContext</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">line</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">column</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">variable</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/gpflow/experimental/check_shapes/error_contexts.html#TrailingBroadcastVarrankContext"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.experimental.check_shapes.error_contexts.TrailingBroadcastVarrankContext" title="Permalink to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#gpflow.experimental.check_shapes.error_contexts.ParserInputContext" title="gpflow.experimental.check_shapes.error_contexts.ParserInputContext"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.experimental.check_shapes.error_contexts.ParserInputContext</span></code></a></p>
+<p>An error was caused by trying to broadcast a trailing variable-rank variable.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>text</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>) – </p></li>
+<li><p><strong>line</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>) – </p></li>
+<li><p><strong>column</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>) – </p></li>
+<li><p><strong>variable</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>]) – </p></li>
+</ul>
 </dd>
 </dl>
 <dl class="py method">
-<dt class="sig sig-object py" id="gpflow.experimental.check_shapes.error_contexts.NoteContext.print">
-<span class="sig-name descname"><span class="pre">print</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">builder</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/gpflow/experimental/check_shapes/error_contexts.html#NoteContext.print"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.experimental.check_shapes.error_contexts.NoteContext.print" title="Permalink to this definition">#</a></dt>
+<dt class="sig sig-object py" id="gpflow.experimental.check_shapes.error_contexts.TrailingBroadcastVarrankContext.print">
+<span class="sig-name descname"><span class="pre">print</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">builder</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/gpflow/experimental/check_shapes/error_contexts.html#TrailingBroadcastVarrankContext.print"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.experimental.check_shapes.error_contexts.TrailingBroadcastVarrankContext.print" title="Permalink to this definition">#</a></dt>
 <dd><p>Print this context to the given <cite>MessageBuilder</cite>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
