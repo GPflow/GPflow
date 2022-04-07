@@ -14,7 +14,8 @@
 """
 Class responsible for remembering and checking shapes.
 """
-from typing import Any, Dict, Iterable, List, Optional, Tuple, TypeVar, Union, cast
+from dataclasses import dataclass
+from typing import Any, Dict, Iterable, List, Optional, Tuple, TypeVar, Union
 
 from ..utils import experimental
 from .base_types import Shape
@@ -49,15 +50,95 @@ def _as_parsed_tensor_spec(tensor_spec: TensorSpecLike, context: ErrorContext) -
         if isinstance(tensor_spec, tuple):
             for dim in tensor_spec:
                 if isinstance(dim, int):
-                    dimension_specs.append(ParsedDimensionSpec(dim, None, False))
+                    dimension_specs.append(ParsedDimensionSpec(dim, None, False, False))
                 else:
                     assert dim is None
-                    dimension_specs.append(ParsedDimensionSpec(None, None, False))
+                    dimension_specs.append(ParsedDimensionSpec(None, None, False, False))
         else:
             assert tensor_spec is None
-            dimension_specs.append(ParsedDimensionSpec(None, None, True))
+            dimension_specs.append(ParsedDimensionSpec(None, None, True, False))
         shape = ParsedShapeSpec(tuple(dimension_specs))
         return ParsedTensorSpec(shape, None)
+
+
+@dataclass
+class _ObservedDim:
+    """
+    Storage of observed size of a single dimension variable.
+    """
+
+    size: Optional[int] = None
+
+    def check_and_update(self, actual: Optional[int], broadcast: bool) -> bool:
+        """
+        Attempt to merge new data into this observation.
+
+        Returns whether the new data is compatible with existing observations.  If this returns
+        `False` it may have been left in an invalid state and should not be used again.
+        """
+        if (actual is None) or (broadcast and actual == 1):
+            # Update contains no information. Nothing to do.
+            return True
+
+        if self.size is None:
+            self.size = actual
+
+        return self.size == actual
+
+
+@dataclass
+class _ObservedDims:
+    """
+    Storage of observed sizes of a var-rank / batch variable.
+    """
+
+    sizes: Optional[List[_ObservedDim]] = None
+    known_rank: bool = False
+
+    def check_and_update(
+        self, actual: Optional[Tuple[Optional[int], ...]], broadcast: bool
+    ) -> bool:
+        """
+        Attempt to merge new data into this observation.
+
+        Returns whether the new data is compatible with existing observations.  If this returns
+        `False` it may have been left in an invalid state and should not be used again.
+        """
+        if actual is None:
+            # Update contains no information. Nothing to do.
+            return True
+
+        if self.sizes is None:
+            self.sizes = []
+            assert not self.known_rank
+
+        # First make sure lengths are set up and matches.
+        longer = len(self.sizes) - len(actual)
+        if self.known_rank:
+            if broadcast:
+                if longer < 0:
+                    return False
+            else:
+                if longer != 0:
+                    return False
+        else:
+            if longer < 0:
+                self.sizes = [_ObservedDim() for _ in range(-longer)] + self.sizes
+                longer = 0
+            if broadcast:
+                pass  # We don't know anything about total rank.
+            else:
+                if longer > 0:
+                    return False
+                self.known_rank = True
+        assert longer >= 0
+
+        # Then match individual dimensions.
+        for i, actual_dim in enumerate(actual):
+            if not self.sizes[i + longer].check_and_update(actual_dim, broadcast):
+                return False
+
+        return True
 
 
 class ShapeChecker:
@@ -72,7 +153,7 @@ class ShapeChecker:
     def __init__(self) -> None:
         self._seen_shapes: List[Tuple[Shape, ParsedTensorSpec, ErrorContext]] = []
         self._additional_context: List[ErrorContext] = []
-        self._seen_dims: Dict[str, Union[int, List[Optional[int]]]] = {}
+        self._seen_dims: Dict[str, Union[_ObservedDim, _ObservedDims]] = {}
 
     def add_context(self, context: ErrorContext) -> None:
         """
@@ -189,32 +270,25 @@ class ShapeChecker:
                         # Anonymous dimension spec - we don't care about the actual values.
                         continue
 
-                    expected_dims = self._seen_dims.get(expected_name)
-                    if expected_dims is None:
-                        expected_dims = cast(List[Optional[int]], variable_rank_len * [None])
-                        self._seen_dims[expected_name] = expected_dims
-
-                    assert isinstance(expected_dims, list)
-
-                    _assert(len(expected_dims) == len(actual_dims))
-                    for i, actual_dim in enumerate(actual_dims):
-                        if actual_dim is None:
-                            continue
-                        if expected_dims[i] is None:
-                            expected_dims[i] = actual_dim
-                        else:
-                            _assert(expected_dims[i] == actual_dim)
+                    expected_dims = self._seen_dims.setdefault(expected_name, _ObservedDims())
+                    assert isinstance(expected_dims, _ObservedDims)
+                    _assert(expected_dims.check_and_update(actual_dims, dim_spec.broadcastable))
 
                 else:
                     actual_dim = actual[actual_i]
-                    if actual_dim is not None:
-                        if dim_spec.constant is not None:
-                            _assert(dim_spec.constant == actual_dim)
-                        elif dim_spec.variable_name is not None:
-                            expected_dim = self._seen_dims.setdefault(
-                                dim_spec.variable_name, actual_dim
-                            )
-                            _assert(expected_dim == actual_dim)
-                        else:
-                            pass  # Anonymous dimension - we don't care about the actual value.
                     actual_i += 1
+                    if actual_dim is None:
+                        continue
+
+                    expected_dim: Union[_ObservedDim, _ObservedDims]
+                    if dim_spec.constant is not None:
+                        expected_dim = _ObservedDim()
+                        assert expected_dim.check_and_update(dim_spec.constant, broadcast=False)
+                    elif dim_spec.variable_name is not None:
+                        expected_name = dim_spec.variable_name
+                        expected_dim = self._seen_dims.setdefault(expected_name, _ObservedDim())
+                    else:
+                        # Anonymous dimension - we don't care about the actual value.
+                        continue
+                    assert isinstance(expected_dim, _ObservedDim)
+                    _assert(expected_dim.check_and_update(actual_dim, dim_spec.broadcastable))

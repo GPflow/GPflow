@@ -15,6 +15,7 @@
 # pylint: disable=unused-argument
 
 from abc import ABC
+from dataclasses import replace
 from typing import Any, Collection, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple, Type
 
 from lark.exceptions import UnexpectedInput
@@ -30,7 +31,13 @@ from .argument_ref import (
     RootArgumentRef,
 )
 from .config import DocstringFormat, get_rewrite_docstrings
-from .error_contexts import ArgumentContext, ErrorContext, LarkUnexpectedInputContext, StackContext
+from .error_contexts import (
+    ArgumentContext,
+    ErrorContext,
+    LarkUnexpectedInputContext,
+    StackContext,
+    TrailingBroadcastVarrankContext,
+)
 from .exceptions import CheckShapesError, DocstringParseError, SpecificationParseError
 from .specs import (
     ParsedArgumentSpec,
@@ -75,6 +82,9 @@ class _TreeVisitor(ABC):
 
 
 class _ParseSpec(_TreeVisitor):
+    def __init__(self, source: str) -> None:
+        self._source = source
+
     def argument_spec(self, tree: Tree[Token]) -> ParsedArgumentSpec:
         argument_name, argument_refs, tensor_spec = _tree_children(tree)
         root_argument_ref = self.visit(argument_name)
@@ -114,30 +124,57 @@ class _ParseSpec(_TreeVisitor):
         return ParsedShapeSpec(self.visit(dimension_specs))
 
     def dimension_specs(self, tree: Tree[Token]) -> Tuple[ParsedDimensionSpec, ...]:
-        return tuple(self.visit(dimension_spec) for dimension_spec in _tree_children(tree))
+        return tuple(
+            self.visit(dimension_spec, i) for i, dimension_spec in enumerate(_tree_children(tree))
+        )
 
-    def dimension_spec_constant(self, tree: Tree[Token]) -> ParsedDimensionSpec:
+    def dimension_spec_broadcast(self, tree: Tree[Token], i: int) -> ParsedDimensionSpec:
+        (dimension_spec,) = _tree_children(tree)
+        child = self.visit(dimension_spec, i)
+        assert isinstance(child, ParsedDimensionSpec)
+        if i > 0 and child.variable_rank:
+            meta = dimension_spec.meta
+            raise SpecificationParseError(
+                TrailingBroadcastVarrankContext(
+                    self._source, meta.line, meta.column, child.variable_name
+                )
+            )
+        return replace(child, broadcastable=True)
+
+    def dimension_spec_constant(self, tree: Tree[Token], i: int) -> ParsedDimensionSpec:
         (token,) = _token_children(tree)
-        return ParsedDimensionSpec(constant=int(token), variable_name=None, variable_rank=False)
+        return ParsedDimensionSpec(
+            constant=int(token), variable_name=None, variable_rank=False, broadcastable=False
+        )
 
-    def dimension_spec_variable(self, tree: Tree[Token]) -> ParsedDimensionSpec:
+    def dimension_spec_variable(self, tree: Tree[Token], i: int) -> ParsedDimensionSpec:
         (token,) = _token_children(tree)
-        return ParsedDimensionSpec(constant=None, variable_name=token, variable_rank=False)
+        return ParsedDimensionSpec(
+            constant=None, variable_name=token, variable_rank=False, broadcastable=False
+        )
 
-    def dimension_spec_anonymous(self, tree: Tree[Token]) -> ParsedDimensionSpec:
-        return ParsedDimensionSpec(constant=None, variable_name=None, variable_rank=False)
+    def dimension_spec_anonymous(self, tree: Tree[Token], i: int) -> ParsedDimensionSpec:
+        return ParsedDimensionSpec(
+            constant=None, variable_name=None, variable_rank=False, broadcastable=False
+        )
 
-    def dimension_spec_variable_rank(self, tree: Tree[Token]) -> ParsedDimensionSpec:
+    def dimension_spec_variable_rank(self, tree: Tree[Token], i: int) -> ParsedDimensionSpec:
         (token1, token2) = _token_children(tree)
         if token1 == _VARIABLE_RANK_LEADING_TOKEN:
             variable_name = token2
         else:
             assert token2 == _VARIABLE_RANK_TRAILING_TOKEN
             variable_name = token1
-        return ParsedDimensionSpec(constant=None, variable_name=variable_name, variable_rank=True)
+        return ParsedDimensionSpec(
+            constant=None, variable_name=variable_name, variable_rank=True, broadcastable=False
+        )
 
-    def dimension_spec_anonymous_variable_rank(self, tree: Tree[Token]) -> ParsedDimensionSpec:
-        return ParsedDimensionSpec(constant=None, variable_name=None, variable_rank=True)
+    def dimension_spec_anonymous_variable_rank(
+        self, tree: Tree[Token], i: int
+    ) -> ParsedDimensionSpec:
+        return ParsedDimensionSpec(
+            constant=None, variable_name=None, variable_rank=True, broadcastable=False
+        )
 
     def note_spec(self, tree: Tree[Token]) -> ParsedNoteSpec:
         _hash_token, *note_tokens = _token_children(tree)
@@ -179,16 +216,26 @@ class _RewritedocString(_TreeVisitor):
         return "".join(out)
 
     def _shape_spec_to_sphinx(self, shape_spec: ParsedShapeSpec) -> str:
-        out = []
-        for dim in shape_spec.dims:
-            if dim.constant is not None:
-                out.append(str(dim.constant))
-            elif dim.variable_name is not None:
-                suffix = "..." if dim.variable_rank else ""
-                out.append(f"*{dim.variable_name}*{suffix}")
-            else:
-                out.append("..." if dim.variable_rank else ".")
-        return ", ".join(out)
+        return ", ".join(self._dim_spec_to_sphinx(dim) for dim in shape_spec.dims)
+
+    def _dim_spec_to_sphinx(self, dim_spec: ParsedDimensionSpec) -> str:
+        tokens = []
+
+        if dim_spec.broadcastable:
+            tokens.append("broadcast ")
+
+        if dim_spec.constant is not None:
+            tokens.append(str(dim_spec.constant))
+        elif dim_spec.variable_name:
+            tokens.append(f"*{dim_spec.variable_name}*")
+        else:
+            if not dim_spec.variable_rank:
+                tokens.append(".")
+
+        if dim_spec.variable_rank:
+            tokens.append("...")
+
+        return "".join(tokens)
 
     def _guess_indent(self, docstring: str) -> Optional[int]:
         """
@@ -349,14 +396,18 @@ class _CachedParser:
         if result is sentinel:
             try:
                 tree = self._parser.parse(text)
-            except UnexpectedInput as e:
+            except UnexpectedInput as ui:
                 raise self._exception_class(
                     StackContext(
-                        context, LarkUnexpectedInputContext(text, e, self._terminal_descriptions)
+                        context, LarkUnexpectedInputContext(text, ui, self._terminal_descriptions)
                     )
-                ) from e
+                ) from ui
 
-            result = self._transformer_class(*transformer_args).visit(tree)
+            try:
+                result = self._transformer_class(*transformer_args).visit(tree)
+            except CheckShapesError as cse:
+                raise self._exception_class(StackContext(context, cse.context)) from cse
+
             self._cache[cache_key] = result
         return result
 
@@ -409,7 +460,7 @@ def parse_tensor_spec(tensor_spec: str, context: ErrorContext) -> ParsedTensorSp
     """
     Parse a `check_shapes` tensor specification.
     """
-    result = _TENSOR_SPEC_PARSER.parse(tensor_spec, (), context)
+    result = _TENSOR_SPEC_PARSER.parse(tensor_spec, (tensor_spec,), context)
     assert isinstance(result, ParsedTensorSpec)
     return result
 
@@ -422,7 +473,7 @@ def parse_function_spec(function_spec: Sequence[str], context: ErrorContext) -> 
     notes = []
     for i, spec in enumerate(function_spec):
         argument_context = StackContext(context, ArgumentContext(i))
-        parsed_spec = _ARGUMENT_SPEC_PARSER.parse(spec, (), argument_context)
+        parsed_spec = _ARGUMENT_SPEC_PARSER.parse(spec, (spec,), argument_context)
         if isinstance(parsed_spec, ParsedArgumentSpec):
             arguments.append(parsed_spec)
         else:

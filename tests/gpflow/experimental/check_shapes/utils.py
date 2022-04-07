@@ -69,11 +69,6 @@ def t(*shape: Dimension) -> TestShaped:
     return TestShaped(shape)
 
 
-@dataclass(frozen=True)
-class varrank:
-    name: Optional[str]
-
-
 def make_argument_ref(argument_name: str, *refs: Union[int, str]) -> ArgumentRef:
     result: ArgumentRef = RootArgumentRef(argument_name)
     for ref in refs:
@@ -94,17 +89,51 @@ def make_note_spec(note: Union[ParsedNoteSpec, str, None]) -> Optional[ParsedNot
         return None
 
 
-def make_shape_spec(*dims: Union[int, str, varrank, None]) -> ParsedShapeSpec:
+@dataclass(frozen=True)
+class varrank:
+    name: Optional[str]
+
+
+@dataclass(frozen=True)
+class bc:
+    inner: Union[int, str, varrank, None]
+
+
+def make_shape_spec(*dims: Union[int, str, varrank, bc, None]) -> ParsedShapeSpec:
     shape = []
     for dim in dims:
+        broadcastable = False
+        if isinstance(dim, bc):
+            broadcastable = True
+            dim = dim.inner
+
         if isinstance(dim, int):
-            shape.append(ParsedDimensionSpec(constant=dim, variable_name=None, variable_rank=False))
+            shape.append(
+                ParsedDimensionSpec(
+                    constant=dim,
+                    variable_name=None,
+                    variable_rank=False,
+                    broadcastable=broadcastable,
+                )
+            )
         elif dim is None or isinstance(dim, str):
-            shape.append(ParsedDimensionSpec(constant=None, variable_name=dim, variable_rank=False))
+            shape.append(
+                ParsedDimensionSpec(
+                    constant=None,
+                    variable_name=dim,
+                    variable_rank=False,
+                    broadcastable=broadcastable,
+                )
+            )
         else:
             assert isinstance(dim, varrank)
             shape.append(
-                ParsedDimensionSpec(constant=None, variable_name=dim.name, variable_rank=True)
+                ParsedDimensionSpec(
+                    constant=None,
+                    variable_name=dim.name,
+                    variable_rank=True,
+                    broadcastable=broadcastable,
+                )
             )
     return ParsedShapeSpec(tuple(shape))
 

@@ -105,6 +105,20 @@ TESTS = [
         False,
     ),
     ShapeCheckerTest(
+        "var_dim_reuse",
+        [
+            (t(3, 3), "[d1, d1]"),
+        ],
+        True,
+    ),
+    ShapeCheckerTest(
+        "var_dim_reuse_bad",
+        [
+            (t(3, 4), "[d1, d1]"),
+        ],
+        False,
+    ),
+    ShapeCheckerTest(
         "var_rank_empty",
         [
             (t(), "[ds...]"),
@@ -236,6 +250,140 @@ TESTS = [
     ShapeCheckerTest("anonymous_dot_bad_too_long", [(t(1, 2, 3), "[., 3]")], False),
     ShapeCheckerTest("anonymous_dot_bad_too_short", [(t(3), "[., 3]")], False),
     ShapeCheckerTest("anonymous_ellipsis_too_short", [(t(), "[..., 3]")], False),
+    ShapeCheckerTest(
+        "broadcast_constant",
+        [
+            (t(1, 3), "[broadcast 2, broadcast 3]"),
+        ],
+        True,
+    ),
+    ShapeCheckerTest(
+        "broadcast_constant_bad",
+        [
+            (t(1, 4), "[broadcast 2, broadcast 3]"),
+        ],
+        False,
+    ),
+    ShapeCheckerTest(
+        "broadcast_neither_1",
+        [
+            (t(2, 3, 4), "[broadcast a, b, broadcast c]"),
+            (t(2, 3, 4), "[a, broadcast b, broadcast c]"),
+        ],
+        True,
+    ),
+    ShapeCheckerTest(
+        "broadcast_broadcast_1",
+        [
+            (t(1, 3, 1, 5), "[broadcast a, b, broadcast c, broadcast d]"),
+            (t(2, 1, 4, 1), "[a, broadcast b, broadcast c, broadcast d]"),
+        ],
+        True,
+    ),
+    ShapeCheckerTest(
+        "broadcast_both_1",
+        [
+            (t(1, 1, 1), "[broadcast a, b, broadcast c]"),
+            (t(1, 1, 1), "[a, broadcast b, broadcast c]"),
+        ],
+        True,
+    ),
+    ShapeCheckerTest(
+        "broadcast_mismatch_1",
+        [
+            (t(2), "[broadcast a]"),
+            (t(3), "[a]"),
+        ],
+        False,
+    ),
+    ShapeCheckerTest(
+        "broadcast_mismatch_2",
+        [
+            (t(2), "[a]"),
+            (t(3), "[broadcast a]"),
+        ],
+        False,
+    ),
+    ShapeCheckerTest(
+        "broadcast_variable_rank_first",
+        [
+            (t(1, 1, 3), "[broadcast a...]"),
+            (t(1, 2, 3), "[a...]"),
+        ],
+        True,
+    ),
+    ShapeCheckerTest(
+        "broadcast_variable_rank_second",
+        [
+            (t(1, 2, 3), "[a...]"),
+            (t(1, 1, 3), "[broadcast a...]"),
+        ],
+        True,
+    ),
+    ShapeCheckerTest(
+        "broadcast_variable_rank_short_first",
+        [
+            (t(1, 1, 3), "[broadcast a...]"),
+            (t(4, 4, 1, 2, 3), "[a...]"),
+        ],
+        True,
+    ),
+    ShapeCheckerTest(
+        "broadcast_variable_rank_short_second",
+        [
+            (t(4, 4, 1, 2, 3), "[a...]"),
+            (t(1, 1, 3), "[broadcast a...]"),
+        ],
+        True,
+    ),
+    ShapeCheckerTest(
+        "broadcast_variable_rank_empty_first",
+        [
+            (t(), "[broadcast a...]"),
+            (t(1, 2, 3), "[a...]"),
+        ],
+        True,
+    ),
+    ShapeCheckerTest(
+        "broadcast_variable_rank_empty_second",
+        [
+            (t(1, 2, 3), "[a...]"),
+            (t(), "[broadcast a...]"),
+        ],
+        True,
+    ),
+    ShapeCheckerTest(
+        "broadcast_variable_rank_mismatch_first",
+        [
+            (t(1, 4, 3), "[broadcast a...]"),
+            (t(1, 2, 3), "[a...]"),
+        ],
+        False,
+    ),
+    ShapeCheckerTest(
+        "broadcast_variable_rank_mismatch_second",
+        [
+            (t(1, 2, 3), "[a...]"),
+            (t(1, 4, 3), "[broadcast a...]"),
+        ],
+        False,
+    ),
+    ShapeCheckerTest(
+        "broadcast_variable_rank_long_first",
+        [
+            (t(1, 2, 3), "[broadcast a...]"),
+            (t(2, 3), "[a...]"),
+        ],
+        False,
+    ),
+    ShapeCheckerTest(
+        "broadcast_variable_rank_long_second",
+        [
+            (t(2, 3), "[a...]"),
+            (t(1, 2, 3), "[broadcast a...]"),
+        ],
+        False,
+    ),
     ShapeCheckerTest("None", [(None, "[2, 3]")], True),
     ShapeCheckerTest(
         "parsed_tensor_spec",

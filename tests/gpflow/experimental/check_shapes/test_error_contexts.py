@@ -31,6 +31,7 @@ from gpflow.experimental.check_shapes.error_contexts import (
     ParallelContext,
     ShapeContext,
     StackContext,
+    TrailingBroadcastVarrankContext,
 )
 from gpflow.experimental.check_shapes.specs import ParsedNoteSpec
 
@@ -601,3 +602,51 @@ Expected: Some b's
 """ == to_str(
         LarkUnexpectedInputContext(text, error, terminal_descriptions)
     )
+
+
+@pytest.mark.parametrize(
+    "context,expected",
+    [
+        (
+            TrailingBroadcastVarrankContext("foo bar", 1, 5, "bar"),
+            """
+Line:    "foo bar"
+              ^
+Variable bar
+Broadcasting not supported for non-leading variable-rank variables.
+""",
+        ),
+        (
+            TrailingBroadcastVarrankContext("foo bar", 0, 5, "bar"),
+            """
+Variable bar
+Broadcasting not supported for non-leading variable-rank variables.
+""",
+        ),
+        (
+            TrailingBroadcastVarrankContext("foo bar", 1, 0, "bar"),
+            """
+Line:    "foo bar"
+Variable bar
+Broadcasting not supported for non-leading variable-rank variables.
+""",
+        ),
+        (
+            TrailingBroadcastVarrankContext("foo bar", 0, 0, "bar"),
+            """
+Variable bar
+Broadcasting not supported for non-leading variable-rank variables.
+""",
+        ),
+        (
+            TrailingBroadcastVarrankContext("foo bar", 1, 5, None),
+            """
+Line: "foo bar"
+           ^
+Broadcasting not supported for non-leading variable-rank variables.
+""",
+        ),
+    ],
+)
+def test_trailing_broadcast_varrank_context(context: ErrorContext, expected: str) -> None:
+    assert expected == to_str(context)
