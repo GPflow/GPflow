@@ -320,6 +320,11 @@ function checkPageExistsAndRedirect(event) {
       </a>
      </li>
      <li class="toctree-l3">
+      <a class="reference internal" href="checker_context/index.html">
+       gpflow.experimental.check_shapes.checker_context
+      </a>
+     </li>
+     <li class="toctree-l3">
       <a class="reference internal" href="decorator/index.html">
        gpflow.experimental.check_shapes.decorator
       </a>
@@ -580,6 +585,11 @@ function checkPageExistsAndRedirect(event) {
      Note specification
     </a>
    </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#checking-intermediate-results">
+     Checking intermediate results
+    </a>
+   </li>
   </ul>
  </li>
  <li class="toc-h2 nav-item toc-entry">
@@ -623,8 +633,8 @@ function checkPageExistsAndRedirect(event) {
   </a>
  </li>
  <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#shapes-of-custom-objects">
-   Shapes of custom objects
+  <a class="reference internal nav-link" href="#shapes-of-custom-types">
+   Shapes of custom types
   </a>
  </li>
  <li class="toc-h2 nav-item toc-entry">
@@ -760,6 +770,11 @@ function checkPageExistsAndRedirect(event) {
   </a>
   <ul class="nav section-nav flex-column">
    <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#gpflow-experimental-check-shapes-check-shape">
+     gpflow.experimental.check_shapes.check_shape
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
     <a class="reference internal nav-link" href="#gpflow-experimental-check-shapes-check-shapes">
      gpflow.experimental.check_shapes.check_shapes
     </a>
@@ -787,6 +802,11 @@ function checkPageExistsAndRedirect(event) {
    <li class="toc-h3 nav-item toc-entry">
     <a class="reference internal nav-link" href="#gpflow-experimental-check-shapes-get-shape">
      gpflow.experimental.check_shapes.get_shape
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#gpflow-experimental-check-shapes-get-shape-checker">
+     gpflow.experimental.check_shapes.get_shape_checker
     </a>
    </li>
    <li class="toc-h3 nav-item toc-entry">
@@ -942,8 +962,7 @@ places:</p>
 </ul>
 </div></blockquote>
 <p>For example:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nd">@tf</span><span class="o">.</span><span class="n">function</span>
-<span class="nd">@check_shapes</span><span class="p">(</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nd">@check_shapes</span><span class="p">(</span>
     <span class="s2">&quot;features: [batch_shape..., n_features]&quot;</span><span class="p">,</span>
     <span class="s2">&quot;weights: [n_features]  # A note about the shape of `weights`.&quot;</span><span class="p">,</span>
     <span class="s2">&quot;return: [batch_shape...]&quot;</span><span class="p">,</span>
@@ -954,11 +973,35 @@ places:</p>
 </pre></div>
 </div>
 </section>
+<section id="checking-intermediate-results">
+<h3>Checking intermediate results<a class="headerlink" href="#checking-intermediate-results" title="Permalink to this headline">#</a></h3>
+<p>You can use the function <a class="reference internal" href="#gpflow.experimental.check_shapes.check_shape" title="gpflow.experimental.check_shapes.check_shape"><code class="xref py py-func docutils literal notranslate"><span class="pre">check_shape()</span></code></a> to check the shape of an intermediate result. This
+function will use the same namespace as the immediately surrounding <a class="reference internal" href="#gpflow.experimental.check_shapes.check_shapes" title="gpflow.experimental.check_shapes.check_shapes"><code class="xref py py-func docutils literal notranslate"><span class="pre">check_shapes()</span></code></a> decorator,
+and should only be called within functions that has such a decorator. For example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nd">@check_shapes</span><span class="p">(</span>
+    <span class="s2">&quot;weights: [n_features, n_labels]&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;test_features: [n_rows, n_features]&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;test_labels: [n_rows, n_labels]&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;return: []&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="k">def</span> <span class="nf">loss</span><span class="p">(</span>
+    <span class="n">weights</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">test_features</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">test_labels</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+    <span class="n">prediction</span> <span class="o">=</span> <span class="n">check_shape</span><span class="p">(</span><span class="n">test_features</span> <span class="o">@</span> <span class="n">weights</span><span class="p">,</span> <span class="s2">&quot;[n_rows, n_labels]&quot;</span><span class="p">)</span>
+    <span class="n">error</span> <span class="o">=</span> <span class="n">check_shape</span><span class="p">(</span><span class="n">prediction</span> <span class="o">-</span> <span class="n">test_labels</span><span class="p">,</span> <span class="s2">&quot;[n_rows, n_labels]&quot;</span><span class="p">)</span>
+    <span class="n">square_error</span> <span class="o">=</span> <span class="n">check_shape</span><span class="p">(</span><span class="n">error</span> <span class="o">**</span> <span class="mi">2</span><span class="p">,</span> <span class="s2">&quot;[n_rows, n_labels]&quot;</span><span class="p">)</span>
+    <span class="n">mean_square_error</span> <span class="o">=</span> <span class="n">check_shape</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">square_error</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">),</span> <span class="s2">&quot;[n_rows]&quot;</span><span class="p">)</span>
+    <span class="n">root_mean_square_error</span> <span class="o">=</span> <span class="n">check_shape</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">mean_square_error</span><span class="p">),</span> <span class="s2">&quot;[n_rows]&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">root_mean_square_error</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
 </section>
 <section id="shape-reuse">
 <h2>Shape reuse<a class="headerlink" href="#shape-reuse" title="Permalink to this headline">#</a></h2>
-<p>Just like with other code it is useful to be able to define a shape in one place and reuse it.
-In particular this ensures that your code keep having consistent shapes, even if it is refactored.</p>
+<p>Just like with other code it is useful to be able to specify a shape in one place and reuse the
+specification. In particular this ensures that your code keep having consistent shapes, even if it
+is refactored.</p>
 <section id="class-inheritance">
 <h3>Class inheritance<a class="headerlink" href="#class-inheritance" title="Permalink to this headline">#</a></h3>
 <p>If you have a class hiererchy, you probably want to ensure that derived classes handle tensors with
@@ -1034,6 +1077,8 @@ use it without the decorator. In fact the decorator is just a wrapper around the
 <span class="n">prediction</span> <span class="o">=</span> <span class="n">shape_checker</span><span class="o">.</span><span class="n">check_shape</span><span class="p">(</span><span class="n">features</span> <span class="o">@</span> <span class="n">weights</span><span class="p">,</span> <span class="s2">&quot;[n_rows, n_labels]&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
+<p>You can use the function <a class="reference internal" href="#gpflow.experimental.check_shapes.get_shape_checker" title="gpflow.experimental.check_shapes.get_shape_checker"><code class="xref py py-func docutils literal notranslate"><span class="pre">get_shape_checker()</span></code></a> to get the <a class="reference internal" href="#gpflow.experimental.check_shapes.ShapeChecker" title="gpflow.experimental.check_shapes.ShapeChecker"><code class="xref py py-class docutils literal notranslate"><span class="pre">ShapeChecker</span></code></a> used by any
+immediately surrounding <a class="reference internal" href="#gpflow.experimental.check_shapes.check_shapes" title="gpflow.experimental.check_shapes.check_shapes"><code class="xref py py-func docutils literal notranslate"><span class="pre">check_shapes()</span></code></a> decorator.</p>
 </section>
 <section id="speed-and-interactions-with-tf-function">
 <h2>Speed, and interactions with <cite>tf.function</cite><a class="headerlink" href="#speed-and-interactions-with-tf-function" title="Permalink to this headline">#</a></h2>
@@ -1107,11 +1152,11 @@ section will be modified.</p>
 </pre></div>
 </div>
 </section>
-<section id="shapes-of-custom-objects">
-<h2>Shapes of custom objects<a class="headerlink" href="#shapes-of-custom-objects" title="Permalink to this headline">#</a></h2>
+<section id="shapes-of-custom-types">
+<h2>Shapes of custom types<a class="headerlink" href="#shapes-of-custom-types" title="Permalink to this headline">#</a></h2>
 <p><code class="xref py py-mod docutils literal notranslate"><span class="pre">check_shapes</span></code> uses the function <a class="reference internal" href="#gpflow.experimental.check_shapes.get_shape" title="gpflow.experimental.check_shapes.get_shape"><code class="xref py py-func docutils literal notranslate"><span class="pre">get_shape()</span></code></a> to extract the shape of an object.</p>
-<p><a class="reference internal" href="#gpflow.experimental.check_shapes.get_shape" title="gpflow.experimental.check_shapes.get_shape"><code class="xref py py-func docutils literal notranslate"><span class="pre">get_shape()</span></code></a> uses <code class="xref py py-func docutils literal notranslate"><span class="pre">functools.singledispatch()</span></code> to branch on the type of object to the shape
-from, and you can extend this to extract shapes for you own custom types.</p>
+<p><a class="reference internal" href="#gpflow.experimental.check_shapes.get_shape" title="gpflow.experimental.check_shapes.get_shape"><code class="xref py py-func docutils literal notranslate"><span class="pre">get_shape()</span></code></a> uses <code class="xref py py-func docutils literal notranslate"><span class="pre">functools.singledispatch()</span></code> to branch on the type of object to get the
+shape from, and you can extend this to extract shapes for you own custom types.</p>
 <p>For example:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 
@@ -1143,7 +1188,7 @@ from, and you can extend this to extract shapes for you own custom types.</p>
 <span class="p">)</span>
 <span class="k">def</span> <span class="nf">loss</span><span class="p">(</span>
     <span class="n">model</span><span class="p">:</span> <span class="n">LinearModel</span><span class="p">,</span> <span class="n">test_features</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">test_labels</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
     <span class="n">prediction</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">test_features</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">((</span><span class="n">prediction</span> <span class="o">-</span> <span class="n">test_labels</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)))</span>
 </pre></div>
@@ -1156,6 +1201,7 @@ from, and you can extend this to extract shapes for you own custom types.</p>
 <li class="toctree-l1"><a class="reference internal" href="accessors/index.html">gpflow.experimental.check_shapes.accessors</a></li>
 <li class="toctree-l1"><a class="reference internal" href="argument_ref/index.html">gpflow.experimental.check_shapes.argument_ref</a></li>
 <li class="toctree-l1"><a class="reference internal" href="checker/index.html">gpflow.experimental.check_shapes.checker</a></li>
+<li class="toctree-l1"><a class="reference internal" href="checker_context/index.html">gpflow.experimental.check_shapes.checker_context</a></li>
 <li class="toctree-l1"><a class="reference internal" href="decorator/index.html">gpflow.experimental.check_shapes.decorator</a></li>
 <li class="toctree-l1"><a class="reference internal" href="error_contexts/index.html">gpflow.experimental.check_shapes.error_contexts</a></li>
 <li class="toctree-l1"><a class="reference internal" href="parser/index.html">gpflow.experimental.check_shapes.parser</a></li>
@@ -1850,6 +1896,34 @@ came from - for better error messages.</p>
 </section>
 <section id="functions">
 <h2>Functions<a class="headerlink" href="#functions" title="Permalink to this headline">#</a></h2>
+<section id="gpflow-experimental-check-shapes-check-shape">
+<h3>gpflow.experimental.check_shapes.check_shape<a class="headerlink" href="#gpflow-experimental-check-shapes-check-shape" title="Permalink to this headline">#</a></h3>
+<dl class="py function">
+<dt class="sig sig-object py" id="gpflow.experimental.check_shapes.check_shape">
+<span class="sig-prename descclassname"><span class="pre">gpflow.experimental.check_shapes.</span></span><span class="sig-name descname"><span class="pre">check_shape</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shaped</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tensor_spec</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">context</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/gpflow/experimental/check_shapes/checker_context.html#check_shape"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.experimental.check_shapes.check_shape" title="Permalink to this definition">#</a></dt>
+<dd><p>Raise an error if a tensor has the wrong shape.</p>
+<p>This uses the <a class="reference internal" href="#gpflow.experimental.check_shapes.ShapeChecker" title="gpflow.experimental.check_shapes.ShapeChecker"><code class="xref py py-class docutils literal notranslate"><span class="pre">ShapeChecker</span></code></a> from the wrapping <cite>check_shapes</cite> decorator. Behaviour is
+undefined if you call this from a function that is not directly wrapped in <a class="reference internal" href="#gpflow.experimental.check_shapes.check_shapes" title="gpflow.experimental.check_shapes.check_shapes"><code class="xref py py-func docutils literal notranslate"><span class="pre">check_shapes()</span></code></a>
+or <cite>inherit_check_shapes</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>shaped</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">TypeVar</span></code>(<code class="docutils literal notranslate"><span class="pre">S</span></code>)) – The object whose shape to check.</p></li>
+<li><p><strong>tensor_spec</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<a class="reference internal" href="checker/index.html#gpflow.experimental.check_shapes.checker.ParsedTensorSpec" title="gpflow.experimental.check_shapes.specs.ParsedTensorSpec"><code class="xref py py-class docutils literal notranslate"><span class="pre">ParsedTensorSpec</span></code></a>, <code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>], <code class="xref py py-data docutils literal notranslate"><span class="pre">...</span></code>], <code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code>]) – Specification to check the tensor against. See: <a class="reference internal" href="#check-specification">Check specification</a>.</p></li>
+<li><p><strong>context</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<a class="reference internal" href="#gpflow.experimental.check_shapes.ErrorContext" title="gpflow.experimental.check_shapes.error_contexts.ErrorContext"><code class="xref py py-class docutils literal notranslate"><span class="pre">ErrorContext</span></code></a>]) – Information about where <cite>shaped</cite> is coming from, for improved error
+messages.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">TypeVar</span></code>(<code class="docutils literal notranslate"><span class="pre">S</span></code>)</p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><cite>shaped</cite>, for convenience.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
 <section id="gpflow-experimental-check-shapes-check-shapes">
 <h3>gpflow.experimental.check_shapes.check_shapes<a class="headerlink" href="#gpflow-experimental-check-shapes-check-shapes" title="Permalink to this headline">#</a></h3>
 <dl class="py function">
@@ -1951,6 +2025,22 @@ came from - for better error messages.</p>
 </dd>
 <dt class="field-even">Return type</dt>
 <dd class="field-even"><p><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>], <code class="xref py py-data docutils literal notranslate"><span class="pre">...</span></code>]]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="gpflow-experimental-check-shapes-get-shape-checker">
+<h3>gpflow.experimental.check_shapes.get_shape_checker<a class="headerlink" href="#gpflow-experimental-check-shapes-get-shape-checker" title="Permalink to this headline">#</a></h3>
+<dl class="py function">
+<dt class="sig sig-object py" id="gpflow.experimental.check_shapes.get_shape_checker">
+<span class="sig-prename descclassname"><span class="pre">gpflow.experimental.check_shapes.</span></span><span class="sig-name descname"><span class="pre">get_shape_checker</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/gpflow/experimental/check_shapes/checker_context.html#get_shape_checker"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.experimental.check_shapes.get_shape_checker" title="Permalink to this definition">#</a></dt>
+<dd><p>Get the <a class="reference internal" href="#gpflow.experimental.check_shapes.ShapeChecker" title="gpflow.experimental.check_shapes.ShapeChecker"><code class="xref py py-class docutils literal notranslate"><span class="pre">ShapeChecker</span></code></a> from the wrapping <a class="reference internal" href="#gpflow.experimental.check_shapes.check_shapes" title="gpflow.experimental.check_shapes.check_shapes"><code class="xref py py-func docutils literal notranslate"><span class="pre">check_shapes()</span></code></a> decorator.</p>
+<p>Behaviour is undefined if you call this from a function that is not directly wrapped in
+<a class="reference internal" href="#gpflow.experimental.check_shapes.check_shapes" title="gpflow.experimental.check_shapes.check_shapes"><code class="xref py py-func docutils literal notranslate"><span class="pre">check_shapes()</span></code></a> or <cite>inherit_check_shapes</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="#gpflow.experimental.check_shapes.ShapeChecker" title="gpflow.experimental.check_shapes.checker.ShapeChecker"><code class="xref py py-class docutils literal notranslate"><span class="pre">ShapeChecker</span></code></a></p>
 </dd>
 </dl>
 </dd></dl>
