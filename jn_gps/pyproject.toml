@@ -1,0 +1,80 @@
+[tool.poetry]
+name = "jn_gps"
+version = "0.1.0"
+description = ""
+authors = ["Jesper Nielsen <jesper@secondmind.ai>"]
+
+[tool.poetry.dependencies]
+gpflow = "^2.5.2"
+jax = {extras = ["cpu"], version = "^0.3.13"}
+matplotlib = "^3.5.1"
+python = ">=3.7,<3.11"
+tensorflow = "2.8.*"  # Unneeded - exists to manage dependencies.
+tensorflow-probability = {extras = ["jax"], version = "^0.16.0"}
+
+[tool.poetry.dev-dependencies]
+black = "^20.8b1"
+click = "<8.1.0"  # Unneeded - exists to manage dependencies.
+isort = "^5.10.1"
+mypy = "^0.910"
+pylint = "^2.10.2"
+pytest = "^5.2"
+taskipy = "^1.10.1"
+
+[tool.isort]
+py_version=37
+profile="black"
+
+[tool.black]
+target-version = ['py37']
+line-length = 100
+
+[tool.mypy]
+python_version = "3.7"
+show_error_codes = true
+strict = true
+disallow_subclassing_any = false
+
+[[tool.mypy.overrides]]
+module = [
+    "jaxlib.*",
+    "matplotlib.*",
+    "numpy.*",
+    "scipy.*",
+    "tensorflow_probability.*",
+    "pytest.*",
+]
+ignore_missing_imports = true
+
+
+[tool.taskipy.tasks]
+isort = """
+    echo XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX isort XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+    isort jn_gps tests
+"""
+black = """
+    echo XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX black XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+    black jn_gps tests
+"""
+mypy = """
+    echo XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX mypy XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+    mypy jn_gps tests
+"""
+pylint = """
+    echo XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX pylint XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+    pylint jn_gps tests
+"""
+pytest = """
+    echo XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX pytest XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+    pytest jn_gps tests
+"""
+
+format = "task isort && task black"
+lint = "task mypy && task pylint"
+test = "task format && task lint && task pytest"
+
+run = "python -m jn_gps.run"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
