@@ -289,7 +289,7 @@ function checkPageExistsAndRedirect(event) {
 <span class="sd">        :param variance: the (initial) value for the variance parameter.</span>
 <span class="sd">        :param lengthscales: the (initial) value for the lengthscale</span>
 <span class="sd">            parameter(s), to induce ARD behaviour this must be initialised as</span>
-<span class="sd">            an array the same length as the the number of active dimensions</span>
+<span class="sd">            an array the same length as the number of active dimensions</span>
 <span class="sd">            e.g. [1., 1., 1.]. If only a single value is passed, this value</span>
 <span class="sd">            is used as the lengthscale of each dimension.</span>
 <span class="sd">        :param kwargs: accepts `name` and `active_dims`, which is a list or</span>
@@ -369,6 +369,26 @@ function checkPageExistsAndRedirect(event) {
 <span class="sd">    parameter ℓ (i.e. [(X - X2ᵀ) / ℓ]). The last axis corresponds to the</span>
 <span class="sd">    input dimension.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">variance</span><span class="p">:</span> <span class="n">TensorType</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span> <span class="n">lengthscales</span><span class="p">:</span> <span class="n">TensorType</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :param variance: the (initial) value for the variance parameter.</span>
+<span class="sd">        :param lengthscales: the (initial) value for the lengthscale</span>
+<span class="sd">            parameter(s), to induce ARD behaviour this must be initialised as</span>
+<span class="sd">            an array the same length as the number of active dimensions</span>
+<span class="sd">            e.g. [1., 1., 1.]. Note that anisotropic kernels can possess</span>
+<span class="sd">            negative lengthscales. If only a single value is passed, this</span>
+<span class="sd">            value is used as the lengthscale of each dimension.</span>
+<span class="sd">        :param kwargs: accepts `name` and `active_dims`, which is a list or</span>
+<span class="sd">            slice of indices which controls which columns of X are used (by</span>
+<span class="sd">            default, all columns are used).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">variance</span><span class="p">,</span> <span class="n">lengthscales</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ard</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">lengthscales</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lengthscales</span><span class="o">.</span><span class="n">numpy</span><span class="p">())</span>
 
     <span class="k">def</span> <span class="nf">K</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">X2</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">TensorType</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">K_d</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">scaled_difference_matrix</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">X2</span><span class="p">))</span>
