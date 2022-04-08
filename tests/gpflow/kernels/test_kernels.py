@@ -19,7 +19,6 @@ import pytest
 import tensorflow as tf
 from numpy.testing import assert_allclose
 
-import gpflow
 import gpflow.ci_utils
 from gpflow.base import AnyNDArray, TensorType
 from gpflow.config import default_float
@@ -31,6 +30,7 @@ from gpflow.kernels import (
     Constant,
     Convolutional,
     Coregion,
+    Cosine,
     IsotropicStationary,
     Kernel,
     Linear,
@@ -467,6 +467,7 @@ def test_ard_invalid_active_dims() -> None:
         [SquaredExponential, "lengthscales"],
         [Linear, "variance"],
         [ArcCosine, "weight_variances"],
+        [Cosine, "lengthscales"],
     ],
 )
 @pytest.mark.parametrize(
