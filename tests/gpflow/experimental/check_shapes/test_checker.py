@@ -228,6 +228,22 @@ TESTS = [
         [(t(2), "[d1, ds..., d2]")],
         False,
     ),
+    ShapeCheckerTest(
+        "var_rank_bad_4",
+        [
+            (t(1, 2, 3), "[ds...]"),
+            (t(2, 3), "[ds...]"),
+        ],
+        False,
+    ),
+    ShapeCheckerTest(
+        "var_rank_bad_5",
+        [
+            (t(2, 3), "[ds...]"),
+            (t(1, 2, 3), "[ds...]"),
+        ],
+        False,
+    ),
     ShapeCheckerTest("anonymous_dot", [(t(2, 3), "[., 3]")], True),
     ShapeCheckerTest("anonymous_None", [(t(2, 3), "[2, None]")], True),
     ShapeCheckerTest("anonymous_ellipsis", [(t(2, 3), "[..., 3]")], True),
