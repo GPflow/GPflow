@@ -298,6 +298,7 @@ function checkPageExistsAndRedirect(event) {
 
 <span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>  <span class="c1"># pragma: no cover</span>
     <span class="kn">from</span> <span class="nn">.argument_ref</span> <span class="kn">import</span> <span class="n">ArgumentRef</span>
+    <span class="kn">from</span> <span class="nn">.bools</span> <span class="kn">import</span> <span class="n">ParsedBoolSpec</span>
     <span class="kn">from</span> <span class="nn">.specs</span> <span class="kn">import</span> <span class="n">ParsedNoteSpec</span><span class="p">,</span> <span class="n">ParsedShapeSpec</span><span class="p">,</span> <span class="n">ParsedTensorSpec</span>
 
 <span class="n">_UNKNOWN_FILE</span> <span class="o">=</span> <span class="s2">&quot;&lt;Unknown file&gt;&quot;</span>
@@ -431,7 +432,7 @@ function checkPageExistsAndRedirect(event) {
 <span class="sd">    Error context with many contexts in parallel.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="n">children</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">ErrorContext</span><span class="p">]</span>
+    <span class="n">children</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">ErrorContext</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
 
 <div class="viewcode-block" id="ParallelContext.print"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/index.html#gpflow.experimental.check_shapes.checker.ParallelContext.print">[docs]</a>    <span class="k">def</span> <span class="nf">print</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">builder</span><span class="p">:</span> <span class="n">MessageBuilder</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="c1"># Merge any nested parallel contexts.</span>
@@ -476,7 +477,7 @@ function checkPageExistsAndRedirect(event) {
         <span class="k">for</span> <span class="n">head</span><span class="p">,</span> <span class="n">bodies</span> <span class="ow">in</span> <span class="n">by_head</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
             <span class="n">head</span><span class="o">.</span><span class="n">print</span><span class="p">(</span><span class="n">builder</span><span class="p">)</span>
             <span class="k">with</span> <span class="n">builder</span><span class="o">.</span><span class="n">indent</span><span class="p">()</span> <span class="k">as</span> <span class="n">b</span><span class="p">:</span>
-                <span class="n">ParallelContext</span><span class="p">(</span><span class="n">bodies</span><span class="p">)</span><span class="o">.</span><span class="n">print</span><span class="p">(</span><span class="n">b</span><span class="p">)</span></div></div>
+                <span class="n">ParallelContext</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="n">bodies</span><span class="p">))</span><span class="o">.</span><span class="n">print</span><span class="p">(</span><span class="n">b</span><span class="p">)</span></div></div>
 
 
 <div class="viewcode-block" id="FunctionCallContext"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/index.html#gpflow.experimental.check_shapes.checker.FunctionCallContext">[docs]</a><span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
@@ -650,6 +651,18 @@ function checkPageExistsAndRedirect(event) {
                 <span class="n">b</span><span class="o">.</span><span class="n">add_columned_line</span><span class="p">(</span><span class="s2">&quot;Value:&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">value</span><span class="p">)</span></div></div>
 
 
+<div class="viewcode-block" id="ConditionContext"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/index.html#gpflow.experimental.check_shapes.checker.ConditionContext">[docs]</a><span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">ConditionContext</span><span class="p">(</span><span class="n">ErrorContext</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    An error occurred in a conditional context.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">condition</span><span class="p">:</span> <span class="s2">&quot;ParsedBoolSpec&quot;</span>
+
+<div class="viewcode-block" id="ConditionContext.print"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/index.html#gpflow.experimental.check_shapes.checker.ConditionContext.print">[docs]</a>    <span class="k">def</span> <span class="nf">print</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">builder</span><span class="p">:</span> <span class="n">MessageBuilder</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">builder</span><span class="o">.</span><span class="n">add_columned_line</span><span class="p">(</span><span class="s2">&quot;Condition:&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">condition</span><span class="p">)</span></div></div>
+
+
 <div class="viewcode-block" id="ShapeContext"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/index.html#gpflow.experimental.check_shapes.checker.ShapeContext">[docs]</a><span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">class</span> <span class="nc">ShapeContext</span><span class="p">(</span><span class="n">ErrorContext</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
@@ -678,6 +691,18 @@ function checkPageExistsAndRedirect(event) {
 
 <div class="viewcode-block" id="NoteContext.print"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/checker/index.html#gpflow.experimental.check_shapes.checker.NoteContext.print">[docs]</a>    <span class="k">def</span> <span class="nf">print</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">builder</span><span class="p">:</span> <span class="n">MessageBuilder</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">builder</span><span class="o">.</span><span class="n">add_columned_line</span><span class="p">(</span><span class="s2">&quot;Note:&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">note</span><span class="o">.</span><span class="n">note</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="ObjectValueContext"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/index.html#gpflow.experimental.check_shapes.checker.ObjectValueContext">[docs]</a><span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">ObjectValueContext</span><span class="p">(</span><span class="n">ErrorContext</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    An error was caused by the value of an object.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">obj</span><span class="p">:</span> <span class="n">Any</span>
+
+<div class="viewcode-block" id="ObjectValueContext.print"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/index.html#gpflow.experimental.check_shapes.checker.ObjectValueContext.print">[docs]</a>    <span class="k">def</span> <span class="nf">print</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">builder</span><span class="p">:</span> <span class="n">MessageBuilder</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">builder</span><span class="o">.</span><span class="n">add_columned_line</span><span class="p">(</span><span class="s2">&quot;Value:&quot;</span><span class="p">,</span> <span class="nb">repr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">obj</span><span class="p">))</span></div></div>
 
 
 <div class="viewcode-block" id="ObjectTypeContext"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/index.html#gpflow.experimental.check_shapes.checker.ObjectTypeContext">[docs]</a><span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>

@@ -278,6 +278,13 @@ function checkPageExistsAndRedirect(event) {
     <span class="n">IndexArgumentRef</span><span class="p">,</span>
     <span class="n">RootArgumentRef</span><span class="p">,</span>
 <span class="p">)</span>
+<span class="kn">from</span> <span class="nn">.bool_specs</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">ParsedAndBoolSpec</span><span class="p">,</span>
+    <span class="n">ParsedArgumentRefBoolSpec</span><span class="p">,</span>
+    <span class="n">ParsedBoolSpec</span><span class="p">,</span>
+    <span class="n">ParsedNotBoolSpec</span><span class="p">,</span>
+    <span class="n">ParsedOrBoolSpec</span><span class="p">,</span>
+<span class="p">)</span>
 <span class="kn">from</span> <span class="nn">.config</span> <span class="kn">import</span> <span class="n">DocstringFormat</span><span class="p">,</span> <span class="n">get_rewrite_docstrings</span>
 <span class="kn">from</span> <span class="nn">.error_contexts</span> <span class="kn">import</span> <span class="p">(</span>
     <span class="n">ArgumentContext</span><span class="p">,</span>
@@ -334,10 +341,38 @@ function checkPageExistsAndRedirect(event) {
         <span class="bp">self</span><span class="o">.</span><span class="n">_source</span> <span class="o">=</span> <span class="n">source</span>
 
     <span class="k">def</span> <span class="nf">argument_spec</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tree</span><span class="p">:</span> <span class="n">Tree</span><span class="p">[</span><span class="n">Token</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">ParsedArgumentSpec</span><span class="p">:</span>
-        <span class="n">argument_ref</span><span class="p">,</span> <span class="n">tensor_spec</span> <span class="o">=</span> <span class="n">_tree_children</span><span class="p">(</span><span class="n">tree</span><span class="p">)</span>
+        <span class="n">argument_ref</span><span class="p">,</span> <span class="n">shape_spec</span><span class="p">,</span> <span class="o">*</span><span class="n">other_specs</span> <span class="o">=</span> <span class="n">_tree_children</span><span class="p">(</span><span class="n">tree</span><span class="p">)</span>
         <span class="n">argument</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">argument_ref</span><span class="p">)</span>
-        <span class="n">tensor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">tensor_spec</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">ParsedArgumentSpec</span><span class="p">(</span><span class="n">argument</span><span class="p">,</span> <span class="n">tensor</span><span class="p">)</span>
+        <span class="n">shape</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">shape_spec</span><span class="p">)</span>
+        <span class="n">condition</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">note</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">for</span> <span class="n">other_spec</span> <span class="ow">in</span> <span class="n">other_specs</span><span class="p">:</span>
+            <span class="n">other</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">other_spec</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">ParsedBoolSpec</span><span class="p">):</span>
+                <span class="k">assert</span> <span class="n">condition</span> <span class="ow">is</span> <span class="kc">None</span>
+                <span class="n">condition</span> <span class="o">=</span> <span class="n">other</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">ParsedNoteSpec</span><span class="p">)</span>
+                <span class="k">assert</span> <span class="n">note</span> <span class="ow">is</span> <span class="kc">None</span>
+                <span class="n">note</span> <span class="o">=</span> <span class="n">other</span>
+        <span class="n">tensor</span> <span class="o">=</span> <span class="n">ParsedTensorSpec</span><span class="p">(</span><span class="n">shape</span><span class="p">,</span> <span class="n">note</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">ParsedArgumentSpec</span><span class="p">(</span><span class="n">argument</span><span class="p">,</span> <span class="n">tensor</span><span class="p">,</span> <span class="n">condition</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">bool_spec_or</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tree</span><span class="p">:</span> <span class="n">Tree</span><span class="p">[</span><span class="n">Token</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">ParsedBoolSpec</span><span class="p">:</span>
+        <span class="n">left</span><span class="p">,</span> <span class="n">right</span> <span class="o">=</span> <span class="n">_tree_children</span><span class="p">(</span><span class="n">tree</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">ParsedOrBoolSpec</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">left</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">right</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">bool_spec_and</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tree</span><span class="p">:</span> <span class="n">Tree</span><span class="p">[</span><span class="n">Token</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">ParsedBoolSpec</span><span class="p">:</span>
+        <span class="n">left</span><span class="p">,</span> <span class="n">right</span> <span class="o">=</span> <span class="n">_tree_children</span><span class="p">(</span><span class="n">tree</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">ParsedAndBoolSpec</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">left</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">right</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">bool_spec_not</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tree</span><span class="p">:</span> <span class="n">Tree</span><span class="p">[</span><span class="n">Token</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">ParsedBoolSpec</span><span class="p">:</span>
+        <span class="p">(</span><span class="n">right</span><span class="p">,)</span> <span class="o">=</span> <span class="n">_tree_children</span><span class="p">(</span><span class="n">tree</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">ParsedNotBoolSpec</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">right</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">bool_spec_argument_ref</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tree</span><span class="p">:</span> <span class="n">Tree</span><span class="p">[</span><span class="n">Token</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">ParsedBoolSpec</span><span class="p">:</span>
+        <span class="p">(</span><span class="n">argument_ref</span><span class="p">,)</span> <span class="o">=</span> <span class="n">_tree_children</span><span class="p">(</span><span class="n">tree</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">ParsedArgumentRefBoolSpec</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">argument_ref</span><span class="p">))</span>
 
     <span class="k">def</span> <span class="nf">argument_ref_root</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tree</span><span class="p">:</span> <span class="n">Tree</span><span class="p">[</span><span class="n">Token</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">ArgumentRef</span><span class="p">:</span>
         <span class="p">(</span><span class="n">token</span><span class="p">,)</span> <span class="o">=</span> <span class="n">_token_children</span><span class="p">(</span><span class="n">tree</span><span class="p">)</span>
@@ -452,12 +487,43 @@ function checkPageExistsAndRedirect(event) {
         <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;* **</span><span class="si">{</span><span class="nb">repr</span><span class="p">(</span><span class="n">argument_spec</span><span class="o">.</span><span class="n">argument_ref</span><span class="p">)</span><span class="si">}</span><span class="s2">**&quot;</span><span class="p">)</span>
         <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot; has shape [&quot;</span><span class="p">)</span>
         <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_shape_spec_to_sphinx</span><span class="p">(</span><span class="n">shape_spec</span><span class="p">))</span>
-        <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;].&quot;</span><span class="p">)</span>
+        <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;]&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">argument_spec</span><span class="o">.</span><span class="n">condition</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot; if &quot;</span><span class="p">)</span>
+            <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_bool_spec_to_sphinx</span><span class="p">(</span><span class="n">argument_spec</span><span class="o">.</span><span class="n">condition</span><span class="p">,</span> <span class="kc">False</span><span class="p">))</span>
+
+        <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)</span>
+
         <span class="k">if</span> <span class="n">tensor_spec</span><span class="o">.</span><span class="n">note</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">note_spec</span> <span class="o">=</span> <span class="n">tensor_spec</span><span class="o">.</span><span class="n">note</span>
             <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">)</span>
             <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">note_spec</span><span class="o">.</span><span class="n">note</span><span class="p">)</span>
         <span class="k">return</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">out</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_bool_spec_to_sphinx</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bool_spec</span><span class="p">:</span> <span class="n">ParsedBoolSpec</span><span class="p">,</span> <span class="n">paren_wrap</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">bool_spec</span><span class="p">,</span> <span class="n">ParsedOrBoolSpec</span><span class="p">):</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_bool_spec_to_sphinx</span><span class="p">(</span><span class="n">bool_spec</span><span class="o">.</span><span class="n">left</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+                <span class="o">+</span> <span class="s2">&quot; or &quot;</span>
+                <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bool_spec_to_sphinx</span><span class="p">(</span><span class="n">bool_spec</span><span class="o">.</span><span class="n">right</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+            <span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">bool_spec</span><span class="p">,</span> <span class="n">ParsedAndBoolSpec</span><span class="p">):</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_bool_spec_to_sphinx</span><span class="p">(</span><span class="n">bool_spec</span><span class="o">.</span><span class="n">left</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+                <span class="o">+</span> <span class="s2">&quot; and &quot;</span>
+                <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bool_spec_to_sphinx</span><span class="p">(</span><span class="n">bool_spec</span><span class="o">.</span><span class="n">right</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+            <span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">bool_spec</span><span class="p">,</span> <span class="n">ParsedNotBoolSpec</span><span class="p">):</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="s2">&quot;not &quot;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bool_spec_to_sphinx</span><span class="p">(</span><span class="n">bool_spec</span><span class="o">.</span><span class="n">right</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">bool_spec</span><span class="p">,</span> <span class="n">ParsedArgumentRefBoolSpec</span><span class="p">)</span>
+            <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;*</span><span class="si">{</span><span class="n">bool_spec</span><span class="o">.</span><span class="n">argument_ref</span><span class="si">!r}</span><span class="s2">*&quot;</span>
+
+        <span class="k">if</span> <span class="n">paren_wrap</span><span class="p">:</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="n">result</span><span class="si">}</span><span class="s2">)&quot;</span>
+
+        <span class="k">return</span> <span class="n">result</span>
 
     <span class="k">def</span> <span class="nf">_shape_spec_to_sphinx</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">shape_spec</span><span class="p">:</span> <span class="n">ParsedShapeSpec</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
         <span class="k">return</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_dim_spec_to_sphinx</span><span class="p">(</span><span class="n">dim</span><span class="p">)</span> <span class="k">for</span> <span class="n">dim</span> <span class="ow">in</span> <span class="n">shape_spec</span><span class="o">.</span><span class="n">dims</span><span class="p">)</span>

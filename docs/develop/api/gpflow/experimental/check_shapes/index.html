@@ -315,6 +315,11 @@ function checkPageExistsAndRedirect(event) {
       </a>
      </li>
      <li class="toctree-l3">
+      <a class="reference internal" href="bool_specs/index.html">
+       gpflow.experimental.check_shapes.bool_specs
+      </a>
+     </li>
+     <li class="toctree-l3">
       <a class="reference internal" href="checker/index.html">
        gpflow.experimental.check_shapes.checker
       </a>
@@ -581,6 +586,11 @@ function checkPageExistsAndRedirect(event) {
     </a>
    </li>
    <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#condition-specification">
+     Condition specification
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
     <a class="reference internal nav-link" href="#note-specification">
      Note specification
     </a>
@@ -668,6 +678,11 @@ function checkPageExistsAndRedirect(event) {
     </a>
    </li>
    <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#gpflow-experimental-check-shapes-conditioncontext">
+     gpflow.experimental.check_shapes.ConditionContext
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
     <a class="reference internal nav-link" href="#gpflow-experimental-check-shapes-docstringformat">
      gpflow.experimental.check_shapes.DocstringFormat
     </a>
@@ -715,6 +730,11 @@ function checkPageExistsAndRedirect(event) {
    <li class="toc-h3 nav-item toc-entry">
     <a class="reference internal nav-link" href="#gpflow-experimental-check-shapes-objecttypecontext">
      gpflow.experimental.check_shapes.ObjectTypeContext
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#gpflow-experimental-check-shapes-objectvaluecontext">
+     gpflow.experimental.check_shapes.ObjectValueContext
     </a>
    </li>
    <li class="toc-h3 nav-item toc-entry">
@@ -874,7 +894,7 @@ function checkPageExistsAndRedirect(event) {
 <h2>Check specification<a class="headerlink" href="#check-specification" title="Permalink to this headline">#</a></h2>
 <p>The shapes to check are specified by the arguments to <a class="reference internal" href="#gpflow.experimental.check_shapes.check_shapes" title="gpflow.experimental.check_shapes.check_shapes"><code class="xref py py-func docutils literal notranslate"><span class="pre">check_shapes()</span></code></a>. Each argument is a
 string of the format:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">&lt;</span><span class="n">argument</span> <span class="n">specifier</span><span class="o">&gt;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">shape</span> <span class="n">specifier</span><span class="o">&gt;</span> <span class="p">[</span><span class="c1"># &lt;note&gt;]</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">&lt;</span><span class="n">argument</span> <span class="n">specifier</span><span class="o">&gt;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">shape</span> <span class="n">specifier</span><span class="o">&gt;</span> <span class="p">[</span><span class="k">if</span> <span class="o">&lt;</span><span class="n">condition</span><span class="o">&gt;</span><span class="p">]</span> <span class="p">[</span><span class="c1"># &lt;note&gt;]</span>
 </pre></div>
 </div>
 <section id="argument-specification">
@@ -883,13 +903,11 @@ string of the format:</p>
 function, or the special name <code class="docutils literal notranslate"><span class="pre">return</span></code>. The value <code class="docutils literal notranslate"><span class="pre">return</span></code> refers to the value returned by the
 function.</p>
 <p>The <code class="docutils literal notranslate"><span class="pre">&lt;argument</span> <span class="pre">specifier&gt;</span></code> can then be modified to refer to elements of the object in two ways:</p>
-<blockquote>
-<div><ul class="simple">
+<ul class="simple">
 <li><p>Use <code class="docutils literal notranslate"><span class="pre">.&lt;name&gt;</span></code> to refer to attributes of the object.</p></li>
 <li><p>Use <code class="docutils literal notranslate"><span class="pre">[&lt;index&gt;]</span></code> to refer to elements of a sequence. This is particularly useful if your
 function returns a tuple of values.</p></li>
 </ul>
-</div></blockquote>
 <p>We do not support looking up values in a  <code class="docutils literal notranslate"><span class="pre">dict</span></code>.</p>
 <p>If the argument, or any of the looked-up values, are <cite>None</cite> the check is skipped.</p>
 <p>For example:</p>
@@ -910,8 +928,7 @@ function returns a tuple of values.</p></li>
 <p>Shapes are specified by the syntax
 <code class="docutils literal notranslate"><span class="pre">[&lt;dimension</span> <span class="pre">specifier</span> <span class="pre">1&gt;,</span> <span class="pre">&lt;dimension</span> <span class="pre">specifer</span> <span class="pre">2&gt;,</span> <span class="pre">...,</span> <span class="pre">&lt;dimension</span> <span class="pre">specifier</span> <span class="pre">n&gt;]</span></code>, where
 <code class="docutils literal notranslate"><span class="pre">&lt;dimension</span> <span class="pre">specifier</span> <span class="pre">i&gt;</span></code> is one of:</p>
-<blockquote>
-<div><ul class="simple">
+<ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">&lt;integer&gt;</span></code>, to require that dimension to have that exact size.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">&lt;name&gt;</span></code>, to bind that dimension to a variable. Dimensions bound to the same variable must
 have the same size, though that size can be anything.</p></li>
@@ -920,7 +937,6 @@ have the same size, though that size can be anything.</p></li>
 multiple uses of the same variable name must match the same dimension sizes.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">*</span></code> or <code class="docutils literal notranslate"><span class="pre">...</span></code>, to allow <em>any</em> number of dimensions without constraints.</p></li>
 </ul>
-</div></blockquote>
 <p>A scalar shape is specified by <code class="docutils literal notranslate"><span class="pre">[]</span></code>.</p>
 <p>For example:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nd">@check_shapes</span><span class="p">(</span>
@@ -950,17 +966,48 @@ to the specification. For example:</p>
 </pre></div>
 </div>
 </section>
+<section id="condition-specification">
+<h3>Condition specification<a class="headerlink" href="#condition-specification" title="Permalink to this headline">#</a></h3>
+<p>You can use the optional <cite>if &lt;condition&gt;</cite> syntax to conditionally evaluate shapes. If an <cite>if
+&lt;condition&gt;</cite> is used, the specification is only appplied if <cite>&lt;condition&gt;</cite> evaluates to <cite>True</cite>. This
+is useful if shapes depend on other input parameters. Valid conditions are:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">&lt;argument</span> <span class="pre">specifier&gt;</span></code>, with the same syntax and rules as above, uses the <cite>bool</cite> built-in to
+convert the value of the argument to a <cite>bool</cite>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">&lt;left&gt;</span> <span class="pre">or</span> <span class="pre">&lt;right&gt;</span></code>, evaluates to <cite>True</cite> if any of <cite>&lt;left&gt;</cite> or <cite>&lt;right&gt;</cite> evaluates to <cite>True</cite>
+and to <cite>False</cite> otherwise.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">&lt;left&gt;</span> <span class="pre">and</span> <span class="pre">&lt;right&gt;</span></code>, evaluates to <cite>False</cite> if any of <cite>&lt;left&gt;</cite> or <cite>&lt;right&gt;</cite> evaluates to
+<cite>False</cite> and to <cite>True</cite> otherwise.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">not</span> <span class="pre">&lt;right&gt;</span></code>, evaluates to the opposite value of <cite>&lt;right&gt;</cite>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">(&lt;exp&gt;)</span></code>, uses parenthesis to change operator precedence, as usual.</p></li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>All specifications with either no <cite>if</cite> syntax or a <cite>&lt;condition&gt;</cite> that evaluates to <cite>True</cite> will be
+applied. It is possible for multiple specifications to apply to the same value.</p>
+</div>
+<p>For example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nd">@check_shapes</span><span class="p">(</span>
+    <span class="s2">&quot;X: [n_rows, n_inputs]&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;return: [n_rows, n_outputs, n_rows, n_outputs] if full_input_cov and full_output_cov&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;return: [n_outputs, n_rows, n_rows] if full_input_cov and (not full_output_cov)&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;return: [n_rows, n_outputs, n_outputs] if (not full_input_cov) and full_output_cov&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;return: [n_rows, n_outputs] if (not full_input_cov) and (not full_output_cov)&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="k">def</span> <span class="nf">kernel</span><span class="p">(</span><span class="n">X</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">full_input_cov</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">full_output_cov</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+    <span class="o">...</span>
+</pre></div>
+</div>
+</section>
 <section id="note-specification">
 <h3>Note specification<a class="headerlink" href="#note-specification" title="Permalink to this headline">#</a></h3>
 <p>You can add notes to your specifications using a <cite>#</cite> followed by the note. These notes will be
 appended to relevant error messages and appear in rewritten docstrings. You can add notes in two
 places:</p>
-<blockquote>
-<div><ul class="simple">
+<ul class="simple">
 <li><p>After the specification of a single argument, to add a note to that argument only.</p></li>
 <li><p>On a single line by itself, to add a note to the entire function.</p></li>
 </ul>
-</div></blockquote>
 <p>For example:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nd">@check_shapes</span><span class="p">(</span>
     <span class="s2">&quot;features: [batch_shape..., n_features]&quot;</span><span class="p">,</span>
@@ -1200,6 +1247,7 @@ shape from, and you can extend this to extract shapes for you own custom types.<
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="accessors/index.html">gpflow.experimental.check_shapes.accessors</a></li>
 <li class="toctree-l1"><a class="reference internal" href="argument_ref/index.html">gpflow.experimental.check_shapes.argument_ref</a></li>
+<li class="toctree-l1"><a class="reference internal" href="bool_specs/index.html">gpflow.experimental.check_shapes.bool_specs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="checker/index.html">gpflow.experimental.check_shapes.checker</a></li>
 <li class="toctree-l1"><a class="reference internal" href="checker_context/index.html">gpflow.experimental.check_shapes.checker_context</a></li>
 <li class="toctree-l1"><a class="reference internal" href="decorator/index.html">gpflow.experimental.check_shapes.decorator</a></li>
@@ -1302,6 +1350,35 @@ shape from, and you can extend this to extract shapes for you own custom types.<
 <dd class="field-odd"><p><strong>context</strong> (<a class="reference internal" href="#gpflow.experimental.check_shapes.ErrorContext" title="gpflow.experimental.check_shapes.error_contexts.ErrorContext"><code class="xref py py-class docutils literal notranslate"><span class="pre">ErrorContext</span></code></a>) – </p>
 </dd>
 </dl>
+</dd></dl>
+
+</section>
+<section id="gpflow-experimental-check-shapes-conditioncontext">
+<h3>gpflow.experimental.check_shapes.ConditionContext<a class="headerlink" href="#gpflow-experimental-check-shapes-conditioncontext" title="Permalink to this headline">#</a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="gpflow.experimental.check_shapes.ConditionContext">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.experimental.check_shapes.</span></span><span class="sig-name descname"><span class="pre">ConditionContext</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">condition</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/gpflow/experimental/check_shapes/error_contexts.html#ConditionContext"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.experimental.check_shapes.ConditionContext" title="Permalink to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#gpflow.experimental.check_shapes.ErrorContext" title="gpflow.experimental.check_shapes.error_contexts.ErrorContext"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.experimental.check_shapes.error_contexts.ErrorContext</span></code></a></p>
+<p>An error occurred in a conditional context.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>condition</strong> (<a class="reference internal" href="bool_specs/index.html#gpflow.experimental.check_shapes.bool_specs.ParsedBoolSpec" title="gpflow.experimental.check_shapes.bool_specs.ParsedBoolSpec"><em>ParsedBoolSpec</em></a>) – </p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="gpflow.experimental.check_shapes.ConditionContext.print">
+<span class="sig-name descname"><span class="pre">print</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">builder</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/gpflow/experimental/check_shapes/error_contexts.html#ConditionContext.print"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.experimental.check_shapes.ConditionContext.print" title="Permalink to this definition">#</a></dt>
+<dd><p>Print this context to the given <cite>MessageBuilder</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>builder</strong> (<a class="reference internal" href="#gpflow.experimental.check_shapes.MessageBuilder" title="gpflow.experimental.check_shapes.error_contexts.MessageBuilder"><code class="xref py py-class docutils literal notranslate"><span class="pre">MessageBuilder</span></code></a>) – </p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
 </dd></dl>
 
 </section>
@@ -1626,6 +1703,35 @@ saved for later use.</p>
 </dd></dl>
 
 </section>
+<section id="gpflow-experimental-check-shapes-objectvaluecontext">
+<h3>gpflow.experimental.check_shapes.ObjectValueContext<a class="headerlink" href="#gpflow-experimental-check-shapes-objectvaluecontext" title="Permalink to this headline">#</a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="gpflow.experimental.check_shapes.ObjectValueContext">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.experimental.check_shapes.</span></span><span class="sig-name descname"><span class="pre">ObjectValueContext</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obj</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/gpflow/experimental/check_shapes/error_contexts.html#ObjectValueContext"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.experimental.check_shapes.ObjectValueContext" title="Permalink to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#gpflow.experimental.check_shapes.ErrorContext" title="gpflow.experimental.check_shapes.error_contexts.ErrorContext"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.experimental.check_shapes.error_contexts.ErrorContext</span></code></a></p>
+<p>An error was caused by the value of an object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>obj</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>) – </p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="gpflow.experimental.check_shapes.ObjectValueContext.print">
+<span class="sig-name descname"><span class="pre">print</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">builder</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/gpflow/experimental/check_shapes/error_contexts.html#ObjectValueContext.print"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.experimental.check_shapes.ObjectValueContext.print" title="Permalink to this definition">#</a></dt>
+<dd><p>Print this context to the given <cite>MessageBuilder</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>builder</strong> (<a class="reference internal" href="#gpflow.experimental.check_shapes.MessageBuilder" title="gpflow.experimental.check_shapes.error_contexts.MessageBuilder"><code class="xref py py-class docutils literal notranslate"><span class="pre">MessageBuilder</span></code></a>) – </p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
 <section id="gpflow-experimental-check-shapes-parallelcontext">
 <h3>gpflow.experimental.check_shapes.ParallelContext<a class="headerlink" href="#gpflow-experimental-check-shapes-parallelcontext" title="Permalink to this headline">#</a></h3>
 <dl class="py class">
@@ -1635,7 +1741,7 @@ saved for later use.</p>
 <p>Error context with many contexts in parallel.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>children</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Sequence</span></code>[<a class="reference internal" href="#gpflow.experimental.check_shapes.ErrorContext" title="gpflow.experimental.check_shapes.error_contexts.ErrorContext"><code class="xref py py-class docutils literal notranslate"><span class="pre">ErrorContext</span></code></a>]) – </p>
+<dd class="field-odd"><p><strong>children</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<a class="reference internal" href="#gpflow.experimental.check_shapes.ErrorContext" title="gpflow.experimental.check_shapes.error_contexts.ErrorContext"><code class="xref py py-class docutils literal notranslate"><span class="pre">ErrorContext</span></code></a>, <code class="xref py py-data docutils literal notranslate"><span class="pre">...</span></code>]) – </p>
 </dd>
 </dl>
 <dl class="py method">
@@ -1736,7 +1842,7 @@ came from - for better error messages.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>expected</strong> (<a class="reference internal" href="checker/index.html#gpflow.experimental.check_shapes.checker.ParsedShapeSpec" title="gpflow.experimental.check_shapes.specs.ParsedShapeSpec"><code class="xref py py-class docutils literal notranslate"><span class="pre">ParsedShapeSpec</span></code></a>) – </p></li>
+<li><p><strong>expected</strong> (<a class="reference internal" href="checker/index.html#gpflow.experimental.check_shapes.checker.ParsedShapeSpec" title="gpflow.experimental.check_shapes.checker.ParsedShapeSpec"><em>ParsedShapeSpec</em></a>) – </p></li>
 <li><p><strong>actual</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>], <code class="xref py py-data docutils literal notranslate"><span class="pre">...</span></code>]]) – </p></li>
 </ul>
 </dd>
@@ -1829,7 +1935,7 @@ came from - for better error messages.</p>
 <p>An error occurred in the context of a tensor specification.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>spec</strong> (<a class="reference internal" href="checker/index.html#gpflow.experimental.check_shapes.checker.ParsedTensorSpec" title="gpflow.experimental.check_shapes.specs.ParsedTensorSpec"><code class="xref py py-class docutils literal notranslate"><span class="pre">ParsedTensorSpec</span></code></a>) – </p>
+<dd class="field-odd"><p><strong>spec</strong> (<a class="reference internal" href="checker/index.html#gpflow.experimental.check_shapes.checker.ParsedTensorSpec" title="gpflow.experimental.check_shapes.checker.ParsedTensorSpec"><em>ParsedTensorSpec</em></a>) – </p>
 </dd>
 </dl>
 <dl class="py method">

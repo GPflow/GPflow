@@ -264,7 +264,7 @@ function checkPageExistsAndRedirect(event) {
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="kn">import</span> <span class="nn">inspect</span>
 <span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">wraps</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">cast</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">cast</span>
 
 <span class="kn">from</span> <span class="nn">..utils</span> <span class="kn">import</span> <span class="n">experimental</span>
 <span class="kn">from</span> <span class="nn">.accessors</span> <span class="kn">import</span> <span class="n">set_check_shapes</span>
@@ -274,12 +274,15 @@ function checkPageExistsAndRedirect(event) {
 <span class="kn">from</span> <span class="nn">.checker_context</span> <span class="kn">import</span> <span class="n">set_shape_checker</span>
 <span class="kn">from</span> <span class="nn">.config</span> <span class="kn">import</span> <span class="n">get_enable_check_shapes</span>
 <span class="kn">from</span> <span class="nn">.error_contexts</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">ConditionContext</span><span class="p">,</span>
     <span class="n">FunctionCallContext</span><span class="p">,</span>
     <span class="n">FunctionDefinitionContext</span><span class="p">,</span>
     <span class="n">NoteContext</span><span class="p">,</span>
+    <span class="n">ParallelContext</span><span class="p">,</span>
     <span class="n">StackContext</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="kn">from</span> <span class="nn">.parser</span> <span class="kn">import</span> <span class="n">parse_and_rewrite_docstring</span><span class="p">,</span> <span class="n">parse_function_spec</span>
+<span class="kn">from</span> <span class="nn">.specs</span> <span class="kn">import</span> <span class="n">ParsedArgumentSpec</span>
 
 
 <div class="viewcode-block" id="null_check_shapes"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/decorator/index.html#gpflow.experimental.check_shapes.decorator.null_check_shapes">[docs]</a><span class="k">def</span> <span class="nf">null_check_shapes</span><span class="p">(</span><span class="n">func</span><span class="p">:</span> <span class="n">C</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">C</span><span class="p">:</span>
@@ -337,27 +340,47 @@ function checkPageExistsAndRedirect(event) {
             <span class="k">for</span> <span class="n">note_spec</span> <span class="ow">in</span> <span class="n">note_specs</span><span class="p">:</span>
                 <span class="n">checker</span><span class="o">.</span><span class="n">add_context</span><span class="p">(</span><span class="n">StackContext</span><span class="p">(</span><span class="n">bound_error_context</span><span class="p">,</span> <span class="n">NoteContext</span><span class="p">(</span><span class="n">note_spec</span><span class="p">)))</span>
 
-            <span class="n">checker</span><span class="o">.</span><span class="n">check_shapes</span><span class="p">(</span>
-                <span class="p">(</span>
-                    <span class="n">arg_spec</span><span class="o">.</span><span class="n">argument_ref</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">arg_map</span><span class="p">,</span> <span class="n">bound_error_context</span><span class="p">),</span>
-                    <span class="n">arg_spec</span><span class="o">.</span><span class="n">tensor</span><span class="p">,</span>
-                    <span class="n">StackContext</span><span class="p">(</span><span class="n">bound_error_context</span><span class="p">,</span> <span class="n">arg_spec</span><span class="o">.</span><span class="n">argument_ref</span><span class="o">.</span><span class="n">error_context</span><span class="p">),</span>
-                <span class="p">)</span>
-                <span class="k">for</span> <span class="n">arg_spec</span> <span class="ow">in</span> <span class="n">pre_specs</span>
-            <span class="p">)</span>
+            <span class="k">def</span> <span class="nf">_check_specs</span><span class="p">(</span><span class="n">specs</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">ParsedArgumentSpec</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">processed_specs</span> <span class="o">=</span> <span class="p">[]</span>
+
+                <span class="k">for</span> <span class="n">arg_spec</span> <span class="ow">in</span> <span class="n">specs</span><span class="p">:</span>
+                    <span class="n">arg_value</span> <span class="o">=</span> <span class="n">arg_spec</span><span class="o">.</span><span class="n">argument_ref</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">arg_map</span><span class="p">,</span> <span class="n">bound_error_context</span><span class="p">)</span>
+                    <span class="n">arg_context</span> <span class="o">=</span> <span class="n">StackContext</span><span class="p">(</span>
+                        <span class="n">bound_error_context</span><span class="p">,</span> <span class="n">arg_spec</span><span class="o">.</span><span class="n">argument_ref</span><span class="o">.</span><span class="n">error_context</span>
+                    <span class="p">)</span>
+
+                    <span class="k">if</span> <span class="n">arg_spec</span><span class="o">.</span><span class="n">condition</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="n">condition</span><span class="p">,</span> <span class="n">condition_context</span> <span class="o">=</span> <span class="n">arg_spec</span><span class="o">.</span><span class="n">condition</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                            <span class="n">arg_map</span><span class="p">,</span> <span class="n">StackContext</span><span class="p">(</span><span class="n">arg_context</span><span class="p">,</span> <span class="n">ConditionContext</span><span class="p">(</span><span class="n">arg_spec</span><span class="o">.</span><span class="n">condition</span><span class="p">))</span>
+                        <span class="p">)</span>
+                        <span class="k">if</span> <span class="ow">not</span> <span class="n">condition</span><span class="p">:</span>
+                            <span class="k">continue</span>
+                        <span class="n">arg_context</span> <span class="o">=</span> <span class="n">StackContext</span><span class="p">(</span>
+                            <span class="n">bound_error_context</span><span class="p">,</span>
+                            <span class="n">ParallelContext</span><span class="p">(</span>
+                                <span class="p">(</span>
+                                    <span class="n">StackContext</span><span class="p">(</span>
+                                        <span class="n">arg_spec</span><span class="o">.</span><span class="n">argument_ref</span><span class="o">.</span><span class="n">error_context</span><span class="p">,</span>
+                                        <span class="n">StackContext</span><span class="p">(</span>
+                                            <span class="n">ConditionContext</span><span class="p">(</span><span class="n">arg_spec</span><span class="o">.</span><span class="n">condition</span><span class="p">),</span>
+                                            <span class="n">condition_context</span><span class="p">,</span>
+                                        <span class="p">),</span>
+                                    <span class="p">),</span>
+                                <span class="p">)</span>
+                            <span class="p">),</span>
+                        <span class="p">)</span>
+
+                    <span class="n">processed_specs</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">arg_value</span><span class="p">,</span> <span class="n">arg_spec</span><span class="o">.</span><span class="n">tensor</span><span class="p">,</span> <span class="n">arg_context</span><span class="p">))</span>
+
+                <span class="n">checker</span><span class="o">.</span><span class="n">check_shapes</span><span class="p">(</span><span class="n">processed_specs</span><span class="p">)</span>
+
+            <span class="n">_check_specs</span><span class="p">(</span><span class="n">pre_specs</span><span class="p">)</span>
 
             <span class="k">with</span> <span class="n">set_shape_checker</span><span class="p">(</span><span class="n">checker</span><span class="p">):</span>
                 <span class="n">result</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
             <span class="n">arg_map</span><span class="p">[</span><span class="n">RESULT_TOKEN</span><span class="p">]</span> <span class="o">=</span> <span class="n">result</span>
 
-            <span class="n">checker</span><span class="o">.</span><span class="n">check_shapes</span><span class="p">(</span>
-                <span class="p">(</span>
-                    <span class="n">arg_spec</span><span class="o">.</span><span class="n">argument_ref</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">arg_map</span><span class="p">,</span> <span class="n">bound_error_context</span><span class="p">),</span>
-                    <span class="n">arg_spec</span><span class="o">.</span><span class="n">tensor</span><span class="p">,</span>
-                    <span class="n">StackContext</span><span class="p">(</span><span class="n">bound_error_context</span><span class="p">,</span> <span class="n">arg_spec</span><span class="o">.</span><span class="n">argument_ref</span><span class="o">.</span><span class="n">error_context</span><span class="p">),</span>
-                <span class="p">)</span>
-                <span class="k">for</span> <span class="n">arg_spec</span> <span class="ow">in</span> <span class="n">post_specs</span>
-            <span class="p">)</span>
+            <span class="n">_check_specs</span><span class="p">(</span><span class="n">post_specs</span><span class="p">)</span>
 
             <span class="k">return</span> <span class="n">result</span>
 

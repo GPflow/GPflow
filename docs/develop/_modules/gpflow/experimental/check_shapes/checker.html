@@ -504,15 +504,15 @@ function checkPageExistsAndRedirect(event) {
                     <span class="n">StackContext</span><span class="p">(</span>
                         <span class="n">VariableContext</span><span class="p">(</span><span class="n">variable</span><span class="p">),</span>
                         <span class="n">ParallelContext</span><span class="p">(</span>
-                            <span class="p">[</span>
+                            <span class="nb">tuple</span><span class="p">(</span>
                                 <span class="n">StackContext</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">TensorSpecContext</span><span class="p">(</span><span class="n">s</span><span class="p">))</span>
                                 <span class="k">for</span> <span class="n">s</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_specs_by_variable</span><span class="p">[</span><span class="n">variable</span><span class="p">]</span>
-                            <span class="p">]</span>
+                            <span class="p">)</span>
                         <span class="p">),</span>
                     <span class="p">)</span>
                 <span class="p">)</span>
         <span class="k">if</span> <span class="n">new_variable_error_contexts</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">VariableTypeError</span><span class="p">(</span><span class="n">ParallelContext</span><span class="p">(</span><span class="n">new_variable_error_contexts</span><span class="p">))</span>
+            <span class="k">raise</span> <span class="n">VariableTypeError</span><span class="p">(</span><span class="n">ParallelContext</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="n">new_variable_error_contexts</span><span class="p">)))</span>
 
         <span class="k">def</span> <span class="nf">_assert</span><span class="p">(</span><span class="n">condition</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">condition</span><span class="p">:</span>
@@ -523,10 +523,10 @@ function checkPageExistsAndRedirect(event) {
                     <span class="n">shape_error_context</span><span class="p">:</span> <span class="n">ErrorContext</span> <span class="o">=</span> <span class="n">ShapeContext</span><span class="p">(</span><span class="n">tensor_spec</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">shape</span><span class="p">)</span>
                     <span class="k">if</span> <span class="n">tensor_spec</span><span class="o">.</span><span class="n">note</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                         <span class="n">shape_error_context</span> <span class="o">=</span> <span class="n">ParallelContext</span><span class="p">(</span>
-                            <span class="p">[</span><span class="n">NoteContext</span><span class="p">(</span><span class="n">tensor_spec</span><span class="o">.</span><span class="n">note</span><span class="p">),</span> <span class="n">shape_error_context</span><span class="p">]</span>
+                            <span class="p">(</span><span class="n">NoteContext</span><span class="p">(</span><span class="n">tensor_spec</span><span class="o">.</span><span class="n">note</span><span class="p">),</span> <span class="n">shape_error_context</span><span class="p">)</span>
                         <span class="p">)</span>
                     <span class="n">contexts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">StackContext</span><span class="p">(</span><span class="n">context</span><span class="p">,</span> <span class="n">shape_error_context</span><span class="p">))</span>
-                <span class="k">raise</span> <span class="n">ShapeMismatchError</span><span class="p">(</span><span class="n">ParallelContext</span><span class="p">(</span><span class="n">contexts</span><span class="p">))</span>
+                <span class="k">raise</span> <span class="n">ShapeMismatchError</span><span class="p">(</span><span class="n">ParallelContext</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="n">contexts</span><span class="p">)))</span>
 
         <span class="k">for</span> <span class="n">actual</span><span class="p">,</span> <span class="n">tensor_spec</span> <span class="ow">in</span> <span class="n">new_shapes</span><span class="p">:</span>
             <span class="n">actual_len</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">actual</span><span class="p">)</span>
