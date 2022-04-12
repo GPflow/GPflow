@@ -296,14 +296,15 @@ function checkPageExistsAndRedirect(event) {
         <span class="n">noise_variance</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
     <span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        `data`:  a tuple of (X, Y), where the inputs X has shape [N, D]</span>
-<span class="sd">            and the outputs Y has shape [N, R].</span>
-<span class="sd">        `inducing_variable`:  an InducingPoints instance or a matrix of</span>
-<span class="sd">            the pseudo inputs Z, of shape [M, D].</span>
-<span class="sd">        `kernel`, `mean_function` are appropriate GPflow objects</span>
-
 <span class="sd">        This method only works with a Gaussian likelihood, its variance is</span>
 <span class="sd">        initialized to `noise_variance`.</span>
+
+<span class="sd">        :param data: a tuple of (X, Y), where the inputs X has shape [N, D]</span>
+<span class="sd">            and the outputs Y has shape [N, R].</span>
+<span class="sd">        :param inducing_variable:  an InducingPoints instance or a matrix of</span>
+<span class="sd">            the pseudo inputs Z, of shape [M, D].</span>
+<span class="sd">        :param kernel: An appropriate GPflow kernel object.</span>
+<span class="sd">        :param mean_function: An appropriate GPflow mean function object.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">likelihood</span> <span class="o">=</span> <span class="n">likelihoods</span><span class="o">.</span><span class="n">Gaussian</span><span class="p">(</span><span class="n">noise_variance</span><span class="p">)</span>
         <span class="n">X_data</span><span class="p">,</span> <span class="n">Y_data</span> <span class="o">=</span> <span class="n">data_input_to_tensor</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
@@ -407,13 +408,14 @@ function checkPageExistsAndRedirect(event) {
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">CommonTensors</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">B</span><span class="p">,</span> <span class="n">LB</span><span class="p">,</span> <span class="n">AAT</span><span class="p">,</span> <span class="n">L</span><span class="p">)</span>
 
 <div class="viewcode-block" id="SGPR_deprecated.logdet_term"><a class="viewcode-back" href="../../../api/gpflow/models/sgpr/index.html#gpflow.models.SGPR_deprecated.logdet_term">[docs]</a>    <span class="k">def</span> <span class="nf">logdet_term</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">common</span><span class="p">:</span> <span class="s2">&quot;SGPR.CommonTensors&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Bound from Jensen&#39;s Inequality:</span>
+
 <span class="sd">        .. math::</span>
-<span class="sd">            log |K + σ²I| &lt;= log |Q + σ²I| + N * log (1 + tr(K - Q)/(σ²N))</span>
+<span class="sd">            \log |K + σ²I| &lt;= \log |Q + σ²I| + N * \log (1 + \textrm{tr}(K - Q)/(σ²N))</span>
 
 <span class="sd">        :param common: A named tuple containing matrices that will be used</span>
-<span class="sd">        :return: log_det, lower bound on -.5 * output_dim * log |K + σ²I|</span>
+<span class="sd">        :return: log_det, lower bound on :math:`-.5 * \textrm{output_dim} * \log |K + σ²I|`</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">LB</span> <span class="o">=</span> <span class="n">common</span><span class="o">.</span><span class="n">LB</span>
         <span class="n">AAT</span> <span class="o">=</span> <span class="n">common</span><span class="o">.</span><span class="n">AAT</span>

@@ -259,47 +259,6 @@ function checkPageExistsAndRedirect(event) {
 <span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
 <span class="c1"># See the License for the specific language governing permissions and</span>
 <span class="c1"># limitations under the License.</span>
-
-<span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">Likelihoods are another core component of GPflow. This describes how likely the</span>
-<span class="sd">data is under the assumptions made about the underlying latent functions</span>
-<span class="sd">p(Y|F). Different likelihoods make different</span>
-<span class="sd">assumptions about the distribution of the data, as such different data-types</span>
-<span class="sd">(continuous, binary, ordinal, count) are better modelled with different</span>
-<span class="sd">likelihood assumptions.</span>
-
-<span class="sd">Use of any likelihood other than Gaussian typically introduces the need to use</span>
-<span class="sd">an approximation to perform inference, if one isn&#39;t already needed. A</span>
-<span class="sd">variational inference and MCMC models are included in GPflow and allow</span>
-<span class="sd">approximate inference with non-Gaussian likelihoods. An introduction to these</span>
-<span class="sd">models can be found :ref:`here &lt;implemented_models&gt;`. Specific notebooks</span>
-<span class="sd">illustrating non-Gaussian likelihood regressions are available for</span>
-<span class="sd">`classification &lt;notebooks/classification.html&gt;`_ (binary data), `ordinal</span>
-<span class="sd">&lt;notebooks/ordinal.html&gt;`_ and `multiclass &lt;notebooks/multiclass.html&gt;`_.</span>
-
-<span class="sd">Creating new likelihoods</span>
-<span class="sd">----------</span>
-<span class="sd">Likelihoods are defined by their</span>
-<span class="sd">log-likelihood. When creating new likelihoods, the</span>
-<span class="sd">:func:`logp &lt;gpflow.likelihoods.Likelihood.logp&gt;` method (log p(Y|F)), the</span>
-<span class="sd">:func:`conditional_mean &lt;gpflow.likelihoods.Likelihood.conditional_mean&gt;`,</span>
-<span class="sd">:func:`conditional_variance</span>
-<span class="sd">&lt;gpflow.likelihoods.Likelihood.conditional_variance&gt;`.</span>
-
-<span class="sd">In order to perform variational inference with non-Gaussian likelihoods a term</span>
-<span class="sd">called ``variational expectations``, ∫ q(F) log p(Y|F) dF, needs to</span>
-<span class="sd">be computed under a Gaussian distribution q(F) ~ N(μ, Σ).</span>
-
-<span class="sd">The :func:`variational_expectations &lt;gpflow.likelihoods.Likelihood.variational_expectations&gt;`</span>
-<span class="sd">method can be overriden if this can be computed in closed form, otherwise; if</span>
-<span class="sd">the new likelihood inherits</span>
-<span class="sd">:class:`Likelihood &lt;gpflow.likelihoods.Likelihood&gt;` the default will use</span>
-<span class="sd">Gauss-Hermite numerical integration (works well when F is 1D</span>
-<span class="sd">or 2D), if the new likelihood inherits from</span>
-<span class="sd">:class:`MonteCarloLikelihood &lt;gpflow.likelihoods.MonteCarloLikelihood&gt;` the</span>
-<span class="sd">integration is done by sampling (can be more suitable when F is higher dimensional).</span>
-<span class="sd">&quot;&quot;&quot;</span>
-
 <span class="kn">import</span> <span class="nn">abc</span>
 <span class="kn">import</span> <span class="nn">warnings</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">Union</span>
@@ -644,8 +603,10 @@ function checkPageExistsAndRedirect(event) {
 
 <span class="sd">    The `Likelihood` class contains methods to compute marginal statistics of functions</span>
 <span class="sd">    of the latents and the data ϕ(y,f):</span>
-<span class="sd">     * variational_expectations:  ϕ(y,f) = log p(y|f)</span>
-<span class="sd">     * predict_log_density: ϕ(y,f) = p(y|f)</span>
+
+<span class="sd">    * variational_expectations:  ϕ(y,f) = log p(y|f)</span>
+<span class="sd">    * predict_log_density: ϕ(y,f) = p(y|f)</span>
+
 <span class="sd">    Those statistics are computed after having first marginalized the latent processes f</span>
 <span class="sd">    under a multivariate normal distribution q(f) that is fully factorized.</span>
 

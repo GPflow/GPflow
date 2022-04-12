@@ -280,16 +280,19 @@ function checkPageExistsAndRedirect(event) {
     <span class="n">white</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MeanAndVariance</span><span class="p">:</span>
     <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Given a g1 and g2, and distribution p and q such that</span>
+<span class="sd">    Given a g1 and g2, and distribution p and q such that::</span>
+
 <span class="sd">      p(g2) = N(g2; 0, Kmm)</span>
 
 <span class="sd">      p(g1) = N(g1; 0, Knn)</span>
 <span class="sd">      p(g1 | g2) = N(g1; Knm (Kmm⁻¹) g2, Knn - Knm (Kmm⁻¹) Kmn)</span>
 
-<span class="sd">    And</span>
+<span class="sd">    And::</span>
+
 <span class="sd">      q(g2) = N(g2; f, q_sqrt q_sqrtᵀ)</span>
 
-<span class="sd">    This method computes the mean and (co)variance of</span>
+<span class="sd">    This method computes the mean and (co)variance of::</span>
+
 <span class="sd">      q(g1) = ∫ q(g2) p(g1 | g2)</span>
 
 <span class="sd">    :param Kmn: [M, ..., N]</span>
@@ -423,12 +426,13 @@ function checkPageExistsAndRedirect(event) {
     <span class="n">mean</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">cov</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">full_cov</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">num_samples</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Returns a sample from a D-dimensional Multivariate Normal distribution</span>
+<span class="sd">    Returns a sample from a D-dimensional Multivariate Normal distribution.</span>
+
 <span class="sd">    :param mean: [..., N, D]</span>
 <span class="sd">    :param cov: [..., N, D] or [..., N, D, D]</span>
 <span class="sd">    :param full_cov: if `True` return a &quot;full&quot; covariance matrix, otherwise a &quot;diag&quot;:</span>
-<span class="sd">    - &quot;full&quot;: cov holds the full covariance matrix (without jitter)</span>
-<span class="sd">    - &quot;diag&quot;: cov holds the diagonal elements of the covariance matrix</span>
+<span class="sd">        - &quot;full&quot;: cov holds the full covariance matrix (without jitter)</span>
+<span class="sd">        - &quot;diag&quot;: cov holds the diagonal elements of the covariance matrix</span>
 <span class="sd">    :return: sample from the MVN of shape [..., (S), N, D], S = num_samples</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">shape_constraints</span> <span class="o">=</span> <span class="p">[</span>
@@ -476,14 +480,14 @@ function checkPageExistsAndRedirect(event) {
 
 <span class="sd">    :param fvar: has shape [N, P] (full_cov = False) or [P, N, N] (full_cov = True).</span>
 <span class="sd">    :return:</span>
-<span class="sd">    1. full_cov: True and full_output_cov: True</span>
-<span class="sd">       fvar [N, P, N, P]</span>
-<span class="sd">    2. full_cov: True and full_output_cov: False</span>
-<span class="sd">       fvar [P, N, N]</span>
-<span class="sd">    3. full_cov: False and full_output_cov: True</span>
-<span class="sd">       fvar [N, P, P]</span>
-<span class="sd">    4. full_cov: False and full_output_cov: False</span>
-<span class="sd">       fvar [N, P]</span>
+<span class="sd">        1. full_cov: True and full_output_cov: True</span>
+<span class="sd">           fvar [N, P, N, P]</span>
+<span class="sd">        2. full_cov: True and full_output_cov: False</span>
+<span class="sd">           fvar [P, N, N]</span>
+<span class="sd">        3. full_cov: False and full_output_cov: True</span>
+<span class="sd">           fvar [N, P, P]</span>
+<span class="sd">        4. full_cov: False and full_output_cov: False</span>
+<span class="sd">           fvar [N, P]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">full_cov</span> <span class="ow">and</span> <span class="n">full_output_cov</span><span class="p">:</span>
         <span class="n">fvar</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">fvar</span><span class="p">))</span>  <span class="c1"># [N, N, P, P]</span>
@@ -511,7 +515,9 @@ function checkPageExistsAndRedirect(event) {
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MeanAndVariance</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    The inducing outputs live in the g-space (R^L).</span>
+
 <span class="sd">    Interdomain conditional calculation.</span>
+
 <span class="sd">    :param Kmn: [M, L, N, P]</span>
 <span class="sd">    :param Kmm: [L, M, M]</span>
 <span class="sd">    :param Knn: [N, P]  or  [N, P, P]  or  [P, N, N]  or  [N, P, N, P]</span>
@@ -615,6 +621,7 @@ function checkPageExistsAndRedirect(event) {
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    This function handles conditioning of multi-output GPs in the case where the conditioning</span>
 <span class="sd">    points are all fully correlated, in both the prior and posterior.</span>
+
 <span class="sd">    :param Kmn: [M, N, P]</span>
 <span class="sd">    :param Kmm: [M, M]</span>
 <span class="sd">    :param Knn: [N, P] or [N, P, N, P]</span>
@@ -655,6 +662,7 @@ function checkPageExistsAndRedirect(event) {
 <span class="sd">    This function handles conditioning of multi-output GPs in the case where the conditioning</span>
 <span class="sd">    points are all fully correlated, in both the prior and posterior.</span>
 <span class="sd">    Note: This conditional can handle &#39;repetitions&#39; R, given in `f` and `q_sqrt`.</span>
+
 <span class="sd">    :param Kmn: [M, N, P]</span>
 <span class="sd">    :param Kmm: [M, M]</span>
 <span class="sd">    :param Knn: [N, P] or [N, P, P] or [P, N, N] or [N, P, N, P]</span>
@@ -847,9 +855,12 @@ function checkPageExistsAndRedirect(event) {
     <span class="n">q_sqrt</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">white</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MeanAndVariance</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;Multi-output GP with independent GP priors.</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Multi-output GP with independent GP priors.</span>
+
 <span class="sd">    Number of latent processes equals the number of outputs (L = P).</span>
 <span class="sd">    The covariance matrices used to calculate the conditional have the following shape:</span>
+
 <span class="sd">    - Kuu: [P, M, M]</span>
 <span class="sd">    - Kuf: [P, M, N]</span>
 <span class="sd">    - Kff: [P, N] or [P, N, N]</span>

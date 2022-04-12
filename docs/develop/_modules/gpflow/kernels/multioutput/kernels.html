@@ -274,11 +274,15 @@ function checkPageExistsAndRedirect(event) {
 <span class="sd">    Multi Output Kernel class.</span>
 <span class="sd">    This kernel can represent correlation between outputs of different datapoints.</span>
 <span class="sd">    Therefore, subclasses of Mok should implement `K` which returns:</span>
+
 <span class="sd">    - [N, P, N, P] if full_output_cov = True</span>
 <span class="sd">    - [P, N, N] if full_output_cov = False</span>
+
 <span class="sd">    and `K_diag` returns:</span>
+
 <span class="sd">    - [N, P, P] if full_output_cov = True</span>
 <span class="sd">    - [N, P] if full_output_cov = False</span>
+
 <span class="sd">    The `full_output_cov` argument holds whether the kernel should calculate</span>
 <span class="sd">    the covariance between the outputs. In case there is no correlation but</span>
 <span class="sd">    `full_output_cov` is set to True the covariance matrix will be filled with zeros</span>
@@ -303,12 +307,14 @@ function checkPageExistsAndRedirect(event) {
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns the correlation of f(X) and f(X2), where f(.) can be multi-dimensional.</span>
+
 <span class="sd">        :param X: data matrix, [N1, D]</span>
 <span class="sd">        :param X2: data matrix, [N2, D]</span>
 <span class="sd">        :param full_output_cov: calculate correlation between outputs.</span>
-<span class="sd">        :return: cov[f(X), f(X2)] with shape</span>
-<span class="sd">        - [N1, P, N2, P] if `full_output_cov` = True</span>
-<span class="sd">        - [P, N1, N2] if `full_output_cov` = False</span>
+<span class="sd">        :return: cov[f(X), f(X2)] with shape:</span>
+
+<span class="sd">            - [N1, P, N2, P] if `full_output_cov` = True</span>
+<span class="sd">            - [P, N1, N2] if `full_output_cov` = False</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
 
@@ -316,11 +322,13 @@ function checkPageExistsAndRedirect(event) {
     <span class="k">def</span> <span class="nf">K_diag</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">full_output_cov</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns the correlation of f(X) and f(X), where f(.) can be multi-dimensional.</span>
+
 <span class="sd">        :param X: data matrix, [N, D]</span>
 <span class="sd">        :param full_output_cov: calculate correlation between outputs.</span>
-<span class="sd">        :return: var[f(X)] with shape</span>
-<span class="sd">        - [N, P, N, P] if `full_output_cov` = True</span>
-<span class="sd">        - [N, P] if `full_output_cov` = False</span>
+<span class="sd">        :return: var[f(X)] with shape:</span>
+
+<span class="sd">            - [N, P, N, P] if `full_output_cov` = True</span>
+<span class="sd">            - [N, P] if `full_output_cov` = False</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
 
@@ -348,8 +356,10 @@ function checkPageExistsAndRedirect(event) {
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    - Shared: we use the same kernel for each latent GP</span>
 <span class="sd">    - Independent: Latents are uncorrelated a priori.</span>
-<span class="sd">    Note: this class is created only for testing and comparison purposes.</span>
-<span class="sd">    Use `gpflow.kernels` instead for more efficient code.</span>
+
+<span class="sd">    .. warning::</span>
+<span class="sd">       This class is created only for testing and comparison purposes.</span>
+<span class="sd">       Use `gpflow.kernels` instead for more efficient code.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kernel</span><span class="p">:</span> <span class="n">Kernel</span><span class="p">,</span> <span class="n">output_dim</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>

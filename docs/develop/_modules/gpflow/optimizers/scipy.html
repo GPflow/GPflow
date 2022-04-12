@@ -290,35 +290,32 @@ function checkPageExistsAndRedirect(event) {
         <span class="o">**</span><span class="n">scipy_kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">OptimizeResult</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Minimize is a wrapper around the `scipy.optimize.minimize` function</span>
-<span class="sd">        handling the packing and unpacking of a list of shaped variables on the</span>
-<span class="sd">        TensorFlow side vs. the flat numpy array required on the Scipy side.</span>
+<span class="sd">        Minimize `closure`.</span>
 
-<span class="sd">        Args:</span>
-<span class="sd">            closure: A closure that re-evaluates the model, returning the loss</span>
-<span class="sd">                to be minimized.</span>
-<span class="sd">            variables: The list (tuple) of variables to be optimized</span>
-<span class="sd">                (typically `model.trainable_variables`)</span>
-<span class="sd">            method: The type of solver to use in SciPy. Defaults to &quot;L-BFGS-B&quot;.</span>
-<span class="sd">            step_callback: If not None, a callable that gets called once after</span>
-<span class="sd">                each optimisation step. The callable is passed the arguments</span>
-<span class="sd">                `step`, `variables`, and `values`. `step` is the optimisation</span>
-<span class="sd">                step counter, `variables` is the list of trainable variables as</span>
-<span class="sd">                above, and `values` is the corresponding list of tensors of</span>
-<span class="sd">                matching shape that contains their value at this optimisation</span>
-<span class="sd">                step.</span>
-<span class="sd">            compile: If True, wraps the evaluation function (the passed `closure`</span>
-<span class="sd">                as well as its gradient computation) inside a `tf.function()`,</span>
-<span class="sd">                which will improve optimization speed in most cases.</span>
-<span class="sd">            allow_unused_variables: Whether to allow variables that are not</span>
-<span class="sd">                actually used in the closure.</span>
-<span class="sd">            scipy_kwargs: Arguments passed through to `scipy.optimize.minimize`</span>
-<span class="sd">                Note that Scipy&#39;s minimize() takes a `callback` argument, but</span>
-<span class="sd">                you probably want to use our wrapper and pass in `step_callback`.</span>
+<span class="sd">        Minimize is a wrapper around the `scipy.optimize.minimize` function handling the packing and</span>
+<span class="sd">        unpacking of a list of shaped variables on the TensorFlow side vs. the flat numpy array</span>
+<span class="sd">        required on the Scipy side.</span>
 
-<span class="sd">        Returns:</span>
-<span class="sd">            The optimization result represented as a Scipy ``OptimizeResult``</span>
-<span class="sd">            object. See the Scipy documentation for description of attributes.</span>
+<span class="sd">        :param closure: A closure that re-evaluates the model, returning the loss to be minimized.</span>
+<span class="sd">        :param variables: The list (tuple) of variables to be optimized</span>
+<span class="sd">            (typically `model.trainable_variables`)</span>
+<span class="sd">        :param method: The type of solver to use in SciPy. Defaults to &quot;L-BFGS-B&quot;.</span>
+<span class="sd">        :param step_callback: If not None, a callable that gets called once after each optimisation</span>
+<span class="sd">            step. The callable is passed the arguments `step`, `variables`, and `values`. `step` is</span>
+<span class="sd">            the optimisation step counter, `variables` is the list of trainable variables as above,</span>
+<span class="sd">            and `values` is the corresponding list of tensors of matching shape that contains their</span>
+<span class="sd">            value at this optimisation step.</span>
+<span class="sd">        :param compile: If True, wraps the evaluation function (the passed `closure` as well as its</span>
+<span class="sd">            gradient computation) inside a `tf.function()`, which will improve optimization speed in</span>
+<span class="sd">            most cases.</span>
+<span class="sd">        :param allow_unused_variables: Whether to allow variables that are not actually used in the</span>
+<span class="sd">            closure.</span>
+<span class="sd">        :param scipy_kwargs: Arguments passed through to `scipy.optimize.minimize`.</span>
+<span class="sd">            Note that Scipy&#39;s minimize() takes a `callback` argument, but you probably want to use</span>
+<span class="sd">            our wrapper and pass in `step_callback`.</span>
+<span class="sd">        :returns:</span>
+<span class="sd">            The optimization result represented as a Scipy ``OptimizeResult`` object.</span>
+<span class="sd">            See the Scipy documentation for description of attributes.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">callable</span><span class="p">(</span><span class="n">closure</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
@@ -327,7 +324,8 @@ function checkPageExistsAndRedirect(event) {
         <span class="n">variables</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">variables</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">Variable</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">variables</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
-                <span class="s2">&quot;The &#39;variables&#39; argument is expected to only contain tf.Variable instances (use model.trainable_variables, not model.trainable_parameters)&quot;</span>
+                <span class="s2">&quot;The &#39;variables&#39; argument is expected to only contain tf.Variable instances&quot;</span>
+                <span class="s2">&quot; (use model.trainable_variables, not model.trainable_parameters)&quot;</span>
             <span class="p">)</span>  <span class="c1"># pragma: no cover</span>
         <span class="n">initial_params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">initial_parameters</span><span class="p">(</span><span class="n">variables</span><span class="p">)</span>
 

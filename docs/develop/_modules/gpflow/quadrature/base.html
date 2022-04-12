@@ -288,23 +288,26 @@ function checkPageExistsAndRedirect(event) {
         <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
         <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Compute the Gaussian Expectation of a function f:</span>
+<span class="sd">        Compute the Gaussian Expectation of a function f::</span>
 
 <span class="sd">            X ~ N(mean, var)</span>
 <span class="sd">            E[f(X)] = ∫f(x, *args, **kwargs)p(x)dx</span>
 
-<span class="sd">        Using the formula:</span>
+<span class="sd">        Using the formula::</span>
+
 <span class="sd">            E[f(X)] = sum_{i=1}^{N_quad_points} f(x_i) * w_i</span>
 
 <span class="sd">        where x_i, w_i must be provided by the inheriting class through self._build_X_W.</span>
 <span class="sd">        The computations broadcast along batch-dimensions, represented by [b1, b2, ..., bX].</span>
 
 <span class="sd">        :param fun: Callable or Iterable of Callables that operates elementwise, with</span>
-<span class="sd">            signature f(X, *args, **kwargs). Moreover, it must satisfy the shape-mapping:</span>
+<span class="sd">            signature f(X, *args, **kwargs). Moreover, it must satisfy the shape-mapping::</span>
+
 <span class="sd">                X shape: [N_quad_points, b1, b2, ..., bX, d],</span>
 <span class="sd">                    usually [N_quad_points, N, d]</span>
 <span class="sd">                f(X) shape: [N_quad_points, b1, b2, ...., bX, d&#39;],</span>
 <span class="sd">                    usually [N_quad_points, N, 1] or [N_quad_points, N, d]</span>
+
 <span class="sd">            In most cases, f should only operate over the last dimension of X</span>
 <span class="sd">        :param mean: Array/Tensor with shape [b1, b2, ..., bX, d], usually [N, d],</span>
 <span class="sd">            representing the mean of a d-Variate Gaussian distribution</span>
@@ -312,7 +315,7 @@ function checkPageExistsAndRedirect(event) {
 <span class="sd">            representing the variance of a d-Variate Gaussian distribution</span>
 <span class="sd">        :param *args: Passed to fun</span>
 <span class="sd">        :param **kargs: Passed to fun</span>
-<span class="sd">        :return: Array/Tensor with shape [b1, b2, ...., bX, d&#39;],</span>
+<span class="sd">        :return: Array/Tensor with shape [b1, b2, ...., bX, d\&#39;],</span>
 <span class="sd">            usually [N, d] or [N, 1]</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
@@ -330,31 +333,34 @@ function checkPageExistsAndRedirect(event) {
         <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
         <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Compute the Gaussian log-Expectation of a the exponential of a function f:</span>
+<span class="sd">        Compute the Gaussian log-Expectation of a the exponential of a function f::</span>
 
 <span class="sd">            X ~ N(mean, var)</span>
 <span class="sd">            log E[exp[f(X)]] = log ∫exp[f(x, *args, **kwargs)]p(x)dx</span>
 
-<span class="sd">        Using the formula:</span>
+<span class="sd">        Using the formula::</span>
+
 <span class="sd">            log E[exp[f(X)]] = log sum_{i=1}^{N_quad_points} exp[f(x_i) + log w_i]</span>
 
 <span class="sd">        where x_i, w_i must be provided by the inheriting class through self._build_X_W.</span>
 <span class="sd">        The computations broadcast along batch-dimensions, represented by [b1, b2, ..., bX].</span>
 
 <span class="sd">        :param fun: Callable or Iterable of Callables that operates elementwise, with</span>
-<span class="sd">            signature f(X, *args, **kwargs). Moreover, it must satisfy the shape-mapping:</span>
+<span class="sd">            signature f(X, \*args, \*\*kwargs). Moreover, it must satisfy the shape-mapping::</span>
+
 <span class="sd">                X shape: [N_quad_points, b1, b2, ..., bX, d],</span>
 <span class="sd">                    usually [N_quad_points, N, d]</span>
 <span class="sd">                f(X) shape: [N_quad_points, b1, b2, ...., bX, d&#39;],</span>
 <span class="sd">                    usually [N_quad_points, N, 1] or [N_quad_points, N, d]</span>
+
 <span class="sd">            In most cases, f should only operate over the last dimension of X</span>
 <span class="sd">        :param mean: Array/Tensor with shape [b1, b2, ..., bX, d], usually [N, d],</span>
 <span class="sd">            representing the mean of a d-Variate Gaussian distribution</span>
 <span class="sd">        :param var: Array/Tensor with shape b1, b2, ..., bX, d], usually [N, d],</span>
 <span class="sd">            representing the variance of a d-Variate Gaussian distribution</span>
-<span class="sd">        :param *args: Passed to fun</span>
-<span class="sd">        :param **kargs: Passed to fun</span>
-<span class="sd">        :return: Array/Tensor with shape [b1, b2, ...., bX, d&#39;],</span>
+<span class="sd">        :param args: Passed to fun</span>
+<span class="sd">        :param kwargs: Passed to fun</span>
+<span class="sd">        :return: Array/Tensor with shape [b1, b2, ...., bX, d\&#39;],</span>
 <span class="sd">            usually [N, d] or [N, 1]</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 

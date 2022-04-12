@@ -641,16 +641,21 @@ function checkPageExistsAndRedirect(event) {
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.conditionals.base_conditional">
 <span class="sig-prename descclassname"><span class="pre">gpflow.conditionals.</span></span><span class="sig-name descname"><span class="pre">base_conditional</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Kmn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Kmm</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Knn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_sqrt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">white</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/conditionals/util.html#base_conditional"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.conditionals.base_conditional" title="Permalink to this definition">#</a></dt>
-<dd><dl>
-<dt>Given a g1 and g2, and distribution p and q such that</dt><dd><p>p(g2) = N(g2; 0, Kmm)</p>
-<p>p(g1) = N(g1; 0, Knn)
-p(g1 | g2) = N(g1; Knm (Kmm⁻¹) g2, Knn - Knm (Kmm⁻¹) Kmn)</p>
-</dd>
-<dt>And</dt><dd><p>q(g2) = N(g2; f, q_sqrt q_sqrtᵀ)</p>
-</dd>
-<dt>This method computes the mean and (co)variance of</dt><dd><p>q(g1) = ∫ q(g2) p(g1 | g2)</p>
-</dd>
-</dl>
+<dd><p>Given a g1 and g2, and distribution p and q such that:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>p(g2) = N(g2; 0, Kmm)
+
+p(g1) = N(g1; 0, Knn)
+p(g1 | g2) = N(g1; Knm (Kmm⁻¹) g2, Knn - Knm (Kmm⁻¹) Kmn)
+</pre></div>
+</div>
+<p>And:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">q</span><span class="p">(</span><span class="n">g2</span><span class="p">)</span> <span class="o">=</span> <span class="n">N</span><span class="p">(</span><span class="n">g2</span><span class="p">;</span> <span class="n">f</span><span class="p">,</span> <span class="n">q_sqrt</span> <span class="n">q_sqrtᵀ</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>This method computes the mean and (co)variance of:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>q(g1) = ∫ q(g2) p(g1 | g2)
+</pre></div>
+</div>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -685,10 +690,12 @@ triangular) or [M, R] (diagonal)</p></li>
 <dt class="sig sig-object py" id="gpflow.conditionals.conditionals._sparse_conditional">
 <span class="sig-prename descclassname"><span class="pre">gpflow.conditionals.conditionals.</span></span><span class="sig-name descname"><span class="pre">_sparse_conditional</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Xnew</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_output_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_sqrt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">white</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/conditionals/conditionals.html#_sparse_conditional"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.conditionals.conditionals._sparse_conditional" title="Permalink to this definition">#</a></dt>
 <dd><p>Single-output GP conditional.</p>
-<p>The covariance matrices used to calculate the conditional have the following shape:
-- Kuu: [M, M]
-- Kuf: [M, N]
-- Kff: [N, N]</p>
+<p>The covariance matrices used to calculate the conditional have the following shape:</p>
+<ul class="simple">
+<li><p>Kuu: [M, M]</p></li>
+<li><p>Kuf: [M, N]</p></li>
+<li><p>Kff: [N, N]</p></li>
+</ul>
 <p>Further reference:</p>
 <ul class="simple">
 <li><p>See <cite>gpflow.conditionals._dense_conditional</cite> (below) for a detailed explanation of
@@ -698,15 +705,12 @@ conditional in the single-output case.</p></li>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>Xnew</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – data matrix, size [N, D].</p></li>
-<li><p><strong>f</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – data matrix, [M, R]</p></li>
+<li><p><strong>Xnew</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – data matrix: [N, D]</p></li>
+<li><p><strong>f</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – data matrix: [M, R]</p></li>
 <li><p><strong>full_cov</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – return the covariance between the datapoints</p></li>
-<li><p><strong>full_output_cov</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – <p>return the covariance between the outputs.
-NOTE: as we are using a single-output kernel with repetitions</p>
-<blockquote>
-<div><p>these covariances will be zero.</p>
-</div></blockquote>
-</p></li>
+<li><p><strong>full_output_cov</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – return the covariance between the outputs.
+NOTE: as we are using a single-output kernel with repetitions
+these covariances will be zero.</p></li>
 <li><p><strong>q_sqrt</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]) – matrix of standard-deviations or Cholesky matrices,
 size [M, R] or [R, M, M].</p></li>
 <li><p><strong>white</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – boolean of whether to use the whitened representation</p></li>
@@ -741,13 +745,15 @@ about the shape of the variance, depending on <cite>full_cov</cite> and <cite>fu
 <p>Additionally, there may be Gaussian uncertainty about f as represented by
 q_sqrt. In this case <cite>f</cite> represents the mean of the distribution and
 q_sqrt the square-root of the covariance.</p>
-<dl class="simple">
-<dt>Additionally, the GP may have been centered (whitened) so that</dt><dd><p>p(v) = 𝒩(𝟎, 𝐈)
-f = 𝐋v</p>
-</dd>
-<dt>thus</dt><dd><p>p(f) = 𝒩(𝟎, 𝐋𝐋ᵀ) = 𝒩(𝟎, 𝐊).</p>
-</dd>
-</dl>
+<p>Additionally, the GP may have been centered (whitened) so that:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">p</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="o">=</span> <span class="n">𝒩</span><span class="p">(</span><span class="mi">𝟎</span><span class="p">,</span> <span class="n">𝐈</span><span class="p">)</span>
+<span class="n">f</span> <span class="o">=</span> <span class="n">𝐋v</span>
+</pre></div>
+</div>
+<p>thus:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">p</span><span class="p">(</span><span class="n">f</span><span class="p">)</span> <span class="o">=</span> <span class="n">𝒩</span><span class="p">(</span><span class="mi">𝟎</span><span class="p">,</span> <span class="n">𝐋𝐋ᵀ</span><span class="p">)</span> <span class="o">=</span> <span class="n">𝒩</span><span class="p">(</span><span class="mi">𝟎</span><span class="p">,</span> <span class="n">𝐊</span><span class="p">)</span><span class="o">.</span>
+</pre></div>
+</div>
 <p>In this case <cite>f</cite> represents the values taken by v.</p>
 <p>The method can either return the diagonals of the covariance matrix for
 each output (default) or the full covariance matrix (full_cov=True).</p>
@@ -791,10 +797,12 @@ described above.</p></li>
 <span class="sig-prename descclassname"><span class="pre">gpflow.conditionals.multioutput.conditionals.</span></span><span class="sig-name descname"><span class="pre">shared_independent_conditional</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Xnew</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_output_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_sqrt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">white</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/conditionals/multioutput/conditionals.html#shared_independent_conditional"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.conditionals.multioutput.conditionals.shared_independent_conditional" title="Permalink to this definition">#</a></dt>
 <dd><p>Multioutput conditional for an independent kernel and shared inducing inducing.
 Same behaviour as conditional with non-multioutput kernels.
-The covariance matrices used to calculate the conditional have the following shape:
-- Kuu: [M, M]
-- Kuf: [M, N]
-- Kff: N or [N, N]</p>
+The covariance matrices used to calculate the conditional have the following shape:</p>
+<ul class="simple">
+<li><p>Kuu: [M, M]</p></li>
+<li><p>Kuf: [M, N]</p></li>
+<li><p>Kff: N or [N, N]</p></li>
+</ul>
 <p>Further reference:</p>
 <ul class="simple">
 <li><p>See <cite>gpflow.conditionals._conditional</cite> for a detailed explanation of
@@ -1024,14 +1032,16 @@ The dispatcher will make sure that we use the most efficent one.
 In most cases this means calculating the conditional mean m and variance v and then
 returning m + sqrt(v) * eps, with eps ~ N(0, 1).
 However, for some combinations of Mok and Mof more efficient sampling routines exists.
-The dispatcher will make sure that we use the most efficient one.
-:rtype: <code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]
-:return: samples, mean, cov</p>
-<blockquote>
-<div><p>samples has shape [num_samples, N, P] or [N, P] if num_samples is None
-mean and cov as for conditional()</p>
-</div></blockquote>
+The dispatcher will make sure that we use the most efficient one.</p>
 <dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>samples, mean, cov
+samples has shape [num_samples, N, P] or [N, P] if num_samples is None
+mean and cov as for conditional()</p>
+</dd>
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>Xnew</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – </p></li>
@@ -1055,27 +1065,18 @@ mean and cov as for conditional()</p>
 <dt class="sig sig-object py" id="gpflow.conditionals.uncertain_conditional">
 <span class="sig-prename descclassname"><span class="pre">gpflow.conditionals.</span></span><span class="sig-name descname"><span class="pre">uncertain_conditional</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Xnew_mu</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Xnew_var</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_mu</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_sqrt</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean_function</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_output_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">white</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/conditionals/uncertain_conditionals.html#uncertain_conditional"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.conditionals.uncertain_conditional" title="Permalink to this definition">#</a></dt>
 <dd><p>Calculates the conditional for uncertain inputs Xnew, p(Xnew) = N(Xnew_mu, Xnew_var).
-See <code class="docutils literal notranslate"><span class="pre">conditional</span></code> documentation for further reference.
-:type Xnew_mu: <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>
-:param Xnew_mu: mean of the inputs, size [N, D]in
-:type Xnew_var: <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>
-:param Xnew_var: covariance matrix of the inputs, size [N, n, n]
-:type inducing_variable: <a class="reference internal" href="../inducing_variables/index.html#gpflow.inducing_variables.InducingVariables" title="gpflow.inducing_variables.inducing_variables.InducingVariables"><code class="xref py py-class docutils literal notranslate"><span class="pre">InducingVariables</span></code></a>
-:param inducing_variable: gpflow.InducingVariable object, only InducingPoints is supported
-:type kernel: <a class="reference internal" href="../kernels/index.html#gpflow.kernels.Kernel" title="gpflow.kernels.base.Kernel"><code class="xref py py-class docutils literal notranslate"><span class="pre">Kernel</span></code></a>
-:param kernel: gpflow kernel object.
-:type q_mu: <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>
-:param q_mu: mean inducing points, size [M, Dout]
-:type q_sqrt: <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>
-:param q_sqrt: cholesky of the covariance matrix of the inducing points, size [t, M, M]
-:type full_output_cov: <code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>
-:param full_output_cov: boolean wheter to compute covariance between output dimension.</p>
-<blockquote>
-<div><p>Influences the shape of return value <code class="docutils literal notranslate"><span class="pre">fvar</span></code>. Default is False</p>
-</div></blockquote>
+See <code class="docutils literal notranslate"><span class="pre">conditional</span></code> documentation for further reference.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
+<li><p><strong>Xnew_mu</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – mean of the inputs, size [N, D]in</p></li>
+<li><p><strong>Xnew_var</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – covariance matrix of the inputs, size [N, n, n]</p></li>
+<li><p><strong>inducing_variable</strong> (<a class="reference internal" href="../inducing_variables/index.html#gpflow.inducing_variables.InducingVariables" title="gpflow.inducing_variables.inducing_variables.InducingVariables"><code class="xref py py-class docutils literal notranslate"><span class="pre">InducingVariables</span></code></a>) – gpflow.InducingVariable object, only InducingPoints is supported</p></li>
+<li><p><strong>kernel</strong> (<a class="reference internal" href="../kernels/index.html#gpflow.kernels.Kernel" title="gpflow.kernels.base.Kernel"><code class="xref py py-class docutils literal notranslate"><span class="pre">Kernel</span></code></a>) – gpflow kernel object.</p></li>
+<li><p><strong>q_mu</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – mean inducing points, size [M, Dout]</p></li>
+<li><p><strong>q_sqrt</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – cholesky of the covariance matrix of the inducing points, size [t, M, M]</p></li>
+<li><p><strong>full_output_cov</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – boolean wheter to compute covariance between output dimension.
+Influences the shape of return value <code class="docutils literal notranslate"><span class="pre">fvar</span></code>. Default is False</p></li>
 <li><p><strong>white</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – boolean whether to use whitened representation. Default is False.</p></li>
 <li><p><strong>mean_function</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<a class="reference internal" href="../mean_functions/index.html#gpflow.mean_functions.MeanFunction" title="gpflow.mean_functions.MeanFunction"><code class="xref py py-class docutils literal notranslate"><span class="pre">MeanFunction</span></code></a>]) – </p></li>
 <li><p><strong>full_cov</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – </p></li>

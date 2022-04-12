@@ -36,7 +36,7 @@
     <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
-    <link rel="next" title="&lt;no title&gt;" href="cglb.html" />
+    <link rel="next" title="Conjugate Gradient Lower Bound" href="cglb.html" />
     <link rel="prev" title="Derivation of SGPR equations" href="SGPR_notes.html" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="docsearch:language" content="None">
@@ -381,6 +381,11 @@ function checkPageExistsAndRedirect(event) {
  <li class="toctree-l1 current active">
   <a class="current reference internal" href="#">
    Sanity checking when model behaviours should overlap
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="cglb.html">
+   Conjugate Gradient Lower Bound
   </a>
  </li>
  <li class="toctree-l1">
@@ -733,8 +738,8 @@ div.rendered_html tbody tr:hover {
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2022-04-12 13:41:03.767400: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcudart.so.11.0&#39;; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory
-2022-04-12 13:41:03.767430: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.
+2022-04-12 15:14:30.863931: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcudart.so.11.0&#39;; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory
+2022-04-12 15:14:30.863959: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
@@ -806,12 +811,12 @@ div.rendered_html tbody tr:hover {
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2022-04-12 13:41:06.868422: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcuda.so.1&#39;; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory
-2022-04-12 13:41:06.868454: W tensorflow/stream_executor/cuda/cuda_driver.cc:269] failed call to cuInit: UNKNOWN ERROR (303)
-2022-04-12 13:41:06.868474: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (1e9625b1ffce): /proc/driver/nvidia/version does not exist
-2022-04-12 13:41:06.868758: I tensorflow/core/platform/cpu_feature_guard.cc:151] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA
+2022-04-12 15:14:34.028382: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcuda.so.1&#39;; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory
+2022-04-12 15:14:34.028415: W tensorflow/stream_executor/cuda/cuda_driver.cc:269] failed call to cuInit: UNKNOWN ERROR (303)
+2022-04-12 15:14:34.028433: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (ff15def5dec8): /proc/driver/nvidia/version does not exist
+2022-04-12 15:14:34.028703: I tensorflow/core/platform/cpu_feature_guard.cc:151] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA
 To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.
-2022-04-12 13:41:06.967527: W tensorflow/python/util/util.cc:368] Sets are not currently considered sequences, but this may change in the future, so consider avoiding using them.
+2022-04-12 15:14:34.113581: W tensorflow/python/util/util.cc:368] Sets are not currently considered sequences, but this may change in the future, so consider avoiding using them.
 </pre></div></div>
 </div>
 <p>Now, we optimize the models. For <code class="docutils literal notranslate"><span class="pre">GPR</span></code>, <code class="docutils literal notranslate"><span class="pre">SVGP</span></code>, and <code class="docutils literal notranslate"><span class="pre">GPRFITC</span></code>, this simply optimizes the hyperparameters (since the inducing points are fixed). For the variational models, this jointly maximises the lower bound to the marginal likelihood (Evidence Lower Bound, ELBO) with respect to the variational parameters and the kernel and likelihood hyperparameters.</p>

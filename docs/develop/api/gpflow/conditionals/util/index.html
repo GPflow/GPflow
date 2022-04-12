@@ -624,31 +624,31 @@ function checkPageExistsAndRedirect(event) {
 <span class="sig-prename descclassname"><span class="pre">gpflow.conditionals.util.</span></span><span class="sig-name descname"><span class="pre">fully_correlated_conditional_repeat</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Kmn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Kmm</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Knn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_output_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_sqrt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">white</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/gpflow/conditionals/util.html#fully_correlated_conditional_repeat"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.conditionals.util.fully_correlated_conditional_repeat" title="Permalink to this definition">#</a></dt>
 <dd><p>This function handles conditioning of multi-output GPs in the case where the conditioning
 points are all fully correlated, in both the prior and posterior.
-Note: This conditional can handle ‘repetitions’ R, given in <cite>f</cite> and <cite>q_sqrt</cite>.
-:type Kmn: <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>
-:param Kmn: [M, N, P]
-:type Kmm: <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>
-:param Kmm: [M, M]
-:type Knn: <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>
-:param Knn: [N, P] or [N, P, P] or [P, N, N] or [N, P, N, P]
-:type f: <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>
-:param f: data matrix, [M, R]
-:type q_sqrt: <code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]
-:param q_sqrt: [R, M, M] or [M, R]
-:type full_cov: <code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>
-:param full_cov: calculate covariance between inputs
-:type full_output_cov: <code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>
-:param full_output_cov: calculate covariance between outputs
-:type white: <code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>
-:param white: use whitened representation
-:rtype: <code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]
-:return:</p>
-<blockquote>
-<div><ul class="simple">
+Note: This conditional can handle ‘repetitions’ R, given in <cite>f</cite> and <cite>q_sqrt</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>Kmn</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – [M, N, P]</p></li>
+<li><p><strong>Kmm</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – [M, M]</p></li>
+<li><p><strong>Knn</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – [N, P] or [N, P, P] or [P, N, N] or [N, P, N, P]</p></li>
+<li><p><strong>f</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – data matrix, [M, R]</p></li>
+<li><p><strong>q_sqrt</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]) – [R, M, M] or [M, R]</p></li>
+<li><p><strong>full_cov</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – calculate covariance between inputs</p></li>
+<li><p><strong>full_output_cov</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – calculate covariance between outputs</p></li>
+<li><p><strong>white</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – use whitened representation</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]</p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><ul class="simple">
 <li><p>mean: [R, N, P]</p></li>
 <li><p>variance: [R, N, P], [R, N, P, P], [R, P, N, N], [R, N, P, N, P]</p></li>
 </ul>
-</div></blockquote>
+</p>
+</dd>
+</dl>
 </dd></dl>
 
 </section>

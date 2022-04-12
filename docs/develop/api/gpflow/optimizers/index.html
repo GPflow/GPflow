@@ -734,25 +734,25 @@ interface are also possible.</p>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>This helper makes it easy to read from variables being set with a prior and
 writes values back to the same variables.</p>
-<dl>
-<dt>Example:</dt><dd><p>model = …  # Create a GPflow model
-hmc_helper = SamplingHelper(model.log_posterior_density, model.trainable_parameters)</p>
-<p>target_log_prob_fn = hmc_helper.target_log_prob_fn
-current_state = hmc_helper.current_state</p>
-<p>hmc = tfp.mcmc.HamiltonianMonteCarlo(target_log_prob_fn=target_log_prob_fn, …)
-adaptive_hmc = tfp.mcmc.SimpleStepSizeAdaptation(hmc, …)</p>
-<p>&#64;tf.function
-def run_chain_fn():</p>
-<blockquote>
-<div><dl class="simple">
-<dt>return mcmc.sample_chain(</dt><dd><p>num_samples, num_burnin_steps, current_state, kernel=adaptive_hmc)</p>
-</dd>
-</dl>
-</div></blockquote>
-<p>hmc_samples = run_chain_fn()
-parameter_samples = hmc_helper.convert_to_constrained_values(hmc_samples)</p>
-</dd>
-</dl>
+<p>Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">model</span> <span class="o">=</span> <span class="o">...</span>  <span class="c1"># Create a GPflow model</span>
+<span class="n">hmc_helper</span> <span class="o">=</span> <span class="n">SamplingHelper</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">log_posterior_density</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">trainable_parameters</span><span class="p">)</span>
+
+<span class="n">target_log_prob_fn</span> <span class="o">=</span> <span class="n">hmc_helper</span><span class="o">.</span><span class="n">target_log_prob_fn</span>
+<span class="n">current_state</span> <span class="o">=</span> <span class="n">hmc_helper</span><span class="o">.</span><span class="n">current_state</span>
+
+<span class="n">hmc</span> <span class="o">=</span> <span class="n">tfp</span><span class="o">.</span><span class="n">mcmc</span><span class="o">.</span><span class="n">HamiltonianMonteCarlo</span><span class="p">(</span><span class="n">target_log_prob_fn</span><span class="o">=</span><span class="n">target_log_prob_fn</span><span class="p">,</span> <span class="o">...</span><span class="p">)</span>
+<span class="n">adaptive_hmc</span> <span class="o">=</span> <span class="n">tfp</span><span class="o">.</span><span class="n">mcmc</span><span class="o">.</span><span class="n">SimpleStepSizeAdaptation</span><span class="p">(</span><span class="n">hmc</span><span class="p">,</span> <span class="o">...</span><span class="p">)</span>
+
+<span class="nd">@tf</span><span class="o">.</span><span class="n">function</span>
+<span class="k">def</span> <span class="nf">run_chain_fn</span><span class="p">():</span>
+    <span class="k">return</span> <span class="n">mcmc</span><span class="o">.</span><span class="n">sample_chain</span><span class="p">(</span>
+        <span class="n">num_samples</span><span class="p">,</span> <span class="n">num_burnin_steps</span><span class="p">,</span> <span class="n">current_state</span><span class="p">,</span> <span class="n">kernel</span><span class="o">=</span><span class="n">adaptive_hmc</span><span class="p">)</span>
+
+<span class="n">hmc_samples</span> <span class="o">=</span> <span class="n">run_chain_fn</span><span class="p">()</span>
+<span class="n">parameter_samples</span> <span class="o">=</span> <span class="n">hmc_helper</span><span class="o">.</span><span class="n">convert_to_constrained_values</span><span class="p">(</span><span class="n">hmc_samples</span><span class="p">)</span>
+</pre></div>
+</div>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -813,55 +813,38 @@ unconstrained underlying variables.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="gpflow.optimizers.Scipy.minimize">
 <span class="sig-name descname"><span class="pre">minimize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">closure</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">variables</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'L-BFGS-B'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">step_callback</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">compile</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">allow_unused_variables</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">scipy_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/optimizers/scipy.html#Scipy.minimize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.optimizers.Scipy.minimize" title="Permalink to this definition">#</a></dt>
-<dd><p>Minimize is a wrapper around the <cite>scipy.optimize.minimize</cite> function
-handling the packing and unpacking of a list of shaped variables on the
-TensorFlow side vs. the flat numpy array required on the Scipy side.</p>
-<dl>
-<dt>Args:</dt><dd><dl class="simple">
-<dt>closure: A closure that re-evaluates the model, returning the loss</dt><dd><p>to be minimized.</p>
-</dd>
-<dt>variables: The list (tuple) of variables to be optimized</dt><dd><p>(typically <cite>model.trainable_variables</cite>)</p>
-</dd>
-</dl>
-<p>method: The type of solver to use in SciPy. Defaults to “L-BFGS-B”.
-step_callback: If not None, a callable that gets called once after</p>
-<blockquote>
-<div><p>each optimisation step. The callable is passed the arguments
-<cite>step</cite>, <cite>variables</cite>, and <cite>values</cite>. <cite>step</cite> is the optimisation
-step counter, <cite>variables</cite> is the list of trainable variables as
-above, and <cite>values</cite> is the corresponding list of tensors of
-matching shape that contains their value at this optimisation
-step.</p>
-</div></blockquote>
-<dl class="simple">
-<dt>compile: If True, wraps the evaluation function (the passed <cite>closure</cite></dt><dd><p>as well as its gradient computation) inside a <cite>tf.function()</cite>,
-which will improve optimization speed in most cases.</p>
-</dd>
-<dt>allow_unused_variables: Whether to allow variables that are not</dt><dd><p>actually used in the closure.</p>
-</dd>
-<dt>scipy_kwargs: Arguments passed through to <cite>scipy.optimize.minimize</cite></dt><dd><p>Note that Scipy’s minimize() takes a <cite>callback</cite> argument, but
-you probably want to use our wrapper and pass in <cite>step_callback</cite>.</p>
-</dd>
-</dl>
-</dd>
-<dt>Returns:</dt><dd><p>The optimization result represented as a Scipy <code class="docutils literal notranslate"><span class="pre">OptimizeResult</span></code>
-object. See the Scipy documentation for description of attributes.</p>
-</dd>
-</dl>
+<dd><p>Minimize <cite>closure</cite>.</p>
+<p>Minimize is a wrapper around the <cite>scipy.optimize.minimize</cite> function handling the packing and
+unpacking of a list of shaped variables on the TensorFlow side vs. the flat numpy array
+required on the Scipy side.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>closure</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Callable</span></code>[[], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]) – </p></li>
-<li><p><strong>variables</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Sequence</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>]) – </p></li>
-<li><p><strong>method</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>]) – </p></li>
-<li><p><strong>step_callback</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Callable</span></code>[[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Sequence</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Sequence</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]], <code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code>], <a class="reference internal" href="../monitor/index.html#gpflow.monitor.Monitor" title="gpflow.monitor.base.Monitor"><code class="xref py py-class docutils literal notranslate"><span class="pre">Monitor</span></code></a>, <code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code>]) – </p></li>
-<li><p><strong>compile</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – </p></li>
-<li><p><strong>allow_unused_variables</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – </p></li>
-<li><p><strong>scipy_kwargs</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>) – </p></li>
+<li><p><strong>closure</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Callable</span></code>[[], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]) – A closure that re-evaluates the model, returning the loss to be minimized.</p></li>
+<li><p><strong>variables</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Sequence</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>]) – The list (tuple) of variables to be optimized
+(typically <cite>model.trainable_variables</cite>)</p></li>
+<li><p><strong>method</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>]) – The type of solver to use in SciPy. Defaults to “L-BFGS-B”.</p></li>
+<li><p><strong>step_callback</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Callable</span></code>[[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Sequence</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Sequence</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]], <code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code>], <a class="reference internal" href="../monitor/index.html#gpflow.monitor.Monitor" title="gpflow.monitor.base.Monitor"><code class="xref py py-class docutils literal notranslate"><span class="pre">Monitor</span></code></a>, <code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code>]) – If not None, a callable that gets called once after each optimisation
+step. The callable is passed the arguments <cite>step</cite>, <cite>variables</cite>, and <cite>values</cite>. <cite>step</cite> is
+the optimisation step counter, <cite>variables</cite> is the list of trainable variables as above,
+and <cite>values</cite> is the corresponding list of tensors of matching shape that contains their
+value at this optimisation step.</p></li>
+<li><p><strong>compile</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – If True, wraps the evaluation function (the passed <cite>closure</cite> as well as its
+gradient computation) inside a <cite>tf.function()</cite>, which will improve optimization speed in
+most cases.</p></li>
+<li><p><strong>allow_unused_variables</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – Whether to allow variables that are not actually used in the
+closure.</p></li>
+<li><p><strong>scipy_kwargs</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>) – Arguments passed through to <cite>scipy.optimize.minimize</cite>.
+Note that Scipy’s minimize() takes a <cite>callback</cite> argument, but you probably want to use
+our wrapper and pass in <cite>step_callback</cite>.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type</dt>
 <dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">OptimizeResult</span></code></p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The optimization result represented as a Scipy <code class="docutils literal notranslate"><span class="pre">OptimizeResult</span></code> object.
+See the Scipy documentation for description of attributes.</p>
 </dd>
 </dl>
 </dd></dl>

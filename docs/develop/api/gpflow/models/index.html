@@ -902,17 +902,13 @@ be optimized jointly with other parameters.</p></li>
 <dl class="py method">
 <dt class="sig sig-object py" id="gpflow.models.CGLB.logdet_term">
 <span class="sig-name descname"><span class="pre">logdet_term</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">common</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/cglb.html#CGLB.logdet_term"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.CGLB.logdet_term" title="Permalink to this definition">#</a></dt>
-<dd><p>Compute a lower bound on -0.5 * log <a href="#id7"><span class="problematic" id="id8">|K + σ²I|</span></a> based on a
-low-rank approximation to K.
-..  math:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>log |K + σ²I| &lt;= log |Q + σ²I| + n * log(1 + tr(K - Q)/(σ²n)).
-</pre></div>
-</div>
-<p>This bound is at least as tight as
-..  math:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>log |K + σ²I| &lt;=  log |Q + σ²I| + tr(K - Q)/σ²,
-</pre></div>
-</div>
+<dd><p>Compute a lower bound on <span class="math notranslate nohighlight">\(-0.5 * \log |K + σ²I|\)</span> based on a
+low-rank approximation to K.</p>
+<div class="math notranslate nohighlight">
+\[\log |K + σ²I| &lt;= \log |Q + σ²I| + n * \log(1 + \textrm{tr}(K - Q)/(σ²n)).\]</div>
+<p>This bound is at least as tight as</p>
+<div class="math notranslate nohighlight">
+\[\log |K + σ²I| &lt;=  \log |Q + σ²I| + \textrm{tr}(K - Q)/σ²,\]</div>
 <p>which appears in SGPR.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -1634,12 +1630,10 @@ approximated by a Gaussian, and the KL divergence is minimised between
 the approximation and the posterior. It turns out that the optimal
 posterior precision shares off-diagonal elements with the prior, so
 only the diagonal elements of the precision need be adjusted.
-The posterior approximation is
-.. math:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">q</span><span class="p">(</span>\<span class="n">mathbf</span> <span class="n">f</span><span class="p">)</span> <span class="o">=</span> <span class="n">N</span><span class="p">(</span>\<span class="n">mathbf</span> <span class="n">f</span> \<span class="p">,</span><span class="o">|</span>\<span class="p">,</span> \<span class="n">mathbf</span> <span class="n">K</span> \<span class="n">boldsymbol</span> \<span class="n">alpha</span><span class="p">,</span>
-                  <span class="p">[</span>\<span class="n">mathbf</span> <span class="n">K</span><span class="o">^</span><span class="p">{</span><span class="o">-</span><span class="mi">1</span><span class="p">}</span> <span class="o">+</span> \<span class="n">textrm</span><span class="p">{</span><span class="n">diag</span><span class="p">}(</span>\<span class="n">boldsymbol</span> \<span class="k">lambda</span><span class="p">))</span><span class="o">^</span><span class="mi">2</span><span class="p">]</span><span class="o">^</span><span class="p">{</span><span class="o">-</span><span class="mi">1</span><span class="p">})</span>
-</pre></div>
-</div>
+The posterior approximation is</p>
+<div class="math notranslate nohighlight">
+\[q(\mathbf f) = N(\mathbf f \,|\, \mathbf K \boldsymbol \alpha,
+                  [\mathbf K^{-1} + \textrm{diag}(\boldsymbol \lambda))^2]^{-1})\]</div>
 <p>This approach has only 2ND parameters, rather than the N + N^2 of vgp,
 but the optimization is non-convex and in practice may cause difficulty.</p>
 <dl class="field-list simple">
@@ -1659,13 +1653,13 @@ but the optimization is non-convex and in practice may cause difficulty.</p>
 <dd><p>q_alpha, q_lambda are variational parameters, size [N, R]
 This method computes the variational lower bound on the likelihood,
 which is:</p>
-<blockquote>
-<div><p>E_{q(F)} [ log p(Y|F) ] - KL[ q(F) || p(F)]</p>
-</div></blockquote>
-<dl class="simple">
-<dt>with</dt><dd><p>q(f) = N(f | K alpha + mean, [K^-1 + diag(square(lambda))]^-1) .</p>
-</dd>
-</dl>
+<div class="math notranslate nohighlight">
+\[E_{q(F)} [ \log p(Y|F) ] - KL[ q(F) || p(F)]\]</div>
+<p>with</p>
+<div class="math notranslate nohighlight">
+\[q(f) = N(f |
+    K \alpha + \textrm{mean},
+    [K^-1 + \textrm{diag}(\textrm{square}(\lambda))]^-1) .\]</div>
 <dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></p>
@@ -1690,18 +1684,15 @@ GPs.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="gpflow.models.VGPOpperArchambeau.predict_f">
 <span class="sig-name descname"><span class="pre">predict_f</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Xnew</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_output_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/models/vgp.html#VGPOpperArchambeau.predict_f"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.models.VGPOpperArchambeau.predict_f" title="Permalink to this definition">#</a></dt>
-<dd><dl class="simple">
-<dt>The posterior variance of F is given by</dt><dd><p>q(f) = N(f | K alpha + mean, [K^-1 + diag(lambda**2)]^-1)</p>
-</dd>
-</dl>
+<dd><p>The posterior variance of F is given by</p>
+<div class="math notranslate nohighlight">
+\[q(f) = N(f |
+    K \alpha + \textrm{mean}, [K^-1 + \textrm{diag}(\lambda**2)]^-1)\]</div>
 <p>Here we project this to F*, the values of the GP at Xnew which is given
 by</p>
-<blockquote>
-<div><dl class="simple">
-<dt>q(F*) = N ( F* | K_{<em>F} alpha + mean, K_{*</em>} - K_{<a href="#id5"><span class="problematic" id="id6">*</span></a>f}[K_{ff} +</dt><dd><p>diag(lambda**-2)]^-1 K_{f*} )</p>
-</dd>
-</dl>
-</div></blockquote>
+<div class="math notranslate nohighlight">
+\[q(F*) = N ( F* | K_{*F} \alpha + \textrm{mean}, K_{**} - K_{*f}[K_{ff} +
+                                \textrm{diag}(\lambda**-2)]^-1 K_{f*} )\]</div>
 <p>Note: This model currently does not allow full output covariances</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>

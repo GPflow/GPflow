@@ -32,6 +32,8 @@
     <script src="../../../_static/doctools.js"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="https://unpkg.com/@jupyter-widgets/html-manager@^0.20.1/dist/embed-amd.js"></script>
+    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
     <link rel="next" title="gpflow.likelihoods.scalar_continuous" href="scalar_continuous/index.html" />
@@ -571,6 +573,11 @@ function checkPageExistsAndRedirect(event) {
 <nav id="bd-toc-nav">
     <ul class="visible nav section-nav flex-column">
  <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#creating-new-likelihoods">
+   Creating new likelihoods
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
   <a class="reference internal nav-link" href="#modules">
    Modules
   </a>
@@ -705,7 +712,39 @@ function checkPageExistsAndRedirect(event) {
                 
   <section id="gpflow-likelihoods">
 <h1>gpflow.likelihoods<a class="headerlink" href="#gpflow-likelihoods" title="Permalink to this headline">#</a></h1>
-<span class="target" id="module-gpflow.likelihoods"></span><section id="modules">
+<span class="target" id="module-gpflow.likelihoods"></span><p>Likelihoods are another core component of GPflow. This describes how likely the
+data is under the assumptions made about the underlying latent functions
+p(Y|F). Different likelihoods make different
+assumptions about the distribution of the data, as such different data-types
+(continuous, binary, ordinal, count) are better modelled with different
+likelihood assumptions.</p>
+<p>Use of any likelihood other than Gaussian typically introduces the need to use
+an approximation to perform inference, if one isn’t already needed.
+Variational inference and MCMC models are included in GPflow and allow
+approximate inference with non-Gaussian likelihoods. An introduction to these
+models can be found <a class="reference internal" href="../../../intro.html#implemented-models"><span class="std std-ref">here</span></a>. Specific notebooks
+illustrating non-Gaussian likelihood regressions are available for
+<a class="reference external" href="notebooks/classification.html">classification</a> (binary data), <a class="reference external" href="notebooks/ordinal.html">ordinal</a> and <a class="reference external" href="notebooks/multiclass.html">multiclass</a>.</p>
+<section id="creating-new-likelihoods">
+<h2>Creating new likelihoods<a class="headerlink" href="#creating-new-likelihoods" title="Permalink to this headline">#</a></h2>
+<p>Likelihoods are defined by their
+log-likelihood. When creating new likelihoods, the
+<code class="xref py py-func docutils literal notranslate"><span class="pre">logp</span></code> method (log p(Y|F)), the
+<a class="reference internal" href="#gpflow.likelihoods.Likelihood.conditional_mean" title="gpflow.likelihoods.Likelihood.conditional_mean"><code class="xref py py-func docutils literal notranslate"><span class="pre">conditional_mean</span></code></a>,
+<a class="reference internal" href="#gpflow.likelihoods.Likelihood.conditional_variance" title="gpflow.likelihoods.Likelihood.conditional_variance"><code class="xref py py-func docutils literal notranslate"><span class="pre">conditional_variance</span></code></a>.</p>
+<p>In order to perform variational inference with non-Gaussian likelihoods a term
+called <code class="docutils literal notranslate"><span class="pre">variational</span> <span class="pre">expectations</span></code>, ∫ q(F) log p(Y|F) dF, needs to
+be computed under a Gaussian distribution q(F) ~ N(μ, Σ).</p>
+<p>The <a class="reference internal" href="#gpflow.likelihoods.Likelihood.variational_expectations" title="gpflow.likelihoods.Likelihood.variational_expectations"><code class="xref py py-func docutils literal notranslate"><span class="pre">variational_expectations</span></code></a>
+method can be overriden if this can be computed in closed form, otherwise; if
+the new likelihood inherits
+<a class="reference internal" href="#gpflow.likelihoods.Likelihood" title="gpflow.likelihoods.Likelihood"><code class="xref py py-class docutils literal notranslate"><span class="pre">Likelihood</span></code></a> the default will use
+Gauss-Hermite numerical integration (works well when F is 1D
+or 2D), if the new likelihood inherits from
+<a class="reference internal" href="#gpflow.likelihoods.MonteCarloLikelihood" title="gpflow.likelihoods.MonteCarloLikelihood"><code class="xref py py-class docutils literal notranslate"><span class="pre">MonteCarloLikelihood</span></code></a> the
+integration is done by sampling (can be more suitable when F is higher dimensional).</p>
+</section>
+<section id="modules">
 <h2>Modules<a class="headerlink" href="#modules" title="Permalink to this headline">#</a></h2>
 <div class="toctree-wrapper compound">
 <ul>
@@ -1200,14 +1239,18 @@ of size ‘binsize’) and using this Poisson likelihood.</p>
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.likelihoods.</span></span><span class="sig-name descname"><span class="pre">RobustMax</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num_classes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epsilon</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.001</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/likelihoods/multiclass.html#RobustMax"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.likelihoods.RobustMax" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="../index.html#gpflow.Module" title="gpflow.base.Module"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.base.Module</span></code></a></p>
 <p>This class represent a multi-class inverse-link function. Given a vector
-f=[f_1, f_2, … f_k], the result of the mapping is</p>
-<p>y = [y_1 … y_k]</p>
+<span class="math notranslate nohighlight">\(f=[f_1, f_2, ... f_k]\)</span>, the result of the mapping is</p>
+<div class="math notranslate nohighlight">
+\[y = [y_1 ... y_k]\]</div>
 <p>with</p>
-<dl class="simple">
-<dt>y_i = (1-epsilon)  i == argmax(f)</dt><dd><p>epsilon/(k-1)  otherwise</p>
-</dd>
-</dl>
-<p>where k is the number of classes.</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}y_i = \left\{
+\begin{array}{ll}
+    (1-\varepsilon)   &amp; \textrm{if} \ i = \textrm{argmax}(f) \\
+    \varepsilon/(k-1) &amp; \textrm{otherwise}
+\end{array}
+\right.\end{split}\]</div>
+<p>where <span class="math notranslate nohighlight">\(k\)</span> is the number of classes.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -1232,12 +1275,10 @@ each scalar latent function is associated with a single scalar observation varia
 check for this.</p>
 <p>The <cite>Likelihood</cite> class contains methods to compute marginal statistics of functions
 of the latents and the data ϕ(y,f):</p>
-<blockquote>
-<div><ul class="simple">
+<ul class="simple">
 <li><p>variational_expectations:  ϕ(y,f) = log p(y|f)</p></li>
 <li><p>predict_log_density: ϕ(y,f) = p(y|f)</p></li>
 </ul>
-</div></blockquote>
 <p>Those statistics are computed after having first marginalized the latent processes f
 under a multivariate normal distribution q(f) that is fully factorized.</p>
 <p>Some univariate integrals can be done by quadrature: we implement quadrature routines for 1D

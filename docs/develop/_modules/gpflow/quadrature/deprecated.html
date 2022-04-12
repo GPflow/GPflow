@@ -378,6 +378,8 @@ function checkPageExistsAndRedirect(event) {
 <span class="sd">    The means and variances of the Gaussians are specified by Fmu and Fvar.</span>
 <span class="sd">    The N-integrals are assumed to be taken wrt the last dimensions of Fmu, Fvar.</span>
 
+<span class="sd">    `Fmu`, `Fvar`, `Ys` should all have same shape, with overall size `N`.</span>
+
 <span class="sd">    :param funcs: the integrand(s):</span>
 <span class="sd">        Callable or Iterable of Callables that operates elementwise</span>
 <span class="sd">    :param H: number of Gauss-Hermite quadrature points</span>
@@ -385,9 +387,7 @@ function checkPageExistsAndRedirect(event) {
 <span class="sd">    :param Fvar: array/tensor or `Din`-tuple/list thereof</span>
 <span class="sd">    :param logspace: if True, funcs are the log-integrands and this calculates</span>
 <span class="sd">        the log-expectation of exp(funcs)</span>
-<span class="sd">    :param **Ys: arrays/tensors; deterministic arguments to be passed by name</span>
-
-<span class="sd">    Fmu, Fvar, Ys should all have same shape, with overall size `N`</span>
+<span class="sd">    :param Ys: arrays/tensors; deterministic arguments to be passed by name</span>
 <span class="sd">    :return: shape is the same as that of the first Fmu</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
@@ -456,6 +456,8 @@ function checkPageExistsAndRedirect(event) {
 <span class="sd">    Computes N Gaussian expectation integrals of one or more functions</span>
 <span class="sd">    using Monte Carlo samples. The Gaussians must be independent.</span>
 
+<span class="sd">    `Fmu`, `Fvar`, `Ys` should all have same shape, with overall size `N`.</span>
+
 <span class="sd">    :param funcs: the integrand(s):</span>
 <span class="sd">        Callable or Iterable of Callables that operates elementwise</span>
 <span class="sd">    :param S: number of Monte Carlo sampling points</span>
@@ -463,9 +465,7 @@ function checkPageExistsAndRedirect(event) {
 <span class="sd">    :param Fvar: array/tensor</span>
 <span class="sd">    :param logspace: if True, funcs are the log-integrands and this calculates</span>
 <span class="sd">        the log-expectation of exp(funcs)</span>
-<span class="sd">    :param **Ys: arrays/tensors; deterministic arguments to be passed by name</span>
-
-<span class="sd">    Fmu, Fvar, Ys should all have same shape, with overall size `N`</span>
+<span class="sd">    :param Ys: arrays/tensors; deterministic arguments to be passed by name</span>
 <span class="sd">    :return: shape is the same as that of the first Fmu</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">N</span><span class="p">,</span> <span class="n">D</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">Fmu</span><span class="p">)[</span><span class="mi">0</span><span class="p">],</span> <span class="n">tf</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">Fvar</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>

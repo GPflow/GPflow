@@ -287,6 +287,7 @@ function checkPageExistsAndRedirect(event) {
 <span class="sd">    Single-output GP conditional.</span>
 
 <span class="sd">    The covariance matrices used to calculate the conditional have the following shape:</span>
+
 <span class="sd">    - Kuu: [M, M]</span>
 <span class="sd">    - Kuf: [M, N]</span>
 <span class="sd">    - Kff: [N, N]</span>
@@ -297,18 +298,19 @@ function checkPageExistsAndRedirect(event) {
 <span class="sd">      conditional in the single-output case.</span>
 <span class="sd">    - See the multiouput notebook for more information about the multiouput framework.</span>
 
-<span class="sd">    :param Xnew: data matrix, size [N, D].</span>
-<span class="sd">    :param f: data matrix, [M, R]</span>
+<span class="sd">    :param Xnew: data matrix: [N, D]</span>
+<span class="sd">    :param f: data matrix: [M, R]</span>
 <span class="sd">    :param full_cov: return the covariance between the datapoints</span>
 <span class="sd">    :param full_output_cov: return the covariance between the outputs.</span>
-<span class="sd">           NOTE: as we are using a single-output kernel with repetitions</span>
-<span class="sd">                 these covariances will be zero.</span>
+<span class="sd">        NOTE: as we are using a single-output kernel with repetitions</span>
+<span class="sd">        these covariances will be zero.</span>
 <span class="sd">    :param q_sqrt: matrix of standard-deviations or Cholesky matrices,</span>
 <span class="sd">        size [M, R] or [R, M, M].</span>
 <span class="sd">    :param white: boolean of whether to use the whitened representation</span>
 <span class="sd">    :return:</span>
 <span class="sd">        - mean:     [N, R]</span>
 <span class="sd">        - variance: [N, R], [R, N, N], [N, R, R] or [N, R, N, R]</span>
+
 <span class="sd">        Please see `gpflow.conditional._expand_independent_outputs` for more information</span>
 <span class="sd">        about the shape of the variance, depending on `full_cov` and `full_output_cov`.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -346,11 +348,15 @@ function checkPageExistsAndRedirect(event) {
 <span class="sd">    q_sqrt. In this case `f` represents the mean of the distribution and</span>
 <span class="sd">    q_sqrt the square-root of the covariance.</span>
 
-<span class="sd">    Additionally, the GP may have been centered (whitened) so that</span>
+<span class="sd">    Additionally, the GP may have been centered (whitened) so that::</span>
+
 <span class="sd">        p(v) = 𝒩(𝟎, 𝐈)</span>
 <span class="sd">        f = 𝐋v</span>
-<span class="sd">    thus</span>
+
+<span class="sd">    thus::</span>
+
 <span class="sd">        p(f) = 𝒩(𝟎, 𝐋𝐋ᵀ) = 𝒩(𝟎, 𝐊).</span>
+
 <span class="sd">    In this case `f` represents the values taken by v.</span>
 
 <span class="sd">    The method can either return the diagonals of the covariance matrix for</span>

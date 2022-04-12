@@ -1028,7 +1028,7 @@ of <cite>value</cite> might change size.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="gpflow.posteriors.PrecomputedValue.wrap_alpha_Qinv">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">wrap_alpha_Qinv</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">alpha</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Qinv</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/posteriors.html#PrecomputedValue.wrap_alpha_Qinv"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.posteriors.PrecomputedValue.wrap_alpha_Qinv" title="Permalink to this definition">#</a></dt>
-<dd><p>Wraps <cite>alpha</cite> and <cite>Qinv</cite> in <a href="#id1"><span class="problematic" id="id2">`</span></a>PrecomputedValue`s.</p>
+<dd><p>Wraps <cite>alpha</cite> and <cite>Qinv</cite> in <cite>PrecomputedValue</cite>s.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -1174,16 +1174,17 @@ and I is the corresponding identity matrix.</p>
 <dd><p>Reshapes fvar to the correct shape, specified by <cite>full_cov</cite> and <cite>full_output_cov</cite>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>fvar</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – has shape [N, P] (full_cov = False) or [P, N, N] (full_cov = True).</p>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>fvar</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – has shape [N, P] (full_cov = False) or [P, N, N] (full_cov = True).</p></li>
+<li><p><strong>full_cov</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – </p></li>
+<li><p><strong>full_output_cov</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – </p></li>
+</ul>
 </dd>
 <dt class="field-even">Return type</dt>
 <dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></p>
 </dd>
 <dt class="field-odd">Returns</dt>
-<dd class="field-odd"><p></p>
-</dd>
-</dl>
-<ol class="arabic simple">
+<dd class="field-odd"><p><ol class="arabic simple">
 <li><p>full_cov: True and full_output_cov: True
 fvar [N, P, N, P]</p></li>
 <li><p>full_cov: True and full_output_cov: False
@@ -1193,12 +1194,7 @@ fvar [N, P, P]</p></li>
 <li><p>full_cov: False and full_output_cov: False
 fvar [N, P]</p></li>
 </ol>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>full_cov</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – </p></li>
-<li><p><strong>full_output_cov</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – </p></li>
-</ul>
+</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1230,31 +1226,31 @@ fvar [N, P]</p></li>
 <dt class="sig sig-object py" id="gpflow.posteriors.fully_correlated_conditional">
 <span class="sig-prename descclassname"><span class="pre">gpflow.posteriors.</span></span><span class="sig-name descname"><span class="pre">fully_correlated_conditional</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Kmn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Kmm</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Knn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_output_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_sqrt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">white</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/conditionals/util.html#fully_correlated_conditional"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.posteriors.fully_correlated_conditional" title="Permalink to this definition">#</a></dt>
 <dd><p>This function handles conditioning of multi-output GPs in the case where the conditioning
-points are all fully correlated, in both the prior and posterior.
-:type Kmn: <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>
-:param Kmn: [M, N, P]
-:type Kmm: <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>
-:param Kmm: [M, M]
-:type Knn: <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>
-:param Knn: [N, P] or [N, P, N, P]
-:type f: <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>
-:param f: data matrix, [M, 1]
-:type q_sqrt: <code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]
-:param q_sqrt: [1, M, M] or [1, L]
-:type full_cov: <code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>
-:param full_cov: calculate covariance between inputs
-:type full_output_cov: <code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>
-:param full_output_cov: calculate covariance between outputs
-:type white: <code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>
-:param white: use whitened representation
-:rtype: <code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]
-:return:</p>
-<blockquote>
-<div><ul class="simple">
+points are all fully correlated, in both the prior and posterior.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>Kmn</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – [M, N, P]</p></li>
+<li><p><strong>Kmm</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – [M, M]</p></li>
+<li><p><strong>Knn</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – [N, P] or [N, P, N, P]</p></li>
+<li><p><strong>f</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – data matrix, [M, 1]</p></li>
+<li><p><strong>q_sqrt</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]) – [1, M, M] or [1, L]</p></li>
+<li><p><strong>full_cov</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – calculate covariance between inputs</p></li>
+<li><p><strong>full_output_cov</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – calculate covariance between outputs</p></li>
+<li><p><strong>white</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – use whitened representation</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]</p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><ul class="simple">
 <li><p>mean: [N, P]</p></li>
 <li><p>variance: [N, P], [N, P, P], [P, N, N], [N, P, N, P]</p></li>
 </ul>
-</div></blockquote>
+</p>
+</dd>
+</dl>
 </dd></dl>
 
 </section>
@@ -1372,32 +1368,32 @@ points are all fully correlated, in both the prior and posterior.
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.posteriors.independent_interdomain_conditional">
 <span class="sig-prename descclassname"><span class="pre">gpflow.posteriors.</span></span><span class="sig-name descname"><span class="pre">independent_interdomain_conditional</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Kmn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Kmm</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Knn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_output_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_sqrt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">white</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/conditionals/util.html#independent_interdomain_conditional"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.posteriors.independent_interdomain_conditional" title="Permalink to this definition">#</a></dt>
-<dd><p>The inducing outputs live in the g-space (R^L).
-Interdomain conditional calculation.
-:type Kmn: <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>
-:param Kmn: [M, L, N, P]
-:type Kmm: <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>
-:param Kmm: [L, M, M]
-:type Knn: <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>
-:param Knn: [N, P]  or  [N, P, P]  or  [P, N, N]  or  [N, P, N, P]
-:type f: <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>
-:param f: data matrix, [M, L]
-:type q_sqrt: <code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]
-:param q_sqrt: [L, M, M]  or  [M, L]
-:type full_cov: <code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>
-:param full_cov: calculate covariance between inputs
-:type full_output_cov: <code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>
-:param full_output_cov: calculate covariance between outputs
-:type white: <code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>
-:param white: use whitened representation
-:rtype: <code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]
-:return:</p>
-<blockquote>
-<div><ul class="simple">
+<dd><p>The inducing outputs live in the g-space (R^L).</p>
+<p>Interdomain conditional calculation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>Kmn</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – [M, L, N, P]</p></li>
+<li><p><strong>Kmm</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – [L, M, M]</p></li>
+<li><p><strong>Knn</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – [N, P]  or  [N, P, P]  or  [P, N, N]  or  [N, P, N, P]</p></li>
+<li><p><strong>f</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – data matrix, [M, L]</p></li>
+<li><p><strong>q_sqrt</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]) – [L, M, M]  or  [M, L]</p></li>
+<li><p><strong>full_cov</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – calculate covariance between inputs</p></li>
+<li><p><strong>full_output_cov</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – calculate covariance between outputs</p></li>
+<li><p><strong>white</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – use whitened representation</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]</p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><ul class="simple">
 <li><p>mean: [N, P]</p></li>
 <li><p>variance: [N, P], [N, P, P], [P, N, N], [N, P, N, P]</p></li>
 </ul>
-</div></blockquote>
+</p>
+</dd>
+</dl>
 </dd></dl>
 
 </section>
@@ -1406,33 +1402,29 @@ Interdomain conditional calculation.
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.posteriors.leading_transpose">
 <span class="sig-prename descclassname"><span class="pre">gpflow.posteriors.</span></span><span class="sig-name descname"><span class="pre">leading_transpose</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">perm</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">leading_dim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/utilities/ops.html#leading_transpose"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.posteriors.leading_transpose" title="Permalink to this definition">#</a></dt>
-<dd><p>Transposes tensors with leading dimensions. Leading dimensions in
-permutation list represented via ellipsis <cite>…</cite> and is of type List[Union[int, type(…)]
-(please note, due to mypy issues, List[Any] is used instead).
-When leading dimensions are found, <cite>transpose</cite> method
-considers them as a single grouped element indexed by 0 in <cite>perm</cite> list. So, passing
-<cite>perm=[-2, …, -1]</cite>, you assume that your input tensor has […, A, B] shape,
-and you want to move leading dims between A and B dimensions.
-Dimension indices in permutation list can be negative or positive. Valid positive
-indices start from 1 up to the tensor rank, viewing leading dimensions <cite>…</cite> as zero
-index.
-Example:</p>
-<blockquote>
-<div><dl class="simple">
-<dt>a = tf.random.normal((1, 2, 3, 4, 5, 6))</dt><dd><p># […, A, B, C],
-# where A is 1st element,
-# B is 2nd element and
-# C is 3rd element in
-# permutation list,
-# leading dimensions are [1, 2, 3]
-# which are 0th element in permutation
-# list</p>
-</dd>
-</dl>
-<p>b = leading_transpose(a, [3, -3, …, -2])  # [C, A, …, B]
-sess.run(b).shape
-output&gt; (6, 4, 1, 2, 3, 5)</p>
-</div></blockquote>
+<dd><p>Transposes tensors with leading dimensions.</p>
+<p>Leading dimensions in permutation list represented via ellipsis <cite>…</cite> and is of type
+List[Union[int, type(…)]  (please note, due to mypy issues, List[Any] is used instead).  When
+leading dimensions are found, <cite>transpose</cite> method considers them as a single grouped element
+indexed by 0 in <cite>perm</cite> list. So, passing <cite>perm=[-2, …, -1]</cite>, you assume that your input tensor
+has […, A, B] shape, and you want to move leading dims between A and B dimensions.  Dimension
+indices in permutation list can be negative or positive. Valid positive indices start from 1 up
+to the tensor rank, viewing leading dimensions <cite>…</cite> as zero index.</p>
+<p>Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">a</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
+<span class="c1"># [..., A, B, C],</span>
+<span class="c1"># where A is 1st element,</span>
+<span class="c1"># B is 2nd element and</span>
+<span class="c1"># C is 3rd element in</span>
+<span class="c1"># permutation list,</span>
+<span class="c1"># leading dimensions are [1, 2, 3]</span>
+<span class="c1"># which are 0th element in permutation list</span>
+<span class="n">b</span> <span class="o">=</span> <span class="n">leading_transpose</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="o">-</span><span class="mi">3</span><span class="p">,</span> <span class="o">...</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">])</span>  <span class="c1"># [C, A, ..., B]</span>
+<span class="n">sess</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">b</span><span class="p">)</span><span class="o">.</span><span class="n">shape</span>
+
+<span class="n">output</span><span class="o">&gt;</span> <span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+</pre></div>
+</div>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -1448,7 +1440,7 @@ output&gt; (6, 4, 1, 2, 3, 5)</p>
 <dd class="field-odd"><p>TensorFlow tensor.</p>
 </dd>
 <dt class="field-even">Raises</dt>
-<dd class="field-even"><p>ValueError when <cite>…</cite> cannot be found.</p>
+<dd class="field-even"><p><strong>ValueError</strong> – when <cite>…</cite> cannot be found.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1487,12 +1479,14 @@ where both f and g are GPs, with W having a shape [P, L]</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.posteriors.separate_independent_conditional_implementation">
 <span class="sig-prename descclassname"><span class="pre">gpflow.posteriors.</span></span><span class="sig-name descname"><span class="pre">separate_independent_conditional_implementation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Kmns</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Kmms</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Knns</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_sqrt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">white</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/conditionals/util.html#separate_independent_conditional_implementation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.posteriors.separate_independent_conditional_implementation" title="Permalink to this definition">#</a></dt>
-<dd><p>Multi-output GP with independent GP priors.
-Number of latent processes equals the number of outputs (L = P).
-The covariance matrices used to calculate the conditional have the following shape:
-- Kuu: [P, M, M]
-- Kuf: [P, M, N]
-- Kff: [P, N] or [P, N, N]</p>
+<dd><p>Multi-output GP with independent GP priors.</p>
+<p>Number of latent processes equals the number of outputs (L = P).
+The covariance matrices used to calculate the conditional have the following shape:</p>
+<ul class="simple">
+<li><p>Kuu: [P, M, M]</p></li>
+<li><p>Kuf: [P, M, N]</p></li>
+<li><p>Kff: [P, N] or [P, N, N]</p></li>
+</ul>
 <p>Further reference:</p>
 <ul class="simple">
 <li><p>See <cite>gpflow.conditionals._conditional</cite> for a detailed explanation of

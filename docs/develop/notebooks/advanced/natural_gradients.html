@@ -384,6 +384,11 @@ function checkPageExistsAndRedirect(event) {
   </a>
  </li>
  <li class="toctree-l1">
+  <a class="reference internal" href="../theory/cglb.html">
+   Conjugate Gradient Lower Bound
+  </a>
+ </li>
+ <li class="toctree-l1">
   <a class="reference internal" href="../theory/upper_bound.html">
    Discussion of the GP marginal likelihood upper bound
   </a>
@@ -457,13 +462,6 @@ function checkPageExistsAndRedirect(event) {
   <a class="reference internal nav-link" href="#Comparison-with-ordinary-gradients-in-the-conjugate-case">
    Comparison with ordinary gradients in the conjugate case
   </a>
-  <ul class="nav section-nav flex-column">
-   <li class="toc-h3 nav-item toc-entry">
-    <a class="reference internal nav-link" href="#(Take-home-message:-natural-gradients-are-always-better)">
-     (Take home message: natural gradients are always better)
-    </a>
-   </li>
-  </ul>
  </li>
  <li class="toc-h2 nav-item toc-entry">
   <a class="reference internal nav-link" href="#Comparison-with-ordinary-gradients-in-the-non-conjugate-case">
@@ -471,8 +469,8 @@ function checkPageExistsAndRedirect(event) {
   </a>
   <ul class="nav section-nav flex-column">
    <li class="toc-h3 nav-item toc-entry">
-    <a class="reference internal nav-link" href="#(Take-home-message:-natural-gradients-are-usually-better)">
-     (Take home message: natural gradients are usually better)
+    <a class="reference internal nav-link" href="#Binary-classification">
+     Binary classification
     </a>
    </li>
   </ul>
@@ -792,12 +790,12 @@ div.rendered_html tbody tr:hover {
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2022-04-12 13:09:27.331176: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcudart.so.11.0&#39;; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory
-2022-04-12 13:09:27.331204: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.
-2022-04-12 13:09:30.070688: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcuda.so.1&#39;; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory
-2022-04-12 13:09:30.070720: W tensorflow/stream_executor/cuda/cuda_driver.cc:269] failed call to cuInit: UNKNOWN ERROR (303)
-2022-04-12 13:09:30.070739: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (1e9625b1ffce): /proc/driver/nvidia/version does not exist
-2022-04-12 13:09:30.070999: I tensorflow/core/platform/cpu_feature_guard.cc:151] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA
+2022-04-12 14:42:00.627141: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcudart.so.11.0&#39;; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory
+2022-04-12 14:42:00.627179: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.
+2022-04-12 14:42:03.624758: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcuda.so.1&#39;; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory
+2022-04-12 14:42:03.624788: W tensorflow/stream_executor/cuda/cuda_driver.cc:269] failed call to cuInit: UNKNOWN ERROR (303)
+2022-04-12 14:42:03.624808: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (ff15def5dec8): /proc/driver/nvidia/version does not exist
+2022-04-12 14:42:03.625095: I tensorflow/core/platform/cpu_feature_guard.cc:151] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA
 To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.
 </pre></div></div>
 </div>
@@ -876,7 +874,7 @@ To enable them in other operations, rebuild TensorFlow with the appropriate comp
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2022-04-12 13:09:30.210115: W tensorflow/python/util/util.cc:368] Sets are not currently considered sequences, but this may change in the future, so consider avoiding using them.
+2022-04-12 14:42:03.779771: W tensorflow/python/util/util.cc:368] Sets are not currently considered sequences, but this may change in the future, so consider avoiding using them.
 </pre></div></div>
 </div>
 <p>The ELBO of the approximate GP model after a single NatGrad step:</p>
@@ -1128,8 +1126,7 @@ To silence this warning, decorate the function with @tf.autograph.experimental.d
 </section>
 <section id="Comparison-with-ordinary-gradients-in-the-conjugate-case">
 <h2>Comparison with ordinary gradients in the conjugate case<a class="headerlink" href="#Comparison-with-ordinary-gradients-in-the-conjugate-case" title="Permalink to this headline">#</a></h2>
-<section id="(Take-home-message:-natural-gradients-are-always-better)">
-<h3>(Take home message: natural gradients are always better)<a class="headerlink" href="#(Take-home-message:-natural-gradients-are-always-better)" title="Permalink to this headline">#</a></h3>
+<p>(Take home message: natural gradients are always better)</p>
 <p>Compared to SVGP with ordinary gradients with minibatches, the natural gradient optimizer is much faster in the Gaussian case.</p>
 <p>Here we’ll do hyperparameter learning together with optimization of the variational parameters, comparing the interleaved natural gradient approach and the one using ordinary gradients for the hyperparameters and variational parameters jointly.</p>
 <p><strong>NOTE:</strong> Again we need to compromise for smaller gamma value, which we’ll keep <em>fixed</em> during the optimization.</p>
@@ -1230,11 +1227,11 @@ To silence this warning, decorate the function with @tf.autograph.experimental.d
 </pre></div></div>
 </div>
 </section>
-</section>
 <section id="Comparison-with-ordinary-gradients-in-the-non-conjugate-case">
 <h2>Comparison with ordinary gradients in the non-conjugate case<a class="headerlink" href="#Comparison-with-ordinary-gradients-in-the-non-conjugate-case" title="Permalink to this headline">#</a></h2>
-<section id="(Take-home-message:-natural-gradients-are-usually-better)">
-<h3>(Take home message: natural gradients are usually better)<a class="headerlink" href="#(Take-home-message:-natural-gradients-are-usually-better)" title="Permalink to this headline">#</a></h3>
+<section id="Binary-classification">
+<h3>Binary classification<a class="headerlink" href="#Binary-classification" title="Permalink to this headline">#</a></h3>
+<p>(Take home message: natural gradients are usually better)</p>
 <p>We can use natural gradients even when the likelihood isn’t Gaussian. It isn’t guaranteed to be better, but it usually is better in practical situations.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[23]:

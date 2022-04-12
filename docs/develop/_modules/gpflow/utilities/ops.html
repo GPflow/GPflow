@@ -287,33 +287,36 @@ function checkPageExistsAndRedirect(event) {
 
 <div class="viewcode-block" id="leading_transpose"><a class="viewcode-back" href="../../../api/gpflow/posteriors/index.html#gpflow.expectations.squared_exponentials.leading_transpose">[docs]</a><span class="k">def</span> <span class="nf">leading_transpose</span><span class="p">(</span><span class="n">tensor</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">perm</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span> <span class="n">leading_dim</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Transposes tensors with leading dimensions. Leading dimensions in</span>
-<span class="sd">    permutation list represented via ellipsis `...` and is of type List[Union[int, type(...)]</span>
-<span class="sd">    (please note, due to mypy issues, List[Any] is used instead).</span>
-<span class="sd">    When leading dimensions are found, `transpose` method</span>
-<span class="sd">    considers them as a single grouped element indexed by 0 in `perm` list. So, passing</span>
-<span class="sd">    `perm=[-2, ..., -1]`, you assume that your input tensor has [..., A, B] shape,</span>
-<span class="sd">    and you want to move leading dims between A and B dimensions.</span>
-<span class="sd">    Dimension indices in permutation list can be negative or positive. Valid positive</span>
-<span class="sd">    indices start from 1 up to the tensor rank, viewing leading dimensions `...` as zero</span>
-<span class="sd">    index.</span>
-<span class="sd">    Example:</span>
+<span class="sd">    Transposes tensors with leading dimensions.</span>
+
+<span class="sd">    Leading dimensions in permutation list represented via ellipsis `...` and is of type</span>
+<span class="sd">    List[Union[int, type(...)]  (please note, due to mypy issues, List[Any] is used instead).  When</span>
+<span class="sd">    leading dimensions are found, `transpose` method considers them as a single grouped element</span>
+<span class="sd">    indexed by 0 in `perm` list. So, passing `perm=[-2, ..., -1]`, you assume that your input tensor</span>
+<span class="sd">    has [..., A, B] shape, and you want to move leading dims between A and B dimensions.  Dimension</span>
+<span class="sd">    indices in permutation list can be negative or positive. Valid positive indices start from 1 up</span>
+<span class="sd">    to the tensor rank, viewing leading dimensions `...` as zero index.</span>
+
+<span class="sd">    Example::</span>
+
 <span class="sd">        a = tf.random.normal((1, 2, 3, 4, 5, 6))</span>
-<span class="sd">            # [..., A, B, C],</span>
-<span class="sd">            # where A is 1st element,</span>
-<span class="sd">            # B is 2nd element and</span>
-<span class="sd">            # C is 3rd element in</span>
-<span class="sd">            # permutation list,</span>
-<span class="sd">            # leading dimensions are [1, 2, 3]</span>
-<span class="sd">            # which are 0th element in permutation</span>
-<span class="sd">            # list</span>
+<span class="sd">        # [..., A, B, C],</span>
+<span class="sd">        # where A is 1st element,</span>
+<span class="sd">        # B is 2nd element and</span>
+<span class="sd">        # C is 3rd element in</span>
+<span class="sd">        # permutation list,</span>
+<span class="sd">        # leading dimensions are [1, 2, 3]</span>
+<span class="sd">        # which are 0th element in permutation list</span>
 <span class="sd">        b = leading_transpose(a, [3, -3, ..., -2])  # [C, A, ..., B]</span>
 <span class="sd">        sess.run(b).shape</span>
+
 <span class="sd">        output&gt; (6, 4, 1, 2, 3, 5)</span>
+
 <span class="sd">    :param tensor: TensorFlow tensor.</span>
 <span class="sd">    :param perm: List of permutation indices.</span>
 <span class="sd">    :returns: TensorFlow tensor.</span>
-<span class="sd">    :raises: ValueError when `...` cannot be found.</span>
+<span class="sd">    :raises ValueError: when `...` cannot be found.</span>
+
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">perm</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">perm</span><span class="p">)</span>
     <span class="n">idx</span> <span class="o">=</span> <span class="n">perm</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>

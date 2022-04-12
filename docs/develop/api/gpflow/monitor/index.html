@@ -708,12 +708,12 @@ The current step is available through <cite>self.current_step</cite>.</p>
 <dd><p>Bases: <a class="reference internal" href="#gpflow.monitor.ToTensorBoard" title="gpflow.monitor.tensorboard.ToTensorBoard"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.monitor.tensorboard.ToTensorBoard</span></code></a></p>
 <p>Monitoring task that creates a sensible TensorBoard for a model.</p>
 <p>Monitors all the model’s parameters for which their name matches with <cite>keywords_to_monitor</cite>.
-By default, “kernel” and “likelihood” are elements of <cite>keywords_to_monitor</cite>.
-Example:</p>
-<blockquote>
-<div><p>keyword = “kernel”, parameter = “kernel.lengthscale” =&gt; match
-keyword = “variational”, parameter = “kernel.lengthscale” =&gt; no match</p>
-</div></blockquote>
+By default, “kernel” and “likelihood” are elements of <cite>keywords_to_monitor</cite>.</p>
+<p>Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">keyword</span> <span class="o">=</span> <span class="s2">&quot;kernel&quot;</span><span class="p">,</span> <span class="n">parameter</span> <span class="o">=</span> <span class="s2">&quot;kernel.lengthscale&quot;</span> <span class="o">=&gt;</span> <span class="n">match</span>
+<span class="n">keyword</span> <span class="o">=</span> <span class="s2">&quot;variational&quot;</span><span class="p">,</span> <span class="n">parameter</span> <span class="o">=</span> <span class="s2">&quot;kernel.lengthscale&quot;</span> <span class="o">=&gt;</span> <span class="n">no</span> <span class="n">match</span>
+</pre></div>
+</div>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -754,23 +754,24 @@ The current step is available through <cite>self.current_step</cite>.</p>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Accepts any number of of <cite>MonitorTaskGroup</cite> instances, and runs them
 according to their specified periodicity.</p>
-<dl>
-<dt>Example use-case:</dt><dd><p><a href="#id1"><span class="problematic" id="id2">``</span></a>`
-# Create some monitor tasks
-log_dir = “logs”
-model_task = ModelToTensorBoard(log_dir, model)
-image_task = ImageToTensorBoard(log_dir, plot_prediction, “image_samples”)
-lml_task = ScalarToTensorBoard(log_dir, lambda: model.log_marginal_likelihood(), “lml”)</p>
-<p># Plotting tasks can be quite slow, so we want to run them less frequently.
-# We group them in a <cite>MonitorTaskGroup</cite> and set the period to 5.
-slow_tasks = MonitorTaskGroup(image_task, period=5)</p>
-<p># The other tasks are fast. We run them at each iteration of the optimisation.
-fast_tasks = MonitorTaskGroup([model_task, lml_task], period=1)</p>
-<p># We pass both groups to the <cite>Monitor</cite>
-monitor = Monitor(fast_tasks, slow_tasks)
-<a href="#id3"><span class="problematic" id="id4">``</span></a><a href="#id5"><span class="problematic" id="id6">`</span></a></p>
-</dd>
-</dl>
+<p>Example use-case:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># Create some monitor tasks</span>
+<span class="n">log_dir</span> <span class="o">=</span> <span class="s2">&quot;logs&quot;</span>
+<span class="n">model_task</span> <span class="o">=</span> <span class="n">ModelToTensorBoard</span><span class="p">(</span><span class="n">log_dir</span><span class="p">,</span> <span class="n">model</span><span class="p">)</span>
+<span class="n">image_task</span> <span class="o">=</span> <span class="n">ImageToTensorBoard</span><span class="p">(</span><span class="n">log_dir</span><span class="p">,</span> <span class="n">plot_prediction</span><span class="p">,</span> <span class="s2">&quot;image_samples&quot;</span><span class="p">)</span>
+<span class="n">lml_task</span> <span class="o">=</span> <span class="n">ScalarToTensorBoard</span><span class="p">(</span><span class="n">log_dir</span><span class="p">,</span> <span class="k">lambda</span><span class="p">:</span> <span class="n">model</span><span class="o">.</span><span class="n">log_marginal_likelihood</span><span class="p">(),</span> <span class="s2">&quot;lml&quot;</span><span class="p">)</span>
+
+<span class="c1"># Plotting tasks can be quite slow, so we want to run them less frequently.</span>
+<span class="c1"># We group them in a `MonitorTaskGroup` and set the period to 5.</span>
+<span class="n">slow_tasks</span> <span class="o">=</span> <span class="n">MonitorTaskGroup</span><span class="p">(</span><span class="n">image_task</span><span class="p">,</span> <span class="n">period</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+
+<span class="c1"># The other tasks are fast. We run them at each iteration of the optimisation.</span>
+<span class="n">fast_tasks</span> <span class="o">=</span> <span class="n">MonitorTaskGroup</span><span class="p">([</span><span class="n">model_task</span><span class="p">,</span> <span class="n">lml_task</span><span class="p">],</span> <span class="n">period</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="c1"># We pass both groups to the `Monitor`</span>
+<span class="n">monitor</span> <span class="o">=</span> <span class="n">Monitor</span><span class="p">(</span><span class="n">fast_tasks</span><span class="p">,</span> <span class="n">slow_tasks</span><span class="p">)</span>
+</pre></div>
+</div>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>task_groups</strong> (<a class="reference internal" href="#gpflow.monitor.MonitorTaskGroup" title="gpflow.monitor.base.MonitorTaskGroup"><code class="xref py py-class docutils literal notranslate"><span class="pre">MonitorTaskGroup</span></code></a>) – </p>

@@ -670,48 +670,42 @@ to be used for quadrature.</p>
 <dt class="sig sig-object py" id="gpflow.quadrature.GaussianQuadrature.logspace">
 <span class="sig-name descname"><span class="pre">logspace</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fun</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">var</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/quadrature/base.html#GaussianQuadrature.logspace"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.quadrature.GaussianQuadrature.logspace" title="Permalink to this definition">#</a></dt>
 <dd><p>Compute the Gaussian log-Expectation of a the exponential of a function f:</p>
-<blockquote>
-<div><p>X ~ N(mean, var)
-log E[exp[f(X)]] = log ∫exp[f(x, <a href="#id1"><span class="problematic" id="id2">*</span></a>args, <a href="#id3"><span class="problematic" id="id4">**</span></a>kwargs)]p(x)dx</p>
-</div></blockquote>
-<dl class="simple">
-<dt>Using the formula:</dt><dd><p>log E[exp[f(X)]] = log sum_{i=1}^{N_quad_points} exp[f(x_i) + log w_i]</p>
-</dd>
-</dl>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>X ~ N(mean, var)
+log E[exp[f(X)]] = log ∫exp[f(x, *args, **kwargs)]p(x)dx
+</pre></div>
+</div>
+<p>Using the formula:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">log</span> <span class="n">E</span><span class="p">[</span><span class="n">exp</span><span class="p">[</span><span class="n">f</span><span class="p">(</span><span class="n">X</span><span class="p">)]]</span> <span class="o">=</span> <span class="n">log</span> <span class="n">sum_</span><span class="p">{</span><span class="n">i</span><span class="o">=</span><span class="mi">1</span><span class="p">}</span><span class="o">^</span><span class="p">{</span><span class="n">N_quad_points</span><span class="p">}</span> <span class="n">exp</span><span class="p">[</span><span class="n">f</span><span class="p">(</span><span class="n">x_i</span><span class="p">)</span> <span class="o">+</span> <span class="n">log</span> <span class="n">w_i</span><span class="p">]</span>
+</pre></div>
+</div>
 <p>where x_i, w_i must be provided by the inheriting class through self._build_X_W.
 The computations broadcast along batch-dimensions, represented by [b1, b2, …, bX].</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>fun</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Callable</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">...</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Iterable</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Callable</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">...</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]]]) – <p>Callable or Iterable of Callables that operates elementwise, with
-signature f(X, <a href="#id5"><span class="problematic" id="id6">*</span></a>args, <a href="#id7"><span class="problematic" id="id8">**</span></a>kwargs). Moreover, it must satisfy the shape-mapping:</p>
-<blockquote>
-<div><dl class="simple">
-<dt>X shape: [N_quad_points, b1, b2, …, bX, d],</dt><dd><p>usually [N_quad_points, N, d]</p>
-</dd>
-<dt>f(X) shape: [N_quad_points, b1, b2, …., bX, d’],</dt><dd><p>usually [N_quad_points, N, 1] or [N_quad_points, N, d]</p>
-</dd>
-</dl>
-</div></blockquote>
+signature f(X, *args, **kwargs). Moreover, it must satisfy the shape-mapping:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">X</span> <span class="n">shape</span><span class="p">:</span> <span class="p">[</span><span class="n">N_quad_points</span><span class="p">,</span> <span class="n">b1</span><span class="p">,</span> <span class="n">b2</span><span class="p">,</span> <span class="o">...</span><span class="p">,</span> <span class="n">bX</span><span class="p">,</span> <span class="n">d</span><span class="p">],</span>
+    <span class="n">usually</span> <span class="p">[</span><span class="n">N_quad_points</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">d</span><span class="p">]</span>
+<span class="n">f</span><span class="p">(</span><span class="n">X</span><span class="p">)</span> <span class="n">shape</span><span class="p">:</span> <span class="p">[</span><span class="n">N_quad_points</span><span class="p">,</span> <span class="n">b1</span><span class="p">,</span> <span class="n">b2</span><span class="p">,</span> <span class="o">....</span><span class="p">,</span> <span class="n">bX</span><span class="p">,</span> <span class="n">d</span><span class="s1">&#39;],</span>
+    <span class="n">usually</span> <span class="p">[</span><span class="n">N_quad_points</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="ow">or</span> <span class="p">[</span><span class="n">N_quad_points</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">d</span><span class="p">]</span>
+</pre></div>
+</div>
 <p>In most cases, f should only operate over the last dimension of X</p>
 </p></li>
 <li><p><strong>mean</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>, <a class="reference internal" href="../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>]) – Array/Tensor with shape [b1, b2, …, bX, d], usually [N, d],
 representing the mean of a d-Variate Gaussian distribution</p></li>
 <li><p><strong>var</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>, <a class="reference internal" href="../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>]) – Array/Tensor with shape b1, b2, …, bX, d], usually [N, d],
 representing the variance of a d-Variate Gaussian distribution</p></li>
-<li><p><strong>*args</strong> – <p>Passed to fun</p>
-</p></li>
-<li><p><strong>**kargs</strong> – <p>Passed to fun</p>
-</p></li>
-<li><p><strong>args</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>) – </p></li>
-<li><p><strong>kwargs</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>) – </p></li>
+<li><p><strong>args</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>) – Passed to fun</p></li>
+<li><p><strong>kwargs</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>) – Passed to fun</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type</dt>
 <dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></p>
 </dd>
 <dt class="field-odd">Returns</dt>
-<dd class="field-odd"><p>Array/Tensor with shape [b1, b2, …., bX, d’],
+<dd class="field-odd"><p>Array/Tensor with shape [b1, b2, …., bX, d'],
 usually [N, d] or [N, 1]</p>
 </dd>
 </dl>
@@ -818,6 +812,7 @@ to leave out the item index, i.e. f actually maps (?xD)-&gt;(?x*Dout).
 <span class="sig-prename descclassname"><span class="pre">gpflow.quadrature.</span></span><span class="sig-name descname"><span class="pre">ndiag_mc</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">funcs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">S</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Fmu</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Fvar</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logspace</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epsilon</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">Ys</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/quadrature/deprecated.html#ndiag_mc"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.quadrature.ndiag_mc" title="Permalink to this definition">#</a></dt>
 <dd><p>Computes N Gaussian expectation integrals of one or more functions
 using Monte Carlo samples. The Gaussians must be independent.</p>
+<p><cite>Fmu</cite>, <cite>Fvar</cite>, <cite>Ys</cite> should all have same shape, with overall size <cite>N</cite>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -828,20 +823,15 @@ Callable or Iterable of Callables that operates elementwise</p></li>
 <li><p><strong>Fvar</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>, <a class="reference internal" href="../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>]) – array/tensor</p></li>
 <li><p><strong>logspace</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – if True, funcs are the log-integrands and this calculates
 the log-expectation of exp(funcs)</p></li>
-<li><p><strong>**Ys</strong> – <p>arrays/tensors; deterministic arguments to be passed by name</p>
-</p></li>
+<li><p><strong>Ys</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>, <a class="reference internal" href="../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>]) – arrays/tensors; deterministic arguments to be passed by name</p></li>
+<li><p><strong>epsilon</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>, <a class="reference internal" href="../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>, <code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code>]) – </p></li>
 </ul>
 </dd>
-</dl>
-<p>Fmu, Fvar, Ys should all have same shape, with overall size <cite>N</cite>
-:rtype: <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>
-:return: shape is the same as that of the first Fmu</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>epsilon</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>, <a class="reference internal" href="../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>, <code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code>]) – </p></li>
-<li><p><strong>Ys</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>, <a class="reference internal" href="../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>]) – </p></li>
-</ul>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>shape is the same as that of the first Fmu</p>
 </dd>
 </dl>
 </dd></dl>
@@ -856,6 +846,7 @@ the log-expectation of exp(funcs)</p></li>
 using Gauss-Hermite quadrature. The Gaussians must be independent.</p>
 <p>The means and variances of the Gaussians are specified by Fmu and Fvar.
 The N-integrals are assumed to be taken wrt the last dimensions of Fmu, Fvar.</p>
+<p><cite>Fmu</cite>, <cite>Fvar</cite>, <cite>Ys</cite> should all have same shape, with overall size <cite>N</cite>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -866,17 +857,14 @@ Callable or Iterable of Callables that operates elementwise</p></li>
 <li><p><strong>Fvar</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>, <a class="reference internal" href="../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>, <a class="reference internal" href="../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>], <code class="xref py py-data docutils literal notranslate"><span class="pre">...</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>, <a class="reference internal" href="../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>]]]) – array/tensor or <cite>Din</cite>-tuple/list thereof</p></li>
 <li><p><strong>logspace</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – if True, funcs are the log-integrands and this calculates
 the log-expectation of exp(funcs)</p></li>
-<li><p><strong>**Ys</strong> – <p>arrays/tensors; deterministic arguments to be passed by name</p>
-</p></li>
+<li><p><strong>Ys</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>, <a class="reference internal" href="../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>]) – arrays/tensors; deterministic arguments to be passed by name</p></li>
 </ul>
 </dd>
-</dl>
-<p>Fmu, Fvar, Ys should all have same shape, with overall size <cite>N</cite>
-:rtype: <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>
-:return: shape is the same as that of the first Fmu</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>Ys</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>, <a class="reference internal" href="../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>]) – </p>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>shape is the same as that of the first Fmu</p>
 </dd>
 </dl>
 </dd></dl>

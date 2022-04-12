@@ -461,8 +461,8 @@ function checkPageExistsAndRedirect(event) {
 <span class="sd">    the shape of the data. This functions updates the internal data of the given vgp, and updates</span>
 <span class="sd">    the variational parameters to fit.</span>
 
-<span class="sd">    This function requires that the input :param:`vgp` were create with :class:`tf.Variable`s for</span>
-<span class="sd">    :param:`data`.</span>
+<span class="sd">    This function requires that the input `vgp` were create with :class:`tf.Variable`s for</span>
+<span class="sd">    `data`.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">old_X_data</span><span class="p">,</span> <span class="n">old_Y_data</span> <span class="o">=</span> <span class="n">vgp</span><span class="o">.</span><span class="n">data</span>
     <span class="k">assert</span> <span class="n">is_variable</span><span class="p">(</span><span class="n">old_X_data</span><span class="p">)</span> <span class="ow">and</span> <span class="n">is_variable</span><span class="p">(</span>
@@ -503,7 +503,9 @@ function checkPageExistsAndRedirect(event) {
 <span class="sd">    posterior precision shares off-diagonal elements with the prior, so</span>
 <span class="sd">    only the diagonal elements of the precision need be adjusted.</span>
 <span class="sd">    The posterior approximation is</span>
+
 <span class="sd">    .. math::</span>
+
 <span class="sd">       q(\mathbf f) = N(\mathbf f \,|\, \mathbf K \boldsymbol \alpha,</span>
 <span class="sd">                         [\mathbf K^{-1} + \textrm{diag}(\boldsymbol \lambda))^2]^{-1})</span>
 
@@ -545,9 +547,18 @@ function checkPageExistsAndRedirect(event) {
 <span class="sd">        q_alpha, q_lambda are variational parameters, size [N, R]</span>
 <span class="sd">        This method computes the variational lower bound on the likelihood,</span>
 <span class="sd">        which is:</span>
-<span class="sd">            E_{q(F)} [ \log p(Y|F) ] - KL[ q(F) || p(F)]</span>
+
+<span class="sd">        .. math::</span>
+
+<span class="sd">           E_{q(F)} [ \log p(Y|F) ] - KL[ q(F) || p(F)]</span>
+
 <span class="sd">        with</span>
-<span class="sd">            q(f) = N(f | K alpha + mean, [K^-1 + diag(square(lambda))]^-1) .</span>
+
+<span class="sd">        .. math::</span>
+
+<span class="sd">           q(f) = N(f |</span>
+<span class="sd">               K \alpha + \textrm{mean},</span>
+<span class="sd">               [K^-1 + \textrm{diag}(\textrm{square}(\lambda))]^-1) .</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">X_data</span><span class="p">,</span> <span class="n">Y_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span>
 
@@ -589,11 +600,19 @@ function checkPageExistsAndRedirect(event) {
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MeanAndVariance</span><span class="p">:</span>
         <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        The posterior variance of F is given by</span>
-<span class="sd">            q(f) = N(f | K alpha + mean, [K^-1 + diag(lambda**2)]^-1)</span>
+
+<span class="sd">        .. math::</span>
+
+<span class="sd">           q(f) = N(f |</span>
+<span class="sd">               K \alpha + \textrm{mean}, [K^-1 + \textrm{diag}(\lambda**2)]^-1)</span>
+
 <span class="sd">        Here we project this to F*, the values of the GP at Xnew which is given</span>
 <span class="sd">        by</span>
-<span class="sd">           q(F*) = N ( F* | K_{*F} alpha + mean, K_{**} - K_{*f}[K_{ff} +</span>
-<span class="sd">                                           diag(lambda**-2)]^-1 K_{f*} )</span>
+
+<span class="sd">        .. math::</span>
+
+<span class="sd">           q(F*) = N ( F* | K_{*F} \alpha + \textrm{mean}, K_{**} - K_{*f}[K_{ff} +</span>
+<span class="sd">                                           \textrm{diag}(\lambda**-2)]^-1 K_{f*} )</span>
 
 <span class="sd">        Note: This model currently does not allow full output covariances</span>
 <span class="sd">        &quot;&quot;&quot;</span>
