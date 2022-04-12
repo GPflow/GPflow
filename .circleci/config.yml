@@ -164,7 +164,7 @@ jobs:
           py_ver: <<parameters.py_ver>>
           tf_ver: <<parameters.tf_ver>>
           tfp_ver: <<parameters.tfp_ver>>
-          pytest_filter: not notebooks
+          pytest_filter: not notebooks and not docs
 
   notebook-test:
     parameters:
@@ -182,6 +182,17 @@ jobs:
           tf_ver: <<parameters.tf_ver>>
           tfp_ver: <<parameters.tfp_ver>>
           pytest_filter: notebooks
+
+  docs-test:
+    docker:
+      # build-docs below use `max` version, so let's test with the same version we're going to use.
+      - image: cimg/python:<<pipeline.parameters.max_py_ver>>
+    steps:
+      - run_tests:
+          py_ver: <<pipeline.parameters.max_py_ver>>
+          tf_ver: <<pipeline.parameters.max_tf_ver>>
+          tfp_ver: <<pipeline.parameters.max_tfp_ver>>
+          pytest_filter: docs
 
   build-docs:
     docker:
@@ -329,6 +340,10 @@ workflows:
           filters:
             tags:
               only: /^v[0-9]+(\.[0-9]+)*(-rc[0-9]+)?/
+      - docs-test:
+          filters:
+            tags:
+              only: /^v[0-9]+(\.[0-9]+)*(-rc[0-9]+)?/
       - noop:
           name: fast-tests
           requires:
@@ -338,6 +353,7 @@ workflows:
             - type-check-max
             - format-check-min
             - format-check-max
+            - docs-test
       - unit-test:
           name: unit-test-min
           py_ver: <<pipeline.parameters.min_py_ver>>

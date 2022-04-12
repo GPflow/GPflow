@@ -50,7 +50,7 @@ from .base_types import Shape
 
 if TYPE_CHECKING:  # pragma: no cover
     from .argument_ref import ArgumentRef
-    from .bools import ParsedBoolSpec
+    from .bool_specs import ParsedBoolSpec
     from .specs import ParsedNoteSpec, ParsedShapeSpec, ParsedTensorSpec
 
 _UNKNOWN_FILE = "<Unknown file>"
