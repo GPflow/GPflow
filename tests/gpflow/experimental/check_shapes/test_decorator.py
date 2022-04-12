@@ -528,6 +528,33 @@ def test_check_shapes__none() -> None:
     f(Input(ins=(None,)))
 
 
+def test_check_shapes__condition() -> None:
+    @check_shapes(
+        "a: [1] if b1",
+        "a: [2] if not b1 and b2",
+        "a: [3] if not b1 and not b2",
+    )
+    def f(a: TestShaped, b1: bool, b2: bool) -> None:
+        pass
+
+    f(t(1), True, True)
+    f(t(1), True, False)
+    f(t(2), False, True)
+    f(t(3), False, False)
+
+    with pytest.raises(ShapeMismatchError):
+        f(t(2), True, True)
+
+    with pytest.raises(ShapeMismatchError):
+        f(t(2), True, False)
+
+    with pytest.raises(ShapeMismatchError):
+        f(t(1), False, True)
+
+    with pytest.raises(ShapeMismatchError):
+        f(t(2), False, False)
+
+
 def test_check_shapes__reuse() -> None:
     check_my_shapes = check_shapes(
         "a: [d1, d2]",
@@ -638,17 +665,17 @@ def test_check_shapes__error_message() -> None:
     def_line = current_line() + 2
 
     @check_shapes(
-        "a: [d1, d2]",
+        "a: [d1, d2] if cond",
         "b: [d1, d3]  # Some note on b",
         "return: [d2, d3]",
         "# Some note on f",
         "# Some other note on f",
     )
-    def f(a: TestShaped, b: TestShaped) -> TestShaped:
+    def f(a: TestShaped, b: TestShaped, cond: bool) -> TestShaped:
         return t(3, 4)
 
     with pytest.raises(ShapeMismatchError) as e:
-        f(t(2, 3), t(3, 4))
+        f(t(2, 3), t(3, 4), True)
 
     (message,) = e.value.args
     assert (
@@ -659,6 +686,9 @@ Tensor shape mismatch.
     Note:     Some note on f
     Note:     Some other note on f
     Argument: a
+      Condition: cond
+        Argument: cond
+          Value: True
       Expected: [d1, d2]
       Actual:   [2, 3]
     Argument: b

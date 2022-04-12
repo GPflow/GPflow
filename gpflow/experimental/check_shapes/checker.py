@@ -256,15 +256,15 @@ class ShapeChecker:
                     StackContext(
                         VariableContext(variable),
                         ParallelContext(
-                            [
+                            tuple(
                                 StackContext(c, TensorSpecContext(s))
                                 for s, c in self._specs_by_variable[variable]
-                            ]
+                            )
                         ),
                     )
                 )
         if new_variable_error_contexts:
-            raise VariableTypeError(ParallelContext(new_variable_error_contexts))
+            raise VariableTypeError(ParallelContext(tuple(new_variable_error_contexts)))
 
         def _assert(condition: bool) -> None:
             if not condition:
@@ -275,10 +275,10 @@ class ShapeChecker:
                     shape_error_context: ErrorContext = ShapeContext(tensor_spec.shape, shape)
                     if tensor_spec.note is not None:
                         shape_error_context = ParallelContext(
-                            [NoteContext(tensor_spec.note), shape_error_context]
+                            (NoteContext(tensor_spec.note), shape_error_context)
                         )
                     contexts.append(StackContext(context, shape_error_context))
-                raise ShapeMismatchError(ParallelContext(contexts))
+                raise ShapeMismatchError(ParallelContext(tuple(contexts)))
 
         for actual, tensor_spec in new_shapes:
             actual_len = len(actual)

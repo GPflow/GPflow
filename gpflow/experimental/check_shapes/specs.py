@@ -18,6 +18,7 @@ from dataclasses import dataclass
 from typing import Optional, Tuple
 
 from .argument_ref import ArgumentRef
+from .bool_specs import ParsedBoolSpec
 
 
 @dataclass(frozen=True)
@@ -95,9 +96,22 @@ class ParsedTensorSpec:
 class ParsedArgumentSpec:
     argument_ref: ArgumentRef
     tensor: ParsedTensorSpec
+    condition: Optional[ParsedBoolSpec]
 
     def __repr__(self) -> str:
-        return f"{self.argument_ref}: {self.tensor}"
+        tokens = []
+        tokens.append(f"{self.argument_ref}: ")
+        tokens.append(repr(self.tensor.shape))
+
+        if self.condition is not None:
+            tokens.append(" if ")
+            tokens.append(repr(self.condition))
+
+        if self.tensor.note is not None:
+            tokens.append("  ")
+            tokens.append(repr(self.tensor.note))
+
+        return "".join(tokens)
 
 
 @dataclass(frozen=True)
