@@ -28,6 +28,8 @@ from gpflow.optimizers import Scipy
 # %matplotlib inline
 
 # %% [markdown]
+# # Conjugate Gradient Lower Bound
+#
 # First, we load the `snelson1d` training dataset.
 
 # %%

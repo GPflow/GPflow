@@ -239,15 +239,15 @@ class Parameter(tfp.util.TransformedVariable):
         Assigns constrained `value` to the unconstrained parameter's variable.
         It passes constrained value through parameter's transform first.
 
-        Example:
-            ```
+        Example::
+
             a = Parameter(2.0, transform=tfp.bijectors.Softplus())
             b = Parameter(3.0)
 
             a.assign(4.0)               # `a` parameter to `2.0` value.
             a.assign(tf.constant(5.0))  # `a` parameter to `5.0` value.
             a.assign(b)                 # `a` parameter to constrained value of `b`.
-            ```
+
 
         :param value: Constrained tensor-like value.
         :param use_locking: If `True`, use locking during the assignment.

@@ -40,8 +40,8 @@ def to_default_float(x: TensorData) -> tf.Tensor:
 
 def set_trainable(model: Union[tf.Module, Iterable[tf.Module]], flag: bool) -> None:
     """
-    Set trainable flag for all `tf.Variable`s and `gpflow.Parameter`s in a `tf.Module` or collection
-    of `tf.Module`s.
+    Set trainable flag for all :class:`tf.Variable`\ s and :class:`gpflow.Parameter`\ s in a
+    :class:`tf.Module` or collection of :class:`tf.Module`\ s.
     """
     modules = [model] if isinstance(model, tf.Module) else model
 

@@ -130,6 +130,8 @@ def ndiagquad(
     The means and variances of the Gaussians are specified by Fmu and Fvar.
     The N-integrals are assumed to be taken wrt the last dimensions of Fmu, Fvar.
 
+    `Fmu`, `Fvar`, `Ys` should all have same shape, with overall size `N`.
+
     :param funcs: the integrand(s):
         Callable or Iterable of Callables that operates elementwise
     :param H: number of Gauss-Hermite quadrature points
@@ -137,9 +139,7 @@ def ndiagquad(
     :param Fvar: array/tensor or `Din`-tuple/list thereof
     :param logspace: if True, funcs are the log-integrands and this calculates
         the log-expectation of exp(funcs)
-    :param **Ys: arrays/tensors; deterministic arguments to be passed by name
-
-    Fmu, Fvar, Ys should all have same shape, with overall size `N`
+    :param Ys: arrays/tensors; deterministic arguments to be passed by name
     :return: shape is the same as that of the first Fmu
     """
     warnings.warn(
@@ -208,6 +208,8 @@ def ndiag_mc(
     Computes N Gaussian expectation integrals of one or more functions
     using Monte Carlo samples. The Gaussians must be independent.
 
+    `Fmu`, `Fvar`, `Ys` should all have same shape, with overall size `N`.
+
     :param funcs: the integrand(s):
         Callable or Iterable of Callables that operates elementwise
     :param S: number of Monte Carlo sampling points
@@ -215,9 +217,7 @@ def ndiag_mc(
     :param Fvar: array/tensor
     :param logspace: if True, funcs are the log-integrands and this calculates
         the log-expectation of exp(funcs)
-    :param **Ys: arrays/tensors; deterministic arguments to be passed by name
-
-    Fmu, Fvar, Ys should all have same shape, with overall size `N`
+    :param Ys: arrays/tensors; deterministic arguments to be passed by name
     :return: shape is the same as that of the first Fmu
     """
     N, D = tf.shape(Fmu)[0], tf.shape(Fvar)[1]

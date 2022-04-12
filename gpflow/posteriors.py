@@ -117,7 +117,7 @@ class PrecomputedValue:
     @staticmethod
     def wrap_alpha_Qinv(alpha: TensorType, Qinv: TensorType) -> Tuple["PrecomputedValue", ...]:
         """
-        Wraps `alpha` and `Qinv` in `PrecomputedValue`s.
+        Wraps `alpha` and `Qinv` in `PrecomputedValue`\ s.
         """
         one_dynamic = False
         L_dynamic = False

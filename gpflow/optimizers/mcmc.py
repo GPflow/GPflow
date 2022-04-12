@@ -26,7 +26,8 @@ class SamplingHelper:
     This helper makes it easy to read from variables being set with a prior and
     writes values back to the same variables.
 
-    Example:
+    Example::
+
         model = ...  # Create a GPflow model
         hmc_helper = SamplingHelper(model.log_posterior_density, model.trainable_parameters)
 

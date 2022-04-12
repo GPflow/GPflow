@@ -27,13 +27,13 @@ class ChangePoints(Combination):
     input space where different kernels govern different parts of the space.
 
     The kernel is by multiplication and addition of the base kernels with
-    sigmoid functions (σ). A single change-point kernel is defined as:
+    sigmoid functions (σ). A single change-point kernel is defined as::
 
         K₁(x, x') * (1 - σ(x)) * (1 - σ(x')) + K₂(x, x') * σ(x) * σ(x')
 
     where K₁ is deactivated around the change-point and K₂ is activated. The
-    single change-point version can be found in \citet{lloyd2014}. Each sigmoid
-    is a logistic function defined as:
+    single change-point version can be found in :cite:t:`lloyd2014`. Each sigmoid
+    is a logistic function defined as::
 
         σ(x) = 1 / (1 + exp{-s(x - x₀)})
 

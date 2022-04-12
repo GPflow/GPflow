@@ -25,11 +25,14 @@ from .base import Kernel
 
 class Convolutional(Kernel):
     r"""
-    Plain convolutional kernel as described in \citet{vdw2017convgp}. Defines
-    a GP f( ) that is constructed from a sum of responses of individual patches
+    Plain convolutional kernel as described in :cite:t:`vdw2017convgp`. Defines
+    a GP :math:`f()` that is constructed from a sum of responses of individual patches
     in an image:
-      f(x) = \sum_p x^{[p]}
-    where x^{[p]} is the pth patch in the image.
+
+    .. math::
+       f(x) = \sum_p x^{[p]}
+
+    where :math:`x^{[p]}` is the :math:`p`'th patch in the image.
 
     The key reference is :cite:t:`vdw2017convgp`.
     """

@@ -39,33 +39,36 @@ def eye(num: int, value: tf.Tensor, dtype: Optional[tf.DType] = None) -> tf.Tens
 
 def leading_transpose(tensor: tf.Tensor, perm: List[Any], leading_dim: int = 0) -> tf.Tensor:
     """
-    Transposes tensors with leading dimensions. Leading dimensions in
-    permutation list represented via ellipsis `...` and is of type List[Union[int, type(...)]
-    (please note, due to mypy issues, List[Any] is used instead).
-    When leading dimensions are found, `transpose` method
-    considers them as a single grouped element indexed by 0 in `perm` list. So, passing
-    `perm=[-2, ..., -1]`, you assume that your input tensor has [..., A, B] shape,
-    and you want to move leading dims between A and B dimensions.
-    Dimension indices in permutation list can be negative or positive. Valid positive
-    indices start from 1 up to the tensor rank, viewing leading dimensions `...` as zero
-    index.
-    Example:
+    Transposes tensors with leading dimensions.
+
+    Leading dimensions in permutation list represented via ellipsis `...` and is of type
+    List[Union[int, type(...)]  (please note, due to mypy issues, List[Any] is used instead).  When
+    leading dimensions are found, `transpose` method considers them as a single grouped element
+    indexed by 0 in `perm` list. So, passing `perm=[-2, ..., -1]`, you assume that your input tensor
+    has [..., A, B] shape, and you want to move leading dims between A and B dimensions.  Dimension
+    indices in permutation list can be negative or positive. Valid positive indices start from 1 up
+    to the tensor rank, viewing leading dimensions `...` as zero index.
+
+    Example::
+
         a = tf.random.normal((1, 2, 3, 4, 5, 6))
-            # [..., A, B, C],
-            # where A is 1st element,
-            # B is 2nd element and
-            # C is 3rd element in
-            # permutation list,
-            # leading dimensions are [1, 2, 3]
-            # which are 0th element in permutation
-            # list
+        # [..., A, B, C],
+        # where A is 1st element,
+        # B is 2nd element and
+        # C is 3rd element in
+        # permutation list,
+        # leading dimensions are [1, 2, 3]
+        # which are 0th element in permutation list
         b = leading_transpose(a, [3, -3, ..., -2])  # [C, A, ..., B]
         sess.run(b).shape
+
         output> (6, 4, 1, 2, 3, 5)
+
     :param tensor: TensorFlow tensor.
     :param perm: List of permutation indices.
     :returns: TensorFlow tensor.
-    :raises: ValueError when `...` cannot be found.
+    :raises ValueError: when `...` cannot be found.
+
     """
     perm = copy.copy(perm)
     idx = perm.index(...)
