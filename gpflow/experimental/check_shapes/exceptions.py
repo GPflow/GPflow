@@ -39,6 +39,9 @@ class CheckShapesError(Exception):
 
         self.context = context
 
+        # Prevent Keras from rewriting our exception:
+        self._keras_call_info_injected = True
+
 
 class VariableTypeError(CheckShapesError):
     """
