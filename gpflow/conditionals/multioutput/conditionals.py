@@ -55,9 +55,11 @@ def shared_independent_conditional(
     q_sqrt: Optional[tf.Tensor] = None,
     white: bool = False,
 ) -> MeanAndVariance:
-    """Multioutput conditional for an independent kernel and shared inducing inducing.
+    """
+    Multioutput conditional for an independent kernel and shared inducing inducing.
     Same behaviour as conditional with non-multioutput kernels.
     The covariance matrices used to calculate the conditional have the following shape:
+
     - Kuu: [M, M]
     - Kuf: [M, N]
     - Kff: N or [N, N]
@@ -79,6 +81,7 @@ def shared_independent_conditional(
     :return:
         - mean:     [N, P]
         - variance: [N, P], [P, N, N], [N, P, P] or [N, P, N, P]
+
         Please see `gpflow.conditional._expand_independent_outputs` for more information
         about the shape of the variance, depending on `full_cov` and `full_output_cov`.
     """

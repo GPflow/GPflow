@@ -15,12 +15,13 @@
 # pylint: disable=unused-argument  # Bunch of fake functions below has unused arguments.
 
 from dataclasses import dataclass
-from typing import Optional, Tuple
+from typing import Mapping, Optional, Sequence, Tuple
 
 import pytest
 
 from gpflow.experimental.check_shapes import (
     ShapeMismatchError,
+    check_shape,
     check_shapes,
     disable_check_shapes,
     get_check_shapes,
@@ -242,23 +243,186 @@ def test_check_shapes__anonymous__bad_imput() -> None:
         f(t(1, 2), t(1, 3), t(2), t())
 
 
-def test_check_shapes__anonymous__bad_return() -> None:
+def test_check_shapes__broadcast_constant() -> None:
     @check_shapes(
-        "a: [., d1]",
-        "b: [None, d2]",
-        "c: [..., d1]",
-        "d: [*, d2]",
-        "return: [..., d1, d2]",
+        "a: [broadcast 2, broadcast 3]",
     )
-    def f(a: TestShaped, b: TestShaped, c: TestShaped, d: TestShaped) -> TestShaped:
-        return t(
-            *get_shape(c)[:-1],
-            get_shape(a)[-1] + 1,  # type: ignore
-            get_shape(b)[-1],
-        )
+    def f(a: TestShaped) -> None:
+        pass
+
+    f(t(1, 1))
+    f(t(1, 3))
+    f(t(2, 1))
+    f(t(2, 3))
+    f(t(None, 1))
+    f(t(None, 3))
+    f(t(1, None))
+    f(t(2, None))
+    f(t_unk())
 
     with pytest.raises(ShapeMismatchError):
-        f(t(1, 2), t(1, 3), t(2), t(3))
+        f(t(3, 3))
+
+
+def test_check_shapes__broadcast_first() -> None:
+    @check_shapes(
+        "a: [broadcast d1, broadcast d2, broadcast d3]",
+        "b: [d1, d2, d3]",
+    )
+    def f(a: TestShaped, b: TestShaped) -> None:
+        pass
+
+    f(t(1, 1, 3), t(1, 2, 3))
+    f(t(None, 1, 3), t(1, 2, 3))
+    f(t(1, None, 3), t(1, 2, 3))
+    f(t(1, 1, None), t(1, 2, 3))
+    f(t(1, 1, 3), t(None, 2, 3))
+    f(t(1, 1, 3), t(1, None, 3))
+    f(t(1, 1, 3), t(1, 2, None))
+    f(t_unk(), t(1, 2, 3))
+    f(t(1, 1, 3), t_unk())
+    f(t_unk(), t_unk())
+
+    with pytest.raises(ShapeMismatchError):
+        f(t(1, 2, 3), t(1, 4, 3))
+
+
+def test_check_shapes__broadcast_second() -> None:
+    @check_shapes(
+        "a: [d1, d2, d3]",
+        "b: [broadcast d1, broadcast d2, broadcast d3]",
+    )
+    def f(a: TestShaped, b: TestShaped) -> None:
+        pass
+
+    f(t(1, 2, 3), t(1, 1, 3))
+    f(t(None, 2, 3), t(1, 1, 3))
+    f(t(1, None, 3), t(1, 1, 3))
+    f(t(1, 2, None), t(1, 1, 3))
+    f(t(1, 2, 3), t(None, 1, 3))
+    f(t(1, 2, 3), t(1, None, 3))
+    f(t(1, 2, 3), t(1, 1, None))
+    f(t_unk(), t(1, 1, 3))
+    f(t(1, 2, 3), t_unk())
+    f(t_unk(), t_unk())
+
+    with pytest.raises(ShapeMismatchError):
+        f(t(1, 2, 3), t(1, 4, 3))
+
+
+def test_check_shapes__broadcast_both() -> None:
+    @check_shapes(
+        "a: [broadcast d1, broadcast d2, broadcast d3, broadcast d4]",
+        "b: [broadcast d1, broadcast d2, broadcast d3, broadcast d4]",
+    )
+    def f(a: TestShaped, b: TestShaped) -> None:
+        pass
+
+    f(t(1, 1, 3, 4), t(1, 2, 1, 4))
+    f(t(None, 1, 3, 4), t(1, 2, 1, 4))
+    f(t(1, None, 3, 4), t(1, 2, 1, 4))
+    f(t(1, 1, None, 4), t(1, 2, 1, 4))
+    f(t(1, 1, 3, None), t(1, 2, 1, 4))
+    f(t(1, 1, 3, 4), t(None, 2, 1, 4))
+    f(t(1, 1, 3, 4), t(1, None, 1, 4))
+    f(t(1, 1, 3, 4), t(1, 2, None, 4))
+    f(t(1, 1, 3, 4), t(1, 2, 1, None))
+    f(t_unk(), t(1, 2, 1, 4))
+    f(t(1, 1, 3, 4), t_unk())
+    f(t_unk(), t_unk())
+
+    with pytest.raises(ShapeMismatchError):
+        f(t(1, 2, 3, 4), t(1, 2, 5, 4))
+
+
+def test_check_shapes__broadcast_var_rank_first() -> None:
+    @check_shapes(
+        "a: [broadcast d...]",
+        "b: [d...]",
+    )
+    def f(a: TestShaped, b: TestShaped) -> None:
+        pass
+
+    f(t(1, 1, 3), t(1, 2, 3))
+    f(t(1), t(1, 2, 3))
+    f(t(3), t(1, 2, 3))
+    f(t(), t(1, 2, 3))
+    f(t(None, 1, 3), t(1, 2, 3))
+    f(t(1, None, 3), t(1, 2, 3))
+    f(t(1, 1, None), t(1, 2, 3))
+    f(t(1, 1, 3), t(None, 2, 3))
+    f(t(1, 1, 3), t(1, None, 3))
+    f(t(1, 1, 3), t(1, 2, None))
+    f(t_unk(), t(1, 2, 3))
+    f(t(1, 1, 3), t_unk())
+    f(t_unk(), t_unk())
+
+    with pytest.raises(ShapeMismatchError):
+        f(t(1, 2, 3), t(1, 4, 3))
+
+    with pytest.raises(ShapeMismatchError):
+        f(t(1, 1, 2, 3), t(1, 2, 3))
+
+
+def test_check_shapes__broadcast_var_rank_second() -> None:
+    @check_shapes(
+        "a: [d...]",
+        "b: [broadcast d...]",
+    )
+    def f(a: TestShaped, b: TestShaped) -> None:
+        pass
+
+    f(t(1, 2, 3), t(1, 1, 3))
+    f(t(1, 2, 3), t(1))
+    f(t(1, 2, 3), t(3))
+    f(t(1, 2, 3), t())
+    f(t(None, 2, 3), t(1, 1, 3))
+    f(t(1, None, 3), t(1, 1, 3))
+    f(t(1, 2, None), t(1, 1, 3))
+    f(t(1, 2, 3), t(None, 1, 3))
+    f(t(1, 2, 3), t(1, None, 3))
+    f(t(1, 2, 3), t(1, 1, None))
+    f(t_unk(), t(1, 1, 3))
+    f(t(1, 2, 3), t_unk())
+    f(t_unk(), t_unk())
+
+    with pytest.raises(ShapeMismatchError):
+        f(t(1, 2, 3), t(1, 4, 3))
+
+    with pytest.raises(ShapeMismatchError):
+        f(t(1, 2, 3), t(1, 1, 2, 3))
+
+
+def test_check_shapes__broadcast_var_rank_both() -> None:
+    @check_shapes(
+        "a: [broadcast d...]",
+        "b: [broadcast d...]",
+    )
+    def f(a: TestShaped, b: TestShaped) -> None:
+        pass
+
+    f(t(1, 1, 3, 4), t(1, 2, 1, 4))
+    f(t(1, 1, 3, 4), t(1, 2, 1, 4))
+    f(t(4), t(1, 2, 1, 4))
+    f(t(1), t(1, 2, 1, 4))
+    f(t(), t(1, 2, 1, 4))
+    f(t(1, 1, 3, 4), t(4))
+    f(t(1, 1, 3, 4), t(1))
+    f(t(1, 1, 3, 4), t())
+    f(t(None, 1, 3, 4), t(1, 2, 1, 4))
+    f(t(1, None, 3, 4), t(1, 2, 1, 4))
+    f(t(1, 1, None, 4), t(1, 2, 1, 4))
+    f(t(1, 1, 3, None), t(1, 2, 1, 4))
+    f(t(1, 1, 3, 4), t(None, 2, 1, 4))
+    f(t(1, 1, 3, 4), t(1, None, 1, 4))
+    f(t(1, 1, 3, 4), t(1, 2, None, 4))
+    f(t(1, 1, 3, 4), t(1, 2, 1, None))
+    f(t_unk(), t(1, 2, 1, 4))
+    f(t(1, 1, 3, 4), t_unk())
+    f(t_unk(), t_unk())
+
+    with pytest.raises(ShapeMismatchError):
+        f(t(1, 2, 3, 4), t(1, 2, 5, 4))
 
 
 def test_check_shapes__scalar() -> None:
@@ -341,6 +505,38 @@ def test_check_shapes__argument_refs() -> None:
         f(Input(ins=(t(2, 1, 1), t(1, 1, 2))))
 
 
+def test_check_shapes__argument_refs__collections() -> None:
+    @check_shapes(
+        "x.keys(): [., w]",
+        "x.values(): [., h]",
+        "return[all]: [w, h]",
+    )
+    def f(x: Mapping[TestShaped, TestShaped]) -> Sequence[TestShaped]:
+        result = []
+        for k, v in x.items():
+            _, w = get_shape(k)
+            _, h = get_shape(v)
+            result.append(t(w, h))
+        return result
+
+    # Don't crash...
+    f({})
+    f(
+        {
+            t(1, 2): t(3, 4),
+            t(5, 2): t(5, 4),
+        }
+    )
+
+    with pytest.raises(ShapeMismatchError):
+        f(
+            {
+                t(1, 2): t(3, 4),
+                t(5, 3): t(5, 4),
+            }
+        )
+
+
 def test_check_shapes__none() -> None:
     @dataclass
     class Input:
@@ -364,6 +560,33 @@ def test_check_shapes__none() -> None:
     f(Input(ins=(None,)))
 
 
+def test_check_shapes__condition() -> None:
+    @check_shapes(
+        "a: [1] if b1",
+        "a: [2] if not b1 and b2",
+        "a: [3] if not b1 and not b2",
+    )
+    def f(a: TestShaped, b1: bool, b2: bool) -> None:
+        pass
+
+    f(t(1), True, True)
+    f(t(1), True, False)
+    f(t(2), False, True)
+    f(t(3), False, False)
+
+    with pytest.raises(ShapeMismatchError):
+        f(t(2), True, True)
+
+    with pytest.raises(ShapeMismatchError):
+        f(t(2), True, False)
+
+    with pytest.raises(ShapeMismatchError):
+        f(t(1), False, True)
+
+    with pytest.raises(ShapeMismatchError):
+        f(t(2), False, False)
+
+
 def test_check_shapes__reuse() -> None:
     check_my_shapes = check_shapes(
         "a: [d1, d2]",
@@ -385,6 +608,46 @@ def test_check_shapes__reuse() -> None:
     # Don't crash...
     f(t(2, 3), t(2, 4))
     g(t(2, 3), t(2, 4))
+
+
+def test_check_shapes__check_shape() -> None:
+
+    def_line = current_line() + 3
+    call_line = current_line() + 8
+
+    @check_shapes(
+        "a: [d1, d2]",
+        "b: [d1, d3]",
+        "return: [d2, d3]",
+    )
+    def f(a: TestShaped, b: TestShaped) -> TestShaped:
+        check_shape(t(4, 3), "[d3, d2]")
+        return t(3, 4)
+
+    # Don't crash...
+    f(t(2, 3), t(2, 4))
+
+    with pytest.raises(ShapeMismatchError) as e:
+        f(t(2, 3), t(2, 5))
+
+    (message,) = e.value.args
+    assert (
+        f"""
+Tensor shape mismatch.
+  Function:              test_check_shapes__check_shape.<locals>.f
+    Declared: {__file__}:{def_line}
+    Argument: a
+      Expected: [d1, d2]
+      Actual:   [2, 3]
+    Argument: b
+      Expected: [d1, d3]
+      Actual:   [2, 5]
+  check_shape called at: {__file__}:{call_line}
+    Expected: [d3, d2]
+    Actual:   [4, 3]
+"""
+        == message
+    )
 
 
 def test_check_shapes__disable() -> None:
@@ -434,17 +697,17 @@ def test_check_shapes__error_message() -> None:
     def_line = current_line() + 2
 
     @check_shapes(
-        "a: [d1, d2]",
+        "a: [d1, d2] if cond",
         "b: [d1, d3]  # Some note on b",
         "return: [d2, d3]",
         "# Some note on f",
         "# Some other note on f",
     )
-    def f(a: TestShaped, b: TestShaped) -> TestShaped:
+    def f(a: TestShaped, b: TestShaped, cond: bool) -> TestShaped:
         return t(3, 4)
 
     with pytest.raises(ShapeMismatchError) as e:
-        f(t(2, 3), t(3, 4))
+        f(t(2, 3), t(3, 4), True)
 
     (message,) = e.value.args
     assert (
@@ -455,6 +718,9 @@ Tensor shape mismatch.
     Note:     Some note on f
     Note:     Some other note on f
     Argument: a
+      Condition: cond
+        Argument: cond
+          Value: True
       Expected: [d1, d2]
       Actual:   [2, 3]
     Argument: b

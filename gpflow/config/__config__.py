@@ -166,24 +166,33 @@ Float = Union[float]
 class Config:
     """
     Immutable object for storing global GPflow settings
-
-    Args:
-        int: Integer data type, int32 or int64.
-        float: Float data type, float32 or float64
-        jitter: Jitter value. Mainly used for for making badly conditioned matrices more stable.
-            Default value is `1e-6`.
-        positive_bijector: Method for positive bijector, either "softplus" or "exp".
-            Default is "softplus".
-        positive_minimum: Lower bound for the positive transformation.
-        summary_fmt: Summary format for module printing.
     """
 
     int: type = field(default_factory=_default_int_factory)
+    """Integer data type, int32 or int64."""
+
     float: type = field(default_factory=_default_float_factory)
+    """Float data type, float32 or float64"""
+
     jitter: Float = field(default_factory=_default_jitter_factory)
+    """
+    Jitter value. Mainly used for for making badly conditioned matrices more stable.
+
+    Default value is `1e-6`.
+    """
+
     positive_bijector: str = field(default_factory=_default_positive_bijector_factory)
+    """
+    Method for positive bijector, either "softplus" or "exp".
+
+    Default is "softplus".
+    """
+
     positive_minimum: Float = field(default_factory=_default_positive_minimum_factory)
+    """Lower bound for the positive transformation."""
+
     summary_fmt: Optional[str] = field(default_factory=_default_summary_fmt_factory)
+    """Summary format for module printing."""
 
 
 def config() -> Config:

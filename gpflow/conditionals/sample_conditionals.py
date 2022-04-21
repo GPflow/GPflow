@@ -43,6 +43,7 @@ def _sample_conditional(
     returning m + sqrt(v) * eps, with eps ~ N(0, 1).
     However, for some combinations of Mok and Mof more efficient sampling routines exists.
     The dispatcher will make sure that we use the most efficient one.
+
     :return: samples, mean, cov
         samples has shape [num_samples, N, P] or [N, P] if num_samples is None
         mean and cov as for conditional()

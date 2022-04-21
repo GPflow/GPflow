@@ -19,7 +19,7 @@ from gpflow.experimental.check_shapes.specs import (
     ParsedNoteSpec,
 )
 
-from .utils import make_arg_spec, make_argument_ref, make_shape_spec, varrank
+from .utils import barg, bc, make_arg_spec, make_argument_ref, make_shape_spec, varrank
 
 
 def test_note_spec() -> None:
@@ -34,7 +34,6 @@ def test_note_spec() -> None:
             make_arg_spec(
                 make_argument_ref("foo"),
                 make_shape_spec(),
-                note=None,
             ),
             "foo: []",
         ),
@@ -42,7 +41,6 @@ def test_note_spec() -> None:
             make_arg_spec(
                 make_argument_ref("foo"),
                 make_shape_spec(1, 2),
-                note=None,
             ),
             "foo: [1, 2]",
         ),
@@ -50,7 +48,6 @@ def test_note_spec() -> None:
             make_arg_spec(
                 make_argument_ref("foo"),
                 make_shape_spec("x", "y"),
-                note=None,
             ),
             "foo: [x, y]",
         ),
@@ -58,7 +55,6 @@ def test_note_spec() -> None:
             make_arg_spec(
                 make_argument_ref("foo"),
                 make_shape_spec(varrank("x"), "y"),
-                note=None,
             ),
             "foo: [x..., y]",
         ),
@@ -66,7 +62,6 @@ def test_note_spec() -> None:
             make_arg_spec(
                 make_argument_ref("foo"),
                 make_shape_spec("x", varrank("y"), "z"),
-                note=None,
             ),
             "foo: [x, y..., z]",
         ),
@@ -74,9 +69,22 @@ def test_note_spec() -> None:
             make_arg_spec(
                 make_argument_ref("foo"),
                 make_shape_spec(None, varrank(None), None),
-                note=None,
             ),
             "foo: [., ..., .]",
+        ),
+        (
+            make_arg_spec(
+                make_argument_ref("foo"),
+                make_shape_spec(bc(varrank("y")), bc(3), bc("x")),
+            ),
+            "foo: [broadcast y..., broadcast 3, broadcast x]",
+        ),
+        (
+            make_arg_spec(
+                make_argument_ref("foo"),
+                make_shape_spec(bc(varrank(None)), bc(None)),
+            ),
+            "foo: [broadcast ..., broadcast .]",
         ),
         (
             make_arg_spec(
@@ -85,6 +93,23 @@ def test_note_spec() -> None:
                 note=ParsedNoteSpec("bar"),
             ),
             "foo: [x, y]  # bar",
+        ),
+        (
+            make_arg_spec(
+                make_argument_ref("foo"),
+                make_shape_spec("x", "y"),
+                condition=barg("bar"),
+            ),
+            "foo: [x, y] if bar",
+        ),
+        (
+            make_arg_spec(
+                make_argument_ref("foo"),
+                make_shape_spec("x", "y"),
+                condition=barg("bar"),
+                note="baz",
+            ),
+            "foo: [x, y] if bar  # baz",
         ),
     ],
 )
@@ -102,7 +127,6 @@ def test_argument_spec(argument_spec: ParsedArgumentSpec, expected_repr: str) ->
                     make_arg_spec(
                         make_argument_ref("foo"),
                         make_shape_spec("x", "y"),
-                        note=None,
                     ),
                 ),
                 (ParsedNoteSpec("note 1"),),
@@ -115,7 +139,6 @@ def test_argument_spec(argument_spec: ParsedArgumentSpec, expected_repr: str) ->
                     make_arg_spec(
                         make_argument_ref("foo"),
                         make_shape_spec("x", "y"),
-                        note=None,
                     ),
                     make_arg_spec(
                         make_argument_ref("bar"),

@@ -38,7 +38,7 @@ Check specification
 The shapes to check are specified by the arguments to :func:`check_shapes`. Each argument is a
 string of the format::
 
-    <argument specifier>: <shape specifier> [# <note>]
+    <argument specifier>: <shape specifier> [if <condition>] [# <note>]
 
 
 Argument specification
@@ -50,9 +50,12 @@ function.
 
 The ``<argument specifier>`` can then be modified to refer to elements of the object in two ways:
 
-    * Use ``.<name>`` to refer to attributes of the object.
-    * Use ``[<index>]`` to refer to elements of a sequence. This is particularly useful if your
-      function returns a tuple of values.
+* Use ``.<name>`` to refer to attributes of the object.
+* Use ``[<index>]`` to refer to elements of a sequence. This is particularly useful if your
+  function returns a tuple of values.
+* Use ``[all]`` to select all elements in a collection.
+* Use ``.keys()`` to select all keys in a mapping.
+* Use ``.values()`` to select all values in a mapping.
 
 We do not support looking up values in a  ``dict``.
 
@@ -65,7 +68,10 @@ For example::
         "data.training_data: ...",
         "return: ...",
         "return[0]: ...",
-        "something[0].foo.bar[23]: ...",
+        "data_list[all]: ...",
+        "data_dict.keys(): ...",
+        "data_dict.values(): ...",
+        "something[all].foo[0].bar.values(): ...",
     )
     def f(...):
         ...
@@ -78,13 +84,13 @@ Shapes are specified by the syntax
 ``[<dimension specifier 1>, <dimension specifer 2>, ..., <dimension specifier n>]``, where
 ``<dimension specifier i>`` is one of:
 
-    * ``<integer>``, to require that dimension to have that exact size.
-    * ``<name>``, to bind that dimension to a variable. Dimensions bound to the same variable must
-      have the same size, though that size can be anything.
-    * ``None`` or ``.`` to allow exactly one single dimension without constraints.
-    * ``*<name>`` or ``<name>...``, to bind *any* number of dimensions to a variable. Again,
-      multiple uses of the same variable name must match the same dimension sizes.
-    * ``*`` or ``...``, to allow *any* number of dimensions without constraints.
+* ``<integer>``, to require that dimension to have that exact size.
+* ``<name>``, to bind that dimension to a variable. Dimensions bound to the same variable must
+  have the same size, though that size can be anything.
+* ``None`` or ``.`` to allow exactly one single dimension without constraints.
+* ``*<name>`` or ``<name>...``, to bind *any* number of dimensions to a variable. Again,
+  multiple uses of the same variable name must match the same dimension sizes.
+* ``*`` or ``...``, to allow *any* number of dimensions without constraints.
 
 A scalar shape is specified by ``[]``.
 
@@ -104,6 +110,52 @@ For example::
     def f(...):
         ...
 
+Any of the above can be prefixed with the keyword ``broadcast``, to allow any value that broadcasts
+to the specification. For example::
+
+    @check_shapes(
+        "a: [broadcast batch...]",
+        "b: [broadcast batch...]",
+        "return: [batch...]",
+    )
+    def add(a: AnyNDArray, b: AnyNDArray) -> AnyNDArray:
+        return a + b
+
+
+Condition specification
+-----------------------
+
+You can use the optional `if <condition>` syntax to conditionally evaluate shapes. If an `if
+<condition>` is used, the specification is only appplied if `<condition>` evaluates to `True`. This
+is useful if shapes depend on other input parameters. Valid conditions are:
+
+* ``<argument specifier>``, with the same syntax and rules as above, except that constructions that
+  evaluates to multiple elements are disallowed. Uses the `bool` built-in to convert the value of
+  the argument to a `bool`.
+* ``<left> or <right>``, evaluates to `True` if any of `<left>` or `<right>` evaluates to `True`
+  and to `False` otherwise.
+* ``<left> and <right>``, evaluates to `False` if any of `<left>` or `<right>` evaluates to
+  `False` and to `True` otherwise.
+* ``not <right>``, evaluates to the opposite value of `<right>`.
+* ``(<exp>)``, uses parenthesis to change operator precedence, as usual.
+
+.. note::
+
+   All specifications with either no `if` syntax or a `<condition>` that evaluates to `True` will be
+   applied. It is possible for multiple specifications to apply to the same value.
+
+For example::
+
+    @check_shapes(
+        "X: [n_rows, n_inputs]",
+        "return: [n_rows, n_outputs, n_rows, n_outputs] if full_input_cov and full_output_cov",
+        "return: [n_outputs, n_rows, n_rows] if full_input_cov and (not full_output_cov)",
+        "return: [n_rows, n_outputs, n_outputs] if (not full_input_cov) and full_output_cov",
+        "return: [n_rows, n_outputs] if (not full_input_cov) and (not full_output_cov)",
+    )
+    def kernel(X: tf.Tensor, full_input_cov: bool, full_output_cov: bool) -> tf.Tensor:
+        ...
+
 
 Note specification
 ------------------
@@ -112,12 +164,11 @@ You can add notes to your specifications using a `#` followed by the note. These
 appended to relevant error messages and appear in rewritten docstrings. You can add notes in two
 places:
 
-    * After the specification of a single argument, to add a note to that argument only.
-    * On a single line by itself, to add a note to the entire function.
+* After the specification of a single argument, to add a note to that argument only.
+* On a single line by itself, to add a note to the entire function.
 
 For example::
 
-    @tf.function
     @check_shapes(
         "features: [batch_shape..., n_features]",
         "weights: [n_features]  # A note about the shape of `weights`.",
@@ -128,11 +179,36 @@ For example::
         ...
 
 
+Checking intermediate results
+-----------------------------
+
+You can use the function :func:`check_shape` to check the shape of an intermediate result. This
+function will use the same namespace as the immediately surrounding :func:`check_shapes` decorator,
+and should only be called within functions that has such a decorator. For example::
+
+    @check_shapes(
+        "weights: [n_features, n_labels]",
+        "test_features: [n_rows, n_features]",
+        "test_labels: [n_rows, n_labels]",
+        "return: []",
+    )
+    def loss(
+        weights: np.ndarray, test_features: np.ndarray, test_labels: np.ndarray
+    ) -> np.ndarray:
+        prediction = check_shape(test_features @ weights, "[n_rows, n_labels]")
+        error = check_shape(prediction - test_labels, "[n_rows, n_labels]")
+        square_error = check_shape(error ** 2, "[n_rows, n_labels]")
+        mean_square_error = check_shape(np.mean(square_error, axis=-1), "[n_rows]")
+        root_mean_square_error = check_shape(np.sqrt(mean_square_error), "[n_rows]")
+        return np.mean(root_mean_square_error)
+
+
 Shape reuse
 +++++++++++
 
-Just like with other code it is useful to be able to define a shape in one place and reuse it.
-In particular this ensures that your code keep having consistent shapes, even if it is refactored.
+Just like with other code it is useful to be able to specify a shape in one place and reuse the
+specification. In particular this ensures that your code keep having consistent shapes, even if it
+is refactored.
 
 
 Class inheritance
@@ -214,6 +290,9 @@ use it without the decorator. In fact the decorator is just a wrapper around the
     shape_checker.check_shape(features, "[n_rows, n_features]")
     prediction = shape_checker.check_shape(features @ weights, "[n_rows, n_labels]")
 
+You can use the function :func:`get_shape_checker` to get the :class:`ShapeChecker` used by any
+immediately surrounding :func:`check_shapes` decorator.
+
 
 Speed, and interactions with `tf.function`
 ++++++++++++++++++++++++++++++++++++++++++
@@ -292,13 +371,13 @@ if you do not wish to have your docstrings rewritten, you can disable it with
     set_rewrite_docstrings(None)
 
 
-Shapes of custom objects
-++++++++++++++++++++++++
+Shapes of custom types
+++++++++++++++++++++++
 
 :mod:`check_shapes` uses the function :func:`get_shape` to extract the shape of an object.
 
-:func:`get_shape` uses :func:`functools.singledispatch` to branch on the type of object to the shape
-from, and you can extend this to extract shapes for you own custom types.
+:func:`get_shape` uses :func:`functools.singledispatch` to branch on the type of object to get the
+shape from, and you can extend this to extract shapes for you own custom types.
 
 For example::
 
@@ -332,15 +411,15 @@ For example::
     )
     def loss(
         model: LinearModel, test_features: np.ndarray, test_labels: np.ndarray
-    ) -> None:
+    ) -> np.ndarray:
         prediction = model.predict(test_features)
         return np.mean(np.sqrt(np.mean((prediction - test_labels) ** 2, axis=-1)))
-
 """
 
 from .accessors import get_check_shapes, maybe_get_check_shapes
 from .base_types import Dimension, Shape
 from .checker import ShapeChecker
+from .checker_context import check_shape, get_shape_checker
 from .config import (
     DocstringFormat,
     disable_check_shapes,
@@ -353,16 +432,23 @@ from .decorator import check_shapes
 from .error_contexts import (
     ArgumentContext,
     AttributeContext,
+    ConditionContext,
     ErrorContext,
     FunctionCallContext,
     FunctionDefinitionContext,
     IndexContext,
     LarkUnexpectedInputContext,
+    MappingKeyContext,
+    MappingValueContext,
     MessageBuilder,
+    MultipleElementBoolContext,
     ObjectTypeContext,
+    ObjectValueContext,
     ParallelContext,
     ShapeContext,
     StackContext,
+    TensorSpecContext,
+    VariableContext,
 )
 from .exceptions import (
     ArgumentReferenceError,
@@ -371,6 +457,7 @@ from .exceptions import (
     NoShapeError,
     ShapeMismatchError,
     SpecificationParseError,
+    VariableTypeError,
 )
 from .inheritance import inherit_check_shapes
 from .shapes import get_shape
@@ -380,6 +467,7 @@ __all__ = [
     "ArgumentReferenceError",
     "AttributeContext",
     "CheckShapesError",
+    "ConditionContext",
     "Dimension",
     "DocstringFormat",
     "DocstringParseError",
@@ -388,9 +476,13 @@ __all__ = [
     "FunctionDefinitionContext",
     "IndexContext",
     "LarkUnexpectedInputContext",
+    "MappingKeyContext",
+    "MappingValueContext",
     "MessageBuilder",
+    "MultipleElementBoolContext",
     "NoShapeError",
     "ObjectTypeContext",
+    "ObjectValueContext",
     "ParallelContext",
     "Shape",
     "ShapeChecker",
@@ -398,11 +490,17 @@ __all__ = [
     "ShapeMismatchError",
     "SpecificationParseError",
     "StackContext",
+    "TensorSpecContext",
+    "VariableContext",
+    "VariableTypeError",
     "accessors",
     "argument_ref",
     "base_types",
+    "bool_specs",
+    "check_shape",
     "check_shapes",
     "checker",
+    "checker_context",
     "config",
     "decorator",
     "disable_check_shapes",
@@ -412,6 +510,7 @@ __all__ = [
     "get_enable_check_shapes",
     "get_rewrite_docstrings",
     "get_shape",
+    "get_shape_checker",
     "inherit_check_shapes",
     "inheritance",
     "maybe_get_check_shapes",

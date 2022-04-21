@@ -16,14 +16,25 @@ Utilities for testing the `check_shapes` library.
 """
 import inspect
 from dataclasses import dataclass
+from enum import Enum
 from typing import Optional, Union
 
 from gpflow.experimental.check_shapes import Dimension, Shape, get_shape
 from gpflow.experimental.check_shapes.argument_ref import (
+    AllElementsRef,
     ArgumentRef,
     AttributeArgumentRef,
     IndexArgumentRef,
+    KeysRef,
     RootArgumentRef,
+    ValuesRef,
+)
+from gpflow.experimental.check_shapes.bool_specs import (
+    ParsedAndBoolSpec,
+    ParsedArgumentRefBoolSpec,
+    ParsedBoolSpec,
+    ParsedNotBoolSpec,
+    ParsedOrBoolSpec,
 )
 from gpflow.experimental.check_shapes.error_contexts import ErrorContext, MessageBuilder
 from gpflow.experimental.check_shapes.specs import (
@@ -69,19 +80,50 @@ def t(*shape: Dimension) -> TestShaped:
     return TestShaped(shape)
 
 
-@dataclass(frozen=True)
-class varrank:
-    name: Optional[str]
+class ArgumentRefConstant(Enum):
+    ALL = "all"
+    KEYS = "keys"
+    VALUES = "values"
 
 
-def make_argument_ref(argument_name: str, *refs: Union[int, str]) -> ArgumentRef:
+all_ref = ArgumentRefConstant.ALL
+keys_ref = ArgumentRefConstant.KEYS
+values_ref = ArgumentRefConstant.VALUES
+
+
+def make_argument_ref(
+    argument_name: str, *refs: Union[int, str, ArgumentRefConstant]
+) -> ArgumentRef:
     result: ArgumentRef = RootArgumentRef(argument_name)
     for ref in refs:
         if isinstance(ref, int):
             result = IndexArgumentRef(result, ref)
-        else:
+        elif isinstance(ref, str):
             result = AttributeArgumentRef(result, ref)
+        elif ref == all_ref:
+            result = AllElementsRef(result)
+        elif ref == keys_ref:
+            result = KeysRef(result)
+        else:
+            assert ref == values_ref
+            result = ValuesRef(result)
     return result
+
+
+def barg(name: str) -> ParsedBoolSpec:
+    return ParsedArgumentRefBoolSpec(RootArgumentRef(name))
+
+
+def bor(left: ParsedBoolSpec, right: ParsedBoolSpec) -> ParsedBoolSpec:
+    return ParsedOrBoolSpec(left, right)
+
+
+def band(left: ParsedBoolSpec, right: ParsedBoolSpec) -> ParsedBoolSpec:
+    return ParsedAndBoolSpec(left, right)
+
+
+def bnot(right: ParsedBoolSpec) -> ParsedBoolSpec:
+    return ParsedNotBoolSpec(right)
 
 
 def make_note_spec(note: Union[ParsedNoteSpec, str, None]) -> Optional[ParsedNoteSpec]:
@@ -94,31 +136,69 @@ def make_note_spec(note: Union[ParsedNoteSpec, str, None]) -> Optional[ParsedNot
         return None
 
 
-def make_shape_spec(*dims: Union[int, str, varrank, None]) -> ParsedShapeSpec:
+@dataclass(frozen=True)
+class varrank:
+    name: Optional[str]
+
+
+@dataclass(frozen=True)
+class bc:
+    inner: Union[int, str, varrank, None]
+
+
+def make_shape_spec(*dims: Union[int, str, varrank, bc, None]) -> ParsedShapeSpec:
     shape = []
     for dim in dims:
+        broadcastable = False
+        if isinstance(dim, bc):
+            broadcastable = True
+            dim = dim.inner
+
         if isinstance(dim, int):
-            shape.append(ParsedDimensionSpec(constant=dim, variable_name=None, variable_rank=False))
+            shape.append(
+                ParsedDimensionSpec(
+                    constant=dim,
+                    variable_name=None,
+                    variable_rank=False,
+                    broadcastable=broadcastable,
+                )
+            )
         elif dim is None or isinstance(dim, str):
-            shape.append(ParsedDimensionSpec(constant=None, variable_name=dim, variable_rank=False))
+            shape.append(
+                ParsedDimensionSpec(
+                    constant=None,
+                    variable_name=dim,
+                    variable_rank=False,
+                    broadcastable=broadcastable,
+                )
+            )
         else:
             assert isinstance(dim, varrank)
             shape.append(
-                ParsedDimensionSpec(constant=None, variable_name=dim.name, variable_rank=True)
+                ParsedDimensionSpec(
+                    constant=None,
+                    variable_name=dim.name,
+                    variable_rank=True,
+                    broadcastable=broadcastable,
+                )
             )
     return ParsedShapeSpec(tuple(shape))
 
 
 def make_tensor_spec(
-    shape_spec: ParsedShapeSpec, note: Union[ParsedNoteSpec, str, None]
+    shape_spec: ParsedShapeSpec, note: Union[ParsedNoteSpec, str, None] = None
 ) -> ParsedTensorSpec:
     return ParsedTensorSpec(shape_spec, make_note_spec(note))
 
 
 def make_arg_spec(
-    argument_ref: ArgumentRef, shape_spec: ParsedShapeSpec, note: Union[ParsedNoteSpec, str, None]
+    argument_ref: ArgumentRef,
+    shape_spec: ParsedShapeSpec,
+    *,
+    condition: Optional[ParsedBoolSpec] = None,
+    note: Union[ParsedNoteSpec, str, None] = None,
 ) -> ParsedArgumentSpec:
-    return ParsedArgumentSpec(argument_ref, make_tensor_spec(shape_spec, note))
+    return ParsedArgumentSpec(argument_ref, make_tensor_spec(shape_spec, note), condition)
 
 
 def current_line() -> int:

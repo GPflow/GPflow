@@ -20,21 +20,29 @@ from lark.exceptions import UnexpectedCharacters, UnexpectedEOF, UnexpectedToken
 from gpflow.experimental.check_shapes.error_contexts import (
     ArgumentContext,
     AttributeContext,
+    ConditionContext,
     ErrorContext,
     FunctionCallContext,
     FunctionDefinitionContext,
     IndexContext,
     LarkUnexpectedInputContext,
+    MappingKeyContext,
+    MappingValueContext,
     MessageBuilder,
+    MultipleElementBoolContext,
     NoteContext,
     ObjectTypeContext,
+    ObjectValueContext,
     ParallelContext,
     ShapeContext,
     StackContext,
+    TensorSpecContext,
+    TrailingBroadcastVarrankContext,
+    VariableContext,
 )
 from gpflow.experimental.check_shapes.specs import ParsedNoteSpec
 
-from .utils import TestContext, current_line, make_shape_spec
+from .utils import TestContext, barg, bnot, bor, current_line, make_shape_spec, make_tensor_spec
 
 
 def to_str(context: ErrorContext) -> str:
@@ -213,16 +221,16 @@ def test_stack_context(context: ErrorContext, expected: str) -> None:
     "context,expected",
     [
         (
-            ParallelContext([]),
+            ParallelContext(()),
             """
 """,
         ),
         (
             ParallelContext(
-                [
+                (
                     TestContext("A"),
                     TestContext("B"),
-                ]
+                )
             ),
             """
 A
@@ -231,23 +239,23 @@ B
         ),
         (
             ParallelContext(
-                [
+                (
                     TestContext("A"),
                     ParallelContext(
-                        [
+                        (
                             TestContext("B"),
                             TestContext("C"),
-                        ]
+                        )
                     ),
                     TestContext("D"),
                     ParallelContext(
-                        [
+                        (
                             TestContext("E"),
                             TestContext("F"),
-                        ]
+                        )
                     ),
                     TestContext("G"),
-                ]
+                )
             ),
             """
 A
@@ -261,7 +269,7 @@ G
         ),
         (
             ParallelContext(
-                [
+                (
                     StackContext(
                         TestContext("A"),
                         StackContext(
@@ -283,7 +291,7 @@ G
                             TestContext("C1"),
                         ),
                     ),
-                ]
+                )
             ),
             """
 A
@@ -368,6 +376,22 @@ Function: str
   Declared: <Unknown file>:<Unknown line>
 """ == to_str(
         FunctionDefinitionContext(str)
+    )
+
+
+def test_variable_context() -> None:
+    assert """
+Variable: foo
+""" == to_str(
+        VariableContext("foo")
+    )
+
+
+def test_tensor_spec_context() -> None:
+    assert """
+Specification: [a, 1]
+""" == to_str(
+        TensorSpecContext(make_tensor_spec(make_shape_spec("a", 1), None))
     )
 
 
@@ -468,6 +492,70 @@ def test_index_context(context: ErrorContext, expected: str) -> None:
     "context,expected",
     [
         (
+            MappingKeyContext(2),
+            """
+Map key: [2]
+""",
+        ),
+        (
+            MappingKeyContext("foo"),
+            """
+Map key: ['foo']
+""",
+        ),
+        (
+            MappingKeyContext(None),
+            """
+Map key: [None]
+""",
+        ),
+    ],
+)
+def test_mapping_key_context(context: ErrorContext, expected: str) -> None:
+    assert expected == to_str(context)
+
+
+@pytest.mark.parametrize(
+    "context,expected",
+    [
+        (
+            MappingValueContext(2),
+            """
+Map value, of key: [2]
+""",
+        ),
+        (
+            MappingValueContext("foo", value=3),
+            """
+Map value, of key: ['foo']
+  Value: 3
+""",
+        ),
+        (
+            MappingValueContext(None, value=None),
+            """
+Map value, of key: [None]
+  Value: None
+""",
+        ),
+    ],
+)
+def test_mapping_value_context(context: ErrorContext, expected: str) -> None:
+    assert expected == to_str(context)
+
+
+def test_condition_context() -> None:
+    assert """
+Condition: foo or (not bar)
+""" == to_str(
+        ConditionContext(bor(barg("foo"), bnot(barg("bar"))))
+    )
+
+
+@pytest.mark.parametrize(
+    "context,expected",
+    [
+        (
             ShapeContext(make_shape_spec("x", 3), (2, 3)),
             """
 Expected: [x, 3]
@@ -500,6 +588,33 @@ Note: Some note.
 """ == to_str(
         NoteContext(ParsedNoteSpec("Some note."))
     )
+
+
+@pytest.mark.parametrize(
+    "context,expected",
+    [
+        (
+            ObjectValueContext(None),
+            """
+Value: None
+""",
+        ),
+        (
+            ObjectValueContext(7),
+            """
+Value: 7
+""",
+        ),
+        (
+            ObjectValueContext("foo"),
+            """
+Value: 'foo'
+""",
+        ),
+    ],
+)
+def test_object_value_context(context: ErrorContext, expected: str) -> None:
+    assert expected == to_str(context)
 
 
 @pytest.mark.parametrize(
@@ -601,3 +716,87 @@ Expected: Some b's
 """ == to_str(
         LarkUnexpectedInputContext(text, error, terminal_descriptions)
     )
+
+
+@pytest.mark.parametrize(
+    "context,expected",
+    [
+        (
+            TrailingBroadcastVarrankContext("foo bar", 1, 5, "bar"),
+            """
+Line:    "foo bar"
+              ^
+Variable bar
+Broadcasting not supported for non-leading variable-rank variables.
+""",
+        ),
+        (
+            TrailingBroadcastVarrankContext("foo bar", 0, 5, "bar"),
+            """
+Variable bar
+Broadcasting not supported for non-leading variable-rank variables.
+""",
+        ),
+        (
+            TrailingBroadcastVarrankContext("foo bar", 1, 0, "bar"),
+            """
+Line:    "foo bar"
+Variable bar
+Broadcasting not supported for non-leading variable-rank variables.
+""",
+        ),
+        (
+            TrailingBroadcastVarrankContext("foo bar", 0, 0, "bar"),
+            """
+Variable bar
+Broadcasting not supported for non-leading variable-rank variables.
+""",
+        ),
+        (
+            TrailingBroadcastVarrankContext("foo bar", 1, 5, None),
+            """
+Line: "foo bar"
+           ^
+Broadcasting not supported for non-leading variable-rank variables.
+""",
+        ),
+    ],
+)
+def test_trailing_broadcast_varrank_context(context: ErrorContext, expected: str) -> None:
+    assert expected == to_str(context)
+
+
+@pytest.mark.parametrize(
+    "context,expected",
+    [
+        (
+            MultipleElementBoolContext("foo bar", 1, 5),
+            """
+Line: "foo bar"
+           ^
+Argument references that evaluate to multiple values are not supported for boolean expressions.
+""",
+        ),
+        (
+            MultipleElementBoolContext("foo bar", 0, 5),
+            """
+Argument references that evaluate to multiple values are not supported for boolean expressions.
+""",
+        ),
+        (
+            MultipleElementBoolContext("foo bar", 1, 0),
+            """
+Line: "foo bar"
+Argument references that evaluate to multiple values are not supported for boolean expressions.
+""",
+        ),
+        (
+            MultipleElementBoolContext("foo bar", 0, 0),
+            """
+Argument references that evaluate to multiple values are not supported for boolean expressions.
+""",
+        ),
+    ],
+)
+def test_multiple_elements_bool_context(context: ErrorContext, expected: str) -> None:
+    assert expected == to_str(context)

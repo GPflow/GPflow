@@ -71,15 +71,19 @@ class CGLB(SGPR):
         return self._v
 
     def logdet_term(self, common: SGPR.CommonTensors) -> tf.Tensor:
-        """
-        Compute a lower bound on -0.5 * log |K + σ²I| based on a
+        r"""
+        Compute a lower bound on :math:`-0.5 * \log |K + σ²I|` based on a
         low-rank approximation to K.
-        ..  math::
-            log |K + σ²I| <= log |Q + σ²I| + n * log(1 + tr(K - Q)/(σ²n)).
+
+        .. math::
+
+           \log |K + σ²I| <= \log |Q + σ²I| + n * \log(1 + \textrm{tr}(K - Q)/(σ²n)).
 
         This bound is at least as tight as
-        ..  math::
-            log |K + σ²I| <=  log |Q + σ²I| + tr(K - Q)/σ²,
+
+        .. math::
+
+           \log |K + σ²I| <=  \log |Q + σ²I| + \textrm{tr}(K - Q)/σ²,
 
         which appears in SGPR.
         """

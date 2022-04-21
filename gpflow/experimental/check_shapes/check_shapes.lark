@@ -17,26 +17,52 @@
 ?argument_or_note_spec: argument_spec
                       | note_spec
 
-argument_spec: argument_name argument_refs ":" tensor_spec
+argument_spec: argument_ref ":" shape_spec ("if" bool_spec)? note_spec?
 
-argument_name: CNAME
+?bool_spec: bool_spec_1
+          | bool_spec_or
 
-argument_refs: argument_ref*
-?argument_ref: argument_ref_attribute
+?bool_spec_1: bool_spec_2
+            | bool_spec_and
+
+?bool_spec_2: "(" bool_spec ")"
+            | bool_spec_not
+            | bool_spec_argument_ref
+
+bool_spec_or: bool_spec "or" bool_spec_1
+bool_spec_and: bool_spec_1 "and" bool_spec_2
+bool_spec_not: "not" bool_spec_2
+bool_spec_argument_ref: argument_ref
+
+?argument_ref: argument_ref_root
+             | argument_ref_attribute
              | argument_ref_index
-argument_ref_attribute: "." CNAME
-argument_ref_index: "[" INT "]"
+             | argument_ref_all
+             | argument_ref_keys
+             | argument_ref_values
+
+argument_ref_root: CNAME
+argument_ref_attribute: argument_ref "." CNAME
+argument_ref_index: argument_ref "[" INT "]"
+argument_ref_all: argument_ref "[" "all" "]"
+argument_ref_keys: argument_ref "." "keys" "(" ")"
+argument_ref_values: argument_ref "." "values" "(" ")"
 
 tensor_spec: shape_spec note_spec?
 
 shape_spec: "[" dimension_specs "]"
 
 dimension_specs: [dimension_spec ("," dimension_spec)* ","?]
-?dimension_spec: dimension_spec_constant
-               | dimension_spec_variable
-               | dimension_spec_anonymous
-               | dimension_spec_variable_rank
-               | dimension_spec_anonymous_variable_rank
+?dimension_spec: dimension_spec_broadcast
+               | dimension_spec_broadcastable
+
+dimension_spec_broadcast: BROADCAST dimension_spec_broadcastable
+
+?dimension_spec_broadcastable: dimension_spec_constant
+                             | dimension_spec_variable
+                             | dimension_spec_anonymous
+                             | dimension_spec_variable_rank
+                             | dimension_spec_anonymous_variable_rank
 
 dimension_spec_constant: INT
 dimension_spec_variable: CNAME
@@ -46,6 +72,7 @@ dimension_spec_anonymous_variable_rank: STAR | ELLIPSIS
 
 note_spec: HASH NOTE_TEXT*
 
+BROADCAST: "broadcast"
 HASH: "#"
 DOT: "."
 NONE: "None"

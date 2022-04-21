@@ -27,10 +27,18 @@ from gpflow.experimental.check_shapes.specs import ParsedFunctionSpec, ParsedNot
 
 from .utils import (
     TestContext,
+    all_ref,
+    band,
+    barg,
+    bc,
+    bnot,
+    bor,
     current_line,
+    keys_ref,
     make_arg_spec,
     make_argument_ref,
     make_shape_spec,
+    values_ref,
     varrank,
 )
 
@@ -60,17 +68,14 @@ _TEST_DATA = [
                 make_arg_spec(
                     make_argument_ref("a"),
                     make_shape_spec(2, 3),
-                    note=None,
                 ),
                 make_arg_spec(
                     make_argument_ref("b"),
                     make_shape_spec(2, 4),
-                    note=None,
                 ),
                 make_arg_spec(
                     make_argument_ref("return"),
                     make_shape_spec(3, 4),
-                    note=None,
                 ),
             ),
             (),
@@ -107,17 +112,14 @@ _TEST_DATA = [
                 make_arg_spec(
                     make_argument_ref("a"),
                     make_shape_spec("d1", "d2"),
-                    note=None,
                 ),
                 make_arg_spec(
                     make_argument_ref("b"),
                     make_shape_spec("d1", "d3"),
-                    note=None,
                 ),
                 make_arg_spec(
                     make_argument_ref("return"),
                     make_shape_spec("d2", "d3"),
-                    note=None,
                 ),
             ),
             (),
@@ -156,27 +158,22 @@ _TEST_DATA = [
                 make_arg_spec(
                     make_argument_ref("a"),
                     make_shape_spec(varrank("ds")),
-                    note=None,
                 ),
                 make_arg_spec(
                     make_argument_ref("b"),
                     make_shape_spec(varrank("ds"), "d1"),
-                    note=None,
                 ),
                 make_arg_spec(
                     make_argument_ref("c"),
                     make_shape_spec("d1", varrank("ds"), "d2"),
-                    note=None,
                 ),
                 make_arg_spec(
                     make_argument_ref("d"),
                     make_shape_spec("d1", varrank("ds")),
-                    note=None,
                 ),
                 make_arg_spec(
                     make_argument_ref("return"),
                     make_shape_spec(varrank("ds"), "d1", "d2"),
-                    note=None,
                 ),
             ),
             (),
@@ -225,27 +222,22 @@ _TEST_DATA = [
                 make_arg_spec(
                     make_argument_ref("a"),
                     make_shape_spec(None, "d1"),
-                    note=None,
                 ),
                 make_arg_spec(
                     make_argument_ref("b"),
                     make_shape_spec(None, "d2"),
-                    note=None,
                 ),
                 make_arg_spec(
                     make_argument_ref("c"),
                     make_shape_spec(varrank(None), "d1"),
-                    note=None,
                 ),
                 make_arg_spec(
                     make_argument_ref("d"),
                     make_shape_spec(varrank(None), "d2"),
-                    note=None,
                 ),
                 make_arg_spec(
                     make_argument_ref("return"),
                     make_shape_spec(varrank(None), "d1", "d2"),
-                    note=None,
                 ),
             ),
             (),
@@ -281,6 +273,70 @@ _TEST_DATA = [
         """,
     ),
     TestData(
+        "broadcasting",
+        (
+            "a: [d1, broadcast 3]",
+            "b: [broadcast d1, d2]",
+            "c: [d1, broadcast ., d2]",
+            "d: [broadcast *ds]",
+            "return: [broadcast ...]",
+        ),
+        ParsedFunctionSpec(
+            (
+                make_arg_spec(
+                    make_argument_ref("a"),
+                    make_shape_spec("d1", bc(3)),
+                ),
+                make_arg_spec(
+                    make_argument_ref("b"),
+                    make_shape_spec(bc("d1"), "d2"),
+                ),
+                make_arg_spec(
+                    make_argument_ref("c"),
+                    make_shape_spec("d1", bc(None), "d2"),
+                ),
+                make_arg_spec(
+                    make_argument_ref("d"),
+                    make_shape_spec(bc(varrank("ds"))),
+                ),
+                make_arg_spec(
+                    make_argument_ref("return"),
+                    make_shape_spec(bc(varrank(None))),
+                ),
+            ),
+            (),
+        ),
+        """
+        :param a: Parameter a.
+        :param b: Parameter b.
+        :param c: Parameter c.
+        :param d: Parameter d.
+        :returns: Return value.
+        """,
+        """
+        :param a:
+            * **a** has shape [*d1*, broadcast 3].
+
+            Parameter a.
+        :param b:
+            * **b** has shape [broadcast *d1*, *d2*].
+
+            Parameter b.
+        :param c:
+            * **c** has shape [*d1*, broadcast ., *d2*].
+
+            Parameter c.
+        :param d:
+            * **d** has shape [broadcast *ds*...].
+
+            Parameter d.
+        :returns:
+            * **return** has shape [broadcast ...].
+
+            Return value.
+        """,
+    ),
+    TestData(
         "scalars",
         (
             "a: []",
@@ -292,17 +348,14 @@ _TEST_DATA = [
                 make_arg_spec(
                     make_argument_ref("a"),
                     make_shape_spec(),
-                    note=None,
                 ),
                 make_arg_spec(
                     make_argument_ref("b"),
                     make_shape_spec(),
-                    note=None,
                 ),
                 make_arg_spec(
                     make_argument_ref("return"),
                     make_shape_spec(),
-                    note=None,
                 ),
             ),
             (),
@@ -332,6 +385,7 @@ _TEST_DATA = [
         (
             "x.ins[0]: [a_batch..., 1]",
             "x.ins[1]: [b_batch..., 2]",
+            "y.keys()[all].values(): []",
             "return[0].out: [a_batch..., 3]",
             "return[1].out: [b_batch..., 4]",
         ),
@@ -340,28 +394,30 @@ _TEST_DATA = [
                 make_arg_spec(
                     make_argument_ref("x", "ins", 0),
                     make_shape_spec(varrank("a_batch"), 1),
-                    note=None,
                 ),
                 make_arg_spec(
                     make_argument_ref("x", "ins", 1),
                     make_shape_spec(varrank("b_batch"), 2),
+                ),
+                make_arg_spec(
+                    make_argument_ref("y", keys_ref, all_ref, values_ref),
+                    make_shape_spec(),
                     note=None,
                 ),
                 make_arg_spec(
                     make_argument_ref("return", 0, "out"),
                     make_shape_spec(varrank("a_batch"), 3),
-                    note=None,
                 ),
                 make_arg_spec(
                     make_argument_ref("return", 1, "out"),
                     make_shape_spec(varrank("b_batch"), 4),
-                    note=None,
                 ),
             ),
             (),
         ),
         """
         :param x: Parameter x.
+        :param y: Parameter y.
         :returns: Return value.
         """,
         """
@@ -370,11 +426,117 @@ _TEST_DATA = [
             * **x.ins[1]** has shape [*b_batch*..., 2].
 
             Parameter x.
+        :param y:
+            * **y.keys()[all].values()** has shape [].
+
+            Parameter y.
         :returns:
             * **return[0].out** has shape [*a_batch*..., 3].
             * **return[1].out** has shape [*b_batch*..., 4].
 
             Return value.
+        """,
+    ),
+    TestData(
+        "conditionals",
+        (
+            "x: [1] if b1",
+            "x: [2] if b1 or b2",
+            "x: [3] if b1 and b2",
+            "x: [4] if not b1",
+            "x: [5] if b1 or b2 and b3",
+            "x: [6] if (b1 or b2) and b3",
+            "x: [7] if b1 and b2 or b3",
+            "x: [8] if b1 and (b2 or b3)",
+            "x: [9] if not b1 or b2",
+            "x: [10] if not (b1 or b2)",
+            "x: [11] if not b1 and b2",
+            "x: [12] if not (b1 and b2)",
+        ),
+        ParsedFunctionSpec(
+            (
+                make_arg_spec(
+                    make_argument_ref("x"),
+                    make_shape_spec(1),
+                    condition=barg("b1"),
+                ),
+                make_arg_spec(
+                    make_argument_ref("x"),
+                    make_shape_spec(2),
+                    condition=bor(barg("b1"), barg("b2")),
+                ),
+                make_arg_spec(
+                    make_argument_ref("x"),
+                    make_shape_spec(3),
+                    condition=band(barg("b1"), barg("b2")),
+                ),
+                make_arg_spec(
+                    make_argument_ref("x"),
+                    make_shape_spec(4),
+                    condition=bnot(barg("b1")),
+                ),
+                make_arg_spec(
+                    make_argument_ref("x"),
+                    make_shape_spec(5),
+                    condition=bor(barg("b1"), band(barg("b2"), barg("b3"))),
+                ),
+                make_arg_spec(
+                    make_argument_ref("x"),
+                    make_shape_spec(6),
+                    condition=band(bor(barg("b1"), barg("b2")), barg("b3")),
+                ),
+                make_arg_spec(
+                    make_argument_ref("x"),
+                    make_shape_spec(7),
+                    condition=bor(band(barg("b1"), barg("b2")), barg("b3")),
+                ),
+                make_arg_spec(
+                    make_argument_ref("x"),
+                    make_shape_spec(8),
+                    condition=band(barg("b1"), bor(barg("b2"), barg("b3"))),
+                ),
+                make_arg_spec(
+                    make_argument_ref("x"),
+                    make_shape_spec(9),
+                    condition=bor(bnot(barg("b1")), barg("b2")),
+                ),
+                make_arg_spec(
+                    make_argument_ref("x"),
+                    make_shape_spec(10),
+                    condition=bnot(bor(barg("b1"), barg("b2"))),
+                ),
+                make_arg_spec(
+                    make_argument_ref("x"),
+                    make_shape_spec(11),
+                    condition=band(bnot(barg("b1")), barg("b2")),
+                ),
+                make_arg_spec(
+                    make_argument_ref("x"),
+                    make_shape_spec(12),
+                    condition=bnot(band(barg("b1"), barg("b2"))),
+                ),
+            ),
+            (),
+        ),
+        """
+        :param x: Parameter x.
+        """,
+        """
+        :param x:
+            * **x** has shape [10] if not (*b1* or *b2*).
+            * **x** has shape [11] if (not *b1*) and *b2*.
+            * **x** has shape [12] if not (*b1* and *b2*).
+            * **x** has shape [1] if *b1*.
+            * **x** has shape [2] if *b1* or *b2*.
+            * **x** has shape [3] if *b1* and *b2*.
+            * **x** has shape [4] if not *b1*.
+            * **x** has shape [5] if *b1* or (*b2* and *b3*).
+            * **x** has shape [6] if (*b1* or *b2*) and *b3*.
+            * **x** has shape [7] if (*b1* and *b2*) or *b3*.
+            * **x** has shape [8] if *b1* and (*b2* or *b3*).
+            * **x** has shape [9] if (not *b1*) or *b2*.
+
+            Parameter x.
         """,
     ),
     TestData(
@@ -391,7 +553,6 @@ _TEST_DATA = [
                 make_arg_spec(
                     make_argument_ref("a"),
                     make_shape_spec("d1", "d2"),
-                    note=None,
                 ),
                 make_arg_spec(
                     make_argument_ref("b"),
@@ -449,17 +610,14 @@ _TEST_DATA = [
                 make_arg_spec(
                     make_argument_ref("a"),
                     make_shape_spec("d1", "d2"),
-                    note=None,
                 ),
                 make_arg_spec(
                     make_argument_ref("b"),
                     make_shape_spec("d1", "d3"),
-                    note=None,
                 ),
                 make_arg_spec(
                     make_argument_ref("return"),
                     make_shape_spec("d2", "d3"),
-                    note=None,
                 ),
             ),
             (),
@@ -479,17 +637,14 @@ _TEST_DATA = [
                 make_arg_spec(
                     make_argument_ref("a"),
                     make_shape_spec("d1", "d2"),
-                    note=None,
                 ),
                 make_arg_spec(
                     make_argument_ref("b"),
                     make_shape_spec("d1", "d3"),
-                    note=None,
                 ),
                 make_arg_spec(
                     make_argument_ref("return"),
                     make_shape_spec("d2", "d3"),
-                    note=None,
                 ),
             ),
             (),
@@ -516,17 +671,14 @@ _TEST_DATA = [
                 make_arg_spec(
                     make_argument_ref("a"),
                     make_shape_spec("d1", "d2"),
-                    note=None,
                 ),
                 make_arg_spec(
                     make_argument_ref("b"),
                     make_shape_spec("d1", "d3"),
-                    note=None,
                 ),
                 make_arg_spec(
                     make_argument_ref("return"),
                     make_shape_spec("d2", "d3"),
-                    note=None,
                 ),
             ),
             (),
@@ -548,12 +700,10 @@ _TEST_DATA = [
                 make_arg_spec(
                     make_argument_ref("a"),
                     make_shape_spec(varrank("batch"), "n_features"),
-                    note=None,
                 ),
                 make_arg_spec(
                     make_argument_ref("return"),
                     make_shape_spec(varrank("batch"), 1),
-                    note=None,
                 ),
             ),
             (),
@@ -596,12 +746,10 @@ _TEST_DATA = [
                 make_arg_spec(
                     make_argument_ref("a"),
                     make_shape_spec(varrank("batch"), "n_features"),
-                    note=None,
                 ),
                 make_arg_spec(
                     make_argument_ref("return"),
                     make_shape_spec(varrank("batch"), 1),
-                    note=None,
                 ),
             ),
             (),
@@ -644,7 +792,6 @@ _TEST_DATA = [
                 make_arg_spec(
                     make_argument_ref("train", "features"),
                     make_shape_spec(varrank("train_batch"), "n_features"),
-                    note=None,
                 ),
                 make_arg_spec(
                     make_argument_ref("train", "labels"),
@@ -654,17 +801,14 @@ _TEST_DATA = [
                 make_arg_spec(
                     make_argument_ref("test_features"),
                     make_shape_spec(varrank("test_batch"), "n_features"),
-                    note=None,
                 ),
                 make_arg_spec(
                     make_argument_ref("return", 0),
                     make_shape_spec(varrank("test_batch"), "n_labels"),
-                    note=None,
                 ),
                 make_arg_spec(
                     make_argument_ref("return", 1),
                     make_shape_spec(varrank("test_batch"), "n_labels"),
-                    note=None,
                 ),
             ),
             (ParsedNoteSpec("Function note."),),
@@ -723,7 +867,6 @@ _TEST_DATA = [
                 make_arg_spec(
                     make_argument_ref("train", "features"),
                     make_shape_spec(varrank("train_batch"), "n_features"),
-                    note=None,
                 ),
                 make_arg_spec(
                     make_argument_ref("train", "labels"),
@@ -733,17 +876,14 @@ _TEST_DATA = [
                 make_arg_spec(
                     make_argument_ref("test_features"),
                     make_shape_spec(varrank("test_batch"), "n_features"),
-                    note=None,
                 ),
                 make_arg_spec(
                     make_argument_ref("return", 0),
                     make_shape_spec(varrank("test_batch"), "n_labels"),
-                    note=None,
                 ),
                 make_arg_spec(
                     make_argument_ref("return", 1),
                     make_shape_spec(varrank("test_batch"), "n_labels"),
-                    note=None,
                 ),
             ),
             (ParsedNoteSpec("Function note."),),
@@ -791,7 +931,6 @@ _TEST_DATA = [
                 make_arg_spec(
                     make_argument_ref("train", "features"),
                     make_shape_spec(varrank("train_batch"), "n_features"),
-                    note=None,
                 ),
                 make_arg_spec(
                     make_argument_ref("train", "labels"),
@@ -801,17 +940,14 @@ _TEST_DATA = [
                 make_arg_spec(
                     make_argument_ref("test_features"),
                     make_shape_spec(varrank("test_batch"), "n_features"),
-                    note=None,
                 ),
                 make_arg_spec(
                     make_argument_ref("return", 0),
                     make_shape_spec(varrank("test_batch"), "n_labels"),
-                    note=None,
                 ),
                 make_arg_spec(
                     make_argument_ref("return", 1),
                     make_shape_spec(varrank("test_batch"), "n_labels"),
-                    note=None,
                 ),
             ),
             (ParsedNoteSpec("Function note."),),
@@ -864,7 +1000,6 @@ _TEST_DATA = [
                 make_arg_spec(
                     make_argument_ref("train", "features"),
                     make_shape_spec(varrank("train_batch"), "n_features"),
-                    note=None,
                 ),
                 make_arg_spec(
                     make_argument_ref("train", "labels"),
@@ -874,17 +1009,14 @@ _TEST_DATA = [
                 make_arg_spec(
                     make_argument_ref("test_features"),
                     make_shape_spec(varrank("test_batch"), "n_features"),
-                    note=None,
                 ),
                 make_arg_spec(
                     make_argument_ref("return", 0),
                     make_shape_spec(varrank("test_batch"), "n_labels"),
-                    note=None,
                 ),
                 make_arg_spec(
                     make_argument_ref("return", 1),
                     make_shape_spec(varrank("test_batch"), "n_labels"),
-                    note=None,
                 ),
             ),
             (ParsedNoteSpec("Function note."),),
@@ -958,9 +1090,10 @@ def test_parse_and_rewrite_docstring__disable(data: TestData) -> None:
 Unable to parse shape specification.
   check_shapes called at: __check_shapes_path_and_line__
     Argument number (0-indexed): 0
-      Line:     "a [batch..., x]"
-                    ^
-      Expected: integer (re=(?:[0-9])+)
+      Line:            "a [batch..., x]"
+                           ^
+      Expected one of: "all"
+                       integer (re=(?:[0-9])+)
 """,
         ),
         (
@@ -1031,13 +1164,59 @@ Unable to parse shape specification.
     Argument number (0-indexed): 0
       Line:            "a: [, x]"
                             ^
-      Expected one of: variable name (re=(?:(?:[A-Z]|[a-z])|_)(?:(?:(?:[A-Z]|[a-z])|[0-9]|_))*)
+      Expected one of: "broadcast"
+                       variable name (re=(?:(?:[A-Z]|[a-z])|_)(?:(?:(?:[A-Z]|[a-z])|[0-9]|_))*)
                        "."
                        "..."
                        integer (re=(?:[0-9])+)
                        "None"
                        "]"
                        "*"
+""",
+        ),
+        (
+            "a: [x, broadcast y..., z]",
+            """
+Unable to parse shape specification.
+  check_shapes called at: __check_shapes_path_and_line__
+    Argument number (0-indexed): 0
+      Line:    "a: [x, broadcast y..., z]"
+                                 ^
+      Variable y
+      Broadcasting not supported for non-leading variable-rank variables.
+""",
+        ),
+        (
+            "a: [x] if b[all]",
+            """
+Unable to parse shape specification.
+  check_shapes called at: __check_shapes_path_and_line__
+    Argument number (0-indexed): 0
+      Line: "a: [x] if b[all]"
+                        ^
+      Argument references that evaluate to multiple values are not supported for boolean expressions.
+""",
+        ),
+        (
+            "a: [x] if b.keys()",
+            """
+Unable to parse shape specification.
+  check_shapes called at: __check_shapes_path_and_line__
+    Argument number (0-indexed): 0
+      Line: "a: [x] if b.keys()"
+                        ^
+      Argument references that evaluate to multiple values are not supported for boolean expressions.
+""",
+        ),
+        (
+            "a: [x] if b.c[2].values()[3].d",
+            """
+Unable to parse shape specification.
+  check_shapes called at: __check_shapes_path_and_line__
+    Argument number (0-indexed): 0
+      Line: "a: [x] if b.c[2].values()[3].d"
+                             ^
+      Argument references that evaluate to multiple values are not supported for boolean expressions.
 """,
         ),
         (

@@ -62,7 +62,9 @@ class ModelToTensorBoard(ToTensorBoard):
 
     Monitors all the model's parameters for which their name matches with `keywords_to_monitor`.
     By default, "kernel" and "likelihood" are elements of `keywords_to_monitor`.
-    Example:
+
+    Example::
+
         keyword = "kernel", parameter = "kernel.lengthscale" => match
         keyword = "variational", parameter = "kernel.lengthscale" => no match
     """

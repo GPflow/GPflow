@@ -40,23 +40,26 @@ class GaussianQuadrature:
         **kwargs: Any,
     ) -> tf.Tensor:
         r"""
-        Compute the Gaussian Expectation of a function f:
+        Compute the Gaussian Expectation of a function f::
 
             X ~ N(mean, var)
             E[f(X)] = ∫f(x, *args, **kwargs)p(x)dx
 
-        Using the formula:
+        Using the formula::
+
             E[f(X)] = sum_{i=1}^{N_quad_points} f(x_i) * w_i
 
         where x_i, w_i must be provided by the inheriting class through self._build_X_W.
         The computations broadcast along batch-dimensions, represented by [b1, b2, ..., bX].
 
         :param fun: Callable or Iterable of Callables that operates elementwise, with
-            signature f(X, *args, **kwargs). Moreover, it must satisfy the shape-mapping:
+            signature f(X, *args, **kwargs). Moreover, it must satisfy the shape-mapping::
+
                 X shape: [N_quad_points, b1, b2, ..., bX, d],
                     usually [N_quad_points, N, d]
                 f(X) shape: [N_quad_points, b1, b2, ...., bX, d'],
                     usually [N_quad_points, N, 1] or [N_quad_points, N, d]
+
             In most cases, f should only operate over the last dimension of X
         :param mean: Array/Tensor with shape [b1, b2, ..., bX, d], usually [N, d],
             representing the mean of a d-Variate Gaussian distribution
@@ -64,7 +67,7 @@ class GaussianQuadrature:
             representing the variance of a d-Variate Gaussian distribution
         :param *args: Passed to fun
         :param **kargs: Passed to fun
-        :return: Array/Tensor with shape [b1, b2, ...., bX, d'],
+        :return: Array/Tensor with shape [b1, b2, ...., bX, d\'],
             usually [N, d] or [N, 1]
         """
 
@@ -82,31 +85,34 @@ class GaussianQuadrature:
         **kwargs: Any,
     ) -> tf.Tensor:
         r"""
-        Compute the Gaussian log-Expectation of a the exponential of a function f:
+        Compute the Gaussian log-Expectation of a the exponential of a function f::
 
             X ~ N(mean, var)
             log E[exp[f(X)]] = log ∫exp[f(x, *args, **kwargs)]p(x)dx
 
-        Using the formula:
+        Using the formula::
+
             log E[exp[f(X)]] = log sum_{i=1}^{N_quad_points} exp[f(x_i) + log w_i]
 
         where x_i, w_i must be provided by the inheriting class through self._build_X_W.
         The computations broadcast along batch-dimensions, represented by [b1, b2, ..., bX].
 
         :param fun: Callable or Iterable of Callables that operates elementwise, with
-            signature f(X, *args, **kwargs). Moreover, it must satisfy the shape-mapping:
+            signature f(X, \*args, \*\*kwargs). Moreover, it must satisfy the shape-mapping::
+
                 X shape: [N_quad_points, b1, b2, ..., bX, d],
                     usually [N_quad_points, N, d]
                 f(X) shape: [N_quad_points, b1, b2, ...., bX, d'],
                     usually [N_quad_points, N, 1] or [N_quad_points, N, d]
+
             In most cases, f should only operate over the last dimension of X
         :param mean: Array/Tensor with shape [b1, b2, ..., bX, d], usually [N, d],
             representing the mean of a d-Variate Gaussian distribution
         :param var: Array/Tensor with shape b1, b2, ..., bX, d], usually [N, d],
             representing the variance of a d-Variate Gaussian distribution
-        :param *args: Passed to fun
-        :param **kargs: Passed to fun
-        :return: Array/Tensor with shape [b1, b2, ...., bX, d'],
+        :param args: Passed to fun
+        :param kwargs: Passed to fun
+        :return: Array/Tensor with shape [b1, b2, ...., bX, d\'],
             usually [N, d] or [N, 1]
         """
 

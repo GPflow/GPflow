@@ -16,21 +16,25 @@ Decorator for checking the shapes of function using tf Tensors.
 """
 import inspect
 from functools import wraps
-from typing import Any, Callable, cast
+from typing import Any, Callable, Sequence, cast
 
 from ..utils import experimental
 from .accessors import set_check_shapes
 from .argument_ref import RESULT_TOKEN
 from .base_types import C
 from .checker import ShapeChecker
+from .checker_context import set_shape_checker
 from .config import get_enable_check_shapes
 from .error_contexts import (
+    ConditionContext,
     FunctionCallContext,
     FunctionDefinitionContext,
     NoteContext,
+    ParallelContext,
     StackContext,
 )
 from .parser import parse_and_rewrite_docstring, parse_function_spec
+from .specs import ParsedArgumentSpec
 
 
 def null_check_shapes(func: C) -> C:
@@ -88,26 +92,48 @@ def check_shapes(*specs: str) -> Callable[[C], C]:
             for note_spec in note_specs:
                 checker.add_context(StackContext(bound_error_context, NoteContext(note_spec)))
 
-            checker.check_shapes(
-                (
-                    arg_spec.argument_ref.get(arg_map, bound_error_context),
-                    arg_spec.tensor,
-                    StackContext(bound_error_context, arg_spec.argument_ref.error_context),
-                )
-                for arg_spec in pre_specs
-            )
+            def _check_specs(specs: Sequence[ParsedArgumentSpec]) -> None:
+                processed_specs = []
 
-            result = func(*args, **kwargs)
+                for arg_spec in specs:
+                    for arg_value, relative_arg_context in arg_spec.argument_ref.get(
+                        arg_map, bound_error_context
+                    ):
+                        arg_context = StackContext(bound_error_context, relative_arg_context)
+
+                        if arg_spec.condition is not None:
+                            condition, condition_context = arg_spec.condition.get(
+                                arg_map,
+                                StackContext(arg_context, ConditionContext(arg_spec.condition)),
+                            )
+                            if not condition:
+                                continue
+                            arg_context = StackContext(
+                                bound_error_context,
+                                ParallelContext(
+                                    (
+                                        StackContext(
+                                            relative_arg_context,
+                                            StackContext(
+                                                ConditionContext(arg_spec.condition),
+                                                condition_context,
+                                            ),
+                                        ),
+                                    )
+                                ),
+                            )
+
+                        processed_specs.append((arg_value, arg_spec.tensor, arg_context))
+
+                checker.check_shapes(processed_specs)
+
+            _check_specs(pre_specs)
+
+            with set_shape_checker(checker):
+                result = func(*args, **kwargs)
             arg_map[RESULT_TOKEN] = result
 
-            checker.check_shapes(
-                (
-                    arg_spec.argument_ref.get(arg_map, bound_error_context),
-                    arg_spec.tensor,
-                    StackContext(bound_error_context, arg_spec.argument_ref.error_context),
-                )
-                for arg_spec in post_specs
-            )
+            _check_specs(post_specs)
 
             return result
 
