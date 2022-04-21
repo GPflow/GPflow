@@ -96,33 +96,34 @@ def check_shapes(*specs: str) -> Callable[[C], C]:
                 processed_specs = []
 
                 for arg_spec in specs:
-                    arg_value = arg_spec.argument_ref.get(arg_map, bound_error_context)
-                    arg_context = StackContext(
-                        bound_error_context, arg_spec.argument_ref.error_context
-                    )
+                    for arg_value, relative_arg_context in arg_spec.argument_ref.get(
+                        arg_map, bound_error_context
+                    ):
+                        arg_context = StackContext(bound_error_context, relative_arg_context)
 
-                    if arg_spec.condition is not None:
-                        condition, condition_context = arg_spec.condition.get(
-                            arg_map, StackContext(arg_context, ConditionContext(arg_spec.condition))
-                        )
-                        if not condition:
-                            continue
-                        arg_context = StackContext(
-                            bound_error_context,
-                            ParallelContext(
-                                (
-                                    StackContext(
-                                        arg_spec.argument_ref.error_context,
+                        if arg_spec.condition is not None:
+                            condition, condition_context = arg_spec.condition.get(
+                                arg_map,
+                                StackContext(arg_context, ConditionContext(arg_spec.condition)),
+                            )
+                            if not condition:
+                                continue
+                            arg_context = StackContext(
+                                bound_error_context,
+                                ParallelContext(
+                                    (
                                         StackContext(
-                                            ConditionContext(arg_spec.condition),
-                                            condition_context,
+                                            relative_arg_context,
+                                            StackContext(
+                                                ConditionContext(arg_spec.condition),
+                                                condition_context,
+                                            ),
                                         ),
-                                    ),
-                                )
-                            ),
-                        )
+                                    )
+                                ),
+                            )
 
-                    processed_specs.append((arg_value, arg_spec.tensor, arg_context))
+                        processed_specs.append((arg_value, arg_spec.tensor, arg_context))
 
                 checker.check_shapes(processed_specs)
 

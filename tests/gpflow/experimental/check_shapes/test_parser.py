@@ -27,15 +27,18 @@ from gpflow.experimental.check_shapes.specs import ParsedFunctionSpec, ParsedNot
 
 from .utils import (
     TestContext,
+    all_ref,
     band,
     barg,
     bc,
     bnot,
     bor,
     current_line,
+    keys_ref,
     make_arg_spec,
     make_argument_ref,
     make_shape_spec,
+    values_ref,
     varrank,
 )
 
@@ -382,6 +385,7 @@ _TEST_DATA = [
         (
             "x.ins[0]: [a_batch..., 1]",
             "x.ins[1]: [b_batch..., 2]",
+            "y.keys()[all].values(): []",
             "return[0].out: [a_batch..., 3]",
             "return[1].out: [b_batch..., 4]",
         ),
@@ -396,6 +400,11 @@ _TEST_DATA = [
                     make_shape_spec(varrank("b_batch"), 2),
                 ),
                 make_arg_spec(
+                    make_argument_ref("y", keys_ref, all_ref, values_ref),
+                    make_shape_spec(),
+                    note=None,
+                ),
+                make_arg_spec(
                     make_argument_ref("return", 0, "out"),
                     make_shape_spec(varrank("a_batch"), 3),
                 ),
@@ -408,6 +417,7 @@ _TEST_DATA = [
         ),
         """
         :param x: Parameter x.
+        :param y: Parameter y.
         :returns: Return value.
         """,
         """
@@ -416,6 +426,10 @@ _TEST_DATA = [
             * **x.ins[1]** has shape [*b_batch*..., 2].
 
             Parameter x.
+        :param y:
+            * **y.keys()[all].values()** has shape [].
+
+            Parameter y.
         :returns:
             * **return[0].out** has shape [*a_batch*..., 3].
             * **return[1].out** has shape [*b_batch*..., 4].
@@ -1076,9 +1090,10 @@ def test_parse_and_rewrite_docstring__disable(data: TestData) -> None:
 Unable to parse shape specification.
   check_shapes called at: __check_shapes_path_and_line__
     Argument number (0-indexed): 0
-      Line:     "a [batch..., x]"
-                    ^
-      Expected: integer (re=(?:[0-9])+)
+      Line:            "a [batch..., x]"
+                           ^
+      Expected one of: "all"
+                       integer (re=(?:[0-9])+)
 """,
         ),
         (
@@ -1169,6 +1184,39 @@ Unable to parse shape specification.
                                  ^
       Variable y
       Broadcasting not supported for non-leading variable-rank variables.
+""",
+        ),
+        (
+            "a: [x] if b[all]",
+            """
+Unable to parse shape specification.
+  check_shapes called at: __check_shapes_path_and_line__
+    Argument number (0-indexed): 0
+      Line: "a: [x] if b[all]"
+                        ^
+      Argument references that evaluate to multiple values are not supported for boolean expressions.
+""",
+        ),
+        (
+            "a: [x] if b.keys()",
+            """
+Unable to parse shape specification.
+  check_shapes called at: __check_shapes_path_and_line__
+    Argument number (0-indexed): 0
+      Line: "a: [x] if b.keys()"
+                        ^
+      Argument references that evaluate to multiple values are not supported for boolean expressions.
+""",
+        ),
+        (
+            "a: [x] if b.c[2].values()[3].d",
+            """
+Unable to parse shape specification.
+  check_shapes called at: __check_shapes_path_and_line__
+    Argument number (0-indexed): 0
+      Line: "a: [x] if b.c[2].values()[3].d"
+                             ^
+      Argument references that evaluate to multiple values are not supported for boolean expressions.
 """,
         ),
         (

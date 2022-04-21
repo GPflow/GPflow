@@ -404,6 +404,34 @@ class IndexContext(ErrorContext):
 
 
 @dataclass(frozen=True)
+class MappingKeyContext(ErrorContext):
+    """
+    An error occurent in the context of a key in a map.
+    """
+
+    key: Any
+
+    def print(self, builder: MessageBuilder) -> None:
+        builder.add_columned_line("Map key:", f"[{self.key!r}]")
+
+
+@dataclass(frozen=True)
+class MappingValueContext(ErrorContext):
+    """
+    An error occurent in the context of a value in a map.
+    """
+
+    key: Any
+    value: Any = _NO_VALUE
+
+    def print(self, builder: MessageBuilder) -> None:
+        builder.add_columned_line("Map value, of key:", f"[{self.key!r}]")
+        if self.value is not _NO_VALUE:
+            with builder.indent() as b:
+                b.add_columned_line("Value:", self.value)
+
+
+@dataclass(frozen=True)
 class ConditionContext(ErrorContext):
     """
     An error occurred in a conditional context.
@@ -533,3 +561,20 @@ class TrailingBroadcastVarrankContext(ParserInputContext):
         if self.variable is not None:
             builder.add_columned_line("Variable", self.variable)
         builder.add_line("Broadcasting not supported for non-leading variable-rank variables.")
+
+
+@dataclass(frozen=True)
+class MultipleElementBoolContext(ParserInputContext):
+    """
+    An error was caused by trying to use a multi-element argument specification as a bool.
+    """
+
+    line: int
+    column: int
+
+    def print(self, builder: MessageBuilder) -> None:
+        self.print_line(builder, self.line, self.column)
+        builder.add_line(
+            "Argument references that evaluate to multiple values are not supported for boolean"
+            " expressions."
+        )
