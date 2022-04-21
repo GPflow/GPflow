@@ -651,6 +651,34 @@ function checkPageExistsAndRedirect(event) {
                 <span class="n">b</span><span class="o">.</span><span class="n">add_columned_line</span><span class="p">(</span><span class="s2">&quot;Value:&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">value</span><span class="p">)</span></div></div>
 
 
+<div class="viewcode-block" id="MappingKeyContext"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/index.html#gpflow.experimental.check_shapes.checker.MappingKeyContext">[docs]</a><span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">MappingKeyContext</span><span class="p">(</span><span class="n">ErrorContext</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    An error occurent in the context of a key in a map.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">key</span><span class="p">:</span> <span class="n">Any</span>
+
+<div class="viewcode-block" id="MappingKeyContext.print"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/index.html#gpflow.experimental.check_shapes.checker.MappingKeyContext.print">[docs]</a>    <span class="k">def</span> <span class="nf">print</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">builder</span><span class="p">:</span> <span class="n">MessageBuilder</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">builder</span><span class="o">.</span><span class="n">add_columned_line</span><span class="p">(</span><span class="s2">&quot;Map key:&quot;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="si">!r}</span><span class="s2">]&quot;</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="MappingValueContext"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/index.html#gpflow.experimental.check_shapes.checker.MappingValueContext">[docs]</a><span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">MappingValueContext</span><span class="p">(</span><span class="n">ErrorContext</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    An error occurent in the context of a value in a map.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">key</span><span class="p">:</span> <span class="n">Any</span>
+    <span class="n">value</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">_NO_VALUE</span>
+
+<div class="viewcode-block" id="MappingValueContext.print"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/index.html#gpflow.experimental.check_shapes.checker.MappingValueContext.print">[docs]</a>    <span class="k">def</span> <span class="nf">print</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">builder</span><span class="p">:</span> <span class="n">MessageBuilder</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">builder</span><span class="o">.</span><span class="n">add_columned_line</span><span class="p">(</span><span class="s2">&quot;Map value, of key:&quot;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="si">!r}</span><span class="s2">]&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">_NO_VALUE</span><span class="p">:</span>
+            <span class="k">with</span> <span class="n">builder</span><span class="o">.</span><span class="n">indent</span><span class="p">()</span> <span class="k">as</span> <span class="n">b</span><span class="p">:</span>
+                <span class="n">b</span><span class="o">.</span><span class="n">add_columned_line</span><span class="p">(</span><span class="s2">&quot;Value:&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">value</span><span class="p">)</span></div></div>
+
+
 <div class="viewcode-block" id="ConditionContext"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/index.html#gpflow.experimental.check_shapes.checker.ConditionContext">[docs]</a><span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">class</span> <span class="nc">ConditionContext</span><span class="p">(</span><span class="n">ErrorContext</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
@@ -781,6 +809,23 @@ function checkPageExistsAndRedirect(event) {
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">variable</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">builder</span><span class="o">.</span><span class="n">add_columned_line</span><span class="p">(</span><span class="s2">&quot;Variable&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">variable</span><span class="p">)</span>
         <span class="n">builder</span><span class="o">.</span><span class="n">add_line</span><span class="p">(</span><span class="s2">&quot;Broadcasting not supported for non-leading variable-rank variables.&quot;</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="MultipleElementBoolContext"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/index.html#gpflow.experimental.check_shapes.checker.MultipleElementBoolContext">[docs]</a><span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">MultipleElementBoolContext</span><span class="p">(</span><span class="n">ParserInputContext</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    An error was caused by trying to use a multi-element argument specification as a bool.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">line</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">column</span><span class="p">:</span> <span class="nb">int</span>
+
+<div class="viewcode-block" id="MultipleElementBoolContext.print"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/index.html#gpflow.experimental.check_shapes.checker.MultipleElementBoolContext.print">[docs]</a>    <span class="k">def</span> <span class="nf">print</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">builder</span><span class="p">:</span> <span class="n">MessageBuilder</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">print_line</span><span class="p">(</span><span class="n">builder</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">line</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">column</span><span class="p">)</span>
+        <span class="n">builder</span><span class="o">.</span><span class="n">add_line</span><span class="p">(</span>
+            <span class="s2">&quot;Argument references that evaluate to multiple values are not supported for boolean&quot;</span>
+            <span class="s2">&quot; expressions.&quot;</span>
+        <span class="p">)</span></div></div>
 </pre></div>
 
               </div>

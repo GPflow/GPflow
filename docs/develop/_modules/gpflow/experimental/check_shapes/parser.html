@@ -273,10 +273,13 @@ function checkPageExistsAndRedirect(event) {
 
 <span class="kn">from</span> <span class="nn">.argument_ref</span> <span class="kn">import</span> <span class="p">(</span>
     <span class="n">RESULT_TOKEN</span><span class="p">,</span>
+    <span class="n">AllElementsRef</span><span class="p">,</span>
     <span class="n">ArgumentRef</span><span class="p">,</span>
     <span class="n">AttributeArgumentRef</span><span class="p">,</span>
     <span class="n">IndexArgumentRef</span><span class="p">,</span>
+    <span class="n">KeysRef</span><span class="p">,</span>
     <span class="n">RootArgumentRef</span><span class="p">,</span>
+    <span class="n">ValuesRef</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="kn">from</span> <span class="nn">.bool_specs</span> <span class="kn">import</span> <span class="p">(</span>
     <span class="n">ParsedAndBoolSpec</span><span class="p">,</span>
@@ -290,6 +293,7 @@ function checkPageExistsAndRedirect(event) {
     <span class="n">ArgumentContext</span><span class="p">,</span>
     <span class="n">ErrorContext</span><span class="p">,</span>
     <span class="n">LarkUnexpectedInputContext</span><span class="p">,</span>
+    <span class="n">MultipleElementBoolContext</span><span class="p">,</span>
     <span class="n">StackContext</span><span class="p">,</span>
     <span class="n">TrailingBroadcastVarrankContext</span><span class="p">,</span>
 <span class="p">)</span>
@@ -342,7 +346,7 @@ function checkPageExistsAndRedirect(event) {
 
     <span class="k">def</span> <span class="nf">argument_spec</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tree</span><span class="p">:</span> <span class="n">Tree</span><span class="p">[</span><span class="n">Token</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">ParsedArgumentSpec</span><span class="p">:</span>
         <span class="n">argument_ref</span><span class="p">,</span> <span class="n">shape_spec</span><span class="p">,</span> <span class="o">*</span><span class="n">other_specs</span> <span class="o">=</span> <span class="n">_tree_children</span><span class="p">(</span><span class="n">tree</span><span class="p">)</span>
-        <span class="n">argument</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">argument_ref</span><span class="p">)</span>
+        <span class="n">argument</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">argument_ref</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
         <span class="n">shape</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">shape_spec</span><span class="p">)</span>
         <span class="n">condition</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="n">note</span> <span class="o">=</span> <span class="kc">None</span>
@@ -372,21 +376,45 @@ function checkPageExistsAndRedirect(event) {
 
     <span class="k">def</span> <span class="nf">bool_spec_argument_ref</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tree</span><span class="p">:</span> <span class="n">Tree</span><span class="p">[</span><span class="n">Token</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">ParsedBoolSpec</span><span class="p">:</span>
         <span class="p">(</span><span class="n">argument_ref</span><span class="p">,)</span> <span class="o">=</span> <span class="n">_tree_children</span><span class="p">(</span><span class="n">tree</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">ParsedArgumentRefBoolSpec</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">argument_ref</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">ParsedArgumentRefBoolSpec</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">argument_ref</span><span class="p">,</span> <span class="kc">True</span><span class="p">))</span>
 
-    <span class="k">def</span> <span class="nf">argument_ref_root</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tree</span><span class="p">:</span> <span class="n">Tree</span><span class="p">[</span><span class="n">Token</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">ArgumentRef</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">argument_ref_root</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tree</span><span class="p">:</span> <span class="n">Tree</span><span class="p">[</span><span class="n">Token</span><span class="p">],</span> <span class="n">is_for_bool_spec</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ArgumentRef</span><span class="p">:</span>
         <span class="p">(</span><span class="n">token</span><span class="p">,)</span> <span class="o">=</span> <span class="n">_token_children</span><span class="p">(</span><span class="n">tree</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">RootArgumentRef</span><span class="p">(</span><span class="n">token</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">argument_ref_attribute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tree</span><span class="p">:</span> <span class="n">Tree</span><span class="p">[</span><span class="n">Token</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">ArgumentRef</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">argument_ref_attribute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tree</span><span class="p">:</span> <span class="n">Tree</span><span class="p">[</span><span class="n">Token</span><span class="p">],</span> <span class="n">is_for_bool_spec</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ArgumentRef</span><span class="p">:</span>
         <span class="p">(</span><span class="n">source</span><span class="p">,)</span> <span class="o">=</span> <span class="n">_tree_children</span><span class="p">(</span><span class="n">tree</span><span class="p">)</span>
         <span class="p">(</span><span class="n">token</span><span class="p">,)</span> <span class="o">=</span> <span class="n">_token_children</span><span class="p">(</span><span class="n">tree</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">AttributeArgumentRef</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">source</span><span class="p">),</span> <span class="n">token</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">AttributeArgumentRef</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">is_for_bool_spec</span><span class="p">),</span> <span class="n">token</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">argument_ref_index</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tree</span><span class="p">:</span> <span class="n">Tree</span><span class="p">[</span><span class="n">Token</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">ArgumentRef</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">argument_ref_index</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tree</span><span class="p">:</span> <span class="n">Tree</span><span class="p">[</span><span class="n">Token</span><span class="p">],</span> <span class="n">is_for_bool_spec</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ArgumentRef</span><span class="p">:</span>
         <span class="p">(</span><span class="n">source</span><span class="p">,)</span> <span class="o">=</span> <span class="n">_tree_children</span><span class="p">(</span><span class="n">tree</span><span class="p">)</span>
         <span class="p">(</span><span class="n">token</span><span class="p">,)</span> <span class="o">=</span> <span class="n">_token_children</span><span class="p">(</span><span class="n">tree</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">IndexArgumentRef</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">source</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">token</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">IndexArgumentRef</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">is_for_bool_spec</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">token</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">argument_ref_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tree</span><span class="p">:</span> <span class="n">Tree</span><span class="p">[</span><span class="n">Token</span><span class="p">],</span> <span class="n">is_for_bool_spec</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ArgumentRef</span><span class="p">:</span>
+        <span class="p">(</span><span class="n">source</span><span class="p">,)</span> <span class="o">=</span> <span class="n">_tree_children</span><span class="p">(</span><span class="n">tree</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_disallow_multiple_element_bool_spec</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">is_for_bool_spec</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">AllElementsRef</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">is_for_bool_spec</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">argument_ref_keys</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tree</span><span class="p">:</span> <span class="n">Tree</span><span class="p">[</span><span class="n">Token</span><span class="p">],</span> <span class="n">is_for_bool_spec</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ArgumentRef</span><span class="p">:</span>
+        <span class="p">(</span><span class="n">source</span><span class="p">,)</span> <span class="o">=</span> <span class="n">_tree_children</span><span class="p">(</span><span class="n">tree</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_disallow_multiple_element_bool_spec</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">is_for_bool_spec</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">KeysRef</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">is_for_bool_spec</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">argument_ref_values</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tree</span><span class="p">:</span> <span class="n">Tree</span><span class="p">[</span><span class="n">Token</span><span class="p">],</span> <span class="n">is_for_bool_spec</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ArgumentRef</span><span class="p">:</span>
+        <span class="p">(</span><span class="n">source</span><span class="p">,)</span> <span class="o">=</span> <span class="n">_tree_children</span><span class="p">(</span><span class="n">tree</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_disallow_multiple_element_bool_spec</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">is_for_bool_spec</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">ValuesRef</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">is_for_bool_spec</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">_disallow_multiple_element_bool_spec</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">source</span><span class="p">:</span> <span class="n">Tree</span><span class="p">[</span><span class="n">Token</span><span class="p">],</span> <span class="n">is_for_bool_spec</span><span class="p">:</span> <span class="nb">bool</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">is_for_bool_spec</span><span class="p">:</span>
+            <span class="n">meta</span> <span class="o">=</span> <span class="n">source</span><span class="o">.</span><span class="n">meta</span>
+            <span class="k">raise</span> <span class="n">SpecificationParseError</span><span class="p">(</span>
+                <span class="n">MultipleElementBoolContext</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_source</span><span class="p">,</span> <span class="n">meta</span><span class="o">.</span><span class="n">end_line</span><span class="p">,</span> <span class="n">meta</span><span class="o">.</span><span class="n">end_column</span><span class="p">)</span>
+            <span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">tensor_spec</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tree</span><span class="p">:</span> <span class="n">Tree</span><span class="p">[</span><span class="n">Token</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">ParsedTensorSpec</span><span class="p">:</span>
         <span class="n">shape_spec</span><span class="p">,</span> <span class="o">*</span><span class="n">note_specs</span> <span class="o">=</span> <span class="n">_tree_children</span><span class="p">(</span><span class="n">tree</span><span class="p">)</span>

@@ -718,8 +718,23 @@ function checkPageExistsAndRedirect(event) {
     </a>
    </li>
    <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#gpflow-experimental-check-shapes-mappingkeycontext">
+     gpflow.experimental.check_shapes.MappingKeyContext
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#gpflow-experimental-check-shapes-mappingvaluecontext">
+     gpflow.experimental.check_shapes.MappingValueContext
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
     <a class="reference internal nav-link" href="#gpflow-experimental-check-shapes-messagebuilder">
      gpflow.experimental.check_shapes.MessageBuilder
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#gpflow-experimental-check-shapes-multipleelementboolcontext">
+     gpflow.experimental.check_shapes.MultipleElementBoolContext
     </a>
    </li>
    <li class="toc-h3 nav-item toc-entry">
@@ -907,6 +922,9 @@ function.</p>
 <li><p>Use <code class="docutils literal notranslate"><span class="pre">.&lt;name&gt;</span></code> to refer to attributes of the object.</p></li>
 <li><p>Use <code class="docutils literal notranslate"><span class="pre">[&lt;index&gt;]</span></code> to refer to elements of a sequence. This is particularly useful if your
 function returns a tuple of values.</p></li>
+<li><p>Use <code class="docutils literal notranslate"><span class="pre">[all]</span></code> to select all elements in a collection.</p></li>
+<li><p>Use <code class="docutils literal notranslate"><span class="pre">.keys()</span></code> to select all keys in a mapping.</p></li>
+<li><p>Use <code class="docutils literal notranslate"><span class="pre">.values()</span></code> to select all values in a mapping.</p></li>
 </ul>
 <p>We do not support looking up values in a  <code class="docutils literal notranslate"><span class="pre">dict</span></code>.</p>
 <p>If the argument, or any of the looked-up values, are <cite>None</cite> the check is skipped.</p>
@@ -916,7 +934,10 @@ function returns a tuple of values.</p></li>
     <span class="s2">&quot;data.training_data: ...&quot;</span><span class="p">,</span>
     <span class="s2">&quot;return: ...&quot;</span><span class="p">,</span>
     <span class="s2">&quot;return[0]: ...&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;something[0].foo.bar[23]: ...&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;data_list[all]: ...&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;data_dict.keys(): ...&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;data_dict.values(): ...&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;something[all].foo[0].bar.values(): ...&quot;</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="k">def</span> <span class="nf">f</span><span class="p">(</span><span class="o">...</span><span class="p">):</span>
     <span class="o">...</span>
@@ -972,8 +993,9 @@ to the specification. For example:</p>
 &lt;condition&gt;</cite> is used, the specification is only appplied if <cite>&lt;condition&gt;</cite> evaluates to <cite>True</cite>. This
 is useful if shapes depend on other input parameters. Valid conditions are:</p>
 <ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">&lt;argument</span> <span class="pre">specifier&gt;</span></code>, with the same syntax and rules as above, uses the <cite>bool</cite> built-in to
-convert the value of the argument to a <cite>bool</cite>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">&lt;argument</span> <span class="pre">specifier&gt;</span></code>, with the same syntax and rules as above, except that constructions that
+evaluates to multiple elements are disallowed. Uses the <cite>bool</cite> built-in to convert the value of
+the argument to a <cite>bool</cite>.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">&lt;left&gt;</span> <span class="pre">or</span> <span class="pre">&lt;right&gt;</span></code>, evaluates to <cite>True</cite> if any of <cite>&lt;left&gt;</cite> or <cite>&lt;right&gt;</cite> evaluates to <cite>True</cite>
 and to <cite>False</cite> otherwise.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">&lt;left&gt;</span> <span class="pre">and</span> <span class="pre">&lt;right&gt;</span></code>, evaluates to <cite>False</cite> if any of <cite>&lt;left&gt;</cite> or <cite>&lt;right&gt;</cite> evaluates to
@@ -1592,6 +1614,67 @@ saved for later use.</p>
 </dd></dl>
 
 </section>
+<section id="gpflow-experimental-check-shapes-mappingkeycontext">
+<h3>gpflow.experimental.check_shapes.MappingKeyContext<a class="headerlink" href="#gpflow-experimental-check-shapes-mappingkeycontext" title="Permalink to this headline">#</a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="gpflow.experimental.check_shapes.MappingKeyContext">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.experimental.check_shapes.</span></span><span class="sig-name descname"><span class="pre">MappingKeyContext</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/gpflow/experimental/check_shapes/error_contexts.html#MappingKeyContext"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.experimental.check_shapes.MappingKeyContext" title="Permalink to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#gpflow.experimental.check_shapes.ErrorContext" title="gpflow.experimental.check_shapes.error_contexts.ErrorContext"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.experimental.check_shapes.error_contexts.ErrorContext</span></code></a></p>
+<p>An error occurent in the context of a key in a map.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>key</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>) – </p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="gpflow.experimental.check_shapes.MappingKeyContext.print">
+<span class="sig-name descname"><span class="pre">print</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">builder</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/gpflow/experimental/check_shapes/error_contexts.html#MappingKeyContext.print"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.experimental.check_shapes.MappingKeyContext.print" title="Permalink to this definition">#</a></dt>
+<dd><p>Print this context to the given <cite>MessageBuilder</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>builder</strong> (<a class="reference internal" href="#gpflow.experimental.check_shapes.MessageBuilder" title="gpflow.experimental.check_shapes.error_contexts.MessageBuilder"><code class="xref py py-class docutils literal notranslate"><span class="pre">MessageBuilder</span></code></a>) – </p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="gpflow-experimental-check-shapes-mappingvaluecontext">
+<h3>gpflow.experimental.check_shapes.MappingValueContext<a class="headerlink" href="#gpflow-experimental-check-shapes-mappingvaluecontext" title="Permalink to this headline">#</a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="gpflow.experimental.check_shapes.MappingValueContext">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.experimental.check_shapes.</span></span><span class="sig-name descname"><span class="pre">MappingValueContext</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value=&lt;object</span> <span class="pre">object&gt;</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/gpflow/experimental/check_shapes/error_contexts.html#MappingValueContext"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.experimental.check_shapes.MappingValueContext" title="Permalink to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#gpflow.experimental.check_shapes.ErrorContext" title="gpflow.experimental.check_shapes.error_contexts.ErrorContext"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.experimental.check_shapes.error_contexts.ErrorContext</span></code></a></p>
+<p>An error occurent in the context of a value in a map.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>key</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>) – </p></li>
+<li><p><strong>value</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>) – </p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="gpflow.experimental.check_shapes.MappingValueContext.print">
+<span class="sig-name descname"><span class="pre">print</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">builder</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/gpflow/experimental/check_shapes/error_contexts.html#MappingValueContext.print"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.experimental.check_shapes.MappingValueContext.print" title="Permalink to this definition">#</a></dt>
+<dd><p>Print this context to the given <cite>MessageBuilder</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>builder</strong> (<a class="reference internal" href="#gpflow.experimental.check_shapes.MessageBuilder" title="gpflow.experimental.check_shapes.error_contexts.MessageBuilder"><code class="xref py py-class docutils literal notranslate"><span class="pre">MessageBuilder</span></code></a>) – </p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
 <section id="gpflow-experimental-check-shapes-messagebuilder">
 <h3>gpflow.experimental.check_shapes.MessageBuilder<a class="headerlink" href="#gpflow-experimental-check-shapes-messagebuilder" title="Permalink to this headline">#</a></h3>
 <dl class="py class">
@@ -1652,6 +1735,39 @@ saved for later use.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Iterator</span></code>[<a class="reference internal" href="#gpflow.experimental.check_shapes.MessageBuilder" title="gpflow.experimental.check_shapes.error_contexts.MessageBuilder"><code class="xref py py-class docutils literal notranslate"><span class="pre">MessageBuilder</span></code></a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="gpflow-experimental-check-shapes-multipleelementboolcontext">
+<h3>gpflow.experimental.check_shapes.MultipleElementBoolContext<a class="headerlink" href="#gpflow-experimental-check-shapes-multipleelementboolcontext" title="Permalink to this headline">#</a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="gpflow.experimental.check_shapes.MultipleElementBoolContext">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.experimental.check_shapes.</span></span><span class="sig-name descname"><span class="pre">MultipleElementBoolContext</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">line</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">column</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/gpflow/experimental/check_shapes/error_contexts.html#MultipleElementBoolContext"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.experimental.check_shapes.MultipleElementBoolContext" title="Permalink to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference internal" href="error_contexts/index.html#gpflow.experimental.check_shapes.error_contexts.ParserInputContext" title="gpflow.experimental.check_shapes.error_contexts.ParserInputContext"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.experimental.check_shapes.error_contexts.ParserInputContext</span></code></a></p>
+<p>An error was caused by trying to use a multi-element argument specification as a bool.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>text</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>) – </p></li>
+<li><p><strong>line</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>) – </p></li>
+<li><p><strong>column</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>) – </p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="gpflow.experimental.check_shapes.MultipleElementBoolContext.print">
+<span class="sig-name descname"><span class="pre">print</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">builder</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/gpflow/experimental/check_shapes/error_contexts.html#MultipleElementBoolContext.print"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.experimental.check_shapes.MultipleElementBoolContext.print" title="Permalink to this definition">#</a></dt>
+<dd><p>Print this context to the given <cite>MessageBuilder</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>builder</strong> (<a class="reference internal" href="#gpflow.experimental.check_shapes.MessageBuilder" title="gpflow.experimental.check_shapes.error_contexts.MessageBuilder"><code class="xref py py-class docutils literal notranslate"><span class="pre">MessageBuilder</span></code></a>) – </p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></p>
 </dd>
 </dl>
 </dd></dl>
