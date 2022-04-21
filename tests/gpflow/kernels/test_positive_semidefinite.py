@@ -20,7 +20,7 @@ import tensorflow as tf
 from numpy.testing import assert_array_less
 
 import gpflow.ci_utils
-from gpflow import kernels
+from gpflow import kernels, test_utils
 
 KERNEL_CLASSES = [
     kernel
@@ -32,23 +32,25 @@ KERNEL_CLASSES = [
 rng = np.random.RandomState(42)
 
 
-def pos_semidefinite(kernel: kernels.Kernel) -> None:
-    N, D = 100, 5
-    X = rng.randn(N, D)
-
-    cov = kernel(X)
-    eig = tf.linalg.eigvalsh(cov).numpy()
-    assert_array_less(-1e-12, eig)
-
-
 @pytest.mark.parametrize("kernel_class", KERNEL_CLASSES)
-def test_positive_semidefinite(kernel_class: Type[kernels.Kernel]) -> None:
+def test_kernel_interface(kernel_class: Type[kernels.Kernel]) -> None:
     """
     A valid kernel is positive semidefinite. Some kernels are only valid for
     particular input shapes, see https://github.com/GPflow/GPflow/issues/1328
     """
+    N, N2, D = 101, 103, 5
+    X = rng.randn(N, D)
+    X2 = rng.randn(N2, D)
     kernel = kernel_class()
-    pos_semidefinite(kernel)
+
+    if isinstance(kernel, kernels.White):
+        # The White kernel is special in that it is based on indices, not
+        # values, and hence White()(X, X2) is zero everywhere. This means we
+        # need to explicitly check psd-ness of just kernel(X) itself.
+        K = kernel(X)
+        test_utils.assert_psd_matrix(K)
+    else:
+        test_utils.check_kernel_interface(kernel, X, X2)
 
 
 @pytest.mark.parametrize(
@@ -60,4 +62,8 @@ def test_positive_semidefinite_periodic(base_class: Type[kernels.IsotropicStatio
     particular input shapes, see https://github.com/GPflow/GPflow/issues/1328
     """
     kernel = kernels.Periodic(base_class())
-    pos_semidefinite(kernel)
+
+    N, N2, D = 101, 103, 5
+    X = rng.randn(N, D)
+    X2 = rng.randn(N2, D)
+    test_utils.check_kernel_interface(kernel, X, X2)

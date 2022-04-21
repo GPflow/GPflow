@@ -50,8 +50,7 @@ This release contains contributions from:
 
 ## Major Features and Improvements
 
-* <INSERT MAJOR FEATURE HERE, USING MARKDOWN SYNTAX>
-* <IF RELEASE CONTAINS MULTIPLE FEATURES FROM SAME AREA, GROUP THEM TOGETHER>
+* Testing: new `test_utils` submodule that provides a `check_kernel_interface` function that does basic correctness checks of custom `Kernel` implementations
 
 ## Bug Fixes and Other Changes
 
@@ -62,7 +61,7 @@ This release contains contributions from:
 
 This release contains contributions from:
 
-ltiao, jesnie
+ltiao, jesnie, st--
 
 
 # Release 2.4.0

@@ -32,6 +32,7 @@ from . import (
     posteriors,
     probability_distributions,
     quadrature,
+    test_utils,
     utilities,
 )
 from .base import Module, Parameter
@@ -66,6 +67,7 @@ __all__ = [
     "probability_distributions",
     "quadrature",
     "set_trainable",
+    "test_utils",
     "utilities",
     "versions",
 ]
