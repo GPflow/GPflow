@@ -96,7 +96,7 @@ class RootArgumentRef(ArgumentRef):
 
 @dataclass(frozen=True)  # type: ignore
 class DelegatingArgumentRef(ArgumentRef):
-    """ Abstract base class for `ArgumentRef`s the delegates to a source. """
+    """ Abstract base class for :class:`ArgumentRef`\ s that delegates to a source. """
 
     source: ArgumentRef
 
