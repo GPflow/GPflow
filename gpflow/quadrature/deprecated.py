@@ -27,7 +27,8 @@ from .gauss_hermite import NDiagGHQuadrature
 
 
 def hermgauss(n: int) -> Tuple[AnyNDArray, AnyNDArray]:
-    x, w = np.polynomial.hermite.hermgauss(n)
+    # Type-ignore is because for some versions mypy can't find np.polynomial.hermite
+    x, w = np.polynomial.hermite.hermgauss(n)  # type: ignore
     x, w = x.astype(default_float()), w.astype(default_float())
     return x, w
 
@@ -47,7 +48,7 @@ def mvhermgauss(H: int, D: int) -> Tuple[AnyNDArray, AnyNDArray]:
     gh_x, gh_w = hermgauss(H)
     x: AnyNDArray = np.array(list(itertools.product(*(gh_x,) * D)))  # H**DxD
     w = np.prod(np.array(list(itertools.product(*(gh_w,) * D))), 1)  # H**D
-    return x, w
+    return x, w  # type: ignore
 
 
 def mvnquad(

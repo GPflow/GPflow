@@ -6,6 +6,7 @@ import pytest
 import tensorflow as tf
 
 import gpflow
+from gpflow.base import AnyNDArray
 from gpflow.models.svgp import SVGP_deprecated, SVGP_with_posterior
 
 input_dim = 7
@@ -50,7 +51,7 @@ def make_models(
     lik = gpflow.likelihoods.Gaussian(0.1)
     q_mu = np.random.randn(M, L)
     if q_diag:
-        q_sqrt = np.random.randn(M, L) ** 2
+        q_sqrt: AnyNDArray = np.random.randn(M, L) ** 2
     else:
         q_sqrt = np.tril(np.random.randn(L, M, M))
     mold = SVGP_deprecated(k, lik, Z, q_diag=q_diag, q_mu=q_mu, q_sqrt=q_sqrt, whiten=whiten)

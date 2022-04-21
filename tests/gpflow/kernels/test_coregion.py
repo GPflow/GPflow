@@ -27,7 +27,7 @@ rng = np.random.RandomState(0)
 
 class Datum:
     N1, N2 = 6, 16
-    X = [rng.rand(N1, 2) * 1, rng.rand(N2, 2) * 1]
+    X: Sequence[AnyNDArray] = [rng.rand(N1, 2) * 1, rng.rand(N2, 2) * 1]
     Y = [
         np.sin(x[:, :1]) + 0.9 * np.cos(x[:, 1:2] * 1.6) + rng.randn(x.shape[0], 1) * 0.8 for x in X
     ]
@@ -42,7 +42,7 @@ class Datum:
 
     # For predict tests
     N = 10
-    Xtest = rng.rand(N, 2) * N
+    Xtest: AnyNDArray = rng.rand(N, 2) * N
     Xtest_augmented0: AnyNDArray = np.hstack([Xtest, np.zeros((N, 1))])
     Xtest_augmented1: AnyNDArray = np.hstack([Xtest, np.ones((N, 1))])
     Ytest = np.sin(Xtest[:, :1]) + 0.9 * np.cos(Xtest[:, 1:2] * 1.6)

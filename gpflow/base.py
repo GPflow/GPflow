@@ -18,25 +18,27 @@ from typing import TYPE_CHECKING, Any, List, Optional, Sequence, Tuple, Union
 import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
-from packaging.version import Version
 from typing_extensions import Final
 
 from .config import default_float, default_summary_fmt
+from .type_flags import GENERIC_NP_ARRAYS, NP_TYPE_CHECKING
 
 if TYPE_CHECKING:  # pragma: no cover
     from IPython.lib import pretty
 
 DType = Union[np.dtype, tf.DType]
 
-# It would be nice to use something more interesting than `Any` here, but it looks like the
-# infrastructure in the rest of the ecosystem isn't really set up for this yet. Maybe when we
-# get Python 3.11?
-if TYPE_CHECKING:  # pragma: no cover
-    AnyNDArray = Union["np.ndarray[Any, Any]"]
-elif Version(np.__version__) < Version("1.20.0"):
-    AnyNDArray = np.ndarray
+
+if TYPE_CHECKING and (not NP_TYPE_CHECKING):  # pragma: no cover
+    AnyNDArray = Any
 else:
-    AnyNDArray = np.ndarray[Any, Any]
+    if GENERIC_NP_ARRAYS:
+        # It would be nice to use something more interesting than `Any` here, but it looks like
+        # the infrastructure in the rest of the ecosystem isn't really set up for this
+        # yet. Maybe when we get Python 3.11?
+        AnyNDArray = np.ndarray[Any, Any]  # type: ignore
+    else:
+        AnyNDArray = Union[np.ndarray]  # type: ignore
 
 VariableData = Union[List[Any], Tuple[Any], AnyNDArray, int, float]  # deprecated
 Transform = Union[tfp.bijectors.Bijector]
@@ -297,7 +299,7 @@ def _validate_unconstrained_value(
 ) -> tf.Tensor:
     value = _cast_to_dtype(value, dtype)
     unconstrained_value = _to_unconstrained(value, transform)
-    if unconstrained_value.dtype.is_integer:
+    if unconstrained_value.dtype.is_integer:  # type: ignore
         return unconstrained_value
     message = (
         "gpflow.Parameter: the value to be assigned is incompatible with this parameter's "

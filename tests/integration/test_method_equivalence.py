@@ -19,7 +19,7 @@ import pytest
 from numpy.testing import assert_allclose
 
 import gpflow
-from gpflow.base import TensorType
+from gpflow.base import AnyNDArray, TensorType
 from gpflow.config import default_jitter
 from gpflow.kernels import Kernel
 from gpflow.likelihoods import Likelihood
@@ -30,10 +30,10 @@ rng = np.random.RandomState(0)
 
 
 class Datum:
-    X = rng.rand(20, 1) * 10
+    X: AnyNDArray = rng.rand(20, 1) * 10
     Y = np.sin(X) + 0.9 * np.cos(X * 1.6) + rng.randn(*X.shape) * 0.8
     Y = np.tile(Y, 2)  # two identical columns
-    Xtest = rng.rand(10, 1) * 10
+    Xtest: AnyNDArray = rng.rand(10, 1) * 10
     data = (X, Y)
 
 
@@ -45,8 +45,8 @@ class DatumVGP:
     Y = np.random.randn(N, DY)
     q_mu = np.random.randn(N, DY)
     q_sqrt = np.random.randn(DY, N, N)
-    q_alpha = np.random.randn(N, DX)
-    q_lambda = np.random.randn(N, DX) ** 2
+    q_alpha: AnyNDArray = np.random.randn(N, DX)
+    q_lambda: AnyNDArray = np.random.randn(N, DX) ** 2
     data = (X, Y)
 
 

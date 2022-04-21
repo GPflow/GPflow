@@ -161,17 +161,17 @@ def test_broadcasting_mix_latent_gps(full_cov: bool, full_output_cov: bool) -> N
 
     g_sqrt_diag: AnyNDArray = np.tril(np.random.randn(S * L, N, N), -1)  # [L*S, N, N]
     g_sqrt_diag = np.reshape(g_sqrt_diag, [L, S, N, N])
-    g_var_diag = g_sqrt_diag @ np.transpose(g_sqrt_diag, [0, 1, 3, 2])  # [L, S, N, N]
+    g_var_diag: AnyNDArray = g_sqrt_diag @ np.transpose(g_sqrt_diag, [0, 1, 3, 2])  # [L, S, N, N]
     g_var = np.zeros([S, N, L, N, L])
     for l in range(L):
         g_var[:, :, l, :, l] = g_var_diag[l, :, :, :]  # replace diagonal elements by g_var_diag
 
     # reference numpy implementation for mean
-    f_mu_ref = g_mu @ W.T  # [S, N, P]
+    f_mu_ref: AnyNDArray = g_mu @ W.T  # [S, N, P]
 
     # reference numpy implementation for variance
     g_var_tmp = np.transpose(g_var, [0, 1, 3, 2, 4])  # [S, N, N, L, L]
-    f_var_ref = W @ g_var_tmp @ W.T  # [S, N, N, P, P]
+    f_var_ref: AnyNDArray = W @ g_var_tmp @ W.T  # [S, N, N, P, P]
     f_var_ref = np.transpose(f_var_ref, [0, 1, 3, 2, 4])  # [S, N, P, N, P]
 
     if not full_cov:

@@ -17,6 +17,7 @@ import pytest
 import tensorflow as tf
 
 import gpflow
+from gpflow.base import AnyNDArray
 from gpflow.config import default_float
 
 rng = np.random.RandomState(0)
@@ -27,10 +28,10 @@ class Datum:
     n_outputs = 2
     n_outputs_c = 1
 
-    X = rng.rand(20, n_inputs) * 10
+    X: AnyNDArray = rng.rand(20, n_inputs) * 10
     Y = np.sin(X) + 0.9 * np.cos(X * 1.6) + rng.randn(*X.shape) * 0.8
     Y = np.tile(Y, n_outputs)  # identical columns
-    Xtest = rng.rand(10, n_outputs) * 10
+    Xtest: AnyNDArray = rng.rand(10, n_outputs) * 10
     data = (X, Y)
 
     # for classification:

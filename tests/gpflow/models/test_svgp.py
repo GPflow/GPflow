@@ -29,11 +29,11 @@ from gpflow.models import SVGP
 @dataclass(frozen=True)
 class DatumSVGP:
     rng: np.random.RandomState = np.random.RandomState(0)
-    X = rng.randn(20, 1)
-    Y = rng.randn(20, 2) ** 2
-    Z = rng.randn(3, 1)
-    qsqrt = (rng.randn(3, 2) ** 2) * 0.01
-    qmean = rng.randn(3, 2)
+    X: AnyNDArray = rng.randn(20, 1)
+    Y: AnyNDArray = rng.randn(20, 2) ** 2
+    Z: AnyNDArray = rng.randn(3, 1)
+    qsqrt: AnyNDArray = (rng.randn(3, 2) ** 2) * 0.01  # type: ignore
+    qmean: AnyNDArray = rng.randn(3, 2)
     lik = gpflow.likelihoods.Exponential()
     data = (X, Y)
 

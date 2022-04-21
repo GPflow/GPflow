@@ -34,16 +34,17 @@ rng = np.random.RandomState(1)
 def univariate_log_marginal_likelihood(
     y: AnyNDArray, K: AnyNDArray, noise_var: AnyNDArray
 ) -> AnyNDArray:
-    return cast(
-        AnyNDArray,
-        -0.5 * y * y / (K + noise_var) - 0.5 * np.log(K + noise_var) - 0.5 * np.log(np.pi * 2.0),
+    return (  # type: ignore
+        -0.5 * y * y / (K + noise_var)  # type: ignore
+        - 0.5 * np.log(K + noise_var)
+        - 0.5 * np.log(np.pi * 2.0)
     )
 
 
 def univariate_posterior(
     y: AnyNDArray, K: AnyNDArray, noise_var: AnyNDArray
 ) -> Tuple[AnyNDArray, AnyNDArray]:
-    mean = K * y / (K + noise_var)
+    mean = K * y / (K + noise_var)  # type: ignore
     variance: AnyNDArray = K - K / (K + noise_var)
     return mean, variance
 
@@ -145,7 +146,7 @@ def test_variational_univariate_prior_KL(diag: bool, whiten: bool) -> None:
     reference_kl = univariate_prior_KL(
         Datum.posterior_mean, Datum.zero_mean, Datum.posterior_var, Datum.K
     )
-    q_mu = np.ones((1, Datum.num_latent_gps)) * Datum.posterior_mean
+    q_mu: AnyNDArray = np.ones((1, Datum.num_latent_gps)) * Datum.posterior_mean
     ones = np.ones((1, Datum.num_latent_gps)) if diag else np.ones((1, 1, Datum.num_latent_gps))
     q_sqrt = ones * Datum.posterior_std
     model = gpflow.models.SVGP(
@@ -168,7 +169,7 @@ def test_variational_univariate_log_likelihood(diag: bool, whiten: bool) -> None
     reference_log_marginal_likelihood = univariate_log_marginal_likelihood(
         y=Datum.y_data, K=Datum.K, noise_var=Datum.noise_var
     )
-    q_mu = np.ones((1, Datum.num_latent_gps)) * Datum.posterior_mean
+    q_mu: AnyNDArray = np.ones((1, Datum.num_latent_gps)) * Datum.posterior_mean
     ones = np.ones((1, Datum.num_latent_gps)) if diag else np.ones((1, 1, Datum.num_latent_gps))
     q_sqrt = ones * Datum.posterior_std
     model = gpflow.models.SVGP(
@@ -188,7 +189,7 @@ def test_variational_univariate_log_likelihood(diag: bool, whiten: bool) -> None
 @pytest.mark.parametrize("diag", [True, False])
 @pytest.mark.parametrize("whiten", [True, False])
 def test_variational_univariate_conditionals(diag: bool, whiten: bool) -> None:
-    q_mu = np.ones((1, Datum.num_latent_gps)) * Datum.posterior_mean
+    q_mu: AnyNDArray = np.ones((1, Datum.num_latent_gps)) * Datum.posterior_mean
     ones = np.ones((1, Datum.num_latent_gps)) if diag else np.ones((1, 1, Datum.num_latent_gps))
     q_sqrt = ones * Datum.posterior_std
     model = gpflow.models.SVGP(
@@ -213,7 +214,7 @@ def test_variational_univariate_conditionals(diag: bool, whiten: bool) -> None:
 
 @pytest.mark.parametrize("whiten", [True, False])
 def test_variational_multivariate_prior_KL_full_q(whiten: bool) -> None:
-    cov_q = MultiDatum.q_sqrt_full @ MultiDatum.q_sqrt_full.T
+    cov_q: AnyNDArray = MultiDatum.q_sqrt_full @ MultiDatum.q_sqrt_full.T
     mean_prior = np.zeros((MultiDatum.dim, 1))
     cov_prior = (
         np.eye(MultiDatum.dim)
