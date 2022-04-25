@@ -23,8 +23,13 @@ import pytest
 import tensorflow as tf
 
 from gpflow.base import AnyNDArray
-from gpflow.experimental.check_shapes import check_shapes
-from gpflow.experimental.check_shapes.config import disable_check_shapes
+from gpflow.experimental.check_shapes import ShapeMismatchError
+from gpflow.experimental.check_shapes import check_shape as cs
+from gpflow.experimental.check_shapes import (
+    check_shapes,
+    disable_check_shapes,
+    inherit_check_shapes,
+)
 
 
 def test_check_shapes__numpy() -> None:
@@ -49,6 +54,64 @@ def test_check_shapes__tensorflow() -> None:
         return tf.zeros((3, 4))
 
     f(tf.zeros((2, 3)), tf.zeros((2, 4)))  # Don't crash...
+
+
+def test_check_shapes__tensorflow__keras() -> None:
+    # pylint: disable=arguments-differ,abstract-method,no-value-for-parameter,unexpected-keyword-arg
+
+    class SuperLayer(tf.keras.layers.Layer):
+        def __init__(self) -> None:
+            super().__init__()
+            self._b = tf.Variable(0.0)
+
+        @check_shapes(
+            "x: [batch, input_dim]",
+            "y: [batch, 1]",
+            "return: [batch, input_dim]",
+        )
+        def call(self, x: tf.Tensor, y: tf.Tensor) -> tf.Tensor:
+            return x + y + self._b
+
+    class SubLayer(SuperLayer):
+        @inherit_check_shapes
+        def call(self, x: tf.Tensor, y: tf.Tensor) -> tf.Tensor:
+            return x - y + self._b
+
+    class MyModel(tf.keras.Model):
+        def __init__(self, join: SuperLayer) -> None:
+            super().__init__()
+            self._join = join
+
+        @check_shapes(
+            "xy: [batch, input_dim_plus_one]",
+            "return: [batch, input_dim]",
+        )
+        def call(self, xy: tf.Tensor) -> tf.Tensor:
+            x = cs(xy[:, :-1], "[batch, input_dim]")
+            y = cs(xy[:, -1:], "[batch, 1]")
+            return self._join(x, y)
+
+    x = tf.ones((32, 3))
+    y = tf.zeros((32, 1))
+    xy = tf.concat([x, y], axis=1)
+    y_bad = tf.zeros((32, 2))
+    targets = tf.ones((32, 3))
+
+    def test_layer(join: SuperLayer) -> None:
+        join(x, y)
+
+        with pytest.raises(ShapeMismatchError):
+            join(x, y_bad)
+
+        model = MyModel(join)
+        model.compile(
+            optimizer=tf.keras.optimizers.SGD(learning_rate=0.25),
+            loss="mean_squared_error",
+        )
+        model.fit(x=xy, y=targets)
+
+    test_layer(SuperLayer())
+    test_layer(SubLayer())
 
 
 _F = Callable[[tf.Tensor], tf.Tensor]

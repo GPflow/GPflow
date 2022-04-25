@@ -15,8 +15,10 @@
 Decorator for checking the shapes of function using tf Tensors.
 """
 import inspect
-from functools import wraps
+from functools import update_wrapper
 from typing import Any, Callable, Sequence, cast
+
+import tensorflow as tf
 
 from ..utils import experimental
 from .accessors import set_check_shapes
@@ -70,7 +72,6 @@ def check_shapes(*specs: str) -> Callable[[C], C]:
         bound_error_context = FunctionDefinitionContext(func)
         signature = inspect.signature(func)
 
-        @wraps(func)
         def wrapped(*args: Any, **kwargs: Any) -> Any:
             if not get_enable_check_shapes():
                 return func(*args, **kwargs)
@@ -137,10 +138,12 @@ def check_shapes(*specs: str) -> Callable[[C], C]:
 
             return result
 
+        # Make TensorFlow understand our decoration:
+        tf.compat.v1.flags.tf_decorator.make_decorator(func, wrapped)
+
+        update_wrapper(wrapped, func)
         set_check_shapes(wrapped, _check_shapes)
-        wrapped.__doc__ = parse_and_rewrite_docstring(
-            wrapped.__doc__, func_spec, bound_error_context
-        )
+        wrapped.__doc__ = parse_and_rewrite_docstring(func.__doc__, func_spec, bound_error_context)
         return cast(C, wrapped)
 
     return _check_shapes
