@@ -61,11 +61,13 @@ __all__ = [
     "mean_functions",
     "models",
     "monitor",
+    "mypy_flags",
     "optimizers",
     "posteriors",
     "probability_distributions",
     "quadrature",
     "set_trainable",
+    "type_flags",
     "utilities",
     "versions",
 ]

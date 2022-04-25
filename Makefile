@@ -39,7 +39,7 @@ format-check:
 	isort --check-only $(ISORT_CONFIG) $(ISORT_TARGETS)
 
 type-check:
-	mypy $(MYPY_TARGETS)
+	mypy `python -m gpflow.mypy_flags` $(MYPY_TARGETS)
 
 test:
 	pytest -n auto --dist loadfile -v --durations=10 tests/

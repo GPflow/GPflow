@@ -27,10 +27,10 @@ rng = np.random.RandomState(0)
 
 
 class Datum:
-    X = rng.rand(20, 1) * 10
+    X: AnyNDArray = rng.rand(20, 1) * 10
     Y = np.sin(X) + 0.9 * np.cos(X * 1.6) + rng.randn(*X.shape) * 0.8
     Y = np.tile(Y, 2)  # two identical columns
-    Xtest = rng.rand(10, 1) * 10
+    Xtest: AnyNDArray = rng.rand(10, 1) * 10
     data = (X, Y)
 
 

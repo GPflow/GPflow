@@ -126,7 +126,10 @@ jobs:
           name: Run type check
           command: |
             source .venv/bin/activate
+            # Test without flags, as that is what our users are likely to do:
             mypy gpflow tests
+            # Test with flags improves coverage:
+            mypy $(python -m gpflow.mypy_flags) gpflow tests
 
   format-check:
     parameters:

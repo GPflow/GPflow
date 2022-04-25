@@ -17,7 +17,7 @@ from typing import Optional
 import numpy as np
 import tensorflow as tf
 
-from ..base import Parameter, TensorType
+from ..base import AnyNDArray, Parameter, TensorType
 from ..utilities import positive, to_default_float
 from .base import ActiveDims, Kernel
 
@@ -166,7 +166,7 @@ class Coregion(Kernel):
 
         self.output_dim = output_dim
         self.rank = rank
-        W = 0.1 * np.ones((self.output_dim, self.rank))
+        W: AnyNDArray = 0.1 * np.ones((self.output_dim, self.rank))
         kappa = np.ones(self.output_dim)
         self.W = Parameter(W)
         self.kappa = Parameter(kappa, transform=positive())

@@ -21,6 +21,7 @@ from _pytest.fixtures import SubRequest
 from packaging.version import Version
 
 import gpflow
+from gpflow.base import AnyNDArray
 from gpflow.config import Config, as_context
 from gpflow.utilities import set_trainable
 from gpflow.utilities.traversal import (
@@ -37,7 +38,7 @@ class Data:
     H1 = 2
     M = 10
     D = 1
-    Z = 0.5 * np.ones((M, 1))
+    Z: AnyNDArray = 0.5 * np.ones((M, 1))
     ls = 2.0
     var = 1.0
 

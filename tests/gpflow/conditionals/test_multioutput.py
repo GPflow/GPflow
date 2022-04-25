@@ -387,7 +387,7 @@ def test_fully_correlated_conditional_repeat_whiten(whiten: bool) -> None:
     """
     N, P = Data.N, Data.P
 
-    Lm = np.random.randn(1, 1).astype(np.float32) ** 2
+    Lm: AnyNDArray = np.random.randn(1, 1).astype(np.float32) ** 2
     Kmm = Lm * Lm + default_jitter()
 
     Kmn = tf.ones((1, N, P))
@@ -784,8 +784,8 @@ def test_compare_mixed_kernel() -> None:
 def test_multioutput_with_diag_q_sqrt() -> None:
     data = DataMixedKernel
 
-    q_sqrt_diag = np.ones((data.M, data.L)) * 2
-    q_sqrt = np.repeat(np.eye(data.M)[None, ...], data.L, axis=0) * 2  # L x M x M
+    q_sqrt_diag: AnyNDArray = np.ones((data.M, data.L)) * 2
+    q_sqrt: AnyNDArray = np.repeat(np.eye(data.M)[None, ...], data.L, axis=0) * 2  # L x M x M
 
     kern_list = [SquaredExponential() for _ in range(data.L)]
     k1 = mk.LinearCoregionalization(kern_list, W=data.W)
@@ -910,7 +910,7 @@ def test_independent_interdomain_conditional_whiten(whiten: bool) -> None:
     """
     N, P = Data.N, Data.P
 
-    Lm = np.random.randn(1, 1, 1).astype(np.float32) ** 2
+    Lm: AnyNDArray = np.random.randn(1, 1, 1).astype(np.float32) ** 2
     Kmm = Lm * Lm + default_jitter()
 
     Kmn = tf.ones((1, 1, N, P))

@@ -15,6 +15,7 @@
 import numpy as np
 import tensorflow as tf
 
+from gpflow.base import AnyNDArray
 from gpflow.likelihoods import HeteroskedasticTFPConditional
 
 tf.random.set_seed(99012)
@@ -25,7 +26,7 @@ class Data:
     N = 5
     Y = rng.randn(N, 1)
     f_mean = rng.randn(N, 2)
-    f_var = rng.randn(N, 2) ** 2
+    f_var: AnyNDArray = rng.randn(N, 2) ** 2
 
 
 def test_analytic_mean_and_var() -> None:

@@ -14,6 +14,7 @@
 
 # -*- coding: utf-8 -*-
 
+from typing import cast
 from unittest.mock import patch
 
 import numpy as np
@@ -90,7 +91,7 @@ class Datum:
     mu = rng.randn(M, N)  # [M, N]
     A = rng.randn(M, M)
     I = np.eye(M)  # [M, M]
-    K = A @ A.T + default_jitter() * I  # [M, M]
+    K: AnyNDArray = cast(AnyNDArray, A @ A.T) + default_jitter() * I  # [M, M]
     sqrt = make_sqrt(N, M)  # [N, M, M]
     sqrt_diag = rng.randn(M, N)  # [M, N]
     K_batch = make_K_batch(N, M)

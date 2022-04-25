@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Tuple
+from typing import Tuple, cast
 
 import numpy as np
 import tensorflow as tf
@@ -30,10 +30,10 @@ def data(rng: np.random.RandomState) -> Tuple[RegressionData, tf.Tensor, tf.Tens
     t: int = 20
     d: int = 2
 
-    x = rng.randn(n, d)
-    xs = rng.randn(t, d)  # test points
+    x: AnyNDArray = rng.randn(n, d)
+    xs: AnyNDArray = rng.randn(t, d)  # test points
     c: AnyNDArray = np.array([[-1.4], [0.5]])
-    y = np.sin(x @ c + 0.5 * rng.randn(n, 1))
+    y = np.sin(cast(AnyNDArray, x @ c) + 0.5 * rng.randn(n, 1))
     z = rng.randn(10, 2)
 
     return (tdf(x), tdf(y)), tdf(z), tdf(xs)

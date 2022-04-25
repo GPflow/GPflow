@@ -17,6 +17,7 @@ import pytest
 import tensorflow as tf
 
 import gpflow.kernels as kernels
+from gpflow.base import AnyNDArray
 
 rng = np.random.RandomState(0)
 
@@ -24,7 +25,7 @@ rng = np.random.RandomState(0)
 class Datum:
     num_data = 100
     D = 100
-    X = rng.rand(num_data, D) * 100
+    X: AnyNDArray = rng.rand(num_data, D) * 100
 
 
 kernel_list = [
