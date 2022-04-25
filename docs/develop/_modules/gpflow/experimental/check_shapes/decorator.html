@@ -263,8 +263,10 @@ function checkPageExistsAndRedirect(event) {
 <span class="sd">Decorator for checking the shapes of function using tf Tensors.</span>
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="kn">import</span> <span class="nn">inspect</span>
-<span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">wraps</span>
+<span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">update_wrapper</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">cast</span>
+
+<span class="kn">import</span> <span class="nn">tensorflow</span> <span class="k">as</span> <span class="nn">tf</span>
 
 <span class="kn">from</span> <span class="nn">..utils</span> <span class="kn">import</span> <span class="n">experimental</span>
 <span class="kn">from</span> <span class="nn">.accessors</span> <span class="kn">import</span> <span class="n">set_check_shapes</span>
@@ -318,7 +320,6 @@ function checkPageExistsAndRedirect(event) {
         <span class="n">bound_error_context</span> <span class="o">=</span> <span class="n">FunctionDefinitionContext</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
         <span class="n">signature</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
 
-        <span class="nd">@wraps</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
         <span class="k">def</span> <span class="nf">wrapped</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">get_enable_check_shapes</span><span class="p">():</span>
                 <span class="k">return</span> <span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
@@ -385,10 +386,12 @@ function checkPageExistsAndRedirect(event) {
 
             <span class="k">return</span> <span class="n">result</span>
 
+        <span class="c1"># Make TensorFlow understand our decoration:</span>
+        <span class="n">tf</span><span class="o">.</span><span class="n">compat</span><span class="o">.</span><span class="n">v1</span><span class="o">.</span><span class="n">flags</span><span class="o">.</span><span class="n">tf_decorator</span><span class="o">.</span><span class="n">make_decorator</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="n">wrapped</span><span class="p">)</span>
+
+        <span class="n">update_wrapper</span><span class="p">(</span><span class="n">wrapped</span><span class="p">,</span> <span class="n">func</span><span class="p">)</span>
         <span class="n">set_check_shapes</span><span class="p">(</span><span class="n">wrapped</span><span class="p">,</span> <span class="n">_check_shapes</span><span class="p">)</span>
-        <span class="n">wrapped</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">=</span> <span class="n">parse_and_rewrite_docstring</span><span class="p">(</span>
-            <span class="n">wrapped</span><span class="o">.</span><span class="vm">__doc__</span><span class="p">,</span> <span class="n">func_spec</span><span class="p">,</span> <span class="n">bound_error_context</span>
-        <span class="p">)</span>
+        <span class="n">wrapped</span><span class="o">.</span><span class="vm">__doc__</span> <span class="o">=</span> <span class="n">parse_and_rewrite_docstring</span><span class="p">(</span><span class="n">func</span><span class="o">.</span><span class="vm">__doc__</span><span class="p">,</span> <span class="n">func_spec</span><span class="p">,</span> <span class="n">bound_error_context</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">cast</span><span class="p">(</span><span class="n">C</span><span class="p">,</span> <span class="n">wrapped</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">_check_shapes</span></div>
