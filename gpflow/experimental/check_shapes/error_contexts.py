@@ -17,12 +17,13 @@
 """
 Infrastructure for describing the context of an error.
 
-The `MessageBuilder` is used to format / indent messages nicely.
+The :class:`MessageBuilder` is used to format / indent messages nicely.
 
-The `ErrorContext` is a reusable bit of information about where/why an error occurred that can be
-written to a `MessageBuilder`.
+The :class:`ErrorContext` is a reusable bit of information about where/why an error occurred that
+can be written to a :class:`MessageBuilder`.
 
-`ErrorContext`s can be composed using the `StackContext` and `ParallelContext`.
+:class:`ErrorContext`\ s can be composed using the :class:`StackContext` and
+:class:`ParallelContext`.
 
 This allows reusable error messages in a consistent format.
 """
@@ -59,7 +60,7 @@ _NONE_SHAPE = "<Tensor has unknown shape>"
 
 _NO_VALUE = object()
 """
-Sentinel to represent "no value" in places where `None` is a valid value.
+Sentinel to represent "no value" in places where ``None`` is a valid value.
 """
 
 
@@ -101,7 +102,7 @@ class MessageBuilder:
     @contextmanager
     def indent(self) -> Iterator["MessageBuilder"]:
         """
-        Indent text.
+        Context manager for indenting text.
         """
         child = MessageBuilder(self._indent_str + "  ")
         self._lines.append(child)
@@ -137,13 +138,13 @@ class ErrorContext(ABC):
     """
     A context in which an error can occur.
 
-    Contexts should be immutable, and implement __eq__ - so that they can be composed using
-    `StackContext` and `ParallelContext`.
+    Contexts should be immutable, and implement :func:`__eq__` - so that they can be composed using
+    :class:`StackContext` and :class:`ParallelContext`.
 
     The contexts are often created even if an error doesn't actually occur, so they should be cheap
-    to create - prefer to do any slow computation in `print`, rather than in `__init__`.
+    to create - prefer to do any slow computation in :func:`print`, rather than in :func:`__init__`.
 
-    Maybe think of an `ErrorContext` as a factory of error messages.
+    Maybe think of an :class:`ErrorContext` as a factory of error messages.
     """
 
     @abstractmethod

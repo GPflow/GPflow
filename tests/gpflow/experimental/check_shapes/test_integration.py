@@ -23,13 +23,13 @@ import pytest
 import tensorflow as tf
 
 from gpflow.base import AnyNDArray
-from gpflow.experimental.check_shapes import ShapeMismatchError
 from gpflow.experimental.check_shapes import check_shape as cs
 from gpflow.experimental.check_shapes import (
     check_shapes,
     disable_check_shapes,
     inherit_check_shapes,
 )
+from gpflow.experimental.check_shapes.exceptions import ShapeMismatchError
 
 
 def test_check_shapes__numpy() -> None:

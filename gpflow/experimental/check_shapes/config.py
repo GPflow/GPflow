@@ -22,6 +22,10 @@ _enabled = True
 
 
 class DocstringFormat(Enum):
+    """
+    Enumeration of supported formats of docstrings.
+    """
+
     SPHINX = "sphinx"
     """
     Rewrite docstrings in the `Sphinx <https://www.sphinx-doc.org/en/master/>`_ format.
@@ -41,7 +45,14 @@ def set_enable_check_shapes(enabled: bool) -> None:
     Set whether to enable :mod:`check_shapes`.
 
     Check shapes has a non-zero impact on performance. If this is unacceptable to you, you can
-    disable it.
+    use this function to disable it.
+
+    Example:
+
+    .. literalinclude:: /examples/test_check_shapes_examples.py
+       :start-after: [disable__manual]
+       :end-before: [disable__manual]
+       :dedent:
 
     See also :func:`disable_check_shapes`.
     """
@@ -61,10 +72,12 @@ def disable_check_shapes() -> Iterator[None]:
     """
     Context manager that temporarily disables shape checking.
 
-    Example::
+    Example:
 
-        with disable_check_shapes():
-            function_that_is_performance_sensitive()
+    .. literalinclude:: /examples/test_check_shapes_examples.py
+       :start-after: [disable__context_manager]
+       :end-before: [disable__context_manager]
+       :dedent:
     """
     old_value = get_enable_check_shapes()
     set_enable_check_shapes(False)

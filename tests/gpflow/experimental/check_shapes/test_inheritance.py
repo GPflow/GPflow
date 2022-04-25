@@ -21,12 +21,12 @@ from typing import Any, Callable, ContextManager
 import pytest
 
 from gpflow.experimental.check_shapes import (
-    ShapeMismatchError,
     check_shape,
     check_shapes,
     disable_check_shapes,
     inherit_check_shapes,
 )
+from gpflow.experimental.check_shapes.exceptions import ShapeMismatchError
 
 from .utils import TestShaped, current_line, t
 

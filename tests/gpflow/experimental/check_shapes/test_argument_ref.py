@@ -16,7 +16,6 @@ from typing import Any, Mapping, Optional, Sequence, Tuple
 
 import pytest
 
-from gpflow.experimental.check_shapes import ArgumentReferenceError
 from gpflow.experimental.check_shapes.argument_ref import RESULT_TOKEN, ArgumentRef
 from gpflow.experimental.check_shapes.error_contexts import (
     ArgumentContext,
@@ -27,6 +26,7 @@ from gpflow.experimental.check_shapes.error_contexts import (
     MappingValueContext,
     StackContext,
 )
+from gpflow.experimental.check_shapes.exceptions import ArgumentReferenceError
 
 from .utils import TestContext, all_ref, keys_ref, make_argument_ref, values_ref
 
