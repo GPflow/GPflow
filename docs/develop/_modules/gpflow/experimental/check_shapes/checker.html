@@ -397,6 +397,13 @@ function checkPageExistsAndRedirect(event) {
 
 <span class="sd">    This remembers observed shapes and specifications, so that tensors can be checked for</span>
 <span class="sd">    compatibility across multiple calls, and so that we can provide good error messages.</span>
+
+<span class="sd">    Example:</span>
+
+<span class="sd">    .. literalinclude:: /examples/test_check_shapes_examples.py</span>
+<span class="sd">       :start-after: [shape_checker__raw]</span>
+<span class="sd">       :end-before: [shape_checker__raw]</span>
+<span class="sd">       :dedent:</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="nd">@experimental</span>
@@ -415,6 +422,8 @@ function checkPageExistsAndRedirect(event) {
 <span class="sd">        Add arbirtary context to the shape checker.</span>
 
 <span class="sd">        This context will be included in any error messages.</span>
+
+<span class="sd">        :param context: Context to add to this shape checker.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_additional_context</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">context</span><span class="p">)</span></div>
 
@@ -428,10 +437,13 @@ function checkPageExistsAndRedirect(event) {
 <span class="sd">        compatibility across multiple calls, and so that we can provide good error messages.</span>
 
 <span class="sd">        :param shaped: The object whose shape to check.</span>
-<span class="sd">        :param tensor_spec: Specification to check the tensor against. See: `Check specification`_.</span>
-<span class="sd">        :param context: Information about where `shaped` is coming from, for improved error</span>
+<span class="sd">        :param tensor_spec: Specification to check the tensor against.</span>
+<span class="sd">            Usually this is a ``str`` in the format described in `Shape specification`_.</span>
+<span class="sd">            Alternatively this can be a pre-parsed :class:`ParsedTensorSpec`, or an actual</span>
+<span class="sd">            :class:`Shape`.</span>
+<span class="sd">        :param context: Information about where ``shaped`` is coming from, for improved error</span>
 <span class="sd">            messages.</span>
-<span class="sd">        :returns: `shaped`, for convenience.</span>
+<span class="sd">        :returns: ``shaped``, for convenience.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">get_enable_check_shapes</span><span class="p">():</span>
             <span class="k">return</span> <span class="n">shaped</span>
@@ -455,10 +467,10 @@ function checkPageExistsAndRedirect(event) {
 <span class="sd">        This remembers observed shapes and specifications, so that tensors can be checked for</span>
 <span class="sd">        compatibility across multiple calls, and so that we can provide good error messages.</span>
 
-<span class="sd">        :param checks: Checks to perform. The elements can either be `(shaped, tensor_spec)` or</span>
-<span class="sd">            `(shaped, tensor_spec, context)` tuples. Where: `shaped` is the tensor whose shape to</span>
-<span class="sd">            check; `tensor_spec` is the specification to check it against (see `Check</span>
-<span class="sd">            specification`_); and `context` contains (optional) information about where `shaped`</span>
+<span class="sd">        :param checks: Checks to perform. The elements can either be ``(shaped, tensor_spec)`` or</span>
+<span class="sd">            ``(shaped, tensor_spec, context)`` tuples. Where: ``shaped`` is the tensor whose shape</span>
+<span class="sd">            to check; ``tensor_spec`` is the specification to check it against (see `Shape</span>
+<span class="sd">            specification`_); and ``context`` contains (optional) information about where ``shaped``</span>
 <span class="sd">            came from - for better error messages.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">get_enable_check_shapes</span><span class="p">():</span>

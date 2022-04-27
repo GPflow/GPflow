@@ -269,26 +269,27 @@ function checkPageExistsAndRedirect(event) {
 
 <div class="viewcode-block" id="set_check_shapes"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/accessors/index.html#gpflow.experimental.check_shapes.accessors.set_check_shapes">[docs]</a><span class="k">def</span> <span class="nf">set_check_shapes</span><span class="p">(</span><span class="n">func</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">check_shapes</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">C</span><span class="p">],</span> <span class="n">C</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Store `check_shapes` in `func`, so that we later can tell which `check_shapes` was applied to</span>
-<span class="sd">    it.</span>
+<span class="sd">    Store ``check_shapes`` in ``func``, so that we later can tell which ``check_shapes`` was applied</span>
+<span class="sd">    to it.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="nb">setattr</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="s2">&quot;__check_shapes__&quot;</span><span class="p">,</span> <span class="n">check_shapes</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="maybe_get_check_shapes"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/index.html#gpflow.experimental.check_shapes.accessors.maybe_get_check_shapes">[docs]</a><span class="k">def</span> <span class="nf">maybe_get_check_shapes</span><span class="p">(</span><span class="n">func</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="n">C</span><span class="p">],</span> <span class="n">C</span><span class="p">]]:</span>
+<div class="viewcode-block" id="maybe_get_check_shapes"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/accessors/index.html#gpflow.experimental.check_shapes.accessors.maybe_get_check_shapes">[docs]</a><span class="k">def</span> <span class="nf">maybe_get_check_shapes</span><span class="p">(</span><span class="n">func</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="n">C</span><span class="p">],</span> <span class="n">C</span><span class="p">]]:</span>
     <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Get the `check_shapes` that was applied to `func`.</span>
+<span class="sd">    Get the ``check_shapes`` that was applied to ``func``.</span>
 
-<span class="sd">    Returns `None` if no `check_shapes` was applied to `func`.</span>
+<span class="sd">    :returns: The ``check_shapes`` that is wrapping ``func``, and ``None`` if no ``check_shapes`` is</span>
+<span class="sd">        not wrapping ``func``.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="s2">&quot;__check_shapes__&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="get_check_shapes"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/index.html#gpflow.experimental.check_shapes.accessors.get_check_shapes">[docs]</a><span class="k">def</span> <span class="nf">get_check_shapes</span><span class="p">(</span><span class="n">func</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">C</span><span class="p">],</span> <span class="n">C</span><span class="p">]:</span>
     <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Get the `check_shapes` that was applied to `func`.</span>
+<span class="sd">    Get the ``check_shapes`` that was applied to ``func``.</span>
 
-<span class="sd">    :raises ValueError: If no `check_shapes` was applied to `func`.</span>
+<span class="sd">    :raises ValueError: If no ``check_shapes`` was applied to ``func``.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">result</span> <span class="o">=</span> <span class="n">maybe_get_check_shapes</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">result</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>

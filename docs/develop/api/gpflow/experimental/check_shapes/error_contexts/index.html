@@ -34,7 +34,7 @@
     <script src="https://unpkg.com/@jupyter-widgets/html-manager@^0.20.1/dist/embed-amd.js"></script>
     <link rel="index" title="Index" href="../../../../../genindex.html" />
     <link rel="search" title="Search" href="../../../../../search.html" />
-    <link rel="next" title="gpflow.experimental.check_shapes.parser" href="../parser/index.html" />
+    <link rel="next" title="gpflow.experimental.check_shapes.exceptions" href="../exceptions/index.html" />
     <link rel="prev" title="gpflow.experimental.check_shapes.decorator" href="../decorator/index.html" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="docsearch:language" content="None">
@@ -340,6 +340,11 @@ function checkPageExistsAndRedirect(event) {
       </a>
      </li>
      <li class="toctree-l3">
+      <a class="reference internal" href="../exceptions/index.html">
+       gpflow.experimental.check_shapes.exceptions
+      </a>
+     </li>
+     <li class="toctree-l3">
       <a class="reference internal" href="../parser/index.html">
        gpflow.experimental.check_shapes.parser
       </a>
@@ -576,6 +581,26 @@ function checkPageExistsAndRedirect(event) {
   </a>
   <ul class="nav section-nav flex-column">
    <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#gpflow-experimental-check-shapes-error-contexts-larkunexpectedinputcontext">
+     gpflow.experimental.check_shapes.error_contexts.LarkUnexpectedInputContext
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#gpflow-experimental-check-shapes-error-contexts-messagebuilder">
+     gpflow.experimental.check_shapes.error_contexts.MessageBuilder
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#gpflow-experimental-check-shapes-error-contexts-multipleelementboolcontext">
+     gpflow.experimental.check_shapes.error_contexts.MultipleElementBoolContext
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#gpflow-experimental-check-shapes-error-contexts-objecttypecontext">
+     gpflow.experimental.check_shapes.error_contexts.ObjectTypeContext
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
     <a class="reference internal nav-link" href="#gpflow-experimental-check-shapes-error-contexts-parserinputcontext">
      gpflow.experimental.check_shapes.error_contexts.ParserInputContext
     </a>
@@ -611,13 +636,176 @@ function checkPageExistsAndRedirect(event) {
   <section id="gpflow-experimental-check-shapes-error-contexts">
 <h1>gpflow.experimental.check_shapes.error_contexts<a class="headerlink" href="#gpflow-experimental-check-shapes-error-contexts" title="Permalink to this headline">#</a></h1>
 <span class="target" id="module-gpflow.experimental.check_shapes.error_contexts"></span><p>Infrastructure for describing the context of an error.</p>
-<p>The <cite>MessageBuilder</cite> is used to format / indent messages nicely.</p>
-<p>The <cite>ErrorContext</cite> is a reusable bit of information about where/why an error occurred that can be
-written to a <cite>MessageBuilder</cite>.</p>
-<p><cite>ErrorContext`s can be composed using the `StackContext</cite> and <cite>ParallelContext</cite>.</p>
+<p>The <a class="reference internal" href="#gpflow.experimental.check_shapes.error_contexts.MessageBuilder" title="gpflow.experimental.check_shapes.error_contexts.MessageBuilder"><code class="xref py py-class docutils literal notranslate"><span class="pre">MessageBuilder</span></code></a> is used to format / indent messages nicely.</p>
+<p>The <a class="reference internal" href="../index.html#gpflow.experimental.check_shapes.ErrorContext" title="gpflow.experimental.check_shapes.error_contexts.ErrorContext"><code class="xref py py-class docutils literal notranslate"><span class="pre">ErrorContext</span></code></a> is a reusable bit of information about where/why an error occurred that
+can be written to a <a class="reference internal" href="#gpflow.experimental.check_shapes.error_contexts.MessageBuilder" title="gpflow.experimental.check_shapes.error_contexts.MessageBuilder"><code class="xref py py-class docutils literal notranslate"><span class="pre">MessageBuilder</span></code></a>.</p>
+<p><a class="reference internal" href="../index.html#gpflow.experimental.check_shapes.ErrorContext" title="gpflow.experimental.check_shapes.error_contexts.ErrorContext"><code class="xref py py-class docutils literal notranslate"><span class="pre">ErrorContext</span></code></a>s can be composed using the <a class="reference internal" href="../argument_ref/index.html#gpflow.experimental.check_shapes.argument_ref.StackContext" title="gpflow.experimental.check_shapes.error_contexts.StackContext"><code class="xref py py-class docutils literal notranslate"><span class="pre">StackContext</span></code></a> and
+<a class="reference internal" href="../bool_specs/index.html#gpflow.experimental.check_shapes.bool_specs.ParallelContext" title="gpflow.experimental.check_shapes.error_contexts.ParallelContext"><code class="xref py py-class docutils literal notranslate"><span class="pre">ParallelContext</span></code></a>.</p>
 <p>This allows reusable error messages in a consistent format.</p>
 <section id="classes">
 <h2>Classes<a class="headerlink" href="#classes" title="Permalink to this headline">#</a></h2>
+<section id="gpflow-experimental-check-shapes-error-contexts-larkunexpectedinputcontext">
+<h3>gpflow.experimental.check_shapes.error_contexts.LarkUnexpectedInputContext<a class="headerlink" href="#gpflow-experimental-check-shapes-error-contexts-larkunexpectedinputcontext" title="Permalink to this headline">#</a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="gpflow.experimental.check_shapes.error_contexts.LarkUnexpectedInputContext">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.experimental.check_shapes.error_contexts.</span></span><span class="sig-name descname"><span class="pre">LarkUnexpectedInputContext</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">error</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">terminal_descriptions</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/gpflow/experimental/check_shapes/error_contexts.html#LarkUnexpectedInputContext"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.experimental.check_shapes.error_contexts.LarkUnexpectedInputContext" title="Permalink to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#gpflow.experimental.check_shapes.error_contexts.ParserInputContext" title="gpflow.experimental.check_shapes.error_contexts.ParserInputContext"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.experimental.check_shapes.error_contexts.ParserInputContext</span></code></a></p>
+<p>An error was caused by an <cite>UnexpectedInput</cite> error from <cite>Lark</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>text</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>) – </p></li>
+<li><p><strong>error</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">UnexpectedInput</span></code>) – </p></li>
+<li><p><strong>terminal_descriptions</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Mapping</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>]) – </p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="gpflow.experimental.check_shapes.error_contexts.LarkUnexpectedInputContext.print">
+<span class="sig-name descname"><span class="pre">print</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">builder</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/gpflow/experimental/check_shapes/error_contexts.html#LarkUnexpectedInputContext.print"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.experimental.check_shapes.error_contexts.LarkUnexpectedInputContext.print" title="Permalink to this definition">#</a></dt>
+<dd><p>Print this context to the given <cite>MessageBuilder</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>builder</strong> (<a class="reference internal" href="#gpflow.experimental.check_shapes.error_contexts.MessageBuilder" title="gpflow.experimental.check_shapes.error_contexts.MessageBuilder"><code class="xref py py-class docutils literal notranslate"><span class="pre">MessageBuilder</span></code></a>) – </p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="gpflow-experimental-check-shapes-error-contexts-messagebuilder">
+<h3>gpflow.experimental.check_shapes.error_contexts.MessageBuilder<a class="headerlink" href="#gpflow-experimental-check-shapes-error-contexts-messagebuilder" title="Permalink to this headline">#</a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="gpflow.experimental.check_shapes.error_contexts.MessageBuilder">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.experimental.check_shapes.error_contexts.</span></span><span class="sig-name descname"><span class="pre">MessageBuilder</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">indent_str</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/gpflow/experimental/check_shapes/error_contexts.html#MessageBuilder"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.experimental.check_shapes.error_contexts.MessageBuilder" title="Permalink to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Utility for formatting nested text.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>indent_str</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>) – </p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="gpflow.experimental.check_shapes.error_contexts.MessageBuilder.add_columned_line">
+<span class="sig-name descname"><span class="pre">add_columned_line</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">texts</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/gpflow/experimental/check_shapes/error_contexts.html#MessageBuilder.add_columned_line"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.experimental.check_shapes.error_contexts.MessageBuilder.add_columned_line" title="Permalink to this definition">#</a></dt>
+<dd><p>Write a line of several values, left-aligned within the current indentation level.</p>
+<p>Inputs are converted to <cite>str`s using `str(text)</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>texts</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>) – </p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gpflow.experimental.check_shapes.error_contexts.MessageBuilder.add_line">
+<span class="sig-name descname"><span class="pre">add_line</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/gpflow/experimental/check_shapes/error_contexts.html#MessageBuilder.add_line"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.experimental.check_shapes.error_contexts.MessageBuilder.add_line" title="Permalink to this definition">#</a></dt>
+<dd><p>Write a line, indented at the current level.</p>
+<p>Input is converted to a <cite>str</cite> using <cite>str(text)</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>text</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>) – </p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gpflow.experimental.check_shapes.error_contexts.MessageBuilder.build">
+<span class="sig-name descname"><span class="pre">build</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/gpflow/experimental/check_shapes/error_contexts.html#MessageBuilder.build"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.experimental.check_shapes.error_contexts.MessageBuilder.build" title="Permalink to this definition">#</a></dt>
+<dd><p>Compile all collected text into a single string.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="gpflow.experimental.check_shapes.error_contexts.MessageBuilder.indent">
+<span class="sig-name descname"><span class="pre">indent</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/gpflow/experimental/check_shapes/error_contexts.html#MessageBuilder.indent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.experimental.check_shapes.error_contexts.MessageBuilder.indent" title="Permalink to this definition">#</a></dt>
+<dd><p>Context manager for indenting text.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Iterator</span></code>[<a class="reference internal" href="#gpflow.experimental.check_shapes.error_contexts.MessageBuilder" title="gpflow.experimental.check_shapes.error_contexts.MessageBuilder"><code class="xref py py-class docutils literal notranslate"><span class="pre">MessageBuilder</span></code></a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="gpflow-experimental-check-shapes-error-contexts-multipleelementboolcontext">
+<h3>gpflow.experimental.check_shapes.error_contexts.MultipleElementBoolContext<a class="headerlink" href="#gpflow-experimental-check-shapes-error-contexts-multipleelementboolcontext" title="Permalink to this headline">#</a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="gpflow.experimental.check_shapes.error_contexts.MultipleElementBoolContext">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.experimental.check_shapes.error_contexts.</span></span><span class="sig-name descname"><span class="pre">MultipleElementBoolContext</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">line</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">column</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/gpflow/experimental/check_shapes/error_contexts.html#MultipleElementBoolContext"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.experimental.check_shapes.error_contexts.MultipleElementBoolContext" title="Permalink to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#gpflow.experimental.check_shapes.error_contexts.ParserInputContext" title="gpflow.experimental.check_shapes.error_contexts.ParserInputContext"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.experimental.check_shapes.error_contexts.ParserInputContext</span></code></a></p>
+<p>An error was caused by trying to use a multi-element argument specification as a bool.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>text</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>) – </p></li>
+<li><p><strong>line</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>) – </p></li>
+<li><p><strong>column</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>) – </p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="gpflow.experimental.check_shapes.error_contexts.MultipleElementBoolContext.print">
+<span class="sig-name descname"><span class="pre">print</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">builder</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/gpflow/experimental/check_shapes/error_contexts.html#MultipleElementBoolContext.print"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.experimental.check_shapes.error_contexts.MultipleElementBoolContext.print" title="Permalink to this definition">#</a></dt>
+<dd><p>Print this context to the given <cite>MessageBuilder</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>builder</strong> (<a class="reference internal" href="#gpflow.experimental.check_shapes.error_contexts.MessageBuilder" title="gpflow.experimental.check_shapes.error_contexts.MessageBuilder"><code class="xref py py-class docutils literal notranslate"><span class="pre">MessageBuilder</span></code></a>) – </p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="gpflow-experimental-check-shapes-error-contexts-objecttypecontext">
+<h3>gpflow.experimental.check_shapes.error_contexts.ObjectTypeContext<a class="headerlink" href="#gpflow-experimental-check-shapes-error-contexts-objecttypecontext" title="Permalink to this headline">#</a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="gpflow.experimental.check_shapes.error_contexts.ObjectTypeContext">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.experimental.check_shapes.error_contexts.</span></span><span class="sig-name descname"><span class="pre">ObjectTypeContext</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obj</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/gpflow/experimental/check_shapes/error_contexts.html#ObjectTypeContext"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.experimental.check_shapes.error_contexts.ObjectTypeContext" title="Permalink to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference internal" href="../index.html#gpflow.experimental.check_shapes.ErrorContext" title="gpflow.experimental.check_shapes.error_contexts.ErrorContext"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.experimental.check_shapes.error_contexts.ErrorContext</span></code></a></p>
+<p>An error was caused by the type of an object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>obj</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>) – </p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="gpflow.experimental.check_shapes.error_contexts.ObjectTypeContext.print">
+<span class="sig-name descname"><span class="pre">print</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">builder</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/gpflow/experimental/check_shapes/error_contexts.html#ObjectTypeContext.print"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.experimental.check_shapes.error_contexts.ObjectTypeContext.print" title="Permalink to this definition">#</a></dt>
+<dd><p>Print this context to the given <cite>MessageBuilder</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>builder</strong> (<a class="reference internal" href="#gpflow.experimental.check_shapes.error_contexts.MessageBuilder" title="gpflow.experimental.check_shapes.error_contexts.MessageBuilder"><code class="xref py py-class docutils literal notranslate"><span class="pre">MessageBuilder</span></code></a>) – </p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
 <section id="gpflow-experimental-check-shapes-error-contexts-parserinputcontext">
 <h3>gpflow.experimental.check_shapes.error_contexts.ParserInputContext<a class="headerlink" href="#gpflow-experimental-check-shapes-error-contexts-parserinputcontext" title="Permalink to this headline">#</a></h3>
 <dl class="py class">
@@ -656,7 +844,7 @@ written to a <cite>MessageBuilder</cite>.</p>
 <dd><p>Print this context to the given <cite>MessageBuilder</cite>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>builder</strong> (<a class="reference internal" href="../index.html#gpflow.experimental.check_shapes.MessageBuilder" title="gpflow.experimental.check_shapes.error_contexts.MessageBuilder"><code class="xref py py-class docutils literal notranslate"><span class="pre">MessageBuilder</span></code></a>) – </p>
+<dd class="field-odd"><p><strong>builder</strong> (<a class="reference internal" href="#gpflow.experimental.check_shapes.error_contexts.MessageBuilder" title="gpflow.experimental.check_shapes.error_contexts.MessageBuilder"><code class="xref py py-class docutils literal notranslate"><span class="pre">MessageBuilder</span></code></a>) – </p>
 </dd>
 <dt class="field-even">Return type</dt>
 <dd class="field-even"><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></p>

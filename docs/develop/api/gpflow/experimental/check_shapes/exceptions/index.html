@@ -6,7 +6,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
-    <title>gpflow.experimental.check_shapes.decorator &#8212; GPflow 2.4.0 documentation</title>
+    <title>gpflow.experimental.check_shapes.exceptions &#8212; GPflow 2.4.0 documentation</title>
     
   <!-- Loaded before other Sphinx assets -->
   <link href="../../../../../_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
@@ -34,8 +34,8 @@
     <script src="https://unpkg.com/@jupyter-widgets/html-manager@^0.20.1/dist/embed-amd.js"></script>
     <link rel="index" title="Index" href="../../../../../genindex.html" />
     <link rel="search" title="Search" href="../../../../../search.html" />
-    <link rel="next" title="gpflow.experimental.check_shapes.error_contexts" href="../error_contexts/index.html" />
-    <link rel="prev" title="gpflow.experimental.check_shapes.checker_context" href="../checker_context/index.html" />
+    <link rel="next" title="gpflow.experimental.check_shapes.parser" href="../parser/index.html" />
+    <link rel="prev" title="gpflow.experimental.check_shapes.error_contexts" href="../error_contexts/index.html" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="docsearch:language" content="None">
     
@@ -141,14 +141,14 @@
 
 <!-- NOTE: this JS must live here (not in our global JS file) because it relies
      on being processed by Jinja before it is run (specifically for replacing
-     variables api/gpflow/experimental/check_shapes/decorator/index and {'json_url': 'https://gpflow.github.io/GPflow/versions.json', 'url_template': 'https://gpflow.github.io/GPflow/{version}/index.html', 'version_match': 'develop'}.
+     variables api/gpflow/experimental/check_shapes/exceptions/index and {'json_url': 'https://gpflow.github.io/GPflow/versions.json', 'url_template': 'https://gpflow.github.io/GPflow/{version}/index.html', 'version_match': 'develop'}.
 -->
 
 <script type="text/javascript">
 // Check if corresponding page path exists in other version of docs
 // and, if so, go there instead of the homepage of the other docs version
 function checkPageExistsAndRedirect(event) {
-    const currentFilePath = "api/gpflow/experimental/check_shapes/decorator/index.html",
+    const currentFilePath = "api/gpflow/experimental/check_shapes/exceptions/index.html",
           tryUrl = event.target.getAttribute("href");
     let otherDocsHomepage = tryUrl.replace(currentFilePath, "");
     $.ajax({
@@ -169,7 +169,7 @@ function checkPageExistsAndRedirect(event) {
 // Populate the version switcher from the JSON config file
 (function () {
     $.getJSON("https://gpflow.github.io/GPflow/versions.json", function(data, textStatus, jqXHR) {
-        const currentFilePath = "api/gpflow/experimental/check_shapes/decorator/index.html";
+        const currentFilePath = "api/gpflow/experimental/check_shapes/exceptions/index.html";
         // create links to the corresponding page in the other docs versions
         $.each(data, function(index, entry) {
             // if no custom name specified (e.g., "latest"), use version string
@@ -329,8 +329,8 @@ function checkPageExistsAndRedirect(event) {
        gpflow.experimental.check_shapes.checker_context
       </a>
      </li>
-     <li class="toctree-l3 current active">
-      <a class="current reference internal" href="#">
+     <li class="toctree-l3">
+      <a class="reference internal" href="../decorator/index.html">
        gpflow.experimental.check_shapes.decorator
       </a>
      </li>
@@ -339,8 +339,8 @@ function checkPageExistsAndRedirect(event) {
        gpflow.experimental.check_shapes.error_contexts
       </a>
      </li>
-     <li class="toctree-l3">
-      <a class="reference internal" href="../exceptions/index.html">
+     <li class="toctree-l3 current active">
+      <a class="current reference internal" href="#">
        gpflow.experimental.check_shapes.exceptions
       </a>
      </li>
@@ -581,40 +581,23 @@ function checkPageExistsAndRedirect(event) {
   </a>
   <ul class="nav section-nav flex-column">
    <li class="toc-h3 nav-item toc-entry">
-    <a class="reference internal nav-link" href="#gpflow-experimental-check-shapes-decorator-conditioncontext">
-     gpflow.experimental.check_shapes.decorator.ConditionContext
+    <a class="reference internal nav-link" href="#gpflow-experimental-check-shapes-exceptions-checkshapeserror">
+     gpflow.experimental.check_shapes.exceptions.CheckShapesError
     </a>
    </li>
    <li class="toc-h3 nav-item toc-entry">
-    <a class="reference internal nav-link" href="#gpflow-experimental-check-shapes-decorator-functiondefinitioncontext">
-     gpflow.experimental.check_shapes.decorator.FunctionDefinitionContext
+    <a class="reference internal nav-link" href="#gpflow-experimental-check-shapes-exceptions-docstringparseerror">
+     gpflow.experimental.check_shapes.exceptions.DocstringParseError
     </a>
    </li>
    <li class="toc-h3 nav-item toc-entry">
-    <a class="reference internal nav-link" href="#gpflow-experimental-check-shapes-decorator-parsedargumentspec">
-     gpflow.experimental.check_shapes.decorator.ParsedArgumentSpec
-    </a>
-   </li>
-  </ul>
- </li>
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#functions">
-   Functions
-  </a>
-  <ul class="nav section-nav flex-column">
-   <li class="toc-h3 nav-item toc-entry">
-    <a class="reference internal nav-link" href="#gpflow-experimental-check-shapes-decorator-null-check-shapes">
-     gpflow.experimental.check_shapes.decorator.null_check_shapes
+    <a class="reference internal nav-link" href="#gpflow-experimental-check-shapes-exceptions-noshapeerror">
+     gpflow.experimental.check_shapes.exceptions.NoShapeError
     </a>
    </li>
    <li class="toc-h3 nav-item toc-entry">
-    <a class="reference internal nav-link" href="#gpflow-experimental-check-shapes-decorator-parse-and-rewrite-docstring">
-     gpflow.experimental.check_shapes.decorator.parse_and_rewrite_docstring
-    </a>
-   </li>
-   <li class="toc-h3 nav-item toc-entry">
-    <a class="reference internal nav-link" href="#gpflow-experimental-check-shapes-decorator-parse-function-spec">
-     gpflow.experimental.check_shapes.decorator.parse_function_spec
+    <a class="reference internal nav-link" href="#gpflow-experimental-check-shapes-exceptions-specificationparseerror">
+     gpflow.experimental.check_shapes.exceptions.SpecificationParseError
     </a>
    </li>
   </ul>
@@ -640,145 +623,67 @@ function checkPageExistsAndRedirect(event) {
               
               <div>
                 
-  <section id="gpflow-experimental-check-shapes-decorator">
-<h1>gpflow.experimental.check_shapes.decorator<a class="headerlink" href="#gpflow-experimental-check-shapes-decorator" title="Permalink to this headline">#</a></h1>
-<span class="target" id="module-gpflow.experimental.check_shapes.decorator"></span><p>Decorator for checking the shapes of function using tf Tensors.</p>
+  <section id="gpflow-experimental-check-shapes-exceptions">
+<h1>gpflow.experimental.check_shapes.exceptions<a class="headerlink" href="#gpflow-experimental-check-shapes-exceptions" title="Permalink to this headline">#</a></h1>
+<span class="target" id="module-gpflow.experimental.check_shapes.exceptions"></span><p>Exceptions generated by <cite>check_shapes</cite>.</p>
+<p>These rely heavily on the infrastructure in <cite>error_contexts.py</cite>.</p>
 <section id="classes">
 <h2>Classes<a class="headerlink" href="#classes" title="Permalink to this headline">#</a></h2>
-<section id="gpflow-experimental-check-shapes-decorator-conditioncontext">
-<h3>gpflow.experimental.check_shapes.decorator.ConditionContext<a class="headerlink" href="#gpflow-experimental-check-shapes-decorator-conditioncontext" title="Permalink to this headline">#</a></h3>
+<section id="gpflow-experimental-check-shapes-exceptions-checkshapeserror">
+<h3>gpflow.experimental.check_shapes.exceptions.CheckShapesError<a class="headerlink" href="#gpflow-experimental-check-shapes-exceptions-checkshapeserror" title="Permalink to this headline">#</a></h3>
 <dl class="py class">
-<dt class="sig sig-object py" id="gpflow.experimental.check_shapes.decorator.ConditionContext">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.experimental.check_shapes.decorator.</span></span><span class="sig-name descname"><span class="pre">ConditionContext</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">condition</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/gpflow/experimental/check_shapes/error_contexts.html#ConditionContext"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.experimental.check_shapes.decorator.ConditionContext" title="Permalink to this definition">#</a></dt>
-<dd><p>Bases: <a class="reference internal" href="../index.html#gpflow.experimental.check_shapes.ErrorContext" title="gpflow.experimental.check_shapes.error_contexts.ErrorContext"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.experimental.check_shapes.error_contexts.ErrorContext</span></code></a></p>
-<p>An error occurred in a conditional context.</p>
+<dt class="sig sig-object py" id="gpflow.experimental.check_shapes.exceptions.CheckShapesError">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.experimental.check_shapes.exceptions.</span></span><span class="sig-name descname"><span class="pre">CheckShapesError</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">context</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/gpflow/experimental/check_shapes/exceptions.html#CheckShapesError"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.experimental.check_shapes.exceptions.CheckShapesError" title="Permalink to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Exception</span></code></p>
+<p>Common super class for <cite>check_shapes</cite> errors.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>condition</strong> (<a class="reference internal" href="../bool_specs/index.html#gpflow.experimental.check_shapes.bool_specs.ParsedBoolSpec" title="gpflow.experimental.check_shapes.bool_specs.ParsedBoolSpec"><code class="xref py py-class docutils literal notranslate"><span class="pre">ParsedBoolSpec</span></code></a>) – </p>
+<dd class="field-odd"><p><strong>context</strong> (<a class="reference internal" href="../index.html#gpflow.experimental.check_shapes.ErrorContext" title="gpflow.experimental.check_shapes.error_contexts.ErrorContext"><code class="xref py py-class docutils literal notranslate"><span class="pre">ErrorContext</span></code></a>) – </p>
 </dd>
 </dl>
-<dl class="py method">
-<dt class="sig sig-object py" id="gpflow.experimental.check_shapes.decorator.ConditionContext.print">
-<span class="sig-name descname"><span class="pre">print</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">builder</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/gpflow/experimental/check_shapes/error_contexts.html#ConditionContext.print"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.experimental.check_shapes.decorator.ConditionContext.print" title="Permalink to this definition">#</a></dt>
-<dd><p>Print this context to the given <cite>MessageBuilder</cite>.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>builder</strong> (<a class="reference internal" href="../error_contexts/index.html#gpflow.experimental.check_shapes.error_contexts.MessageBuilder" title="gpflow.experimental.check_shapes.error_contexts.MessageBuilder"><code class="xref py py-class docutils literal notranslate"><span class="pre">MessageBuilder</span></code></a>) – </p>
-</dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></p>
-</dd>
-</dl>
-</dd></dl>
-
 </dd></dl>
 
 </section>
-<section id="gpflow-experimental-check-shapes-decorator-functiondefinitioncontext">
-<h3>gpflow.experimental.check_shapes.decorator.FunctionDefinitionContext<a class="headerlink" href="#gpflow-experimental-check-shapes-decorator-functiondefinitioncontext" title="Permalink to this headline">#</a></h3>
+<section id="gpflow-experimental-check-shapes-exceptions-docstringparseerror">
+<h3>gpflow.experimental.check_shapes.exceptions.DocstringParseError<a class="headerlink" href="#gpflow-experimental-check-shapes-exceptions-docstringparseerror" title="Permalink to this headline">#</a></h3>
 <dl class="py class">
-<dt class="sig sig-object py" id="gpflow.experimental.check_shapes.decorator.FunctionDefinitionContext">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.experimental.check_shapes.decorator.</span></span><span class="sig-name descname"><span class="pre">FunctionDefinitionContext</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">func</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/gpflow/experimental/check_shapes/error_contexts.html#FunctionDefinitionContext"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.experimental.check_shapes.decorator.FunctionDefinitionContext" title="Permalink to this definition">#</a></dt>
-<dd><p>Bases: <a class="reference internal" href="../index.html#gpflow.experimental.check_shapes.ErrorContext" title="gpflow.experimental.check_shapes.error_contexts.ErrorContext"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.experimental.check_shapes.error_contexts.ErrorContext</span></code></a></p>
-<p>An error occured in the context of a function definition.</p>
+<dt class="sig sig-object py" id="gpflow.experimental.check_shapes.exceptions.DocstringParseError">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.experimental.check_shapes.exceptions.</span></span><span class="sig-name descname"><span class="pre">DocstringParseError</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">context</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/gpflow/experimental/check_shapes/exceptions.html#DocstringParseError"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.experimental.check_shapes.exceptions.DocstringParseError" title="Permalink to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#gpflow.experimental.check_shapes.exceptions.CheckShapesError" title="gpflow.experimental.check_shapes.exceptions.CheckShapesError"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.experimental.check_shapes.exceptions.CheckShapesError</span></code></a></p>
+<p>Error raised if there was an error parsing the shape specification.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>func</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Callable</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">...</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>]) – </p>
+<dd class="field-odd"><p><strong>context</strong> (<a class="reference internal" href="../index.html#gpflow.experimental.check_shapes.ErrorContext" title="gpflow.experimental.check_shapes.error_contexts.ErrorContext"><code class="xref py py-class docutils literal notranslate"><span class="pre">ErrorContext</span></code></a>) – </p>
 </dd>
 </dl>
-<dl class="py method">
-<dt class="sig sig-object py" id="gpflow.experimental.check_shapes.decorator.FunctionDefinitionContext.print">
-<span class="sig-name descname"><span class="pre">print</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">builder</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/gpflow/experimental/check_shapes/error_contexts.html#FunctionDefinitionContext.print"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.experimental.check_shapes.decorator.FunctionDefinitionContext.print" title="Permalink to this definition">#</a></dt>
-<dd><p>Print this context to the given <cite>MessageBuilder</cite>.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>builder</strong> (<a class="reference internal" href="../error_contexts/index.html#gpflow.experimental.check_shapes.error_contexts.MessageBuilder" title="gpflow.experimental.check_shapes.error_contexts.MessageBuilder"><code class="xref py py-class docutils literal notranslate"><span class="pre">MessageBuilder</span></code></a>) – </p>
-</dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></p>
-</dd>
-</dl>
-</dd></dl>
-
 </dd></dl>
 
 </section>
-<section id="gpflow-experimental-check-shapes-decorator-parsedargumentspec">
-<h3>gpflow.experimental.check_shapes.decorator.ParsedArgumentSpec<a class="headerlink" href="#gpflow-experimental-check-shapes-decorator-parsedargumentspec" title="Permalink to this headline">#</a></h3>
+<section id="gpflow-experimental-check-shapes-exceptions-noshapeerror">
+<h3>gpflow.experimental.check_shapes.exceptions.NoShapeError<a class="headerlink" href="#gpflow-experimental-check-shapes-exceptions-noshapeerror" title="Permalink to this headline">#</a></h3>
 <dl class="py class">
-<dt class="sig sig-object py" id="gpflow.experimental.check_shapes.decorator.ParsedArgumentSpec">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.experimental.check_shapes.decorator.</span></span><span class="sig-name descname"><span class="pre">ParsedArgumentSpec</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">argument_ref</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">condition</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/gpflow/experimental/check_shapes/specs.html#ParsedArgumentSpec"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.experimental.check_shapes.decorator.ParsedArgumentSpec" title="Permalink to this definition">#</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dt class="sig sig-object py" id="gpflow.experimental.check_shapes.exceptions.NoShapeError">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.experimental.check_shapes.exceptions.</span></span><span class="sig-name descname"><span class="pre">NoShapeError</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">context</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/gpflow/experimental/check_shapes/exceptions.html#NoShapeError"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.experimental.check_shapes.exceptions.NoShapeError" title="Permalink to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#gpflow.experimental.check_shapes.exceptions.CheckShapesError" title="gpflow.experimental.check_shapes.exceptions.CheckShapesError"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.experimental.check_shapes.exceptions.CheckShapesError</span></code></a></p>
+<p>Error raised if we are trying to get the shape of an object that does not have a shape.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>argument_ref</strong> (<a class="reference internal" href="../argument_ref/index.html#gpflow.experimental.check_shapes.argument_ref.ArgumentRef" title="gpflow.experimental.check_shapes.argument_ref.ArgumentRef"><code class="xref py py-class docutils literal notranslate"><span class="pre">ArgumentRef</span></code></a>) – </p></li>
-<li><p><strong>tensor</strong> (<a class="reference internal" href="../checker/index.html#gpflow.experimental.check_shapes.checker.ParsedTensorSpec" title="gpflow.experimental.check_shapes.specs.ParsedTensorSpec"><code class="xref py py-class docutils literal notranslate"><span class="pre">ParsedTensorSpec</span></code></a>) – </p></li>
-<li><p><strong>condition</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<a class="reference internal" href="../bool_specs/index.html#gpflow.experimental.check_shapes.bool_specs.ParsedBoolSpec" title="gpflow.experimental.check_shapes.bool_specs.ParsedBoolSpec"><code class="xref py py-class docutils literal notranslate"><span class="pre">ParsedBoolSpec</span></code></a>]) – </p></li>
-</ul>
+<dd class="field-odd"><p><strong>context</strong> (<a class="reference internal" href="../index.html#gpflow.experimental.check_shapes.ErrorContext" title="gpflow.experimental.check_shapes.error_contexts.ErrorContext"><code class="xref py py-class docutils literal notranslate"><span class="pre">ErrorContext</span></code></a>) – </p>
 </dd>
 </dl>
 </dd></dl>
 
 </section>
-</section>
-<section id="functions">
-<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this headline">#</a></h2>
-<section id="gpflow-experimental-check-shapes-decorator-null-check-shapes">
-<h3>gpflow.experimental.check_shapes.decorator.null_check_shapes<a class="headerlink" href="#gpflow-experimental-check-shapes-decorator-null-check-shapes" title="Permalink to this headline">#</a></h3>
-<dl class="py function">
-<dt class="sig sig-object py" id="gpflow.experimental.check_shapes.decorator.null_check_shapes">
-<span class="sig-prename descclassname"><span class="pre">gpflow.experimental.check_shapes.decorator.</span></span><span class="sig-name descname"><span class="pre">null_check_shapes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">func</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/gpflow/experimental/check_shapes/decorator.html#null_check_shapes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.experimental.check_shapes.decorator.null_check_shapes" title="Permalink to this definition">#</a></dt>
-<dd><p>Annotates the given function so that it looks like it has shape checks, but without actually
-checking anything.</p>
-<p>This is necessary not to break <code class="docutils literal notranslate"><span class="pre">&#64;inherit_check_shapes</span></code> when shape checking is disabled.</p>
+<section id="gpflow-experimental-check-shapes-exceptions-specificationparseerror">
+<h3>gpflow.experimental.check_shapes.exceptions.SpecificationParseError<a class="headerlink" href="#gpflow-experimental-check-shapes-exceptions-specificationparseerror" title="Permalink to this headline">#</a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="gpflow.experimental.check_shapes.exceptions.SpecificationParseError">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.experimental.check_shapes.exceptions.</span></span><span class="sig-name descname"><span class="pre">SpecificationParseError</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">context</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/gpflow/experimental/check_shapes/exceptions.html#SpecificationParseError"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.experimental.check_shapes.exceptions.SpecificationParseError" title="Permalink to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#gpflow.experimental.check_shapes.exceptions.CheckShapesError" title="gpflow.experimental.check_shapes.exceptions.CheckShapesError"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.experimental.check_shapes.exceptions.CheckShapesError</span></code></a></p>
+<p>Error raised if there was an error parsing the shape specification.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>func</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">TypeVar</span></code>(<code class="docutils literal notranslate"><span class="pre">C</span></code>, bound= <code class="xref py py-data docutils literal notranslate"><span class="pre">Callable</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">...</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>])) – </p>
-</dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">TypeVar</span></code>(<code class="docutils literal notranslate"><span class="pre">C</span></code>, bound= <code class="xref py py-data docutils literal notranslate"><span class="pre">Callable</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">...</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>])</p>
-</dd>
-</dl>
-</dd></dl>
-
-</section>
-<section id="gpflow-experimental-check-shapes-decorator-parse-and-rewrite-docstring">
-<h3>gpflow.experimental.check_shapes.decorator.parse_and_rewrite_docstring<a class="headerlink" href="#gpflow-experimental-check-shapes-decorator-parse-and-rewrite-docstring" title="Permalink to this headline">#</a></h3>
-<dl class="py function">
-<dt class="sig sig-object py" id="gpflow.experimental.check_shapes.decorator.parse_and_rewrite_docstring">
-<span class="sig-prename descclassname"><span class="pre">gpflow.experimental.check_shapes.decorator.</span></span><span class="sig-name descname"><span class="pre">parse_and_rewrite_docstring</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">docstring</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">function_spec</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">context</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/gpflow/experimental/check_shapes/parser.html#parse_and_rewrite_docstring"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.experimental.check_shapes.decorator.parse_and_rewrite_docstring" title="Permalink to this definition">#</a></dt>
-<dd><p>Rewrite <cite>docstring</cite> to include the shapes specified by the <cite>argument_specs</cite>.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>docstring</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>]) – </p></li>
-<li><p><strong>function_spec</strong> (<a class="reference internal" href="../parser/index.html#gpflow.experimental.check_shapes.parser.ParsedFunctionSpec" title="gpflow.experimental.check_shapes.specs.ParsedFunctionSpec"><code class="xref py py-class docutils literal notranslate"><span class="pre">ParsedFunctionSpec</span></code></a>) – </p></li>
-<li><p><strong>context</strong> (<a class="reference internal" href="../index.html#gpflow.experimental.check_shapes.ErrorContext" title="gpflow.experimental.check_shapes.error_contexts.ErrorContext"><code class="xref py py-class docutils literal notranslate"><span class="pre">ErrorContext</span></code></a>) – </p></li>
-</ul>
-</dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>]</p>
-</dd>
-</dl>
-</dd></dl>
-
-</section>
-<section id="gpflow-experimental-check-shapes-decorator-parse-function-spec">
-<h3>gpflow.experimental.check_shapes.decorator.parse_function_spec<a class="headerlink" href="#gpflow-experimental-check-shapes-decorator-parse-function-spec" title="Permalink to this headline">#</a></h3>
-<dl class="py function">
-<dt class="sig sig-object py" id="gpflow.experimental.check_shapes.decorator.parse_function_spec">
-<span class="sig-prename descclassname"><span class="pre">gpflow.experimental.check_shapes.decorator.</span></span><span class="sig-name descname"><span class="pre">parse_function_spec</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">function_spec</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">context</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/gpflow/experimental/check_shapes/parser.html#parse_function_spec"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.experimental.check_shapes.decorator.parse_function_spec" title="Permalink to this definition">#</a></dt>
-<dd><p>Parse all <cite>check_shapes</cite> argument or note specification for a single function.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>function_spec</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Sequence</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>]) – </p></li>
-<li><p><strong>context</strong> (<a class="reference internal" href="../index.html#gpflow.experimental.check_shapes.ErrorContext" title="gpflow.experimental.check_shapes.error_contexts.ErrorContext"><code class="xref py py-class docutils literal notranslate"><span class="pre">ErrorContext</span></code></a>) – </p></li>
-</ul>
-</dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p><a class="reference internal" href="../parser/index.html#gpflow.experimental.check_shapes.parser.ParsedFunctionSpec" title="gpflow.experimental.check_shapes.specs.ParsedFunctionSpec"><code class="xref py py-class docutils literal notranslate"><span class="pre">ParsedFunctionSpec</span></code></a></p>
+<dd class="field-odd"><p><strong>context</strong> (<a class="reference internal" href="../index.html#gpflow.experimental.check_shapes.ErrorContext" title="gpflow.experimental.check_shapes.error_contexts.ErrorContext"><code class="xref py py-class docutils literal notranslate"><span class="pre">ErrorContext</span></code></a>) – </p>
 </dd>
 </dl>
 </dd></dl>
