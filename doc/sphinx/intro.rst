@@ -18,7 +18,7 @@ Version history is documented `here <https://github.com/GPflow/GPflow/blob/maste
 
 Getting Started
 ---------------
-Get started with our `examples and tutorials <notebooks/intro.html>`_.
+Get started with our :doc:`manual`.
 
 
 What's the difference between GPy and GPflow?
