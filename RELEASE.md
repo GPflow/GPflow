@@ -6,7 +6,8 @@ Release notes for all past releases are available in the ['Releases' section](ht
 
 ## Breaking Changes
 
-* `gpflow.utilities.utilities` has been removed. It was scheduled for deletion in `2.3.0`. Use `gpflow.utilities` instead.
+* <DOCUMENT BREAKING CHANGES HERE>
+* <THIS SECTION SHOULD CONTAIN API AND BEHAVIORAL BREAKING CHANGES>
 
 ## Known Caveats
 
@@ -32,21 +33,20 @@ This release contains contributions from:
 <INSERT>, <NAME>, <HERE>, <USING>, <GITHUB>, <HANDLE>
 
 
-# Release 2.5.0 (next upcoming release in progress)
+# Release 2.5.1 (next upcoming release in progress)
 
 <INSERT SMALL BLURB ABOUT RELEASE FOCUS AREA AND POTENTIAL TOOLCHAIN CHANGES>
 
 ## Breaking Changes
 
-* Removed method `Likelihood.predict_density`, which has been deprecated since March 24, 2020.
-* Removed property `ScalarLikelihood.num_gauss_hermite_points`, which has been deprecated since September 30, 2020.
+* <DOCUMENT BREAKING CHANGES HERE>
+* <THIS SECTION SHOULD CONTAIN API AND BEHAVIORAL BREAKING CHANGES>
 
 ## Known Caveats
 
-* Dropped support for Python 3.6. New minimum version is 3.7.
-* Dropped support for TensorFlow 2.2 and 2.3. New minimum version is 2.4
-* Further improvements to type hints - this may reveal new problems in your code-base if
-  you use a type checker, such as `mypy`.
+* <CAVEATS REGARDING THE RELEASE (BUT NOT BREAKING CHANGES).>
+* <ADDING/BUMPING DEPENDENCIES SHOULD GO HERE>
+* <KNOWN LACK OF SUPPORT ON SOME PLATFORM SHOULD GO HERE>
 
 ## Major Features and Improvements
 
@@ -55,14 +55,72 @@ This release contains contributions from:
 
 ## Bug Fixes and Other Changes
 
-* Minor improvement to code clarity (variable scoping) in SVGP model (#1800)
-* Improving mathematical formatting in docs (SGPR derivations) (#1806)
+* <SIMILAR TO ABOVE SECTION, BUT FOR OTHER IMPORTANT CHANGES / BUG FIXES>
+* <IF A CHANGE CLOSES A GITHUB ISSUE, IT SHOULD BE DOCUMENTED HERE>
+* <NOTES SHOULD BE GROUPED PER AREA>
 
 ## Thanks to our Contributors
 
 This release contains contributions from:
 
-ltiao, jesnie
+<INSERT>, <NAME>, <HERE>, <USING>, <GITHUB>, <HANDLE>
+
+
+# Release 2.5.0
+
+The focus of this release has mostly been bumping the minimally supported versions of Python and
+TensorFlow; and development of `gpflow.experimental.check_shapes`.
+
+## Breaking Changes
+
+* Dropped support for Python 3.6. New minimum version is 3.7. (#1803, #1859)
+* Dropped support for TensorFlow 2.2 and 2.3. New minimum version is 2.4. (#1803)
+* Removed sub-package `gpflow.utilities.utilities`. It was scheduled for deletion in `2.3.0`.
+  Use `gpflow.utilities` instead. (#1804)
+* Removed method `Likelihood.predict_density`, which has been deprecated since March 24, 2020.
+  (#1804)
+* Removed property `ScalarLikelihood.num_gauss_hermite_points`, which has been deprecated since
+  September 30, 2020. (#1804)
+
+## Known Caveats
+
+* Further improvements to type hints - this may reveal new problems in your code-base if
+  you use a type checker, such as `mypy`. (#1795, #1799, #1802, #1812, #1814, #1816)
+
+## Major Features and Improvements
+
+* Significant work on `gpflow.experimental.check_shapes`.
+
+  - Support anonymous dimensions. (#1796)
+  - Add a hook to let the user register shapes for custom types. (#1798)
+  - Support `Optional` values. (#1797)
+  - Make it configurable. (#1810)
+  - Add accesors for setting/getting previously applied checks. (#1815)
+  - Much improved error messages. (#1822)
+  - Add support for user notes on shapes. (#1836)
+  - Support checking all elements of collections. (#1840)
+  - Enable stand-alone shape checking, without using a decorator. (#1845)
+  - Support for broadcasts. (#1849)
+  - Add support for checking the shapes of intermediate computations. (#1853)
+  - Support conditional shapes. (#1855)
+
+* Significant speed-up of the GPR posterior objects. (#1809, #1811)
+
+* Significant improvements to documentation. Note the new home page:
+  https://gpflow.github.io/GPflow/index.html
+  (#1828, #1829, #1830, #1831, #1833, #1841, #1842, #1856, #1857)
+
+## Bug Fixes and Other Changes
+
+* Minor improvement to code clarity (variable scoping) in SVGP model. (#1800)
+* Improving mathematical formatting in docs (SGPR derivations). (#1806)
+* Allow anisotropic kernels to have negative length-scales. (#1843)
+
+## Thanks to our Contributors
+
+This release contains contributions from:
+
+ltiao, uri.granta, frgsimpson, st--, jesnie
 
 
 # Release 2.4.0
