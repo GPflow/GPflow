@@ -33,9 +33,10 @@ def get_shape(shaped: Any, context: ErrorContext) -> Shape:
     """
     Returns the shape of the given object.
 
-    Returns `None` if the object has as shape, but it is unknown.
-
-    Raises an exception if objects of that type do not have shapes.
+    :param shaped: The objects whose shape to extract.
+    :param context: Context we are getting the shape in, for improved error messages.
+    :returns: The shape of ``shaped``, or ``None`` if the shape exists, but is unknown.
+    :raises NoShapeError: If objects of this type does not have shapes.
     """
     raise NoShapeError(StackContext(context, ObjectTypeContext(shaped)))
 

@@ -149,6 +149,13 @@ class ShapeChecker:
 
     This remembers observed shapes and specifications, so that tensors can be checked for
     compatibility across multiple calls, and so that we can provide good error messages.
+
+    Example:
+
+    .. literalinclude:: /examples/test_check_shapes_examples.py
+       :start-after: [shape_checker__raw]
+       :end-before: [shape_checker__raw]
+       :dedent:
     """
 
     @experimental
@@ -167,6 +174,8 @@ class ShapeChecker:
         Add arbirtary context to the shape checker.
 
         This context will be included in any error messages.
+
+        :param context: Context to add to this shape checker.
         """
         self._additional_context.append(context)
 
@@ -180,10 +189,13 @@ class ShapeChecker:
         compatibility across multiple calls, and so that we can provide good error messages.
 
         :param shaped: The object whose shape to check.
-        :param tensor_spec: Specification to check the tensor against. See: `Check specification`_.
-        :param context: Information about where `shaped` is coming from, for improved error
+        :param tensor_spec: Specification to check the tensor against.
+            Usually this is a ``str`` in the format described in `Shape specification`_.
+            Alternatively this can be a pre-parsed :class:`ParsedTensorSpec`, or an actual
+            :class:`Shape`.
+        :param context: Information about where ``shaped`` is coming from, for improved error
             messages.
-        :returns: `shaped`, for convenience.
+        :returns: ``shaped``, for convenience.
         """
         if not get_enable_check_shapes():
             return shaped
@@ -207,10 +219,10 @@ class ShapeChecker:
         This remembers observed shapes and specifications, so that tensors can be checked for
         compatibility across multiple calls, and so that we can provide good error messages.
 
-        :param checks: Checks to perform. The elements can either be `(shaped, tensor_spec)` or
-            `(shaped, tensor_spec, context)` tuples. Where: `shaped` is the tensor whose shape to
-            check; `tensor_spec` is the specification to check it against (see `Check
-            specification`_); and `context` contains (optional) information about where `shaped`
+        :param checks: Checks to perform. The elements can either be ``(shaped, tensor_spec)`` or
+            ``(shaped, tensor_spec, context)`` tuples. Where: ``shaped`` is the tensor whose shape
+            to check; ``tensor_spec`` is the specification to check it against (see `Shape
+            specification`_); and ``context`` contains (optional) information about where ``shaped``
             came from - for better error messages.
         """
         if not get_enable_check_shapes():

@@ -30,6 +30,13 @@ def inherit_check_shapes(func: C) -> C:
     Decorator that inherits the :func:`check_shapes` decoration from any overridden method in a
     super-class.
 
+    Example:
+
+    .. literalinclude:: /examples/test_check_shapes_examples.py
+       :start-after: [reuse__inherit_check_shapes]
+       :end-before: [reuse__inherit_check_shapes]
+       :dedent:
+
     See: `Class inheritance`_.
     """
     if not get_enable_check_shapes():

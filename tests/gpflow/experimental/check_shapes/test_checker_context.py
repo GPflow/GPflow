@@ -21,13 +21,9 @@ from time import sleep
 
 import pytest
 
-from gpflow.experimental.check_shapes import (
-    ShapeChecker,
-    ShapeMismatchError,
-    check_shape,
-    get_shape_checker,
-)
+from gpflow.experimental.check_shapes import ShapeChecker, check_shape, get_shape_checker
 from gpflow.experimental.check_shapes.checker_context import set_shape_checker
+from gpflow.experimental.check_shapes.exceptions import ShapeMismatchError
 
 from .utils import current_line, t
 

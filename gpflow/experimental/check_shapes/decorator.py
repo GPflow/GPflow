@@ -44,7 +44,7 @@ def null_check_shapes(func: C) -> C:
     Annotates the given function so that it looks like it has shape checks, but without actually
     checking anything.
 
-    This is necessary not to break `@inherit_check_shapes` when shape checking is disabled.
+    This is necessary not to break ``@inherit_check_shapes`` when shape checking is disabled.
     """
     set_check_shapes(func, null_check_shapes)
     return func
@@ -54,6 +54,13 @@ def null_check_shapes(func: C) -> C:
 def check_shapes(*specs: str) -> Callable[[C], C]:
     """
     Decorator that checks the shapes of tensor arguments.
+
+    Example:
+
+    .. literalinclude:: /examples/test_check_shapes_examples.py
+       :start-after: [basic]
+       :end-before: [basic]
+       :dedent:
 
     :param specs: Specification of arguments to check. See: `Check specification`_.
     """

@@ -21,26 +21,27 @@ from .base_types import C
 
 def set_check_shapes(func: Callable[..., Any], check_shapes: Callable[[C], C]) -> None:
     """
-    Store `check_shapes` in `func`, so that we later can tell which `check_shapes` was applied to
-    it.
+    Store ``check_shapes`` in ``func``, so that we later can tell which ``check_shapes`` was applied
+    to it.
     """
     setattr(func, "__check_shapes__", check_shapes)
 
 
 def maybe_get_check_shapes(func: Callable[..., Any]) -> Optional[Callable[[C], C]]:
     """
-    Get the `check_shapes` that was applied to `func`.
+    Get the ``check_shapes`` that was applied to ``func``.
 
-    Returns `None` if no `check_shapes` was applied to `func`.
+    :returns: The ``check_shapes`` that is wrapping ``func``, and ``None`` if no ``check_shapes`` is
+        not wrapping ``func``.
     """
     return getattr(func, "__check_shapes__", None)
 
 
 def get_check_shapes(func: Callable[..., Any]) -> Callable[[C], C]:
     """
-    Get the `check_shapes` that was applied to `func`.
+    Get the ``check_shapes`` that was applied to ``func``.
 
-    :raises ValueError: If no `check_shapes` was applied to `func`.
+    :raises ValueError: If no ``check_shapes`` was applied to ``func``.
     """
     result = maybe_get_check_shapes(func)
     if result is None:

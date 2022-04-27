@@ -14,31 +14,25 @@
 """
 A library for annotating and checking the shapes of tensors.
 
-This library is compatible with both TensorFlow and NumPy.
+The main entry point is :func:`check_shapes`.
 
-The main entry point is :func:`check_shapes.check_shapes`.
+Example:
 
-For example::
-
-    @tf.function
-    @check_shapes(
-        "features: [batch_shape..., n_features]",
-        "weights: [n_features]",
-        "return: [batch_shape...]",
-    )
-    def linear_model(
-        features: tf.Tensor, weights: tf.Tensor
-    ) -> tf.Tensor:
-        ...
+.. literalinclude:: /examples/test_check_shapes_examples.py
+   :start-after: [basic]
+   :end-before: [basic]
+   :dedent:
 
 
 Check specification
 +++++++++++++++++++
 
 The shapes to check are specified by the arguments to :func:`check_shapes`. Each argument is a
-string of the format::
+string of the format:
 
-    <argument specifier>: <shape specifier> [if <condition>] [# <note>]
+.. code-block:: bnf
+
+   <argument specifier> ":" <shape specifier> ["if" <condition>] ["#" <note>]
 
 
 Argument specification
@@ -48,167 +42,226 @@ The ``<argument specifier>`` must start with either the name of an argument to t
 function, or the special name ``return``. The value ``return`` refers to the value returned by the
 function.
 
-The ``<argument specifier>`` can then be modified to refer to elements of the object in two ways:
+The ``<argument specifier>`` can then be modified to refer to elements of the object in several
+ways:
 
-* Use ``.<name>`` to refer to attributes of the object.
-* Use ``[<index>]`` to refer to elements of a sequence. This is particularly useful if your
-  function returns a tuple of values.
-* Use ``[all]`` to select all elements in a collection.
-* Use ``.keys()`` to select all keys in a mapping.
-* Use ``.values()`` to select all values in a mapping.
+* Use ``.<name>`` to refer to an attribute of an object:
 
-We do not support looking up values in a  ``dict``.
+  .. literalinclude:: /examples/test_check_shapes_examples.py
+     :start-after: [argument_ref_attribute]
+     :end-before: [argument_ref_attribute]
+     :dedent:
 
-If the argument, or any of the looked-up values, are `None` the check is skipped.
+* Use ``[<index>]`` to refer to a specific element of a sequence. This is particularly useful if
+  your function returns a tuple of values:
 
-For example::
+  .. literalinclude:: /examples/test_check_shapes_examples.py
+     :start-after: [argument_ref_index]
+     :end-before: [argument_ref_index]
+     :dedent:
 
-    @check_shapes(
-        "weights: ...",
-        "data.training_data: ...",
-        "return: ...",
-        "return[0]: ...",
-        "data_list[all]: ...",
-        "data_dict.keys(): ...",
-        "data_dict.values(): ...",
-        "something[all].foo[0].bar.values(): ...",
-    )
-    def f(...):
-        ...
+* Use ``[all]`` to select all elements of a collection:
+
+  .. literalinclude:: /examples/test_check_shapes_examples.py
+     :start-after: [argument_ref_all]
+     :end-before: [argument_ref_all]
+     :dedent:
+
+* Use ``.keys()`` to select all keys of a mapping:
+
+  .. literalinclude:: /examples/test_check_shapes_examples.py
+     :start-after: [argument_ref_keys]
+     :end-before: [argument_ref_keys]
+     :dedent:
+
+* Use ``.values()`` to select all values of a mapping:
+
+  .. literalinclude:: /examples/test_check_shapes_examples.py
+     :start-after: [argument_ref_values]
+     :end-before: [argument_ref_values]
+     :dedent:
+
+.. note::
+
+   We do not support looking up a specific key or value in a  ``dict``.
+
+If the argument, or any of the looked-up values, are ``None`` the check is skipped. This is useful
+for optional values:
+
+.. literalinclude:: /examples/test_check_shapes_examples.py
+   :start-after: [argument_ref_optional]
+   :end-before: [argument_ref_optional]
+   :dedent:
 
 
 Shape specification
 -------------------
 
-Shapes are specified by the syntax
-``[<dimension specifier 1>, <dimension specifer 2>, ..., <dimension specifier n>]``, where
-``<dimension specifier i>`` is one of:
+Shapes are specified by the syntax:
 
-* ``<integer>``, to require that dimension to have that exact size.
+
+.. code-block:: bnf
+
+   "[" <dimension specifier 1> "," <dimension specifer 2> "," ... "," <dimension specifier n> "]"
+
+where ``<dimension specifier i>`` is one of:
+
+* ``<integer>``, to require that dimension to have that exact size:
+
+  .. literalinclude:: /examples/test_check_shapes_examples.py
+     :start-after: [dimension_spec_constant]
+     :end-before: [dimension_spec_constant]
+     :dedent:
+
 * ``<name>``, to bind that dimension to a variable. Dimensions bound to the same variable must
-  have the same size, though that size can be anything.
-* ``None`` or ``.`` to allow exactly one single dimension without constraints.
+  have the same size, though that size can be anything:
+
+  .. literalinclude:: /examples/test_check_shapes_examples.py
+     :start-after: [dimension_spec_variable]
+     :end-before: [dimension_spec_variable]
+     :dedent:
+
+* ``None`` or ``.`` to allow exactly one single dimension without constraints:
+
+  .. literalinclude:: /examples/test_check_shapes_examples.py
+     :start-after: [dimension_spec_anonymous__none]
+     :end-before: [dimension_spec_anonymous__none]
+     :dedent:
+
+  or:
+
+  .. literalinclude:: /examples/test_check_shapes_examples.py
+     :start-after: [dimension_spec_anonymous__dot]
+     :end-before: [dimension_spec_anonymous__dot]
+     :dedent:
+
 * ``*<name>`` or ``<name>...``, to bind *any* number of dimensions to a variable. Again,
-  multiple uses of the same variable name must match the same dimension sizes.
-* ``*`` or ``...``, to allow *any* number of dimensions without constraints.
+  multiple uses of the same variable name must match the same dimension sizes:
 
-A scalar shape is specified by ``[]``.
+  .. literalinclude:: /examples/test_check_shapes_examples.py
+     :start-after: [dimension_spec_variable_rank__star]
+     :end-before: [dimension_spec_variable_rank__star]
+     :dedent:
 
-For example::
+  or:
 
-    @check_shapes(
-        "...: []",
-        "...: [3, 4]",
-        "...: [width, height]",
-        "...: [., height]",
-        "...: [width, None],
-        "...: [n_samples, *batch]",
-        "...: [batch..., 2]",
-        "...: [n_samples, *]",
-        "...: [..., 2]",
-    )
-    def f(...):
-        ...
+  .. literalinclude:: /examples/test_check_shapes_examples.py
+     :start-after: [dimension_spec_variable_rank__ellipsis]
+     :end-before: [dimension_spec_variable_rank__ellipsis]
+     :dedent:
 
-Any of the above can be prefixed with the keyword ``broadcast``, to allow any value that broadcasts
-to the specification. For example::
+* ``*`` or ``...``, to allow *any* number of dimensions without constraints:
 
-    @check_shapes(
-        "a: [broadcast batch...]",
-        "b: [broadcast batch...]",
-        "return: [batch...]",
-    )
-    def add(a: AnyNDArray, b: AnyNDArray) -> AnyNDArray:
-        return a + b
+  .. literalinclude:: /examples/test_check_shapes_examples.py
+     :start-after: [dimension_spec_anonymous_variable_rank__star]
+     :end-before: [dimension_spec_anonymous_variable_rank__star]
+     :dedent:
+
+  or:
+
+  .. literalinclude:: /examples/test_check_shapes_examples.py
+     :start-after: [dimension_spec_anonymous_variable_rank__ellipsis]
+     :end-before: [dimension_spec_anonymous_variable_rank__ellipsis]
+     :dedent:
+
+A scalar shape is specified by ``[]``:
+
+.. literalinclude:: /examples/test_check_shapes_examples.py
+   :start-after: [dimension_spec__scalar]
+   :end-before: [dimension_spec__scalar]
+   :dedent:
+
+Any of the above can be prefixed with the keyword ``broadcast`` to allow any value that broadcasts
+to the specification. For example:
+
+.. literalinclude:: /examples/test_check_shapes_examples.py
+   :start-after: [dimension_spec_broadcast]
+   :end-before: [dimension_spec_broadcast]
+   :dedent:
 
 
 Condition specification
 -----------------------
 
-You can use the optional `if <condition>` syntax to conditionally evaluate shapes. If an `if
-<condition>` is used, the specification is only appplied if `<condition>` evaluates to `True`. This
-is useful if shapes depend on other input parameters. Valid conditions are:
+You can use the optional ``if <condition>`` syntax to conditionally evaluate shapes. If an ``if
+<condition>`` is used, the specification is only appplied if ``<condition>`` evaluates to ``True``.
+This is useful if shapes depend on other input parameters. Valid conditions are:
 
 * ``<argument specifier>``, with the same syntax and rules as above, except that constructions that
-  evaluates to multiple elements are disallowed. Uses the `bool` built-in to convert the value of
-  the argument to a `bool`.
-* ``<left> or <right>``, evaluates to `True` if any of `<left>` or `<right>` evaluates to `True`
-  and to `False` otherwise.
-* ``<left> and <right>``, evaluates to `False` if any of `<left>` or `<right>` evaluates to
-  `False` and to `True` otherwise.
-* ``not <right>``, evaluates to the opposite value of `<right>`.
+  evaluates to multiple elements are disallowed. Uses the ``bool`` built-in to convert the value of
+  the argument to a ``bool``:
+
+  .. literalinclude:: /examples/test_check_shapes_examples.py
+     :start-after: [bool_spec_argument_ref]
+     :end-before: [bool_spec_argument_ref]
+     :dedent:
+
+* ``<left> or <right>``, evaluates to ``True`` if any of ``<left>`` or ``<right>`` evaluates to
+  ``True`` and to ``False`` otherwise:
+
+  .. literalinclude:: /examples/test_check_shapes_examples.py
+     :start-after: [bool_spec_or]
+     :end-before: [bool_spec_or]
+     :dedent:
+
+* ``<left> and <right>``, evaluates to ``False`` if any of ``<left>`` or ``<right>`` evaluates to
+  ``False`` and to ``True`` otherwise:
+
+  .. literalinclude:: /examples/test_check_shapes_examples.py
+     :start-after: [bool_spec_and]
+     :end-before: [bool_spec_and]
+     :dedent:
+
+* ``not <right>``, evaluates to the opposite value of ``<right>``:
+
+  .. literalinclude:: /examples/test_check_shapes_examples.py
+     :start-after: [bool_spec_not]
+     :end-before: [bool_spec_not]
+     :dedent:
+
 * ``(<exp>)``, uses parenthesis to change operator precedence, as usual.
+
+Conditions can be composed to apply different specs, depending on function arguments:
+
+.. literalinclude:: /examples/test_check_shapes_examples.py
+   :start-after: [bool_spec__composition]
+   :end-before: [bool_spec__composition]
+   :dedent:
 
 .. note::
 
-   All specifications with either no `if` syntax or a `<condition>` that evaluates to `True` will be
-   applied. It is possible for multiple specifications to apply to the same value.
-
-For example::
-
-    @check_shapes(
-        "X: [n_rows, n_inputs]",
-        "return: [n_rows, n_outputs, n_rows, n_outputs] if full_input_cov and full_output_cov",
-        "return: [n_outputs, n_rows, n_rows] if full_input_cov and (not full_output_cov)",
-        "return: [n_rows, n_outputs, n_outputs] if (not full_input_cov) and full_output_cov",
-        "return: [n_rows, n_outputs] if (not full_input_cov) and (not full_output_cov)",
-    )
-    def kernel(X: tf.Tensor, full_input_cov: bool, full_output_cov: bool) -> tf.Tensor:
-        ...
+   All specifications with either no ``if`` syntax or a ``<condition>`` that evaluates to ``True``
+   will be applied. It is possible for multiple specifications to apply to the same value.
 
 
 Note specification
 ------------------
 
-You can add notes to your specifications using a `#` followed by the note. These notes will be
+You can add notes to your specifications using a ``#`` followed by the note. These notes will be
 appended to relevant error messages and appear in rewritten docstrings. You can add notes in two
 places:
 
-* After the specification of a single argument, to add a note to that argument only.
-* On a single line by itself, to add a note to the entire function.
+* On a single line by itself, to add a note to the entire function:
 
-For example::
+  .. literalinclude:: /examples/test_check_shapes_examples.py
+     :start-after: [note_spec__global]
+     :end-before: [note_spec__global]
+     :dedent:
 
-    @check_shapes(
-        "features: [batch_shape..., n_features]",
-        "weights: [n_features]  # A note about the shape of `weights`.",
-        "return: [batch_shape...]",
-        "# A note about `f`.",
-    )
-    def f(...):
-        ...
+* After the specification of a single argument, to add a note to that argument only:
 
-
-Checking intermediate results
------------------------------
-
-You can use the function :func:`check_shape` to check the shape of an intermediate result. This
-function will use the same namespace as the immediately surrounding :func:`check_shapes` decorator,
-and should only be called within functions that has such a decorator. For example::
-
-    @check_shapes(
-        "weights: [n_features, n_labels]",
-        "test_features: [n_rows, n_features]",
-        "test_labels: [n_rows, n_labels]",
-        "return: []",
-    )
-    def loss(
-        weights: np.ndarray, test_features: np.ndarray, test_labels: np.ndarray
-    ) -> np.ndarray:
-        prediction = check_shape(test_features @ weights, "[n_rows, n_labels]")
-        error = check_shape(prediction - test_labels, "[n_rows, n_labels]")
-        square_error = check_shape(error ** 2, "[n_rows, n_labels]")
-        mean_square_error = check_shape(np.mean(square_error, axis=-1), "[n_rows]")
-        root_mean_square_error = check_shape(np.sqrt(mean_square_error), "[n_rows]")
-        return np.mean(root_mean_square_error)
+  .. literalinclude:: /examples/test_check_shapes_examples.py
+     :start-after: [note_spec__local]
+     :end-before: [note_spec__local]
+     :dedent:
 
 
 Shape reuse
 +++++++++++
 
 Just like with other code it is useful to be able to specify a shape in one place and reuse the
-specification. In particular this ensures that your code keep having consistent shapes, even if it
-is refactored.
+specification. In particular this ensures that your code keep having internally consistent shapes,
+even if it is refactored.
 
 
 Class inheritance
@@ -216,23 +269,12 @@ Class inheritance
 
 If you have a class hiererchy, you probably want to ensure that derived classes handle tensors with
 the same shapes as the base classes. You can use the :func:`inherit_check_shapes` decorator to
-inherit shapes from overridden methods.
+inherit shapes from overridden methods:
 
-Example::
-
-    class SuperClass(ABC):
-        @abstractmethod
-        @check_shapes(
-            "a: [batch..., 4]",
-            "return: [batch..., 1]",
-        )
-        def f(self, a: tf.Tensor) -> tf.Tensor:
-            ...
-
-    class SubClass(SuperClass):
-        @inherit_check_shapes
-        def f(self, a: tf.Tensor) -> tf.Tensor:
-            ...
+.. literalinclude:: /examples/test_check_shapes_examples.py
+   :start-after: [reuse__inherit_check_shapes]
+   :end-before: [reuse__inherit_check_shapes]
+   :dedent:
 
 
 Functional programming
@@ -240,20 +282,12 @@ Functional programming
 
 If you prefer functional- over object oriented programming, you may have functions that you require
 to handle the same shapes. To do this, remember that in Python a decorator is just a function, and
-functions are objects that can be stored::
+functions are objects that can be stored:
 
-    check_my_shapes = check_shapes(
-        "a: [batch..., 4]",
-        "return: [batch..., 1]",
-    )
-
-    @check_my_shapes
-    def f(a: tf.Tensor) -> tf.Tensor:
-        ...
-
-    @check_my_shapes
-    def g(a: tf.Tensor) -> tf.Tensor:
-        ...
+.. literalinclude:: /examples/test_check_shapes_examples.py
+   :start-after: [reuse__functional]
+   :end-before: [reuse__functional]
+   :dedent:
 
 
 Other reuse of shapes
@@ -261,21 +295,25 @@ Other reuse of shapes
 
 You can use :func:`get_check_shapes` to get, and reuse, the shape definitions from a previously
 declared function. This is particularly useful to ensure fakes in tests use the same shapes as the
-production implementation::
+production implementation:
 
-    @check_shapes(
-        "a: [batch..., 4]",
-        "return: [batch..., 1]",
-    )
-    def f(a: tf.Tensor) -> tf.Tensor:
-        ...
+.. literalinclude:: /examples/test_check_shapes_examples.py
+   :start-after: [reuse__get_check_shapes]
+   :end-before: [reuse__get_check_shapes]
+   :dedent:
 
-    def test_something() -> None:
-        @get_check_shapes(f)
-        def fake_f(a: tf.Tensor) -> tf.Tensor:
-            ...
 
-        # Test that patches `f` with `fake_f` goes here...
+Checking intermediate results
++++++++++++++++++++++++++++++
+
+You can use the function :func:`check_shape` to check the shape of an intermediate result. This
+function will use the same namespace as the immediately surrounding :func:`check_shapes` decorator,
+and should only be called within functions that has such a decorator. For example:
+
+.. literalinclude:: /examples/test_check_shapes_examples.py
+   :start-after: [intermediate_results]
+   :end-before: [intermediate_results]
+   :dedent:
 
 
 Checking shapes without a decorator
@@ -283,12 +321,12 @@ Checking shapes without a decorator
 
 While the :func:`check_shapes` decorator is the recommend way to use this library, it is possible to
 use it without the decorator. In fact the decorator is just a wrapper around the class
-:class:`ShapeChecker`, which can be used to check shapes directly. For example::
+:class:`ShapeChecker`, which can be used to check shapes directly:
 
-    shape_checker = ShapeChecker()
-    shape_checker.check_shape(weights, "[n_features, n_labels]")
-    shape_checker.check_shape(features, "[n_rows, n_features]")
-    prediction = shape_checker.check_shape(features @ weights, "[n_rows, n_labels]")
+.. literalinclude:: /examples/test_check_shapes_examples.py
+   :start-after: [shape_checker__raw]
+   :end-before: [shape_checker__raw]
+   :dedent:
 
 You can use the function :func:`get_shape_checker` to get the :class:`ShapeChecker` used by any
 immediately surrounding :func:`check_shapes` decorator.
@@ -304,16 +342,24 @@ actual graphs.  This is considered a feature as that means that :func:`check_sha
 the execution speed of compiled functions. However, it also means that tensor dimensions of dynamic
 size are not verified in compiled mode.
 
-If your code is very performance sensitive and :mod:`check_shapes` is causing an unacceptable
-slowdown it can be disabled. Preferably use :func:`disable_check_shapes`::
+Disabling shape checking
+------------------------
 
-    with disable_check_shapes():
-        function_that_is_performance_sensitive()
+If your code is very performance sensitive and :mod:`check_shapes` is causing an unacceptable
+slowdown it can be disabled. Preferably use the context mananger :func:`disable_check_shapes`:
+
+.. literalinclude:: /examples/test_check_shapes_examples.py
+   :start-after: [disable__context_manager]
+   :end-before: [disable__context_manager]
+   :dedent:
 
 Alternatively :mod:`check_shapes` can also be disable globally with
-:func:`set_enable_check_shapes`::
+:func:`set_enable_check_shapes`:
 
-    set_enable_check_shapes(False)
+.. literalinclude:: /examples/test_check_shapes_examples.py
+   :start-after: [disable__manual]
+   :end-before: [disable__manual]
+   :dedent:
 
 Beware that any function declared while shape checking is disabled, will continue not to check
 shapes, even if shape checking is otherwise enabled again.
@@ -322,101 +368,60 @@ shapes, even if shape checking is otherwise enabled again.
 Documenting shapes
 ++++++++++++++++++
 
-The :func:`check_shapes` decorator rewrites the docstring (`.__doc__`) of the decorated function to
-add information about shapes, in a format compatible with
-`Sphinx <https://www.sphinx-doc.org/en/master/>`_. Only parameters that already have a `:param ...:`
-section will be modified.
+The :func:`check_shapes` decorator rewrites the docstring (``.__doc__``) of the decorated function
+to add information about shapes, in a format compatible with
+`Sphinx <https://www.sphinx-doc.org/en/master/>`_. Only parameters that already have a
+``:param ...:`` section will be modified.
 
-For example::
+For example:
 
-    @tf.function
-    @check_shapes(
-        "features: [batch_shape..., n_features]",
-        "weights: [n_features]",
-        "return: [batch_shape...]",
-    )
-    def linear_model(
-        features: tf.Tensor, weights: tf.Tensor
-    ) -> tf.Tensor:
-        \"\"\"
-        Computes a prediction from a linear model.
-        :param features: Data to make predictions from.
-        :param weights: Model weights.
-        :returns: Model predictions.
-        \"\"\"
-        ...
+.. literalinclude:: /examples/test_check_shapes_examples.py
+   :start-after: [doc_rewrite__definition]
+   :end-before: [doc_rewrite__definition]
+   :dedent:
 
-will have `.__doc__`::
+will have ``.__doc__``:
 
-    \"\"\"
-    Computes a prediction from a linear model.
-
-    :param a:
-        * **features** has shape [*batch_shape*..., *n_features*].
-
-        Data to make predictions from.
-    :param b:
-        * **weights** has shape [*n_features*].
-
-        Model weights.
-    :returns:
-        * **return** has shape [*batch_shape*...].
-
-        Model predictions.
-    \"\"\"
+.. literalinclude:: /examples/test_check_shapes_examples.py
+   :start-after: [doc_rewrite__rewritten]
+   :end-before: [doc_rewrite__rewritten]
+   :dedent:
 
 if you do not wish to have your docstrings rewritten, you can disable it with
-:func:`set_rewrite_docstrings`::
+:func:`set_rewrite_docstrings`:
 
-    set_rewrite_docstrings(None)
+.. literalinclude:: /examples/test_check_shapes_examples.py
+   :start-after: [doc_rewrite__disable]
+   :end-before: [doc_rewrite__disable]
+   :dedent:
+
+
+Supported types
++++++++++++++++
+
+This library has built-in support for checking the shapes of:
+
+* Python built-in scalars: ``bool``, ``int``, ``float`` and ``str``.
+* Python sequences: :class:`collections.abc.Sequences`, including ``tuple`` and ``list``.
+* NumPy ``ndarray``\ s.
+* TensorFlow ``Tensor``\ s and ``Variable``\ s.
+* TensorFlow Probability ``DeferredTensor``\ s.
 
 
 Shapes of custom types
-++++++++++++++++++++++
+----------------------
 
 :mod:`check_shapes` uses the function :func:`get_shape` to extract the shape of an object.
-
 :func:`get_shape` uses :func:`functools.singledispatch` to branch on the type of object to get the
-shape from, and you can extend this to extract shapes for you own custom types.
+shape from, and you can extend this to extract shapes for you own custom types:
 
-For example::
-
-    import numpy as np
-
-    from gpflow.experimental.check_shapes import Shape, check_shapes, get_shape
-
-
-    class LinearModel:
-        def __init__(self, weights: np.ndarray) -> None:
-            self._weights = weights
-
-        @check_shapes(
-            "self: [n_features, n_labels]",
-            "features: [n_rows, n_features]",
-            "return: [n_rows, n_labels]",
-        )
-        def predict(self, features: np.ndarray) -> None:
-            return features @ self._weights
-
-
-    @get_shape.register(LinearModel)
-    def get_linear_model_shape(model: LinearModel) -> Shape:
-        return model._weights.shape
-
-
-    @check_shapes(
-        "model: [n_features, n_labels]",
-        "test_features: [n_rows, n_features]",
-        "test_labels: [n_rows, n_labels]",
-    )
-    def loss(
-        model: LinearModel, test_features: np.ndarray, test_labels: np.ndarray
-    ) -> np.ndarray:
-        prediction = model.predict(test_features)
-        return np.mean(np.sqrt(np.mean((prediction - test_labels) ** 2, axis=-1)))
+.. literalinclude:: /examples/test_check_shapes_examples.py
+   :start-after: [custom_type]
+   :end-before: [custom_type]
+   :dedent:
 """
 
-from .accessors import get_check_shapes, maybe_get_check_shapes
+from .accessors import get_check_shapes
 from .base_types import Dimension, Shape
 from .checker import ShapeChecker
 from .checker_context import check_shape, get_shape_checker
@@ -429,70 +434,16 @@ from .config import (
     set_rewrite_docstrings,
 )
 from .decorator import check_shapes
-from .error_contexts import (
-    ArgumentContext,
-    AttributeContext,
-    ConditionContext,
-    ErrorContext,
-    FunctionCallContext,
-    FunctionDefinitionContext,
-    IndexContext,
-    LarkUnexpectedInputContext,
-    MappingKeyContext,
-    MappingValueContext,
-    MessageBuilder,
-    MultipleElementBoolContext,
-    ObjectTypeContext,
-    ObjectValueContext,
-    ParallelContext,
-    ShapeContext,
-    StackContext,
-    TensorSpecContext,
-    VariableContext,
-)
-from .exceptions import (
-    ArgumentReferenceError,
-    CheckShapesError,
-    DocstringParseError,
-    NoShapeError,
-    ShapeMismatchError,
-    SpecificationParseError,
-    VariableTypeError,
-)
+from .error_contexts import ErrorContext
 from .inheritance import inherit_check_shapes
 from .shapes import get_shape
 
 __all__ = [
-    "ArgumentContext",
-    "ArgumentReferenceError",
-    "AttributeContext",
-    "CheckShapesError",
-    "ConditionContext",
     "Dimension",
     "DocstringFormat",
-    "DocstringParseError",
     "ErrorContext",
-    "FunctionCallContext",
-    "FunctionDefinitionContext",
-    "IndexContext",
-    "LarkUnexpectedInputContext",
-    "MappingKeyContext",
-    "MappingValueContext",
-    "MessageBuilder",
-    "MultipleElementBoolContext",
-    "NoShapeError",
-    "ObjectTypeContext",
-    "ObjectValueContext",
-    "ParallelContext",
     "Shape",
     "ShapeChecker",
-    "ShapeContext",
-    "ShapeMismatchError",
-    "SpecificationParseError",
-    "StackContext",
-    "TensorSpecContext",
-    "VariableContext",
-    "VariableTypeError",
     "accessors",
     "argument_ref",
     "base_types",
@@ -513,7 +464,6 @@ __all__ = [
     "get_shape_checker",
     "inherit_check_shapes",
     "inheritance",
-    "maybe_get_check_shapes",
     "parser",
     "set_enable_check_shapes",
     "set_rewrite_docstrings",

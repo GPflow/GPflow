@@ -44,6 +44,10 @@ extensions = [
     "IPython.sphinxext.ipython_console_highlighting",
 ]
 
+
+# Configuration for highlighting in code examples:
+highlight_options = {"stripall": True}
+
 set_type_checking_flag = True
 typehints_fully_qualified = False
 always_document_param_types = True

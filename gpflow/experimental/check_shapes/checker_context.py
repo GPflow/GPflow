@@ -42,7 +42,7 @@ def get_shape_checker() -> ShapeChecker:
     Get the :class:`ShapeChecker` from the wrapping :func:`check_shapes` decorator.
 
     Behaviour is undefined if you call this from a function that is not directly wrapped in
-    :func:`check_shapes` or `inherit_check_shapes`.
+    :func:`check_shapes` or :func:`inherit_check_shapes`.
     """
     return _shape_checker.get()
 
@@ -53,15 +53,22 @@ def check_shape(
     """
     Raise an error if a tensor has the wrong shape.
 
-    This uses the :class:`ShapeChecker` from the wrapping `check_shapes` decorator. Behaviour is
-    undefined if you call this from a function that is not directly wrapped in :func:`check_shapes`
-    or `inherit_check_shapes`.
+    This uses the :class:`ShapeChecker` from the wrapping :func:`check_shapes` decorator. Behaviour
+    is undefined if you call this from a function that is not directly wrapped in
+    :func:`check_shapes` or :func:`inherit_check_shapes`.
+
+    Example:
+
+    .. literalinclude:: /examples/test_check_shapes_examples.py
+       :start-after: [intermediate_results]
+       :end-before: [intermediate_results]
+       :dedent:
 
     :param shaped: The object whose shape to check.
-    :param tensor_spec: Specification to check the tensor against. See: `Check specification`_.
-    :param context: Information about where `shaped` is coming from, for improved error
+    :param tensor_spec: Specification to check the tensor against. See: `Shape specification`_.
+    :param context: Information about where ``shaped`` is coming from, for improved error
         messages.
-    :returns: `shaped`, for convenience.
+    :returns: ``shaped``, for convenience.
     """
     if not get_enable_check_shapes():
         return shaped
