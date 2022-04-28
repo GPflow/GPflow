@@ -33,7 +33,7 @@ This release contains contributions from:
 <INSERT>, <NAME>, <HERE>, <USING>, <GITHUB>, <HANDLE>
 
 
-# Release 2.5.1 (next upcoming release in progress)
+# Release 2.5.2 (next upcoming release in progress)
 
 <INSERT SMALL BLURB ABOUT RELEASE FOCUS AREA AND POTENTIAL TOOLCHAIN CHANGES>
 
@@ -64,6 +64,21 @@ This release contains contributions from:
 This release contains contributions from:
 
 <INSERT>, <NAME>, <HERE>, <USING>, <GITHUB>, <HANDLE>
+
+
+# Release 2.5.1
+
+Fix problem with release process of 2.5.0.
+
+## Bug Fixes and Other Changes
+
+* Fix bug in release process.
+
+## Thanks to our Contributors
+
+This release contains contributions from:
+
+jesnie
 
 
 # Release 2.5.0
