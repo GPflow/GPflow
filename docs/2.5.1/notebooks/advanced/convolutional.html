@@ -1,0 +1,2129 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+    <title>Convolutional Gaussian Processes &#8212; GPflow 2.5.1 documentation</title>
+    
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
+
+    
+  <link rel="stylesheet"
+    href="../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/pydata-custom.css" />
+    
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf">
+
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="https://unpkg.com/@jupyter-widgets/html-manager@^0.20.1/dist/embed-amd.js"></script>
+    <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="A simple demonstration of coregionalization" href="coregionalisation.html" />
+    <link rel="prev" title="Change points" href="changepoints.html" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="docsearch:language" content="None">
+    
+
+    <!-- Google Analytics -->
+    
+  </head>
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="60">
+    
+    <div class="container-fluid" id="banner"></div>
+
+    
+    <nav class="navbar navbar-light navbar-expand-lg bg-light fixed-top bd-navbar" id="navbar-main"><div class="container-xl">
+
+  <div id="navbar-start">
+    
+    
+
+<a class="navbar-brand" href="../../index.html">
+  <img src="../../_static/gpflow_logo.svg" class="logo" alt="logo">
+</a>
+
+
+    
+  </div>
+
+  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar-collapsible" aria-controls="navbar-collapsible" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="navbar-toggler-icon"></span>
+  </button>
+
+  
+  <div id="navbar-collapsible" class="col-lg-9 collapse navbar-collapse">
+    <div id="navbar-center" class="mr-auto">
+      
+      <div class="navbar-center-item">
+        <ul id="navbar-main-elements" class="navbar-nav">
+    <li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../intro.html">
+  Introduction
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../intro.html">
+  GPflow manual
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../intro_to_gpflow2.html">
+  GPflow with TensorFlow 2
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../gpflow2_upgrade_guide.html">
+  GPflow 2 Upgrade Guide
+ </a>
+</li>
+
+<li class="toctree-l1 current active nav-item">
+ <a class="reference internal nav-link" href="../../notebooks_file.html">
+  Notebooks
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../derivations.html">
+  Derivations
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../api/gpflow/index.html">
+  API reference
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../bibliography.html">
+  Bibliography
+ </a>
+</li>
+
+    
+</ul>
+      </div>
+      
+    </div>
+
+    <div id="navbar-end">
+      
+      <div class="navbar-end-item">
+        <div class="dropdown" id="version_switcher">
+    <button type="button" class="btn btn-primary btn-sm navbar-btn dropdown-toggle" id="version_switcher_button" data-toggle="dropdown">
+        2.5.1  <!-- this text may get changed later by javascript -->
+        <span class="caret"></span>
+    </button>
+    <div id="version_switcher_menu" class="dropdown-menu list-group-flush py-0" aria-labelledby="version_switcher_button">
+    <!-- dropdown will be populated by javascript on page load -->
+    </div>
+</div>
+
+<!-- NOTE: this JS must live here (not in our global JS file) because it relies
+     on being processed by Jinja before it is run (specifically for replacing
+     variables notebooks/advanced/convolutional and {'json_url': 'https://gpflow.github.io/GPflow/versions.json', 'url_template': 'https://gpflow.github.io/GPflow/{version}/index.html', 'version_match': '2.5.1'}.
+-->
+
+<script type="text/javascript">
+// Check if corresponding page path exists in other version of docs
+// and, if so, go there instead of the homepage of the other docs version
+function checkPageExistsAndRedirect(event) {
+    const currentFilePath = "notebooks/advanced/convolutional.html",
+          tryUrl = event.target.getAttribute("href");
+    let otherDocsHomepage = tryUrl.replace(currentFilePath, "");
+    $.ajax({
+        type: 'HEAD',
+        url: tryUrl,
+        // if the page exists, go there
+        success: function() {
+            location.href = tryUrl;
+        }
+    }).fail(function() {
+        location.href = otherDocsHomepage;
+    });
+    // this prevents the browser from following the href of the clicked node
+    // (which is fine because this function takes care of redirecting)
+    return false;
+}
+
+// Populate the version switcher from the JSON config file
+(function () {
+    $.getJSON("https://gpflow.github.io/GPflow/versions.json", function(data, textStatus, jqXHR) {
+        const currentFilePath = "notebooks/advanced/convolutional.html";
+        // create links to the corresponding page in the other docs versions
+        $.each(data, function(index, entry) {
+            // if no custom name specified (e.g., "latest"), use version string
+            if (!("name" in entry)) {
+                entry.name = entry.version;
+            }
+            // create the node
+            const node = document.createElement("a");
+            node.setAttribute("class", "list-group-item list-group-item-action py-1");
+            node.textContent = `${entry.name}`;
+            node.setAttribute("href", `${entry.url}${currentFilePath}`);
+            // on click, AJAX calls will check if the linked page exists before
+            // trying to redirect, and if not, will redirect to the homepage
+            // for that version of the docs.
+            node.onclick = checkPageExistsAndRedirect;
+            // Add dataset values for the version and name in case people want
+            // to apply CSS styling based on this information.
+            node.dataset["versionName"] = entry.name;
+            node.dataset["version"] = entry.version;
+
+            $("#version_switcher_menu").append(node);
+            // replace dropdown button text with the preferred display name of
+            // this version, rather than using sphinx's  variable.
+            // also highlight the dropdown entry for the currently-viewed
+            // version's entry
+            if (entry.version == "2.5.1") {
+                node.classList.add("active");
+                let btn = document.getElementById("version_switcher_button");
+                btn.innerText = btn.dataset["activeVersionName"] = entry.name;
+                btn.dataset["activeVersion"] = entry.version;
+            }
+        });
+    });
+})();
+</script>
+      </div>
+      
+    </div>
+  </div>
+</div>
+    </nav>
+    
+
+    <div class="container-xl">
+      <div class="row">
+          
+            
+            <!-- Only show if we have sidebars configured, else just a small margin  -->
+            <div class="col-12 col-md-3 bd-sidebar">
+              <div class="sidebar-start-items"><form class="bd-search d-flex align-items-center" action="../../search.html" method="get">
+  <i class="icon fas fa-search"></i>
+  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
+</form><nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
+  <div class="bd-toc-item active">
+    <ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../basics/GPLVM.html">
+   Bayesian Gaussian process latent variable model (Bayesian GPLVM)
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../basics/classification.html">
+   Basic (binary) GP classification model
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../basics/monitoring.html">
+   Monitoring Optimisation
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../basics/regression.html">
+   Basic (Gaussian likelihood) GP regression model
+  </a>
+ </li>
+</ul>
+<ul class="current nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="advanced_many_points.html">
+   More details on models with many observation points
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="changepoints.html">
+   Change points
+  </a>
+ </li>
+ <li class="toctree-l1 current active">
+  <a class="current reference internal" href="#">
+   Convolutional Gaussian Processes
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="coregionalisation.html">
+   A simple demonstration of coregionalization
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="fast_predictions.html">
+   Faster predictions by caching
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="gps_for_big_data.html">
+   Stochastic Variational Inference for scalability with SVGP
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="heteroskedastic.html">
+   Heteroskedastic Likelihood and Multi-Latent GP
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="kernels.html">
+   Manipulating kernels
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="mcmc.html">
+   MCMC (Markov Chain Monte Carlo)
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="multiclass_classification.html">
+   Multiclass classification
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="multioutput.html">
+   Multi-output Gaussian processes in GPflow
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="natural_gradients.html">
+   Natural gradients
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="optimisation.html">
+   Optimizers
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="ordinal_regression.html">
+   Ordinal regression
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="variational_fourier_features.html">
+   Variational Fourier Features in the GPflow framework
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="varying_noise.html">
+   Gaussian process regression with varying output noise
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../tailor/external-mean-function.html">
+   Custom mean functions: metalearning with GPs
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../tailor/gp_nn.html">
+   Mixing TensorFlow models with GPflow
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../tailor/kernel_design.html">
+   Kernel Design
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../tailor/likelihood_design.html">
+   Likelihood Design
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../tailor/mixture_density_network.html">
+   Mixture Density Networks in GPflow
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../tailor/models_with_latent_variables.html">
+   Models with observed and latent variables
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../tailor/updating_models_with_new_data.html">
+   Updating model with new data
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../theory/FITCvsVFE.html">
+   Comparing FITC approximation to VFE approximation
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../theory/SGPR_notes.html">
+   Derivation of SGPR equations
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../theory/Sanity_check.html">
+   Sanity checking when model behaviours should overlap
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../theory/cglb.html">
+   Conjugate Gradient Lower Bound
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../theory/upper_bound.html">
+   Discussion of the GP marginal likelihood upper bound
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../theory/vgp_notes.html">
+   Derivation of VGP equations
+  </a>
+ </li>
+</ul>
+<ul class="nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../understanding/architecture.html">
+   Architecture
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../understanding/models.html">
+   Manipulating GPflow models
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../understanding/utilities.html">
+   Utilities
+  </a>
+ </li>
+</ul>
+
+  </div>
+</nav>
+              </div>
+              <div class="sidebar-end-items">
+              </div>
+            </div>
+            
+          
+
+          
+          <div class="d-none d-xl-block col-xl-2 bd-toc">
+            
+              
+              <div class="toc-item">
+                
+<div class="tocsection onthispage mt-5 pt-1 pb-3">
+    <i class="fas fa-list"></i> On this page
+</div>
+
+<nav id="bd-toc-nav">
+    <ul class="visible nav section-nav flex-column">
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#Generate-dataset">
+   Generate dataset
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#Squared-Exponential-kernel">
+   Squared Exponential kernel
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#Convolutional-kernel">
+   Convolutional kernel
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#Conclusion">
+   Conclusion
+  </a>
+ </li>
+</ul>
+
+</nav>
+              </div>
+              
+              <div class="toc-item">
+                
+              </div>
+              
+            
+          </div>
+          
+
+          
+          
+            
+          
+          <main class="col-12 col-md-9 col-xl-7 py-md-5 pl-md-5 pr-md-4 bd-content" role="main">
+              
+              <div>
+                
+  
+<style>
+/* CSS for nbsphinx extension */
+
+/* remove conflicting styling from Sphinx themes */
+div.nbinput.container div.prompt *,
+div.nboutput.container div.prompt *,
+div.nbinput.container div.input_area pre,
+div.nboutput.container div.output_area pre,
+div.nbinput.container div.input_area .highlight,
+div.nboutput.container div.output_area .highlight {
+    border: none;
+    padding: 0;
+    margin: 0;
+    box-shadow: none;
+}
+
+div.nbinput.container > div[class*=highlight],
+div.nboutput.container > div[class*=highlight] {
+    margin: 0;
+}
+
+div.nbinput.container div.prompt *,
+div.nboutput.container div.prompt * {
+    background: none;
+}
+
+div.nboutput.container div.output_area .highlight,
+div.nboutput.container div.output_area pre {
+    background: unset;
+}
+
+div.nboutput.container div.output_area div.highlight {
+    color: unset;  /* override Pygments text color */
+}
+
+/* avoid gaps between output lines */
+div.nboutput.container div[class*=highlight] pre {
+    line-height: normal;
+}
+
+/* input/output containers */
+div.nbinput.container,
+div.nboutput.container {
+    display: -webkit-flex;
+    display: flex;
+    align-items: flex-start;
+    margin: 0;
+    width: 100%;
+}
+@media (max-width: 540px) {
+    div.nbinput.container,
+    div.nboutput.container {
+        flex-direction: column;
+    }
+}
+
+/* input container */
+div.nbinput.container {
+    padding-top: 5px;
+}
+
+/* last container */
+div.nblast.container {
+    padding-bottom: 5px;
+}
+
+/* input prompt */
+div.nbinput.container div.prompt pre {
+    color: #307FC1;
+}
+
+/* output prompt */
+div.nboutput.container div.prompt pre {
+    color: #BF5B3D;
+}
+
+/* all prompts */
+div.nbinput.container div.prompt,
+div.nboutput.container div.prompt {
+    width: 4.5ex;
+    padding-top: 5px;
+    position: relative;
+    user-select: none;
+}
+
+div.nbinput.container div.prompt > div,
+div.nboutput.container div.prompt > div {
+    position: absolute;
+    right: 0;
+    margin-right: 0.3ex;
+}
+
+@media (max-width: 540px) {
+    div.nbinput.container div.prompt,
+    div.nboutput.container div.prompt {
+        width: unset;
+        text-align: left;
+        padding: 0.4em;
+    }
+    div.nboutput.container div.prompt.empty {
+        padding: 0;
+    }
+
+    div.nbinput.container div.prompt > div,
+    div.nboutput.container div.prompt > div {
+        position: unset;
+    }
+}
+
+/* disable scrollbars on prompts */
+div.nbinput.container div.prompt pre,
+div.nboutput.container div.prompt pre {
+    overflow: hidden;
+}
+
+/* input/output area */
+div.nbinput.container div.input_area,
+div.nboutput.container div.output_area {
+    -webkit-flex: 1;
+    flex: 1;
+    overflow: auto;
+}
+@media (max-width: 540px) {
+    div.nbinput.container div.input_area,
+    div.nboutput.container div.output_area {
+        width: 100%;
+    }
+}
+
+/* input area */
+div.nbinput.container div.input_area {
+    border: 1px solid #e0e0e0;
+    border-radius: 2px;
+    /*background: #f5f5f5;*/
+}
+
+/* override MathJax center alignment in output cells */
+div.nboutput.container div[class*=MathJax] {
+    text-align: left !important;
+}
+
+/* override sphinx.ext.imgmath center alignment in output cells */
+div.nboutput.container div.math p {
+    text-align: left;
+}
+
+/* standard error */
+div.nboutput.container div.output_area.stderr {
+    background: #fdd;
+}
+
+/* ANSI colors */
+.ansi-black-fg { color: #3E424D; }
+.ansi-black-bg { background-color: #3E424D; }
+.ansi-black-intense-fg { color: #282C36; }
+.ansi-black-intense-bg { background-color: #282C36; }
+.ansi-red-fg { color: #E75C58; }
+.ansi-red-bg { background-color: #E75C58; }
+.ansi-red-intense-fg { color: #B22B31; }
+.ansi-red-intense-bg { background-color: #B22B31; }
+.ansi-green-fg { color: #00A250; }
+.ansi-green-bg { background-color: #00A250; }
+.ansi-green-intense-fg { color: #007427; }
+.ansi-green-intense-bg { background-color: #007427; }
+.ansi-yellow-fg { color: #DDB62B; }
+.ansi-yellow-bg { background-color: #DDB62B; }
+.ansi-yellow-intense-fg { color: #B27D12; }
+.ansi-yellow-intense-bg { background-color: #B27D12; }
+.ansi-blue-fg { color: #208FFB; }
+.ansi-blue-bg { background-color: #208FFB; }
+.ansi-blue-intense-fg { color: #0065CA; }
+.ansi-blue-intense-bg { background-color: #0065CA; }
+.ansi-magenta-fg { color: #D160C4; }
+.ansi-magenta-bg { background-color: #D160C4; }
+.ansi-magenta-intense-fg { color: #A03196; }
+.ansi-magenta-intense-bg { background-color: #A03196; }
+.ansi-cyan-fg { color: #60C6C8; }
+.ansi-cyan-bg { background-color: #60C6C8; }
+.ansi-cyan-intense-fg { color: #258F8F; }
+.ansi-cyan-intense-bg { background-color: #258F8F; }
+.ansi-white-fg { color: #C5C1B4; }
+.ansi-white-bg { background-color: #C5C1B4; }
+.ansi-white-intense-fg { color: #A1A6B2; }
+.ansi-white-intense-bg { background-color: #A1A6B2; }
+
+.ansi-default-inverse-fg { color: #FFFFFF; }
+.ansi-default-inverse-bg { background-color: #000000; }
+
+.ansi-bold { font-weight: bold; }
+.ansi-underline { text-decoration: underline; }
+
+
+div.nbinput.container div.input_area div[class*=highlight] > pre,
+div.nboutput.container div.output_area div[class*=highlight] > pre,
+div.nboutput.container div.output_area div[class*=highlight].math,
+div.nboutput.container div.output_area.rendered_html,
+div.nboutput.container div.output_area > div.output_javascript,
+div.nboutput.container div.output_area:not(.rendered_html) > img{
+    padding: 5px;
+    margin: 0;
+}
+
+/* fix copybtn overflow problem in chromium (needed for 'sphinx_copybutton') */
+div.nbinput.container div.input_area > div[class^='highlight'],
+div.nboutput.container div.output_area > div[class^='highlight']{
+    overflow-y: hidden;
+}
+
+/* hide copybtn icon on prompts (needed for 'sphinx_copybutton') */
+.prompt .copybtn {
+    display: none;
+}
+
+/* Some additional styling taken form the Jupyter notebook CSS */
+div.rendered_html table {
+  border: none;
+  border-collapse: collapse;
+  border-spacing: 0;
+  color: black;
+  font-size: 12px;
+  table-layout: fixed;
+}
+div.rendered_html thead {
+  border-bottom: 1px solid black;
+  vertical-align: bottom;
+}
+div.rendered_html tr,
+div.rendered_html th,
+div.rendered_html td {
+  text-align: right;
+  vertical-align: middle;
+  padding: 0.5em 0.5em;
+  line-height: normal;
+  white-space: normal;
+  max-width: none;
+  border: none;
+}
+div.rendered_html th {
+  font-weight: bold;
+}
+div.rendered_html tbody tr:nth-child(odd) {
+  background: #f5f5f5;
+}
+div.rendered_html tbody tr:hover {
+  background: rgba(66, 165, 245, 0.2);
+}
+</style>
+<section id="Convolutional-Gaussian-Processes">
+<h1>Convolutional Gaussian Processes<a class="headerlink" href="#Convolutional-Gaussian-Processes" title="Permalink to this headline">#</a></h1>
+<p>Mark van der Wilk (July 2019)</p>
+<p>Here we show a simple example of the rectangles experiment, where we compare a normal squared exponential GP, and a convolutional GP. This is similar to the experiment in [1].</p>
+<p>[1] Van der Wilk, Rasmussen, Hensman (2017). Convolutional Gaussian Processes. <em>Advances in Neural Information Processing Systems 30</em>.</p>
+<section id="Generate-dataset">
+<h2>Generate dataset<a class="headerlink" href="#Generate-dataset" title="Permalink to this headline">#</a></h2>
+<p>Generate a simple dataset of rectangles. We want to classify whether they are tall or wide. <strong>NOTE:</strong> Here we take care to make sure that the rectangles don’t touch the edge, which is different to the original paper. We do this to avoid needing to use patch weights, which are needed to correctly account for edge effects.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+
+<span class="kn">import</span> <span class="nn">gpflow</span>
+<span class="kn">import</span> <span class="nn">tensorflow</span> <span class="k">as</span> <span class="nn">tf</span>
+<span class="kn">import</span> <span class="nn">tensorflow_probability</span> <span class="k">as</span> <span class="nn">tfp</span>
+
+<span class="kn">from</span> <span class="nn">gpflow</span> <span class="kn">import</span> <span class="n">set_trainable</span>
+<span class="kn">from</span> <span class="nn">gpflow.ci_utils</span> <span class="kn">import</span> <span class="n">is_continuous_integration</span>
+
+<span class="n">gpflow</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">set_default_float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+<span class="n">gpflow</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">set_default_jitter</span><span class="p">(</span><span class="mf">1e-4</span><span class="p">)</span>
+<span class="n">gpflow</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">set_default_summary_fmt</span><span class="p">(</span><span class="s2">&quot;notebook&quot;</span><span class="p">)</span>
+
+<span class="c1"># for reproducibility of this notebook:</span>
+<span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">123</span><span class="p">)</span>
+<span class="n">tf</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">set_seed</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
+
+<span class="n">MAXITER</span> <span class="o">=</span> <span class="mi">2</span> <span class="k">if</span> <span class="n">is_continuous_integration</span><span class="p">()</span> <span class="k">else</span> <span class="mi">100</span>
+<span class="n">NUM_TRAIN_DATA</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="mi">5</span> <span class="k">if</span> <span class="n">is_continuous_integration</span><span class="p">()</span> <span class="k">else</span> <span class="mi">100</span>
+<span class="p">)</span>  <span class="c1"># This is less than in the original rectangles dataset</span>
+<span class="n">NUM_TEST_DATA</span> <span class="o">=</span> <span class="mi">7</span> <span class="k">if</span> <span class="n">is_continuous_integration</span><span class="p">()</span> <span class="k">else</span> <span class="mi">300</span>
+<span class="n">H</span> <span class="o">=</span> <span class="n">W</span> <span class="o">=</span> <span class="mi">14</span>  <span class="c1"># width and height. In the original paper this is 28</span>
+<span class="n">IMAGE_SHAPE</span> <span class="o">=</span> <span class="p">[</span><span class="n">H</span><span class="p">,</span> <span class="n">W</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+2022-04-28 12:22:25.874355: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcudart.so.11.0&#39;; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory
+2022-04-28 12:22:25.874382: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.
+</pre></div></div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">affine_scalar_bijector</span><span class="p">(</span><span class="n">shift</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="n">scale_bijector</span> <span class="o">=</span> <span class="n">tfp</span><span class="o">.</span><span class="n">bijectors</span><span class="o">.</span><span class="n">Scale</span><span class="p">(</span><span class="n">scale</span><span class="p">)</span> <span class="k">if</span> <span class="n">scale</span> <span class="k">else</span> <span class="n">tfp</span><span class="o">.</span><span class="n">bijectors</span><span class="o">.</span><span class="n">Identity</span><span class="p">()</span>
+    <span class="n">shift_bijector</span> <span class="o">=</span> <span class="n">tfp</span><span class="o">.</span><span class="n">bijectors</span><span class="o">.</span><span class="n">Shift</span><span class="p">(</span><span class="n">shift</span><span class="p">)</span> <span class="k">if</span> <span class="n">shift</span> <span class="k">else</span> <span class="n">tfp</span><span class="o">.</span><span class="n">bijectors</span><span class="o">.</span><span class="n">Identity</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">shift_bijector</span><span class="p">(</span><span class="n">scale_bijector</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">make_rectangle</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">x0</span><span class="p">,</span> <span class="n">y0</span><span class="p">,</span> <span class="n">x1</span><span class="p">,</span> <span class="n">y1</span><span class="p">):</span>
+    <span class="n">arr</span><span class="p">[</span><span class="n">y0</span><span class="p">:</span><span class="n">y1</span><span class="p">,</span> <span class="n">x0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">arr</span><span class="p">[</span><span class="n">y0</span><span class="p">:</span><span class="n">y1</span><span class="p">,</span> <span class="n">x1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">arr</span><span class="p">[</span><span class="n">y0</span><span class="p">,</span> <span class="n">x0</span><span class="p">:</span><span class="n">x1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">arr</span><span class="p">[</span><span class="n">y1</span><span class="p">,</span> <span class="n">x0</span> <span class="p">:</span> <span class="n">x1</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+
+
+<span class="k">def</span> <span class="nf">make_random_rectangle</span><span class="p">(</span><span class="n">arr</span><span class="p">):</span>
+    <span class="n">x0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">arr</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="mi">3</span><span class="p">)</span>
+    <span class="n">y0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">arr</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="mi">3</span><span class="p">)</span>
+    <span class="n">x1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="n">x0</span> <span class="o">+</span> <span class="mi">2</span><span class="p">,</span> <span class="n">arr</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">y1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="n">y0</span> <span class="o">+</span> <span class="mi">2</span><span class="p">,</span> <span class="n">arr</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">make_rectangle</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">x0</span><span class="p">,</span> <span class="n">y0</span><span class="p">,</span> <span class="n">x1</span><span class="p">,</span> <span class="n">y1</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">x0</span><span class="p">,</span> <span class="n">y0</span><span class="p">,</span> <span class="n">x1</span><span class="p">,</span> <span class="n">y1</span>
+
+
+<span class="k">def</span> <span class="nf">make_rectangles_dataset</span><span class="p">(</span><span class="n">num</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">h</span><span class="p">):</span>
+    <span class="n">d</span><span class="p">,</span> <span class="n">Y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">num</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">w</span><span class="p">)),</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">num</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">img</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">d</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1000</span><span class="p">):</span>  <span class="c1"># Finite number of tries</span>
+            <span class="n">x0</span><span class="p">,</span> <span class="n">y0</span><span class="p">,</span> <span class="n">x1</span><span class="p">,</span> <span class="n">y1</span> <span class="o">=</span> <span class="n">make_random_rectangle</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>
+            <span class="n">rw</span><span class="p">,</span> <span class="n">rh</span> <span class="o">=</span> <span class="n">y1</span> <span class="o">-</span> <span class="n">y0</span><span class="p">,</span> <span class="n">x1</span> <span class="o">-</span> <span class="n">x0</span>
+            <span class="k">if</span> <span class="n">rw</span> <span class="o">==</span> <span class="n">rh</span><span class="p">:</span>
+                <span class="n">img</span><span class="p">[:,</span> <span class="p">:]</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="k">continue</span>
+            <span class="n">Y</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">rw</span> <span class="o">&gt;</span> <span class="n">rh</span>
+            <span class="k">break</span>
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="n">d</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">num</span><span class="p">,</span> <span class="n">w</span> <span class="o">*</span> <span class="n">h</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">gpflow</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">default_float</span><span class="p">()),</span>
+        <span class="n">Y</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">gpflow</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">default_float</span><span class="p">()),</span>
+    <span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span> <span class="o">=</span> <span class="n">data</span> <span class="o">=</span> <span class="n">make_rectangles_dataset</span><span class="p">(</span><span class="n">NUM_TRAIN_DATA</span><span class="p">,</span> <span class="o">*</span><span class="n">IMAGE_SHAPE</span><span class="p">)</span>
+<span class="n">Xt</span><span class="p">,</span> <span class="n">Yt</span> <span class="o">=</span> <span class="n">test_data</span> <span class="o">=</span> <span class="n">make_rectangles_dataset</span><span class="p">(</span><span class="n">NUM_TEST_DATA</span><span class="p">,</span> <span class="o">*</span><span class="n">IMAGE_SHAPE</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">):</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">X</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">*</span><span class="n">IMAGE_SHAPE</span><span class="p">))</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="n">Y</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/notebooks_advanced_convolutional_5_0.png" src="../../_images/notebooks_advanced_convolutional_5_0.png" />
+</div>
+</div>
+</section>
+<section id="Squared-Exponential-kernel">
+<h2>Squared Exponential kernel<a class="headerlink" href="#Squared-Exponential-kernel" title="Permalink to this headline">#</a></h2>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">rbf_m</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">SVGP</span><span class="p">(</span>
+    <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">SquaredExponential</span><span class="p">(),</span>
+    <span class="n">gpflow</span><span class="o">.</span><span class="n">likelihoods</span><span class="o">.</span><span class="n">Bernoulli</span><span class="p">(),</span>
+    <span class="n">gpflow</span><span class="o">.</span><span class="n">inducing_variables</span><span class="o">.</span><span class="n">InducingPoints</span><span class="p">(</span><span class="n">X</span><span class="o">.</span><span class="n">copy</span><span class="p">()),</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+2022-04-28 12:22:28.207539: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcuda.so.1&#39;; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory
+2022-04-28 12:22:28.207566: W tensorflow/stream_executor/cuda/cuda_driver.cc:269] failed call to cuInit: UNKNOWN ERROR (303)
+2022-04-28 12:22:28.207584: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (b1d3ce9e03ad): /proc/driver/nvidia/version does not exist
+2022-04-28 12:22:28.207858: I tensorflow/core/platform/cpu_feature_guard.cc:151] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA
+To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">rbf_training_loss_closure</span> <span class="o">=</span> <span class="n">rbf_m</span><span class="o">.</span><span class="n">training_loss_closure</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="nb">compile</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">rbf_elbo</span> <span class="o">=</span> <span class="k">lambda</span><span class="p">:</span> <span class="o">-</span><span class="n">rbf_training_loss_closure</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;RBF elbo before training: </span><span class="si">%.4e</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">rbf_elbo</span><span class="p">())</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+WARNING:tensorflow:AutoGraph could not transform &lt;bound method Dispatcher.dispatch of &lt;dispatched prior_kl&gt;&gt; and will run it as-is.
+Please report this to the TensorFlow team. When filing the bug, set the verbosity to 10 (on Linux, `export AUTOGRAPH_VERBOSITY=10`) and attach the full output.
+Cause: invalid value for &#34;node&#34;: expected &#34;ast.AST&#34;, got &#34;&lt;class &#39;NoneType&#39;&gt;&#34;; to visit lists of nodes, use &#34;visit_block&#34; instead
+To silence this warning, decorate the function with @tf.autograph.experimental.do_not_convert
+WARNING: AutoGraph could not transform &lt;bound method Dispatcher.dispatch of &lt;dispatched prior_kl&gt;&gt; and will run it as-is.
+Please report this to the TensorFlow team. When filing the bug, set the verbosity to 10 (on Linux, `export AUTOGRAPH_VERBOSITY=10`) and attach the full output.
+Cause: invalid value for &#34;node&#34;: expected &#34;ast.AST&#34;, got &#34;&lt;class &#39;NoneType&#39;&gt;&#34;; to visit lists of nodes, use &#34;visit_block&#34; instead
+To silence this warning, decorate the function with @tf.autograph.experimental.do_not_convert
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+2022-04-28 12:22:31.375146: W tensorflow/python/util/util.cc:368] Sets are not currently considered sequences, but this may change in the future, so consider avoiding using them.
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+RBF elbo before training: -9.9408e+01
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">set_trainable</span><span class="p">(</span><span class="n">rbf_m</span><span class="o">.</span><span class="n">inducing_variable</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+<span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+<span class="n">res</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">optimizers</span><span class="o">.</span><span class="n">Scipy</span><span class="p">()</span><span class="o">.</span><span class="n">minimize</span><span class="p">(</span>
+    <span class="n">rbf_training_loss_closure</span><span class="p">,</span>
+    <span class="n">variables</span><span class="o">=</span><span class="n">rbf_m</span><span class="o">.</span><span class="n">trainable_variables</span><span class="p">,</span>
+    <span class="n">method</span><span class="o">=</span><span class="s2">&quot;l-bfgs-b&quot;</span><span class="p">,</span>
+    <span class="n">options</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;disp&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">&quot;maxiter&quot;</span><span class="p">:</span> <span class="n">MAXITER</span><span class="p">},</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">res</span><span class="o">.</span><span class="n">nfev</span> <span class="o">/</span> <span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time</span><span class="p">)</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2"> iter/s&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+RUNNING THE L-BFGS-B CODE
+
+           * * *
+
+Machine precision = 2.220D-16
+ N =         5152     M =           10
+
+At X0         0 variables are exactly at the bounds
+
+At iterate    0    f=  9.94077D+01    |proj g|=  1.77693D+01
+
+At iterate    1    f=  8.27056D+01    |proj g|=  1.08235D+01
+
+At iterate    2    f=  7.10286D+01    |proj g|=  2.52642D+00
+
+At iterate    3    f=  6.96128D+01    |proj g|=  9.52086D-01
+
+At iterate    4    f=  6.91601D+01    |proj g|=  2.98596D-01
+
+At iterate    5    f=  6.90683D+01    |proj g|=  4.57667D-01
+
+At iterate    6    f=  6.87999D+01    |proj g|=  8.48569D-01
+
+At iterate    7    f=  6.87526D+01    |proj g|=  1.00002D+00
+
+At iterate    8    f=  6.85857D+01    |proj g|=  1.28576D+00
+
+At iterate    9    f=  6.81708D+01    |proj g|=  2.04265D+00
+
+At iterate   10    f=  6.58595D+01    |proj g|=  1.34225D+00
+
+At iterate   11    f=  6.47617D+01    |proj g|=  9.21923D-01
+
+At iterate   12    f=  6.37115D+01    |proj g|=  7.98398D-01
+
+At iterate   13    f=  6.31593D+01    |proj g|=  3.96800D-01
+
+At iterate   14    f=  6.23801D+01    |proj g|=  1.27642D+00
+
+At iterate   15    f=  6.17198D+01    |proj g|=  7.71734D-01
+
+At iterate   16    f=  6.13083D+01    |proj g|=  6.72739D-01
+
+At iterate   17    f=  6.09537D+01    |proj g|=  4.45487D-01
+
+At iterate   18    f=  6.07507D+01    |proj g|=  5.04335D-01
+
+At iterate   19    f=  6.06242D+01    |proj g|=  1.80232D-01
+
+At iterate   20    f=  6.04829D+01    |proj g|=  1.79481D-01
+
+At iterate   21    f=  6.04182D+01    |proj g|=  1.66211D-01
+
+At iterate   22    f=  6.04028D+01    |proj g|=  1.52839D-01
+
+At iterate   23    f=  6.03795D+01    |proj g|=  4.28437D-02
+
+At iterate   24    f=  6.03764D+01    |proj g|=  4.87340D-02
+
+At iterate   25    f=  6.03741D+01    |proj g|=  3.66168D-02
+
+At iterate   26    f=  6.03735D+01    |proj g|=  1.01438D-01
+
+At iterate   27    f=  6.03723D+01    |proj g|=  3.97105D-02
+
+At iterate   28    f=  6.03721D+01    |proj g|=  1.89009D-02
+
+At iterate   29    f=  6.03719D+01    |proj g|=  1.17457D-02
+
+At iterate   30    f=  6.03716D+01    |proj g|=  1.04475D-02
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+ This problem is unconstrained.
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+
+At iterate   31    f=  6.03716D+01    |proj g|=  1.80645D-02
+
+At iterate   32    f=  6.03714D+01    |proj g|=  2.73618D-03
+
+At iterate   33    f=  6.03714D+01    |proj g|=  2.05487D-03
+
+At iterate   34    f=  6.03714D+01    |proj g|=  2.28429D-03
+
+At iterate   35    f=  6.03714D+01    |proj g|=  2.56206D-03
+
+At iterate   36    f=  6.03714D+01    |proj g|=  8.80378D-04
+
+At iterate   37    f=  6.03714D+01    |proj g|=  3.83350D-04
+
+At iterate   38    f=  6.03714D+01    |proj g|=  3.14405D-04
+
+At iterate   39    f=  6.03714D+01    |proj g|=  2.42994D-04
+
+At iterate   40    f=  6.03714D+01    |proj g|=  5.85343D-04
+
+           * * *
+
+Tit   = total number of iterations
+Tnf   = total number of function evaluations
+Tnint = total number of segments explored during Cauchy searches
+Skip  = number of BFGS updates skipped
+Nact  = number of active bounds at final generalized Cauchy point
+Projg = norm of the final projected gradient
+F     = final function value
+
+           * * *
+
+   N    Tit     Tnf  Tnint  Skip  Nact     Projg        F
+ 5152     40     48      1     0     0   5.853D-04   6.037D+01
+  F =   60.371382131218276
+
+CONVERGENCE: REL_REDUCTION_OF_F_&lt;=_FACTR*EPSMCH
+35.603 iter/s
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">train_acc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">((</span><span class="n">rbf_m</span><span class="o">.</span><span class="n">predict_y</span><span class="p">(</span><span class="n">X</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mf">0.5</span><span class="p">)</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">&quot;float&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="n">Y</span><span class="p">)</span>
+<span class="n">test_acc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">((</span><span class="n">rbf_m</span><span class="o">.</span><span class="n">predict_y</span><span class="p">(</span><span class="n">Xt</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mf">0.5</span><span class="p">)</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">&quot;float&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="n">Yt</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Train acc: </span><span class="si">{</span><span class="n">train_acc</span> <span class="o">*</span> <span class="mi">100</span><span class="si">}</span><span class="s2">%</span><span class="se">\n</span><span class="s2">Test acc : </span><span class="si">{</span><span class="n">test_acc</span><span class="o">*</span><span class="mi">100</span><span class="si">}</span><span class="s2">%&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;RBF elbo after training: </span><span class="si">%.4e</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">rbf_elbo</span><span class="p">())</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Train acc: 100.0%
+Test acc : 68.33333333333333%
+RBF elbo after training: -6.0371e+01
+</pre></div></div>
+</div>
+</section>
+<section id="Convolutional-kernel">
+<h2>Convolutional kernel<a class="headerlink" href="#Convolutional-kernel" title="Permalink to this headline">#</a></h2>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">f64</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+<span class="n">positive_with_min</span> <span class="o">=</span> <span class="k">lambda</span><span class="p">:</span> <span class="n">affine_scalar_bijector</span><span class="p">(</span><span class="n">shift</span><span class="o">=</span><span class="n">f64</span><span class="p">(</span><span class="mf">1e-4</span><span class="p">))(</span><span class="n">tfp</span><span class="o">.</span><span class="n">bijectors</span><span class="o">.</span><span class="n">Softplus</span><span class="p">())</span>
+<span class="n">constrained</span> <span class="o">=</span> <span class="k">lambda</span><span class="p">:</span> <span class="n">affine_scalar_bijector</span><span class="p">(</span><span class="n">shift</span><span class="o">=</span><span class="n">f64</span><span class="p">(</span><span class="mf">1e-4</span><span class="p">),</span> <span class="n">scale</span><span class="o">=</span><span class="n">f64</span><span class="p">(</span><span class="mf">100.0</span><span class="p">))(</span>
+    <span class="n">tfp</span><span class="o">.</span><span class="n">bijectors</span><span class="o">.</span><span class="n">Sigmoid</span><span class="p">()</span>
+<span class="p">)</span>
+<span class="n">max_abs_1</span> <span class="o">=</span> <span class="k">lambda</span><span class="p">:</span> <span class="n">affine_scalar_bijector</span><span class="p">(</span><span class="n">shift</span><span class="o">=</span><span class="n">f64</span><span class="p">(</span><span class="o">-</span><span class="mf">2.0</span><span class="p">),</span> <span class="n">scale</span><span class="o">=</span><span class="n">f64</span><span class="p">(</span><span class="mf">4.0</span><span class="p">))(</span><span class="n">tfp</span><span class="o">.</span><span class="n">bijectors</span><span class="o">.</span><span class="n">Sigmoid</span><span class="p">())</span>
+
+<span class="n">patch_shape</span> <span class="o">=</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span>
+<span class="n">conv_k</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">Convolutional</span><span class="p">(</span><span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">SquaredExponential</span><span class="p">(),</span> <span class="n">IMAGE_SHAPE</span><span class="p">,</span> <span class="n">patch_shape</span><span class="p">)</span>
+<span class="n">conv_k</span><span class="o">.</span><span class="n">base_kernel</span><span class="o">.</span><span class="n">lengthscales</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="n">positive_with_min</span><span class="p">())</span>
+<span class="c1"># Weight scale and variance are non-identifiable. We also need to prevent variance from shooting off crazily.</span>
+<span class="n">conv_k</span><span class="o">.</span><span class="n">base_kernel</span><span class="o">.</span><span class="n">variance</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="n">constrained</span><span class="p">())</span>
+<span class="n">conv_k</span><span class="o">.</span><span class="n">weights</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span><span class="n">conv_k</span><span class="o">.</span><span class="n">weights</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="n">transform</span><span class="o">=</span><span class="n">max_abs_1</span><span class="p">())</span>
+<span class="n">conv_f</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">inducing_variables</span><span class="o">.</span><span class="n">InducingPatches</span><span class="p">(</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">conv_k</span><span class="o">.</span><span class="n">get_patches</span><span class="p">(</span><span class="n">X</span><span class="p">)</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">9</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">conv_m</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">SVGP</span><span class="p">(</span><span class="n">conv_k</span><span class="p">,</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">likelihoods</span><span class="o">.</span><span class="n">Bernoulli</span><span class="p">(),</span> <span class="n">conv_f</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">set_trainable</span><span class="p">(</span><span class="n">conv_m</span><span class="o">.</span><span class="n">inducing_variable</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+<span class="n">set_trainable</span><span class="p">(</span><span class="n">conv_m</span><span class="o">.</span><span class="n">kernel</span><span class="o">.</span><span class="n">base_kernel</span><span class="o">.</span><span class="n">variance</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+<span class="n">set_trainable</span><span class="p">(</span><span class="n">conv_m</span><span class="o">.</span><span class="n">kernel</span><span class="o">.</span><span class="n">weights</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">conv_training_loss_closure</span> <span class="o">=</span> <span class="n">conv_m</span><span class="o">.</span><span class="n">training_loss_closure</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="nb">compile</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">conv_elbo</span> <span class="o">=</span> <span class="k">lambda</span><span class="p">:</span> <span class="o">-</span><span class="n">conv_training_loss_closure</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;conv elbo before training: </span><span class="si">%.4e</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">conv_elbo</span><span class="p">())</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+conv elbo before training: -8.7271e+01
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+<span class="n">res</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">optimizers</span><span class="o">.</span><span class="n">Scipy</span><span class="p">()</span><span class="o">.</span><span class="n">minimize</span><span class="p">(</span>
+    <span class="n">conv_training_loss_closure</span><span class="p">,</span>
+    <span class="n">variables</span><span class="o">=</span><span class="n">conv_m</span><span class="o">.</span><span class="n">trainable_variables</span><span class="p">,</span>
+    <span class="n">method</span><span class="o">=</span><span class="s2">&quot;l-bfgs-b&quot;</span><span class="p">,</span>
+    <span class="n">options</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;disp&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">&quot;maxiter&quot;</span><span class="p">:</span> <span class="n">MAXITER</span> <span class="o">/</span> <span class="mi">10</span><span class="p">},</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">res</span><span class="o">.</span><span class="n">nfev</span> <span class="o">/</span> <span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time</span><span class="p">)</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2"> iter/s&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+RUNNING THE L-BFGS-B CODE
+
+           * * *
+
+Machine precision = 2.220D-16
+ N =         1081     M =           10
+
+At X0         0 variables are exactly at the bounds
+
+At iterate    0    f=  8.72706D+01    |proj g|=  3.34786D+01
+
+At iterate    1    f=  7.06198D+01    |proj g|=  1.23134D+01
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+ This problem is unconstrained.
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+
+At iterate    2    f=  7.03607D+01    |proj g|=  6.56137D+00
+
+At iterate    3    f=  6.98680D+01    |proj g|=  2.96447D+00
+
+At iterate    4    f=  6.93739D+01    |proj g|=  2.88465D+00
+
+At iterate    5    f=  6.88717D+01    |proj g|=  5.27202D+00
+
+At iterate    6    f=  6.60134D+01    |proj g|=  1.11323D+01
+
+At iterate    7    f=  6.51602D+01    |proj g|=  3.43289D+00
+
+At iterate    8    f=  6.49795D+01    |proj g|=  9.75563D-01
+
+At iterate    9    f=  6.48808D+01    |proj g|=  9.60694D-01
+
+4.471 iter/s
+At iterate   10    f=  6.48453D+01    |proj g|=  1.39257D+00
+
+           * * *
+
+Tit   = total number of iterations
+Tnf   = total number of function evaluations
+Tnint = total number of segments explored during Cauchy searches
+Skip  = number of BFGS updates skipped
+Nact  = number of active bounds at final generalized Cauchy point
+Projg = norm of the final projected gradient
+F     = final function value
+
+           * * *
+
+   N    Tit     Tnf  Tnint  Skip  Nact     Projg        F
+ 1081     10     11      1     0     0   1.393D+00   6.485D+01
+  F =   64.845328136876148
+
+STOP: TOTAL NO. of ITERATIONS REACHED LIMIT
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">set_trainable</span><span class="p">(</span><span class="n">conv_m</span><span class="o">.</span><span class="n">kernel</span><span class="o">.</span><span class="n">base_kernel</span><span class="o">.</span><span class="n">variance</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+<span class="n">res</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">optimizers</span><span class="o">.</span><span class="n">Scipy</span><span class="p">()</span><span class="o">.</span><span class="n">minimize</span><span class="p">(</span>
+    <span class="n">conv_training_loss_closure</span><span class="p">,</span>
+    <span class="n">variables</span><span class="o">=</span><span class="n">conv_m</span><span class="o">.</span><span class="n">trainable_variables</span><span class="p">,</span>
+    <span class="n">method</span><span class="o">=</span><span class="s2">&quot;l-bfgs-b&quot;</span><span class="p">,</span>
+    <span class="n">options</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;disp&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">&quot;maxiter&quot;</span><span class="p">:</span> <span class="n">MAXITER</span><span class="p">},</span>
+<span class="p">)</span>
+<span class="n">train_acc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">((</span><span class="n">conv_m</span><span class="o">.</span><span class="n">predict_y</span><span class="p">(</span><span class="n">X</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mf">0.5</span><span class="p">)</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">&quot;float&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="n">Y</span><span class="p">)</span>
+<span class="n">test_acc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">((</span><span class="n">conv_m</span><span class="o">.</span><span class="n">predict_y</span><span class="p">(</span><span class="n">Xt</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mf">0.5</span><span class="p">)</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">&quot;float&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="n">Yt</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Train acc: </span><span class="si">{</span><span class="n">train_acc</span> <span class="o">*</span> <span class="mi">100</span><span class="si">}</span><span class="s2">%</span><span class="se">\n</span><span class="s2">Test acc : </span><span class="si">{</span><span class="n">test_acc</span><span class="o">*</span><span class="mi">100</span><span class="si">}</span><span class="s2">%&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;conv elbo after training: </span><span class="si">%.4e</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">conv_elbo</span><span class="p">())</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+RUNNING THE L-BFGS-B CODE
+
+           * * *
+
+Machine precision = 2.220D-16
+ N =         1082     M =           10
+
+At X0         0 variables are exactly at the bounds
+
+At iterate    0    f=  6.48453D+01    |proj g|=  3.53996D+00
+
+At iterate    1    f=  6.24919D+01    |proj g|=  7.35357D+00
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+ This problem is unconstrained.
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+
+At iterate    2    f=  6.23531D+01    |proj g|=  7.58264D+00
+
+At iterate    3    f=  6.04166D+01    |proj g|=  1.58157D+01
+
+At iterate    4    f=  5.88887D+01    |proj g|=  2.48005D+01
+
+At iterate    5    f=  5.63927D+01    |proj g|=  4.28536D+01
+
+At iterate    6    f=  5.02144D+01    |proj g|=  1.04313D+02
+
+At iterate    7    f=  4.44685D+01    |proj g|=  8.74280D+01
+
+At iterate    8    f=  3.92359D+01    |proj g|=  3.11481D+01
+
+At iterate    9    f=  3.74686D+01    |proj g|=  3.06073D+01
+
+At iterate   10    f=  3.68864D+01    |proj g|=  4.40037D+01
+
+At iterate   11    f=  3.60668D+01    |proj g|=  7.87412D+00
+
+At iterate   12    f=  3.58935D+01    |proj g|=  1.41535D+01
+
+At iterate   13    f=  3.45651D+01    |proj g|=  7.04865D+01
+
+At iterate   14    f=  3.13752D+01    |proj g|=  4.56939D+01
+
+At iterate   15    f=  3.02012D+01    |proj g|=  2.86627D+01
+
+At iterate   16    f=  2.96655D+01    |proj g|=  1.60272D+01
+
+At iterate   17    f=  2.94558D+01    |proj g|=  8.24031D+00
+
+At iterate   18    f=  2.93105D+01    |proj g|=  2.25261D+00
+
+At iterate   19    f=  2.90992D+01    |proj g|=  5.73397D+00
+
+At iterate   20    f=  2.87163D+01    |proj g|=  1.55953D+01
+
+At iterate   21    f=  2.81823D+01    |proj g|=  2.54265D+01
+
+At iterate   22    f=  2.80343D+01    |proj g|=  2.19902D+01
+
+At iterate   23    f=  2.79432D+01    |proj g|=  1.41609D+01
+
+At iterate   24    f=  2.78263D+01    |proj g|=  2.44911D+00
+
+At iterate   25    f=  2.78000D+01    |proj g|=  1.18706D+00
+
+At iterate   26    f=  2.77623D+01    |proj g|=  3.27247D+00
+
+At iterate   27    f=  2.76356D+01    |proj g|=  5.23204D+00
+
+At iterate   28    f=  2.74130D+01    |proj g|=  6.84226D+00
+
+At iterate   29    f=  2.72099D+01    |proj g|=  2.39793D+00
+
+At iterate   30    f=  2.71505D+01    |proj g|=  8.87291D-01
+
+At iterate   31    f=  2.71225D+01    |proj g|=  1.25368D+00
+
+At iterate   32    f=  2.70691D+01    |proj g|=  3.44551D+00
+
+At iterate   33    f=  2.70246D+01    |proj g|=  3.99899D+00
+
+At iterate   34    f=  2.70165D+01    |proj g|=  1.66840D+00
+
+At iterate   35    f=  2.69736D+01    |proj g|=  1.96735D-01
+
+At iterate   36    f=  2.69568D+01    |proj g|=  4.38151D+00
+
+At iterate   37    f=  2.69408D+01    |proj g|=  1.61116D+00
+
+At iterate   38    f=  2.69308D+01    |proj g|=  1.04302D+00
+
+At iterate   39    f=  2.68977D+01    |proj g|=  1.50422D+00
+
+At iterate   40    f=  2.68704D+01    |proj g|=  2.03393D+00
+
+At iterate   41    f=  2.68478D+01    |proj g|=  7.74728D-01
+
+At iterate   42    f=  2.68370D+01    |proj g|=  6.68973D-01
+
+At iterate   43    f=  2.68312D+01    |proj g|=  1.17495D+00
+
+At iterate   44    f=  2.68205D+01    |proj g|=  1.40366D+00
+
+At iterate   45    f=  2.68164D+01    |proj g|=  2.93858D+00
+
+At iterate   46    f=  2.68066D+01    |proj g|=  1.14149D+00
+
+At iterate   47    f=  2.68038D+01    |proj g|=  2.29234D-01
+
+At iterate   48    f=  2.68031D+01    |proj g|=  6.60556D-02
+
+At iterate   49    f=  2.68025D+01    |proj g|=  6.92349D-01
+
+At iterate   50    f=  2.68010D+01    |proj g|=  7.83832D-01
+
+At iterate   51    f=  2.67992D+01    |proj g|=  2.75345D+00
+
+At iterate   52    f=  2.67965D+01    |proj g|=  1.09876D+00
+
+At iterate   53    f=  2.67954D+01    |proj g|=  1.38049D-01
+
+At iterate   54    f=  2.67951D+01    |proj g|=  1.82734D-01
+
+At iterate   55    f=  2.67943D+01    |proj g|=  2.35909D-01
+
+At iterate   56    f=  2.67915D+01    |proj g|=  1.36155D+00
+
+At iterate   57    f=  2.67888D+01    |proj g|=  1.44441D+00
+
+At iterate   58    f=  2.67867D+01    |proj g|=  6.69361D-01
+
+At iterate   59    f=  2.67852D+01    |proj g|=  2.49328D-01
+
+At iterate   60    f=  2.67849D+01    |proj g|=  1.30080D-01
+
+At iterate   61    f=  2.67838D+01    |proj g|=  3.45720D-01
+
+At iterate   62    f=  2.67818D+01    |proj g|=  7.66960D-01
+
+At iterate   63    f=  2.67784D+01    |proj g|=  9.00951D-01
+
+At iterate   64    f=  2.67780D+01    |proj g|=  1.20365D+00
+
+At iterate   65    f=  2.67748D+01    |proj g|=  8.04737D-01
+
+At iterate   66    f=  2.67725D+01    |proj g|=  9.50914D-02
+
+At iterate   67    f=  2.67716D+01    |proj g|=  2.91533D-01
+
+At iterate   68    f=  2.67709D+01    |proj g|=  2.11284D-01
+
+At iterate   69    f=  2.67707D+01    |proj g|=  7.81899D-01
+
+At iterate   70    f=  2.67699D+01    |proj g|=  4.71172D-01
+
+At iterate   71    f=  2.67687D+01    |proj g|=  7.77922D-02
+
+At iterate   72    f=  2.67676D+01    |proj g|=  3.15642D-01
+
+At iterate   73    f=  2.67667D+01    |proj g|=  4.34826D-01
+
+At iterate   74    f=  2.67662D+01    |proj g|=  8.68346D-01
+
+At iterate   75    f=  2.67653D+01    |proj g|=  1.22761D+00
+
+At iterate   76    f=  2.67642D+01    |proj g|=  5.35418D-01
+
+At iterate   77    f=  2.67634D+01    |proj g|=  4.99054D-02
+
+At iterate   78    f=  2.67632D+01    |proj g|=  1.29662D-01
+
+At iterate   79    f=  2.67626D+01    |proj g|=  1.94508D-01
+
+At iterate   80    f=  2.67625D+01    |proj g|=  5.88695D-01
+
+At iterate   81    f=  2.67616D+01    |proj g|=  3.65856D-01
+
+At iterate   82    f=  2.67614D+01    |proj g|=  3.02147D-01
+
+At iterate   83    f=  2.67611D+01    |proj g|=  1.93515D-01
+
+At iterate   84    f=  2.67607D+01    |proj g|=  1.59691D-01
+
+At iterate   85    f=  2.67587D+01    |proj g|=  1.00310D-01
+
+At iterate   86    f=  2.67585D+01    |proj g|=  5.74819D-01
+
+At iterate   87    f=  2.67576D+01    |proj g|=  3.45734D-01
+
+At iterate   88    f=  2.67569D+01    |proj g|=  3.97831D-01
+
+At iterate   89    f=  2.67565D+01    |proj g|=  1.99034D-01
+
+At iterate   90    f=  2.67561D+01    |proj g|=  1.41983D-01
+
+At iterate   91    f=  2.67556D+01    |proj g|=  1.60806D-01
+
+At iterate   92    f=  2.67554D+01    |proj g|=  9.41866D-01
+
+At iterate   93    f=  2.67549D+01    |proj g|=  2.74195D-01
+
+At iterate   94    f=  2.67546D+01    |proj g|=  1.29183D-01
+
+At iterate   95    f=  2.67544D+01    |proj g|=  2.30971D-01
+
+At iterate   96    f=  2.67542D+01    |proj g|=  2.83451D-01
+
+At iterate   97    f=  2.67537D+01    |proj g|=  6.83473D-01
+
+At iterate   98    f=  2.67532D+01    |proj g|=  8.01556D-02
+
+At iterate   99    f=  2.67529D+01    |proj g|=  1.23590D-01
+
+At iterate  100    f=  2.67525D+01    |proj g|=  6.68318D-01
+
+           * * *
+
+Tit   = total number of iterations
+Tnf   = total number of function evaluations
+Tnint = total number of segments explored during Cauchy searches
+Skip  = number of BFGS updates skipped
+Nact  = number of active bounds at final generalized Cauchy point
+Projg = norm of the final projected gradient
+F     = final function value
+
+           * * *
+
+   N    Tit     Tnf  Tnint  Skip  Nact     Projg        F
+ 1082    100    113      1     0     0   6.683D-01   2.675D+01
+  F =   26.752476277148411
+
+STOP: TOTAL NO. of ITERATIONS REACHED LIMIT
+Train acc: 100.0%
+Test acc : 97.0%
+conv elbo after training: -2.6752e+01
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">res</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">optimizers</span><span class="o">.</span><span class="n">Scipy</span><span class="p">()</span><span class="o">.</span><span class="n">minimize</span><span class="p">(</span>
+    <span class="n">conv_training_loss_closure</span><span class="p">,</span>
+    <span class="n">variables</span><span class="o">=</span><span class="n">conv_m</span><span class="o">.</span><span class="n">trainable_variables</span><span class="p">,</span>
+    <span class="n">method</span><span class="o">=</span><span class="s2">&quot;l-bfgs-b&quot;</span><span class="p">,</span>
+    <span class="n">options</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;disp&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">&quot;maxiter&quot;</span><span class="p">:</span> <span class="n">MAXITER</span><span class="p">},</span>
+<span class="p">)</span>
+<span class="n">train_acc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">((</span><span class="n">conv_m</span><span class="o">.</span><span class="n">predict_y</span><span class="p">(</span><span class="n">X</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mf">0.5</span><span class="p">)</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">&quot;float&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="n">Y</span><span class="p">)</span>
+<span class="n">test_acc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">((</span><span class="n">conv_m</span><span class="o">.</span><span class="n">predict_y</span><span class="p">(</span><span class="n">Xt</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mf">0.5</span><span class="p">)</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">&quot;float&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="n">Yt</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Train acc: </span><span class="si">{</span><span class="n">train_acc</span> <span class="o">*</span> <span class="mi">100</span><span class="si">}</span><span class="s2">%</span><span class="se">\n</span><span class="s2">Test acc : </span><span class="si">{</span><span class="n">test_acc</span><span class="o">*</span><span class="mi">100</span><span class="si">}</span><span class="s2">%&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;conv elbo after training: </span><span class="si">%.4e</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">conv_elbo</span><span class="p">())</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+ This problem is unconstrained.
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+RUNNING THE L-BFGS-B CODE
+
+           * * *
+
+Machine precision = 2.220D-16
+ N =         1082     M =           10
+
+At X0         0 variables are exactly at the bounds
+
+At iterate    0    f=  2.67525D+01    |proj g|=  6.68318D-01
+
+At iterate    1    f=  2.67522D+01    |proj g|=  3.27002D-01
+
+At iterate    2    f=  2.67522D+01    |proj g|=  3.31661D-02
+
+At iterate    3    f=  2.67521D+01    |proj g|=  6.80577D-02
+
+At iterate    4    f=  2.67520D+01    |proj g|=  3.95929D-01
+
+At iterate    5    f=  2.67518D+01    |proj g|=  6.57866D-01
+
+At iterate    6    f=  2.67514D+01    |proj g|=  7.21012D-01
+
+At iterate    7    f=  2.67511D+01    |proj g|=  6.49715D-01
+
+At iterate    8    f=  2.67507D+01    |proj g|=  1.08979D-01
+
+At iterate    9    f=  2.67505D+01    |proj g|=  2.88004D-01
+
+At iterate   10    f=  2.67503D+01    |proj g|=  5.68242D-01
+
+At iterate   11    f=  2.67501D+01    |proj g|=  5.87606D-01
+
+At iterate   12    f=  2.67496D+01    |proj g|=  2.55465D-01
+
+At iterate   13    f=  2.67493D+01    |proj g|=  2.47611D-01
+
+At iterate   14    f=  2.67492D+01    |proj g|=  4.35793D-01
+
+At iterate   15    f=  2.67489D+01    |proj g|=  5.27562D-01
+
+At iterate   16    f=  2.67487D+01    |proj g|=  1.92907D-01
+
+At iterate   17    f=  2.67486D+01    |proj g|=  4.50674D-02
+
+At iterate   18    f=  2.67486D+01    |proj g|=  2.11891D-01
+
+At iterate   19    f=  2.67484D+01    |proj g|=  4.25851D-01
+
+At iterate   20    f=  2.67483D+01    |proj g|=  4.95829D-01
+
+At iterate   21    f=  2.67482D+01    |proj g|=  5.43455D-01
+
+At iterate   22    f=  2.67480D+01    |proj g|=  3.04600D-01
+
+At iterate   23    f=  2.67479D+01    |proj g|=  3.68898D-02
+
+At iterate   24    f=  2.67479D+01    |proj g|=  6.15518D-02
+
+At iterate   25    f=  2.67479D+01    |proj g|=  8.95039D-02
+
+At iterate   26    f=  2.67479D+01    |proj g|=  1.41212D-01
+
+At iterate   27    f=  2.67478D+01    |proj g|=  5.84156D-02
+
+At iterate   28    f=  2.67477D+01    |proj g|=  1.68661D-01
+
+At iterate   29    f=  2.67475D+01    |proj g|=  1.89131D-01
+
+At iterate   30    f=  2.67475D+01    |proj g|=  2.34854D-01
+
+At iterate   31    f=  2.67474D+01    |proj g|=  9.16588D-02
+
+At iterate   32    f=  2.67474D+01    |proj g|=  2.90862D-02
+
+At iterate   33    f=  2.67474D+01    |proj g|=  3.78140D-02
+
+At iterate   34    f=  2.67473D+01    |proj g|=  1.47481D-01
+
+At iterate   35    f=  2.67473D+01    |proj g|=  2.26681D-01
+
+At iterate   36    f=  2.67472D+01    |proj g|=  2.15401D-01
+
+At iterate   37    f=  2.67472D+01    |proj g|=  2.70266D-01
+
+At iterate   38    f=  2.67472D+01    |proj g|=  1.24085D-01
+
+At iterate   39    f=  2.67472D+01    |proj g|=  2.66106D-02
+
+At iterate   40    f=  2.67472D+01    |proj g|=  4.83632D-02
+
+At iterate   41    f=  2.67472D+01    |proj g|=  6.90195D-02
+
+At iterate   42    f=  2.67472D+01    |proj g|=  8.14353D-02
+
+At iterate   43    f=  2.67472D+01    |proj g|=  1.21137D-01
+
+At iterate   44    f=  2.67471D+01    |proj g|=  9.34502D-02
+
+At iterate   45    f=  2.67471D+01    |proj g|=  4.26762D-02
+
+At iterate   46    f=  2.67471D+01    |proj g|=  4.98395D-02
+
+At iterate   47    f=  2.67471D+01    |proj g|=  6.74465D-02
+
+At iterate   48    f=  2.67471D+01    |proj g|=  7.35587D-02
+
+At iterate   49    f=  2.67471D+01    |proj g|=  1.21215D-01
+
+At iterate   50    f=  2.67471D+01    |proj g|=  7.21497D-02
+
+At iterate   51    f=  2.67471D+01    |proj g|=  2.14279D-02
+
+At iterate   52    f=  2.67471D+01    |proj g|=  3.71622D-02
+
+At iterate   53    f=  2.67470D+01    |proj g|=  3.20793D-02
+
+At iterate   54    f=  2.67470D+01    |proj g|=  1.60953D-01
+
+At iterate   55    f=  2.67470D+01    |proj g|=  3.17055D-02
+
+At iterate   56    f=  2.67470D+01    |proj g|=  5.56109D-02
+
+At iterate   57    f=  2.67470D+01    |proj g|=  1.28999D-01
+
+At iterate   58    f=  2.67470D+01    |proj g|=  1.62634D-01
+
+At iterate   59    f=  2.67469D+01    |proj g|=  1.61227D-01
+
+At iterate   60    f=  2.67469D+01    |proj g|=  1.78622D-01
+
+At iterate   61    f=  2.67469D+01    |proj g|=  7.27710D-02
+
+At iterate   62    f=  2.67469D+01    |proj g|=  2.23603D-02
+
+At iterate   63    f=  2.67469D+01    |proj g|=  8.89382D-02
+
+At iterate   64    f=  2.67468D+01    |proj g|=  1.25858D-01
+
+At iterate   65    f=  2.67468D+01    |proj g|=  1.22739D-01
+
+At iterate   66    f=  2.67468D+01    |proj g|=  1.27566D-01
+
+At iterate   67    f=  2.67467D+01    |proj g|=  6.79658D-02
+
+At iterate   68    f=  2.67467D+01    |proj g|=  8.85150D-02
+
+At iterate   69    f=  2.67466D+01    |proj g|=  1.03223D-01
+
+At iterate   70    f=  2.67465D+01    |proj g|=  1.50167D-01
+
+At iterate   71    f=  2.67465D+01    |proj g|=  1.29116D-01
+
+At iterate   72    f=  2.67464D+01    |proj g|=  1.69379D-01
+
+At iterate   73    f=  2.67463D+01    |proj g|=  6.84585D-02
+
+At iterate   74    f=  2.67462D+01    |proj g|=  8.04399D-02
+
+At iterate   75    f=  2.67461D+01    |proj g|=  1.96892D-01
+
+At iterate   76    f=  2.67460D+01    |proj g|=  5.93084D-02
+
+At iterate   77    f=  2.67458D+01    |proj g|=  1.35104D-01
+
+At iterate   78    f=  2.67456D+01    |proj g|=  1.53596D-01
+
+At iterate   79    f=  2.67452D+01    |proj g|=  8.89142D-02
+
+At iterate   80    f=  2.67451D+01    |proj g|=  4.10770D-01
+
+At iterate   81    f=  2.67448D+01    |proj g|=  1.72357D-01
+
+At iterate   82    f=  2.67447D+01    |proj g|=  8.90349D-02
+
+At iterate   83    f=  2.67446D+01    |proj g|=  1.94874D-01
+
+At iterate   84    f=  2.67444D+01    |proj g|=  2.01792D-01
+
+At iterate   85    f=  2.67441D+01    |proj g|=  4.32662D-01
+
+At iterate   86    f=  2.67438D+01    |proj g|=  1.73046D-01
+
+At iterate   87    f=  2.67434D+01    |proj g|=  1.68457D-01
+
+At iterate   88    f=  2.67433D+01    |proj g|=  6.37669D-02
+
+At iterate   89    f=  2.67431D+01    |proj g|=  4.10139D-02
+
+At iterate   90    f=  2.67426D+01    |proj g|=  3.56666D-01
+
+At iterate   91    f=  2.67418D+01    |proj g|=  4.45180D-01
+
+At iterate   92    f=  2.67417D+01    |proj g|=  8.12744D-01
+
+At iterate   93    f=  2.67411D+01    |proj g|=  5.98035D-01
+
+At iterate   94    f=  2.67405D+01    |proj g|=  2.28753D-01
+
+At iterate   95    f=  2.67403D+01    |proj g|=  6.07015D-02
+
+At iterate   96    f=  2.67402D+01    |proj g|=  1.35451D-01
+
+At iterate   97    f=  2.67401D+01    |proj g|=  5.26272D-01
+
+At iterate   98    f=  2.67398D+01    |proj g|=  3.61718D-01
+
+At iterate   99    f=  2.67392D+01    |proj g|=  1.99866D-01
+
+At iterate  100    f=  2.67388D+01    |proj g|=  3.14256D-01
+
+           * * *
+
+Tit   = total number of iterations
+Tnf   = total number of function evaluations
+Tnint = total number of segments explored during Cauchy searches
+Skip  = number of BFGS updates skipped
+Nact  = number of active bounds at final generalized Cauchy point
+Projg = norm of the final projected gradient
+F     = final function value
+
+           * * *
+
+   N    Tit     Tnf  Tnint  Skip  Nact     Projg        F
+ 1082    100    112      1     0     0   3.143D-01   2.674D+01
+  F =   26.738761345353041
+
+STOP: TOTAL NO. of ITERATIONS REACHED LIMIT
+Train acc: 100.0%
+Test acc : 99.0%
+conv elbo after training: -2.6739e+01
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">set_trainable</span><span class="p">(</span><span class="n">conv_m</span><span class="o">.</span><span class="n">kernel</span><span class="o">.</span><span class="n">weights</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+<span class="n">res</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">optimizers</span><span class="o">.</span><span class="n">Scipy</span><span class="p">()</span><span class="o">.</span><span class="n">minimize</span><span class="p">(</span>
+    <span class="n">conv_training_loss_closure</span><span class="p">,</span>
+    <span class="n">variables</span><span class="o">=</span><span class="n">conv_m</span><span class="o">.</span><span class="n">trainable_variables</span><span class="p">,</span>
+    <span class="n">method</span><span class="o">=</span><span class="s2">&quot;l-bfgs-b&quot;</span><span class="p">,</span>
+    <span class="n">options</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;disp&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">&quot;maxiter&quot;</span><span class="p">:</span> <span class="n">MAXITER</span><span class="p">},</span>
+<span class="p">)</span>
+<span class="n">train_acc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">((</span><span class="n">conv_m</span><span class="o">.</span><span class="n">predict_y</span><span class="p">(</span><span class="n">X</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mf">0.5</span><span class="p">)</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">&quot;float&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="n">Y</span><span class="p">)</span>
+<span class="n">test_acc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">((</span><span class="n">conv_m</span><span class="o">.</span><span class="n">predict_y</span><span class="p">(</span><span class="n">Xt</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mf">0.5</span><span class="p">)</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">&quot;float&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="n">Yt</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Train acc: </span><span class="si">{</span><span class="n">train_acc</span> <span class="o">*</span> <span class="mi">100</span><span class="si">}</span><span class="s2">%</span><span class="se">\n</span><span class="s2">Test acc : </span><span class="si">{</span><span class="n">test_acc</span><span class="o">*</span><span class="mi">100</span><span class="si">}</span><span class="s2">%&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;conv elbo after training: </span><span class="si">%.4e</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">conv_elbo</span><span class="p">())</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+RUNNING THE L-BFGS-B CODE
+
+           * * *
+
+Machine precision = 2.220D-16
+ N =         1226     M =           10
+
+At X0         0 variables are exactly at the bounds
+
+At iterate    0    f=  2.67388D+01    |proj g|=  3.16606D-01
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+ This problem is unconstrained.
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+
+At iterate    1    f=  2.67198D+01    |proj g|=  5.35704D+00
+
+At iterate    2    f=  2.65476D+01    |proj g|=  8.50611D+00
+
+At iterate    3    f=  2.42278D+01    |proj g|=  2.36226D+01
+
+At iterate    4    f=  2.30459D+01    |proj g|=  3.37315D+01
+
+At iterate    5    f=  2.23312D+01    |proj g|=  5.38908D+00
+
+At iterate    6    f=  2.22042D+01    |proj g|=  5.50696D+00
+
+At iterate    7    f=  2.18324D+01    |proj g|=  5.77575D+00
+
+At iterate    8    f=  2.09906D+01    |proj g|=  6.52458D+00
+
+At iterate    9    f=  2.01091D+01    |proj g|=  3.34543D+00
+
+At iterate   10    f=  1.95405D+01    |proj g|=  1.98401D+00
+
+At iterate   11    f=  1.90199D+01    |proj g|=  1.17356D+00
+
+At iterate   12    f=  1.85327D+01    |proj g|=  9.06774D+00
+
+At iterate   13    f=  1.83419D+01    |proj g|=  9.38439D+00
+
+At iterate   14    f=  1.81870D+01    |proj g|=  2.21364D+00
+
+At iterate   15    f=  1.81425D+01    |proj g|=  2.30578D+00
+
+At iterate   16    f=  1.81002D+01    |proj g|=  1.40678D+00
+
+At iterate   17    f=  1.80287D+01    |proj g|=  7.62623D+00
+
+At iterate   18    f=  1.79518D+01    |proj g|=  7.29553D+00
+
+At iterate   19    f=  1.78896D+01    |proj g|=  3.87625D+00
+
+At iterate   20    f=  1.78499D+01    |proj g|=  6.94533D-01
+
+At iterate   21    f=  1.78436D+01    |proj g|=  5.31812D-01
+
+At iterate   22    f=  1.78170D+01    |proj g|=  1.12749D+00
+
+At iterate   23    f=  1.77653D+01    |proj g|=  2.11881D+00
+
+At iterate   24    f=  1.77073D+01    |proj g|=  1.58629D+00
+
+At iterate   25    f=  1.77044D+01    |proj g|=  3.38680D+00
+
+At iterate   26    f=  1.76715D+01    |proj g|=  1.27725D+00
+
+At iterate   27    f=  1.76586D+01    |proj g|=  5.15361D-01
+
+At iterate   28    f=  1.76455D+01    |proj g|=  9.85674D-01
+
+At iterate   29    f=  1.76410D+01    |proj g|=  1.86225D+00
+
+At iterate   30    f=  1.76355D+01    |proj g|=  6.47077D-01
+
+At iterate   31    f=  1.76337D+01    |proj g|=  5.77440D-01
+
+At iterate   32    f=  1.76318D+01    |proj g|=  3.11405D-01
+
+At iterate   33    f=  1.76260D+01    |proj g|=  8.33015D-01
+
+At iterate   34    f=  1.76145D+01    |proj g|=  1.17071D+00
+
+At iterate   35    f=  1.75961D+01    |proj g|=  1.56094D+00
+
+At iterate   36    f=  1.75859D+01    |proj g|=  2.87217D+00
+
+At iterate   37    f=  1.75661D+01    |proj g|=  1.10688D+00
+
+At iterate   38    f=  1.75597D+01    |proj g|=  5.32229D-01
+
+At iterate   39    f=  1.75540D+01    |proj g|=  1.61750D-01
+
+At iterate   40    f=  1.75489D+01    |proj g|=  1.10577D+00
+
+At iterate   41    f=  1.75432D+01    |proj g|=  4.14753D-01
+
+At iterate   42    f=  1.75388D+01    |proj g|=  2.00931D+00
+
+At iterate   43    f=  1.75341D+01    |proj g|=  6.63690D-01
+
+At iterate   44    f=  1.75315D+01    |proj g|=  3.42959D-01
+
+At iterate   45    f=  1.75305D+01    |proj g|=  3.40188D-01
+
+At iterate   46    f=  1.75255D+01    |proj g|=  9.50140D-01
+
+At iterate   47    f=  1.75244D+01    |proj g|=  1.27258D+00
+
+At iterate   48    f=  1.75220D+01    |proj g|=  6.29967D-01
+
+At iterate   49    f=  1.75200D+01    |proj g|=  1.48973D-01
+
+At iterate   50    f=  1.75189D+01    |proj g|=  5.12409D-01
+
+At iterate   51    f=  1.75162D+01    |proj g|=  1.00840D+00
+
+At iterate   52    f=  1.75112D+01    |proj g|=  1.37148D+00
+
+At iterate   53    f=  1.75032D+01    |proj g|=  1.25122D+00
+
+At iterate   54    f=  1.74971D+01    |proj g|=  3.02170D+00
+
+At iterate   55    f=  1.74855D+01    |proj g|=  2.47447D-01
+
+At iterate   56    f=  1.74801D+01    |proj g|=  2.49745D-01
+
+At iterate   57    f=  1.74698D+01    |proj g|=  5.75337D-01
+
+At iterate   58    f=  1.74609D+01    |proj g|=  2.02369D+00
+
+At iterate   59    f=  1.74576D+01    |proj g|=  6.34100D-01
+
+At iterate   60    f=  1.74536D+01    |proj g|=  6.13180D-01
+
+At iterate   61    f=  1.74440D+01    |proj g|=  1.15760D+00
+
+At iterate   62    f=  1.74335D+01    |proj g|=  6.30429D-01
+
+At iterate   63    f=  1.74243D+01    |proj g|=  9.07482D-01
+
+At iterate   64    f=  1.74176D+01    |proj g|=  2.05518D-01
+
+At iterate   65    f=  1.73966D+01    |proj g|=  9.31738D-01
+
+At iterate   66    f=  1.73818D+01    |proj g|=  2.43965D+00
+
+At iterate   67    f=  1.73597D+01    |proj g|=  2.55341D-01
+
+At iterate   68    f=  1.73519D+01    |proj g|=  4.12070D-01
+
+At iterate   69    f=  1.73419D+01    |proj g|=  4.82338D-01
+
+At iterate   70    f=  1.73399D+01    |proj g|=  1.27481D+00
+
+At iterate   71    f=  1.73346D+01    |proj g|=  5.64209D-01
+
+At iterate   72    f=  1.73316D+01    |proj g|=  3.59697D-01
+
+At iterate   73    f=  1.73202D+01    |proj g|=  9.34174D-01
+
+At iterate   74    f=  1.73129D+01    |proj g|=  7.64093D-01
+
+At iterate   75    f=  1.73057D+01    |proj g|=  7.10556D-01
+
+At iterate   76    f=  1.72737D+01    |proj g|=  8.91003D-01
+
+At iterate   77    f=  1.72707D+01    |proj g|=  9.01481D-01
+
+At iterate   78    f=  1.72580D+01    |proj g|=  3.54078D-01
+
+At iterate   79    f=  1.72472D+01    |proj g|=  3.22970D-01
+
+At iterate   80    f=  1.72306D+01    |proj g|=  4.59835D-01
+
+At iterate   81    f=  1.72169D+01    |proj g|=  1.63498D+00
+
+At iterate   82    f=  1.72115D+01    |proj g|=  1.11399D+00
+
+At iterate   83    f=  1.72052D+01    |proj g|=  5.04271D-01
+
+At iterate   84    f=  1.71981D+01    |proj g|=  2.29634D-01
+
+At iterate   85    f=  1.71939D+01    |proj g|=  2.09421D-01
+
+At iterate   86    f=  1.71911D+01    |proj g|=  9.33184D-01
+
+At iterate   87    f=  1.71850D+01    |proj g|=  4.73352D-01
+
+At iterate   88    f=  1.71802D+01    |proj g|=  1.03556D+00
+
+At iterate   89    f=  1.71767D+01    |proj g|=  5.02440D-01
+
+At iterate   90    f=  1.71733D+01    |proj g|=  4.19461D-01
+
+At iterate   91    f=  1.71718D+01    |proj g|=  2.85280D+00
+
+At iterate   92    f=  1.71640D+01    |proj g|=  3.72939D-01
+
+At iterate   93    f=  1.71632D+01    |proj g|=  1.40182D-01
+
+At iterate   94    f=  1.71618D+01    |proj g|=  2.05326D-01
+
+At iterate   95    f=  1.71604D+01    |proj g|=  1.49402D+00
+
+At iterate   96    f=  1.71573D+01    |proj g|=  1.08904D+00
+
+At iterate   97    f=  1.71512D+01    |proj g|=  7.39262D-01
+
+At iterate   98    f=  1.71467D+01    |proj g|=  8.81063D-01
+
+At iterate   99    f=  1.71444D+01    |proj g|=  8.02543D-01
+
+At iterate  100    f=  1.71418D+01    |proj g|=  4.07631D-01
+
+           * * *
+
+Tit   = total number of iterations
+Tnf   = total number of function evaluations
+Tnint = total number of segments explored during Cauchy searches
+Skip  = number of BFGS updates skipped
+Nact  = number of active bounds at final generalized Cauchy point
+Projg = norm of the final projected gradient
+F     = final function value
+
+           * * *
+
+   N    Tit     Tnf  Tnint  Skip  Nact     Projg        F
+ 1226    100    113      1     0     0   4.076D-01   1.714D+01
+  F =   17.141761798250375
+
+STOP: TOTAL NO. of ITERATIONS REACHED LIMIT
+Train acc: 100.0%
+Test acc : 95.66666666666667%
+conv elbo after training: -1.7142e+01
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">gpflow</span><span class="o">.</span><span class="n">utilities</span><span class="o">.</span><span class="n">print_summary</span><span class="p">(</span><span class="n">rbf_m</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area rendered_html docutils container">
+<table>
+<thead>
+<tr><th>name                    </th><th>class    </th><th>transform     </th><th>prior  </th><th>trainable  </th><th>shape        </th><th>dtype  </th><th>value                                               </th></tr>
+</thead>
+<tbody>
+<tr><td>SVGP.kernel.variance    </td><td>Parameter</td><td>Softplus      </td><td>       </td><td>True       </td><td>()           </td><td>float64</td><td>3.5665517693007325                                  </td></tr>
+<tr><td>SVGP.kernel.lengthscales</td><td>Parameter</td><td>Softplus      </td><td>       </td><td>True       </td><td>()           </td><td>float64</td><td>2.7512917930392673                                  </td></tr>
+<tr><td>SVGP.inducing_variable.Z</td><td>Parameter</td><td>Identity      </td><td>       </td><td>False      </td><td>(100, 196)   </td><td>float64</td><td>[[0., 0., 0....                                     </td></tr>
+<tr><td>SVGP.q_mu               </td><td>Parameter</td><td>Identity      </td><td>       </td><td>True       </td><td>(100, 1)     </td><td>float64</td><td>[[-5.78241751e-01...                                </td></tr>
+<tr><td>SVGP.q_sqrt             </td><td>Parameter</td><td>FillTriangular</td><td>       </td><td>True       </td><td>(1, 100, 100)</td><td>float64</td><td>[[[6.44747990e-01, 0.00000000e+00, 0.00000000e+00...</td></tr>
+</tbody>
+</table></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">gpflow</span><span class="o">.</span><span class="n">utilities</span><span class="o">.</span><span class="n">print_summary</span><span class="p">(</span><span class="n">conv_m</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area rendered_html docutils container">
+<table>
+<thead>
+<tr><th>name                                </th><th>class    </th><th>transform       </th><th>prior  </th><th>trainable  </th><th>shape      </th><th>dtype  </th><th>value                                             </th></tr>
+</thead>
+<tbody>
+<tr><td>SVGP.kernel.base_kernel.variance    </td><td>Parameter</td><td>Sigmoid + Chain </td><td>       </td><td>True       </td><td>()         </td><td>float64</td><td>99.96483476475984                                 </td></tr>
+<tr><td>SVGP.kernel.base_kernel.lengthscales</td><td>Parameter</td><td>Softplus + Chain</td><td>       </td><td>True       </td><td>()         </td><td>float64</td><td>0.6318083529666758                                </td></tr>
+<tr><td>SVGP.kernel.weights                 </td><td>Parameter</td><td>Sigmoid + Chain </td><td>       </td><td>True       </td><td>(144,)     </td><td>float64</td><td>[2.60754232e-01, 3.78009395e-01, 4.45695491e-01...</td></tr>
+<tr><td>SVGP.inducing_variable.Z            </td><td>Parameter</td><td>Identity        </td><td>       </td><td>False      </td><td>(45, 9)    </td><td>float64</td><td>[[0., 0., 0....                                   </td></tr>
+<tr><td>SVGP.q_mu                           </td><td>Parameter</td><td>Identity        </td><td>       </td><td>True       </td><td>(45, 1)    </td><td>float64</td><td>[[0.01217117...                                   </td></tr>
+<tr><td>SVGP.q_sqrt                         </td><td>Parameter</td><td>FillTriangular  </td><td>       </td><td>True       </td><td>(1, 45, 45)</td><td>float64</td><td>[[[0.07111259, 0., 0....                          </td></tr>
+</tbody>
+</table></div>
+</div>
+</section>
+<section id="Conclusion">
+<h2>Conclusion<a class="headerlink" href="#Conclusion" title="Permalink to this headline">#</a></h2>
+<p>The convolutional kernel performs much better in this simple task. It demonstrates non-local generalization of the strong assumptions in the kernel.</p>
+</section>
+</section>
+
+
+              </div>
+              
+              
+          </main>
+          
+
+      </div>
+    </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf"></script>
+<footer class="footer mt-5 mt-md-0">
+  <div class="container">
+    
+    <div class="footer-item">
+      <p class="copyright">
+    &copy; Copyright 2022, The GPflow Contributors.<br>
+</p>
+    </div>
+    
+    <div class="footer-item">
+      <p class="sphinx-version">
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.5.0.<br>
+</p>
+    </div>
+    
+  </div>
+</footer>
+  </body>
+</html>

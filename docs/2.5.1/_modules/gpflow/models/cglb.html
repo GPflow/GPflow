@@ -1,0 +1,680 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>gpflow.models.cglb &#8212; GPflow 2.5.1 documentation</title>
+    
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
+
+    
+  <link rel="stylesheet"
+    href="../../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/pydata-custom.css" />
+    
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf">
+
+    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="https://unpkg.com/@jupyter-widgets/html-manager@^0.20.1/dist/embed-amd.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="docsearch:language" content="None">
+    
+
+    <!-- Google Analytics -->
+    
+  </head>
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="60">
+    
+    <div class="container-fluid" id="banner"></div>
+
+    
+    <nav class="navbar navbar-light navbar-expand-lg bg-light fixed-top bd-navbar" id="navbar-main"><div class="container-xl">
+
+  <div id="navbar-start">
+    
+    
+
+<a class="navbar-brand" href="../../../index.html">
+  <img src="../../../_static/gpflow_logo.svg" class="logo" alt="logo">
+</a>
+
+
+    
+  </div>
+
+  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar-collapsible" aria-controls="navbar-collapsible" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="navbar-toggler-icon"></span>
+  </button>
+
+  
+  <div id="navbar-collapsible" class="col-lg-9 collapse navbar-collapse">
+    <div id="navbar-center" class="mr-auto">
+      
+      <div class="navbar-center-item">
+        <ul id="navbar-main-elements" class="navbar-nav">
+    <li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../intro.html">
+  Introduction
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../notebooks/intro.html">
+  GPflow manual
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../notebooks/intro_to_gpflow2.html">
+  GPflow with TensorFlow 2
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../notebooks/gpflow2_upgrade_guide.html">
+  GPflow 2 Upgrade Guide
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../notebooks_file.html">
+  Notebooks
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../derivations.html">
+  Derivations
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../api/gpflow/index.html">
+  API reference
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../bibliography.html">
+  Bibliography
+ </a>
+</li>
+
+    
+</ul>
+      </div>
+      
+    </div>
+
+    <div id="navbar-end">
+      
+      <div class="navbar-end-item">
+        <div class="dropdown" id="version_switcher">
+    <button type="button" class="btn btn-primary btn-sm navbar-btn dropdown-toggle" id="version_switcher_button" data-toggle="dropdown">
+        2.5.1  <!-- this text may get changed later by javascript -->
+        <span class="caret"></span>
+    </button>
+    <div id="version_switcher_menu" class="dropdown-menu list-group-flush py-0" aria-labelledby="version_switcher_button">
+    <!-- dropdown will be populated by javascript on page load -->
+    </div>
+</div>
+
+<!-- NOTE: this JS must live here (not in our global JS file) because it relies
+     on being processed by Jinja before it is run (specifically for replacing
+     variables _modules/gpflow/models/cglb and {'json_url': 'https://gpflow.github.io/GPflow/versions.json', 'url_template': 'https://gpflow.github.io/GPflow/{version}/index.html', 'version_match': '2.5.1'}.
+-->
+
+<script type="text/javascript">
+// Check if corresponding page path exists in other version of docs
+// and, if so, go there instead of the homepage of the other docs version
+function checkPageExistsAndRedirect(event) {
+    const currentFilePath = "_modules/gpflow/models/cglb.html",
+          tryUrl = event.target.getAttribute("href");
+    let otherDocsHomepage = tryUrl.replace(currentFilePath, "");
+    $.ajax({
+        type: 'HEAD',
+        url: tryUrl,
+        // if the page exists, go there
+        success: function() {
+            location.href = tryUrl;
+        }
+    }).fail(function() {
+        location.href = otherDocsHomepage;
+    });
+    // this prevents the browser from following the href of the clicked node
+    // (which is fine because this function takes care of redirecting)
+    return false;
+}
+
+// Populate the version switcher from the JSON config file
+(function () {
+    $.getJSON("https://gpflow.github.io/GPflow/versions.json", function(data, textStatus, jqXHR) {
+        const currentFilePath = "_modules/gpflow/models/cglb.html";
+        // create links to the corresponding page in the other docs versions
+        $.each(data, function(index, entry) {
+            // if no custom name specified (e.g., "latest"), use version string
+            if (!("name" in entry)) {
+                entry.name = entry.version;
+            }
+            // create the node
+            const node = document.createElement("a");
+            node.setAttribute("class", "list-group-item list-group-item-action py-1");
+            node.textContent = `${entry.name}`;
+            node.setAttribute("href", `${entry.url}${currentFilePath}`);
+            // on click, AJAX calls will check if the linked page exists before
+            // trying to redirect, and if not, will redirect to the homepage
+            // for that version of the docs.
+            node.onclick = checkPageExistsAndRedirect;
+            // Add dataset values for the version and name in case people want
+            // to apply CSS styling based on this information.
+            node.dataset["versionName"] = entry.name;
+            node.dataset["version"] = entry.version;
+
+            $("#version_switcher_menu").append(node);
+            // replace dropdown button text with the preferred display name of
+            // this version, rather than using sphinx's  variable.
+            // also highlight the dropdown entry for the currently-viewed
+            // version's entry
+            if (entry.version == "2.5.1") {
+                node.classList.add("active");
+                let btn = document.getElementById("version_switcher_button");
+                btn.innerText = btn.dataset["activeVersionName"] = entry.name;
+                btn.dataset["activeVersion"] = entry.version;
+            }
+        });
+    });
+})();
+</script>
+      </div>
+      
+    </div>
+  </div>
+</div>
+    </nav>
+    
+
+    <div class="container-xl">
+      <div class="row">
+          
+            
+            <!-- Only show if we have sidebars configured, else just a small margin  -->
+            <div class="col-12 col-md-3 bd-sidebar">
+              <div class="sidebar-start-items"><form class="bd-search d-flex align-items-center" action="../../../search.html" method="get">
+  <i class="icon fas fa-search"></i>
+  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
+</form><nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
+  <div class="bd-toc-item active">
+    
+  </div>
+</nav>
+              </div>
+              <div class="sidebar-end-items">
+              </div>
+            </div>
+            
+          
+
+          
+          <div class="d-none d-xl-block col-xl-2 bd-toc">
+            
+          </div>
+          
+
+          
+          
+            
+          
+          <main class="col-12 col-md-9 col-xl-7 py-md-5 pl-md-5 pr-md-4 bd-content" role="main">
+              
+              <div>
+                
+  <h1>Source code for gpflow.models.cglb</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright 2021 the GPflow authors.</span>
+<span class="c1">#</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+<span class="c1">#</span>
+<span class="c1"># http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c1">#</span>
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
+
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">NamedTuple</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span>
+
+<span class="kn">import</span> <span class="nn">tensorflow</span> <span class="k">as</span> <span class="nn">tf</span>
+
+<span class="kn">from</span> <span class="nn">..base</span> <span class="kn">import</span> <span class="n">InputData</span><span class="p">,</span> <span class="n">MeanAndVariance</span><span class="p">,</span> <span class="n">Parameter</span><span class="p">,</span> <span class="n">RegressionData</span><span class="p">,</span> <span class="n">TensorType</span>
+<span class="kn">from</span> <span class="nn">..config</span> <span class="kn">import</span> <span class="n">default_float</span><span class="p">,</span> <span class="n">default_int</span>
+<span class="kn">from</span> <span class="nn">..covariances</span> <span class="kn">import</span> <span class="n">Kuf</span>
+<span class="kn">from</span> <span class="nn">..utilities</span> <span class="kn">import</span> <span class="n">add_noise_cov</span><span class="p">,</span> <span class="n">to_default_float</span>
+<span class="kn">from</span> <span class="nn">.sgpr</span> <span class="kn">import</span> <span class="n">SGPR</span>
+
+
+<div class="viewcode-block" id="CGLB"><a class="viewcode-back" href="../../../api/gpflow/models/index.html#gpflow.models.cglb.CGLB">[docs]</a><span class="k">class</span> <span class="nc">CGLB</span><span class="p">(</span><span class="n">SGPR</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Conjugate Gradient Lower Bound.</span>
+
+<span class="sd">    The key reference is :cite:t:`pmlr-v139-artemev21a`.</span>
+
+<span class="sd">    :param cg_tolerance: Determines accuracy to which conjugate</span>
+<span class="sd">        gradient is run when evaluating the elbo. Running more</span>
+<span class="sd">        iterations of CG would increase the ELBO by at most</span>
+<span class="sd">        `cg_tolerance`.</span>
+
+<span class="sd">    :param max_cg_iters: Maximum number of iterations of CG to run</span>
+<span class="sd">        per evaluation of the ELBO (or mean prediction).</span>
+
+<span class="sd">    :param restart_cg_iters: How frequently to restart the CG iteration.</span>
+<span class="sd">        Can be useful to avoid build up of numerical errors when</span>
+<span class="sd">        many steps of CG are run.</span>
+
+<span class="sd">    :param v_grad_optimization: If False, in every evaluation of the</span>
+<span class="sd">        ELBO, CG is run to select a new auxilary vector `v`. If</span>
+<span class="sd">        False, no CG is run when evaluating the ELBO but</span>
+<span class="sd">        gradients with respect to `v` are tracked so that it can</span>
+<span class="sd">        be optimized jointly with other parameters.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">data</span><span class="p">:</span> <span class="n">RegressionData</span><span class="p">,</span>
+        <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+        <span class="n">cg_tolerance</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
+        <span class="n">max_cg_iters</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">100</span><span class="p">,</span>
+        <span class="n">restart_cg_iters</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">40</span><span class="p">,</span>
+        <span class="n">v_grad_optimization</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">n</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_v</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">b</span><span class="p">,</span> <span class="n">n</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">default_float</span><span class="p">()),</span> <span class="n">trainable</span><span class="o">=</span><span class="n">v_grad_optimization</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cg_tolerance</span> <span class="o">=</span> <span class="n">cg_tolerance</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_max_cg_iters</span> <span class="o">=</span> <span class="n">max_cg_iters</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_restart_cg_iters</span> <span class="o">=</span> <span class="n">restart_cg_iters</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">aux_vec</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Parameter</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_v</span>
+
+<div class="viewcode-block" id="CGLB.logdet_term"><a class="viewcode-back" href="../../../api/gpflow/models/index.html#gpflow.models.cglb.CGLB.logdet_term">[docs]</a>    <span class="k">def</span> <span class="nf">logdet_term</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">common</span><span class="p">:</span> <span class="n">SGPR</span><span class="o">.</span><span class="n">CommonTensors</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute a lower bound on :math:`-0.5 * \log |K + σ²I|` based on a</span>
+<span class="sd">        low-rank approximation to K.</span>
+
+<span class="sd">        .. math::</span>
+
+<span class="sd">           \log |K + σ²I| &lt;= \log |Q + σ²I| + n * \log(1 + \textrm{tr}(K - Q)/(σ²n)).</span>
+
+<span class="sd">        This bound is at least as tight as</span>
+
+<span class="sd">        .. math::</span>
+
+<span class="sd">           \log |K + σ²I| &lt;=  \log |Q + σ²I| + \textrm{tr}(K - Q)/σ²,</span>
+
+<span class="sd">        which appears in SGPR.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">LB</span> <span class="o">=</span> <span class="n">common</span><span class="o">.</span><span class="n">LB</span>
+        <span class="n">AAT</span> <span class="o">=</span> <span class="n">common</span><span class="o">.</span><span class="n">AAT</span>
+        <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span>
+        <span class="n">num_data</span> <span class="o">=</span> <span class="n">to_default_float</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">y</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">output_dim</span> <span class="o">=</span> <span class="n">to_default_float</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">y</span><span class="p">)[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">sigma_sq</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">likelihood</span><span class="o">.</span><span class="n">variance</span>
+
+        <span class="n">kdiag</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">kernel</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">full_cov</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="c1"># t / σ²</span>
+        <span class="n">trace</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">reduce_sum</span><span class="p">(</span><span class="n">kdiag</span><span class="p">)</span> <span class="o">/</span> <span class="n">sigma_sq</span> <span class="o">-</span> <span class="n">tf</span><span class="o">.</span><span class="n">reduce_sum</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">diag_part</span><span class="p">(</span><span class="n">AAT</span><span class="p">))</span>
+        <span class="n">logdet_b</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">reduce_sum</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">diag_part</span><span class="p">(</span><span class="n">LB</span><span class="p">)))</span>
+        <span class="n">logsigma_sq</span> <span class="o">=</span> <span class="n">num_data</span> <span class="o">*</span> <span class="n">tf</span><span class="o">.</span><span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">sigma_sq</span><span class="p">)</span>
+
+        <span class="c1"># Correction term from Jensen&#39;s inequality</span>
+        <span class="n">logtrace</span> <span class="o">=</span> <span class="n">num_data</span> <span class="o">*</span> <span class="n">tf</span><span class="o">.</span><span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">trace</span> <span class="o">/</span> <span class="n">num_data</span><span class="p">)</span>
+        <span class="k">return</span> <span class="o">-</span><span class="n">output_dim</span> <span class="o">*</span> <span class="p">(</span><span class="n">logdet_b</span> <span class="o">+</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">logsigma_sq</span> <span class="o">+</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">logtrace</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="CGLB.quad_term"><a class="viewcode-back" href="../../../api/gpflow/models/index.html#gpflow.models.cglb.CGLB.quad_term">[docs]</a>    <span class="k">def</span> <span class="nf">quad_term</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">common</span><span class="p">:</span> <span class="n">SGPR</span><span class="o">.</span><span class="n">CommonTensors</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Computes a lower bound on the quadratic term in the log</span>
+<span class="sd">        marginal likelihood of conjugate GPR. The bound is based on</span>
+<span class="sd">        an auxiliary vector, v. For :math:`Q ≺ K` and :math:`r=y - Kv`</span>
+
+<span class="sd">        .. math::</span>
+<span class="sd">            -0.5 * (rᵀQ⁻¹r + 2yᵀv - vᵀ K v ) &lt;= -0.5 * yᵀK⁻¹y &lt;= -0.5 * (2yᵀv - vᵀKv).</span>
+
+<span class="sd">        Equality holds if :math:`r=0`, i.e. :math:`v = K⁻¹y`.</span>
+
+<span class="sd">        If `self.aux_vec` is trainable, gradients are computed with</span>
+<span class="sd">        respect to :math:`v` as well and :math:`v` can be optimized</span>
+<span class="sd">        using gradient based methods.</span>
+
+<span class="sd">        Otherwise, :math:`v` is updated with the method of conjugate</span>
+<span class="sd">        gradients (CG). CG is run until :math:`0.5 * rᵀQ⁻¹r &lt;= ϵ`,</span>
+<span class="sd">        which ensures that the maximum bias due to this term is not</span>
+<span class="sd">        more than :math:`ϵ`. The :math:`ϵ` is the CG tolerance.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span>
+        <span class="n">err</span> <span class="o">=</span> <span class="n">y</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">mean_function</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">sigma_sq</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">likelihood</span><span class="o">.</span><span class="n">variance</span>
+        <span class="n">K</span> <span class="o">=</span> <span class="n">add_noise_cov</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kernel</span><span class="o">.</span><span class="n">K</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">sigma_sq</span><span class="p">)</span>
+
+        <span class="n">A</span> <span class="o">=</span> <span class="n">common</span><span class="o">.</span><span class="n">A</span>
+        <span class="n">LB</span> <span class="o">=</span> <span class="n">common</span><span class="o">.</span><span class="n">LB</span>
+        <span class="n">preconditioner</span> <span class="o">=</span> <span class="n">NystromPreconditioner</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">LB</span><span class="p">,</span> <span class="n">sigma_sq</span><span class="p">)</span>
+        <span class="n">err_t</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">err</span><span class="p">)</span>
+
+        <span class="n">v_init</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">aux_vec</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">v_init</span><span class="o">.</span><span class="n">trainable</span><span class="p">:</span>
+            <span class="n">v</span> <span class="o">=</span> <span class="n">cglb_conjugate_gradient</span><span class="p">(</span>
+                <span class="n">K</span><span class="p">,</span>
+                <span class="n">err_t</span><span class="p">,</span>
+                <span class="n">v_init</span><span class="p">,</span>
+                <span class="n">preconditioner</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_cg_tolerance</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_max_cg_iters</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_restart_cg_iters</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">v</span> <span class="o">=</span> <span class="n">v_init</span>
+
+        <span class="n">Kv</span> <span class="o">=</span> <span class="n">v</span> <span class="o">@</span> <span class="n">K</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="n">err_t</span> <span class="o">-</span> <span class="n">Kv</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">error_bound</span> <span class="o">=</span> <span class="n">preconditioner</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+        <span class="n">lb</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">reduce_sum</span><span class="p">(</span><span class="n">v</span> <span class="o">*</span> <span class="p">(</span><span class="n">r</span> <span class="o">+</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">Kv</span><span class="p">))</span>
+        <span class="n">ub</span> <span class="o">=</span> <span class="n">lb</span> <span class="o">+</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">error_bound</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">v_init</span><span class="o">.</span><span class="n">trainable</span><span class="p">:</span>
+            <span class="n">v_init</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="o">-</span><span class="n">ub</span></div>
+
+<div class="viewcode-block" id="CGLB.predict_f"><a class="viewcode-back" href="../../../api/gpflow/models/index.html#gpflow.models.cglb.CGLB.predict_f">[docs]</a>    <span class="k">def</span> <span class="nf">predict_f</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">xnew</span><span class="p">:</span> <span class="n">InputData</span><span class="p">,</span>
+        <span class="n">full_cov</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">full_output_cov</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">cg_tolerance</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1e-3</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MeanAndVariance</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        The posterior mean for CGLB model is given by</span>
+
+<span class="sd">        .. :math::</span>
+<span class="sd">            m(xs) = K_{sf}v + Q_{ff}Q⁻¹r</span>
+
+<span class="sd">        where :math:`r = y - K v`  is the residual from CG.</span>
+
+<span class="sd">        Note that when :math:`v=0`, this agree with the SGPR mean,</span>
+<span class="sd">        while if :math:`v = K⁻¹ y`, then :math:`r=0`, and the exact</span>
+<span class="sd">        GP mean is recovered.</span>
+
+<span class="sd">        :param cg_tolerance: float or None: If None, the cached value of</span>
+<span class="sd">            :math:`v` is used. If float, conjugate gradient is run until :math:`rᵀQ⁻¹r &lt; ϵ`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span>
+        <span class="n">err</span> <span class="o">=</span> <span class="n">y</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">mean_function</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">kxx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">kernel</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+        <span class="n">ksf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">kernel</span><span class="p">(</span><span class="n">xnew</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+        <span class="n">sigma_sq</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">likelihood</span><span class="o">.</span><span class="n">variance</span>
+        <span class="n">sigma</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">sigma_sq</span><span class="p">)</span>
+        <span class="n">iv</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">inducing_variable</span>
+        <span class="n">kernel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">kernel</span>
+        <span class="n">matmul</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">matmul</span>
+        <span class="n">trisolve</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">triangular_solve</span>
+
+        <span class="n">kmat</span> <span class="o">=</span> <span class="n">add_noise_cov</span><span class="p">(</span><span class="n">kxx</span><span class="p">,</span> <span class="n">sigma_sq</span><span class="p">)</span>
+
+        <span class="n">common</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_common_calculation</span><span class="p">()</span>
+        <span class="n">A</span><span class="p">,</span> <span class="n">LB</span><span class="p">,</span> <span class="n">L</span> <span class="o">=</span> <span class="n">common</span><span class="o">.</span><span class="n">A</span><span class="p">,</span> <span class="n">common</span><span class="o">.</span><span class="n">LB</span><span class="p">,</span> <span class="n">common</span><span class="o">.</span><span class="n">L</span>
+
+        <span class="n">v</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">aux_vec</span>
+        <span class="k">if</span> <span class="n">cg_tolerance</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">preconditioner</span> <span class="o">=</span> <span class="n">NystromPreconditioner</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">LB</span><span class="p">,</span> <span class="n">sigma_sq</span><span class="p">)</span>
+            <span class="n">err_t</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">err</span><span class="p">)</span>
+            <span class="n">v</span> <span class="o">=</span> <span class="n">cglb_conjugate_gradient</span><span class="p">(</span>
+                <span class="n">kmat</span><span class="p">,</span>
+                <span class="n">err_t</span><span class="p">,</span>
+                <span class="n">v</span><span class="p">,</span>
+                <span class="n">preconditioner</span><span class="p">,</span>
+                <span class="n">cg_tolerance</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_max_cg_iters</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_restart_cg_iters</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="n">cg_mean</span> <span class="o">=</span> <span class="n">matmul</span><span class="p">(</span><span class="n">ksf</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">transpose_b</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="n">err</span> <span class="o">-</span> <span class="n">matmul</span><span class="p">(</span><span class="n">kmat</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">transpose_b</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="n">Kus</span> <span class="o">=</span> <span class="n">Kuf</span><span class="p">(</span><span class="n">iv</span><span class="p">,</span> <span class="n">kernel</span><span class="p">,</span> <span class="n">xnew</span><span class="p">)</span>
+        <span class="n">Ares</span> <span class="o">=</span> <span class="n">matmul</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">res</span><span class="p">)</span>  <span class="c1"># The god of war!</span>
+        <span class="n">c</span> <span class="o">=</span> <span class="n">trisolve</span><span class="p">(</span><span class="n">LB</span><span class="p">,</span> <span class="n">Ares</span><span class="p">,</span> <span class="n">lower</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="o">/</span> <span class="n">sigma</span>
+        <span class="n">tmp1</span> <span class="o">=</span> <span class="n">trisolve</span><span class="p">(</span><span class="n">L</span><span class="p">,</span> <span class="n">Kus</span><span class="p">,</span> <span class="n">lower</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">tmp2</span> <span class="o">=</span> <span class="n">trisolve</span><span class="p">(</span><span class="n">LB</span><span class="p">,</span> <span class="n">tmp1</span><span class="p">,</span> <span class="n">lower</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">sgpr_mean</span> <span class="o">=</span> <span class="n">matmul</span><span class="p">(</span><span class="n">tmp2</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">transpose_a</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">full_cov</span><span class="p">:</span>
+            <span class="n">var</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">kernel</span><span class="p">(</span><span class="n">xnew</span><span class="p">)</span>
+                <span class="o">+</span> <span class="n">matmul</span><span class="p">(</span><span class="n">tmp2</span><span class="p">,</span> <span class="n">tmp2</span><span class="p">,</span> <span class="n">transpose_a</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                <span class="o">-</span> <span class="n">matmul</span><span class="p">(</span><span class="n">tmp1</span><span class="p">,</span> <span class="n">tmp1</span><span class="p">,</span> <span class="n">transpose_a</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="p">)</span>
+            <span class="n">var</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">var</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">num_latent_gps</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>  <span class="c1"># [P, N, N]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">var</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">kernel</span><span class="p">(</span><span class="n">xnew</span><span class="p">,</span> <span class="n">full_cov</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+                <span class="o">+</span> <span class="n">tf</span><span class="o">.</span><span class="n">reduce_sum</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">tmp2</span><span class="p">),</span> <span class="mi">0</span><span class="p">)</span>
+                <span class="o">-</span> <span class="n">tf</span><span class="o">.</span><span class="n">reduce_sum</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">tmp1</span><span class="p">),</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="p">)</span>
+            <span class="n">var</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">var</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_latent_gps</span><span class="p">])</span>
+
+        <span class="n">mean</span> <span class="o">=</span> <span class="n">sgpr_mean</span> <span class="o">+</span> <span class="n">cg_mean</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">mean_function</span><span class="p">(</span><span class="n">xnew</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">mean</span><span class="p">,</span> <span class="n">var</span></div>
+
+<div class="viewcode-block" id="CGLB.predict_y"><a class="viewcode-back" href="../../../api/gpflow/models/index.html#gpflow.models.cglb.CGLB.predict_y">[docs]</a>    <span class="k">def</span> <span class="nf">predict_y</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">xnew</span><span class="p">:</span> <span class="n">InputData</span><span class="p">,</span>
+        <span class="n">full_cov</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">full_output_cov</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">cg_tolerance</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1e-3</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MeanAndVariance</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute the mean and variance of the held-out data at the</span>
+<span class="sd">        input points.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">full_cov</span> <span class="ow">or</span> <span class="n">full_output_cov</span><span class="p">:</span>
+            <span class="c1"># See https://github.com/GPflow/GPflow/issues/1461</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+                <span class="s2">&quot;The predict_y method currently supports only the argument values full_cov=False&quot;</span>
+                <span class="s2">&quot; and full_output_cov=False&quot;</span>
+            <span class="p">)</span>
+
+        <span class="n">f_mean</span><span class="p">,</span> <span class="n">f_var</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">predict_f</span><span class="p">(</span>
+            <span class="n">xnew</span><span class="p">,</span> <span class="n">full_cov</span><span class="o">=</span><span class="n">full_cov</span><span class="p">,</span> <span class="n">full_output_cov</span><span class="o">=</span><span class="n">full_output_cov</span><span class="p">,</span> <span class="n">cg_tolerance</span><span class="o">=</span><span class="n">cg_tolerance</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">likelihood</span><span class="o">.</span><span class="n">predict_mean_and_var</span><span class="p">(</span><span class="n">f_mean</span><span class="p">,</span> <span class="n">f_var</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="CGLB.predict_log_density"><a class="viewcode-back" href="../../../api/gpflow/models/index.html#gpflow.models.cglb.CGLB.predict_log_density">[docs]</a>    <span class="k">def</span> <span class="nf">predict_log_density</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">data</span><span class="p">:</span> <span class="n">RegressionData</span><span class="p">,</span>
+        <span class="n">full_cov</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">full_output_cov</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">cg_tolerance</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1e-3</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute the log density of the data at the new data points.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">full_cov</span> <span class="ow">or</span> <span class="n">full_output_cov</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+                <span class="s2">&quot;The predict_log_density method currently supports only the argument values&quot;</span>
+                <span class="s2">&quot; full_cov=False and full_output_cov=False&quot;</span>
+            <span class="p">)</span>
+
+        <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">data</span>
+        <span class="n">f_mean</span><span class="p">,</span> <span class="n">f_var</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">predict_f</span><span class="p">(</span>
+            <span class="n">x</span><span class="p">,</span> <span class="n">full_cov</span><span class="o">=</span><span class="n">full_cov</span><span class="p">,</span> <span class="n">full_output_cov</span><span class="o">=</span><span class="n">full_output_cov</span><span class="p">,</span> <span class="n">cg_tolerance</span><span class="o">=</span><span class="n">cg_tolerance</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">likelihood</span><span class="o">.</span><span class="n">predict_log_density</span><span class="p">(</span><span class="n">f_mean</span><span class="p">,</span> <span class="n">f_var</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="NystromPreconditioner"><a class="viewcode-back" href="../../../api/gpflow/models/cglb/index.html#gpflow.models.cglb.NystromPreconditioner">[docs]</a><span class="k">class</span> <span class="nc">NystromPreconditioner</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Preconditioner of the form :math:`Q=(Q_ff + σ²I)⁻¹`,</span>
+<span class="sd">    where L is lower triangular with :math: `LLᵀ = Kᵤᵤ`</span>
+<span class="sd">    :math:`A = σ⁻²L⁻¹Kᵤₓ` and :math:`B = AAᵀ + I = LᵦLᵦᵀ`</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">A</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">LB</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">sigma_sq</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">A</span> <span class="o">=</span> <span class="n">A</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">LB</span> <span class="o">=</span> <span class="n">LB</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sigma_sq</span> <span class="o">=</span> <span class="n">sigma_sq</span>
+
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Computes :math:`vᵀQ^{-1}` and `vᵀQ^{-1}v`. Note that this is</span>
+<span class="sd">        implemented as multipication of a row vector on the right.</span>
+
+<span class="sd">        :param v: Vector we want to backsolve. Shape [B, N].</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">sigma_sq</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sigma_sq</span>
+        <span class="n">A</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">A</span>
+        <span class="n">LB</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">LB</span>
+
+        <span class="n">trans</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">transpose</span>
+        <span class="n">trisolve</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">triangular_solve</span>
+        <span class="n">matmul</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">matmul</span>
+        <span class="nb">sum</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">reduce_sum</span>
+
+        <span class="n">v</span> <span class="o">=</span> <span class="n">trans</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+        <span class="n">Av</span> <span class="o">=</span> <span class="n">matmul</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span>
+        <span class="n">LBinvAv</span> <span class="o">=</span> <span class="n">trisolve</span><span class="p">(</span><span class="n">LB</span><span class="p">,</span> <span class="n">Av</span><span class="p">)</span>
+        <span class="n">LBinvtLBinvAv</span> <span class="o">=</span> <span class="n">trisolve</span><span class="p">(</span><span class="n">trans</span><span class="p">(</span><span class="n">LB</span><span class="p">),</span> <span class="n">LBinvAv</span><span class="p">,</span> <span class="n">lower</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+        <span class="n">rv</span> <span class="o">=</span> <span class="n">v</span> <span class="o">-</span> <span class="n">matmul</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">LBinvtLBinvAv</span><span class="p">,</span> <span class="n">transpose_a</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">vtrv</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">rv</span> <span class="o">*</span> <span class="n">v</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">trans</span><span class="p">(</span><span class="n">rv</span><span class="p">)</span> <span class="o">/</span> <span class="n">sigma_sq</span><span class="p">,</span> <span class="n">vtrv</span> <span class="o">/</span> <span class="n">sigma_sq</span></div>
+
+
+<div class="viewcode-block" id="cglb_conjugate_gradient"><a class="viewcode-back" href="../../../api/gpflow/models/cglb/index.html#gpflow.models.cglb.cglb_conjugate_gradient">[docs]</a><span class="k">def</span> <span class="nf">cglb_conjugate_gradient</span><span class="p">(</span>
+    <span class="n">K</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span>
+    <span class="n">b</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span>
+    <span class="n">initial</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span>
+    <span class="n">preconditioner</span><span class="p">:</span> <span class="n">NystromPreconditioner</span><span class="p">,</span>
+    <span class="n">cg_tolerance</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">max_steps</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">restart_cg_step</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Conjugate gradient algorithm used in CGLB model. The method of</span>
+<span class="sd">    conjugate gradient (Hestenes and Stiefel, 1952) produces a</span>
+<span class="sd">    sequence of vectors :math:`v_0, v_1, v_2, ..., v_N` such that</span>
+<span class="sd">    :math:`v_0` = initial, and (in exact arithmetic)</span>
+<span class="sd">    :math:`Kv_n = b`. In practice, the v_i often converge quickly to</span>
+<span class="sd">    approximate :math:`K^{-1}b`, and the algorithm can be stopped</span>
+<span class="sd">    without running N iterations.</span>
+
+<span class="sd">    We assume the preconditioner, :math:`Q`, satisfies :math:`Q ≺ K`,</span>
+<span class="sd">    and stop the algorithm when :math:`r_i = b - Kv_i` satisfies</span>
+<span class="sd">    :math:`||rᵢᵀ||_{Q⁻¹r}^2 = rᵢᵀQ⁻¹rᵢ &lt;= ϵ`.</span>
+
+<span class="sd">    :param K: Matrix we want to backsolve from. Must be PSD. Shape [N, N].</span>
+<span class="sd">    :param b: Vector we want to backsolve. Shape [B, N].</span>
+<span class="sd">    :param initial: Initial vector solution. Shape [N].</span>
+<span class="sd">    :param preconditioner: Preconditioner function.</span>
+<span class="sd">    :param cg_tolerance: Expected maximum error. This value is used</span>
+<span class="sd">        as a decision boundary against stopping criteria.</span>
+<span class="sd">    :param max_steps: Maximum number of CG iterations.</span>
+<span class="sd">    :param restart_cg_step: Restart step at which the CG resets the</span>
+<span class="sd">        internal state to the initial position using the currect</span>
+<span class="sd">        solution vector :math:`v`. Can help avoid build up of</span>
+<span class="sd">        numerical errors.</span>
+
+<span class="sd">    :return: `v` where `v` approximately satisfies :math:`Kv = b`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">class</span> <span class="nc">CGState</span><span class="p">(</span><span class="n">NamedTuple</span><span class="p">):</span>
+        <span class="n">i</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span>
+        <span class="n">v</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span>
+        <span class="n">r</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span>
+        <span class="n">p</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span>
+        <span class="n">rz</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span>
+
+    <span class="k">def</span> <span class="nf">stopping_criterion</span><span class="p">(</span><span class="n">state</span><span class="p">:</span> <span class="n">CGState</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">(</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">state</span><span class="o">.</span><span class="n">rz</span> <span class="o">&gt;</span> <span class="n">cg_tolerance</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">state</span><span class="o">.</span><span class="n">i</span> <span class="o">&lt;</span> <span class="n">max_steps</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">cg_step</span><span class="p">(</span><span class="n">state</span><span class="p">:</span> <span class="n">CGState</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">CGState</span><span class="p">]:</span>
+        <span class="n">Ap</span> <span class="o">=</span> <span class="n">state</span><span class="o">.</span><span class="n">p</span> <span class="o">@</span> <span class="n">K</span>
+        <span class="n">denom</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">reduce_sum</span><span class="p">(</span><span class="n">state</span><span class="o">.</span><span class="n">p</span> <span class="o">*</span> <span class="n">Ap</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">gamma</span> <span class="o">=</span> <span class="n">state</span><span class="o">.</span><span class="n">rz</span> <span class="o">/</span> <span class="n">denom</span>
+        <span class="n">v</span> <span class="o">=</span> <span class="n">state</span><span class="o">.</span><span class="n">v</span> <span class="o">+</span> <span class="n">gamma</span> <span class="o">*</span> <span class="n">state</span><span class="o">.</span><span class="n">p</span>
+        <span class="n">i</span> <span class="o">=</span> <span class="n">state</span><span class="o">.</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">cond</span><span class="p">(</span>
+            <span class="n">state</span><span class="o">.</span><span class="n">i</span> <span class="o">%</span> <span class="n">restart_cg_step</span> <span class="o">==</span> <span class="n">restart_cg_step</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="k">lambda</span><span class="p">:</span> <span class="n">b</span> <span class="o">-</span> <span class="n">v</span> <span class="o">@</span> <span class="n">K</span><span class="p">,</span>
+            <span class="k">lambda</span><span class="p">:</span> <span class="n">state</span><span class="o">.</span><span class="n">r</span> <span class="o">-</span> <span class="n">gamma</span> <span class="o">*</span> <span class="n">Ap</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">z</span><span class="p">,</span> <span class="n">new_rz</span> <span class="o">=</span> <span class="n">preconditioner</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">cond</span><span class="p">(</span>
+            <span class="n">state</span><span class="o">.</span><span class="n">i</span> <span class="o">%</span> <span class="n">restart_cg_step</span> <span class="o">==</span> <span class="n">restart_cg_step</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="k">lambda</span><span class="p">:</span> <span class="n">z</span><span class="p">,</span>
+            <span class="k">lambda</span><span class="p">:</span> <span class="n">z</span> <span class="o">+</span> <span class="n">state</span><span class="o">.</span><span class="n">p</span> <span class="o">*</span> <span class="n">new_rz</span> <span class="o">/</span> <span class="n">state</span><span class="o">.</span><span class="n">rz</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">CGState</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">new_rz</span><span class="p">)]</span>
+
+    <span class="n">Kv</span> <span class="o">=</span> <span class="n">initial</span> <span class="o">@</span> <span class="n">K</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="n">b</span> <span class="o">-</span> <span class="n">Kv</span>
+    <span class="n">z</span><span class="p">,</span> <span class="n">rz</span> <span class="o">=</span> <span class="n">preconditioner</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+    <span class="n">p</span> <span class="o">=</span> <span class="n">z</span>
+    <span class="n">i</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">constant</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">default_int</span><span class="p">())</span>
+    <span class="n">initial_state</span> <span class="o">=</span> <span class="n">CGState</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">initial</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">rz</span><span class="p">)</span>
+    <span class="n">final_state</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">while_loop</span><span class="p">(</span><span class="n">stopping_criterion</span><span class="p">,</span> <span class="n">cg_step</span><span class="p">,</span> <span class="p">[</span><span class="n">initial_state</span><span class="p">])</span>
+    <span class="n">final_state</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">nest</span><span class="o">.</span><span class="n">map_structure</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">stop_gradient</span><span class="p">,</span> <span class="n">final_state</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">final_state</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">v</span></div>
+</pre></div>
+
+              </div>
+              
+              
+          </main>
+          
+
+      </div>
+    </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf"></script>
+<footer class="footer mt-5 mt-md-0">
+  <div class="container">
+    
+    <div class="footer-item">
+      <p class="copyright">
+    &copy; Copyright 2022, The GPflow Contributors.<br>
+</p>
+    </div>
+    
+    <div class="footer-item">
+      <p class="sphinx-version">
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.5.0.<br>
+</p>
+    </div>
+    
+  </div>
+</footer>
+  </body>
+</html>
