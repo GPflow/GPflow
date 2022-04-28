@@ -5,12 +5,6 @@ GPflow manual
 You can use this document to get familiar with GPflow. We've split up the material into four different categories: basics, understanding, advanced needs, and tailored models. We have also provided a `flow diagram <_static/GPflows.png>`_ to guide you to the relevant parts of GPflow for your specific problem.
 
 
-GPflow 2
---------
-
-Users of GPflow 1 should check the :doc:`notebooks/gpflow2_upgrade_guide`.
-
-
 Basics
 ------
 
