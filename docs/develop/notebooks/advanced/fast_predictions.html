@@ -6,7 +6,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
-    <title>Faster predictions by caching &#8212; GPflow 2.5.0 documentation</title>
+    <title>Faster predictions by caching &#8212; GPflow 2.5.1 documentation</title>
     
   <!-- Loaded before other Sphinx assets -->
   <link href="../../_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
@@ -790,8 +790,8 @@ p(\mathbf{f}_*|X, Y) = \mathcal{N}(\mu, \Sigma)
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2022-04-28 09:25:24.447907: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcudart.so.11.0&#39;; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory
-2022-04-28 09:25:24.447933: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.
+2022-04-28 11:28:17.146955: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcudart.so.11.0&#39;; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory
+2022-04-28 11:28:17.146981: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.
 </pre></div></div>
 </div>
 </section>
@@ -814,10 +814,10 @@ p(\mathbf{f}_*|X, Y) = \mathcal{N}(\mu, \Sigma)
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2022-04-28 09:25:26.673978: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcuda.so.1&#39;; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory
-2022-04-28 09:25:26.674008: W tensorflow/stream_executor/cuda/cuda_driver.cc:269] failed call to cuInit: UNKNOWN ERROR (303)
-2022-04-28 09:25:26.674026: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (09836addeff6): /proc/driver/nvidia/version does not exist
-2022-04-28 09:25:26.674284: I tensorflow/core/platform/cpu_feature_guard.cc:151] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA
+2022-04-28 11:28:19.493385: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcuda.so.1&#39;; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory
+2022-04-28 11:28:19.493414: W tensorflow/stream_executor/cuda/cuda_driver.cc:269] failed call to cuInit: UNKNOWN ERROR (303)
+2022-04-28 11:28:19.493433: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (4d5b849030ca): /proc/driver/nvidia/version does not exist
+2022-04-28 11:28:19.493693: I tensorflow/core/platform/cpu_feature_guard.cc:151] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA
 To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.
 </pre></div></div>
 </div>
@@ -836,7 +836,7 @@ To enable them in other operations, rebuild TensorFlow with the appropriate comp
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-146 ms ± 7.45 ms per loop (mean ± std. dev. of 7 runs, 1 loop each)
+157 ms ± 4.55 ms per loop (mean ± std. dev. of 7 runs, 10 loops each)
 </pre></div></div>
 </div>
 <div class="nbinput nblast docutils container">
@@ -862,7 +862,7 @@ To enable them in other operations, rebuild TensorFlow with the appropriate comp
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-200 ms ± 392 µs per loop (mean ± std. dev. of 7 runs, 10 loops each)
+197 ms ± 6.59 ms per loop (mean ± std. dev. of 7 runs, 10 loops each)
 </pre></div></div>
 </div>
 </section>
@@ -896,7 +896,7 @@ To enable them in other operations, rebuild TensorFlow with the appropriate comp
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-201 ms ± 5.55 ms per loop (mean ± std. dev. of 7 runs, 10 loops each)
+215 ms ± 32.5 ms per loop (mean ± std. dev. of 7 runs, 1 loop each)
 </pre></div></div>
 </div>
 <p>And again using the posterior object and caching</p>
@@ -922,7 +922,7 @@ To enable them in other operations, rebuild TensorFlow with the appropriate comp
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-104 ms ± 4.61 ms per loop (mean ± std. dev. of 7 runs, 10 loops each)
+101 ms ± 3.39 ms per loop (mean ± std. dev. of 7 runs, 10 loops each)
 </pre></div></div>
 </div>
 </section>
@@ -954,7 +954,7 @@ To enable them in other operations, rebuild TensorFlow with the appropriate comp
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-300 ms ± 6.16 ms per loop (mean ± std. dev. of 7 runs, 1 loop each)
+300 ms ± 17.9 ms per loop (mean ± std. dev. of 7 runs, 1 loop each)
 </pre></div></div>
 </div>
 <p>Using the posterior object instead:</p>
@@ -980,7 +980,7 @@ To enable them in other operations, rebuild TensorFlow with the appropriate comp
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-106 ms ± 4.54 ms per loop (mean ± std. dev. of 7 runs, 10 loops each)
+106 ms ± 4.5 ms per loop (mean ± std. dev. of 7 runs, 10 loops each)
 </pre></div></div>
 </div>
 </section>
