@@ -11,7 +11,19 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-from typing import Any, Callable, DefaultDict, Dict, Iterator, Mapping, Set, Tuple, Type, TypeVar
+from typing import (
+    Any,
+    Callable,
+    DefaultDict,
+    Generic,
+    Iterator,
+    List,
+    Set,
+    Tuple,
+    Type,
+    TypeVar,
+    cast,
+)
 
 import numpy as np
 import pytest
@@ -28,15 +40,31 @@ from gpflow.models import GPR, SGPR, SVGP, VGP, GPModel, training_loss_closure
 from gpflow.models.vgp import update_vgp_data
 from gpflow.posteriors import AbstractPosterior, PrecomputeCacheType
 
-_CreateModel = Callable[[RegressionData], GPModel]
-_C = TypeVar("_C", bound=_CreateModel)
+_M = TypeVar("_M", bound=GPModel, covariant=True)
+_CreateModel = Callable[[RegressionData], _M]
 
-_MULTI_OUTPUT = "multi_output"
-_MODEL_FACTORIES: Dict[_CreateModel, Mapping[str, Any]] = {}
+
+# I'd like to make this a `dataclass`, but mypy get confused about `create_model` being a function
+# member, but that doesn't take `self`.
+class _ModelFactory(Generic[_M]):
+    def __init__(
+        self,
+        create_model: _CreateModel[_M],
+        multi_output: bool,
+        atol: float,
+        rtol: float,
+    ) -> None:
+        self.create_model = create_model
+        self.multi_output = multi_output
+        self.atol = atol
+        self.rtol = rtol
+
+
+_MODEL_FACTORIES: List[_ModelFactory[Any]] = []
 
 # This exists to make it easy to disable tf.function, for debugging.
 _COMPILE = True
-_MAXITER = 500
+_MAXITER = 10
 _DEFAULT_ATOL = 1e-10
 _DEFAULT_RTOL = 1e-7
 
@@ -53,19 +81,19 @@ def _register_posterior_bo_integration_test(
 
 
 def model_factory(
-    *flags: str, atol: float = _DEFAULT_ATOL, rtol: float = _DEFAULT_RTOL
-) -> Callable[[_C], _C]:
+    multi_output: bool = False, atol: float = _DEFAULT_ATOL, rtol: float = _DEFAULT_RTOL
+) -> Callable[[_CreateModel[_M]], _ModelFactory[_M]]:
     """ Decorator for adding a function to the `_MODEL_FACTORIES` list. """
 
-    properties = {
-        "atol": atol,
-        "rtol": rtol,
-        **{flag: True for flag in flags},
-    }
-
-    def register(create_model: _C) -> _C:
-        _MODEL_FACTORIES[create_model] = properties
-        return create_model
+    def register(create_model: _CreateModel[_M]) -> _ModelFactory[_M]:
+        model_factory = _ModelFactory(
+            create_model,
+            multi_output,
+            atol,
+            rtol,
+        )
+        _MODEL_FACTORIES.append(model_factory)
+        return model_factory
 
     return register
 
@@ -80,7 +108,7 @@ def create_likelihood() -> Likelihood:
 
 def create_inducing_points(data: RegressionData) -> InducingPoints:
     n_features = data[0].shape[1]
-    n_inducing_points = 25
+    n_inducing_points = 5
     rng = np.random.default_rng(20220208)
     Z = tf.constant(rng.random((n_inducing_points, n_features)))
     return InducingPoints(Z)
@@ -107,7 +135,7 @@ def create_sgpr(data: RegressionData) -> SGPR:
     return SGPR(data=data, kernel=create_kernel(), inducing_variable=create_inducing_points(data))
 
 
-@model_factory(rtol=1e-3)
+@model_factory(rtol=5e-3)
 def create_vgp(data: RegressionData) -> VGP:
     return VGP(data=data, kernel=create_kernel(), likelihood=create_likelihood())
 
@@ -126,7 +154,7 @@ def create_svgp__independent_single_output(data: RegressionData) -> SVGP:
     )
 
 
-@model_factory(_MULTI_OUTPUT)
+@model_factory(multi_output=True)
 def create_svgp__fully_correlated_multi_output(data: RegressionData) -> SVGP:
     n_outputs = data[1].shape[1]
     kernel = gpflow.kernels.SharedIndependent(create_kernel(), output_dim=n_outputs)
@@ -142,7 +170,7 @@ def create_svgp__fully_correlated_multi_output(data: RegressionData) -> SVGP:
     )
 
 
-@model_factory(_MULTI_OUTPUT)
+@model_factory(multi_output=True)
 def create_svgp__independent_multi_output(data: RegressionData) -> SVGP:
     n_outputs = data[1].shape[1]
     kernel = gpflow.kernels.SharedIndependent(create_kernel(), output_dim=n_outputs)
@@ -160,7 +188,7 @@ def create_svgp__independent_multi_output(data: RegressionData) -> SVGP:
     )
 
 
-@model_factory(_MULTI_OUTPUT)
+@model_factory(multi_output=True)
 def create_svgp__fallback_independent_latent_posterior(data: RegressionData) -> SVGP:
     n_outputs = data[1].shape[1]
     rng = np.random.default_rng(20220131)
@@ -182,7 +210,7 @@ def create_svgp__fallback_independent_latent_posterior(data: RegressionData) -> 
     )
 
 
-@model_factory(_MULTI_OUTPUT)
+@model_factory(multi_output=True)
 def create_svgp__linear_coregionalization(data: RegressionData) -> SVGP:
     n_outputs = data[1].shape[1]
     rng = np.random.default_rng(20220131)
@@ -204,27 +232,12 @@ def create_svgp__linear_coregionalization(data: RegressionData) -> SVGP:
 
 
 @pytest.fixture(params=_MODEL_FACTORIES)
-def _create_model(request: SubRequest) -> _CreateModel:
-    return request.param
+def _model_factory(request: SubRequest) -> _ModelFactory[Any]:
+    return cast(_ModelFactory[Any], request.param)
 
 
 @pytest.fixture
-def _multi_output(_create_model: _CreateModel) -> bool:
-    return _MULTI_OUTPUT in _MODEL_FACTORIES[_create_model]
-
-
-@pytest.fixture
-def _rtol(_create_model: _CreateModel) -> float:
-    return _MODEL_FACTORIES[_create_model]["rtol"]
-
-
-@pytest.fixture
-def _atol(_create_model: _CreateModel) -> float:
-    return _MODEL_FACTORIES[_create_model]["atol"]
-
-
-@pytest.fixture
-def _f_minimum(_multi_output: bool) -> tf.Tensor:
+def _f_minimum(_model_factory: _ModelFactory[Any]) -> tf.Tensor:
     return (
         tf.constant(
             [
@@ -234,7 +247,7 @@ def _f_minimum(_multi_output: bool) -> tf.Tensor:
             ],
             dtype=default_float(),
         )
-        if _multi_output
+        if _model_factory.multi_output
         else tf.constant([[0.3, 0.5]], dtype=default_float())
     )
 
@@ -253,7 +266,7 @@ def _f(_f_minimum: tf.Tensor) -> Callable[[tf.Tensor], tf.Tensor]:
 def _data(
     _f: Callable[[tf.Tensor], tf.Tensor], _f_minimum: tf.Tensor
 ) -> Tuple[tf.Variable, tf.Variable]:
-    n_initial_data = 10
+    n_initial_data = 3
     n_outputs, n_features = _f_minimum.shape
 
     rng = np.random.default_rng(20220126)
@@ -323,12 +336,10 @@ def _optimize(_data: Tuple[tf.Variable, tf.Variable]) -> Callable[[GPModel], Non
 
 def test_posterior_bo_integration__predict_f(
     register_posterior_bo_integration_test: Callable[[AbstractPosterior], None],
-    _create_model: _CreateModel,
+    _model_factory: _ModelFactory[Any],
     _data: Tuple[tf.Variable, tf.Variable],
     _extend_data: Callable[[GPModel], Iterator[int]],
     _X_new: tf.Tensor,
-    _rtol: float,
-    _atol: float,
 ) -> None:
     """
     Check that data added incrementally is correctly reflected in `predict_f`.
@@ -337,7 +348,7 @@ def test_posterior_bo_integration__predict_f(
     n_rows_new = _X_new.shape[0]
     n_outputs = Y.shape[1]
 
-    model = _create_model(_data)
+    model = _model_factory.create_model(_data)
     posterior = model.posterior(PrecomputeCacheType.VARIABLE)
     register_posterior_bo_integration_test(posterior)
     predict_f = posterior.predict_f
@@ -351,22 +362,24 @@ def test_posterior_bo_integration__predict_f(
         np.testing.assert_equal((n_rows_new, n_outputs), compiled_mean.shape)
         np.testing.assert_equal((n_rows_new, n_outputs), compiled_var.shape)
 
-        eager_model = _create_model(_data)
+        eager_model = _model_factory.create_model(_data)
         eager_mean, eager_var = eager_model.predict_f(_X_new)
 
-        np.testing.assert_allclose(eager_mean, compiled_mean, rtol=_rtol, atol=_atol)
-        np.testing.assert_allclose(eager_var, compiled_var, rtol=_rtol, atol=_atol)
+        np.testing.assert_allclose(
+            eager_mean, compiled_mean, rtol=_model_factory.rtol, atol=_model_factory.atol
+        )
+        np.testing.assert_allclose(
+            eager_var, compiled_var, rtol=_model_factory.rtol, atol=_model_factory.atol
+        )
 
 
 def test_posterior_bo_integration__optimization(
     register_posterior_bo_integration_test: Callable[[AbstractPosterior], None],
-    _create_model: _CreateModel,
+    _model_factory: _ModelFactory[Any],
     _data: Tuple[tf.Variable, tf.Variable],
     _extend_data: Callable[[GPModel], Iterator[int]],
     _X_new: tf.Tensor,
     _optimize: Callable[[GPModel], None],
-    _rtol: float,
-    _atol: float,
 ) -> None:
     """
     Check that data added incrementally is considered when optimizing a model.
@@ -375,7 +388,7 @@ def test_posterior_bo_integration__optimization(
     n_rows_new = _X_new.shape[0]
     n_outputs = Y.shape[1]
 
-    model = _create_model(_data)
+    model = _model_factory.create_model(_data)
     posterior = model.posterior(PrecomputeCacheType.VARIABLE)
     register_posterior_bo_integration_test(posterior)
     predict_f = posterior.predict_f
@@ -395,9 +408,13 @@ def test_posterior_bo_integration__optimization(
     np.testing.assert_equal((n_rows_new, n_outputs), compiled_mean.shape)
     np.testing.assert_equal((n_rows_new, n_outputs), compiled_var.shape)
 
-    eager_model = _create_model(_data)
+    eager_model = _model_factory.create_model(_data)
     _optimize(eager_model)
     eager_mean, eager_var = eager_model.predict_f(_X_new)
 
-    np.testing.assert_allclose(eager_mean, compiled_mean, rtol=_rtol, atol=_atol)
-    np.testing.assert_allclose(eager_var, compiled_var, rtol=_rtol, atol=_atol)
+    np.testing.assert_allclose(
+        eager_mean, compiled_mean, rtol=_model_factory.rtol, atol=_model_factory.atol
+    )
+    np.testing.assert_allclose(
+        eager_var, compiled_var, rtol=_model_factory.rtol, atol=_model_factory.atol
+    )

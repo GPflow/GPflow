@@ -2,15 +2,17 @@ import numpy as np
 import tensorflow as tf
 
 import gpflow
+from gpflow.base import RegressionData
 
 
 class DummyModel(gpflow.models.BayesianModel, gpflow.models.ExternalDataTrainingLossMixin):
-    def maximum_log_likelihood_objective(self, data):
+    # type-ignore is because of changed method signature:
+    def maximum_log_likelihood_objective(self, data: RegressionData) -> tf.Tensor:  # type: ignore
         X, Y = data
         return tf.reduce_sum(X * Y)
 
 
-def test_training_loss_closure_with_minibatch():
+def test_training_loss_closure_with_minibatch() -> None:
     N = 13
     B = 5
     num_batches = int(np.ceil(N / B))

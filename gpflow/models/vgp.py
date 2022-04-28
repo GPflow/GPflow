@@ -93,7 +93,8 @@ class VGP_deprecated(GPModel, InternalDataTrainingLossMixin):
             constrained_shape=(num_latent_gps, static_num_data, static_num_data),
         )
 
-    def maximum_log_likelihood_objective(self) -> tf.Tensor:
+    # type-ignore is because of changed method signature:
+    def maximum_log_likelihood_objective(self) -> tf.Tensor:  # type: ignore
         return self.elbo()
 
     def elbo(self) -> tf.Tensor:
@@ -152,7 +153,10 @@ class VGP_with_posterior(VGP_deprecated):
     enables caching for faster subsequent predictions.
     """
 
-    def posterior(self, precompute_cache=posteriors.PrecomputeCacheType.TENSOR):
+    def posterior(
+        self,
+        precompute_cache: posteriors.PrecomputeCacheType = posteriors.PrecomputeCacheType.TENSOR,
+    ) -> posteriors.VGPPosterior:
         """
         Create the Posterior object which contains precomputed matrices for
         faster prediction.
@@ -181,7 +185,9 @@ class VGP_with_posterior(VGP_deprecated):
             precompute_cache=precompute_cache,
         )
 
-    def predict_f(self, Xnew: InputData, full_cov=False, full_output_cov=False) -> MeanAndVariance:
+    def predict_f(
+        self, Xnew: InputData, full_cov: bool = False, full_output_cov: bool = False
+    ) -> MeanAndVariance:
         """
         For backwards compatibility, VGP's predict_f uses the fused (no-cache)
         computation, which is more efficient during training.
@@ -207,8 +213,8 @@ def update_vgp_data(vgp: VGP_deprecated, new_data: RegressionData) -> None:
     the shape of the data. This functions updates the internal data of the given vgp, and updates
     the variational parameters to fit.
 
-    This function requires that the input :param:`vgp` were create with :class:`tf.Variable`s for
-    :param:`data`.
+    This function requires that the input `vgp` were create with :class:`tf.Variable`s for
+    `data`.
     """
     old_X_data, old_Y_data = vgp.data
     assert is_variable(old_X_data) and is_variable(
@@ -240,22 +246,18 @@ def update_vgp_data(vgp: VGP_deprecated, new_data: RegressionData) -> None:
 class VGPOpperArchambeau(GPModel, InternalDataTrainingLossMixin):
     r"""
     This method approximates the Gaussian process posterior using a multivariate Gaussian.
-    The key reference is:
-    ::
-      @article{Opper:2009,
-          title = {The Variational Gaussian Approximation Revisited},
-          author = {Opper, Manfred and Archambeau, Cedric},
-          journal = {Neural Comput.},
-          year = {2009},
-          pages = {786--792},
-      }
+
+    The key reference is :cite:t:`Opper:2009`.
+
     The idea is that the posterior over the function-value vector F is
     approximated by a Gaussian, and the KL divergence is minimised between
     the approximation and the posterior. It turns out that the optimal
     posterior precision shares off-diagonal elements with the prior, so
     only the diagonal elements of the precision need be adjusted.
     The posterior approximation is
+
     .. math::
+
        q(\mathbf f) = N(\mathbf f \,|\, \mathbf K \boldsymbol \alpha,
                          [\mathbf K^{-1} + \textrm{diag}(\boldsymbol \lambda))^2]^{-1})
 
@@ -281,14 +283,15 @@ class VGPOpperArchambeau(GPModel, InternalDataTrainingLossMixin):
         super().__init__(kernel, likelihood, mean_function, num_latent_gps)
 
         self.data = data_input_to_tensor(data)
-        X_data, Y_data = self.data
+        X_data, _Y_data = self.data
         self.num_data = X_data.shape[0]
         self.q_alpha = Parameter(np.zeros((self.num_data, self.num_latent_gps)))
         self.q_lambda = Parameter(
             np.ones((self.num_data, self.num_latent_gps)), transform=gpflow.utilities.positive()
         )
 
-    def maximum_log_likelihood_objective(self) -> tf.Tensor:
+    # type-ignore is because of changed method signature:
+    def maximum_log_likelihood_objective(self) -> tf.Tensor:  # type: ignore
         return self.elbo()
 
     def elbo(self) -> tf.Tensor:
@@ -296,9 +299,18 @@ class VGPOpperArchambeau(GPModel, InternalDataTrainingLossMixin):
         q_alpha, q_lambda are variational parameters, size [N, R]
         This method computes the variational lower bound on the likelihood,
         which is:
-            E_{q(F)} [ \log p(Y|F) ] - KL[ q(F) || p(F)]
+
+        .. math::
+
+           E_{q(F)} [ \log p(Y|F) ] - KL[ q(F) || p(F)]
+
         with
-            q(f) = N(f | K alpha + mean, [K^-1 + diag(square(lambda))]^-1) .
+
+        .. math::
+
+           q(f) = N(f |
+               K \alpha + \textrm{mean},
+               [K^-1 + \textrm{diag}(\textrm{square}(\lambda))]^-1) .
         """
         X_data, Y_data = self.data
 
@@ -340,11 +352,19 @@ class VGPOpperArchambeau(GPModel, InternalDataTrainingLossMixin):
     ) -> MeanAndVariance:
         r"""
         The posterior variance of F is given by
-            q(f) = N(f | K alpha + mean, [K^-1 + diag(lambda**2)]^-1)
+
+        .. math::
+
+           q(f) = N(f |
+               K \alpha + \textrm{mean}, [K^-1 + \textrm{diag}(\lambda**2)]^-1)
+
         Here we project this to F*, the values of the GP at Xnew which is given
         by
-           q(F*) = N ( F* | K_{*F} alpha + mean, K_{**} - K_{*f}[K_{ff} +
-                                           diag(lambda**-2)]^-1 K_{f*} )
+
+        .. math::
+
+           q(F*) = N ( F* | K_{*F} \alpha + \textrm{mean}, K_{**} - K_{*f}[K_{ff} +
+                                           \textrm{diag}(\lambda**-2)]^-1 K_{f*} )
 
         Note: This model currently does not allow full output covariances
         """

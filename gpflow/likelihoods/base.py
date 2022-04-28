@@ -11,47 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-"""
-Likelihoods are another core component of GPflow. This describes how likely the
-data is under the assumptions made about the underlying latent functions
-p(Y|F). Different likelihoods make different
-assumptions about the distribution of the data, as such different data-types
-(continuous, binary, ordinal, count) are better modelled with different
-likelihood assumptions.
-
-Use of any likelihood other than Gaussian typically introduces the need to use
-an approximation to perform inference, if one isn't already needed. A
-variational inference and MCMC models are included in GPflow and allow
-approximate inference with non-Gaussian likelihoods. An introduction to these
-models can be found :ref:`here <implemented_models>`. Specific notebooks
-illustrating non-Gaussian likelihood regressions are available for
-`classification <notebooks/classification.html>`_ (binary data), `ordinal
-<notebooks/ordinal.html>`_ and `multiclass <notebooks/multiclass.html>`_.
-
-Creating new likelihoods
-----------
-Likelihoods are defined by their
-log-likelihood. When creating new likelihoods, the
-:func:`logp <gpflow.likelihoods.Likelihood.logp>` method (log p(Y|F)), the
-:func:`conditional_mean <gpflow.likelihoods.Likelihood.conditional_mean>`,
-:func:`conditional_variance
-<gpflow.likelihoods.Likelihood.conditional_variance>`.
-
-In order to perform variational inference with non-Gaussian likelihoods a term
-called ``variational expectations``, ∫ q(F) log p(Y|F) dF, needs to
-be computed under a Gaussian distribution q(F) ~ N(μ, Σ).
-
-The :func:`variational_expectations <gpflow.likelihoods.Likelihood.variational_expectations>`
-method can be overriden if this can be computed in closed form, otherwise; if
-the new likelihood inherits
-:class:`Likelihood <gpflow.likelihoods.Likelihood>` the default will use
-Gauss-Hermite numerical integration (works well when F is 1D
-or 2D), if the new likelihood inherits from
-:class:`MonteCarloLikelihood <gpflow.likelihoods.MonteCarloLikelihood>` the
-integration is done by sampling (can be more suitable when F is higher dimensional).
-"""
-
 import abc
 import warnings
 from typing import Any, Callable, Iterable, Optional, Sequence, Union
@@ -247,16 +206,6 @@ class Likelihood(Module, metaclass=abc.ABCMeta):
     def _predict_log_density(self, Fmu: TensorType, Fvar: TensorType, Y: TensorType) -> tf.Tensor:
         raise NotImplementedError
 
-    def predict_density(self, Fmu: TensorType, Fvar: TensorType, Y: TensorType) -> tf.Tensor:
-        """
-        Deprecated: see `predict_log_density`
-        """
-        warnings.warn(
-            "predict_density is deprecated and will be removed in GPflow 2.1, use predict_log_density instead",
-            DeprecationWarning,
-        )
-        return self.predict_log_density(Fmu, Fvar, Y)
-
     def variational_expectations(
         self, Fmu: TensorType, Fvar: TensorType, Y: TensorType
     ) -> tf.Tensor:
@@ -406,8 +355,10 @@ class ScalarLikelihood(QuadratureLikelihood):
 
     The `Likelihood` class contains methods to compute marginal statistics of functions
     of the latents and the data ϕ(y,f):
-     * variational_expectations:  ϕ(y,f) = log p(y|f)
-     * predict_log_density: ϕ(y,f) = p(y|f)
+
+    * variational_expectations:  ϕ(y,f) = log p(y|f)
+    * predict_log_density: ϕ(y,f) = p(y|f)
+
     Those statistics are computed after having first marginalized the latent processes f
     under a multivariate normal distribution q(f) that is fully factorized.
 
@@ -418,32 +369,6 @@ class ScalarLikelihood(QuadratureLikelihood):
 
     def __init__(self, **kwargs: Any) -> None:
         super().__init__(latent_dim=None, observation_dim=None, **kwargs)
-
-    @property
-    def num_gauss_hermite_points(self) -> int:
-        warnings.warn(
-            "The num_gauss_hermite_points property is deprecated; access through the `quadrature` attribute instead",
-            DeprecationWarning,
-        )
-
-        if not isinstance(self.quadrature, NDiagGHQuadrature):
-            raise TypeError(
-                "Can only query num_gauss_hermite_points if quadrature is a NDiagGHQuadrature instance"
-            )
-        return self.quadrature.n_gh
-
-    @num_gauss_hermite_points.setter
-    def num_gauss_hermite_points(self, n_gh: int) -> None:
-        warnings.warn(
-            "The num_gauss_hermite_points setter is deprecated; assign a new GaussianQuadrature instance to the `quadrature` attribute instead",
-            DeprecationWarning,
-        )
-
-        if isinstance(self.quadrature, NDiagGHQuadrature) and n_gh == self.quadrature.n_gh:
-            return  # nothing to do here
-
-        with tf.init_scope():
-            self.quadrature = NDiagGHQuadrature(self._quadrature_dim, n_gh)
 
     def _check_last_dims_valid(self, F: TensorType, Y: TensorType) -> None:
         """

@@ -17,7 +17,7 @@ from typing import Optional
 import numpy as np
 import tensorflow as tf
 
-from ..base import Parameter, TensorType
+from ..base import AnyNDArray, Parameter, TensorType
 from ..utilities import positive, to_default_float
 from .base import ActiveDims, Kernel
 
@@ -27,17 +27,9 @@ class ArcCosine(Kernel):
     The Arc-cosine family of kernels which mimics the computation in neural
     networks. The order parameter specifies the assumed activation function.
     The Multi Layer Perceptron (MLP) kernel is closely related to the ArcCosine
-    kernel of order 0. The key reference is
+    kernel of order 0.
 
-    ::
-
-        @incollection{NIPS2009_3628,
-            title = {Kernel Methods for Deep Learning},
-            author = {Youngmin Cho and Lawrence K. Saul},
-            booktitle = {Advances in Neural Information Processing Systems 22},
-            year = {2009},
-            url = {http://papers.nips.cc/paper/3628-kernel-methods-for-deep-learning.pdf}
-        }
+    The key reference is :cite:t:`NIPS2009_3628`.
     """
 
     implemented_orders = {0, 1, 2}
@@ -79,7 +71,8 @@ class ArcCosine(Kernel):
         """
         Whether ARD behaviour is active.
         """
-        return self.weight_variances.shape.ndims > 0
+        ndims: int = self.weight_variances.shape.ndims
+        return ndims > 0
 
     def _weighted_product(self, X: TensorType, X2: Optional[TensorType] = None) -> tf.Tensor:
         if X2 is None:
@@ -173,7 +166,7 @@ class Coregion(Kernel):
 
         self.output_dim = output_dim
         self.rank = rank
-        W = 0.1 * np.ones((self.output_dim, self.rank))
+        W: AnyNDArray = 0.1 * np.ones((self.output_dim, self.rank))
         kappa = np.ones(self.output_dim)
         self.W = Parameter(W)
         self.kappa = Parameter(kappa, transform=positive())

@@ -20,7 +20,7 @@ import tensorflow as tf
 from numpy.testing import assert_allclose
 
 import gpflow
-from gpflow.base import MeanAndVariance
+from gpflow.base import AnyNDArray, MeanAndVariance
 from gpflow.conditionals import conditional, uncertain_conditional
 from gpflow.config import default_float
 from gpflow.mean_functions import Constant, Linear, MeanFunction, Zero
@@ -64,7 +64,7 @@ class MomentMatchingSVGP(gpflow.models.SVGP):
         return mean, covar
 
 
-def gen_L(n: int, *shape: int) -> np.ndarray:
+def gen_L(n: int, *shape: int) -> AnyNDArray:
     return np.array([np.tril(rng.randn(*shape)) for _ in range(n)])
 
 
@@ -99,14 +99,14 @@ class Data:
     D_out = 3
     D_in = 1
     X = np.linspace(-5, 5, N)[:, None] + rng.randn(N, 1)
-    Y = np.hstack([np.sin(X), np.cos(X), X ** 2])
+    Y: AnyNDArray = np.hstack([np.sin(X), np.cos(X), X ** 2])
     Xnew_mu = rng.randn(N_new, 1)
     Xnew_covar = np.zeros((N_new, 1, 1))
     data = (X, Y)
 
 
 class DataMC1(Data):
-    Y = np.hstack([np.sin(Data.X), np.sin(Data.X) * 2, Data.X ** 2])
+    Y: AnyNDArray = np.hstack([np.sin(Data.X), np.sin(Data.X) * 2, Data.X ** 2])
     data = (Data.X, Y)
 
 
@@ -116,10 +116,10 @@ class DataMC2(Data):
     D_out = 4
     D_in = 2
     X = rng.randn(N, D_in)
-    Y = np.hstack([np.sin(X), np.sin(X)])
+    Y: AnyNDArray = np.hstack([np.sin(X), np.sin(X)])
     Xnew_mu = rng.randn(N_new, D_in)
     L = gen_L(N_new, D_in, D_in)
-    Xnew_covar = np.array([l @ l.T for l in L])
+    Xnew_covar: AnyNDArray = np.array([l @ l.T for l in L])
     data = (X, Y)
 
 
@@ -252,7 +252,7 @@ def test_quadrature(white: bool, mean: Optional[str]) -> None:
 
     effective_mean = mean_function or (lambda X: 0.0)
 
-    def conditional_fn(X: tf.Tensor) -> MeanAndVariance:
+    def conditional_fn(X: tf.Tensor) -> tf.Tensor:
         return conditional(
             X,
             inducing_variable,

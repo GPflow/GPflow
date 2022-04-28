@@ -21,23 +21,28 @@ import tensorflow_probability as tfp
 from typing_extensions import Final
 
 from .config import default_float, default_summary_fmt
+from .type_flags import GENERIC_NP_ARRAYS, NP_TYPE_CHECKING
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from IPython.lib import pretty
 
 DType = Union[np.dtype, tf.DType]
-VariableData = Union[List[Any], Tuple[Any], np.ndarray, int, float]  # deprecated
+
+
+if TYPE_CHECKING and (not NP_TYPE_CHECKING):  # pragma: no cover
+    AnyNDArray = Any
+else:
+    if GENERIC_NP_ARRAYS:
+        # It would be nice to use something more interesting than `Any` here, but it looks like
+        # the infrastructure in the rest of the ecosystem isn't really set up for this
+        # yet. Maybe when we get Python 3.11?
+        AnyNDArray = np.ndarray[Any, Any]  # type: ignore
+    else:
+        AnyNDArray = Union[np.ndarray]  # type: ignore
+
+VariableData = Union[List[Any], Tuple[Any], AnyNDArray, int, float]  # deprecated
 Transform = Union[tfp.bijectors.Bijector]
 Prior = Union[tfp.distributions.Distribution]
-
-
-TensorType = Union[np.ndarray, tf.Tensor, tf.Variable, "Parameter"]
-"""
-Type alias for tensor-like types that are supported by most TensorFlow and GPflow operations.
-
-NOTE: Union types like this do not work with the `register` method of `multipledispatch`'s
-`Dispatcher` class. Instead use `TensorLike`.
-"""
 
 
 # We've left this as object until we've tested the performance consequences of using the full set
@@ -51,14 +56,9 @@ TensorLike: Final[Tuple[type, ...]] = (object,)
 
 _NativeScalar = Union[int, float]
 _Array = Sequence[Any]  # a nested array of int, float, bool etc. kept simple for readability
-TensorData = Union[_NativeScalar, _Array, TensorType]
 
 MeanAndVariance = Tuple[tf.Tensor, tf.Tensor]
 SamplesMeanAndVariance = Tuple[tf.Tensor, tf.Tensor, tf.Tensor]
-
-InputData = Union[TensorType]
-OutputData = Union[TensorType]
-RegressionData = Tuple[InputData, OutputData]
 
 
 def _IS_PARAMETER(o: object) -> bool:
@@ -106,7 +106,7 @@ class PriorOn(Enum):
 class Parameter(tfp.util.TransformedVariable):
     def __init__(
         self,
-        value: Union[TensorData, "Parameter"],
+        value: "TensorData",
         *,
         transform: Optional[Transform] = None,
         prior: Optional[Prior] = None,
@@ -132,6 +132,10 @@ class Parameter(tfp.util.TransformedVariable):
         :param shape: Convenience shortcut for setting both `unconstrained_shape` and
             `constrained_shape` to the same value.
         """
+        if transform:
+            name = name or transform.name
+
+        tensor_value: TensorType
         if isinstance(value, Parameter):
             transform = transform or value.transform
             prior = prior or value.prior
@@ -140,7 +144,9 @@ class Parameter(tfp.util.TransformedVariable):
             trainable = value.trainable if trainable is None else trainable
 
             if dtype:
-                value = _cast_to_dtype(value, dtype)
+                tensor_value = _cast_to_dtype(value, dtype)
+            else:
+                tensor_value = value
         else:
             if transform is None:
                 transform = tfp.bijectors.Identity()
@@ -148,9 +154,9 @@ class Parameter(tfp.util.TransformedVariable):
             prior_on = prior_on if prior_on else PriorOn.CONSTRAINED
             trainable = trainable if trainable is not None else True
 
-            value = _cast_to_dtype(value, dtype)
+            tensor_value = _cast_to_dtype(value, dtype)
 
-        _validate_unconstrained_value(value, transform, dtype)
+        _validate_unconstrained_value(tensor_value, transform, dtype)
 
         if shape is not None:
             assert unconstrained_shape is None, "Cannot set both `shape` and `unconstrained_shape`."
@@ -159,9 +165,9 @@ class Parameter(tfp.util.TransformedVariable):
             constrained_shape = shape
 
         super().__init__(
-            value,
+            tensor_value,
             transform,
-            dtype=value.dtype,
+            dtype=tensor_value.dtype,
             trainable=trainable,
             name=name,
             shape=unconstrained_shape,
@@ -222,11 +228,11 @@ class Parameter(tfp.util.TransformedVariable):
 
         This attribute cannot be set directly. Use :func:`gpflow.set_trainable`.
         """
-        return self.unconstrained_variable.trainable
+        return self.unconstrained_variable.trainable  # type: ignore
 
     def assign(
         self,
-        value: TensorData,
+        value: "TensorData",
         use_locking: bool = False,
         name: Optional[str] = None,
         read_value: bool = True,
@@ -235,15 +241,15 @@ class Parameter(tfp.util.TransformedVariable):
         Assigns constrained `value` to the unconstrained parameter's variable.
         It passes constrained value through parameter's transform first.
 
-        Example:
-            ```
+        Example::
+
             a = Parameter(2.0, transform=tfp.bijectors.Softplus())
             b = Parameter(3.0)
 
             a.assign(4.0)               # `a` parameter to `2.0` value.
             a.assign(tf.constant(5.0))  # `a` parameter to `5.0` value.
             a.assign(b)                 # `a` parameter to constrained value of `b`.
-            ```
+
 
         :param value: Constrained tensor-like value.
         :param use_locking: If `True`, use locking during the assignment.
@@ -255,6 +261,22 @@ class Parameter(tfp.util.TransformedVariable):
         return self.unconstrained_variable.assign(
             unconstrained_value, use_locking=use_locking, name=name, read_value=read_value
         )
+
+
+# These types are defined after "Parameter" to avoid forward references that breaks our
+# documentation build:
+TensorType = Union[AnyNDArray, tf.Tensor, tf.Variable, Parameter]
+"""
+Type alias for tensor-like types that are supported by most TensorFlow and GPflow operations.
+
+NOTE: Union types like this do not work with the `register` method of `multipledispatch`'s
+`Dispatcher` class. Instead use `TensorLike`.
+"""
+
+TensorData = Union[_NativeScalar, _Array, TensorType]
+InputData = Union[TensorType]
+OutputData = Union[TensorType]
+RegressionData = Tuple[InputData, OutputData]
 
 
 def _cast_to_dtype(
@@ -277,7 +299,7 @@ def _validate_unconstrained_value(
 ) -> tf.Tensor:
     value = _cast_to_dtype(value, dtype)
     unconstrained_value = _to_unconstrained(value, transform)
-    if unconstrained_value.dtype.is_integer:
+    if unconstrained_value.dtype.is_integer:  # type: ignore
         return unconstrained_value
     message = (
         "gpflow.Parameter: the value to be assigned is incompatible with this parameter's "

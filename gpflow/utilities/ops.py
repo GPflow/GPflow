@@ -13,15 +13,16 @@
 # limitations under the License.
 
 import copy
-from typing import Any, List, Optional, Union
+from typing import Any, Callable, List, Optional, Union
 
-import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
 
+from ..base import AnyNDArray
+
 
 def cast(
-    value: Union[tf.Tensor, np.ndarray], dtype: tf.DType, name: Optional[str] = None
+    value: Union[tf.Tensor, AnyNDArray], dtype: tf.DType, name: Optional[str] = None
 ) -> tf.Tensor:
     if not tf.is_tensor(value):
         # TODO(awav): Release TF2.2 resolves this issue
@@ -38,33 +39,36 @@ def eye(num: int, value: tf.Tensor, dtype: Optional[tf.DType] = None) -> tf.Tens
 
 def leading_transpose(tensor: tf.Tensor, perm: List[Any], leading_dim: int = 0) -> tf.Tensor:
     """
-    Transposes tensors with leading dimensions. Leading dimensions in
-    permutation list represented via ellipsis `...` and is of type List[Union[int, type(...)]
-    (please note, due to mypy issues, List[Any] is used instead).
-    When leading dimensions are found, `transpose` method
-    considers them as a single grouped element indexed by 0 in `perm` list. So, passing
-    `perm=[-2, ..., -1]`, you assume that your input tensor has [..., A, B] shape,
-    and you want to move leading dims between A and B dimensions.
-    Dimension indices in permutation list can be negative or positive. Valid positive
-    indices start from 1 up to the tensor rank, viewing leading dimensions `...` as zero
-    index.
-    Example:
+    Transposes tensors with leading dimensions.
+
+    Leading dimensions in permutation list represented via ellipsis `...` and is of type
+    List[Union[int, type(...)]  (please note, due to mypy issues, List[Any] is used instead).  When
+    leading dimensions are found, `transpose` method considers them as a single grouped element
+    indexed by 0 in `perm` list. So, passing `perm=[-2, ..., -1]`, you assume that your input tensor
+    has [..., A, B] shape, and you want to move leading dims between A and B dimensions.  Dimension
+    indices in permutation list can be negative or positive. Valid positive indices start from 1 up
+    to the tensor rank, viewing leading dimensions `...` as zero index.
+
+    Example::
+
         a = tf.random.normal((1, 2, 3, 4, 5, 6))
-            # [..., A, B, C],
-            # where A is 1st element,
-            # B is 2nd element and
-            # C is 3rd element in
-            # permutation list,
-            # leading dimensions are [1, 2, 3]
-            # which are 0th element in permutation
-            # list
+        # [..., A, B, C],
+        # where A is 1st element,
+        # B is 2nd element and
+        # C is 3rd element in
+        # permutation list,
+        # leading dimensions are [1, 2, 3]
+        # which are 0th element in permutation list
         b = leading_transpose(a, [3, -3, ..., -2])  # [C, A, ..., B]
         sess.run(b).shape
+
         output> (6, 4, 1, 2, 3, 5)
+
     :param tensor: TensorFlow tensor.
     :param perm: List of permutation indices.
     :returns: TensorFlow tensor.
-    :raises: ValueError when `...` cannot be found.
+    :raises ValueError: when `...` cannot be found.
+
     """
     perm = copy.copy(perm)
     idx = perm.index(...)
@@ -78,7 +82,9 @@ def leading_transpose(tensor: tf.Tensor, perm: List[Any], leading_dim: int = 0) 
     return tf.transpose(tensor, perm)
 
 
-def broadcasting_elementwise(op, a, b):
+def broadcasting_elementwise(
+    op: Callable[[tf.Tensor, tf.Tensor], tf.Tensor], a: tf.Tensor, b: tf.Tensor
+) -> tf.Tensor:
     """
     Apply binary operation `op` to every pair in tensors `a` and `b`.
 
@@ -91,7 +97,7 @@ def broadcasting_elementwise(op, a, b):
     return tf.reshape(flatres, tf.concat([tf.shape(a), tf.shape(b)], 0))
 
 
-def square_distance(X, X2):
+def square_distance(X: tf.Tensor, X2: Optional[tf.Tensor]) -> tf.Tensor:
     """
     Returns ||X - X2ᵀ||²
     Due to the implementation and floating-point imprecision, the
@@ -116,7 +122,7 @@ def square_distance(X, X2):
     return dist
 
 
-def difference_matrix(X, X2):
+def difference_matrix(X: tf.Tensor, X2: Optional[tf.Tensor]) -> tf.Tensor:
     """
     Returns (X - X2ᵀ)
 

@@ -18,7 +18,10 @@ import inspect
 from typing import Callable, Optional, cast
 
 from ..utils import experimental
+from .accessors import maybe_get_check_shapes
 from .base_types import C
+from .config import get_enable_check_shapes
+from .decorator import null_check_shapes
 
 
 @experimental
@@ -27,8 +30,18 @@ def inherit_check_shapes(func: C) -> C:
     Decorator that inherits the :func:`check_shapes` decoration from any overridden method in a
     super-class.
 
+    Example:
+
+    .. literalinclude:: /examples/test_check_shapes_examples.py
+       :start-after: [reuse__inherit_check_shapes]
+       :end-before: [reuse__inherit_check_shapes]
+       :dedent:
+
     See: `Class inheritance`_.
     """
+    if not get_enable_check_shapes():
+        return null_check_shapes(func)
+
     return cast(C, _InheritCheckShapes(func))
 
 
@@ -49,7 +62,7 @@ class _InheritCheckShapes:
             overridden_method = getattr(parent, name, None)
             if overridden_method is None:
                 continue
-            overridden_check_shapes = getattr(overridden_method, "__check_shapes__", None)
+            overridden_check_shapes = maybe_get_check_shapes(overridden_method)
             if overridden_check_shapes is None:
                 continue
             break

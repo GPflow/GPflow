@@ -34,10 +34,10 @@ from typing import Callable, List, Optional, Sequence, Tuple, Union
 import numpy as np
 import tensorflow as tf
 
-from ..base import Module, TensorType
+from ..base import AnyNDArray, Module, TensorType
 
 ActiveDims = Union[slice, Sequence[int]]
-NormalizedActiveDims = Union[slice, np.ndarray]
+NormalizedActiveDims = Union[slice, AnyNDArray]
 
 
 class Kernel(Module, metaclass=abc.ABCMeta):
@@ -59,10 +59,10 @@ class Kernel(Module, metaclass=abc.ABCMeta):
     @staticmethod
     def _normalize_active_dims(value: Optional[ActiveDims]) -> NormalizedActiveDims:
         if value is None:
-            value = slice(None, None, None)
-        if not isinstance(value, slice):
-            value = np.array(value, dtype=int)
-        return value
+            return slice(None, None, None)
+        if isinstance(value, slice):
+            return value
+        return np.array(value, dtype=int)
 
     @property
     def active_dims(self) -> NormalizedActiveDims:
@@ -117,6 +117,9 @@ class Kernel(Module, metaclass=abc.ABCMeta):
         :param cov: Tensor of covariance matrices, [N, D, D] or [N, D].
         :return: [N, I, I].
         """
+        cov = tf.convert_to_tensor(cov)
+        assert isinstance(cov, tf.Tensor)  # Hint for mypy.
+
         if cov.shape.ndims == 2:
             cov = tf.linalg.diag(cov)
 
@@ -143,6 +146,9 @@ class Kernel(Module, metaclass=abc.ABCMeta):
         Validate that ARD parameter matches the number of active_dims (provided active_dims
         has been specified as an array).
         """
+        ard_parameter = tf.convert_to_tensor(ard_parameter)
+        assert isinstance(ard_parameter, tf.Tensor)  # Hint for mypy.
+
         if self.active_dims is None or isinstance(self.active_dims, slice):
             # Can only validate parameter if active_dims is an array
             return
@@ -271,7 +277,7 @@ class ReducingCombination(Combination):
 class Sum(ReducingCombination):
     @property
     def _reduce(self) -> Callable[[Sequence[TensorType]], TensorType]:
-        return tf.add_n
+        return tf.add_n  # type: ignore
 
 
 class Product(ReducingCombination):

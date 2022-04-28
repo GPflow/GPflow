@@ -27,25 +27,19 @@ class ChangePoints(Combination):
     input space where different kernels govern different parts of the space.
 
     The kernel is by multiplication and addition of the base kernels with
-    sigmoid functions (σ). A single change-point kernel is defined as:
+    sigmoid functions (σ). A single change-point kernel is defined as::
 
         K₁(x, x') * (1 - σ(x)) * (1 - σ(x')) + K₂(x, x') * σ(x) * σ(x')
 
     where K₁ is deactivated around the change-point and K₂ is activated. The
-    single change-point version can be found in \citet{lloyd2014}. Each sigmoid
-    is a logistic function defined as:
+    single change-point version can be found in :cite:t:`lloyd2014`. Each sigmoid
+    is a logistic function defined as::
 
         σ(x) = 1 / (1 + exp{-s(x - x₀)})
 
     parameterized by location "x₀" and steepness "s".
 
-    @incollection{lloyd2014,
-      author = {Lloyd, James Robert et al},
-      title = {Automatic Construction and Natural-language Description of Nonparametric Regression Models},
-      booktitle = {Proceedings of the Twenty-Eighth AAAI Conference on Artificial Intelligence},
-      year = {2014},
-      url = {http://dl.acm.org/citation.cfm?id=2893873.2894066},
-    }
+    The key reference is :cite:t:`lloyd2014`.
     """
 
     def __init__(

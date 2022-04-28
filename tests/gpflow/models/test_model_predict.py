@@ -12,12 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import Any, Dict, Optional, Type
+
 import numpy as np
 import pytest
 
 import gpflow
 from gpflow.inducing_variables import InducingPoints
-from gpflow.kernels import Matern32
+from gpflow.kernels import Kernel, Matern32
+from gpflow.models.util import InducingPointsLike
 
 rng = np.random.RandomState(0)
 
@@ -25,15 +28,15 @@ rng = np.random.RandomState(0)
 class ModelSetup:
     def __init__(
         self,
-        model_class,
-        kernel=Matern32(),
-        likelihood=gpflow.likelihoods.Gaussian(),
-        whiten=None,
-        q_diag=None,
-        requires_inducing_variables=True,
-        requires_data=False,
-        requires_likelihood=True,
-    ):
+        model_class: Type[gpflow.models.GPModel],
+        kernel: Kernel = Matern32(),
+        likelihood: gpflow.likelihoods.Likelihood = gpflow.likelihoods.Gaussian(),
+        whiten: Optional[bool] = None,
+        q_diag: Optional[bool] = None,
+        requires_inducing_variables: bool = True,
+        requires_data: bool = False,
+        requires_likelihood: bool = True,
+    ) -> None:
 
         self.model_class = model_class
         self.kernel = kernel
@@ -44,8 +47,13 @@ class ModelSetup:
         self.requires_data = requires_data
         self.requires_likelihood = requires_likelihood
 
-    def get_model(self, Z, num_latent_gps, data=None):
-        params = dict(kernel=self.kernel, num_latent_gps=num_latent_gps)
+    def get_model(
+        self,
+        Z: InducingPointsLike,
+        num_latent_gps: int,
+        data: Optional[gpflow.base.RegressionData] = None,
+    ) -> gpflow.models.GPModel:
+        params: Dict[str, Any] = dict(kernel=self.kernel, num_latent_gps=num_latent_gps)
 
         if self.whiten is not None and self.q_diag is not None:
             params.update(inducing_variable=Z, whiten=self.whiten, q_diag=self.q_diag)
@@ -61,7 +69,7 @@ class ModelSetup:
 
         return self.model_class(**params)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"ModelSetup({self.model_class.__name__}, {self.whiten}, {self.q_diag})"
 
 
@@ -70,7 +78,11 @@ model_setups = [
     ModelSetup(model_class=gpflow.models.SVGP, whiten=True, q_diag=False),
     ModelSetup(model_class=gpflow.models.SVGP, whiten=True, q_diag=True),
     ModelSetup(model_class=gpflow.models.SVGP, whiten=False, q_diag=False),
-    ModelSetup(model_class=gpflow.models.SGPR, requires_data=True, requires_likelihood=False),
+    ModelSetup(
+        model_class=gpflow.models.SGPR,  # type: ignore  # mypy thinks SPGR is abstract.
+        requires_data=True,
+        requires_likelihood=False,
+    ),
     ModelSetup(
         model_class=gpflow.models.VGP,
         requires_inducing_variables=False,
@@ -91,7 +103,7 @@ model_setups = [
 
 
 @pytest.mark.parametrize("Ntrain, Ntest, D", [[100, 10, 2]])
-def test_gaussian_mean_and_variance(Ntrain, Ntest, D):
+def test_gaussian_mean_and_variance(Ntrain: int, Ntest: int, D: int) -> None:
     data = rng.randn(Ntrain, D), rng.randn(Ntrain, 1)
     Xtest, _ = rng.randn(Ntest, D), rng.randn(Ntest, 1)
     kernel = Matern32() + gpflow.kernels.White()
@@ -105,7 +117,7 @@ def test_gaussian_mean_and_variance(Ntrain, Ntest, D):
 
 
 @pytest.mark.parametrize("Ntrain, Ntest, D", [[100, 10, 2]])
-def test_gaussian_log_density(Ntrain, Ntest, D):
+def test_gaussian_log_density(Ntrain: int, Ntest: int, D: int) -> None:
     data = rng.randn(Ntrain, D), rng.randn(Ntrain, 1)
     Xtest, Ytest = rng.randn(Ntest, D), rng.randn(Ntest, 1)
     kernel = Matern32() + gpflow.kernels.White()
@@ -122,13 +134,13 @@ def test_gaussian_log_density(Ntrain, Ntest, D):
     assert np.allclose(log_density_hand, log_density)
 
 
-@pytest.mark.parametrize("input_dim, output_dim, N, Ntest, M", [[3, 2, 20, 30, 5]])
-def test_gaussian_full_cov(input_dim, output_dim, N, Ntest, M):
+@pytest.mark.parametrize("input_dim, output_dim, N, Ntest", [[3, 2, 20, 30]])
+def test_gaussian_full_cov(input_dim: int, output_dim: int, N: int, Ntest: int) -> None:
     covar_shape = (output_dim, Ntest, Ntest)
-    X, Y, Z = rng.randn(N, input_dim), rng.randn(N, output_dim), rng.randn(M, input_dim)
+    X, Y = rng.randn(N, input_dim), rng.randn(N, output_dim)
     Xtest = rng.randn(Ntest, input_dim)
     kernel = Matern32()
-    model_gp = gpflow.models.GPR([X, Y], kernel=kernel)
+    model_gp = gpflow.models.GPR((X, Y), kernel=kernel)
 
     mu1, var = model_gp.predict_f(Xtest, full_cov=False)
     mu2, covar = model_gp.predict_f(Xtest, full_cov=True)
@@ -141,12 +153,14 @@ def test_gaussian_full_cov(input_dim, output_dim, N, Ntest, M):
 
 
 @pytest.mark.parametrize("input_dim, output_dim, N, Ntest, M, num_samples", [[3, 2, 20, 30, 5, 5]])
-def test_gaussian_full_cov_samples(input_dim, output_dim, N, Ntest, M, num_samples):
+def test_gaussian_full_cov_samples(
+    input_dim: int, output_dim: int, N: int, Ntest: int, M: int, num_samples: int
+) -> None:
     samples_shape = (num_samples, Ntest, output_dim)
     X, Y, _ = rng.randn(N, input_dim), rng.randn(N, output_dim), rng.randn(M, input_dim)
     Xtest = rng.randn(Ntest, input_dim)
     kernel = Matern32()
-    model_gp = gpflow.models.GPR([X, Y], kernel=kernel)
+    model_gp = gpflow.models.GPR((X, Y), kernel=kernel)
 
     samples = model_gp.predict_f_samples(Xtest, num_samples)
     assert samples.shape == samples_shape
@@ -161,7 +175,9 @@ def test_gaussian_full_cov_samples(input_dim, output_dim, N, Ntest, M, num_sampl
 @pytest.mark.parametrize("N", [20])
 @pytest.mark.parametrize("Ntest", [30])
 @pytest.mark.parametrize("M", [5])
-def test_other_models_full_cov(model_setup, input_dim, output_dim, N, Ntest, M):
+def test_other_models_full_cov(
+    model_setup: ModelSetup, input_dim: int, output_dim: int, N: int, Ntest: int, M: int
+) -> None:
     covar_shape = (output_dim, Ntest, Ntest)
     X, Y = rng.randn(N, input_dim), rng.randn(N, output_dim)
     Z = InducingPoints(rng.randn(M, input_dim))
@@ -186,8 +202,14 @@ def test_other_models_full_cov(model_setup, input_dim, output_dim, N, Ntest, M):
 @pytest.mark.parametrize("M", [5])
 @pytest.mark.parametrize("num_samples", [5])
 def test_other_models_full_cov_samples(
-    model_setup, input_dim, output_dim, N, Ntest, M, num_samples
-):
+    model_setup: ModelSetup,
+    input_dim: int,
+    output_dim: int,
+    N: int,
+    Ntest: int,
+    M: int,
+    num_samples: int,
+) -> None:
     samples_shape = (num_samples, Ntest, output_dim)
     X, Y, Z = rng.randn(N, input_dim), rng.randn(N, output_dim), rng.randn(M, input_dim)
     Xtest = rng.randn(Ntest, input_dim)

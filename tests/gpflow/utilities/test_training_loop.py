@@ -1,3 +1,5 @@
+from typing import Any
+
 import numpy as np
 import tensorflow as tf
 
@@ -14,13 +16,15 @@ class Datum:
     data = (X, Y)
 
 
-def create_model():
+def create_model() -> gpflow.models.GPModel:
     return gpflow.models.GPR(
         Datum.data, gpflow.kernels.SquaredExponential(), noise_variance=Datum.noise_scale ** 2
     )
 
 
-def assert_models_close(m, mref, **tol_kwargs):
+def assert_models_close(
+    m: gpflow.models.GPModel, mref: gpflow.models.GPModel, **tol_kwargs: Any
+) -> None:
     np.testing.assert_allclose(
         m.kernel.variance.numpy(), mref.kernel.variance.numpy(), **tol_kwargs
     )
@@ -32,7 +36,7 @@ def assert_models_close(m, mref, **tol_kwargs):
     )
 
 
-def test_training_loop_compiles():
+def test_training_loop_compiles() -> None:
     m1 = create_model()
     m2 = create_model()
     training_loop(
@@ -44,7 +48,7 @@ def test_training_loop_compiles():
     assert_models_close(m1, m2)
 
 
-def test_training_loop_converges():
+def test_training_loop_converges() -> None:
     m = create_model()
     mref = create_model()
     gpflow.optimizers.Scipy().minimize(mref.training_loss, mref.trainable_variables)

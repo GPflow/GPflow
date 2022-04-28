@@ -21,7 +21,7 @@ import tensorflow_probability as tfp
 from _pytest.fixtures import SubRequest
 
 import gpflow
-from gpflow.base import TensorType
+from gpflow.base import AnyNDArray, TensorType
 from gpflow.likelihoods import HeteroskedasticTFPConditional
 
 tf.random.set_seed(99012)
@@ -39,7 +39,7 @@ class Data:
     Y = rng.randn(N, 1)
     # single "GP" (for the mean):
     f_mean = rng.randn(N, 1)
-    f_var = rng.randn(N, 1) ** 2  # ensure positivity
+    f_var: AnyNDArray = rng.randn(N, 1) ** 2  # ensure positivity
     equivalent_f2 = np.log(g_var) / 2
     f2_mean = np.full((N, 1), equivalent_f2)
     f2_var = np.zeros((N, 1))

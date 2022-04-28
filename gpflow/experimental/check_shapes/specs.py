@@ -18,6 +18,15 @@ from dataclasses import dataclass
 from typing import Optional, Tuple
 
 from .argument_ref import ArgumentRef
+from .bool_specs import ParsedBoolSpec
+
+
+@dataclass(frozen=True)
+class ParsedNoteSpec:
+    note: str
+
+    def __repr__(self) -> str:
+        return f"# {self.note}"
 
 
 @dataclass(frozen=True)
@@ -25,24 +34,33 @@ class ParsedDimensionSpec:
     constant: Optional[int]
     variable_name: Optional[str]
     variable_rank: bool
+    broadcastable: bool
 
     def __post_init__(self) -> None:
-        assert (self.constant is None) != (
-            self.variable_name is None
-        ), "Argument must be either constant or variable."
+        assert (
+            self.variable_name is None or self.constant is None
+        ), "Dimension cannot be both constant and variable."
         if self.variable_rank:
-            assert (
-                self.variable_rank is not None
-            ), "Variable-rank dimensions must be bound to a variable."
             assert self.constant is None, "Constants cannot have a variable rank."
 
     def __repr__(self) -> str:
+        tokens = []
+
+        if self.broadcastable:
+            tokens.append("broadcast ")
+
         if self.constant is not None:
-            return str(self.constant)
+            tokens.append(str(self.constant))
+        elif self.variable_name:
+            tokens.append(self.variable_name)
         else:
-            assert self.variable_name is not None
-            suffix = "..." if self.variable_rank else ""
-            return self.variable_name + suffix
+            if not self.variable_rank:
+                tokens.append(".")
+
+        if self.variable_rank:
+            tokens.append("...")
+
+        return "".join(tokens)
 
 
 @dataclass(frozen=True)
@@ -54,16 +72,55 @@ class ParsedShapeSpec:
         assert (
             n_variable_rank <= 1
         ), f"At most one variable-rank dimension allowed. Found {n_variable_rank} in {self}."
+        for dim in self.dims[1:]:
+            assert (not dim.broadcastable) or (
+                not dim.variable_rank
+            ), f"Only leading variable-rank dimensions can be broadcast. Found {self}."
 
     def __repr__(self) -> str:
         dims = [repr(dim) for dim in self.dims]
-        return f"({', '.join(dims)})"
+        return f"[{', '.join(dims)}]"
+
+
+@dataclass(frozen=True)
+class ParsedTensorSpec:
+    shape: ParsedShapeSpec
+    note: Optional[ParsedNoteSpec]
+
+    def __repr__(self) -> str:
+        note_str = f"  {self.note}" if self.note is not None else ""
+        return f"{self.shape}{note_str}"
 
 
 @dataclass(frozen=True)
 class ParsedArgumentSpec:
     argument_ref: ArgumentRef
-    shape: ParsedShapeSpec
+    tensor: ParsedTensorSpec
+    condition: Optional[ParsedBoolSpec]
 
     def __repr__(self) -> str:
-        return f"{self.argument_ref}: {self.shape}"
+        tokens = []
+        tokens.append(f"{self.argument_ref}: ")
+        tokens.append(repr(self.tensor.shape))
+
+        if self.condition is not None:
+            tokens.append(" if ")
+            tokens.append(repr(self.condition))
+
+        if self.tensor.note is not None:
+            tokens.append("  ")
+            tokens.append(repr(self.tensor.note))
+
+        return "".join(tokens)
+
+
+@dataclass(frozen=True)
+class ParsedFunctionSpec:
+    arguments: Tuple[ParsedArgumentSpec, ...]
+    notes: Tuple[ParsedNoteSpec, ...]
+
+    def __repr__(self) -> str:
+        lines = [repr(argument) for argument in self.arguments] + [
+            repr(note) for note in self.notes
+        ]
+        return "\n".join(lines)

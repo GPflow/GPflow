@@ -25,11 +25,16 @@ from ..models import BayesianModel
 from ..utilities import parameter_dict
 from .base import MonitorTask
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     import matplotlib
 
 
-__all__ = ["ToTensorBoard", "ModelToTensorBoard", "ScalarToTensorBoard", "ImageToTensorBoard"]
+__all__ = [
+    "ImageToTensorBoard",
+    "ModelToTensorBoard",
+    "ScalarToTensorBoard",
+    "ToTensorBoard",
+]
 
 
 class ToTensorBoard(MonitorTask):
@@ -57,7 +62,9 @@ class ModelToTensorBoard(ToTensorBoard):
 
     Monitors all the model's parameters for which their name matches with `keywords_to_monitor`.
     By default, "kernel" and "likelihood" are elements of `keywords_to_monitor`.
-    Example:
+
+    Example::
+
         keyword = "kernel", parameter = "kernel.lengthscale" => match
         keyword = "variational", parameter = "kernel.lengthscale" => no match
     """

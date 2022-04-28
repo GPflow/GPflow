@@ -1,8 +1,8 @@
-BLACK_CONFIG=-t py36 -l 100
+BLACK_CONFIG=-t py37 -l 100
 BLACK_TARGETS=gpflow tests doc setup.py
 ISORT_CONFIG=--atomic -l 100 --trailing-comma --remove-redundant-aliases --multi-line 3
-ISORT_TARGETS=gpflow tests setup.py
-MYPY_TARGETS=gpflow tests setup.py
+ISORT_TARGETS=gpflow tests doc/*.py setup.py
+MYPY_TARGETS=gpflow tests doc/*.py setup.py
 
 .PHONY: help clean dev-install install package format format-check type-check test check-all
 
@@ -22,10 +22,10 @@ clean:
 	rm -rf dist *.egg-info build
 
 dev-install:
-	pip install --use-feature=2020-resolver -r tests_requirements.txt -e .
+	pip install -r tests_requirements.txt -e .
 
 install:
-	pip install --use-feature=2020-resolver .
+	pip install .
 
 package:
 	python setup.py bdist
@@ -39,7 +39,7 @@ format-check:
 	isort --check-only $(ISORT_CONFIG) $(ISORT_TARGETS)
 
 type-check:
-	mypy $(MYPY_TARGETS)
+	mypy `python -m gpflow.mypy_flags` $(MYPY_TARGETS)
 
 test:
 	pytest -n auto --dist loadfile -v --durations=10 tests/

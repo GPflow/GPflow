@@ -17,7 +17,7 @@ import pytest
 import tensorflow as tf
 from numpy.testing import assert_allclose
 
-from gpflow.base import TensorType
+from gpflow.base import AnyNDArray, TensorType
 from gpflow.config import default_float, default_int
 from gpflow.likelihoods import Bernoulli, MultiClass, RobustMax, Softmax
 from gpflow.utilities import to_default_float, to_default_int
@@ -35,7 +35,7 @@ def test_softmax_y_shape_assert(num: int, dimF: int, dimY: int) -> None:
     dimension. This test checks that this assert works as intended.
     """
     F = tf.random.normal((num, dimF))
-    dY = np.vstack((np.random.randn(num - 3, dimY), np.ones((3, dimY)))) > 0
+    dY: AnyNDArray = np.vstack((np.random.randn(num - 3, dimY), np.ones((3, dimY)))) > 0
     Y = tf.convert_to_tensor(dY, dtype=default_int())
     likelihood = Softmax(dimF)
     try:
@@ -47,8 +47,10 @@ def test_softmax_y_shape_assert(num: int, dimF: int, dimY: int) -> None:
 @pytest.mark.parametrize("num", [10, 3])
 @pytest.mark.parametrize("dimF, dimY", [[2, 1]])
 def test_softmax_bernoulli_equivalence(num: int, dimF: int, dimY: int) -> None:
-    dF = np.vstack((np.random.randn(num - 3, dimF), np.array([[-3.0, 0.0], [3, 0.0], [0.0, 0.0]])))
-    dY = np.vstack((np.random.randn(num - 3, dimY), np.ones((3, dimY)))) > 0
+    dF: AnyNDArray = np.vstack(
+        (np.random.randn(num - 3, dimF), np.array([[-3.0, 0.0], [3, 0.0], [0.0, 0.0]]))
+    )
+    dY: AnyNDArray = np.vstack((np.random.randn(num - 3, dimY), np.ones((3, dimY)))) > 0
     F = to_default_float(dF)
     Fvar = tf.exp(tf.stack([F[:, 1], -10.0 + tf.zeros(F.shape[0], dtype=F.dtype)], axis=1))
     F = tf.stack([F[:, 0], tf.zeros(F.shape[0], dtype=F.dtype)], axis=1)
@@ -109,9 +111,9 @@ def test_robust_max_multiclass_symmetric(
     pred = likelihood.predict_log_density(F, F, Y)
     variational_expectations = likelihood.variational_expectations(F, F, Y)
 
-    expected_mu = (p * (1.0 - epsilon) + (1.0 - p) * epsilon / (num_classes - 1)) * np.ones(
-        (num_points, 1)
-    )
+    expected_mu: AnyNDArray = (
+        p * (1.0 - epsilon) + (1.0 - p) * epsilon / (num_classes - 1)
+    ) * np.ones((num_points, 1))
     expected_log_density = np.log(expected_mu)
 
     # assert_allclose() would complain about shape mismatch

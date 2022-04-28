@@ -112,7 +112,9 @@ def Kuf_fallback_separate_linear_coregionalization(
     kernel: LinearCoregionalization,
     Xnew: TensorType,
 ) -> tf.Tensor:
-    kuf_impl = Kuf.dispatch(SeparateIndependentInducingVariables, SeparateIndependent, object)
+    kuf_impl = Kuf.dispatch_or_raise(
+        SeparateIndependentInducingVariables, SeparateIndependent, object
+    )
     return _fallback_Kuf(kuf_impl, inducing_variable, kernel, Xnew)
 
 
@@ -126,7 +128,9 @@ def Kuf_fallback_shared_linear_coregionalization(
     kernel: LinearCoregionalization,
     Xnew: TensorType,
 ) -> tf.Tensor:
-    kuf_impl = Kuf.dispatch(SharedIndependentInducingVariables, SeparateIndependent, object)
+    kuf_impl = Kuf.dispatch_or_raise(
+        SharedIndependentInducingVariables, SeparateIndependent, object
+    )
     return _fallback_Kuf(kuf_impl, inducing_variable, kernel, Xnew)
 
 

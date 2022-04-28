@@ -29,7 +29,6 @@ There are different mixins depending on whether the model already contains the
 training data (InternalDataTrainingLossMixin), or requires it to be passed in
 to the objective function (ExternalDataTrainingLossMixin).
 """
-
 from typing import Callable, TypeVar, Union
 
 import tensorflow as tf
@@ -57,20 +56,22 @@ class InternalDataTrainingLossMixin:
         """
         Returns the training loss for this model.
         """
-        return self._training_loss()
+        # Type-ignore is because _training_loss should be added by implementing class.
+        return self._training_loss()  # type: ignore
 
-    def training_loss_closure(self, *, compile=True) -> Callable[[], tf.Tensor]:
+    def training_loss_closure(self, *, compile: bool = True) -> Callable[[], tf.Tensor]:
         """
         Convenience method. Returns a closure which itself returns the training loss. This closure
         can be passed to the minimize methods on :class:`gpflow.optimizers.Scipy` and subclasses of
         `tf.optimizers.Optimizer`.
 
-        :param compile: If `True` (default), compile the training loss function in a TensorFlow graph
-            by wrapping it in tf.function()
+        :param compile: If `True` (default), compile the training loss function in a TensorFlow
+            graph by wrapping it in tf.function()
         """
+        closure = self.training_loss
         if compile:
-            return tf.function(self.training_loss)
-        return self.training_loss
+            closure = tf.function(closure)
+        return closure
 
 
 class ExternalDataTrainingLossMixin:
@@ -93,13 +94,14 @@ class ExternalDataTrainingLossMixin:
 
         :param data: the data to be used for computing the model objective.
         """
-        return self._training_loss(data)
+        # Type-ignore is because _training_loss should be added by implementing class.
+        return self._training_loss(data)  # type: ignore
 
     def training_loss_closure(
         self,
         data: Union[Data, DatasetOwnedIterator],
         *,
-        compile=True,
+        compile: bool = True,
     ) -> Callable[[], tf.Tensor]:
         """
         Returns a closure that computes the training loss, which by default is
@@ -118,13 +120,14 @@ class ExternalDataTrainingLossMixin:
                 input_signature = [data.element_spec]
                 training_loss = tf.function(training_loss, input_signature=input_signature)
 
-            def closure():
+            def closure() -> tf.Tensor:
+                assert isinstance(data, DatasetOwnedIterator)  # Hint for mypy.
                 batch = next(data)
                 return training_loss(batch)
 
         else:
 
-            def closure():
+            def closure() -> tf.Tensor:
                 return training_loss(data)
 
             if compile:

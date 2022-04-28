@@ -18,7 +18,7 @@ import gpflow
 from gpflow.config import default_float
 
 
-def test_update_vgp_data():
+def test_update_vgp_data() -> None:
     rng = np.random.default_rng(20220223)
     sample = lambda *shape: tf.convert_to_tensor(rng.standard_normal(shape), dtype=default_float())
 

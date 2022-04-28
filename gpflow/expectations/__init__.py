@@ -10,4 +10,17 @@ from . import (
 )
 from .expectations import expectation, quadrature_expectation
 
-__all__ = ["expectation", "quadrature_expectation"]
+__all__ = [
+    "cross_kernels",
+    "dispatch",
+    "expectation",
+    "expectations",
+    "linears",
+    "mean_functions",
+    "misc",
+    "products",
+    "quadrature_expectation",
+    "quadratures",
+    "squared_exponentials",
+    "sums",
+]

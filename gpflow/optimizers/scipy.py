@@ -20,6 +20,7 @@ import scipy.optimize
 import tensorflow as tf
 from scipy.optimize import OptimizeResult
 
+from ..base import AnyNDArray
 from ..monitor.base import Monitor
 
 __all__ = ["Scipy"]
@@ -41,35 +42,32 @@ class Scipy:
         **scipy_kwargs: Any,
     ) -> OptimizeResult:
         """
-        Minimize is a wrapper around the `scipy.optimize.minimize` function
-        handling the packing and unpacking of a list of shaped variables on the
-        TensorFlow side vs. the flat numpy array required on the Scipy side.
+        Minimize `closure`.
 
-        Args:
-            closure: A closure that re-evaluates the model, returning the loss
-                to be minimized.
-            variables: The list (tuple) of variables to be optimized
-                (typically `model.trainable_variables`)
-            method: The type of solver to use in SciPy. Defaults to "L-BFGS-B".
-            step_callback: If not None, a callable that gets called once after
-                each optimisation step. The callable is passed the arguments
-                `step`, `variables`, and `values`. `step` is the optimisation
-                step counter, `variables` is the list of trainable variables as
-                above, and `values` is the corresponding list of tensors of
-                matching shape that contains their value at this optimisation
-                step.
-            compile: If True, wraps the evaluation function (the passed `closure`
-                as well as its gradient computation) inside a `tf.function()`,
-                which will improve optimization speed in most cases.
-            allow_unused_variables: Whether to allow variables that are not
-                actually used in the closure.
-            scipy_kwargs: Arguments passed through to `scipy.optimize.minimize`
-                Note that Scipy's minimize() takes a `callback` argument, but
-                you probably want to use our wrapper and pass in `step_callback`.
+        Minimize is a wrapper around the `scipy.optimize.minimize` function handling the packing and
+        unpacking of a list of shaped variables on the TensorFlow side vs. the flat numpy array
+        required on the Scipy side.
 
-        Returns:
-            The optimization result represented as a Scipy ``OptimizeResult``
-            object. See the Scipy documentation for description of attributes.
+        :param closure: A closure that re-evaluates the model, returning the loss to be minimized.
+        :param variables: The list (tuple) of variables to be optimized
+            (typically `model.trainable_variables`)
+        :param method: The type of solver to use in SciPy. Defaults to "L-BFGS-B".
+        :param step_callback: If not None, a callable that gets called once after each optimisation
+            step. The callable is passed the arguments `step`, `variables`, and `values`. `step` is
+            the optimisation step counter, `variables` is the list of trainable variables as above,
+            and `values` is the corresponding list of tensors of matching shape that contains their
+            value at this optimisation step.
+        :param compile: If True, wraps the evaluation function (the passed `closure` as well as its
+            gradient computation) inside a `tf.function()`, which will improve optimization speed in
+            most cases.
+        :param allow_unused_variables: Whether to allow variables that are not actually used in the
+            closure.
+        :param scipy_kwargs: Arguments passed through to `scipy.optimize.minimize`.
+            Note that Scipy's minimize() takes a `callback` argument, but you probably want to use
+            our wrapper and pass in `step_callback`.
+        :returns:
+            The optimization result represented as a Scipy ``OptimizeResult`` object.
+            See the Scipy documentation for description of attributes.
         """
         if not callable(closure):
             raise TypeError(
@@ -78,7 +76,8 @@ class Scipy:
         variables = tuple(variables)
         if not all(isinstance(v, tf.Variable) for v in variables):
             raise TypeError(
-                "The 'variables' argument is expected to only contain tf.Variable instances (use model.trainable_variables, not model.trainable_parameters)"
+                "The 'variables' argument is expected to only contain tf.Variable instances"
+                " (use model.trainable_variables, not model.trainable_parameters)"
             )  # pragma: no cover
         initial_params = self.initial_parameters(variables)
 
@@ -107,7 +106,7 @@ class Scipy:
         variables: Sequence[tf.Variable],
         compile: bool = True,
         allow_unused_variables: bool = False,
-    ) -> Callable[[np.ndarray], Tuple[np.ndarray, np.ndarray]]:
+    ) -> Callable[[AnyNDArray], Tuple[AnyNDArray, AnyNDArray]]:
         first_call = True
 
         def _tf_eval(x: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor]:
@@ -133,7 +132,7 @@ class Scipy:
         if compile:
             _tf_eval = tf.function(_tf_eval)
 
-        def _eval(x: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+        def _eval(x: AnyNDArray) -> Tuple[AnyNDArray, AnyNDArray]:
             loss, grad = _tf_eval(tf.convert_to_tensor(x))
             return loss.numpy().astype(np.float64), grad.numpy().astype(np.float64)
 
@@ -168,10 +167,10 @@ class Scipy:
     @classmethod
     def callback_func(
         cls, variables: Sequence[tf.Variable], step_callback: StepCallback
-    ) -> Callable[[np.ndarray], None]:
+    ) -> Callable[[AnyNDArray], None]:
         step = 0  # type: int
 
-        def _callback(x: np.ndarray) -> None:
+        def _callback(x: AnyNDArray) -> None:
             nonlocal step
 
             if isinstance(step_callback, Monitor):

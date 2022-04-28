@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Optional, Sequence
+from typing import Optional, Sequence, cast
 
 import numpy as np
 import tensorflow as tf
@@ -25,19 +25,16 @@ from .base import Kernel
 
 class Convolutional(Kernel):
     r"""
-    Plain convolutional kernel as described in \citet{vdw2017convgp}. Defines
-    a GP f( ) that is constructed from a sum of responses of individual patches
+    Plain convolutional kernel as described in :cite:t:`vdw2017convgp`. Defines
+    a GP :math:`f()` that is constructed from a sum of responses of individual patches
     in an image:
-      f(x) = \sum_p x^{[p]}
-    where x^{[p]} is the pth patch in the image.
 
-    @incollection{vdw2017convgp,
-      title = {Convolutional Gaussian Processes},
-      author = {van der Wilk, Mark and Rasmussen, Carl Edward and Hensman, James},
-      booktitle = {Advances in Neural Information Processing Systems 30},
-      year = {2017},
-      url = {http://papers.nips.cc/paper/6877-convolutional-gaussian-processes.pdf}
-    }
+    .. math::
+       f(x) = \sum_p x^{[p]}
+
+    where :math:`x^{[p]}` is the :math:`p`'th patch in the image.
+
+    The key reference is :cite:t:`vdw2017convgp`.
     """
 
     def __init__(
@@ -60,7 +57,9 @@ class Convolutional(Kernel):
     # @lru_cache() -- Can we do some kind of memoizing with TF2?
     def get_patches(self, X: TensorType) -> tf.Tensor:
         """
-        Extracts patches from the images X. Patches are extracted separately for each of the colour channels.
+        Extracts patches from the images X. Patches are extracted separately for each of the colour
+        channels.
+
         :param X: (N x input_dim)
         :return: Patches (N, num_patches, patch_shape)
         """
@@ -100,8 +99,8 @@ class Convolutional(Kernel):
         return tf.reduce_sum(bigK * W2[None, :, :], [1, 2]) / self.num_patches ** 2.0
 
     @property
-    def patch_len(self) -> np.ndarray:
-        return np.prod(self.patch_shape)
+    def patch_len(self) -> int:
+        return cast(int, np.prod(self.patch_shape))
 
     @property
     def num_patches(self) -> int:

@@ -27,9 +27,9 @@ NatGradParameters = Union[Tuple[Parameter, Parameter], Tuple[Parameter, Paramete
 
 __all__ = [
     "NaturalGradient",
-    "XiTransform",
     "XiNat",
     "XiSqrtMeanVar",
+    "XiTransform",
 ]
 
 
@@ -135,13 +135,7 @@ class NaturalGradient(tf.optimizers.Optimizer):
     Note furthermore that the natural gradients are implemented only for the
     full covariance case (i.e., q_diag=True is NOT supported).
 
-    When using in your work, please cite
-
-        @inproceedings{salimbeni18,
-            title={Natural Gradients in Practice: Non-Conjugate Variational Inference in Gaussian Process Models},
-            author={Salimbeni, Hugh and Eleftheriadis, Stefanos and Hensman, James},
-            booktitle={AISTATS},
-            year={2018}
+    When using in your work, please cite :cite:t:`salimbeni18`.
     """
 
     def __init__(
@@ -170,13 +164,13 @@ class NaturalGradient(tf.optimizers.Optimizer):
         :param var_list: List of pair tuples of variational parameters or
             triplet tuple with variational parameters and ξ transformation.
             If ξ is not specified, will use self.xi_transform.
-            For example, `var_list` could be
-            ```
-            var_list = [
-                (q_mu1, q_sqrt1),
-                (q_mu2, q_sqrt2, XiSqrtMeanVar())
-            ]
-            ```
+            For example, `var_list` could be::
+
+                var_list = [
+                    (q_mu1, q_sqrt1),
+                    (q_mu2, q_sqrt2, XiSqrtMeanVar())
+                ]
+
 
         GPflow implements the `XiNat` (default) and `XiSqrtMeanVar` transformations
         for parameters. Custom transformations that implement the `XiTransform`
@@ -242,13 +236,7 @@ class NaturalGradient(tf.optimizers.Optimizer):
 
         (Note that tape.gradient() returns the gradients in *unconstrained* space!)
 
-        Implements equation [10] from
-
-        @inproceedings{salimbeni18,
-            title={Natural Gradients in Practice: Non-Conjugate Variational Inference in Gaussian Process Models},
-            author={Salimbeni, Hugh and Eleftheriadis, Stefanos and Hensman, James},
-            booktitle={AISTATS},
-            year={2018}
+        Implements equation [10] from :cite:t:`salimbeni18`.
 
         In addition, for convenience with the rest of GPflow, this code computes ∂L/∂η using
         the chain rule (the following assumes a numerator layout where the gradient is a row
@@ -321,7 +309,7 @@ class NaturalGradient(tf.optimizers.Optimizer):
         q_sqrt.assign(varsqrt_new)
 
     def get_config(self) -> Dict[str, Any]:
-        config = super().get_config()
+        config: Dict[str, Any] = super().get_config()
         config.update({"gamma": self._serialize_hyperparameter("gamma")})
         return config
 
@@ -338,12 +326,16 @@ def swap_dimensions(
 ) -> Callable[..., Tuple[tf.Tensor, tf.Tensor]]:
     """
     Converts between GPflow indexing and tensorflow indexing
-    `method` is a function that broadcasts over the first dimension (i.e. like all tensorflow matrix ops):
-        `method` inputs [D, N, 1], [D, N, N]
-        `method` outputs [D, N, 1], [D, N, N]
+    `method` is a function that broadcasts over the first dimension (i.e. like all tensorflow matrix
+    ops):
+
+    * `method` inputs [D, N, 1], [D, N, N]
+    * `method` outputs [D, N, 1], [D, N, N]
+
     :return: Function that broadcasts over the final dimension (i.e. compatible with GPflow):
-        inputs: [N, D], [D, N, N]
-        outputs: [N, D], [D, N, N]
+
+        * inputs: [N, D], [D, N, N]
+        * outputs: [N, D], [D, N, N]
     """
 
     @functools.wraps(method)

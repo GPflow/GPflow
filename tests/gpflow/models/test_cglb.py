@@ -12,9 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import Tuple, cast
+
 import numpy as np
 import tensorflow as tf
 
+from gpflow.base import AnyNDArray, RegressionData
 from gpflow.config import default_float
 from gpflow.kernels import SquaredExponential
 from gpflow.models import CGLB, GPR, SGPR
@@ -22,21 +25,21 @@ from gpflow.models.cglb import NystromPreconditioner, cglb_conjugate_gradient
 from gpflow.utilities import to_default_float as tdf
 
 
-def data(rng: np.random.RandomState):
+def data(rng: np.random.RandomState) -> Tuple[RegressionData, tf.Tensor, tf.Tensor]:
     n: int = 100
     t: int = 20
     d: int = 2
 
-    x = rng.randn(n, d)
-    xs = rng.randn(t, d)  # test points
-    c = np.array([[-1.4], [0.5]])
-    y = np.sin(x @ c + 0.5 * rng.randn(n, 1))
+    x: AnyNDArray = rng.randn(n, d)
+    xs: AnyNDArray = rng.randn(t, d)  # test points
+    c: AnyNDArray = np.array([[-1.4], [0.5]])
+    y = np.sin(cast(AnyNDArray, x @ c) + 0.5 * rng.randn(n, 1))
     z = rng.randn(10, 2)
 
     return (tdf(x), tdf(y)), tdf(z), tdf(xs)
 
 
-def test_cglb_check_basics():
+def test_cglb_check_basics() -> None:
     """
     * Quadratic term of CGLB with v=0 is equivalent to the quadratic term of SGPR.
     * Log determinant term of CGLB is less or equal to SGPR log determinant.
@@ -76,7 +79,7 @@ def test_cglb_check_basics():
     assert cglb_logdet <= gpr_logdet
 
 
-def test_conjugate_gradient_convergence():
+def test_conjugate_gradient_convergence() -> None:
     """
     Check that the method of conjugate gradients implemented can solve a linear system of equations
     """
@@ -109,7 +112,7 @@ def test_conjugate_gradient_convergence():
     np.testing.assert_allclose(Kinv_y, tf.transpose(v), rtol=0.1)
 
 
-def test_cglb_quad_term_guarantees():
+def test_cglb_quad_term_guarantees() -> None:
     """
     Check that when conjugate gradient is used to evaluate the quadratic term,
     the obtained solution is:
@@ -126,7 +129,7 @@ def test_cglb_quad_term_guarantees():
     k = SquaredExponential()
     K = k(x) + noise * tf.eye(x.shape[0], dtype=default_float())
 
-    def inv_quad_term(K: tf.Tensor, y: tf.Tensor):
+    def inv_quad_term(K: tf.Tensor, y: tf.Tensor) -> tf.Tensor:
         """
         For PSD K, compute -0.5 * y.T K^{-1} y via Cholesky decomposition
         """
@@ -153,7 +156,7 @@ def test_cglb_quad_term_guarantees():
     assert np.abs(cglb_quad_term - cholesky_quad_term) <= max_error
 
 
-def test_cglb_predict():
+def test_cglb_predict() -> None:
     """
     Test that 1.) The predict method returns the same variance estimate as SGPR.
               2.) The predict method returns the same mean as SGPR for v=0.

@@ -20,19 +20,20 @@ from typing import Callable, Iterable, List, Optional, Tuple, Union
 import numpy as np
 import tensorflow as tf
 
-from ..base import TensorType
+from ..base import AnyNDArray, TensorType
 from ..config import default_float
 from ..utilities import to_default_float
 from .gauss_hermite import NDiagGHQuadrature
 
 
-def hermgauss(n: int) -> Tuple[np.ndarray, np.ndarray]:
-    x, w = np.polynomial.hermite.hermgauss(n)
+def hermgauss(n: int) -> Tuple[AnyNDArray, AnyNDArray]:
+    # Type-ignore is because for some versions mypy can't find np.polynomial.hermite
+    x, w = np.polynomial.hermite.hermgauss(n)  # type: ignore
     x, w = x.astype(default_float()), w.astype(default_float())
     return x, w
 
 
-def mvhermgauss(H: int, D: int) -> Tuple[np.ndarray, np.ndarray]:
+def mvhermgauss(H: int, D: int) -> Tuple[AnyNDArray, AnyNDArray]:
     """
     Return the evaluation locations 'xn', and weights 'wn' for a multivariate
     Gauss-Hermite quadrature.
@@ -45,9 +46,9 @@ def mvhermgauss(H: int, D: int) -> Tuple[np.ndarray, np.ndarray]:
     :return: eval_locations 'x' (H**DxD), weights 'w' (H**D)
     """
     gh_x, gh_w = hermgauss(H)
-    x = np.array(list(itertools.product(*(gh_x,) * D)))  # H**DxD
+    x: AnyNDArray = np.array(list(itertools.product(*(gh_x,) * D)))  # H**DxD
     w = np.prod(np.array(list(itertools.product(*(gh_w,) * D))), 1)  # H**D
-    return x, w
+    return x, w  # type: ignore
 
 
 def mvnquad(
@@ -130,6 +131,8 @@ def ndiagquad(
     The means and variances of the Gaussians are specified by Fmu and Fvar.
     The N-integrals are assumed to be taken wrt the last dimensions of Fmu, Fvar.
 
+    `Fmu`, `Fvar`, `Ys` should all have same shape, with overall size `N`.
+
     :param funcs: the integrand(s):
         Callable or Iterable of Callables that operates elementwise
     :param H: number of Gauss-Hermite quadrature points
@@ -137,9 +140,7 @@ def ndiagquad(
     :param Fvar: array/tensor or `Din`-tuple/list thereof
     :param logspace: if True, funcs are the log-integrands and this calculates
         the log-expectation of exp(funcs)
-    :param **Ys: arrays/tensors; deterministic arguments to be passed by name
-
-    Fmu, Fvar, Ys should all have same shape, with overall size `N`
+    :param Ys: arrays/tensors; deterministic arguments to be passed by name
     :return: shape is the same as that of the first Fmu
     """
     warnings.warn(
@@ -208,6 +209,8 @@ def ndiag_mc(
     Computes N Gaussian expectation integrals of one or more functions
     using Monte Carlo samples. The Gaussians must be independent.
 
+    `Fmu`, `Fvar`, `Ys` should all have same shape, with overall size `N`.
+
     :param funcs: the integrand(s):
         Callable or Iterable of Callables that operates elementwise
     :param S: number of Monte Carlo sampling points
@@ -215,9 +218,7 @@ def ndiag_mc(
     :param Fvar: array/tensor
     :param logspace: if True, funcs are the log-integrands and this calculates
         the log-expectation of exp(funcs)
-    :param **Ys: arrays/tensors; deterministic arguments to be passed by name
-
-    Fmu, Fvar, Ys should all have same shape, with overall size `N`
+    :param Ys: arrays/tensors; deterministic arguments to be passed by name
     :return: shape is the same as that of the first Fmu
     """
     N, D = tf.shape(Fmu)[0], tf.shape(Fvar)[1]

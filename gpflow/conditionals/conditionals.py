@@ -19,7 +19,7 @@ import tensorflow as tf
 from ..base import MeanAndVariance
 from ..inducing_variables import InducingVariables
 from ..kernels import Kernel
-from ..posteriors import VGPPosterior, get_posterior_class
+from ..posteriors import BasePosterior, VGPPosterior, get_posterior_class
 from .dispatch import conditional
 
 
@@ -39,36 +39,36 @@ def _sparse_conditional(
     Single-output GP conditional.
 
     The covariance matrices used to calculate the conditional have the following shape:
+
     - Kuu: [M, M]
     - Kuf: [M, N]
     - Kff: [N, N]
 
-    Further reference
-    -----------------
+    Further reference:
+
     - See `gpflow.conditionals._dense_conditional` (below) for a detailed explanation of
       conditional in the single-output case.
     - See the multiouput notebook for more information about the multiouput framework.
 
-    Parameters
-    ----------
-    :param Xnew: data matrix, size [N, D].
-    :param f: data matrix, [M, R]
+    :param Xnew: data matrix: [N, D]
+    :param f: data matrix: [M, R]
     :param full_cov: return the covariance between the datapoints
     :param full_output_cov: return the covariance between the outputs.
-           NOTE: as we are using a single-output kernel with repetitions
-                 these covariances will be zero.
+        NOTE: as we are using a single-output kernel with repetitions
+        these covariances will be zero.
     :param q_sqrt: matrix of standard-deviations or Cholesky matrices,
         size [M, R] or [R, M, M].
     :param white: boolean of whether to use the whitened representation
     :return:
         - mean:     [N, R]
         - variance: [N, R], [R, N, N], [N, R, R] or [N, R, N, R]
+
         Please see `gpflow.conditional._expand_independent_outputs` for more information
         about the shape of the variance, depending on `full_cov` and `full_output_cov`.
     """
     posterior_class = get_posterior_class(kernel, inducing_variable)
 
-    posterior = posterior_class(
+    posterior: BasePosterior = posterior_class(
         kernel,
         inducing_variable,
         f,
@@ -100,11 +100,15 @@ def _dense_conditional(
     q_sqrt. In this case `f` represents the mean of the distribution and
     q_sqrt the square-root of the covariance.
 
-    Additionally, the GP may have been centered (whitened) so that
+    Additionally, the GP may have been centered (whitened) so that::
+
         p(v) = 𝒩(𝟎, 𝐈)
         f = 𝐋v
-    thus
+
+    thus::
+
         p(f) = 𝒩(𝟎, 𝐋𝐋ᵀ) = 𝒩(𝟎, 𝐊).
+
     In this case `f` represents the values taken by v.
 
     The method can either return the diagonals of the covariance matrix for

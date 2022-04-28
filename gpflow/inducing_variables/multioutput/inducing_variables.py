@@ -15,7 +15,6 @@ from typing import Sequence, Tuple
 
 import tensorflow as tf
 
-from ...base import TensorType
 from ..inducing_variables import InducingVariables
 
 
@@ -31,7 +30,7 @@ class MultioutputInducingVariables(InducingVariables):
     """
 
     @property
-    def inducing_variables(self) -> Tuple[TensorType, ...]:
+    def inducing_variables(self) -> Tuple[InducingVariables, ...]:
         raise NotImplementedError
 
 
@@ -39,21 +38,25 @@ class FallbackSharedIndependentInducingVariables(MultioutputInducingVariables):
     """
     Shared definition of inducing variables for each independent latent process.
 
-    This class is designated to be used to
-     - provide a general interface for multioutput kernels
-       constructed from independent latent processes,
-     - only require the specification of Kuu and Kuf.
+    This class is designated to be used to:
+
+    - provide a general interface for multioutput kernels
+      constructed from independent latent processes,
+    - only require the specification of Kuu and Kuf.
+
     All multioutput kernels constructed from independent latent processes allow
     the inducing variables to be specified in the latent processes, and a
     reasonably efficient method (i.e. one that takes advantage of the
     independence in the latent processes) can be specified quite generally by
     only requiring the following covariances:
-     - Kuu: [L, M, M],
-     - Kuf: [L, M, N, P].
-    In `gpflow/conditionals/multioutput/conditionals.py` we define a conditional() implementation for this
-    combination. We specify this code path for all kernels which inherit from
-    `IndependentLatentBase`. This set-up allows inference with any such kernel
-    to be implemented by specifying only `Kuu()` and `Kuf()`.
+
+    - Kuu: [L, M, M],
+    - Kuf: [L, M, N, P].
+
+    In `gpflow/conditionals/multioutput/conditionals.py` we define a conditional() implementation
+    for this combination. We specify this code path for all kernels which inherit from
+    `IndependentLatentBase`. This set-up allows inference with any such kernel to be implemented by
+    specifying only `Kuu()` and `Kuf()`.
 
     We call this the base class, since many multioutput GPs that are constructed
     from independent latent processes acutally allow even more efficient
@@ -64,7 +67,7 @@ class FallbackSharedIndependentInducingVariables(MultioutputInducingVariables):
     processes.
     """
 
-    def __init__(self, inducing_variable: TensorType):
+    def __init__(self, inducing_variable: InducingVariables):
         super().__init__()
         self.inducing_variable = inducing_variable
 
@@ -73,7 +76,7 @@ class FallbackSharedIndependentInducingVariables(MultioutputInducingVariables):
         return self.inducing_variable.num_inducing
 
     @property
-    def inducing_variables(self) -> Tuple[TensorType]:
+    def inducing_variables(self) -> Tuple[InducingVariables]:
         return (self.inducing_variable,)
 
 
@@ -81,21 +84,25 @@ class FallbackSeparateIndependentInducingVariables(MultioutputInducingVariables)
     """
     Separate set of inducing variables for each independent latent process.
 
-    This class is designated to be used to
-     - provide a general interface for multioutput kernels
-       constructed from independent latent processes,
-     - only require the specification of Kuu and Kuf.
+    This class is designated to be used to:
+
+    - provide a general interface for multioutput kernels
+      constructed from independent latent processes,
+    - only require the specification of Kuu and Kuf.
+
     All multioutput kernels constructed from independent latent processes allow
     the inducing variables to be specified in the latent processes, and a
     reasonably efficient method (i.e. one that takes advantage of the
     independence in the latent processes) can be specified quite generally by
     only requiring the following covariances:
-     - Kuu: [L, M, M],
-     - Kuf: [L, M, N, P].
+
+    - Kuu: [L, M, M],
+    - Kuf: [L, M, N, P].
+
     In `gpflow/multioutput/conditionals.py` we define a conditional() implementation for this
     combination. We specify this code path for all kernels which inherit from
-    `IndependentLatentBase`. This set-up allows inference with any such kernel
-    to be implemented by specifying only `Kuu()` and `Kuf()`.
+    `IndependentLatentBase`. This set-up allows inference with any such kernel to be implemented by
+    specifying only `Kuu()` and `Kuf()`.
 
     We call this the base class, since many multioutput GPs that are constructed
     from independent latent processes acutally allow even more efficient
@@ -106,7 +113,7 @@ class FallbackSeparateIndependentInducingVariables(MultioutputInducingVariables)
     Note: each object should have the same number of inducing variables, M.
     """
 
-    def __init__(self, inducing_variable_list: Sequence[TensorType]):
+    def __init__(self, inducing_variable_list: Sequence[InducingVariables]):
         super().__init__()
         self.inducing_variable_list = inducing_variable_list
 
@@ -116,7 +123,7 @@ class FallbackSeparateIndependentInducingVariables(MultioutputInducingVariables)
         return self.inducing_variable_list[0].num_inducing
 
     @property
-    def inducing_variables(self) -> Tuple[TensorType, ...]:
+    def inducing_variables(self) -> Tuple[InducingVariables, ...]:
         return tuple(self.inducing_variable_list)
 
 

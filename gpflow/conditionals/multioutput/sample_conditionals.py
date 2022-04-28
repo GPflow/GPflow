@@ -54,7 +54,7 @@ def _sample_conditional(
     if full_output_cov:
         raise NotImplementedError("full_output_cov not yet implemented")
 
-    ind_conditional = conditional.dispatch(
+    ind_conditional = conditional.dispatch_or_raise(
         object, SeparateIndependentInducingVariables, SeparateIndependent, object
     )
     g_mu, g_var = ind_conditional(

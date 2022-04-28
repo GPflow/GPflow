@@ -1,16 +1,15 @@
 <div style="text-align:center">
-<img width="500" height="200" src="https://github.com/GPflow/GPflow/blob/develop/doc/source/_static/gpflow_logo.svg">
+<img width="500" height="200" src="https://github.com/GPflow/GPflow/blob/develop/doc/sphinx/_static/gpflow_logo.svg">
 </div>
 
 [![CircleCI](https://circleci.com/gh/GPflow/GPflow/tree/develop.svg?style=svg)](https://circleci.com/gh/GPflow/GPflow/tree/develop)
 [![Coverage Status](http://codecov.io/github/GPflow/GPflow/coverage.svg?branch=master)](http://codecov.io/github/GPflow/GPflow?branch=master)
-[![Documentation Status](https://readthedocs.org/projects/gpflow/badge/?version=master)](http://gpflow.readthedocs.io/en/master/?badge=master)
 [![Slack Status](https://img.shields.io/badge/slack-gpflow-green.svg?logo=Slack)](https://join.slack.com/t/gpflow/shared_invite/enQtOTE5MDA0Nzg5NjA2LTYwZWI3MzhjYjNlZWI1MWExYzZjMGNhOWIwZWMzMGY0YjVkYzAyYjQ4NjgzNDUyZTgyNzcwYjAyY2QzMWRmYjE)
 
 
 [Website](https://gpflow.org) |
-[Documentation (release)](https://gpflow.readthedocs.io/en/master/) |
-[Documentation (develop)](https://gpflow.readthedocs.io/en/develop/) |
+[Documentation (release)](https://gpflow.github.io/GPflow/) |
+[Documentation (develop)](https://gpflow.github.io/GPflow/develop) |
 [Glossary](GLOSSARY.md)
 
 #### Table of Contents
@@ -34,9 +33,9 @@
 GPflow is a package for building Gaussian process models in Python.
 It implements modern Gaussian process inference for composable kernels and likelihoods.
 
-GPflow 2.1 builds on [TensorFlow 2.2+](http://www.tensorflow.org) and [TensorFlow Probability](https://www.tensorflow.org/probability/) for running computations, which allows fast execution on GPUs.
+GPflow builds on [TensorFlow 2.4+](http://www.tensorflow.org) and [TensorFlow Probability](https://www.tensorflow.org/probability/) for running computations, which allows fast execution on GPUs.
 
-The [online documentation (develop)](http://gpflow.readthedocs.io/en/develop/)/[(master)](http://gpflow.readthedocs.io/en/master/) contains more details.
+The [online documentation (latest release)](https://gpflow.github.io/GPflow/)/[(develop)](https://gpflow.github.io/GPflow/develop) contains more details.
 
 
 ### Maintainers
@@ -56,9 +55,9 @@ GPflow would not be the same without the community. **We are grateful to [all co
 
 ### Requirements
 
-GPflow depends on both TensorFlow (TF, version ≥ 2.2) and TensorFlow Probability (TFP, version ≥ 0.10.1). We support Python ≥ 3.6.
+GPflow depends on both TensorFlow (TF, version ≥ 2.4) and TensorFlow Probability (TFP, version ≥ 0.12). We support Python ≥ 3.7.
 
-**NOTE:** TensorFlow Probability releases are tightly coupled to TensorFlow, e.g. TFP 0.12 requires TF>=2.4, TFP 0.11 requires TF>=2.3, and TFP 0.10 requires TF>=2.2. Unfortunately, this is _not_ specified in TFP's dependencies. So if you already have an (older) version of TensorFlow installed, GPflow will pull in the latest TFP, which will be incompatible. If you get errors such as `ImportError: This version of TensorFlow Probability requires TensorFlow version >= 2.4`, you have to either upgrade TensorFlow (`pip install -U tensorflow`) or manually install an older version of the `tensorflow_probability` package.
+**NOTE:** TensorFlow Probability releases are tightly coupled to TensorFlow, e.g. TFP 0.14 requires TF>=2.6, TFP 0.13 requires TF>=2.5, and TFP 0.12 requires TF>=2.4. Unfortunately, this is _not_ specified in TFP's dependencies. So if you already have an (older) version of TensorFlow installed, GPflow will pull in the latest TFP, which will be incompatible. If you get errors such as `ImportError: This version of TensorFlow Probability requires TensorFlow version >= 2.4`, you have to either upgrade TensorFlow (`pip install -U tensorflow`) or manually install an older version of the `tensorflow_probability` package.
 
 ### Latest (stable) release from PyPI
 
@@ -83,8 +82,8 @@ This will automatically install all required dependencies.
 
 ## Getting Started with GPflow 2.0
 
-There is an ["Intro to GPflow 2.0"](https://gpflow.readthedocs.io/en/develop/notebooks/intro_to_gpflow2.html) Jupyter notebook; check it out for details.
-To convert your code from GPflow 1 check the [GPflow 2 upgrade guide](https://gpflow.readthedocs.io/en/develop/notebooks/gpflow2_upgrade_guide.html).
+There is an ["Intro to GPflow 2.0"](https://gpflow.github.io/GPflow/develop/notebooks/intro_to_gpflow2.html) Jupyter notebook; check it out for details.
+To convert your code from GPflow 1 check the [GPflow 2 upgrade guide](https://gpflow.github.io/GPflow/develop/notebooks/gpflow2_upgrade_guide.html).
 
 
 ## The GPflow Community
@@ -148,7 +147,7 @@ Unfortunately, there is no such thing as backward compatibility for GPflow _mode
 We have stopped development and support for GPflow based on TensorFlow 1.
 The latest release supporting TensorFlow 1 is [v1.5.1](https://github.com/GPflow/GPflow/releases/tag/v1.5.1).
 [Documentation](https://gpflow.readthedocs.io/en/v1.5.1-docs/) and
-[tutorials](https://nbviewer.jupyter.org/github/GPflow/GPflow/blob/v1.5.1/doc/source/notebooks/intro.ipynb)
+[tutorials](https://nbviewer.jupyter.org/github/GPflow/GPflow/blob/v1.5.1/doc/sphinx/notebooks/intro.ipynb)
 will remain available.
 
 

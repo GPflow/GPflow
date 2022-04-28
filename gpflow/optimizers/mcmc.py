@@ -26,7 +26,8 @@ class SamplingHelper:
     This helper makes it easy to read from variables being set with a prior and
     writes values back to the same variables.
 
-    Example:
+    Example::
+
         model = ...  # Create a GPflow model
         hmc_helper = SamplingHelper(model.log_posterior_density, model.trainable_parameters)
 
@@ -110,7 +111,7 @@ class SamplingHelper:
 
             return log_prob, grad_fn
 
-        return _target_log_prob_fn_closure
+        return _target_log_prob_fn_closure  # type: ignore
 
     def convert_to_constrained_values(
         self, hmc_samples: Sequence[tf.Tensor]

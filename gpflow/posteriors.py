@@ -117,7 +117,7 @@ class PrecomputedValue:
     @staticmethod
     def wrap_alpha_Qinv(alpha: TensorType, Qinv: TensorType) -> Tuple["PrecomputedValue", ...]:
         """
-        Wraps `alpha` and `Qinv` in `PrecomputedValue`s.
+        Wraps `alpha` and `Qinv` in `PrecomputedValue`\ s.
         """
         one_dynamic = False
         L_dynamic = False
@@ -355,7 +355,7 @@ class GPRPosterior(AbstractPosterior):
             cov = tf.broadcast_to(tf.expand_dims(cov, -3), cov_shape)  # [..., R, N, N]
 
         else:
-            cov = Knn - tf.linalg.diag_part(Knm @ Qinv @ Kmn)  # [..., N]
+            cov = Knn - tf.einsum("...ij,...ji->...i", Knm @ Qinv, Kmn)  # [..., N]
             cov_shape = tf.concat([leading_dims, [num_func, N]], 0)  # [..., R, N]
             cov = tf.broadcast_to(tf.expand_dims(cov, -2), cov_shape)  # [..., R, N]
             cov = tf.linalg.adjoint(cov)
@@ -696,7 +696,7 @@ class BasePosterior(AbstractPosterior):
 class IndependentPosterior(BasePosterior):
     def _post_process_mean_and_cov(
         self, mean: TensorType, cov: TensorType, full_cov: bool, full_output_cov: bool
-    ) -> tf.Tensor:
+    ) -> MeanAndVariance:
         return mean, expand_independent_outputs(cov, full_cov, full_output_cov)
 
     def _get_Kff(self, Xnew: TensorType, full_cov: bool) -> tf.Tensor:
@@ -962,7 +962,7 @@ get_posterior_class = Dispatcher("get_posterior_class")
 @get_posterior_class.register(kernels.Kernel, InducingVariables)
 def _get_posterior_base_case(
     kernel: Kernel, inducing_variable: InducingVariables
-) -> Type[AbstractPosterior]:
+) -> Type[BasePosterior]:
     # independent single output
     return IndependentPosteriorSingleOutput
 
@@ -970,7 +970,7 @@ def _get_posterior_base_case(
 @get_posterior_class.register(kernels.MultioutputKernel, InducingPoints)
 def _get_posterior_fully_correlated_mo(
     kernel: Kernel, inducing_variable: InducingVariables
-) -> Type[AbstractPosterior]:
+) -> Type[BasePosterior]:
     return FullyCorrelatedPosterior
 
 
@@ -980,7 +980,7 @@ def _get_posterior_fully_correlated_mo(
 )
 def _get_posterior_independent_mo(
     kernel: Kernel, inducing_variable: InducingVariables
-) -> Type[AbstractPosterior]:
+) -> Type[BasePosterior]:
     # independent multi-output
     return IndependentPosteriorMultiOutput
 
@@ -991,7 +991,7 @@ def _get_posterior_independent_mo(
 )
 def _get_posterior_independentlatent_mo_fallback(
     kernel: Kernel, inducing_variable: InducingVariables
-) -> Type[AbstractPosterior]:
+) -> Type[BasePosterior]:
     return FallbackIndependentLatentPosterior
 
 
@@ -1001,7 +1001,7 @@ def _get_posterior_independentlatent_mo_fallback(
 )
 def _get_posterior_linearcoregionalization_mo_efficient(
     kernel: Kernel, inducing_variable: InducingVariables
-) -> Type[AbstractPosterior]:
+) -> Type[BasePosterior]:
     # Linear mixing---efficient multi-output
     return LinearCoregionalizationPosterior
 
@@ -1014,10 +1014,10 @@ def create_posterior(
     whiten: bool,
     mean_function: Optional[MeanFunction] = None,
     precompute_cache: Union[PrecomputeCacheType, str, None] = PrecomputeCacheType.TENSOR,
-) -> AbstractPosterior:
+) -> BasePosterior:
     posterior_class = get_posterior_class(kernel, inducing_variable)
     precompute_cache = _validate_precompute_cache_type(precompute_cache)
-    return posterior_class(
+    return posterior_class(  # type: ignore
         kernel,
         inducing_variable,
         q_mu,

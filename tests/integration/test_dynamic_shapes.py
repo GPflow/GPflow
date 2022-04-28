@@ -17,6 +17,7 @@ import pytest
 import tensorflow as tf
 
 import gpflow
+from gpflow.base import AnyNDArray
 from gpflow.config import default_float
 
 rng = np.random.RandomState(0)
@@ -27,10 +28,10 @@ class Datum:
     n_outputs = 2
     n_outputs_c = 1
 
-    X = rng.rand(20, n_inputs) * 10
+    X: AnyNDArray = rng.rand(20, n_inputs) * 10
     Y = np.sin(X) + 0.9 * np.cos(X * 1.6) + rng.randn(*X.shape) * 0.8
     Y = np.tile(Y, n_outputs)  # identical columns
-    Xtest = rng.rand(10, n_outputs) * 10
+    Xtest: AnyNDArray = rng.rand(10, n_outputs) * 10
     data = (X, Y)
 
     # for classification:
@@ -38,7 +39,7 @@ class Datum:
     cdata = (X, Yc)
 
 
-def test_vgp():
+def test_vgp() -> None:
     X = tf.Variable(
         tf.zeros((1, Datum.n_inputs), dtype=default_float()), shape=(None, None), trainable=False
     )
@@ -54,7 +55,7 @@ def test_vgp():
     )
 
     @tf.function
-    def model_closure():
+    def model_closure() -> tf.Tensor:
         return -model.elbo()
 
     model_closure()  # Trigger compilation.
@@ -73,7 +74,7 @@ def test_vgp():
 
 @pytest.mark.parametrize("whiten", [True, False])
 @pytest.mark.parametrize("q_diag", [True, False])
-def test_svgp(whiten, q_diag):
+def test_svgp(whiten: bool, q_diag: bool) -> None:
     model = gpflow.models.SVGP(
         gpflow.kernels.SquaredExponential(),
         gpflow.likelihoods.Gaussian(),
@@ -93,7 +94,7 @@ def test_svgp(whiten, q_diag):
     )
 
     @tf.function
-    def model_closure():
+    def model_closure() -> tf.Tensor:
         return -elbo(Datum.data)
 
     model_closure()  # Trigger compilation.
@@ -109,7 +110,7 @@ def test_svgp(whiten, q_diag):
     )
 
 
-def test_vgp_multiclass():
+def test_vgp_multiclass() -> None:
     X = tf.Variable(
         tf.zeros((1, Datum.n_inputs), dtype=default_float()), shape=(None, None), trainable=False
     )
@@ -126,7 +127,7 @@ def test_vgp_multiclass():
     )
 
     @tf.function
-    def model_closure():
+    def model_closure() -> tf.Tensor:
         return -model.elbo()
 
     model_closure()  # Trigger compilation.
@@ -143,7 +144,7 @@ def test_vgp_multiclass():
     )
 
 
-def test_svgp_multiclass():
+def test_svgp_multiclass() -> None:
     num_classes = 3
     model = gpflow.models.SVGP(
         gpflow.kernels.SquaredExponential(),
@@ -161,7 +162,7 @@ def test_svgp_multiclass():
     )
 
     @tf.function
-    def model_closure():
+    def model_closure() -> tf.Tensor:
         return -elbo(Datum.cdata)
 
     model_closure()  # Trigger compilation.

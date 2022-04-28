@@ -14,6 +14,7 @@
 
 # -*- coding: utf-8 -*-
 
+from typing import cast
 from unittest.mock import patch
 
 import numpy as np
@@ -23,7 +24,7 @@ from numpy.testing import assert_allclose, assert_almost_equal
 
 import gpflow
 from gpflow import Parameter, default_float, default_jitter
-from gpflow.base import TensorType
+from gpflow.base import AnyNDArray, TensorType
 from gpflow.inducing_variables import InducingPoints
 from gpflow.kernels import Kernel
 from gpflow.kullback_leiblers import gauss_kl, prior_kl
@@ -68,7 +69,7 @@ def make_sqrt(N: int, M: int) -> TensorType:
 
 def make_K_batch(N: int, M: int) -> TensorType:
     K_np = rng.randn(N, M, M)
-    beye = np.array([np.eye(M) for _ in range(N)])
+    beye: AnyNDArray = np.array([np.eye(M) for _ in range(N)])
     return 0.1 * (K_np + np.transpose(K_np, (0, 2, 1))) + beye
 
 
@@ -90,7 +91,7 @@ class Datum:
     mu = rng.randn(M, N)  # [M, N]
     A = rng.randn(M, M)
     I = np.eye(M)  # [M, M]
-    K = A @ A.T + default_jitter() * I  # [M, M]
+    K: AnyNDArray = cast(AnyNDArray, A @ A.T) + default_jitter() * I  # [M, M]
     sqrt = make_sqrt(N, M)  # [N, M, M]
     sqrt_diag = rng.randn(M, N)  # [M, N]
     K_batch = make_K_batch(N, M)
@@ -214,8 +215,8 @@ def test_unknown_size_inputs() -> None:
     one unknown parameter, `gauss_kl` would blow up. This happened because
     `tf.size` can only output types `tf.int32` or `tf.int64`.
     """
-    mu = np.ones([1, 4], dtype=default_float())
-    sqrt = np.ones([4, 1, 1], dtype=default_float())
+    mu: AnyNDArray = np.ones([1, 4], dtype=default_float())
+    sqrt: AnyNDArray = np.ones([4, 1, 1], dtype=default_float())
 
     known_shape = gauss_kl(*map(tf.constant, [mu, sqrt]))
     unknown_shape = gauss_kl(mu, sqrt)
@@ -225,14 +226,14 @@ def test_unknown_size_inputs() -> None:
 
 @pytest.mark.parametrize("white", [True, False])
 def test_q_sqrt_constraints(
-    inducing_points: bool, kernel: Kernel, mu: np.ndarray, white: bool
+    inducing_points: bool, kernel: Kernel, mu: AnyNDArray, white: bool
 ) -> None:
     """Test that sending in an unconstrained q_sqrt returns the same conditional
     evaluation and gradients. This is important to match the behaviour of the KL, which
     enforces q_sqrt is triangular.
     """
 
-    tril = np.tril(rng.randn(Ln, Nn, Nn))
+    tril: AnyNDArray = np.tril(rng.randn(Ln, Nn, Nn))
 
     q_sqrt_constrained = Parameter(tril, transform=triangular())
     q_sqrt_unconstrained = Parameter(tril)

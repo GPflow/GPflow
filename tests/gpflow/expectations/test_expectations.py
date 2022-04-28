@@ -24,6 +24,7 @@ import gpflow
 import gpflow.inducing_variables as iv
 import gpflow.kernels as krn
 from gpflow import mean_functions as mf
+from gpflow.base import AnyNDArray
 from gpflow.config import default_float
 from gpflow.expectations import expectation, quadrature_expectation
 from gpflow.probability_distributions import (
@@ -49,8 +50,8 @@ Z = rng.randn(num_ind, D_in)
 
 
 def markov_gauss() -> MarkovGaussian:
-    cov_params = rng.randn(num_data + 1, D_in, 2 * D_in) / 2.0  # (N+1)xDx2D
-    Xcov = cov_params @ np.transpose(cov_params, (0, 2, 1))  # (N+1)xDxD
+    cov_params: AnyNDArray = rng.randn(num_data + 1, D_in, 2 * D_in) / 2.0  # (N+1)xDx2D
+    Xcov: AnyNDArray = cov_params @ np.transpose(cov_params, (0, 2, 1))  # (N+1)xDxD
     Xcross = cov_params[:-1] @ np.transpose(cov_params[1:], (0, 2, 1))  # NxDxD
     Xcross = np.concatenate((Xcross, np.zeros((1, D_in, D_in))), 0)  # (N+1)xDxD
     Xcov = np.stack([Xcov, Xcross])  # 2x(N+1)xDxD

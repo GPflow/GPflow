@@ -18,7 +18,7 @@ import numpy as np
 import tensorflow as tf
 
 from .. import covariances, kernels, likelihoods
-from ..base import Parameter
+from ..base import InputData, MeanAndVariance, OutputData, Parameter, RegressionData, TensorType
 from ..config import default_float, default_jitter
 from ..expectations import expectation
 from ..inducing_variables import InducingPoints
@@ -28,9 +28,9 @@ from ..probability_distributions import DiagonalGaussian
 from ..utilities import positive, to_default_float
 from ..utilities.ops import pca_reduce
 from .gpr import GPR
-from .model import GPModel, MeanAndVariance
-from .training_mixins import InputData, InternalDataTrainingLossMixin, OutputData
-from .util import data_input_to_tensor, inducingpoint_wrapper
+from .model import GPModel
+from .training_mixins import InternalDataTrainingLossMixin
+from .util import InducingVariablesLike, data_input_to_tensor, inducingpoint_wrapper
 
 
 class GPLVM(GPR):
@@ -84,21 +84,24 @@ class BayesianGPLVM(GPModel, InternalDataTrainingLossMixin):
         X_data_var: tf.Tensor,
         kernel: Kernel,
         num_inducing_variables: Optional[int] = None,
-        inducing_variable=None,
-        X_prior_mean=None,
-        X_prior_var=None,
+        inducing_variable: Optional[InducingVariablesLike] = None,
+        X_prior_mean: Optional[TensorType] = None,
+        X_prior_var: Optional[TensorType] = None,
     ):
         """
         Initialise Bayesian GPLVM object. This method only works with a Gaussian likelihood.
 
         :param data: data matrix, size N (number of points) x D (dimensions)
-        :param X_data_mean: initial latent positions, size N (number of points) x Q (latent dimensions).
-        :param X_data_var: variance of latent positions ([N, Q]), for the initialisation of the latent space.
+        :param X_data_mean: initial latent positions, size N (number of points) x
+            Q (latent dimensions).
+        :param X_data_var: variance of latent positions ([N, Q]), for the initialisation of the
+            latent space.
         :param kernel: kernel specification, by default Squared Exponential
         :param num_inducing_variables: number of inducing points, M
-        :param inducing_variable: matrix of inducing points, size M (inducing points) x Q (latent dimensions). By default
-            random permutation of X_data_mean.
-        :param X_prior_mean: prior mean used in KL term of bound. By default 0. Same size as X_data_mean.
+        :param inducing_variable: matrix of inducing points, size M (inducing points) x
+            Q (latent dimensions). By default random permutation of X_data_mean.
+        :param X_prior_mean: prior mean used in KL term of bound. By default 0.
+            Same size as X_data_mean.
         :param X_prior_var: prior variance used in KL term of bound. By default 1.
         """
         num_data, num_latent_gps = X_data_mean.shape
@@ -118,7 +121,8 @@ class BayesianGPLVM(GPModel, InternalDataTrainingLossMixin):
 
         if (inducing_variable is None) == (num_inducing_variables is None):
             raise ValueError(
-                "BayesianGPLVM needs exactly one of `inducing_variable` and `num_inducing_variables`"
+                "BayesianGPLVM needs exactly one of `inducing_variable` and"
+                " `num_inducing_variables`"
             )
 
         if inducing_variable is None:
@@ -145,7 +149,8 @@ class BayesianGPLVM(GPModel, InternalDataTrainingLossMixin):
         assert self.X_prior_var.shape[0] == self.num_data
         assert self.X_prior_var.shape[1] == self.num_latent_gps
 
-    def maximum_log_likelihood_objective(self) -> tf.Tensor:
+    # type-ignore is because of changed method signature:
+    def maximum_log_likelihood_objective(self) -> tf.Tensor:  # type: ignore
         return self.elbo()
 
     def elbo(self) -> tf.Tensor:
@@ -262,5 +267,7 @@ class BayesianGPLVM(GPModel, InternalDataTrainingLossMixin):
             var = tf.tile(tf.expand_dims(var, 1), shape)
         return mean + self.mean_function(Xnew), var
 
-    def predict_log_density(self, data: OutputData) -> tf.Tensor:
+    def predict_log_density(
+        self, data: RegressionData, full_cov: bool = False, full_output_cov: bool = False
+    ) -> tf.Tensor:
         raise NotImplementedError

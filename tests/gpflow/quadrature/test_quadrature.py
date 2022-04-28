@@ -12,13 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import cast
+
 import numpy as np
 import pytest
 import tensorflow as tf
 from numpy.testing import assert_allclose
 
 import gpflow.quadrature as quadrature
-from gpflow.base import TensorType
+from gpflow.base import AnyNDArray, TensorType
 
 
 @pytest.mark.parametrize("mu", [np.array([1.0, 1.3])])
@@ -71,7 +73,7 @@ def test_diagquad_logspace(
 @pytest.mark.parametrize("mu1", [np.array([1.0, 1.3])])
 @pytest.mark.parametrize("var1", [np.array([3.0, 3.5])])
 def test_diagquad_with_kwarg(mu1: TensorType, var1: TensorType) -> None:
-    alpha = np.array([2.5, -1.3])
+    alpha: AnyNDArray = np.array([2.5, -1.3])
     num_gauss_hermite_points = 25
     quad = quadrature.ndiagquad(
         lambda X, Y: tf.exp(X * Y), num_gauss_hermite_points, mu1, var1, Y=alpha
@@ -88,8 +90,8 @@ def test_ndiagquad_does_not_throw_error() -> None:
 
     @tf.function(autograph=False)
     def func_ndiagquad_autograph_false() -> tf.Tensor:
-        mu = np.array([1.0, 1.3])
-        var = np.array([3.0, 3.5])
+        mu: AnyNDArray = np.array([1.0, 1.3])
+        var: AnyNDArray = np.array([3.0, 3.5])
         num_gauss_hermite_points = 25
         return quadrature.ndiagquad(
             [lambda *X: tf.exp(X[0])], num_gauss_hermite_points, [mu], [var]
@@ -104,18 +106,18 @@ def test_quadrature_autograph() -> None:
     Regression test for https://github.com/GPflow/GPflow/issues/1547.
     """
 
-    def compute(autograph: bool) -> np.ndarray:
+    def compute(autograph: bool) -> AnyNDArray:
         @tf.function(autograph=autograph)
         def func() -> tf.Tensor:
-            mu = np.array([1.0, 1.3])
-            var = np.array([3.0, 3.5])
+            mu: AnyNDArray = np.array([1.0, 1.3])
+            var: AnyNDArray = np.array([3.0, 3.5])
             num_gauss_hermite_points = 25
             return quadrature.ndiagquad(
                 [lambda *X: tf.exp(X[0])], num_gauss_hermite_points, [mu], [var]
             )
 
         (result,) = func()
-        return result.numpy()
+        return cast(AnyNDArray, result.numpy())
 
     np.testing.assert_equal(
         compute(autograph=True),

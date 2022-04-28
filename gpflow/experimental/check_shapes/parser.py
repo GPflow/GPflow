@@ -15,19 +15,52 @@
 # pylint: disable=unused-argument
 
 from abc import ABC
-from functools import lru_cache
-from typing import Any, Collection, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple
+from dataclasses import replace
+from typing import Any, Collection, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple, Type
 
-from lark import Lark, Token, Tree
+from lark.exceptions import UnexpectedInput
+from lark.lark import Lark
+from lark.lexer import PatternRE, PatternStr, Token
+from lark.tree import Tree
 
 from .argument_ref import (
     RESULT_TOKEN,
+    AllElementsRef,
     ArgumentRef,
     AttributeArgumentRef,
     IndexArgumentRef,
+    KeysRef,
     RootArgumentRef,
+    ValuesRef,
 )
-from .specs import ParsedArgumentSpec, ParsedDimensionSpec, ParsedShapeSpec
+from .bool_specs import (
+    ParsedAndBoolSpec,
+    ParsedArgumentRefBoolSpec,
+    ParsedBoolSpec,
+    ParsedNotBoolSpec,
+    ParsedOrBoolSpec,
+)
+from .config import DocstringFormat, get_rewrite_docstrings
+from .error_contexts import (
+    ArgumentContext,
+    ErrorContext,
+    LarkUnexpectedInputContext,
+    MultipleElementBoolContext,
+    StackContext,
+    TrailingBroadcastVarrankContext,
+)
+from .exceptions import CheckShapesError, DocstringParseError, SpecificationParseError
+from .specs import (
+    ParsedArgumentSpec,
+    ParsedDimensionSpec,
+    ParsedFunctionSpec,
+    ParsedNoteSpec,
+    ParsedShapeSpec,
+    ParsedTensorSpec,
+)
+
+_VARIABLE_RANK_LEADING_TOKEN = "*"
+_VARIABLE_RANK_TRAILING_TOKEN = "..."
 
 
 def _tree_children(tree: Tree[Token]) -> Iterable[Tree[Token]]:
@@ -59,55 +92,159 @@ class _TreeVisitor(ABC):
         return visit(tree, *args, **kwargs)
 
 
-class _ParseArgumentSpec(_TreeVisitor):
-    def argument_spec(self, tree: Tree[Token]) -> ParsedArgumentSpec:
-        argument_name, argument_refs, shape_spec = _tree_children(tree)
-        root_argument_ref = self.visit(argument_name)
-        argument_ref = self.visit(argument_refs, root_argument_ref)
-        shape = self.visit(shape_spec, argument_ref)
-        return ParsedArgumentSpec(argument_ref, shape)
+class _ParseSpec(_TreeVisitor):
+    def __init__(self, source: str) -> None:
+        self._source = source
 
-    def argument_name(self, tree: Tree[Token]) -> ArgumentRef:
+    def argument_spec(self, tree: Tree[Token]) -> ParsedArgumentSpec:
+        argument_ref, shape_spec, *other_specs = _tree_children(tree)
+        argument = self.visit(argument_ref, False)
+        shape = self.visit(shape_spec)
+        condition = None
+        note = None
+        for other_spec in other_specs:
+            other = self.visit(other_spec)
+            if isinstance(other, ParsedBoolSpec):
+                assert condition is None
+                condition = other
+            else:
+                assert isinstance(other, ParsedNoteSpec)
+                assert note is None
+                note = other
+        tensor = ParsedTensorSpec(shape, note)
+        return ParsedArgumentSpec(argument, tensor, condition)
+
+    def bool_spec_or(self, tree: Tree[Token]) -> ParsedBoolSpec:
+        left, right = _tree_children(tree)
+        return ParsedOrBoolSpec(self.visit(left), self.visit(right))
+
+    def bool_spec_and(self, tree: Tree[Token]) -> ParsedBoolSpec:
+        left, right = _tree_children(tree)
+        return ParsedAndBoolSpec(self.visit(left), self.visit(right))
+
+    def bool_spec_not(self, tree: Tree[Token]) -> ParsedBoolSpec:
+        (right,) = _tree_children(tree)
+        return ParsedNotBoolSpec(self.visit(right))
+
+    def bool_spec_argument_ref(self, tree: Tree[Token]) -> ParsedBoolSpec:
+        (argument_ref,) = _tree_children(tree)
+        return ParsedArgumentRefBoolSpec(self.visit(argument_ref, True))
+
+    def argument_ref_root(self, tree: Tree[Token], is_for_bool_spec: bool) -> ArgumentRef:
         (token,) = _token_children(tree)
         return RootArgumentRef(token)
 
-    def argument_refs(self, tree: Tree[Token], result: ArgumentRef) -> ArgumentRef:
-        for argument_ref in _tree_children(tree):
-            result = self.visit(argument_ref, result)
-        return result
-
-    def argument_ref_attribute(self, tree: Tree[Token], source: ArgumentRef) -> ArgumentRef:
+    def argument_ref_attribute(self, tree: Tree[Token], is_for_bool_spec: bool) -> ArgumentRef:
+        (source,) = _tree_children(tree)
         (token,) = _token_children(tree)
-        return AttributeArgumentRef(source, token)
+        return AttributeArgumentRef(self.visit(source, is_for_bool_spec), token)
 
-    def argument_ref_index(self, tree: Tree[Token], source: ArgumentRef) -> ArgumentRef:
+    def argument_ref_index(self, tree: Tree[Token], is_for_bool_spec: bool) -> ArgumentRef:
+        (source,) = _tree_children(tree)
         (token,) = _token_children(tree)
-        return IndexArgumentRef(source, int(token))
+        return IndexArgumentRef(self.visit(source, is_for_bool_spec), int(token))
 
-    def shape_spec(self, tree: Tree[Token], argument_ref: ArgumentRef) -> ParsedShapeSpec:
+    def argument_ref_all(self, tree: Tree[Token], is_for_bool_spec: bool) -> ArgumentRef:
+        (source,) = _tree_children(tree)
+        self._disallow_multiple_element_bool_spec(source, is_for_bool_spec)
+        return AllElementsRef(self.visit(source, is_for_bool_spec))
+
+    def argument_ref_keys(self, tree: Tree[Token], is_for_bool_spec: bool) -> ArgumentRef:
+        (source,) = _tree_children(tree)
+        self._disallow_multiple_element_bool_spec(source, is_for_bool_spec)
+        return KeysRef(self.visit(source, is_for_bool_spec))
+
+    def argument_ref_values(self, tree: Tree[Token], is_for_bool_spec: bool) -> ArgumentRef:
+        (source,) = _tree_children(tree)
+        self._disallow_multiple_element_bool_spec(source, is_for_bool_spec)
+        return ValuesRef(self.visit(source, is_for_bool_spec))
+
+    def _disallow_multiple_element_bool_spec(
+        self, source: Tree[Token], is_for_bool_spec: bool
+    ) -> None:
+        if is_for_bool_spec:
+            meta = source.meta
+            raise SpecificationParseError(
+                MultipleElementBoolContext(self._source, meta.end_line, meta.end_column)
+            )
+
+    def tensor_spec(self, tree: Tree[Token]) -> ParsedTensorSpec:
+        shape_spec, *note_specs = _tree_children(tree)
+        shape = self.visit(shape_spec)
+        if note_specs:
+            (note_spec,) = note_specs
+            note = self.visit(note_spec)
+        else:
+            note = None
+        return ParsedTensorSpec(shape, note)
+
+    def shape_spec(self, tree: Tree[Token]) -> ParsedShapeSpec:
         (dimension_specs,) = _tree_children(tree)
         return ParsedShapeSpec(self.visit(dimension_specs))
 
     def dimension_specs(self, tree: Tree[Token]) -> Tuple[ParsedDimensionSpec, ...]:
-        return tuple(self.visit(dimension_spec) for dimension_spec in _tree_children(tree))
+        return tuple(
+            self.visit(dimension_spec, i) for i, dimension_spec in enumerate(_tree_children(tree))
+        )
 
-    def dimension_spec_constant(self, tree: Tree[Token]) -> ParsedDimensionSpec:
+    def dimension_spec_broadcast(self, tree: Tree[Token], i: int) -> ParsedDimensionSpec:
+        (dimension_spec,) = _tree_children(tree)
+        child = self.visit(dimension_spec, i)
+        assert isinstance(child, ParsedDimensionSpec)
+        if i > 0 and child.variable_rank:
+            meta = dimension_spec.meta
+            raise SpecificationParseError(
+                TrailingBroadcastVarrankContext(
+                    self._source, meta.line, meta.column, child.variable_name
+                )
+            )
+        return replace(child, broadcastable=True)
+
+    def dimension_spec_constant(self, tree: Tree[Token], i: int) -> ParsedDimensionSpec:
         (token,) = _token_children(tree)
-        return ParsedDimensionSpec(constant=int(token), variable_name=None, variable_rank=False)
+        return ParsedDimensionSpec(
+            constant=int(token), variable_name=None, variable_rank=False, broadcastable=False
+        )
 
-    def dimension_spec_variable(self, tree: Tree[Token]) -> ParsedDimensionSpec:
+    def dimension_spec_variable(self, tree: Tree[Token], i: int) -> ParsedDimensionSpec:
         (token,) = _token_children(tree)
-        return ParsedDimensionSpec(constant=None, variable_name=token, variable_rank=False)
+        return ParsedDimensionSpec(
+            constant=None, variable_name=token, variable_rank=False, broadcastable=False
+        )
 
-    def dimension_spec_variable_rank(self, tree: Tree[Token]) -> ParsedDimensionSpec:
-        (token,) = _token_children(tree)
-        return ParsedDimensionSpec(constant=None, variable_name=token, variable_rank=True)
+    def dimension_spec_anonymous(self, tree: Tree[Token], i: int) -> ParsedDimensionSpec:
+        return ParsedDimensionSpec(
+            constant=None, variable_name=None, variable_rank=False, broadcastable=False
+        )
+
+    def dimension_spec_variable_rank(self, tree: Tree[Token], i: int) -> ParsedDimensionSpec:
+        (token1, token2) = _token_children(tree)
+        if token1 == _VARIABLE_RANK_LEADING_TOKEN:
+            variable_name = token2
+        else:
+            assert token2 == _VARIABLE_RANK_TRAILING_TOKEN
+            variable_name = token1
+        return ParsedDimensionSpec(
+            constant=None, variable_name=variable_name, variable_rank=True, broadcastable=False
+        )
+
+    def dimension_spec_anonymous_variable_rank(
+        self, tree: Tree[Token], i: int
+    ) -> ParsedDimensionSpec:
+        return ParsedDimensionSpec(
+            constant=None, variable_name=None, variable_rank=True, broadcastable=False
+        )
+
+    def note_spec(self, tree: Tree[Token]) -> ParsedNoteSpec:
+        _hash_token, *note_tokens = _token_children(tree)
+        return ParsedNoteSpec(" ".join(token.strip() for token in note_tokens))
 
 
-class _RewriteDocString(_TreeVisitor):
-    def __init__(self, source: str, argument_specs: Collection[ParsedArgumentSpec]) -> None:
+class _RewritedocString(_TreeVisitor):
+    def __init__(self, source: str, function_spec: ParsedFunctionSpec) -> None:
         self._source = source
-        self._spec_lines = self._argument_specs_to_sphinx(argument_specs)
+        self._spec_lines = self._argument_specs_to_sphinx(function_spec.arguments)
+        self._notes = tuple(note.note for note in function_spec.notes)
         self._indent = self._guess_indent(source)
 
     def _argument_specs_to_sphinx(
@@ -124,22 +261,71 @@ class _RewriteDocString(_TreeVisitor):
         return result
 
     def _argument_spec_to_sphinx(self, argument_spec: ParsedArgumentSpec) -> str:
+        tensor_spec = argument_spec.tensor
+        shape_spec = tensor_spec.shape
         out = []
         out.append(f"* **{repr(argument_spec.argument_ref)}**")
         out.append(" has shape [")
-        out.append(self._shape_spec_to_sphinx(argument_spec.shape))
-        out.append("].")
+        out.append(self._shape_spec_to_sphinx(shape_spec))
+        out.append("]")
+
+        if argument_spec.condition is not None:
+            out.append(" if ")
+            out.append(self._bool_spec_to_sphinx(argument_spec.condition, False))
+
+        out.append(".")
+
+        if tensor_spec.note is not None:
+            note_spec = tensor_spec.note
+            out.append(" ")
+            out.append(note_spec.note)
         return "".join(out)
 
+    def _bool_spec_to_sphinx(self, bool_spec: ParsedBoolSpec, paren_wrap: bool) -> str:
+        if isinstance(bool_spec, ParsedOrBoolSpec):
+            result = (
+                self._bool_spec_to_sphinx(bool_spec.left, True)
+                + " or "
+                + self._bool_spec_to_sphinx(bool_spec.right, True)
+            )
+        elif isinstance(bool_spec, ParsedAndBoolSpec):
+            result = (
+                self._bool_spec_to_sphinx(bool_spec.left, True)
+                + " and "
+                + self._bool_spec_to_sphinx(bool_spec.right, True)
+            )
+        elif isinstance(bool_spec, ParsedNotBoolSpec):
+            result = "not " + self._bool_spec_to_sphinx(bool_spec.right, True)
+        else:
+            assert isinstance(bool_spec, ParsedArgumentRefBoolSpec)
+            return f"*{bool_spec.argument_ref!r}*"
+
+        if paren_wrap:
+            result = f"({result})"
+
+        return result
+
     def _shape_spec_to_sphinx(self, shape_spec: ParsedShapeSpec) -> str:
-        out = []
-        for dim in shape_spec.dims:
-            if dim.constant is not None:
-                out.append(str(dim.constant))
-            if dim.variable_name is not None:
-                suffix = "..." if dim.variable_rank else ""
-                out.append(f"*{dim.variable_name}*{suffix}")
-        return ", ".join(out)
+        return ", ".join(self._dim_spec_to_sphinx(dim) for dim in shape_spec.dims)
+
+    def _dim_spec_to_sphinx(self, dim_spec: ParsedDimensionSpec) -> str:
+        tokens = []
+
+        if dim_spec.broadcastable:
+            tokens.append("broadcast ")
+
+        if dim_spec.constant is not None:
+            tokens.append(str(dim_spec.constant))
+        elif dim_spec.variable_name:
+            tokens.append(f"*{dim_spec.variable_name}*")
+        else:
+            if not dim_spec.variable_rank:
+                tokens.append(".")
+
+        if dim_spec.variable_rank:
+            tokens.append("...")
+
+        return "".join(tokens)
 
     def _guess_indent(self, docstring: str) -> Optional[int]:
         """
@@ -197,9 +383,19 @@ class _RewriteDocString(_TreeVisitor):
         #   and `self._source[pos:]` still needs to be added.
         # * When visiting children we pass `out` and `pos`, and the children add content to `out`
         #   and return a new `pos`.
-        _docs, info_fields = _tree_children(tree)
+        docs, info_fields = _tree_children(tree)
         out: List[str] = []
         pos = 0
+
+        if self._notes:
+            out.append(self._source[pos : docs.meta.end_pos])
+            pos = docs.meta.end_pos
+            indent = self._indent or 0
+            indent_str = "\n\n" + indent * " "
+            for note in self._notes:
+                out.append(indent_str)
+                out.append(note)
+
         pos = self.visit(info_fields, out, pos)
         out.append(self._source[pos:])
         return "".join(out)
@@ -234,33 +430,150 @@ class _RewriteDocString(_TreeVisitor):
         return tokens[-1]
 
 
-_DOCSTRING_PARSER = Lark.open(
-    "docstring.lark", rel_to=__file__, propagate_positions=True, start="docstring"
+class _CachedParser:
+    """
+    Small wrapper around Lark so that we can reuse as much code as possible between the different
+    things we parse.
+    """
+
+    def __init__(
+        self,
+        grammar_filename: str,
+        start_symbol: str,
+        parser_name: str,
+        re_terminal_descriptions: Mapping[str, str],
+        transformer_class: Type[_TreeVisitor],
+        exception_class: Type[CheckShapesError],
+    ) -> None:
+        self._cache: Dict[Tuple[str, Tuple[Any, ...]], Any] = {}
+        self._parser = Lark.open(
+            grammar_filename,
+            rel_to=__file__,
+            propagate_positions=True,
+            start=start_symbol,
+            parser=parser_name,
+        )
+        self._terminal_descriptions = {}
+        self._transformer_class = transformer_class
+        self._exception_class = exception_class
+
+        # Pre-compute nice terminal descriptions for our error messages:
+        missing = set()
+        unused = dict(re_terminal_descriptions)
+        for terminal in self._parser.terminals:
+            name = terminal.name
+            pattern = terminal.pattern
+            if isinstance(pattern, PatternStr):
+                description = f'"{pattern.value}"'
+            else:
+                assert isinstance(pattern, PatternRE)
+                unused_description = unused.pop(name, None)
+                # If we enter this `if` then the parser is misconfigured, so we never get here, even
+                # during tests.
+                if unused_description is None:  # pragma: no cover
+                    missing.add(name)
+                    description = "ERROR"
+                else:
+                    description = f"{re_terminal_descriptions[name]} (re={pattern.value})"
+            self._terminal_descriptions[name] = description
+        assert not unused, f"Redundant terminal descriptions were provided: {sorted(unused)}"
+        assert not missing, f"Some RE terminals did not have a description: {sorted(missing)}"
+
+    def parse(self, text: str, transformer_args: Tuple[Any, ...], context: ErrorContext) -> Any:
+        sentinel = object()
+        cache_key = (text, transformer_args)
+        result = self._cache.get(cache_key, sentinel)
+        if result is sentinel:
+            try:
+                tree = self._parser.parse(text)
+            except UnexpectedInput as ui:
+                raise self._exception_class(
+                    StackContext(
+                        context, LarkUnexpectedInputContext(text, ui, self._terminal_descriptions)
+                    )
+                ) from ui
+
+            try:
+                result = self._transformer_class(*transformer_args).visit(tree)
+            except CheckShapesError as cse:
+                raise self._exception_class(StackContext(context, cse.context)) from cse
+
+            self._cache[cache_key] = result
+        return result
+
+
+_TENSOR_SPEC_PARSER = _CachedParser(
+    grammar_filename="check_shapes.lark",
+    start_symbol="tensor_spec",
+    parser_name="lalr",
+    re_terminal_descriptions={
+        "NOTE_TEXT": "note / comment text",
+        "CNAME": "variable name",
+        "INT": "integer",
+        "WS": "whitespace",
+    },
+    transformer_class=_ParseSpec,
+    exception_class=SpecificationParseError,
+)
+_ARGUMENT_SPEC_PARSER = _CachedParser(
+    grammar_filename="check_shapes.lark",
+    start_symbol="argument_or_note_spec",
+    parser_name="lalr",
+    re_terminal_descriptions={
+        "NOTE_TEXT": "note / comment text",
+        "CNAME": "variable name",
+        "INT": "integer",
+        "WS": "whitespace",
+    },
+    transformer_class=_ParseSpec,
+    exception_class=SpecificationParseError,
+)
+_SPHINX_DOCSTRING_PARSER = _CachedParser(
+    grammar_filename="docstring.lark",
+    start_symbol="docstring",
+    parser_name="earley",
+    re_terminal_descriptions={
+        "ANY": "any text",
+        "CNAME": "variable name",
+        "INFO_FIELD_OTHER": "Sphinx info field",
+        "PARAM": "Sphinx parameter field",
+        "RETURNS": "Sphinx `return` field",
+        "WS": "whitespace",
+    },
+    transformer_class=_RewritedocString,
+    exception_class=DocstringParseError,
 )
 
 
-_ARGUMENT_SPEC_PARSER = Lark.open(
-    "check_shapes.lark",
-    rel_to=__file__,
-    propagate_positions=True,
-    start="argument_spec",
-    parser="lalr",
-)
+def parse_tensor_spec(tensor_spec: str, context: ErrorContext) -> ParsedTensorSpec:
 
-
-@lru_cache(maxsize=None)
-def parse_argument_spec(argument_spec: str) -> ParsedArgumentSpec:
     """
-    Parse a `check_shapes` argument specification.
+    Parse a `check_shapes` tensor specification.
     """
-    tree = _ARGUMENT_SPEC_PARSER.parse(argument_spec)
-    specs = _ParseArgumentSpec().visit(tree)
-    return specs
+    result = _TENSOR_SPEC_PARSER.parse(tensor_spec, (tensor_spec,), context)
+    assert isinstance(result, ParsedTensorSpec)
+    return result
 
 
-@lru_cache(maxsize=None)
+def parse_function_spec(function_spec: Sequence[str], context: ErrorContext) -> ParsedFunctionSpec:
+    """
+    Parse all `check_shapes` argument or note specification for a single function.
+    """
+    arguments = []
+    notes = []
+    for i, spec in enumerate(function_spec):
+        argument_context = StackContext(context, ArgumentContext(i))
+        parsed_spec = _ARGUMENT_SPEC_PARSER.parse(spec, (spec,), argument_context)
+        if isinstance(parsed_spec, ParsedArgumentSpec):
+            arguments.append(parsed_spec)
+        else:
+            assert isinstance(parsed_spec, ParsedNoteSpec)
+            notes.append(parsed_spec)
+    return ParsedFunctionSpec(tuple(arguments), tuple(notes))
+
+
 def parse_and_rewrite_docstring(
-    docstring: Optional[str], argument_specs: Tuple[ParsedArgumentSpec, ...]
+    docstring: Optional[str], function_spec: ParsedFunctionSpec, context: ErrorContext
 ) -> Optional[str]:
     """
     Rewrite `docstring` to include the shapes specified by the `argument_specs`.
@@ -268,5 +581,14 @@ def parse_and_rewrite_docstring(
     if docstring is None:
         return None
 
-    tree = _DOCSTRING_PARSER.parse(docstring)
-    return _RewriteDocString(docstring, argument_specs).visit(tree)
+    docstring_format = get_rewrite_docstrings()
+    if docstring_format == DocstringFormat.NONE:
+        return docstring
+
+    assert docstring_format == DocstringFormat.SPHINX, (
+        f"Current docstring format is {docstring_format}, but I don't know how to rewrite that."
+        " See `gpflow.experimental.check_shapes.config.set_rewrite_docstrings`."
+    )
+    result = _SPHINX_DOCSTRING_PARSER.parse(docstring, (docstring, function_spec), context)
+    assert isinstance(result, str)
+    return result

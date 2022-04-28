@@ -17,21 +17,22 @@ import numpy as np
 import tensorflow as tf
 
 import gpflow
+from gpflow.base import AnyNDArray
 from gpflow.utilities import to_default_float
 
 
 @dataclass(frozen=True)
 class Datum:
     rng: np.random.RandomState = np.random.RandomState(0)
-    X: np.ndarray = rng.randn(100, 2)
-    Y: np.ndarray = rng.randn(100, 1)
-    Z: np.ndarray = rng.randn(10, 2)
-    Xs: np.ndarray = rng.randn(10, 2)
+    X: AnyNDArray = rng.randn(100, 2)
+    Y: AnyNDArray = rng.randn(100, 1)
+    Z: AnyNDArray = rng.randn(10, 2)
+    Xs: AnyNDArray = rng.randn(10, 2)
     lik = gpflow.likelihoods.Gaussian()
     kernel = gpflow.kernels.Matern32()
 
 
-def test_sgpr_qu():
+def test_sgpr_qu() -> None:
     rng = Datum().rng
     X = to_default_float(rng.randn(100, 2))
     Z = to_default_float(rng.randn(20, 2))

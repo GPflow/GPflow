@@ -19,6 +19,7 @@ import pytest
 import tensorflow as tf
 
 import gpflow
+from gpflow.base import AnyNDArray
 from gpflow.config import default_float
 from gpflow.models import GPR, GPModel
 
@@ -26,10 +27,10 @@ rng = np.random.RandomState(0)
 
 
 class Datum:
-    X = rng.rand(20, 1) * 10
+    X: AnyNDArray = rng.rand(20, 1) * 10
     Y = np.sin(X) + 0.9 * np.cos(X * 1.6) + rng.randn(*X.shape) * 0.8
     Y = np.tile(Y, 2)  # two identical columns
-    Xtest = rng.rand(10, 1) * 10
+    Xtest: AnyNDArray = rng.rand(10, 1) * 10
     data = (X, Y)
 
 
@@ -64,13 +65,10 @@ def test_scipy_jit() -> None:
         compile=True,
     )
 
-    def get_values(model: GPModel) -> np.ndarray:
+    def get_values(model: GPModel) -> AnyNDArray:
         return np.array([var.numpy().squeeze() for var in model.trainable_variables])
 
-    # The tolerance of the following test had to be loosened slightly from atol=1e-15
-    # due to the changes introduced by PR #1213, which removed some implicit casts
-    # to float32. With TF 2.4 / TFP 0.12, we had to further increase atol from 1e-14.
-    np.testing.assert_allclose(get_values(m1), get_values(m2), rtol=1e-14, atol=2e-14)
+    np.testing.assert_allclose(get_values(m1), get_values(m2), rtol=1e-13, atol=1e-13)
 
 
 @pytest.mark.parametrize("compile", [True, False])

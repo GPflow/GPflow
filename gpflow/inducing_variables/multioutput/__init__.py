@@ -5,3 +5,12 @@ from .inducing_variables import (
     SeparateIndependentInducingVariables,
     SharedIndependentInducingVariables,
 )
+
+__all__ = [
+    "FallbackSeparateIndependentInducingVariables",
+    "FallbackSharedIndependentInducingVariables",
+    "MultioutputInducingVariables",
+    "SeparateIndependentInducingVariables",
+    "SharedIndependentInducingVariables",
+    "inducing_variables",
+]

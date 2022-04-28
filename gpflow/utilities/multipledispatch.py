@@ -12,16 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Any, Callable, Tuple, Type, TypeVar, Union
+from typing import Any, Callable, Optional, Tuple, Type, TypeVar, Union
 
 from multipledispatch import Dispatcher as GeneratorDispatcher
-from multipledispatch.dispatcher import variadic_signature_matches
+from multipledispatch.dispatcher import str_signature, variadic_signature_matches
 from multipledispatch.variadic import isvariadic
 
 __all__ = ["Dispatcher"]
 
 
-_C = TypeVar("_C", bound=Callable[..., Any])
+AnyCallable = Callable[..., Any]
+_C = TypeVar("_C", bound=AnyCallable)
 Types = Union[Type[Any], Tuple[Type[Any], ...]]
 
 
@@ -38,18 +39,32 @@ class Dispatcher(GeneratorDispatcher):
 
     def register(self, *types: Types, **kwargs: Any) -> Callable[[_C], _C]:
         # Override to add type hints...
-        return super().register(*types, **kwargs)
+        result: Callable[[_C], _C] = super().register(*types, **kwargs)
+        return result
 
-    def dispatch(self, *types: Types) -> Callable[..., Any]:
+    def dispatch(self, *types: Types) -> Optional[AnyCallable]:
         """
         Returns matching function for `types`; if not existing returns None.
         """
+        result: AnyCallable
         if types in self.funcs:
-            return self.funcs[types]
+            result = self.funcs[types]
+            return result
 
         return self.get_first_occurrence(*types)
 
-    def get_first_occurrence(self, *types: Types) -> Callable[..., Any]:
+    def dispatch_or_raise(self, *types: Types) -> AnyCallable:
+        """
+        Returns matching function for `types`; if not existing raises an error.
+        """
+        f = self.dispatch(*types)
+        if f is None:
+            raise NotImplementedError(
+                f"Could not find signature for {self.name}: <{str_signature(types)}>"
+            )
+        return f
+
+    def get_first_occurrence(self, *types: Types) -> Optional[AnyCallable]:
         """
         Returns the first occurrence of a matching function
 
@@ -60,8 +75,9 @@ class Dispatcher(GeneratorDispatcher):
         `None` is returned.
         """
         n = len(types)
+        result: AnyCallable
         for signature in self.ordering:
-            if len(signature) == n and all(map(issubclass, types, signature)):
+            if len(signature) == n and all(map(issubclass, types, signature)):  # type: ignore
                 result = self.funcs[signature]
                 return result
             elif len(signature) and isvariadic(signature[-1]):

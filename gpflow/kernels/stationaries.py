@@ -41,7 +41,7 @@ class Stationary(Kernel):
         :param variance: the (initial) value for the variance parameter.
         :param lengthscales: the (initial) value for the lengthscale
             parameter(s), to induce ARD behaviour this must be initialised as
-            an array the same length as the the number of active dimensions
+            an array the same length as the number of active dimensions
             e.g. [1., 1., 1.]. If only a single value is passed, this value
             is used as the lengthscale of each dimension.
         :param kwargs: accepts `name` and `active_dims`, which is a list or
@@ -62,7 +62,8 @@ class Stationary(Kernel):
         """
         Whether ARD behaviour is active.
         """
-        return self.lengthscales.shape.ndims > 0
+        ndims: int = self.lengthscales.shape.ndims
+        return ndims > 0
 
     def scale(self, X: TensorType) -> TensorType:
         X_scaled = X / self.lengthscales if X is not None else X
@@ -120,6 +121,26 @@ class AnisotropicStationary(Stationary):
     parameter ℓ (i.e. [(X - X2ᵀ) / ℓ]). The last axis corresponds to the
     input dimension.
     """
+
+    def __init__(
+        self, variance: TensorType = 1.0, lengthscales: TensorType = 1.0, **kwargs: Any
+    ) -> None:
+        """
+        :param variance: the (initial) value for the variance parameter.
+        :param lengthscales: the (initial) value for the lengthscale
+            parameter(s), to induce ARD behaviour this must be initialised as
+            an array the same length as the number of active dimensions
+            e.g. [1., 1., 1.]. Note that anisotropic kernels can possess
+            negative lengthscales. If only a single value is passed, this
+            value is used as the lengthscale of each dimension.
+        :param kwargs: accepts `name` and `active_dims`, which is a list or
+            slice of indices which controls which columns of X are used (by
+            default, all columns are used).
+        """
+        super().__init__(variance, lengthscales, **kwargs)
+
+        if self.ard:
+            self.lengthscales = Parameter(self.lengthscales.numpy())
 
     def K(self, X: TensorType, X2: Optional[TensorType] = None) -> tf.Tensor:
         return self.K_d(self.scaled_difference_matrix(X, X2))
