@@ -357,6 +357,9 @@ workflows:
             - format-check-min
             - format-check-max
             - docs-test
+          filters:
+            tags:
+              only: /^v[0-9]+(\.[0-9]+)*(-rc[0-9]+)?/
       - unit-test:
           name: unit-test-min
           py_ver: <<pipeline.parameters.min_py_ver>>
@@ -405,6 +408,9 @@ workflows:
             - unit-test-max
             - notebook-test-min
             - notebook-test-max
+          filters:
+            tags:
+              only: /^v[0-9]+(\.[0-9]+)*(-rc[0-9]+)?/
       - build-docs:
           requires:
             - all-tests
