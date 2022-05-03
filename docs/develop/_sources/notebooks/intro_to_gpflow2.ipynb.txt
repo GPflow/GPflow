@@ -2,7 +2,7 @@
  "cells": [
   {
    "cell_type": "markdown",
-   "id": "debe4ba1",
+   "id": "38382800",
    "metadata": {},
    "source": [
     "GPflow with TensorFlow 2\n",
@@ -17,13 +17,13 @@
   {
    "cell_type": "code",
    "execution_count": 1,
-   "id": "6977de28",
+   "id": "27db6408",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-04-28T11:22:56.156198Z",
-     "iopub.status.busy": "2022-04-28T11:22:56.155961Z",
-     "iopub.status.idle": "2022-04-28T11:22:59.324155Z",
-     "shell.execute_reply": "2022-04-28T11:22:59.323646Z"
+     "iopub.execute_input": "2022-05-03T13:14:14.706107Z",
+     "iopub.status.busy": "2022-05-03T13:14:14.705862Z",
+     "iopub.status.idle": "2022-05-03T13:14:18.018138Z",
+     "shell.execute_reply": "2022-05-03T13:14:18.017620Z"
     }
    },
    "outputs": [
@@ -31,8 +31,8 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2022-04-28 11:22:57.249585: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcudart.so.11.0'; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory\n",
-      "2022-04-28 11:22:57.249612: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.\n"
+      "2022-05-03 13:14:15.889787: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcudart.so.11.0'; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory\n",
+      "2022-05-03 13:14:15.889815: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.\n"
      ]
     }
    ],
@@ -60,7 +60,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "b94ec5d4",
+   "id": "6cf16751",
    "metadata": {},
    "source": [
     "Make `tensorboard` work inside notebook:"
@@ -69,13 +69,13 @@
   {
    "cell_type": "code",
    "execution_count": 2,
-   "id": "a9a33e16",
+   "id": "72d48c1a",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-04-28T11:22:59.326821Z",
-     "iopub.status.busy": "2022-04-28T11:22:59.326613Z",
-     "iopub.status.idle": "2022-04-28T11:22:59.632117Z",
-     "shell.execute_reply": "2022-04-28T11:22:59.630965Z"
+     "iopub.execute_input": "2022-05-03T13:14:18.021785Z",
+     "iopub.status.busy": "2022-05-03T13:14:18.021585Z",
+     "iopub.status.idle": "2022-05-03T13:14:18.326163Z",
+     "shell.execute_reply": "2022-05-03T13:14:18.325590Z"
     }
    },
    "outputs": [],
@@ -97,7 +97,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "73e9daad",
+   "id": "918c1e93",
    "metadata": {},
    "source": [
     "Set up random seeds and default float for `gpflow` tensors:"
@@ -106,13 +106,13 @@
   {
    "cell_type": "code",
    "execution_count": 3,
-   "id": "c40c9a15",
+   "id": "438e2a22",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-04-28T11:22:59.634975Z",
-     "iopub.status.busy": "2022-04-28T11:22:59.634762Z",
-     "iopub.status.idle": "2022-04-28T11:22:59.638034Z",
-     "shell.execute_reply": "2022-04-28T11:22:59.637635Z"
+     "iopub.execute_input": "2022-05-03T13:14:18.329744Z",
+     "iopub.status.busy": "2022-05-03T13:14:18.329520Z",
+     "iopub.status.idle": "2022-05-03T13:14:18.332863Z",
+     "shell.execute_reply": "2022-05-03T13:14:18.332478Z"
     }
    },
    "outputs": [],
@@ -124,7 +124,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "8b9a54de",
+   "id": "2a55d9f2",
    "metadata": {},
    "source": [
     "## Loading data using TensorFlow Datasets\n",
@@ -135,13 +135,13 @@
   {
    "cell_type": "code",
    "execution_count": 4,
-   "id": "9652bc9c",
+   "id": "4b2eee56",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-04-28T11:22:59.639994Z",
-     "iopub.status.busy": "2022-04-28T11:22:59.639814Z",
-     "iopub.status.idle": "2022-04-28T11:22:59.927070Z",
-     "shell.execute_reply": "2022-04-28T11:22:59.926646Z"
+     "iopub.execute_input": "2022-05-03T13:14:18.335741Z",
+     "iopub.status.busy": "2022-05-03T13:14:18.335552Z",
+     "iopub.status.idle": "2022-05-03T13:14:18.589049Z",
+     "shell.execute_reply": "2022-05-03T13:14:18.588621Z"
     }
    },
    "outputs": [
@@ -149,16 +149,16 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2022-04-28 11:22:59.643245: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcuda.so.1'; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory\n",
-      "2022-04-28 11:22:59.643279: W tensorflow/stream_executor/cuda/cuda_driver.cc:269] failed call to cuInit: UNKNOWN ERROR (303)\n",
-      "2022-04-28 11:22:59.643300: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (4d5b849030ca): /proc/driver/nvidia/version does not exist\n",
-      "2022-04-28 11:22:59.643647: I tensorflow/core/platform/cpu_feature_guard.cc:151] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA\n",
+      "2022-05-03 13:14:18.338854: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcuda.so.1'; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory\n",
+      "2022-05-03 13:14:18.338886: W tensorflow/stream_executor/cuda/cuda_driver.cc:269] failed call to cuInit: UNKNOWN ERROR (303)\n",
+      "2022-05-03 13:14:18.338906: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (cef30543c893): /proc/driver/nvidia/version does not exist\n",
+      "2022-05-03 13:14:18.339236: I tensorflow/core/platform/cpu_feature_guard.cc:151] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA\n",
       "To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.\n"
      ]
     },
     {
      "data": {
-      "image/png": "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\n",
+      "image/png": "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\n",
       "text/plain": [
        "<Figure size 432x288 with 1 Axes>"
       ]
@@ -190,7 +190,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "9a4f759a",
+   "id": "bf2ec17d",
    "metadata": {},
    "source": [
     "Working with TensorFlow Datasets is an efficient way to rapidly shuffle, iterate, and batch from data. For `prefetch` size we use `tf.data.experimental.AUTOTUNE` as recommended by TensorFlow [guidelines](https://www.tensorflow.org/guide/data_performance)."
@@ -199,13 +199,13 @@
   {
    "cell_type": "code",
    "execution_count": 5,
-   "id": "7b87d7ad",
+   "id": "b009c3b3",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-04-28T11:22:59.929320Z",
-     "iopub.status.busy": "2022-04-28T11:22:59.929124Z",
-     "iopub.status.idle": "2022-04-28T11:22:59.939219Z",
-     "shell.execute_reply": "2022-04-28T11:22:59.938793Z"
+     "iopub.execute_input": "2022-05-03T13:14:18.591238Z",
+     "iopub.status.busy": "2022-05-03T13:14:18.591035Z",
+     "iopub.status.idle": "2022-05-03T13:14:18.601177Z",
+     "shell.execute_reply": "2022-05-03T13:14:18.600764Z"
     }
    },
    "outputs": [
@@ -244,7 +244,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "b2135164",
+   "id": "fc619544",
    "metadata": {},
    "source": [
     "## Define a GP model\n",
@@ -255,13 +255,13 @@
   {
    "cell_type": "code",
    "execution_count": 6,
-   "id": "b5996cd8",
+   "id": "dd018e1e",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-04-28T11:22:59.941255Z",
-     "iopub.status.busy": "2022-04-28T11:22:59.941072Z",
-     "iopub.status.idle": "2022-04-28T11:22:59.980329Z",
-     "shell.execute_reply": "2022-04-28T11:22:59.979733Z"
+     "iopub.execute_input": "2022-05-03T13:14:18.603142Z",
+     "iopub.status.busy": "2022-05-03T13:14:18.602959Z",
+     "iopub.status.idle": "2022-05-03T13:14:18.634585Z",
+     "shell.execute_reply": "2022-05-03T13:14:18.634163Z"
     }
    },
    "outputs": [],
@@ -277,7 +277,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "a23096c2",
+   "id": "01758223",
    "metadata": {},
    "source": [
     "You can set a module (or a particular parameter) to be non-trainable using the auxiliary method ```set_trainable(module, False)```:"
@@ -286,13 +286,13 @@
   {
    "cell_type": "code",
    "execution_count": 7,
-   "id": "6d487520",
+   "id": "86483b06",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-04-28T11:22:59.982997Z",
-     "iopub.status.busy": "2022-04-28T11:22:59.982790Z",
-     "iopub.status.idle": "2022-04-28T11:23:00.149429Z",
-     "shell.execute_reply": "2022-04-28T11:23:00.148984Z"
+     "iopub.execute_input": "2022-05-03T13:14:18.636941Z",
+     "iopub.status.busy": "2022-05-03T13:14:18.636751Z",
+     "iopub.status.idle": "2022-05-03T13:14:18.811095Z",
+     "shell.execute_reply": "2022-05-03T13:14:18.810642Z"
     }
    },
    "outputs": [
@@ -300,7 +300,7 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2022-04-28 11:22:59.987199: W tensorflow/python/util/util.cc:368] Sets are not currently considered sequences, but this may change in the future, so consider avoiding using them.\n"
+      "2022-05-03 13:14:18.640474: W tensorflow/python/util/util.cc:368] Sets are not currently considered sequences, but this may change in the future, so consider avoiding using them.\n"
      ]
     }
    ],
@@ -316,7 +316,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "a2609b32",
+   "id": "b8cebccb",
    "metadata": {},
    "source": [
     "We can use ```param.assign(value)``` to assign a value to a parameter:"
@@ -325,13 +325,13 @@
   {
    "cell_type": "code",
    "execution_count": 8,
-   "id": "a86449d2",
+   "id": "2227e5d9",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-04-28T11:23:00.151654Z",
-     "iopub.status.busy": "2022-04-28T11:23:00.151462Z",
-     "iopub.status.idle": "2022-04-28T11:23:00.157011Z",
-     "shell.execute_reply": "2022-04-28T11:23:00.156422Z"
+     "iopub.execute_input": "2022-05-03T13:14:18.813546Z",
+     "iopub.status.busy": "2022-05-03T13:14:18.813351Z",
+     "iopub.status.idle": "2022-05-03T13:14:18.818521Z",
+     "shell.execute_reply": "2022-05-03T13:14:18.818137Z"
     }
    },
    "outputs": [
@@ -352,7 +352,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "2ecf2599",
+   "id": "203be3f4",
    "metadata": {},
    "source": [
     "All these changes are reflected when we use ```print_summary(model)``` to print a detailed summary of the model. By default the output is displayed in a minimalistic and simple table."
@@ -361,13 +361,13 @@
   {
    "cell_type": "code",
    "execution_count": 9,
-   "id": "8dcd92af",
+   "id": "dde1254f",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-04-28T11:23:00.159878Z",
-     "iopub.status.busy": "2022-04-28T11:23:00.159632Z",
-     "iopub.status.idle": "2022-04-28T11:23:00.176821Z",
-     "shell.execute_reply": "2022-04-28T11:23:00.176373Z"
+     "iopub.execute_input": "2022-05-03T13:14:18.821025Z",
+     "iopub.status.busy": "2022-05-03T13:14:18.820845Z",
+     "iopub.status.idle": "2022-05-03T13:14:18.832698Z",
+     "shell.execute_reply": "2022-05-03T13:14:18.832303Z"
     }
    },
    "outputs": [
@@ -401,7 +401,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "22de09b4",
+   "id": "6fac4ad5",
    "metadata": {},
    "source": [
     "We can change default printing so that it will look nicer in our notebook:"
@@ -410,13 +410,13 @@
   {
    "cell_type": "code",
    "execution_count": 10,
-   "id": "c1f861d2",
+   "id": "589cee65",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-04-28T11:23:00.178969Z",
-     "iopub.status.busy": "2022-04-28T11:23:00.178776Z",
-     "iopub.status.idle": "2022-04-28T11:23:00.189323Z",
-     "shell.execute_reply": "2022-04-28T11:23:00.188940Z"
+     "iopub.execute_input": "2022-05-03T13:14:18.834747Z",
+     "iopub.status.busy": "2022-05-03T13:14:18.834563Z",
+     "iopub.status.idle": "2022-05-03T13:14:18.844871Z",
+     "shell.execute_reply": "2022-05-03T13:14:18.844504Z"
     }
    },
    "outputs": [
@@ -453,7 +453,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "a2ffeb54",
+   "id": "40eb26d8",
    "metadata": {},
    "source": [
     "Jupyter notebooks also format GPflow classes (that are subclasses of `gpflow.base.Module`) in the same nice way when at the end of a cell (this is independent of the `default_summary_fmt`):"
@@ -462,20 +462,20 @@
   {
    "cell_type": "code",
    "execution_count": 11,
-   "id": "369adca5",
+   "id": "d679b390",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-04-28T11:23:00.191215Z",
-     "iopub.status.busy": "2022-04-28T11:23:00.191023Z",
-     "iopub.status.idle": "2022-04-28T11:23:00.208322Z",
-     "shell.execute_reply": "2022-04-28T11:23:00.207947Z"
+     "iopub.execute_input": "2022-05-03T13:14:18.846885Z",
+     "iopub.status.busy": "2022-05-03T13:14:18.846703Z",
+     "iopub.status.idle": "2022-05-03T13:14:18.868495Z",
+     "shell.execute_reply": "2022-05-03T13:14:18.867648Z"
     }
    },
    "outputs": [
     {
      "data": {
       "text/html": [
-       "&lt;gpflow.models.svgp.SVGP object at 0x7f28ed724d90&gt;\n",
+       "&lt;gpflow.models.svgp.SVGP object at 0x7f31acf17df0&gt;\n",
        "<table>\n",
        "<thead>\n",
        "<tr><th>name                    </th><th>class    </th><th>transform       </th><th>prior  </th><th>trainable  </th><th>shape      </th><th>dtype  </th><th>value           </th></tr>\n",
@@ -491,7 +491,7 @@
        "</table>"
       ],
       "text/plain": [
-       "<gpflow.models.svgp.SVGP object at 0x7f28ed724d90>\n",
+       "<gpflow.models.svgp.SVGP object at 0x7f31acf17df0>\n",
        "name                      class      transform         prior    trainable    shape        dtype    value\n",
        "------------------------  ---------  ----------------  -------  -----------  -----------  -------  ----------------\n",
        "SVGP.kernel.variance      Parameter  Softplus                   True         ()           float64  2.0\n",
@@ -513,7 +513,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "23273e38",
+   "id": "7606c8b1",
    "metadata": {},
    "source": [
     "## Training using training_loss and training_loss_closure\n",
@@ -529,13 +529,13 @@
   {
    "cell_type": "code",
    "execution_count": 12,
-   "id": "41e7985d",
+   "id": "4ef0ad1e",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-04-28T11:23:00.210282Z",
-     "iopub.status.busy": "2022-04-28T11:23:00.210107Z",
-     "iopub.status.idle": "2022-04-28T11:23:00.281511Z",
-     "shell.execute_reply": "2022-04-28T11:23:00.281086Z"
+     "iopub.execute_input": "2022-05-03T13:14:18.872487Z",
+     "iopub.status.busy": "2022-05-03T13:14:18.872132Z",
+     "iopub.status.idle": "2022-05-03T13:14:18.940679Z",
+     "shell.execute_reply": "2022-05-03T13:14:18.940264Z"
     }
    },
    "outputs": [
@@ -561,7 +561,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "b7ad05cf",
+   "id": "900c1ae4",
    "metadata": {},
    "source": [
     "This also works for the Scipy optimizer, though it will do the full optimization on a single call to minimize():"
@@ -570,13 +570,13 @@
   {
    "cell_type": "code",
    "execution_count": 13,
-   "id": "34208947",
+   "id": "52c74610",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-04-28T11:23:00.283616Z",
-     "iopub.status.busy": "2022-04-28T11:23:00.283418Z",
-     "iopub.status.idle": "2022-04-28T11:23:04.058296Z",
-     "shell.execute_reply": "2022-04-28T11:23:04.057549Z"
+     "iopub.execute_input": "2022-05-03T13:14:18.943151Z",
+     "iopub.status.busy": "2022-05-03T13:14:18.942941Z",
+     "iopub.status.idle": "2022-05-03T13:14:22.907610Z",
+     "shell.execute_reply": "2022-05-03T13:14:22.907197Z"
     }
    },
    "outputs": [
@@ -611,7 +611,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "1ef1a669",
+   "id": "6f9c6692",
    "metadata": {},
    "source": [
     "You can obtain a compiled version using training_loss_closure, whose `compile` argument is True by default:"
@@ -620,20 +620,20 @@
   {
    "cell_type": "code",
    "execution_count": 14,
-   "id": "0ae35748",
+   "id": "564f7862",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-04-28T11:23:04.061370Z",
-     "iopub.status.busy": "2022-04-28T11:23:04.061075Z",
-     "iopub.status.idle": "2022-04-28T11:23:04.066090Z",
-     "shell.execute_reply": "2022-04-28T11:23:04.065648Z"
+     "iopub.execute_input": "2022-05-03T13:14:22.909772Z",
+     "iopub.status.busy": "2022-05-03T13:14:22.909547Z",
+     "iopub.status.idle": "2022-05-03T13:14:22.913503Z",
+     "shell.execute_reply": "2022-05-03T13:14:22.913015Z"
     }
    },
    "outputs": [
     {
      "data": {
       "text/plain": [
-       "<bound method InternalDataTrainingLossMixin.training_loss of <gpflow.models.vgp.VGP object at 0x7f28ef04e6b0>>"
+       "<bound method InternalDataTrainingLossMixin.training_loss of <gpflow.models.vgp.VGP object at 0x7f3091ce82e0>>"
       ]
      },
      "execution_count": 14,
@@ -649,7 +649,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "0f504ee2",
+   "id": "fcaed306",
    "metadata": {},
    "source": [
     "### External data\n",
@@ -661,13 +661,13 @@
   {
    "cell_type": "code",
    "execution_count": 15,
-   "id": "c6a4c0a7",
+   "id": "7738e7d5",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-04-28T11:23:04.068137Z",
-     "iopub.status.busy": "2022-04-28T11:23:04.067949Z",
-     "iopub.status.idle": "2022-04-28T11:23:04.102716Z",
-     "shell.execute_reply": "2022-04-28T11:23:04.102320Z"
+     "iopub.execute_input": "2022-05-03T13:14:22.915455Z",
+     "iopub.status.busy": "2022-05-03T13:14:22.915277Z",
+     "iopub.status.idle": "2022-05-03T13:14:22.949376Z",
+     "shell.execute_reply": "2022-05-03T13:14:22.949003Z"
     }
    },
    "outputs": [
@@ -689,7 +689,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "174c6f60",
+   "id": "b8002f04",
    "metadata": {},
    "source": [
     "To make optimizing it easy, it has a `training_loss_closure()` method, that takes the data and returns a closure that computes the training loss on this data:"
@@ -698,13 +698,13 @@
   {
    "cell_type": "code",
    "execution_count": 16,
-   "id": "c8282719",
+   "id": "32c83b0a",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-04-28T11:23:04.104737Z",
-     "iopub.status.busy": "2022-04-28T11:23:04.104556Z",
-     "iopub.status.idle": "2022-04-28T11:23:06.195292Z",
-     "shell.execute_reply": "2022-04-28T11:23:06.194867Z"
+     "iopub.execute_input": "2022-05-03T13:14:22.951445Z",
+     "iopub.status.busy": "2022-05-03T13:14:22.951263Z",
+     "iopub.status.idle": "2022-05-03T13:14:25.373986Z",
+     "shell.execute_reply": "2022-05-03T13:14:25.373527Z"
     }
    },
    "outputs": [
@@ -729,7 +729,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "7f5049d1",
+   "id": "b4ea6f5a",
    "metadata": {},
    "source": [
     "SVGP can handle mini-batching, and an iterator from a batched tf.data.Dataset can be passed to the model's training_loss_closure():"
@@ -738,13 +738,13 @@
   {
    "cell_type": "code",
    "execution_count": 17,
-   "id": "ec873846",
+   "id": "f19c8036",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-04-28T11:23:06.197497Z",
-     "iopub.status.busy": "2022-04-28T11:23:06.197300Z",
-     "iopub.status.idle": "2022-04-28T11:23:07.139817Z",
-     "shell.execute_reply": "2022-04-28T11:23:07.139391Z"
+     "iopub.execute_input": "2022-05-03T13:14:25.376655Z",
+     "iopub.status.busy": "2022-05-03T13:14:25.376373Z",
+     "iopub.status.idle": "2022-05-03T13:14:26.537392Z",
+     "shell.execute_reply": "2022-05-03T13:14:26.536977Z"
     },
     "lines_to_next_cell": 1
    },
@@ -790,7 +790,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "2ef43979",
+   "id": "1934f6f6",
    "metadata": {},
    "source": [
     "As previously, training_loss_closure takes an optional `compile` argument for tf.function compilation (True by default)."
@@ -798,7 +798,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "e9ea528b",
+   "id": "ccb4ca30",
    "metadata": {},
    "source": [
     "## Training using Gradient Tapes\n",
@@ -811,13 +811,13 @@
   {
    "cell_type": "code",
    "execution_count": 18,
-   "id": "1522ec12",
+   "id": "6415589f",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-04-28T11:23:07.142059Z",
-     "iopub.status.busy": "2022-04-28T11:23:07.141831Z",
-     "iopub.status.idle": "2022-04-28T11:23:07.145372Z",
-     "shell.execute_reply": "2022-04-28T11:23:07.144990Z"
+     "iopub.execute_input": "2022-05-03T13:14:26.539650Z",
+     "iopub.status.busy": "2022-05-03T13:14:26.539446Z",
+     "iopub.status.idle": "2022-05-03T13:14:26.542967Z",
+     "shell.execute_reply": "2022-05-03T13:14:26.542586Z"
     }
    },
    "outputs": [],
@@ -833,7 +833,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "ec12c97c",
+   "id": "cc054cdb",
    "metadata": {},
    "source": [
     "We can use the functionality of TensorFlow Datasets to define a simple training loop that iterates over batches of the training dataset:"
@@ -842,13 +842,13 @@
   {
    "cell_type": "code",
    "execution_count": 19,
-   "id": "66d31096",
+   "id": "a15ffa8c",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-04-28T11:23:07.147322Z",
-     "iopub.status.busy": "2022-04-28T11:23:07.147147Z",
-     "iopub.status.idle": "2022-04-28T11:23:07.150735Z",
-     "shell.execute_reply": "2022-04-28T11:23:07.150357Z"
+     "iopub.execute_input": "2022-05-03T13:14:26.544837Z",
+     "iopub.status.busy": "2022-05-03T13:14:26.544654Z",
+     "iopub.status.idle": "2022-05-03T13:14:26.548203Z",
+     "shell.execute_reply": "2022-05-03T13:14:26.547834Z"
     }
    },
    "outputs": [],
@@ -869,13 +869,13 @@
   {
    "cell_type": "code",
    "execution_count": 20,
-   "id": "170b743f",
+   "id": "df2acdff",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-04-28T11:23:07.152494Z",
-     "iopub.status.busy": "2022-04-28T11:23:07.152324Z",
-     "iopub.status.idle": "2022-04-28T11:23:08.053166Z",
-     "shell.execute_reply": "2022-04-28T11:23:08.052554Z"
+     "iopub.execute_input": "2022-05-03T13:14:26.550152Z",
+     "iopub.status.busy": "2022-05-03T13:14:26.549842Z",
+     "iopub.status.idle": "2022-05-03T13:14:27.460798Z",
+     "shell.execute_reply": "2022-05-03T13:14:27.459911Z"
     }
    },
    "outputs": [
@@ -921,7 +921,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "fe6e81de",
+   "id": "8351db0d",
    "metadata": {},
    "source": [
     "## Monitoring\n",
@@ -933,13 +933,13 @@
   {
    "cell_type": "code",
    "execution_count": 21,
-   "id": "b77f81f7",
+   "id": "89d8cc52",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-04-28T11:23:08.055533Z",
-     "iopub.status.busy": "2022-04-28T11:23:08.055325Z",
-     "iopub.status.idle": "2022-04-28T11:23:08.078185Z",
-     "shell.execute_reply": "2022-04-28T11:23:08.077194Z"
+     "iopub.execute_input": "2022-05-03T13:14:27.464707Z",
+     "iopub.status.busy": "2022-05-03T13:14:27.464369Z",
+     "iopub.status.idle": "2022-05-03T13:14:27.487776Z",
+     "shell.execute_reply": "2022-05-03T13:14:27.487031Z"
     },
     "lines_to_next_cell": 2
    },
@@ -1019,7 +1019,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "fdd425b7",
+   "id": "b6c8376e",
    "metadata": {
     "lines_to_next_cell": 2
    },
@@ -1031,13 +1031,13 @@
   {
    "cell_type": "code",
    "execution_count": 22,
-   "id": "df5ff720",
+   "id": "c277f9b7",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-04-28T11:23:08.080407Z",
-     "iopub.status.busy": "2022-04-28T11:23:08.080218Z",
-     "iopub.status.idle": "2022-04-28T11:23:12.906569Z",
-     "shell.execute_reply": "2022-04-28T11:23:12.905874Z"
+     "iopub.execute_input": "2022-05-03T13:14:27.490228Z",
+     "iopub.status.busy": "2022-05-03T13:14:27.490006Z",
+     "iopub.status.idle": "2022-05-03T13:14:32.821931Z",
+     "shell.execute_reply": "2022-05-03T13:14:32.821431Z"
     }
    },
    "outputs": [
@@ -1136,7 +1136,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "c59bfd04",
+   "id": "a413a05f",
    "metadata": {},
    "source": [
     "Then, we can use TensorBoard to examine the training procedure in more detail"
@@ -1145,13 +1145,13 @@
   {
    "cell_type": "code",
    "execution_count": 23,
-   "id": "1c08ccd5",
+   "id": "3441ab6c",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-04-28T11:23:12.909036Z",
-     "iopub.status.busy": "2022-04-28T11:23:12.908839Z",
-     "iopub.status.idle": "2022-04-28T11:23:12.911229Z",
-     "shell.execute_reply": "2022-04-28T11:23:12.910834Z"
+     "iopub.execute_input": "2022-05-03T13:14:32.824454Z",
+     "iopub.status.busy": "2022-05-03T13:14:32.824248Z",
+     "iopub.status.idle": "2022-05-03T13:14:32.826642Z",
+     "shell.execute_reply": "2022-05-03T13:14:32.826248Z"
     }
    },
    "outputs": [],
@@ -1161,7 +1161,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "c3c13765",
+   "id": "2c090806",
    "metadata": {},
    "source": [
     "## Saving and loading models\n",
@@ -1174,13 +1174,13 @@
   {
    "cell_type": "code",
    "execution_count": 24,
-   "id": "3408b92a",
+   "id": "7e005440",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-04-28T11:23:12.913064Z",
-     "iopub.status.busy": "2022-04-28T11:23:12.912884Z",
-     "iopub.status.idle": "2022-04-28T11:23:12.915768Z",
-     "shell.execute_reply": "2022-04-28T11:23:12.915391Z"
+     "iopub.execute_input": "2022-05-03T13:14:32.828567Z",
+     "iopub.status.busy": "2022-05-03T13:14:32.828384Z",
+     "iopub.status.idle": "2022-05-03T13:14:32.831305Z",
+     "shell.execute_reply": "2022-05-03T13:14:32.830931Z"
     }
    },
    "outputs": [],
@@ -1191,7 +1191,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "c2c71990",
+   "id": "8cb5f4e0",
    "metadata": {},
    "source": [
     "Create `Checkpoint` object:"
@@ -1200,13 +1200,13 @@
   {
    "cell_type": "code",
    "execution_count": 25,
-   "id": "5e925ab9",
+   "id": "15270cbf",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-04-28T11:23:12.917502Z",
-     "iopub.status.busy": "2022-04-28T11:23:12.917322Z",
-     "iopub.status.idle": "2022-04-28T11:23:12.920174Z",
-     "shell.execute_reply": "2022-04-28T11:23:12.919804Z"
+     "iopub.execute_input": "2022-05-03T13:14:32.833090Z",
+     "iopub.status.busy": "2022-05-03T13:14:32.832932Z",
+     "iopub.status.idle": "2022-05-03T13:14:32.835731Z",
+     "shell.execute_reply": "2022-05-03T13:14:32.835358Z"
     }
    },
    "outputs": [],
@@ -1217,7 +1217,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "f1459e99",
+   "id": "3e59533c",
    "metadata": {},
    "source": [
     "Save the variable `a` and change its value right after:"
@@ -1226,13 +1226,13 @@
   {
    "cell_type": "code",
    "execution_count": 26,
-   "id": "3ef5503f",
+   "id": "f40c7010",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-04-28T11:23:12.922125Z",
-     "iopub.status.busy": "2022-04-28T11:23:12.921847Z",
-     "iopub.status.idle": "2022-04-28T11:23:12.928572Z",
-     "shell.execute_reply": "2022-04-28T11:23:12.928158Z"
+     "iopub.execute_input": "2022-05-03T13:14:32.837614Z",
+     "iopub.status.busy": "2022-05-03T13:14:32.837387Z",
+     "iopub.status.idle": "2022-05-03T13:14:32.844735Z",
+     "shell.execute_reply": "2022-05-03T13:14:32.843617Z"
     }
    },
    "outputs": [],
@@ -1243,7 +1243,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "88fed6ac",
+   "id": "e29295e4",
    "metadata": {},
    "source": [
     "Now we can restore the old variable value:"
@@ -1252,13 +1252,13 @@
   {
    "cell_type": "code",
    "execution_count": 27,
-   "id": "7cc3faa6",
+   "id": "cae258f5",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-04-28T11:23:12.930614Z",
-     "iopub.status.busy": "2022-04-28T11:23:12.930434Z",
-     "iopub.status.idle": "2022-04-28T11:23:12.934854Z",
-     "shell.execute_reply": "2022-04-28T11:23:12.934456Z"
+     "iopub.execute_input": "2022-05-03T13:14:32.846653Z",
+     "iopub.status.busy": "2022-05-03T13:14:32.846471Z",
+     "iopub.status.idle": "2022-05-03T13:14:32.850924Z",
+     "shell.execute_reply": "2022-05-03T13:14:32.850527Z"
     }
    },
    "outputs": [
@@ -1281,7 +1281,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "3cd4e470",
+   "id": "bbc8deb0",
    "metadata": {},
    "source": [
     "In the example below, we modify a simple training loop to save the model every 100 epochs using the `CheckpointManager`."
@@ -1290,13 +1290,13 @@
   {
    "cell_type": "code",
    "execution_count": 28,
-   "id": "74cd08ae",
+   "id": "8f9a5199",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-04-28T11:23:12.936725Z",
-     "iopub.status.busy": "2022-04-28T11:23:12.936561Z",
-     "iopub.status.idle": "2022-04-28T11:23:12.978425Z",
-     "shell.execute_reply": "2022-04-28T11:23:12.977623Z"
+     "iopub.execute_input": "2022-05-03T13:14:32.852923Z",
+     "iopub.status.busy": "2022-05-03T13:14:32.852743Z",
+     "iopub.status.idle": "2022-05-03T13:14:32.897616Z",
+     "shell.execute_reply": "2022-05-03T13:14:32.897133Z"
     }
    },
    "outputs": [],
@@ -1336,13 +1336,13 @@
   {
    "cell_type": "code",
    "execution_count": 29,
-   "id": "4b7c851f",
+   "id": "36a5dfc9",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-04-28T11:23:12.981000Z",
-     "iopub.status.busy": "2022-04-28T11:23:12.980800Z",
-     "iopub.status.idle": "2022-04-28T11:23:17.659100Z",
-     "shell.execute_reply": "2022-04-28T11:23:17.658634Z"
+     "iopub.execute_input": "2022-05-03T13:14:32.900136Z",
+     "iopub.status.busy": "2022-05-03T13:14:32.899932Z",
+     "iopub.status.idle": "2022-05-03T13:14:38.093760Z",
+     "shell.execute_reply": "2022-05-03T13:14:38.093283Z"
     }
    },
    "outputs": [
@@ -1444,7 +1444,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "99b94ce5",
+   "id": "7b2076c5",
    "metadata": {},
    "source": [
     "After the models have been saved, we can restore them using ```tf.train.Checkpoint.restore``` and assert that their performance corresponds to that logged during training."
@@ -1453,13 +1453,13 @@
   {
    "cell_type": "code",
    "execution_count": 30,
-   "id": "438a91f1",
+   "id": "b893293b",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-04-28T11:23:17.661345Z",
-     "iopub.status.busy": "2022-04-28T11:23:17.661147Z",
-     "iopub.status.idle": "2022-04-28T11:23:17.807972Z",
-     "shell.execute_reply": "2022-04-28T11:23:17.807514Z"
+     "iopub.execute_input": "2022-05-03T13:14:38.095964Z",
+     "iopub.status.busy": "2022-05-03T13:14:38.095763Z",
+     "iopub.status.idle": "2022-05-03T13:14:38.251446Z",
+     "shell.execute_reply": "2022-05-03T13:14:38.250989Z"
     }
    },
    "outputs": [
@@ -1485,7 +1485,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "09f8d596",
+   "id": "92d1fe70",
    "metadata": {},
    "source": [
     "### Copying (hyper)parameter values between models\n",
@@ -1498,13 +1498,13 @@
   {
    "cell_type": "code",
    "execution_count": 31,
-   "id": "2a7d53ba",
+   "id": "94e17230",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-04-28T11:23:17.810201Z",
-     "iopub.status.busy": "2022-04-28T11:23:17.810002Z",
-     "iopub.status.idle": "2022-04-28T11:23:17.822678Z",
-     "shell.execute_reply": "2022-04-28T11:23:17.821884Z"
+     "iopub.execute_input": "2022-05-03T13:14:38.253675Z",
+     "iopub.status.busy": "2022-05-03T13:14:38.253459Z",
+     "iopub.status.idle": "2022-05-03T13:14:38.271358Z",
+     "shell.execute_reply": "2022-05-03T13:14:38.270579Z"
     }
    },
    "outputs": [],
@@ -1515,13 +1515,13 @@
   {
    "cell_type": "code",
    "execution_count": 32,
-   "id": "6b309069",
+   "id": "57e546ff",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-04-28T11:23:17.824642Z",
-     "iopub.status.busy": "2022-04-28T11:23:17.824461Z",
-     "iopub.status.idle": "2022-04-28T11:23:17.832325Z",
-     "shell.execute_reply": "2022-04-28T11:23:17.831956Z"
+     "iopub.execute_input": "2022-05-03T13:14:38.274439Z",
+     "iopub.status.busy": "2022-05-03T13:14:38.274158Z",
+     "iopub.status.idle": "2022-05-03T13:14:38.286356Z",
+     "shell.execute_reply": "2022-05-03T13:14:38.285737Z"
     }
    },
    "outputs": [
@@ -1555,7 +1555,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "c9359081",
+   "id": "93eb96cc",
    "metadata": {},
    "source": [
     "Such a dictionary can be assigned back to this model (or another model with the same tree of parameters) as follows:"
@@ -1564,13 +1564,13 @@
   {
    "cell_type": "code",
    "execution_count": 33,
-   "id": "f7f7df18",
+   "id": "a254cea9",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-04-28T11:23:17.834292Z",
-     "iopub.status.busy": "2022-04-28T11:23:17.834111Z",
-     "iopub.status.idle": "2022-04-28T11:23:17.842408Z",
-     "shell.execute_reply": "2022-04-28T11:23:17.841470Z"
+     "iopub.execute_input": "2022-05-03T13:14:38.288575Z",
+     "iopub.status.busy": "2022-05-03T13:14:38.288377Z",
+     "iopub.status.idle": "2022-05-03T13:14:38.296951Z",
+     "shell.execute_reply": "2022-05-03T13:14:38.296515Z"
     }
    },
    "outputs": [],
@@ -1581,7 +1581,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "ea4df527",
+   "id": "c0a55f77",
    "metadata": {},
    "source": [
     "### TensorFlow `saved_model`\n",
@@ -1592,13 +1592,13 @@
   {
    "cell_type": "code",
    "execution_count": 34,
-   "id": "ea833691",
+   "id": "7e010fff",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-04-28T11:23:17.844378Z",
-     "iopub.status.busy": "2022-04-28T11:23:17.844199Z",
-     "iopub.status.idle": "2022-04-28T11:23:17.846939Z",
-     "shell.execute_reply": "2022-04-28T11:23:17.846564Z"
+     "iopub.execute_input": "2022-05-03T13:14:38.299864Z",
+     "iopub.status.busy": "2022-05-03T13:14:38.299675Z",
+     "iopub.status.idle": "2022-05-03T13:14:38.302685Z",
+     "shell.execute_reply": "2022-05-03T13:14:38.302274Z"
     }
    },
    "outputs": [],
@@ -1610,7 +1610,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "ce802460",
+   "id": "5fcca31d",
    "metadata": {},
    "source": [
     "We also save the original prediction for later comparison. Here `samples_input` needs to be a tensor so that `tf.function` will compile a single graph:"
@@ -1619,13 +1619,13 @@
   {
    "cell_type": "code",
    "execution_count": 35,
-   "id": "4753cad5",
+   "id": "9a186914",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-04-28T11:23:17.848811Z",
-     "iopub.status.busy": "2022-04-28T11:23:17.848557Z",
-     "iopub.status.idle": "2022-04-28T11:23:18.498103Z",
-     "shell.execute_reply": "2022-04-28T11:23:18.496985Z"
+     "iopub.execute_input": "2022-05-03T13:14:38.305426Z",
+     "iopub.status.busy": "2022-05-03T13:14:38.305241Z",
+     "iopub.status.idle": "2022-05-03T13:14:38.760273Z",
+     "shell.execute_reply": "2022-05-03T13:14:38.759725Z"
     }
    },
    "outputs": [],
@@ -1636,7 +1636,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "7c3fd972",
+   "id": "db85a369",
    "metadata": {
     "lines_to_next_cell": 0
    },
@@ -1647,13 +1647,13 @@
   {
    "cell_type": "code",
    "execution_count": 36,
-   "id": "b06013b8",
+   "id": "33c8bf94",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-04-28T11:23:18.500798Z",
-     "iopub.status.busy": "2022-04-28T11:23:18.500587Z",
-     "iopub.status.idle": "2022-04-28T11:23:18.908427Z",
-     "shell.execute_reply": "2022-04-28T11:23:18.907835Z"
+     "iopub.execute_input": "2022-05-03T13:14:38.763079Z",
+     "iopub.status.busy": "2022-05-03T13:14:38.762827Z",
+     "iopub.status.idle": "2022-05-03T13:14:39.194826Z",
+     "shell.execute_reply": "2022-05-03T13:14:39.194342Z"
     }
    },
    "outputs": [
@@ -1704,7 +1704,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "f5db2fe2",
+   "id": "81c62542",
    "metadata": {},
    "source": [
     "We can load the module back as a new instance and compare the prediction results:"
@@ -1713,13 +1713,13 @@
   {
    "cell_type": "code",
    "execution_count": 37,
-   "id": "3affd29b",
+   "id": "4e95dbe2",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-04-28T11:23:18.910854Z",
-     "iopub.status.busy": "2022-04-28T11:23:18.910656Z",
-     "iopub.status.idle": "2022-04-28T11:23:19.102390Z",
-     "shell.execute_reply": "2022-04-28T11:23:19.101528Z"
+     "iopub.execute_input": "2022-05-03T13:14:39.198174Z",
+     "iopub.status.busy": "2022-05-03T13:14:39.197931Z",
+     "iopub.status.idle": "2022-05-03T13:14:39.404594Z",
+     "shell.execute_reply": "2022-05-03T13:14:39.404107Z"
     }
    },
    "outputs": [],
@@ -1732,7 +1732,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "132d8d73",
+   "id": "e42983df",
    "metadata": {},
    "source": [
     "## User config update\n",
@@ -1743,13 +1743,13 @@
   {
    "cell_type": "code",
    "execution_count": 38,
-   "id": "a61bed6d",
+   "id": "4c53e79d",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-04-28T11:23:19.104917Z",
-     "iopub.status.busy": "2022-04-28T11:23:19.104709Z",
-     "iopub.status.idle": "2022-04-28T11:23:19.108788Z",
-     "shell.execute_reply": "2022-04-28T11:23:19.108382Z"
+     "iopub.execute_input": "2022-05-03T13:14:39.407573Z",
+     "iopub.status.busy": "2022-05-03T13:14:39.407282Z",
+     "iopub.status.idle": "2022-05-03T13:14:39.412602Z",
+     "shell.execute_reply": "2022-05-03T13:14:39.412102Z"
     }
    },
    "outputs": [
@@ -1783,13 +1783,13 @@
   {
    "cell_type": "code",
    "execution_count": 39,
-   "id": "9891b781",
+   "id": "950ef8f2",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-04-28T11:23:19.110839Z",
-     "iopub.status.busy": "2022-04-28T11:23:19.110549Z",
-     "iopub.status.idle": "2022-04-28T11:23:19.120132Z",
-     "shell.execute_reply": "2022-04-28T11:23:19.119734Z"
+     "iopub.execute_input": "2022-05-03T13:14:39.414717Z",
+     "iopub.status.busy": "2022-05-03T13:14:39.414525Z",
+     "iopub.status.idle": "2022-05-03T13:14:39.425488Z",
+     "shell.execute_reply": "2022-05-03T13:14:39.425026Z"
     }
    },
    "outputs": [
