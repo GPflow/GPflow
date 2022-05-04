@@ -2,7 +2,7 @@
  "cells": [
   {
    "cell_type": "markdown",
-   "id": "c60d8662",
+   "id": "0c9b7520",
    "metadata": {},
    "source": [
     "# Kernel Design\n",
@@ -17,13 +17,13 @@
   {
    "cell_type": "code",
    "execution_count": 1,
-   "id": "f53cb3c9",
+   "id": "5102cac3",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-05-03T14:12:05.277172Z",
-     "iopub.status.busy": "2022-05-03T14:12:05.276900Z",
-     "iopub.status.idle": "2022-05-03T14:12:08.414362Z",
-     "shell.execute_reply": "2022-05-03T14:12:08.413451Z"
+     "iopub.execute_input": "2022-05-04T09:36:04.719191Z",
+     "iopub.status.busy": "2022-05-04T09:36:04.718985Z",
+     "iopub.status.idle": "2022-05-04T09:36:07.530335Z",
+     "shell.execute_reply": "2022-05-04T09:36:07.529771Z"
     }
    },
    "outputs": [
@@ -31,8 +31,8 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2022-05-03 14:12:05.458780: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcudart.so.11.0'; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory\n",
-      "2022-05-03 14:12:05.458809: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.\n"
+      "2022-05-04 09:36:04.876440: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcudart.so.11.0'; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory\n",
+      "2022-05-04 09:36:04.876465: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.\n"
      ]
     }
    ],
@@ -49,7 +49,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "462af386",
+   "id": "0a356cef",
    "metadata": {},
    "source": [
     "To make this new kernel class, we inherit from the base class `gpflow.kernels.Kernel` and implement the three functions below. **NOTE:** Depending on the kernel to be implemented, other classes can be more adequate. For example, if the kernel to be implemented is isotropic stationary, you can immediately subclass `gpflow.kernels.IsotropicStationary` (at which point you\n",
@@ -72,13 +72,13 @@
   {
    "cell_type": "code",
    "execution_count": 2,
-   "id": "d59047b3",
+   "id": "26c7339f",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-05-03T14:12:08.417213Z",
-     "iopub.status.busy": "2022-05-03T14:12:08.416972Z",
-     "iopub.status.idle": "2022-05-03T14:12:08.441604Z",
-     "shell.execute_reply": "2022-05-03T14:12:08.441103Z"
+     "iopub.execute_input": "2022-05-04T09:36:07.533115Z",
+     "iopub.status.busy": "2022-05-04T09:36:07.532906Z",
+     "iopub.status.idle": "2022-05-04T09:36:07.555140Z",
+     "shell.execute_reply": "2022-05-04T09:36:07.554737Z"
     }
    },
    "outputs": [
@@ -86,10 +86,10 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2022-05-03 14:12:08.420339: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcuda.so.1'; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory\n",
-      "2022-05-03 14:12:08.420379: W tensorflow/stream_executor/cuda/cuda_driver.cc:269] failed call to cuInit: UNKNOWN ERROR (303)\n",
-      "2022-05-03 14:12:08.420398: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (c38c719fb7f4): /proc/driver/nvidia/version does not exist\n",
-      "2022-05-03 14:12:08.420678: I tensorflow/core/platform/cpu_feature_guard.cc:151] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA\n",
+      "2022-05-04 09:36:07.536094: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcuda.so.1'; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory\n",
+      "2022-05-04 09:36:07.536123: W tensorflow/stream_executor/cuda/cuda_driver.cc:269] failed call to cuInit: UNKNOWN ERROR (303)\n",
+      "2022-05-04 09:36:07.536141: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (a18dc6881027): /proc/driver/nvidia/version does not exist\n",
+      "2022-05-04 09:36:07.536397: I tensorflow/core/platform/cpu_feature_guard.cc:151] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA\n",
       "To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.\n"
      ]
     },
@@ -134,7 +134,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "a3eecfd2",
+   "id": "66bb6f91",
    "metadata": {},
    "source": [
     "We can now evaluate our new kernel function and draw samples from a Gaussian process with this covariance:"
@@ -143,13 +143,13 @@
   {
    "cell_type": "code",
    "execution_count": 3,
-   "id": "1e044363",
+   "id": "9e42dbb8",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-05-03T14:12:08.446601Z",
-     "iopub.status.busy": "2022-05-03T14:12:08.446335Z",
-     "iopub.status.idle": "2022-05-03T14:12:14.486711Z",
-     "shell.execute_reply": "2022-05-03T14:12:14.486113Z"
+     "iopub.execute_input": "2022-05-04T09:36:07.557330Z",
+     "iopub.status.busy": "2022-05-04T09:36:07.557142Z",
+     "iopub.status.idle": "2022-05-04T09:36:08.352662Z",
+     "shell.execute_reply": "2022-05-04T09:36:08.352249Z"
     }
    },
    "outputs": [
@@ -190,7 +190,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "442cf639",
+   "id": "4692ec31",
    "metadata": {},
    "source": [
     "## Using the kernel in a model\n",
@@ -207,13 +207,13 @@
   {
    "cell_type": "code",
    "execution_count": 4,
-   "id": "f5d081b2",
+   "id": "cb68662b",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-05-03T14:12:14.490640Z",
-     "iopub.status.busy": "2022-05-03T14:12:14.490350Z",
-     "iopub.status.idle": "2022-05-03T14:12:16.170162Z",
-     "shell.execute_reply": "2022-05-03T14:12:16.169493Z"
+     "iopub.execute_input": "2022-05-04T09:36:08.355271Z",
+     "iopub.status.busy": "2022-05-04T09:36:08.355073Z",
+     "iopub.status.idle": "2022-05-04T09:36:09.771751Z",
+     "shell.execute_reply": "2022-05-04T09:36:09.771185Z"
     }
    },
    "outputs": [
@@ -221,7 +221,7 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2022-05-03 14:12:14.518493: W tensorflow/python/util/util.cc:368] Sets are not currently considered sequences, but this may change in the future, so consider avoiding using them.\n"
+      "2022-05-04 09:36:08.377585: W tensorflow/python/util/util.cc:368] Sets are not currently considered sequences, but this may change in the future, so consider avoiding using them.\n"
      ]
     },
     {
@@ -289,7 +289,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "ef30e159",
+   "id": "4d2b0eb7",
    "metadata": {},
    "source": [
     "## See also\n",
