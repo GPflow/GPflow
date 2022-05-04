@@ -4,15 +4,18 @@ import numpy as np
 import tensorflow as tf
 
 import gpflow
+from gpflow.experimental.check_shapes import ShapeChecker
 from gpflow.utilities import training_loop
 
 
 class Datum:
     rng = np.random.RandomState(123)
+    cs = ShapeChecker().check_shape
+
     N = 13
-    X = np.linspace(0, 10, 13)[:, None]
+    X = cs(np.linspace(0, 10, N)[:, None], "[N, 1]")
     noise_scale = 0.01
-    Y = np.sin(X) + rng.randn(N, 1) * noise_scale
+    Y = cs(np.sin(X) + rng.randn(N, 1) * noise_scale, "[N, 1]")
     data = (X, Y)
 
 
