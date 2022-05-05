@@ -123,19 +123,9 @@ class DocumentableModule:
     @staticmethod
     def collect(
         root: ModuleType,
-        expected_name_prefix: Optional[str] = None,
     ) -> "DocumentableModule":
         root_name = root.__name__
-
-        if expected_name_prefix is None:
-            expected_name_prefix = root_name + "."
-
-        def _should_ignore(child: Union[Callable[..., Any], Type[Any]]) -> bool:
-            declared_name = f"{child.__module__}.{child.__qualname__}"
-            assert expected_name_prefix is not None
-            return (
-                not declared_name.startswith(expected_name_prefix)
-            ) or declared_name in IGNORE_MODULES
+        exported_names = set(getattr(root, "__all__", []))
 
         modules: List["DocumentableModule"] = []
         classes: List[DocumentableClass] = []
@@ -147,15 +137,20 @@ class DocumentableModule:
 
             child = getattr(root, key)
             child_name = root_name + "." + key
+            if child_name in IGNORE_MODULES:
+                continue
+
+            def _should_ignore(child: Union[Callable[..., Any], Type[Any]]) -> bool:
+                declared_in_root = child.__module__ == root_name
+                explicitly_exported = key in exported_names
+                return not (declared_in_root or explicitly_exported)
 
             if isinstance(child, Dispatcher):
                 functions.append(DocumentableDispatcher(child_name, child))
             elif inspect.ismodule(child):
                 if child.__name__ != child_name:  # Ignore imports of modules.
                     continue
-                if child_name in IGNORE_MODULES:
-                    continue
-                modules.append(DocumentableModule.collect(child, expected_name_prefix))
+                modules.append(DocumentableModule.collect(child))
             elif inspect.isclass(child):
                 if _should_ignore(child):
                     continue
