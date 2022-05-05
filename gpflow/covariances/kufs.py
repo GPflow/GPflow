@@ -35,7 +35,7 @@ def Kuf_sqexp_multiscale(
     Xnew, _ = kernel.slice(Xnew, None)
     Zmu, Zlen = kernel.slice(inducing_variable.Z, inducing_variable.scales)
     idlengthscales = kernel.lengthscales + Zlen
-    d = inducing_variable._cust_square_dist(Xnew, Zmu, idlengthscales)
+    d = inducing_variable._cust_square_dist(Xnew, Zmu, idlengthscales[None, :, :])
     lengthscales = tf.reduce_prod(kernel.lengthscales / idlengthscales, 1)
     lengthscales = tf.reshape(lengthscales, (1, -1))
     return tf.transpose(kernel.variance * tf.exp(-0.5 * d) * lengthscales)
