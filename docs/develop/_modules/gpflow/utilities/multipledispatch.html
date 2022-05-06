@@ -268,7 +268,7 @@ function checkPageExistsAndRedirect(event) {
 <span class="n">Types</span> <span class="o">=</span> <span class="n">Union</span><span class="p">[</span><span class="n">Type</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Type</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span> <span class="o">...</span><span class="p">]]</span>
 
 
-<div class="viewcode-block" id="Dispatcher"><a class="viewcode-back" href="../../../api/gpflow/kullback_leiblers/index.html#gpflow.kullback_leiblers.Dispatcher">[docs]</a><span class="k">class</span> <span class="nc">Dispatcher</span><span class="p">(</span><span class="n">GeneratorDispatcher</span><span class="p">):</span>
+<div class="viewcode-block" id="Dispatcher"><a class="viewcode-back" href="../../../api/gpflow/utilities/index.html#gpflow.utilities.Dispatcher">[docs]</a><span class="k">class</span> <span class="nc">Dispatcher</span><span class="p">(</span><span class="n">GeneratorDispatcher</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    multipledispatch.Dispatcher uses a generator to yield the</span>
 <span class="sd">    desired function implementation, which is problematic as TensorFlow&#39;s</span>
@@ -279,12 +279,12 @@ function checkPageExistsAndRedirect(event) {
 <span class="sd">    compilable by AutoGraph.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-<div class="viewcode-block" id="Dispatcher.register"><a class="viewcode-back" href="../../../api/gpflow/kullback_leiblers/index.html#gpflow.kullback_leiblers.Dispatcher.register">[docs]</a>    <span class="k">def</span> <span class="nf">register</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">types</span><span class="p">:</span> <span class="n">Types</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">_C</span><span class="p">],</span> <span class="n">_C</span><span class="p">]:</span>
+<div class="viewcode-block" id="Dispatcher.register"><a class="viewcode-back" href="../../../api/gpflow/utilities/index.html#gpflow.utilities.Dispatcher.register">[docs]</a>    <span class="k">def</span> <span class="nf">register</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">types</span><span class="p">:</span> <span class="n">Types</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">_C</span><span class="p">],</span> <span class="n">_C</span><span class="p">]:</span>
         <span class="c1"># Override to add type hints...</span>
         <span class="n">result</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">_C</span><span class="p">],</span> <span class="n">_C</span><span class="p">]</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="o">*</span><span class="n">types</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">result</span></div>
 
-<div class="viewcode-block" id="Dispatcher.dispatch"><a class="viewcode-back" href="../../../api/gpflow/kullback_leiblers/index.html#gpflow.kullback_leiblers.Dispatcher.dispatch">[docs]</a>    <span class="k">def</span> <span class="nf">dispatch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">types</span><span class="p">:</span> <span class="n">Types</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">AnyCallable</span><span class="p">]:</span>
+<div class="viewcode-block" id="Dispatcher.dispatch"><a class="viewcode-back" href="../../../api/gpflow/utilities/index.html#gpflow.utilities.Dispatcher.dispatch">[docs]</a>    <span class="k">def</span> <span class="nf">dispatch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">types</span><span class="p">:</span> <span class="n">Types</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">AnyCallable</span><span class="p">]:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns matching function for `types`; if not existing returns None.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -295,7 +295,7 @@ function checkPageExistsAndRedirect(event) {
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_first_occurrence</span><span class="p">(</span><span class="o">*</span><span class="n">types</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="Dispatcher.dispatch_or_raise"><a class="viewcode-back" href="../../../api/gpflow/kullback_leiblers/index.html#gpflow.kullback_leiblers.Dispatcher.dispatch_or_raise">[docs]</a>    <span class="k">def</span> <span class="nf">dispatch_or_raise</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">types</span><span class="p">:</span> <span class="n">Types</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AnyCallable</span><span class="p">:</span>
+<div class="viewcode-block" id="Dispatcher.dispatch_or_raise"><a class="viewcode-back" href="../../../api/gpflow/utilities/index.html#gpflow.utilities.Dispatcher.dispatch_or_raise">[docs]</a>    <span class="k">def</span> <span class="nf">dispatch_or_raise</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">types</span><span class="p">:</span> <span class="n">Types</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AnyCallable</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns matching function for `types`; if not existing raises an error.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -306,7 +306,7 @@ function checkPageExistsAndRedirect(event) {
             <span class="p">)</span>
         <span class="k">return</span> <span class="n">f</span></div>
 
-<div class="viewcode-block" id="Dispatcher.get_first_occurrence"><a class="viewcode-back" href="../../../api/gpflow/kullback_leiblers/index.html#gpflow.kullback_leiblers.Dispatcher.get_first_occurrence">[docs]</a>    <span class="k">def</span> <span class="nf">get_first_occurrence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">types</span><span class="p">:</span> <span class="n">Types</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">AnyCallable</span><span class="p">]:</span>
+<div class="viewcode-block" id="Dispatcher.get_first_occurrence"><a class="viewcode-back" href="../../../api/gpflow/utilities/index.html#gpflow.utilities.Dispatcher.get_first_occurrence">[docs]</a>    <span class="k">def</span> <span class="nf">get_first_occurrence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">types</span><span class="p">:</span> <span class="n">Types</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">AnyCallable</span><span class="p">]:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns the first occurrence of a matching function</span>
 
