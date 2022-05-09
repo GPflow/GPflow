@@ -46,9 +46,8 @@ class Dispatcher(GeneratorDispatcher):
         """
         Returns matching function for `types`; if not existing returns None.
         """
-        result: AnyCallable
         if types in self.funcs:
-            result = self.funcs[types]
+            result: AnyCallable = self.funcs[types]
             return result
 
         return self.get_first_occurrence(*types)
@@ -75,10 +74,9 @@ class Dispatcher(GeneratorDispatcher):
         `None` is returned.
         """
         n = len(types)
-        result: AnyCallable
         for signature in self.ordering:
             if len(signature) == n and all(map(issubclass, types, signature)):  # type: ignore
-                result = self.funcs[signature]
+                result: AnyCallable = self.funcs[signature]
                 return result
             elif len(signature) and isvariadic(signature[-1]):
                 if variadic_signature_matches(types, signature):

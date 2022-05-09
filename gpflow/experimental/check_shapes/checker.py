@@ -240,9 +240,8 @@ class ShapeChecker:
                     call_context = FunctionCallContext(self.check_shapes).precompute()
                 context = StackContext(call_context, IndexContext(i))
             parsed_tensor_check = _as_parsed_tensor_spec(tensor_spec, context)
-            shape: Shape
             if shaped is None:
-                shape = None
+                shape: Shape = None
             else:
                 shape = get_shape(shaped, context)
             self._seen_shapes.append((shape, parsed_tensor_check, context))
@@ -329,15 +328,17 @@ class ShapeChecker:
                     if actual_dim is None:
                         continue
 
-                    expected_dim: Union[_ObservedDim, _ObservedDims]
                     if dim_spec.constant is not None:
                         expected_dim = _ObservedDim()
                         assert expected_dim.check_and_update(dim_spec.constant, broadcast=False)
                     elif dim_spec.variable_name is not None:
                         expected_name = dim_spec.variable_name
-                        expected_dim = self._seen_dims.setdefault(expected_name, _ObservedDim())
+                        maybe_expected_dim = self._seen_dims.setdefault(
+                            expected_name, _ObservedDim()
+                        )
+                        assert isinstance(maybe_expected_dim, _ObservedDim)
+                        expected_dim = maybe_expected_dim
                     else:
                         # Anonymous dimension - we don't care about the actual value.
                         continue
-                    assert isinstance(expected_dim, _ObservedDim)
                     _assert(expected_dim.check_and_update(actual_dim, dim_spec.broadcastable))

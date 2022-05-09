@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Callable, Optional, Tuple
+from typing import Optional, Tuple
 
 import tensorflow as tf
 
@@ -627,14 +627,11 @@ def separate_independent_conditional_implementation(
     fs = tf.transpose(f)[:, :, None]  # [P, M, 1]
     # [P, 1, M, M]  or  [P, M, 1]
 
-    base_conditional_args_to_map: Tuple[tf.Tensor, ...]
-    single_gp_conditional: Callable[[Tuple[tf.Tensor, ...]], MeanAndVariance]
-
     if q_sqrt is not None:
         q_sqrts = (
             tf.transpose(q_sqrt)[:, :, None] if q_sqrt.shape.ndims == 2 else q_sqrt[:, None, :, :]
         )
-        base_conditional_args_to_map = (Kmms, Kmns, Knns, fs, q_sqrts)
+        base_conditional_args_to_map: Tuple[tf.Tensor, ...] = (Kmms, Kmns, Knns, fs, q_sqrts)
 
         def single_gp_conditional(
             t: Tuple[tf.Tensor, ...]

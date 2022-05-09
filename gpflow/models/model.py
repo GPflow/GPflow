@@ -133,10 +133,9 @@ class GPModel(BayesianModel):
         problematic assumptions re the output dimensions of mean_function.
         See https://github.com/GPflow/GPflow/issues/1343
         """
-        num_latent_gps: int
         if isinstance(kernel, MultioutputKernel):
             # MultioutputKernels already have num_latent_gps attributes
-            num_latent_gps = kernel.num_latent_gps
+            num_latent_gps: int = kernel.num_latent_gps
         elif isinstance(likelihood, SwitchedLikelihood):
             # the SwitchedLikelihood partitions/stitches based on the last
             # column in Y, but we should not add a separate latent GP for this!
