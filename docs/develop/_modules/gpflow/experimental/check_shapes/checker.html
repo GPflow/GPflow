@@ -482,9 +482,8 @@ function checkPageExistsAndRedirect(event) {
                     <span class="n">call_context</span> <span class="o">=</span> <span class="n">FunctionCallContext</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">check_shapes</span><span class="p">)</span><span class="o">.</span><span class="n">precompute</span><span class="p">()</span>
                 <span class="n">context</span> <span class="o">=</span> <span class="n">StackContext</span><span class="p">(</span><span class="n">call_context</span><span class="p">,</span> <span class="n">IndexContext</span><span class="p">(</span><span class="n">i</span><span class="p">))</span>
             <span class="n">parsed_tensor_check</span> <span class="o">=</span> <span class="n">_as_parsed_tensor_spec</span><span class="p">(</span><span class="n">tensor_spec</span><span class="p">,</span> <span class="n">context</span><span class="p">)</span>
-            <span class="n">shape</span><span class="p">:</span> <span class="n">Shape</span>
             <span class="k">if</span> <span class="n">shaped</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">shape</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="n">shape</span><span class="p">:</span> <span class="n">Shape</span> <span class="o">=</span> <span class="kc">None</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">shape</span> <span class="o">=</span> <span class="n">get_shape</span><span class="p">(</span><span class="n">shaped</span><span class="p">,</span> <span class="n">context</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_seen_shapes</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">shape</span><span class="p">,</span> <span class="n">parsed_tensor_check</span><span class="p">,</span> <span class="n">context</span><span class="p">))</span>
@@ -571,17 +570,19 @@ function checkPageExistsAndRedirect(event) {
                     <span class="k">if</span> <span class="n">actual_dim</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                         <span class="k">continue</span>
 
-                    <span class="n">expected_dim</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">_ObservedDim</span><span class="p">,</span> <span class="n">_ObservedDims</span><span class="p">]</span>
                     <span class="k">if</span> <span class="n">dim_spec</span><span class="o">.</span><span class="n">constant</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                         <span class="n">expected_dim</span> <span class="o">=</span> <span class="n">_ObservedDim</span><span class="p">()</span>
                         <span class="k">assert</span> <span class="n">expected_dim</span><span class="o">.</span><span class="n">check_and_update</span><span class="p">(</span><span class="n">dim_spec</span><span class="o">.</span><span class="n">constant</span><span class="p">,</span> <span class="n">broadcast</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
                     <span class="k">elif</span> <span class="n">dim_spec</span><span class="o">.</span><span class="n">variable_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                         <span class="n">expected_name</span> <span class="o">=</span> <span class="n">dim_spec</span><span class="o">.</span><span class="n">variable_name</span>
-                        <span class="n">expected_dim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_seen_dims</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">expected_name</span><span class="p">,</span> <span class="n">_ObservedDim</span><span class="p">())</span>
+                        <span class="n">maybe_expected_dim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_seen_dims</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span>
+                            <span class="n">expected_name</span><span class="p">,</span> <span class="n">_ObservedDim</span><span class="p">()</span>
+                        <span class="p">)</span>
+                        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">maybe_expected_dim</span><span class="p">,</span> <span class="n">_ObservedDim</span><span class="p">)</span>
+                        <span class="n">expected_dim</span> <span class="o">=</span> <span class="n">maybe_expected_dim</span>
                     <span class="k">else</span><span class="p">:</span>
                         <span class="c1"># Anonymous dimension - we don&#39;t care about the actual value.</span>
                         <span class="k">continue</span>
-                    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">expected_dim</span><span class="p">,</span> <span class="n">_ObservedDim</span><span class="p">)</span>
                     <span class="n">_assert</span><span class="p">(</span><span class="n">expected_dim</span><span class="o">.</span><span class="n">check_and_update</span><span class="p">(</span><span class="n">actual_dim</span><span class="p">,</span> <span class="n">dim_spec</span><span class="o">.</span><span class="n">broadcastable</span><span class="p">))</span></div></div>
 </pre></div>
 
