@@ -262,10 +262,11 @@ function checkPageExistsAndRedirect(event) {
 <span class="kn">from</span> <span class="nn">deprecated</span> <span class="kn">import</span> <span class="n">deprecated</span>
 
 <span class="kn">from</span> <span class="nn">..base</span> <span class="kn">import</span> <span class="n">Module</span><span class="p">,</span> <span class="n">Parameter</span><span class="p">,</span> <span class="n">TensorData</span><span class="p">,</span> <span class="n">TensorType</span>
+<span class="kn">from</span> <span class="nn">..experimental.check_shapes</span> <span class="kn">import</span> <span class="n">ErrorContext</span><span class="p">,</span> <span class="n">Shape</span><span class="p">,</span> <span class="n">check_shapes</span><span class="p">,</span> <span class="n">get_shape</span>
 <span class="kn">from</span> <span class="nn">..utilities</span> <span class="kn">import</span> <span class="n">positive</span>
 
 
-<div class="viewcode-block" id="InducingVariables"><a class="viewcode-back" href="../../../api/gpflow/inducing_variables/index.html#gpflow.inducing_variables.InducingVariables">[docs]</a><span class="k">class</span> <span class="nc">InducingVariables</span><span class="p">(</span><span class="n">Module</span><span class="p">):</span>
+<div class="viewcode-block" id="InducingVariables"><a class="viewcode-back" href="../../../api/gpflow/inducing_variables/index.html#gpflow.inducing_variables.InducingVariables">[docs]</a><span class="k">class</span> <span class="nc">InducingVariables</span><span class="p">(</span><span class="n">Module</span><span class="p">,</span> <span class="n">abc</span><span class="o">.</span><span class="n">ABC</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Abstract base class for inducing variables.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -284,22 +285,54 @@ function checkPageExistsAndRedirect(event) {
         <span class="s2">&quot; Use `iv.num_inducing` instead.&quot;</span>
     <span class="p">)</span>
     <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_inducing</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_inducing</span>
+
+    <span class="nd">@property</span>
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">shape</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Shape</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the shape of these inducing variables.</span>
+
+<span class="sd">        Shape should be some variation of ``[M, D, P]``, where:</span>
+
+<span class="sd">        * ``M`` is the number of inducing variables.</span>
+<span class="sd">        * ``D`` is the number of input dimensions.</span>
+<span class="sd">        * ``P`` is the number of output dimensions (1 if this is not a multi-output inducing</span>
+<span class="sd">          variable).</span>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+
+
+<div class="viewcode-block" id="get_scalar_shape"><a class="viewcode-back" href="../../../api/gpflow/inducing_variables/inducing_variables/index.html#gpflow.inducing_variables.get_scalar_shape">[docs]</a><span class="nd">@get_shape</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">InducingVariables</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">get_scalar_shape</span><span class="p">(</span><span class="n">shaped</span><span class="p">:</span> <span class="n">InducingVariables</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="n">ErrorContext</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Shape</span><span class="p">:</span>
+    <span class="k">return</span> <span class="n">shaped</span><span class="o">.</span><span class="n">shape</span></div>
 
 
 <div class="viewcode-block" id="InducingPointsBase"><a class="viewcode-back" href="../../../api/gpflow/inducing_variables/inducing_variables/index.html#gpflow.inducing_variables.InducingPointsBase">[docs]</a><span class="k">class</span> <span class="nc">InducingPointsBase</span><span class="p">(</span><span class="n">InducingVariables</span><span class="p">):</span>
+    <span class="nd">@check_shapes</span><span class="p">(</span>
+        <span class="s2">&quot;Z: [M, D]&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Z</span><span class="p">:</span> <span class="n">TensorData</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        :param Z: the initial positions of the inducing points, size [M, D]</span>
+<span class="sd">        :param Z: The initial positions of the inducing points.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">Z</span><span class="p">,</span> <span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">Variable</span><span class="p">,</span> <span class="n">tfp</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">TransformedVariable</span><span class="p">)):</span>
             <span class="n">Z</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="n">Z</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">Z</span> <span class="o">=</span> <span class="n">Z</span>
 
-    <span class="nd">@property</span>
+    <span class="nd">@property</span>  <span class="c1"># type: ignore  # mypy doesn&#39;t like decorated properties.</span>
+    <span class="nd">@check_shapes</span><span class="p">(</span>
+        <span class="s2">&quot;return: []&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
     <span class="k">def</span> <span class="nf">num_inducing</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
-        <span class="k">return</span> <span class="n">tf</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Z</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span></div>
+        <span class="k">return</span> <span class="n">tf</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Z</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">shape</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Shape</span><span class="p">:</span>
+        <span class="n">shape</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Z</span><span class="o">.</span><span class="n">shape</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">shape</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="mi">1</span><span class="p">,)</span></div>
 
 
 <div class="viewcode-block" id="InducingPoints"><a class="viewcode-back" href="../../../api/gpflow/inducing_variables/index.html#gpflow.inducing_variables.InducingPoints">[docs]</a><span class="k">class</span> <span class="nc">InducingPoints</span><span class="p">(</span><span class="n">InducingPointsBase</span><span class="p">):</span>
@@ -315,20 +348,26 @@ function checkPageExistsAndRedirect(event) {
 <span class="sd">    Originally proposed in :cite:t:`NIPS2009_3876`.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
+    <span class="nd">@check_shapes</span><span class="p">(</span>
+        <span class="s2">&quot;Z: [M, D]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;scales: [M, D]&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Z</span><span class="p">:</span> <span class="n">TensorData</span><span class="p">,</span> <span class="n">scales</span><span class="p">:</span> <span class="n">TensorData</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">Z</span><span class="p">)</span>
         <span class="c1"># Multi-scale inducing_variable widths (std. dev. of Gaussian)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">scales</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="n">scales</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="n">positive</span><span class="p">())</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">Z</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">scales</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s2">&quot;Input locations `Z` and `scales` must have the same shape.&quot;</span>
-            <span class="p">)</span>  <span class="c1"># pragma: no cover</span>
 
     <span class="nd">@staticmethod</span>
+    <span class="nd">@check_shapes</span><span class="p">(</span>
+        <span class="s2">&quot;A: [N, D]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;B: [M, D]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;sc: [broadcast N, broadcast M, D]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return: [N, M]&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
     <span class="k">def</span> <span class="nf">_cust_square_dist</span><span class="p">(</span><span class="n">A</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">B</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">sc</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Custom version of _square_dist that allows sc to provide per-datapoint length</span>
-<span class="sd">        scales. sc: [N, M, D].</span>
+<span class="sd">        scales.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">tf</span><span class="o">.</span><span class="n">reduce_sum</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">square</span><span class="p">((</span><span class="n">tf</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-</span> <span class="n">tf</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">B</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span> <span class="o">/</span> <span class="n">sc</span><span class="p">),</span> <span class="mi">2</span><span class="p">)</span></div>
 </pre></div>

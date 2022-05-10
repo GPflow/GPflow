@@ -2,7 +2,7 @@
  "cells": [
   {
    "cell_type": "markdown",
-   "id": "c85a6666",
+   "id": "09f39403",
    "metadata": {},
    "source": [
     "# Manipulating kernels\n",
@@ -14,13 +14,13 @@
   {
    "cell_type": "code",
    "execution_count": 1,
-   "id": "253eee61",
+   "id": "379a5845",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-05-10T10:13:52.601737Z",
-     "iopub.status.busy": "2022-05-10T10:13:52.601505Z",
-     "iopub.status.idle": "2022-05-10T10:13:55.622561Z",
-     "shell.execute_reply": "2022-05-10T10:13:55.622102Z"
+     "iopub.execute_input": "2022-05-10T14:23:03.339884Z",
+     "iopub.status.busy": "2022-05-10T14:23:03.339615Z",
+     "iopub.status.idle": "2022-05-10T14:23:06.518853Z",
+     "shell.execute_reply": "2022-05-10T14:23:06.518320Z"
     }
    },
    "outputs": [
@@ -28,8 +28,16 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2022-05-10 10:13:52.770516: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcudart.so.11.0'; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory\n",
-      "2022-05-10 10:13:52.770540: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.\n"
+      "2022-05-10 14:23:03.525788: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcudart.so.11.0'; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory\n",
+      "2022-05-10 14:23:03.525815: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.\n"
+     ]
+    },
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "/home/circleci/project/gpflow/experimental/utils.py:42: UserWarning: You're calling gpflow.experimental.check_shapes.decorator.check_shapes which is considered *experimental*. Expect: breaking changes, poor documentation, and bugs.\n",
+      "  warn(\n"
      ]
     }
    ],
@@ -46,7 +54,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "2900bd62",
+   "id": "06eef9cd",
    "metadata": {},
    "source": [
     "## Standard kernels in GPflow\n",
@@ -93,13 +101,13 @@
   {
    "cell_type": "code",
    "execution_count": 2,
-   "id": "54251356",
+   "id": "468ec3b0",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-05-10T10:13:55.625200Z",
-     "iopub.status.busy": "2022-05-10T10:13:55.624991Z",
-     "iopub.status.idle": "2022-05-10T10:13:57.617415Z",
-     "shell.execute_reply": "2022-05-10T10:13:57.616902Z"
+     "iopub.execute_input": "2022-05-10T14:23:06.523267Z",
+     "iopub.status.busy": "2022-05-10T14:23:06.522749Z",
+     "iopub.status.idle": "2022-05-10T14:23:12.394452Z",
+     "shell.execute_reply": "2022-05-10T14:23:12.393676Z"
     }
    },
    "outputs": [
@@ -107,10 +115,10 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2022-05-10 10:13:55.715021: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcuda.so.1'; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory\n",
-      "2022-05-10 10:13:55.715052: W tensorflow/stream_executor/cuda/cuda_driver.cc:269] failed call to cuInit: UNKNOWN ERROR (303)\n",
-      "2022-05-10 10:13:55.715071: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (6053e66b1f76): /proc/driver/nvidia/version does not exist\n",
-      "2022-05-10 10:13:55.715332: I tensorflow/core/platform/cpu_feature_guard.cc:151] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA\n",
+      "2022-05-10 14:23:06.622023: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcuda.so.1'; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory\n",
+      "2022-05-10 14:23:06.622056: W tensorflow/stream_executor/cuda/cuda_driver.cc:269] failed call to cuInit: UNKNOWN ERROR (303)\n",
+      "2022-05-10 14:23:06.622075: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (527a5c4f1609): /proc/driver/nvidia/version does not exist\n",
+      "2022-05-10 14:23:06.622376: I tensorflow/core/platform/cpu_feature_guard.cc:151] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA\n",
       "To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.\n"
      ]
     },
@@ -150,7 +158,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "dbca2117",
+   "id": "21c9ec93",
    "metadata": {},
    "source": [
     "## First example: create a Matern 3/2 covariance kernel\n",
@@ -161,13 +169,13 @@
   {
    "cell_type": "code",
    "execution_count": 3,
-   "id": "92a0dfa7",
+   "id": "00790268",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-05-10T10:13:57.620393Z",
-     "iopub.status.busy": "2022-05-10T10:13:57.620186Z",
-     "iopub.status.idle": "2022-05-10T10:13:57.628806Z",
-     "shell.execute_reply": "2022-05-10T10:13:57.628394Z"
+     "iopub.execute_input": "2022-05-10T14:23:12.397186Z",
+     "iopub.status.busy": "2022-05-10T14:23:12.396911Z",
+     "iopub.status.idle": "2022-05-10T14:23:12.406573Z",
+     "shell.execute_reply": "2022-05-10T14:23:12.405924Z"
     }
    },
    "outputs": [],
@@ -177,7 +185,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "af017d55",
+   "id": "c29804a2",
    "metadata": {},
    "source": [
     "**NOTE:** The values specified for the `variance` and `lengthscales` parameters are **floats**.\n",
@@ -188,13 +196,13 @@
   {
    "cell_type": "code",
    "execution_count": 4,
-   "id": "bce9dd6c",
+   "id": "cdb0233c",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-05-10T10:13:57.631009Z",
-     "iopub.status.busy": "2022-05-10T10:13:57.630819Z",
-     "iopub.status.idle": "2022-05-10T10:13:57.642192Z",
-     "shell.execute_reply": "2022-05-10T10:13:57.641805Z"
+     "iopub.execute_input": "2022-05-10T14:23:12.409072Z",
+     "iopub.status.busy": "2022-05-10T14:23:12.408812Z",
+     "iopub.status.idle": "2022-05-10T14:23:12.421787Z",
+     "shell.execute_reply": "2022-05-10T14:23:12.421211Z"
     }
    },
    "outputs": [
@@ -264,7 +272,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "2b40c0d2",
+   "id": "c3291259",
    "metadata": {},
    "source": [
     "You can access the parameter values and assign new values with the same syntax as for models:"
@@ -273,13 +281,13 @@
   {
    "cell_type": "code",
    "execution_count": 5,
-   "id": "47535b76",
+   "id": "1619733e",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-05-10T10:13:57.644227Z",
-     "iopub.status.busy": "2022-05-10T10:13:57.644044Z",
-     "iopub.status.idle": "2022-05-10T10:13:57.649317Z",
-     "shell.execute_reply": "2022-05-10T10:13:57.648913Z"
+     "iopub.execute_input": "2022-05-10T14:23:12.424119Z",
+     "iopub.status.busy": "2022-05-10T14:23:12.423851Z",
+     "iopub.status.idle": "2022-05-10T14:23:12.430515Z",
+     "shell.execute_reply": "2022-05-10T14:23:12.429987Z"
     }
    },
    "outputs": [
@@ -300,7 +308,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "d3b95f6b",
+   "id": "b04d2312",
    "metadata": {},
    "source": [
     "Finally, you can *call* the kernel object to compute covariance matrices:"
@@ -309,13 +317,13 @@
   {
    "cell_type": "code",
    "execution_count": 6,
-   "id": "435bfc16",
+   "id": "0fc3aaac",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-05-10T10:13:57.651339Z",
-     "iopub.status.busy": "2022-05-10T10:13:57.651156Z",
-     "iopub.status.idle": "2022-05-10T10:13:57.779186Z",
-     "shell.execute_reply": "2022-05-10T10:13:57.778741Z"
+     "iopub.execute_input": "2022-05-10T14:23:12.432791Z",
+     "iopub.status.busy": "2022-05-10T14:23:12.432546Z",
+     "iopub.status.idle": "2022-05-10T14:23:12.577110Z",
+     "shell.execute_reply": "2022-05-10T14:23:12.576571Z"
     }
    },
    "outputs": [
@@ -346,7 +354,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "5ccec2a2",
+   "id": "04b8af14",
    "metadata": {},
    "source": [
     "## Combine kernels\n",
@@ -357,13 +365,13 @@
   {
    "cell_type": "code",
    "execution_count": 7,
-   "id": "8f50da10",
+   "id": "f1f8598c",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-05-10T10:13:57.781313Z",
-     "iopub.status.busy": "2022-05-10T10:13:57.781106Z",
-     "iopub.status.idle": "2022-05-10T10:13:58.672571Z",
-     "shell.execute_reply": "2022-05-10T10:13:58.672130Z"
+     "iopub.execute_input": "2022-05-10T14:23:12.579612Z",
+     "iopub.status.busy": "2022-05-10T14:23:12.579337Z",
+     "iopub.status.idle": "2022-05-10T14:23:14.444856Z",
+     "shell.execute_reply": "2022-05-10T14:23:14.444300Z"
     }
    },
    "outputs": [
@@ -448,7 +456,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "2a9f113d",
+   "id": "6e719763",
    "metadata": {},
    "source": [
     "## Kernels for higher-dimensional input spaces\n",
@@ -458,7 +466,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "253447fc",
+   "id": "d8db8dda",
    "metadata": {},
    "source": [
     "You can also initialize the lengthscales when the object is created:"
@@ -467,13 +475,13 @@
   {
    "cell_type": "code",
    "execution_count": 8,
-   "id": "185e92a3",
+   "id": "67830fe3",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-05-10T10:13:58.675679Z",
-     "iopub.status.busy": "2022-05-10T10:13:58.675452Z",
-     "iopub.status.idle": "2022-05-10T10:13:58.687698Z",
-     "shell.execute_reply": "2022-05-10T10:13:58.687270Z"
+     "iopub.execute_input": "2022-05-10T14:23:14.447466Z",
+     "iopub.status.busy": "2022-05-10T14:23:14.447185Z",
+     "iopub.status.idle": "2022-05-10T14:23:14.465043Z",
+     "shell.execute_reply": "2022-05-10T14:23:14.464300Z"
     }
    },
    "outputs": [
@@ -505,7 +513,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "bb081184",
+   "id": "f54ecb5d",
    "metadata": {},
    "source": [
     "## Specify active dimensions\n",
@@ -518,13 +526,13 @@
   {
    "cell_type": "code",
    "execution_count": 9,
-   "id": "91245511",
+   "id": "3f26bcb5",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-05-10T10:13:58.689875Z",
-     "iopub.status.busy": "2022-05-10T10:13:58.689681Z",
-     "iopub.status.idle": "2022-05-10T10:13:58.700576Z",
-     "shell.execute_reply": "2022-05-10T10:13:58.700132Z"
+     "iopub.execute_input": "2022-05-10T14:23:14.467659Z",
+     "iopub.status.busy": "2022-05-10T14:23:14.467353Z",
+     "iopub.status.idle": "2022-05-10T14:23:14.480837Z",
+     "shell.execute_reply": "2022-05-10T14:23:14.480097Z"
     }
    },
    "outputs": [],
@@ -536,7 +544,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "1f5ef1cd",
+   "id": "1ff5c84c",
    "metadata": {},
    "source": [
     "`active_dims` makes it easy to create additive models. Here we build an additive Matern 5/2 kernel:"
@@ -545,13 +553,13 @@
   {
    "cell_type": "code",
    "execution_count": 10,
-   "id": "32bc8b36",
+   "id": "0069a1bc",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-05-10T10:13:58.702940Z",
-     "iopub.status.busy": "2022-05-10T10:13:58.702740Z",
-     "iopub.status.idle": "2022-05-10T10:13:58.715173Z",
-     "shell.execute_reply": "2022-05-10T10:13:58.714741Z"
+     "iopub.execute_input": "2022-05-10T14:23:14.483662Z",
+     "iopub.status.busy": "2022-05-10T14:23:14.483363Z",
+     "iopub.status.idle": "2022-05-10T14:23:14.498520Z",
+     "shell.execute_reply": "2022-05-10T14:23:14.497903Z"
     }
    },
    "outputs": [],
@@ -563,7 +571,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "0edc8b4c",
+   "id": "ee9e7fde",
    "metadata": {},
    "source": [
     "Let's plot this kernel and sample from it:"
@@ -572,13 +580,13 @@
   {
    "cell_type": "code",
    "execution_count": 11,
-   "id": "87a4b614",
+   "id": "d6637a86",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-05-10T10:13:58.717437Z",
-     "iopub.status.busy": "2022-05-10T10:13:58.717242Z",
-     "iopub.status.idle": "2022-05-10T10:14:05.912503Z",
-     "shell.execute_reply": "2022-05-10T10:14:05.912066Z"
+     "iopub.execute_input": "2022-05-10T14:23:14.501136Z",
+     "iopub.status.busy": "2022-05-10T14:23:14.500873Z",
+     "iopub.status.idle": "2022-05-10T14:24:28.435165Z",
+     "shell.execute_reply": "2022-05-10T14:24:28.434577Z"
     }
    },
    "outputs": [
@@ -620,7 +628,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "391b2de0",
+   "id": "fd6706ec",
    "metadata": {},
    "source": [
     "## Define new covariance functions\n",

@@ -257,6 +257,7 @@ function checkPageExistsAndRedirect(event) {
 
 <span class="kn">import</span> <span class="nn">tensorflow</span> <span class="k">as</span> <span class="nn">tf</span>
 
+<span class="kn">from</span> <span class="nn">...experimental.check_shapes</span> <span class="kn">import</span> <span class="n">Shape</span><span class="p">,</span> <span class="n">check_shapes</span>
 <span class="kn">from</span> <span class="nn">..inducing_variables</span> <span class="kn">import</span> <span class="n">InducingVariables</span>
 
 
@@ -309,17 +310,31 @@ function checkPageExistsAndRedirect(event) {
 <span class="sd">    processes.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
+    <span class="nd">@check_shapes</span><span class="p">(</span>
+        <span class="s2">&quot;inducing_variable: [M, D, 1]&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inducing_variable</span><span class="p">:</span> <span class="n">InducingVariables</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">inducing_variable</span> <span class="o">=</span> <span class="n">inducing_variable</span>
 
-    <span class="nd">@property</span>
+    <span class="nd">@property</span>  <span class="c1"># type: ignore  # mypy doesn&#39;t like decorated properties.</span>
+    <span class="nd">@check_shapes</span><span class="p">(</span>
+        <span class="s2">&quot;return: []&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
     <span class="k">def</span> <span class="nf">num_inducing</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">inducing_variable</span><span class="o">.</span><span class="n">num_inducing</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">inducing_variables</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">InducingVariables</span><span class="p">]:</span>
-        <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">inducing_variable</span><span class="p">,)</span></div>
+        <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">inducing_variable</span><span class="p">,)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">shape</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Shape</span><span class="p">:</span>
+        <span class="n">inner</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">inducing_variable</span><span class="o">.</span><span class="n">shape</span>
+        <span class="k">if</span> <span class="n">inner</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">inner</span>
+        <span class="k">assert</span> <span class="n">inner</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span>
+        <span class="k">return</span> <span class="n">inner</span><span class="p">[:</span><span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="p">(</span><span class="kc">None</span><span class="p">,)</span></div>
 
 
 <div class="viewcode-block" id="FallbackSeparateIndependentInducingVariables"><a class="viewcode-back" href="../../../../api/gpflow/inducing_variables/index.html#gpflow.inducing_variables.FallbackSeparateIndependentInducingVariables">[docs]</a><span class="k">class</span> <span class="nc">FallbackSeparateIndependentInducingVariables</span><span class="p">(</span><span class="n">MultioutputInducingVariables</span><span class="p">):</span>
@@ -355,18 +370,31 @@ function checkPageExistsAndRedirect(event) {
 <span class="sd">    Note: each object should have the same number of inducing variables, M.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
+    <span class="nd">@check_shapes</span><span class="p">(</span>
+        <span class="s2">&quot;inducing_variable_list[all]: [M, D, 1]&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inducing_variable_list</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">InducingVariables</span><span class="p">]):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">inducing_variable_list</span> <span class="o">=</span> <span class="n">inducing_variable_list</span>
 
-    <span class="nd">@property</span>
+    <span class="nd">@property</span>  <span class="c1"># type: ignore  # mypy doesn&#39;t like decorated properties.</span>
+    <span class="nd">@check_shapes</span><span class="p">(</span>
+        <span class="s2">&quot;return: []&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
     <span class="k">def</span> <span class="nf">num_inducing</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-        <span class="c1"># TODO(st--) we should check that they all have the same length...</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">inducing_variable_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">num_inducing</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">inducing_variables</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">InducingVariables</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
-        <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">inducing_variable_list</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">inducing_variable_list</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">shape</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Shape</span><span class="p">:</span>
+        <span class="n">inner</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">inducing_variable_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span>
+        <span class="k">if</span> <span class="n">inner</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">inner</span>
+        <span class="k">assert</span> <span class="n">inner</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span>
+        <span class="k">return</span> <span class="n">inner</span><span class="p">[:</span><span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">inducing_variable_list</span><span class="p">),)</span></div>
 
 
 <div class="viewcode-block" id="SharedIndependentInducingVariables"><a class="viewcode-back" href="../../../../api/gpflow/inducing_variables/index.html#gpflow.inducing_variables.SharedIndependentInducingVariables">[docs]</a><span class="k">class</span> <span class="nc">SharedIndependentInducingVariables</span><span class="p">(</span><span class="n">FallbackSharedIndependentInducingVariables</span><span class="p">):</span>
@@ -375,9 +403,7 @@ function checkPageExistsAndRedirect(event) {
 <span class="sd">    this class is intended to be used without the constraints on the shapes that</span>
 <span class="sd">    `Kuu()` and `Kuf()` return. This allows a custom `conditional()` to provide</span>
 <span class="sd">    the most efficient implementation.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="k">pass</span></div>
+<span class="sd">    &quot;&quot;&quot;</span></div>
 
 
 <div class="viewcode-block" id="SeparateIndependentInducingVariables"><a class="viewcode-back" href="../../../../api/gpflow/inducing_variables/index.html#gpflow.inducing_variables.SeparateIndependentInducingVariables">[docs]</a><span class="k">class</span> <span class="nc">SeparateIndependentInducingVariables</span><span class="p">(</span><span class="n">FallbackSeparateIndependentInducingVariables</span><span class="p">):</span>
@@ -386,9 +412,7 @@ function checkPageExistsAndRedirect(event) {
 <span class="sd">    this class is intended to be used without the constraints on the shapes that</span>
 <span class="sd">    `Kuu()` and `Kuf()` return. This allows a custom `conditional()` to provide</span>
 <span class="sd">    the most efficient implementation.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="k">pass</span></div>
+<span class="sd">    &quot;&quot;&quot;</span></div>
 </pre></div>
 
               </div>
