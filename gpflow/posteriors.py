@@ -15,7 +15,7 @@
 import enum
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Optional, Tuple, Type, Union
+from typing import Optional, Tuple, Type, Union, cast
 
 import tensorflow as tf
 
@@ -363,15 +363,14 @@ class GPRPosterior(AbstractPosterior):
         return mean, cov
 
     def _precompute(self) -> Tuple[PrecomputedValue, ...]:
-        Kmm = self.kernel(self.X_data)
+        X_data = cast(tf.Tensor, self.X_data)
+        Kmm = self.kernel(X_data)
         Kmm_plus_s = add_noise_cov(Kmm, self.likelihood_variance)
 
         Lm = tf.linalg.cholesky(Kmm_plus_s)
-        Kmm_plus_s_inv = tf.linalg.cholesky_solve(
-            Lm, tf.eye(tf.shape(self.X_data)[0], dtype=Lm.dtype)
-        )
+        Kmm_plus_s_inv = tf.linalg.cholesky_solve(Lm, tf.eye(tf.shape(X_data)[0], dtype=Lm.dtype))
 
-        M = self.X_data.shape[0]
+        M = X_data.shape[0]
         M_dynamic = M is None
 
         tf.debugging.assert_shapes(
@@ -579,12 +578,13 @@ class VGPPosterior(AbstractPosterior):
         )
 
     def _precompute(self) -> Tuple[PrecomputedValue, ...]:
-        Kmm = self.kernel(self.X_data) + eye(
-            tf.shape(self.X_data)[-2], value=default_jitter(), dtype=self.X_data.dtype
+        X_data = cast(tf.Tensor, self.X_data)
+        Kmm = self.kernel(X_data) + eye(
+            tf.shape(X_data)[-2], value=default_jitter(), dtype=X_data.dtype
         )  # [..., M, M]
         Lm = tf.linalg.cholesky(Kmm)
 
-        M = self.X_data.shape[0]
+        M = X_data.shape[0]
         M_dynamic = M is None
 
         return (PrecomputedValue(Lm, (M_dynamic, M_dynamic)),)

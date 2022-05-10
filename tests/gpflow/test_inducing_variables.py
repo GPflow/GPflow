@@ -12,10 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import Callable, Optional, Tuple
+
 import numpy as np
+import pytest
 import tensorflow as tf
 
 import gpflow
+import gpflow.inducing_variables as giv
+from gpflow.experimental.check_shapes import get_shape
+from tests.gpflow.experimental.check_shapes.utils import TestContext
 
 
 def test_inducing_points_with_variable_shape() -> None:
@@ -25,7 +31,7 @@ def test_inducing_points_with_variable_shape() -> None:
     Z1 = np.random.randn(M1, D)
 
     # use explicit tf.Variable with None shape:
-    iv = gpflow.inducing_variables.InducingPoints(
+    iv = giv.InducingPoints(
         tf.Variable(Z1, trainable=False, dtype=gpflow.default_float(), shape=(None, D))
     )
     # Note that we cannot have Z be trainable if we want to be able to change its shape;
@@ -50,14 +56,51 @@ def test_inducing_points_with_variable_shape() -> None:
     optimization_step()
 
 
-def test_num_inducing() -> None:
-    M = 7
-    D = 3
-    Z = np.random.randn(M, D)
+@pytest.mark.parametrize(
+    "iv_factory,expected_shape",
+    [
+        (lambda t: giv.InducingPoints(t), (7, 3, 1)),
+        (lambda t: giv.Multiscale(t, t), (7, 3, 1)),
+        (lambda t: giv.InducingPatches(t), (7, 3, 1)),
+        (
+            lambda t: giv.FallbackSharedIndependentInducingVariables(giv.InducingPoints(t)),
+            (7, 3, None),
+        ),
+        (
+            lambda t: giv.FallbackSeparateIndependentInducingVariables(
+                [
+                    giv.InducingPoints(t),
+                    giv.InducingPoints(t),
+                ]
+            ),
+            (7, 3, 2),
+        ),
+        (
+            lambda t: giv.SharedIndependentInducingVariables(giv.InducingPoints(t)),
+            (7, 3, None),
+        ),
+        (
+            lambda t: giv.SeparateIndependentInducingVariables(
+                [
+                    giv.InducingPoints(t),
+                    giv.InducingPoints(t),
+                ]
+            ),
+            (7, 3, 2),
+        ),
+    ],
+)
+def test_shape(
+    iv_factory: Callable[[tf.Tensor], giv.InducingVariables],
+    expected_shape: Tuple[Optional[int], ...],
+) -> None:
+    M = expected_shape[0]
+    ones = tf.ones((7, 3))
+    t1 = tf.Variable(ones)
+    t2 = tf.Variable(ones, shape=tf.TensorShape(None))
 
-    iv = gpflow.inducing_variables.InducingPoints(
-        tf.Variable(Z, trainable=False, dtype=gpflow.default_float())
-    )
-
-    assert M == iv.num_inducing
-    assert M == len(iv)
+    for t, e in zip((t1, t2), (expected_shape, None)):
+        iv = iv_factory(t)
+        assert e == get_shape(iv, TestContext())
+        assert M == iv.num_inducing
+        assert M == len(iv)

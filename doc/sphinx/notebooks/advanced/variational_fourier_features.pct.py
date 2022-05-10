@@ -33,6 +33,7 @@ from gpflow.utilities import to_default_float
 from gpflow import covariances as cov
 from gpflow import kullback_leiblers as kl
 from gpflow.ci_utils import ci_niter
+from gpflow.experimental.check_shapes import Shape
 
 # %%
 # VFF give structured covariance matrices that are computationally efficient.
@@ -59,13 +60,21 @@ class FourierFeatures1D(InducingVariables):
         # [a, b] defining the interval of the Fourier representation:
         self.a = gpflow.Parameter(a, dtype=gpflow.default_float())
         self.b = gpflow.Parameter(b, dtype=gpflow.default_float())
+        self.M = M
         # integer array defining the frequencies, ω_m = 2π (b - a)/m:
         self.ms = np.arange(M)
 
     @property
     def num_inducing(self):
         """ number of inducing variables (defines dimensionality of q(u)) """
-        return 2 * tf.shape(self.ms)[0] - 1  # `M` cosine and `M-1` sine components
+        return 2 * self.M - 1  # `M` cosine and `M-1` sine components
+
+    @property
+    def shape(self) -> Shape:
+        M = 2 * self.M - 1
+        D = 1  # Input size.
+        P = 1  # Output size.
+        return (M, D, P)
 
 
 # %% [markdown]

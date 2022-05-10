@@ -117,7 +117,7 @@ def test_dispatcher_autograph_warnings(
     test_fn_compiled = tf.function(test_fn)  # with autograph=True by default
 
     # ...but calling using subclass
-    result = test_fn_compiled(gpflow.inducing_variables.InducingPoints([1.0, 2.0]))
+    result = test_fn_compiled(gpflow.inducing_variables.InducingPoints([[1.0, 2.0]]))
     assert result.numpy() == 3.0  # expect computation to work either way
 
     captured = capsys.readouterr()

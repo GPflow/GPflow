@@ -35,8 +35,11 @@ from .utils import TestContext
         ((0,), (1,)),
         ([[0.1, 0.2]], (1, 2)),
         ([[[], []]], None),
+        (np.zeros(()), ()),
         (np.zeros((3, 4)), (3, 4)),
+        (tf.zeros(()), ()),
         (tf.zeros((4, 3)), (4, 3)),
+        (tf.Variable(np.zeros(())), ()),
         (tf.Variable(np.zeros((2, 4))), (2, 4)),
         # pylint: disable=unexpected-keyword-arg
         (tf.Variable(np.zeros((2, 4)), shape=[2, None]), (2, None)),

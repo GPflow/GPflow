@@ -33,14 +33,13 @@ This release contains contributions from:
 <INSERT>, <NAME>, <HERE>, <USING>, <GITHUB>, <HANDLE>
 
 
-# Release 2.5.3 (next upcoming release in progress)
+# Release 2.6.0 (next upcoming release in progress)
 
 <INSERT SMALL BLURB ABOUT RELEASE FOCUS AREA AND POTENTIAL TOOLCHAIN CHANGES>
 
 ## Breaking Changes
 
-* <DOCUMENT BREAKING CHANGES HERE>
-* <THIS SECTION SHOULD CONTAIN API AND BEHAVIORAL BREAKING CHANGES>
+* Change to `InducingVariables` API. `InducingVariables` must now have a `shape` property.
 
 ## Known Caveats
 
@@ -63,7 +62,7 @@ This release contains contributions from:
 
 This release contains contributions from:
 
-<INSERT>, <NAME>, <HERE>, <USING>, <GITHUB>, <HANDLE>
+jesnie
 
 
 # Release 2.5.2
