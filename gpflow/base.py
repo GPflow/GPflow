@@ -135,7 +135,6 @@ class Parameter(tfp.util.TransformedVariable):
         if transform:
             name = name or transform.name
 
-        tensor_value: TensorType
         if isinstance(value, Parameter):
             transform = transform or value.transform
             prior = prior or value.prior
@@ -144,7 +143,7 @@ class Parameter(tfp.util.TransformedVariable):
             trainable = value.trainable if trainable is None else trainable
 
             if dtype:
-                tensor_value = _cast_to_dtype(value, dtype)
+                tensor_value: TensorType = _cast_to_dtype(value, dtype)
             else:
                 tensor_value = value
         else:

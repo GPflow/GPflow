@@ -50,6 +50,7 @@ class _Versions:
         self._versions.append(
             {
                 "version": version,
+                "url": f"https://gpflow.github.io/GPflow/{version}/index.html",
             }
         )
         self._sorted = False
@@ -65,6 +66,7 @@ class _Versions:
             # Insert `develop` in the second spot, after the latest release, but before older
             # releases:
             versions.insert(1, develop)
+        self._versions = versions
         self._sorted = True
 
     @property

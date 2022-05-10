@@ -24,7 +24,7 @@ copyright = "2022, The GPflow Contributors"
 author = "The GPflow Contributors"
 
 # The full version, including alpha/beta/rc tags
-release = "2.5.1"
+release = "2.5.2"
 
 
 # -- General configuration ---------------------------------------------------
@@ -80,7 +80,6 @@ html_theme_options = {
     "github_url": "https://github.com/GPflow/GPflow",
     "switcher": {
         "json_url": "https://gpflow.github.io/GPflow/versions.json",
-        "url_template": "https://gpflow.github.io/GPflow/{version}/index.html",
         "version_match": Path("build_version.txt").read_text().strip(),
     },
     "navbar_end": ["version-switcher"],
