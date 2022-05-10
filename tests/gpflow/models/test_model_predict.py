@@ -154,7 +154,14 @@ def test_gaussian_full_cov(input_dim: int, output_dim: int, N: int, Ntest: int) 
 
 @pytest.mark.parametrize("input_dim, output_dim, N, Ntest, M, num_samples", [[3, 2, 20, 30, 5, 5]])
 def test_gaussian_full_cov_samples(
-    input_dim: int, output_dim: int, N: int, Ntest: int, M: int, num_samples: int
+    input_dim: int,
+    output_dim: int,
+    N: int,
+    Ntest: int,
+    M: int,
+    num_samples: int,
+    full_cov: bool,
+    full_output_cov: bool,
 ) -> None:
     samples_shape = (num_samples, Ntest, output_dim)
     X, Y, _ = rng.randn(N, input_dim), rng.randn(N, output_dim), rng.randn(M, input_dim)
@@ -162,10 +169,9 @@ def test_gaussian_full_cov_samples(
     kernel = Matern32()
     model_gp = gpflow.models.GPR((X, Y), kernel=kernel)
 
-    samples = model_gp.predict_f_samples(Xtest, num_samples)
-    assert samples.shape == samples_shape
-
-    samples = model_gp.predict_f_samples(Xtest, num_samples, full_cov=False)
+    samples = model_gp.predict_f_samples(
+        Xtest, num_samples, full_cov=full_cov, full_output_cov=full_output_cov
+    )
     assert samples.shape == samples_shape
 
 
@@ -209,11 +215,15 @@ def test_other_models_full_cov_samples(
     Ntest: int,
     M: int,
     num_samples: int,
+    full_cov: bool,
+    full_output_cov: bool,
 ) -> None:
     samples_shape = (num_samples, Ntest, output_dim)
     X, Y, Z = rng.randn(N, input_dim), rng.randn(N, output_dim), rng.randn(M, input_dim)
     Xtest = rng.randn(Ntest, input_dim)
     model_gp = model_setup.get_model(Z, num_latent_gps=output_dim, data=(X, Y))
 
-    samples = model_gp.predict_f_samples(Xtest, num_samples)
+    samples = model_gp.predict_f_samples(
+        Xtest, num_samples, full_cov=full_cov, full_output_cov=full_output_cov
+    )
     assert samples.shape == samples_shape

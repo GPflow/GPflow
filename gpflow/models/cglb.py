@@ -181,6 +181,9 @@ class CGLB(SGPR):
         :param cg_tolerance: float or None: If None, the cached value of
             :math:`v` is used. If float, conjugate gradient is run until :math:`rᵀQ⁻¹r < ϵ`.
         """
+        if full_output_cov:
+            raise NotImplementedError
+
         x, y = self.data
         err = y - self.mean_function(x)
         kxx = self.kernel(x, x)

@@ -242,6 +242,9 @@ class SGPR_deprecated(SGPRBase_deprecated):
         Xnew. For a derivation of the terms in here, see the associated SGPR
         notebook.
         """
+        if full_output_cov:
+            raise NotImplementedError
+
         X_data, Y_data = self.data
         num_inducing = self.inducing_variable.num_inducing
         err = Y_data - self.mean_function(X_data)
@@ -409,6 +412,9 @@ class GPRFITC(SGPRBase_deprecated):
         Compute the mean and variance of the latent function at some new points
         Xnew.
         """
+        if full_output_cov:
+            raise NotImplementedError
+
         _, _, Luu, L, _, _, gamma = self.common_terms()
         Kus = Kuf(self.inducing_variable, self.kernel, Xnew)  # [M, N]
 

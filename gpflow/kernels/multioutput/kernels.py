@@ -18,7 +18,9 @@ from typing import Optional, Sequence, Tuple
 import tensorflow as tf
 
 from ...base import Parameter, TensorType
+from ...experimental.check_shapes import check_shape as cs
 from ...experimental.check_shapes import check_shapes, inherit_check_shapes
+from ...utilities.ops import leading_tile, leading_transpose
 from ..base import Combination, Kernel
 
 
@@ -147,18 +149,37 @@ class SharedIndependent(MultioutputKernel):
     def K(
         self, X: TensorType, X2: Optional[TensorType] = None, full_output_cov: bool = True
     ) -> tf.Tensor:
-        K = self.kernel.K(X, X2)  # [N, N2]
+        K = cs(self.kernel.K(X, X2), "[N..., N2...]")
+        X_rank = tf.rank(X) - 1
+        X2_rank = 1 if X2 is None else (tf.rank(X2) - 1)
         if full_output_cov:
-            Ks = tf.tile(K[..., None], [1, 1, self.output_dim])  # [N, N2, P]
-            return tf.transpose(tf.linalg.diag(Ks), [0, 2, 1, 3])  # [N, P, N2, P]
+            Ks = cs(leading_tile(K[..., None], [self.output_dim]), "[N..., N2..., P]")
+            Ks = cs(tf.linalg.diag(Ks), "[N..., N2..., P, P]")
+
+            P_rank = tf.ones((), dtype=tf.int32)
+            ranks = [X_rank, X2_rank, P_rank, P_rank]
+            indices = []
+            i = tf.zeros((), dtype=tf.int32)
+            for rank in ranks:
+                indices.append(tf.range(i, i + rank))
+                i += rank
+            X_indices, X2_indices, P_indices, P2_indices = indices
+            perm = tf.concat([X_indices, P_indices, X2_indices, P2_indices], axis=0)
+            return cs(tf.transpose(Ks, perm), "[N..., P, N2..., P]")
         else:
-            return tf.tile(K[None, ...], [self.output_dim, 1, 1])  # [P, N, N2]
+            multiples = tf.concat(
+                [[self.output_dim], tf.ones((X_rank + X2_rank), dtype=tf.int32)], axis=0
+            )
+            return cs(tf.tile(K[None, ...], multiples), "[P, N..., N2...]")
 
     @inherit_check_shapes
     def K_diag(self, X: TensorType, full_output_cov: bool = True) -> tf.Tensor:
-        K = self.kernel.K_diag(X)  # N
-        Ks = tf.tile(K[:, None], [1, self.output_dim])  # [N, P]
-        return tf.linalg.diag(Ks) if full_output_cov else Ks  # [N, P, P] or [N, P]
+        K = cs(self.kernel.K_diag(X), "[N...]")
+        Ks = cs(leading_tile(K[..., None], [self.output_dim]), "[N..., P]")
+        if full_output_cov:
+            return cs(tf.linalg.diag(Ks), "[N..., P, P]")
+        else:
+            return cs(Ks, "[N..., P]")
 
 
 class SeparateIndependent(MultioutputKernel, Combination):

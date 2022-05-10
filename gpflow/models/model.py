@@ -13,16 +13,19 @@
 # limitations under the License.
 
 import abc
-from typing import Any, Optional
+from typing import Any, Optional, Tuple
 
 import tensorflow as tf
 
 from ..base import InputData, MeanAndVariance, Module, RegressionData
 from ..conditionals.util import sample_mvn
+from ..experimental.check_shapes import check_shape as cs
+from ..experimental.check_shapes import check_shapes
 from ..kernels import Kernel, MultioutputKernel
 from ..likelihoods import Likelihood, SwitchedLikelihood
 from ..mean_functions import MeanFunction, Zero
 from ..utilities import to_default_float
+from ..utilities.ops import leading_reshape
 
 
 class BayesianModel(Module, metaclass=abc.ABCMeta):
@@ -153,6 +156,10 @@ class GPModel(BayesianModel):
     ) -> MeanAndVariance:
         raise NotImplementedError
 
+    @check_shapes(
+        "Xnew: [batch..., N, D]",
+        "return: [batch_and_num_samples..., N, P]",
+    )
     def predict_f_samples(
         self,
         Xnew: InputData,
@@ -178,31 +185,41 @@ class GPModel(BayesianModel):
         :param full_output_cov:
             If True, draw correlated samples over the outputs.
             If False, draw samples that are uncorrelated over the outputs.
-
-        Currently, the method does not support `full_output_cov=True` and `full_cov=True`.
         """
-        if full_cov and full_output_cov:
-            raise NotImplementedError(
-                "The combination of both `full_cov` and `full_output_cov` is not supported."
-            )
-
         # check below for shape info
         mean, cov = self.predict_f(Xnew, full_cov=full_cov, full_output_cov=full_output_cov)
         if full_cov:
-            # mean: [..., N, P]
-            # cov: [..., P, N, N]
-            mean_for_sample = tf.linalg.adjoint(mean)  # [..., P, N]
-            samples = sample_mvn(
-                mean_for_sample, cov, full_cov, num_samples=num_samples
-            )  # [..., (S), P, N]
-            samples = tf.linalg.adjoint(samples)  # [..., (S), N, P]
+            if full_output_cov:
+                cs(cov, "[batch..., N, P, N, P]")
+                N, P = tf.shape(mean)[-2:]
+                NP = N * P
+                r_mean = cs(leading_reshape(mean, 2, (1, NP)), "[batch..., 1,NP]")
+                r_cov = cs(leading_reshape(cov, 4, (1, NP, NP)), "[batch..., 1, NP, NP]")
+                r_samples = cs(
+                    sample_mvn(r_mean, r_cov, full_cov=True, num_samples=num_samples),
+                    "[batch_and_num_samples..., 1, NP]",
+                )
+                samples = cs(
+                    leading_reshape(r_samples, 2, (N, P)), "[batch_and_num_samples..., N, P]"
+                )
+            else:
+                cs(cov, "[batch..., P, N, N]")
+                mean_for_sample = cs(tf.linalg.adjoint(mean), "[batch..., P, N]")
+                samples = cs(
+                    sample_mvn(mean_for_sample, cov, full_cov, num_samples=num_samples),
+                    "[batch_and_num_samples..., P, N]",
+                )
+                samples = cs(tf.linalg.adjoint(samples), "[batch_and_num_samples..., N, P]")
         else:
-            # mean: [..., N, P]
-            # cov: [..., N, P] or [..., N, P, P]
-            samples = sample_mvn(
-                mean, cov, full_output_cov, num_samples=num_samples
-            )  # [..., (S), N, P]
-        return samples  # [..., (S), N, P]
+            if full_output_cov:
+                cs(cov, "[batch..., N, P, P]")
+            else:
+                cs(cov, "[batch..., N, P]")
+            samples = cs(
+                sample_mvn(mean, cov, full_output_cov, num_samples=num_samples),
+                "[batch_and_num_samples..., N, P]",
+            )
+        return samples
 
     def predict_y(
         self, Xnew: InputData, full_cov: bool = False, full_output_cov: bool = False

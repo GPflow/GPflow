@@ -20,10 +20,14 @@ import gpflow
 
 from .. import posteriors
 from ..base import InputData, MeanAndVariance, RegressionData
-from ..kernels import Kernel
+from ..conditionals.util import expand_independent_outputs
+from ..experimental.check_shapes import check_shape as cs
+from ..experimental.check_shapes import check_shapes
+from ..kernels import Kernel, MultioutputKernel
 from ..logdensities import multivariate_normal
 from ..mean_functions import MeanFunction
 from ..utilities.model_utils import add_noise_cov
+from ..utilities.ops import leading_reshape, leading_transpose
 from .model import GPModel
 from .training_mixins import InternalDataTrainingLossMixin
 from .util import data_input_to_tensor
@@ -75,6 +79,9 @@ class GPR_deprecated(GPModel, InternalDataTrainingLossMixin):
         """
         return add_noise_cov(K, self.likelihood.variance)
 
+    @check_shapes(
+        "return: []",
+    )
     def log_marginal_likelihood(self) -> tf.Tensor:
         r"""
         Computes the log marginal likelihood.
@@ -84,15 +91,39 @@ class GPR_deprecated(GPModel, InternalDataTrainingLossMixin):
 
         """
         X, Y = self.data
-        K = self.kernel(X)
-        ks = self._add_noise_cov(K)
-        L = tf.linalg.cholesky(ks)
-        m = self.mean_function(X)
+        cs(X, "[N, D]")
+        cs(Y, "[N, P]")
+        m = cs(self.mean_function(X), "[N, broadcast P]")
+
+        if isinstance(self.kernel, MultioutputKernel):
+            N = tf.shape(Y)[-2]
+            P = tf.shape(Y)[-1]
+            NP = N * P
+            K = cs(self.kernel(X, full_cov=True, full_output_cov=True), "[N, P, N, P]")
+            K = cs(leading_reshape(K, 4, (NP, NP)), "[NP, NP]")
+            Y = cs(leading_reshape(Y, 2, (NP, 1)), "[NP, 1]")
+            if tf.shape(m)[-1] != P:
+                # Broadcast
+                m = cs(tf.tile(m, [1, P]), "[N, P]")
+            m = cs(leading_reshape(m, 2, (NP, 1)), "[NP, 1]")
+        else:
+            K = cs(self.kernel(X, full_cov=True), "[N, N]")
+
+        ks = cs(self._add_noise_cov(K), "[N2, D2]")
+        L = cs(tf.linalg.cholesky(ks), "[N2, D2]")
 
         # [R,] log-likelihoods for each independent dimension of Y
-        log_prob = multivariate_normal(Y, m, L)
+        log_prob = cs(multivariate_normal(Y, m, L), "[P2]")
         return tf.reduce_sum(log_prob)
 
+    @check_shapes(
+        "Xnew: [batch..., N, D]",
+        "return[0]: [batch..., N, P]",
+        "return[1]: [batch..., N, P] if (not full_cov) and (not full_output_cov)",
+        "return[1]: [batch..., P, N, N] if full_cov and (not full_output_cov)",
+        "return[1]: [batch..., N, P, P] if (not full_cov) and full_output_cov",
+        "return[1]: [batch..., N, P, N, P] if full_cov and full_output_cov",
+    )
     def predict_f(
         self, Xnew: InputData, full_cov: bool = False, full_output_cov: bool = False
     ) -> MeanAndVariance:
@@ -106,17 +137,180 @@ class GPR_deprecated(GPModel, InternalDataTrainingLossMixin):
         points.
         """
         X, Y = self.data
-        err = Y - self.mean_function(X)
-
-        kmm = self.kernel(X)
-        knn = self.kernel(Xnew, full_cov=full_cov)
-        kmn = self.kernel(X, Xnew)
-        kmm_plus_s = self._add_noise_cov(kmm)
+        print("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
+        print("X", X.shape)
+        print("Y", Y.shape)
+        print("Xnew", Xnew.shape)
+        print("full_cov", full_cov)
+        print("full_output_cov", full_output_cov)
+        cs(X, "[M, D]")
+        cs(Y, "[M, P]")
+        err = cs(Y - self.mean_function(X), "[M, P]")
 
         conditional = gpflow.conditionals.base_conditional
-        f_mean_zero, f_var = conditional(
-            kmn, kmm_plus_s, knn, err, full_cov=full_cov, white=False
-        )  # [N, P], [N, P] or [P, N, N]
+        if isinstance(self.kernel, MultioutputKernel):
+            M = tf.shape(Y)[-2]
+            N = tf.shape(Xnew)[-2]
+            P = tf.shape(Y)[-1]
+            batch = tf.shape(Xnew)[:-2]
+            batch_rank = tf.shape(batch)[0]
+            MP = M * P
+            NP = N * P
+
+            Kmm = cs(self.kernel(X, full_cov=True, full_output_cov=True), "[M, P, M, P]")
+            Kmm = cs(leading_reshape(Kmm, 4, (MP, MP)), "[MP, MP]")
+            Kmm_plus_s = cs(self._add_noise_cov(Kmm), "[MP, MP]")
+            Kmn = cs(
+                self.kernel(X, Xnew, full_cov=True, full_output_cov=True),
+                "[M, P, batch..., N, P]",
+            )
+            err = cs(tf.reshape(err, [MP, 1]), "[MP, 1]")
+
+            if full_output_cov:
+                if full_cov:
+                    Knn = cs(
+                        self.kernel(Xnew, full_cov=True, full_output_cov=True),
+                        "[batch..., N, P, N, P]",
+                    )
+                    Knn = cs(leading_reshape(Knn, 4, (NP, NP)), "[batch..., NP, NP]")
+                    Kmn = cs(
+                        tf.reshape(Kmn, tf.concat([[MP], batch, [NP]], axis=0)),
+                        "[MP, batch..., NP]",
+                    )
+                    err = cs(tf.reshape(err, [MP, 1]), "[MP, 1]")
+
+                    f_mean_zero, f_var = conditional(
+                        Kmn, Kmm_plus_s, Knn, err, full_cov=True, white=False
+                    )
+                    cs(f_mean_zero, "[batch..., NP, 1]")
+                    cs(f_var, "[batch..., 1, NP, NP]")
+
+                    f_mean_zero = cs(
+                        tf.reshape(f_mean_zero, tf.concat([batch, [N, P]], axis=0)),
+                        "[batch..., N, P]",
+                    )
+                    f_var = cs(
+                        tf.reshape(f_var, tf.concat([batch, [N, P, N, P]], axis=0)),
+                        "[batch..., N, P, N, P]",
+                    )
+
+                else:
+                    Knn = cs(
+                        self.kernel(Xnew, full_cov=False, full_output_cov=True),
+                        "[batch..., N, P, P]",
+                    )
+                    Kmn = cs(
+                        tf.reshape(Kmn, tf.concat([[MP], batch, [N, P]], axis=0)),
+                        "[MP, batch..., N, P]",
+                    )
+
+                    f_mean_zero, f_var = conditional(
+                        Kmn, Kmm_plus_s, Knn, err, full_cov=True, white=False
+                    )
+                    cs(f_mean_zero, "[batch..., N, P, 1]")
+                    cs(f_var, "[batch..., N, 1, P, P]")
+
+                    f_mean_zero = cs(
+                        tf.reshape(f_mean_zero, tf.concat([batch, [N, P]], axis=0)),
+                        "[batch..., N, P]",
+                    )
+                    f_var = cs(
+                        tf.reshape(f_var, tf.concat([batch, [N, P, P]], axis=0)),
+                        "[batch..., N, P, P]",
+                    )
+            else:
+
+                Knn = cs(
+                    self.kernel(Xnew, full_cov=full_cov, full_output_cov=False),
+                    "[P, batch..., N, N]" if full_cov else "[batch..., N, P]",
+                )
+                if not full_cov:
+                    Knn = cs(
+                        tf.transpose(
+                            Knn,
+                            tf.concat(
+                                [[batch_rank + 1], tf.range(batch_rank), [batch_rank]], axis=0
+                            ),
+                        ),
+                        "[P, batch..., N]",
+                    )
+
+                Kmn = cs(
+                    tf.reshape(Kmn, tf.concat([[MP], batch, [N, P]], axis=0)),
+                    "[MP, batch..., N, P]",
+                )
+                Kmn = cs(
+                    tf.transpose(
+                        Kmn,
+                        tf.concat(
+                            [[0, batch_rank + 2], tf.range(batch_rank) + 1, [batch_rank + 1]],
+                            axis=0,
+                        ),
+                    ),
+                    "[MP, P, batch..., N]",
+                )
+
+                f_mean_zero, f_var = conditional(
+                    Kmn, Kmm_plus_s, Knn, err, full_cov=full_cov, white=False
+                )
+
+                cs(f_mean_zero, "[P, batch..., N, 1]")
+                f_mean_zero = cs(
+                    tf.reshape(f_mean_zero, tf.concat([[P], batch, [N]], axis=0)),
+                    "[P, batch..., N]",
+                )
+                f_mean_zero = cs(
+                    tf.transpose(
+                        f_mean_zero,
+                        tf.concat([tf.range(batch_rank) + 1, [batch_rank + 1, 0]], axis=0),
+                    ),
+                    "[batch..., N, P]",
+                )
+
+                if full_cov:
+                    cs(f_var, "[P, batch..., 1, N, N]")
+                    f_var = cs(
+                        tf.reshape(f_var, tf.concat([[P], batch, [N, N]], axis=0)),
+                        "[P, batch..., N, N]",
+                    )
+                    f_var = cs(
+                        tf.transpose(
+                            f_var,
+                            tf.concat(
+                                [tf.range(batch_rank) + 1, [0, batch_rank + 1, batch_rank + 2]],
+                                axis=0,
+                            ),
+                        ),
+                        "[batch..., P, N, N]",
+                    )
+                else:
+                    cs(f_var, "[P, batch..., N, 1]")
+                    f_var = cs(
+                        tf.reshape(f_var, tf.concat([[P], batch, [N]], axis=0)), "[P, batch..., N]"
+                    )
+                    f_var = cs(
+                        tf.transpose(
+                            f_var,
+                            tf.concat([tf.range(batch_rank) + 1, [batch_rank + 1, 0]], axis=0),
+                        ),
+                        "[batch..., N, P]",
+                    )
+        else:
+            Kmm = cs(self.kernel(X), "[M, M]")
+            Knn = cs(
+                self.kernel(Xnew, full_cov=full_cov),
+                "[batch..., N, N]" if full_cov else "[batch..., N]",
+            )
+            Kmn = cs(self.kernel(X, Xnew), "[M, batch..., N]")
+            Kmm_plus_s = cs(self._add_noise_cov(Kmm), "[M, M]")
+
+            f_mean_zero, f_var = conditional(
+                Kmn, Kmm_plus_s, Knn, err, full_cov=full_cov, white=False
+            )
+            cs(f_mean_zero, "[batch..., N, P]")
+            cs(f_var, "[batch..., P, N, N]" if full_cov else "[batch..., N, P]")
+            f_var = expand_independent_outputs(f_var, full_cov, full_output_cov)
+
         f_mean = f_mean_zero + self.mean_function(Xnew)
         return f_mean, f_var
 

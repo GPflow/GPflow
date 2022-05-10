@@ -134,6 +134,9 @@ class VGP_deprecated(GPModel, InternalDataTrainingLossMixin):
     def predict_f(
         self, Xnew: InputData, full_cov: bool = False, full_output_cov: bool = False
     ) -> MeanAndVariance:
+        if full_output_cov:
+            raise NotImplementedError
+
         X_data, _Y_data = self.data
         mu, var = conditional(
             Xnew,

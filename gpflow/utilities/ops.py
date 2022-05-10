@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import copy
-from typing import Any, Callable, List, Optional, Union
+from typing import Any, Callable, List, Optional, Tuple, Union
 
 import tensorflow as tf
 import tensorflow_probability as tfp
@@ -93,6 +93,36 @@ def leading_transpose(tensor: tf.Tensor, perm: List[Any], leading_dim: int = 0) 
     leading_dims = tf.range(rank - len(perm) + 1)
     perm = tf.concat([perm_tf[:idx], leading_dims, perm_tf[idx + 1 :]], 0)
     return tf.transpose(tensor, perm)
+
+
+@check_shapes(
+    "tensor: [before...]",
+    "new_suffix_shape: [new_suffix_len]",
+    "return: [after...]",
+)
+def leading_reshape(
+    tensor: tf.Tensor, suffix_len: int, new_suffix_shape: Tuple[Union[tf.Tensor, int], ...]
+) -> tf.Tensor:
+    old_shape = tf.shape(tensor)
+    prefix = old_shape[:-suffix_len]
+    new_suffix = tf.stack(new_suffix_shape)
+    new_shape = tf.concat([prefix, new_suffix], axis=0)
+    return tf.reshape(tensor, new_shape)
+
+
+@check_shapes(
+    "tensor: [before...]",
+    "suffix_multiples: [suffix_len]",
+    "return: [after...]",
+)
+def leading_tile(
+    tensor: tf.Tensor, suffix_multiples: Tuple[Union[tf.Tensor, int], ...]
+) -> tf.Tensor:
+    suffix_multiples_tf = tf.constant(suffix_multiples)
+    prefix_len = tf.rank(tensor) - tf.rank(suffix_multiples_tf)
+    prefix_multiples_tf = tf.ones([prefix_len], dtype=suffix_multiples_tf.dtype)
+    multiples = tf.concat([prefix_multiples_tf, suffix_multiples_tf], axis=0)
+    return tf.tile(tensor, multiples)
 
 
 @check_shapes(

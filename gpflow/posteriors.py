@@ -318,6 +318,9 @@ class GPRPosterior(AbstractPosterior):
         Computes predictive mean and (co)variance at Xnew, *excluding* mean_function.
         Relies on cached alpha and Qinv.
         """
+        if full_output_cov:
+            raise NotImplementedError
+
         (alpha,) = cache
         (Qinv,) = cache
 
@@ -388,6 +391,8 @@ class GPRPosterior(AbstractPosterior):
         Computes predictive mean and (co)variance at Xnew, *excluding* mean_function
         Does not make use of caching
         """
+        if full_output_cov:
+            raise NotImplementedError
 
         # taken directly from the deprecated GPR implementation
         assert self.mean_function is not None
@@ -471,6 +476,9 @@ class SGPRPosterior(AbstractPosterior):
         Computes predictive mean and (co)variance at Xnew, *excluding* mean_function.
         Relies on cached alpha and Qinv.
         """
+        if full_output_cov:
+            raise NotImplementedError
+
         alpha, Qinv = cache
 
         Kus = Kuf(self.inducing_variable, self.kernel, Xnew)
@@ -496,6 +504,8 @@ class SGPRPosterior(AbstractPosterior):
         Compute the mean and variance of the latent function at some new points
         Xnew. Does not make use of caching
         """
+        if full_output_cov:
+            raise NotImplementedError
 
         # taken directly from the deprecated SGPR implementation
         num_inducing = self.inducing_variable.num_inducing
@@ -561,6 +571,9 @@ class VGPPosterior(AbstractPosterior):
         full_cov: bool = False,
         full_output_cov: bool = False,
     ) -> MeanAndVariance:
+        if full_output_cov:
+            raise NotImplementedError
+
         (Lm,) = cache
         Kmn = self.kernel(self.X_data, Xnew)  # [M, ..., N]
         Knn = self.kernel(

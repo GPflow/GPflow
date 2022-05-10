@@ -18,9 +18,22 @@ import tensorflow as tf
 
 from ..base import MeanAndVariance
 from ..config import default_float, default_jitter
+from ..experimental.check_shapes import check_shape as cs
+from ..experimental.check_shapes import check_shapes
 from ..utilities.ops import leading_transpose
 
 
+@check_shapes(
+    "Kmn: [M, batch..., N]",
+    "Kmm: [M, M]",
+    "Knn: [batch..., N, N] if full_cov",
+    "Knn: [batch..., N] if not full_cov",
+    "f: [M, R]",
+    "q_sqrt: [M_R_or_R_M_M...]",
+    "return[0]: [batch..., N, R]",
+    "return[1]: [batch..., R, N, N] if full_cov",
+    "return[1]: [batch..., N, R] if not full_cov",
+)
 def base_conditional(
     Kmn: tf.Tensor,
     Kmm: tf.Tensor,
@@ -47,10 +60,10 @@ def base_conditional(
 
       q(g1) = ∫ q(g2) p(g1 | g2)
 
-    :param Kmn: [M, ..., N]
-    :param Kmm: [M, M]
-    :param Knn: [..., N, N]  or  N
-    :param f: [M, R]
+    :param Kmn: Kmn
+    :param Kmm: Kmm
+    :param Knn: Knn
+    :param f: f
     :param full_cov: bool
     :param q_sqrt: If this is a Tensor, it must have shape [R, M, M] (lower
         triangular) or [M, R] (diagonal)
@@ -63,6 +76,17 @@ def base_conditional(
     )
 
 
+@check_shapes(
+    "Kmn: [M, batch..., N]",
+    "Lm: [M, M]",
+    "Knn: [batch..., N, N] if full_cov",
+    "Knn: [batch..., N] if not full_cov",
+    "f: [M, R]",
+    "q_sqrt: [M_R_or_R_M_M...]",
+    "return[0]: [batch..., N, R]",
+    "return[1]: [batch..., R, N, N] if full_cov",
+    "return[1]: [batch..., N, R] if not full_cov",
+)
 def base_conditional_with_lm(
     Kmn: tf.Tensor,
     Lm: tf.Tensor,
@@ -79,6 +103,9 @@ def base_conditional_with_lm(
 
     This allows `Lm` to be precomputed, which can improve performance.
     """
+    if q_sqrt is not None:
+        cs(q_sqrt, "[M, R]" if q_sqrt.shape.ndims == 2 else "[R, M, M]")
+
     # compute kernel stuff
     num_func = tf.shape(f)[-1]  # R
     N = tf.shape(Kmn)[-1]
@@ -96,24 +123,6 @@ def base_conditional_with_lm(
         0,
     )  # [N]
     Kmn = tf.transpose(Kmn, perm)  # [..., M, N]
-
-    shape_constraints = [
-        (Kmn, [..., "M", "N"]),
-        (Lm, ["M", "M"]),
-        (Knn, [..., "N", "N"] if full_cov else [..., "N"]),
-        (f, ["M", "R"]),
-    ]
-    if q_sqrt is not None:
-        shape_constraints.append(
-            (q_sqrt, (["M", "R"] if q_sqrt.shape.ndims == 2 else ["R", "M", "M"]))
-        )
-    tf.debugging.assert_shapes(
-        shape_constraints,
-        message="base_conditional() arguments "
-        "[Note that this check verifies the shape of an alternative "
-        "representation of Kmn. See the docs for the actual expected "
-        "shape.]",
-    )
 
     leading_dims = tf.shape(Kmn)[:-2]
 
@@ -162,14 +171,6 @@ def base_conditional_with_lm(
 
     if not full_cov:
         fvar = tf.linalg.adjoint(fvar)  # [N, R]
-
-    shape_constraints = [
-        (Kmn, [..., "M", "N"]),  # tensor included again for N dimension
-        (f, [..., "M", "R"]),  # tensor included again for R dimension
-        (fmean, [..., "N", "R"]),
-        (fvar, [..., "R", "N", "N"] if full_cov else [..., "N", "R"]),
-    ]
-    tf.debugging.assert_shapes(shape_constraints, message="base_conditional() return values")
 
     return fmean, fvar
 
@@ -226,24 +227,25 @@ def sample_mvn(
     return samples  # [..., S, N, D]
 
 
+@check_shapes(
+    "fvar: [batch..., P, N, N] if full_cov",
+    "fvar: [batch..., N, P] if not full_cov",
+    "return: [batch..., N, P, N, P] if full_cov and full_output_cov",
+    "return: [batch..., N, P, P] if (not full_cov) and full_output_cov",
+    "return: [batch..., P, N, N] if full_cov and (not full_output_cov)",
+    "return: [batch..., N, P] if (not full_cov) and (not full_output_cov)",
+)
 def expand_independent_outputs(fvar: tf.Tensor, full_cov: bool, full_output_cov: bool) -> tf.Tensor:
     """
     Reshapes fvar to the correct shape, specified by `full_cov` and `full_output_cov`.
 
-    :param fvar: has shape [N, P] (full_cov = False) or [P, N, N] (full_cov = True).
-    :return:
-        1. full_cov: True and full_output_cov: True
-           fvar [N, P, N, P]
-        2. full_cov: True and full_output_cov: False
-           fvar [P, N, N]
-        3. full_cov: False and full_output_cov: True
-           fvar [N, P, P]
-        4. full_cov: False and full_output_cov: False
-           fvar [N, P]
+    :param fvar: Single-output covariance.
+    :return: Multi-output covariance.
     """
     if full_cov and full_output_cov:
-        fvar = tf.linalg.diag(tf.transpose(fvar))  # [N, N, P, P]
-        fvar = tf.transpose(fvar, [0, 2, 1, 3])  # [N, P, N, P]
+        fvar = cs(leading_transpose(fvar, [..., -2, -1, -3]), "[batch..., N, N, P]")
+        fvar = cs(tf.linalg.diag(fvar), "[batch..., N, N, P, P]")
+        fvar = cs(leading_transpose(fvar, [..., -4, -2, -3, -1]), "[batch..., N, P, N, P]")
     if not full_cov and full_output_cov:
         fvar = tf.linalg.diag(fvar)  # [N, P, P]
     if full_cov and not full_output_cov:

@@ -107,6 +107,9 @@ class GPMC(GPModel, InternalDataTrainingLossMixin):
         where F* are points on the GP at Xnew, F=LV are points on the GP at X.
 
         """
+        if full_output_cov:
+            raise NotImplementedError
+
         X_data, _Y_data = self.data
         mu, var = conditional(
             Xnew, X_data, self.kernel, self.V, full_cov=full_cov, q_sqrt=None, white=True
