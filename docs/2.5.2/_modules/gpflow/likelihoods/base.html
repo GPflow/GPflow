@@ -1,0 +1,868 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>gpflow.likelihoods.base &#8212; GPflow 2.5.2 documentation</title>
+    
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
+
+    
+  <link rel="stylesheet"
+    href="../../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/pydata-custom.css" />
+    
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf">
+
+    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="https://unpkg.com/@jupyter-widgets/html-manager@^0.20.1/dist/embed-amd.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="docsearch:language" content="None">
+    
+
+    <!-- Google Analytics -->
+    
+  </head>
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="60">
+    
+    <div class="container-fluid" id="banner"></div>
+
+    
+    <nav class="navbar navbar-light navbar-expand-lg bg-light fixed-top bd-navbar" id="navbar-main"><div class="container-xl">
+
+  <div id="navbar-start">
+    
+    
+
+<a class="navbar-brand" href="../../../index.html">
+  <img src="../../../_static/gpflow_logo.svg" class="logo" alt="logo">
+</a>
+
+
+    
+  </div>
+
+  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar-collapsible" aria-controls="navbar-collapsible" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="navbar-toggler-icon"></span>
+  </button>
+
+  
+  <div id="navbar-collapsible" class="col-lg-9 collapse navbar-collapse">
+    <div id="navbar-center" class="mr-auto">
+      
+      <div class="navbar-center-item">
+        <ul id="navbar-main-elements" class="navbar-nav">
+    <li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../intro.html">
+  Introduction
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../manual.html">
+  GPflow manual
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../notebooks/intro_to_gpflow2.html">
+  GPflow with TensorFlow 2
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../notebooks_file.html">
+  Notebooks
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../derivations.html">
+  Derivations
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../api/gpflow/index.html">
+  API reference
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../bibliography.html">
+  Bibliography
+ </a>
+</li>
+
+    
+</ul>
+      </div>
+      
+    </div>
+
+    <div id="navbar-end">
+      
+      <div class="navbar-end-item">
+        <div class="dropdown" id="version_switcher">
+    <button type="button" class="btn btn-primary btn-sm navbar-btn dropdown-toggle" id="version_switcher_button" data-toggle="dropdown">
+        2.5.2  <!-- this text may get changed later by javascript -->
+        <span class="caret"></span>
+    </button>
+    <div id="version_switcher_menu" class="dropdown-menu list-group-flush py-0" aria-labelledby="version_switcher_button">
+    <!-- dropdown will be populated by javascript on page load -->
+    </div>
+</div>
+
+<!-- NOTE: this JS must live here (not in our global JS file) because it relies
+     on being processed by Jinja before it is run (specifically for replacing
+     variables _modules/gpflow/likelihoods/base and {'json_url': 'https://gpflow.github.io/GPflow/versions.json', 'version_match': '2.5.2'}.
+-->
+
+<script type="text/javascript">
+// Check if corresponding page path exists in other version of docs
+// and, if so, go there instead of the homepage of the other docs version
+function checkPageExistsAndRedirect(event) {
+    const currentFilePath = "_modules/gpflow/likelihoods/base.html",
+          tryUrl = event.target.getAttribute("href");
+    let otherDocsHomepage = tryUrl.replace(currentFilePath, "");
+    $.ajax({
+        type: 'HEAD',
+        url: tryUrl,
+        // if the page exists, go there
+        success: function() {
+            location.href = tryUrl;
+        }
+    }).fail(function() {
+        location.href = otherDocsHomepage;
+    });
+    // this prevents the browser from following the href of the clicked node
+    // (which is fine because this function takes care of redirecting)
+    return false;
+}
+
+// Populate the version switcher from the JSON config file
+(function () {
+    $.getJSON("https://gpflow.github.io/GPflow/versions.json", function(data, textStatus, jqXHR) {
+        const currentFilePath = "_modules/gpflow/likelihoods/base.html";
+        // create links to the corresponding page in the other docs versions
+        $.each(data, function(index, entry) {
+            // if no custom name specified (e.g., "latest"), use version string
+            if (!("name" in entry)) {
+                entry.name = entry.version;
+            }
+            // create the node
+            const node = document.createElement("a");
+            node.setAttribute("class", "list-group-item list-group-item-action py-1");
+            node.textContent = `${entry.name}`;
+            node.setAttribute("href", `${entry.url}${currentFilePath}`);
+            // on click, AJAX calls will check if the linked page exists before
+            // trying to redirect, and if not, will redirect to the homepage
+            // for that version of the docs.
+            node.onclick = checkPageExistsAndRedirect;
+            // Add dataset values for the version and name in case people want
+            // to apply CSS styling based on this information.
+            node.dataset["versionName"] = entry.name;
+            node.dataset["version"] = entry.version;
+
+            $("#version_switcher_menu").append(node);
+            // replace dropdown button text with the preferred display name of
+            // this version, rather than using sphinx's  variable.
+            // also highlight the dropdown entry for the currently-viewed
+            // version's entry
+            if (entry.version == "2.5.2") {
+                node.classList.add("active");
+                let btn = document.getElementById("version_switcher_button");
+                btn.innerText = btn.dataset["activeVersionName"] = entry.name;
+                btn.dataset["activeVersion"] = entry.version;
+            }
+        });
+    });
+})();
+</script>
+      </div>
+      
+    </div>
+  </div>
+</div>
+    </nav>
+    
+
+    <div class="container-xl">
+      <div class="row">
+          
+            
+            <!-- Only show if we have sidebars configured, else just a small margin  -->
+            <div class="col-12 col-md-3 bd-sidebar">
+              <div class="sidebar-start-items"><form class="bd-search d-flex align-items-center" action="../../../search.html" method="get">
+  <i class="icon fas fa-search"></i>
+  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
+</form><nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
+  <div class="bd-toc-item active">
+    
+  </div>
+</nav>
+              </div>
+              <div class="sidebar-end-items">
+              </div>
+            </div>
+            
+          
+
+          
+          <div class="d-none d-xl-block col-xl-2 bd-toc">
+            
+          </div>
+          
+
+          
+          
+            
+          
+          <main class="col-12 col-md-9 col-xl-7 py-md-5 pl-md-5 pr-md-4 bd-content" role="main">
+              
+              <div>
+                
+  <h1>Source code for gpflow.likelihoods.base</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright 2016-2020 The GPflow Contributors. All Rights Reserved.</span>
+<span class="c1">#</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+<span class="c1">#</span>
+<span class="c1"># http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c1">#</span>
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
+<span class="kn">import</span> <span class="nn">abc</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">import</span> <span class="nn">tensorflow</span> <span class="k">as</span> <span class="nn">tf</span>
+
+<span class="kn">from</span> <span class="nn">..base</span> <span class="kn">import</span> <span class="n">MeanAndVariance</span><span class="p">,</span> <span class="n">Module</span><span class="p">,</span> <span class="n">TensorType</span>
+<span class="kn">from</span> <span class="nn">..quadrature</span> <span class="kn">import</span> <span class="n">GaussianQuadrature</span><span class="p">,</span> <span class="n">NDiagGHQuadrature</span><span class="p">,</span> <span class="n">ndiag_mc</span>
+
+<span class="n">DEFAULT_NUM_GAUSS_HERMITE_POINTS</span> <span class="o">=</span> <span class="mi">20</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">The number of Gauss-Hermite points to use for quadrature (fallback when a</span>
+<span class="sd">likelihood method does not have an analytic method) if quadrature object is not</span>
+<span class="sd">explicitly passed to likelihood constructor.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<div class="viewcode-block" id="Likelihood"><a class="viewcode-back" href="../../../api/gpflow/likelihoods/index.html#gpflow.likelihoods.Likelihood">[docs]</a><span class="k">class</span> <span class="nc">Likelihood</span><span class="p">(</span><span class="n">Module</span><span class="p">,</span> <span class="n">metaclass</span><span class="o">=</span><span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">latent_dim</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">observation_dim</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        A base class for likelihoods, which specifies an observation model</span>
+<span class="sd">        connecting the latent functions (&#39;F&#39;) to the data (&#39;Y&#39;).</span>
+
+<span class="sd">        All of the members of this class are expected to obey some shape conventions, as specified</span>
+<span class="sd">        by latent_dim and observation_dim.</span>
+
+<span class="sd">        If we&#39;re operating on an array of function values &#39;F&#39;, then the last dimension represents</span>
+<span class="sd">        multiple functions (preceding dimensions could represent different data points, or</span>
+<span class="sd">        different random samples, for example). Similarly, the last dimension of Y represents a</span>
+<span class="sd">        single data point. We check that the dimensions are as this object expects.</span>
+
+<span class="sd">        The return shapes of all functions in this class is the broadcasted shape of the arguments,</span>
+<span class="sd">        excluding the last dimension of each argument.</span>
+
+<span class="sd">        :param latent_dim: the dimension of the vector F of latent functions for a single data point</span>
+<span class="sd">        :param observation_dim: the dimension of the observation vector Y for a single data point</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">latent_dim</span> <span class="o">=</span> <span class="n">latent_dim</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">observation_dim</span> <span class="o">=</span> <span class="n">observation_dim</span>
+
+    <span class="k">def</span> <span class="nf">_check_last_dims_valid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">F</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">Y</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Assert that the dimensions of the latent functions F and the data Y are compatible.</span>
+
+<span class="sd">        :param F: function evaluation Tensor, with shape [..., latent_dim]</span>
+<span class="sd">        :param Y: observation Tensor, with shape [..., observation_dim]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_latent_dims</span><span class="p">(</span><span class="n">F</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_data_dims</span><span class="p">(</span><span class="n">Y</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_check_return_shape</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">result</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">F</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">Y</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check that the shape of a computed statistic of the data</span>
+<span class="sd">        is the broadcasted shape from F and Y.</span>
+
+<span class="sd">        :param result: result Tensor, with shape [...]</span>
+<span class="sd">        :param F: function evaluation Tensor, with shape [..., latent_dim]</span>
+<span class="sd">        :param Y: observation Tensor, with shape [..., observation_dim]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">expected_shape</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">broadcast_dynamic_shape</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">F</span><span class="p">)[:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">tf</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">Y</span><span class="p">)[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">tf</span><span class="o">.</span><span class="n">debugging</span><span class="o">.</span><span class="n">assert_equal</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">result</span><span class="p">),</span> <span class="n">expected_shape</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_check_latent_dims</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">F</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Ensure that a tensor of latent functions F has latent_dim as right-most dimension.</span>
+
+<span class="sd">        :param F: function evaluation Tensor, with shape [..., latent_dim]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">tf</span><span class="o">.</span><span class="n">debugging</span><span class="o">.</span><span class="n">assert_shapes</span><span class="p">([(</span><span class="n">F</span><span class="p">,</span> <span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">latent_dim</span><span class="p">))])</span>
+
+    <span class="k">def</span> <span class="nf">_check_data_dims</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Y</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Ensure that a tensor of data Y has observation_dim as right-most dimension.</span>
+
+<span class="sd">        :param Y: observation Tensor, with shape [..., observation_dim]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">tf</span><span class="o">.</span><span class="n">debugging</span><span class="o">.</span><span class="n">assert_shapes</span><span class="p">([(</span><span class="n">Y</span><span class="p">,</span> <span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">observation_dim</span><span class="p">))])</span>
+
+<div class="viewcode-block" id="Likelihood.log_prob"><a class="viewcode-back" href="../../../api/gpflow/likelihoods/index.html#gpflow.likelihoods.Likelihood.log_prob">[docs]</a>    <span class="k">def</span> <span class="nf">log_prob</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">F</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">Y</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        The log probability density log p(Y|F)</span>
+
+<span class="sd">        :param F: function evaluation Tensor, with shape [..., latent_dim]</span>
+<span class="sd">        :param Y: observation Tensor, with shape [..., observation_dim]:</span>
+<span class="sd">        :returns: log pdf, with shape [...]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_last_dims_valid</span><span class="p">(</span><span class="n">F</span><span class="p">,</span> <span class="n">Y</span><span class="p">)</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_log_prob</span><span class="p">(</span><span class="n">F</span><span class="p">,</span> <span class="n">Y</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_return_shape</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="n">F</span><span class="p">,</span> <span class="n">Y</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">res</span></div>
+
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">_log_prob</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">F</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">Y</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+
+<div class="viewcode-block" id="Likelihood.conditional_mean"><a class="viewcode-back" href="../../../api/gpflow/likelihoods/index.html#gpflow.likelihoods.Likelihood.conditional_mean">[docs]</a>    <span class="k">def</span> <span class="nf">conditional_mean</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">F</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        The conditional mean of Y|F: [E[Y₁|F], ..., E[Yₖ|F]]</span>
+<span class="sd">        where K = observation_dim</span>
+
+<span class="sd">        :param F: function evaluation Tensor, with shape [..., latent_dim]</span>
+<span class="sd">        :returns: mean [..., observation_dim]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_latent_dims</span><span class="p">(</span><span class="n">F</span><span class="p">)</span>
+        <span class="n">expected_Y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_conditional_mean</span><span class="p">(</span><span class="n">F</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_data_dims</span><span class="p">(</span><span class="n">expected_Y</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">expected_Y</span></div>
+
+    <span class="k">def</span> <span class="nf">_conditional_mean</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">F</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+
+<div class="viewcode-block" id="Likelihood.conditional_variance"><a class="viewcode-back" href="../../../api/gpflow/likelihoods/index.html#gpflow.likelihoods.Likelihood.conditional_variance">[docs]</a>    <span class="k">def</span> <span class="nf">conditional_variance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">F</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        The conditional marginal variance of Y|F: [var(Y₁|F), ..., var(Yₖ|F)]</span>
+<span class="sd">        where K = observation_dim</span>
+
+<span class="sd">        :param F: function evaluation Tensor, with shape [..., latent_dim]</span>
+<span class="sd">        :returns: variance [..., observation_dim]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_latent_dims</span><span class="p">(</span><span class="n">F</span><span class="p">)</span>
+        <span class="n">var_Y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_conditional_variance</span><span class="p">(</span><span class="n">F</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_data_dims</span><span class="p">(</span><span class="n">var_Y</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">var_Y</span></div>
+
+    <span class="k">def</span> <span class="nf">_conditional_variance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">F</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+
+<div class="viewcode-block" id="Likelihood.predict_mean_and_var"><a class="viewcode-back" href="../../../api/gpflow/likelihoods/index.html#gpflow.likelihoods.Likelihood.predict_mean_and_var">[docs]</a>    <span class="k">def</span> <span class="nf">predict_mean_and_var</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Fmu</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">Fvar</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MeanAndVariance</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Given a Normal distribution for the latent function,</span>
+<span class="sd">        return the mean and marginal variance of Y,</span>
+
+<span class="sd">        i.e. if</span>
+<span class="sd">            q(f) = N(Fmu, Fvar)</span>
+
+<span class="sd">        and this object represents</span>
+
+<span class="sd">            p(y|f)</span>
+
+<span class="sd">        then this method computes the predictive mean</span>
+
+<span class="sd">           ∫∫ y p(y|f)q(f) df dy</span>
+
+<span class="sd">        and the predictive variance</span>
+
+<span class="sd">           ∫∫ y² p(y|f)q(f) df dy  - [ ∫∫ y p(y|f)q(f) df dy ]²</span>
+
+
+<span class="sd">        :param Fmu: mean function evaluation Tensor, with shape [..., latent_dim]</span>
+<span class="sd">        :param Fvar: variance of function evaluation Tensor, with shape [..., latent_dim]</span>
+<span class="sd">        :returns: mean and variance, both with shape [..., observation_dim]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_latent_dims</span><span class="p">(</span><span class="n">Fmu</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_latent_dims</span><span class="p">(</span><span class="n">Fvar</span><span class="p">)</span>
+        <span class="n">mu</span><span class="p">,</span> <span class="n">var</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_predict_mean_and_var</span><span class="p">(</span><span class="n">Fmu</span><span class="p">,</span> <span class="n">Fvar</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_data_dims</span><span class="p">(</span><span class="n">mu</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_data_dims</span><span class="p">(</span><span class="n">var</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">mu</span><span class="p">,</span> <span class="n">var</span></div>
+
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">_predict_mean_and_var</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Fmu</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">Fvar</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MeanAndVariance</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+
+<div class="viewcode-block" id="Likelihood.predict_log_density"><a class="viewcode-back" href="../../../api/gpflow/likelihoods/index.html#gpflow.likelihoods.Likelihood.predict_log_density">[docs]</a>    <span class="k">def</span> <span class="nf">predict_log_density</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Fmu</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">Fvar</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">Y</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Given a Normal distribution for the latent function, and a datum Y,</span>
+<span class="sd">        compute the log predictive density of Y,</span>
+
+<span class="sd">        i.e. if</span>
+<span class="sd">            q(F) = N(Fmu, Fvar)</span>
+
+<span class="sd">        and this object represents</span>
+
+<span class="sd">            p(y|F)</span>
+
+<span class="sd">        then this method computes the predictive density</span>
+
+<span class="sd">            log ∫ p(y=Y|F)q(F) df</span>
+
+<span class="sd">        :param Fmu: mean function evaluation Tensor, with shape [..., latent_dim]</span>
+<span class="sd">        :param Fvar: variance of function evaluation Tensor, with shape [..., latent_dim]</span>
+<span class="sd">        :param Y: observation Tensor, with shape [..., observation_dim]:</span>
+<span class="sd">        :returns: log predictive density, with shape [...]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">tf</span><span class="o">.</span><span class="n">debugging</span><span class="o">.</span><span class="n">assert_equal</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">Fmu</span><span class="p">),</span> <span class="n">tf</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">Fvar</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_last_dims_valid</span><span class="p">(</span><span class="n">Fmu</span><span class="p">,</span> <span class="n">Y</span><span class="p">)</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_predict_log_density</span><span class="p">(</span><span class="n">Fmu</span><span class="p">,</span> <span class="n">Fvar</span><span class="p">,</span> <span class="n">Y</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_return_shape</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="n">Fmu</span><span class="p">,</span> <span class="n">Y</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">res</span></div>
+
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">_predict_log_density</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Fmu</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">Fvar</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">Y</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+
+<div class="viewcode-block" id="Likelihood.variational_expectations"><a class="viewcode-back" href="../../../api/gpflow/likelihoods/index.html#gpflow.likelihoods.Likelihood.variational_expectations">[docs]</a>    <span class="k">def</span> <span class="nf">variational_expectations</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">Fmu</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">Fvar</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">Y</span><span class="p">:</span> <span class="n">TensorType</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute the expected log density of the data, given a Gaussian</span>
+<span class="sd">        distribution for the function values,</span>
+
+<span class="sd">        i.e. if</span>
+<span class="sd">            q(f) = N(Fmu, Fvar)</span>
+
+<span class="sd">        and this object represents</span>
+
+<span class="sd">            p(y|f)</span>
+
+<span class="sd">        then this method computes</span>
+
+<span class="sd">           ∫ log(p(y=Y|f)) q(f) df.</span>
+
+<span class="sd">        This only works if the broadcasting dimension of the statistics of q(f) (mean and variance)</span>
+<span class="sd">        are broadcastable with that of the data Y.</span>
+
+<span class="sd">        :param Fmu: mean function evaluation Tensor, with shape [..., latent_dim]</span>
+<span class="sd">        :param Fvar: variance of function evaluation Tensor, with shape [..., latent_dim]</span>
+<span class="sd">        :param Y: observation Tensor, with shape [..., observation_dim]:</span>
+<span class="sd">        :returns: expected log density of the data given q(F), with shape [...]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">tf</span><span class="o">.</span><span class="n">debugging</span><span class="o">.</span><span class="n">assert_equal</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">Fmu</span><span class="p">),</span> <span class="n">tf</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">Fvar</span><span class="p">))</span>
+        <span class="c1"># returns an error if Y[:-1] and Fmu[:-1] do not broadcast together</span>
+        <span class="n">_</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">broadcast_dynamic_shape</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">Fmu</span><span class="p">)[:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">tf</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">Y</span><span class="p">)[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_last_dims_valid</span><span class="p">(</span><span class="n">Fmu</span><span class="p">,</span> <span class="n">Y</span><span class="p">)</span>
+        <span class="n">ret</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_variational_expectations</span><span class="p">(</span><span class="n">Fmu</span><span class="p">,</span> <span class="n">Fvar</span><span class="p">,</span> <span class="n">Y</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_return_shape</span><span class="p">(</span><span class="n">ret</span><span class="p">,</span> <span class="n">Fmu</span><span class="p">,</span> <span class="n">Y</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">ret</span></div>
+
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">_variational_expectations</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">Fmu</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">Fvar</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">Y</span><span class="p">:</span> <span class="n">TensorType</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+
+
+<div class="viewcode-block" id="QuadratureLikelihood"><a class="viewcode-back" href="../../../api/gpflow/likelihoods/index.html#gpflow.likelihoods.QuadratureLikelihood">[docs]</a><span class="k">class</span> <span class="nc">QuadratureLikelihood</span><span class="p">(</span><span class="n">Likelihood</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">latent_dim</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
+        <span class="n">observation_dim</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
+        <span class="o">*</span><span class="p">,</span>
+        <span class="n">quadrature</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">GaussianQuadrature</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">latent_dim</span><span class="o">=</span><span class="n">latent_dim</span><span class="p">,</span> <span class="n">observation_dim</span><span class="o">=</span><span class="n">observation_dim</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">quadrature</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">with</span> <span class="n">tf</span><span class="o">.</span><span class="n">init_scope</span><span class="p">():</span>
+                <span class="n">quadrature</span> <span class="o">=</span> <span class="n">NDiagGHQuadrature</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_quadrature_dim</span><span class="p">,</span> <span class="n">DEFAULT_NUM_GAUSS_HERMITE_POINTS</span>
+                <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">quadrature</span> <span class="o">=</span> <span class="n">quadrature</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">_quadrature_dim</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This defines the number of dimensions over which to evaluate the</span>
+<span class="sd">        quadrature. Generally, this is equal to self.latent_dim. This exists</span>
+<span class="sd">        as a separate property to allow the ScalarLikelihood subclass to</span>
+<span class="sd">        override it with 1 (broadcasting over observation/latent dimensions</span>
+<span class="sd">        instead).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">latent_dim</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">latent_dim</span>
+
+    <span class="k">def</span> <span class="nf">_quadrature_log_prob</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">F</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">Y</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the appropriate log prob integrand for quadrature.</span>
+
+<span class="sd">        Quadrature expects f(X), here logp(F), to return shape [N_quad_points]</span>
+<span class="sd">        + batch_shape + [d&#39;]. Here d&#39;=1, but log_prob() only returns</span>
+<span class="sd">        [N_quad_points] + batch_shape, so we add an extra dimension.</span>
+
+<span class="sd">        Also see _quadrature_reduction.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">tf</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">log_prob</span><span class="p">(</span><span class="n">F</span><span class="p">,</span> <span class="n">Y</span><span class="p">),</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_quadrature_reduction</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">quadrature_result</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Converts the quadrature integral appropriately.</span>
+
+<span class="sd">        The return shape of quadrature is batch_shape + [d&#39;]. Here, d&#39;=1, but</span>
+<span class="sd">        we want predict_log_density and variational_expectations to return just</span>
+<span class="sd">        batch_shape, so we squeeze out the extra dimension.</span>
+
+<span class="sd">        Also see _quadrature_log_prob.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">tf</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">quadrature_result</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_predict_log_density</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Fmu</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">Fvar</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">Y</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Here, we implement a default Gauss-Hermite quadrature routine, but some</span>
+<span class="sd">        likelihoods (Gaussian, Poisson) will implement specific cases.</span>
+<span class="sd">        :param Fmu: mean function evaluation Tensor, with shape [..., latent_dim]</span>
+<span class="sd">        :param Fvar: variance of function evaluation Tensor, with shape [..., latent_dim]</span>
+<span class="sd">        :param Y: observation Tensor, with shape [..., observation_dim]:</span>
+<span class="sd">        :returns: log predictive density, with shape [...]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_quadrature_reduction</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">quadrature</span><span class="o">.</span><span class="n">logspace</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_quadrature_log_prob</span><span class="p">,</span> <span class="n">Fmu</span><span class="p">,</span> <span class="n">Fvar</span><span class="p">,</span> <span class="n">Y</span><span class="o">=</span><span class="n">Y</span><span class="p">)</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_variational_expectations</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">Fmu</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">Fvar</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">Y</span><span class="p">:</span> <span class="n">TensorType</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Here, we implement a default Gauss-Hermite quadrature routine, but some</span>
+<span class="sd">        likelihoods (Gaussian, Poisson) will implement specific cases.</span>
+<span class="sd">        :param Fmu: mean function evaluation Tensor, with shape [..., latent_dim]</span>
+<span class="sd">        :param Fvar: variance of function evaluation Tensor, with shape [..., latent_dim]</span>
+<span class="sd">        :param Y: observation Tensor, with shape [..., observation_dim]:</span>
+<span class="sd">        :returns: variational expectations, with shape [...]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_quadrature_reduction</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">quadrature</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_quadrature_log_prob</span><span class="p">,</span> <span class="n">Fmu</span><span class="p">,</span> <span class="n">Fvar</span><span class="p">,</span> <span class="n">Y</span><span class="o">=</span><span class="n">Y</span><span class="p">)</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_predict_mean_and_var</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Fmu</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">Fvar</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MeanAndVariance</span><span class="p">:</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Here, we implement a default Gauss-Hermite quadrature routine, but some</span>
+<span class="sd">        likelihoods (e.g. Gaussian) will implement specific cases.</span>
+
+<span class="sd">        :param Fmu: mean function evaluation Tensor, with shape [..., latent_dim]</span>
+<span class="sd">        :param Fvar: variance of function evaluation Tensor, with shape [..., latent_dim]</span>
+<span class="sd">        :returns: mean and variance of Y, both with shape [..., observation_dim]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">def</span> <span class="nf">conditional_y_squared</span><span class="p">(</span><span class="o">*</span><span class="n">F</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">conditional_variance</span><span class="p">(</span><span class="o">*</span><span class="n">F</span><span class="p">)</span> <span class="o">+</span> <span class="n">tf</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conditional_mean</span><span class="p">(</span><span class="o">*</span><span class="n">F</span><span class="p">))</span>
+
+        <span class="n">E_y</span><span class="p">,</span> <span class="n">E_y2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">quadrature</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">conditional_mean</span><span class="p">,</span> <span class="n">conditional_y_squared</span><span class="p">],</span> <span class="n">Fmu</span><span class="p">,</span> <span class="n">Fvar</span><span class="p">)</span>
+        <span class="n">V_y</span> <span class="o">=</span> <span class="n">E_y2</span> <span class="o">-</span> <span class="n">E_y</span> <span class="o">**</span> <span class="mi">2</span>
+        <span class="k">return</span> <span class="n">E_y</span><span class="p">,</span> <span class="n">V_y</span></div>
+
+
+<div class="viewcode-block" id="ScalarLikelihood"><a class="viewcode-back" href="../../../api/gpflow/likelihoods/index.html#gpflow.likelihoods.ScalarLikelihood">[docs]</a><span class="k">class</span> <span class="nc">ScalarLikelihood</span><span class="p">(</span><span class="n">QuadratureLikelihood</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A likelihood class that helps with scalar likelihood functions: likelihoods where</span>
+<span class="sd">    each scalar latent function is associated with a single scalar observation variable.</span>
+
+<span class="sd">    If there are multiple latent functions, then there must be a corresponding number of data: we</span>
+<span class="sd">    check for this.</span>
+
+<span class="sd">    The `Likelihood` class contains methods to compute marginal statistics of functions</span>
+<span class="sd">    of the latents and the data ϕ(y,f):</span>
+
+<span class="sd">    * variational_expectations:  ϕ(y,f) = log p(y|f)</span>
+<span class="sd">    * predict_log_density: ϕ(y,f) = p(y|f)</span>
+
+<span class="sd">    Those statistics are computed after having first marginalized the latent processes f</span>
+<span class="sd">    under a multivariate normal distribution q(f) that is fully factorized.</span>
+
+<span class="sd">    Some univariate integrals can be done by quadrature: we implement quadrature routines for 1D</span>
+<span class="sd">    integrals in this class, though they may be overwritten by inheriting classes where those</span>
+<span class="sd">    integrals are available in closed form.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">latent_dim</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">observation_dim</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_check_last_dims_valid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">F</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">Y</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Assert that the dimensions of the latent functions and the data are compatible</span>
+<span class="sd">        :param F: function evaluation Tensor, with shape [..., latent_dim]</span>
+<span class="sd">        :param Y: observation Tensor, with shape [..., latent_dim]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">tf</span><span class="o">.</span><span class="n">debugging</span><span class="o">.</span><span class="n">assert_shapes</span><span class="p">([(</span><span class="n">F</span><span class="p">,</span> <span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="s2">&quot;num_latent&quot;</span><span class="p">)),</span> <span class="p">(</span><span class="n">Y</span><span class="p">,</span> <span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="s2">&quot;num_latent&quot;</span><span class="p">))])</span>
+
+    <span class="k">def</span> <span class="nf">_log_prob</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">F</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">Y</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute log p(Y|F), where by convention we sum out the last axis as it represented</span>
+<span class="sd">        independent latent functions and observations.</span>
+<span class="sd">        :param F: function evaluation Tensor, with shape [..., latent_dim]</span>
+<span class="sd">        :param Y: observation Tensor, with shape [..., latent_dim]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">tf</span><span class="o">.</span><span class="n">reduce_sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_scalar_log_prob</span><span class="p">(</span><span class="n">F</span><span class="p">,</span> <span class="n">Y</span><span class="p">),</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">_scalar_log_prob</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">F</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">Y</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">_quadrature_dim</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Quadrature is over the latent dimensions. Generally, this is equal to</span>
+<span class="sd">        self.latent_dim. This separate property allows the ScalarLikelihood</span>
+<span class="sd">        subclass to override it with 1 (broadcasting over observation/latent</span>
+<span class="sd">        dimensions instead).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="mi">1</span>
+
+    <span class="k">def</span> <span class="nf">_quadrature_log_prob</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">F</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">Y</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the appropriate log prob integrand for quadrature.</span>
+
+<span class="sd">        Quadrature expects f(X), here logp(F), to return shape [N_quad_points]</span>
+<span class="sd">        + batch_shape + [d&#39;]. Here d&#39; corresponds to the last dimension of both</span>
+<span class="sd">        F and Y, and _scalar_log_prob simply broadcasts over this.</span>
+
+<span class="sd">        Also see _quadrature_reduction.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scalar_log_prob</span><span class="p">(</span><span class="n">F</span><span class="p">,</span> <span class="n">Y</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_quadrature_reduction</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">quadrature_result</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Converts the quadrature integral appropriately.</span>
+
+<span class="sd">        The return shape of quadrature is batch_shape + [d&#39;]. Here, d&#39;</span>
+<span class="sd">        corresponds to the last dimension of both F and Y, and we want to sum</span>
+<span class="sd">        over the observations to obtain the overall predict_log_density or</span>
+<span class="sd">        variational_expectations.</span>
+
+<span class="sd">        Also see _quadrature_log_prob.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">tf</span><span class="o">.</span><span class="n">reduce_sum</span><span class="p">(</span><span class="n">quadrature_result</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SwitchedLikelihood"><a class="viewcode-back" href="../../../api/gpflow/likelihoods/index.html#gpflow.likelihoods.SwitchedLikelihood">[docs]</a><span class="k">class</span> <span class="nc">SwitchedLikelihood</span><span class="p">(</span><span class="n">ScalarLikelihood</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">likelihood_list</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">ScalarLikelihood</span><span class="p">],</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        In this likelihood, we assume at extra column of Y, which contains</span>
+<span class="sd">        integers that specify a likelihood from the list of likelihoods.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">likelihoods</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">likelihood_list</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_partition_and_stitch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">TensorType</span><span class="p">],</span> <span class="n">func_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        args is a list of tensors, to be passed to self.likelihoods.&lt;func_name&gt;</span>
+
+<span class="sd">        args[-1] is the &#39;Y&#39; argument, which contains the indexes to self.likelihoods.</span>
+
+<span class="sd">        This function splits up the args using dynamic_partition, calls the</span>
+<span class="sd">        relevant function on the likelihoods, and re-combines the result.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># get the index from Y</span>
+        <span class="n">args_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+        <span class="n">Y</span> <span class="o">=</span> <span class="n">args_list</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">ind</span> <span class="o">=</span> <span class="n">Y</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">ind</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">ind</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+        <span class="n">Y</span> <span class="o">=</span> <span class="n">Y</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">args_list</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">Y</span>
+
+        <span class="c1"># split up the arguments into chunks corresponding to the relevant likelihoods</span>
+        <span class="n">args_chunks</span> <span class="o">=</span> <span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">dynamic_partition</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">ind</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">likelihoods</span><span class="p">))</span> <span class="k">for</span> <span class="n">X</span> <span class="ow">in</span> <span class="n">args_list</span><span class="p">])</span>
+
+        <span class="c1"># apply the likelihood-function to each section of the data</span>
+        <span class="n">funcs</span> <span class="o">=</span> <span class="p">[</span><span class="nb">getattr</span><span class="p">(</span><span class="n">lik</span><span class="p">,</span> <span class="n">func_name</span><span class="p">)</span> <span class="k">for</span> <span class="n">lik</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">likelihoods</span><span class="p">]</span>
+        <span class="n">results</span> <span class="o">=</span> <span class="p">[</span><span class="n">f</span><span class="p">(</span><span class="o">*</span><span class="n">args_i</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span><span class="p">,</span> <span class="n">args_i</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">funcs</span><span class="p">,</span> <span class="n">args_chunks</span><span class="p">)]</span>
+
+        <span class="c1"># stitch the results back together</span>
+        <span class="n">partitions</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">dynamic_partition</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">ind</span><span class="p">)),</span> <span class="n">ind</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">likelihoods</span><span class="p">))</span>
+        <span class="n">results</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">dynamic_stitch</span><span class="p">(</span><span class="n">partitions</span><span class="p">,</span> <span class="n">results</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">results</span>
+
+    <span class="k">def</span> <span class="nf">_check_last_dims_valid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">F</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">Y</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">tf</span><span class="o">.</span><span class="n">assert_equal</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">F</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">tf</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">Y</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_scalar_log_prob</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">F</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">Y</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_partition_and_stitch</span><span class="p">([</span><span class="n">F</span><span class="p">,</span> <span class="n">Y</span><span class="p">],</span> <span class="s2">&quot;_scalar_log_prob&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_predict_log_density</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Fmu</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">Fvar</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">Y</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_partition_and_stitch</span><span class="p">([</span><span class="n">Fmu</span><span class="p">,</span> <span class="n">Fvar</span><span class="p">,</span> <span class="n">Y</span><span class="p">],</span> <span class="s2">&quot;predict_log_density&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_variational_expectations</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">Fmu</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">Fvar</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">Y</span><span class="p">:</span> <span class="n">TensorType</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_partition_and_stitch</span><span class="p">([</span><span class="n">Fmu</span><span class="p">,</span> <span class="n">Fvar</span><span class="p">,</span> <span class="n">Y</span><span class="p">],</span> <span class="s2">&quot;variational_expectations&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_predict_mean_and_var</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Fmu</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">Fvar</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MeanAndVariance</span><span class="p">:</span>
+        <span class="n">mvs</span> <span class="o">=</span> <span class="p">[</span><span class="n">lik</span><span class="o">.</span><span class="n">predict_mean_and_var</span><span class="p">(</span><span class="n">Fmu</span><span class="p">,</span> <span class="n">Fvar</span><span class="p">)</span> <span class="k">for</span> <span class="n">lik</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">likelihoods</span><span class="p">]</span>
+        <span class="n">mu_list</span><span class="p">,</span> <span class="n">var_list</span> <span class="o">=</span> <span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="n">mvs</span><span class="p">)</span>
+        <span class="n">mu</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span><span class="n">mu_list</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">var</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span><span class="n">var_list</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">mu</span><span class="p">,</span> <span class="n">var</span>
+
+    <span class="k">def</span> <span class="nf">_conditional_mean</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">F</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+
+    <span class="k">def</span> <span class="nf">_conditional_variance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">F</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+
+
+<div class="viewcode-block" id="MonteCarloLikelihood"><a class="viewcode-back" href="../../../api/gpflow/likelihoods/index.html#gpflow.likelihoods.MonteCarloLikelihood">[docs]</a><span class="k">class</span> <span class="nc">MonteCarloLikelihood</span><span class="p">(</span><span class="n">Likelihood</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_monte_carlo_points</span> <span class="o">=</span> <span class="mi">100</span>
+
+    <span class="k">def</span> <span class="nf">_mc_quadrature</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">funcs</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">],</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]]],</span>
+        <span class="n">Fmu</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span>
+        <span class="n">Fvar</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span>
+        <span class="n">logspace</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">epsilon</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">TensorType</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">Ys</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">ndiag_mc</span><span class="p">(</span><span class="n">funcs</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_monte_carlo_points</span><span class="p">,</span> <span class="n">Fmu</span><span class="p">,</span> <span class="n">Fvar</span><span class="p">,</span> <span class="n">logspace</span><span class="p">,</span> <span class="n">epsilon</span><span class="p">,</span> <span class="o">**</span><span class="n">Ys</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_predict_mean_and_var</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">Fmu</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">Fvar</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">epsilon</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">TensorType</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MeanAndVariance</span><span class="p">:</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Given a Normal distribution for the latent function,</span>
+<span class="sd">        return the mean of Y</span>
+
+<span class="sd">        if</span>
+<span class="sd">            q(f) = N(Fmu, Fvar)</span>
+
+<span class="sd">        and this object represents</span>
+
+<span class="sd">            p(y|f)</span>
+
+<span class="sd">        then this method computes the predictive mean</span>
+
+<span class="sd">           ∫∫ y p(y|f)q(f) df dy</span>
+
+<span class="sd">        and the predictive variance</span>
+
+<span class="sd">           ∫∫ y² p(y|f)q(f) df dy  - [ ∫∫ y p(y|f)q(f) df dy ]²</span>
+
+<span class="sd">        Here, we implement a default Monte Carlo routine.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">def</span> <span class="nf">conditional_y_squared</span><span class="p">(</span><span class="o">*</span><span class="n">F</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TensorType</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">conditional_variance</span><span class="p">(</span><span class="o">*</span><span class="n">F</span><span class="p">)</span> <span class="o">+</span> <span class="n">tf</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conditional_mean</span><span class="p">(</span><span class="o">*</span><span class="n">F</span><span class="p">))</span>
+
+        <span class="n">E_y</span><span class="p">,</span> <span class="n">E_y2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mc_quadrature</span><span class="p">(</span>
+            <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">conditional_mean</span><span class="p">,</span> <span class="n">conditional_y_squared</span><span class="p">],</span> <span class="n">Fmu</span><span class="p">,</span> <span class="n">Fvar</span><span class="p">,</span> <span class="n">epsilon</span><span class="o">=</span><span class="n">epsilon</span>
+        <span class="p">)</span>
+        <span class="n">V_y</span> <span class="o">=</span> <span class="n">E_y2</span> <span class="o">-</span> <span class="n">tf</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">E_y</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">E_y</span><span class="p">,</span> <span class="n">V_y</span>  <span class="c1"># [N, D]</span>
+
+    <span class="k">def</span> <span class="nf">_predict_log_density</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">Fmu</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">Fvar</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">Y</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">epsilon</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">TensorType</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Given a Normal distribution for the latent function, and a datum Y,</span>
+<span class="sd">        compute the log predictive density of Y.</span>
+
+<span class="sd">        i.e. if</span>
+<span class="sd">            q(f) = N(Fmu, Fvar)</span>
+
+<span class="sd">        and this object represents</span>
+
+<span class="sd">            p(y|f)</span>
+
+<span class="sd">        then this method computes the predictive density</span>
+
+<span class="sd">            log ∫ p(y=Y|f)q(f) df</span>
+
+<span class="sd">        Here, we implement a default Monte Carlo routine.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">tf</span><span class="o">.</span><span class="n">reduce_sum</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_mc_quadrature</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">log_prob</span><span class="p">,</span> <span class="n">Fmu</span><span class="p">,</span> <span class="n">Fvar</span><span class="p">,</span> <span class="n">Y</span><span class="o">=</span><span class="n">Y</span><span class="p">,</span> <span class="n">logspace</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">epsilon</span><span class="o">=</span><span class="n">epsilon</span><span class="p">),</span>
+            <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_variational_expectations</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">Fmu</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">Fvar</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">Y</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">epsilon</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">TensorType</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+        <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute the expected log density of the data, given a Gaussian</span>
+<span class="sd">        distribution for the function values.</span>
+
+<span class="sd">        if</span>
+<span class="sd">            q(f) = N(Fmu, Fvar)  - Fmu: [N, D]  Fvar: [N, D]</span>
+
+<span class="sd">        and this object represents</span>
+
+<span class="sd">            p(y|f)  - Y: [N, 1]</span>
+
+<span class="sd">        then this method computes</span>
+
+<span class="sd">           ∫ (log p(y|f)) q(f) df.</span>
+
+
+<span class="sd">        Here, we implement a default Monte Carlo quadrature routine.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">tf</span><span class="o">.</span><span class="n">reduce_sum</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_mc_quadrature</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">log_prob</span><span class="p">,</span> <span class="n">Fmu</span><span class="p">,</span> <span class="n">Fvar</span><span class="p">,</span> <span class="n">Y</span><span class="o">=</span><span class="n">Y</span><span class="p">,</span> <span class="n">epsilon</span><span class="o">=</span><span class="n">epsilon</span><span class="p">),</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span>
+        <span class="p">)</span></div>
+</pre></div>
+
+              </div>
+              
+              
+          </main>
+          
+
+      </div>
+    </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf"></script>
+<footer class="footer mt-5 mt-md-0">
+  <div class="container">
+    
+    <div class="footer-item">
+      <p class="copyright">
+    &copy; Copyright 2022, The GPflow Contributors.<br>
+</p>
+    </div>
+    
+    <div class="footer-item">
+      <p class="sphinx-version">
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.5.0.<br>
+</p>
+    </div>
+    
+  </div>
+</footer>
+  </body>
+</html>

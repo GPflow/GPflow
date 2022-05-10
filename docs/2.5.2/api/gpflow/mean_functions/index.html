@@ -1,0 +1,794 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+    <title>gpflow.mean_functions &#8212; GPflow 2.5.2 documentation</title>
+    
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
+
+    
+  <link rel="stylesheet"
+    href="../../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/pydata-custom.css" />
+    
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf">
+
+    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="https://unpkg.com/@jupyter-widgets/html-manager@^0.20.1/dist/embed-amd.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="gpflow.models" href="../models/index.html" />
+    <link rel="prev" title="gpflow.logdensities" href="../logdensities/index.html" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="docsearch:language" content="None">
+    
+
+    <!-- Google Analytics -->
+    
+  </head>
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="60">
+    
+    <div class="container-fluid" id="banner"></div>
+
+    
+    <nav class="navbar navbar-light navbar-expand-lg bg-light fixed-top bd-navbar" id="navbar-main"><div class="container-xl">
+
+  <div id="navbar-start">
+    
+    
+
+<a class="navbar-brand" href="../../../index.html">
+  <img src="../../../_static/gpflow_logo.svg" class="logo" alt="logo">
+</a>
+
+
+    
+  </div>
+
+  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar-collapsible" aria-controls="navbar-collapsible" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="navbar-toggler-icon"></span>
+  </button>
+
+  
+  <div id="navbar-collapsible" class="col-lg-9 collapse navbar-collapse">
+    <div id="navbar-center" class="mr-auto">
+      
+      <div class="navbar-center-item">
+        <ul id="navbar-main-elements" class="navbar-nav">
+    <li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../intro.html">
+  Introduction
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../manual.html">
+  GPflow manual
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../notebooks/intro_to_gpflow2.html">
+  GPflow with TensorFlow 2
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../notebooks_file.html">
+  Notebooks
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../derivations.html">
+  Derivations
+ </a>
+</li>
+
+<li class="toctree-l1 current active nav-item">
+ <a class="reference internal nav-link" href="../index.html">
+  API reference
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../bibliography.html">
+  Bibliography
+ </a>
+</li>
+
+    
+</ul>
+      </div>
+      
+    </div>
+
+    <div id="navbar-end">
+      
+      <div class="navbar-end-item">
+        <div class="dropdown" id="version_switcher">
+    <button type="button" class="btn btn-primary btn-sm navbar-btn dropdown-toggle" id="version_switcher_button" data-toggle="dropdown">
+        2.5.2  <!-- this text may get changed later by javascript -->
+        <span class="caret"></span>
+    </button>
+    <div id="version_switcher_menu" class="dropdown-menu list-group-flush py-0" aria-labelledby="version_switcher_button">
+    <!-- dropdown will be populated by javascript on page load -->
+    </div>
+</div>
+
+<!-- NOTE: this JS must live here (not in our global JS file) because it relies
+     on being processed by Jinja before it is run (specifically for replacing
+     variables api/gpflow/mean_functions/index and {'json_url': 'https://gpflow.github.io/GPflow/versions.json', 'version_match': '2.5.2'}.
+-->
+
+<script type="text/javascript">
+// Check if corresponding page path exists in other version of docs
+// and, if so, go there instead of the homepage of the other docs version
+function checkPageExistsAndRedirect(event) {
+    const currentFilePath = "api/gpflow/mean_functions/index.html",
+          tryUrl = event.target.getAttribute("href");
+    let otherDocsHomepage = tryUrl.replace(currentFilePath, "");
+    $.ajax({
+        type: 'HEAD',
+        url: tryUrl,
+        // if the page exists, go there
+        success: function() {
+            location.href = tryUrl;
+        }
+    }).fail(function() {
+        location.href = otherDocsHomepage;
+    });
+    // this prevents the browser from following the href of the clicked node
+    // (which is fine because this function takes care of redirecting)
+    return false;
+}
+
+// Populate the version switcher from the JSON config file
+(function () {
+    $.getJSON("https://gpflow.github.io/GPflow/versions.json", function(data, textStatus, jqXHR) {
+        const currentFilePath = "api/gpflow/mean_functions/index.html";
+        // create links to the corresponding page in the other docs versions
+        $.each(data, function(index, entry) {
+            // if no custom name specified (e.g., "latest"), use version string
+            if (!("name" in entry)) {
+                entry.name = entry.version;
+            }
+            // create the node
+            const node = document.createElement("a");
+            node.setAttribute("class", "list-group-item list-group-item-action py-1");
+            node.textContent = `${entry.name}`;
+            node.setAttribute("href", `${entry.url}${currentFilePath}`);
+            // on click, AJAX calls will check if the linked page exists before
+            // trying to redirect, and if not, will redirect to the homepage
+            // for that version of the docs.
+            node.onclick = checkPageExistsAndRedirect;
+            // Add dataset values for the version and name in case people want
+            // to apply CSS styling based on this information.
+            node.dataset["versionName"] = entry.name;
+            node.dataset["version"] = entry.version;
+
+            $("#version_switcher_menu").append(node);
+            // replace dropdown button text with the preferred display name of
+            // this version, rather than using sphinx's  variable.
+            // also highlight the dropdown entry for the currently-viewed
+            // version's entry
+            if (entry.version == "2.5.2") {
+                node.classList.add("active");
+                let btn = document.getElementById("version_switcher_button");
+                btn.innerText = btn.dataset["activeVersionName"] = entry.name;
+                btn.dataset["activeVersion"] = entry.version;
+            }
+        });
+    });
+})();
+</script>
+      </div>
+      
+    </div>
+  </div>
+</div>
+    </nav>
+    
+
+    <div class="container-xl">
+      <div class="row">
+          
+            
+            <!-- Only show if we have sidebars configured, else just a small margin  -->
+            <div class="col-12 col-md-3 bd-sidebar">
+              <div class="sidebar-start-items"><form class="bd-search d-flex align-items-center" action="../../../search.html" method="get">
+  <i class="icon fas fa-search"></i>
+  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
+</form><nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
+  <div class="bd-toc-item active">
+    <ul class="current nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../base/index.html">
+   gpflow.base
+  </a>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../conditionals/index.html">
+   gpflow.conditionals
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/>
+  <label for="toctree-checkbox-1">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../conditionals/util/index.html">
+     gpflow.conditionals.util
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../config/index.html">
+   gpflow.config
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../covariances/index.html">
+   gpflow.covariances
+  </a>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../expectations/index.html">
+   gpflow.expectations
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" type="checkbox"/>
+  <label for="toctree-checkbox-2">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../expectations/quadratures/index.html">
+     gpflow.expectations.quadratures
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../experimental/index.html">
+   gpflow.experimental
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" type="checkbox"/>
+  <label for="toctree-checkbox-3">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2 has-children">
+    <a class="reference internal" href="../experimental/check_shapes/index.html">
+     gpflow.experimental.check_shapes
+    </a>
+    <input class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" type="checkbox"/>
+    <label for="toctree-checkbox-4">
+     <i class="fas fa-chevron-down">
+     </i>
+    </label>
+    <ul>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../experimental/check_shapes/accessors/index.html">
+       gpflow.experimental.check_shapes.accessors
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../experimental/check_shapes/argument_ref/index.html">
+       gpflow.experimental.check_shapes.argument_ref
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../experimental/check_shapes/bool_specs/index.html">
+       gpflow.experimental.check_shapes.bool_specs
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../experimental/check_shapes/checker_context/index.html">
+       gpflow.experimental.check_shapes.checker_context
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../experimental/check_shapes/decorator/index.html">
+       gpflow.experimental.check_shapes.decorator
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../experimental/check_shapes/error_contexts/index.html">
+       gpflow.experimental.check_shapes.error_contexts
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../experimental/check_shapes/exceptions/index.html">
+       gpflow.experimental.check_shapes.exceptions
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../experimental/check_shapes/parser/index.html">
+       gpflow.experimental.check_shapes.parser
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../experimental/check_shapes/shapes/index.html">
+       gpflow.experimental.check_shapes.shapes
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../experimental/check_shapes/specs/index.html">
+       gpflow.experimental.check_shapes.specs
+      </a>
+     </li>
+    </ul>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../experimental/utils/index.html">
+     gpflow.experimental.utils
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../inducing_variables/index.html">
+   gpflow.inducing_variables
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" type="checkbox"/>
+  <label for="toctree-checkbox-5">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../inducing_variables/inducing_variables/index.html">
+     gpflow.inducing_variables.inducing_variables
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../kernels/index.html">
+   gpflow.kernels
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-6" name="toctree-checkbox-6" type="checkbox"/>
+  <label for="toctree-checkbox-6">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../kernels/base/index.html">
+     gpflow.kernels.base
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../kullback_leiblers/index.html">
+   gpflow.kullback_leiblers
+  </a>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../likelihoods/index.html">
+   gpflow.likelihoods
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" type="checkbox"/>
+  <label for="toctree-checkbox-7">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../likelihoods/utils/index.html">
+     gpflow.likelihoods.utils
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../logdensities/index.html">
+   gpflow.logdensities
+  </a>
+ </li>
+ <li class="toctree-l1 current active">
+  <a class="current reference internal" href="#">
+   gpflow.mean_functions
+  </a>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../models/index.html">
+   gpflow.models
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-8" name="toctree-checkbox-8" type="checkbox"/>
+  <label for="toctree-checkbox-8">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../models/cglb/index.html">
+     gpflow.models.cglb
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../models/gpr/index.html">
+     gpflow.models.gpr
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../models/sgpr/index.html">
+     gpflow.models.sgpr
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../models/svgp/index.html">
+     gpflow.models.svgp
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../models/util/index.html">
+     gpflow.models.util
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../models/vgp/index.html">
+     gpflow.models.vgp
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../monitor/index.html">
+   gpflow.monitor
+  </a>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../optimizers/index.html">
+   gpflow.optimizers
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" type="checkbox"/>
+  <label for="toctree-checkbox-9">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../optimizers/natgrad/index.html">
+     gpflow.optimizers.natgrad
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../posteriors/index.html">
+   gpflow.posteriors
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../probability_distributions/index.html">
+   gpflow.probability_distributions
+  </a>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../quadrature/index.html">
+   gpflow.quadrature
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-10" name="toctree-checkbox-10" type="checkbox"/>
+  <label for="toctree-checkbox-10">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../quadrature/gauss_hermite/index.html">
+     gpflow.quadrature.gauss_hermite
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../utilities/index.html">
+   gpflow.utilities
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-11" name="toctree-checkbox-11" type="checkbox"/>
+  <label for="toctree-checkbox-11">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../utilities/ops/index.html">
+     gpflow.utilities.ops
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../utilities/traversal/index.html">
+     gpflow.utilities.traversal
+    </a>
+   </li>
+  </ul>
+ </li>
+</ul>
+
+  </div>
+</nav>
+              </div>
+              <div class="sidebar-end-items">
+              </div>
+            </div>
+            
+          
+
+          
+          <div class="d-none d-xl-block col-xl-2 bd-toc">
+            
+              
+              <div class="toc-item">
+                
+<div class="tocsection onthispage mt-5 pt-1 pb-3">
+    <i class="fas fa-list"></i> On this page
+</div>
+
+<nav id="bd-toc-nav">
+    <ul class="visible nav section-nav flex-column">
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#classes">
+   Classes
+  </a>
+  <ul class="nav section-nav flex-column">
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#gpflow-mean-functions-additive">
+     gpflow.mean_functions.Additive
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#gpflow-mean-functions-constant">
+     gpflow.mean_functions.Constant
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#gpflow-mean-functions-identity">
+     gpflow.mean_functions.Identity
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#gpflow-mean-functions-linear">
+     gpflow.mean_functions.Linear
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#gpflow-mean-functions-meanfunction">
+     gpflow.mean_functions.MeanFunction
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#gpflow-mean-functions-product">
+     gpflow.mean_functions.Product
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#gpflow-mean-functions-switchedmeanfunction">
+     gpflow.mean_functions.SwitchedMeanFunction
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#gpflow-mean-functions-zero">
+     gpflow.mean_functions.Zero
+    </a>
+   </li>
+  </ul>
+ </li>
+</ul>
+
+</nav>
+              </div>
+              
+              <div class="toc-item">
+                
+              </div>
+              
+            
+          </div>
+          
+
+          
+          
+            
+          
+          <main class="col-12 col-md-9 col-xl-7 py-md-5 pl-md-5 pr-md-4 bd-content" role="main">
+              
+              <div>
+                
+  <section id="gpflow-mean-functions">
+<h1>gpflow.mean_functions<a class="headerlink" href="#gpflow-mean-functions" title="Permalink to this headline">#</a></h1>
+<span class="target" id="module-gpflow.mean_functions"></span><p>Throughout GPflow, by default, latent functions being modelled with Gaussian
+processes are assumed to have zero mean, f ~ GP(0, k(x,x’)).</p>
+<p>In some cases we may wish to model only the deviation from a fixed function
+with a Gaussian process.  For flexibility this fixed function could be both
+input dependent and parameterised function, μ(x; θ),
+with some unknown parameters θ, resulting in f ~ GP(μ(x;θ), k(x,x’)).</p>
+<p>The GPflow <a class="reference internal" href="#gpflow.mean_functions.MeanFunction" title="gpflow.mean_functions.MeanFunction"><code class="xref py py-class docutils literal notranslate"><span class="pre">MeanFunction</span></code></a> class
+allows this to be done whilst additionally learning parameters of the
+parametric function.</p>
+<section id="classes">
+<h2>Classes<a class="headerlink" href="#classes" title="Permalink to this headline">#</a></h2>
+<section id="gpflow-mean-functions-additive">
+<h3>gpflow.mean_functions.Additive<a class="headerlink" href="#gpflow-mean-functions-additive" title="Permalink to this headline">#</a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="gpflow.mean_functions.Additive">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.mean_functions.</span></span><span class="sig-name descname"><span class="pre">Additive</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">first_part</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">second_part</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/mean_functions.html#Additive"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.mean_functions.Additive" title="Permalink to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#gpflow.mean_functions.MeanFunction" title="gpflow.mean_functions.MeanFunction"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.mean_functions.MeanFunction</span></code></a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>first_part</strong> (<a class="reference internal" href="#gpflow.mean_functions.MeanFunction" title="gpflow.mean_functions.MeanFunction"><code class="xref py py-class docutils literal notranslate"><span class="pre">MeanFunction</span></code></a>) – </p></li>
+<li><p><strong>second_part</strong> (<a class="reference internal" href="#gpflow.mean_functions.MeanFunction" title="gpflow.mean_functions.MeanFunction"><code class="xref py py-class docutils literal notranslate"><span class="pre">MeanFunction</span></code></a>) – </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="gpflow-mean-functions-constant">
+<h3>gpflow.mean_functions.Constant<a class="headerlink" href="#gpflow-mean-functions-constant" title="Permalink to this headline">#</a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="gpflow.mean_functions.Constant">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.mean_functions.</span></span><span class="sig-name descname"><span class="pre">Constant</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">c</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/mean_functions.html#Constant"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.mean_functions.Constant" title="Permalink to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#gpflow.mean_functions.MeanFunction" title="gpflow.mean_functions.MeanFunction"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.mean_functions.MeanFunction</span></code></a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>c</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>, <a class="reference internal" href="../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>, <code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code>]) – </p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="gpflow-mean-functions-identity">
+<h3>gpflow.mean_functions.Identity<a class="headerlink" href="#gpflow-mean-functions-identity" title="Permalink to this headline">#</a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="gpflow.mean_functions.Identity">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.mean_functions.</span></span><span class="sig-name descname"><span class="pre">Identity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_dim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/mean_functions.html#Identity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.mean_functions.Identity" title="Permalink to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#gpflow.mean_functions.Linear" title="gpflow.mean_functions.Linear"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.mean_functions.Linear</span></code></a></p>
+<p>y_i = x_i</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>input_dim</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>]) – </p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="gpflow-mean-functions-linear">
+<h3>gpflow.mean_functions.Linear<a class="headerlink" href="#gpflow-mean-functions-linear" title="Permalink to this headline">#</a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="gpflow.mean_functions.Linear">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.mean_functions.</span></span><span class="sig-name descname"><span class="pre">Linear</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">A</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/mean_functions.html#Linear"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.mean_functions.Linear" title="Permalink to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#gpflow.mean_functions.MeanFunction" title="gpflow.mean_functions.MeanFunction"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.mean_functions.MeanFunction</span></code></a></p>
+<p>y_i = A x_i + b</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>A</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>, <a class="reference internal" href="../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>, <code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code>]) – </p></li>
+<li><p><strong>b</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>, <a class="reference internal" href="../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>, <code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code>]) – </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="gpflow-mean-functions-meanfunction">
+<h3>gpflow.mean_functions.MeanFunction<a class="headerlink" href="#gpflow-mean-functions-meanfunction" title="Permalink to this headline">#</a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="gpflow.mean_functions.MeanFunction">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.mean_functions.</span></span><span class="sig-name descname"><span class="pre">MeanFunction</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/mean_functions.html#MeanFunction"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.mean_functions.MeanFunction" title="Permalink to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference internal" href="../index.html#gpflow.Module" title="gpflow.base.Module"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.base.Module</span></code></a></p>
+<p>The base mean function class.
+To implement a mean function, write the __call__ method. This takes a
+tensor X and returns a tensor m(X). In accordance with the GPflow
+standard, each row of X represents one datum, and each row of Y is computed
+independently for each row of X.</p>
+<p>MeanFunction classes can have parameters, see the Linear class for an
+example.</p>
+</dd></dl>
+
+</section>
+<section id="gpflow-mean-functions-product">
+<h3>gpflow.mean_functions.Product<a class="headerlink" href="#gpflow-mean-functions-product" title="Permalink to this headline">#</a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="gpflow.mean_functions.Product">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.mean_functions.</span></span><span class="sig-name descname"><span class="pre">Product</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">first_part</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">second_part</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/mean_functions.html#Product"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.mean_functions.Product" title="Permalink to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#gpflow.mean_functions.MeanFunction" title="gpflow.mean_functions.MeanFunction"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.mean_functions.MeanFunction</span></code></a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>first_part</strong> (<a class="reference internal" href="#gpflow.mean_functions.MeanFunction" title="gpflow.mean_functions.MeanFunction"><code class="xref py py-class docutils literal notranslate"><span class="pre">MeanFunction</span></code></a>) – </p></li>
+<li><p><strong>second_part</strong> (<a class="reference internal" href="#gpflow.mean_functions.MeanFunction" title="gpflow.mean_functions.MeanFunction"><code class="xref py py-class docutils literal notranslate"><span class="pre">MeanFunction</span></code></a>) – </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="gpflow-mean-functions-switchedmeanfunction">
+<h3>gpflow.mean_functions.SwitchedMeanFunction<a class="headerlink" href="#gpflow-mean-functions-switchedmeanfunction" title="Permalink to this headline">#</a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="gpflow.mean_functions.SwitchedMeanFunction">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.mean_functions.</span></span><span class="sig-name descname"><span class="pre">SwitchedMeanFunction</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">meanfunction_list</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/mean_functions.html#SwitchedMeanFunction"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.mean_functions.SwitchedMeanFunction" title="Permalink to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#gpflow.mean_functions.MeanFunction" title="gpflow.mean_functions.MeanFunction"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.mean_functions.MeanFunction</span></code></a></p>
+<p>This class enables to use different (independent) mean_functions respective
+to the data ‘label’.
+We assume the ‘label’ is stored in the extra column of X.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>meanfunction_list</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Collection</span></code>[<a class="reference internal" href="#gpflow.mean_functions.MeanFunction" title="gpflow.mean_functions.MeanFunction"><code class="xref py py-class docutils literal notranslate"><span class="pre">MeanFunction</span></code></a>]) – </p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="gpflow-mean-functions-zero">
+<h3>gpflow.mean_functions.Zero<a class="headerlink" href="#gpflow-mean-functions-zero" title="Permalink to this headline">#</a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="gpflow.mean_functions.Zero">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.mean_functions.</span></span><span class="sig-name descname"><span class="pre">Zero</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">output_dim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/mean_functions.html#Zero"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.mean_functions.Zero" title="Permalink to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#gpflow.mean_functions.Constant" title="gpflow.mean_functions.Constant"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.mean_functions.Constant</span></code></a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>output_dim</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>) – </p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+</section>
+</section>
+
+
+              </div>
+              
+              
+          </main>
+          
+
+      </div>
+    </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf"></script>
+<footer class="footer mt-5 mt-md-0">
+  <div class="container">
+    
+    <div class="footer-item">
+      <p class="copyright">
+    &copy; Copyright 2022, The GPflow Contributors.<br>
+</p>
+    </div>
+    
+    <div class="footer-item">
+      <p class="sphinx-version">
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.5.0.<br>
+</p>
+    </div>
+    
+  </div>
+</footer>
+  </body>
+</html>

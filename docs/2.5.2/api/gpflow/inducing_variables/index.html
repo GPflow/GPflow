@@ -1,0 +1,907 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+    <title>gpflow.inducing_variables &#8212; GPflow 2.5.2 documentation</title>
+    
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
+
+    
+  <link rel="stylesheet"
+    href="../../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/pydata-custom.css" />
+    
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf">
+
+    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="https://unpkg.com/@jupyter-widgets/html-manager@^0.20.1/dist/embed-amd.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="gpflow.inducing_variables.inducing_variables" href="inducing_variables/index.html" />
+    <link rel="prev" title="gpflow.experimental.utils" href="../experimental/utils/index.html" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="docsearch:language" content="None">
+    
+
+    <!-- Google Analytics -->
+    
+  </head>
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="60">
+    
+    <div class="container-fluid" id="banner"></div>
+
+    
+    <nav class="navbar navbar-light navbar-expand-lg bg-light fixed-top bd-navbar" id="navbar-main"><div class="container-xl">
+
+  <div id="navbar-start">
+    
+    
+
+<a class="navbar-brand" href="../../../index.html">
+  <img src="../../../_static/gpflow_logo.svg" class="logo" alt="logo">
+</a>
+
+
+    
+  </div>
+
+  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar-collapsible" aria-controls="navbar-collapsible" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="navbar-toggler-icon"></span>
+  </button>
+
+  
+  <div id="navbar-collapsible" class="col-lg-9 collapse navbar-collapse">
+    <div id="navbar-center" class="mr-auto">
+      
+      <div class="navbar-center-item">
+        <ul id="navbar-main-elements" class="navbar-nav">
+    <li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../intro.html">
+  Introduction
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../manual.html">
+  GPflow manual
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../notebooks/intro_to_gpflow2.html">
+  GPflow with TensorFlow 2
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../notebooks_file.html">
+  Notebooks
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../derivations.html">
+  Derivations
+ </a>
+</li>
+
+<li class="toctree-l1 current active nav-item">
+ <a class="reference internal nav-link" href="../index.html">
+  API reference
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../bibliography.html">
+  Bibliography
+ </a>
+</li>
+
+    
+</ul>
+      </div>
+      
+    </div>
+
+    <div id="navbar-end">
+      
+      <div class="navbar-end-item">
+        <div class="dropdown" id="version_switcher">
+    <button type="button" class="btn btn-primary btn-sm navbar-btn dropdown-toggle" id="version_switcher_button" data-toggle="dropdown">
+        2.5.2  <!-- this text may get changed later by javascript -->
+        <span class="caret"></span>
+    </button>
+    <div id="version_switcher_menu" class="dropdown-menu list-group-flush py-0" aria-labelledby="version_switcher_button">
+    <!-- dropdown will be populated by javascript on page load -->
+    </div>
+</div>
+
+<!-- NOTE: this JS must live here (not in our global JS file) because it relies
+     on being processed by Jinja before it is run (specifically for replacing
+     variables api/gpflow/inducing_variables/index and {'json_url': 'https://gpflow.github.io/GPflow/versions.json', 'version_match': '2.5.2'}.
+-->
+
+<script type="text/javascript">
+// Check if corresponding page path exists in other version of docs
+// and, if so, go there instead of the homepage of the other docs version
+function checkPageExistsAndRedirect(event) {
+    const currentFilePath = "api/gpflow/inducing_variables/index.html",
+          tryUrl = event.target.getAttribute("href");
+    let otherDocsHomepage = tryUrl.replace(currentFilePath, "");
+    $.ajax({
+        type: 'HEAD',
+        url: tryUrl,
+        // if the page exists, go there
+        success: function() {
+            location.href = tryUrl;
+        }
+    }).fail(function() {
+        location.href = otherDocsHomepage;
+    });
+    // this prevents the browser from following the href of the clicked node
+    // (which is fine because this function takes care of redirecting)
+    return false;
+}
+
+// Populate the version switcher from the JSON config file
+(function () {
+    $.getJSON("https://gpflow.github.io/GPflow/versions.json", function(data, textStatus, jqXHR) {
+        const currentFilePath = "api/gpflow/inducing_variables/index.html";
+        // create links to the corresponding page in the other docs versions
+        $.each(data, function(index, entry) {
+            // if no custom name specified (e.g., "latest"), use version string
+            if (!("name" in entry)) {
+                entry.name = entry.version;
+            }
+            // create the node
+            const node = document.createElement("a");
+            node.setAttribute("class", "list-group-item list-group-item-action py-1");
+            node.textContent = `${entry.name}`;
+            node.setAttribute("href", `${entry.url}${currentFilePath}`);
+            // on click, AJAX calls will check if the linked page exists before
+            // trying to redirect, and if not, will redirect to the homepage
+            // for that version of the docs.
+            node.onclick = checkPageExistsAndRedirect;
+            // Add dataset values for the version and name in case people want
+            // to apply CSS styling based on this information.
+            node.dataset["versionName"] = entry.name;
+            node.dataset["version"] = entry.version;
+
+            $("#version_switcher_menu").append(node);
+            // replace dropdown button text with the preferred display name of
+            // this version, rather than using sphinx's  variable.
+            // also highlight the dropdown entry for the currently-viewed
+            // version's entry
+            if (entry.version == "2.5.2") {
+                node.classList.add("active");
+                let btn = document.getElementById("version_switcher_button");
+                btn.innerText = btn.dataset["activeVersionName"] = entry.name;
+                btn.dataset["activeVersion"] = entry.version;
+            }
+        });
+    });
+})();
+</script>
+      </div>
+      
+    </div>
+  </div>
+</div>
+    </nav>
+    
+
+    <div class="container-xl">
+      <div class="row">
+          
+            
+            <!-- Only show if we have sidebars configured, else just a small margin  -->
+            <div class="col-12 col-md-3 bd-sidebar">
+              <div class="sidebar-start-items"><form class="bd-search d-flex align-items-center" action="../../../search.html" method="get">
+  <i class="icon fas fa-search"></i>
+  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
+</form><nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
+  <div class="bd-toc-item active">
+    <ul class="current nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../base/index.html">
+   gpflow.base
+  </a>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../conditionals/index.html">
+   gpflow.conditionals
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/>
+  <label for="toctree-checkbox-1">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../conditionals/util/index.html">
+     gpflow.conditionals.util
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../config/index.html">
+   gpflow.config
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../covariances/index.html">
+   gpflow.covariances
+  </a>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../expectations/index.html">
+   gpflow.expectations
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" type="checkbox"/>
+  <label for="toctree-checkbox-2">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../expectations/quadratures/index.html">
+     gpflow.expectations.quadratures
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../experimental/index.html">
+   gpflow.experimental
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" type="checkbox"/>
+  <label for="toctree-checkbox-3">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2 has-children">
+    <a class="reference internal" href="../experimental/check_shapes/index.html">
+     gpflow.experimental.check_shapes
+    </a>
+    <input class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" type="checkbox"/>
+    <label for="toctree-checkbox-4">
+     <i class="fas fa-chevron-down">
+     </i>
+    </label>
+    <ul>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../experimental/check_shapes/accessors/index.html">
+       gpflow.experimental.check_shapes.accessors
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../experimental/check_shapes/argument_ref/index.html">
+       gpflow.experimental.check_shapes.argument_ref
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../experimental/check_shapes/bool_specs/index.html">
+       gpflow.experimental.check_shapes.bool_specs
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../experimental/check_shapes/checker_context/index.html">
+       gpflow.experimental.check_shapes.checker_context
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../experimental/check_shapes/decorator/index.html">
+       gpflow.experimental.check_shapes.decorator
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../experimental/check_shapes/error_contexts/index.html">
+       gpflow.experimental.check_shapes.error_contexts
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../experimental/check_shapes/exceptions/index.html">
+       gpflow.experimental.check_shapes.exceptions
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../experimental/check_shapes/parser/index.html">
+       gpflow.experimental.check_shapes.parser
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../experimental/check_shapes/shapes/index.html">
+       gpflow.experimental.check_shapes.shapes
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../experimental/check_shapes/specs/index.html">
+       gpflow.experimental.check_shapes.specs
+      </a>
+     </li>
+    </ul>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../experimental/utils/index.html">
+     gpflow.experimental.utils
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1 current active has-children">
+  <a class="current reference internal" href="#">
+   gpflow.inducing_variables
+  </a>
+  <input checked="" class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" type="checkbox"/>
+  <label for="toctree-checkbox-5">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="inducing_variables/index.html">
+     gpflow.inducing_variables.inducing_variables
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../kernels/index.html">
+   gpflow.kernels
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-6" name="toctree-checkbox-6" type="checkbox"/>
+  <label for="toctree-checkbox-6">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../kernels/base/index.html">
+     gpflow.kernels.base
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../kullback_leiblers/index.html">
+   gpflow.kullback_leiblers
+  </a>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../likelihoods/index.html">
+   gpflow.likelihoods
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" type="checkbox"/>
+  <label for="toctree-checkbox-7">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../likelihoods/utils/index.html">
+     gpflow.likelihoods.utils
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../logdensities/index.html">
+   gpflow.logdensities
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../mean_functions/index.html">
+   gpflow.mean_functions
+  </a>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../models/index.html">
+   gpflow.models
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-8" name="toctree-checkbox-8" type="checkbox"/>
+  <label for="toctree-checkbox-8">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../models/cglb/index.html">
+     gpflow.models.cglb
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../models/gpr/index.html">
+     gpflow.models.gpr
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../models/sgpr/index.html">
+     gpflow.models.sgpr
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../models/svgp/index.html">
+     gpflow.models.svgp
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../models/util/index.html">
+     gpflow.models.util
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../models/vgp/index.html">
+     gpflow.models.vgp
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../monitor/index.html">
+   gpflow.monitor
+  </a>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../optimizers/index.html">
+   gpflow.optimizers
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" type="checkbox"/>
+  <label for="toctree-checkbox-9">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../optimizers/natgrad/index.html">
+     gpflow.optimizers.natgrad
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../posteriors/index.html">
+   gpflow.posteriors
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../probability_distributions/index.html">
+   gpflow.probability_distributions
+  </a>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../quadrature/index.html">
+   gpflow.quadrature
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-10" name="toctree-checkbox-10" type="checkbox"/>
+  <label for="toctree-checkbox-10">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../quadrature/gauss_hermite/index.html">
+     gpflow.quadrature.gauss_hermite
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../utilities/index.html">
+   gpflow.utilities
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-11" name="toctree-checkbox-11" type="checkbox"/>
+  <label for="toctree-checkbox-11">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../utilities/ops/index.html">
+     gpflow.utilities.ops
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../utilities/traversal/index.html">
+     gpflow.utilities.traversal
+    </a>
+   </li>
+  </ul>
+ </li>
+</ul>
+
+  </div>
+</nav>
+              </div>
+              <div class="sidebar-end-items">
+              </div>
+            </div>
+            
+          
+
+          
+          <div class="d-none d-xl-block col-xl-2 bd-toc">
+            
+              
+              <div class="toc-item">
+                
+<div class="tocsection onthispage mt-5 pt-1 pb-3">
+    <i class="fas fa-list"></i> On this page
+</div>
+
+<nav id="bd-toc-nav">
+    <ul class="visible nav section-nav flex-column">
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#modules">
+   Modules
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#classes">
+   Classes
+  </a>
+  <ul class="nav section-nav flex-column">
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#gpflow-inducing-variables-fallbackseparateindependentinducingvariables">
+     gpflow.inducing_variables.FallbackSeparateIndependentInducingVariables
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#gpflow-inducing-variables-fallbacksharedindependentinducingvariables">
+     gpflow.inducing_variables.FallbackSharedIndependentInducingVariables
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#gpflow-inducing-variables-inducingpatches">
+     gpflow.inducing_variables.InducingPatches
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#gpflow-inducing-variables-inducingpoints">
+     gpflow.inducing_variables.InducingPoints
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#gpflow-inducing-variables-inducingvariables">
+     gpflow.inducing_variables.InducingVariables
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#gpflow-inducing-variables-multioutputinducingvariables">
+     gpflow.inducing_variables.MultioutputInducingVariables
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#gpflow-inducing-variables-multiscale">
+     gpflow.inducing_variables.Multiscale
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#gpflow-inducing-variables-separateindependentinducingvariables">
+     gpflow.inducing_variables.SeparateIndependentInducingVariables
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#gpflow-inducing-variables-sharedindependentinducingvariables">
+     gpflow.inducing_variables.SharedIndependentInducingVariables
+    </a>
+   </li>
+  </ul>
+ </li>
+</ul>
+
+</nav>
+              </div>
+              
+              <div class="toc-item">
+                
+              </div>
+              
+            
+          </div>
+          
+
+          
+          
+            
+          
+          <main class="col-12 col-md-9 col-xl-7 py-md-5 pl-md-5 pr-md-4 bd-content" role="main">
+              
+              <div>
+                
+  <section id="gpflow-inducing-variables">
+<h1>gpflow.inducing_variables<a class="headerlink" href="#gpflow-inducing-variables" title="Permalink to this headline">#</a></h1>
+<span class="target" id="module-gpflow.inducing_variables"></span><section id="modules">
+<h2>Modules<a class="headerlink" href="#modules" title="Permalink to this headline">#</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="inducing_variables/index.html">gpflow.inducing_variables.inducing_variables</a></li>
+</ul>
+</div>
+</section>
+<section id="classes">
+<h2>Classes<a class="headerlink" href="#classes" title="Permalink to this headline">#</a></h2>
+<section id="gpflow-inducing-variables-fallbackseparateindependentinducingvariables">
+<h3>gpflow.inducing_variables.FallbackSeparateIndependentInducingVariables<a class="headerlink" href="#gpflow-inducing-variables-fallbackseparateindependentinducingvariables" title="Permalink to this headline">#</a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="gpflow.inducing_variables.FallbackSeparateIndependentInducingVariables">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.inducing_variables.</span></span><span class="sig-name descname"><span class="pre">FallbackSeparateIndependentInducingVariables</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inducing_variable_list</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/inducing_variables/multioutput/inducing_variables.html#FallbackSeparateIndependentInducingVariables"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.inducing_variables.FallbackSeparateIndependentInducingVariables" title="Permalink to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#gpflow.inducing_variables.MultioutputInducingVariables" title="gpflow.inducing_variables.multioutput.inducing_variables.MultioutputInducingVariables"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.inducing_variables.multioutput.inducing_variables.MultioutputInducingVariables</span></code></a></p>
+<p>Separate set of inducing variables for each independent latent process.</p>
+<p>This class is designated to be used to:</p>
+<ul class="simple">
+<li><p>provide a general interface for multioutput kernels
+constructed from independent latent processes,</p></li>
+<li><p>only require the specification of Kuu and Kuf.</p></li>
+</ul>
+<p>All multioutput kernels constructed from independent latent processes allow
+the inducing variables to be specified in the latent processes, and a
+reasonably efficient method (i.e. one that takes advantage of the
+independence in the latent processes) can be specified quite generally by
+only requiring the following covariances:</p>
+<ul class="simple">
+<li><p>Kuu: [L, M, M],</p></li>
+<li><p>Kuf: [L, M, N, P].</p></li>
+</ul>
+<p>In <cite>gpflow/multioutput/conditionals.py</cite> we define a conditional() implementation for this
+combination. We specify this code path for all kernels which inherit from
+<cite>IndependentLatentBase</cite>. This set-up allows inference with any such kernel to be implemented by
+specifying only <cite>Kuu()</cite> and <cite>Kuf()</cite>.</p>
+<p>We call this the base class, since many multioutput GPs that are constructed
+from independent latent processes acutally allow even more efficient
+approximations. However, we include this code path, as it does not require
+specifying a new <cite>conditional()</cite> implementation.</p>
+<p>We use a different definition of inducing variables for each latent process.
+Note: each object should have the same number of inducing variables, M.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>inducing_variable_list</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Sequence</span></code>[<a class="reference internal" href="#gpflow.inducing_variables.InducingVariables" title="gpflow.inducing_variables.inducing_variables.InducingVariables"><code class="xref py py-class docutils literal notranslate"><span class="pre">InducingVariables</span></code></a>]) – </p>
+</dd>
+</dl>
+<dl class="py property">
+<dt class="sig sig-object py" id="gpflow.inducing_variables.FallbackSeparateIndependentInducingVariables.num_inducing">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">num_inducing</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">tensorflow.python.framework.ops.Tensor</span></em><a class="headerlink" href="#gpflow.inducing_variables.FallbackSeparateIndependentInducingVariables.num_inducing" title="Permalink to this definition">#</a></dt>
+<dd><p>Returns the number of inducing variables, relevant for example to determine the size of the
+variational distribution.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="gpflow-inducing-variables-fallbacksharedindependentinducingvariables">
+<h3>gpflow.inducing_variables.FallbackSharedIndependentInducingVariables<a class="headerlink" href="#gpflow-inducing-variables-fallbacksharedindependentinducingvariables" title="Permalink to this headline">#</a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="gpflow.inducing_variables.FallbackSharedIndependentInducingVariables">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.inducing_variables.</span></span><span class="sig-name descname"><span class="pre">FallbackSharedIndependentInducingVariables</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/inducing_variables/multioutput/inducing_variables.html#FallbackSharedIndependentInducingVariables"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.inducing_variables.FallbackSharedIndependentInducingVariables" title="Permalink to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#gpflow.inducing_variables.MultioutputInducingVariables" title="gpflow.inducing_variables.multioutput.inducing_variables.MultioutputInducingVariables"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.inducing_variables.multioutput.inducing_variables.MultioutputInducingVariables</span></code></a></p>
+<p>Shared definition of inducing variables for each independent latent process.</p>
+<p>This class is designated to be used to:</p>
+<ul class="simple">
+<li><p>provide a general interface for multioutput kernels
+constructed from independent latent processes,</p></li>
+<li><p>only require the specification of Kuu and Kuf.</p></li>
+</ul>
+<p>All multioutput kernels constructed from independent latent processes allow
+the inducing variables to be specified in the latent processes, and a
+reasonably efficient method (i.e. one that takes advantage of the
+independence in the latent processes) can be specified quite generally by
+only requiring the following covariances:</p>
+<ul class="simple">
+<li><p>Kuu: [L, M, M],</p></li>
+<li><p>Kuf: [L, M, N, P].</p></li>
+</ul>
+<p>In <cite>gpflow/conditionals/multioutput/conditionals.py</cite> we define a conditional() implementation
+for this combination. We specify this code path for all kernels which inherit from
+<cite>IndependentLatentBase</cite>. This set-up allows inference with any such kernel to be implemented by
+specifying only <cite>Kuu()</cite> and <cite>Kuf()</cite>.</p>
+<p>We call this the base class, since many multioutput GPs that are constructed
+from independent latent processes acutally allow even more efficient
+approximations. However, we include this code path, as it does not require
+specifying a new <cite>conditional()</cite> implementation.</p>
+<p>Here, we share the definition of inducing variables between all latent
+processes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>inducing_variable</strong> (<a class="reference internal" href="#gpflow.inducing_variables.InducingVariables" title="gpflow.inducing_variables.inducing_variables.InducingVariables"><code class="xref py py-class docutils literal notranslate"><span class="pre">InducingVariables</span></code></a>) – </p>
+</dd>
+</dl>
+<dl class="py property">
+<dt class="sig sig-object py" id="gpflow.inducing_variables.FallbackSharedIndependentInducingVariables.num_inducing">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">num_inducing</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">tensorflow.python.framework.ops.Tensor</span></em><a class="headerlink" href="#gpflow.inducing_variables.FallbackSharedIndependentInducingVariables.num_inducing" title="Permalink to this definition">#</a></dt>
+<dd><p>Returns the number of inducing variables, relevant for example to determine the size of the
+variational distribution.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="gpflow-inducing-variables-inducingpatches">
+<h3>gpflow.inducing_variables.InducingPatches<a class="headerlink" href="#gpflow-inducing-variables-inducingpatches" title="Permalink to this headline">#</a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="gpflow.inducing_variables.InducingPatches">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.inducing_variables.</span></span><span class="sig-name descname"><span class="pre">InducingPatches</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Z</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/inducing_variables/inducing_patch.html#InducingPatches"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.inducing_variables.InducingPatches" title="Permalink to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#gpflow.inducing_variables.InducingPoints" title="gpflow.inducing_variables.inducing_variables.InducingPoints"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.inducing_variables.inducing_variables.InducingPoints</span></code></a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>Z</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Sequence</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>, <a class="reference internal" href="../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>]) – </p></li>
+<li><p><strong>name</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>]) – </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="gpflow-inducing-variables-inducingpoints">
+<h3>gpflow.inducing_variables.InducingPoints<a class="headerlink" href="#gpflow-inducing-variables-inducingpoints" title="Permalink to this headline">#</a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="gpflow.inducing_variables.InducingPoints">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.inducing_variables.</span></span><span class="sig-name descname"><span class="pre">InducingPoints</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Z</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/inducing_variables/inducing_variables.html#InducingPoints"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.inducing_variables.InducingPoints" title="Permalink to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference internal" href="inducing_variables/index.html#gpflow.inducing_variables.inducing_variables.InducingPointsBase" title="gpflow.inducing_variables.inducing_variables.InducingPointsBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.inducing_variables.inducing_variables.InducingPointsBase</span></code></a></p>
+<p>Real-space inducing points</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>Z</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Sequence</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>, <a class="reference internal" href="../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>]) – </p></li>
+<li><p><strong>name</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>]) – </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="gpflow-inducing-variables-inducingvariables">
+<h3>gpflow.inducing_variables.InducingVariables<a class="headerlink" href="#gpflow-inducing-variables-inducingvariables" title="Permalink to this headline">#</a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="gpflow.inducing_variables.InducingVariables">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.inducing_variables.</span></span><span class="sig-name descname"><span class="pre">InducingVariables</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/inducing_variables/inducing_variables.html#InducingVariables"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.inducing_variables.InducingVariables" title="Permalink to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference internal" href="../index.html#gpflow.Module" title="gpflow.base.Module"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.base.Module</span></code></a></p>
+<p>Abstract base class for inducing variables.</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="gpflow.inducing_variables.InducingVariables.num_inducing">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">num_inducing</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">tensorflow.python.framework.ops.Tensor</span></em><a class="headerlink" href="#gpflow.inducing_variables.InducingVariables.num_inducing" title="Permalink to this definition">#</a></dt>
+<dd><p>Returns the number of inducing variables, relevant for example to determine the size of the
+variational distribution.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="gpflow-inducing-variables-multioutputinducingvariables">
+<h3>gpflow.inducing_variables.MultioutputInducingVariables<a class="headerlink" href="#gpflow-inducing-variables-multioutputinducingvariables" title="Permalink to this headline">#</a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="gpflow.inducing_variables.MultioutputInducingVariables">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.inducing_variables.</span></span><span class="sig-name descname"><span class="pre">MultioutputInducingVariables</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/inducing_variables/multioutput/inducing_variables.html#MultioutputInducingVariables"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.inducing_variables.MultioutputInducingVariables" title="Permalink to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#gpflow.inducing_variables.InducingVariables" title="gpflow.inducing_variables.inducing_variables.InducingVariables"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.inducing_variables.inducing_variables.InducingVariables</span></code></a></p>
+<p>Multioutput Inducing Variables
+Base class for methods which define a collection of inducing variables which
+in some way can be grouped. The main example is where the inducing variables
+consist of outputs of various independent GPs. This can be because our model
+uses multiple independent GPs (SharedIndependent, SeparateIndependent) or
+because it is constructed from independent GPs (eg IndependentLatent,
+LinearCoregionalization).</p>
+</dd></dl>
+
+</section>
+<section id="gpflow-inducing-variables-multiscale">
+<h3>gpflow.inducing_variables.Multiscale<a class="headerlink" href="#gpflow-inducing-variables-multiscale" title="Permalink to this headline">#</a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="gpflow.inducing_variables.Multiscale">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.inducing_variables.</span></span><span class="sig-name descname"><span class="pre">Multiscale</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Z</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scales</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/inducing_variables/inducing_variables.html#Multiscale"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.inducing_variables.Multiscale" title="Permalink to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference internal" href="inducing_variables/index.html#gpflow.inducing_variables.inducing_variables.InducingPointsBase" title="gpflow.inducing_variables.inducing_variables.InducingPointsBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.inducing_variables.inducing_variables.InducingPointsBase</span></code></a></p>
+<p>Multi-scale inducing variables</p>
+<p>Originally proposed in <span id="id1">Lázaro-Gredilla and Figueiras-Vidal [<a class="reference internal" href="../../../bibliography.html#id13" title="Miguel Lázaro-Gredilla and An\'ıbal Figueiras-Vidal. Inter-domain gaussian processes for sparse inference using inducing features. In Advances in Neural Information Processing Systems 22. 2009.">LazaroGFV09</a>]</span>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>Z</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Sequence</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>, <a class="reference internal" href="../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>]) – </p></li>
+<li><p><strong>scales</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Sequence</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>, <a class="reference internal" href="../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>]) – </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="gpflow-inducing-variables-separateindependentinducingvariables">
+<h3>gpflow.inducing_variables.SeparateIndependentInducingVariables<a class="headerlink" href="#gpflow-inducing-variables-separateindependentinducingvariables" title="Permalink to this headline">#</a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="gpflow.inducing_variables.SeparateIndependentInducingVariables">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.inducing_variables.</span></span><span class="sig-name descname"><span class="pre">SeparateIndependentInducingVariables</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inducing_variable_list</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/inducing_variables/multioutput/inducing_variables.html#SeparateIndependentInducingVariables"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.inducing_variables.SeparateIndependentInducingVariables" title="Permalink to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#gpflow.inducing_variables.FallbackSeparateIndependentInducingVariables" title="gpflow.inducing_variables.multioutput.inducing_variables.FallbackSeparateIndependentInducingVariables"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.inducing_variables.multioutput.inducing_variables.FallbackSeparateIndependentInducingVariables</span></code></a></p>
+<p>Here, we define the same inducing variables as in the base class. However,
+this class is intended to be used without the constraints on the shapes that
+<cite>Kuu()</cite> and <cite>Kuf()</cite> return. This allows a custom <cite>conditional()</cite> to provide
+the most efficient implementation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>inducing_variable_list</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Sequence</span></code>[<a class="reference internal" href="#gpflow.inducing_variables.InducingVariables" title="gpflow.inducing_variables.inducing_variables.InducingVariables"><code class="xref py py-class docutils literal notranslate"><span class="pre">InducingVariables</span></code></a>]) – </p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="gpflow-inducing-variables-sharedindependentinducingvariables">
+<h3>gpflow.inducing_variables.SharedIndependentInducingVariables<a class="headerlink" href="#gpflow-inducing-variables-sharedindependentinducingvariables" title="Permalink to this headline">#</a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="gpflow.inducing_variables.SharedIndependentInducingVariables">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.inducing_variables.</span></span><span class="sig-name descname"><span class="pre">SharedIndependentInducingVariables</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inducing_variable</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/inducing_variables/multioutput/inducing_variables.html#SharedIndependentInducingVariables"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.inducing_variables.SharedIndependentInducingVariables" title="Permalink to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#gpflow.inducing_variables.FallbackSharedIndependentInducingVariables" title="gpflow.inducing_variables.multioutput.inducing_variables.FallbackSharedIndependentInducingVariables"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.inducing_variables.multioutput.inducing_variables.FallbackSharedIndependentInducingVariables</span></code></a></p>
+<p>Here, we define the same inducing variables as in the base class. However,
+this class is intended to be used without the constraints on the shapes that
+<cite>Kuu()</cite> and <cite>Kuf()</cite> return. This allows a custom <cite>conditional()</cite> to provide
+the most efficient implementation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>inducing_variable</strong> (<a class="reference internal" href="#gpflow.inducing_variables.InducingVariables" title="gpflow.inducing_variables.inducing_variables.InducingVariables"><code class="xref py py-class docutils literal notranslate"><span class="pre">InducingVariables</span></code></a>) – </p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+</section>
+</section>
+
+
+              </div>
+              
+              
+          </main>
+          
+
+      </div>
+    </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf"></script>
+<footer class="footer mt-5 mt-md-0">
+  <div class="container">
+    
+    <div class="footer-item">
+      <p class="copyright">
+    &copy; Copyright 2022, The GPflow Contributors.<br>
+</p>
+    </div>
+    
+    <div class="footer-item">
+      <p class="sphinx-version">
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.5.0.<br>
+</p>
+    </div>
+    
+  </div>
+</footer>
+  </body>
+</html>
