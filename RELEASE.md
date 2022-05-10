@@ -33,7 +33,7 @@ This release contains contributions from:
 <INSERT>, <NAME>, <HERE>, <USING>, <GITHUB>, <HANDLE>
 
 
-# Release 2.5.2 (next upcoming release in progress)
+# Release 2.5.3 (next upcoming release in progress)
 
 <INSERT SMALL BLURB ABOUT RELEASE FOCUS AREA AND POTENTIAL TOOLCHAIN CHANGES>
 
@@ -55,7 +55,26 @@ This release contains contributions from:
 
 ## Bug Fixes and Other Changes
 
+* <SIMILAR TO ABOVE SECTION, BUT FOR OTHER IMPORTANT CHANGES / BUG FIXES>
+* <IF A CHANGE CLOSES A GITHUB ISSUE, IT SHOULD BE DOCUMENTED HERE>
+* <NOTES SHOULD BE GROUPED PER AREA>
+
+## Thanks to our Contributors
+
+This release contains contributions from:
+
+<INSERT>, <NAME>, <HERE>, <USING>, <GITHUB>, <HANDLE>
+
+
+# Release 2.5.2
+
+This release fixes a performance regression introduced in `2.5.0`.  `2.5.0` used features of Python
+that `tensorfow < 2.9.0` do not know how to compile, which negatively impacted performance.
+
+## Bug Fixes and Other Changes
+
 * Fixed some bugs that prevented TensorFlow compilation and had negative performance impact. (#1882)
+* Various improvements to documentation. (#1875, #1866, #1877, #1879)
 
 ## Thanks to our Contributors
 
