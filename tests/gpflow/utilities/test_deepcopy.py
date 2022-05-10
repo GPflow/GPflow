@@ -9,6 +9,7 @@ from packaging.version import Version
 
 import gpflow
 from gpflow.base import TensorType
+from gpflow.experimental.check_shapes import check_shapes
 
 
 class A(tf.Module):
@@ -17,6 +18,10 @@ class A(tf.Module):
         shift = tf.Variable(1e-6)
         self.bijector = tfp.bijectors.Chain([tfp.bijectors.Softplus(), tfp.bijectors.Shift(shift)])
 
+    @check_shapes(
+        "x: [any...]",
+        "return: [any...]",
+    )
     def __call__(self, x: TensorType) -> tf.Tensor:
         return self.bijector(x)
 
@@ -26,6 +31,10 @@ class B(tf.Module):
         self.var = tf.Variable([2.0])
         self.a = A()
 
+    @check_shapes(
+        "x: [any...]",
+        "return: [any...]",
+    )
     def __call__(self, x: TensorType) -> tf.Tensor:
         return self.a(x)
 

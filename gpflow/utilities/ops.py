@@ -19,8 +19,13 @@ import tensorflow as tf
 import tensorflow_probability as tfp
 
 from ..base import AnyNDArray
+from ..experimental.check_shapes import check_shapes
 
 
+@check_shapes(
+    "value: [any...]",
+    "return: [any...]",
+)
 def cast(
     value: Union[tf.Tensor, AnyNDArray], dtype: tf.DType, name: Optional[str] = None
 ) -> tf.Tensor:
@@ -31,12 +36,20 @@ def cast(
     return tf.cast(value, dtype, name=name)
 
 
+@check_shapes(
+    "value: []",
+    "return: [N, N]",
+)
 def eye(num: int, value: tf.Tensor, dtype: Optional[tf.DType] = None) -> tf.Tensor:
     if dtype is not None:
         value = cast(value, dtype)
     return tf.linalg.diag(tf.fill([num], value))
 
 
+@check_shapes(
+    "tensor: [any...]",
+    "return: [transposed_any...]",
+)
 def leading_transpose(tensor: tf.Tensor, perm: List[Any], leading_dim: int = 0) -> tf.Tensor:
     """
     Transposes tensors with leading dimensions.
@@ -82,6 +95,11 @@ def leading_transpose(tensor: tf.Tensor, perm: List[Any], leading_dim: int = 0) 
     return tf.transpose(tensor, perm)
 
 
+@check_shapes(
+    "a: [a_shape...]",
+    "b: [b_shape...]",
+    "return: [a_shape_b_shape...]",
+)
 def broadcasting_elementwise(
     op: Callable[[tf.Tensor, tf.Tensor], tf.Tensor], a: tf.Tensor, b: tf.Tensor
 ) -> tf.Tensor:
@@ -89,17 +107,20 @@ def broadcasting_elementwise(
     Apply binary operation `op` to every pair in tensors `a` and `b`.
 
     :param op: binary operator on tensors, e.g. tf.add, tf.substract
-    :param a: tf.Tensor, shape [n_1, ..., n_a]
-    :param b: tf.Tensor, shape [m_1, ..., m_b]
-    :return: tf.Tensor, shape [n_1, ..., n_a, m_1, ..., m_b]
     """
     flatres = op(tf.reshape(a, [-1, 1]), tf.reshape(b, [1, -1]))
     return tf.reshape(flatres, tf.concat([tf.shape(a), tf.shape(b)], 0))
 
 
+@check_shapes(
+    "X: [batch..., D]",
+    "X2: [batch2..., D]",
+    "return: [batch_batch2...]",
+)
 def square_distance(X: tf.Tensor, X2: Optional[tf.Tensor]) -> tf.Tensor:
     """
     Returns ||X - X2ᵀ||²
+
     Due to the implementation and floating-point imprecision, the
     result may actually be very slightly negative for entries very
     close to each other.
@@ -122,6 +143,11 @@ def square_distance(X: tf.Tensor, X2: Optional[tf.Tensor]) -> tf.Tensor:
     return dist
 
 
+@check_shapes(
+    "X: [batch..., D]",
+    "X2: [batch2..., D]",
+    "return: [batch_batch2..., D]",
+)
 def difference_matrix(X: tf.Tensor, X2: Optional[tf.Tensor]) -> tf.Tensor:
     """
     Returns (X - X2ᵀ)
@@ -145,14 +171,19 @@ def difference_matrix(X: tf.Tensor, X2: Optional[tf.Tensor]) -> tf.Tensor:
     return diff
 
 
+@check_shapes(
+    "X: [N, D]",
+    "latent_dim: []",
+    "return: [N, Q]",
+)
 def pca_reduce(X: tf.Tensor, latent_dim: tf.Tensor) -> tf.Tensor:
     """
-    A helpful function for linearly reducing the dimensionality of the input
-    points X to `latent_dim` dimensions.
+    Linearly reduce the dimensionality of the input points `X` to `latent_dim` dimensions.
 
-    :param X: data array of size N (number of points) x D (dimensions)
-    :param latent_dim: Number of latent dimensions Q < D
-    :return: PCA projection array of size [N, Q].
+    :param X: Data to reduce.
+    :param latent_dim: Number of latent dimension, Q < D.
+    :return: PCA projection array.
+
     """
     if latent_dim > X.shape[1]:  # pragma: no cover
         raise ValueError("Cannot have more latent dimensions than observed")

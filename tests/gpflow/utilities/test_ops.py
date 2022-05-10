@@ -6,9 +6,15 @@ import tensorflow as tf
 
 import gpflow
 from gpflow.base import AnyNDArray
+from gpflow.experimental.check_shapes import check_shapes
 from gpflow.utilities.ops import difference_matrix
 
 
+@check_shapes(
+    "X: [N, D]",
+    "Q: []",
+    "return: [N, Q]",
+)
 def pca_reduce(X: Union[AnyNDArray, tf.Tensor], Q: int) -> AnyNDArray:
     """
     A helpful function for linearly reducing the dimensionality of the data X
