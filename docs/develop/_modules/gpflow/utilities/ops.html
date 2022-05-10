@@ -261,9 +261,14 @@ function checkPageExistsAndRedirect(event) {
 <span class="kn">import</span> <span class="nn">tensorflow_probability</span> <span class="k">as</span> <span class="nn">tfp</span>
 
 <span class="kn">from</span> <span class="nn">..base</span> <span class="kn">import</span> <span class="n">AnyNDArray</span>
+<span class="kn">from</span> <span class="nn">..experimental.check_shapes</span> <span class="kn">import</span> <span class="n">check_shapes</span>
 
 
-<div class="viewcode-block" id="cast"><a class="viewcode-back" href="../../../api/gpflow/utilities/ops/index.html#gpflow.utilities.ops.cast">[docs]</a><span class="k">def</span> <span class="nf">cast</span><span class="p">(</span>
+<div class="viewcode-block" id="cast"><a class="viewcode-back" href="../../../api/gpflow/utilities/ops/index.html#gpflow.utilities.ops.cast">[docs]</a><span class="nd">@check_shapes</span><span class="p">(</span>
+    <span class="s2">&quot;value: [any...]&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;return: [any...]&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="k">def</span> <span class="nf">cast</span><span class="p">(</span>
     <span class="n">value</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">AnyNDArray</span><span class="p">],</span> <span class="n">dtype</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">DType</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">tf</span><span class="o">.</span><span class="n">is_tensor</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
@@ -273,13 +278,21 @@ function checkPageExistsAndRedirect(event) {
     <span class="k">return</span> <span class="n">tf</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">dtype</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="eye"><a class="viewcode-back" href="../../../api/gpflow/utilities/ops/index.html#gpflow.utilities.ops.eye">[docs]</a><span class="k">def</span> <span class="nf">eye</span><span class="p">(</span><span class="n">num</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">dtype</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">DType</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<div class="viewcode-block" id="eye"><a class="viewcode-back" href="../../../api/gpflow/utilities/ops/index.html#gpflow.utilities.ops.eye">[docs]</a><span class="nd">@check_shapes</span><span class="p">(</span>
+    <span class="s2">&quot;value: []&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;return: [N, N]&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="k">def</span> <span class="nf">eye</span><span class="p">(</span><span class="n">num</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">dtype</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">DType</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
     <span class="k">if</span> <span class="n">dtype</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">value</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">dtype</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">tf</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">fill</span><span class="p">([</span><span class="n">num</span><span class="p">],</span> <span class="n">value</span><span class="p">))</span></div>
 
 
-<div class="viewcode-block" id="leading_transpose"><a class="viewcode-back" href="../../../api/gpflow/utilities/ops/index.html#gpflow.utilities.ops.leading_transpose">[docs]</a><span class="k">def</span> <span class="nf">leading_transpose</span><span class="p">(</span><span class="n">tensor</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">perm</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span> <span class="n">leading_dim</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<div class="viewcode-block" id="leading_transpose"><a class="viewcode-back" href="../../../api/gpflow/utilities/ops/index.html#gpflow.utilities.ops.leading_transpose">[docs]</a><span class="nd">@check_shapes</span><span class="p">(</span>
+    <span class="s2">&quot;tensor: [any...]&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;return: [transposed_any...]&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="k">def</span> <span class="nf">leading_transpose</span><span class="p">(</span><span class="n">tensor</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">perm</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span> <span class="n">leading_dim</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Transposes tensors with leading dimensions.</span>
 
@@ -324,24 +337,32 @@ function checkPageExistsAndRedirect(event) {
     <span class="k">return</span> <span class="n">tf</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">tensor</span><span class="p">,</span> <span class="n">perm</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="broadcasting_elementwise"><a class="viewcode-back" href="../../../api/gpflow/utilities/ops/index.html#gpflow.utilities.ops.broadcasting_elementwise">[docs]</a><span class="k">def</span> <span class="nf">broadcasting_elementwise</span><span class="p">(</span>
+<div class="viewcode-block" id="broadcasting_elementwise"><a class="viewcode-back" href="../../../api/gpflow/utilities/ops/index.html#gpflow.utilities.ops.broadcasting_elementwise">[docs]</a><span class="nd">@check_shapes</span><span class="p">(</span>
+    <span class="s2">&quot;a: [a_shape...]&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;b: [b_shape...]&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;return: [a_shape_b_shape...]&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="k">def</span> <span class="nf">broadcasting_elementwise</span><span class="p">(</span>
     <span class="n">op</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">],</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">],</span> <span class="n">a</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">b</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Apply binary operation `op` to every pair in tensors `a` and `b`.</span>
 
 <span class="sd">    :param op: binary operator on tensors, e.g. tf.add, tf.substract</span>
-<span class="sd">    :param a: tf.Tensor, shape [n_1, ..., n_a]</span>
-<span class="sd">    :param b: tf.Tensor, shape [m_1, ..., m_b]</span>
-<span class="sd">    :return: tf.Tensor, shape [n_1, ..., n_a, m_1, ..., m_b]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">flatres</span> <span class="o">=</span> <span class="n">op</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]),</span> <span class="n">tf</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]))</span>
     <span class="k">return</span> <span class="n">tf</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">flatres</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">tf</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">a</span><span class="p">),</span> <span class="n">tf</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">b</span><span class="p">)],</span> <span class="mi">0</span><span class="p">))</span></div>
 
 
-<div class="viewcode-block" id="square_distance"><a class="viewcode-back" href="../../../api/gpflow/utilities/ops/index.html#gpflow.utilities.ops.square_distance">[docs]</a><span class="k">def</span> <span class="nf">square_distance</span><span class="p">(</span><span class="n">X</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">X2</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<div class="viewcode-block" id="square_distance"><a class="viewcode-back" href="../../../api/gpflow/utilities/ops/index.html#gpflow.utilities.ops.square_distance">[docs]</a><span class="nd">@check_shapes</span><span class="p">(</span>
+    <span class="s2">&quot;X: [batch..., D]&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;X2: [batch2..., D]&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;return: [batch_batch2...]&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="k">def</span> <span class="nf">square_distance</span><span class="p">(</span><span class="n">X</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">X2</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Returns ||X - X2ᵀ||²</span>
+
 <span class="sd">    Due to the implementation and floating-point imprecision, the</span>
 <span class="sd">    result may actually be very slightly negative for entries very</span>
 <span class="sd">    close to each other.</span>
@@ -364,7 +385,12 @@ function checkPageExistsAndRedirect(event) {
     <span class="k">return</span> <span class="n">dist</span></div>
 
 
-<div class="viewcode-block" id="difference_matrix"><a class="viewcode-back" href="../../../api/gpflow/utilities/ops/index.html#gpflow.utilities.ops.difference_matrix">[docs]</a><span class="k">def</span> <span class="nf">difference_matrix</span><span class="p">(</span><span class="n">X</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">X2</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<div class="viewcode-block" id="difference_matrix"><a class="viewcode-back" href="../../../api/gpflow/utilities/ops/index.html#gpflow.utilities.ops.difference_matrix">[docs]</a><span class="nd">@check_shapes</span><span class="p">(</span>
+    <span class="s2">&quot;X: [batch..., D]&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;X2: [batch2..., D]&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;return: [batch_batch2..., D]&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="k">def</span> <span class="nf">difference_matrix</span><span class="p">(</span><span class="n">X</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">X2</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Returns (X - X2ᵀ)</span>
 
@@ -387,14 +413,19 @@ function checkPageExistsAndRedirect(event) {
     <span class="k">return</span> <span class="n">diff</span></div>
 
 
-<div class="viewcode-block" id="pca_reduce"><a class="viewcode-back" href="../../../api/gpflow/utilities/ops/index.html#gpflow.utilities.ops.pca_reduce">[docs]</a><span class="k">def</span> <span class="nf">pca_reduce</span><span class="p">(</span><span class="n">X</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">latent_dim</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<div class="viewcode-block" id="pca_reduce"><a class="viewcode-back" href="../../../api/gpflow/utilities/ops/index.html#gpflow.utilities.ops.pca_reduce">[docs]</a><span class="nd">@check_shapes</span><span class="p">(</span>
+    <span class="s2">&quot;X: [N, D]&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;latent_dim: []&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;return: [N, Q]&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="k">def</span> <span class="nf">pca_reduce</span><span class="p">(</span><span class="n">X</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">latent_dim</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    A helpful function for linearly reducing the dimensionality of the input</span>
-<span class="sd">    points X to `latent_dim` dimensions.</span>
+<span class="sd">    Linearly reduce the dimensionality of the input points `X` to `latent_dim` dimensions.</span>
 
-<span class="sd">    :param X: data array of size N (number of points) x D (dimensions)</span>
-<span class="sd">    :param latent_dim: Number of latent dimensions Q &lt; D</span>
-<span class="sd">    :return: PCA projection array of size [N, Q].</span>
+<span class="sd">    :param X: Data to reduce.</span>
+<span class="sd">    :param latent_dim: Number of latent dimension, Q &lt; D.</span>
+<span class="sd">    :return: PCA projection array.</span>
+
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">latent_dim</span> <span class="o">&gt;</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>  <span class="c1"># pragma: no cover</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Cannot have more latent dimensions than observed&quot;</span><span class="p">)</span>

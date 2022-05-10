@@ -34,7 +34,7 @@
     <script src="https://unpkg.com/@jupyter-widgets/html-manager@^0.20.1/dist/embed-amd.js"></script>
     <link rel="index" title="Index" href="../../../../genindex.html" />
     <link rel="search" title="Search" href="../../../../search.html" />
-    <link rel="next" title="gpflow.utilities.traversal" href="../traversal/index.html" />
+    <link rel="next" title="Bibliography" href="../../../../bibliography.html" />
     <link rel="prev" title="gpflow.utilities" href="../index.html" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="docsearch:language" content="None">
@@ -519,11 +519,6 @@ function checkPageExistsAndRedirect(event) {
      gpflow.utilities.ops
     </a>
    </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="../traversal/index.html">
-     gpflow.utilities.traversal
-    </a>
-   </li>
   </ul>
  </li>
 </ul>
@@ -626,15 +621,12 @@ function checkPageExistsAndRedirect(event) {
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>op</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Callable</span></code>[[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]) – binary operator on tensors, e.g. tf.add, tf.substract</p></li>
-<li><p><strong>a</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – tf.Tensor, shape [n_1, …, n_a]</p></li>
-<li><p><strong>b</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – tf.Tensor, shape [m_1, …, m_b]</p></li>
+<li><p><strong>a</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – </p></li>
+<li><p><strong>b</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – </p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type</dt>
 <dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></p>
-</dd>
-<dt class="field-odd">Returns</dt>
-<dd class="field-odd"><p>tf.Tensor, shape [n_1, …, n_a, m_1, …, m_b]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -736,7 +728,11 @@ to the tensor rank, viewing leading dimensions <cite>…</cite> as zero index.</
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>tensor</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – TensorFlow tensor.</p></li>
+<li><p><strong>tensor</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – <ul>
+<li><p><strong>tensor</strong> has shape [<em>any</em>…].</p></li>
+</ul>
+<p>TensorFlow tensor.</p>
+</p></li>
 <li><p><strong>perm</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>]) – List of permutation indices.</p></li>
 <li><p><strong>leading_dim</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>) – </p></li>
 </ul>
@@ -745,7 +741,11 @@ to the tensor rank, viewing leading dimensions <cite>…</cite> as zero index.</
 <dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></p>
 </dd>
 <dt class="field-odd">Returns</dt>
-<dd class="field-odd"><p>TensorFlow tensor.</p>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><strong>return</strong> has shape [<em>transposed_any</em>…].</p></li>
+</ul>
+<p>TensorFlow tensor.</p>
+</p>
 </dd>
 <dt class="field-even">Raises</dt>
 <dd class="field-even"><p><strong>ValueError</strong> – when <cite>…</cite> cannot be found.</p>
@@ -759,20 +759,31 @@ to the tensor rank, viewing leading dimensions <cite>…</cite> as zero index.</
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.utilities.ops.pca_reduce">
 <span class="sig-prename descclassname"><span class="pre">gpflow.utilities.ops.</span></span><span class="sig-name descname"><span class="pre">pca_reduce</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">latent_dim</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/gpflow/utilities/ops.html#pca_reduce"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.utilities.ops.pca_reduce" title="Permalink to this definition">#</a></dt>
-<dd><p>A helpful function for linearly reducing the dimensionality of the input
-points X to <cite>latent_dim</cite> dimensions.</p>
+<dd><p>Linearly reduce the dimensionality of the input points <cite>X</cite> to <cite>latent_dim</cite> dimensions.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>X</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – data array of size N (number of points) x D (dimensions)</p></li>
-<li><p><strong>latent_dim</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – Number of latent dimensions Q &lt; D</p></li>
+<li><p><strong>X</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – <ul>
+<li><p><strong>X</strong> has shape [<em>N</em>, <em>D</em>].</p></li>
+</ul>
+<p>Data to reduce.</p>
+</p></li>
+<li><p><strong>latent_dim</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – <ul>
+<li><p><strong>latent_dim</strong> has shape [].</p></li>
+</ul>
+<p>Number of latent dimension, Q &lt; D.</p>
+</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type</dt>
 <dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></p>
 </dd>
 <dt class="field-odd">Returns</dt>
-<dd class="field-odd"><p>PCA projection array of size [N, Q].</p>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><strong>return</strong> has shape [<em>N</em>, <em>Q</em>].</p></li>
+</ul>
+<p>PCA projection array.</p>
+</p>
 </dd>
 </dl>
 </dd></dl>
@@ -783,8 +794,8 @@ points X to <cite>latent_dim</cite> dimensions.</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.utilities.ops.square_distance">
 <span class="sig-prename descclassname"><span class="pre">gpflow.utilities.ops.</span></span><span class="sig-name descname"><span class="pre">square_distance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">X2</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/gpflow/utilities/ops.html#square_distance"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.utilities.ops.square_distance" title="Permalink to this definition">#</a></dt>
-<dd><p>Returns ||X - X2ᵀ||²
-Due to the implementation and floating-point imprecision, the
+<dd><p>Returns ||X - X2ᵀ||²</p>
+<p>Due to the implementation and floating-point imprecision, the
 result may actually be very slightly negative for entries very
 close to each other.</p>
 <p>This function can deal with leading dimensions in X and X2.

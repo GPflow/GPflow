@@ -243,12 +243,18 @@ function checkPageExistsAndRedirect(event) {
 <span></span><span class="kn">import</span> <span class="nn">tensorflow</span> <span class="k">as</span> <span class="nn">tf</span>
 
 <span class="kn">from</span> <span class="nn">..base</span> <span class="kn">import</span> <span class="n">TensorType</span>
+<span class="kn">from</span> <span class="nn">..experimental.check_shapes</span> <span class="kn">import</span> <span class="n">check_shapes</span>
 
 
-<div class="viewcode-block" id="add_noise_cov"><a class="viewcode-back" href="../../../api/gpflow/utilities/index.html#gpflow.utilities.add_noise_cov">[docs]</a><span class="k">def</span> <span class="nf">add_noise_cov</span><span class="p">(</span><span class="n">K</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">likelihood_variance</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<div class="viewcode-block" id="add_noise_cov"><a class="viewcode-back" href="../../../api/gpflow/utilities/index.html#gpflow.utilities.add_noise_cov">[docs]</a><span class="nd">@check_shapes</span><span class="p">(</span>
+    <span class="s2">&quot;K: [N, N]&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;likelihood_variance: []&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;return: [N, N]&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="k">def</span> <span class="nf">add_noise_cov</span><span class="p">(</span><span class="n">K</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">likelihood_variance</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Returns K + σ² I, where σ² is the likelihood noise variance (scalar),</span>
-<span class="sd">    and I is the corresponding identity matrix.</span>
+<span class="sd">    Returns K + σ² I, where σ² is the likelihood noise variance and I is the corresponding identity</span>
+<span class="sd">    matrix.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">k_diag</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">diag_part</span><span class="p">(</span><span class="n">K</span><span class="p">)</span>
     <span class="n">s_diag</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">fill</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">k_diag</span><span class="p">),</span> <span class="n">likelihood_variance</span><span class="p">)</span>

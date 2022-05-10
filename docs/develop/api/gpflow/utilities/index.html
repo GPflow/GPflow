@@ -519,11 +519,6 @@ function checkPageExistsAndRedirect(event) {
      gpflow.utilities.ops
     </a>
    </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="traversal/index.html">
-     gpflow.utilities.traversal
-    </a>
-   </li>
   </ul>
  </li>
 </ul>
@@ -652,6 +647,11 @@ function checkPageExistsAndRedirect(event) {
     </a>
    </li>
    <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#gpflow-utilities-traverse-module">
+     gpflow.utilities.traverse_module
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
     <a class="reference internal nav-link" href="#gpflow-utilities-triangular">
      gpflow.utilities.triangular
     </a>
@@ -691,7 +691,6 @@ function checkPageExistsAndRedirect(event) {
 <div class="toctree-wrapper compound">
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="ops/index.html">gpflow.utilities.ops</a></li>
-<li class="toctree-l1"><a class="reference internal" href="traversal/index.html">gpflow.utilities.traversal</a></li>
 </ul>
 </div>
 </section>
@@ -813,8 +812,8 @@ element of the iterator. If no matching functions are found,
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.utilities.add_noise_cov">
 <span class="sig-prename descclassname"><span class="pre">gpflow.utilities.</span></span><span class="sig-name descname"><span class="pre">add_noise_cov</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">K</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">likelihood_variance</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/utilities/model_utils.html#add_noise_cov"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.utilities.add_noise_cov" title="Permalink to this definition">#</a></dt>
-<dd><p>Returns K + σ² I, where σ² is the likelihood noise variance (scalar),
-and I is the corresponding identity matrix.</p>
+<dd><p>Returns K + σ² I, where σ² is the likelihood noise variance and I is the corresponding identity
+matrix.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -1138,6 +1137,32 @@ corresponding loss gradients. Adam is a default optimizer with default settings.
 </dd>
 <dt class="field-even">Return type</dt>
 <dd class="field-even"><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></p>
+</dd>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="gpflow-utilities-traverse-module">
+<h3>gpflow.utilities.traverse_module<a class="headerlink" href="#gpflow-utilities-traverse-module" title="Permalink to this headline">#</a></h3>
+<dl class="py function">
+<dt class="sig sig-object py" id="gpflow.utilities.traverse_module">
+<span class="sig-prename descclassname"><span class="pre">gpflow.utilities.</span></span><span class="sig-name descname"><span class="pre">traverse_module</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">m</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">acc</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">update_cb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_types</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/utilities/traversal.html#traverse_module"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.utilities.traverse_module" title="Permalink to this definition">#</a></dt>
+<dd><p>Recursively traverses <cite>m</cite>, accumulating in <cite>acc</cite> a path and a state until it finds an object of
+type in <cite>target_types</cite> to apply <cite>update_cb</cite> to update the accumulator <cite>acc</cite> and/or the object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>m</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">TypeVar</span></code>(<code class="docutils literal notranslate"><span class="pre">TraverseInput</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code>, <a class="reference internal" href="../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>)) – tf.Module, tf.Variable or gpflow.Parameter</p></li>
+<li><p><strong>acc</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">TypeVar</span></code>(<code class="docutils literal notranslate"><span class="pre">State</span></code>)]) – Tuple of path and state</p></li>
+<li><p><strong>update_cb</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Callable</span></code>[[<code class="xref py py-class docutils literal notranslate"><span class="pre">TypeVar</span></code>(<code class="docutils literal notranslate"><span class="pre">TraverseInput</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code>, <a class="reference internal" href="../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>), <code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">TypeVar</span></code>(<code class="docutils literal notranslate"><span class="pre">State</span></code>)], <code class="xref py py-class docutils literal notranslate"><span class="pre">TypeVar</span></code>(<code class="docutils literal notranslate"><span class="pre">State</span></code>)]) – Callable</p></li>
+<li><p><strong>target_types</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Type</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-data docutils literal notranslate"><span class="pre">...</span></code>]) – target class types</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">TypeVar</span></code>(<code class="docutils literal notranslate"><span class="pre">State</span></code>)</p>
 </dd>
 <dt class="field-odd">Returns</dt>
 <dd class="field-odd"><p></p>
