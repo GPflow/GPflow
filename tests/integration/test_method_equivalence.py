@@ -21,6 +21,7 @@ from numpy.testing import assert_allclose
 import gpflow
 from gpflow.base import AnyNDArray, TensorType
 from gpflow.config import default_jitter
+from gpflow.experimental.check_shapes import ShapeChecker
 from gpflow.kernels import Kernel
 from gpflow.likelihoods import Likelihood
 from gpflow.mean_functions import Constant
@@ -30,10 +31,12 @@ rng = np.random.RandomState(0)
 
 
 class Datum:
-    X: AnyNDArray = rng.rand(20, 1) * 10
-    Y = np.sin(X) + 0.9 * np.cos(X * 1.6) + rng.randn(*X.shape) * 0.8
-    Y = np.tile(Y, 2)  # two identical columns
-    Xtest: AnyNDArray = rng.rand(10, 1) * 10
+    cs = ShapeChecker().check_shape
+
+    X: AnyNDArray = cs(rng.rand(20, 1) * 10, "[N, D]")
+    Y = cs(np.sin(X) + 0.9 * np.cos(X * 1.6) + rng.randn(*X.shape) * 0.8, "[N, 1]")
+    Y = cs(np.tile(Y, 2), "[N, P]")  # two identical columns
+    Xtest: AnyNDArray = cs(rng.rand(10, 1) * 10, "[N_new, D]")
     data = (X, Y)
 
 
@@ -282,9 +285,11 @@ def test_equivalence_vgp_and_opper_archambeau() -> None:
 
 
 class DatumUpper:
+    cs = ShapeChecker().check_shape
+
     rng = np.random.default_rng(123)
-    X = rng.random((100, 1))
-    Y = np.sin(1.5 * 2 * np.pi * X) + rng.standard_normal(X.shape) * 0.1 + 5.3
+    X = cs(rng.random((100, 1)), "[N, D]")
+    Y = cs(np.sin(1.5 * 2 * np.pi * X) + rng.standard_normal(X.shape) * 0.1 + 5.3, "[N, P]")
     assert Y.mean() > 5.0, "offset ensures a regression test against the bug fixed by PR #1560"
     data = (X, Y)
 

@@ -878,7 +878,7 @@ def test_separate_independent_conditional_with_q_sqrt_none() -> None:
     inducing_variable_list = [InducingPoints(data.X[: data.M, ...]) for _ in range(data.L)]
     inducing_variable = mf.SeparateIndependentInducingVariables(inducing_variable_list)
 
-    mu_1, var_1 = gpflow.conditionals.conditional(
+    gpflow.conditionals.conditional(
         data.X,
         inducing_variable,
         kernel,

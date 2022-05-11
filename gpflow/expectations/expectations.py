@@ -79,7 +79,7 @@ def expectation(
     p, obj1, feat1, obj2, feat2 = _init_expectation(p, obj1, obj2)
     try:
         return dispatch.expectation(p, obj1, feat1, obj2, feat2, nghp=nghp)
-    except NotImplementedError as error:
+    except NotImplementedError:
         return dispatch.quadrature_expectation(p, obj1, feat1, obj2, feat2, nghp=nghp)
 
 

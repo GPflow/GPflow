@@ -79,7 +79,6 @@ class Convolutional(Kernel):
         # The separate patches will then be in the second axis.
         batch = tf.shape(X)[:-2]
         N = tf.shape(X)[-2]
-        D = tf.shape(X)[-1]
         flat_batch = tf.reduce_prod(batch)
         num_data = flat_batch * N
         X = cs(
@@ -154,10 +153,7 @@ class Convolutional(Kernel):
         Xp = cs(self.get_patches(X), "[batch..., N, P, S]")
 
         rank = tf.rank(Xp) - 3
-        batch = tf.shape(Xp)[:-3]
-        N = tf.shape(Xp)[-3]
         P = tf.shape(Xp)[-2]
-        S = tf.shape(Xp)[-1]
         ones = tf.ones((rank,), dtype=tf.int32)
 
         W2 = cs(self.weights[:, None] * self.weights[None, :], "[P, P]")

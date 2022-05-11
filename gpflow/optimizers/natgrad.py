@@ -20,6 +20,7 @@ import numpy as np
 import tensorflow as tf
 
 from ..base import Parameter, _to_constrained
+from ..experimental.check_shapes import check_shapes
 
 Scalar = Union[float, tf.Tensor, np.ndarray]
 LossClosure = Callable[[], tf.Tensor]
@@ -43,23 +44,33 @@ class XiTransform(metaclass=abc.ABCMeta):
     """
     XiTransform is the base class that implements three transformations necessary
     for the natural gradient calculation wrt any parameterization.
-    This class does not handle any shape information, but it is assumed that
-    the parameters pairs are always of shape (N, D) and (D, N, N).
     """
 
     @staticmethod
     @abc.abstractmethod
+    @check_shapes(
+        "mean: [N, D]",
+        "varsqrt: [D, N, N]",
+        "return[0]: [N, D]",
+        "return[1]: [D, N, N]",
+    )
     def meanvarsqrt_to_xi(mean: tf.Tensor, varsqrt: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor]:
         """
         Transforms the parameter `mean` and `varsqrt` to `xi1`, `xi2`
 
-        :param mean: the mean parameter (N, D)
-        :param varsqrt: the varsqrt parameter (D, N, N)
-        :return: tuple (xi1, xi2), the xi parameters (N, D), (D, N, N)
+        :param mean: the mean parameter
+        :param varsqrt: the varsqrt parameter
+        :return: tuple (xi1, xi2), the xi parameters
         """
 
     @staticmethod
     @abc.abstractmethod
+    @check_shapes(
+        "xi1: [N, D]",
+        "xi2: [D, N, N]",
+        "return[0]: [N, D]",
+        "return[1]: [D, N, N]",
+    )
     def xi_to_meanvarsqrt(xi1: tf.Tensor, xi2: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor]:
         """
         Transforms the parameter `xi1`, `xi2` to `mean`, `varsqrt`
@@ -71,6 +82,12 @@ class XiTransform(metaclass=abc.ABCMeta):
 
     @staticmethod
     @abc.abstractmethod
+    @check_shapes(
+        "nat1: [N, D]",
+        "nat2: [D, N, N]",
+        "return[0]: [N, D]",
+        "return[1]: [D, N, N]",
+    )
     def naturals_to_xi(nat1: tf.Tensor, nat2: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor]:
         """
         Applies the transform so that `nat1`, `nat2` is mapped to `xi1`, `xi2`
@@ -89,14 +106,32 @@ class XiNat(XiTransform):
     """
 
     @staticmethod
+    @check_shapes(
+        "mean: [N, D]",
+        "varsqrt: [D, N, N]",
+        "return[0]: [N, D]",
+        "return[1]: [D, N, N]",
+    )
     def meanvarsqrt_to_xi(mean: tf.Tensor, varsqrt: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor]:
         return meanvarsqrt_to_natural(mean, varsqrt)
 
     @staticmethod
+    @check_shapes(
+        "xi1: [N, D]",
+        "xi2: [D, N, N]",
+        "return[0]: [N, D]",
+        "return[1]: [D, N, N]",
+    )
     def xi_to_meanvarsqrt(xi1: tf.Tensor, xi2: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor]:
         return natural_to_meanvarsqrt(xi1, xi2)
 
     @staticmethod
+    @check_shapes(
+        "nat1: [N, D]",
+        "nat2: [D, N, N]",
+        "return[0]: [N, D]",
+        "return[1]: [D, N, N]",
+    )
     def naturals_to_xi(nat1: tf.Tensor, nat2: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor]:
         return nat1, nat2
 
@@ -108,14 +143,32 @@ class XiSqrtMeanVar(XiTransform):
     """
 
     @staticmethod
+    @check_shapes(
+        "mean: [N, D]",
+        "varsqrt: [D, N, N]",
+        "return[0]: [N, D]",
+        "return[1]: [D, N, N]",
+    )
     def meanvarsqrt_to_xi(mean: tf.Tensor, varsqrt: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor]:
         return mean, varsqrt
 
     @staticmethod
+    @check_shapes(
+        "xi1: [N, D]",
+        "xi2: [D, N, N]",
+        "return[0]: [N, D]",
+        "return[1]: [D, N, N]",
+    )
     def xi_to_meanvarsqrt(xi1: tf.Tensor, xi2: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor]:
         return xi1, xi2
 
     @staticmethod
+    @check_shapes(
+        "nat1: [N, D]",
+        "nat2: [D, N, N]",
+        "return[0]: [N, D]",
+        "return[1]: [D, N, N]",
+    )
     def naturals_to_xi(nat1: tf.Tensor, nat2: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor]:
         return natural_to_meanvarsqrt(nat1, nat2)
 
@@ -151,6 +204,10 @@ class NaturalGradient(tf.optimizers.Optimizer):
         self.gamma = gamma
         self.xi_transform = xi_transform
 
+    @check_shapes(
+        "var_list[all][0]: [N, D]",
+        "var_list[all][1]: [D, N, N]",
+    )
     def minimize(
         self,
         loss_fn: LossClosure,
@@ -159,6 +216,10 @@ class NaturalGradient(tf.optimizers.Optimizer):
         """
         Minimizes objective function of the model.
         Natural Gradient optimizer works with variational parameters only.
+
+        GPflow implements the `XiNat` (default) and `XiSqrtMeanVar` transformations
+        for parameters. Custom transformations that implement the `XiTransform`
+        interface are also possible.
 
         :param loss_fn: Loss function.
         :param var_list: List of pair tuples of variational parameters or
@@ -170,15 +231,14 @@ class NaturalGradient(tf.optimizers.Optimizer):
                     (q_mu1, q_sqrt1),
                     (q_mu2, q_sqrt2, XiSqrtMeanVar())
                 ]
-
-
-        GPflow implements the `XiNat` (default) and `XiSqrtMeanVar` transformations
-        for parameters. Custom transformations that implement the `XiTransform`
-        interface are also possible.
         """
         parameters = [(v[0], v[1], (v[2] if len(v) > 2 else None)) for v in var_list]  # type: ignore[misc]
         self._natgrad_steps(loss_fn, parameters)
 
+    @check_shapes(
+        "parameters[all][0]: [N, D]",
+        "parameters[all][1]: [D, N, N]",
+    )
     def _natgrad_steps(
         self,
         loss_fn: LossClosure,
@@ -209,14 +269,12 @@ class NaturalGradient(tf.optimizers.Optimizer):
             ):
                 self._natgrad_apply_gradients(q_mu_grad, q_sqrt_grad, q_mu, q_sqrt, xi_transform)
 
-    def _assert_shapes(self, q_mu: tf.Tensor, q_sqrt: tf.Tensor) -> None:
-        tf.debugging.assert_shapes(
-            [
-                (q_mu, ["M", "L"]),
-                (q_sqrt, ["L", "M", "M"]),
-            ]
-        )
-
+    @check_shapes(
+        "q_mu_grad: [N, D]",
+        "q_sqrt_grad: [D, N_N_transformed...]",
+        "q_mu: [N, D]",
+        "q_sqrt: [D, N, N]",
+    )
     def _natgrad_apply_gradients(
         self,
         q_mu_grad: tf.Tensor,
@@ -257,8 +315,6 @@ class NaturalGradient(tf.optimizers.Optimizer):
             with shape [L, M, M] (the diagonal parametrization, q_diag=True, is NOT supported)
         :param xi_transform: the ξ transform to use (self.xi_transform if not specified)
         """
-        self._assert_shapes(q_mu, q_sqrt)
-
         if xi_transform is None:
             xi_transform = self.xi_transform
 
@@ -339,14 +395,18 @@ def swap_dimensions(
     """
 
     @functools.wraps(method)
+    @check_shapes(
+        "a_nd: [N, D] if swap",
+        "a_nd: [D, N, 1] if not swap",
+        "b_dnn: [D, N, N]",
+        "return[0]: [N, D] if swap",
+        "return[0]: [D, N, 1] if not swap",
+        "return[1]: [D, N, N]",
+    )
     def wrapper(
         a_nd: tf.Tensor, b_dnn: tf.Tensor, swap: bool = True
     ) -> Tuple[tf.Tensor, tf.Tensor]:
         if swap:
-            if a_nd.shape.ndims != 2:  # pragma: no cover
-                raise ValueError("The mean parametrization must have 2 dimensions.")
-            if b_dnn.shape.ndims != 3:  # pragma: no cover
-                raise ValueError("The covariance parametrization must have 3 dimensions.")
             a_dn1 = tf.linalg.adjoint(a_nd)[:, :, None]
             A_dn1, B_dnn = method(a_dn1, b_dnn)
             A_nd = tf.linalg.adjoint(A_dn1[:, :, 0])
@@ -358,6 +418,12 @@ def swap_dimensions(
 
 
 @swap_dimensions
+@check_shapes(
+    "nat1: [D, N, 1]",
+    "nat2: [D, N, N]",
+    "return[0]: [D, N, 1]",
+    "return[1]: [D, N, N]",
+)
 def natural_to_meanvarsqrt(nat1: tf.Tensor, nat2: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor]:
     var_sqrt_inv = tf.linalg.cholesky(-2 * nat2)
     var_sqrt = _inverse_lower_triangular(var_sqrt_inv)
@@ -369,6 +435,12 @@ def natural_to_meanvarsqrt(nat1: tf.Tensor, nat2: tf.Tensor) -> Tuple[tf.Tensor,
 
 
 @swap_dimensions
+@check_shapes(
+    "mu: [D, N, 1]",
+    "s_sqrt: [D, N, N]",
+    "return[0]: [D, N, 1]",
+    "return[1]: [D, N, N]",
+)
 def meanvarsqrt_to_natural(mu: tf.Tensor, s_sqrt: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor]:
     s_sqrt_inv = _inverse_lower_triangular(s_sqrt)
     s_inv = tf.linalg.matmul(s_sqrt_inv, s_sqrt_inv, transpose_a=True)
@@ -376,29 +448,57 @@ def meanvarsqrt_to_natural(mu: tf.Tensor, s_sqrt: tf.Tensor) -> Tuple[tf.Tensor,
 
 
 @swap_dimensions
+@check_shapes(
+    "nat1: [D, N, 1]",
+    "nat2: [D, N, N]",
+    "return[0]: [D, N, 1]",
+    "return[1]: [D, N, N]",
+)
 def natural_to_expectation(nat1: tf.Tensor, nat2: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor]:
     args = natural_to_meanvarsqrt(nat1, nat2, swap=False)
     return meanvarsqrt_to_expectation(*args, swap=False)
 
 
 @swap_dimensions
+@check_shapes(
+    "eta1: [D, N, 1]",
+    "eta2: [D, N, N]",
+    "return[0]: [D, N, 1]",
+    "return[1]: [D, N, N]",
+)
 def expectation_to_natural(eta1: tf.Tensor, eta2: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor]:
     args = expectation_to_meanvarsqrt(eta1, eta2, swap=False)
     return meanvarsqrt_to_natural(*args, swap=False)
 
 
 @swap_dimensions
+@check_shapes(
+    "eta1: [D, N, 1]",
+    "eta2: [D, N, N]",
+    "return[0]: [D, N, 1]",
+    "return[1]: [D, N, N]",
+)
 def expectation_to_meanvarsqrt(eta1: tf.Tensor, eta2: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor]:
     var = eta2 - tf.linalg.matmul(eta1, eta1, transpose_b=True)
     return eta1, tf.linalg.cholesky(var)
 
 
 @swap_dimensions
+@check_shapes(
+    "m: [D, N, 1]",
+    "v_sqrt: [D, N, N]",
+    "return[0]: [D, N, 1]",
+    "return[1]: [D, N, N]",
+)
 def meanvarsqrt_to_expectation(m: tf.Tensor, v_sqrt: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor]:
     v = tf.linalg.matmul(v_sqrt, v_sqrt, transpose_b=True)
     return m, v + tf.linalg.matmul(m, m, transpose_b=True)
 
 
+@check_shapes(
+    "M: [D, N, N]",
+    "return: [D, N, N]",
+)
 def _inverse_lower_triangular(M: tf.Tensor) -> tf.Tensor:
     """
     Take inverse of lower triangular (e.g. Cholesky) matrix. This function

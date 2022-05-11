@@ -19,7 +19,7 @@ import tensorflow as tf
 
 from ..base import AnyNDArray
 from ..config import default_float
-from ..experimental.check_shapes import check_shapes, inherit_check_shapes
+from ..experimental.check_shapes import check_shapes
 from ..inducing_variables import InducingPoints, InducingVariables
 from .model import BayesianModel
 from .training_mixins import Data, ExternalDataTrainingLossMixin

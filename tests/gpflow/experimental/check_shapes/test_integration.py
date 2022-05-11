@@ -178,7 +178,7 @@ def test_check_shapes__tensorflow_compilation(
             err_wrapper = _TF_FUNCTION
 
     if Version(tf.__version__) < Version("2.5.0"):
-        # TensorFlow <= 2.4.0 doesn't like the optional `z` argument:
+        # TensorFlow < 2.5.0 doesn't like the optional `z` argument:
 
         class SqErr:
             @check_shapes(
