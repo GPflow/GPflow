@@ -16,7 +16,7 @@
 # pylint: disable=no-member  # PyLint struggles with TensorFlow.
 
 from time import perf_counter
-from typing import Any, Callable
+from typing import Any, Callable, Optional
 
 import numpy as np
 import pytest
@@ -114,12 +114,12 @@ def test_check_shapes__tensorflow__keras() -> None:
     test_layer(SubLayer())
 
 
-_F = Callable[[tf.Tensor], tf.Tensor]
+_Err = Callable[[tf.Tensor, tf.Tensor], tf.Tensor]
 _Loss = Callable[[], tf.Tensor]
 
 
 @pytest.mark.parametrize(
-    "f_wrapper,loss_wrapper",
+    "err_wrapper,loss_wrapper",
     [
         (
             lambda x: x,
@@ -130,11 +130,21 @@ _Loss = Callable[[], tf.Tensor]
             tf.function,
         ),
         (
-            tf.function(input_signature=[tf.TensorSpec(shape=[None], dtype=tf.float64)]),
+            tf.function(
+                input_signature=[
+                    tf.TensorSpec(shape=[None], dtype=tf.float64),
+                    tf.TensorSpec(shape=[], dtype=tf.float64),
+                ]
+            ),
             tf.function(input_signature=[]),
         ),
         (
-            tf.function(input_signature=[tf.TensorSpec(shape=None, dtype=tf.float64)]),
+            tf.function(
+                input_signature=[
+                    tf.TensorSpec(shape=None, dtype=tf.float64),
+                    tf.TensorSpec(shape=None, dtype=tf.float64),
+                ]
+            ),
             tf.function(input_signature=[]),
         ),
         (
@@ -143,20 +153,30 @@ _Loss = Callable[[], tf.Tensor]
         ),
     ],
 )
+@pytest.mark.parametrize("target_shape", [None, tf.TensorShape([]), tf.TensorShape(None)])
+@pytest.mark.parametrize("v_shape", [None, tf.TensorShape([50]), tf.TensorShape(None)])
 def test_check_shapes__tensorflow_compilation(
-    f_wrapper: Callable[[_F], _F], loss_wrapper: Callable[[_Loss], _Loss]
+    err_wrapper: Callable[[_Err], _Err],
+    loss_wrapper: Callable[[_Loss], _Loss],
+    target_shape: Optional[tf.TensorShape],
+    v_shape: Optional[tf.TensorShape],
 ) -> None:
-    target = 0.5
+    class SqErr:
+        @check_shapes(
+            "x: [broadcast n...]",
+            "y: [broadcast n...]",
+            "z: [broadcast n...]",
+            "return: [n...]",
+        )
+        def __call__(self, x: tf.Tensor, y: tf.Tensor, z: Optional[tf.Tensor] = None) -> tf.Tensor:
+            # z only declared to test the case of `None` arguments.
+            return (x - y) ** 2
 
-    @f_wrapper
-    @check_shapes(
-        "x: [n]",
-        "return: [n]",
-    )
-    def f(x: tf.Tensor) -> tf.Tensor:
-        return (x - target) ** 2
+    sq_err = err_wrapper(SqErr())
 
-    v = tf.Variable(np.linspace(0.0, 1.0))
+    dtype = np.float64
+    target = tf.Variable(0.5, dtype=dtype, shape=target_shape)
+    v = tf.Variable(np.linspace(0.0, 1.0), dtype=dtype, shape=v_shape)
 
     @loss_wrapper
     @check_shapes(
@@ -164,7 +184,7 @@ def test_check_shapes__tensorflow_compilation(
     )
     def loss() -> tf.Tensor:
         # keepdims is just to add an extra dimension to make the check more interesting.
-        return tf.reduce_sum(f(v), keepdims=True)
+        return tf.reduce_sum(sq_err(v, target), keepdims=True)
 
     optimiser = tf.keras.optimizers.SGD(learning_rate=0.25)
     for _ in range(10):

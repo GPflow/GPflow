@@ -189,12 +189,16 @@ def test_ExecuteCallback_arguments(capsys: CaptureFixture[str]) -> None:
 # ########################################
 
 
+def none() -> None:
+    return None
+
+
 @pytest.mark.parametrize(
     "task_or_tasks",
     [
-        ExecuteCallback(lambda: None),
-        [ExecuteCallback(lambda: None)],
-        [ExecuteCallback(lambda: None), ExecuteCallback(lambda: None)],
+        ExecuteCallback(none),
+        [ExecuteCallback(none)],
+        [ExecuteCallback(none), ExecuteCallback(none)],
     ],
 )
 def test_MonitorTaskGroup_and_Monitor(task_or_tasks: Union[MonitorTask, List[MonitorTask]]) -> None:

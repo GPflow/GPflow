@@ -35,6 +35,7 @@ import numpy as np
 import tensorflow as tf
 
 from ..base import AnyNDArray, Module, TensorType
+from ..experimental.check_shapes import check_shapes, inherit_check_shapes
 
 ActiveDims = Union[slice, Sequence[int]]
 NormalizedActiveDims = Union[slice, AnyNDArray]
@@ -88,13 +89,19 @@ class Kernel(Module, metaclass=abc.ABCMeta):
         other_dims = other.active_dims.reshape(1, -1)
         return not np.any(this_dims == other_dims)
 
+    @check_shapes(
+        "X: [N..., D]",
+        "X2: [N2..., D]",
+        "return[0]: [N..., I]",
+        "return[1]: [N2..., I]",
+    )
     def slice(self, X: TensorType, X2: Optional[TensorType] = None) -> Tuple[tf.Tensor, tf.Tensor]:
         """
         Slice the correct dimensions for use in the kernel, as indicated by `self.active_dims`.
 
-        :param X: Input 1 [N, D].
-        :param X2: Input 2 [M, D], can be None.
-        :return: Sliced X, X2, [N, I], I - input dimension.
+        :param X: Input 1.
+        :param X2: Input 2], can be None.
+        :return: Sliced X, X2.
         """
         dims = self.active_dims
         if isinstance(dims, slice):
@@ -107,6 +114,10 @@ class Kernel(Module, metaclass=abc.ABCMeta):
                 X2 = tf.gather(X2, dims, axis=-1)
         return X, X2
 
+    @check_shapes(
+        "cov: [N, *D_or_DD]",
+        "return: [N, I, I]",
+    )
     def slice_cov(self, cov: TensorType) -> tf.Tensor:
         """
         Slice the correct dimensions for use in the kernel, as indicated by
@@ -114,8 +125,8 @@ class Kernel(Module, metaclass=abc.ABCMeta):
         rows *and* columns. This will also turn flattened diagonal
         matrices into a tensor of full diagonal matrices.
 
-        :param cov: Tensor of covariance matrices, [N, D, D] or [N, D].
-        :return: [N, I, I].
+        :param cov: Tensor of covariance matrices.
+        :return: Sliced covariance matrices.
         """
         cov = tf.convert_to_tensor(cov)
         assert isinstance(cov, tf.Tensor)  # Hint for mypy.
@@ -141,6 +152,9 @@ class Kernel(Module, metaclass=abc.ABCMeta):
 
         return cov
 
+    @check_shapes(
+        "ard_parameter: [any...]",
+    )
     def _validate_ard_active_dims(self, ard_parameter: TensorType) -> None:
         """
         Validate that ARD parameter matches the number of active_dims (provided active_dims
@@ -160,13 +174,28 @@ class Kernel(Module, metaclass=abc.ABCMeta):
             )
 
     @abc.abstractmethod
+    @check_shapes(
+        "X: [N..., D]",
+        "X2: [N2..., D]",
+        "return: [N..., N2...]",
+    )
     def K(self, X: TensorType, X2: Optional[TensorType] = None) -> tf.Tensor:
         raise NotImplementedError
 
     @abc.abstractmethod
+    @check_shapes(
+        "X: [N..., D]",
+        "return: [N...]",
+    )
     def K_diag(self, X: TensorType) -> tf.Tensor:
         raise NotImplementedError
 
+    @check_shapes(
+        "X: [N..., D]",
+        "X2: [N2..., D]",
+        "return: [N..., N2...] if full_cov",
+        "return: [N...] if not full_cov",
+    )
     def __call__(
         self,
         X: TensorType,
@@ -250,6 +279,7 @@ class Combination(Kernel):
 
 
 class ReducingCombination(Combination):
+    @inherit_check_shapes
     def __call__(
         self,
         X: TensorType,
@@ -262,9 +292,11 @@ class ReducingCombination(Combination):
             [k(X, X2, full_cov=full_cov, presliced=presliced) for k in self.kernels]
         )
 
+    @inherit_check_shapes
     def K(self, X: TensorType, X2: Optional[TensorType] = None) -> tf.Tensor:
         return self._reduce([k.K(X, X2) for k in self.kernels])
 
+    @inherit_check_shapes
     def K_diag(self, X: TensorType) -> tf.Tensor:
         return self._reduce([k.K_diag(X) for k in self.kernels])
 

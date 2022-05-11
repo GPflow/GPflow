@@ -17,6 +17,7 @@ from typing import Optional, Sequence
 import tensorflow as tf
 
 from ..base import Parameter, TensorType
+from ..experimental.check_shapes import check_shapes, inherit_check_shapes
 from ..utilities import positive
 from .base import Combination, Kernel
 
@@ -42,6 +43,11 @@ class ChangePoints(Combination):
     The key reference is :cite:t:`lloyd2014`.
     """
 
+    @check_shapes(
+        "locations: [n_change_points]",
+        "locations: [n_change_points_tuple...]",
+        "steepness: [broadcast n_change_points_tuple...]",
+    )
     def __init__(
         self,
         kernels: Sequence[Kernel],
@@ -76,6 +82,7 @@ class ChangePoints(Combination):
         # it is not clear how to flatten out nested change-points
         self.kernels = list(kernels)
 
+    @inherit_check_shapes
     def K(self, X: tf.Tensor, X2: Optional[tf.Tensor] = None) -> tf.Tensor:
         sig_X = self._sigmoids(X)  # N1 x 1 x Ncp
         sig_X2 = self._sigmoids(X2) if X2 is not None else sig_X  # N2 x 1 x Ncp
@@ -97,6 +104,7 @@ class ChangePoints(Combination):
         kernel_stack = tf.stack([k(X, X2) for k in self.kernels], axis=2)
         return tf.reduce_sum(kernel_stack * starters * stoppers, axis=2)
 
+    @inherit_check_shapes
     def K_diag(self, X: tf.Tensor) -> tf.Tensor:
         N = tf.shape(X)[0]
         sig_X = tf.reshape(self._sigmoids(X), (N, -1))  # N x Ncp
@@ -108,6 +116,10 @@ class ChangePoints(Combination):
         kernel_stack = tf.stack([k(X, full_cov=False) for k in self.kernels], axis=1)
         return tf.reduce_sum(kernel_stack * starters * stoppers, axis=1)
 
+    @check_shapes(
+        "X: [N, D]",
+        "return: [N, D, n_change_points]",
+    )
     def _sigmoids(self, X: tf.Tensor) -> tf.Tensor:
         locations = tf.sort(self.locations)  # ensure locations are ordered
         locations = tf.reshape(locations, (1, 1, -1))

@@ -18,6 +18,7 @@ from typing import Optional, Sequence, Tuple
 import tensorflow as tf
 
 from ...base import Parameter, TensorType
+from ...experimental.check_shapes import check_shapes, inherit_check_shapes
 from ..base import Combination, Kernel
 
 
@@ -27,13 +28,13 @@ class MultioutputKernel(Kernel):
     This kernel can represent correlation between outputs of different datapoints.
     Therefore, subclasses of Mok should implement `K` which returns:
 
-    - [N, P, N, P] if full_output_cov = True
-    - [P, N, N] if full_output_cov = False
+    - [N..., P, N..., P] if full_output_cov = True
+    - [P, N..., N...] if full_output_cov = False
 
     and `K_diag` returns:
 
-    - [N, P, P] if full_output_cov = True
-    - [N, P] if full_output_cov = False
+    - [N..., P, P] if full_output_cov = True
+    - [N..., P] if full_output_cov = False
 
     The `full_output_cov` argument holds whether the kernel should calculate
     the covariance between the outputs. In case there is no correlation but
@@ -54,36 +55,49 @@ class MultioutputKernel(Kernel):
         raise NotImplementedError
 
     @abc.abstractmethod
+    @check_shapes(
+        "X: [N..., D]",
+        "X2: [N2..., D]",
+        "return: [N..., P, N2..., P] if full_output_cov",
+        "return: [P, N1..., N2...] if not full_output_cov",
+    )
     def K(
         self, X: TensorType, X2: Optional[TensorType] = None, full_output_cov: bool = True
     ) -> tf.Tensor:
         """
         Returns the correlation of f(X) and f(X2), where f(.) can be multi-dimensional.
 
-        :param X: data matrix, [N1, D]
-        :param X2: data matrix, [N2, D]
+        :param X: data matrix
+        :param X2: data matrix
         :param full_output_cov: calculate correlation between outputs.
-        :return: cov[f(X), f(X2)] with shape:
-
-            - [N1, P, N2, P] if `full_output_cov` = True
-            - [P, N1, N2] if `full_output_cov` = False
+        :return: cov[f(X), f(X2)]
         """
         raise NotImplementedError
 
     @abc.abstractmethod
+    @check_shapes(
+        "X: [N..., D]",
+        "return: [N..., P, P] if full_output_cov",
+        "return: [N..., P] if not full_output_cov",
+    )
     def K_diag(self, X: TensorType, full_output_cov: bool = True) -> tf.Tensor:
         """
         Returns the correlation of f(X) and f(X), where f(.) can be multi-dimensional.
 
-        :param X: data matrix, [N, D]
+        :param X: data matrix
         :param full_output_cov: calculate correlation between outputs.
-        :return: var[f(X)] with shape:
-
-            - [N, P, N, P] if `full_output_cov` = True
-            - [N, P] if `full_output_cov` = False
+        :return: var[f(X)]
         """
         raise NotImplementedError
 
+    @check_shapes(
+        "X: [N..., D]",
+        "X2: [N2..., D]",
+        "return: [N..., P, N2..., P] if full_cov and full_output_cov",
+        "return: [P, N..., N2...] if full_cov and (not full_output_cov)",
+        "return: [N..., P, P] if (not full_cov) and full_output_cov",
+        "return: [N..., P] if (not full_cov) and (not full_output_cov)",
+    )
     def __call__(
         self,
         X: TensorType,
@@ -129,6 +143,7 @@ class SharedIndependent(MultioutputKernel):
         """The underlying kernels in the multioutput kernel"""
         return (self.kernel,)
 
+    @inherit_check_shapes
     def K(
         self, X: TensorType, X2: Optional[TensorType] = None, full_output_cov: bool = True
     ) -> tf.Tensor:
@@ -139,6 +154,7 @@ class SharedIndependent(MultioutputKernel):
         else:
             return tf.tile(K[None, ...], [self.output_dim, 1, 1])  # [P, N, N2]
 
+    @inherit_check_shapes
     def K_diag(self, X: TensorType, full_output_cov: bool = True) -> tf.Tensor:
         K = self.kernel.K_diag(X)  # N
         Ks = tf.tile(K[:, None], [1, self.output_dim])  # [N, P]
@@ -163,6 +179,7 @@ class SeparateIndependent(MultioutputKernel, Combination):
         """The underlying kernels in the multioutput kernel"""
         return tuple(self.kernels)
 
+    @inherit_check_shapes
     def K(
         self, X: TensorType, X2: Optional[TensorType] = None, full_output_cov: bool = True
     ) -> tf.Tensor:
@@ -172,6 +189,7 @@ class SeparateIndependent(MultioutputKernel, Combination):
         else:
             return tf.stack([k.K(X, X2) for k in self.kernels], axis=0)  # [P, N, N2]
 
+    @inherit_check_shapes
     def K_diag(self, X: TensorType, full_output_cov: bool = False) -> tf.Tensor:
         stacked = tf.stack([k.K_diag(X) for k in self.kernels], axis=1)  # [N, P]
         return tf.linalg.diag(stacked) if full_output_cov else stacked  # [N, P, P]  or  [N, P]
@@ -192,6 +210,11 @@ class IndependentLatent(MultioutputKernel):
     """
 
     @abc.abstractmethod
+    @check_shapes(
+        "X: [N, D]",
+        "X2: [N2, D]",
+        "return: [L, N, N2]",
+    )
     def Kgg(self, X: TensorType, X2: TensorType) -> tf.Tensor:
         raise NotImplementedError
 
@@ -201,22 +224,27 @@ class LinearCoregionalization(IndependentLatent, Combination):
     Linear mixing of the latent GPs to form the output.
     """
 
+    @check_shapes(
+        "W: [P, L]",
+    )
     def __init__(self, kernels: Sequence[Kernel], W: TensorType, name: Optional[str] = None):
         Combination.__init__(self, kernels=kernels, name=name)
         self.W = Parameter(W)  # [P, L]
 
     @property
     def num_latent_gps(self) -> int:
-        return self.W.shape[-1]  # type: ignore # L
+        return self.W.shape[-1]  # type: ignore  # L
 
     @property
     def latent_kernels(self) -> Tuple[Kernel, ...]:
         """The underlying kernels in the multioutput kernel"""
         return tuple(self.kernels)
 
+    @inherit_check_shapes
     def Kgg(self, X: TensorType, X2: TensorType) -> tf.Tensor:
         return tf.stack([k.K(X, X2) for k in self.kernels], axis=0)  # [L, N, N2]
 
+    @inherit_check_shapes
     def K(
         self, X: TensorType, X2: Optional[TensorType] = None, full_output_cov: bool = True
     ) -> tf.Tensor:
@@ -230,6 +258,7 @@ class LinearCoregionalization(IndependentLatent, Combination):
             # return tf.einsum('lnm,kl,kl->knm', Kxx, self.W, self.W)
             return tf.reduce_sum(self.W[:, :, None, None] * KxxW, [1])  # [P, N, N2]
 
+    @inherit_check_shapes
     def K_diag(self, X: TensorType, full_output_cov: bool = True) -> tf.Tensor:
         K = tf.stack([k.K_diag(X) for k in self.kernels], axis=1)  # [N, L]
         if full_output_cov:

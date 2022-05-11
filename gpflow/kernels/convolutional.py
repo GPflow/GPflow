@@ -19,6 +19,7 @@ import tensorflow as tf
 
 from ..base import Parameter, TensorType
 from ..config import default_float
+from ..experimental.check_shapes import check_shapes, inherit_check_shapes
 from ..utilities import to_default_float
 from .base import Kernel
 
@@ -37,6 +38,11 @@ class Convolutional(Kernel):
     The key reference is :cite:t:`vdw2017convgp`.
     """
 
+    @check_shapes(
+        "image_shape: [2]",
+        "patch_shape: [2]",
+        "weights: [n_patches]",
+    )
     def __init__(
         self,
         base_kernel: Kernel,
@@ -55,13 +61,17 @@ class Convolutional(Kernel):
         )
 
     # @lru_cache() -- Can we do some kind of memoizing with TF2?
+    @check_shapes(
+        "X: [N, D]",
+        "return: [N, n_patches, patch_size]",
+    )
     def get_patches(self, X: TensorType) -> tf.Tensor:
         """
         Extracts patches from the images X. Patches are extracted separately for each of the colour
         channels.
 
-        :param X: (N x input_dim)
-        :return: Patches (N, num_patches, patch_shape)
+        :param X: Images.
+        :return: Patches.
         """
         # Roll the colour channel to the front, so it appears to
         # `tf.extract_image_patches()` as separate images. Then extract patches
@@ -82,6 +92,7 @@ class Convolutional(Kernel):
         )
         return to_default_float(reshaped_patches)
 
+    @inherit_check_shapes
     def K(self, X: TensorType, X2: Optional[TensorType] = None) -> tf.Tensor:
         Xp = self.get_patches(X)  # [N, P, patch_len]
         Xp2 = Xp if X2 is None else self.get_patches(X2)
@@ -92,6 +103,7 @@ class Convolutional(Kernel):
         W2bigK = bigK * W2[None, :, None, :]
         return tf.reduce_sum(W2bigK, [1, 3]) / self.num_patches ** 2.0
 
+    @inherit_check_shapes
     def K_diag(self, X: TensorType) -> tf.Tensor:
         Xp = self.get_patches(X)  # N x num_patches x patch_dim
         W2 = self.weights[:, None] * self.weights[None, :]  # [P, P]

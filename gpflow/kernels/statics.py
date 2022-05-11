@@ -17,6 +17,7 @@ from typing import Optional
 import tensorflow as tf
 
 from ..base import Parameter, TensorType
+from ..experimental.check_shapes import check_shapes, inherit_check_shapes
 from ..utilities import positive
 from .base import ActiveDims, Kernel
 
@@ -27,12 +28,16 @@ class Static(Kernel):
     parameter is a variance, σ².
     """
 
+    @check_shapes(
+        "variance: []",
+    )
     def __init__(
         self, variance: TensorType = 1.0, active_dims: Optional[ActiveDims] = None
     ) -> None:
         super().__init__(active_dims)
         self.variance = Parameter(variance, transform=positive())
 
+    @inherit_check_shapes
     def K_diag(self, X: TensorType) -> tf.Tensor:
         return tf.fill(tf.shape(X)[:-1], tf.squeeze(self.variance))
 
@@ -48,6 +53,7 @@ class White(Static):
     σ²  is the variance parameter.
     """
 
+    @inherit_check_shapes
     def K(self, X: TensorType, X2: Optional[TensorType] = None) -> tf.Tensor:
         if X2 is None:
             d = tf.fill(tf.shape(X)[:-1], tf.squeeze(self.variance))
@@ -68,6 +74,7 @@ class Constant(Static):
     σ²  is the variance parameter.
     """
 
+    @inherit_check_shapes
     def K(self, X: TensorType, X2: Optional[TensorType] = None) -> tf.Tensor:
         if X2 is None:
             shape = tf.concat(

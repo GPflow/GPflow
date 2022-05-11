@@ -20,7 +20,7 @@ import tensorflow_probability as tfp
 from deprecated import deprecated
 
 from ..base import Module, Parameter, TensorData, TensorType
-from ..experimental.check_shapes import ErrorContext, Shape, check_shapes, get_shape
+from ..experimental.check_shapes import ErrorContext, Shape, check_shapes, register_get_shape
 from ..utilities import positive
 
 
@@ -60,7 +60,7 @@ class InducingVariables(Module, abc.ABC):
         """
 
 
-@get_shape.register(InducingVariables)
+@register_get_shape(InducingVariables)
 def get_scalar_shape(shaped: InducingVariables, context: ErrorContext) -> Shape:
     return shaped.shape
 

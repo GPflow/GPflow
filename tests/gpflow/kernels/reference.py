@@ -1,8 +1,15 @@
 import numpy as np
 
 from gpflow.base import AnyNDArray
+from gpflow.experimental.check_shapes import check_shapes
 
 
+@check_shapes(
+    "X: [N, D]",
+    "X: [N, D_tuple...]",
+    "lengthscales: [broadcast D_tuple...]",
+    "signal_variance: [broadcast D_tuple...]",
+)
 def ref_rbf_kernel(
     X: AnyNDArray, lengthscales: AnyNDArray, signal_variance: AnyNDArray
 ) -> AnyNDArray:
@@ -20,6 +27,13 @@ def ref_rbf_kernel(
     return kernel
 
 
+@check_shapes(
+    "X: [N, D]",
+    "X: [N, D_tuple...]",
+    "weight_variances: [broadcast D_tuple...]",
+    "bias_variance: [broadcast D_tuple...]",
+    "signal_variance: [broadcast D_tuple...]",
+)
 def ref_arccosine_kernel(
     X: AnyNDArray,
     order: int,
@@ -59,6 +73,13 @@ def ref_arccosine_kernel(
     return kernel
 
 
+@check_shapes(
+    "X: [N, D]",
+    "X: [N, D_tuple...]",
+    "lengthscales: [broadcast D_tuple...]",
+    "signal_variance: [broadcast D_tuple...]",
+    "period: [broadcast D_tuple...]",
+)
 def ref_periodic_kernel(
     X: AnyNDArray,
     base_name: str,

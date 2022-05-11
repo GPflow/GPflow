@@ -23,6 +23,7 @@ import gpflow
 import gpflow.ci_utils
 from gpflow import kernels
 from gpflow.base import TensorType
+from gpflow.experimental.check_shapes import check_shapes
 
 KERNEL_CLASSES = [
     # Static kernels:
@@ -123,6 +124,10 @@ def test_broadcast_indices_active_dims(kernel_class: Type[kernels.SquaredExponen
     compare_vs_map(X1, X2, kernel)
 
 
+@check_shapes(
+    "X1: [S, N, D]",
+    "X2: [M, D]",
+)
 def compare_vs_map(X1: TensorType, X2: TensorType, kernel: kernels.Kernel) -> None:
     K12_loop = tf.stack([kernel(x, X2) for x in X1])  # [S, N, M]
     K12_native = kernel(X1, X2)  # [S, N, M]

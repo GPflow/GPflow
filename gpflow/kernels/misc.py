@@ -18,6 +18,7 @@ import numpy as np
 import tensorflow as tf
 
 from ..base import AnyNDArray, Parameter, TensorType
+from ..experimental.check_shapes import check_shapes, inherit_check_shapes
 from ..utilities import positive, to_default_float
 from .base import ActiveDims, Kernel
 
@@ -34,6 +35,11 @@ class ArcCosine(Kernel):
 
     implemented_orders = {0, 1, 2}
 
+    @check_shapes(
+        "variance: []",
+        "weight_variances: [scalar_or_n_active_dims...]",
+        "bias_variance: []",
+    )
     def __init__(
         self,
         order: int = 0,
@@ -74,13 +80,27 @@ class ArcCosine(Kernel):
         ndims: int = self.weight_variances.shape.ndims
         return ndims > 0
 
-    def _weighted_product(self, X: TensorType, X2: Optional[TensorType] = None) -> tf.Tensor:
-        if X2 is None:
-            return tf.reduce_sum(self.weight_variances * tf.square(X), axis=1) + self.bias_variance
+    @check_shapes(
+        "X: [N, D]",
+        "return: [N]",
+    )
+    def _diag_weighted_product(self, X: TensorType) -> tf.Tensor:
+        return tf.reduce_sum(self.weight_variances * tf.square(X), axis=1) + self.bias_variance
+
+    @check_shapes(
+        "X: [N, D]",
+        "X2: [N2, D]",
+        "return: [N, N2]",
+    )
+    def _full_weighted_product(self, X: TensorType, X2: TensorType) -> tf.Tensor:
         return (
             tf.linalg.matmul((self.weight_variances * X), X2, transpose_b=True) + self.bias_variance
         )
 
+    @check_shapes(
+        "theta: [any...]",
+        "return: [any...]",
+    )
     def _J(self, theta: TensorType) -> TensorType:
         """
         Implements the order dependent family of functions defined in equations
@@ -96,15 +116,16 @@ class ArcCosine(Kernel):
                 1.0 + 2.0 * tf.cos(theta) ** 2
             )
 
+    @inherit_check_shapes
     def K(self, X: TensorType, X2: Optional[TensorType] = None) -> tf.Tensor:
-        X_denominator = tf.sqrt(self._weighted_product(X))
+        X_denominator = tf.sqrt(self._diag_weighted_product(X))
         if X2 is None:
             X2 = X
             X2_denominator = X_denominator
         else:
-            X2_denominator = tf.sqrt(self._weighted_product(X2))
+            X2_denominator = tf.sqrt(self._diag_weighted_product(X2))
 
-        numerator = self._weighted_product(X, X2)
+        numerator = self._full_weighted_product(X, X2)
         cos_theta = numerator / X_denominator[:, None] / X2_denominator[None, :]
         jitter = 1e-15
         theta = tf.acos(jitter + (1 - 2 * jitter) * cos_theta)
@@ -117,8 +138,9 @@ class ArcCosine(Kernel):
             * X2_denominator[None, :] ** self.order
         )
 
+    @inherit_check_shapes
     def K_diag(self, X: TensorType) -> tf.Tensor:
-        X_product = self._weighted_product(X)
+        X_product = self._diag_weighted_product(X)
         const = (1.0 / np.pi) * self._J(to_default_float(0.0))
         return self.variance * const * X_product ** self.order
 
@@ -171,14 +193,21 @@ class Coregion(Kernel):
         self.W = Parameter(W)
         self.kappa = Parameter(kappa, transform=positive())
 
+    @check_shapes(
+        "return: [P, P]",
+    )
     def output_covariance(self) -> tf.Tensor:
         B = tf.linalg.matmul(self.W, self.W, transpose_b=True) + tf.linalg.diag(self.kappa)
         return B
 
+    @check_shapes(
+        "return: [P]",
+    )
     def output_variance(self) -> tf.Tensor:
         B_diag = tf.reduce_sum(tf.square(self.W), 1) + self.kappa
         return B_diag
 
+    @inherit_check_shapes
     def K(self, X: TensorType, X2: Optional[TensorType] = None) -> tf.Tensor:
         shape_constraints = [
             (X, [..., "N", 1]),
@@ -196,6 +225,7 @@ class Coregion(Kernel):
         B = self.output_covariance()
         return tf.gather(tf.transpose(tf.gather(B, X2)), X)
 
+    @inherit_check_shapes
     def K_diag(self, X: TensorType) -> tf.Tensor:
         tf.debugging.assert_shapes([(X, [..., "N", 1])])
         X = tf.cast(X[..., 0], tf.int32)
