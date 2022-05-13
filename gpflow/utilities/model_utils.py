@@ -5,9 +5,9 @@ from ..experimental.check_shapes import check_shapes
 
 
 @check_shapes(
-    "K: [N, N]",
+    "K: [batch..., N, N]",
     "likelihood_variance: []",
-    "return: [N, N]",
+    "return: [batch..., N, N]",
 )
 def add_noise_cov(K: tf.Tensor, likelihood_variance: TensorType) -> tf.Tensor:
     """
