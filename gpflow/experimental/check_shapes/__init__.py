@@ -256,6 +256,23 @@ places:
      :dedent:
 
 
+Best-effort checking
+++++++++++++++++++++
+
+This library will perform shape checks on a best-effort basis. Many things can prevent this library
+from being able to check shapes. For example:
+
+* Unknown shapes. Sometimes the library is not able to determine the shape of an object, and thus
+  cannot check that object. For example ``Optional`` arguments with value ``None`` cannot be
+  checked, and compiled TensorFlow code can have variables with an unknown shape.
+
+* Use of variable-rank dimensions. In general we cannot infer the size of variable-rank dimensions
+  if there are multiple variable-rank specifications within the same shape specification (e.g.
+  ``cov: [m..., n...]``). This library will try to learn the size of these variable-rank dimensions
+  from neighbouring shape specifications, but this is not always possible. Use of ``broadcast`` with
+  variable-rank dimensions makes it even harder to infer these values.
+
+
 Shape reuse
 +++++++++++
 

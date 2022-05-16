@@ -98,7 +98,7 @@ def leading_transpose(tensor: tf.Tensor, perm: List[Any], leading_dim: int = 0) 
 @check_shapes(
     "a: [a_shape...]",
     "b: [b_shape...]",
-    "return: [a_shape_b_shape...]",
+    "return: [a_shape..., b_shape...]",
 )
 def broadcasting_elementwise(
     op: Callable[[tf.Tensor, tf.Tensor], tf.Tensor], a: tf.Tensor, b: tf.Tensor
@@ -115,7 +115,7 @@ def broadcasting_elementwise(
 @check_shapes(
     "X: [batch..., D]",
     "X2: [batch2..., D]",
-    "return: [batch_batch2...]",
+    "return: [batch..., batch2...]",
 )
 def square_distance(X: tf.Tensor, X2: Optional[tf.Tensor]) -> tf.Tensor:
     """
@@ -146,7 +146,7 @@ def square_distance(X: tf.Tensor, X2: Optional[tf.Tensor]) -> tf.Tensor:
 @check_shapes(
     "X: [batch..., D]",
     "X2: [batch2..., D]",
-    "return: [batch_batch2..., D]",
+    "return: [batch..., batch2..., D]",
 )
 def difference_matrix(X: tf.Tensor, X2: Optional[tf.Tensor]) -> tf.Tensor:
     """

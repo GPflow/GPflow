@@ -68,6 +68,13 @@ def test_note_spec() -> None:
         (
             make_arg_spec(
                 make_argument_ref("foo"),
+                make_shape_spec(varrank("x"), varrank("y")),
+            ),
+            "foo: [x..., y...]",
+        ),
+        (
+            make_arg_spec(
+                make_argument_ref("foo"),
                 make_shape_spec(None, varrank(None), None),
             ),
             "foo: [., ..., .]",

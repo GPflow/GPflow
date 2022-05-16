@@ -49,8 +49,8 @@ This release contains contributions from:
 
 ## Major Features and Improvements
 
-* <INSERT MAJOR FEATURE HERE, USING MARKDOWN SYNTAX>
-* <IF RELEASE CONTAINS MULTIPLE FEATURES FROM SAME AREA, GROUP THEM TOGETHER>
+* `gpflow.experimental.check_shapes`
+  - Now support multiple variable-rank dimensions at the same time, e.g. `cov: [n..., n...]`.
 
 ## Bug Fixes and Other Changes
 
