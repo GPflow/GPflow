@@ -18,7 +18,7 @@ from dataclasses import dataclass
 from typing import Any, Dict, Iterable, List, Optional, Set, Tuple, TypeVar, Union
 
 from ..utils import experimental
-from .base_types import Shape
+from .base_types import Dimension, Shape
 from .config import get_enable_check_shapes
 from .error_contexts import (
     ErrorContext,
@@ -40,6 +40,10 @@ S = TypeVar("S")
 
 
 TensorSpecLike = Union[ParsedTensorSpec, str, Shape]
+_Shape = Tuple[Dimension, ...]
+
+
+_ANONYMOUS_VAR_RANK = "..."
 
 
 def _as_parsed_tensor_spec(tensor_spec: TensorSpecLike, context: ErrorContext) -> ParsedTensorSpec:
@@ -75,8 +79,9 @@ class _ObservedDim:
         """
         Attempt to merge new data into this observation.
 
-        Returns whether the new data is compatible with existing observations.  If this returns
-        `False` it may have been left in an invalid state and should not be used again.
+        Returns whether the new data is compatible with existing observations. If this method
+        returns `False` this object may have been left in an invalid state and should not be used
+        again.
         """
         if (actual is None) or (broadcast and actual == 1):
             # Update contains no information. Nothing to do.
@@ -103,8 +108,9 @@ class _ObservedDims:
         """
         Attempt to merge new data into this observation.
 
-        Returns whether the new data is compatible with existing observations.  If this returns
-        `False` it may have been left in an invalid state and should not be used again.
+        Returns whether the new data is compatible with existing observations. If this method
+        returns `False` this object may have been left in an invalid state and should not be used
+        again.
         """
         if actual is None:
             # Update contains no information. Nothing to do.
@@ -143,6 +149,24 @@ class _ObservedDims:
         return True
 
 
+@dataclass(eq=False)
+class _ShapeCheck:
+    """
+    A shape check that is waiting to be performed.
+    """
+
+    actual: _Shape
+    actual_begin: int
+    actual_end: int
+    expected: ParsedShapeSpec
+    expected_begin: int
+    expected_end: int
+
+    @property
+    def finished(self) -> bool:
+        return self.expected_begin >= self.expected_end
+
+
 class ShapeChecker:
     """
     Mechanism for checking the shapes of tensors.
@@ -160,14 +184,19 @@ class ShapeChecker:
 
     @experimental
     def __init__(self) -> None:
-        self._seen_shapes: List[Tuple[Shape, ParsedTensorSpec, ErrorContext]] = []
+        self._observed_shapes: List[Tuple[Shape, ParsedTensorSpec, ErrorContext]] = []
+
+        # Mapping from unresolved varrank variables to the checks that are waiting for the rank to
+        # be determined.
+        self._waiting_for_varrank: Dict[str, Set[_ShapeCheck]] = {}
 
         # Here we're (ab-)using `Dict[ , None]` instead of `set`, because `dict`s retain ordering.
         self._specs_by_variable: Dict[str, Dict[Tuple[ParsedTensorSpec, ErrorContext], None]] = {}
         self._rank1_variables: Set[str] = set()
         self._varrank_variables: Set[str] = set()
         self._additional_context: List[ErrorContext] = []
-        self._seen_dims: Dict[str, Union[_ObservedDim, _ObservedDims]] = {}
+        self._observed_dims: Dict[str, _ObservedDim] = {}
+        self._observed_dimss: Dict[str, _ObservedDims] = {}
 
     def add_context(self, context: ErrorContext) -> None:
         """
@@ -228,27 +257,60 @@ class ShapeChecker:
         if not get_enable_check_shapes():
             return
 
-        new_shapes = []
+        shape_checks = self._parse_checks(checks)
+        while shape_checks:
+            shape_check = shape_checks.pop()
+            dim_checks = self._match_dims(shape_check)
+            for dim_spec, actual_dims in dim_checks:
+                self._check_dim(dim_spec, actual_dims, shape_checks)
+
+    def _parse_checks(
+        self,
+        checks: Iterable[
+            Union[Tuple[Any, TensorSpecLike], Tuple[Any, TensorSpecLike, ErrorContext]]
+        ],
+    ) -> List[_ShapeCheck]:
+        """
+        Sanity check, register and parse the given ``checks`` into :class:`_ShapeCheck` objects.
+        """
+        shape_checks = []
         new_variables = set()
         call_context: Optional[ErrorContext] = None
         for i, check in enumerate(checks):
             shaped, tensor_spec, *contexts = check
+
+            # Determine error context:
             if contexts:
                 (context,) = contexts
             else:
                 if call_context is None:
                     call_context = FunctionCallContext(self.check_shapes).precompute()
                 context = StackContext(call_context, IndexContext(i))
+
             parsed_tensor_check = _as_parsed_tensor_spec(tensor_spec, context)
+            parsed_shape_check = parsed_tensor_check.shape
+
+            # Determine shape:
             if shaped is None:
                 shape: Shape = None
             else:
                 shape = get_shape(shaped, context)
-            self._seen_shapes.append((shape, parsed_tensor_check, context))
-            if shape is not None:
-                new_shapes.append((shape, parsed_tensor_check))
+            self._observed_shapes.append((shape, parsed_tensor_check, context))
 
-            for dim_spec in parsed_tensor_check.shape.dims:
+            if shape is not None:
+                shape_checks.append(
+                    _ShapeCheck(
+                        actual=shape,
+                        actual_begin=0,
+                        actual_end=len(shape),
+                        expected=parsed_shape_check,
+                        expected_begin=0,
+                        expected_end=len(parsed_shape_check.dims),
+                    )
+                )
+
+            # Record used variables:
+            for dim_spec in parsed_shape_check.dims:
                 if dim_spec.variable_name is None:
                     continue
                 self._specs_by_variable.setdefault(dim_spec.variable_name, {})[
@@ -260,10 +322,19 @@ class ShapeChecker:
                     self._rank1_variables.add(dim_spec.variable_name)
                 new_variables.add(dim_spec.variable_name)
 
-        new_variable_error_contexts = []
-        for variable in sorted(new_variables):
+        self._check_variable_use(new_variables)
+
+        return shape_checks
+
+    def _check_variable_use(self, variables: Iterable[str]) -> None:
+        """
+        Check that the given variables are used in either a rank-1 or a variable-rank context, and
+        not both.
+        """
+        error_contexts = []
+        for variable in sorted(variables):
             if (variable in self._rank1_variables) and (variable in self._varrank_variables):
-                new_variable_error_contexts.append(
+                error_contexts.append(
                     StackContext(
                         VariableContext(variable),
                         ParallelContext(
@@ -274,71 +345,164 @@ class ShapeChecker:
                         ),
                     )
                 )
-        if new_variable_error_contexts:
-            raise VariableTypeError(ParallelContext(tuple(new_variable_error_contexts)))
+        if error_contexts:
+            raise VariableTypeError(ParallelContext(tuple(error_contexts)))
 
-        def _assert(condition: bool) -> None:
-            if not condition:
-                contexts: List[ErrorContext] = []
-                contexts.extend(self._additional_context)
+    def _match_dims(self, shape_check: _ShapeCheck) -> Iterable[Tuple[ParsedDimensionSpec, _Shape]]:
+        """
+        Match expected dimensions against actual dimensions.
+        """
 
-                for shape, tensor_spec, context in self._seen_shapes:
-                    shape_error_context: ErrorContext = ShapeContext(tensor_spec.shape, shape)
-                    if tensor_spec.note is not None:
-                        shape_error_context = ParallelContext(
-                            (NoteContext(tensor_spec.note), shape_error_context)
-                        )
-                    contexts.append(StackContext(context, shape_error_context))
-                raise ShapeMismatchError(ParallelContext(tuple(contexts)))
+        # Determine rank of expected dimensions:
 
-        for actual, tensor_spec in new_shapes:
-            actual_len = len(actual)
-            actual_i = 0
-
-            shape_spec = tensor_spec.shape
-            expected = shape_spec.dims
-            expected_len = len(expected)
-
-            n_variable_rank = sum(dim_spec.variable_rank for dim_spec in expected)
-            assert n_variable_rank <= 1, "At most one variable-rank ParsedDimensionSpec allowed."
-            if n_variable_rank == 0:
-                _assert(expected_len == actual_len)
-            else:
-                _assert(expected_len - n_variable_rank <= actual_len)
-
-            for dim_spec in expected:
-
-                if dim_spec.variable_rank:
-                    variable_rank_len = actual_len - (expected_len - n_variable_rank)
-                    actual_dims = actual[actual_i : actual_i + variable_rank_len]
-                    actual_i += variable_rank_len
-
-                    expected_name = dim_spec.variable_name
-                    if expected_name is None:
-                        # Anonymous dimension spec - we don't care about the actual values.
-                        continue
-
-                    expected_dims = self._seen_dims.setdefault(expected_name, _ObservedDims())
-                    assert isinstance(expected_dims, _ObservedDims)
-                    _assert(expected_dims.check_and_update(actual_dims, dim_spec.broadcastable))
-
-                else:
-                    actual_dim = actual[actual_i]
-                    actual_i += 1
-                    if actual_dim is None:
-                        continue
-
-                    if dim_spec.constant is not None:
-                        expected_dim = _ObservedDim()
-                        assert expected_dim.check_and_update(dim_spec.constant, broadcast=False)
-                    elif dim_spec.variable_name is not None:
-                        expected_name = dim_spec.variable_name
-                        maybe_expected_dim = self._seen_dims.setdefault(
-                            expected_name, _ObservedDim()
-                        )
-                        assert isinstance(maybe_expected_dim, _ObservedDim)
-                        expected_dim = maybe_expected_dim
+        unallocated_len = shape_check.actual_end - shape_check.actual_begin
+        allocated_sizes: List[Optional[int]] = []
+        n_unallocated = 0
+        unknown_len_variables: Dict[str, bool] = {}
+        for i in range(shape_check.expected_begin, shape_check.expected_end):
+            expected_dim = shape_check.expected.dims[i]
+            if expected_dim.variable_rank:
+                expected_name: Optional[str] = expected_dim.variable_name
+                if expected_name is not None:
+                    observed_dims = self._observed_dimss.get(expected_name)
+                    if (
+                        (not expected_dim.broadcastable)
+                        and (observed_dims is not None)
+                        and observed_dims.known_rank
+                        and (observed_dims.sizes is not None)
+                    ):
+                        rank = len(observed_dims.sizes)
+                        unallocated_len -= rank
+                        allocated_sizes.append(rank)
                     else:
-                        # Anonymous dimension - we don't care about the actual value.
-                        continue
-                    _assert(expected_dim.check_and_update(actual_dim, dim_spec.broadcastable))
+                        allocated_sizes.append(None)
+                        n_unallocated += 1
+                        broadcastable = (
+                            unknown_len_variables.get(expected_name, False)
+                            | expected_dim.broadcastable
+                        )
+                        unknown_len_variables[expected_name] = broadcastable
+                else:
+                    allocated_sizes.append(None)
+                    n_unallocated += 1
+                    unknown_len_variables[_ANONYMOUS_VAR_RANK] = True
+            else:
+                unallocated_len -= 1
+                allocated_sizes.append(1)
+
+        # Determine rank of variables with outknown rank:
+
+        n_unknown = len(unknown_len_variables)
+        unknown_len: Optional[int] = None
+        if n_unknown == 0:
+            self._assert(unallocated_len == 0)
+        else:
+            self._assert(unallocated_len >= 0)
+            if n_unknown == 1:
+                broadcastable = next(iter(unknown_len_variables.values()))
+                if n_unallocated <= 1 or (not broadcastable):
+                    self._assert(unallocated_len % n_unallocated == 0)
+                    unknown_len = unallocated_len // n_unallocated
+
+        dim_checks = []
+
+        # Take as much as we can from the left side:
+
+        def _get_rank(i: int) -> Optional[int]:
+            expected_rank = allocated_sizes[i]
+            return unknown_len if expected_rank is None else expected_rank
+
+        while not shape_check.finished:
+            expected_rank = _get_rank(shape_check.expected_begin)
+            if expected_rank is None:
+                break
+
+            dim_checks.append(
+                (
+                    shape_check.expected.dims[shape_check.expected_begin],
+                    shape_check.actual[
+                        shape_check.actual_begin : shape_check.actual_begin + expected_rank
+                    ],
+                )
+            )
+            shape_check.actual_begin += expected_rank
+            shape_check.expected_begin += 1
+
+        # Take as much as we can from the right side:
+
+        while not shape_check.finished:
+            expected_rank = _get_rank(shape_check.expected_end - 1)
+            if expected_rank is None:
+                break
+
+            dim_checks.append(
+                (
+                    shape_check.expected.dims[shape_check.expected_end - 1],
+                    shape_check.actual[
+                        shape_check.actual_end - expected_rank : shape_check.actual_end
+                    ],
+                )
+            )
+            shape_check.actual_end -= expected_rank
+            shape_check.expected_end -= 1
+
+        if not shape_check.finished:
+            waiting_for = set(unknown_len_variables) - {_ANONYMOUS_VAR_RANK}
+            for name in waiting_for:
+                self._waiting_for_varrank.setdefault(name, set()).add(shape_check)
+
+        return dim_checks
+
+    def _check_dim(
+        self, expected: ParsedDimensionSpec, actual_dims: _Shape, shape_checks: List[_ShapeCheck]
+    ) -> None:
+        """
+        Checks that ``actual_dim`` matches ``expected``.
+
+        Newly learned information may enable the evaluation of deferred shape checks - any such will
+        be added to ``shape_checks``.
+        """
+        if expected.variable_rank:
+            expected_name = expected.variable_name
+            if expected_name is None:
+                # Anonymous dimension spec - we don't care about the actual values.
+                return
+
+            observed_dims = self._observed_dimss.setdefault(expected_name, _ObservedDims())
+            self._assert(observed_dims.check_and_update(actual_dims, expected.broadcastable))
+            if observed_dims.known_rank:
+                shape_checks.extend(self._waiting_for_varrank.pop(expected_name, set()))
+
+        else:
+            (actual_dim,) = actual_dims
+            if actual_dim is None:
+                # Acutal dimension is unknown - nothing to check.
+                return
+
+            if expected.constant is not None:
+                observed_dim = _ObservedDim()
+                assert observed_dim.check_and_update(expected.constant, broadcast=False)
+            elif expected.variable_name is not None:
+                expected_name = expected.variable_name
+                observed_dim = self._observed_dims.setdefault(expected_name, _ObservedDim())
+            else:
+                # Anonymous dimension - we don't care about the actual value.
+                return
+            self._assert(observed_dim.check_and_update(actual_dim, expected.broadcastable))
+
+    def _assert(self, condition: bool) -> None:
+        """
+        Raise a nicely formatted :class:`ShapeMismatchError` if ``condition`` is not ``True``.
+        """
+        if not condition:
+            contexts: List[ErrorContext] = []
+            contexts.extend(self._additional_context)
+
+            for shape, tensor_spec, context in self._observed_shapes:
+                shape_error_context: ErrorContext = ShapeContext(tensor_spec.shape, shape)
+                if tensor_spec.note is not None:
+                    shape_error_context = ParallelContext(
+                        (NoteContext(tensor_spec.note), shape_error_context)
+                    )
+                contexts.append(StackContext(context, shape_error_context))
+            raise ShapeMismatchError(ParallelContext(tuple(contexts)))

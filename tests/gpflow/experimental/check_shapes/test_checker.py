@@ -150,6 +150,54 @@ TESTS = [
         True,
     ),
     ShapeCheckerTest(
+        "var_rank_multi_1",
+        [
+            (t(1, 2, 3), "[ds1..., ds2...]"),
+            (t(1, 2), "[ds1...]"),
+            (t(3), "[ds2...]"),
+        ],
+        True,
+    ),
+    ShapeCheckerTest(
+        "var_rank_multi_2",
+        [
+            (t(1), "[ds1...]"),
+            (t(1, 2, 3), "[ds1..., ds2...]"),
+            (t(2, 3), "[ds2...]"),
+        ],
+        True,
+    ),
+    ShapeCheckerTest(
+        "var_rank_multi_3",
+        [
+            (t(), "[ds1...]"),
+            (t(1, 2, 3), "[ds2...]"),
+            (t(1, 2, 3), "[ds1..., ds2...]"),
+        ],
+        True,
+    ),
+    ShapeCheckerTest(
+        "var_rank_multi_4",
+        [
+            (t(1, 2, 1, 2), "[ds..., ds...]"),
+        ],
+        True,
+    ),
+    ShapeCheckerTest(
+        "var_rank_multi_5",
+        [
+            (t(1, 2, 3, 4, 5), "[1, ..., 3, ..., 5]"),
+        ],
+        True,
+    ),
+    ShapeCheckerTest(
+        "var_rank_multi_broadcast",
+        [
+            (t(2, 1, 1, 2, 3), "[broadcast ds..., ds...]"),
+        ],
+        True,
+    ),
+    ShapeCheckerTest(
         "var_rank_unknown_dim_1",
         [
             (t(None, 6), "[ds...]"),
@@ -237,6 +285,43 @@ TESTS = [
         [
             (t(2, 3), "[ds...]"),
             (t(1, 2, 3), "[ds...]"),
+        ],
+        False,
+    ),
+    ShapeCheckerTest(
+        "var_rank_bad_6",
+        [
+            (t(1, 4, 3), "[ds1..., ds2...]"),
+            (t(1, 2), "[ds1...]"),
+            (t(3), "[ds2...]"),
+        ],
+        False,
+    ),
+    ShapeCheckerTest(
+        "var_rank_bad_7",
+        [
+            (t(1, 2, 1, 2, 3), "[ds..., ds...]"),
+        ],
+        False,
+    ),
+    ShapeCheckerTest(
+        "var_rank_bad_8",
+        [
+            (t(1, 2, 1, 3), "[ds..., ds...]"),
+        ],
+        False,
+    ),
+    ShapeCheckerTest(
+        "var_rank_bad_9",
+        [
+            (t(7, 2, 3, 4, 5), "[1, ..., 3, ..., 5]"),
+        ],
+        False,
+    ),
+    ShapeCheckerTest(
+        "var_rank_bad_10",
+        [
+            (t(1, 2, 3, 4, 7), "[1, ..., 3, ..., 5]"),
         ],
         False,
     ),
