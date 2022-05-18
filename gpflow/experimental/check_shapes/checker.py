@@ -315,7 +315,7 @@ class ShapeChecker:
 
             # Determine shape:
             if shaped is None:
-                shape: Shape = None
+                shape = None
             else:
                 shape = get_shape(shaped, context)
             self._observed_shapes.append((shape, parsed_tensor_check, context))
