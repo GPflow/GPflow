@@ -572,6 +572,11 @@ function checkPageExistsAndRedirect(event) {
   </ul>
  </li>
  <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#best-effort-checking">
+   Best-effort checking
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
   <a class="reference internal nav-link" href="#shape-reuse">
    Shape reuse
   </a>
@@ -1130,6 +1135,21 @@ places:</p>
 </li>
 </ul>
 </section>
+</section>
+<section id="best-effort-checking">
+<h2>Best-effort checking<a class="headerlink" href="#best-effort-checking" title="Permalink to this headline">#</a></h2>
+<p>This library will perform shape checks on a best-effort basis. Many things can prevent this library
+from being able to check shapes. For example:</p>
+<ul class="simple">
+<li><p>Unknown shapes. Sometimes the library is not able to determine the shape of an object, and thus
+cannot check that object. For example <code class="docutils literal notranslate"><span class="pre">Optional</span></code> arguments with value <code class="docutils literal notranslate"><span class="pre">None</span></code> cannot be
+checked, and compiled TensorFlow code can have variables with an unknown shape.</p></li>
+<li><p>Use of variable-rank dimensions. In general we cannot infer the size of variable-rank dimensions
+if there are multiple variable-rank specifications within the same shape specification (e.g.
+<code class="docutils literal notranslate"><span class="pre">cov:</span> <span class="pre">[m...,</span> <span class="pre">n...]</span></code>). This library will try to learn the size of these variable-rank dimensions
+from neighbouring shape specifications, but this is not always possible. Use of <code class="docutils literal notranslate"><span class="pre">broadcast</span></code> with
+variable-rank dimensions makes it even harder to infer these values.</p></li>
+</ul>
 </section>
 <section id="shape-reuse">
 <h2>Shape reuse<a class="headerlink" href="#shape-reuse" title="Permalink to this headline">#</a></h2>
