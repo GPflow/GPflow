@@ -151,6 +151,7 @@ _TEST_DATA = [
             "b: [ds..., d1]",
             "c: [d1, ds..., d2]",
             "d: [d1, ds...]",
+            "e: [*ds1, ds2..., *ds3]",
             "return: [*ds, d1, d2]",
         ),
         ParsedFunctionSpec(
@@ -172,6 +173,10 @@ _TEST_DATA = [
                     make_shape_spec("d1", varrank("ds")),
                 ),
                 make_arg_spec(
+                    make_argument_ref("e"),
+                    make_shape_spec(varrank("ds1"), varrank("ds2"), varrank("ds3")),
+                ),
+                make_arg_spec(
                     make_argument_ref("return"),
                     make_shape_spec(varrank("ds"), "d1", "d2"),
                 ),
@@ -183,6 +188,7 @@ _TEST_DATA = [
         :param b: Parameter b.
         :param c: Parameter c.
         :param d: Parameter d.
+        :param e: Parameter e.
         :returns: Return value.
         """,
         """
@@ -202,6 +208,10 @@ _TEST_DATA = [
             * **d** has shape [*d1*, *ds*...].
 
             Parameter d.
+        :param e:
+            * **e** has shape [*ds1*..., *ds2*..., *ds3*...].
+
+            Parameter e.
         :returns:
             * **return** has shape [*ds*..., *d1*, *d2*].
 
@@ -215,6 +225,7 @@ _TEST_DATA = [
             "b: [None, d2]",
             "c: [..., d1]",
             "d: [*, d2]",
+            "e: [*, ..., *]",
             "return: [..., d1, d2]",
         ),
         ParsedFunctionSpec(
@@ -236,6 +247,10 @@ _TEST_DATA = [
                     make_shape_spec(varrank(None), "d2"),
                 ),
                 make_arg_spec(
+                    make_argument_ref("e"),
+                    make_shape_spec(varrank(None), varrank(None), varrank(None)),
+                ),
+                make_arg_spec(
                     make_argument_ref("return"),
                     make_shape_spec(varrank(None), "d1", "d2"),
                 ),
@@ -247,6 +262,7 @@ _TEST_DATA = [
         :param b: Parameter b.
         :param c: Parameter c.
         :param d: Parameter d.
+        :param e: Parameter e.
         :returns: Return value.
         """,
         """
@@ -266,6 +282,10 @@ _TEST_DATA = [
             * **d** has shape [..., *d2*].
 
             Parameter d.
+        :param e:
+            * **e** has shape [..., ..., ...].
+
+            Parameter e.
         :returns:
             * **return** has shape [..., *d1*, *d2*].
 
