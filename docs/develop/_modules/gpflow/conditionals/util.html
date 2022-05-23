@@ -873,7 +873,13 @@ function checkPageExistsAndRedirect(event) {
         <span class="n">q_sqrts</span> <span class="o">=</span> <span class="p">(</span>
             <span class="n">tf</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">q_sqrt</span><span class="p">)[:,</span> <span class="p">:,</span> <span class="kc">None</span><span class="p">]</span> <span class="k">if</span> <span class="n">q_sqrt</span><span class="o">.</span><span class="n">shape</span><span class="o">.</span><span class="n">ndims</span> <span class="o">==</span> <span class="mi">2</span> <span class="k">else</span> <span class="n">q_sqrt</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span>
         <span class="p">)</span>
-        <span class="n">base_conditional_args_to_map</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">Kmms</span><span class="p">,</span> <span class="n">Kmns</span><span class="p">,</span> <span class="n">Knns</span><span class="p">,</span> <span class="n">fs</span><span class="p">,</span> <span class="n">q_sqrts</span><span class="p">)</span>
+        <span class="n">base_conditional_args_to_map</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">Kmms</span><span class="p">,</span>
+            <span class="n">Kmns</span><span class="p">,</span>
+            <span class="n">Knns</span><span class="p">,</span>
+            <span class="n">fs</span><span class="p">,</span>
+            <span class="n">q_sqrts</span><span class="p">,</span>
+        <span class="p">)</span>  <span class="c1"># type: Tuple[tf.Tensor, ...]</span>
 
         <span class="k">def</span> <span class="nf">single_gp_conditional</span><span class="p">(</span>
             <span class="n">t</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>

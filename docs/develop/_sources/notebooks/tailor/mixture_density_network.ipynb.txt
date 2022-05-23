@@ -2,7 +2,7 @@
  "cells": [
   {
    "cell_type": "markdown",
-   "id": "6f153ec1",
+   "id": "3f388107",
    "metadata": {},
    "source": [
     "# Mixture Density Networks in GPflow\n",
@@ -14,7 +14,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "8790f098",
+   "id": "5bb23f0d",
    "metadata": {},
    "source": [
     "## Conditional Density Estimation models\n",
@@ -24,13 +24,13 @@
   {
    "cell_type": "code",
    "execution_count": 1,
-   "id": "b98e9ff6",
+   "id": "9d79e338",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-05-23T11:23:11.017016Z",
-     "iopub.status.busy": "2022-05-23T11:23:11.016570Z",
-     "iopub.status.idle": "2022-05-23T11:23:11.876614Z",
-     "shell.execute_reply": "2022-05-23T11:23:11.875893Z"
+     "iopub.execute_input": "2022-05-23T13:30:20.865496Z",
+     "iopub.status.busy": "2022-05-23T13:30:20.865032Z",
+     "iopub.status.idle": "2022-05-23T13:30:21.640034Z",
+     "shell.execute_reply": "2022-05-23T13:30:21.639352Z"
     }
    },
    "outputs": [],
@@ -48,13 +48,13 @@
   {
    "cell_type": "code",
    "execution_count": 2,
-   "id": "c21d6d62",
+   "id": "88779878",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-05-23T11:23:11.880881Z",
-     "iopub.status.busy": "2022-05-23T11:23:11.880462Z",
-     "iopub.status.idle": "2022-05-23T11:23:12.095341Z",
-     "shell.execute_reply": "2022-05-23T11:23:12.094437Z"
+     "iopub.execute_input": "2022-05-23T13:30:21.643279Z",
+     "iopub.status.busy": "2022-05-23T13:30:21.642938Z",
+     "iopub.status.idle": "2022-05-23T13:30:21.824513Z",
+     "shell.execute_reply": "2022-05-23T13:30:21.823875Z"
     }
    },
    "outputs": [
@@ -93,7 +93,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "921bc94b",
+   "id": "8ed2f2b5",
    "metadata": {},
    "source": [
     "At first sight, this dataset doesn't seem overly complex. Both input and output have a single dimension, and the data has a clear sinusoidal pattern. However, notice that a single input $x$ can correspond to multiple output values $y$, so for example $x=0$ can yield any of the values $\\{-1.5, -3/4, 0, 0.8, 1.5\\}$. Typical regression algorithms such as Linear Regression, Gaussian Process regression and Multilayer Perceptrons (MLPs) struggle as they can only predict one output value for every input.\n",
@@ -103,7 +103,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "fe054e81",
+   "id": "acc8e848",
    "metadata": {},
    "source": [
     "## Mixture Density Network models\n",
@@ -125,7 +125,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "100c0699",
+   "id": "ab1add50",
    "metadata": {},
    "source": [
     "## A GPflow MDN implementation\n",
@@ -138,13 +138,13 @@
   {
    "cell_type": "code",
    "execution_count": 3,
-   "id": "8f246793",
+   "id": "d25bf0b7",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-05-23T11:23:12.098467Z",
-     "iopub.status.busy": "2022-05-23T11:23:12.098090Z",
-     "iopub.status.idle": "2022-05-23T11:23:14.055967Z",
-     "shell.execute_reply": "2022-05-23T11:23:14.054931Z"
+     "iopub.execute_input": "2022-05-23T13:30:21.827162Z",
+     "iopub.status.busy": "2022-05-23T13:30:21.826896Z",
+     "iopub.status.idle": "2022-05-23T13:30:23.499826Z",
+     "shell.execute_reply": "2022-05-23T13:30:23.499147Z"
     }
    },
    "outputs": [
@@ -152,8 +152,8 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2022-05-23 11:23:12.289240: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcudart.so.11.0'; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory\n",
-      "2022-05-23 11:23:12.289270: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.\n"
+      "2022-05-23 13:30:21.999609: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcudart.so.11.0'; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory\n",
+      "2022-05-23 13:30:21.999637: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.\n"
      ]
     }
    ],
@@ -164,13 +164,13 @@
   {
    "cell_type": "code",
    "execution_count": 4,
-   "id": "7703b49b",
+   "id": "826c653c",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-05-23T11:23:14.060590Z",
-     "iopub.status.busy": "2022-05-23T11:23:14.060014Z",
-     "iopub.status.idle": "2022-05-23T11:23:14.790267Z",
-     "shell.execute_reply": "2022-05-23T11:23:14.789325Z"
+     "iopub.execute_input": "2022-05-23T13:30:23.512450Z",
+     "iopub.status.busy": "2022-05-23T13:30:23.511912Z",
+     "iopub.status.idle": "2022-05-23T13:30:24.115107Z",
+     "shell.execute_reply": "2022-05-23T13:30:24.114372Z"
     }
    },
    "outputs": [
@@ -191,7 +191,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "467936e7",
+   "id": "ccc03bae",
    "metadata": {},
    "source": [
     "Next, we create a `MDN` class that inherits from GPflow's `Model` class. We need to do the following:\n",
@@ -203,13 +203,13 @@
   {
    "cell_type": "code",
    "execution_count": 5,
-   "id": "68731c6c",
+   "id": "9a9b6336",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-05-23T11:23:14.793744Z",
-     "iopub.status.busy": "2022-05-23T11:23:14.793395Z",
-     "iopub.status.idle": "2022-05-23T11:23:14.804297Z",
-     "shell.execute_reply": "2022-05-23T11:23:14.803563Z"
+     "iopub.execute_input": "2022-05-23T13:30:24.117883Z",
+     "iopub.status.busy": "2022-05-23T13:30:24.117591Z",
+     "iopub.status.idle": "2022-05-23T13:30:24.126386Z",
+     "shell.execute_reply": "2022-05-23T13:30:24.125804Z"
     }
    },
    "outputs": [],
@@ -265,7 +265,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "16d2b9f2",
+   "id": "0be22249",
    "metadata": {},
    "source": [
     "### Notes\n",
@@ -282,7 +282,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "14f39a6f",
+   "id": "0ca0d9dd",
    "metadata": {},
    "source": [
     "## Experiment 1: The sinusoidal dataset\n",
@@ -293,13 +293,13 @@
   {
    "cell_type": "code",
    "execution_count": 6,
-   "id": "63845b3b",
+   "id": "a95ec4ca",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-05-23T11:23:14.806903Z",
-     "iopub.status.busy": "2022-05-23T11:23:14.806611Z",
-     "iopub.status.idle": "2022-05-23T11:23:14.841481Z",
-     "shell.execute_reply": "2022-05-23T11:23:14.840025Z"
+     "iopub.execute_input": "2022-05-23T13:30:24.128890Z",
+     "iopub.status.busy": "2022-05-23T13:30:24.128588Z",
+     "iopub.status.idle": "2022-05-23T13:30:24.159382Z",
+     "shell.execute_reply": "2022-05-23T13:30:24.158678Z"
     }
    },
    "outputs": [
@@ -328,10 +328,10 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2022-05-23 11:23:14.809245: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcuda.so.1'; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory\n",
-      "2022-05-23 11:23:14.809278: W tensorflow/stream_executor/cuda/cuda_driver.cc:269] failed call to cuInit: UNKNOWN ERROR (303)\n",
-      "2022-05-23 11:23:14.809302: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (0ad0ab90cb53): /proc/driver/nvidia/version does not exist\n",
-      "2022-05-23 11:23:14.809609: I tensorflow/core/platform/cpu_feature_guard.cc:151] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA\n",
+      "2022-05-23 13:30:24.131027: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcuda.so.1'; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory\n",
+      "2022-05-23 13:30:24.131056: W tensorflow/stream_executor/cuda/cuda_driver.cc:269] failed call to cuInit: UNKNOWN ERROR (303)\n",
+      "2022-05-23 13:30:24.131076: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (4b1aebcab215): /proc/driver/nvidia/version does not exist\n",
+      "2022-05-23 13:30:24.131334: I tensorflow/core/platform/cpu_feature_guard.cc:151] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA\n",
       "To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.\n"
      ]
     }
@@ -346,7 +346,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "f276fd9c",
+   "id": "efa23d59",
    "metadata": {},
    "source": [
     "The objective function for MDN instances is the `maximum_log_likelihood_objective`, which we use for optimization of the parameters. GPflow ensures that only the variables stored in `Parameter` objects are optimized. For the MDN, the only parameters are the weights and the biases of the neural net.\n",
@@ -357,13 +357,13 @@
   {
    "cell_type": "code",
    "execution_count": 7,
-   "id": "aef1954d",
+   "id": "365a6c04",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-05-23T11:23:14.844542Z",
-     "iopub.status.busy": "2022-05-23T11:23:14.844235Z",
-     "iopub.status.idle": "2022-05-23T11:25:31.658959Z",
-     "shell.execute_reply": "2022-05-23T11:25:31.658242Z"
+     "iopub.execute_input": "2022-05-23T13:30:24.162421Z",
+     "iopub.status.busy": "2022-05-23T13:30:24.162128Z",
+     "iopub.status.idle": "2022-05-23T13:31:47.217971Z",
+     "shell.execute_reply": "2022-05-23T13:31:47.217318Z"
     }
    },
    "outputs": [
@@ -371,7 +371,7 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2022-05-23 11:23:14.860606: W tensorflow/python/util/util.cc:368] Sets are not currently considered sequences, but this may change in the future, so consider avoiding using them.\n"
+      "2022-05-23 13:30:24.174658: W tensorflow/python/util/util.cc:368] Sets are not currently considered sequences, but this may change in the future, so consider avoiding using them.\n"
      ]
     },
     {
@@ -397,7 +397,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "2ec58f8f",
+   "id": "ec1d6418",
    "metadata": {},
    "source": [
     "To evaluate the validity of our model, we draw the posterior density. We also plot $\\mu(x)$ of the optimized neural net. Remember that for every $x$ the neural net outputs $M$ means $\\mu_m(x)$. These determine the location of the Gaussians. We plot all $M$ means and use their corresponding mixture weight $\\pi_m(X)$ to determine their size. Larger dots will have more impact in the Gaussian ensemble."
@@ -406,13 +406,13 @@
   {
    "cell_type": "code",
    "execution_count": 8,
-   "id": "68fc4986",
+   "id": "fb637639",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-05-23T11:25:31.662014Z",
-     "iopub.status.busy": "2022-05-23T11:25:31.661657Z",
-     "iopub.status.idle": "2022-05-23T11:25:32.349379Z",
-     "shell.execute_reply": "2022-05-23T11:25:32.348759Z"
+     "iopub.execute_input": "2022-05-23T13:31:47.220734Z",
+     "iopub.status.busy": "2022-05-23T13:31:47.220441Z",
+     "iopub.status.idle": "2022-05-23T13:31:47.898090Z",
+     "shell.execute_reply": "2022-05-23T13:31:47.897475Z"
     }
    },
    "outputs": [
@@ -445,7 +445,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "62083c57",
+   "id": "c7526250",
    "metadata": {},
    "source": [
     "## Experiment 2: The half moon dataset\n",
@@ -456,13 +456,13 @@
   {
    "cell_type": "code",
    "execution_count": 9,
-   "id": "792d80a2",
+   "id": "b8f328d7",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-05-23T11:25:32.352080Z",
-     "iopub.status.busy": "2022-05-23T11:25:32.351773Z",
-     "iopub.status.idle": "2022-05-23T11:25:32.622441Z",
-     "shell.execute_reply": "2022-05-23T11:25:32.621801Z"
+     "iopub.execute_input": "2022-05-23T13:31:47.900753Z",
+     "iopub.status.busy": "2022-05-23T13:31:47.900468Z",
+     "iopub.status.idle": "2022-05-23T13:31:48.168202Z",
+     "shell.execute_reply": "2022-05-23T13:31:48.167537Z"
     }
    },
    "outputs": [],
@@ -479,13 +479,13 @@
   {
    "cell_type": "code",
    "execution_count": 10,
-   "id": "97015eee",
+   "id": "da0fc793",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-05-23T11:25:32.625369Z",
-     "iopub.status.busy": "2022-05-23T11:25:32.625070Z",
-     "iopub.status.idle": "2022-05-23T11:25:32.756050Z",
-     "shell.execute_reply": "2022-05-23T11:25:32.755393Z"
+     "iopub.execute_input": "2022-05-23T13:31:48.171071Z",
+     "iopub.status.busy": "2022-05-23T13:31:48.170788Z",
+     "iopub.status.idle": "2022-05-23T13:31:48.269241Z",
+     "shell.execute_reply": "2022-05-23T13:31:48.268653Z"
     }
    },
    "outputs": [
@@ -511,7 +511,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "702538be",
+   "id": "c21c84dc",
    "metadata": {},
    "source": [
     "The only difference in the MDN's setup is that we lower the number of mixture components."
@@ -520,13 +520,13 @@
   {
    "cell_type": "code",
    "execution_count": 11,
-   "id": "ff4178fc",
+   "id": "c60aa969",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-05-23T11:25:32.759930Z",
-     "iopub.status.busy": "2022-05-23T11:25:32.759590Z",
-     "iopub.status.idle": "2022-05-23T11:25:32.772436Z",
-     "shell.execute_reply": "2022-05-23T11:25:32.771797Z"
+     "iopub.execute_input": "2022-05-23T13:31:48.271745Z",
+     "iopub.status.busy": "2022-05-23T13:31:48.271445Z",
+     "iopub.status.idle": "2022-05-23T13:31:48.315185Z",
+     "shell.execute_reply": "2022-05-23T13:31:48.314614Z"
     }
    },
    "outputs": [],
@@ -537,13 +537,13 @@
   {
    "cell_type": "code",
    "execution_count": 12,
-   "id": "1114288c",
+   "id": "3df81d1c",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-05-23T11:25:32.776207Z",
-     "iopub.status.busy": "2022-05-23T11:25:32.775874Z",
-     "iopub.status.idle": "2022-05-23T11:31:34.570059Z",
-     "shell.execute_reply": "2022-05-23T11:31:34.569051Z"
+     "iopub.execute_input": "2022-05-23T13:31:48.318023Z",
+     "iopub.status.busy": "2022-05-23T13:31:48.317580Z",
+     "iopub.status.idle": "2022-05-23T13:38:51.020408Z",
+     "shell.execute_reply": "2022-05-23T13:38:51.019745Z"
     }
    },
    "outputs": [
@@ -568,13 +568,13 @@
   {
    "cell_type": "code",
    "execution_count": 13,
-   "id": "9885e3a2",
+   "id": "1646b35b",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-05-23T11:31:34.573976Z",
-     "iopub.status.busy": "2022-05-23T11:31:34.573620Z",
-     "iopub.status.idle": "2022-05-23T11:31:35.304441Z",
-     "shell.execute_reply": "2022-05-23T11:31:35.303575Z"
+     "iopub.execute_input": "2022-05-23T13:38:51.023544Z",
+     "iopub.status.busy": "2022-05-23T13:38:51.023242Z",
+     "iopub.status.idle": "2022-05-23T13:38:51.769901Z",
+     "shell.execute_reply": "2022-05-23T13:38:51.769185Z"
     }
    },
    "outputs": [
@@ -601,7 +601,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "7e445bd6",
+   "id": "c8c83607",
    "metadata": {},
    "source": [
     "## References\n",
