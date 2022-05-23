@@ -69,6 +69,7 @@ from gpflow.experimental.check_shapes import (
     get_rewrite_docstrings,
     get_shape,
     inherit_check_shapes,
+    register_get_shape,
     set_enable_check_shapes,
     set_enable_function_call_precompute,
     set_rewrite_docstrings,
@@ -815,7 +816,7 @@ def test_example__custom_type() -> None:
             prediction: AnyNDArray = np.einsum("...i,i -> ...", features, self._weights)
             return prediction
 
-    @get_shape.register(LinearModel)
+    @register_get_shape(LinearModel)
     def get_linear_model_shape(model: LinearModel, context: ErrorContext) -> Shape:
         shape: Shape = model._weights.shape
         return shape

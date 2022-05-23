@@ -19,7 +19,7 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Optional, Union
 
-from gpflow.experimental.check_shapes import Dimension, Shape, get_shape
+from gpflow.experimental.check_shapes import Dimension, Shape, register_get_shape
 from gpflow.experimental.check_shapes.argument_ref import (
     AllElementsRef,
     ArgumentRef,
@@ -62,7 +62,7 @@ class TestShaped:
     test_shape: Shape
 
 
-@get_shape.register(TestShaped)
+@register_get_shape(TestShaped)
 def get_test_shaped_shape(shaped: TestShaped, context: ErrorContext) -> Shape:
     return shaped.test_shape
 
