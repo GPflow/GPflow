@@ -47,7 +47,7 @@ def test_example__basic() -> None:
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Collection, Mapping, Optional, Tuple
+from typing import Mapping, Optional, Sequence, Tuple
 from unittest.mock import MagicMock
 
 import numpy as np
@@ -114,7 +114,7 @@ def test_example__argument_ref_all() -> None:
         "data[all]: [., n_columns]",
         "return: [., n_columns]",
     )
-    def concat_rows(data: Collection[AnyNDArray]) -> AnyNDArray:
+    def concat_rows(data: Sequence[AnyNDArray]) -> AnyNDArray:
         return np.concatenate(data, axis=0)
 
     concat_rows(
