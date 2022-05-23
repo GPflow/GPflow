@@ -631,7 +631,13 @@ def separate_independent_conditional_implementation(
         q_sqrts = (
             tf.transpose(q_sqrt)[:, :, None] if q_sqrt.shape.ndims == 2 else q_sqrt[:, None, :, :]
         )
-        base_conditional_args_to_map: Tuple[tf.Tensor, ...] = (Kmms, Kmns, Knns, fs, q_sqrts)
+        base_conditional_args_to_map = (
+            Kmms,
+            Kmns,
+            Knns,
+            fs,
+            q_sqrts,
+        )  # type: Tuple[tf.Tensor, ...]
 
         def single_gp_conditional(
             t: Tuple[tf.Tensor, ...]
