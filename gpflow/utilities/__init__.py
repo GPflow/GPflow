@@ -1,4 +1,5 @@
 from .bijectors import positive, triangular, triangular_size
+from .dimobjs import dims
 from .misc import is_variable, set_trainable, to_default_float, to_default_int, training_loop
 from .model_utils import add_likelihood_noise_cov, add_noise_cov, assert_params_false
 from .multipledispatch import Dispatcher
@@ -23,6 +24,7 @@ __all__ = [
     "assert_params_false",
     "bijectors",
     "deepcopy",
+    "dims",
     "freeze",
     "is_variable",
     "leaf_components",

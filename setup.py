@@ -21,7 +21,7 @@ requirements = [
     # NOTE: Support of Apple Silicon MacOS platforms is in an experimental mode
     "tensorflow-macos>=2.4.0; platform_system=='Darwin' and platform_machine=='arm64'",
     # NOTE: once we require tensorflow-probability>=0.12, we can remove our custom deepcopy handling
-    "typing_extensions",
+    "typing_extensions>=3.7.0",
 ]
 
 
