@@ -15,7 +15,7 @@
 Unit test for code for specifying and evaluating boolean expressions.
 """
 from dataclasses import dataclass
-from typing import Any, Mapping, Tuple
+from typing import Any, List, Mapping, Tuple
 
 import pytest
 
@@ -41,6 +41,10 @@ class BoolSpecTest:
 
     def __str__(self) -> str:
         return repr(self.spec).replace(" ", "_")
+
+
+_NON_EMPTY_LIST = [3]
+_EMPTY_LIST: List[int] = []
 
 
 TESTS = [
@@ -88,22 +92,22 @@ TESTS = [
                 ),
             ),
             (
-                {"foo": [3]},
+                {"foo": _NON_EMPTY_LIST},
                 (
                     True,
                     StackContext(
                         ArgumentContext("foo"),
-                        ObjectValueContext([3]),
+                        ObjectValueContext(_NON_EMPTY_LIST),
                     ),
                 ),
             ),
             (
-                {"foo": []},
+                {"foo": _EMPTY_LIST},
                 (
                     False,
                     StackContext(
                         ArgumentContext("foo"),
-                        ObjectValueContext([]),
+                        ObjectValueContext(_EMPTY_LIST),
                     ),
                 ),
             ),

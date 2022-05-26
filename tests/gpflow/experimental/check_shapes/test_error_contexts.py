@@ -52,6 +52,14 @@ def to_str(context: ErrorContext) -> str:
     return builder.build()
 
 
+def check_eq(context: ErrorContext) -> None:
+    # Sanity checking of __eq__ and __hash__
+    assert context == context
+    assert context != TestContext()
+    assert context != None
+    assert context in {context}
+
+
 def test_message_builder__add_line() -> None:
     builder = MessageBuilder()
     builder.add_line("foo")
@@ -215,6 +223,7 @@ A
 )
 def test_stack_context(context: ErrorContext, expected: str) -> None:
     assert expected == to_str(context)
+    check_eq(context)
 
 
 @pytest.mark.parametrize(
@@ -306,11 +315,14 @@ A
 )
 def test_parallel_context(context: ErrorContext, expected: str) -> None:
     assert expected == to_str(context)
+    check_eq(context)
 
 
 def test_function_call_context() -> None:
     def f() -> str:
-        return to_str(FunctionCallContext(f))
+        context = FunctionCallContext(f)
+        check_eq(context)
+        return to_str(context)
 
     call_line = current_line() + 1
     assert (
@@ -323,7 +335,9 @@ f called at: {__file__}:{call_line}
 
 def test_function_call_context__wrapping() -> None:
     def f() -> str:
-        return to_str(FunctionCallContext(f3))
+        context = FunctionCallContext(f3)
+        check_eq(context)
+        return to_str(context)
 
     @wraps(f)
     def f2() -> str:
@@ -354,6 +368,7 @@ f called at: {__file__}:{call_line}
 """ == to_str(
         context
     )
+    check_eq(context)
 
 
 def test_function_definition_context() -> None:
@@ -362,37 +377,45 @@ def test_function_definition_context() -> None:
     def f() -> None:
         ...
 
+    context = FunctionDefinitionContext(f)
     assert f"""
 Function: test_function_definition_context.<locals>.f
   Declared: {__file__}:{def_line}
 """ == to_str(
-        FunctionDefinitionContext(f)
+        context
     )
+    check_eq(context)
 
 
 def test_function_definition_context__builtin() -> None:
+    context = FunctionDefinitionContext(str)
     assert """
 Function: str
   Declared: <Unknown file>:<Unknown line>
 """ == to_str(
-        FunctionDefinitionContext(str)
+        context
     )
+    check_eq(context)
 
 
 def test_variable_context() -> None:
+    context = VariableContext("foo")
     assert """
 Variable: foo
 """ == to_str(
-        VariableContext("foo")
+        context
     )
+    check_eq(context)
 
 
 def test_tensor_spec_context() -> None:
+    context = TensorSpecContext(make_tensor_spec(make_shape_spec("a", 1), None))
     assert """
 Specification: [a, 1]
 """ == to_str(
-        TensorSpecContext(make_tensor_spec(make_shape_spec("a", 1), None))
+        context
     )
+    check_eq(context)
 
 
 @pytest.mark.parametrize(
@@ -418,6 +441,13 @@ Argument: arg
 """,
         ),
         (
+            ArgumentContext("arg", value={}),
+            """
+Argument: arg
+  Value: {}
+""",
+        ),
+        (
             ArgumentContext(3, value=None),
             """
 Argument number (0-indexed): 3
@@ -428,6 +458,7 @@ Argument number (0-indexed): 3
 )
 def test_argument_context(context: ErrorContext, expected: str) -> None:
     assert expected == to_str(context)
+    check_eq(context)
 
 
 @pytest.mark.parametrize(
@@ -447,6 +478,13 @@ Attribute: .attr
 """,
         ),
         (
+            AttributeContext("attr", value={}),
+            """
+Attribute: .attr
+  Value: {}
+""",
+        ),
+        (
             AttributeContext("attr", value=None),
             """
 Attribute: .attr
@@ -457,6 +495,7 @@ Attribute: .attr
 )
 def test_attribute_context(context: ErrorContext, expected: str) -> None:
     assert expected == to_str(context)
+    check_eq(context)
 
 
 @pytest.mark.parametrize(
@@ -476,6 +515,13 @@ Index: [2]
 """,
         ),
         (
+            IndexContext(2, value={}),
+            """
+Index: [2]
+  Value: {}
+""",
+        ),
+        (
             IndexContext(2, value=None),
             """
 Index: [2]
@@ -486,6 +532,7 @@ Index: [2]
 )
 def test_index_context(context: ErrorContext, expected: str) -> None:
     assert expected == to_str(context)
+    check_eq(context)
 
 
 @pytest.mark.parametrize(
@@ -504,6 +551,12 @@ Map key: ['foo']
 """,
         ),
         (
+            MappingKeyContext({}),
+            """
+Map key: [{}]
+""",
+        ),
+        (
             MappingKeyContext(None),
             """
 Map key: [None]
@@ -513,6 +566,7 @@ Map key: [None]
 )
 def test_mapping_key_context(context: ErrorContext, expected: str) -> None:
     assert expected == to_str(context)
+    check_eq(context)
 
 
 @pytest.mark.parametrize(
@@ -532,6 +586,13 @@ Map value, of key: ['foo']
 """,
         ),
         (
+            MappingValueContext({}, value={}),
+            """
+Map value, of key: [{}]
+  Value: {}
+""",
+        ),
+        (
             MappingValueContext(None, value=None),
             """
 Map value, of key: [None]
@@ -542,14 +603,17 @@ Map value, of key: [None]
 )
 def test_mapping_value_context(context: ErrorContext, expected: str) -> None:
     assert expected == to_str(context)
+    check_eq(context)
 
 
 def test_condition_context() -> None:
+    context = ConditionContext(bor(barg("foo"), bnot(barg("bar"))))
     assert """
 Condition: foo or (not bar)
 """ == to_str(
-        ConditionContext(bor(barg("foo"), bnot(barg("bar"))))
+        context
     )
+    check_eq(context)
 
 
 @pytest.mark.parametrize(
@@ -580,14 +644,17 @@ Actual:   <Tensor has unknown shape>
 )
 def test_shape_context(context: ErrorContext, expected: str) -> None:
     assert expected == to_str(context)
+    check_eq(context)
 
 
 def test_note_context() -> None:
+    context = NoteContext(ParsedNoteSpec("Some note."))
     assert """
 Note: Some note.
 """ == to_str(
-        NoteContext(ParsedNoteSpec("Some note."))
+        context
     )
+    check_eq(context)
 
 
 @pytest.mark.parametrize(
@@ -606,6 +673,12 @@ Value: 7
 """,
         ),
         (
+            ObjectValueContext({}),
+            """
+Value: {}
+""",
+        ),
+        (
             ObjectValueContext("foo"),
             """
 Value: 'foo'
@@ -615,6 +688,7 @@ Value: 'foo'
 )
 def test_object_value_context(context: ErrorContext, expected: str) -> None:
     assert expected == to_str(context)
+    check_eq(context)
 
 
 @pytest.mark.parametrize(
@@ -633,6 +707,12 @@ Object type: builtins.int
 """,
         ),
         (
+            ObjectTypeContext({}),
+            """
+Object type: builtins.dict
+""",
+        ),
+        (
             ObjectTypeContext(ObjectTypeContext(7)),
             """
 Object type: gpflow.experimental.check_shapes.error_contexts.ObjectTypeContext
@@ -642,6 +722,7 @@ Object type: gpflow.experimental.check_shapes.error_contexts.ObjectTypeContext
 )
 def test_object_type_context(context: ErrorContext, expected: str) -> None:
     assert expected == to_str(context)
+    check_eq(context)
 
 
 def test_object_type_context__nested_type() -> None:
@@ -650,11 +731,13 @@ def test_object_type_context__nested_type() -> None:
 
             pass
 
+    context = ObjectTypeContext(A.B())
     assert """
 Object type: tests.gpflow.experimental.check_shapes.test_error_contexts.test_object_type_context__nested_type.<locals>.A.B
 """ == to_str(
-        ObjectTypeContext(A.B())
+        context
     )
+    check_eq(context)
 
 
 def test_lark_unexpected_input_context__unexpected_eof() -> None:
@@ -666,14 +749,16 @@ def test_lark_unexpected_input_context__unexpected_eof() -> None:
         "C": "Some c's",
     }
 
+    context = LarkUnexpectedInputContext(text, error, terminal_descriptions)
     assert """
 Expected one of: Some a's
                  Some b's
                  Some c's
 Found unexpected end of input.
 """ == to_str(
-        LarkUnexpectedInputContext(text, error, terminal_descriptions)
+        context
     )
+    check_eq(context)
 
 
 def test_lark_unexpected_input_context__unexpected_characters() -> None:
@@ -688,13 +773,15 @@ This is line 3
         "C": "Some c's",
     }
 
+    context = LarkUnexpectedInputContext(text, error, terminal_descriptions)
     assert """
 Line: "This is line 2"
                ^
 Found unexpected character.
 """ == to_str(
-        LarkUnexpectedInputContext(text, error, terminal_descriptions)
+        context
     )
+    check_eq(context)
 
 
 def test_lark_unexpected_input_context__unexpected_token() -> None:
@@ -709,13 +796,15 @@ This is line 3
         "C": "Some c's",
     }
 
+    context = LarkUnexpectedInputContext(text, error, terminal_descriptions)
     assert """
 Line:     "This is line 1"
                         ^
 Expected: Some b's
 """ == to_str(
-        LarkUnexpectedInputContext(text, error, terminal_descriptions)
+        context
     )
+    check_eq(context)
 
 
 @pytest.mark.parametrize(
@@ -764,6 +853,7 @@ Broadcasting not supported for non-leading variable-rank variables.
 )
 def test_trailing_broadcast_varrank_context(context: ErrorContext, expected: str) -> None:
     assert expected == to_str(context)
+    check_eq(context)
 
 
 @pytest.mark.parametrize(
@@ -800,3 +890,4 @@ Argument references that evaluate to multiple values are not supported for boole
 )
 def test_multiple_elements_bool_context(context: ErrorContext, expected: str) -> None:
     assert expected == to_str(context)
+    check_eq(context)
