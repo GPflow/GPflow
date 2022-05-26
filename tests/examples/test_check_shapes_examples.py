@@ -370,6 +370,29 @@ def test_example__bool_spec_argument_ref() -> None:
     # [bool_spec_argument_ref]
 
 
+def test_example__bool_spec_argument_ref_is_none() -> None:
+    # pylint: disable=unused-argument
+
+    # [bool_spec_argument_ref_is_none]
+
+    @check_shapes(
+        "a: [n_a]",
+        "b: [n_b]",
+        "return: [n_a, n_a] if b is None",
+        "return: [n_a, n_b] if b is not None",
+    )
+    def square(a: AnyNDArray, b: Optional[AnyNDArray] = None) -> AnyNDArray:
+        if b is None:
+            b = a
+        result: AnyNDArray = a[:, None] * b[None, :]
+        return result
+
+    square(np.ones((3,)))
+    square(np.ones((3,)), np.ones((4,)))
+
+    # [bool_spec_argument_ref_is_none]
+
+
 def test_example__bool_spec_or() -> None:
     # pylint: disable=unused-argument
 

@@ -35,7 +35,7 @@ from gpflow.experimental.check_shapes.exceptions import ShapeMismatchError
 def test_check_shapes__numpy() -> None:
     @check_shapes(
         "a: [d1, d2]",
-        "b: [d1, d3]",
+        "b: [d1, d3] if b is not None",
         "return: [d2, d3]",
     )
     def f(a: AnyNDArray, b: AnyNDArray) -> AnyNDArray:
@@ -47,7 +47,7 @@ def test_check_shapes__numpy() -> None:
 def test_check_shapes__tensorflow() -> None:
     @check_shapes(
         "a: [d1, d2]",
-        "b: [d1, d3]",
+        "b: [d1, d3] if b is not None",
         "return: [d2, d3]",
     )
     def f(a: tf.Tensor, b: tf.Tensor) -> tf.Tensor:

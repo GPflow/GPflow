@@ -30,6 +30,7 @@ from gpflow.experimental.check_shapes.argument_ref import (
     ValuesRef,
 )
 from gpflow.experimental.check_shapes.bool_specs import (
+    BoolTest,
     ParsedAndBoolSpec,
     ParsedArgumentRefBoolSpec,
     ParsedBoolSpec,
@@ -110,8 +111,10 @@ def make_argument_ref(
     return result
 
 
-def barg(name: str) -> ParsedBoolSpec:
-    return ParsedArgumentRefBoolSpec(RootArgumentRef(name))
+def barg(name: str, bool_test: Union[BoolTest, str] = BoolTest.BOOL) -> ParsedBoolSpec:
+    if isinstance(bool_test, str):
+        bool_test = BoolTest[bool_test]
+    return ParsedArgumentRefBoolSpec(RootArgumentRef(name), bool_test)
 
 
 def bor(left: ParsedBoolSpec, right: ParsedBoolSpec) -> ParsedBoolSpec:
