@@ -445,8 +445,9 @@ class ShapeChecker:
 
         # Take as much as we can from the left side:
 
+        allocated_i = 0
         while not shape_check.finished:
-            expected_rank = allocated_sizes[shape_check.expected_begin]
+            expected_rank = allocated_sizes[allocated_i]
             if expected_rank is None:
                 break
 
@@ -458,13 +459,15 @@ class ShapeChecker:
                     ],
                 )
             )
+            allocated_i += 1
             shape_check.actual_begin += expected_rank
             shape_check.expected_begin += 1
 
         # Take as much as we can from the right side:
 
+        allocated_i = len(allocated_sizes) - 1
         while not shape_check.finished:
-            expected_rank = allocated_sizes[shape_check.expected_end - 1]
+            expected_rank = allocated_sizes[allocated_i]
             if expected_rank is None:
                 break
 
@@ -476,6 +479,7 @@ class ShapeChecker:
                     ],
                 )
             )
+            allocated_i -= 1
             shape_check.actual_end -= expected_rank
             shape_check.expected_end -= 1
 
