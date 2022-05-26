@@ -152,39 +152,48 @@ TESTS = [
     ShapeCheckerTest(
         "var_rank_multi_1",
         [
-            (t(1, 2, 3), "[ds1..., ds2...]"),
-            (t(1, 2), "[ds1...]"),
-            (t(3), "[ds2...]"),
+            (t(1, 3, 6, 7, 5), "[d1, ds2..., d3, ds4..., d5]"),
+            (t(), "[ds2...]"),
+            (t(6, 7), "[ds4...]"),
         ],
         True,
     ),
     ShapeCheckerTest(
         "var_rank_multi_2",
         [
-            (t(1), "[ds1...]"),
-            (t(1, 2, 3), "[ds1..., ds2...]"),
-            (t(2, 3), "[ds2...]"),
+            (t(1, 3, 6, 7, 5), "[d1, ds2..., d3, ds4..., d5]"),
+            (t(6, 7), "[ds4...]"),
+            (t(), "[ds2...]"),
         ],
         True,
     ),
     ShapeCheckerTest(
         "var_rank_multi_3",
         [
-            (t(), "[ds1...]"),
-            (t(1, 2, 3), "[ds2...]"),
-            (t(1, 2, 3), "[ds1..., ds2...]"),
+            (t(), "[ds2...]"),
+            (t(1, 3, 6, 7, 5), "[d1, ds2..., d3, ds4..., d5]"),
+            (t(6, 7), "[ds4...]"),
         ],
         True,
     ),
     ShapeCheckerTest(
         "var_rank_multi_4",
         [
-            (t(1, 2, 1, 2), "[ds..., ds...]"),
+            (t(), "[ds2...]"),
+            (t(6, 7), "[ds4...]"),
+            (t(1, 3, 6, 7, 5), "[d1, ds2..., d3, ds4..., d5]"),
         ],
         True,
     ),
     ShapeCheckerTest(
         "var_rank_multi_5",
+        [
+            (t(1, 2, 1, 2), "[ds..., ds...]"),
+        ],
+        True,
+    ),
+    ShapeCheckerTest(
+        "var_rank_multi_6",
         [
             (t(1, 2, 3, 4, 5, 6), "[1, ..., 3, ..., 6]"),
         ],
