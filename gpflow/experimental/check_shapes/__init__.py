@@ -179,6 +179,13 @@ to the specification. For example:
    :end-before: [dimension_spec_broadcast]
    :dedent:
 
+Specifically, to mark a dimension as ``broadcast`` means:
+
+* If the specification is that the dimension should have size ``n``, then the actual dimension must
+  have value ``1`` or ``n``.
+* If all leading dimension specifications are also marked ``broadcast``, then the actual shape is
+  allowed to be shorter than the specification — the dimension is allowed to be missing.
+
 
 Condition specification
 -----------------------

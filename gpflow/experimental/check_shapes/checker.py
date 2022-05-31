@@ -43,9 +43,6 @@ TensorSpecLike = Union[ParsedTensorSpec, str, Shape]
 _Shape = Tuple[Dimension, ...]
 
 
-_ANONYMOUS_VAR_RANK = "..."
-
-
 def _as_parsed_tensor_spec(tensor_spec: TensorSpecLike, context: ErrorContext) -> ParsedTensorSpec:
     if isinstance(tensor_spec, ParsedTensorSpec):
         return tensor_spec
@@ -103,7 +100,10 @@ class _ObservedDims:
     known_rank: bool = False
 
     def check_and_update(
-        self, actual: Optional[Tuple[Optional[int], ...]], broadcast: bool
+        self,
+        actual: Optional[Tuple[Optional[int], ...]],
+        broadcast: bool,
+        shape_possibly_truncated: bool,
     ) -> bool:
         """
         Attempt to merge new data into this observation.
@@ -123,7 +123,7 @@ class _ObservedDims:
         # First make sure lengths are set up and matches.
         longer = len(self.sizes) - len(actual)
         if self.known_rank:
-            if broadcast:
+            if shape_possibly_truncated:
                 if longer < 0:
                     return False
             else:
@@ -133,7 +133,7 @@ class _ObservedDims:
             if longer < 0:
                 self.sizes = [_ObservedDim() for _ in range(-longer)] + self.sizes
                 longer = 0
-            if broadcast:
+            if shape_possibly_truncated:
                 pass  # We don't know anything about total rank.
             else:
                 if longer > 0:
@@ -282,10 +282,10 @@ class ShapeChecker:
             # Note that self._match_dims may not be able to match all dims. If that is the case it
             # adds the check to `self._waiting_for_varrank`:
             dim_checks = self._match_dims(shape_check)
-            for dim_spec, actual_dims in dim_checks:
+            for dim_spec, actual_dims, shape_possibly_truncated in dim_checks:
                 # Note that self._check_dim may revive checks from `self._waiting_for_varrank` and
                 # add them back to `shape_check_queue`:
-                self._check_dim(dim_spec, actual_dims, shape_check_queue)
+                self._check_dim(dim_spec, actual_dims, shape_possibly_truncated, shape_check_queue)
 
     def _parse_checks(
         self,
@@ -371,14 +371,15 @@ class ShapeChecker:
         if error_contexts:
             raise VariableTypeError(ParallelContext(tuple(error_contexts)))
 
-    def _match_dims(self, shape_check: _ShapeCheck) -> Iterable[Tuple[ParsedDimensionSpec, _Shape]]:
+    def _match_dims(
+        self, shape_check: _ShapeCheck
+    ) -> Iterable[Tuple[ParsedDimensionSpec, _Shape, bool]]:
         """
         Match expected dimensions against actual dimensions.
 
         If some dimensions cannot be determined, the remaining dimensions are added to
         `self._waiting_for_varrank`.
         """
-
         # Determine rank of expected dimensions:
 
         # Length of the current shape, which we have not yet matched against a dimension spec:
@@ -388,42 +389,60 @@ class ShapeChecker:
         allocated_sizes: List[Optional[int]] = []
 
         # Count of `None`s in `allocated_sizes`:
-        n_unallocated = 0
+        n_allocated_none = 0
 
         # Mapping from variables, that we don't know the rank of, to whether they're used with
         # `broadcast`.
-        unknown_len_variables: Dict[str, bool] = {}
+        unknown_len_variables: Dict[Optional[str], bool] = {}
 
-        for i in range(shape_check.expected_begin, shape_check.expected_end):
+        # The length of a shape is allowed to be short if the dimension, and all leading dimensions
+        # are `broadcast`, so pre-compute where this applies.
+        leading_broadcast = True
+        leading_broadcasts = []
+        for i in range(0, shape_check.expected_end):
             expected_dim = shape_check.expected.dims[i]
+            leading_broadcast &= expected_dim.broadcastable
+            leading_broadcasts.append(leading_broadcast)
+
+        for i in range(shape_check.expected_begin, shape_check.expected_end)[::-1]:
+            leading_broadcast = leading_broadcasts[i]
+            expected_dim = shape_check.expected.dims[i]
+            expected_name = expected_dim.variable_name
+
+            rank: Optional[int] = None
             if expected_dim.variable_rank:
-                expected_name = expected_dim.variable_name
                 if expected_name is not None:
                     observed_dims = self._observed_dimses.get(expected_name)
                     if (
-                        (not expected_dim.broadcastable)
-                        and (observed_dims is not None)
+                        (observed_dims is not None)
                         and observed_dims.known_rank
                         and (observed_dims.sizes is not None)
                     ):
                         rank = len(observed_dims.sizes)
-                        unallocated_len -= rank
-                        allocated_sizes.append(rank)
-                    else:
-                        allocated_sizes.append(None)
-                        n_unallocated += 1
-                        broadcastable = (
-                            unknown_len_variables.get(expected_name, False)
-                            or expected_dim.broadcastable
-                        )
-                        unknown_len_variables[expected_name] = broadcastable
-                else:
-                    allocated_sizes.append(None)
-                    n_unallocated += 1
-                    unknown_len_variables[_ANONYMOUS_VAR_RANK] = True
             else:
-                unallocated_len -= 1
-                allocated_sizes.append(1)
+                rank = 1
+
+            if rank is not None and leading_broadcast:
+                all_trailing_shapes_known = n_allocated_none == 0
+                if all_trailing_shapes_known:
+                    # We know where the dimension ends, because everything after this has known size,
+                    # so we can infer the start from the `unallocated_len`.
+                    rank = min(rank, unallocated_len)
+                else:
+                    # We don't know where this dimension starts, because of broadcasting, and we
+                    # don't know where it ends, because something after this has an unknown size
+                    # - all bets are off...
+                    rank = None
+
+            if rank is None:
+                n_allocated_none += 1
+                unknown_len_variables[expected_name] = leading_broadcast
+            else:
+                unallocated_len -= rank
+
+            allocated_sizes.append(rank)
+
+        allocated_sizes = allocated_sizes[::-1]  # This list was built in reverse order.
 
         # Determine length of variables with outknown length:
 
@@ -435,11 +454,13 @@ class ShapeChecker:
         else:
             self._assert(unallocated_len >= 0)
             if n_unknown == 1:
-                broadcastable = next(iter(unknown_len_variables.values()))
-                if n_unallocated <= 1 or (not broadcastable):
-                    self._assert(unallocated_len % n_unallocated == 0)
-                    unknown_len = unallocated_len // n_unallocated
-                    allocated_sizes = [unknown_len if s is None else s for s in allocated_sizes]
+                (expected_name,) = unknown_len_variables
+                if expected_name is not None:
+                    broadcastable = unknown_len_variables[expected_name]
+                    if n_allocated_none <= 1 or (not broadcastable):
+                        self._assert(unallocated_len % n_allocated_none == 0)
+                        unknown_len = unallocated_len // n_allocated_none
+                        allocated_sizes = [unknown_len if s is None else s for s in allocated_sizes]
 
         dim_checks = []
 
@@ -457,6 +478,7 @@ class ShapeChecker:
                     shape_check.actual[
                         shape_check.actual_begin : shape_check.actual_begin + expected_rank
                     ],
+                    leading_broadcasts[shape_check.expected_begin],
                 )
             )
             allocated_i += 1
@@ -477,6 +499,7 @@ class ShapeChecker:
                     shape_check.actual[
                         shape_check.actual_end - expected_rank : shape_check.actual_end
                     ],
+                    leading_broadcasts[shape_check.expected_begin],
                 )
             )
             allocated_i -= 1
@@ -484,14 +507,18 @@ class ShapeChecker:
             shape_check.expected_end -= 1
 
         if not shape_check.finished:
-            waiting_for = set(unknown_len_variables) - {_ANONYMOUS_VAR_RANK}
+            waiting_for: Set[str] = set(unknown_len_variables) - {None}  # type: ignore
             for name in waiting_for:
                 self._waiting_for_varrank.setdefault(name, set()).add(shape_check)
 
         return dim_checks
 
     def _check_dim(
-        self, expected: ParsedDimensionSpec, actual_dims: _Shape, shape_checks: List[_ShapeCheck]
+        self,
+        expected: ParsedDimensionSpec,
+        actual_dims: _Shape,
+        shape_possibly_truncated: bool,
+        shape_checks: List[_ShapeCheck],
     ) -> None:
         """
         Checks that ``actual_dim`` matches ``expected``.
@@ -506,11 +533,20 @@ class ShapeChecker:
                 return
 
             observed_dims = self._observed_dimses.setdefault(expected_name, _ObservedDims())
-            self._assert(observed_dims.check_and_update(actual_dims, expected.broadcastable))
+            self._assert(
+                observed_dims.check_and_update(
+                    actual_dims, expected.broadcastable, shape_possibly_truncated
+                )
+            )
             if observed_dims.known_rank:
                 shape_checks.extend(self._waiting_for_varrank.pop(expected_name, set()))
 
         else:
+            if not actual_dims:
+                # Broadcastable dimension was not matched against anything.
+                assert shape_possibly_truncated
+                return
+
             (actual_dim,) = actual_dims
             if actual_dim is None:
                 # Acutal dimension is unknown - nothing to check.
