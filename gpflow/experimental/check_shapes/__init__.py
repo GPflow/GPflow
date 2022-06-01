@@ -196,6 +196,15 @@ This is useful if shapes depend on other input parameters. Valid conditions are:
      :end-before: [bool_spec_argument_ref]
      :dedent:
 
+* ``<argument specifier> is None``, and ``<argument specifier> is not None``, with the usual rules
+  for an ``<argument specifier>``, to test whether an argument is, or is not, ``None``. We currently
+  only allow tests against ``None``, not general Python equality tests:
+
+  .. literalinclude:: /examples/test_check_shapes_examples.py
+     :start-after: [bool_spec_argument_ref_is_none]
+     :end-before: [bool_spec_argument_ref_is_none]
+     :dedent:
+
 * ``<left> or <right>``, evaluates to ``True`` if any of ``<left>`` or ``<right>`` evaluates to
   ``True`` and to ``False`` otherwise:
 

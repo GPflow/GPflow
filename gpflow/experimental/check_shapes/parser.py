@@ -34,6 +34,7 @@ from .argument_ref import (
     ValuesRef,
 )
 from .bool_specs import (
+    BoolTest,
     ParsedAndBoolSpec,
     ParsedArgumentRefBoolSpec,
     ParsedBoolSpec,
@@ -126,9 +127,17 @@ class _ParseSpec(_TreeVisitor):
         (right,) = _tree_children(tree)
         return ParsedNotBoolSpec(self.visit(right))
 
+    def bool_spec_argument_ref_is_none(self, tree: Tree[Token]) -> ParsedBoolSpec:
+        (argument_ref,) = _tree_children(tree)
+        return ParsedArgumentRefBoolSpec(self.visit(argument_ref, True), BoolTest.IS_NONE)
+
+    def bool_spec_argument_ref_is_not_none(self, tree: Tree[Token]) -> ParsedBoolSpec:
+        (argument_ref,) = _tree_children(tree)
+        return ParsedArgumentRefBoolSpec(self.visit(argument_ref, True), BoolTest.IS_NOT_NONE)
+
     def bool_spec_argument_ref(self, tree: Tree[Token]) -> ParsedBoolSpec:
         (argument_ref,) = _tree_children(tree)
-        return ParsedArgumentRefBoolSpec(self.visit(argument_ref, True))
+        return ParsedArgumentRefBoolSpec(self.visit(argument_ref, True), BoolTest.BOOL)
 
     def argument_ref_root(self, tree: Tree[Token], is_for_bool_spec: bool) -> ArgumentRef:
         (token,) = _token_children(tree)
@@ -298,7 +307,14 @@ class _RewritedocString(_TreeVisitor):
             result = "not " + self._bool_spec_to_sphinx(bool_spec.right, True)
         else:
             assert isinstance(bool_spec, ParsedArgumentRefBoolSpec)
-            return f"*{bool_spec.argument_ref!r}*"
+            if bool_spec.bool_test == BoolTest.BOOL:
+                paren_wrap = False  # Never wrap a stand-alone argument.
+                result = f"*{bool_spec.argument_ref!r}*"
+            elif bool_spec.bool_test == BoolTest.IS_NONE:
+                result = f"*{bool_spec.argument_ref!r}* is *None*"
+            else:
+                assert bool_spec.bool_test == BoolTest.IS_NOT_NONE
+                result = f"*{bool_spec.argument_ref!r}* is not *None*"
 
         if paren_wrap:
             result = f"({result})"

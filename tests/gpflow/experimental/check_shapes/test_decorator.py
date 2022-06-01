@@ -564,15 +564,18 @@ def test_check_shapes__condition() -> None:
     @check_shapes(
         "a: [1] if b1",
         "a: [2] if not b1 and b2",
-        "a: [3] if not b1 and not b2",
+        "a: [3] if not b1 and b2 is not None and not b2",
+        "a: [4] if not b1 and b2 is None",
     )
-    def f(a: TestShaped, b1: bool, b2: bool) -> None:
+    def f(a: TestShaped, b1: bool, b2: Optional[bool]) -> None:
         pass
 
     f(t(1), True, True)
     f(t(1), True, False)
+    f(t(1), True, None)
     f(t(2), False, True)
     f(t(3), False, False)
+    f(t(4), False, None)
 
     with pytest.raises(ShapeMismatchError):
         f(t(2), True, True)
@@ -581,10 +584,16 @@ def test_check_shapes__condition() -> None:
         f(t(2), True, False)
 
     with pytest.raises(ShapeMismatchError):
+        f(t(2), True, None)
+
+    with pytest.raises(ShapeMismatchError):
         f(t(1), False, True)
 
     with pytest.raises(ShapeMismatchError):
         f(t(2), False, False)
+
+    with pytest.raises(ShapeMismatchError):
+        f(t(2), False, None)
 
 
 def test_check_shapes__reuse() -> None:

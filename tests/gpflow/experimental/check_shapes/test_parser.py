@@ -472,6 +472,18 @@ _TEST_DATA = [
             "x: [10] if not (b1 or b2)",
             "x: [11] if not b1 and b2",
             "x: [12] if not (b1 and b2)",
+            "x: [13] if b1 is None",
+            "x: [14] if b1 is None or b2",
+            "x: [15] if b1 is None and b2",
+            "x: [16] if b1 or b2 is None",
+            "x: [17] if b1 and b2 is None",
+            "x: [18] if not b1 is None",
+            "x: [19] if b1 is not None",
+            "x: [20] if b1 is not None or b2",
+            "x: [21] if b1 is not None and b2",
+            "x: [22] if b1 or b2 is not None",
+            "x: [23] if b1 and b2 is not None",
+            "x: [24] if not b1 is not None",
         ),
         ParsedFunctionSpec(
             (
@@ -535,6 +547,66 @@ _TEST_DATA = [
                     make_shape_spec(12),
                     condition=bnot(band(barg("b1"), barg("b2"))),
                 ),
+                make_arg_spec(
+                    make_argument_ref("x"),
+                    make_shape_spec(13),
+                    condition=barg("b1", "IS_NONE"),
+                ),
+                make_arg_spec(
+                    make_argument_ref("x"),
+                    make_shape_spec(14),
+                    condition=bor(barg("b1", "IS_NONE"), barg("b2")),
+                ),
+                make_arg_spec(
+                    make_argument_ref("x"),
+                    make_shape_spec(15),
+                    condition=band(barg("b1", "IS_NONE"), barg("b2")),
+                ),
+                make_arg_spec(
+                    make_argument_ref("x"),
+                    make_shape_spec(16),
+                    condition=bor(barg("b1"), barg("b2", "IS_NONE")),
+                ),
+                make_arg_spec(
+                    make_argument_ref("x"),
+                    make_shape_spec(17),
+                    condition=band(barg("b1"), barg("b2", "IS_NONE")),
+                ),
+                make_arg_spec(
+                    make_argument_ref("x"),
+                    make_shape_spec(18),
+                    condition=bnot(barg("b1", "IS_NONE")),
+                ),
+                make_arg_spec(
+                    make_argument_ref("x"),
+                    make_shape_spec(19),
+                    condition=barg("b1", "IS_NOT_NONE"),
+                ),
+                make_arg_spec(
+                    make_argument_ref("x"),
+                    make_shape_spec(20),
+                    condition=bor(barg("b1", "IS_NOT_NONE"), barg("b2")),
+                ),
+                make_arg_spec(
+                    make_argument_ref("x"),
+                    make_shape_spec(21),
+                    condition=band(barg("b1", "IS_NOT_NONE"), barg("b2")),
+                ),
+                make_arg_spec(
+                    make_argument_ref("x"),
+                    make_shape_spec(22),
+                    condition=bor(barg("b1"), barg("b2", "IS_NOT_NONE")),
+                ),
+                make_arg_spec(
+                    make_argument_ref("x"),
+                    make_shape_spec(23),
+                    condition=band(barg("b1"), barg("b2", "IS_NOT_NONE")),
+                ),
+                make_arg_spec(
+                    make_argument_ref("x"),
+                    make_shape_spec(24),
+                    condition=bnot(barg("b1", "IS_NOT_NONE")),
+                ),
             ),
             (),
         ),
@@ -546,7 +618,19 @@ _TEST_DATA = [
             * **x** has shape [10] if not (*b1* or *b2*).
             * **x** has shape [11] if (not *b1*) and *b2*.
             * **x** has shape [12] if not (*b1* and *b2*).
+            * **x** has shape [13] if *b1* is *None*.
+            * **x** has shape [14] if (*b1* is *None*) or *b2*.
+            * **x** has shape [15] if (*b1* is *None*) and *b2*.
+            * **x** has shape [16] if *b1* or (*b2* is *None*).
+            * **x** has shape [17] if *b1* and (*b2* is *None*).
+            * **x** has shape [18] if not (*b1* is *None*).
+            * **x** has shape [19] if *b1* is not *None*.
             * **x** has shape [1] if *b1*.
+            * **x** has shape [20] if (*b1* is not *None*) or *b2*.
+            * **x** has shape [21] if (*b1* is not *None*) and *b2*.
+            * **x** has shape [22] if *b1* or (*b2* is not *None*).
+            * **x** has shape [23] if *b1* and (*b2* is not *None*).
+            * **x** has shape [24] if not (*b1* is not *None*).
             * **x** has shape [2] if *b1* or *b2*.
             * **x** has shape [3] if *b1* and *b2*.
             * **x** has shape [4] if not *b1*.
