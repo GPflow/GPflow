@@ -75,14 +75,29 @@ commands:
           tfp_ver: <<parameters.tfp_ver>>
       - run:
           name: Run tests
-          command: |
-            source .venv/bin/activate
-            pytest -v -W ignore::UserWarning --durations=10 -m "<<parameters.pytest_filter>>" --cov=./gpflow ./tests
+          command: "
+            source .venv/bin/activate \n
+            pytest
+              -v
+              -W ignore::UserWarning
+              --durations=10
+              -m \"<<parameters.pytest_filter>>\"
+              --cov=./gpflow
+              --cov-report=xml
+              ./tests
+          "
       - run:
           name: Upload coverage report
           command: |
-            source .venv/bin/activate
-            bash <(curl -s https://codecov.io/bash) -t "${CODECOV_TOKEN}"
+            curl https://keybase.io/codecovsecurity/pgp_keys.asc | gpg --no-default-keyring --keyring trustedkeys.gpg --import # One-time step
+            curl -Os "https://uploader.codecov.io/latest/linux/codecov"
+            curl -Os "https://uploader.codecov.io/latest/linux/codecov.SHA256SUM"
+            curl -Os "https://uploader.codecov.io/latest/linux/codecov.SHA256SUM.sig"
+            gpgv codecov.SHA256SUM.sig codecov.SHA256SUM
+            shasum -a 256 -c codecov.SHA256SUM || sha256sum -c codecov.SHA256SUM
+            unset NODE_OPTIONS  # See https://github.com/codecov/uploader/issues/475
+            chmod +x codecov
+            ./codecov -v -t "${CODECOV_TOKEN}" -n "${CIRCLE_BUILD_NUM}"
 
 jobs:
   verify-install:
