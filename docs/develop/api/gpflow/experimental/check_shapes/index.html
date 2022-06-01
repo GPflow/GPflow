@@ -1019,6 +1019,26 @@ the argument to a <code class="docutils literal notranslate"><span class="pre">b
 </pre></div>
 </div>
 </li>
+<li><p><code class="docutils literal notranslate"><span class="pre">&lt;argument</span> <span class="pre">specifier&gt;</span> <span class="pre">is</span> <span class="pre">None</span></code>, and <code class="docutils literal notranslate"><span class="pre">&lt;argument</span> <span class="pre">specifier&gt;</span> <span class="pre">is</span> <span class="pre">not</span> <span class="pre">None</span></code>, with the usual rules
+for an <code class="docutils literal notranslate"><span class="pre">&lt;argument</span> <span class="pre">specifier&gt;</span></code>, to test whether an argument is, or is not, <code class="docutils literal notranslate"><span class="pre">None</span></code>. We currently
+only allow tests against <code class="docutils literal notranslate"><span class="pre">None</span></code>, not general Python equality tests:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nd">@check_shapes</span><span class="p">(</span>
+    <span class="s2">&quot;a: [n_a]&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;b: [n_b]&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;return: [n_a, n_a] if b is None&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;return: [n_a, n_b] if b is not None&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="k">def</span> <span class="nf">square</span><span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="n">AnyNDArray</span><span class="p">,</span> <span class="n">b</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">AnyNDArray</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AnyNDArray</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">b</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">b</span> <span class="o">=</span> <span class="n">a</span>
+    <span class="n">result</span><span class="p">:</span> <span class="n">AnyNDArray</span> <span class="o">=</span> <span class="n">a</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="n">b</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:]</span>
+    <span class="k">return</span> <span class="n">result</span>
+
+<span class="n">square</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="mi">3</span><span class="p">,)))</span>
+<span class="n">square</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="mi">3</span><span class="p">,)),</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="mi">4</span><span class="p">,)))</span>
+</pre></div>
+</div>
+</li>
 <li><p><code class="docutils literal notranslate"><span class="pre">&lt;left&gt;</span> <span class="pre">or</span> <span class="pre">&lt;right&gt;</span></code>, evaluates to <code class="docutils literal notranslate"><span class="pre">True</span></code> if any of <code class="docutils literal notranslate"><span class="pre">&lt;left&gt;</span></code> or <code class="docutils literal notranslate"><span class="pre">&lt;right&gt;</span></code> evaluates to
 <code class="docutils literal notranslate"><span class="pre">True</span></code> and to <code class="docutils literal notranslate"><span class="pre">False</span></code> otherwise:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nd">@check_shapes</span><span class="p">(</span>

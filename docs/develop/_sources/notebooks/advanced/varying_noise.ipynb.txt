@@ -2,7 +2,7 @@
  "cells": [
   {
    "cell_type": "markdown",
-   "id": "06cd63ea",
+   "id": "38877df9",
    "metadata": {},
    "source": [
     "# Gaussian process regression with varying output noise"
@@ -10,7 +10,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "b284aa2e",
+   "id": "1599a8a9",
    "metadata": {},
    "source": [
     "This notebook shows how to construct a Gaussian process model where different noise is assumed for different data points. The model is:\n",
@@ -28,13 +28,13 @@
   {
    "cell_type": "code",
    "execution_count": 1,
-   "id": "a2b3556d",
+   "id": "c67f5d03",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-05-23T13:13:29.606420Z",
-     "iopub.status.busy": "2022-05-23T13:13:29.605732Z",
-     "iopub.status.idle": "2022-05-23T13:13:32.887093Z",
-     "shell.execute_reply": "2022-05-23T13:13:32.886453Z"
+     "iopub.execute_input": "2022-06-01T10:38:01.644333Z",
+     "iopub.status.busy": "2022-06-01T10:38:01.643977Z",
+     "iopub.status.idle": "2022-06-01T10:38:04.972511Z",
+     "shell.execute_reply": "2022-06-01T10:38:04.971599Z"
     }
    },
    "outputs": [
@@ -42,8 +42,8 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2022-05-23 13:13:30.010205: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcudart.so.11.0'; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory\n",
-      "2022-05-23 13:13:30.010235: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.\n"
+      "2022-06-01 10:38:02.041758: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcudart.so.11.0'; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory\n",
+      "2022-06-01 10:38:02.041807: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.\n"
      ]
     },
     {
@@ -69,7 +69,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "664c2dcd",
+   "id": "3c325383",
    "metadata": {},
    "source": [
     "## Demo 1: known noise variances\n",
@@ -80,13 +80,13 @@
   {
    "cell_type": "code",
    "execution_count": 2,
-   "id": "38782172",
+   "id": "a6026ffe",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-05-23T13:13:32.890381Z",
-     "iopub.status.busy": "2022-05-23T13:13:32.889909Z",
-     "iopub.status.idle": "2022-05-23T13:13:32.894757Z",
-     "shell.execute_reply": "2022-05-23T13:13:32.894217Z"
+     "iopub.execute_input": "2022-06-01T10:38:04.976792Z",
+     "iopub.status.busy": "2022-06-01T10:38:04.976244Z",
+     "iopub.status.idle": "2022-06-01T10:38:04.981947Z",
+     "shell.execute_reply": "2022-06-01T10:38:04.981192Z"
     }
    },
    "outputs": [],
@@ -107,7 +107,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "ec4a5a42",
+   "id": "8b7e7c7f",
    "metadata": {},
    "source": [
     "Here's a plot of the data, with error bars representing two standard deviations:"
@@ -116,13 +116,13 @@
   {
    "cell_type": "code",
    "execution_count": 3,
-   "id": "0301d3f2",
+   "id": "f32eb36f",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-05-23T13:13:32.897174Z",
-     "iopub.status.busy": "2022-05-23T13:13:32.896902Z",
-     "iopub.status.idle": "2022-05-23T13:13:33.030084Z",
-     "shell.execute_reply": "2022-05-23T13:13:33.029188Z"
+     "iopub.execute_input": "2022-06-01T10:38:04.984931Z",
+     "iopub.status.busy": "2022-06-01T10:38:04.984624Z",
+     "iopub.status.idle": "2022-06-01T10:38:05.097941Z",
+     "shell.execute_reply": "2022-06-01T10:38:05.097305Z"
     }
    },
    "outputs": [
@@ -154,7 +154,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "32e01cee",
+   "id": "c978b05d",
    "metadata": {},
    "source": [
     "### Make a Y matrix that includes the variances\n",
@@ -164,13 +164,13 @@
   {
    "cell_type": "code",
    "execution_count": 4,
-   "id": "e2c86e81",
+   "id": "51b4c1f4",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-05-23T13:13:33.032888Z",
-     "iopub.status.busy": "2022-05-23T13:13:33.032566Z",
-     "iopub.status.idle": "2022-05-23T13:13:33.036005Z",
-     "shell.execute_reply": "2022-05-23T13:13:33.035420Z"
+     "iopub.execute_input": "2022-06-01T10:38:05.101438Z",
+     "iopub.status.busy": "2022-06-01T10:38:05.101120Z",
+     "iopub.status.idle": "2022-06-01T10:38:05.104492Z",
+     "shell.execute_reply": "2022-06-01T10:38:05.103948Z"
     }
    },
    "outputs": [],
@@ -180,7 +180,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "e3320520",
+   "id": "6d5c789d",
    "metadata": {},
    "source": [
     "### Make a new likelihood\n",
@@ -191,13 +191,13 @@
   {
    "cell_type": "code",
    "execution_count": 5,
-   "id": "7e9e9d29",
+   "id": "cef77ea4",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-05-23T13:13:33.038535Z",
-     "iopub.status.busy": "2022-05-23T13:13:33.038258Z",
-     "iopub.status.idle": "2022-05-23T13:13:33.044450Z",
-     "shell.execute_reply": "2022-05-23T13:13:33.043872Z"
+     "iopub.execute_input": "2022-06-01T10:38:05.107571Z",
+     "iopub.status.busy": "2022-06-01T10:38:05.107140Z",
+     "iopub.status.idle": "2022-06-01T10:38:05.116251Z",
+     "shell.execute_reply": "2022-06-01T10:38:05.115435Z"
     }
    },
    "outputs": [],
@@ -236,7 +236,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "145f71f3",
+   "id": "7dcca12b",
    "metadata": {},
    "source": [
     "### Put it together with Variational Gaussian Process (VGP)\n",
@@ -250,13 +250,13 @@
   {
    "cell_type": "code",
    "execution_count": 6,
-   "id": "b491545c",
+   "id": "8c00842a",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-05-23T13:13:33.046935Z",
-     "iopub.status.busy": "2022-05-23T13:13:33.046644Z",
-     "iopub.status.idle": "2022-05-23T13:13:33.085616Z",
-     "shell.execute_reply": "2022-05-23T13:13:33.084966Z"
+     "iopub.execute_input": "2022-06-01T10:38:05.119160Z",
+     "iopub.status.busy": "2022-06-01T10:38:05.118878Z",
+     "iopub.status.idle": "2022-06-01T10:38:05.159815Z",
+     "shell.execute_reply": "2022-06-01T10:38:05.158918Z"
     },
     "lines_to_next_cell": 2
    },
@@ -265,10 +265,10 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2022-05-23 13:13:33.049014: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcuda.so.1'; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory\n",
-      "2022-05-23 13:13:33.049049: W tensorflow/stream_executor/cuda/cuda_driver.cc:269] failed call to cuInit: UNKNOWN ERROR (303)\n",
-      "2022-05-23 13:13:33.049070: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (4b1aebcab215): /proc/driver/nvidia/version does not exist\n",
-      "2022-05-23 13:13:33.049364: I tensorflow/core/platform/cpu_feature_guard.cc:151] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA\n",
+      "2022-06-01 10:38:05.121162: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcuda.so.1'; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory\n",
+      "2022-06-01 10:38:05.121194: W tensorflow/stream_executor/cuda/cuda_driver.cc:269] failed call to cuInit: UNKNOWN ERROR (303)\n",
+      "2022-06-01 10:38:05.121213: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (01f7e3379066): /proc/driver/nvidia/version does not exist\n",
+      "2022-06-01 10:38:05.121479: I tensorflow/core/platform/cpu_feature_guard.cc:151] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA\n",
       "To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.\n",
       "/home/circleci/project/gpflow/experimental/utils.py:42: UserWarning: You're calling gpflow.experimental.check_shapes.checker.ShapeChecker.__init__ which is considered *experimental*. Expect: breaking changes, poor documentation, and bugs.\n",
       "  warn(\n"
@@ -284,7 +284,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "292f8737",
+   "id": "0fee66b2",
    "metadata": {},
    "source": [
     "Notice that we specify num_latent_gps=1, as the VGP model would normally infer this from the shape of Y_data, but we handle the second column manually in the HeteroskedasticGaussian likelihood."
@@ -293,13 +293,13 @@
   {
    "cell_type": "code",
    "execution_count": 7,
-   "id": "22f812a0",
+   "id": "d811bda4",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-05-23T13:13:33.088346Z",
-     "iopub.status.busy": "2022-05-23T13:13:33.088028Z",
-     "iopub.status.idle": "2022-05-23T13:14:50.302526Z",
-     "shell.execute_reply": "2022-05-23T13:14:50.301855Z"
+     "iopub.execute_input": "2022-06-01T10:38:05.163293Z",
+     "iopub.status.busy": "2022-06-01T10:38:05.162849Z",
+     "iopub.status.idle": "2022-06-01T10:39:18.870105Z",
+     "shell.execute_reply": "2022-06-01T10:39:18.869335Z"
     }
    },
    "outputs": [
@@ -307,7 +307,7 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2022-05-23 13:13:33.101462: W tensorflow/python/util/util.cc:368] Sets are not currently considered sequences, but this may change in the future, so consider avoiding using them.\n"
+      "2022-06-01 10:38:05.179709: W tensorflow/python/util/util.cc:368] Sets are not currently considered sequences, but this may change in the future, so consider avoiding using them.\n"
      ]
     }
    ],
@@ -326,13 +326,13 @@
   {
    "cell_type": "code",
    "execution_count": 8,
-   "id": "b9af7872",
+   "id": "de4a45fb",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-05-23T13:14:50.306474Z",
-     "iopub.status.busy": "2022-05-23T13:14:50.306165Z",
-     "iopub.status.idle": "2022-05-23T13:14:50.445772Z",
-     "shell.execute_reply": "2022-05-23T13:14:50.444990Z"
+     "iopub.execute_input": "2022-06-01T10:39:18.874328Z",
+     "iopub.status.busy": "2022-06-01T10:39:18.873968Z",
+     "iopub.status.idle": "2022-06-01T10:39:19.006186Z",
+     "shell.execute_reply": "2022-06-01T10:39:19.005298Z"
     }
    },
    "outputs": [
@@ -374,7 +374,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "342a6977",
+   "id": "1529477c",
    "metadata": {},
    "source": [
     "### Questions for the reader\n",
@@ -387,7 +387,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "8bca6ccd",
+   "id": "77e15d41",
    "metadata": {},
    "source": [
     "## Demo 2: grouped noise variances\n",
@@ -400,13 +400,13 @@
   {
    "cell_type": "code",
    "execution_count": 9,
-   "id": "5b551a73",
+   "id": "9bf88670",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-05-23T13:14:50.450426Z",
-     "iopub.status.busy": "2022-05-23T13:14:50.450070Z",
-     "iopub.status.idle": "2022-05-23T13:14:50.454084Z",
-     "shell.execute_reply": "2022-05-23T13:14:50.453291Z"
+     "iopub.execute_input": "2022-06-01T10:39:19.011008Z",
+     "iopub.status.busy": "2022-06-01T10:39:19.010666Z",
+     "iopub.status.idle": "2022-06-01T10:39:19.014564Z",
+     "shell.execute_reply": "2022-06-01T10:39:19.013678Z"
     }
    },
    "outputs": [],
@@ -416,7 +416,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "d97357d6",
+   "id": "21717bc9",
    "metadata": {},
    "source": [
     "### Generate data"
@@ -425,13 +425,13 @@
   {
    "cell_type": "code",
    "execution_count": 10,
-   "id": "56556f9a",
+   "id": "30ff0324",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-05-23T13:14:50.457578Z",
-     "iopub.status.busy": "2022-05-23T13:14:50.457238Z",
-     "iopub.status.idle": "2022-05-23T13:14:50.462400Z",
-     "shell.execute_reply": "2022-05-23T13:14:50.461662Z"
+     "iopub.execute_input": "2022-06-01T10:39:19.018552Z",
+     "iopub.status.busy": "2022-06-01T10:39:19.018212Z",
+     "iopub.status.idle": "2022-06-01T10:39:19.023601Z",
+     "shell.execute_reply": "2022-06-01T10:39:19.022874Z"
     }
    },
    "outputs": [],
@@ -451,13 +451,13 @@
   {
    "cell_type": "code",
    "execution_count": 11,
-   "id": "3543af1d",
+   "id": "f71e07fa",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-05-23T13:14:50.465750Z",
-     "iopub.status.busy": "2022-05-23T13:14:50.465438Z",
-     "iopub.status.idle": "2022-05-23T13:14:50.576909Z",
-     "shell.execute_reply": "2022-05-23T13:14:50.576125Z"
+     "iopub.execute_input": "2022-06-01T10:39:19.026879Z",
+     "iopub.status.busy": "2022-06-01T10:39:19.026483Z",
+     "iopub.status.idle": "2022-06-01T10:39:19.175603Z",
+     "shell.execute_reply": "2022-06-01T10:39:19.174726Z"
     }
    },
    "outputs": [
@@ -482,7 +482,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "00c74685",
+   "id": "3f355a88",
    "metadata": {},
    "source": [
     "### Data structure\n",
@@ -493,13 +493,13 @@
   {
    "cell_type": "code",
    "execution_count": 12,
-   "id": "c63f2b0a",
+   "id": "1d12c003",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-05-23T13:14:50.580315Z",
-     "iopub.status.busy": "2022-05-23T13:14:50.580023Z",
-     "iopub.status.idle": "2022-05-23T13:14:50.583598Z",
-     "shell.execute_reply": "2022-05-23T13:14:50.582921Z"
+     "iopub.execute_input": "2022-06-01T10:39:19.211849Z",
+     "iopub.status.busy": "2022-06-01T10:39:19.211427Z",
+     "iopub.status.idle": "2022-06-01T10:39:19.215442Z",
+     "shell.execute_reply": "2022-06-01T10:39:19.214687Z"
     }
    },
    "outputs": [],
@@ -509,7 +509,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "eb226de4",
+   "id": "fea07f82",
    "metadata": {},
    "source": [
     "### Build a likelihood\n",
@@ -520,13 +520,13 @@
   {
    "cell_type": "code",
    "execution_count": 13,
-   "id": "450b7e77",
+   "id": "9f8fae38",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-05-23T13:14:50.614986Z",
-     "iopub.status.busy": "2022-05-23T13:14:50.614638Z",
-     "iopub.status.idle": "2022-05-23T13:14:50.637786Z",
-     "shell.execute_reply": "2022-05-23T13:14:50.636986Z"
+     "iopub.execute_input": "2022-06-01T10:39:19.218581Z",
+     "iopub.status.busy": "2022-06-01T10:39:19.218224Z",
+     "iopub.status.idle": "2022-06-01T10:39:19.242708Z",
+     "shell.execute_reply": "2022-06-01T10:39:19.242051Z"
     }
    },
    "outputs": [],
@@ -539,13 +539,13 @@
   {
    "cell_type": "code",
    "execution_count": 14,
-   "id": "e1effe9e",
+   "id": "ead176c5",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-05-23T13:14:50.641816Z",
-     "iopub.status.busy": "2022-05-23T13:14:50.641482Z",
-     "iopub.status.idle": "2022-05-23T13:14:50.662795Z",
-     "shell.execute_reply": "2022-05-23T13:14:50.662136Z"
+     "iopub.execute_input": "2022-06-01T10:39:19.246035Z",
+     "iopub.status.busy": "2022-06-01T10:39:19.245673Z",
+     "iopub.status.idle": "2022-06-01T10:39:19.266924Z",
+     "shell.execute_reply": "2022-06-01T10:39:19.266127Z"
     },
     "lines_to_next_cell": 2
    },
@@ -559,13 +559,13 @@
   {
    "cell_type": "code",
    "execution_count": 15,
-   "id": "14369c83",
+   "id": "55241f48",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-05-23T13:14:50.666765Z",
-     "iopub.status.busy": "2022-05-23T13:14:50.666456Z",
-     "iopub.status.idle": "2022-05-23T13:15:55.998883Z",
-     "shell.execute_reply": "2022-05-23T13:15:55.998057Z"
+     "iopub.execute_input": "2022-06-01T10:39:19.270832Z",
+     "iopub.status.busy": "2022-06-01T10:39:19.270450Z",
+     "iopub.status.idle": "2022-06-01T10:40:24.531488Z",
+     "shell.execute_reply": "2022-06-01T10:40:24.530496Z"
     }
    },
    "outputs": [],
@@ -576,7 +576,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "02c968c5",
+   "id": "a41e36b8",
    "metadata": {},
    "source": [
     "We've now fitted the VGP model to the data, but without optimizing over the hyperparameters. Plotting the data, we see that the fit is not terrible, but hasn't made use of our knowledge of the varying noise."
@@ -585,13 +585,13 @@
   {
    "cell_type": "code",
    "execution_count": 16,
-   "id": "351004c2",
+   "id": "e1ab9862",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-05-23T13:15:56.002176Z",
-     "iopub.status.busy": "2022-05-23T13:15:56.001864Z",
-     "iopub.status.idle": "2022-05-23T13:15:56.187214Z",
-     "shell.execute_reply": "2022-05-23T13:15:56.186304Z"
+     "iopub.execute_input": "2022-06-01T10:40:24.534769Z",
+     "iopub.status.busy": "2022-06-01T10:40:24.534454Z",
+     "iopub.status.idle": "2022-06-01T10:40:24.728949Z",
+     "shell.execute_reply": "2022-06-01T10:40:24.728191Z"
     }
    },
    "outputs": [
@@ -625,7 +625,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "4a1b845c",
+   "id": "16b56a8f",
    "metadata": {},
    "source": [
     "### Optimizing the noise variances\n",
@@ -637,13 +637,13 @@
   {
    "cell_type": "code",
    "execution_count": 17,
-   "id": "f9455150",
+   "id": "8bb14164",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-05-23T13:15:56.190216Z",
-     "iopub.status.busy": "2022-05-23T13:15:56.189917Z",
-     "iopub.status.idle": "2022-05-23T13:17:43.681089Z",
-     "shell.execute_reply": "2022-05-23T13:17:43.680394Z"
+     "iopub.execute_input": "2022-06-01T10:40:24.733355Z",
+     "iopub.status.busy": "2022-06-01T10:40:24.733013Z",
+     "iopub.status.idle": "2022-06-01T10:42:20.400283Z",
+     "shell.execute_reply": "2022-06-01T10:42:20.399646Z"
     }
    },
    "outputs": [],
@@ -664,7 +664,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "0691ea87",
+   "id": "eeb06245",
    "metadata": {},
    "source": [
     "### Plotting the fitted model\n",
@@ -678,13 +678,13 @@
   {
    "cell_type": "code",
    "execution_count": 18,
-   "id": "61fa306e",
+   "id": "c80b1cfb",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-05-23T13:17:43.685292Z",
-     "iopub.status.busy": "2022-05-23T13:17:43.684972Z",
-     "iopub.status.idle": "2022-05-23T13:17:43.836764Z",
-     "shell.execute_reply": "2022-05-23T13:17:43.836065Z"
+     "iopub.execute_input": "2022-06-01T10:42:20.403735Z",
+     "iopub.status.busy": "2022-06-01T10:42:20.403416Z",
+     "iopub.status.idle": "2022-06-01T10:42:20.587292Z",
+     "shell.execute_reply": "2022-06-01T10:42:20.586708Z"
     }
    },
    "outputs": [
@@ -720,13 +720,13 @@
   {
    "cell_type": "code",
    "execution_count": 19,
-   "id": "881e87b0",
+   "id": "210a7899",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-05-23T13:17:43.842101Z",
-     "iopub.status.busy": "2022-05-23T13:17:43.841801Z",
-     "iopub.status.idle": "2022-05-23T13:17:43.858934Z",
-     "shell.execute_reply": "2022-05-23T13:17:43.858349Z"
+     "iopub.execute_input": "2022-06-01T10:42:20.590736Z",
+     "iopub.status.busy": "2022-06-01T10:42:20.590453Z",
+     "iopub.status.idle": "2022-06-01T10:42:20.606092Z",
+     "shell.execute_reply": "2022-06-01T10:42:20.605539Z"
     }
    },
    "outputs": [
@@ -764,7 +764,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "73385079",
+   "id": "43783468",
    "metadata": {},
    "source": [
     "## Further reading\n",

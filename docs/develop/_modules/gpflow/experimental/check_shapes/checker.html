@@ -687,8 +687,9 @@ function checkPageExistsAndRedirect(event) {
 
         <span class="c1"># Take as much as we can from the left side:</span>
 
+        <span class="n">allocated_i</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="k">while</span> <span class="ow">not</span> <span class="n">shape_check</span><span class="o">.</span><span class="n">finished</span><span class="p">:</span>
-            <span class="n">expected_rank</span> <span class="o">=</span> <span class="n">allocated_sizes</span><span class="p">[</span><span class="n">shape_check</span><span class="o">.</span><span class="n">expected_begin</span><span class="p">]</span>
+            <span class="n">expected_rank</span> <span class="o">=</span> <span class="n">allocated_sizes</span><span class="p">[</span><span class="n">allocated_i</span><span class="p">]</span>
             <span class="k">if</span> <span class="n">expected_rank</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="k">break</span>
 
@@ -700,13 +701,15 @@ function checkPageExistsAndRedirect(event) {
                     <span class="p">],</span>
                 <span class="p">)</span>
             <span class="p">)</span>
+            <span class="n">allocated_i</span> <span class="o">+=</span> <span class="mi">1</span>
             <span class="n">shape_check</span><span class="o">.</span><span class="n">actual_begin</span> <span class="o">+=</span> <span class="n">expected_rank</span>
             <span class="n">shape_check</span><span class="o">.</span><span class="n">expected_begin</span> <span class="o">+=</span> <span class="mi">1</span>
 
         <span class="c1"># Take as much as we can from the right side:</span>
 
+        <span class="n">allocated_i</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">allocated_sizes</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
         <span class="k">while</span> <span class="ow">not</span> <span class="n">shape_check</span><span class="o">.</span><span class="n">finished</span><span class="p">:</span>
-            <span class="n">expected_rank</span> <span class="o">=</span> <span class="n">allocated_sizes</span><span class="p">[</span><span class="n">shape_check</span><span class="o">.</span><span class="n">expected_end</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>
+            <span class="n">expected_rank</span> <span class="o">=</span> <span class="n">allocated_sizes</span><span class="p">[</span><span class="n">allocated_i</span><span class="p">]</span>
             <span class="k">if</span> <span class="n">expected_rank</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="k">break</span>
 
@@ -718,6 +721,7 @@ function checkPageExistsAndRedirect(event) {
                     <span class="p">],</span>
                 <span class="p">)</span>
             <span class="p">)</span>
+            <span class="n">allocated_i</span> <span class="o">-=</span> <span class="mi">1</span>
             <span class="n">shape_check</span><span class="o">.</span><span class="n">actual_end</span> <span class="o">-=</span> <span class="n">expected_rank</span>
             <span class="n">shape_check</span><span class="o">.</span><span class="n">expected_end</span> <span class="o">-=</span> <span class="mi">1</span>
 
