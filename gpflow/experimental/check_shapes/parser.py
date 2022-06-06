@@ -384,6 +384,48 @@ class _RewritedocString(_TreeVisitor):
         out.append(trailing_str)
         return docs.meta.end_pos
 
+    def _insert_param_info_fields(
+        self,
+        is_first_info_field: bool,
+        spec_lines: Mapping[str, Sequence[str]],
+        out: List[str],
+        pos: int,
+    ) -> int:
+        leading_str = self._source[pos:].rstrip()
+        out.append(leading_str)
+        pos += len(leading_str)
+
+        if not self._source:
+            # Case where nothing preceeds these fields. Just write them.
+            needed_newlines = 0
+        elif is_first_info_field:
+            # Free-form documentation preceeds these fields. Have 2 newlines to separate them.
+            needed_newlines = 2
+        else:
+            # Another info-field preceeds these fields.
+            needed_newlines = 1
+
+        indent = self._indent or 0
+        indent_str = indent * " "
+        indent_one_str = 4 * " "
+
+        for arg_name, arg_lines in spec_lines.items():
+            out.append(needed_newlines * "\n")
+            needed_newlines = 1
+
+            out.append(indent_str)
+            if arg_name == RESULT_TOKEN:
+                out.append(":returns:")
+            else:
+                out.append(f":param {arg_name}:")
+            for arg_line in arg_lines:
+                out.append("\n")
+                out.append(indent_str)
+                out.append(indent_one_str)
+                out.append(arg_line)
+
+        return pos
+
     def docstring(self, tree: Tree[Token]) -> str:
         # The strategy here is:
         # * `out` contains a list of strings that will be concatenated and form the final result.
@@ -396,39 +438,62 @@ class _RewritedocString(_TreeVisitor):
         pos = 0
 
         if self._notes:
-            out.append(self._source[pos : docs.meta.end_pos])
-            pos = docs.meta.end_pos
+            if not docs.meta.empty:
+                out.append(self._source[pos : docs.meta.end_pos])
+                pos = docs.meta.end_pos
             indent = self._indent or 0
-            indent_str = "\n\n" + indent * " "
+            indent_str = indent * " "
             for note in self._notes:
+                if out:
+                    out.append("\n\n")
                 out.append(indent_str)
                 out.append(note)
 
         pos = self.visit(info_fields, out, pos)
         out.append(self._source[pos:])
+
         return "".join(out)
 
     def info_fields(self, tree: Tree[Token], out: List[str], pos: int) -> int:
+        spec_lines = dict(self._spec_lines)
+        is_first_info_field = True
         for child in _tree_children(tree):
-            pos = self.visit(child, out, pos)
+            # This will remove the self._spec_lines corresponding to found `:param:`'s.
+            pos = self.visit(child, spec_lines, out, pos)
+            is_first_info_field = False
+
+        # Add any remaining `:param:`s:
+        pos = self._insert_param_info_fields(is_first_info_field, spec_lines, out, pos)
+
+        # Make sure info fields are terminated by a new-line:
+        if self._spec_lines:
+            if (pos >= len(self._source)) or (self._source[pos] != "\n"):
+                out.append("\n")
+
         return pos
 
-    def info_field_param(self, tree: Tree[Token], out: List[str], pos: int) -> int:
+    def info_field_param(
+        self, tree: Tree[Token], spec_lines: Dict[str, Sequence[str]], out: List[str], pos: int
+    ) -> int:
         info_field_args, docs = _tree_children(tree)
         arg_name = self.visit(info_field_args)
-        spec_lines = self._spec_lines.get(arg_name, None)
-        if spec_lines:
-            pos = self._insert_spec_lines(out, pos, spec_lines, docs)
+        arg_lines = spec_lines.pop(arg_name, None)
+        if arg_lines:
+            pos = self._insert_spec_lines(out, pos, arg_lines, docs)
         return pos
 
-    def info_field_returns(self, tree: Tree[Token], out: List[str], pos: int) -> int:
+    def info_field_returns(
+        self, tree: Tree[Token], spec_lines: Dict[str, Sequence[str]], out: List[str], pos: int
+    ) -> int:
         (docs,) = _tree_children(tree)
-        spec_lines = self._spec_lines.get(RESULT_TOKEN, None)
-        if spec_lines:
-            pos = self._insert_spec_lines(out, pos, spec_lines, docs)
+        return_lines = spec_lines.pop(RESULT_TOKEN, None)
+        if return_lines:
+            pos = self._insert_spec_lines(out, pos, return_lines, docs)
         return pos
 
-    def info_field_other(self, tree: Tree[Token], out: List[str], pos: int) -> int:
+    def info_field_other(
+        self, tree: Tree[Token], spec_lines: Dict[str, Sequence[str]], out: List[str], pos: int
+    ) -> int:
         return pos
 
     def info_field_args(self, tree: Tree[Token]) -> str:

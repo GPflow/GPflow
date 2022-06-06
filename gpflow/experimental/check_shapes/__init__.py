@@ -403,8 +403,11 @@ Documenting shapes
 
 The :func:`check_shapes` decorator rewrites the docstring (``.__doc__``) of the decorated function
 to add information about shapes, in a format compatible with
-`Sphinx <https://www.sphinx-doc.org/en/master/>`_. Only parameters that already have a
-``:param ...:`` section will be modified.
+`Sphinx <https://www.sphinx-doc.org/en/master/>`_.
+
+Only functions that already have a docstring will be updated. Functions that have no docstring at
+all will not have one added, this is so that we do not override a docstring that would have been
+inherited from a super class.
 
 For example:
 

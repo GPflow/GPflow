@@ -730,7 +730,75 @@ _TEST_DATA = [
         None,
     ),
     TestData(
-        "partial_docstring",
+        "empty_docstring",
+        (
+            "a: [d1, d2]",
+            "b: [d1, d3]",
+            "return: [d2, d3]",
+        ),
+        ParsedFunctionSpec(
+            (
+                make_arg_spec(
+                    make_argument_ref("a"),
+                    make_shape_spec("d1", "d2"),
+                ),
+                make_arg_spec(
+                    make_argument_ref("b"),
+                    make_shape_spec("d1", "d3"),
+                ),
+                make_arg_spec(
+                    make_argument_ref("return"),
+                    make_shape_spec("d2", "d3"),
+                ),
+            ),
+            (),
+        ),
+        "",
+        """:param a:
+    * **a** has shape [*d1*, *d2*].
+:param b:
+    * **b** has shape [*d1*, *d3*].
+:returns:
+    * **return** has shape [*d2*, *d3*].
+""",
+    ),
+    TestData(
+        "no_params_doc",
+        (
+            "a: [d1, d2]",
+            "b: [d1, d3]",
+            "return: [d2, d3]",
+        ),
+        ParsedFunctionSpec(
+            (
+                make_arg_spec(
+                    make_argument_ref("a"),
+                    make_shape_spec("d1", "d2"),
+                ),
+                make_arg_spec(
+                    make_argument_ref("b"),
+                    make_shape_spec("d1", "d3"),
+                ),
+                make_arg_spec(
+                    make_argument_ref("return"),
+                    make_shape_spec("d2", "d3"),
+                ),
+            ),
+            (),
+        ),
+        """Some docstring.""",
+        """Some docstring.
+
+:param a:
+    * **a** has shape [*d1*, *d2*].
+:param b:
+    * **b** has shape [*d1*, *d3*].
+:returns:
+    * **return** has shape [*d2*, *d3*].
+""",
+    ),
+    TestData(
+        "partial_params_doc",
         (
             "a: [d1, d2]",
             "b: [d1, d3]",
@@ -761,6 +829,10 @@ _TEST_DATA = [
             * **b** has shape [*d1*, *d3*].
 
             Parameter b.
+        :param a:
+            * **a** has shape [*d1*, *d2*].
+        :returns:
+            * **return** has shape [*d2*, *d3*].
         """,
     ),
     TestData(
@@ -791,7 +863,12 @@ _TEST_DATA = [
         """:param b:
     * **b** has shape [*d1*, *d3*].
 
-    Parameter b.""",
+    Parameter b.
+:param a:
+    * **a** has shape [*d1*, *d2*].
+:returns:
+    * **return** has shape [*d2*, *d3*].
+""",
     ),
     TestData(
         "other_info_fields",
@@ -837,6 +914,42 @@ _TEST_DATA = [
 
             Some description of the return type.
         :rtype: TensorType
+        """,
+    ),
+    TestData(
+        "only_other_info_fields",
+        (
+            "a: [batch..., n_features]",
+            "return: [batch..., 1]",
+        ),
+        ParsedFunctionSpec(
+            (
+                make_arg_spec(
+                    make_argument_ref("a"),
+                    make_shape_spec(varrank("batch"), "n_features"),
+                ),
+                make_arg_spec(
+                    make_argument_ref("return"),
+                    make_shape_spec(varrank("batch"), 1),
+                ),
+            ),
+            (),
+        ),
+        """
+        :meta: Blah blah.
+        :type a: TensorType
+        :meta: More chaff.
+        :rtype: TensorType
+        """,
+        """
+        :meta: Blah blah.
+        :type a: TensorType
+        :meta: More chaff.
+        :rtype: TensorType
+        :param a:
+            * **a** has shape [*batch*..., *n_features*].
+        :returns:
+            * **return** has shape [*batch*..., 1].
         """,
     ),
     TestData(
@@ -1087,7 +1200,8 @@ _TEST_DATA = [
         * **return[0]** has shape [*test_batch*..., *n_labels*].
         * **return[1]** has shape [*test_batch*..., *n_labels*].
 
-        Model mean and variance prediction.""",
+        Model mean and variance prediction.
+""",
     ),
     TestData(
         "funny_formatting_4",
@@ -1156,7 +1270,8 @@ And some more comment.
 * **return[0]** has shape [*test_batch*..., *n_labels*].
 * **return[1]** has shape [*test_batch*..., *n_labels*].
 
-Model mean and variance prediction.""",
+Model mean and variance prediction.
+""",
     ),
 ]
 
