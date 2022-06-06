@@ -48,7 +48,6 @@ from .error_contexts import (
     LarkUnexpectedInputContext,
     MultipleElementBoolContext,
     StackContext,
-    TrailingBroadcastVarrankContext,
 )
 from .exceptions import CheckShapesError, DocstringParseError, SpecificationParseError
 from .specs import (
@@ -200,13 +199,6 @@ class _ParseSpec(_TreeVisitor):
         (dimension_spec,) = _tree_children(tree)
         child = self.visit(dimension_spec, i)
         assert isinstance(child, ParsedDimensionSpec)
-        if i > 0 and child.variable_rank:
-            meta = dimension_spec.meta
-            raise SpecificationParseError(
-                TrailingBroadcastVarrankContext(
-                    self._source, meta.line, meta.column, child.variable_name
-                )
-            )
         return replace(child, broadcastable=True)
 
     def dimension_spec_constant(self, tree: Tree[Token], i: int) -> ParsedDimensionSpec:

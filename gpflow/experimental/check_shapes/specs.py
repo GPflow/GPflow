@@ -67,12 +67,6 @@ class ParsedDimensionSpec:
 class ParsedShapeSpec:
     dims: Tuple[ParsedDimensionSpec, ...]
 
-    def __post_init__(self) -> None:
-        for dim in self.dims[1:]:
-            assert (not dim.broadcastable) or (
-                not dim.variable_rank
-            ), f"Only leading variable-rank dimensions can be broadcast. Found {self}."
-
     def __repr__(self) -> str:
         dims = [repr(dim) for dim in self.dims]
         return f"[{', '.join(dims)}]"

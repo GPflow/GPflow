@@ -597,23 +597,6 @@ class LarkUnexpectedInputContext(ParserInputContext):
 
 
 @dataclass(frozen=True)
-class TrailingBroadcastVarrankContext(ParserInputContext):
-    """
-    An error was caused by trying to broadcast a trailing variable-rank variable.
-    """
-
-    line: int
-    column: int
-    variable: Optional[str]
-
-    def print(self, builder: MessageBuilder) -> None:
-        self.print_line(builder, self.line, self.column)
-        if self.variable is not None:
-            builder.add_columned_line("Variable", self.variable)
-        builder.add_line("Broadcasting not supported for non-leading variable-rank variables.")
-
-
-@dataclass(frozen=True)
 class MultipleElementBoolContext(ParserInputContext):
     """
     An error was caused by trying to use a multi-element argument specification as a bool.

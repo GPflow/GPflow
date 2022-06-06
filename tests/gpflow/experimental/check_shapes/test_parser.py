@@ -1279,18 +1279,6 @@ Unable to parse shape specification.
 """,
         ),
         (
-            "a: [x, broadcast y..., z]",
-            """
-Unable to parse shape specification.
-  check_shapes called at: __check_shapes_path_and_line__
-    Argument number (0-indexed): 0
-      Line:    "a: [x, broadcast y..., z]"
-                                 ^
-      Variable y
-      Broadcasting not supported for non-leading variable-rank variables.
-""",
-        ),
-        (
             "a: [x] if b[all]",
             """
 Unable to parse shape specification.
