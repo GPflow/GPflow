@@ -19,6 +19,8 @@ import tensorflow as tf
 
 from ..base import Parameter, TensorType
 from ..config import default_float
+from ..experimental.check_shapes import check_shape as cs
+from ..experimental.check_shapes import check_shapes, inherit_check_shapes
 from ..utilities import to_default_float
 from .base import Kernel
 
@@ -37,6 +39,11 @@ class Convolutional(Kernel):
     The key reference is :cite:t:`vdw2017convgp`.
     """
 
+    @check_shapes(
+        "image_shape: [2]",
+        "patch_shape: [2]",
+        "weights: [P]",
+    )
     def __init__(
         self,
         base_kernel: Kernel,
@@ -54,49 +61,111 @@ class Convolutional(Kernel):
             np.ones(self.num_patches, dtype=default_float()) if weights is None else weights
         )
 
-    # @lru_cache() -- Can we do some kind of memoizing with TF2?
+    @check_shapes(
+        "X: [batch..., N, D]",
+        "return: [batch..., N, P, S]",
+    )
     def get_patches(self, X: TensorType) -> tf.Tensor:
         """
         Extracts patches from the images X. Patches are extracted separately for each of the colour
         channels.
 
-        :param X: (N x input_dim)
-        :return: Patches (N, num_patches, patch_shape)
+        :param X: Images.
+        :return: Patches.
         """
         # Roll the colour channel to the front, so it appears to
         # `tf.extract_image_patches()` as separate images. Then extract patches
         # and reshape to have the first axis the same as the number of images.
         # The separate patches will then be in the second axis.
-        num_data = tf.shape(X)[0]
-        castX = tf.transpose(tf.reshape(X, [num_data, -1, self.colour_channels]), [0, 2, 1])
-        patches = tf.image.extract_patches(
-            tf.reshape(castX, [-1, self.image_shape[0], self.image_shape[1], 1], name="rX"),
-            [1, self.patch_shape[0], self.patch_shape[1], 1],
-            [1, 1, 1, 1],
-            [1, 1, 1, 1],
-            "VALID",
+        batch = tf.shape(X)[:-2]
+        N = tf.shape(X)[-2]
+        D = tf.shape(X)[-1]
+        flat_batch = tf.reduce_prod(batch)
+        num_data = tf.reduce_prod(batch) * N
+        X = cs(
+            tf.transpose(tf.reshape(X, [num_data, -1, self.colour_channels]), [0, 2, 1]),
+            "[C, num_data, W_x_H]",
         )
-        shp = tf.shape(patches)  # img x out_rows x out_cols
-        reshaped_patches = tf.reshape(
-            patches, [num_data, self.colour_channels * shp[1] * shp[2], shp[3]]
+        X = cs(
+            tf.reshape(X, [-1, self.image_shape[0], self.image_shape[1], 1], name="rX"),
+            "[C_x_num_data, W, H, 1]",
+        )
+        patches = cs(
+            tf.image.extract_patches(
+                X,
+                [1, self.patch_shape[0], self.patch_shape[1], 1],
+                [1, 1, 1, 1],
+                [1, 1, 1, 1],
+                "VALID",
+            ),
+            "[C_x_num_data, n_x_patches, n_y_patches, S]",
+        )
+        shp = tf.shape(patches)
+        reshaped_patches = cs(
+            tf.reshape(
+                patches, tf.concat([batch, [N, self.colour_channels * shp[1] * shp[2], shp[3]]], 0)
+            ),
+            "[batch..., N, P, S]",
         )
         return to_default_float(reshaped_patches)
 
+    @inherit_check_shapes
     def K(self, X: TensorType, X2: Optional[TensorType] = None) -> tf.Tensor:
-        Xp = self.get_patches(X)  # [N, P, patch_len]
-        Xp2 = Xp if X2 is None else self.get_patches(X2)
+        Xp = cs(self.get_patches(X), "[batch..., N, P, S]")
+        W2 = cs(self.weights[:, None] * self.weights[None, :], "[P, P]")
 
-        bigK = self.base_kernel.K(Xp, Xp2)  # [N, num_patches, N, num_patches]
+        rank = tf.rank(Xp) - 3
+        batch = tf.shape(Xp)[:-3]
+        N = tf.shape(Xp)[-3]
+        P = tf.shape(Xp)[-2]
+        S = tf.shape(Xp)[-1]
+        ones = tf.ones((rank,), dtype=tf.int32)
 
-        W2 = self.weights[:, None] * self.weights[None, :]  # [P, P]
-        W2bigK = bigK * W2[None, :, None, :]
-        return tf.reduce_sum(W2bigK, [1, 3]) / self.num_patches ** 2.0
+        if X2 is None:
+            Xp = cs(tf.reshape(Xp, tf.concat([batch, [N * P, S]], 0)), "[batch..., N_x_P, S]")
+            bigK = cs(self.base_kernel.K(Xp), "[batch..., N_x_P, N_x_P]")
+            bigK = cs(
+                tf.reshape(bigK, tf.concat([batch, [N, P, N, P]], 0)), "[batch..., N, P, N, P]"
+            )
+            W2 = cs(tf.reshape(W2, tf.concat([ones, [1, P, 1, P]], 0)), "[..., 1, P, 1, P]")
+            W2bigK = cs(bigK * W2, "[batch..., N, P, N, P]")
+            return cs(
+                tf.reduce_sum(W2bigK, [rank + 1, rank + 3]) / self.num_patches ** 2.0,
+                "[batch..., N, N]",
+            )
 
+        else:
+            Xp2 = Xp if X2 is None else cs(self.get_patches(X2), "[batch2..., N2, P, S]")
+            rank2 = tf.rank(Xp2) - 3
+            ones2 = tf.ones((rank2,), dtype=tf.int32)
+            bigK = cs(self.base_kernel.K(Xp, Xp2), "[batch..., N, P, batch2..., N2, P]")
+            W2 = cs(
+                tf.reshape(W2, tf.concat([ones, [1, P], ones2, [1, P]], 0)),
+                "[..., 1, P, ..., 1, P]",
+            )
+            W2bigK = cs(bigK * W2, "[batch..., N, P, batch2..., N2, P]")
+            return cs(
+                tf.reduce_sum(W2bigK, [rank + 1, rank + rank2 + 3]) / self.num_patches ** 2.0,
+                "[batch..., N, batch2..., N2]",
+            )
+
+    @inherit_check_shapes
     def K_diag(self, X: TensorType) -> tf.Tensor:
-        Xp = self.get_patches(X)  # N x num_patches x patch_dim
-        W2 = self.weights[:, None] * self.weights[None, :]  # [P, P]
-        bigK = self.base_kernel.K(Xp)  # [N, P, P]
-        return tf.reduce_sum(bigK * W2[None, :, :], [1, 2]) / self.num_patches ** 2.0
+        Xp = cs(self.get_patches(X), "[batch..., N, P, S]")
+
+        rank = tf.rank(Xp) - 3
+        batch = tf.shape(Xp)[:-3]
+        N = tf.shape(Xp)[-3]
+        P = tf.shape(Xp)[-2]
+        S = tf.shape(Xp)[-1]
+        ones = tf.ones((rank,), dtype=tf.int32)
+
+        W2 = cs(self.weights[:, None] * self.weights[None, :], "[P, P]")
+        W2 = cs(tf.reshape(W2, tf.concat([ones, [1, P, P]], 0)), "[..., 1, P, P]")
+
+        bigK = cs(self.base_kernel.K(Xp), "[batch..., N, P, P]")
+
+        return tf.reduce_sum(bigK * W2, [rank + 1, rank + 2]) / self.num_patches ** 2.0
 
     @property
     def patch_len(self) -> int:

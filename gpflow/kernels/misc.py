@@ -18,6 +18,8 @@ import numpy as np
 import tensorflow as tf
 
 from ..base import AnyNDArray, Parameter, TensorType
+from ..experimental.check_shapes import check_shape as cs
+from ..experimental.check_shapes import check_shapes, inherit_check_shapes
 from ..utilities import positive, to_default_float
 from .base import ActiveDims, Kernel
 
@@ -34,6 +36,11 @@ class ArcCosine(Kernel):
 
     implemented_orders = {0, 1, 2}
 
+    @check_shapes(
+        "variance: []",
+        "weight_variances: [broadcast n_active_dims]",
+        "bias_variance: []",
+    )
     def __init__(
         self,
         order: int = 0,
@@ -74,13 +81,66 @@ class ArcCosine(Kernel):
         ndims: int = self.weight_variances.shape.ndims
         return ndims > 0
 
-    def _weighted_product(self, X: TensorType, X2: Optional[TensorType] = None) -> tf.Tensor:
-        if X2 is None:
-            return tf.reduce_sum(self.weight_variances * tf.square(X), axis=1) + self.bias_variance
-        return (
-            tf.linalg.matmul((self.weight_variances * X), X2, transpose_b=True) + self.bias_variance
-        )
+    @check_shapes(
+        "X: [batch..., N, D]",
+        "return: [batch..., N]",
+    )
+    def _diag_weighted_product(self, X: TensorType) -> tf.Tensor:
+        return tf.reduce_sum(self.weight_variances * tf.square(X), axis=-1) + self.bias_variance
 
+    @check_shapes(
+        "X: [batch..., N, D]",
+        "X2: [batch2..., N2, D]",
+        "return: [batch..., N, batch2..., N2] if X2 is not None",
+        "return: [batch..., N, N] if X2 is None",
+    )
+    def _full_weighted_product(self, X: TensorType, X2: Optional[TensorType]) -> tf.Tensor:
+        if X2 is None:
+            return (
+                tf.linalg.matmul((self.weight_variances * X), X, transpose_b=True)
+                + self.bias_variance
+            )
+
+        else:
+            D = tf.shape(X)[-1]
+            N = tf.shape(X)[-2]
+            N2 = tf.shape(X2)[-2]
+            batch = tf.shape(X)[:-2]
+            batch2 = tf.shape(X2)[:-2]
+            rank = tf.rank(X) - 2
+            rank2 = tf.rank(X2) - 2
+            ones = tf.ones((rank,), tf.int32)
+            ones2 = tf.ones((rank2,), tf.int32)
+
+            X = cs(
+                tf.reshape(X, tf.concat([batch, ones2, [N, D]], 0)),
+                "[batch..., broadcast batch2..., N, D]",
+            )
+            X2 = cs(
+                tf.reshape(X2, tf.concat([ones, batch2, [N2, D]], 0)),
+                "[broadcast batch..., batch2..., N2, D]",
+            )
+            result = cs(
+                tf.linalg.matmul((self.weight_variances * X), X2, transpose_b=True)
+                + self.bias_variance,
+                "[batch..., batch2..., N, N2]",
+            )
+
+            indices = tf.concat(
+                [
+                    tf.range(rank),
+                    [rank + rank2],
+                    tf.range(rank2) + rank,
+                    [rank + rank2 + 1],
+                ],
+                axis=0,
+            )
+            return tf.transpose(result, indices)
+
+    @check_shapes(
+        "theta: [any...]",
+        "return: [any...]",
+    )
     def _J(self, theta: TensorType) -> TensorType:
         """
         Implements the order dependent family of functions defined in equations
@@ -96,16 +156,32 @@ class ArcCosine(Kernel):
                 1.0 + 2.0 * tf.cos(theta) ** 2
             )
 
+    @inherit_check_shapes
     def K(self, X: TensorType, X2: Optional[TensorType] = None) -> tf.Tensor:
-        X_denominator = tf.sqrt(self._weighted_product(X))
+        X_denominator = cs(tf.sqrt(self._diag_weighted_product(X)), "[batch..., N]")
         if X2 is None:
-            X2 = X
-            X2_denominator = X_denominator
+            X2_denominator = cs(X_denominator[..., None, :], "[batch..., 1, N]")
+            X_denominator = cs(X_denominator[..., :, None], "[batch..., N, 1]")
+            numerator = cs(self._full_weighted_product(X, None), "[batch..., N, N]")
         else:
-            X2_denominator = tf.sqrt(self._weighted_product(X2))
+            X2_denominator = cs(tf.sqrt(self._diag_weighted_product(X2)), "[batch2..., N2]")
 
-        numerator = self._weighted_product(X, X2)
-        cos_theta = numerator / X_denominator[:, None] / X2_denominator[None, :]
+            batch = tf.shape(X)[:-1]
+            batch2 = tf.shape(X2)[:-1]
+            ones = tf.ones((tf.rank(X) - 1,), tf.int32)
+            ones2 = tf.ones((tf.rank(X2) - 1,), tf.int32)
+
+            X_denominator = cs(
+                tf.reshape(X_denominator, tf.concat([batch, ones2], 0)),
+                "[batch..., N, broadcast batch2..., 1]",
+            )
+            X2_denominator = cs(
+                tf.reshape(X2_denominator, tf.concat([ones, batch2], 0)),
+                "[broadcast batch..., 1, batch2..., N2]",
+            )
+            numerator = cs(self._full_weighted_product(X, X2), "[batch..., N, batch2..., N2]")
+
+        cos_theta = numerator / X_denominator / X2_denominator
         jitter = 1e-15
         theta = tf.acos(jitter + (1 - 2 * jitter) * cos_theta)
 
@@ -113,12 +189,13 @@ class ArcCosine(Kernel):
             self.variance
             * (1.0 / np.pi)
             * self._J(theta)
-            * X_denominator[:, None] ** self.order
-            * X2_denominator[None, :] ** self.order
+            * X_denominator ** self.order
+            * X2_denominator ** self.order
         )
 
+    @inherit_check_shapes
     def K_diag(self, X: TensorType) -> tf.Tensor:
-        X_product = self._weighted_product(X)
+        X_product = self._diag_weighted_product(X)
         const = (1.0 / np.pi) * self._J(to_default_float(0.0))
         return self.variance * const * X_product ** self.order
 
@@ -171,33 +248,54 @@ class Coregion(Kernel):
         self.W = Parameter(W)
         self.kappa = Parameter(kappa, transform=positive())
 
+    @check_shapes(
+        "return: [P, P]",
+    )
     def output_covariance(self) -> tf.Tensor:
         B = tf.linalg.matmul(self.W, self.W, transpose_b=True) + tf.linalg.diag(self.kappa)
         return B
 
+    @check_shapes(
+        "return: [P]",
+    )
     def output_variance(self) -> tf.Tensor:
         B_diag = tf.reduce_sum(tf.square(self.W), 1) + self.kappa
         return B_diag
 
+    @inherit_check_shapes
     def K(self, X: TensorType, X2: Optional[TensorType] = None) -> tf.Tensor:
-        shape_constraints = [
-            (X, [..., "N", 1]),
-        ]
-        if X2 is not None:
-            shape_constraints.append((X2, [..., "M", 1]))
-        tf.debugging.assert_shapes(shape_constraints)
+        cs(X, "[batch..., N, 1]  # The `Coregion` kernel requires a 1D input space.")
 
-        X = tf.cast(X[..., 0], tf.int32)
+        B = cs(self.output_covariance(), "[O, O]")
+        X = cs(tf.cast(X[..., 0], tf.int32), "[batch..., N]")
         if X2 is None:
-            X2 = X
+            rank = tf.rank(X) - 1
+            batch = tf.shape(X)[:-1]
+            N = tf.shape(X)[-1]
+            O = tf.shape(B)[-1]
+
+            result = cs(tf.gather(B, X), "[batch..., N, O]")
+            result = cs(tf.reshape(result, [-1, N, O]), "[flat_batch, N, O]")
+            flat_X = cs(tf.reshape(X, [-1, N]), "[flat_batch, N]")
+            result = cs(tf.gather(result, flat_X, axis=2, batch_dims=1), "[flat_batch, N, N]")
+            result = cs(tf.reshape(result, tf.concat([batch, [N, N]], 0)), "[batch..., N, N]")
         else:
-            X2 = tf.cast(X2[..., 0], tf.int32)
+            X2 = cs(tf.cast(X2[..., 0], tf.int32), "[batch2..., N2]")
 
-        B = self.output_covariance()
-        return tf.gather(tf.transpose(tf.gather(B, X2)), X)
+            rank2 = tf.rank(X2)
 
+            result = cs(tf.gather(B, X2), "[batch2..., N2, O]")
+            result = cs(
+                tf.transpose(result, tf.concat([[rank2], tf.range(rank2)], 0)), "[O, batch2..., N2]"
+            )
+            result = cs(tf.gather(result, X), "[batch..., N, batch2..., N2]")
+
+        return result
+
+    @inherit_check_shapes
     def K_diag(self, X: TensorType) -> tf.Tensor:
-        tf.debugging.assert_shapes([(X, [..., "N", 1])])
+        cs(X, "[batch..., N, 1]  # The `Coregion` kernel requires a 1D input space.")
+
         X = tf.cast(X[..., 0], tf.int32)
         B_diag = self.output_variance()
         return tf.gather(B_diag, X)

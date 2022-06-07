@@ -113,9 +113,10 @@ def broadcasting_elementwise(
 
 
 @check_shapes(
-    "X: [batch..., D]",
-    "X2: [batch2..., D]",
-    "return: [batch..., batch2...]",
+    "X: [batch..., N, D]",
+    "X2: [batch2..., N2, D]",
+    "return: [batch..., N, batch2..., N2] if X2 is not None",
+    "return: [batch..., N, N] if X2 is None",
 )
 def square_distance(X: tf.Tensor, X2: Optional[tf.Tensor]) -> tf.Tensor:
     """
@@ -124,12 +125,6 @@ def square_distance(X: tf.Tensor, X2: Optional[tf.Tensor]) -> tf.Tensor:
     Due to the implementation and floating-point imprecision, the
     result may actually be very slightly negative for entries very
     close to each other.
-
-    This function can deal with leading dimensions in X and X2.
-    In the sample case, where X and X2 are both 2 dimensional,
-    for example, X is [N, D] and X2 is [M, D], then a tensor of shape
-    [N, M] is returned. If X is [N1, S1, D] and X2 is [N2, S2, D]
-    then the output will be [N1, S1, N2, S2].
     """
     if X2 is None:
         Xs = tf.reduce_sum(tf.square(X), axis=-1, keepdims=True)
@@ -144,19 +139,14 @@ def square_distance(X: tf.Tensor, X2: Optional[tf.Tensor]) -> tf.Tensor:
 
 
 @check_shapes(
-    "X: [batch..., D]",
-    "X2: [batch2..., D]",
-    "return: [batch..., batch2..., D]",
+    "X: [batch..., N, D]",
+    "X2: [batch2..., N2, D]",
+    "return: [batch..., N, batch2..., N2, D] if X2 is not None",
+    "return: [batch..., N, N, D] if X2 is None",
 )
 def difference_matrix(X: tf.Tensor, X2: Optional[tf.Tensor]) -> tf.Tensor:
     """
     Returns (X - X2ᵀ)
-
-    This function can deal with leading dimensions in X and X2.
-    For example, If X has shape [M, D] and X2 has shape [N, D],
-    the output will have shape [M, N, D]. If X has shape [I, J, M, D]
-    and X2 has shape [K, L, N, D], the output will have shape
-    [I, J, M, K, L, N, D].
     """
     if X2 is None:
         X2 = X

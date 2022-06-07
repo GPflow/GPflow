@@ -22,6 +22,7 @@ from numpy.testing import assert_allclose
 import gpflow.ci_utils
 from gpflow.base import AnyNDArray, TensorType
 from gpflow.config import default_float
+from gpflow.experimental.check_shapes import check_shapes
 from gpflow.kernels import (
     RBF,
     AnisotropicStationary,
@@ -53,6 +54,11 @@ from tests.gpflow.kernels.reference import ref_arccosine_kernel, ref_periodic_ke
 rng = np.random.RandomState(1)
 
 
+@check_shapes(
+    "X: [N, D]",
+    "locations: [L]",
+    "steepness: [broadcast L]",
+)
 def _ref_changepoints(
     X: AnyNDArray,
     kernels: Sequence[Kernel],
@@ -106,6 +112,12 @@ def test_rq_1d(variance: TensorType, lengthscales: TensorType) -> None:
     assert_allclose(gram_matrix_SE, gram_matrix_RQ)
 
 
+@check_shapes(
+    "variance: []",
+    "weight_variances: [broadcast n_active_dims]",
+    "bias_variance: []",
+    "X: [N, D]",
+)
 def _assert_arccosine_kern_err(
     variance: TensorType,
     weight_variances: TensorType,
@@ -514,6 +526,11 @@ def test_changepoints_init_fail(
         ChangePoints(kernels, locations, steepness)
 
 
+@check_shapes(
+    "X: [N, D]",
+    "locations: [L]",
+    "steepness: [broadcast L]",
+)
 def _assert_changepoints_kern_err(
     X: TensorType,
     kernels: Sequence[Kernel],
