@@ -20,11 +20,22 @@ from .. import covariances, mean_functions
 from ..base import MeanAndVariance
 from ..config import default_float, default_jitter
 from ..expectations import expectation
+from ..experimental.check_shapes import check_shapes
 from ..inducing_variables import InducingPoints, InducingVariables
 from ..kernels import Kernel
 from ..probability_distributions import Gaussian
 
 
+@check_shapes(
+    "Xnew_mu: [batch..., N, Din]",
+    "Xnew_var: [batch..., N, n, n]",
+    "inducing_variable: [M, Din, broadcast t]",
+    "q_mu: [M, Dout]",
+    "q_sqrt: [t, M, M]",
+    "return[0]: [batch..., N, Dout]",
+    "return[1]: [batch..., N, t, t] if full_output_cov",
+    "return[1]: [batch..., N, Dout] if not full_output_cov",
+)
 def uncertain_conditional(
     Xnew_mu: tf.Tensor,
     Xnew_var: tf.Tensor,
@@ -42,18 +53,16 @@ def uncertain_conditional(
     Calculates the conditional for uncertain inputs Xnew, p(Xnew) = N(Xnew_mu, Xnew_var).
     See ``conditional`` documentation for further reference.
 
-    :param Xnew_mu: mean of the inputs, size [N, D]in
-    :param Xnew_var: covariance matrix of the inputs, size [N, n, n]
+    :param Xnew_mu: mean of the inputs
+    :param Xnew_var: covariance matrix of the inputs
     :param inducing_variable: gpflow.InducingVariable object, only InducingPoints is supported
     :param kernel: gpflow kernel object.
-    :param q_mu: mean inducing points, size [M, Dout]
-    :param q_sqrt: cholesky of the covariance matrix of the inducing points, size [t, M, M]
+    :param q_mu: mean inducing points
+    :param q_sqrt: cholesky of the covariance matrix of the inducing points
     :param full_output_cov: boolean wheter to compute covariance between output dimension.
         Influences the shape of return value ``fvar``. Default is False
     :param white: boolean whether to use whitened representation. Default is False.
-    :return fmean, fvar: mean and covariance of the conditional, size ``fmean`` is [N, Dout],
-        size ``fvar`` depends on ``full_output_cov``: if True ``f_var`` is [N, t, t],
-        if False then ``f_var`` is [N, Dout]
+    :return fmean, fvar: mean and covariance of the conditional
     """
 
     if not isinstance(inducing_variable, InducingPoints):

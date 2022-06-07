@@ -17,6 +17,7 @@ from typing import Optional
 import tensorflow as tf
 
 from ..base import SamplesMeanAndVariance
+from ..experimental.check_shapes import check_shapes
 from ..inducing_variables import InducingVariables
 from ..kernels import Kernel
 from .dispatch import conditional, sample_conditional
@@ -25,6 +26,17 @@ from .util import sample_mvn
 
 @sample_conditional.register(object, object, Kernel, object)
 @sample_conditional.register(object, InducingVariables, Kernel, object)
+@check_shapes(
+    "Xnew: [batch..., N, D]",
+    "inducing_variable: [M, D, maybe_R...]",
+    "f: [M, R]",
+    "return[0]: [batch..., N, R] if num_samples is None",
+    "return[0]: [batch..., num_samples, N, R] if num_samples is not None",
+    "return[1]: [batch..., N, R]",
+    "return[2]: [batch..., N, R] if (not full_cov) and (not full_output_cov)",
+    "return[2]: [batch..., R, N, N] if full_cov and (not full_output_cov)",
+    "return[2]: [batch..., N, R, R] if (not full_cov) and full_output_cov",
+)
 def _sample_conditional(
     Xnew: tf.Tensor,
     inducing_variable: InducingVariables,
@@ -45,8 +57,6 @@ def _sample_conditional(
     The dispatcher will make sure that we use the most efficient one.
 
     :return: samples, mean, cov
-        samples has shape [num_samples, N, P] or [N, P] if num_samples is None
-        mean and cov as for conditional()
     """
 
     if full_cov and full_output_cov:

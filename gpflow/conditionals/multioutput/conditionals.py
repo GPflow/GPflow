@@ -17,6 +17,7 @@ from typing import Optional
 import tensorflow as tf
 
 from ...base import MeanAndVariance
+from ...experimental.check_shapes import check_shapes
 from ...inducing_variables import (
     FallbackSeparateIndependentInducingVariables,
     FallbackSharedIndependentInducingVariables,
@@ -43,6 +44,17 @@ from ..dispatch import conditional
 
 @conditional._gpflow_internal_register(
     object, SharedIndependentInducingVariables, SharedIndependent, object
+)
+@check_shapes(
+    "Xnew: [batch..., N, D]",
+    "inducing_variable: [M, D, broadcast L]",
+    "f: [M, L]",
+    "q_sqrt: [M_L_or_L_M_M...]",
+    "return[0]: [batch..., N, P]",
+    "return[1]: [batch..., N, P] if (not full_cov) and (not full_output_cov)",
+    "return[1]: [batch..., P, N, N] if full_cov and (not full_output_cov)",
+    "return[1]: [batch..., N, P, P] if (not full_cov) and full_output_cov",
+    "return[1]: [batch..., N, P, N, P] if full_cov and full_output_cov",
 )
 def shared_independent_conditional(
     Xnew: tf.Tensor,
@@ -106,6 +118,17 @@ def shared_independent_conditional(
 @conditional._gpflow_internal_register(
     object, SeparateIndependentInducingVariables, SharedIndependent, object
 )
+@check_shapes(
+    "Xnew: [batch..., N, D]",
+    "inducing_variable: [M, D, broadcast L]",
+    "f: [M, L]",
+    "q_sqrt: [M_L_or_L_M_M...]",
+    "return[0]: [batch..., N, P]",
+    "return[1]: [batch..., N, P] if (not full_cov) and (not full_output_cov)",
+    "return[1]: [batch..., P, N, N] if full_cov and (not full_output_cov)",
+    "return[1]: [batch..., N, P, P] if (not full_cov) and full_output_cov",
+    "return[1]: [batch..., N, P, N, P] if full_cov and full_output_cov",
+)
 def separate_independent_conditional(
     Xnew: tf.Tensor,
     inducing_variable: MultioutputInducingVariables,
@@ -134,6 +157,17 @@ def separate_independent_conditional(
     (FallbackSharedIndependentInducingVariables, FallbackSeparateIndependentInducingVariables),
     IndependentLatent,
     object,
+)
+@check_shapes(
+    "Xnew: [batch..., N, D]",
+    "inducing_variable: [M, D, broadcast L]",
+    "f: [M, L]",
+    "q_sqrt: [M_L_or_L_M_M...]",
+    "return[0]: [batch..., N, P]",
+    "return[1]: [batch..., N, P] if (not full_cov) and (not full_output_cov)",
+    "return[1]: [batch..., P, N, N] if full_cov and (not full_output_cov)",
+    "return[1]: [batch..., N, P, P] if (not full_cov) and full_output_cov",
+    "return[1]: [batch..., N, P, N, P] if full_cov and full_output_cov",
 )
 def fallback_independent_latent_conditional(
     Xnew: tf.Tensor,
@@ -173,6 +207,17 @@ def fallback_independent_latent_conditional(
 
 
 @conditional._gpflow_internal_register(object, InducingPoints, MultioutputKernel, object)
+@check_shapes(
+    "Xnew: [batch..., N, D]",
+    "inducing_variable: [M, D, broadcast L]",
+    "f: [L, 1]",
+    "q_sqrt: [L_1_or_1_L_L...]",
+    "return[0]: [batch..., N, P]",
+    "return[1]: [batch..., N, P] if (not full_cov) and (not full_output_cov)",
+    "return[1]: [batch..., P, N, N] if full_cov and (not full_output_cov)",
+    "return[1]: [batch..., N, P, P] if (not full_cov) and full_output_cov",
+    "return[1]: [batch..., N, P, N, P] if full_cov and full_output_cov",
+)
 def inducing_point_conditional(
     Xnew: tf.Tensor,
     inducing_variable: InducingPoints,
@@ -218,6 +263,17 @@ def inducing_point_conditional(
     (SharedIndependentInducingVariables, SeparateIndependentInducingVariables),
     LinearCoregionalization,
     object,
+)
+@check_shapes(
+    "Xnew: [batch..., N, D]",
+    "inducing_variable: [M, D, broadcast L]",
+    "f: [M, L]",
+    "q_sqrt: [M_L_or_L_M_M...]",
+    "return[0]: [batch..., N, P]",
+    "return[1]: [batch..., N, P] if (not full_cov) and (not full_output_cov)",
+    "return[1]: [batch..., P, N, N] if full_cov and (not full_output_cov)",
+    "return[1]: [batch..., N, P, P] if (not full_cov) and full_output_cov",
+    "return[1]: [batch..., N, P, N, P] if full_cov and full_output_cov",
 )
 def coregionalization_conditional(
     Xnew: tf.Tensor,

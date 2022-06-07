@@ -21,6 +21,7 @@ import tensorflow_probability as tfp
 from typing_extensions import Final
 
 from .config import default_float, default_summary_fmt
+from .experimental.check_shapes import check_shapes
 from .type_flags import GENERIC_NP_ARRAYS, NP_TYPE_CHECKING
 
 if TYPE_CHECKING:  # pragma: no cover
@@ -180,6 +181,7 @@ class Parameter(tfp.util.TransformedVariable):
         self.prior: Optional[Prior] = prior
         self.prior_on = prior_on  # type: ignore  # see https://github.com/python/mypy/issues/3004
 
+    @check_shapes("return: []")
     def log_prior_density(self) -> tf.Tensor:
         """ Log of the prior probability density of the constrained variable. """
 

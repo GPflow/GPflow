@@ -23,6 +23,7 @@ import gpflow
 from gpflow.base import AnyNDArray, MeanAndVariance
 from gpflow.conditionals import conditional, uncertain_conditional
 from gpflow.config import default_float
+from gpflow.experimental.check_shapes import ShapeChecker, check_shapes
 from gpflow.mean_functions import Constant, Linear, MeanFunction, Zero
 from gpflow.quadrature import mvnquad
 from gpflow.utilities import training_loop
@@ -35,6 +36,16 @@ rng = np.random.RandomState(1)
 
 
 class MomentMatchingSVGP(gpflow.models.SVGP):
+    @check_shapes(
+        "Xmu: [batch..., N, Din]",
+        "Xcov: [batch..., N, n, n]",
+        "self.inducing_variable: [M, Din, broadcast t]",
+        "self.q_mu: [M, Dout]",
+        "self.q_sqrt: [t, M, M]",
+        "return[0]: [batch..., N, Dout]",
+        "return[1]: [batch..., N, t, t] if self.full_output_cov",
+        "return[1]: [batch..., N, Dout] if not self.full_output_cov",
+    )
     def uncertain_predict_f_moment_matching(
         self, Xmu: tf.Tensor, Xcov: tf.Tensor
     ) -> MeanAndVariance:
@@ -50,6 +61,13 @@ class MomentMatchingSVGP(gpflow.models.SVGP):
             full_output_cov=self.full_output_cov,
         )
 
+    @check_shapes(
+        "Xmu: [Din]",
+        "Xchol: [n, n]",
+        "return[0]: [Dout]",
+        "return[1]: [t, t] if self.full_output_cov",
+        "return[1]: [Dout] if not self.full_output_cov",
+    )
     def uncertain_predict_f_monte_carlo(
         self, Xmu: tf.Tensor, Xchol: tf.Tensor, mc_iter: int = int(1e6)
     ) -> MeanAndVariance:
@@ -64,6 +82,9 @@ class MomentMatchingSVGP(gpflow.models.SVGP):
         return mean, covar
 
 
+@check_shapes(
+    "return: [n, shape...]",
+)
 def gen_L(n: int, *shape: int) -> AnyNDArray:
     return np.array([np.tril(rng.randn(*shape)) for _ in range(n)])
 
@@ -94,47 +115,62 @@ def mean_function_factory(
 
 
 class Data:
+    cs = ShapeChecker().check_shape
+
     N = 7
     N_new = 2
     D_out = 3
     D_in = 1
-    X = np.linspace(-5, 5, N)[:, None] + rng.randn(N, 1)
-    Y: AnyNDArray = np.hstack([np.sin(X), np.cos(X), X ** 2])
-    Xnew_mu = rng.randn(N_new, 1)
-    Xnew_covar = np.zeros((N_new, 1, 1))
+    X = cs(np.linspace(-5, 5, N)[:, None] + rng.randn(N, 1), "[N, D_in]")
+    Y: AnyNDArray = cs(np.hstack([np.sin(X), np.cos(X), X ** 2]), "[N, D_out]")
+    Xnew_mu = cs(rng.randn(N_new, 1), "[N_new, D_in]")
+    Xnew_covar = cs(np.zeros((N_new, 1, 1)), "[N_new, D_in, D_in]")
     data = (X, Y)
 
 
 class DataMC1(Data):
-    Y: AnyNDArray = np.hstack([np.sin(Data.X), np.sin(Data.X) * 2, Data.X ** 2])
+    Y: AnyNDArray = Data.cs(  # type: ignore
+        np.hstack([np.sin(Data.X), np.sin(Data.X) * 2, Data.X ** 2]), "[N, D_out]"
+    )
     data = (Data.X, Y)
 
 
 class DataMC2(Data):
+    cs = ShapeChecker().check_shape
+
     N = 7
     N_new = 5
     D_out = 4
     D_in = 2
-    X = rng.randn(N, D_in)
-    Y: AnyNDArray = np.hstack([np.sin(X), np.sin(X)])
-    Xnew_mu = rng.randn(N_new, D_in)
-    L = gen_L(N_new, D_in, D_in)
-    Xnew_covar: AnyNDArray = np.array([l @ l.T for l in L])
+    X = cs(rng.randn(N, D_in), "[N, D_in]")
+    Y: AnyNDArray = cs(np.hstack([np.sin(X), np.sin(X)]), "[N, D_out]")
+    Xnew_mu = cs(rng.randn(N_new, D_in), "[N_new, D_in]")
+    L = cs(gen_L(N_new, D_in, D_in), "[N_new, D_in, D_in]")
+    Xnew_covar: AnyNDArray = cs(np.array([l @ l.T for l in L]), "[N_new, D_in, D_in]")
     data = (X, Y)
 
 
 class DataQuad:
+    cs = ShapeChecker().check_shape
+
     num_data = 10
     num_ind = 10
     D_in = 2
     D_out = 3
     H = 150
-    Xmu = tf.convert_to_tensor(rng.randn(num_data, D_in), dtype=default_float())
-    L = gen_L(num_data, D_in, D_in)
-    Xvar = tf.convert_to_tensor(np.array([l @ l.T for l in L]), dtype=default_float())
-    Z = rng.randn(num_ind, D_in)
-    q_mu = tf.convert_to_tensor(rng.randn(num_ind, D_out), dtype=default_float())
-    q_sqrt = gen_q_sqrt(D_out, num_ind, num_ind)
+    Xmu = cs(
+        tf.convert_to_tensor(rng.randn(num_data, D_in), dtype=default_float()), "[num_data, D_in]"
+    )
+    L = cs(gen_L(num_data, D_in, D_in), "[num_data, D_in, D_in]")
+    Xvar = cs(
+        tf.convert_to_tensor(np.array([l @ l.T for l in L]), dtype=default_float()),
+        "[num_data, D_in, D_in]",
+    )
+    Z = cs(rng.randn(num_ind, D_in), "[num_ind, D_in]")
+    q_mu = cs(
+        tf.convert_to_tensor(rng.randn(num_ind, D_out), dtype=default_float()), "[num_ind, D_out]"
+    )
+    q_sqrt = cs(gen_q_sqrt(D_out, num_ind, num_ind), "[D_out, num_ind, num_ind]")
 
 
 MEANS: Collection[Optional[str]] = ["Constant", "Linear", "Zero", None]
