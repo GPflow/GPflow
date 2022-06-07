@@ -626,6 +626,48 @@ function checkPageExistsAndRedirect(event) {
         <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">trailing_str</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">docs</span><span class="o">.</span><span class="n">meta</span><span class="o">.</span><span class="n">end_pos</span>
 
+    <span class="k">def</span> <span class="nf">_insert_param_info_fields</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">is_first_info_field</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+        <span class="n">spec_lines</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]],</span>
+        <span class="n">out</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+        <span class="n">pos</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="n">leading_str</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_source</span><span class="p">[</span><span class="n">pos</span><span class="p">:]</span><span class="o">.</span><span class="n">rstrip</span><span class="p">()</span>
+        <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">leading_str</span><span class="p">)</span>
+        <span class="n">pos</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="n">leading_str</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_source</span><span class="p">:</span>
+            <span class="c1"># Case where nothing preceeds these fields. Just write them.</span>
+            <span class="n">needed_newlines</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">elif</span> <span class="n">is_first_info_field</span><span class="p">:</span>
+            <span class="c1"># Free-form documentation preceeds these fields. Have 2 newlines to separate them.</span>
+            <span class="n">needed_newlines</span> <span class="o">=</span> <span class="mi">2</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Another info-field preceeds these fields.</span>
+            <span class="n">needed_newlines</span> <span class="o">=</span> <span class="mi">1</span>
+
+        <span class="n">indent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_indent</span> <span class="ow">or</span> <span class="mi">0</span>
+        <span class="n">indent_str</span> <span class="o">=</span> <span class="n">indent</span> <span class="o">*</span> <span class="s2">&quot; &quot;</span>
+        <span class="n">indent_one_str</span> <span class="o">=</span> <span class="mi">4</span> <span class="o">*</span> <span class="s2">&quot; &quot;</span>
+
+        <span class="k">for</span> <span class="n">arg_name</span><span class="p">,</span> <span class="n">arg_lines</span> <span class="ow">in</span> <span class="n">spec_lines</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">needed_newlines</span> <span class="o">*</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">needed_newlines</span> <span class="o">=</span> <span class="mi">1</span>
+
+            <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">indent_str</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">arg_name</span> <span class="o">==</span> <span class="n">RESULT_TOKEN</span><span class="p">:</span>
+                <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;:returns:&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;:param </span><span class="si">{</span><span class="n">arg_name</span><span class="si">}</span><span class="s2">:&quot;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">arg_line</span> <span class="ow">in</span> <span class="n">arg_lines</span><span class="p">:</span>
+                <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">indent_str</span><span class="p">)</span>
+                <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">indent_one_str</span><span class="p">)</span>
+                <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">arg_line</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">pos</span>
+
     <span class="k">def</span> <span class="nf">docstring</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tree</span><span class="p">:</span> <span class="n">Tree</span><span class="p">[</span><span class="n">Token</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
         <span class="c1"># The strategy here is:</span>
         <span class="c1"># * `out` contains a list of strings that will be concatenated and form the final result.</span>
@@ -638,39 +680,62 @@ function checkPageExistsAndRedirect(event) {
         <span class="n">pos</span> <span class="o">=</span> <span class="mi">0</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_notes</span><span class="p">:</span>
-            <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_source</span><span class="p">[</span><span class="n">pos</span> <span class="p">:</span> <span class="n">docs</span><span class="o">.</span><span class="n">meta</span><span class="o">.</span><span class="n">end_pos</span><span class="p">])</span>
-            <span class="n">pos</span> <span class="o">=</span> <span class="n">docs</span><span class="o">.</span><span class="n">meta</span><span class="o">.</span><span class="n">end_pos</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">docs</span><span class="o">.</span><span class="n">meta</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
+                <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_source</span><span class="p">[</span><span class="n">pos</span> <span class="p">:</span> <span class="n">docs</span><span class="o">.</span><span class="n">meta</span><span class="o">.</span><span class="n">end_pos</span><span class="p">])</span>
+                <span class="n">pos</span> <span class="o">=</span> <span class="n">docs</span><span class="o">.</span><span class="n">meta</span><span class="o">.</span><span class="n">end_pos</span>
             <span class="n">indent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_indent</span> <span class="ow">or</span> <span class="mi">0</span>
-            <span class="n">indent_str</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="n">indent</span> <span class="o">*</span> <span class="s2">&quot; &quot;</span>
+            <span class="n">indent_str</span> <span class="o">=</span> <span class="n">indent</span> <span class="o">*</span> <span class="s2">&quot; &quot;</span>
             <span class="k">for</span> <span class="n">note</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_notes</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">out</span><span class="p">:</span>
+                    <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">&quot;</span><span class="p">)</span>
                 <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">indent_str</span><span class="p">)</span>
                 <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">note</span><span class="p">)</span>
 
         <span class="n">pos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">info_fields</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">pos</span><span class="p">)</span>
         <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_source</span><span class="p">[</span><span class="n">pos</span><span class="p">:])</span>
+
         <span class="k">return</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">out</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">info_fields</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tree</span><span class="p">:</span> <span class="n">Tree</span><span class="p">[</span><span class="n">Token</span><span class="p">],</span> <span class="n">out</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">pos</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="n">spec_lines</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_spec_lines</span><span class="p">)</span>
+        <span class="n">is_first_info_field</span> <span class="o">=</span> <span class="kc">True</span>
         <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">_tree_children</span><span class="p">(</span><span class="n">tree</span><span class="p">):</span>
-            <span class="n">pos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">child</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">pos</span><span class="p">)</span>
+            <span class="c1"># This will remove the self._spec_lines corresponding to found `:param:`&#39;s.</span>
+            <span class="n">pos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">child</span><span class="p">,</span> <span class="n">spec_lines</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">pos</span><span class="p">)</span>
+            <span class="n">is_first_info_field</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="c1"># Add any remaining `:param:`s:</span>
+        <span class="n">pos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_insert_param_info_fields</span><span class="p">(</span><span class="n">is_first_info_field</span><span class="p">,</span> <span class="n">spec_lines</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">pos</span><span class="p">)</span>
+
+        <span class="c1"># Make sure info fields are terminated by a new-line:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_spec_lines</span><span class="p">:</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">pos</span> <span class="o">&gt;=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_source</span><span class="p">))</span> <span class="ow">or</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_source</span><span class="p">[</span><span class="n">pos</span><span class="p">]</span> <span class="o">!=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">):</span>
+                <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+
         <span class="k">return</span> <span class="n">pos</span>
 
-    <span class="k">def</span> <span class="nf">info_field_param</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tree</span><span class="p">:</span> <span class="n">Tree</span><span class="p">[</span><span class="n">Token</span><span class="p">],</span> <span class="n">out</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">pos</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">info_field_param</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">tree</span><span class="p">:</span> <span class="n">Tree</span><span class="p">[</span><span class="n">Token</span><span class="p">],</span> <span class="n">spec_lines</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]],</span> <span class="n">out</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">pos</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
         <span class="n">info_field_args</span><span class="p">,</span> <span class="n">docs</span> <span class="o">=</span> <span class="n">_tree_children</span><span class="p">(</span><span class="n">tree</span><span class="p">)</span>
         <span class="n">arg_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">info_field_args</span><span class="p">)</span>
-        <span class="n">spec_lines</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_spec_lines</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">arg_name</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">spec_lines</span><span class="p">:</span>
-            <span class="n">pos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_insert_spec_lines</span><span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="n">pos</span><span class="p">,</span> <span class="n">spec_lines</span><span class="p">,</span> <span class="n">docs</span><span class="p">)</span>
+        <span class="n">arg_lines</span> <span class="o">=</span> <span class="n">spec_lines</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">arg_name</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">arg_lines</span><span class="p">:</span>
+            <span class="n">pos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_insert_spec_lines</span><span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="n">pos</span><span class="p">,</span> <span class="n">arg_lines</span><span class="p">,</span> <span class="n">docs</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">pos</span>
 
-    <span class="k">def</span> <span class="nf">info_field_returns</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tree</span><span class="p">:</span> <span class="n">Tree</span><span class="p">[</span><span class="n">Token</span><span class="p">],</span> <span class="n">out</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">pos</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">info_field_returns</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">tree</span><span class="p">:</span> <span class="n">Tree</span><span class="p">[</span><span class="n">Token</span><span class="p">],</span> <span class="n">spec_lines</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]],</span> <span class="n">out</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">pos</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
         <span class="p">(</span><span class="n">docs</span><span class="p">,)</span> <span class="o">=</span> <span class="n">_tree_children</span><span class="p">(</span><span class="n">tree</span><span class="p">)</span>
-        <span class="n">spec_lines</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_spec_lines</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">RESULT_TOKEN</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">spec_lines</span><span class="p">:</span>
-            <span class="n">pos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_insert_spec_lines</span><span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="n">pos</span><span class="p">,</span> <span class="n">spec_lines</span><span class="p">,</span> <span class="n">docs</span><span class="p">)</span>
+        <span class="n">return_lines</span> <span class="o">=</span> <span class="n">spec_lines</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">RESULT_TOKEN</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">return_lines</span><span class="p">:</span>
+            <span class="n">pos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_insert_spec_lines</span><span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="n">pos</span><span class="p">,</span> <span class="n">return_lines</span><span class="p">,</span> <span class="n">docs</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">pos</span>
 
-    <span class="k">def</span> <span class="nf">info_field_other</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tree</span><span class="p">:</span> <span class="n">Tree</span><span class="p">[</span><span class="n">Token</span><span class="p">],</span> <span class="n">out</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">pos</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">info_field_other</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">tree</span><span class="p">:</span> <span class="n">Tree</span><span class="p">[</span><span class="n">Token</span><span class="p">],</span> <span class="n">spec_lines</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]],</span> <span class="n">out</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">pos</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">pos</span>
 
     <span class="k">def</span> <span class="nf">info_field_args</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tree</span><span class="p">:</span> <span class="n">Tree</span><span class="p">[</span><span class="n">Token</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>

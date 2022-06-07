@@ -1342,8 +1342,10 @@ shapes, even if shape checking is otherwise enabled again.</p>
 <h2>Documenting shapes<a class="headerlink" href="#documenting-shapes" title="Permalink to this headline">#</a></h2>
 <p>The <a class="reference internal" href="#gpflow.experimental.check_shapes.check_shapes" title="gpflow.experimental.check_shapes.check_shapes"><code class="xref py py-func docutils literal notranslate"><span class="pre">check_shapes()</span></code></a> decorator rewrites the docstring (<code class="docutils literal notranslate"><span class="pre">.__doc__</span></code>) of the decorated function
 to add information about shapes, in a format compatible with
-<a class="reference external" href="https://www.sphinx-doc.org/en/master/">Sphinx</a>. Only parameters that already have a
-<code class="docutils literal notranslate"><span class="pre">:param</span> <span class="pre">...:</span></code> section will be modified.</p>
+<a class="reference external" href="https://www.sphinx-doc.org/en/master/">Sphinx</a>.</p>
+<p>Only functions that already have a docstring will be updated. Functions that have no docstring at
+all will not have one added, this is so that we do not override a docstring that would have been
+inherited from a super class.</p>
 <p>For example:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nd">@check_shapes</span><span class="p">(</span>
     <span class="s2">&quot;features: [batch..., n_features]&quot;</span><span class="p">,</span>
