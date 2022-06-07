@@ -290,7 +290,6 @@ function checkPageExistsAndRedirect(event) {
     <span class="n">LarkUnexpectedInputContext</span><span class="p">,</span>
     <span class="n">MultipleElementBoolContext</span><span class="p">,</span>
     <span class="n">StackContext</span><span class="p">,</span>
-    <span class="n">TrailingBroadcastVarrankContext</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="kn">from</span> <span class="nn">.exceptions</span> <span class="kn">import</span> <span class="n">CheckShapesError</span><span class="p">,</span> <span class="n">DocstringParseError</span><span class="p">,</span> <span class="n">SpecificationParseError</span>
 <span class="kn">from</span> <span class="nn">.specs</span> <span class="kn">import</span> <span class="p">(</span>
@@ -442,13 +441,6 @@ function checkPageExistsAndRedirect(event) {
         <span class="p">(</span><span class="n">dimension_spec</span><span class="p">,)</span> <span class="o">=</span> <span class="n">_tree_children</span><span class="p">(</span><span class="n">tree</span><span class="p">)</span>
         <span class="n">child</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">dimension_spec</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">child</span><span class="p">,</span> <span class="n">ParsedDimensionSpec</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">child</span><span class="o">.</span><span class="n">variable_rank</span><span class="p">:</span>
-            <span class="n">meta</span> <span class="o">=</span> <span class="n">dimension_spec</span><span class="o">.</span><span class="n">meta</span>
-            <span class="k">raise</span> <span class="n">SpecificationParseError</span><span class="p">(</span>
-                <span class="n">TrailingBroadcastVarrankContext</span><span class="p">(</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">_source</span><span class="p">,</span> <span class="n">meta</span><span class="o">.</span><span class="n">line</span><span class="p">,</span> <span class="n">meta</span><span class="o">.</span><span class="n">column</span><span class="p">,</span> <span class="n">child</span><span class="o">.</span><span class="n">variable_name</span>
-                <span class="p">)</span>
-            <span class="p">)</span>
         <span class="k">return</span> <span class="n">replace</span><span class="p">(</span><span class="n">child</span><span class="p">,</span> <span class="n">broadcastable</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">dimension_spec_constant</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tree</span><span class="p">:</span> <span class="n">Tree</span><span class="p">[</span><span class="n">Token</span><span class="p">],</span> <span class="n">i</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ParsedDimensionSpec</span><span class="p">:</span>

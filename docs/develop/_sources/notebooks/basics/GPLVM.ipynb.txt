@@ -2,7 +2,7 @@
  "cells": [
   {
    "cell_type": "markdown",
-   "id": "92728230",
+   "id": "7e633ab8",
    "metadata": {},
    "source": [
     "# Bayesian Gaussian process latent variable model (Bayesian GPLVM)\n",
@@ -12,13 +12,13 @@
   {
    "cell_type": "code",
    "execution_count": 1,
-   "id": "46c6ea7c",
+   "id": "f1dfb735",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-01T13:17:12.520088Z",
-     "iopub.status.busy": "2022-06-01T13:17:12.519633Z",
-     "iopub.status.idle": "2022-06-01T13:17:15.950153Z",
-     "shell.execute_reply": "2022-06-01T13:17:15.949461Z"
+     "iopub.execute_input": "2022-06-07T09:06:22.950863Z",
+     "iopub.status.busy": "2022-06-07T09:06:22.950565Z",
+     "iopub.status.idle": "2022-06-07T09:06:26.062667Z",
+     "shell.execute_reply": "2022-06-07T09:06:26.062041Z"
     }
    },
    "outputs": [
@@ -26,8 +26,8 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2022-06-01 13:17:12.728966: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcudart.so.11.0'; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory\n",
-      "2022-06-01 13:17:12.729000: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.\n"
+      "2022-06-07 09:06:23.134047: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcudart.so.11.0'; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory\n",
+      "2022-06-07 09:06:23.134072: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.\n"
      ]
     },
     {
@@ -59,7 +59,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "d7c360ad",
+   "id": "fd52ef4e",
    "metadata": {},
    "source": [
     "## Data\n",
@@ -69,13 +69,13 @@
   {
    "cell_type": "code",
    "execution_count": 2,
-   "id": "c154ddbe",
+   "id": "809857db",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-01T13:17:15.954190Z",
-     "iopub.status.busy": "2022-06-01T13:17:15.953601Z",
-     "iopub.status.idle": "2022-06-01T13:17:15.958946Z",
-     "shell.execute_reply": "2022-06-01T13:17:15.958189Z"
+     "iopub.execute_input": "2022-06-07T09:06:26.066120Z",
+     "iopub.status.busy": "2022-06-07T09:06:26.065663Z",
+     "iopub.status.idle": "2022-06-07T09:06:26.069832Z",
+     "shell.execute_reply": "2022-06-07T09:06:26.069322Z"
     }
    },
    "outputs": [],
@@ -85,7 +85,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "fc56d4d8",
+   "id": "ef3564cc",
    "metadata": {},
    "source": [
     "Following the GPflow notation we assume this dataset has a shape of `[num_data, output_dim]`"
@@ -94,13 +94,13 @@
   {
    "cell_type": "code",
    "execution_count": 3,
-   "id": "75daa7d7",
+   "id": "6ea34b5a",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-01T13:17:15.962084Z",
-     "iopub.status.busy": "2022-06-01T13:17:15.961797Z",
-     "iopub.status.idle": "2022-06-01T13:17:15.972467Z",
-     "shell.execute_reply": "2022-06-01T13:17:15.971897Z"
+     "iopub.execute_input": "2022-06-07T09:06:26.072397Z",
+     "iopub.status.busy": "2022-06-07T09:06:26.072116Z",
+     "iopub.status.idle": "2022-06-07T09:06:26.083035Z",
+     "shell.execute_reply": "2022-06-07T09:06:26.082310Z"
     }
    },
    "outputs": [
@@ -108,10 +108,10 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2022-06-01 13:17:15.964540: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcuda.so.1'; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory\n",
-      "2022-06-01 13:17:15.964572: W tensorflow/stream_executor/cuda/cuda_driver.cc:269] failed call to cuInit: UNKNOWN ERROR (303)\n",
-      "2022-06-01 13:17:15.964591: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (2d34b22a3c46): /proc/driver/nvidia/version does not exist\n",
-      "2022-06-01 13:17:15.964849: I tensorflow/core/platform/cpu_feature_guard.cc:151] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA\n",
+      "2022-06-07 09:06:26.074774: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcuda.so.1'; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory\n",
+      "2022-06-07 09:06:26.074805: W tensorflow/stream_executor/cuda/cuda_driver.cc:269] failed call to cuInit: UNKNOWN ERROR (303)\n",
+      "2022-06-07 09:06:26.074826: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (2f63633ef0ff): /proc/driver/nvidia/version does not exist\n",
+      "2022-06-07 09:06:26.075083: I tensorflow/core/platform/cpu_feature_guard.cc:151] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA\n",
       "To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.\n"
      ]
     }
@@ -122,7 +122,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "241634f2",
+   "id": "78d5c546",
    "metadata": {},
    "source": [
     "Integer in $[0, 2]$ indicating to which class the data point belongs (shape `[num_data,]`). Not used for model fitting, only for plotting afterwards."
@@ -131,13 +131,13 @@
   {
    "cell_type": "code",
    "execution_count": 4,
-   "id": "875288cb",
+   "id": "57e5fe1a",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-01T13:17:15.975174Z",
-     "iopub.status.busy": "2022-06-01T13:17:15.974890Z",
-     "iopub.status.idle": "2022-06-01T13:17:15.978840Z",
-     "shell.execute_reply": "2022-06-01T13:17:15.978256Z"
+     "iopub.execute_input": "2022-06-07T09:06:26.085714Z",
+     "iopub.status.busy": "2022-06-07T09:06:26.085422Z",
+     "iopub.status.idle": "2022-06-07T09:06:26.089479Z",
+     "shell.execute_reply": "2022-06-07T09:06:26.088906Z"
     }
    },
    "outputs": [],
@@ -148,13 +148,13 @@
   {
    "cell_type": "code",
    "execution_count": 5,
-   "id": "6c208349",
+   "id": "6e72308d",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-01T13:17:16.016321Z",
-     "iopub.status.busy": "2022-06-01T13:17:16.015499Z",
-     "iopub.status.idle": "2022-06-01T13:17:16.020710Z",
-     "shell.execute_reply": "2022-06-01T13:17:16.019905Z"
+     "iopub.execute_input": "2022-06-07T09:06:26.091794Z",
+     "iopub.status.busy": "2022-06-07T09:06:26.091559Z",
+     "iopub.status.idle": "2022-06-07T09:06:26.095459Z",
+     "shell.execute_reply": "2022-06-07T09:06:26.094731Z"
     }
    },
    "outputs": [
@@ -172,7 +172,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "701a9415",
+   "id": "bcc454fb",
    "metadata": {},
    "source": [
     "## Model construction\n",
@@ -183,13 +183,13 @@
   {
    "cell_type": "code",
    "execution_count": 6,
-   "id": "bdd77aa9",
+   "id": "e7a638a0",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-01T13:17:16.024523Z",
-     "iopub.status.busy": "2022-06-01T13:17:16.024218Z",
-     "iopub.status.idle": "2022-06-01T13:17:16.028055Z",
-     "shell.execute_reply": "2022-06-01T13:17:16.027169Z"
+     "iopub.execute_input": "2022-06-07T09:06:26.097995Z",
+     "iopub.status.busy": "2022-06-07T09:06:26.097729Z",
+     "iopub.status.idle": "2022-06-07T09:06:26.100941Z",
+     "shell.execute_reply": "2022-06-07T09:06:26.100384Z"
     }
    },
    "outputs": [],
@@ -201,7 +201,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "bec66063",
+   "id": "5620ca9b",
    "metadata": {},
    "source": [
     "Initialize via PCA:"
@@ -210,13 +210,13 @@
   {
    "cell_type": "code",
    "execution_count": 7,
-   "id": "58bf5c45",
+   "id": "166f6459",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-01T13:17:16.031605Z",
-     "iopub.status.busy": "2022-06-01T13:17:16.031297Z",
-     "iopub.status.idle": "2022-06-01T13:17:16.051269Z",
-     "shell.execute_reply": "2022-06-01T13:17:16.050585Z"
+     "iopub.execute_input": "2022-06-07T09:06:26.103397Z",
+     "iopub.status.busy": "2022-06-07T09:06:26.103143Z",
+     "iopub.status.idle": "2022-06-07T09:06:26.120989Z",
+     "shell.execute_reply": "2022-06-07T09:06:26.120042Z"
     }
    },
    "outputs": [
@@ -236,7 +236,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "90255d91",
+   "id": "5a98425e",
    "metadata": {},
    "source": [
     "Pick inducing inputs randomly from dataset initialization:"
@@ -245,13 +245,13 @@
   {
    "cell_type": "code",
    "execution_count": 8,
-   "id": "571b41a5",
+   "id": "d799f37b",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-01T13:17:16.055513Z",
-     "iopub.status.busy": "2022-06-01T13:17:16.055093Z",
-     "iopub.status.idle": "2022-06-01T13:17:16.060391Z",
-     "shell.execute_reply": "2022-06-01T13:17:16.059625Z"
+     "iopub.execute_input": "2022-06-07T09:06:26.157639Z",
+     "iopub.status.busy": "2022-06-07T09:06:26.157283Z",
+     "iopub.status.idle": "2022-06-07T09:06:26.161519Z",
+     "shell.execute_reply": "2022-06-07T09:06:26.160800Z"
     }
    },
    "outputs": [],
@@ -264,7 +264,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "d8195435",
+   "id": "8f593944",
    "metadata": {},
    "source": [
     "We construct a Squared Exponential (SE) kernel operating on the two-dimensional latent space.\n",
@@ -275,13 +275,13 @@
   {
    "cell_type": "code",
    "execution_count": 9,
-   "id": "2e82d35b",
+   "id": "ac03dc9d",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-01T13:17:16.063914Z",
-     "iopub.status.busy": "2022-06-01T13:17:16.063630Z",
-     "iopub.status.idle": "2022-06-01T13:17:16.076044Z",
-     "shell.execute_reply": "2022-06-01T13:17:16.075395Z"
+     "iopub.execute_input": "2022-06-07T09:06:26.164400Z",
+     "iopub.status.busy": "2022-06-07T09:06:26.164132Z",
+     "iopub.status.idle": "2022-06-07T09:06:26.176693Z",
+     "shell.execute_reply": "2022-06-07T09:06:26.176067Z"
     }
    },
    "outputs": [],
@@ -292,7 +292,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "12bb183f",
+   "id": "5e7ed927",
    "metadata": {},
    "source": [
     "We have all the necessary ingredients to construct the model. GPflow contains an implementation of the Bayesian GPLVM:"
@@ -301,13 +301,13 @@
   {
    "cell_type": "code",
    "execution_count": 10,
-   "id": "3c790483",
+   "id": "027a16f4",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-01T13:17:16.079760Z",
-     "iopub.status.busy": "2022-06-01T13:17:16.079475Z",
-     "iopub.status.idle": "2022-06-01T13:17:16.108370Z",
-     "shell.execute_reply": "2022-06-01T13:17:16.107459Z"
+     "iopub.execute_input": "2022-06-07T09:06:26.179867Z",
+     "iopub.status.busy": "2022-06-07T09:06:26.179569Z",
+     "iopub.status.idle": "2022-06-07T09:06:26.199444Z",
+     "shell.execute_reply": "2022-06-07T09:06:26.198801Z"
     }
    },
    "outputs": [],
@@ -324,7 +324,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "c6b51661",
+   "id": "a8f79e67",
    "metadata": {},
    "source": [
     "We change the default likelihood variance, which is 1, to 0.01."
@@ -333,13 +333,13 @@
   {
    "cell_type": "code",
    "execution_count": 11,
-   "id": "5a5b8e62",
+   "id": "4b8079ba",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-01T13:17:16.112039Z",
-     "iopub.status.busy": "2022-06-01T13:17:16.111724Z",
-     "iopub.status.idle": "2022-06-01T13:17:16.120428Z",
-     "shell.execute_reply": "2022-06-01T13:17:16.119719Z"
+     "iopub.execute_input": "2022-06-07T09:06:26.202626Z",
+     "iopub.status.busy": "2022-06-07T09:06:26.202336Z",
+     "iopub.status.idle": "2022-06-07T09:06:26.211406Z",
+     "shell.execute_reply": "2022-06-07T09:06:26.210710Z"
     }
    },
    "outputs": [
@@ -360,7 +360,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "c3fc18ff",
+   "id": "b07a1da2",
    "metadata": {},
    "source": [
     "Next we optimize the created model. Given that this model has a deterministic evidence lower bound (ELBO), we can use SciPy's BFGS optimizer."
@@ -369,13 +369,13 @@
   {
    "cell_type": "code",
    "execution_count": 12,
-   "id": "b8f07a2f",
+   "id": "c67904e6",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-01T13:17:16.123597Z",
-     "iopub.status.busy": "2022-06-01T13:17:16.123261Z",
-     "iopub.status.idle": "2022-06-01T13:20:10.011429Z",
-     "shell.execute_reply": "2022-06-01T13:20:10.010672Z"
+     "iopub.execute_input": "2022-06-07T09:06:26.214918Z",
+     "iopub.status.busy": "2022-06-07T09:06:26.214622Z",
+     "iopub.status.idle": "2022-06-07T09:10:09.943142Z",
+     "shell.execute_reply": "2022-06-07T09:10:09.942223Z"
     }
    },
    "outputs": [
@@ -383,7 +383,7 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2022-06-01 13:17:16.137339: W tensorflow/python/util/util.cc:368] Sets are not currently considered sequences, but this may change in the future, so consider avoiding using them.\n"
+      "2022-06-07 09:06:26.227307: W tensorflow/python/util/util.cc:368] Sets are not currently considered sequences, but this may change in the future, so consider avoiding using them.\n"
      ]
     }
    ],
@@ -400,7 +400,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "a18d6b3f",
+   "id": "d8416c06",
    "metadata": {},
    "source": [
     "## Model analysis\n",
@@ -410,13 +410,13 @@
   {
    "cell_type": "code",
    "execution_count": 13,
-   "id": "fb0445c5",
+   "id": "114fa33b",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-01T13:20:10.015639Z",
-     "iopub.status.busy": "2022-06-01T13:20:10.015274Z",
-     "iopub.status.idle": "2022-06-01T13:20:10.037210Z",
-     "shell.execute_reply": "2022-06-01T13:20:10.036654Z"
+     "iopub.execute_input": "2022-06-07T09:10:09.947653Z",
+     "iopub.status.busy": "2022-06-07T09:10:09.946948Z",
+     "iopub.status.idle": "2022-06-07T09:10:09.965460Z",
+     "shell.execute_reply": "2022-06-07T09:10:09.964871Z"
     }
    },
    "outputs": [
@@ -451,7 +451,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "102891e7",
+   "id": "50a54415",
    "metadata": {},
    "source": [
     "## Plotting vs. Principle Component Analysis (PCA)\n",
@@ -462,13 +462,13 @@
   {
    "cell_type": "code",
    "execution_count": 14,
-   "id": "c86559df",
+   "id": "ed8d7e69",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-01T13:20:10.040800Z",
-     "iopub.status.busy": "2022-06-01T13:20:10.040523Z",
-     "iopub.status.idle": "2022-06-01T13:20:10.327958Z",
-     "shell.execute_reply": "2022-06-01T13:20:10.326971Z"
+     "iopub.execute_input": "2022-06-07T09:10:09.968024Z",
+     "iopub.status.busy": "2022-06-07T09:10:09.967727Z",
+     "iopub.status.idle": "2022-06-07T09:10:10.241973Z",
+     "shell.execute_reply": "2022-06-07T09:10:10.241183Z"
     }
    },
    "outputs": [
@@ -501,14 +501,14 @@
   {
    "cell_type": "code",
    "execution_count": null,
-   "id": "bf990ed6",
+   "id": "3051b795",
    "metadata": {},
    "outputs": [],
    "source": []
   },
   {
    "cell_type": "markdown",
-   "id": "53ad0044",
+   "id": "4da872d0",
    "metadata": {},
    "source": [
     "## References\n",

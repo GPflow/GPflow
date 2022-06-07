@@ -285,9 +285,6 @@ function checkPageExistsAndRedirect(event) {
 <span class="n">_Shape</span> <span class="o">=</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Dimension</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
 
 
-<span class="n">_ANONYMOUS_VAR_RANK</span> <span class="o">=</span> <span class="s2">&quot;...&quot;</span>
-
-
 <span class="k">def</span> <span class="nf">_as_parsed_tensor_spec</span><span class="p">(</span><span class="n">tensor_spec</span><span class="p">:</span> <span class="n">TensorSpecLike</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="n">ErrorContext</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ParsedTensorSpec</span><span class="p">:</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">tensor_spec</span><span class="p">,</span> <span class="n">ParsedTensorSpec</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">tensor_spec</span>
@@ -345,7 +342,10 @@ function checkPageExistsAndRedirect(event) {
     <span class="n">known_rank</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
 
     <span class="k">def</span> <span class="nf">check_and_update</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">actual</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="o">...</span><span class="p">]],</span> <span class="n">broadcast</span><span class="p">:</span> <span class="nb">bool</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">actual</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="o">...</span><span class="p">]],</span>
+        <span class="n">broadcast</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+        <span class="n">shape_possibly_truncated</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Attempt to merge new data into this observation.</span>
@@ -365,7 +365,7 @@ function checkPageExistsAndRedirect(event) {
         <span class="c1"># First make sure lengths are set up and matches.</span>
         <span class="n">longer</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sizes</span><span class="p">)</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">actual</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">known_rank</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">broadcast</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">shape_possibly_truncated</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">longer</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
                     <span class="k">return</span> <span class="kc">False</span>
             <span class="k">else</span><span class="p">:</span>
@@ -375,7 +375,7 @@ function checkPageExistsAndRedirect(event) {
             <span class="k">if</span> <span class="n">longer</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">sizes</span> <span class="o">=</span> <span class="p">[</span><span class="n">_ObservedDim</span><span class="p">()</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="o">-</span><span class="n">longer</span><span class="p">)]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">sizes</span>
                 <span class="n">longer</span> <span class="o">=</span> <span class="mi">0</span>
-            <span class="k">if</span> <span class="n">broadcast</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">shape_possibly_truncated</span><span class="p">:</span>
                 <span class="k">pass</span>  <span class="c1"># We don&#39;t know anything about total rank.</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">longer</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
@@ -524,10 +524,10 @@ function checkPageExistsAndRedirect(event) {
             <span class="c1"># Note that self._match_dims may not be able to match all dims. If that is the case it</span>
             <span class="c1"># adds the check to `self._waiting_for_varrank`:</span>
             <span class="n">dim_checks</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_match_dims</span><span class="p">(</span><span class="n">shape_check</span><span class="p">)</span>
-            <span class="k">for</span> <span class="n">dim_spec</span><span class="p">,</span> <span class="n">actual_dims</span> <span class="ow">in</span> <span class="n">dim_checks</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">dim_spec</span><span class="p">,</span> <span class="n">actual_dims</span><span class="p">,</span> <span class="n">shape_possibly_truncated</span> <span class="ow">in</span> <span class="n">dim_checks</span><span class="p">:</span>
                 <span class="c1"># Note that self._check_dim may revive checks from `self._waiting_for_varrank` and</span>
                 <span class="c1"># add them back to `shape_check_queue`:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_check_dim</span><span class="p">(</span><span class="n">dim_spec</span><span class="p">,</span> <span class="n">actual_dims</span><span class="p">,</span> <span class="n">shape_check_queue</span><span class="p">)</span></div>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_check_dim</span><span class="p">(</span><span class="n">dim_spec</span><span class="p">,</span> <span class="n">actual_dims</span><span class="p">,</span> <span class="n">shape_possibly_truncated</span><span class="p">,</span> <span class="n">shape_check_queue</span><span class="p">)</span></div>
 
     <span class="k">def</span> <span class="nf">_parse_checks</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -613,14 +613,15 @@ function checkPageExistsAndRedirect(event) {
         <span class="k">if</span> <span class="n">error_contexts</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">VariableTypeError</span><span class="p">(</span><span class="n">ParallelContext</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="n">error_contexts</span><span class="p">)))</span>
 
-    <span class="k">def</span> <span class="nf">_match_dims</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">shape_check</span><span class="p">:</span> <span class="n">_ShapeCheck</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">ParsedDimensionSpec</span><span class="p">,</span> <span class="n">_Shape</span><span class="p">]]:</span>
+    <span class="k">def</span> <span class="nf">_match_dims</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">shape_check</span><span class="p">:</span> <span class="n">_ShapeCheck</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">ParsedDimensionSpec</span><span class="p">,</span> <span class="n">_Shape</span><span class="p">,</span> <span class="nb">bool</span><span class="p">]]:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Match expected dimensions against actual dimensions.</span>
 
 <span class="sd">        If some dimensions cannot be determined, the remaining dimensions are added to</span>
 <span class="sd">        `self._waiting_for_varrank`.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-
         <span class="c1"># Determine rank of expected dimensions:</span>
 
         <span class="c1"># Length of the current shape, which we have not yet matched against a dimension spec:</span>
@@ -630,42 +631,60 @@ function checkPageExistsAndRedirect(event) {
         <span class="n">allocated_sizes</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[]</span>
 
         <span class="c1"># Count of `None`s in `allocated_sizes`:</span>
-        <span class="n">n_unallocated</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">n_allocated_none</span> <span class="o">=</span> <span class="mi">0</span>
 
         <span class="c1"># Mapping from variables, that we don&#39;t know the rank of, to whether they&#39;re used with</span>
         <span class="c1"># `broadcast`.</span>
-        <span class="n">unknown_len_variables</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">unknown_len_variables</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
 
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">shape_check</span><span class="o">.</span><span class="n">expected_begin</span><span class="p">,</span> <span class="n">shape_check</span><span class="o">.</span><span class="n">expected_end</span><span class="p">):</span>
+        <span class="c1"># The length of a shape is allowed to be short if the dimension, and all leading dimensions</span>
+        <span class="c1"># are `broadcast`, so pre-compute where this applies.</span>
+        <span class="n">leading_broadcast</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">leading_broadcasts</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">shape_check</span><span class="o">.</span><span class="n">expected_end</span><span class="p">):</span>
             <span class="n">expected_dim</span> <span class="o">=</span> <span class="n">shape_check</span><span class="o">.</span><span class="n">expected</span><span class="o">.</span><span class="n">dims</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">leading_broadcast</span> <span class="o">&amp;=</span> <span class="n">expected_dim</span><span class="o">.</span><span class="n">broadcastable</span>
+            <span class="n">leading_broadcasts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">leading_broadcast</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">shape_check</span><span class="o">.</span><span class="n">expected_begin</span><span class="p">,</span> <span class="n">shape_check</span><span class="o">.</span><span class="n">expected_end</span><span class="p">)[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
+            <span class="n">leading_broadcast</span> <span class="o">=</span> <span class="n">leading_broadcasts</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">expected_dim</span> <span class="o">=</span> <span class="n">shape_check</span><span class="o">.</span><span class="n">expected</span><span class="o">.</span><span class="n">dims</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">expected_name</span> <span class="o">=</span> <span class="n">expected_dim</span><span class="o">.</span><span class="n">variable_name</span>
+
+            <span class="n">rank</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
             <span class="k">if</span> <span class="n">expected_dim</span><span class="o">.</span><span class="n">variable_rank</span><span class="p">:</span>
-                <span class="n">expected_name</span> <span class="o">=</span> <span class="n">expected_dim</span><span class="o">.</span><span class="n">variable_name</span>
                 <span class="k">if</span> <span class="n">expected_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                     <span class="n">observed_dims</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_observed_dimses</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">expected_name</span><span class="p">)</span>
                     <span class="k">if</span> <span class="p">(</span>
-                        <span class="p">(</span><span class="ow">not</span> <span class="n">expected_dim</span><span class="o">.</span><span class="n">broadcastable</span><span class="p">)</span>
-                        <span class="ow">and</span> <span class="p">(</span><span class="n">observed_dims</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span>
+                        <span class="p">(</span><span class="n">observed_dims</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span>
                         <span class="ow">and</span> <span class="n">observed_dims</span><span class="o">.</span><span class="n">known_rank</span>
                         <span class="ow">and</span> <span class="p">(</span><span class="n">observed_dims</span><span class="o">.</span><span class="n">sizes</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span>
                     <span class="p">):</span>
                         <span class="n">rank</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">observed_dims</span><span class="o">.</span><span class="n">sizes</span><span class="p">)</span>
-                        <span class="n">unallocated_len</span> <span class="o">-=</span> <span class="n">rank</span>
-                        <span class="n">allocated_sizes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">rank</span><span class="p">)</span>
-                    <span class="k">else</span><span class="p">:</span>
-                        <span class="n">allocated_sizes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
-                        <span class="n">n_unallocated</span> <span class="o">+=</span> <span class="mi">1</span>
-                        <span class="n">broadcastable</span> <span class="o">=</span> <span class="p">(</span>
-                            <span class="n">unknown_len_variables</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">expected_name</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
-                            <span class="ow">or</span> <span class="n">expected_dim</span><span class="o">.</span><span class="n">broadcastable</span>
-                        <span class="p">)</span>
-                        <span class="n">unknown_len_variables</span><span class="p">[</span><span class="n">expected_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">broadcastable</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="n">allocated_sizes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
-                    <span class="n">n_unallocated</span> <span class="o">+=</span> <span class="mi">1</span>
-                    <span class="n">unknown_len_variables</span><span class="p">[</span><span class="n">_ANONYMOUS_VAR_RANK</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">unallocated_len</span> <span class="o">-=</span> <span class="mi">1</span>
-                <span class="n">allocated_sizes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+                <span class="n">rank</span> <span class="o">=</span> <span class="mi">1</span>
+
+            <span class="k">if</span> <span class="n">rank</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">leading_broadcast</span><span class="p">:</span>
+                <span class="n">all_trailing_shapes_known</span> <span class="o">=</span> <span class="n">n_allocated_none</span> <span class="o">==</span> <span class="mi">0</span>
+                <span class="k">if</span> <span class="n">all_trailing_shapes_known</span><span class="p">:</span>
+                    <span class="c1"># We know where the dimension ends, because everything after this has known size,</span>
+                    <span class="c1"># so we can infer the start from the `unallocated_len`.</span>
+                    <span class="n">rank</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">rank</span><span class="p">,</span> <span class="n">unallocated_len</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># We don&#39;t know where this dimension starts, because of broadcasting, and we</span>
+                    <span class="c1"># don&#39;t know where it ends, because something after this has an unknown size</span>
+                    <span class="c1"># - all bets are off...</span>
+                    <span class="n">rank</span> <span class="o">=</span> <span class="kc">None</span>
+
+            <span class="k">if</span> <span class="n">rank</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">n_allocated_none</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="n">unknown_len_variables</span><span class="p">[</span><span class="n">expected_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">leading_broadcast</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">unallocated_len</span> <span class="o">-=</span> <span class="n">rank</span>
+
+            <span class="n">allocated_sizes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">rank</span><span class="p">)</span>
+
+        <span class="n">allocated_sizes</span> <span class="o">=</span> <span class="n">allocated_sizes</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>  <span class="c1"># This list was built in reverse order.</span>
 
         <span class="c1"># Determine length of variables with outknown length:</span>
 
@@ -677,11 +696,13 @@ function checkPageExistsAndRedirect(event) {
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_assert</span><span class="p">(</span><span class="n">unallocated_len</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">n_unknown</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-                <span class="n">broadcastable</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="n">unknown_len_variables</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span>
-                <span class="k">if</span> <span class="n">n_unallocated</span> <span class="o">&lt;=</span> <span class="mi">1</span> <span class="ow">or</span> <span class="p">(</span><span class="ow">not</span> <span class="n">broadcastable</span><span class="p">):</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">_assert</span><span class="p">(</span><span class="n">unallocated_len</span> <span class="o">%</span> <span class="n">n_unallocated</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
-                    <span class="n">unknown_len</span> <span class="o">=</span> <span class="n">unallocated_len</span> <span class="o">//</span> <span class="n">n_unallocated</span>
-                    <span class="n">allocated_sizes</span> <span class="o">=</span> <span class="p">[</span><span class="n">unknown_len</span> <span class="k">if</span> <span class="n">s</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">s</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">allocated_sizes</span><span class="p">]</span>
+                <span class="p">(</span><span class="n">expected_name</span><span class="p">,)</span> <span class="o">=</span> <span class="n">unknown_len_variables</span>
+                <span class="k">if</span> <span class="n">expected_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">broadcastable</span> <span class="o">=</span> <span class="n">unknown_len_variables</span><span class="p">[</span><span class="n">expected_name</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="n">n_allocated_none</span> <span class="o">&lt;=</span> <span class="mi">1</span> <span class="ow">or</span> <span class="p">(</span><span class="ow">not</span> <span class="n">broadcastable</span><span class="p">):</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_assert</span><span class="p">(</span><span class="n">unallocated_len</span> <span class="o">%</span> <span class="n">n_allocated_none</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
+                        <span class="n">unknown_len</span> <span class="o">=</span> <span class="n">unallocated_len</span> <span class="o">//</span> <span class="n">n_allocated_none</span>
+                        <span class="n">allocated_sizes</span> <span class="o">=</span> <span class="p">[</span><span class="n">unknown_len</span> <span class="k">if</span> <span class="n">s</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">s</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">allocated_sizes</span><span class="p">]</span>
 
         <span class="n">dim_checks</span> <span class="o">=</span> <span class="p">[]</span>
 
@@ -699,6 +720,7 @@ function checkPageExistsAndRedirect(event) {
                     <span class="n">shape_check</span><span class="o">.</span><span class="n">actual</span><span class="p">[</span>
                         <span class="n">shape_check</span><span class="o">.</span><span class="n">actual_begin</span> <span class="p">:</span> <span class="n">shape_check</span><span class="o">.</span><span class="n">actual_begin</span> <span class="o">+</span> <span class="n">expected_rank</span>
                     <span class="p">],</span>
+                    <span class="n">leading_broadcasts</span><span class="p">[</span><span class="n">shape_check</span><span class="o">.</span><span class="n">expected_begin</span><span class="p">],</span>
                 <span class="p">)</span>
             <span class="p">)</span>
             <span class="n">allocated_i</span> <span class="o">+=</span> <span class="mi">1</span>
@@ -719,6 +741,7 @@ function checkPageExistsAndRedirect(event) {
                     <span class="n">shape_check</span><span class="o">.</span><span class="n">actual</span><span class="p">[</span>
                         <span class="n">shape_check</span><span class="o">.</span><span class="n">actual_end</span> <span class="o">-</span> <span class="n">expected_rank</span> <span class="p">:</span> <span class="n">shape_check</span><span class="o">.</span><span class="n">actual_end</span>
                     <span class="p">],</span>
+                    <span class="n">leading_broadcasts</span><span class="p">[</span><span class="n">shape_check</span><span class="o">.</span><span class="n">expected_begin</span><span class="p">],</span>
                 <span class="p">)</span>
             <span class="p">)</span>
             <span class="n">allocated_i</span> <span class="o">-=</span> <span class="mi">1</span>
@@ -726,14 +749,18 @@ function checkPageExistsAndRedirect(event) {
             <span class="n">shape_check</span><span class="o">.</span><span class="n">expected_end</span> <span class="o">-=</span> <span class="mi">1</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">shape_check</span><span class="o">.</span><span class="n">finished</span><span class="p">:</span>
-            <span class="n">waiting_for</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">unknown_len_variables</span><span class="p">)</span> <span class="o">-</span> <span class="p">{</span><span class="n">_ANONYMOUS_VAR_RANK</span><span class="p">}</span>
+            <span class="n">waiting_for</span><span class="p">:</span> <span class="n">Set</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">unknown_len_variables</span><span class="p">)</span> <span class="o">-</span> <span class="p">{</span><span class="kc">None</span><span class="p">}</span>  <span class="c1"># type: ignore</span>
             <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">waiting_for</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_waiting_for_varrank</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="nb">set</span><span class="p">())</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">shape_check</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">dim_checks</span>
 
     <span class="k">def</span> <span class="nf">_check_dim</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">expected</span><span class="p">:</span> <span class="n">ParsedDimensionSpec</span><span class="p">,</span> <span class="n">actual_dims</span><span class="p">:</span> <span class="n">_Shape</span><span class="p">,</span> <span class="n">shape_checks</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">_ShapeCheck</span><span class="p">]</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">expected</span><span class="p">:</span> <span class="n">ParsedDimensionSpec</span><span class="p">,</span>
+        <span class="n">actual_dims</span><span class="p">:</span> <span class="n">_Shape</span><span class="p">,</span>
+        <span class="n">shape_possibly_truncated</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+        <span class="n">shape_checks</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">_ShapeCheck</span><span class="p">],</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Checks that ``actual_dim`` matches ``expected``.</span>
@@ -748,11 +775,20 @@ function checkPageExistsAndRedirect(event) {
                 <span class="k">return</span>
 
             <span class="n">observed_dims</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_observed_dimses</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">expected_name</span><span class="p">,</span> <span class="n">_ObservedDims</span><span class="p">())</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_assert</span><span class="p">(</span><span class="n">observed_dims</span><span class="o">.</span><span class="n">check_and_update</span><span class="p">(</span><span class="n">actual_dims</span><span class="p">,</span> <span class="n">expected</span><span class="o">.</span><span class="n">broadcastable</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_assert</span><span class="p">(</span>
+                <span class="n">observed_dims</span><span class="o">.</span><span class="n">check_and_update</span><span class="p">(</span>
+                    <span class="n">actual_dims</span><span class="p">,</span> <span class="n">expected</span><span class="o">.</span><span class="n">broadcastable</span><span class="p">,</span> <span class="n">shape_possibly_truncated</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
             <span class="k">if</span> <span class="n">observed_dims</span><span class="o">.</span><span class="n">known_rank</span><span class="p">:</span>
                 <span class="n">shape_checks</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_waiting_for_varrank</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">expected_name</span><span class="p">,</span> <span class="nb">set</span><span class="p">()))</span>
 
         <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">actual_dims</span><span class="p">:</span>
+                <span class="c1"># Broadcastable dimension was not matched against anything.</span>
+                <span class="k">assert</span> <span class="n">shape_possibly_truncated</span>
+                <span class="k">return</span>
+
             <span class="p">(</span><span class="n">actual_dim</span><span class="p">,)</span> <span class="o">=</span> <span class="n">actual_dims</span>
             <span class="k">if</span> <span class="n">actual_dim</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="c1"># Acutal dimension is unknown - nothing to check.</span>
