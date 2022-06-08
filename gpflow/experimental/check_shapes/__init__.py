@@ -465,8 +465,10 @@ from .config import (
     DocstringFormat,
     disable_check_shapes,
     get_enable_check_shapes,
+    get_enable_function_call_precompute,
     get_rewrite_docstrings,
     set_enable_check_shapes,
+    set_enable_function_call_precompute,
     set_rewrite_docstrings,
 )
 from .decorator import check_shapes
@@ -495,6 +497,7 @@ __all__ = [
     "exceptions",
     "get_check_shapes",
     "get_enable_check_shapes",
+    "get_enable_function_call_precompute",
     "get_rewrite_docstrings",
     "get_shape",
     "get_shape_checker",
@@ -502,6 +505,7 @@ __all__ = [
     "inheritance",
     "parser",
     "set_enable_check_shapes",
+    "set_enable_function_call_precompute",
     "set_rewrite_docstrings",
     "shapes",
     "specs",

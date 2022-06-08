@@ -48,6 +48,7 @@ from typing import (
 from lark.exceptions import UnexpectedCharacters, UnexpectedEOF, UnexpectedInput
 
 from .base_types import Shape
+from .config import get_enable_function_call_precompute
 
 if TYPE_CHECKING:  # pragma: no cover
     from .argument_ref import ArgumentRef
@@ -56,7 +57,12 @@ if TYPE_CHECKING:  # pragma: no cover
 
 _UNKNOWN_FILE = "<Unknown file>"
 _UNKNOWN_LINE = "<Unknown line>"
-_NONE_SHAPE = "<Tensor has unknown shape>"
+_DISABLED_FILE_AND_LINE = (
+    f"{_UNKNOWN_FILE}:{_UNKNOWN_LINE}"
+    " (Disabled. Call gpflow.experimental.check_shapes.set_enable_function_call_precompute(True) to"
+    " see this. (Slow.))"
+)
+_NONE_SHAPE = "<Tensor is None or has unknown shape>"
 
 _NO_VALUE = object()
 """
@@ -300,7 +306,10 @@ class FunctionCallContext(ErrorContext):
 
         :returns: A new instance with precomptued values.
         """
-        return FunctionCallContext(self.func, self._compute())
+        if get_enable_function_call_precompute():
+            return FunctionCallContext(self.func, self._compute())
+        else:
+            return FunctionCallContext(self.func, _DISABLED_FILE_AND_LINE)
 
 
 @dataclass(frozen=True)

@@ -62,10 +62,13 @@ from gpflow.experimental.check_shapes import (
     check_shapes,
     disable_check_shapes,
     get_check_shapes,
+    get_enable_check_shapes,
+    get_enable_function_call_precompute,
     get_rewrite_docstrings,
     get_shape,
     inherit_check_shapes,
     set_enable_check_shapes,
+    set_enable_function_call_precompute,
     set_rewrite_docstrings,
 )
 
@@ -680,6 +683,8 @@ def test_example__disable__manual() -> None:
     def performance_sensitive_function() -> None:
         pass
 
+    old_value = get_enable_check_shapes()
+
     try:
 
         # [disable__manual]
@@ -691,7 +696,27 @@ def test_example__disable__manual() -> None:
         # [disable__manual]
 
     finally:
-        set_enable_check_shapes(True)
+        set_enable_check_shapes(old_value)
+
+
+def test_example__disable_function_call_precompute() -> None:
+    def buggy_function() -> None:
+        pass
+
+    old_value = get_enable_function_call_precompute()
+
+    try:
+
+        # [disable_function_call_precompute]
+
+        set_enable_function_call_precompute(True)
+
+        buggy_function()
+
+        # [disable_function_call_precompute]
+
+    finally:
+        set_enable_function_call_precompute(old_value)
 
 
 def test_example__doc_rewrite() -> None:
