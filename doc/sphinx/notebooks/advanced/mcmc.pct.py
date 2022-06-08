@@ -132,7 +132,7 @@ gpflow.utilities.print_summary(model)
 
 # %%
 num_burnin_steps = ci_niter(300)
-num_samples = ci_niter(2500)
+num_samples = ci_niter(1000)
 
 # Note that here we need model.trainable_parameters, not trainable_variables - only parameters can have priors!
 hmc_helper = gpflow.optimizers.SamplingHelper(
@@ -270,6 +270,9 @@ plt.ylabel("$f|X,Y$")
 plt.title("Posterior GP samples")
 
 plt.show()
+
+# %% [markdown]
+# This example demonstrates the multi-modality of the true posterior over hyperparameters: the data could be explained both by long lengthscale, small signal variance, and high noise variance, as well as by shorter lengthscale, higher signal variance, and low noise variance.
 
 # %% [markdown]
 # ## Example 2: Sparse MC for multiclass classification
