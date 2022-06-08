@@ -30,7 +30,7 @@ import tensorflow as tf
 import gpflow
 from gpflow import set_trainable
 from gpflow.utilities import print_summary
-from gpflow.ci_utils import ci_niter
+from gpflow.ci_utils import reduce_in_tests
 
 import logging
 
@@ -66,7 +66,7 @@ def plot_model(m, name=""):
 # %%
 gpr = gpflow.models.GPR((X, Y), gpflow.kernels.SquaredExponential())
 gpflow.optimizers.Scipy().minimize(
-    gpr.training_loss, gpr.trainable_variables, options=dict(maxiter=ci_niter(1000))
+    gpr.training_loss, gpr.trainable_variables, options=dict(maxiter=reduce_in_tests(1000))
 )
 full_lml = plot_model(gpr)
 
@@ -75,7 +75,7 @@ full_lml = plot_model(gpr)
 # As a first investigation, we compute the upper bound for models trained using the sparse variational GP approximation.
 
 # %%
-Ms = np.arange(4, ci_niter(20, test_n=6), 1)
+Ms = np.arange(4, reduce_in_tests(20, test_n=6), 1)
 vfe_lml = []
 vupper_lml = []
 vfe_hyps = []
@@ -85,7 +85,7 @@ for M in Ms:
     gpflow.optimizers.Scipy().minimize(
         vfe.training_loss,
         vfe.trainable_variables,
-        options=dict(disp=False, maxiter=ci_niter(1000), compile=True),
+        options=dict(disp=False, maxiter=reduce_in_tests(1000), compile=True),
     )
 
     vfe_lml.append(vfe.elbo().numpy())
@@ -110,7 +110,7 @@ _ = plt.legend()
 # Here, we train sparse models with the hyperparameters fixed to the optimal value found previously.
 
 # %%
-fMs = np.arange(3, ci_niter(20, test_n=5), 1)
+fMs = np.arange(3, reduce_in_tests(20, test_n=5), 1)
 fvfe_lml = []  # Fixed vfe lml
 fvupper_lml = []  # Fixed upper lml
 
@@ -134,7 +134,7 @@ for M in fMs:
     gpflow.optimizers.Scipy().minimize(
         vfe.training_loss,
         vfe.trainable_variables,
-        options=dict(disp=False, maxiter=ci_niter(1000)),
+        options=dict(disp=False, maxiter=reduce_in_tests(1000)),
         compile=True,
     )
 
@@ -166,7 +166,7 @@ vfe = gpflow.models.SGPR(
 )
 objective = tf.function(vfe.training_loss)
 gpflow.optimizers.Scipy().minimize(
-    objective, vfe.trainable_variables, options=dict(maxiter=ci_niter(1000)), compile=False
+    objective, vfe.trainable_variables, options=dict(maxiter=reduce_in_tests(1000)), compile=False
 )
 # Note that we need to set compile=False here due to a discrepancy in compiling with tf.function
 # see https://github.com/GPflow/GPflow/issues/1260

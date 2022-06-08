@@ -33,7 +33,7 @@
 import numpy as np
 import tensorflow as tf
 import gpflow
-from gpflow.ci_utils import ci_niter
+from gpflow.ci_utils import reduce_in_tests
 from gpflow.optimizers import NaturalGradient
 from gpflow import set_trainable
 import matplotlib.pyplot as plt
@@ -145,7 +145,7 @@ adam = tf.optimizers.Adam()
 set_trainable(model.q_mu, False)
 set_trainable(model.q_sqrt, False)
 
-for _ in range(ci_niter(1000)):
+for _ in range(reduce_in_tests(1000)):
     natgrad.minimize(model.training_loss, [(model.q_mu, model.q_sqrt)])
     adam.minimize(model.training_loss, model.trainable_variables)
 
@@ -235,7 +235,7 @@ model = gpflow.models.VGP((X, Y_data), kernel=kernel, likelihood=likelihood, num
 
 
 # %%
-for _ in range(ci_niter(1000)):
+for _ in range(reduce_in_tests(1000)):
     natgrad.minimize(model.training_loss, [(model.q_mu, model.q_sqrt)])
 
 # %% [markdown]
@@ -271,7 +271,7 @@ model = gpflow.models.VGP((X, Y_data), kernel=kernel, likelihood=likelihood, num
 set_trainable(model.q_mu, False)
 set_trainable(model.q_sqrt, False)
 
-for _ in range(ci_niter(1000)):
+for _ in range(reduce_in_tests(1000)):
     natgrad.minimize(model.training_loss, [(model.q_mu, model.q_sqrt)])
     adam.minimize(model.training_loss, model.trainable_variables)
 

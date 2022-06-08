@@ -27,7 +27,7 @@ import tensorflow as tf
 import gpflow
 from gpflow.utilities import ops, print_summary
 from gpflow.config import set_default_float, default_float, set_default_summary_fmt
-from gpflow.ci_utils import ci_niter
+from gpflow.ci_utils import reduce_in_tests
 
 set_default_float(np.float64)
 set_default_summary_fmt("notebook")
@@ -115,7 +115,7 @@ gplvm.likelihood.variance.assign(0.01)
 
 # %%
 opt = gpflow.optimizers.Scipy()
-maxiter = ci_niter(1000)
+maxiter = reduce_in_tests(1000)
 _ = opt.minimize(
     gplvm.training_loss,
     method="BFGS",

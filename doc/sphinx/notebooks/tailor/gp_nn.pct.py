@@ -23,7 +23,7 @@ import numpy as np
 import tensorflow as tf
 from matplotlib import pyplot as plt
 import gpflow
-from gpflow.ci_utils import ci_niter
+from gpflow.ci_utils import reduce_in_tests
 from scipy.cluster.vq import kmeans2
 
 from typing import Dict, Optional, Tuple
@@ -32,7 +32,7 @@ import tensorflow_datasets as tfds
 import gpflow
 from gpflow.utilities import to_default_float
 
-iterations = ci_niter(100)
+iterations = reduce_in_tests(100)
 
 # %% [markdown]
 # ## Convolutional network inside a GPflow model

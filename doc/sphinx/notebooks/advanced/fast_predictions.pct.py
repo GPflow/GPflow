@@ -79,11 +79,14 @@
 # +
 import gpflow
 import numpy as np
+from gpflow.ci_utils import reduce_in_tests
 
 # Create some data
-X = np.linspace(-1.1, 1.1, 1000)[:, None]
+n_data = reduce_in_tests(1000)
+X = np.linspace(-1.1, 1.1, n_data)[:, None]
 Y = np.sin(X)
-Xnew = np.linspace(-1.1, 1.1, 1000)[:, None]
+Xnew = np.linspace(-1.1, 1.1, n_data)[:, None]
+inducing_points = Xnew
 
 # + [markdown] id="FzCgor4nKUcW"
 #
@@ -117,7 +120,7 @@ posterior.predict_f(Xnew)
 model = gpflow.models.SVGP(
     gpflow.kernels.SquaredExponential(),
     gpflow.likelihoods.Gaussian(),
-    np.linspace(-1.1, 1.1, 1000)[:, None],
+    inducing_points,
 )
 # -
 
@@ -137,9 +140,7 @@ posterior.predict_f(Xnew)
 #
 # And finally, we follow the same approach this time for the SGPR case.
 
-model = gpflow.models.SGPR(
-    (X, Y), gpflow.kernels.SquaredExponential(), np.linspace(-1.1, 1.1, 1000)[:, None]
-)
+model = gpflow.models.SGPR((X, Y), gpflow.kernels.SquaredExponential(), inducing_points)
 
 # The predict_f method on the instance performs no caching.
 

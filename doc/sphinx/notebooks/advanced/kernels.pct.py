@@ -27,6 +27,8 @@ import matplotlib.pyplot as plt
 plt.style.use("ggplot")
 import tensorflow as tf
 
+from gpflow.ci_utils import reduce_in_tests
+
 # %matplotlib inline
 
 # %% [markdown]
@@ -72,9 +74,10 @@ import tensorflow as tf
 
 # %%
 def plotkernelsample(k, ax, xmin=-3, xmax=3):
-    xx = np.linspace(xmin, xmax, 100)[:, None]
+    n_grid = reduce_in_tests(100)
+    xx = np.linspace(xmin, xmax, n_grid)[:, None]
     K = k(xx)
-    ax.plot(xx, np.random.multivariate_normal(np.zeros(100), K, 3).T)
+    ax.plot(xx, np.random.multivariate_normal(np.zeros(n_grid), K, 3).T)
     ax.set_title(k.__class__.__name__)
 
 
@@ -151,7 +154,8 @@ print_summary(k4)
 
 
 def plotkernelfunction(k, ax, xmin=-3, xmax=3, other=0):
-    xx = np.linspace(xmin, xmax, 200)[:, None]
+    n_grid = reduce_in_tests(200)
+    xx = np.linspace(xmin, xmax, n_grid)[:, None]
     ax.plot(xx, k(xx, np.zeros((1, 1)) + other))
     ax.set_title(k.__class__.__name__ + " k(x, %f)" % other)
 
@@ -198,7 +202,7 @@ k = gpflow.kernels.Matern52(active_dims=[0], lengthscales=2) + gpflow.kernels.Ma
 # Let's plot this kernel and sample from it:
 
 # %%
-n_grid = 30
+n_grid = reduce_in_tests(30)
 x = np.linspace(-10, 10, n_grid)
 X, Y = np.meshgrid(x, x)
 X = np.vstack((X.flatten(), Y.flatten())).T

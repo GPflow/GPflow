@@ -178,12 +178,12 @@ print_summary(model)
 
 # %%
 from gpflow.optimizers import Scipy
-from gpflow.ci_utils import ci_niter
+from gpflow.ci_utils import reduce_in_tests
 
 Scipy().minimize(
     model.training_loss_closure(data, compile=True),
     model.trainable_variables,
-    options=dict(maxiter=ci_niter(1500)),
+    options=dict(maxiter=reduce_in_tests(1500)),
 )
 
 print("Final Likelihood", model.maximum_log_likelihood_objective(data).numpy())
@@ -235,7 +235,7 @@ model = MDN(inner_dims=[100, 100], num_mixtures=5)
 Scipy().minimize(
     model.training_loss_closure(data, compile=True),
     model.trainable_variables,
-    options=dict(maxiter=ci_niter(int(10e3))),
+    options=dict(maxiter=reduce_in_tests(int(10e3))),
 )
 
 print("Final Likelihood", model.maximum_log_likelihood_objective(data).numpy())
