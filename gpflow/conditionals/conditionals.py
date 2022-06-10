@@ -17,6 +17,7 @@ from typing import Optional
 import tensorflow as tf
 
 from ..base import MeanAndVariance
+from ..experimental.check_shapes import check_shapes
 from ..inducing_variables import InducingVariables
 from ..kernels import Kernel
 from ..posteriors import BasePosterior, VGPPosterior, get_posterior_class
@@ -24,6 +25,17 @@ from .dispatch import conditional
 
 
 @conditional._gpflow_internal_register(object, InducingVariables, Kernel, object)
+@check_shapes(
+    "Xnew: [batch..., N, D]",
+    "inducing_variable: [M, D, broadcast R]",
+    "f: [M, R]",
+    "q_sqrt: [M_R_or_R_M_M...]",
+    "return[0]: [batch..., N, R]",
+    "return[1]: [batch..., N, R] if (not full_cov) and (not full_output_cov)",
+    "return[1]: [batch..., R, N, N] if full_cov and (not full_output_cov)",
+    "return[1]: [batch..., N, R, R] if (not full_cov) and full_output_cov",
+    "return[1]: [batch..., N, R, N, R] if full_cov and full_output_cov",
+)
 def _sparse_conditional(
     Xnew: tf.Tensor,
     inducing_variable: InducingVariables,
@@ -50,8 +62,8 @@ def _sparse_conditional(
       conditional in the single-output case.
     - See the multiouput notebook for more information about the multiouput framework.
 
-    :param Xnew: data matrix: [N, D]
-    :param f: data matrix: [M, R]
+    :param Xnew: data matrix
+    :param f: data matrix
     :param full_cov: return the covariance between the datapoints
     :param full_output_cov: return the covariance between the outputs.
         NOTE: as we are using a single-output kernel with repetitions
@@ -59,12 +71,7 @@ def _sparse_conditional(
     :param q_sqrt: matrix of standard-deviations or Cholesky matrices,
         size [M, R] or [R, M, M].
     :param white: boolean of whether to use the whitened representation
-    :return:
-        - mean:     [N, R]
-        - variance: [N, R], [R, N, N], [N, R, R] or [N, R, N, R]
-
-        Please see `gpflow.conditional._expand_independent_outputs` for more information
-        about the shape of the variance, depending on `full_cov` and `full_output_cov`.
+    :return: mean and variance
     """
     posterior_class = get_posterior_class(kernel, inducing_variable)
 
@@ -81,6 +88,16 @@ def _sparse_conditional(
 
 
 @conditional._gpflow_internal_register(object, object, Kernel, object)
+@check_shapes(
+    "Xnew: [batch..., N, D]",
+    "X: [M, D]",
+    "f: [M, R]",
+    "return[0]: [batch..., N, R]",
+    "return[1]: [batch..., N, R] if (not full_cov) and (not full_output_cov)",
+    "return[1]: [batch..., R, N, N] if full_cov and (not full_output_cov)",
+    "return[1]: [batch..., N, R, R] if (not full_cov) and full_output_cov",
+    "return[1]: [batch..., N, R, N, R] if full_cov and full_output_cov",
+)
 def _dense_conditional(
     Xnew: tf.Tensor,
     X: tf.Tensor,
@@ -117,18 +134,16 @@ def _dense_conditional(
     We assume R independent GPs, represented by the columns of f (and the
     first dimension of q_sqrt).
 
-    :param Xnew: data matrix, size [N, D]. Evaluate the GP at these new points
-    :param X: data points, size [M, D].
+    :param Xnew: data matrix. Evaluate the GP at these new points
+    :param X: data points.
     :param kernel: GPflow kernel.
-    :param f: data matrix, [M, R], representing the function values at X,
+    :param f: data matrix, representing the function values at X,
         for R functions.
     :param q_sqrt: matrix of standard-deviations or Cholesky matrices,
         size [M, R] or [R, M, M].
     :param white: boolean of whether to use the whitened representation as
         described above.
-    :return:
-        - mean:     [N, R]
-        - variance: [N, R] (full_cov = False), [R, N, N] (full_cov = True)
+    :return: mean and variance
     """
     posterior = VGPPosterior(
         kernel=kernel,

@@ -312,7 +312,9 @@ class VFFPosterior(gpflow.posteriors.BasePosterior):
             else:
                 # fvar = fvar + tf.reduce_sum(tf.square(LTA), 1)  # K x N
                 fvar = fvar + tf.reduce_sum(tf.square(ATL), 2)  # K x N
-        fvar = tf.transpose(fvar)  # N x K or N x N x K
+
+        if not full_cov:
+            fvar = tf.transpose(fvar)  # N x K
 
         return fmean, fvar
 
@@ -362,7 +364,7 @@ class VFFPosterior(gpflow.posteriors.BasePosterior):
         else:
             KufT_Qinv_Kuf_diag = tf.reduce_sum(Kuf * Qinv_Kuf, axis=-2)
             fvar = self.kernel(Xnew, full_cov=False) - KufT_Qinv_Kuf_diag
-        fvar = tf.transpose(fvar)
+            fvar = tf.transpose(fvar)
 
         return fmean, fvar
 

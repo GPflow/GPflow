@@ -16,16 +16,21 @@ Code for extracting shapes from object.
 """
 import collections.abc as cabc
 from functools import singledispatch
-from typing import Any, Sequence, Tuple, Union
+from typing import TYPE_CHECKING, Any, Sequence, Tuple, Union
 
 import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
 
-from ...base import AnyNDArray
 from .base_types import Shape
 from .error_contexts import ErrorContext, IndexContext, ObjectTypeContext, StackContext
 from .exceptions import NoShapeError
+
+if TYPE_CHECKING:  # pragma: no cover
+    # Avoid cyclic imports:
+    from ...base import AnyNDArray
+else:
+    AnyNDArray = Any
 
 
 @singledispatch

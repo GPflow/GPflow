@@ -17,6 +17,7 @@ from typing import Optional
 import tensorflow as tf
 
 from ...base import SamplesMeanAndVariance
+from ...experimental.check_shapes import check_shapes
 from ...inducing_variables import (
     SeparateIndependentInducingVariables,
     SharedIndependentInducingVariables,
@@ -28,6 +29,15 @@ from ..util import mix_latent_gp, sample_mvn
 
 @sample_conditional.register(
     object, SharedIndependentInducingVariables, LinearCoregionalization, object
+)
+@check_shapes(
+    "Xnew: [batch..., N, D]",
+    "inducing_variable: [M, D, maybe_R...]",
+    "f: [M, R]",
+    "return[0]: [batch..., N, P] if num_samples is None",
+    "return[0]: [batch..., num_samples, N, P] if num_samples is not None",
+    "return[1]: [batch..., N, P]",
+    "return[2]: [batch..., N, P]",
 )
 def _sample_conditional(
     Xnew: tf.Tensor,
@@ -42,12 +52,13 @@ def _sample_conditional(
     num_samples: Optional[int] = None,
 ) -> SamplesMeanAndVariance:
     """
-    `sample_conditional` will return a sample from the conditinoal distribution.
-    In most cases this means calculating the conditional mean m and variance v and then
-    returning m + sqrt(v) * eps, with eps ~ N(0, 1).
-    However, for some combinations of Mok and Mof more efficient sampling routines exists.
-    The dispatcher will make sure that we use the most efficent one.
-    :return: [N, P] (full_output_cov = False) or [N, P, P] (full_output_cov = True)
+     `sample_conditional` will return a sample from the conditional distribution.
+     In most cases this means calculating the conditional mean m and variance v and then
+     returning m + sqrt(v) * eps, with eps ~ N(0, 1).
+     However, for some combinations of Mok and Mof, more efficient sampling routines exist.
+     The dispatcher will make sure that we use the most efficent one.
+
+    :return: samples, mean, cov
     """
     if full_cov:
         raise NotImplementedError("full_cov not yet implemented")
