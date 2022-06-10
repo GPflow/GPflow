@@ -95,14 +95,14 @@ import gpflow as gpf
 import tensorflow as tf
 
 from gpflow.utilities import print_summary
-from gpflow.ci_utils import ci_niter
+from gpflow.ci_utils import reduce_in_tests
 
 gpf.config.set_default_float(np.float64)
 gpf.config.set_default_summary_fmt("notebook")
 np.random.seed(0)
 # %matplotlib inline
 
-MAXITER = ci_niter(2000)
+MAXITER = reduce_in_tests(2000)
 
 # %% [markdown]
 # ## Generate synthetic data

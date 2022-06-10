@@ -21,7 +21,7 @@
 # %%
 import gpflow
 import tensorflow as tf
-from gpflow.ci_utils import ci_niter  # to speed up automated testing of this notebook
+from gpflow.ci_utils import reduce_in_tests
 import matplotlib.pyplot as plt
 
 # %matplotlib inline
@@ -59,7 +59,7 @@ opt.minimize(
     exact_model.training_loss,
     exact_model.trainable_variables,
     method="L-BFGS-B",
-    options=dict(maxiter=ci_niter(20000)),
+    options=dict(maxiter=reduce_in_tests(20000)),
     tol=1e-11,
 )
 

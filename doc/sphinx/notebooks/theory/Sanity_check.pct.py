@@ -43,7 +43,7 @@ import matplotlib.pyplot as plt
 from gpflow import set_trainable
 from gpflow.models import maximum_log_likelihood_objective, training_loss_closure
 from gpflow.config import default_float
-from gpflow.ci_utils import ci_niter
+from gpflow.ci_utils import reduce_in_tests
 
 # %matplotlib inline
 plt.rcParams["figure.figsize"] = (12, 6)
@@ -105,7 +105,7 @@ for m in models:
     opt.minimize(
         loss_closure,
         variables=m.trainable_variables,
-        options=dict(maxiter=ci_niter(1000)),
+        options=dict(maxiter=reduce_in_tests(1000)),
         compile=True,
     )
 

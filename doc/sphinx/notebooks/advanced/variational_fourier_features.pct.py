@@ -32,7 +32,7 @@ from gpflow.base import TensorLike
 from gpflow.utilities import to_default_float
 from gpflow import covariances as cov
 from gpflow import kullback_leiblers as kl
-from gpflow.ci_utils import ci_niter
+from gpflow.ci_utils import reduce_in_tests
 from gpflow.experimental.check_shapes import Shape
 
 # %%
@@ -460,7 +460,7 @@ opt = gpflow.optimizers.Scipy()
 opt.minimize(
     m.training_loss_closure(data),
     m.trainable_variables,
-    options=dict(maxiter=ci_niter(5000)),
+    options=dict(maxiter=reduce_in_tests(5000)),
 )
 
 gpflow.utilities.print_summary(m, fmt="notebook")
@@ -485,7 +485,7 @@ opt = gpflow.optimizers.Scipy()
 opt.minimize(
     m_ip.training_loss_closure(data),
     m_ip.trainable_variables,
-    options=dict(maxiter=ci_niter(5000)),
+    options=dict(maxiter=reduce_in_tests(5000)),
 )
 
 gpflow.utilities.print_summary(m_ip, fmt="notebook")

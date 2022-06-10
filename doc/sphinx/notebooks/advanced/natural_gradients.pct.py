@@ -24,7 +24,7 @@ import numpy as np
 import gpflow
 import tensorflow as tf
 
-from gpflow.ci_utils import ci_niter, ci_range
+from gpflow.ci_utils import reduce_in_tests
 from gpflow.models import VGP, GPR, SGPR, SVGP
 from gpflow.optimizers import NaturalGradient
 from gpflow.optimizers.natgrad import XiSqrtMeanVar
@@ -48,7 +48,7 @@ y = np.sin(10 * x[:, :1]) + 5 * x[:, 1:] ** 2
 data = (x, y)
 inducing_variable = tf.random.uniform((M, D))
 adam_learning_rate = 0.01
-iterations = ci_niter(5)
+iterations = reduce_in_tests(5)
 autotune = tf.data.experimental.AUTOTUNE
 
 # %% [markdown]
@@ -195,14 +195,14 @@ data_minibatch_it = iter(data_minibatch)
 
 
 svgp_objective = svgp.training_loss_closure(data_minibatch_it)
-for _ in range(ci_niter(100)):
+for _ in range(reduce_in_tests(100)):
     natgrad_opt.minimize(svgp_objective, var_list=variational_params)
 
 # %% [markdown]
 # Minibatch SVGP ELBO after NatGrad optimization:
 
 # %%
-np.average([svgp.elbo(next(data_minibatch_it)) for _ in ci_range(100)])
+np.average([svgp.elbo(next(data_minibatch_it)) for _ in range(reduce_in_tests(100))])
 
 # %% [markdown]
 # ## Comparison with ordinary gradients in the conjugate case
@@ -259,11 +259,11 @@ svgp_ordinary_loss = svgp_ordinary.training_loss_closure(data_minibatch_it)
 svgp_natgrad_loss = svgp_natgrad.training_loss_closure(data_minibatch_it)
 
 
-for _ in range(ci_niter(100)):
+for _ in range(reduce_in_tests(100)):
     ordinary_adam_opt.minimize(svgp_ordinary_loss, var_list=svgp_ordinary.trainable_variables)
 
 
-for _ in range(ci_niter(100)):
+for _ in range(reduce_in_tests(100)):
     natgrad_adam_opt.minimize(svgp_natgrad_loss, var_list=svgp_natgrad.trainable_variables)
     natgrad_opt.minimize(svgp_natgrad_loss, var_list=variational_params)
 
@@ -271,13 +271,13 @@ for _ in range(ci_niter(100)):
 # SVGP ELBO after ordinary `Adam` optimization:
 
 # %%
-np.average([svgp_ordinary.elbo(next(data_minibatch_it)) for _ in ci_range(100)])
+np.average([svgp_ordinary.elbo(next(data_minibatch_it)) for _ in range(reduce_in_tests(100))])
 
 # %% [markdown]
 # SVGP ELBO after `NaturalGradient` and `Adam` optimization:
 
 # %%
-np.average([svgp_natgrad.elbo(next(data_minibatch_it)) for _ in ci_range(100)])
+np.average([svgp_natgrad.elbo(next(data_minibatch_it)) for _ in range(reduce_in_tests(100))])
 
 # %% [markdown]
 # ## Comparison with ordinary gradients in the non-conjugate case
@@ -314,11 +314,11 @@ variational_params = [(vgp_bernoulli_natgrad.q_mu, vgp_bernoulli_natgrad.q_sqrt)
 
 # %%
 # Optimize vgp_bernoulli
-for _ in range(ci_niter(100)):
+for _ in range(reduce_in_tests(100)):
     adam_opt.minimize(vgp_bernoulli.training_loss, var_list=vgp_bernoulli.trainable_variables)
 
 # Optimize vgp_bernoulli_natgrad
-for _ in range(ci_niter(100)):
+for _ in range(reduce_in_tests(100)):
     adam_opt.minimize(
         vgp_bernoulli_natgrad.training_loss, var_list=vgp_bernoulli_natgrad.trainable_variables
     )
@@ -359,7 +359,7 @@ variational_params = [
 
 # %%
 # Optimize vgp_bernoulli_natgrads_xi
-for _ in range(ci_niter(100)):
+for _ in range(reduce_in_tests(100)):
     adam_opt.minimize(
         vgp_bernoulli_natgrads_xi.training_loss,
         var_list=vgp_bernoulli_natgrads_xi.trainable_variables,

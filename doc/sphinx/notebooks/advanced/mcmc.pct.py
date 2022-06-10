@@ -27,7 +27,7 @@ import tensorflow_probability as tfp
 from tensorflow_probability import distributions as tfd
 
 import gpflow
-from gpflow.ci_utils import ci_niter
+from gpflow.ci_utils import reduce_in_tests
 from gpflow import set_trainable
 from multiclass_classification import plot_from_samples, colors
 
@@ -131,8 +131,8 @@ gpflow.utilities.print_summary(model)
 # We now sample from the posterior using HMC.
 
 # %%
-num_burnin_steps = ci_niter(300)
-num_samples = ci_niter(1000)
+num_burnin_steps = reduce_in_tests(300)
+num_samples = reduce_in_tests(1000)
 
 # Note that here we need model.trainable_parameters, not trainable_variables - only parameters can have priors!
 hmc_helper = gpflow.optimizers.SamplingHelper(
@@ -354,8 +354,8 @@ print(f"log posterior density at optimum: {model.log_posterior_density()}")
 # Sampling starts with a 'burn in' period.
 
 # %%
-num_burnin_steps = ci_niter(100)
-num_samples = ci_niter(500)
+num_burnin_steps = reduce_in_tests(100)
+num_samples = reduce_in_tests(500)
 
 # Note that here we need model.trainable_parameters, not trainable_variables - only parameters can have priors!
 hmc_helper = gpflow.optimizers.SamplingHelper(
@@ -485,7 +485,7 @@ gpflow.utilities.print_summary(model)
 
 # %%
 optimizer = gpflow.optimizers.Scipy()
-maxiter = ci_niter(3000)
+maxiter = reduce_in_tests(3000)
 _ = optimizer.minimize(
     model.training_loss, model.trainable_variables, options=dict(maxiter=maxiter)
 )
@@ -495,8 +495,8 @@ _ = optimizer.minimize(
 # We then run the sampler,
 
 # %%
-num_burnin_steps = ci_niter(600)
-num_samples = ci_niter(1000)
+num_burnin_steps = reduce_in_tests(600)
+num_samples = reduce_in_tests(1000)
 
 # Note that here we need model.trainable_parameters, not trainable_variables - only parameters can have priors!
 hmc_helper = gpflow.optimizers.SamplingHelper(
@@ -646,8 +646,8 @@ model.kernel.lengthscales.prior_on
 # Let's run HMC and plot chain traces:
 
 # %%
-num_burnin_steps = ci_niter(300)
-num_samples = ci_niter(500)
+num_burnin_steps = reduce_in_tests(300)
+num_samples = reduce_in_tests(500)
 
 hmc_helper = gpflow.optimizers.SamplingHelper(
     model.log_posterior_density, model.trainable_parameters

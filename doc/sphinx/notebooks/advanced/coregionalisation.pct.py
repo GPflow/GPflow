@@ -47,7 +47,7 @@ import matplotlib.pyplot as plt
 
 # %matplotlib inline
 
-from gpflow.ci_utils import ci_niter
+from gpflow.ci_utils import reduce_in_tests
 
 plt.rcParams["figure.figsize"] = (12, 6)
 np.random.seed(123)
@@ -119,7 +119,7 @@ lik = gpflow.likelihoods.SwitchedLikelihood(
 m = gpflow.models.VGP((X_augmented, Y_augmented), kernel=kern, likelihood=lik)
 
 # fit the covariance function parameters
-maxiter = ci_niter(10000)
+maxiter = reduce_in_tests(10000)
 gpflow.optimizers.Scipy().minimize(
     m.training_loss,
     m.trainable_variables,

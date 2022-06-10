@@ -37,7 +37,7 @@ import tensorflow as tf
 import gpflow
 
 from gpflow.config import default_float
-from gpflow.ci_utils import ci_niter
+from gpflow.ci_utils import reduce_in_tests
 from gpflow.utilities import to_default_float
 
 import warnings
@@ -82,7 +82,8 @@ def noisy_sin(x):
     return tf.math.sin(x) + 0.1 * tf.random.normal(x.shape, dtype=default_float())
 
 
-num_train_data, num_test_data = 100, 500
+num_train_data = reduce_in_tests(100)
+num_test_data = reduce_in_tests(500)
 
 X = tf.random.uniform((num_train_data, 1), dtype=default_float()) * 10
 Xtest = tf.random.uniform((num_test_data, 1), dtype=default_float()) * 10
@@ -198,7 +199,9 @@ optimizer.minimize(
 # %%
 optimizer = gpflow.optimizers.Scipy()
 optimizer.minimize(
-    vgp_model.training_loss, vgp_model.trainable_variables, options=dict(maxiter=ci_niter(1000))
+    vgp_model.training_loss,
+    vgp_model.trainable_variables,
+    options=dict(maxiter=reduce_in_tests(1000)),
 )
 
 # %% [markdown]
@@ -267,8 +270,8 @@ def simple_training_loop(model: gpflow.models.SVGP, epochs: int = 1, logging_epo
     tf_optimization_step = tf.function(optimization_step)
 
     batches = iter(train_dataset)
-    for epoch in range(epochs):
-        for _ in range(ci_niter(num_batches_per_epoch)):
+    for epoch in range(reduce_in_tests(epochs)):
+        for _ in range(reduce_in_tests(num_batches_per_epoch)):
             tf_optimization_step(model, next(batches))
 
         epoch_id = epoch + 1
@@ -296,7 +299,7 @@ from gpflow.monitor import (
 )
 
 
-samples_input = np.linspace(0, 10, 100).reshape(-1, 1)
+samples_input = np.linspace(0, 10, reduce_in_tests(100)).reshape(-1, 1)
 
 
 def plot_model(fig, ax):
@@ -350,7 +353,7 @@ def monitored_training_loop(epochs: int):
     batches = iter(train_dataset)
 
     for epoch in range(epochs):
-        for _ in range(ci_niter(num_batches_per_epoch)):
+        for _ in range(reduce_in_tests(num_batches_per_epoch)):
             batch = next(batches)
             tf_optimization_step(model, batch)
 
@@ -434,7 +437,7 @@ def checkpointing_training_loop(
     batches = iter(train_dataset)
 
     for epoch in range(epochs):
-        for step in range(ci_niter(num_batches_per_epoch)):
+        for step in range(reduce_in_tests(num_batches_per_epoch)):
             tf_optimization_step(model, next(batches))
             if step_var is not None:
                 step_var.assign(epoch * num_batches_per_epoch + step + 1)

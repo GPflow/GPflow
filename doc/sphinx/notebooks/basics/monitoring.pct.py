@@ -26,7 +26,7 @@ import matplotlib.pyplot as plt
 import tensorflow as tf
 
 import gpflow
-from gpflow.ci_utils import ci_niter
+from gpflow.ci_utils import reduce_in_tests
 
 np.random.seed(0)
 
@@ -51,7 +51,7 @@ from gpflow.monitor import (
 
 num_data = 100
 noise_std = 0.1
-optimisation_steps = ci_niter(100)
+optimisation_steps = reduce_in_tests(100)
 
 # %%
 # Create dummy data.
