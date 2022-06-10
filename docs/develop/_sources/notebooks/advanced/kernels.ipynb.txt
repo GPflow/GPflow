@@ -2,7 +2,7 @@
  "cells": [
   {
    "cell_type": "markdown",
-   "id": "8ea3795b",
+   "id": "625f3c81",
    "metadata": {},
    "source": [
     "# Manipulating kernels\n",
@@ -14,13 +14,13 @@
   {
    "cell_type": "code",
    "execution_count": 1,
-   "id": "4f1eed5c",
+   "id": "62d74997",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-10T09:41:07.931531Z",
-     "iopub.status.busy": "2022-06-10T09:41:07.931128Z",
-     "iopub.status.idle": "2022-06-10T09:41:11.603527Z",
-     "shell.execute_reply": "2022-06-10T09:41:11.602793Z"
+     "iopub.execute_input": "2022-06-10T16:23:28.562116Z",
+     "iopub.status.busy": "2022-06-10T16:23:28.561811Z",
+     "iopub.status.idle": "2022-06-10T16:23:32.046549Z",
+     "shell.execute_reply": "2022-06-10T16:23:32.045679Z"
     }
    },
    "outputs": [
@@ -28,8 +28,8 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2022-06-10 09:41:08.124921: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcudart.so.11.0'; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory\n",
-      "2022-06-10 09:41:08.124954: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.\n"
+      "2022-06-10 16:23:28.744525: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcudart.so.11.0'; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory\n",
+      "2022-06-10 16:23:28.744553: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.\n"
      ]
     },
     {
@@ -49,12 +49,14 @@
     "plt.style.use(\"ggplot\")\n",
     "import tensorflow as tf\n",
     "\n",
+    "from gpflow.ci_utils import reduce_in_tests\n",
+    "\n",
     "%matplotlib inline"
    ]
   },
   {
    "cell_type": "markdown",
-   "id": "faf05c29",
+   "id": "0d45aed6",
    "metadata": {},
    "source": [
     "## Standard kernels in GPflow\n",
@@ -101,13 +103,13 @@
   {
    "cell_type": "code",
    "execution_count": 2,
-   "id": "f3809e0a",
+   "id": "5fca41b6",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-10T09:41:11.607775Z",
-     "iopub.status.busy": "2022-06-10T09:41:11.607213Z",
-     "iopub.status.idle": "2022-06-10T09:41:16.705724Z",
-     "shell.execute_reply": "2022-06-10T09:41:16.704945Z"
+     "iopub.execute_input": "2022-06-10T16:23:32.050088Z",
+     "iopub.status.busy": "2022-06-10T16:23:32.049565Z",
+     "iopub.status.idle": "2022-06-10T16:23:35.727144Z",
+     "shell.execute_reply": "2022-06-10T16:23:35.726245Z"
     }
    },
    "outputs": [
@@ -115,10 +117,10 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2022-06-10 09:41:11.841507: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcuda.so.1'; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory\n",
-      "2022-06-10 09:41:11.841545: W tensorflow/stream_executor/cuda/cuda_driver.cc:269] failed call to cuInit: UNKNOWN ERROR (303)\n",
-      "2022-06-10 09:41:11.841568: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (97739b7bc232): /proc/driver/nvidia/version does not exist\n",
-      "2022-06-10 09:41:11.841849: I tensorflow/core/platform/cpu_feature_guard.cc:151] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA\n",
+      "2022-06-10 16:23:32.286898: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcuda.so.1'; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory\n",
+      "2022-06-10 16:23:32.286936: W tensorflow/stream_executor/cuda/cuda_driver.cc:269] failed call to cuInit: UNKNOWN ERROR (303)\n",
+      "2022-06-10 16:23:32.286958: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (141dfd1f541c): /proc/driver/nvidia/version does not exist\n",
+      "2022-06-10 16:23:32.287251: I tensorflow/core/platform/cpu_feature_guard.cc:151] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA\n",
       "To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.\n",
       "/home/circleci/project/gpflow/experimental/utils.py:42: UserWarning: You're calling gpflow.experimental.check_shapes.checker.ShapeChecker.__init__ which is considered *experimental*. Expect: breaking changes, poor documentation, and bugs.\n",
       "  warn(\n"
@@ -139,9 +141,10 @@
    ],
    "source": [
     "def plotkernelsample(k, ax, xmin=-3, xmax=3):\n",
-    "    xx = np.linspace(xmin, xmax, 100)[:, None]\n",
+    "    n_grid = reduce_in_tests(100)\n",
+    "    xx = np.linspace(xmin, xmax, n_grid)[:, None]\n",
     "    K = k(xx)\n",
-    "    ax.plot(xx, np.random.multivariate_normal(np.zeros(100), K, 3).T)\n",
+    "    ax.plot(xx, np.random.multivariate_normal(np.zeros(n_grid), K, 3).T)\n",
     "    ax.set_title(k.__class__.__name__)\n",
     "\n",
     "\n",
@@ -160,7 +163,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "72bb6605",
+   "id": "847862af",
    "metadata": {},
    "source": [
     "## First example: create a Matern 3/2 covariance kernel\n",
@@ -171,13 +174,13 @@
   {
    "cell_type": "code",
    "execution_count": 3,
-   "id": "28a5be39",
+   "id": "875d9b5a",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-10T09:41:16.709357Z",
-     "iopub.status.busy": "2022-06-10T09:41:16.709052Z",
-     "iopub.status.idle": "2022-06-10T09:41:16.720422Z",
-     "shell.execute_reply": "2022-06-10T09:41:16.719617Z"
+     "iopub.execute_input": "2022-06-10T16:23:35.731218Z",
+     "iopub.status.busy": "2022-06-10T16:23:35.730851Z",
+     "iopub.status.idle": "2022-06-10T16:23:35.742189Z",
+     "shell.execute_reply": "2022-06-10T16:23:35.741464Z"
     }
    },
    "outputs": [],
@@ -187,7 +190,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "0ab55a9b",
+   "id": "7b9b00c9",
    "metadata": {},
    "source": [
     "**NOTE:** The values specified for the `variance` and `lengthscales` parameters are **floats**.\n",
@@ -198,13 +201,13 @@
   {
    "cell_type": "code",
    "execution_count": 4,
-   "id": "76f189fb",
+   "id": "079e98f2",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-10T09:41:16.723989Z",
-     "iopub.status.busy": "2022-06-10T09:41:16.723676Z",
-     "iopub.status.idle": "2022-06-10T09:41:16.738152Z",
-     "shell.execute_reply": "2022-06-10T09:41:16.737562Z"
+     "iopub.execute_input": "2022-06-10T16:23:35.745337Z",
+     "iopub.status.busy": "2022-06-10T16:23:35.745036Z",
+     "iopub.status.idle": "2022-06-10T16:23:35.758337Z",
+     "shell.execute_reply": "2022-06-10T16:23:35.757789Z"
     }
    },
    "outputs": [
@@ -274,7 +277,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "fad252f0",
+   "id": "f09a5172",
    "metadata": {},
    "source": [
     "You can access the parameter values and assign new values with the same syntax as for models:"
@@ -283,13 +286,13 @@
   {
    "cell_type": "code",
    "execution_count": 5,
-   "id": "2a94396b",
+   "id": "76b1af32",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-10T09:41:16.741017Z",
-     "iopub.status.busy": "2022-06-10T09:41:16.740674Z",
-     "iopub.status.idle": "2022-06-10T09:41:16.747984Z",
-     "shell.execute_reply": "2022-06-10T09:41:16.747371Z"
+     "iopub.execute_input": "2022-06-10T16:23:35.760994Z",
+     "iopub.status.busy": "2022-06-10T16:23:35.760669Z",
+     "iopub.status.idle": "2022-06-10T16:23:35.766953Z",
+     "shell.execute_reply": "2022-06-10T16:23:35.766349Z"
     }
    },
    "outputs": [
@@ -310,7 +313,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "5e18d98d",
+   "id": "8a06a794",
    "metadata": {},
    "source": [
     "Finally, you can *call* the kernel object to compute covariance matrices:"
@@ -319,13 +322,13 @@
   {
    "cell_type": "code",
    "execution_count": 6,
-   "id": "0ec9046e",
+   "id": "8ca9b40e",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-10T09:41:16.750991Z",
-     "iopub.status.busy": "2022-06-10T09:41:16.750692Z",
-     "iopub.status.idle": "2022-06-10T09:41:16.873867Z",
-     "shell.execute_reply": "2022-06-10T09:41:16.873078Z"
+     "iopub.execute_input": "2022-06-10T16:23:35.769585Z",
+     "iopub.status.busy": "2022-06-10T16:23:35.769325Z",
+     "iopub.status.idle": "2022-06-10T16:23:35.883889Z",
+     "shell.execute_reply": "2022-06-10T16:23:35.883134Z"
     }
    },
    "outputs": [
@@ -356,7 +359,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "b9ece61a",
+   "id": "c750a54f",
    "metadata": {},
    "source": [
     "## Combine kernels\n",
@@ -367,13 +370,13 @@
   {
    "cell_type": "code",
    "execution_count": 7,
-   "id": "01ac7c6b",
+   "id": "7355c528",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-10T09:41:16.910912Z",
-     "iopub.status.busy": "2022-06-10T09:41:16.910480Z",
-     "iopub.status.idle": "2022-06-10T09:41:18.059373Z",
-     "shell.execute_reply": "2022-06-10T09:41:18.058424Z"
+     "iopub.execute_input": "2022-06-10T16:23:35.916432Z",
+     "iopub.status.busy": "2022-06-10T16:23:35.916082Z",
+     "iopub.status.idle": "2022-06-10T16:23:36.796482Z",
+     "shell.execute_reply": "2022-06-10T16:23:36.795859Z"
     }
    },
    "outputs": [
@@ -444,7 +447,8 @@
     "\n",
     "\n",
     "def plotkernelfunction(k, ax, xmin=-3, xmax=3, other=0):\n",
-    "    xx = np.linspace(xmin, xmax, 200)[:, None]\n",
+    "    n_grid = reduce_in_tests(200)\n",
+    "    xx = np.linspace(xmin, xmax, n_grid)[:, None]\n",
     "    ax.plot(xx, k(xx, np.zeros((1, 1)) + other))\n",
     "    ax.set_title(k.__class__.__name__ + \" k(x, %f)\" % other)\n",
     "\n",
@@ -458,7 +462,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "aa582b74",
+   "id": "90307b48",
    "metadata": {},
    "source": [
     "## Kernels for higher-dimensional input spaces\n",
@@ -468,7 +472,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "78365ed9",
+   "id": "66b108e6",
    "metadata": {},
    "source": [
     "You can also initialize the lengthscales when the object is created:"
@@ -477,13 +481,13 @@
   {
    "cell_type": "code",
    "execution_count": 8,
-   "id": "dff28885",
+   "id": "a1668cea",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-10T09:41:18.062551Z",
-     "iopub.status.busy": "2022-06-10T09:41:18.062205Z",
-     "iopub.status.idle": "2022-06-10T09:41:18.079206Z",
-     "shell.execute_reply": "2022-06-10T09:41:18.078341Z"
+     "iopub.execute_input": "2022-06-10T16:23:36.799464Z",
+     "iopub.status.busy": "2022-06-10T16:23:36.799152Z",
+     "iopub.status.idle": "2022-06-10T16:23:36.812948Z",
+     "shell.execute_reply": "2022-06-10T16:23:36.812358Z"
     }
    },
    "outputs": [
@@ -515,7 +519,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "7bd80b75",
+   "id": "51acd638",
    "metadata": {},
    "source": [
     "## Specify active dimensions\n",
@@ -528,13 +532,13 @@
   {
    "cell_type": "code",
    "execution_count": 9,
-   "id": "8d248e8e",
+   "id": "8a2adfce",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-10T09:41:18.082411Z",
-     "iopub.status.busy": "2022-06-10T09:41:18.082097Z",
-     "iopub.status.idle": "2022-06-10T09:41:18.097568Z",
-     "shell.execute_reply": "2022-06-10T09:41:18.096917Z"
+     "iopub.execute_input": "2022-06-10T16:23:36.815839Z",
+     "iopub.status.busy": "2022-06-10T16:23:36.815546Z",
+     "iopub.status.idle": "2022-06-10T16:23:36.828532Z",
+     "shell.execute_reply": "2022-06-10T16:23:36.827797Z"
     }
    },
    "outputs": [],
@@ -546,7 +550,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "2429e5b9",
+   "id": "4cb8a770",
    "metadata": {},
    "source": [
     "`active_dims` makes it easy to create additive models. Here we build an additive Matern 5/2 kernel:"
@@ -555,13 +559,13 @@
   {
    "cell_type": "code",
    "execution_count": 10,
-   "id": "229cc93c",
+   "id": "9c151131",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-10T09:41:18.100856Z",
-     "iopub.status.busy": "2022-06-10T09:41:18.100515Z",
-     "iopub.status.idle": "2022-06-10T09:41:18.115093Z",
-     "shell.execute_reply": "2022-06-10T09:41:18.114304Z"
+     "iopub.execute_input": "2022-06-10T16:23:36.831715Z",
+     "iopub.status.busy": "2022-06-10T16:23:36.831409Z",
+     "iopub.status.idle": "2022-06-10T16:23:36.846507Z",
+     "shell.execute_reply": "2022-06-10T16:23:36.845863Z"
     }
    },
    "outputs": [],
@@ -573,7 +577,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "d49a5e5c",
+   "id": "42fadbd5",
    "metadata": {},
    "source": [
     "Let's plot this kernel and sample from it:"
@@ -582,13 +586,13 @@
   {
    "cell_type": "code",
    "execution_count": 11,
-   "id": "10a3f1c1",
+   "id": "f9d08ff8",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-10T09:41:18.118159Z",
-     "iopub.status.busy": "2022-06-10T09:41:18.117842Z",
-     "iopub.status.idle": "2022-06-10T09:41:53.286622Z",
-     "shell.execute_reply": "2022-06-10T09:41:53.285956Z"
+     "iopub.execute_input": "2022-06-10T16:23:36.849802Z",
+     "iopub.status.busy": "2022-06-10T16:23:36.849483Z",
+     "iopub.status.idle": "2022-06-10T16:23:55.559849Z",
+     "shell.execute_reply": "2022-06-10T16:23:55.559202Z"
     }
    },
    "outputs": [
@@ -606,7 +610,7 @@
     }
    ],
    "source": [
-    "n_grid = 30\n",
+    "n_grid = reduce_in_tests(30)\n",
     "x = np.linspace(-10, 10, n_grid)\n",
     "X, Y = np.meshgrid(x, x)\n",
     "X = np.vstack((X.flatten(), Y.flatten())).T\n",
@@ -630,7 +634,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "2e0de18d",
+   "id": "ccaeb16b",
    "metadata": {},
    "source": [
     "## Define new covariance functions\n",

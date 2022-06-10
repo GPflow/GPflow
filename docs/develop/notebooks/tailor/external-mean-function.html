@@ -768,7 +768,7 @@ div.rendered_html tbody tr:hover {
 <span class="kn">from</span> <span class="nn">gpflow.models</span> <span class="kn">import</span> <span class="n">GPR</span>
 <span class="kn">from</span> <span class="nn">gpflow.base</span> <span class="kn">import</span> <span class="n">Parameter</span>
 
-<span class="kn">from</span> <span class="nn">gpflow.ci_utils</span> <span class="kn">import</span> <span class="n">ci_niter</span>
+<span class="kn">from</span> <span class="nn">gpflow.ci_utils</span> <span class="kn">import</span> <span class="n">reduce_in_tests</span>
 
 <span class="c1"># for reproducibility of this notebook:</span>
 <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
@@ -783,8 +783,8 @@ div.rendered_html tbody tr:hover {
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2022-06-10 09:54:41.819878: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcudart.so.11.0&#39;; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory
-2022-06-10 09:54:41.819908: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.
+2022-06-10 16:36:59.322033: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcudart.so.11.0&#39;; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory
+2022-06-10 16:36:59.322063: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.
 /home/circleci/project/gpflow/experimental/utils.py:42: UserWarning: You&#39;re calling gpflow.experimental.check_shapes.decorator.check_shapes which is considered *experimental*. Expect: breaking changes, poor documentation, and bugs.
   warn(
 </pre></div></div>
@@ -829,10 +829,10 @@ div.rendered_html tbody tr:hover {
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2022-06-10 09:54:45.027808: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcuda.so.1&#39;; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory
-2022-06-10 09:54:45.027841: W tensorflow/stream_executor/cuda/cuda_driver.cc:269] failed call to cuInit: UNKNOWN ERROR (303)
-2022-06-10 09:54:45.027859: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (97739b7bc232): /proc/driver/nvidia/version does not exist
-2022-06-10 09:54:45.028133: I tensorflow/core/platform/cpu_feature_guard.cc:151] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA
+2022-06-10 16:37:02.276192: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcuda.so.1&#39;; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory
+2022-06-10 16:37:02.276227: W tensorflow/stream_executor/cuda/cuda_driver.cc:269] failed call to cuInit: UNKNOWN ERROR (303)
+2022-06-10 16:37:02.276247: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (141dfd1f541c): /proc/driver/nvidia/version does not exist
+2022-06-10 16:37:02.276509: I tensorflow/core/platform/cpu_feature_guard.cc:151] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA
 To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.
 /home/circleci/project/gpflow/experimental/utils.py:42: UserWarning: You&#39;re calling gpflow.experimental.check_shapes.checker.ShapeChecker.__init__ which is considered *experimental*. Expect: breaking changes, poor documentation, and bugs.
   warn(
@@ -911,9 +911,10 @@ To enable them in other operations, rebuild TensorFlow with the appropriate comp
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">num_datapoints</span> <span class="o">=</span> <span class="mi">5</span>
 <span class="c1"># Although the original experiment uses (1000, 200, 50) for the following</span>
 <span class="c1"># parameters, we will use (50, 10, 500) for computational reasons.</span>
-<span class="n">num_meta_tasks</span> <span class="o">=</span> <span class="mi">50</span>
-<span class="n">num_test_tasks</span> <span class="o">=</span> <span class="mi">10</span>
+<span class="n">num_meta_tasks</span> <span class="o">=</span> <span class="n">reduce_in_tests</span><span class="p">(</span><span class="mi">50</span><span class="p">)</span>
+<span class="n">num_test_tasks</span> <span class="o">=</span> <span class="n">reduce_in_tests</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
 <span class="n">num_data_per_task</span> <span class="o">=</span> <span class="mi">500</span>
+<span class="n">num_iter</span> <span class="o">=</span> <span class="n">reduce_in_tests</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
 <span class="n">meta</span><span class="p">,</span> <span class="n">test</span> <span class="o">=</span> <span class="n">generate_meta_and_test_tasks</span><span class="p">(</span>
     <span class="n">num_datapoints</span><span class="p">,</span> <span class="n">num_meta_tasks</span><span class="p">,</span> <span class="n">num_test_tasks</span><span class="p">,</span> <span class="n">num_data_per_task</span>
 <span class="p">)</span>
@@ -1010,7 +1011,7 @@ To enable them in other operations, rebuild TensorFlow with the appropriate comp
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">time</span>
 
 
-<span class="k">def</span> <span class="nf">train_loop</span><span class="p">(</span><span class="n">meta_tasks</span><span class="p">,</span> <span class="n">num_iter</span><span class="o">=</span><span class="mi">5</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">train_loop</span><span class="p">(</span><span class="n">meta_tasks</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Metalearning training loop. Trained for 100 epochs in original experiment.</span>
 
@@ -1028,7 +1029,7 @@ To enable them in other operations, rebuild TensorFlow with the appropriate comp
         <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">task</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">meta_tasks</span><span class="p">):</span>
             <span class="n">data</span> <span class="o">=</span> <span class="n">task</span>  <span class="c1"># (X, Y)</span>
             <span class="n">model</span> <span class="o">=</span> <span class="n">build_model</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">mean_function</span><span class="o">=</span><span class="n">mean_function</span><span class="p">)</span>
-            <span class="n">run_adam</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">ci_niter</span><span class="p">(</span><span class="mi">100</span><span class="p">))</span>
+            <span class="n">run_adam</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">reduce_in_tests</span><span class="p">(</span><span class="mi">100</span><span class="p">))</span>
 
         <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&gt;&gt;&gt;&gt; iteration took </span><span class="si">{:.2f}</span><span class="s2"> s&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">ts</span><span class="p">))</span>
     <span class="k">return</span> <span class="n">mean_function</span>
@@ -1051,7 +1052,7 @@ Currently in meta-iteration/epoch 0
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2022-06-10 09:54:46.739559: W tensorflow/python/util/util.cc:368] Sets are not currently considered sequences, but this may change in the future, so consider avoiding using them.
+2022-06-10 16:37:03.302268: W tensorflow/python/util/util.cc:368] Sets are not currently considered sequences, but this may change in the future, so consider avoiding using them.
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -1059,21 +1060,21 @@ Currently in meta-iteration/epoch 0
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-WARNING:tensorflow:AutoGraph could not transform &lt;function _c3_mro at 0x7f6d7f8f2e60&gt; and will run it as-is.
+WARNING:tensorflow:AutoGraph could not transform &lt;function _c3_mro at 0x7f6c16082e60&gt; and will run it as-is.
 Cause: for/else statement not yet supported
 To silence this warning, decorate the function with @tf.autograph.experimental.do_not_convert
-WARNING: AutoGraph could not transform &lt;function _c3_mro at 0x7f6d7f8f2e60&gt; and will run it as-is.
+WARNING: AutoGraph could not transform &lt;function _c3_mro at 0x7f6c16082e60&gt; and will run it as-is.
 Cause: for/else statement not yet supported
 To silence this warning, decorate the function with @tf.autograph.experimental.do_not_convert
-&gt;&gt;&gt;&gt; iteration took 80.18 s
+&gt;&gt;&gt;&gt; iteration took 77.49 s
 Currently in meta-iteration/epoch 1
-&gt;&gt;&gt;&gt; iteration took 73.40 s
+&gt;&gt;&gt;&gt; iteration took 74.80 s
 Currently in meta-iteration/epoch 2
-&gt;&gt;&gt;&gt; iteration took 74.86 s
+&gt;&gt;&gt;&gt; iteration took 77.54 s
 Currently in meta-iteration/epoch 3
-&gt;&gt;&gt;&gt; iteration took 82.58 s
+&gt;&gt;&gt;&gt; iteration took 76.42 s
 Currently in meta-iteration/epoch 4
-&gt;&gt;&gt;&gt; iteration took 75.63 s
+&gt;&gt;&gt;&gt; iteration took 79.88 s
 </pre></div></div>
 </div>
 <p>Finally, we use the optimized mean function for all of the test tasks. <strong>NOTE:</strong> We do not do any further optimization for the hyperparameters in this step.</p>

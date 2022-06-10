@@ -2,7 +2,7 @@
  "cells": [
   {
    "cell_type": "markdown",
-   "id": "9be6c208",
+   "id": "328de827",
    "metadata": {},
    "source": [
     "# Multi-output Gaussian processes in GPflow"
@@ -10,7 +10,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "00185d75",
+   "id": "194444ff",
    "metadata": {},
    "source": [
     "This notebook shows how to construct a multi-output GP model using GPflow, together with different interdomain inducing variables which lead to different approximation properties. GPflow provides a framework for specifying multioutput GP priors, and interdomain approximations which is\n",
@@ -87,13 +87,13 @@
   {
    "cell_type": "code",
    "execution_count": 1,
-   "id": "606c9b94",
+   "id": "37681730",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-10T09:43:59.017596Z",
-     "iopub.status.busy": "2022-06-10T09:43:59.017302Z",
-     "iopub.status.idle": "2022-06-10T09:44:02.339259Z",
-     "shell.execute_reply": "2022-06-10T09:44:02.338621Z"
+     "iopub.execute_input": "2022-06-10T16:26:05.441985Z",
+     "iopub.status.busy": "2022-06-10T16:26:05.441668Z",
+     "iopub.status.idle": "2022-06-10T16:26:08.951600Z",
+     "shell.execute_reply": "2022-06-10T16:26:08.950973Z"
     }
    },
    "outputs": [
@@ -101,8 +101,8 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2022-06-10 09:43:59.955319: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcudart.so.11.0'; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory\n",
-      "2022-06-10 09:43:59.955350: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.\n"
+      "2022-06-10 16:26:06.476239: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcudart.so.11.0'; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory\n",
+      "2022-06-10 16:26:06.476272: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.\n"
      ]
     },
     {
@@ -121,19 +121,19 @@
     "import tensorflow as tf\n",
     "\n",
     "from gpflow.utilities import print_summary\n",
-    "from gpflow.ci_utils import ci_niter\n",
+    "from gpflow.ci_utils import reduce_in_tests\n",
     "\n",
     "gpf.config.set_default_float(np.float64)\n",
     "gpf.config.set_default_summary_fmt(\"notebook\")\n",
     "np.random.seed(0)\n",
     "%matplotlib inline\n",
     "\n",
-    "MAXITER = ci_niter(2000)"
+    "MAXITER = reduce_in_tests(2000)"
    ]
   },
   {
    "cell_type": "markdown",
-   "id": "137da2a5",
+   "id": "815842ee",
    "metadata": {},
    "source": [
     "## Generate synthetic data\n",
@@ -143,13 +143,13 @@
   {
    "cell_type": "code",
    "execution_count": 2,
-   "id": "a7f40b2b",
+   "id": "bbcf9c18",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-10T09:44:02.342669Z",
-     "iopub.status.busy": "2022-06-10T09:44:02.342197Z",
-     "iopub.status.idle": "2022-06-10T09:44:02.345729Z",
-     "shell.execute_reply": "2022-06-10T09:44:02.345188Z"
+     "iopub.execute_input": "2022-06-10T16:26:08.955039Z",
+     "iopub.status.busy": "2022-06-10T16:26:08.954574Z",
+     "iopub.status.idle": "2022-06-10T16:26:08.957796Z",
+     "shell.execute_reply": "2022-06-10T16:26:08.957294Z"
     }
    },
    "outputs": [],
@@ -164,13 +164,13 @@
   {
    "cell_type": "code",
    "execution_count": 3,
-   "id": "4f4c3404",
+   "id": "8a61d2e1",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-10T09:44:02.348358Z",
-     "iopub.status.busy": "2022-06-10T09:44:02.348067Z",
-     "iopub.status.idle": "2022-06-10T09:44:02.352560Z",
-     "shell.execute_reply": "2022-06-10T09:44:02.352028Z"
+     "iopub.execute_input": "2022-06-10T16:26:08.960631Z",
+     "iopub.status.busy": "2022-06-10T16:26:08.960353Z",
+     "iopub.status.idle": "2022-06-10T16:26:08.964991Z",
+     "shell.execute_reply": "2022-06-10T16:26:08.964392Z"
     }
    },
    "outputs": [],
@@ -188,13 +188,13 @@
   {
    "cell_type": "code",
    "execution_count": 4,
-   "id": "1e6a32a2",
+   "id": "c7449a21",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-10T09:44:02.355105Z",
-     "iopub.status.busy": "2022-06-10T09:44:02.354822Z",
-     "iopub.status.idle": "2022-06-10T09:44:02.358482Z",
-     "shell.execute_reply": "2022-06-10T09:44:02.357968Z"
+     "iopub.execute_input": "2022-06-10T16:26:08.967723Z",
+     "iopub.status.busy": "2022-06-10T16:26:08.967440Z",
+     "iopub.status.idle": "2022-06-10T16:26:08.971485Z",
+     "shell.execute_reply": "2022-06-10T16:26:08.970805Z"
     }
    },
    "outputs": [],
@@ -205,7 +205,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "9ba665a3",
+   "id": "63ab35c6",
    "metadata": {},
    "source": [
     "We create a utility function for plotting:"
@@ -214,13 +214,13 @@
   {
    "cell_type": "code",
    "execution_count": 5,
-   "id": "9320f1da",
+   "id": "1b4dbd01",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-10T09:44:02.361019Z",
-     "iopub.status.busy": "2022-06-10T09:44:02.360741Z",
-     "iopub.status.idle": "2022-06-10T09:44:02.366139Z",
-     "shell.execute_reply": "2022-06-10T09:44:02.365603Z"
+     "iopub.execute_input": "2022-06-10T16:26:08.974079Z",
+     "iopub.status.busy": "2022-06-10T16:26:08.973822Z",
+     "iopub.status.idle": "2022-06-10T16:26:08.979541Z",
+     "shell.execute_reply": "2022-06-10T16:26:08.978964Z"
     }
    },
    "outputs": [],
@@ -245,7 +245,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "60199247",
+   "id": "c8f1c278",
    "metadata": {},
    "source": [
     "## Model the outputs of $f(x)$ directly\n",
@@ -258,7 +258,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "dc29f872",
+   "id": "3a287408",
    "metadata": {},
    "source": [
     "### 1. Shared independent multi-output kernel (MOK) and shared independent inducing variables\n",
@@ -268,13 +268,13 @@
   {
    "cell_type": "code",
    "execution_count": 6,
-   "id": "3f93670b",
+   "id": "9f7d17ca",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-10T09:44:02.368817Z",
-     "iopub.status.busy": "2022-06-10T09:44:02.368503Z",
-     "iopub.status.idle": "2022-06-10T09:44:02.396348Z",
-     "shell.execute_reply": "2022-06-10T09:44:02.395716Z"
+     "iopub.execute_input": "2022-06-10T16:26:08.982340Z",
+     "iopub.status.busy": "2022-06-10T16:26:08.982060Z",
+     "iopub.status.idle": "2022-06-10T16:26:09.013357Z",
+     "shell.execute_reply": "2022-06-10T16:26:09.012484Z"
     }
    },
    "outputs": [
@@ -282,10 +282,10 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2022-06-10 09:44:02.370836: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcuda.so.1'; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory\n",
-      "2022-06-10 09:44:02.370864: W tensorflow/stream_executor/cuda/cuda_driver.cc:269] failed call to cuInit: UNKNOWN ERROR (303)\n",
-      "2022-06-10 09:44:02.370884: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (97739b7bc232): /proc/driver/nvidia/version does not exist\n",
-      "2022-06-10 09:44:02.371165: I tensorflow/core/platform/cpu_feature_guard.cc:151] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA\n",
+      "2022-06-10 16:26:08.984510: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcuda.so.1'; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory\n",
+      "2022-06-10 16:26:08.984549: W tensorflow/stream_executor/cuda/cuda_driver.cc:269] failed call to cuInit: UNKNOWN ERROR (303)\n",
+      "2022-06-10 16:26:08.984576: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (141dfd1f541c): /proc/driver/nvidia/version does not exist\n",
+      "2022-06-10 16:26:08.984946: I tensorflow/core/platform/cpu_feature_guard.cc:151] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA\n",
       "To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.\n",
       "/home/circleci/project/gpflow/experimental/utils.py:42: UserWarning: You're calling gpflow.experimental.check_shapes.checker.ShapeChecker.__init__ which is considered *experimental*. Expect: breaking changes, poor documentation, and bugs.\n",
       "  warn(\n"
@@ -308,13 +308,13 @@
   {
    "cell_type": "code",
    "execution_count": 7,
-   "id": "089e228f",
+   "id": "edd50650",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-10T09:44:02.399027Z",
-     "iopub.status.busy": "2022-06-10T09:44:02.398722Z",
-     "iopub.status.idle": "2022-06-10T09:44:02.444219Z",
-     "shell.execute_reply": "2022-06-10T09:44:02.443635Z"
+     "iopub.execute_input": "2022-06-10T16:26:09.016093Z",
+     "iopub.status.busy": "2022-06-10T16:26:09.015799Z",
+     "iopub.status.idle": "2022-06-10T16:26:09.058614Z",
+     "shell.execute_reply": "2022-06-10T16:26:09.057881Z"
     }
    },
    "outputs": [
@@ -353,13 +353,13 @@
   {
    "cell_type": "code",
    "execution_count": 8,
-   "id": "f5672363",
+   "id": "c7c772b5",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-10T09:44:02.446883Z",
-     "iopub.status.busy": "2022-06-10T09:44:02.446566Z",
-     "iopub.status.idle": "2022-06-10T09:44:15.594983Z",
-     "shell.execute_reply": "2022-06-10T09:44:15.594365Z"
+     "iopub.execute_input": "2022-06-10T16:26:09.061485Z",
+     "iopub.status.busy": "2022-06-10T16:26:09.061168Z",
+     "iopub.status.idle": "2022-06-10T16:26:22.438692Z",
+     "shell.execute_reply": "2022-06-10T16:26:22.437816Z"
     }
    },
    "outputs": [
@@ -367,14 +367,14 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2022-06-10 09:44:02.451561: W tensorflow/python/util/util.cc:368] Sets are not currently considered sequences, but this may change in the future, so consider avoiding using them.\n"
+      "2022-06-10 16:26:09.066286: W tensorflow/python/util/util.cc:368] Sets are not currently considered sequences, but this may change in the future, so consider avoiding using them.\n"
      ]
     },
     {
      "name": "stdout",
      "output_type": "stream",
      "text": [
-      "WARNING:tensorflow:AutoGraph could not transform <function _c3_mro at 0x7fe32581ee60> and will run it as-is.\n",
+      "WARNING:tensorflow:AutoGraph could not transform <function _c3_mro at 0x7fe9d6b2ae60> and will run it as-is.\n",
       "Cause: for/else statement not yet supported\n",
       "To silence this warning, decorate the function with @tf.autograph.experimental.do_not_convert\n"
      ]
@@ -383,7 +383,7 @@
      "name": "stdout",
      "output_type": "stream",
      "text": [
-      "WARNING: AutoGraph could not transform <function _c3_mro at 0x7fe32581ee60> and will run it as-is.\n",
+      "WARNING: AutoGraph could not transform <function _c3_mro at 0x7fe9d6b2ae60> and will run it as-is.\n",
       "Cause: for/else statement not yet supported\n",
       "To silence this warning, decorate the function with @tf.autograph.experimental.do_not_convert\n"
      ]
@@ -842,13 +842,7 @@
       "\n",
       "At iterate  213    f=  4.98287D+01    |proj g|=  1.39939D+01\n",
       "\n",
-      "At iterate  214    f=  4.97721D+01    |proj g|=  1.23479D+01\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate  214    f=  4.97721D+01    |proj g|=  1.23479D+01\n",
       "\n",
       "At iterate  215    f=  4.97267D+01    |proj g|=  1.12035D+01\n",
       "\n",
@@ -884,7 +878,13 @@
       "\n",
       "At iterate  231    f=  4.90820D+01    |proj g|=  1.08712D+01\n",
       "\n",
-      "At iterate  232    f=  4.90633D+01    |proj g|=  7.68148D+00\n",
+      "At iterate  232    f=  4.90633D+01    |proj g|=  7.68148D+00\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate  233    f=  4.89847D+01    |proj g|=  1.25171D+01\n",
       "\n",
@@ -1096,13 +1096,7 @@
       "\n",
       "At iterate  337    f=  4.57303D+01    |proj g|=  9.36180D+00\n",
       "\n",
-      "At iterate  338    f=  4.57012D+01    |proj g|=  4.51208D+00\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate  338    f=  4.57012D+01    |proj g|=  4.51208D+00\n",
       "\n",
       "At iterate  339    f=  4.56816D+01    |proj g|=  6.70189D+00\n",
       "\n",
@@ -1167,7 +1161,13 @@
       "At iterate  369    f=  4.49612D+01    |proj g|=  1.07455D+01\n",
       "\n",
       "At iterate  370    f=  4.49456D+01    |proj g|=  3.72699D+00\n",
-      "\n",
+      "\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "At iterate  371    f=  4.49346D+01    |proj g|=  5.39384D+00\n",
       "\n",
       "At iterate  372    f=  4.49239D+01    |proj g|=  1.29705D+01\n",
@@ -1353,13 +1353,7 @@
       "At iterate  462    f=  4.33887D+01    |proj g|=  3.65990D+00\n",
       "\n",
       "At iterate  463    f=  4.33798D+01    |proj g|=  8.08131D+00\n",
-      "\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "\n",
       "At iterate  464    f=  4.33660D+01    |proj g|=  1.05750D+01\n",
       "\n",
       "At iterate  465    f=  4.33526D+01    |proj g|=  1.08277D+01\n",
@@ -1458,7 +1452,13 @@
       "\n",
       "At iterate  512    f=  4.28451D+01    |proj g|=  6.90457D+00\n",
       "\n",
-      "At iterate  513    f=  4.28360D+01    |proj g|=  5.76851D+00\n",
+      "At iterate  513    f=  4.28360D+01    |proj g|=  5.76851D+00\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate  514    f=  4.28327D+01    |proj g|=  5.66540D+00\n",
       "\n",
@@ -1614,13 +1614,7 @@
       "\n",
       "At iterate  590    f=  4.26151D+01    |proj g|=  1.55965D+00\n",
       "\n",
-      "At iterate  591    f=  4.26142D+01    |proj g|=  9.46261D-01\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate  591    f=  4.26142D+01    |proj g|=  9.46261D-01\n",
       "\n",
       "At iterate  592    f=  4.26128D+01    |proj g|=  2.59355D+00\n",
       "\n",
@@ -1736,7 +1730,13 @@
       "\n",
       "At iterate  648    f=  4.25225D+01    |proj g|=  1.19716D+00\n",
       "\n",
-      "At iterate  649    f=  4.25203D+01    |proj g|=  2.67267D+00\n",
+      "At iterate  649    f=  4.25203D+01    |proj g|=  2.67267D+00\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate  650    f=  4.25199D+01    |proj g|=  6.53052D+00\n",
       "\n",
@@ -1874,13 +1874,7 @@
       "\n",
       "At iterate  717    f=  4.24661D+01    |proj g|=  9.71686D-01\n",
       "\n",
-      "At iterate  718    f=  4.24657D+01    |proj g|=  4.48670D-01\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate  718    f=  4.24657D+01    |proj g|=  4.48670D-01\n",
       "\n",
       "At iterate  719    f=  4.24652D+01    |proj g|=  7.09228D-01\n",
       "\n",
@@ -2020,7 +2014,13 @@
       "\n",
       "At iterate  787    f=  4.24428D+01    |proj g|=  2.87762D+00\n",
       "\n",
-      "At iterate  788    f=  4.24426D+01    |proj g|=  5.06562D-01\n",
+      "At iterate  788    f=  4.24426D+01    |proj g|=  5.06562D-01\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate  789    f=  4.24425D+01    |proj g|=  5.47290D-01\n",
       "\n",
@@ -2136,13 +2136,7 @@
       "\n",
       "At iterate  845    f=  4.24348D+01    |proj g|=  4.36476D-01\n",
       "\n",
-      "At iterate  846    f=  4.24347D+01    |proj g|=  6.35644D-01\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate  846    f=  4.24347D+01    |proj g|=  6.35644D-01\n",
       "\n",
       "At iterate  847    f=  4.24346D+01    |proj g|=  5.38888D-01\n",
       "\n",
@@ -2304,7 +2298,13 @@
       "\n",
       "At iterate  926    f=  4.24279D+01    |proj g|=  4.49809D-01\n",
       "\n",
-      "At iterate  927    f=  4.24278D+01    |proj g|=  5.54328D-01\n",
+      "At iterate  927    f=  4.24278D+01    |proj g|=  5.54328D-01\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate  928    f=  4.24278D+01    |proj g|=  4.68890D-01\n",
       "\n",
@@ -2396,13 +2396,7 @@
       "\n",
       "At iterate  972    f=  4.24259D+01    |proj g|=  5.79976D-01\n",
       "\n",
-      "At iterate  973    f=  4.24258D+01    |proj g|=  7.41605D-01\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate  973    f=  4.24258D+01    |proj g|=  7.41605D-01\n",
       "\n",
       "At iterate  974    f=  4.24257D+01    |proj g|=  7.15128D-01\n",
       "\n",
@@ -2574,7 +2568,13 @@
       "\n",
       "At iterate 1058    f=  4.24235D+01    |proj g|=  3.31725D-01\n",
       "\n",
-      "At iterate 1059    f=  4.24235D+01    |proj g|=  2.70477D-01\n",
+      "At iterate 1059    f=  4.24235D+01    |proj g|=  2.70477D-01\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate 1060    f=  4.24234D+01    |proj g|=  1.33499D-01\n",
       "\n",
@@ -2654,13 +2654,7 @@
       "\n",
       "At iterate 1098    f=  4.24232D+01    |proj g|=  3.07769D-01\n",
       "\n",
-      "At iterate 1099    f=  4.24231D+01    |proj g|=  9.27677D-02\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate 1099    f=  4.24231D+01    |proj g|=  9.27677D-02\n",
       "\n",
       "At iterate 1100    f=  4.24231D+01    |proj g|=  7.08433D-02\n",
       "\n",
@@ -2851,7 +2845,13 @@
       "At iterate 1193    f=  4.24226D+01    |proj g|=  1.82596D-01\n",
       "\n",
       "At iterate 1194    f=  4.24226D+01    |proj g|=  2.08666D-01\n",
-      "\n",
+      "\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "At iterate 1195    f=  4.24226D+01    |proj g|=  8.23048D-02\n",
       "\n",
       "At iterate 1196    f=  4.24226D+01    |proj g|=  1.61667D-01\n",
@@ -2921,13 +2921,7 @@
       "At iterate 1228    f=  4.24223D+01    |proj g|=  5.77854D-02\n",
       "\n",
       "At iterate 1229    f=  4.24223D+01    |proj g|=  1.39794D-01\n",
-      "\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "\n",
       "At iterate 1230    f=  4.24223D+01    |proj g|=  3.96212D-01\n",
       "\n",
       "At iterate 1231    f=  4.24223D+01    |proj g|=  1.45627D-01\n",
@@ -3134,7 +3128,13 @@
       "\n",
       "At iterate 1332    f=  4.24215D+01    |proj g|=  2.48562D-01\n",
       "\n",
-      "At iterate 1333    f=  4.24215D+01    |proj g|=  2.97482D-01\n",
+      "At iterate 1333    f=  4.24215D+01    |proj g|=  2.97482D-01\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate 1334    f=  4.24215D+01    |proj g|=  1.10955D-01\n",
       "\n",
@@ -3180,13 +3180,7 @@
       "\n",
       "At iterate 1355    f=  4.24214D+01    |proj g|=  1.04444D-01\n",
       "\n",
-      "At iterate 1356    f=  4.24214D+01    |proj g|=  9.38182D-02\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate 1356    f=  4.24214D+01    |proj g|=  9.38182D-02\n",
       "\n",
       "At iterate 1357    f=  4.24214D+01    |proj g|=  5.00912D-01\n",
       "\n",
@@ -3412,7 +3406,13 @@
       "\n",
       "At iterate 1468    f=  4.24209D+01    |proj g|=  8.01562D-02\n",
       "\n",
-      "At iterate 1469    f=  4.24209D+01    |proj g|=  1.66697D-01\n",
+      "At iterate 1469    f=  4.24209D+01    |proj g|=  1.66697D-01\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate 1470    f=  4.24209D+01    |proj g|=  1.90656D-01\n",
       "\n",
@@ -3436,13 +3436,7 @@
       "\n",
       "At iterate 1480    f=  4.24209D+01    |proj g|=  1.24996D-01\n",
       "\n",
-      "At iterate 1481    f=  4.24209D+01    |proj g|=  1.91858D-01\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate 1481    f=  4.24209D+01    |proj g|=  1.91858D-01\n",
       "\n",
       "At iterate 1482    f=  4.24209D+01    |proj g|=  1.93803D-01\n",
       "\n",
@@ -3701,16 +3695,16 @@
       "At iterate 1609    f=  4.24206D+01    |proj g|=  3.16785D-02\n",
       "\n",
       "At iterate 1610    f=  4.24206D+01    |proj g|=  7.10949D-02\n",
-      "\n",
-      "At iterate 1611    f=  4.24206D+01    |proj g|=  8.11890D-02\n",
-      "\n",
-      "At iterate 1612    f=  4.24206D+01    |proj g|=  1.36131D-01\n"
+      "\n"
      ]
     },
     {
      "name": "stdout",
      "output_type": "stream",
      "text": [
+      "At iterate 1611    f=  4.24206D+01    |proj g|=  8.11890D-02\n",
+      "\n",
+      "At iterate 1612    f=  4.24206D+01    |proj g|=  1.36131D-01\n",
       "\n",
       "At iterate 1613    f=  4.24206D+01    |proj g|=  4.66416D-02\n",
       "\n",
@@ -3968,13 +3962,7 @@
       "\n",
       "At iterate 1740    f=  4.24205D+01    |proj g|=  5.55248D-02\n",
       "\n",
-      "At iterate 1741    f=  4.24205D+01    |proj g|=  8.79091D-02\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate 1741    f=  4.24205D+01    |proj g|=  8.79091D-02\n",
       "\n",
       "At iterate 1742    f=  4.24205D+01    |proj g|=  2.78508D-02\n",
       "\n",
@@ -3984,7 +3972,13 @@
       "\n",
       "At iterate 1745    f=  4.24205D+01    |proj g|=  6.14804D-02\n",
       "\n",
-      "At iterate 1746    f=  4.24205D+01    |proj g|=  4.89817D-02\n",
+      "At iterate 1746    f=  4.24205D+01    |proj g|=  4.89817D-02\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate 1747    f=  4.24205D+01    |proj g|=  2.49207D-02\n",
       "\n",
@@ -4113,13 +4107,13 @@
   {
    "cell_type": "code",
    "execution_count": 9,
-   "id": "f46a8c8e",
+   "id": "9dc877a9",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-10T09:44:15.638573Z",
-     "iopub.status.busy": "2022-06-10T09:44:15.638198Z",
-     "iopub.status.idle": "2022-06-10T09:44:15.656254Z",
-     "shell.execute_reply": "2022-06-10T09:44:15.655613Z"
+     "iopub.execute_input": "2022-06-10T16:26:22.480494Z",
+     "iopub.status.busy": "2022-06-10T16:26:22.480115Z",
+     "iopub.status.idle": "2022-06-10T16:26:22.498811Z",
+     "shell.execute_reply": "2022-06-10T16:26:22.498047Z"
     }
    },
    "outputs": [
@@ -4156,13 +4150,13 @@
   {
    "cell_type": "code",
    "execution_count": 10,
-   "id": "ec1361bc",
+   "id": "ebecf11f",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-10T09:44:15.659352Z",
-     "iopub.status.busy": "2022-06-10T09:44:15.658964Z",
-     "iopub.status.idle": "2022-06-10T09:44:15.879162Z",
-     "shell.execute_reply": "2022-06-10T09:44:15.878468Z"
+     "iopub.execute_input": "2022-06-10T16:26:22.502362Z",
+     "iopub.status.busy": "2022-06-10T16:26:22.502024Z",
+     "iopub.status.idle": "2022-06-10T16:26:22.718269Z",
+     "shell.execute_reply": "2022-06-10T16:26:22.717704Z"
     }
    },
    "outputs": [
@@ -4187,13 +4181,13 @@
   {
    "cell_type": "code",
    "execution_count": 11,
-   "id": "965549e9",
+   "id": "80f212da",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-10T09:44:15.881968Z",
-     "iopub.status.busy": "2022-06-10T09:44:15.881661Z",
-     "iopub.status.idle": "2022-06-10T09:44:15.892099Z",
-     "shell.execute_reply": "2022-06-10T09:44:15.891507Z"
+     "iopub.execute_input": "2022-06-10T16:26:22.721338Z",
+     "iopub.status.busy": "2022-06-10T16:26:22.721063Z",
+     "iopub.status.idle": "2022-06-10T16:26:22.730253Z",
+     "shell.execute_reply": "2022-06-10T16:26:22.729752Z"
     }
    },
    "outputs": [
@@ -4236,7 +4230,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "e7a05b48",
+   "id": "16ddd306",
    "metadata": {},
    "source": [
     "### 2. Separate independent MOK and shared independent inducing variables\n",
@@ -4246,13 +4240,13 @@
   {
    "cell_type": "code",
    "execution_count": 12,
-   "id": "19a5e334",
+   "id": "a5beec43",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-10T09:44:15.895128Z",
-     "iopub.status.busy": "2022-06-10T09:44:15.894743Z",
-     "iopub.status.idle": "2022-06-10T09:44:15.934237Z",
-     "shell.execute_reply": "2022-06-10T09:44:15.933472Z"
+     "iopub.execute_input": "2022-06-10T16:26:22.732742Z",
+     "iopub.status.busy": "2022-06-10T16:26:22.732490Z",
+     "iopub.status.idle": "2022-06-10T16:26:22.766308Z",
+     "shell.execute_reply": "2022-06-10T16:26:22.765408Z"
     }
    },
    "outputs": [],
@@ -4272,13 +4266,13 @@
   {
    "cell_type": "code",
    "execution_count": 13,
-   "id": "b0ef474d",
+   "id": "5a38e5b6",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-10T09:44:15.937825Z",
-     "iopub.status.busy": "2022-06-10T09:44:15.937451Z",
-     "iopub.status.idle": "2022-06-10T09:44:15.962219Z",
-     "shell.execute_reply": "2022-06-10T09:44:15.961456Z"
+     "iopub.execute_input": "2022-06-10T16:26:22.769404Z",
+     "iopub.status.busy": "2022-06-10T16:26:22.769087Z",
+     "iopub.status.idle": "2022-06-10T16:26:22.793344Z",
+     "shell.execute_reply": "2022-06-10T16:26:22.792614Z"
     }
    },
    "outputs": [],
@@ -4290,13 +4284,13 @@
   {
    "cell_type": "code",
    "execution_count": 14,
-   "id": "be43757e",
+   "id": "93227215",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-10T09:44:15.965481Z",
-     "iopub.status.busy": "2022-06-10T09:44:15.965150Z",
-     "iopub.status.idle": "2022-06-10T09:44:30.207851Z",
-     "shell.execute_reply": "2022-06-10T09:44:30.207156Z"
+     "iopub.execute_input": "2022-06-10T16:26:22.797034Z",
+     "iopub.status.busy": "2022-06-10T16:26:22.796562Z",
+     "iopub.status.idle": "2022-06-10T16:26:36.605542Z",
+     "shell.execute_reply": "2022-06-10T16:26:36.604647Z"
     }
    },
    "outputs": [
@@ -4363,13 +4357,7 @@
       "\n",
       "At iterate   16    f=  2.89637D+02    |proj g|=  1.02793D+02\n",
       "\n",
-      "At iterate   17    f=  2.84325D+02    |proj g|=  1.38789D+02\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate   17    f=  2.84325D+02    |proj g|=  1.38789D+02\n",
       "\n",
       "At iterate   18    f=  2.77377D+02    |proj g|=  3.58703D+01\n",
       "\n",
@@ -4385,7 +4373,13 @@
       "\n",
       "At iterate   24    f=  2.40441D+02    |proj g|=  4.44453D+01\n",
       "\n",
-      "At iterate   25    f=  2.32267D+02    |proj g|=  5.76783D+01\n",
+      "At iterate   25    f=  2.32267D+02    |proj g|=  5.76783D+01\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate   26    f=  2.23114D+02    |proj g|=  5.74207D+01\n",
       "\n",
@@ -4416,13 +4410,7 @@
       "At iterate   39    f=  2.01521D+02    |proj g|=  4.90469D+01\n",
       "\n",
       "At iterate   40    f=  1.99887D+02    |proj g|=  1.98770D+01\n",
-      "\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "\n",
       "At iterate   41    f=  1.99065D+02    |proj g|=  1.20509D+01\n",
       "\n",
       "At iterate   42    f=  1.98599D+02    |proj g|=  6.92786D+01\n",
@@ -4451,7 +4439,13 @@
       "\n",
       "At iterate   54    f=  1.92636D+02    |proj g|=  1.73542D+01\n",
       "\n",
-      "At iterate   55    f=  1.92415D+02    |proj g|=  6.33189D+00\n",
+      "At iterate   55    f=  1.92415D+02    |proj g|=  6.33189D+00\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate   56    f=  1.92259D+02    |proj g|=  9.57020D+00\n",
       "\n",
@@ -4485,13 +4479,7 @@
       "\n",
       "At iterate   71    f=  1.88766D+02    |proj g|=  2.36443D+01\n",
       "\n",
-      "At iterate   72    f=  1.88549D+02    |proj g|=  9.54550D+00\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate   72    f=  1.88549D+02    |proj g|=  9.54550D+00\n",
       "\n",
       "At iterate   73    f=  1.88264D+02    |proj g|=  6.52464D+00\n",
       "\n",
@@ -4519,7 +4507,13 @@
       "\n",
       "At iterate   85    f=  1.83433D+02    |proj g|=  4.12002D+01\n",
       "\n",
-      "At iterate   86    f=  1.82977D+02    |proj g|=  1.60404D+01\n",
+      "At iterate   86    f=  1.82977D+02    |proj g|=  1.60404D+01\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate   87    f=  1.82641D+02    |proj g|=  1.03197D+01\n",
       "\n",
@@ -4547,13 +4541,7 @@
       "\n",
       "At iterate   99    f=  1.68136D+02    |proj g|=  5.44790D+01\n",
       "\n",
-      "At iterate  100    f=  1.66202D+02    |proj g|=  2.71768D+01\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate  100    f=  1.66202D+02    |proj g|=  2.71768D+01\n",
       "\n",
       "At iterate  101    f=  1.64565D+02    |proj g|=  3.43769D+01\n",
       "\n",
@@ -4599,7 +4587,13 @@
       "\n",
       "At iterate  122    f=  1.02686D+02    |proj g|=  1.63570D+02\n",
       "\n",
-      "At iterate  123    f=  9.86587D+01    |proj g|=  5.84417D+01\n",
+      "At iterate  123    f=  9.86587D+01    |proj g|=  5.84417D+01\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate  124    f=  9.68666D+01    |proj g|=  2.55379D+01\n",
       "\n",
@@ -4635,13 +4629,7 @@
       "\n",
       "At iterate  140    f=  6.89891D+01    |proj g|=  3.35199D+01\n",
       "\n",
-      "At iterate  141    f=  6.87741D+01    |proj g|=  1.80348D+02\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate  141    f=  6.87741D+01    |proj g|=  1.80348D+02\n",
       "\n",
       "At iterate  142    f=  6.72341D+01    |proj g|=  6.63202D+01\n",
       "\n",
@@ -4690,7 +4678,13 @@
       "At iterate  164    f=  5.70156D+01    |proj g|=  1.70002D+01\n",
       "\n",
       "At iterate  165    f=  5.67836D+01    |proj g|=  2.05895D+01\n",
-      "\n",
+      "\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "At iterate  166    f=  5.64715D+01    |proj g|=  3.58244D+01\n",
       "\n",
       "At iterate  167    f=  5.60298D+01    |proj g|=  3.29991D+01\n",
@@ -4719,13 +4713,7 @@
       "\n",
       "At iterate  179    f=  5.38194D+01    |proj g|=  3.49549D+01\n",
       "\n",
-      "At iterate  180    f=  5.34930D+01    |proj g|=  2.31751D+01\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate  180    f=  5.34930D+01    |proj g|=  2.31751D+01\n",
       "\n",
       "At iterate  181    f=  5.33145D+01    |proj g|=  3.67947D+01\n",
       "\n",
@@ -4774,7 +4762,13 @@
       "At iterate  203    f=  5.04206D+01    |proj g|=  1.81864D+01\n",
       "\n",
       "At iterate  204    f=  5.03283D+01    |proj g|=  3.15831D+01\n",
-      "\n",
+      "\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "At iterate  205    f=  5.02167D+01    |proj g|=  1.08374D+01\n",
       "\n",
       "At iterate  206    f=  5.00959D+01    |proj g|=  6.71044D+00\n",
@@ -4807,13 +4801,7 @@
       "\n",
       "At iterate  220    f=  4.91180D+01    |proj g|=  2.34164D+01\n",
       "\n",
-      "At iterate  221    f=  4.90705D+01    |proj g|=  7.30033D+00\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate  221    f=  4.90705D+01    |proj g|=  7.30033D+00\n",
       "\n",
       "At iterate  222    f=  4.90338D+01    |proj g|=  1.48201D+01\n",
       "\n",
@@ -4865,7 +4853,13 @@
       "\n",
       "At iterate  246    f=  4.73907D+01    |proj g|=  6.75928D+00\n",
       "\n",
-      "At iterate  247    f=  4.73179D+01    |proj g|=  1.31993D+01\n",
+      "At iterate  247    f=  4.73179D+01    |proj g|=  1.31993D+01\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate  248    f=  4.72926D+01    |proj g|=  1.67741D+01\n",
       "\n",
@@ -4887,13 +4881,7 @@
       "\n",
       "At iterate  257    f=  4.68643D+01    |proj g|=  3.96792D+00\n",
       "\n",
-      "At iterate  258    f=  4.68297D+01    |proj g|=  4.32534D+00\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate  258    f=  4.68297D+01    |proj g|=  4.32534D+00\n",
       "\n",
       "At iterate  259    f=  4.67989D+01    |proj g|=  2.33923D+01\n",
       "\n",
@@ -4950,7 +4938,13 @@
       "At iterate  285    f=  4.56052D+01    |proj g|=  5.71523D+00\n",
       "\n",
       "At iterate  286    f=  4.55846D+01    |proj g|=  4.96895D+00\n",
-      "\n",
+      "\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "At iterate  287    f=  4.55312D+01    |proj g|=  1.17282D+01\n",
       "\n",
       "At iterate  288    f=  4.54920D+01    |proj g|=  4.89114D+01\n",
@@ -4969,13 +4963,7 @@
       "\n",
       "At iterate  295    f=  4.51964D+01    |proj g|=  1.65202D+01\n",
       "\n",
-      "At iterate  296    f=  4.51699D+01    |proj g|=  2.21778D+01\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate  296    f=  4.51699D+01    |proj g|=  2.21778D+01\n",
       "\n",
       "At iterate  297    f=  4.51266D+01    |proj g|=  1.05886D+01\n",
       "\n",
@@ -5037,7 +5025,13 @@
       "\n",
       "At iterate  326    f=  4.43547D+01    |proj g|=  6.08249D+00\n",
       "\n",
-      "At iterate  327    f=  4.43291D+01    |proj g|=  5.32892D+00\n",
+      "At iterate  327    f=  4.43291D+01    |proj g|=  5.32892D+00\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate  328    f=  4.43050D+01    |proj g|=  2.27644D+01\n",
       "\n",
@@ -5057,13 +5051,7 @@
       "\n",
       "At iterate  336    f=  4.41327D+01    |proj g|=  1.19243D+01\n",
       "\n",
-      "At iterate  337    f=  4.40823D+01    |proj g|=  1.72437D+01\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate  337    f=  4.40823D+01    |proj g|=  1.72437D+01\n",
       "\n",
       "At iterate  338    f=  4.40405D+01    |proj g|=  1.45587D+01\n",
       "\n",
@@ -5133,7 +5121,13 @@
       "\n",
       "At iterate  371    f=  4.30471D+01    |proj g|=  7.28063D+00\n",
       "\n",
-      "At iterate  372    f=  4.30222D+01    |proj g|=  2.00020D+01\n",
+      "At iterate  372    f=  4.30222D+01    |proj g|=  2.00020D+01\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate  373    f=  4.29625D+01    |proj g|=  6.59157D+00\n",
       "\n",
@@ -5146,13 +5140,7 @@
       "At iterate  377    f=  4.28176D+01    |proj g|=  1.00710D+01\n",
       "\n",
       "At iterate  378    f=  4.27888D+01    |proj g|=  4.87181D+00\n",
-      "\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "\n",
       "At iterate  379    f=  4.27455D+01    |proj g|=  5.38578D+00\n",
       "\n",
       "At iterate  380    f=  4.26918D+01    |proj g|=  1.97475D+01\n",
@@ -5229,18 +5217,18 @@
       "\n",
       "At iterate  416    f=  4.13478D+01    |proj g|=  7.30586D+00\n",
       "\n",
-      "At iterate  417    f=  4.13013D+01    |proj g|=  8.61156D+00\n",
-      "\n",
-      "At iterate  418    f=  4.12733D+01    |proj g|=  3.14722D+01\n",
-      "\n",
-      "At iterate  419    f=  4.12179D+01    |proj g|=  7.57361D+00\n",
-      "\n"
+      "At iterate  417    f=  4.13013D+01    |proj g|=  8.61156D+00\n"
      ]
     },
     {
      "name": "stdout",
      "output_type": "stream",
      "text": [
+      "\n",
+      "At iterate  418    f=  4.12733D+01    |proj g|=  3.14722D+01\n",
+      "\n",
+      "At iterate  419    f=  4.12179D+01    |proj g|=  7.57361D+00\n",
+      "\n",
       "At iterate  420    f=  4.11959D+01    |proj g|=  3.80218D+00\n",
       "\n",
       "At iterate  421    f=  4.11752D+01    |proj g|=  4.36658D+00\n",
@@ -5319,17 +5307,17 @@
       "\n",
       "At iterate  458    f=  4.02262D+01    |proj g|=  1.54480D+01\n",
       "\n",
-      "At iterate  459    f=  4.02015D+01    |proj g|=  7.63486D+00\n"
+      "At iterate  459    f=  4.02015D+01    |proj g|=  7.63486D+00\n",
+      "\n",
+      "At iterate  460    f=  4.01847D+01    |proj g|=  4.89568D+00\n",
+      "\n",
+      "At iterate  461    f=  4.01658D+01    |proj g|=  1.00417D+01\n"
      ]
     },
     {
      "name": "stdout",
      "output_type": "stream",
      "text": [
-      "\n",
-      "At iterate  460    f=  4.01847D+01    |proj g|=  4.89568D+00\n",
-      "\n",
-      "At iterate  461    f=  4.01658D+01    |proj g|=  1.00417D+01\n",
       "\n",
       "At iterate  462    f=  4.01492D+01    |proj g|=  1.89830D+01\n",
       "\n",
@@ -5410,20 +5398,20 @@
       "At iterate  500    f=  3.94112D+01    |proj g|=  9.31280D+00\n",
       "\n",
       "At iterate  501    f=  3.93855D+01    |proj g|=  6.97435D+00\n",
-      "\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "\n",
       "At iterate  502    f=  3.93747D+01    |proj g|=  1.77209D+01\n",
       "\n",
       "At iterate  503    f=  3.93558D+01    |proj g|=  6.55381D+00\n",
       "\n",
       "At iterate  504    f=  3.93385D+01    |proj g|=  5.58937D+00\n",
       "\n",
-      "At iterate  505    f=  3.93008D+01    |proj g|=  1.66424D+01\n",
+      "At iterate  505    f=  3.93008D+01    |proj g|=  1.66424D+01\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate  506    f=  3.92869D+01    |proj g|=  1.49462D+01\n",
       "\n",
@@ -5499,13 +5487,7 @@
       "\n",
       "At iterate  542    f=  3.88370D+01    |proj g|=  3.10827D+00\n",
       "\n",
-      "At iterate  543    f=  3.88258D+01    |proj g|=  1.03254D+01\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate  543    f=  3.88258D+01    |proj g|=  1.03254D+01\n",
       "\n",
       "At iterate  544    f=  3.88153D+01    |proj g|=  4.29438D+00\n",
       "\n",
@@ -5517,7 +5499,13 @@
       "\n",
       "At iterate  548    f=  3.87567D+01    |proj g|=  3.94180D+00\n",
       "\n",
-      "At iterate  549    f=  3.87459D+01    |proj g|=  2.80237D+00\n",
+      "At iterate  549    f=  3.87459D+01    |proj g|=  2.80237D+00\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate  550    f=  3.87347D+01    |proj g|=  7.10194D+00\n",
       "\n",
@@ -5591,13 +5579,7 @@
       "\n",
       "At iterate  585    f=  3.84389D+01    |proj g|=  7.63449D+00\n",
       "\n",
-      "At iterate  586    f=  3.84336D+01    |proj g|=  1.16243D+01\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate  586    f=  3.84336D+01    |proj g|=  1.16243D+01\n",
       "\n",
       "At iterate  587    f=  3.84269D+01    |proj g|=  4.18946D+00\n",
       "\n",
@@ -5619,7 +5601,13 @@
       "\n",
       "At iterate  596    f=  3.83664D+01    |proj g|=  1.21409D+01\n",
       "\n",
-      "At iterate  597    f=  3.83596D+01    |proj g|=  3.94015D+00\n",
+      "At iterate  597    f=  3.83596D+01    |proj g|=  3.94015D+00\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate  598    f=  3.83560D+01    |proj g|=  3.58635D+00\n",
       "\n",
@@ -5677,13 +5665,7 @@
       "\n",
       "At iterate  625    f=  3.81759D+01    |proj g|=  2.16572D+00\n",
       "\n",
-      "At iterate  626    f=  3.81729D+01    |proj g|=  3.09107D+00\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate  626    f=  3.81729D+01    |proj g|=  3.09107D+00\n",
       "\n",
       "At iterate  627    f=  3.81684D+01    |proj g|=  1.13760D+01\n",
       "\n",
@@ -5709,7 +5691,13 @@
       "\n",
       "At iterate  638    f=  3.80918D+01    |proj g|=  6.79601D+00\n",
       "\n",
-      "At iterate  639    f=  3.80826D+01    |proj g|=  7.40922D+00\n",
+      "At iterate  639    f=  3.80826D+01    |proj g|=  7.40922D+00\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate  640    f=  3.80775D+01    |proj g|=  1.25385D+01\n",
       "\n",
@@ -5763,13 +5751,7 @@
       "\n",
       "At iterate  665    f=  3.79185D+01    |proj g|=  3.09752D+00\n",
       "\n",
-      "At iterate  666    f=  3.79109D+01    |proj g|=  1.08852D+01\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate  666    f=  3.79109D+01    |proj g|=  1.08852D+01\n",
       "\n",
       "At iterate  667    f=  3.79014D+01    |proj g|=  4.09047D+00\n",
       "\n",
@@ -5801,7 +5783,13 @@
       "\n",
       "At iterate  681    f=  3.78349D+01    |proj g|=  2.87734D+00\n",
       "\n",
-      "At iterate  682    f=  3.78312D+01    |proj g|=  2.73938D+00\n",
+      "At iterate  682    f=  3.78312D+01    |proj g|=  2.73938D+00\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate  683    f=  3.78251D+01    |proj g|=  3.75085D+00\n",
       "\n",
@@ -5857,13 +5845,7 @@
       "\n",
       "At iterate  709    f=  3.77059D+01    |proj g|=  4.13086D+00\n",
       "\n",
-      "At iterate  710    f=  3.77047D+01    |proj g|=  8.66191D+00\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate  710    f=  3.77047D+01    |proj g|=  8.66191D+00\n",
       "\n",
       "At iterate  711    f=  3.77005D+01    |proj g|=  3.20924D+00\n",
       "\n",
@@ -5895,7 +5877,13 @@
       "\n",
       "At iterate  725    f=  3.76565D+01    |proj g|=  2.32363D+00\n",
       "\n",
-      "At iterate  726    f=  3.76544D+01    |proj g|=  1.74202D+00\n",
+      "At iterate  726    f=  3.76544D+01    |proj g|=  1.74202D+00\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate  727    f=  3.76521D+01    |proj g|=  2.95968D+00\n",
       "\n",
@@ -5937,13 +5925,7 @@
       "\n",
       "At iterate  746    f=  3.75857D+01    |proj g|=  9.05615D+00\n",
       "\n",
-      "At iterate  747    f=  3.75812D+01    |proj g|=  4.11618D+00\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate  747    f=  3.75812D+01    |proj g|=  4.11618D+00\n",
       "\n",
       "At iterate  748    f=  3.75779D+01    |proj g|=  1.49959D+00\n",
       "\n",
@@ -5977,7 +5959,13 @@
       "\n",
       "At iterate  763    f=  3.75362D+01    |proj g|=  3.06313D+00\n",
       "\n",
-      "At iterate  764    f=  3.75333D+01    |proj g|=  5.10231D+00\n",
+      "At iterate  764    f=  3.75333D+01    |proj g|=  5.10231D+00\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate  765    f=  3.75290D+01    |proj g|=  3.27446D+00\n",
       "\n",
@@ -6025,13 +6013,7 @@
       "\n",
       "At iterate  787    f=  3.74742D+01    |proj g|=  1.98360D+00\n",
       "\n",
-      "At iterate  788    f=  3.74731D+01    |proj g|=  1.21401D+00\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate  788    f=  3.74731D+01    |proj g|=  1.21401D+00\n",
       "\n",
       "At iterate  789    f=  3.74719D+01    |proj g|=  2.76453D+00\n",
       "\n",
@@ -6069,7 +6051,13 @@
       "\n",
       "At iterate  806    f=  3.74379D+01    |proj g|=  1.74786D+00\n",
       "\n",
-      "At iterate  807    f=  3.74359D+01    |proj g|=  1.63309D+00\n",
+      "At iterate  807    f=  3.74359D+01    |proj g|=  1.63309D+00\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate  808    f=  3.74335D+01    |proj g|=  2.45244D+00\n",
       "\n",
@@ -6107,13 +6095,7 @@
       "\n",
       "At iterate  825    f=  3.74083D+01    |proj g|=  2.46030D+00\n",
       "\n",
-      "At iterate  826    f=  3.74071D+01    |proj g|=  1.32994D+00\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate  826    f=  3.74071D+01    |proj g|=  1.32994D+00\n",
       "\n",
       "At iterate  827    f=  3.74059D+01    |proj g|=  1.35909D+00\n",
       "\n",
@@ -6159,7 +6141,13 @@
       "\n",
       "At iterate  848    f=  3.73795D+01    |proj g|=  1.67015D+00\n",
       "\n",
-      "At iterate  849    f=  3.73789D+01    |proj g|=  9.86205D-01\n",
+      "At iterate  849    f=  3.73789D+01    |proj g|=  9.86205D-01\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate  850    f=  3.73780D+01    |proj g|=  1.57080D+00\n",
       "\n",
@@ -6199,13 +6187,7 @@
       "\n",
       "At iterate  868    f=  3.73558D+01    |proj g|=  3.51551D+00\n",
       "\n",
-      "At iterate  869    f=  3.73553D+01    |proj g|=  1.60179D+00\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate  869    f=  3.73553D+01    |proj g|=  1.60179D+00\n",
       "\n",
       "At iterate  870    f=  3.73542D+01    |proj g|=  1.72151D+00\n",
       "\n",
@@ -6247,7 +6229,13 @@
       "\n",
       "At iterate  889    f=  3.73366D+01    |proj g|=  2.08788D+00\n",
       "\n",
-      "At iterate  890    f=  3.73360D+01    |proj g|=  3.07827D+00\n",
+      "At iterate  890    f=  3.73360D+01    |proj g|=  3.07827D+00\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate  891    f=  3.73353D+01    |proj g|=  2.81752D+00\n",
       "\n",
@@ -6283,13 +6271,7 @@
       "\n",
       "At iterate  907    f=  3.73226D+01    |proj g|=  7.43892D-01\n",
       "\n",
-      "At iterate  908    f=  3.73221D+01    |proj g|=  4.48454D+00\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate  908    f=  3.73221D+01    |proj g|=  4.48454D+00\n",
       "\n",
       "At iterate  909    f=  3.73212D+01    |proj g|=  2.13999D+00\n",
       "\n",
@@ -6335,7 +6317,13 @@
       "\n",
       "At iterate  930    f=  3.73070D+01    |proj g|=  1.46900D+00\n",
       "\n",
-      "At iterate  931    f=  3.73065D+01    |proj g|=  8.84311D-01\n",
+      "At iterate  931    f=  3.73065D+01    |proj g|=  8.84311D-01\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate  932    f=  3.73059D+01    |proj g|=  1.59548D+00\n",
       "\n",
@@ -6369,13 +6357,7 @@
       "\n",
       "At iterate  947    f=  3.72977D+01    |proj g|=  1.24034D+00\n",
       "\n",
-      "At iterate  948    f=  3.72971D+01    |proj g|=  6.16191D-01\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate  948    f=  3.72971D+01    |proj g|=  6.16191D-01\n",
       "\n",
       "At iterate  949    f=  3.72966D+01    |proj g|=  2.33831D+00\n",
       "\n",
@@ -6427,7 +6409,13 @@
       "\n",
       "At iterate  973    f=  3.72873D+01    |proj g|=  1.46290D+00\n",
       "\n",
-      "At iterate  974    f=  3.72868D+01    |proj g|=  1.84061D+00\n",
+      "At iterate  974    f=  3.72868D+01    |proj g|=  1.84061D+00\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate  975    f=  3.72867D+01    |proj g|=  6.03846D+00\n",
       "\n",
@@ -6455,13 +6443,7 @@
       "\n",
       "At iterate  987    f=  3.72813D+01    |proj g|=  8.56295D-01\n",
       "\n",
-      "At iterate  988    f=  3.72811D+01    |proj g|=  9.45372D-01\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate  988    f=  3.72811D+01    |proj g|=  9.45372D-01\n",
       "\n",
       "At iterate  989    f=  3.72809D+01    |proj g|=  6.16330D+00\n",
       "\n",
@@ -6517,7 +6499,13 @@
       "\n",
       "At iterate 1015    f=  3.72712D+01    |proj g|=  8.67551D-01\n",
       "\n",
-      "At iterate 1016    f=  3.72705D+01    |proj g|=  1.30837D+00\n",
+      "At iterate 1016    f=  3.72705D+01    |proj g|=  1.30837D+00\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate 1017    f=  3.72703D+01    |proj g|=  2.02164D+00\n",
       "\n",
@@ -6545,13 +6533,7 @@
       "\n",
       "At iterate 1029    f=  3.72662D+01    |proj g|=  1.85472D+00\n",
       "\n",
-      "At iterate 1030    f=  3.72658D+01    |proj g|=  6.77016D-01\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate 1030    f=  3.72658D+01    |proj g|=  6.77016D-01\n",
       "\n",
       "At iterate 1031    f=  3.72656D+01    |proj g|=  5.82297D-01\n",
       "\n",
@@ -6604,7 +6586,13 @@
       "At iterate 1055    f=  3.72573D+01    |proj g|=  1.03332D+00\n",
       "\n",
       "At iterate 1056    f=  3.72569D+01    |proj g|=  8.52640D-01\n",
-      "\n",
+      "\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "At iterate 1057    f=  3.72566D+01    |proj g|=  1.09909D+00\n",
       "\n",
       "At iterate 1058    f=  3.72564D+01    |proj g|=  3.78922D+00\n",
@@ -6632,13 +6620,7 @@
       "At iterate 1069    f=  3.72529D+01    |proj g|=  3.76517D-01\n",
       "\n",
       "At iterate 1070    f=  3.72527D+01    |proj g|=  7.43287D-01\n",
-      "\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "\n",
       "At iterate 1071    f=  3.72525D+01    |proj g|=  1.08468D+00\n",
       "\n",
       "At iterate 1072    f=  3.72520D+01    |proj g|=  1.86969D+00\n",
@@ -6693,7 +6675,13 @@
       "\n",
       "At iterate 1097    f=  3.72447D+01    |proj g|=  1.21168D+00\n",
       "\n",
-      "At iterate 1098    f=  3.72444D+01    |proj g|=  1.79544D+00\n",
+      "At iterate 1098    f=  3.72444D+01    |proj g|=  1.79544D+00\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate 1099    f=  3.72442D+01    |proj g|=  7.17803D-01\n",
       "\n",
@@ -6718,13 +6706,7 @@
       "At iterate 1109    f=  3.72417D+01    |proj g|=  7.24095D-01\n",
       "\n",
       "At iterate 1110    f=  3.72416D+01    |proj g|=  2.04456D+00\n",
-      "\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "\n",
       "At iterate 1111    f=  3.72414D+01    |proj g|=  7.86885D-01\n",
       "\n",
       "At iterate 1112    f=  3.72413D+01    |proj g|=  3.92858D-01\n",
@@ -6787,7 +6769,13 @@
       "\n",
       "At iterate 1141    f=  3.72351D+01    |proj g|=  7.38879D-01\n",
       "\n",
-      "At iterate 1142    f=  3.72349D+01    |proj g|=  1.05827D+00\n",
+      "At iterate 1142    f=  3.72349D+01    |proj g|=  1.05827D+00\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate 1143    f=  3.72347D+01    |proj g|=  1.51656D+00\n",
       "\n",
@@ -6804,13 +6792,7 @@
       "At iterate 1149    f=  3.72338D+01    |proj g|=  3.51665D-01\n",
       "\n",
       "At iterate 1150    f=  3.72337D+01    |proj g|=  4.28112D-01\n",
-      "\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "\n",
       "At iterate 1151    f=  3.72335D+01    |proj g|=  1.67622D+00\n",
       "\n",
       "At iterate 1152    f=  3.72333D+01    |proj g|=  1.40446D+00\n",
@@ -6875,7 +6857,13 @@
       "\n",
       "At iterate 1182    f=  3.72276D+01    |proj g|=  1.90843D+00\n",
       "\n",
-      "At iterate 1183    f=  3.72272D+01    |proj g|=  1.52347D+00\n",
+      "At iterate 1183    f=  3.72272D+01    |proj g|=  1.52347D+00\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate 1184    f=  3.72271D+01    |proj g|=  2.87399D+00\n",
       "\n",
@@ -6891,13 +6879,7 @@
       "\n",
       "At iterate 1190    f=  3.72257D+01    |proj g|=  9.45491D-01\n",
       "\n",
-      "At iterate 1191    f=  3.72256D+01    |proj g|=  1.27162D+00\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate 1191    f=  3.72256D+01    |proj g|=  1.27162D+00\n",
       "\n",
       "At iterate 1192    f=  3.72254D+01    |proj g|=  1.42574D+00\n",
       "\n",
@@ -6965,7 +6947,13 @@
       "\n",
       "At iterate 1224    f=  3.72196D+01    |proj g|=  5.94595D-01\n",
       "\n",
-      "At iterate 1225    f=  3.72194D+01    |proj g|=  8.06579D-01\n",
+      "At iterate 1225    f=  3.72194D+01    |proj g|=  8.06579D-01\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate 1226    f=  3.72192D+01    |proj g|=  2.07145D+00\n",
       "\n",
@@ -6979,13 +6967,7 @@
       "\n",
       "At iterate 1231    f=  3.72183D+01    |proj g|=  6.11438D-01\n",
       "\n",
-      "At iterate 1232    f=  3.72182D+01    |proj g|=  1.89349D+00\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate 1232    f=  3.72182D+01    |proj g|=  1.89349D+00\n",
       "\n",
       "At iterate 1233    f=  3.72180D+01    |proj g|=  9.99349D-01\n",
       "\n",
@@ -7063,7 +7045,13 @@
       "\n",
       "At iterate 1270    f=  3.72134D+01    |proj g|=  1.04392D+00\n",
       "\n",
-      "At iterate 1271    f=  3.72133D+01    |proj g|=  3.64169D-01\n",
+      "At iterate 1271    f=  3.72133D+01    |proj g|=  3.64169D-01\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate 1272    f=  3.72132D+01    |proj g|=  4.17837D-01\n",
       "\n",
@@ -7075,13 +7063,7 @@
       "\n",
       "At iterate 1276    f=  3.72127D+01    |proj g|=  4.59383D-01\n",
       "\n",
-      "At iterate 1277    f=  3.72126D+01    |proj g|=  4.46445D-01\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate 1277    f=  3.72126D+01    |proj g|=  4.46445D-01\n",
       "\n",
       "At iterate 1278    f=  3.72125D+01    |proj g|=  2.98855D+00\n",
       "\n",
@@ -7157,7 +7139,13 @@
       "\n",
       "At iterate 1314    f=  3.72075D+01    |proj g|=  1.64297D+00\n",
       "\n",
-      "At iterate 1315    f=  3.72072D+01    |proj g|=  1.12703D+00\n",
+      "At iterate 1315    f=  3.72072D+01    |proj g|=  1.12703D+00\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate 1316    f=  3.72071D+01    |proj g|=  6.92708D-01\n",
       "\n",
@@ -7171,13 +7159,7 @@
       "\n",
       "At iterate 1321    f=  3.72060D+01    |proj g|=  6.96360D-01\n",
       "\n",
-      "At iterate 1322    f=  3.72059D+01    |proj g|=  5.62593D-01\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate 1322    f=  3.72059D+01    |proj g|=  5.62593D-01\n",
       "\n",
       "At iterate 1323    f=  3.72058D+01    |proj g|=  5.90323D-01\n",
       "\n",
@@ -7242,7 +7224,13 @@
       "At iterate 1353    f=  3.72013D+01    |proj g|=  4.37895D-01\n",
       "\n",
       "At iterate 1354    f=  3.72012D+01    |proj g|=  8.01652D-01\n",
-      "\n",
+      "\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "At iterate 1355    f=  3.72011D+01    |proj g|=  1.07688D+00\n",
       "\n",
       "At iterate 1356    f=  3.72009D+01    |proj g|=  8.39649D-01\n",
@@ -7259,13 +7247,7 @@
       "\n",
       "At iterate 1362    f=  3.72001D+01    |proj g|=  1.24802D+00\n",
       "\n",
-      "At iterate 1363    f=  3.71999D+01    |proj g|=  2.29301D+00\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate 1363    f=  3.71999D+01    |proj g|=  2.29301D+00\n",
       "\n",
       "At iterate 1364    f=  3.71997D+01    |proj g|=  5.51335D-01\n",
       "\n",
@@ -7337,7 +7319,13 @@
       "\n",
       "At iterate 1398    f=  3.71961D+01    |proj g|=  4.34926D-01\n",
       "\n",
-      "At iterate 1399    f=  3.71960D+01    |proj g|=  3.71419D-01\n",
+      "At iterate 1399    f=  3.71960D+01    |proj g|=  3.71419D-01\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate 1400    f=  3.71959D+01    |proj g|=  8.05914D-01\n",
       "\n",
@@ -7351,13 +7339,7 @@
       "\n",
       "At iterate 1405    f=  3.71951D+01    |proj g|=  9.32744D-01\n",
       "\n",
-      "At iterate 1406    f=  3.71951D+01    |proj g|=  3.43193D+00\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate 1406    f=  3.71951D+01    |proj g|=  3.43193D+00\n",
       "\n",
       "At iterate 1407    f=  3.71949D+01    |proj g|=  7.10664D-01\n",
       "\n",
@@ -7429,7 +7411,13 @@
       "\n",
       "At iterate 1441    f=  3.71917D+01    |proj g|=  3.83681D-01\n",
       "\n",
-      "At iterate 1442    f=  3.71916D+01    |proj g|=  3.75061D-01\n",
+      "At iterate 1442    f=  3.71916D+01    |proj g|=  3.75061D-01\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate 1443    f=  3.71916D+01    |proj g|=  2.29818D+00\n",
       "\n",
@@ -7443,13 +7431,7 @@
       "\n",
       "At iterate 1448    f=  3.71911D+01    |proj g|=  4.29392D-01\n",
       "\n",
-      "At iterate 1449    f=  3.71910D+01    |proj g|=  2.88658D-01\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate 1449    f=  3.71910D+01    |proj g|=  2.88658D-01\n",
       "\n",
       "At iterate 1450    f=  3.71910D+01    |proj g|=  3.01855D-01\n",
       "\n",
@@ -7515,7 +7497,13 @@
       "\n",
       "At iterate 1481    f=  3.71880D+01    |proj g|=  2.46350D-01\n",
       "\n",
-      "At iterate 1482    f=  3.71879D+01    |proj g|=  3.25098D-01\n",
+      "At iterate 1482    f=  3.71879D+01    |proj g|=  3.25098D-01\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate 1483    f=  3.71879D+01    |proj g|=  1.20634D+00\n",
       "\n",
@@ -7528,13 +7516,7 @@
       "At iterate 1487    f=  3.71876D+01    |proj g|=  1.12711D+00\n",
       "\n",
       "At iterate 1488    f=  3.71876D+01    |proj g|=  4.84445D-01\n",
-      "\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "\n",
       "At iterate 1489    f=  3.71875D+01    |proj g|=  3.74780D-01\n",
       "\n",
       "At iterate 1490    f=  3.71875D+01    |proj g|=  6.00116D-01\n",
@@ -7607,19 +7589,19 @@
       "\n",
       "At iterate 1524    f=  3.71845D+01    |proj g|=  7.92666D-01\n",
       "\n",
-      "At iterate 1525    f=  3.71844D+01    |proj g|=  7.48485D-01\n",
-      "\n",
-      "At iterate 1526    f=  3.71844D+01    |proj g|=  3.90433D-01\n",
-      "\n",
-      "At iterate 1527    f=  3.71843D+01    |proj g|=  2.64639D-01\n",
-      "\n",
-      "At iterate 1528    f=  3.71843D+01    |proj g|=  5.98143D-01\n"
+      "At iterate 1525    f=  3.71844D+01    |proj g|=  7.48485D-01\n"
      ]
     },
     {
      "name": "stdout",
      "output_type": "stream",
      "text": [
+      "\n",
+      "At iterate 1526    f=  3.71844D+01    |proj g|=  3.90433D-01\n",
+      "\n",
+      "At iterate 1527    f=  3.71843D+01    |proj g|=  2.64639D-01\n",
+      "\n",
+      "At iterate 1528    f=  3.71843D+01    |proj g|=  5.98143D-01\n",
       "\n",
       "At iterate 1529    f=  3.71842D+01    |proj g|=  8.26393D-01\n",
       "\n",
@@ -7699,15 +7681,15 @@
       "\n",
       "At iterate 1567    f=  3.71819D+01    |proj g|=  3.77659D-01\n",
       "\n",
-      "At iterate 1568    f=  3.71818D+01    |proj g|=  4.82918D-01\n",
-      "\n",
-      "At iterate 1569    f=  3.71818D+01    |proj g|=  8.04682D-01\n"
+      "At iterate 1568    f=  3.71818D+01    |proj g|=  4.82918D-01\n"
      ]
     },
     {
      "name": "stdout",
      "output_type": "stream",
      "text": [
+      "\n",
+      "At iterate 1569    f=  3.71818D+01    |proj g|=  8.04682D-01\n",
       "\n",
       "At iterate 1570    f=  3.71818D+01    |proj g|=  3.04281D-01\n",
       "\n",
@@ -7789,14 +7771,14 @@
       "\n",
       "At iterate 1609    f=  3.71800D+01    |proj g|=  8.50119D-01\n",
       "\n",
-      "At iterate 1610    f=  3.71800D+01    |proj g|=  2.26150D-01\n",
-      "\n"
+      "At iterate 1610    f=  3.71800D+01    |proj g|=  2.26150D-01\n"
      ]
     },
     {
      "name": "stdout",
      "output_type": "stream",
      "text": [
+      "\n",
       "At iterate 1611    f=  3.71800D+01    |proj g|=  1.00114D-01\n",
       "\n",
       "At iterate 1612    f=  3.71800D+01    |proj g|=  2.66803D-01\n",
@@ -7875,17 +7857,17 @@
       "\n",
       "At iterate 1649    f=  3.71792D+01    |proj g|=  5.75766D-01\n",
       "\n",
-      "At iterate 1650    f=  3.71792D+01    |proj g|=  3.22666D-01\n"
+      "At iterate 1650    f=  3.71792D+01    |proj g|=  3.22666D-01\n",
+      "\n",
+      "At iterate 1651    f=  3.71792D+01    |proj g|=  1.37440D-01\n",
+      "\n",
+      "At iterate 1652    f=  3.71792D+01    |proj g|=  1.38193D-01\n"
      ]
     },
     {
      "name": "stdout",
      "output_type": "stream",
      "text": [
-      "\n",
-      "At iterate 1651    f=  3.71792D+01    |proj g|=  1.37440D-01\n",
-      "\n",
-      "At iterate 1652    f=  3.71792D+01    |proj g|=  1.38193D-01\n",
       "\n",
       "At iterate 1653    f=  3.71792D+01    |proj g|=  5.09281D-01\n",
       "\n",
@@ -7961,17 +7943,17 @@
       "\n",
       "At iterate 1689    f=  3.71787D+01    |proj g|=  1.16240D-01\n",
       "\n",
-      "At iterate 1690    f=  3.71787D+01    |proj g|=  9.66436D-02\n"
+      "At iterate 1690    f=  3.71787D+01    |proj g|=  9.66436D-02\n",
+      "\n",
+      "At iterate 1691    f=  3.71787D+01    |proj g|=  2.55236D-01\n",
+      "\n",
+      "At iterate 1692    f=  3.71786D+01    |proj g|=  2.37840D-01\n"
      ]
     },
     {
      "name": "stdout",
      "output_type": "stream",
      "text": [
-      "\n",
-      "At iterate 1691    f=  3.71787D+01    |proj g|=  2.55236D-01\n",
-      "\n",
-      "At iterate 1692    f=  3.71786D+01    |proj g|=  2.37840D-01\n",
       "\n",
       "At iterate 1693    f=  3.71786D+01    |proj g|=  3.09987D-01\n",
       "\n",
@@ -8041,13 +8023,7 @@
       "\n",
       "At iterate 1726    f=  3.71784D+01    |proj g|=  1.26568D-01\n",
       "\n",
-      "At iterate 1727    f=  3.71784D+01    |proj g|=  1.67146D-01\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate 1727    f=  3.71784D+01    |proj g|=  1.67146D-01\n",
       "\n",
       "At iterate 1728    f=  3.71784D+01    |proj g|=  4.00429D-01\n",
       "\n",
@@ -8063,7 +8039,13 @@
       "\n",
       "At iterate 1734    f=  3.71783D+01    |proj g|=  4.46058D-02\n",
       "\n",
-      "At iterate 1735    f=  3.71783D+01    |proj g|=  1.58118D-01\n",
+      "At iterate 1735    f=  3.71783D+01    |proj g|=  1.58118D-01\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate 1736    f=  3.71783D+01    |proj g|=  1.87142D-01\n",
       "\n",
@@ -8127,13 +8109,7 @@
       "\n",
       "At iterate 1766    f=  3.71782D+01    |proj g|=  6.51814D-02\n",
       "\n",
-      "At iterate 1767    f=  3.71782D+01    |proj g|=  1.49301D-01\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate 1767    f=  3.71782D+01    |proj g|=  1.49301D-01\n",
       "\n",
       "At iterate 1768    f=  3.71782D+01    |proj g|=  2.97428D-01\n",
       "\n",
@@ -8149,7 +8125,13 @@
       "\n",
       "At iterate 1774    f=  3.71782D+01    |proj g|=  7.69985D-02\n",
       "\n",
-      "At iterate 1775    f=  3.71782D+01    |proj g|=  7.46616D-02\n",
+      "At iterate 1775    f=  3.71782D+01    |proj g|=  7.46616D-02\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate 1776    f=  3.71781D+01    |proj g|=  2.55621D-01\n",
       "\n",
@@ -8215,13 +8197,7 @@
       "\n",
       "At iterate 1807    f=  3.71780D+01    |proj g|=  1.28360D-01\n",
       "\n",
-      "At iterate 1808    f=  3.71780D+01    |proj g|=  3.92030D-01\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate 1808    f=  3.71780D+01    |proj g|=  3.92030D-01\n",
       "\n",
       "At iterate 1809    f=  3.71780D+01    |proj g|=  1.31260D-01\n",
       "\n",
@@ -8241,7 +8217,13 @@
       "\n",
       "At iterate 1817    f=  3.71780D+01    |proj g|=  3.44193D-01\n",
       "\n",
-      "At iterate 1818    f=  3.71780D+01    |proj g|=  1.43275D-01\n",
+      "At iterate 1818    f=  3.71780D+01    |proj g|=  1.43275D-01\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate 1819    f=  3.71780D+01    |proj g|=  6.22122D-02\n",
       "\n",
@@ -8305,13 +8287,7 @@
       "\n",
       "At iterate 1849    f=  3.71779D+01    |proj g|=  1.01138D-01\n",
       "\n",
-      "At iterate 1850    f=  3.71779D+01    |proj g|=  2.39856D-01\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate 1850    f=  3.71779D+01    |proj g|=  2.39856D-01\n",
       "\n",
       "At iterate 1851    f=  3.71779D+01    |proj g|=  1.06559D-01\n",
       "\n",
@@ -8330,7 +8306,13 @@
       "At iterate 1858    f=  3.71779D+01    |proj g|=  4.74696D-02\n",
       "\n",
       "At iterate 1859    f=  3.71779D+01    |proj g|=  4.94909D-02\n",
-      "\n",
+      "\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "At iterate 1860    f=  3.71779D+01    |proj g|=  1.57357D-01\n",
       "\n",
       "At iterate 1861    f=  3.71779D+01    |proj g|=  2.17387D-01\n",
@@ -8393,13 +8375,7 @@
       "\n",
       "At iterate 1890    f=  3.71779D+01    |proj g|=  5.14278D-02\n",
       "\n",
-      "At iterate 1891    f=  3.71779D+01    |proj g|=  1.19007D-01\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate 1891    f=  3.71779D+01    |proj g|=  1.19007D-01\n",
       "\n",
       "At iterate 1892    f=  3.71779D+01    |proj g|=  1.55556D-01\n",
       "\n",
@@ -8418,7 +8394,13 @@
       "At iterate 1899    f=  3.71779D+01    |proj g|=  6.18531D-02\n",
       "\n",
       "At iterate 1900    f=  3.71779D+01    |proj g|=  7.65533D-02\n",
-      "\n",
+      "\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "At iterate 1901    f=  3.71779D+01    |proj g|=  6.26567D-02\n",
       "\n",
       "At iterate 1902    f=  3.71779D+01    |proj g|=  1.94170D-01\n",
@@ -8483,13 +8465,7 @@
       "\n",
       "At iterate 1932    f=  3.71778D+01    |proj g|=  1.38092D-01\n",
       "\n",
-      "At iterate 1933    f=  3.71778D+01    |proj g|=  2.33755D-02\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate 1933    f=  3.71778D+01    |proj g|=  2.33755D-02\n",
       "\n",
       "At iterate 1934    f=  3.71778D+01    |proj g|=  1.61691D-02\n",
       "\n",
@@ -8509,7 +8485,13 @@
       "\n",
       "At iterate 1942    f=  3.71778D+01    |proj g|=  9.97873D-02\n",
       "\n",
-      "At iterate 1943    f=  3.71778D+01    |proj g|=  1.03802D-01\n",
+      "At iterate 1943    f=  3.71778D+01    |proj g|=  1.03802D-01\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate 1944    f=  3.71778D+01    |proj g|=  7.68203D-02\n",
       "\n",
@@ -8569,13 +8551,7 @@
       "\n",
       "At iterate 1972    f=  3.71778D+01    |proj g|=  8.64022D-02\n",
       "\n",
-      "At iterate 1973    f=  3.71778D+01    |proj g|=  2.03166D-01\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate 1973    f=  3.71778D+01    |proj g|=  2.03166D-01\n",
       "\n",
       "At iterate 1974    f=  3.71778D+01    |proj g|=  6.37837D-02\n",
       "\n",
@@ -8601,7 +8577,13 @@
       "\n",
       "At iterate 1985    f=  3.71778D+01    |proj g|=  4.59042D-02\n",
       "\n",
-      "At iterate 1986    f=  3.71778D+01    |proj g|=  2.82661D-02\n",
+      "At iterate 1986    f=  3.71778D+01    |proj g|=  2.82661D-02\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate 1987    f=  3.71778D+01    |proj g|=  3.96304D-02\n",
       "\n",
@@ -8658,13 +8640,13 @@
   {
    "cell_type": "code",
    "execution_count": 15,
-   "id": "64c600de",
+   "id": "f1fb3cff",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-10T09:44:30.243912Z",
-     "iopub.status.busy": "2022-06-10T09:44:30.210536Z",
-     "iopub.status.idle": "2022-06-10T09:44:30.256731Z",
-     "shell.execute_reply": "2022-06-10T09:44:30.256119Z"
+     "iopub.execute_input": "2022-06-10T16:26:36.608663Z",
+     "iopub.status.busy": "2022-06-10T16:26:36.608310Z",
+     "iopub.status.idle": "2022-06-10T16:26:36.621397Z",
+     "shell.execute_reply": "2022-06-10T16:26:36.620834Z"
     }
    },
    "outputs": [
@@ -8703,13 +8685,13 @@
   {
    "cell_type": "code",
    "execution_count": 16,
-   "id": "ec78327f",
+   "id": "100a0317",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-10T09:44:30.259445Z",
-     "iopub.status.busy": "2022-06-10T09:44:30.259138Z",
-     "iopub.status.idle": "2022-06-10T09:44:31.697651Z",
-     "shell.execute_reply": "2022-06-10T09:44:31.697042Z"
+     "iopub.execute_input": "2022-06-10T16:26:36.623868Z",
+     "iopub.status.busy": "2022-06-10T16:26:36.623591Z",
+     "iopub.status.idle": "2022-06-10T16:26:38.100334Z",
+     "shell.execute_reply": "2022-06-10T16:26:38.099720Z"
     }
    },
    "outputs": [
@@ -8733,13 +8715,13 @@
   {
    "cell_type": "code",
    "execution_count": 17,
-   "id": "74a31ce1",
+   "id": "d63174ae",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-10T09:44:31.700382Z",
-     "iopub.status.busy": "2022-06-10T09:44:31.700084Z",
-     "iopub.status.idle": "2022-06-10T09:44:31.707555Z",
-     "shell.execute_reply": "2022-06-10T09:44:31.707008Z"
+     "iopub.execute_input": "2022-06-10T16:26:38.104217Z",
+     "iopub.status.busy": "2022-06-10T16:26:38.103890Z",
+     "iopub.status.idle": "2022-06-10T16:26:38.111269Z",
+     "shell.execute_reply": "2022-06-10T16:26:38.110668Z"
     }
    },
    "outputs": [
@@ -8762,7 +8744,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "45d7d181",
+   "id": "c6dc452b",
    "metadata": {},
    "source": [
     "### 3. Separate independent kernel and separate independent inducing variables\n",
@@ -8772,13 +8754,13 @@
   {
    "cell_type": "code",
    "execution_count": 18,
-   "id": "528fea94",
+   "id": "23f9728f",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-10T09:44:31.710119Z",
-     "iopub.status.busy": "2022-06-10T09:44:31.709830Z",
-     "iopub.status.idle": "2022-06-10T09:44:31.763536Z",
-     "shell.execute_reply": "2022-06-10T09:44:31.762883Z"
+     "iopub.execute_input": "2022-06-10T16:26:38.115167Z",
+     "iopub.status.busy": "2022-06-10T16:26:38.114839Z",
+     "iopub.status.idle": "2022-06-10T16:26:38.146911Z",
+     "shell.execute_reply": "2022-06-10T16:26:38.146278Z"
     }
    },
    "outputs": [],
@@ -8797,7 +8779,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "d8ee9f15",
+   "id": "de621a58",
    "metadata": {},
    "source": [
     "**NOTE:** While the inducing points are independent, there needs to be the same number of inducing points per dimension."
@@ -8806,13 +8788,13 @@
   {
    "cell_type": "code",
    "execution_count": 19,
-   "id": "49dd6dea",
+   "id": "f0d39814",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-10T09:44:31.766826Z",
-     "iopub.status.busy": "2022-06-10T09:44:31.766498Z",
-     "iopub.status.idle": "2022-06-10T09:44:31.786252Z",
-     "shell.execute_reply": "2022-06-10T09:44:31.785619Z"
+     "iopub.execute_input": "2022-06-10T16:26:38.150573Z",
+     "iopub.status.busy": "2022-06-10T16:26:38.150286Z",
+     "iopub.status.idle": "2022-06-10T16:26:38.170798Z",
+     "shell.execute_reply": "2022-06-10T16:26:38.169515Z"
     }
    },
    "outputs": [],
@@ -8824,13 +8806,13 @@
   {
    "cell_type": "code",
    "execution_count": 20,
-   "id": "bc8edac5",
+   "id": "17b8c24e",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-10T09:44:31.789443Z",
-     "iopub.status.busy": "2022-06-10T09:44:31.789109Z",
-     "iopub.status.idle": "2022-06-10T09:44:44.671023Z",
-     "shell.execute_reply": "2022-06-10T09:44:44.670410Z"
+     "iopub.execute_input": "2022-06-10T16:26:38.174519Z",
+     "iopub.status.busy": "2022-06-10T16:26:38.174072Z",
+     "iopub.status.idle": "2022-06-10T16:26:51.983566Z",
+     "shell.execute_reply": "2022-06-10T16:26:51.982548Z"
     }
    },
    "outputs": [
@@ -8968,14 +8950,14 @@
       "\n",
       "At iterate   53    f=  1.90482D+02    |proj g|=  2.07433D+01\n",
       "\n",
-      "At iterate   54    f=  1.89960D+02    |proj g|=  1.71689D+01\n",
-      "\n"
+      "At iterate   54    f=  1.89960D+02    |proj g|=  1.71689D+01\n"
      ]
     },
     {
      "name": "stdout",
      "output_type": "stream",
      "text": [
+      "\n",
       "At iterate   55    f=  1.89637D+02    |proj g|=  3.45761D+01\n",
       "\n",
       "At iterate   56    f=  1.89363D+02    |proj g|=  7.31924D+00\n",
@@ -9032,16 +9014,16 @@
       "\n",
       "At iterate   82    f=  1.61503D+02    |proj g|=  1.21866D+02\n",
       "\n",
-      "At iterate   83    f=  1.57487D+02    |proj g|=  9.65884D+01\n",
-      "\n",
-      "At iterate   84    f=  1.55468D+02    |proj g|=  6.21042D+01\n",
-      "\n"
+      "At iterate   83    f=  1.57487D+02    |proj g|=  9.65884D+01\n"
      ]
     },
     {
      "name": "stdout",
      "output_type": "stream",
      "text": [
+      "\n",
+      "At iterate   84    f=  1.55468D+02    |proj g|=  6.21042D+01\n",
+      "\n",
       "At iterate   85    f=  1.53645D+02    |proj g|=  1.37420D+02\n",
       "\n",
       "At iterate   86    f=  1.50731D+02    |proj g|=  3.74976D+01\n",
@@ -9114,15 +9096,15 @@
       "\n",
       "At iterate  120    f=  6.64814D+01    |proj g|=  1.63087D+01\n",
       "\n",
-      "At iterate  121    f=  6.56310D+01    |proj g|=  3.62719D+01\n"
+      "At iterate  121    f=  6.56310D+01    |proj g|=  3.62719D+01\n",
+      "\n",
+      "At iterate  122    f=  6.47751D+01    |proj g|=  8.67537D+01\n"
      ]
     },
     {
      "name": "stdout",
      "output_type": "stream",
      "text": [
-      "\n",
-      "At iterate  122    f=  6.47751D+01    |proj g|=  8.67537D+01\n",
       "\n",
       "At iterate  123    f=  6.36128D+01    |proj g|=  3.35273D+01\n",
       "\n",
@@ -9203,18 +9185,18 @@
       "At iterate  161    f=  5.05966D+01    |proj g|=  6.66314D+00\n",
       "\n",
       "At iterate  162    f=  5.05320D+01    |proj g|=  1.30913D+01\n",
-      "\n"
+      "\n",
+      "At iterate  163    f=  5.04642D+01    |proj g|=  1.77409D+01\n",
+      "\n",
+      "At iterate  164    f=  5.02744D+01    |proj g|=  2.18751D+01\n",
+      "\n",
+      "At iterate  165    f=  5.01232D+01    |proj g|=  2.17121D+01\n"
      ]
     },
     {
      "name": "stdout",
      "output_type": "stream",
      "text": [
-      "At iterate  163    f=  5.04642D+01    |proj g|=  1.77409D+01\n",
-      "\n",
-      "At iterate  164    f=  5.02744D+01    |proj g|=  2.18751D+01\n",
-      "\n",
-      "At iterate  165    f=  5.01232D+01    |proj g|=  2.17121D+01\n",
       "\n",
       "At iterate  166    f=  4.99960D+01    |proj g|=  1.09584D+01\n",
       "\n",
@@ -9288,17 +9270,17 @@
       "\n",
       "At iterate  201    f=  4.67945D+01    |proj g|=  3.15239D+01\n",
       "\n",
-      "At iterate  202    f=  4.67389D+01    |proj g|=  6.03816D+00\n"
+      "At iterate  202    f=  4.67389D+01    |proj g|=  6.03816D+00\n",
+      "\n",
+      "At iterate  203    f=  4.66683D+01    |proj g|=  7.70411D+00\n",
+      "\n",
+      "At iterate  204    f=  4.65574D+01    |proj g|=  1.46439D+01\n"
      ]
     },
     {
      "name": "stdout",
      "output_type": "stream",
      "text": [
-      "\n",
-      "At iterate  203    f=  4.66683D+01    |proj g|=  7.70411D+00\n",
-      "\n",
-      "At iterate  204    f=  4.65574D+01    |proj g|=  1.46439D+01\n",
       "\n",
       "At iterate  205    f=  4.65341D+01    |proj g|=  3.39291D+01\n",
       "\n",
@@ -9381,7 +9363,13 @@
       "At iterate  244    f=  4.47439D+01    |proj g|=  4.76983D+00\n",
       "\n",
       "At iterate  245    f=  4.47150D+01    |proj g|=  1.27162D+01\n",
-      "\n",
+      "\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "At iterate  246    f=  4.46791D+01    |proj g|=  1.29922D+01\n",
       "\n",
       "At iterate  247    f=  4.46550D+01    |proj g|=  5.65238D+01\n",
@@ -9390,13 +9378,7 @@
       "\n",
       "At iterate  249    f=  4.45404D+01    |proj g|=  3.77749D+00\n",
       "\n",
-      "At iterate  250    f=  4.45221D+01    |proj g|=  5.66000D+00\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate  250    f=  4.45221D+01    |proj g|=  5.66000D+00\n",
       "\n",
       "At iterate  251    f=  4.44961D+01    |proj g|=  7.88892D+00\n",
       "\n",
@@ -9466,7 +9448,13 @@
       "\n",
       "At iterate  284    f=  4.34540D+01    |proj g|=  1.05611D+01\n",
       "\n",
-      "At iterate  285    f=  4.33711D+01    |proj g|=  8.75956D+00\n",
+      "At iterate  285    f=  4.33711D+01    |proj g|=  8.75956D+00\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate  286    f=  4.33494D+01    |proj g|=  1.40579D+01\n",
       "\n",
@@ -9488,13 +9476,7 @@
       "\n",
       "At iterate  295    f=  4.31641D+01    |proj g|=  7.35507D+00\n",
       "\n",
-      "At iterate  296    f=  4.31463D+01    |proj g|=  5.08734D+00\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate  296    f=  4.31463D+01    |proj g|=  5.08734D+00\n",
       "\n",
       "At iterate  297    f=  4.31235D+01    |proj g|=  6.21746D+00\n",
       "\n",
@@ -9559,7 +9541,13 @@
       "At iterate  327    f=  4.22777D+01    |proj g|=  6.79450D+00\n",
       "\n",
       "At iterate  328    f=  4.22637D+01    |proj g|=  3.39675D+00\n",
-      "\n",
+      "\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "At iterate  329    f=  4.22515D+01    |proj g|=  7.74732D+00\n",
       "\n",
       "At iterate  330    f=  4.22295D+01    |proj g|=  9.36751D+00\n",
@@ -9584,13 +9572,7 @@
       "\n",
       "At iterate  340    f=  4.18832D+01    |proj g|=  4.04946D+00\n",
       "\n",
-      "At iterate  341    f=  4.18574D+01    |proj g|=  1.25120D+01\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate  341    f=  4.18574D+01    |proj g|=  1.25120D+01\n",
       "\n",
       "At iterate  342    f=  4.18268D+01    |proj g|=  6.97430D+00\n",
       "\n",
@@ -9650,7 +9632,13 @@
       "\n",
       "At iterate  370    f=  4.07426D+01    |proj g|=  3.19077D+01\n",
       "\n",
-      "At iterate  371    f=  4.06491D+01    |proj g|=  1.58336D+01\n",
+      "At iterate  371    f=  4.06491D+01    |proj g|=  1.58336D+01\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate  372    f=  4.06210D+01    |proj g|=  6.58915D+00\n",
       "\n",
@@ -9678,13 +9666,7 @@
       "\n",
       "At iterate  384    f=  4.02329D+01    |proj g|=  8.92779D+00\n",
       "\n",
-      "At iterate  385    f=  4.02039D+01    |proj g|=  4.25346D+00\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate  385    f=  4.02039D+01    |proj g|=  4.25346D+00\n",
       "\n",
       "At iterate  386    f=  4.01812D+01    |proj g|=  9.29412D+00\n",
       "\n",
@@ -9744,7 +9726,13 @@
       "\n",
       "At iterate  414    f=  3.95569D+01    |proj g|=  8.23419D+00\n",
       "\n",
-      "At iterate  415    f=  3.95320D+01    |proj g|=  1.46693D+01\n",
+      "At iterate  415    f=  3.95320D+01    |proj g|=  1.46693D+01\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate  416    f=  3.95042D+01    |proj g|=  1.17468D+01\n",
       "\n",
@@ -9779,13 +9767,7 @@
       "At iterate  431    f=  3.91729D+01    |proj g|=  1.43743D+01\n",
       "\n",
       "At iterate  432    f=  3.91427D+01    |proj g|=  9.03210D+00\n",
-      "\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "\n",
       "At iterate  433    f=  3.91225D+01    |proj g|=  8.21343D+00\n",
       "\n",
       "At iterate  434    f=  3.91030D+01    |proj g|=  9.51017D+00\n",
@@ -9834,7 +9816,13 @@
       "\n",
       "At iterate  456    f=  3.86006D+01    |proj g|=  8.37420D+00\n",
       "\n",
-      "At iterate  457    f=  3.85662D+01    |proj g|=  6.71042D+00\n",
+      "At iterate  457    f=  3.85662D+01    |proj g|=  6.71042D+00\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate  458    f=  3.85497D+01    |proj g|=  1.49551D+01\n",
       "\n",
@@ -9868,13 +9856,7 @@
       "\n",
       "At iterate  473    f=  3.83962D+01    |proj g|=  7.78908D+00\n",
       "\n",
-      "At iterate  474    f=  3.83887D+01    |proj g|=  1.87827D+00\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate  474    f=  3.83887D+01    |proj g|=  1.87827D+00\n",
       "\n",
       "At iterate  475    f=  3.83818D+01    |proj g|=  5.08028D+00\n",
       "\n",
@@ -9921,7 +9903,13 @@
       "At iterate  496    f=  3.82156D+01    |proj g|=  9.05421D+00\n",
       "\n",
       "At iterate  497    f=  3.82109D+01    |proj g|=  4.00441D+00\n",
-      "\n",
+      "\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "At iterate  498    f=  3.82072D+01    |proj g|=  1.62893D+00\n",
       "\n",
       "At iterate  499    f=  3.82030D+01    |proj g|=  3.49998D+00\n",
@@ -9965,13 +9953,7 @@
       "At iterate  518    f=  3.80818D+01    |proj g|=  5.49514D+00\n",
       "\n",
       "At iterate  519    f=  3.80771D+01    |proj g|=  7.48996D+00\n",
-      "\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "\n",
       "At iterate  520    f=  3.80725D+01    |proj g|=  2.65384D+00\n",
       "\n",
       "At iterate  521    f=  3.80682D+01    |proj g|=  1.81702D+00\n",
@@ -10000,7 +9982,13 @@
       "\n",
       "At iterate  533    f=  3.80141D+01    |proj g|=  8.37841D+00\n",
       "\n",
-      "At iterate  534    f=  3.80060D+01    |proj g|=  6.89120D+00\n",
+      "At iterate  534    f=  3.80060D+01    |proj g|=  6.89120D+00\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate  535    f=  3.80028D+01    |proj g|=  7.76786D+00\n",
       "\n",
@@ -10060,13 +10048,7 @@
       "\n",
       "At iterate  563    f=  3.79252D+01    |proj g|=  2.19722D+00\n",
       "\n",
-      "At iterate  564    f=  3.79227D+01    |proj g|=  4.97927D+00\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate  564    f=  3.79227D+01    |proj g|=  4.97927D+00\n",
       "\n",
       "At iterate  565    f=  3.79203D+01    |proj g|=  3.43348D+00\n",
       "\n",
@@ -10090,7 +10072,13 @@
       "\n",
       "At iterate  575    f=  3.78828D+01    |proj g|=  7.75360D-01\n",
       "\n",
-      "At iterate  576    f=  3.78805D+01    |proj g|=  8.58476D+00\n",
+      "At iterate  576    f=  3.78805D+01    |proj g|=  8.58476D+00\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate  577    f=  3.78770D+01    |proj g|=  4.44396D+00\n",
       "\n",
@@ -10156,13 +10144,7 @@
       "\n",
       "At iterate  608    f=  3.78032D+01    |proj g|=  1.30216D+00\n",
       "\n",
-      "At iterate  609    f=  3.78012D+01    |proj g|=  1.34401D+00\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate  609    f=  3.78012D+01    |proj g|=  1.34401D+00\n",
       "\n",
       "At iterate  610    f=  3.78004D+01    |proj g|=  4.14883D+00\n",
       "\n",
@@ -10171,7 +10153,13 @@
       "At iterate  612    f=  3.77960D+01    |proj g|=  2.00614D+00\n",
       "\n",
       "At iterate  613    f=  3.77934D+01    |proj g|=  2.35404D+00\n",
-      "\n",
+      "\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "At iterate  614    f=  3.77926D+01    |proj g|=  5.96840D+00\n",
       "\n",
       "At iterate  615    f=  3.77909D+01    |proj g|=  2.42913D+00\n",
@@ -10334,7 +10322,13 @@
       "\n",
       "At iterate  691    f=  3.76592D+01    |proj g|=  3.21461D+00\n",
       "\n",
-      "At iterate  692    f=  3.76563D+01    |proj g|=  4.62476D+00\n",
+      "At iterate  692    f=  3.76563D+01    |proj g|=  4.62476D+00\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate  693    f=  3.76519D+01    |proj g|=  7.60138D+00\n",
       "\n",
@@ -10346,13 +10340,7 @@
       "\n",
       "At iterate  697    f=  3.76437D+01    |proj g|=  3.38482D+00\n",
       "\n",
-      "At iterate  698    f=  3.76404D+01    |proj g|=  5.07391D+00\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate  698    f=  3.76404D+01    |proj g|=  5.07391D+00\n",
       "\n",
       "At iterate  699    f=  3.76369D+01    |proj g|=  2.33172D+00\n",
       "\n",
@@ -10424,7 +10412,13 @@
       "\n",
       "At iterate  733    f=  3.75341D+01    |proj g|=  2.00358D+00\n",
       "\n",
-      "At iterate  734    f=  3.75311D+01    |proj g|=  4.85592D+00\n",
+      "At iterate  734    f=  3.75311D+01    |proj g|=  4.85592D+00\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate  735    f=  3.75273D+01    |proj g|=  2.51580D+00\n",
       "\n",
@@ -10442,13 +10436,7 @@
       "\n",
       "At iterate  742    f=  3.75065D+01    |proj g|=  4.23130D+00\n",
       "\n",
-      "At iterate  743    f=  3.75044D+01    |proj g|=  5.08940D+00\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate  743    f=  3.75044D+01    |proj g|=  5.08940D+00\n",
       "\n",
       "At iterate  744    f=  3.75023D+01    |proj g|=  1.68417D+00\n",
       "\n",
@@ -10519,7 +10507,13 @@
       "At iterate  777    f=  3.74195D+01    |proj g|=  7.89613D+00\n",
       "\n",
       "At iterate  778    f=  3.74174D+01    |proj g|=  1.87217D+00\n",
-      "\n",
+      "\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "At iterate  779    f=  3.74160D+01    |proj g|=  3.37134D+00\n",
       "\n",
       "At iterate  780    f=  3.74140D+01    |proj g|=  3.14958D+00\n",
@@ -10540,13 +10534,7 @@
       "\n",
       "At iterate  788    f=  3.73894D+01    |proj g|=  4.86753D+00\n",
       "\n",
-      "At iterate  789    f=  3.73870D+01    |proj g|=  2.17477D+00\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate  789    f=  3.73870D+01    |proj g|=  2.17477D+00\n",
       "\n",
       "At iterate  790    f=  3.73859D+01    |proj g|=  7.65289D+00\n",
       "\n",
@@ -10605,7 +10593,13 @@
       "At iterate  817    f=  3.73082D+01    |proj g|=  1.95887D+00\n",
       "\n",
       "At iterate  818    f=  3.73062D+01    |proj g|=  7.51153D+00\n",
-      "\n",
+      "\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "At iterate  819    f=  3.73041D+01    |proj g|=  3.95519D+00\n",
       "\n",
       "At iterate  820    f=  3.73019D+01    |proj g|=  2.82001D+00\n",
@@ -10638,13 +10632,7 @@
       "\n",
       "At iterate  834    f=  3.72716D+01    |proj g|=  7.52689D+00\n",
       "\n",
-      "At iterate  835    f=  3.72693D+01    |proj g|=  1.29276D+00\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate  835    f=  3.72693D+01    |proj g|=  1.29276D+00\n",
       "\n",
       "At iterate  836    f=  3.72686D+01    |proj g|=  1.99569D+00\n",
       "\n",
@@ -10698,7 +10686,13 @@
       "\n",
       "At iterate  861    f=  3.72280D+01    |proj g|=  1.51082D+00\n",
       "\n",
-      "At iterate  862    f=  3.72271D+01    |proj g|=  1.55295D+00\n",
+      "At iterate  862    f=  3.72271D+01    |proj g|=  1.55295D+00\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate  863    f=  3.72259D+01    |proj g|=  5.18478D+00\n",
       "\n",
@@ -10732,13 +10726,7 @@
       "\n",
       "At iterate  878    f=  3.72105D+01    |proj g|=  4.59545D+00\n",
       "\n",
-      "At iterate  879    f=  3.72092D+01    |proj g|=  1.13350D+00\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate  879    f=  3.72092D+01    |proj g|=  1.13350D+00\n",
       "\n",
       "At iterate  880    f=  3.72085D+01    |proj g|=  9.37072D-01\n",
       "\n",
@@ -10788,7 +10776,13 @@
       "\n",
       "At iterate  903    f=  3.71854D+01    |proj g|=  2.81819D+00\n",
       "\n",
-      "At iterate  904    f=  3.71848D+01    |proj g|=  4.18315D+00\n",
+      "At iterate  904    f=  3.71848D+01    |proj g|=  4.18315D+00\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate  905    f=  3.71841D+01    |proj g|=  1.01203D+00\n",
       "\n",
@@ -10828,13 +10822,7 @@
       "\n",
       "At iterate  923    f=  3.71662D+01    |proj g|=  2.16117D+00\n",
       "\n",
-      "At iterate  924    f=  3.71647D+01    |proj g|=  1.24986D+00\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate  924    f=  3.71647D+01    |proj g|=  1.24986D+00\n",
       "\n",
       "At iterate  925    f=  3.71639D+01    |proj g|=  3.84279D+00\n",
       "\n",
@@ -10876,7 +10864,13 @@
       "\n",
       "At iterate  944    f=  3.71462D+01    |proj g|=  1.10461D+00\n",
       "\n",
-      "At iterate  945    f=  3.71447D+01    |proj g|=  1.62791D+00\n",
+      "At iterate  945    f=  3.71447D+01    |proj g|=  1.62791D+00\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate  946    f=  3.71441D+01    |proj g|=  2.64160D+00\n",
       "\n",
@@ -10922,13 +10916,7 @@
       "\n",
       "At iterate  967    f=  3.71250D+01    |proj g|=  2.13357D+00\n",
       "\n",
-      "At iterate  968    f=  3.71231D+01    |proj g|=  2.80292D+00\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate  968    f=  3.71231D+01    |proj g|=  2.80292D+00\n",
       "\n",
       "At iterate  969    f=  3.71212D+01    |proj g|=  2.42744D+00\n",
       "\n",
@@ -10966,7 +10954,13 @@
       "\n",
       "At iterate  986    f=  3.71047D+01    |proj g|=  9.52949D-01\n",
       "\n",
-      "At iterate  987    f=  3.71043D+01    |proj g|=  4.49177D+00\n",
+      "At iterate  987    f=  3.71043D+01    |proj g|=  4.49177D+00\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate  988    f=  3.71036D+01    |proj g|=  2.36120D+00\n",
       "\n",
@@ -11019,13 +11013,7 @@
       "At iterate 1012    f=  3.70824D+01    |proj g|=  2.13087D+00\n",
       "\n",
       "At iterate 1013    f=  3.70818D+01    |proj g|=  6.36505D-01\n",
-      "\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "\n",
       "At iterate 1014    f=  3.70814D+01    |proj g|=  9.82275D-01\n",
       "\n",
       "At iterate 1015    f=  3.70801D+01    |proj g|=  2.29233D+00\n",
@@ -11052,7 +11040,13 @@
       "\n",
       "At iterate 1026    f=  3.70696D+01    |proj g|=  5.20506D+00\n",
       "\n",
-      "At iterate 1027    f=  3.70685D+01    |proj g|=  3.10196D+00\n",
+      "At iterate 1027    f=  3.70685D+01    |proj g|=  3.10196D+00\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate 1028    f=  3.70679D+01    |proj g|=  8.10473D-01\n",
       "\n",
@@ -11121,13 +11115,7 @@
       "At iterate 1060    f=  3.70429D+01    |proj g|=  1.05758D+00\n",
       "\n",
       "At iterate 1061    f=  3.70428D+01    |proj g|=  5.83336D+00\n",
-      "\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "\n",
       "At iterate 1062    f=  3.70421D+01    |proj g|=  2.88270D+00\n",
       "\n",
       "At iterate 1063    f=  3.70414D+01    |proj g|=  5.17613D-01\n",
@@ -11140,7 +11128,13 @@
       "\n",
       "At iterate 1067    f=  3.70392D+01    |proj g|=  4.01422D+00\n",
       "\n",
-      "At iterate 1068    f=  3.70381D+01    |proj g|=  1.73635D+00\n",
+      "At iterate 1068    f=  3.70381D+01    |proj g|=  1.73635D+00\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate 1069    f=  3.70378D+01    |proj g|=  6.87214D-01\n",
       "\n",
@@ -11222,16 +11216,16 @@
       "\n",
       "At iterate 1108    f=  3.70142D+01    |proj g|=  2.32329D+00\n",
       "\n",
-      "At iterate 1109    f=  3.70135D+01    |proj g|=  2.74729D+00\n"
+      "At iterate 1109    f=  3.70135D+01    |proj g|=  2.74729D+00\n",
+      "\n",
+      "At iterate 1110    f=  3.70128D+01    |proj g|=  3.38055D+00\n",
+      "\n"
      ]
     },
     {
      "name": "stdout",
      "output_type": "stream",
      "text": [
-      "\n",
-      "At iterate 1110    f=  3.70128D+01    |proj g|=  3.38055D+00\n",
-      "\n",
       "At iterate 1111    f=  3.70121D+01    |proj g|=  5.24715D-01\n",
       "\n",
       "At iterate 1112    f=  3.70117D+01    |proj g|=  1.09624D+00\n",
@@ -11316,19 +11310,19 @@
       "\n",
       "At iterate 1152    f=  3.69978D+01    |proj g|=  1.14239D+00\n",
       "\n",
-      "At iterate 1153    f=  3.69974D+01    |proj g|=  1.79740D+00\n",
-      "\n",
-      "At iterate 1154    f=  3.69971D+01    |proj g|=  2.20864D+00\n",
-      "\n",
-      "At iterate 1155    f=  3.69967D+01    |proj g|=  3.05710D+00\n",
-      "\n",
-      "At iterate 1156    f=  3.69964D+01    |proj g|=  1.11330D+00\n"
+      "At iterate 1153    f=  3.69974D+01    |proj g|=  1.79740D+00\n"
      ]
     },
     {
      "name": "stdout",
      "output_type": "stream",
      "text": [
+      "\n",
+      "At iterate 1154    f=  3.69971D+01    |proj g|=  2.20864D+00\n",
+      "\n",
+      "At iterate 1155    f=  3.69967D+01    |proj g|=  3.05710D+00\n",
+      "\n",
+      "At iterate 1156    f=  3.69964D+01    |proj g|=  1.11330D+00\n",
       "\n",
       "At iterate 1157    f=  3.69962D+01    |proj g|=  4.79259D-01\n",
       "\n",
@@ -11408,7 +11402,13 @@
       "\n",
       "At iterate 1195    f=  3.69865D+01    |proj g|=  9.93380D-01\n",
       "\n",
-      "At iterate 1196    f=  3.69861D+01    |proj g|=  4.88347D-01\n",
+      "At iterate 1196    f=  3.69861D+01    |proj g|=  4.88347D-01\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate 1197    f=  3.69859D+01    |proj g|=  7.44059D-01\n",
       "\n",
@@ -11422,13 +11422,7 @@
       "\n",
       "At iterate 1202    f=  3.69855D+01    |proj g|=  7.60270D-01\n",
       "\n",
-      "At iterate 1203    f=  3.69854D+01    |proj g|=  2.02683D+00\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate 1203    f=  3.69854D+01    |proj g|=  2.02683D+00\n",
       "\n",
       "At iterate 1204    f=  3.69852D+01    |proj g|=  8.81002D-01\n",
       "\n",
@@ -11496,7 +11490,13 @@
       "\n",
       "At iterate 1236    f=  3.69802D+01    |proj g|=  4.12088D-01\n",
       "\n",
-      "At iterate 1237    f=  3.69801D+01    |proj g|=  8.42371D-01\n",
+      "At iterate 1237    f=  3.69801D+01    |proj g|=  8.42371D-01\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate 1238    f=  3.69799D+01    |proj g|=  1.50331D+00\n",
       "\n",
@@ -11516,13 +11516,7 @@
       "\n",
       "At iterate 1246    f=  3.69780D+01    |proj g|=  3.69012D-01\n",
       "\n",
-      "At iterate 1247    f=  3.69779D+01    |proj g|=  2.92526D-01\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate 1247    f=  3.69779D+01    |proj g|=  2.92526D-01\n",
       "\n",
       "At iterate 1248    f=  3.69778D+01    |proj g|=  1.84820D+00\n",
       "\n",
@@ -11584,7 +11578,13 @@
       "\n",
       "At iterate 1277    f=  3.69737D+01    |proj g|=  8.82140D-01\n",
       "\n",
-      "At iterate 1278    f=  3.69736D+01    |proj g|=  2.04982D+00\n",
+      "At iterate 1278    f=  3.69736D+01    |proj g|=  2.04982D+00\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate 1279    f=  3.69735D+01    |proj g|=  7.82336D-01\n",
       "\n",
@@ -11614,13 +11614,7 @@
       "\n",
       "At iterate 1292    f=  3.69722D+01    |proj g|=  3.62753D-01\n",
       "\n",
-      "At iterate 1293    f=  3.69720D+01    |proj g|=  6.77706D-01\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate 1293    f=  3.69720D+01    |proj g|=  6.77706D-01\n",
       "\n",
       "At iterate 1294    f=  3.69719D+01    |proj g|=  8.85498D-01\n",
       "\n",
@@ -11666,7 +11660,13 @@
       "\n",
       "At iterate 1315    f=  3.69705D+01    |proj g|=  2.02347D-01\n",
       "\n",
-      "At iterate 1316    f=  3.69704D+01    |proj g|=  4.80464D-01\n",
+      "At iterate 1316    f=  3.69704D+01    |proj g|=  4.80464D-01\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate 1317    f=  3.69703D+01    |proj g|=  5.72924D-01\n",
       "\n",
@@ -11714,13 +11714,7 @@
       "\n",
       "At iterate 1339    f=  3.69691D+01    |proj g|=  6.58382D-01\n",
       "\n",
-      "At iterate 1340    f=  3.69690D+01    |proj g|=  7.73815D-01\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate 1340    f=  3.69690D+01    |proj g|=  7.73815D-01\n",
       "\n",
       "At iterate 1341    f=  3.69690D+01    |proj g|=  1.28864D+00\n",
       "\n",
@@ -11747,7 +11741,13 @@
       "At iterate 1352    f=  3.69684D+01    |proj g|=  3.90505D-01\n",
       "\n",
       "At iterate 1353    f=  3.69684D+01    |proj g|=  3.40964D-01\n",
-      "\n",
+      "\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "At iterate 1354    f=  3.69684D+01    |proj g|=  3.07710D-01\n",
       "\n",
       "At iterate 1355    f=  3.69684D+01    |proj g|=  2.61372D-01\n",
@@ -11812,19 +11812,19 @@
       "\n",
       "At iterate 1385    f=  3.69669D+01    |proj g|=  2.73842D-01\n",
       "\n",
-      "At iterate 1386    f=  3.69669D+01    |proj g|=  5.43762D-01\n"
+      "At iterate 1386    f=  3.69669D+01    |proj g|=  5.43762D-01\n",
+      "\n",
+      "At iterate 1387    f=  3.69668D+01    |proj g|=  7.88999D-01\n",
+      "\n",
+      "At iterate 1388    f=  3.69667D+01    |proj g|=  1.70348D+00\n",
+      "\n",
+      "At iterate 1389    f=  3.69666D+01    |proj g|=  4.38603D-01\n"
      ]
     },
     {
      "name": "stdout",
      "output_type": "stream",
      "text": [
-      "\n",
-      "At iterate 1387    f=  3.69668D+01    |proj g|=  7.88999D-01\n",
-      "\n",
-      "At iterate 1388    f=  3.69667D+01    |proj g|=  1.70348D+00\n",
-      "\n",
-      "At iterate 1389    f=  3.69666D+01    |proj g|=  4.38603D-01\n",
       "\n",
       "At iterate 1390    f=  3.69666D+01    |proj g|=  2.91198D-01\n",
       "\n",
@@ -11908,17 +11908,17 @@
       "\n",
       "At iterate 1430    f=  3.69635D+01    |proj g|=  1.55738D+00\n",
       "\n",
-      "At iterate 1431    f=  3.69633D+01    |proj g|=  4.86253D-01\n",
-      "\n",
-      "At iterate 1432    f=  3.69632D+01    |proj g|=  4.63898D-01\n",
-      "\n",
-      "At iterate 1433    f=  3.69631D+01    |proj g|=  1.07245D+00\n"
+      "At iterate 1431    f=  3.69633D+01    |proj g|=  4.86253D-01\n"
      ]
     },
     {
      "name": "stdout",
      "output_type": "stream",
      "text": [
+      "\n",
+      "At iterate 1432    f=  3.69632D+01    |proj g|=  4.63898D-01\n",
+      "\n",
+      "At iterate 1433    f=  3.69631D+01    |proj g|=  1.07245D+00\n",
       "\n",
       "At iterate 1434    f=  3.69630D+01    |proj g|=  6.88674D-01\n",
       "\n",
@@ -11988,7 +11988,13 @@
       "\n",
       "At iterate 1467    f=  3.69611D+01    |proj g|=  1.75247D-01\n",
       "\n",
-      "At iterate 1468    f=  3.69610D+01    |proj g|=  1.88157D-01\n",
+      "At iterate 1468    f=  3.69610D+01    |proj g|=  1.88157D-01\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate 1469    f=  3.69610D+01    |proj g|=  4.53164D-01\n",
       "\n",
@@ -12016,13 +12022,7 @@
       "\n",
       "At iterate 1481    f=  3.69601D+01    |proj g|=  7.61810D-01\n",
       "\n",
-      "At iterate 1482    f=  3.69601D+01    |proj g|=  5.16536D-01\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate 1482    f=  3.69601D+01    |proj g|=  5.16536D-01\n",
       "\n",
       "At iterate 1483    f=  3.69600D+01    |proj g|=  6.66174D-01\n",
       "\n",
@@ -12076,7 +12076,13 @@
       "\n",
       "At iterate 1508    f=  3.69585D+01    |proj g|=  3.22016D-01\n",
       "\n",
-      "At iterate 1509    f=  3.69584D+01    |proj g|=  2.02208D-01\n",
+      "At iterate 1509    f=  3.69584D+01    |proj g|=  2.02208D-01\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate 1510    f=  3.69584D+01    |proj g|=  2.41893D-01\n",
       "\n",
@@ -12117,13 +12123,7 @@
       "At iterate 1528    f=  3.69573D+01    |proj g|=  6.26068D-01\n",
       "\n",
       "At iterate 1529    f=  3.69572D+01    |proj g|=  3.53203D-01\n",
-      "\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "\n",
       "At iterate 1530    f=  3.69571D+01    |proj g|=  3.99967D-01\n",
       "\n",
       "At iterate 1531    f=  3.69571D+01    |proj g|=  3.08197D-01\n",
@@ -12158,7 +12158,13 @@
       "\n",
       "At iterate 1546    f=  3.69563D+01    |proj g|=  2.05964D-01\n",
       "\n",
-      "At iterate 1547    f=  3.69563D+01    |proj g|=  2.87750D-01\n",
+      "At iterate 1547    f=  3.69563D+01    |proj g|=  2.87750D-01\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate 1548    f=  3.69562D+01    |proj g|=  7.31754D-01\n",
       "\n",
@@ -12210,13 +12216,7 @@
       "\n",
       "At iterate 1572    f=  3.69551D+01    |proj g|=  4.87133D-01\n",
       "\n",
-      "At iterate 1573    f=  3.69551D+01    |proj g|=  4.29381D-01\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate 1573    f=  3.69551D+01    |proj g|=  4.29381D-01\n",
       "\n",
       "At iterate 1574    f=  3.69550D+01    |proj g|=  3.71456D-01\n",
       "\n",
@@ -12246,7 +12246,13 @@
       "\n",
       "At iterate 1587    f=  3.69545D+01    |proj g|=  1.75108D-01\n",
       "\n",
-      "At iterate 1588    f=  3.69545D+01    |proj g|=  3.04172D-01\n",
+      "At iterate 1588    f=  3.69545D+01    |proj g|=  3.04172D-01\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate 1589    f=  3.69544D+01    |proj g|=  9.14343D-01\n",
       "\n",
@@ -12308,13 +12314,7 @@
       "\n",
       "At iterate 1618    f=  3.69532D+01    |proj g|=  2.64938D-01\n",
       "\n",
-      "At iterate 1619    f=  3.69531D+01    |proj g|=  4.73631D-01\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate 1619    f=  3.69531D+01    |proj g|=  4.73631D-01\n",
       "\n",
       "At iterate 1620    f=  3.69531D+01    |proj g|=  3.47509D-01\n",
       "\n",
@@ -12332,7 +12332,13 @@
       "\n",
       "At iterate 1627    f=  3.69527D+01    |proj g|=  2.40767D-01\n",
       "\n",
-      "At iterate 1628    f=  3.69526D+01    |proj g|=  6.41024D-01\n",
+      "At iterate 1628    f=  3.69526D+01    |proj g|=  6.41024D-01\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate 1629    f=  3.69526D+01    |proj g|=  5.79314D-01\n",
       "\n",
@@ -12408,13 +12414,7 @@
       "\n",
       "At iterate 1665    f=  3.69515D+01    |proj g|=  3.44874D-01\n",
       "\n",
-      "At iterate 1666    f=  3.69515D+01    |proj g|=  2.12977D-01\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate 1666    f=  3.69515D+01    |proj g|=  2.12977D-01\n",
       "\n",
       "At iterate 1667    f=  3.69515D+01    |proj g|=  3.52034D-01\n",
       "\n",
@@ -12422,7 +12422,13 @@
       "\n",
       "At iterate 1669    f=  3.69514D+01    |proj g|=  9.84689D-01\n",
       "\n",
-      "At iterate 1670    f=  3.69514D+01    |proj g|=  3.20927D-01\n",
+      "At iterate 1670    f=  3.69514D+01    |proj g|=  3.20927D-01\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate 1671    f=  3.69514D+01    |proj g|=  2.49201D-01\n",
       "\n",
@@ -12498,7 +12504,13 @@
       "\n",
       "At iterate 1707    f=  3.69506D+01    |proj g|=  7.38414D-01\n",
       "\n",
-      "At iterate 1708    f=  3.69505D+01    |proj g|=  1.59691D-01\n",
+      "At iterate 1708    f=  3.69505D+01    |proj g|=  1.59691D-01\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate 1709    f=  3.69505D+01    |proj g|=  1.37051D-01\n",
       "\n",
@@ -12511,13 +12523,7 @@
       "At iterate 1713    f=  3.69505D+01    |proj g|=  4.41033D-01\n",
       "\n",
       "At iterate 1714    f=  3.69504D+01    |proj g|=  2.86021D-01\n",
-      "\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "\n",
       "At iterate 1715    f=  3.69504D+01    |proj g|=  2.59760D-01\n",
       "\n",
       "At iterate 1716    f=  3.69504D+01    |proj g|=  4.19983D-01\n",
@@ -12588,7 +12594,13 @@
       "\n",
       "At iterate 1749    f=  3.69500D+01    |proj g|=  6.35824D-01\n",
       "\n",
-      "At iterate 1750    f=  3.69499D+01    |proj g|=  1.07791D-01\n",
+      "At iterate 1750    f=  3.69499D+01    |proj g|=  1.07791D-01\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate 1751    f=  3.69499D+01    |proj g|=  3.21941D-01\n",
       "\n",
@@ -12608,13 +12620,7 @@
       "\n",
       "At iterate 1759    f=  3.69499D+01    |proj g|=  3.69639D-01\n",
       "\n",
-      "At iterate 1760    f=  3.69498D+01    |proj g|=  1.51941D-01\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate 1760    f=  3.69498D+01    |proj g|=  1.51941D-01\n",
       "\n",
       "At iterate 1761    f=  3.69498D+01    |proj g|=  1.25356D-01\n",
       "\n",
@@ -12674,7 +12680,13 @@
       "\n",
       "At iterate 1789    f=  3.69495D+01    |proj g|=  8.96707D-02\n",
       "\n",
-      "At iterate 1790    f=  3.69495D+01    |proj g|=  4.24548D-01\n",
+      "At iterate 1790    f=  3.69495D+01    |proj g|=  4.24548D-01\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate 1791    f=  3.69495D+01    |proj g|=  1.37622D-01\n",
       "\n",
@@ -12700,13 +12712,7 @@
       "\n",
       "At iterate 1802    f=  3.69494D+01    |proj g|=  3.66290D-01\n",
       "\n",
-      "At iterate 1803    f=  3.69494D+01    |proj g|=  6.96702D-01\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate 1803    f=  3.69494D+01    |proj g|=  6.96702D-01\n",
       "\n",
       "At iterate 1804    f=  3.69494D+01    |proj g|=  2.12105D-01\n",
       "\n",
@@ -12756,7 +12762,13 @@
       "\n",
       "At iterate 1827    f=  3.69492D+01    |proj g|=  2.14028D-01\n",
       "\n",
-      "At iterate 1828    f=  3.69492D+01    |proj g|=  2.12091D-01\n",
+      "At iterate 1828    f=  3.69492D+01    |proj g|=  2.12091D-01\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate 1829    f=  3.69492D+01    |proj g|=  6.59241D-01\n",
       "\n",
@@ -12804,13 +12816,7 @@
       "\n",
       "At iterate 1851    f=  3.69490D+01    |proj g|=  1.64810D-01\n",
       "\n",
-      "At iterate 1852    f=  3.69490D+01    |proj g|=  2.69980D-01\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate 1852    f=  3.69490D+01    |proj g|=  2.69980D-01\n",
       "\n",
       "At iterate 1853    f=  3.69490D+01    |proj g|=  2.08302D-01\n",
       "\n",
@@ -12846,7 +12852,13 @@
       "\n",
       "At iterate 1869    f=  3.69489D+01    |proj g|=  2.66958D-01\n",
       "\n",
-      "At iterate 1870    f=  3.69489D+01    |proj g|=  1.55834D-01\n",
+      "At iterate 1870    f=  3.69489D+01    |proj g|=  1.55834D-01\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate 1871    f=  3.69489D+01    |proj g|=  1.45810D-01\n",
       "\n",
@@ -12900,13 +12912,7 @@
       "\n",
       "At iterate 1896    f=  3.69487D+01    |proj g|=  1.55952D-01\n",
       "\n",
-      "At iterate 1897    f=  3.69487D+01    |proj g|=  3.31229D-01\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate 1897    f=  3.69487D+01    |proj g|=  3.31229D-01\n",
       "\n",
       "At iterate 1898    f=  3.69487D+01    |proj g|=  1.14718D-01\n",
       "\n",
@@ -12930,7 +12936,13 @@
       "\n",
       "At iterate 1908    f=  3.69487D+01    |proj g|=  6.95897D-02\n",
       "\n",
-      "At iterate 1909    f=  3.69487D+01    |proj g|=  5.75689D-02\n",
+      "At iterate 1909    f=  3.69487D+01    |proj g|=  5.75689D-02\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate 1910    f=  3.69487D+01    |proj g|=  2.23877D-01\n",
       "\n",
@@ -12998,13 +13010,7 @@
       "\n",
       "At iterate 1942    f=  3.69485D+01    |proj g|=  8.94487D-02\n",
       "\n",
-      "At iterate 1943    f=  3.69485D+01    |proj g|=  1.16319D-01\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate 1943    f=  3.69485D+01    |proj g|=  1.16319D-01\n",
       "\n",
       "At iterate 1944    f=  3.69485D+01    |proj g|=  1.59828D-01\n",
       "\n",
@@ -13018,7 +13024,13 @@
       "\n",
       "At iterate 1949    f=  3.69485D+01    |proj g|=  1.22234D-01\n",
       "\n",
-      "At iterate 1950    f=  3.69485D+01    |proj g|=  1.60376D-01\n",
+      "At iterate 1950    f=  3.69485D+01    |proj g|=  1.60376D-01\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate 1951    f=  3.69485D+01    |proj g|=  2.69390D-01\n",
       "\n",
@@ -13092,13 +13104,7 @@
       "\n",
       "At iterate 1986    f=  3.69484D+01    |proj g|=  1.70835D-01\n",
       "\n",
-      "At iterate 1987    f=  3.69483D+01    |proj g|=  1.57921D-01\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate 1987    f=  3.69483D+01    |proj g|=  1.57921D-01\n",
       "\n",
       "At iterate 1988    f=  3.69483D+01    |proj g|=  3.70968D-01\n",
       "\n",
@@ -13106,7 +13112,13 @@
       "\n",
       "At iterate 1990    f=  3.69483D+01    |proj g|=  7.76450D-02\n",
       "\n",
-      "At iterate 1991    f=  3.69483D+01    |proj g|=  7.42974D-02\n",
+      "At iterate 1991    f=  3.69483D+01    |proj g|=  7.42974D-02\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate 1992    f=  3.69483D+01    |proj g|=  3.14225D-01\n",
       "\n",
@@ -13153,13 +13165,13 @@
   {
    "cell_type": "code",
    "execution_count": 21,
-   "id": "71dc1f28",
+   "id": "482ac656",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-10T09:44:44.674311Z",
-     "iopub.status.busy": "2022-06-10T09:44:44.674021Z",
-     "iopub.status.idle": "2022-06-10T09:44:46.077529Z",
-     "shell.execute_reply": "2022-06-10T09:44:46.076946Z"
+     "iopub.execute_input": "2022-06-10T16:26:51.987304Z",
+     "iopub.status.busy": "2022-06-10T16:26:51.986820Z",
+     "iopub.status.idle": "2022-06-10T16:26:53.490384Z",
+     "shell.execute_reply": "2022-06-10T16:26:53.489708Z"
     }
    },
    "outputs": [
@@ -13182,7 +13194,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "2f518400",
+   "id": "8b6efaed",
    "metadata": {},
    "source": [
     "The following plot shows that we use different inducing *inputs* in each output dimension."
@@ -13191,13 +13203,13 @@
   {
    "cell_type": "code",
    "execution_count": 22,
-   "id": "e28d6b11",
+   "id": "d8f2f91f",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-10T09:44:46.080435Z",
-     "iopub.status.busy": "2022-06-10T09:44:46.080148Z",
-     "iopub.status.idle": "2022-06-10T09:44:48.540862Z",
-     "shell.execute_reply": "2022-06-10T09:44:48.540052Z"
+     "iopub.execute_input": "2022-06-10T16:26:53.493396Z",
+     "iopub.status.busy": "2022-06-10T16:26:53.493101Z",
+     "iopub.status.idle": "2022-06-10T16:26:55.968157Z",
+     "shell.execute_reply": "2022-06-10T16:26:55.967195Z"
     }
    },
    "outputs": [
@@ -13230,20 +13242,20 @@
   {
    "cell_type": "code",
    "execution_count": 23,
-   "id": "8b944189",
+   "id": "f98bc67a",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-10T09:44:48.543492Z",
-     "iopub.status.busy": "2022-06-10T09:44:48.543203Z",
-     "iopub.status.idle": "2022-06-10T09:44:48.547714Z",
-     "shell.execute_reply": "2022-06-10T09:44:48.547168Z"
+     "iopub.execute_input": "2022-06-10T16:26:55.971214Z",
+     "iopub.status.busy": "2022-06-10T16:26:55.970879Z",
+     "iopub.status.idle": "2022-06-10T16:26:55.975195Z",
+     "shell.execute_reply": "2022-06-10T16:26:55.974616Z"
     }
    },
    "outputs": [
     {
      "data": {
       "text/plain": [
-       "ListWrapper([<gpflow.inducing_variables.inducing_variables.InducingPoints object at 0x7fe1d03ab190>, <gpflow.inducing_variables.inducing_variables.InducingPoints object at 0x7fe1d03ab9a0>, <gpflow.inducing_variables.inducing_variables.InducingPoints object at 0x7fe1d03abcd0>])"
+       "ListWrapper([<gpflow.inducing_variables.inducing_variables.InducingPoints object at 0x7fe8a0692a70>, <gpflow.inducing_variables.inducing_variables.InducingPoints object at 0x7fe8a0693280>, <gpflow.inducing_variables.inducing_variables.InducingPoints object at 0x7fe8a0693d30>])"
       ]
      },
      "execution_count": 23,
@@ -13257,7 +13269,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "9854ddc1",
+   "id": "b77ecc8c",
    "metadata": {},
    "source": [
     "## Model $f(x)$ by doing inference in the $g$ space\n",
@@ -13274,13 +13286,13 @@
   {
    "cell_type": "code",
    "execution_count": 24,
-   "id": "24b8b81b",
+   "id": "26bfca47",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-10T09:44:48.550086Z",
-     "iopub.status.busy": "2022-06-10T09:44:48.549853Z",
-     "iopub.status.idle": "2022-06-10T09:44:48.573376Z",
-     "shell.execute_reply": "2022-06-10T09:44:48.572735Z"
+     "iopub.execute_input": "2022-06-10T16:26:55.979059Z",
+     "iopub.status.busy": "2022-06-10T16:26:55.978627Z",
+     "iopub.status.idle": "2022-06-10T16:26:56.005865Z",
+     "shell.execute_reply": "2022-06-10T16:26:56.005227Z"
     }
    },
    "outputs": [],
@@ -13302,13 +13314,13 @@
   {
    "cell_type": "code",
    "execution_count": 25,
-   "id": "9b42c3ca",
+   "id": "06c210f0",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-10T09:44:48.576208Z",
-     "iopub.status.busy": "2022-06-10T09:44:48.575942Z",
-     "iopub.status.idle": "2022-06-10T09:44:48.595512Z",
-     "shell.execute_reply": "2022-06-10T09:44:48.594873Z"
+     "iopub.execute_input": "2022-06-10T16:26:56.009240Z",
+     "iopub.status.busy": "2022-06-10T16:26:56.008913Z",
+     "iopub.status.idle": "2022-06-10T16:26:56.029487Z",
+     "shell.execute_reply": "2022-06-10T16:26:56.028870Z"
     }
    },
    "outputs": [],
@@ -13327,13 +13339,13 @@
   {
    "cell_type": "code",
    "execution_count": 26,
-   "id": "fc08a3bc",
+   "id": "7de4488a",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-10T09:44:48.598401Z",
-     "iopub.status.busy": "2022-06-10T09:44:48.598131Z",
-     "iopub.status.idle": "2022-06-10T09:44:58.477157Z",
-     "shell.execute_reply": "2022-06-10T09:44:58.476267Z"
+     "iopub.execute_input": "2022-06-10T16:26:56.032502Z",
+     "iopub.status.busy": "2022-06-10T16:26:56.032213Z",
+     "iopub.status.idle": "2022-06-10T16:27:06.715328Z",
+     "shell.execute_reply": "2022-06-10T16:27:06.714691Z"
     }
    },
    "outputs": [
@@ -13411,7 +13423,13 @@
       "\n",
       "At iterate   26    f=  3.47640D+02    |proj g|=  2.02890D+01\n",
       "\n",
-      "At iterate   27    f=  3.46572D+02    |proj g|=  6.02102D+01\n",
+      "At iterate   27    f=  3.46572D+02    |proj g|=  6.02102D+01\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate   28    f=  3.44568D+02    |proj g|=  8.33260D+01\n",
       "\n",
@@ -13441,13 +13459,7 @@
       "\n",
       "At iterate   41    f=  3.23107D+02    |proj g|=  1.76406D+01\n",
       "\n",
-      "At iterate   42    f=  3.22136D+02    |proj g|=  2.43598D+01\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate   42    f=  3.22136D+02    |proj g|=  2.43598D+01\n",
       "\n",
       "At iterate   43    f=  3.21209D+02    |proj g|=  7.84923D+01\n",
       "\n",
@@ -13489,7 +13501,13 @@
       "\n",
       "At iterate   62    f=  3.12474D+02    |proj g|=  2.43419D+01\n",
       "\n",
-      "At iterate   63    f=  3.11960D+02    |proj g|=  1.42612D+01\n",
+      "At iterate   63    f=  3.11960D+02    |proj g|=  1.42612D+01\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate   64    f=  3.11625D+02    |proj g|=  6.08397D+00\n",
       "\n",
@@ -13523,13 +13541,7 @@
       "\n",
       "At iterate   79    f=  2.83191D+02    |proj g|=  1.69597D+02\n",
       "\n",
-      "At iterate   80    f=  2.80250D+02    |proj g|=  1.30140D+02\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate   80    f=  2.80250D+02    |proj g|=  1.30140D+02\n",
       "\n",
       "At iterate   81    f=  2.73287D+02    |proj g|=  7.72123D+01\n",
       "\n",
@@ -13561,7 +13573,13 @@
       "\n",
       "At iterate   95    f=  1.93676D+02    |proj g|=  1.05133D+02\n",
       "\n",
-      "At iterate   96    f=  1.85659D+02    |proj g|=  4.79563D+01\n",
+      "At iterate   96    f=  1.85659D+02    |proj g|=  4.79563D+01\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate   97    f=  1.82425D+02    |proj g|=  8.81412D+01\n",
       "\n",
@@ -13633,13 +13651,7 @@
       "\n",
       "At iterate  131    f=  1.41590D+02    |proj g|=  4.40536D+01\n",
       "\n",
-      "At iterate  132    f=  1.40456D+02    |proj g|=  4.24755D+01\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate  132    f=  1.40456D+02    |proj g|=  4.24755D+01\n",
       "\n",
       "At iterate  133    f=  1.39855D+02    |proj g|=  5.90671D+01\n",
       "\n",
@@ -13681,7 +13693,13 @@
       "\n",
       "At iterate  152    f=  1.03272D+02    |proj g|=  3.35278D+01\n",
       "\n",
-      "At iterate  153    f=  1.02385D+02    |proj g|=  1.29619D+02\n",
+      "At iterate  153    f=  1.02385D+02    |proj g|=  1.29619D+02\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate  154    f=  1.00788D+02    |proj g|=  8.80199D+01\n",
       "\n",
@@ -13768,13 +13786,7 @@
       "At iterate  195    f=  3.91089D+01    |proj g|=  7.79045D+01\n",
       "\n",
       "At iterate  196    f=  3.82361D+01    |proj g|=  1.32023D+02\n",
-      "\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "\n",
       "At iterate  197    f=  3.72296D+01    |proj g|=  1.01708D+02\n",
       "\n",
       "At iterate  198    f=  3.66210D+01    |proj g|=  3.23186D+01\n",
@@ -13803,7 +13815,13 @@
       "\n",
       "At iterate  210    f=  3.04721D+01    |proj g|=  6.90320D+01\n",
       "\n",
-      "At iterate  211    f=  3.02558D+01    |proj g|=  6.13243D+01\n",
+      "At iterate  211    f=  3.02558D+01    |proj g|=  6.13243D+01\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate  212    f=  2.98486D+01    |proj g|=  7.00288D+01\n",
       "\n",
@@ -13893,13 +13911,7 @@
       "\n",
       "At iterate  255    f=  2.20992D+01    |proj g|=  2.05751D+01\n",
       "\n",
-      "At iterate  256    f=  2.18625D+01    |proj g|=  3.10410D+01\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate  256    f=  2.18625D+01    |proj g|=  3.10410D+01\n",
       "\n",
       "At iterate  257    f=  2.17153D+01    |proj g|=  3.08709D+01\n",
       "\n",
@@ -13925,7 +13937,13 @@
       "\n",
       "At iterate  268    f=  2.03361D+01    |proj g|=  8.35143D+01\n",
       "\n",
-      "At iterate  269    f=  2.00546D+01    |proj g|=  2.46977D+01\n",
+      "At iterate  269    f=  2.00546D+01    |proj g|=  2.46977D+01\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate  270    f=  1.99963D+01    |proj g|=  1.43468D+01\n",
       "\n",
@@ -14027,13 +14045,7 @@
       "\n",
       "At iterate  319    f=  1.57219D+01    |proj g|=  3.83368D+01\n",
       "\n",
-      "At iterate  320    f=  1.56882D+01    |proj g|=  1.07184D+02\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate  320    f=  1.56882D+01    |proj g|=  1.07184D+02\n",
       "\n",
       "At iterate  321    f=  1.55973D+01    |proj g|=  2.83711D+01\n",
       "\n",
@@ -14046,7 +14058,13 @@
       "At iterate  325    f=  1.52468D+01    |proj g|=  5.27001D+01\n",
       "\n",
       "At iterate  326    f=  1.51811D+01    |proj g|=  5.82431D+01\n",
-      "\n",
+      "\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "At iterate  327    f=  1.51019D+01    |proj g|=  1.05193D+01\n",
       "\n",
       "At iterate  328    f=  1.50778D+01    |proj g|=  8.76460D+00\n",
@@ -14151,17 +14169,17 @@
       "\n",
       "At iterate  378    f=  1.11561D+01    |proj g|=  8.81265D+00\n",
       "\n",
-      "At iterate  379    f=  1.11087D+01    |proj g|=  8.54014D+00\n"
+      "At iterate  379    f=  1.11087D+01    |proj g|=  8.54014D+00\n",
+      "\n",
+      "At iterate  380    f=  1.10194D+01    |proj g|=  2.37229D+01\n",
+      "\n",
+      "At iterate  381    f=  1.09764D+01    |proj g|=  3.76732D+01\n"
      ]
     },
     {
      "name": "stdout",
      "output_type": "stream",
      "text": [
-      "\n",
-      "At iterate  380    f=  1.10194D+01    |proj g|=  2.37229D+01\n",
-      "\n",
-      "At iterate  381    f=  1.09764D+01    |proj g|=  3.76732D+01\n",
       "\n",
       "At iterate  382    f=  1.09039D+01    |proj g|=  1.85854D+01\n",
       "\n",
@@ -14403,17 +14421,17 @@
       "\n",
       "At iterate  498    f=  6.39751D+00    |proj g|=  1.33474D+01\n",
       "\n",
-      "At iterate  499    f=  6.37671D+00    |proj g|=  1.62821D+01\n",
-      "\n",
-      "At iterate  500    f=  6.34928D+00    |proj g|=  1.44442D+01\n",
-      "\n",
-      "At iterate  501    f=  6.30776D+00    |proj g|=  1.53538D+01\n"
+      "At iterate  499    f=  6.37671D+00    |proj g|=  1.62821D+01\n"
      ]
     },
     {
      "name": "stdout",
      "output_type": "stream",
      "text": [
+      "\n",
+      "At iterate  500    f=  6.34928D+00    |proj g|=  1.44442D+01\n",
+      "\n",
+      "At iterate  501    f=  6.30776D+00    |proj g|=  1.53538D+01\n",
       "\n",
       "At iterate  502    f=  6.29344D+00    |proj g|=  1.77791D+01\n",
       "\n",
@@ -14525,7 +14543,13 @@
       "\n",
       "At iterate  556    f=  5.07475D+00    |proj g|=  5.12381D+01\n",
       "\n",
-      "At iterate  557    f=  5.02550D+00    |proj g|=  1.98980D+01\n",
+      "At iterate  557    f=  5.02550D+00    |proj g|=  1.98980D+01\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate  558    f=  4.99364D+00    |proj g|=  4.96973D+00\n",
       "\n",
@@ -14537,13 +14561,7 @@
       "\n",
       "At iterate  562    f=  4.91364D+00    |proj g|=  8.16508D+00\n",
       "\n",
-      "At iterate  563    f=  4.88552D+00    |proj g|=  1.05563D+01\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate  563    f=  4.88552D+00    |proj g|=  1.05563D+01\n",
       "\n",
       "At iterate  564    f=  4.85627D+00    |proj g|=  1.59266D+01\n",
       "\n",
@@ -14647,7 +14665,13 @@
       "\n",
       "At iterate  614    f=  4.00813D+00    |proj g|=  1.16992D+01\n",
       "\n",
-      "At iterate  615    f=  3.99839D+00    |proj g|=  5.43527D+00\n",
+      "At iterate  615    f=  3.99839D+00    |proj g|=  5.43527D+00\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate  616    f=  3.99243D+00    |proj g|=  4.91124D+00\n",
       "\n",
@@ -14663,13 +14687,7 @@
       "\n",
       "At iterate  622    f=  3.91212D+00    |proj g|=  4.54911D+00\n",
       "\n",
-      "At iterate  623    f=  3.89314D+00    |proj g|=  2.13133D+01\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate  623    f=  3.89314D+00    |proj g|=  2.13133D+01\n",
       "\n",
       "At iterate  624    f=  3.88152D+00    |proj g|=  2.25576D+01\n",
       "\n",
@@ -14772,7 +14790,13 @@
       "At iterate  673    f=  3.41044D+00    |proj g|=  9.03547D+00\n",
       "\n",
       "At iterate  674    f=  3.40292D+00    |proj g|=  5.36159D+00\n",
-      "\n",
+      "\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "At iterate  675    f=  3.39724D+00    |proj g|=  9.91107D+00\n",
       "\n",
       "At iterate  676    f=  3.38945D+00    |proj g|=  9.72119D+00\n",
@@ -14791,13 +14815,7 @@
       "\n",
       "At iterate  683    f=  3.32644D+00    |proj g|=  5.01600D+00\n",
       "\n",
-      "At iterate  684    f=  3.32027D+00    |proj g|=  3.01789D+00\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate  684    f=  3.32027D+00    |proj g|=  3.01789D+00\n",
       "\n",
       "At iterate  685    f=  3.31729D+00    |proj g|=  1.49327D+01\n",
       "\n",
@@ -14893,7 +14911,13 @@
       "\n",
       "At iterate  731    f=  3.00069D+00    |proj g|=  9.63174D+00\n",
       "\n",
-      "At iterate  732    f=  2.99659D+00    |proj g|=  1.48315D+01\n",
+      "At iterate  732    f=  2.99659D+00    |proj g|=  1.48315D+01\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate  733    f=  2.98643D+00    |proj g|=  1.88258D+01\n",
       "\n",
@@ -14919,13 +14943,7 @@
       "\n",
       "At iterate  744    f=  2.91875D+00    |proj g|=  1.17209D+01\n",
       "\n",
-      "At iterate  745    f=  2.91171D+00    |proj g|=  5.38099D+00\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate  745    f=  2.91171D+00    |proj g|=  5.38099D+00\n",
       "\n",
       "At iterate  746    f=  2.90773D+00    |proj g|=  1.10544D+01\n",
       "\n",
@@ -15011,7 +15029,13 @@
       "\n",
       "At iterate  787    f=  2.64202D+00    |proj g|=  3.23338D+00\n",
       "\n",
-      "At iterate  788    f=  2.63847D+00    |proj g|=  3.07566D+00\n",
+      "At iterate  788    f=  2.63847D+00    |proj g|=  3.07566D+00\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate  789    f=  2.63628D+00    |proj g|=  4.07236D+01\n",
       "\n",
@@ -15049,13 +15073,7 @@
       "\n",
       "At iterate  806    f=  2.53169D+00    |proj g|=  4.36104D+00\n",
       "\n",
-      "At iterate  807    f=  2.52698D+00    |proj g|=  8.75902D+00\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate  807    f=  2.52698D+00    |proj g|=  8.75902D+00\n",
       "\n",
       "At iterate  808    f=  2.52221D+00    |proj g|=  1.44486D+01\n",
       "\n",
@@ -15125,7 +15143,13 @@
       "\n",
       "At iterate  841    f=  2.33757D+00    |proj g|=  7.12406D+00\n",
       "\n",
-      "At iterate  842    f=  2.33477D+00    |proj g|=  1.39789D+01\n",
+      "At iterate  842    f=  2.33477D+00    |proj g|=  1.39789D+01\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate  843    f=  2.33058D+00    |proj g|=  5.45796D+00\n",
       "\n",
@@ -15172,13 +15196,7 @@
       "At iterate  864    f=  2.16949D+00    |proj g|=  6.76092D+00\n",
       "\n",
       "At iterate  865    f=  2.16066D+00    |proj g|=  3.57963D+00\n",
-      "\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "\n",
       "At iterate  866    f=  2.15271D+00    |proj g|=  5.70662D+00\n",
       "\n",
       "At iterate  867    f=  2.14895D+00    |proj g|=  1.41926D+01\n",
@@ -15249,7 +15267,13 @@
       "\n",
       "At iterate  900    f=  1.84188D+00    |proj g|=  4.73896D+00\n",
       "\n",
-      "At iterate  901    f=  1.83805D+00    |proj g|=  1.95983D+01\n",
+      "At iterate  901    f=  1.83805D+00    |proj g|=  1.95983D+01\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate  902    f=  1.83018D+00    |proj g|=  9.13757D+00\n",
       "\n",
@@ -15303,13 +15327,7 @@
       "\n",
       "At iterate  927    f=  1.61227D+00    |proj g|=  5.15446D+00\n",
       "\n",
-      "At iterate  928    f=  1.60372D+00    |proj g|=  6.73108D+00\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate  928    f=  1.60372D+00    |proj g|=  6.73108D+00\n",
       "\n",
       "At iterate  929    f=  1.58460D+00    |proj g|=  1.00486D+01\n",
       "\n",
@@ -15363,7 +15381,13 @@
       "\n",
       "At iterate  954    f=  1.44627D+00    |proj g|=  1.70822D+00\n",
       "\n",
-      "At iterate  955    f=  1.44333D+00    |proj g|=  1.34029D+01\n",
+      "At iterate  955    f=  1.44333D+00    |proj g|=  1.34029D+01\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate  956    f=  1.43860D+00    |proj g|=  5.14575D+00\n",
       "\n",
@@ -15439,13 +15463,7 @@
       "\n",
       "At iterate  992    f=  1.30234D+00    |proj g|=  2.93377D+00\n",
       "\n",
-      "At iterate  993    f=  1.30078D+00    |proj g|=  1.06528D+00\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate  993    f=  1.30078D+00    |proj g|=  1.06528D+00\n",
       "\n",
       "At iterate  994    f=  1.29791D+00    |proj g|=  2.14740D+00\n",
       "\n",
@@ -15494,7 +15512,13 @@
       "At iterate 1016    f=  1.23929D+00    |proj g|=  2.74445D+00\n",
       "\n",
       "At iterate 1017    f=  1.23640D+00    |proj g|=  4.88664D+00\n",
-      "\n",
+      "\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "At iterate 1018    f=  1.23396D+00    |proj g|=  2.21838D+00\n",
       "\n",
       "At iterate 1019    f=  1.23264D+00    |proj g|=  8.60169D-01\n",
@@ -15575,13 +15599,7 @@
       "\n",
       "At iterate 1057    f=  1.14730D+00    |proj g|=  8.97080D+00\n",
       "\n",
-      "At iterate 1058    f=  1.14462D+00    |proj g|=  3.91535D+00\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate 1058    f=  1.14462D+00    |proj g|=  3.91535D+00\n",
       "\n",
       "At iterate 1059    f=  1.14257D+00    |proj g|=  1.38825D+00\n",
       "\n",
@@ -15617,7 +15635,13 @@
       "\n",
       "At iterate 1075    f=  1.11086D+00    |proj g|=  2.17957D+00\n",
       "\n",
-      "At iterate 1076    f=  1.10994D+00    |proj g|=  1.43983D+00\n",
+      "At iterate 1076    f=  1.10994D+00    |proj g|=  1.43983D+00\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate 1077    f=  1.10831D+00    |proj g|=  2.15690D+00\n",
       "\n",
@@ -15705,13 +15729,7 @@
       "\n",
       "At iterate 1119    f=  1.05419D+00    |proj g|=  2.07893D+00\n",
       "\n",
-      "At iterate 1120    f=  1.05339D+00    |proj g|=  1.81538D+00\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate 1120    f=  1.05339D+00    |proj g|=  1.81538D+00\n",
       "\n",
       "At iterate 1121    f=  1.05145D+00    |proj g|=  1.24828D+00\n",
       "\n",
@@ -15731,7 +15749,13 @@
       "\n",
       "At iterate 1129    f=  1.04362D+00    |proj g|=  1.64478D+00\n",
       "\n",
-      "At iterate 1130    f=  1.04273D+00    |proj g|=  2.36465D+00\n",
+      "At iterate 1130    f=  1.04273D+00    |proj g|=  2.36465D+00\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate 1131    f=  1.04210D+00    |proj g|=  1.38801D+00\n",
       "\n",
@@ -15837,19 +15861,19 @@
       "\n",
       "At iterate 1182    f=  9.92675D-01    |proj g|=  6.71594D-01\n",
       "\n",
-      "At iterate 1183    f=  9.91889D-01    |proj g|=  1.82925D+00\n"
+      "At iterate 1183    f=  9.91889D-01    |proj g|=  1.82925D+00\n",
+      "\n",
+      "At iterate 1184    f=  9.90552D-01    |proj g|=  3.15856D+00\n",
+      "\n",
+      "At iterate 1185    f=  9.89778D-01    |proj g|=  5.20958D+00\n",
+      "\n",
+      "At iterate 1186    f=  9.87963D-01    |proj g|=  1.83998D+00\n"
      ]
     },
     {
      "name": "stdout",
      "output_type": "stream",
      "text": [
-      "\n",
-      "At iterate 1184    f=  9.90552D-01    |proj g|=  3.15856D+00\n",
-      "\n",
-      "At iterate 1185    f=  9.89778D-01    |proj g|=  5.20958D+00\n",
-      "\n",
-      "At iterate 1186    f=  9.87963D-01    |proj g|=  1.83998D+00\n",
       "\n",
       "At iterate 1187    f=  9.87359D-01    |proj g|=  8.98997D-01\n",
       "\n",
@@ -15954,7 +15978,13 @@
       "At iterate 1237    f=  9.44202D-01    |proj g|=  5.30152D+00\n",
       "\n",
       "At iterate 1238    f=  9.43083D-01    |proj g|=  2.36841D+00\n",
-      "\n",
+      "\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "At iterate 1239    f=  9.42129D-01    |proj g|=  1.10955D+00\n",
       "\n",
       "At iterate 1240    f=  9.41042D-01    |proj g|=  2.58271D+00\n",
@@ -15965,13 +15995,7 @@
       "\n",
       "At iterate 1243    f=  9.39423D-01    |proj g|=  9.60219D-01\n",
       "\n",
-      "At iterate 1244    f=  9.38901D-01    |proj g|=  9.71010D-01\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate 1244    f=  9.38901D-01    |proj g|=  9.71010D-01\n",
       "\n",
       "At iterate 1245    f=  9.38154D-01    |proj g|=  2.39723D+00\n",
       "\n",
@@ -16069,7 +16093,13 @@
       "\n",
       "At iterate 1292    f=  9.13546D-01    |proj g|=  4.98452D+00\n",
       "\n",
-      "At iterate 1293    f=  9.13077D-01    |proj g|=  2.16893D+00\n",
+      "At iterate 1293    f=  9.13077D-01    |proj g|=  2.16893D+00\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate 1294    f=  9.12734D-01    |proj g|=  1.71218D+00\n",
       "\n",
@@ -16097,13 +16127,7 @@
       "\n",
       "At iterate 1306    f=  9.08472D-01    |proj g|=  2.20964D+00\n",
       "\n",
-      "At iterate 1307    f=  9.07874D-01    |proj g|=  1.19207D+00\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate 1307    f=  9.07874D-01    |proj g|=  1.19207D+00\n",
       "\n",
       "At iterate 1308    f=  9.07377D-01    |proj g|=  1.16113D+00\n",
       "\n",
@@ -16177,7 +16201,13 @@
       "\n",
       "At iterate 1343    f=  8.88203D-01    |proj g|=  3.28635D+00\n",
       "\n",
-      "At iterate 1344    f=  8.87890D-01    |proj g|=  2.38149D+00\n",
+      "At iterate 1344    f=  8.87890D-01    |proj g|=  2.38149D+00\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate 1345    f=  8.87018D-01    |proj g|=  1.00112D+00\n",
       "\n",
@@ -16217,13 +16247,7 @@
       "\n",
       "At iterate 1363    f=  8.77369D-01    |proj g|=  6.85601D-01\n",
       "\n",
-      "At iterate 1364    f=  8.76778D-01    |proj g|=  1.39071D+00\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate 1364    f=  8.76778D-01    |proj g|=  1.39071D+00\n",
       "\n",
       "At iterate 1365    f=  8.76616D-01    |proj g|=  6.86630D+00\n",
       "\n",
@@ -16291,7 +16315,13 @@
       "\n",
       "At iterate 1397    f=  8.53188D-01    |proj g|=  4.98515D-01\n",
       "\n",
-      "At iterate 1398    f=  8.52695D-01    |proj g|=  1.26853D+00\n",
+      "At iterate 1398    f=  8.52695D-01    |proj g|=  1.26853D+00\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate 1399    f=  8.51441D-01    |proj g|=  1.69919D+00\n",
       "\n",
@@ -16343,13 +16373,7 @@
       "\n",
       "At iterate 1423    f=  8.33811D-01    |proj g|=  2.31577D+00\n",
       "\n",
-      "At iterate 1424    f=  8.32823D-01    |proj g|=  3.72074D+00\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate 1424    f=  8.32823D-01    |proj g|=  3.72074D+00\n",
       "\n",
       "At iterate 1425    f=  8.31856D-01    |proj g|=  1.91283D+00\n",
       "\n",
@@ -16412,7 +16436,13 @@
       "At iterate 1454    f=  8.07982D-01    |proj g|=  7.12202D-01\n",
       "\n",
       "At iterate 1455    f=  8.07652D-01    |proj g|=  7.47341D-01\n",
-      "\n",
+      "\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "At iterate 1456    f=  8.06694D-01    |proj g|=  1.59851D+00\n",
       "\n",
       "At iterate 1457    f=  8.06275D-01    |proj g|=  3.70451D+00\n",
@@ -16467,13 +16497,7 @@
       "\n",
       "At iterate 1482    f=  7.87736D-01    |proj g|=  1.12455D+00\n",
       "\n",
-      "At iterate 1483    f=  7.86916D-01    |proj g|=  1.67611D+00\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate 1483    f=  7.86916D-01    |proj g|=  1.67611D+00\n",
       "\n",
       "At iterate 1484    f=  7.86403D-01    |proj g|=  6.25696D+00\n",
       "\n",
@@ -16529,7 +16553,13 @@
       "\n",
       "At iterate 1510    f=  7.66609D-01    |proj g|=  1.99499D+00\n",
       "\n",
-      "At iterate 1511    f=  7.66116D-01    |proj g|=  8.62261D-01\n",
+      "At iterate 1511    f=  7.66116D-01    |proj g|=  8.62261D-01\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate 1512    f=  7.65547D-01    |proj g|=  2.03014D+00\n",
       "\n",
@@ -16595,13 +16625,7 @@
       "\n",
       "At iterate 1543    f=  7.50788D-01    |proj g|=  1.71348D+00\n",
       "\n",
-      "At iterate 1544    f=  7.50457D-01    |proj g|=  2.46346D+00\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate 1544    f=  7.50457D-01    |proj g|=  2.46346D+00\n",
       "\n",
       "At iterate 1545    f=  7.49687D-01    |proj g|=  9.83127D-01\n",
       "\n",
@@ -16639,7 +16663,13 @@
       "\n",
       "At iterate 1562    f=  7.42504D-01    |proj g|=  8.23233D-01\n",
       "\n",
-      "At iterate 1563    f=  7.42196D-01    |proj g|=  1.14145D+00\n",
+      "At iterate 1563    f=  7.42196D-01    |proj g|=  1.14145D+00\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate 1564    f=  7.42068D-01    |proj g|=  2.94968D+00\n",
       "\n",
@@ -16721,13 +16751,7 @@
       "\n",
       "At iterate 1603    f=  7.27470D-01    |proj g|=  5.60672D-01\n",
       "\n",
-      "At iterate 1604    f=  7.27091D-01    |proj g|=  1.19929D+00\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate 1604    f=  7.27091D-01    |proj g|=  1.19929D+00\n",
       "\n",
       "At iterate 1605    f=  7.26879D-01    |proj g|=  3.71944D+00\n",
       "\n",
@@ -16755,7 +16779,13 @@
       "\n",
       "At iterate 1617    f=  7.22274D-01    |proj g|=  7.04774D-01\n",
       "\n",
-      "At iterate 1618    f=  7.22134D-01    |proj g|=  3.52471D+00\n",
+      "At iterate 1618    f=  7.22134D-01    |proj g|=  3.52471D+00\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate 1619    f=  7.21795D-01    |proj g|=  2.54208D+00\n",
       "\n",
@@ -16846,13 +16876,7 @@
       "At iterate 1662    f=  7.03991D-01    |proj g|=  1.60307D+00\n",
       "\n",
       "At iterate 1663    f=  7.03754D-01    |proj g|=  2.68945D+00\n",
-      "\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "\n",
       "At iterate 1664    f=  7.03168D-01    |proj g|=  1.23229D+00\n",
       "\n",
       "At iterate 1665    f=  7.02701D-01    |proj g|=  8.87015D-01\n",
@@ -16866,7 +16890,13 @@
       "At iterate 1669    f=  7.01353D-01    |proj g|=  1.25476D+00\n",
       "\n",
       "At iterate 1670    f=  7.00858D-01    |proj g|=  1.66809D+00\n",
-      "\n",
+      "\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "At iterate 1671    f=  7.00680D-01    |proj g|=  2.27632D+00\n",
       "\n",
       "At iterate 1672    f=  7.00337D-01    |proj g|=  4.93778D-01\n",
@@ -16973,15 +17003,15 @@
       "\n",
       "At iterate 1723    f=  6.82599D-01    |proj g|=  2.17665D+00\n",
       "\n",
-      "At iterate 1724    f=  6.82244D-01    |proj g|=  5.08903D-01\n",
-      "\n",
-      "At iterate 1725    f=  6.81928D-01    |proj g|=  1.58603D+00\n"
+      "At iterate 1724    f=  6.82244D-01    |proj g|=  5.08903D-01\n"
      ]
     },
     {
      "name": "stdout",
      "output_type": "stream",
      "text": [
+      "\n",
+      "At iterate 1725    f=  6.81928D-01    |proj g|=  1.58603D+00\n",
       "\n",
       "At iterate 1726    f=  6.81373D-01    |proj g|=  1.71354D+00\n",
       "\n",
@@ -17098,7 +17128,13 @@
       "At iterate 1782    f=  6.67126D-01    |proj g|=  4.03887D-01\n",
       "\n",
       "At iterate 1783    f=  6.66924D-01    |proj g|=  1.01255D+00\n",
-      "\n",
+      "\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "At iterate 1784    f=  6.66831D-01    |proj g|=  2.14137D+00\n",
       "\n",
       "At iterate 1785    f=  6.66719D-01    |proj g|=  1.43111D+00\n",
@@ -17109,13 +17145,7 @@
       "\n",
       "At iterate 1788    f=  6.65995D-01    |proj g|=  1.84204D+00\n",
       "\n",
-      "At iterate 1789    f=  6.65830D-01    |proj g|=  7.26839D-01\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate 1789    f=  6.65830D-01    |proj g|=  7.26839D-01\n",
       "\n",
       "At iterate 1790    f=  6.65641D-01    |proj g|=  4.63292D-01\n",
       "\n",
@@ -17203,7 +17233,13 @@
       "\n",
       "At iterate 1832    f=  6.58718D-01    |proj g|=  6.34372D-01\n",
       "\n",
-      "At iterate 1833    f=  6.58622D-01    |proj g|=  2.55226D+00\n",
+      "At iterate 1833    f=  6.58622D-01    |proj g|=  2.55226D+00\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate 1834    f=  6.58441D-01    |proj g|=  9.74010D-01\n",
       "\n",
@@ -17241,13 +17277,7 @@
       "\n",
       "At iterate 1851    f=  6.55460D-01    |proj g|=  6.44865D-01\n",
       "\n",
-      "At iterate 1852    f=  6.55380D-01    |proj g|=  5.80863D-01\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate 1852    f=  6.55380D-01    |proj g|=  5.80863D-01\n",
       "\n",
       "At iterate 1853    f=  6.55249D-01    |proj g|=  9.11187D-01\n",
       "\n",
@@ -17329,7 +17359,13 @@
       "\n",
       "At iterate 1892    f=  6.49844D-01    |proj g|=  6.31047D-01\n",
       "\n",
-      "At iterate 1893    f=  6.49709D-01    |proj g|=  8.87451D-01\n",
+      "At iterate 1893    f=  6.49709D-01    |proj g|=  8.87451D-01\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate 1894    f=  6.49556D-01    |proj g|=  1.51583D+00\n",
       "\n",
@@ -17375,13 +17411,7 @@
       "\n",
       "At iterate 1915    f=  6.47358D-01    |proj g|=  8.74447D-01\n",
       "\n",
-      "At iterate 1916    f=  6.47289D-01    |proj g|=  2.32074D+00\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate 1916    f=  6.47289D-01    |proj g|=  2.32074D+00\n",
       "\n",
       "At iterate 1917    f=  6.47142D-01    |proj g|=  1.32188D+00\n",
       "\n",
@@ -17449,7 +17479,13 @@
       "\n",
       "At iterate 1949    f=  6.42901D-01    |proj g|=  3.87135D-01\n",
       "\n",
-      "At iterate 1950    f=  6.42829D-01    |proj g|=  1.24932D+00\n",
+      "At iterate 1950    f=  6.42829D-01    |proj g|=  1.24932D+00\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate 1951    f=  6.42732D-01    |proj g|=  8.64723D-01\n",
       "\n",
@@ -17515,13 +17551,7 @@
       "\n",
       "At iterate 1982    f=  6.39117D-01    |proj g|=  2.23646D+00\n",
       "\n",
-      "At iterate 1983    f=  6.38994D-01    |proj g|=  8.80371D-01\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate 1983    f=  6.38994D-01    |proj g|=  8.80371D-01\n",
       "\n",
       "At iterate 1984    f=  6.38931D-01    |proj g|=  2.80610D-01\n",
       "\n",
@@ -17570,13 +17600,7 @@
       "           * * *\n",
       "\n",
       "   N    Tit     Tnf  Tnint  Skip  Nact     Projg        F\n",
-      "  298   2000   2206      1     0     0   9.860D-01   6.376D-01\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "  298   2000   2206      1     0     0   9.860D-01   6.376D-01\n",
       "  F =  0.63763038078564449     \n",
       "\n",
       "STOP: TOTAL NO. of ITERATIONS REACHED LIMIT                 \n"
@@ -17590,13 +17614,13 @@
   {
    "cell_type": "code",
    "execution_count": 27,
-   "id": "d2d7add8",
+   "id": "6de2e8cd",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-10T09:44:58.481036Z",
-     "iopub.status.busy": "2022-06-10T09:44:58.480684Z",
-     "iopub.status.idle": "2022-06-10T09:44:59.480323Z",
-     "shell.execute_reply": "2022-06-10T09:44:59.479725Z"
+     "iopub.execute_input": "2022-06-10T16:27:06.717963Z",
+     "iopub.status.busy": "2022-06-10T16:27:06.717685Z",
+     "iopub.status.idle": "2022-06-10T16:27:07.816518Z",
+     "shell.execute_reply": "2022-06-10T16:27:07.815932Z"
     }
    },
    "outputs": [
@@ -17619,7 +17643,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "0af03e76",
+   "id": "3c262761",
    "metadata": {},
    "source": [
     "## Illustration of GPflow's multi-output capabilities\n",
@@ -17628,7 +17652,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "87533667",
+   "id": "78808852",
    "metadata": {},
    "source": [
     "### Multi-output kernels (MOK) class diagram\n",
@@ -17649,7 +17673,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "a50b93d6",
+   "id": "fa65654f",
    "metadata": {},
    "source": [
     "### Multi-output inducing variables class diagram\n",
@@ -17673,7 +17697,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "4a2c9314",
+   "id": "1a99b901",
    "metadata": {},
    "source": [
     "### Implemented combinations\n",
@@ -17694,7 +17718,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "77cb8dc1",
+   "id": "4ce47136",
    "metadata": {},
    "source": [
     "## Debugging: introspect\n",
@@ -17705,20 +17729,20 @@
   {
    "cell_type": "code",
    "execution_count": 28,
-   "id": "d63c594d",
+   "id": "ca782825",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-10T09:44:59.485425Z",
-     "iopub.status.busy": "2022-06-10T09:44:59.485098Z",
-     "iopub.status.idle": "2022-06-10T09:44:59.491130Z",
-     "shell.execute_reply": "2022-06-10T09:44:59.490606Z"
+     "iopub.execute_input": "2022-06-10T16:27:07.819723Z",
+     "iopub.status.busy": "2022-06-10T16:27:07.819443Z",
+     "iopub.status.idle": "2022-06-10T16:27:07.824771Z",
+     "shell.execute_reply": "2022-06-10T16:27:07.824283Z"
     }
    },
    "outputs": [
     {
      "data": {
       "text/plain": [
-       "<code object wrapped at 0x7fe203ae00e0, file \"/home/circleci/project/gpflow/experimental/check_shapes/decorator.py\", line 82>"
+       "<code object wrapped at 0x7fe8b4e58030, file \"/home/circleci/project/gpflow/experimental/check_shapes/decorator.py\", line 82>"
       ]
      },
      "execution_count": 28,
@@ -17758,7 +17782,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "8f87b212",
+   "id": "8d40f4db",
    "metadata": {},
    "source": [
     "## Further Reading:\n",

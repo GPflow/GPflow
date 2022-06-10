@@ -763,7 +763,7 @@ div.rendered_html tbody tr:hover {
 <span class="kn">import</span> <span class="nn">gpflow</span>
 <span class="kn">from</span> <span class="nn">gpflow</span> <span class="kn">import</span> <span class="n">set_trainable</span>
 <span class="kn">from</span> <span class="nn">gpflow.utilities</span> <span class="kn">import</span> <span class="n">print_summary</span>
-<span class="kn">from</span> <span class="nn">gpflow.ci_utils</span> <span class="kn">import</span> <span class="n">ci_niter</span>
+<span class="kn">from</span> <span class="nn">gpflow.ci_utils</span> <span class="kn">import</span> <span class="n">reduce_in_tests</span>
 
 <span class="kn">import</span> <span class="nn">logging</span>
 
@@ -780,8 +780,8 @@ div.rendered_html tbody tr:hover {
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2022-06-10 10:18:58.819798: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcudart.so.11.0&#39;; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory
-2022-06-10 10:18:58.819824: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.
+2022-06-10 17:00:20.493283: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcudart.so.11.0&#39;; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory
+2022-06-10 17:00:20.493310: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.
 /home/circleci/project/gpflow/experimental/utils.py:42: UserWarning: You&#39;re calling gpflow.experimental.check_shapes.decorator.check_shapes which is considered *experimental*. Expect: breaking changes, poor documentation, and bugs.
   warn(
 </pre></div></div>
@@ -822,7 +822,7 @@ div.rendered_html tbody tr:hover {
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">gpr</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">GPR</span><span class="p">((</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">),</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">SquaredExponential</span><span class="p">())</span>
 <span class="n">gpflow</span><span class="o">.</span><span class="n">optimizers</span><span class="o">.</span><span class="n">Scipy</span><span class="p">()</span><span class="o">.</span><span class="n">minimize</span><span class="p">(</span>
-    <span class="n">gpr</span><span class="o">.</span><span class="n">training_loss</span><span class="p">,</span> <span class="n">gpr</span><span class="o">.</span><span class="n">trainable_variables</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">maxiter</span><span class="o">=</span><span class="n">ci_niter</span><span class="p">(</span><span class="mi">1000</span><span class="p">))</span>
+    <span class="n">gpr</span><span class="o">.</span><span class="n">training_loss</span><span class="p">,</span> <span class="n">gpr</span><span class="o">.</span><span class="n">trainable_variables</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">maxiter</span><span class="o">=</span><span class="n">reduce_in_tests</span><span class="p">(</span><span class="mi">1000</span><span class="p">))</span>
 <span class="p">)</span>
 <span class="n">full_lml</span> <span class="o">=</span> <span class="n">plot_model</span><span class="p">(</span><span class="n">gpr</span><span class="p">)</span>
 </pre></div>
@@ -833,14 +833,14 @@ div.rendered_html tbody tr:hover {
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2022-06-10 10:19:01.208193: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcuda.so.1&#39;; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory
-2022-06-10 10:19:01.208225: W tensorflow/stream_executor/cuda/cuda_driver.cc:269] failed call to cuInit: UNKNOWN ERROR (303)
-2022-06-10 10:19:01.208245: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (97739b7bc232): /proc/driver/nvidia/version does not exist
-2022-06-10 10:19:01.208530: I tensorflow/core/platform/cpu_feature_guard.cc:151] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA
+2022-06-10 17:00:22.851877: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcuda.so.1&#39;; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory
+2022-06-10 17:00:22.851905: W tensorflow/stream_executor/cuda/cuda_driver.cc:269] failed call to cuInit: UNKNOWN ERROR (303)
+2022-06-10 17:00:22.851925: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (141dfd1f541c): /proc/driver/nvidia/version does not exist
+2022-06-10 17:00:22.852188: I tensorflow/core/platform/cpu_feature_guard.cc:151] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA
 To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.
 /home/circleci/project/gpflow/experimental/utils.py:42: UserWarning: You&#39;re calling gpflow.experimental.check_shapes.checker.ShapeChecker.__init__ which is considered *experimental*. Expect: breaking changes, poor documentation, and bugs.
   warn(
-2022-06-10 10:19:01.240582: W tensorflow/python/util/util.cc:368] Sets are not currently considered sequences, but this may change in the future, so consider avoiding using them.
+2022-06-10 17:00:22.883352: W tensorflow/python/util/util.cc:368] Sets are not currently considered sequences, but this may change in the future, so consider avoiding using them.
 </pre></div></div>
 </div>
 <div class="nboutput docutils container">
@@ -848,7 +848,7 @@ To enable them in other operations, rebuild TensorFlow with the appropriate comp
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-WARNING: AutoGraph could not transform &lt;function _c3_mro at 0x7f89589c2e60&gt; and will run it as-is.
+WARNING: AutoGraph could not transform &lt;function _c3_mro at 0x7f61037dee60&gt; and will run it as-is.
 Cause: for/else statement not yet supported
 To silence this warning, decorate the function with @tf.autograph.experimental.do_not_convert
 </pre></div></div>
@@ -868,7 +868,7 @@ To silence this warning, decorate the function with @tf.autograph.experimental.d
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">Ms</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="n">ci_niter</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="n">test_n</span><span class="o">=</span><span class="mi">6</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">Ms</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="n">reduce_in_tests</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="n">test_n</span><span class="o">=</span><span class="mi">6</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span>
 <span class="n">vfe_lml</span> <span class="o">=</span> <span class="p">[]</span>
 <span class="n">vupper_lml</span> <span class="o">=</span> <span class="p">[]</span>
 <span class="n">vfe_hyps</span> <span class="o">=</span> <span class="p">[]</span>
@@ -878,7 +878,7 @@ To silence this warning, decorate the function with @tf.autograph.experimental.d
     <span class="n">gpflow</span><span class="o">.</span><span class="n">optimizers</span><span class="o">.</span><span class="n">Scipy</span><span class="p">()</span><span class="o">.</span><span class="n">minimize</span><span class="p">(</span>
         <span class="n">vfe</span><span class="o">.</span><span class="n">training_loss</span><span class="p">,</span>
         <span class="n">vfe</span><span class="o">.</span><span class="n">trainable_variables</span><span class="p">,</span>
-        <span class="n">options</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">disp</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">maxiter</span><span class="o">=</span><span class="n">ci_niter</span><span class="p">(</span><span class="mi">1000</span><span class="p">),</span> <span class="nb">compile</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
+        <span class="n">options</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">disp</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">maxiter</span><span class="o">=</span><span class="n">reduce_in_tests</span><span class="p">(</span><span class="mi">1000</span><span class="p">),</span> <span class="nb">compile</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
     <span class="p">)</span>
 
     <span class="n">vfe_lml</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">vfe</span><span class="o">.</span><span class="n">elbo</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">())</span>
@@ -934,7 +934,7 @@ To silence this warning, decorate the function with @tf.autograph.experimental.d
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fMs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">ci_niter</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="n">test_n</span><span class="o">=</span><span class="mi">5</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fMs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">reduce_in_tests</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="n">test_n</span><span class="o">=</span><span class="mi">5</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span>
 <span class="n">fvfe_lml</span> <span class="o">=</span> <span class="p">[]</span>  <span class="c1"># Fixed vfe lml</span>
 <span class="n">fvupper_lml</span> <span class="o">=</span> <span class="p">[]</span>  <span class="c1"># Fixed upper lml</span>
 
@@ -958,7 +958,7 @@ To silence this warning, decorate the function with @tf.autograph.experimental.d
     <span class="n">gpflow</span><span class="o">.</span><span class="n">optimizers</span><span class="o">.</span><span class="n">Scipy</span><span class="p">()</span><span class="o">.</span><span class="n">minimize</span><span class="p">(</span>
         <span class="n">vfe</span><span class="o">.</span><span class="n">training_loss</span><span class="p">,</span>
         <span class="n">vfe</span><span class="o">.</span><span class="n">trainable_variables</span><span class="p">,</span>
-        <span class="n">options</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">disp</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">maxiter</span><span class="o">=</span><span class="n">ci_niter</span><span class="p">(</span><span class="mi">1000</span><span class="p">)),</span>
+        <span class="n">options</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">disp</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">maxiter</span><span class="o">=</span><span class="n">reduce_in_tests</span><span class="p">(</span><span class="mi">1000</span><span class="p">)),</span>
         <span class="nb">compile</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
     <span class="p">)</span>
 
@@ -1018,7 +1018,7 @@ To silence this warning, decorate the function with @tf.autograph.experimental.d
 <span class="p">)</span>
 <span class="n">objective</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">function</span><span class="p">(</span><span class="n">vfe</span><span class="o">.</span><span class="n">training_loss</span><span class="p">)</span>
 <span class="n">gpflow</span><span class="o">.</span><span class="n">optimizers</span><span class="o">.</span><span class="n">Scipy</span><span class="p">()</span><span class="o">.</span><span class="n">minimize</span><span class="p">(</span>
-    <span class="n">objective</span><span class="p">,</span> <span class="n">vfe</span><span class="o">.</span><span class="n">trainable_variables</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">maxiter</span><span class="o">=</span><span class="n">ci_niter</span><span class="p">(</span><span class="mi">1000</span><span class="p">)),</span> <span class="nb">compile</span><span class="o">=</span><span class="kc">False</span>
+    <span class="n">objective</span><span class="p">,</span> <span class="n">vfe</span><span class="o">.</span><span class="n">trainable_variables</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">maxiter</span><span class="o">=</span><span class="n">reduce_in_tests</span><span class="p">(</span><span class="mi">1000</span><span class="p">)),</span> <span class="nb">compile</span><span class="o">=</span><span class="kc">False</span>
 <span class="p">)</span>
 <span class="c1"># Note that we need to set compile=False here due to a discrepancy in compiling with tf.function</span>
 <span class="c1"># see https://github.com/GPflow/GPflow/issues/1260</span>

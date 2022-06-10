@@ -2,7 +2,7 @@
  "cells": [
   {
    "cell_type": "markdown",
-   "id": "163b06ec",
+   "id": "39212d52",
    "metadata": {},
    "source": [
     "# A simple demonstration of coregionalization\n",
@@ -34,13 +34,13 @@
   {
    "cell_type": "code",
    "execution_count": 1,
-   "id": "f1a80a07",
+   "id": "913a75c3",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-10T09:31:16.399237Z",
-     "iopub.status.busy": "2022-06-10T09:31:16.398964Z",
-     "iopub.status.idle": "2022-06-10T09:31:20.209828Z",
-     "shell.execute_reply": "2022-06-10T09:31:20.209182Z"
+     "iopub.execute_input": "2022-06-10T16:13:01.717181Z",
+     "iopub.status.busy": "2022-06-10T16:13:01.716858Z",
+     "iopub.status.idle": "2022-06-10T16:13:05.386171Z",
+     "shell.execute_reply": "2022-06-10T16:13:05.385524Z"
     }
    },
    "outputs": [
@@ -48,8 +48,8 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2022-06-10 09:31:16.600114: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcudart.so.11.0'; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory\n",
-      "2022-06-10 09:31:16.600142: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.\n"
+      "2022-06-10 16:13:01.899162: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcudart.so.11.0'; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory\n",
+      "2022-06-10 16:13:01.899191: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.\n"
      ]
     },
     {
@@ -69,7 +69,7 @@
     "\n",
     "%matplotlib inline\n",
     "\n",
-    "from gpflow.ci_utils import ci_niter\n",
+    "from gpflow.ci_utils import reduce_in_tests\n",
     "\n",
     "plt.rcParams[\"figure.figsize\"] = (12, 6)\n",
     "np.random.seed(123)"
@@ -77,7 +77,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "58870c90",
+   "id": "4227e6a4",
    "metadata": {},
    "source": [
     "## Data preparation\n",
@@ -92,13 +92,13 @@
   {
    "cell_type": "code",
    "execution_count": 2,
-   "id": "e55a9b68",
+   "id": "ac25e7d9",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-10T09:31:20.213532Z",
-     "iopub.status.busy": "2022-06-10T09:31:20.212991Z",
-     "iopub.status.idle": "2022-06-10T09:31:20.380543Z",
-     "shell.execute_reply": "2022-06-10T09:31:20.379566Z"
+     "iopub.execute_input": "2022-06-10T16:13:05.389783Z",
+     "iopub.status.busy": "2022-06-10T16:13:05.389310Z",
+     "iopub.status.idle": "2022-06-10T16:13:05.493344Z",
+     "shell.execute_reply": "2022-06-10T16:13:05.492772Z"
     }
    },
    "outputs": [
@@ -130,7 +130,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "fdb3979e",
+   "id": "8f9ce91f",
    "metadata": {},
    "source": [
     "## Data formatting for the coregionalized model\n",
@@ -140,13 +140,13 @@
   {
    "cell_type": "code",
    "execution_count": 3,
-   "id": "9ac9354e",
+   "id": "53d7f5ea",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-10T09:31:20.384570Z",
-     "iopub.status.busy": "2022-06-10T09:31:20.384120Z",
-     "iopub.status.idle": "2022-06-10T09:31:20.388819Z",
-     "shell.execute_reply": "2022-06-10T09:31:20.388177Z"
+     "iopub.execute_input": "2022-06-10T16:13:05.496071Z",
+     "iopub.status.busy": "2022-06-10T16:13:05.495799Z",
+     "iopub.status.idle": "2022-06-10T16:13:05.499955Z",
+     "shell.execute_reply": "2022-06-10T16:13:05.499415Z"
     }
    },
    "outputs": [],
@@ -160,7 +160,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "4f979a29",
+   "id": "f18afdbc",
    "metadata": {},
    "source": [
     "## Building the coregionalization kernel\n",
@@ -170,13 +170,13 @@
   {
    "cell_type": "code",
    "execution_count": 4,
-   "id": "86ab4b11",
+   "id": "9cb99939",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-10T09:31:20.391516Z",
-     "iopub.status.busy": "2022-06-10T09:31:20.391245Z",
-     "iopub.status.idle": "2022-06-10T09:31:20.419483Z",
-     "shell.execute_reply": "2022-06-10T09:31:20.418708Z"
+     "iopub.execute_input": "2022-06-10T16:13:05.502596Z",
+     "iopub.status.busy": "2022-06-10T16:13:05.502322Z",
+     "iopub.status.idle": "2022-06-10T16:13:05.528187Z",
+     "shell.execute_reply": "2022-06-10T16:13:05.527573Z"
     }
    },
    "outputs": [
@@ -184,10 +184,10 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2022-06-10 09:31:20.393574: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcuda.so.1'; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory\n",
-      "2022-06-10 09:31:20.393606: W tensorflow/stream_executor/cuda/cuda_driver.cc:269] failed call to cuInit: UNKNOWN ERROR (303)\n",
-      "2022-06-10 09:31:20.393624: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (97739b7bc232): /proc/driver/nvidia/version does not exist\n",
-      "2022-06-10 09:31:20.393895: I tensorflow/core/platform/cpu_feature_guard.cc:151] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA\n",
+      "2022-06-10 16:13:05.504663: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcuda.so.1'; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory\n",
+      "2022-06-10 16:13:05.504696: W tensorflow/stream_executor/cuda/cuda_driver.cc:269] failed call to cuInit: UNKNOWN ERROR (303)\n",
+      "2022-06-10 16:13:05.504714: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (141dfd1f541c): /proc/driver/nvidia/version does not exist\n",
+      "2022-06-10 16:13:05.504992: I tensorflow/core/platform/cpu_feature_guard.cc:151] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA\n",
       "To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.\n"
      ]
     }
@@ -207,7 +207,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "41a925a0",
+   "id": "4637e0c3",
    "metadata": {},
    "source": [
     "**Note:** W = 0 is a saddle point in the objective, which would result in the value of `W` not being optimized to fit the data.\n",
@@ -216,7 +216,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "23b644ff",
+   "id": "08449a78",
    "metadata": {},
    "source": [
     "## Constructing the model\n",
@@ -226,13 +226,13 @@
   {
    "cell_type": "code",
    "execution_count": 5,
-   "id": "b00d5ab8",
+   "id": "aa6ac170",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-10T09:31:20.422620Z",
-     "iopub.status.busy": "2022-06-10T09:31:20.422294Z",
-     "iopub.status.idle": "2022-06-10T09:38:02.146166Z",
-     "shell.execute_reply": "2022-06-10T09:38:02.145507Z"
+     "iopub.execute_input": "2022-06-10T16:13:05.531029Z",
+     "iopub.status.busy": "2022-06-10T16:13:05.530732Z",
+     "iopub.status.idle": "2022-06-10T16:20:41.360696Z",
+     "shell.execute_reply": "2022-06-10T16:20:41.360090Z"
     }
    },
    "outputs": [
@@ -242,7 +242,7 @@
      "text": [
       "/home/circleci/project/gpflow/experimental/utils.py:42: UserWarning: You're calling gpflow.experimental.check_shapes.checker.ShapeChecker.__init__ which is considered *experimental*. Expect: breaking changes, poor documentation, and bugs.\n",
       "  warn(\n",
-      "2022-06-10 09:31:20.468790: W tensorflow/python/util/util.cc:368] Sets are not currently considered sequences, but this may change in the future, so consider avoiding using them.\n"
+      "2022-06-10 16:13:05.575231: W tensorflow/python/util/util.cc:368] Sets are not currently considered sequences, but this may change in the future, so consider avoiding using them.\n"
      ]
     },
     {
@@ -277,7 +277,7 @@
     "m = gpflow.models.VGP((X_augmented, Y_augmented), kernel=kern, likelihood=lik)\n",
     "\n",
     "# fit the covariance function parameters\n",
-    "maxiter = ci_niter(10000)\n",
+    "maxiter = reduce_in_tests(10000)\n",
     "gpflow.optimizers.Scipy().minimize(\n",
     "    m.training_loss,\n",
     "    m.trainable_variables,\n",
@@ -288,7 +288,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "7c1c96e4",
+   "id": "3356e1c9",
    "metadata": {},
    "source": [
     "That's it: the model is trained. Let's plot the model fit to see what's happened."
@@ -297,13 +297,13 @@
   {
    "cell_type": "code",
    "execution_count": 6,
-   "id": "15121d0c",
+   "id": "5f2c63b7",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-10T09:38:02.149118Z",
-     "iopub.status.busy": "2022-06-10T09:38:02.148800Z",
-     "iopub.status.idle": "2022-06-10T09:38:02.689747Z",
-     "shell.execute_reply": "2022-06-10T09:38:02.689071Z"
+     "iopub.execute_input": "2022-06-10T16:20:41.363651Z",
+     "iopub.status.busy": "2022-06-10T16:20:41.363368Z",
+     "iopub.status.idle": "2022-06-10T16:20:41.898598Z",
+     "shell.execute_reply": "2022-06-10T16:20:41.897989Z"
     }
    },
    "outputs": [
@@ -351,7 +351,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "47e800cb",
+   "id": "486360de",
    "metadata": {},
    "source": [
     "From the plots, we can see:\n",
@@ -367,13 +367,13 @@
   {
    "cell_type": "code",
    "execution_count": 7,
-   "id": "2f824ed2",
+   "id": "8fc10f2c",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-10T09:38:02.692623Z",
-     "iopub.status.busy": "2022-06-10T09:38:02.692326Z",
-     "iopub.status.idle": "2022-06-10T09:38:02.819483Z",
-     "shell.execute_reply": "2022-06-10T09:38:02.818923Z"
+     "iopub.execute_input": "2022-06-10T16:20:41.901444Z",
+     "iopub.status.busy": "2022-06-10T16:20:41.901157Z",
+     "iopub.status.idle": "2022-06-10T16:20:42.028180Z",
+     "shell.execute_reply": "2022-06-10T16:20:42.027577Z"
     }
    },
    "outputs": [
@@ -406,7 +406,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "e6ebf2b1",
+   "id": "70df85ed",
    "metadata": {},
    "source": [
     "## References\n",

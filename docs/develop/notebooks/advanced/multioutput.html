@@ -884,14 +884,14 @@ f(x) = W g(x),
 <span class="kn">import</span> <span class="nn">tensorflow</span> <span class="k">as</span> <span class="nn">tf</span>
 
 <span class="kn">from</span> <span class="nn">gpflow.utilities</span> <span class="kn">import</span> <span class="n">print_summary</span>
-<span class="kn">from</span> <span class="nn">gpflow.ci_utils</span> <span class="kn">import</span> <span class="n">ci_niter</span>
+<span class="kn">from</span> <span class="nn">gpflow.ci_utils</span> <span class="kn">import</span> <span class="n">reduce_in_tests</span>
 
 <span class="n">gpf</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">set_default_float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
 <span class="n">gpf</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">set_default_summary_fmt</span><span class="p">(</span><span class="s2">&quot;notebook&quot;</span><span class="p">)</span>
 <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
 <span class="o">%</span><span class="k">matplotlib</span> inline
 
-<span class="n">MAXITER</span> <span class="o">=</span> <span class="n">ci_niter</span><span class="p">(</span><span class="mi">2000</span><span class="p">)</span>
+<span class="n">MAXITER</span> <span class="o">=</span> <span class="n">reduce_in_tests</span><span class="p">(</span><span class="mi">2000</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -900,8 +900,8 @@ f(x) = W g(x),
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2022-06-10 09:43:59.955319: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcudart.so.11.0&#39;; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory
-2022-06-10 09:43:59.955350: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.
+2022-06-10 16:26:06.476239: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcudart.so.11.0&#39;; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory
+2022-06-10 16:26:06.476272: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.
 /home/circleci/project/gpflow/experimental/utils.py:42: UserWarning: You&#39;re calling gpflow.experimental.check_shapes.decorator.check_shapes which is considered *experimental*. Expect: breaking changes, poor documentation, and bugs.
   warn(
 </pre></div></div>
@@ -1001,10 +1001,10 @@ f(x) = I g(x),
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2022-06-10 09:44:02.370836: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcuda.so.1&#39;; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory
-2022-06-10 09:44:02.370864: W tensorflow/stream_executor/cuda/cuda_driver.cc:269] failed call to cuInit: UNKNOWN ERROR (303)
-2022-06-10 09:44:02.370884: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (97739b7bc232): /proc/driver/nvidia/version does not exist
-2022-06-10 09:44:02.371165: I tensorflow/core/platform/cpu_feature_guard.cc:151] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA
+2022-06-10 16:26:08.984510: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcuda.so.1&#39;; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory
+2022-06-10 16:26:08.984549: W tensorflow/stream_executor/cuda/cuda_driver.cc:269] failed call to cuInit: UNKNOWN ERROR (303)
+2022-06-10 16:26:08.984576: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (141dfd1f541c): /proc/driver/nvidia/version does not exist
+2022-06-10 16:26:08.984946: I tensorflow/core/platform/cpu_feature_guard.cc:151] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA
 To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.
 /home/circleci/project/gpflow/experimental/utils.py:42: UserWarning: You&#39;re calling gpflow.experimental.check_shapes.checker.ShapeChecker.__init__ which is considered *experimental*. Expect: breaking changes, poor documentation, and bugs.
   warn(
@@ -1062,7 +1062,7 @@ To enable them in other operations, rebuild TensorFlow with the appropriate comp
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2022-06-10 09:44:02.451561: W tensorflow/python/util/util.cc:368] Sets are not currently considered sequences, but this may change in the future, so consider avoiding using them.
+2022-06-10 16:26:09.066286: W tensorflow/python/util/util.cc:368] Sets are not currently considered sequences, but this may change in the future, so consider avoiding using them.
 </pre></div></div>
 </div>
 <div class="nboutput docutils container">
@@ -1070,10 +1070,10 @@ To enable them in other operations, rebuild TensorFlow with the appropriate comp
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-WARNING:tensorflow:AutoGraph could not transform &lt;function _c3_mro at 0x7fe32581ee60&gt; and will run it as-is.
+WARNING:tensorflow:AutoGraph could not transform &lt;function _c3_mro at 0x7fe9d6b2ae60&gt; and will run it as-is.
 Cause: for/else statement not yet supported
 To silence this warning, decorate the function with @tf.autograph.experimental.do_not_convert
-WARNING: AutoGraph could not transform &lt;function _c3_mro at 0x7fe32581ee60&gt; and will run it as-is.
+WARNING: AutoGraph could not transform &lt;function _c3_mro at 0x7fe9d6b2ae60&gt; and will run it as-is.
 Cause: for/else statement not yet supported
 To silence this warning, decorate the function with @tf.autograph.experimental.do_not_convert
 </pre></div></div>
@@ -13069,7 +13069,7 @@ STOP: TOTAL NO. of ITERATIONS REACHED LIMIT
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-ListWrapper([&lt;gpflow.inducing_variables.inducing_variables.InducingPoints object at 0x7fe1d03ab190&gt;, &lt;gpflow.inducing_variables.inducing_variables.InducingPoints object at 0x7fe1d03ab9a0&gt;, &lt;gpflow.inducing_variables.inducing_variables.InducingPoints object at 0x7fe1d03abcd0&gt;])
+ListWrapper([&lt;gpflow.inducing_variables.inducing_variables.InducingPoints object at 0x7fe8a0692a70&gt;, &lt;gpflow.inducing_variables.inducing_variables.InducingPoints object at 0x7fe8a0693280&gt;, &lt;gpflow.inducing_variables.inducing_variables.InducingPoints object at 0x7fe8a0693d30&gt;])
 </pre></div></div>
 </div>
 </section>
@@ -17365,7 +17365,7 @@ which calls <code class="docutils literal notranslate"><span class="pre">base_co
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-&lt;code object wrapped at 0x7fe203ae00e0, file &#34;/home/circleci/project/gpflow/experimental/check_shapes/decorator.py&#34;, line 82&gt;
+&lt;code object wrapped at 0x7fe8b4e58030, file &#34;/home/circleci/project/gpflow/experimental/check_shapes/decorator.py&#34;, line 82&gt;
 </pre></div></div>
 </div>
 </section>
