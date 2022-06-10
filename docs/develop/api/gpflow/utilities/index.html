@@ -1,18 +1,22 @@
 
 <!DOCTYPE html>
 
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
     <title>gpflow.utilities &#8212; GPflow 2.5.2 documentation</title>
-    
-  <!-- Loaded before other Sphinx assets -->
-  <link href="../../../_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
-<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
+<script>
+  document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+  document.documentElement.dataset.theme = localStorage.getItem("theme") || "light"
+</script>
 
-    
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=92025949c220c2e29695" rel="stylesheet">
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=92025949c220c2e29695" rel="stylesheet">
+
+
   <link rel="stylesheet"
     href="../../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
   <link rel="preload" as="font" type="font/woff2" crossorigin
@@ -22,13 +26,14 @@
 
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="../../../_static/pydata-custom.css" />
-    
+
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf">
+  <link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=92025949c220c2e29695">
 
     <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
     <script src="../../../_static/jquery.js"></script>
     <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="../../../_static/doctools.js"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="https://unpkg.com/@jupyter-widgets/html-manager@^0.20.1/dist/embed-amd.js"></script>
@@ -36,34 +41,41 @@
     <link rel="search" title="Search" href="../../../search.html" />
     <link rel="next" title="gpflow.utilities.ops" href="ops/index.html" />
     <link rel="prev" title="gpflow.quadrature.gauss_hermite" href="../quadrature/gauss_hermite/index.html" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="docsearch:language" content="None">
-    
-
-    <!-- Google Analytics -->
-    
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="docsearch:language" content="en">
   </head>
-  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="60">
-    
-    <div class="container-fluid" id="banner"></div>
+  
+  
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="180" data-default-mode="">
+    <div class="bd-header-announcement container-fluid" id="banner">
+      
+
+    </div>
 
     
-    <nav class="navbar navbar-light navbar-expand-lg bg-light fixed-top bd-navbar" id="navbar-main"><div class="container-xl">
+    <nav class="bd-header navbar navbar-light navbar-expand-lg bg-light fixed-top bd-navbar" id="navbar-main"><div class="bd-header__inner container-xl">
 
   <div id="navbar-start">
     
     
+  
 
-<a class="navbar-brand" href="../../../index.html">
-  <img src="../../../_static/gpflow_logo.svg" class="logo" alt="logo">
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+    <img src="../../../_static/gpflow_logo.svg" class="logo__image only-light" alt="Logo image">
+    <img src="../../../_static/gpflow_logo.svg" class="logo__image only-dark" alt="Logo image">
+  
+  
 </a>
-
-
     
   </div>
 
   <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar-collapsible" aria-controls="navbar-collapsible" aria-expanded="false" aria-label="Toggle navigation">
-    <span class="navbar-toggler-icon"></span>
+    <span class="fas fa-bars"></span>
   </button>
 
   
@@ -124,7 +136,7 @@
       
       <div class="navbar-end-item">
         <div class="dropdown" id="version_switcher">
-    <button type="button" class="btn btn-primary btn-sm navbar-btn dropdown-toggle" id="version_switcher_button" data-toggle="dropdown">
+    <button type="button" class="btn btn-sm navbar-btn dropdown-toggle" id="version_switcher_button" data-toggle="dropdown">
         develop  <!-- this text may get changed later by javascript -->
         <span class="caret"></span>
     </button>
@@ -164,6 +176,10 @@ function checkPageExistsAndRedirect(event) {
 (function () {
     $.getJSON("https://gpflow.github.io/GPflow/versions.json", function(data, textStatus, jqXHR) {
         const currentFilePath = "api/gpflow/utilities/index.html";
+        let btn = document.getElementById("version_switcher_button");
+        // Set empty strings by default so that these attributes exist and can be used in CSS selectors
+        btn.dataset["activeVersionName"] = "";
+        btn.dataset["activeVersion"] = "";
         // create links to the corresponding page in the other docs versions
         $.each(data, function(index, entry) {
             // if no custom name specified (e.g., "latest"), use version string
@@ -191,7 +207,6 @@ function checkPageExistsAndRedirect(event) {
             // version's entry
             if (entry.version == "develop") {
                 node.classList.add("active");
-                let btn = document.getElementById("version_switcher_button");
                 btn.innerText = btn.dataset["activeVersionName"] = entry.name;
                 btn.dataset["activeVersion"] = entry.version;
             }
@@ -207,13 +222,13 @@ function checkPageExistsAndRedirect(event) {
     </nav>
     
 
-    <div class="container-xl">
-      <div class="row">
+    <div class="bd-container container-xl">
+      <div class="bd-container__inner row">
           
-            
-            <!-- Only show if we have sidebars configured, else just a small margin  -->
-            <div class="col-12 col-md-3 bd-sidebar">
-              <div class="sidebar-start-items"><form class="bd-search d-flex align-items-center" action="../../../search.html" method="get">
+
+<!-- Only show if we have sidebars configured, else just a small margin  -->
+<div class="bd-sidebar-primary col-12 col-md-3 bd-sidebar">
+  <div class="sidebar-start-items"><form class="bd-search d-flex align-items-center" action="../../../search.html" method="get">
   <i class="icon fas fa-search"></i>
   <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
 </form><nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
@@ -525,19 +540,20 @@ function checkPageExistsAndRedirect(event) {
 
   </div>
 </nav>
-              </div>
-              <div class="sidebar-end-items">
-              </div>
-            </div>
-            
-          
+  </div>
+  <div class="sidebar-end-items">
+  </div>
+</div>
+
 
           
-          <div class="d-none d-xl-block col-xl-2 bd-toc">
-            
-              
-              <div class="toc-item">
-                
+
+
+<div class="bd-sidebar-secondary d-none d-xl-block col-xl-2 bd-toc">
+  
+    
+    <div class="toc-item">
+      
 <div class="tocsection onthispage mt-5 pt-1 pb-3">
     <i class="fas fa-list"></i> On this page
 </div>
@@ -666,28 +682,26 @@ function checkPageExistsAndRedirect(event) {
 </ul>
 
 </nav>
-              </div>
-              
-              <div class="toc-item">
-                
-              </div>
-              
-            
-          </div>
-          
+    </div>
+    
+    <div class="toc-item">
+      
+    </div>
+    
+  
+</div>
+
 
           
           
-            
-          
-          <main class="col-12 col-md-9 col-xl-7 py-md-5 pl-md-5 pr-md-4 bd-content" role="main">
+          <div class="bd-content col-12 col-md-9 col-xl-7">
               
-              <div>
+              <article class="bd-article" role="main">
                 
   <section id="gpflow-utilities">
-<h1>gpflow.utilities<a class="headerlink" href="#gpflow-utilities" title="Permalink to this headline">#</a></h1>
+<h1>gpflow.utilities<a class="headerlink" href="#gpflow-utilities" title="Permalink to this heading">#</a></h1>
 <span class="target" id="module-gpflow.utilities"></span><section id="modules">
-<h2>Modules<a class="headerlink" href="#modules" title="Permalink to this headline">#</a></h2>
+<h2>Modules<a class="headerlink" href="#modules" title="Permalink to this heading">#</a></h2>
 <div class="toctree-wrapper compound">
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="ops/index.html">gpflow.utilities.ops</a></li>
@@ -695,13 +709,13 @@ function checkPageExistsAndRedirect(event) {
 </div>
 </section>
 <section id="classes">
-<h2>Classes<a class="headerlink" href="#classes" title="Permalink to this headline">#</a></h2>
+<h2>Classes<a class="headerlink" href="#classes" title="Permalink to this heading">#</a></h2>
 <section id="gpflow-utilities-dispatcher">
-<h3>gpflow.utilities.Dispatcher<a class="headerlink" href="#gpflow-utilities-dispatcher" title="Permalink to this headline">#</a></h3>
+<h3>gpflow.utilities.Dispatcher<a class="headerlink" href="#gpflow-utilities-dispatcher" title="Permalink to this heading">#</a></h3>
 <dl class="py class">
 <dt class="sig sig-object py" id="gpflow.utilities.Dispatcher">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.utilities.</span></span><span class="sig-name descname"><span class="pre">Dispatcher</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">doc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/utilities/multipledispatch.html#Dispatcher"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.utilities.Dispatcher" title="Permalink to this definition">#</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">multipledispatch.dispatcher.Dispatcher</span></code></p>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Dispatcher</span></code></p>
 <p>multipledispatch.Dispatcher uses a generator to yield the
 desired function implementation, which is problematic as TensorFlow’s
 autograph is not able to compile code that passes through generators.</p>
@@ -713,10 +727,10 @@ compilable by AutoGraph.</p>
 <span class="sig-name descname"><span class="pre">dispatch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">types</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/utilities/multipledispatch.html#Dispatcher.dispatch"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.utilities.Dispatcher.dispatch" title="Permalink to this definition">#</a></dt>
 <dd><p>Returns matching function for <cite>types</cite>; if not existing returns None.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>types</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Type</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Type</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-data docutils literal notranslate"><span class="pre">...</span></code>]]) – </p>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Callable</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">...</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>]]</p>
 </dd>
 </dl>
@@ -727,10 +741,10 @@ compilable by AutoGraph.</p>
 <span class="sig-name descname"><span class="pre">dispatch_or_raise</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">types</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/utilities/multipledispatch.html#Dispatcher.dispatch_or_raise"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.utilities.Dispatcher.dispatch_or_raise" title="Permalink to this definition">#</a></dt>
 <dd><p>Returns matching function for <cite>types</cite>; if not existing raises an error.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>types</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Type</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Type</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-data docutils literal notranslate"><span class="pre">...</span></code>]]) – </p>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><code class="xref py py-data docutils literal notranslate"><span class="pre">Callable</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">...</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>]</p>
 </dd>
 </dl>
@@ -746,10 +760,10 @@ the same logic to select functions, but simply returns the first
 element of the iterator. If no matching functions are found,
 <cite>None</cite> is returned.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>types</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Type</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Type</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-data docutils literal notranslate"><span class="pre">...</span></code>]]) – </p>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Callable</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">...</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>]]</p>
 </dd>
 </dl>
@@ -789,13 +803,13 @@ element of the iterator. If no matching functions are found,
 </pre></div>
 </div>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>types</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Type</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Type</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-data docutils literal notranslate"><span class="pre">...</span></code>]]) – </p></li>
 <li><p><strong>kwargs</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>) – </p></li>
 </ul>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><code class="xref py py-data docutils literal notranslate"><span class="pre">Callable</span></code>[[<code class="xref py py-class docutils literal notranslate"><span class="pre">TypeVar</span></code>(<code class="docutils literal notranslate"><span class="pre">_C</span></code>, bound= <code class="xref py py-data docutils literal notranslate"><span class="pre">Callable</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">...</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>])], <code class="xref py py-class docutils literal notranslate"><span class="pre">TypeVar</span></code>(<code class="docutils literal notranslate"><span class="pre">_C</span></code>, bound= <code class="xref py py-data docutils literal notranslate"><span class="pre">Callable</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">...</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>])]</p>
 </dd>
 </dl>
@@ -806,16 +820,16 @@ element of the iterator. If no matching functions are found,
 </section>
 </section>
 <section id="functions">
-<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this headline">#</a></h2>
+<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this heading">#</a></h2>
 <section id="gpflow-utilities-add-noise-cov">
-<h3>gpflow.utilities.add_noise_cov<a class="headerlink" href="#gpflow-utilities-add-noise-cov" title="Permalink to this headline">#</a></h3>
+<h3>gpflow.utilities.add_noise_cov<a class="headerlink" href="#gpflow-utilities-add-noise-cov" title="Permalink to this heading">#</a></h3>
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.utilities.add_noise_cov">
 <span class="sig-prename descclassname"><span class="pre">gpflow.utilities.</span></span><span class="sig-name descname"><span class="pre">add_noise_cov</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">K</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">likelihood_variance</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/utilities/model_utils.html#add_noise_cov"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.utilities.add_noise_cov" title="Permalink to this definition">#</a></dt>
 <dd><p>Returns K + σ² I, where σ² is the likelihood noise variance and I is the corresponding identity
 matrix.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>K</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – <ul>
 <li><p><strong>K</strong> has shape [<em>batch</em>…, <em>N</em>, <em>N</em>].</p></li>
@@ -827,10 +841,10 @@ matrix.</p>
 </p></li>
 </ul>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></p>
 </dd>
-<dt class="field-odd">Returns</dt>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p><ul class="simple">
 <li><p><strong>return</strong> has shape [<em>batch</em>…, <em>N</em>, <em>N</em>].</p></li>
 </ul>
@@ -841,24 +855,24 @@ matrix.</p>
 
 </section>
 <section id="gpflow-utilities-deepcopy">
-<h3>gpflow.utilities.deepcopy<a class="headerlink" href="#gpflow-utilities-deepcopy" title="Permalink to this headline">#</a></h3>
+<h3>gpflow.utilities.deepcopy<a class="headerlink" href="#gpflow-utilities-deepcopy" title="Permalink to this heading">#</a></h3>
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.utilities.deepcopy">
 <span class="sig-prename descclassname"><span class="pre">gpflow.utilities.</span></span><span class="sig-name descname"><span class="pre">deepcopy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">memo</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/utilities/traversal.html#deepcopy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.utilities.deepcopy" title="Permalink to this definition">#</a></dt>
 <dd><p>Returns a deepcopy of the input tf.Module. To do that first resets the caches stored inside each
 tfp.bijectors.Bijector to allow the deepcopy of the tf.Module.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>input_module</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">TypeVar</span></code>(<code class="docutils literal notranslate"><span class="pre">M</span></code>, bound= <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code>)) – tf.Module including keras.Model, keras.layers.Layer and gpflow.Module.</p></li>
 <li><p><strong>memo</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>]]) – passed through to func:<cite>copy.deepcopy</cite>
 (see <a class="reference external" href="https://docs.python.org/3/library/copy.html">https://docs.python.org/3/library/copy.html</a>).</p></li>
 </ul>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">TypeVar</span></code>(<code class="docutils literal notranslate"><span class="pre">M</span></code>, bound= <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code>)</p>
 </dd>
-<dt class="field-odd">Returns</dt>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>Returns a deepcopy of an input object.</p>
 </dd>
 </dl>
@@ -866,19 +880,19 @@ tfp.bijectors.Bijector to allow the deepcopy of the tf.Module.</p>
 
 </section>
 <section id="gpflow-utilities-freeze">
-<h3>gpflow.utilities.freeze<a class="headerlink" href="#gpflow-utilities-freeze" title="Permalink to this headline">#</a></h3>
+<h3>gpflow.utilities.freeze<a class="headerlink" href="#gpflow-utilities-freeze" title="Permalink to this heading">#</a></h3>
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.utilities.freeze">
 <span class="sig-prename descclassname"><span class="pre">gpflow.utilities.</span></span><span class="sig-name descname"><span class="pre">freeze</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/utilities/traversal.html#freeze"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.utilities.freeze" title="Permalink to this definition">#</a></dt>
 <dd><p>Returns a deepcopy of the input tf.Module with constants instead of variables and parameters.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>input_module</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">TypeVar</span></code>(<code class="docutils literal notranslate"><span class="pre">M</span></code>, bound= <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code>)) – tf.Module or gpflow.Module.</p>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">TypeVar</span></code>(<code class="docutils literal notranslate"><span class="pre">M</span></code>, bound= <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code>)</p>
 </dd>
-<dt class="field-odd">Returns</dt>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>Returns a frozen deepcopy of an input object.</p>
 </dd>
 </dl>
@@ -886,16 +900,16 @@ tfp.bijectors.Bijector to allow the deepcopy of the tf.Module.</p>
 
 </section>
 <section id="gpflow-utilities-is-variable">
-<h3>gpflow.utilities.is_variable<a class="headerlink" href="#gpflow-utilities-is-variable" title="Permalink to this headline">#</a></h3>
+<h3>gpflow.utilities.is_variable<a class="headerlink" href="#gpflow-utilities-is-variable" title="Permalink to this heading">#</a></h3>
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.utilities.is_variable">
 <span class="sig-prename descclassname"><span class="pre">gpflow.utilities.</span></span><span class="sig-name descname"><span class="pre">is_variable</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/utilities/misc.html#is_variable"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.utilities.is_variable" title="Permalink to this definition">#</a></dt>
 <dd><p>Returns whether the <cite>t</cite> is a TensorFlow variable.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>t</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Sequence</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>, <a class="reference internal" href="../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>]) – </p>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></p>
 </dd>
 </dl>
@@ -903,15 +917,15 @@ tfp.bijectors.Bijector to allow the deepcopy of the tf.Module.</p>
 
 </section>
 <section id="gpflow-utilities-leaf-components">
-<h3>gpflow.utilities.leaf_components<a class="headerlink" href="#gpflow-utilities-leaf-components" title="Permalink to this headline">#</a></h3>
+<h3>gpflow.utilities.leaf_components<a class="headerlink" href="#gpflow-utilities-leaf-components" title="Permalink to this heading">#</a></h3>
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.utilities.leaf_components">
 <span class="sig-prename descclassname"><span class="pre">gpflow.utilities.</span></span><span class="sig-name descname"><span class="pre">leaf_components</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/utilities/traversal.html#leaf_components"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.utilities.leaf_components" title="Permalink to this definition">#</a></dt>
 <dd><dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>input</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code>) – </p>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Mapping</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>, <a class="reference internal" href="../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>]]</p>
 </dd>
 </dl>
@@ -919,20 +933,20 @@ tfp.bijectors.Bijector to allow the deepcopy of the tf.Module.</p>
 
 </section>
 <section id="gpflow-utilities-multiple-assign">
-<h3>gpflow.utilities.multiple_assign<a class="headerlink" href="#gpflow-utilities-multiple-assign" title="Permalink to this headline">#</a></h3>
+<h3>gpflow.utilities.multiple_assign<a class="headerlink" href="#gpflow-utilities-multiple-assign" title="Permalink to this heading">#</a></h3>
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.utilities.multiple_assign">
 <span class="sig-prename descclassname"><span class="pre">gpflow.utilities.</span></span><span class="sig-name descname"><span class="pre">multiple_assign</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parameters</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/utilities/traversal.html#multiple_assign"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.utilities.multiple_assign" title="Permalink to this definition">#</a></dt>
 <dd><p>Multiple assign takes a dictionary with new values. Dictionary keys are paths to the
 <cite>tf.Variable`s or `gpflow.Parameter</cite> of the input module.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>module</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code>) – <cite>tf.Module</cite>.</p></li>
 <li><p><strong>parameters</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Mapping</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]) – a dictionary with keys of the form “.module.path.to.variable” and new value tensors.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></p>
 </dd>
 </dl>
@@ -940,7 +954,7 @@ tfp.bijectors.Bijector to allow the deepcopy of the tf.Module.</p>
 
 </section>
 <section id="gpflow-utilities-parameter-dict">
-<h3>gpflow.utilities.parameter_dict<a class="headerlink" href="#gpflow-utilities-parameter-dict" title="Permalink to this headline">#</a></h3>
+<h3>gpflow.utilities.parameter_dict<a class="headerlink" href="#gpflow-utilities-parameter-dict" title="Permalink to this heading">#</a></h3>
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.utilities.parameter_dict">
 <span class="sig-prename descclassname"><span class="pre">gpflow.utilities.</span></span><span class="sig-name descname"><span class="pre">parameter_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/utilities/traversal.html#parameter_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.utilities.parameter_dict" title="Permalink to this definition">#</a></dt>
@@ -968,10 +982,10 @@ params = parameter_dict(m)
 # }</p>
 </div></blockquote>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>module</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code>) – </p>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>, <a class="reference internal" href="../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>]]</p>
 </dd>
 </dl>
@@ -979,13 +993,13 @@ params = parameter_dict(m)
 
 </section>
 <section id="gpflow-utilities-positive">
-<h3>gpflow.utilities.positive<a class="headerlink" href="#gpflow-utilities-positive" title="Permalink to this headline">#</a></h3>
+<h3>gpflow.utilities.positive<a class="headerlink" href="#gpflow-utilities-positive" title="Permalink to this heading">#</a></h3>
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.utilities.positive">
 <span class="sig-prename descclassname"><span class="pre">gpflow.utilities.</span></span><span class="sig-name descname"><span class="pre">positive</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lower</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/utilities/bijectors.html#positive"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.utilities.positive" title="Permalink to this definition">#</a></dt>
 <dd><p>Returns a positive bijector (a reversible transformation from real to positive numbers).</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>lower</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>]) – overrides default lower bound
 (if None, defaults to gpflow.config.default_positive_minimum())</p></li>
@@ -993,10 +1007,10 @@ params = parameter_dict(m)
 (if None, defaults to gpflow.config.default_positive_bijector())</p></li>
 </ul>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Bijector</span></code></p>
 </dd>
-<dt class="field-odd">Returns</dt>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>a bijector instance</p>
 </dd>
 </dl>
@@ -1004,19 +1018,19 @@ params = parameter_dict(m)
 
 </section>
 <section id="gpflow-utilities-print-summary">
-<h3>gpflow.utilities.print_summary<a class="headerlink" href="#gpflow-utilities-print-summary" title="Permalink to this headline">#</a></h3>
+<h3>gpflow.utilities.print_summary<a class="headerlink" href="#gpflow-utilities-print-summary" title="Permalink to this heading">#</a></h3>
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.utilities.print_summary">
 <span class="sig-prename descclassname"><span class="pre">gpflow.utilities.</span></span><span class="sig-name descname"><span class="pre">print_summary</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fmt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/utilities/traversal.html#print_summary"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.utilities.print_summary" title="Permalink to this definition">#</a></dt>
 <dd><p>Prints a summary of the parameters and variables contained in a tf.Module.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>module</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code>) – </p></li>
 <li><p><strong>fmt</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>]) – </p></li>
 </ul>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></p>
 </dd>
 </dl>
@@ -1024,16 +1038,16 @@ params = parameter_dict(m)
 
 </section>
 <section id="gpflow-utilities-read-values">
-<h3>gpflow.utilities.read_values<a class="headerlink" href="#gpflow-utilities-read-values" title="Permalink to this headline">#</a></h3>
+<h3>gpflow.utilities.read_values<a class="headerlink" href="#gpflow-utilities-read-values" title="Permalink to this heading">#</a></h3>
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.utilities.read_values">
 <span class="sig-prename descclassname"><span class="pre">gpflow.utilities.</span></span><span class="sig-name descname"><span class="pre">read_values</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/utilities/traversal.html#read_values"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.utilities.read_values" title="Permalink to this definition">#</a></dt>
 <dd><p>Returns a dictionary of numpy values of the module parameters (variables).</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>module</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code>) – </p>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>]]</p>
 </dd>
 </dl>
@@ -1041,20 +1055,20 @@ params = parameter_dict(m)
 
 </section>
 <section id="gpflow-utilities-reset-cache-bijectors">
-<h3>gpflow.utilities.reset_cache_bijectors<a class="headerlink" href="#gpflow-utilities-reset-cache-bijectors" title="Permalink to this headline">#</a></h3>
+<h3>gpflow.utilities.reset_cache_bijectors<a class="headerlink" href="#gpflow-utilities-reset-cache-bijectors" title="Permalink to this heading">#</a></h3>
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.utilities.reset_cache_bijectors">
 <span class="sig-prename descclassname"><span class="pre">gpflow.utilities.</span></span><span class="sig-name descname"><span class="pre">reset_cache_bijectors</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/utilities/traversal.html#reset_cache_bijectors"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.utilities.reset_cache_bijectors" title="Permalink to this definition">#</a></dt>
 <dd><p>Recursively finds tfp.bijectors.Bijector-s inside the components of the tf.Module using <cite>traverse_component</cite>.
 Resets the caches stored inside each tfp.bijectors.Bijector.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>input_module</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code>) – tf.Module including keras.Model, keras.layers.Layer and gpflow.Module.</p>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></p>
 </dd>
-<dt class="field-odd">Returns</dt>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>same object but with all bijector caches reset</p>
 </dd>
 </dl>
@@ -1062,16 +1076,16 @@ Resets the caches stored inside each tfp.bijectors.Bijector.</p>
 
 </section>
 <section id="gpflow-utilities-select-dict-parameters-with-prior">
-<h3>gpflow.utilities.select_dict_parameters_with_prior<a class="headerlink" href="#gpflow-utilities-select-dict-parameters-with-prior" title="Permalink to this headline">#</a></h3>
+<h3>gpflow.utilities.select_dict_parameters_with_prior<a class="headerlink" href="#gpflow-utilities-select-dict-parameters-with-prior" title="Permalink to this heading">#</a></h3>
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.utilities.select_dict_parameters_with_prior">
 <span class="sig-prename descclassname"><span class="pre">gpflow.utilities.</span></span><span class="sig-name descname"><span class="pre">select_dict_parameters_with_prior</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/utilities/traversal.html#select_dict_parameters_with_prior"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.utilities.select_dict_parameters_with_prior" title="Permalink to this definition">#</a></dt>
 <dd><p>Collects parameters with prior into a dictionary.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>model</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code>) – </p>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>, <a class="reference internal" href="../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>]</p>
 </dd>
 </dl>
@@ -1079,18 +1093,18 @@ Resets the caches stored inside each tfp.bijectors.Bijector.</p>
 
 </section>
 <section id="gpflow-utilities-tabulate-module-summary">
-<h3>gpflow.utilities.tabulate_module_summary<a class="headerlink" href="#gpflow-utilities-tabulate-module-summary" title="Permalink to this headline">#</a></h3>
+<h3>gpflow.utilities.tabulate_module_summary<a class="headerlink" href="#gpflow-utilities-tabulate-module-summary" title="Permalink to this heading">#</a></h3>
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.utilities.tabulate_module_summary">
 <span class="sig-prename descclassname"><span class="pre">gpflow.utilities.</span></span><span class="sig-name descname"><span class="pre">tabulate_module_summary</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tablefmt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/utilities/traversal.html#tabulate_module_summary"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.utilities.tabulate_module_summary" title="Permalink to this definition">#</a></dt>
 <dd><dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>module</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code>) – </p></li>
 <li><p><strong>tablefmt</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>]) – </p></li>
 </ul>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></p>
 </dd>
 </dl>
@@ -1098,15 +1112,15 @@ Resets the caches stored inside each tfp.bijectors.Bijector.</p>
 
 </section>
 <section id="gpflow-utilities-to-default-float">
-<h3>gpflow.utilities.to_default_float<a class="headerlink" href="#gpflow-utilities-to-default-float" title="Permalink to this headline">#</a></h3>
+<h3>gpflow.utilities.to_default_float<a class="headerlink" href="#gpflow-utilities-to-default-float" title="Permalink to this heading">#</a></h3>
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.utilities.to_default_float">
 <span class="sig-prename descclassname"><span class="pre">gpflow.utilities.</span></span><span class="sig-name descname"><span class="pre">to_default_float</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/utilities/misc.html#to_default_float"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.utilities.to_default_float" title="Permalink to this definition">#</a></dt>
 <dd><dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>x</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Sequence</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>, <a class="reference internal" href="../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>]) – </p>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></p>
 </dd>
 </dl>
@@ -1114,15 +1128,15 @@ Resets the caches stored inside each tfp.bijectors.Bijector.</p>
 
 </section>
 <section id="gpflow-utilities-to-default-int">
-<h3>gpflow.utilities.to_default_int<a class="headerlink" href="#gpflow-utilities-to-default-int" title="Permalink to this headline">#</a></h3>
+<h3>gpflow.utilities.to_default_int<a class="headerlink" href="#gpflow-utilities-to-default-int" title="Permalink to this heading">#</a></h3>
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.utilities.to_default_int">
 <span class="sig-prename descclassname"><span class="pre">gpflow.utilities.</span></span><span class="sig-name descname"><span class="pre">to_default_int</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/utilities/misc.html#to_default_int"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.utilities.to_default_int" title="Permalink to this definition">#</a></dt>
 <dd><dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>x</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Sequence</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>, <a class="reference internal" href="../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>]) – </p>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></p>
 </dd>
 </dl>
@@ -1130,14 +1144,14 @@ Resets the caches stored inside each tfp.bijectors.Bijector.</p>
 
 </section>
 <section id="gpflow-utilities-training-loop">
-<h3>gpflow.utilities.training_loop<a class="headerlink" href="#gpflow-utilities-training-loop" title="Permalink to this headline">#</a></h3>
+<h3>gpflow.utilities.training_loop<a class="headerlink" href="#gpflow-utilities-training-loop" title="Permalink to this heading">#</a></h3>
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.utilities.training_loop">
 <span class="sig-prename descclassname"><span class="pre">gpflow.utilities.</span></span><span class="sig-name descname"><span class="pre">training_loop</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">closure</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">optimizer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">var_list</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maxiter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">compile</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/utilities/misc.html#training_loop"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.utilities.training_loop" title="Permalink to this definition">#</a></dt>
 <dd><p>Simple generic training loop. At each iteration uses a GradientTape to compute
 the gradients of a loss function with respect to a set of variables.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>closure</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Callable</span></code>[[], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]) – Callable that constructs a loss function based on data and model being trained</p></li>
 <li><p><strong>optimizer</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">OptimizerV2</span></code>]) – tf.optimizers or tf.keras.optimizers that updates variables by applying the
@@ -1147,10 +1161,10 @@ corresponding loss gradients. Adam is a default optimizer with default settings.
 <li><p><strong>compile</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – </p></li>
 </ul>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></p>
 </dd>
-<dt class="field-odd">Returns</dt>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p></p>
 </dd>
 </dl>
@@ -1158,14 +1172,14 @@ corresponding loss gradients. Adam is a default optimizer with default settings.
 
 </section>
 <section id="gpflow-utilities-traverse-module">
-<h3>gpflow.utilities.traverse_module<a class="headerlink" href="#gpflow-utilities-traverse-module" title="Permalink to this headline">#</a></h3>
+<h3>gpflow.utilities.traverse_module<a class="headerlink" href="#gpflow-utilities-traverse-module" title="Permalink to this heading">#</a></h3>
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.utilities.traverse_module">
 <span class="sig-prename descclassname"><span class="pre">gpflow.utilities.</span></span><span class="sig-name descname"><span class="pre">traverse_module</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">m</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">acc</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">update_cb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_types</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/utilities/traversal.html#traverse_module"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.utilities.traverse_module" title="Permalink to this definition">#</a></dt>
 <dd><p>Recursively traverses <cite>m</cite>, accumulating in <cite>acc</cite> a path and a state until it finds an object of
 type in <cite>target_types</cite> to apply <cite>update_cb</cite> to update the accumulator <cite>acc</cite> and/or the object.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>m</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">TypeVar</span></code>(<code class="docutils literal notranslate"><span class="pre">TraverseInput</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code>, <a class="reference internal" href="../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>)) – tf.Module, tf.Variable or gpflow.Parameter</p></li>
 <li><p><strong>acc</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">TypeVar</span></code>(<code class="docutils literal notranslate"><span class="pre">State</span></code>)]) – Tuple of path and state</p></li>
@@ -1173,10 +1187,10 @@ type in <cite>target_types</cite> to apply <cite>update_cb</cite> to update the 
 <li><p><strong>target_types</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Type</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-data docutils literal notranslate"><span class="pre">...</span></code>]) – target class types</p></li>
 </ul>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">TypeVar</span></code>(<code class="docutils literal notranslate"><span class="pre">State</span></code>)</p>
 </dd>
-<dt class="field-odd">Returns</dt>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p></p>
 </dd>
 </dl>
@@ -1184,13 +1198,13 @@ type in <cite>target_types</cite> to apply <cite>update_cb</cite> to update the 
 
 </section>
 <section id="gpflow-utilities-triangular">
-<h3>gpflow.utilities.triangular<a class="headerlink" href="#gpflow-utilities-triangular" title="Permalink to this headline">#</a></h3>
+<h3>gpflow.utilities.triangular<a class="headerlink" href="#gpflow-utilities-triangular" title="Permalink to this heading">#</a></h3>
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.utilities.triangular">
 <span class="sig-prename descclassname"><span class="pre">gpflow.utilities.</span></span><span class="sig-name descname"><span class="pre">triangular</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/utilities/bijectors.html#triangular"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.utilities.triangular" title="Permalink to this definition">#</a></dt>
 <dd><p>Returns instance of a triangular bijector.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Bijector</span></code></p>
 </dd>
 </dl>
@@ -1198,22 +1212,22 @@ type in <cite>target_types</cite> to apply <cite>update_cb</cite> to update the 
 
 </section>
 <section id="gpflow-utilities-triangular-size">
-<h3>gpflow.utilities.triangular_size<a class="headerlink" href="#gpflow-utilities-triangular-size" title="Permalink to this headline">#</a></h3>
+<h3>gpflow.utilities.triangular_size<a class="headerlink" href="#gpflow-utilities-triangular-size" title="Permalink to this heading">#</a></h3>
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.utilities.triangular_size">
 <span class="sig-prename descclassname"><span class="pre">gpflow.utilities.</span></span><span class="sig-name descname"><span class="pre">triangular_size</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/utilities/bijectors.html#triangular_size"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.utilities.triangular_size" title="Permalink to this definition">#</a></dt>
 <dd><p>Returns the number of non-zero elements in an <cite>n</cite> by <cite>n</cite> triangular matrix.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>n</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – <ul class="simple">
 <li><p><strong>n</strong> has shape [].</p></li>
 </ul>
 </p>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></p>
 </dd>
-<dt class="field-odd">Returns</dt>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p><ul class="simple">
 <li><p><strong>return</strong> has shape [].</p></li>
 </ul>
@@ -1227,33 +1241,35 @@ type in <cite>target_types</cite> to apply <cite>update_cb</cite> to update the 
 </section>
 
 
-              </div>
+              </article>
               
-              
-          </main>
-          
 
+              
+          </div>
+          
       </div>
     </div>
+
+  
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script src="../../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf"></script>
-<footer class="footer mt-5 mt-md-0">
-  <div class="container">
-    
-    <div class="footer-item">
-      <p class="copyright">
+  <script src="../../../_static/scripts/pydata-sphinx-theme.js?digest=92025949c220c2e29695"></script>
+
+<footer class="bd-footer"><div class="bd-footer__inner container">
+  
+  <div class="footer-item">
+    <p class="copyright">
     &copy; Copyright 2022, The GPflow Contributors.<br>
 </p>
-    </div>
-    
-    <div class="footer-item">
-      <p class="sphinx-version">
-Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.5.0.<br>
-</p>
-    </div>
-    
   </div>
+  
+  <div class="footer-item">
+    <p class="sphinx-version">
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 5.0.1.<br>
+</p>
+  </div>
+  
+</div>
 </footer>
   </body>
 </html>

@@ -1,18 +1,22 @@
 
 <!DOCTYPE html>
 
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
     <title>Multiclass classification &#8212; GPflow 2.5.2 documentation</title>
-    
-  <!-- Loaded before other Sphinx assets -->
-  <link href="../../_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
-<link href="../../_static/styles/pydata-sphinx-theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
+<script>
+  document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+  document.documentElement.dataset.theme = localStorage.getItem("theme") || "light"
+</script>
 
-    
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=92025949c220c2e29695" rel="stylesheet">
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=92025949c220c2e29695" rel="stylesheet">
+
+
   <link rel="stylesheet"
     href="../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
   <link rel="preload" as="font" type="font/woff2" crossorigin
@@ -22,13 +26,14 @@
 
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/pydata-custom.css" />
-    
+
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf">
+  <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=92025949c220c2e29695">
 
     <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
     <script src="../../_static/jquery.js"></script>
     <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="../../_static/doctools.js"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="https://unpkg.com/@jupyter-widgets/html-manager@^0.20.1/dist/embed-amd.js"></script>
@@ -38,34 +43,41 @@
     <link rel="search" title="Search" href="../../search.html" />
     <link rel="next" title="Multi-output Gaussian processes in GPflow" href="multioutput.html" />
     <link rel="prev" title="MCMC (Markov Chain Monte Carlo)" href="mcmc.html" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="docsearch:language" content="None">
-    
-
-    <!-- Google Analytics -->
-    
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="docsearch:language" content="en">
   </head>
-  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="60">
-    
-    <div class="container-fluid" id="banner"></div>
+  
+  
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="180" data-default-mode="">
+    <div class="bd-header-announcement container-fluid" id="banner">
+      
+
+    </div>
 
     
-    <nav class="navbar navbar-light navbar-expand-lg bg-light fixed-top bd-navbar" id="navbar-main"><div class="container-xl">
+    <nav class="bd-header navbar navbar-light navbar-expand-lg bg-light fixed-top bd-navbar" id="navbar-main"><div class="bd-header__inner container-xl">
 
   <div id="navbar-start">
     
     
+  
 
-<a class="navbar-brand" href="../../index.html">
-  <img src="../../_static/gpflow_logo.svg" class="logo" alt="logo">
+
+<a class="navbar-brand logo" href="../../index.html">
+  
+  
+  
+  
+    <img src="../../_static/gpflow_logo.svg" class="logo__image only-light" alt="Logo image">
+    <img src="../../_static/gpflow_logo.svg" class="logo__image only-dark" alt="Logo image">
+  
+  
 </a>
-
-
     
   </div>
 
   <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar-collapsible" aria-controls="navbar-collapsible" aria-expanded="false" aria-label="Toggle navigation">
-    <span class="navbar-toggler-icon"></span>
+    <span class="fas fa-bars"></span>
   </button>
 
   
@@ -126,7 +138,7 @@
       
       <div class="navbar-end-item">
         <div class="dropdown" id="version_switcher">
-    <button type="button" class="btn btn-primary btn-sm navbar-btn dropdown-toggle" id="version_switcher_button" data-toggle="dropdown">
+    <button type="button" class="btn btn-sm navbar-btn dropdown-toggle" id="version_switcher_button" data-toggle="dropdown">
         develop  <!-- this text may get changed later by javascript -->
         <span class="caret"></span>
     </button>
@@ -166,6 +178,10 @@ function checkPageExistsAndRedirect(event) {
 (function () {
     $.getJSON("https://gpflow.github.io/GPflow/versions.json", function(data, textStatus, jqXHR) {
         const currentFilePath = "notebooks/advanced/multiclass_classification.html";
+        let btn = document.getElementById("version_switcher_button");
+        // Set empty strings by default so that these attributes exist and can be used in CSS selectors
+        btn.dataset["activeVersionName"] = "";
+        btn.dataset["activeVersion"] = "";
         // create links to the corresponding page in the other docs versions
         $.each(data, function(index, entry) {
             // if no custom name specified (e.g., "latest"), use version string
@@ -193,7 +209,6 @@ function checkPageExistsAndRedirect(event) {
             // version's entry
             if (entry.version == "develop") {
                 node.classList.add("active");
-                let btn = document.getElementById("version_switcher_button");
                 btn.innerText = btn.dataset["activeVersionName"] = entry.name;
                 btn.dataset["activeVersion"] = entry.version;
             }
@@ -209,13 +224,13 @@ function checkPageExistsAndRedirect(event) {
     </nav>
     
 
-    <div class="container-xl">
-      <div class="row">
+    <div class="bd-container container-xl">
+      <div class="bd-container__inner row">
           
-            
-            <!-- Only show if we have sidebars configured, else just a small margin  -->
-            <div class="col-12 col-md-3 bd-sidebar">
-              <div class="sidebar-start-items"><form class="bd-search d-flex align-items-center" action="../../search.html" method="get">
+
+<!-- Only show if we have sidebars configured, else just a small margin  -->
+<div class="bd-sidebar-primary col-12 col-md-3 bd-sidebar">
+  <div class="sidebar-start-items"><form class="bd-search d-flex align-items-center" action="../../search.html" method="get">
   <i class="icon fas fa-search"></i>
   <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
 </form><nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
@@ -413,19 +428,20 @@ function checkPageExistsAndRedirect(event) {
 
   </div>
 </nav>
-              </div>
-              <div class="sidebar-end-items">
-              </div>
-            </div>
-            
-          
+  </div>
+  <div class="sidebar-end-items">
+  </div>
+</div>
+
 
           
-          <div class="d-none d-xl-block col-xl-2 bd-toc">
-            
-              
-              <div class="toc-item">
-                
+
+
+<div class="bd-sidebar-secondary d-none d-xl-block col-xl-2 bd-toc">
+  
+    
+    <div class="toc-item">
+      
 <div class="tocsection onthispage mt-5 pt-1 pb-3">
     <i class="fas fa-list"></i> On this page
 </div>
@@ -481,23 +497,21 @@ function checkPageExistsAndRedirect(event) {
 </ul>
 
 </nav>
-              </div>
-              
-              <div class="toc-item">
-                
-              </div>
-              
-            
-          </div>
-          
+    </div>
+    
+    <div class="toc-item">
+      
+    </div>
+    
+  
+</div>
+
 
           
           
-            
-          
-          <main class="col-12 col-md-9 col-xl-7 py-md-5 pl-md-5 pr-md-4 bd-content" role="main">
+          <div class="bd-content col-12 col-md-9 col-xl-7">
               
-              <div>
+              <article class="bd-article" role="main">
                 
   
 <style>
@@ -756,7 +770,7 @@ div.rendered_html tbody tr:hover {
 }
 </style>
 <section id="Multiclass-classification">
-<h1>Multiclass classification<a class="headerlink" href="#Multiclass-classification" title="Permalink to this headline">#</a></h1>
+<h1>Multiclass classification<a class="headerlink" href="#Multiclass-classification" title="Permalink to this heading">#</a></h1>
 <p>The multiclass classification problem is a regression problem from an input <span class="math notranslate nohighlight">\(x \in {\cal X}\)</span> to discrete labels <span class="math notranslate nohighlight">\(y\in {\cal Y}\)</span>, where <span class="math notranslate nohighlight">\({\cal Y}\)</span> is a discrete set of size <span class="math notranslate nohighlight">\(C\)</span> bigger than two (for <span class="math notranslate nohighlight">\(C=2\)</span> it is the more usual binary classification).</p>
 <p>Labels are encoded in a one-hot fashion, that is if <span class="math notranslate nohighlight">\(C=4\)</span> and <span class="math notranslate nohighlight">\(y=2\)</span>, we note <span class="math notranslate nohighlight">\(\bar{y} = [0,1,0,0]\)</span>.</p>
 <p>The generative model for this problem consists of:</p>
@@ -808,14 +822,14 @@ pi_c(mathbf{f}) = begin{cases} 1 - epsilon, &amp; mbox{if } c = arg max_c f_c \<
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2022-06-07 09:01:36.153006: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcudart.so.11.0&#39;; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory
-2022-06-07 09:01:36.153043: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.
+2022-06-10 06:42:04.888932: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcudart.so.11.0&#39;; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory
+2022-06-10 06:42:04.888961: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.
 </pre></div></div>
 </div>
 <section id="Sampling-from-the-GP-multiclass-generative-model">
-<h2>Sampling from the GP multiclass generative model<a class="headerlink" href="#Sampling-from-the-GP-multiclass-generative-model" title="Permalink to this headline">#</a></h2>
+<h2>Sampling from the GP multiclass generative model<a class="headerlink" href="#Sampling-from-the-GP-multiclass-generative-model" title="Permalink to this heading">#</a></h2>
 <section id="Declaring-model-parameters-and-input">
-<h3>Declaring model parameters and input<a class="headerlink" href="#Declaring-model-parameters-and-input" title="Permalink to this headline">#</a></h3>
+<h3>Declaring model parameters and input<a class="headerlink" href="#Declaring-model-parameters-and-input" title="Permalink to this heading">#</a></h3>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
@@ -837,7 +851,7 @@ pi_c(mathbf{f}) = begin{cases} 1 - epsilon, &amp; mbox{if } c = arg max_c f_c \<
 </div>
 </section>
 <section id="Sampling">
-<h3>Sampling<a class="headerlink" href="#Sampling" title="Permalink to this headline">#</a></h3>
+<h3>Sampling<a class="headerlink" href="#Sampling" title="Permalink to this heading">#</a></h3>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
@@ -865,16 +879,16 @@ pi_c(mathbf{f}) = begin{cases} 1 - epsilon, &amp; mbox{if } c = arg max_c f_c \<
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2022-06-07 09:01:39.541331: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcuda.so.1&#39;; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory
-2022-06-07 09:01:39.541368: W tensorflow/stream_executor/cuda/cuda_driver.cc:269] failed call to cuInit: UNKNOWN ERROR (303)
-2022-06-07 09:01:39.541393: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (bb5e1c5f504d): /proc/driver/nvidia/version does not exist
-2022-06-07 09:01:39.541729: I tensorflow/core/platform/cpu_feature_guard.cc:151] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA
+2022-06-10 06:42:07.844392: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcuda.so.1&#39;; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory
+2022-06-10 06:42:07.844425: W tensorflow/stream_executor/cuda/cuda_driver.cc:269] failed call to cuInit: UNKNOWN ERROR (303)
+2022-06-10 06:42:07.844444: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (0091ed1183cb): /proc/driver/nvidia/version does not exist
+2022-06-10 06:42:07.844710: I tensorflow/core/platform/cpu_feature_guard.cc:151] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA
 To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.
 </pre></div></div>
 </div>
 </section>
 <section id="Plotting">
-<h3>Plotting<a class="headerlink" href="#Plotting" title="Permalink to this headline">#</a></h3>
+<h3>Plotting<a class="headerlink" href="#Plotting" title="Permalink to this heading">#</a></h3>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
@@ -906,13 +920,13 @@ To enable them in other operations, rebuild TensorFlow with the appropriate comp
 </section>
 </section>
 <section id="Inference">
-<h2>Inference<a class="headerlink" href="#Inference" title="Permalink to this headline">#</a></h2>
+<h2>Inference<a class="headerlink" href="#Inference" title="Permalink to this heading">#</a></h2>
 <p>Inference here consists of computing the posterior distribution over the latent functions given the data <span class="math notranslate nohighlight">\(p(\mathbf{f}|Y, X)\)</span>.</p>
 <p>You can use different inference methods. Here we perform variational inference. For a treatment of the multiclass classification problem using MCMC sampling, see <a class="reference internal" href="mcmc.html"><span class="doc">Markov Chain Monte Carlo (MCMC)</span></a>.</p>
 <section id="Approximate-inference:-Sparse-Variational-Gaussian-Process">
-<h3>Approximate inference: Sparse Variational Gaussian Process<a class="headerlink" href="#Approximate-inference:-Sparse-Variational-Gaussian-Process" title="Permalink to this headline">#</a></h3>
+<h3>Approximate inference: Sparse Variational Gaussian Process<a class="headerlink" href="#Approximate-inference:-Sparse-Variational-Gaussian-Process" title="Permalink to this heading">#</a></h3>
 <section id="Declaring-the-SVGP-model-(see-GPs-for-big-data)">
-<h4>Declaring the SVGP model (see <a class="reference internal" href="gps_for_big_data.html"><span class="doc">GPs for big data</span></a>)<a class="headerlink" href="#Declaring-the-SVGP-model-(see-GPs-for-big-data)" title="Permalink to this headline">#</a></h4>
+<h4>Declaring the SVGP model (see <a class="reference internal" href="gps_for_big_data.html"><span class="doc">GPs for big data</span></a>)<a class="headerlink" href="#Declaring-the-SVGP-model-(see-GPs-for-big-data)" title="Permalink to this heading">#</a></h4>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
@@ -946,7 +960,7 @@ To enable them in other operations, rebuild TensorFlow with the appropriate comp
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2022-06-07 09:01:41.435182: W tensorflow/python/util/util.cc:368] Sets are not currently considered sequences, but this may change in the future, so consider avoiding using them.
+2022-06-10 06:42:08.720568: W tensorflow/python/util/util.cc:368] Sets are not currently considered sequences, but this may change in the future, so consider avoiding using them.
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -970,7 +984,7 @@ To enable them in other operations, rebuild TensorFlow with the appropriate comp
 </div>
 </section>
 <section id="Running-inference">
-<h4>Running inference<a class="headerlink" href="#Running-inference" title="Permalink to this headline">#</a></h4>
+<h4>Running inference<a class="headerlink" href="#Running-inference" title="Permalink to this heading">#</a></h4>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
@@ -1024,33 +1038,35 @@ To enable them in other operations, rebuild TensorFlow with the appropriate comp
 </section>
 
 
-              </div>
+              </article>
               
-              
-          </main>
-          
 
+              
+          </div>
+          
       </div>
     </div>
+
+  
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script src="../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf"></script>
-<footer class="footer mt-5 mt-md-0">
-  <div class="container">
-    
-    <div class="footer-item">
-      <p class="copyright">
+  <script src="../../_static/scripts/pydata-sphinx-theme.js?digest=92025949c220c2e29695"></script>
+
+<footer class="bd-footer"><div class="bd-footer__inner container">
+  
+  <div class="footer-item">
+    <p class="copyright">
     &copy; Copyright 2022, The GPflow Contributors.<br>
 </p>
-    </div>
-    
-    <div class="footer-item">
-      <p class="sphinx-version">
-Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.5.0.<br>
-</p>
-    </div>
-    
   </div>
+  
+  <div class="footer-item">
+    <p class="sphinx-version">
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 5.0.1.<br>
+</p>
+  </div>
+  
+</div>
 </footer>
   </body>
 </html>

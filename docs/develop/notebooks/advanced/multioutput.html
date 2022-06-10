@@ -1,18 +1,22 @@
 
 <!DOCTYPE html>
 
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
     <title>Multi-output Gaussian processes in GPflow &#8212; GPflow 2.5.2 documentation</title>
-    
-  <!-- Loaded before other Sphinx assets -->
-  <link href="../../_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
-<link href="../../_static/styles/pydata-sphinx-theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
+<script>
+  document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+  document.documentElement.dataset.theme = localStorage.getItem("theme") || "light"
+</script>
 
-    
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=92025949c220c2e29695" rel="stylesheet">
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=92025949c220c2e29695" rel="stylesheet">
+
+
   <link rel="stylesheet"
     href="../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
   <link rel="preload" as="font" type="font/woff2" crossorigin
@@ -22,13 +26,14 @@
 
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/pydata-custom.css" />
-    
+
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf">
+  <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=92025949c220c2e29695">
 
     <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
     <script src="../../_static/jquery.js"></script>
     <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="../../_static/doctools.js"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="https://unpkg.com/@jupyter-widgets/html-manager@^0.20.1/dist/embed-amd.js"></script>
@@ -38,34 +43,41 @@
     <link rel="search" title="Search" href="../../search.html" />
     <link rel="next" title="Natural gradients" href="natural_gradients.html" />
     <link rel="prev" title="Multiclass classification" href="multiclass_classification.html" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="docsearch:language" content="None">
-    
-
-    <!-- Google Analytics -->
-    
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="docsearch:language" content="en">
   </head>
-  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="60">
-    
-    <div class="container-fluid" id="banner"></div>
+  
+  
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="180" data-default-mode="">
+    <div class="bd-header-announcement container-fluid" id="banner">
+      
+
+    </div>
 
     
-    <nav class="navbar navbar-light navbar-expand-lg bg-light fixed-top bd-navbar" id="navbar-main"><div class="container-xl">
+    <nav class="bd-header navbar navbar-light navbar-expand-lg bg-light fixed-top bd-navbar" id="navbar-main"><div class="bd-header__inner container-xl">
 
   <div id="navbar-start">
     
     
+  
 
-<a class="navbar-brand" href="../../index.html">
-  <img src="../../_static/gpflow_logo.svg" class="logo" alt="logo">
+
+<a class="navbar-brand logo" href="../../index.html">
+  
+  
+  
+  
+    <img src="../../_static/gpflow_logo.svg" class="logo__image only-light" alt="Logo image">
+    <img src="../../_static/gpflow_logo.svg" class="logo__image only-dark" alt="Logo image">
+  
+  
 </a>
-
-
     
   </div>
 
   <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar-collapsible" aria-controls="navbar-collapsible" aria-expanded="false" aria-label="Toggle navigation">
-    <span class="navbar-toggler-icon"></span>
+    <span class="fas fa-bars"></span>
   </button>
 
   
@@ -126,7 +138,7 @@
       
       <div class="navbar-end-item">
         <div class="dropdown" id="version_switcher">
-    <button type="button" class="btn btn-primary btn-sm navbar-btn dropdown-toggle" id="version_switcher_button" data-toggle="dropdown">
+    <button type="button" class="btn btn-sm navbar-btn dropdown-toggle" id="version_switcher_button" data-toggle="dropdown">
         develop  <!-- this text may get changed later by javascript -->
         <span class="caret"></span>
     </button>
@@ -166,6 +178,10 @@ function checkPageExistsAndRedirect(event) {
 (function () {
     $.getJSON("https://gpflow.github.io/GPflow/versions.json", function(data, textStatus, jqXHR) {
         const currentFilePath = "notebooks/advanced/multioutput.html";
+        let btn = document.getElementById("version_switcher_button");
+        // Set empty strings by default so that these attributes exist and can be used in CSS selectors
+        btn.dataset["activeVersionName"] = "";
+        btn.dataset["activeVersion"] = "";
         // create links to the corresponding page in the other docs versions
         $.each(data, function(index, entry) {
             // if no custom name specified (e.g., "latest"), use version string
@@ -193,7 +209,6 @@ function checkPageExistsAndRedirect(event) {
             // version's entry
             if (entry.version == "develop") {
                 node.classList.add("active");
-                let btn = document.getElementById("version_switcher_button");
                 btn.innerText = btn.dataset["activeVersionName"] = entry.name;
                 btn.dataset["activeVersion"] = entry.version;
             }
@@ -209,13 +224,13 @@ function checkPageExistsAndRedirect(event) {
     </nav>
     
 
-    <div class="container-xl">
-      <div class="row">
+    <div class="bd-container container-xl">
+      <div class="bd-container__inner row">
           
-            
-            <!-- Only show if we have sidebars configured, else just a small margin  -->
-            <div class="col-12 col-md-3 bd-sidebar">
-              <div class="sidebar-start-items"><form class="bd-search d-flex align-items-center" action="../../search.html" method="get">
+
+<!-- Only show if we have sidebars configured, else just a small margin  -->
+<div class="bd-sidebar-primary col-12 col-md-3 bd-sidebar">
+  <div class="sidebar-start-items"><form class="bd-search d-flex align-items-center" action="../../search.html" method="get">
   <i class="icon fas fa-search"></i>
   <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
 </form><nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
@@ -413,19 +428,20 @@ function checkPageExistsAndRedirect(event) {
 
   </div>
 </nav>
-              </div>
-              <div class="sidebar-end-items">
-              </div>
-            </div>
-            
-          
+  </div>
+  <div class="sidebar-end-items">
+  </div>
+</div>
+
 
           
-          <div class="d-none d-xl-block col-xl-2 bd-toc">
-            
-              
-              <div class="toc-item">
-                
+
+
+<div class="bd-sidebar-secondary d-none d-xl-block col-xl-2 bd-toc">
+  
+    
+    <div class="toc-item">
+      
 <div class="tocsection onthispage mt-5 pt-1 pb-3">
     <i class="fas fa-list"></i> On this page
 </div>
@@ -540,23 +556,21 @@ function checkPageExistsAndRedirect(event) {
 </ul>
 
 </nav>
-              </div>
-              
-              <div class="toc-item">
-                
-              </div>
-              
-            
-          </div>
-          
+    </div>
+    
+    <div class="toc-item">
+      
+    </div>
+    
+  
+</div>
+
 
           
           
-            
-          
-          <main class="col-12 col-md-9 col-xl-7 py-md-5 pl-md-5 pr-md-4 bd-content" role="main">
+          <div class="bd-content col-12 col-md-9 col-xl-7">
               
-              <div>
+              <article class="bd-article" role="main">
                 
   
 <style>
@@ -815,7 +829,7 @@ div.rendered_html tbody tr:hover {
 }
 </style>
 <section id="Multi-output-Gaussian-processes-in-GPflow">
-<h1>Multi-output Gaussian processes in GPflow<a class="headerlink" href="#Multi-output-Gaussian-processes-in-GPflow" title="Permalink to this headline">#</a></h1>
+<h1>Multi-output Gaussian processes in GPflow<a class="headerlink" href="#Multi-output-Gaussian-processes-in-GPflow" title="Permalink to this heading">#</a></h1>
 <p>This notebook shows how to construct a multi-output GP model using GPflow, together with different interdomain inducing variables which lead to different approximation properties. GPflow provides a framework for specifying multioutput GP priors, and interdomain approximations which is - modular, by providing a consistent interface for the user of the resulting <code class="docutils literal notranslate"><span class="pre">SVGP</span></code> model, - extensible, by allowing new interdomain variables and kernels to be specified while reusing exising code where
 possible, - efficient, by allowing the most efficient custom code path to be specified where desired.</p>
 <p>Getting to grips with the maths and code can be a bit daunting, so to accompany the documentation there is an <a class="reference external" href="https://arxiv.org/abs/2003.01115">in-depth review on arXiv</a>, which provides a unified mathematical framework, together with a high-level description of software design choices in GPflow.</p>
@@ -852,7 +866,7 @@ possible, - efficient, by allowing the most efficient custom code path to be spe
 \newcommand{\identity}{\mathbb{I}}
 \end{equation}</span></p>
 <section id="Task">
-<h2>Task<a class="headerlink" href="#Task" title="Permalink to this headline">#</a></h2>
+<h2>Task<a class="headerlink" href="#Task" title="Permalink to this heading">#</a></h2>
 <p>We will consider a regression problem for functions <span class="math notranslate nohighlight">\(f: \mathbb{R}^D \rightarrow \mathbb{R}^P\)</span>. We assume that the dataset is of the form <span class="math notranslate nohighlight">\((X, f_1), \dots, (X, f_P)\)</span>, that is, we observe all the outputs for a particular input location (for cases where there are <strong>not</strong> fully observed outputs for each input, see <a class="reference internal" href="coregionalisation.html"><span class="doc">A simple demonstration of coregionalization</span></a>).</p>
 <p>Here we assume a model of the form: <span class="math">\begin{equation}
 f(x) = W g(x),
@@ -886,15 +900,15 @@ f(x) = W g(x),
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2022-06-07 09:01:58.055673: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcudart.so.11.0&#39;; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory
-2022-06-07 09:01:58.055718: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.
+2022-06-10 06:42:25.019088: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcudart.so.11.0&#39;; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory
+2022-06-10 06:42:25.019119: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.
 /home/circleci/project/gpflow/experimental/utils.py:42: UserWarning: You&#39;re calling gpflow.experimental.check_shapes.decorator.check_shapes which is considered *experimental*. Expect: breaking changes, poor documentation, and bugs.
   warn(
 </pre></div></div>
 </div>
 </section>
 <section id="Generate-synthetic-data">
-<h2>Generate synthetic data<a class="headerlink" href="#Generate-synthetic-data" title="Permalink to this headline">#</a></h2>
+<h2>Generate synthetic data<a class="headerlink" href="#Generate-synthetic-data" title="Permalink to this heading">#</a></h2>
 <p>We create a utility function to generate synthetic data. We assume that:</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
@@ -958,12 +972,12 @@ f(x) = W g(x),
 </div>
 </section>
 <section id="Model-the-outputs-of-f(x)-directly">
-<h2>Model the outputs of <span class="math notranslate nohighlight">\(f(x)\)</span> directly<a class="headerlink" href="#Model-the-outputs-of-f(x)-directly" title="Permalink to this headline">#</a></h2>
+<h2>Model the outputs of <span class="math notranslate nohighlight">\(f(x)\)</span> directly<a class="headerlink" href="#Model-the-outputs-of-f(x)-directly" title="Permalink to this heading">#</a></h2>
 <p>The three following examples show how to model the outputs of the model <span class="math notranslate nohighlight">\(f(x)\)</span> directly. Mathematically, this case is equivalent to having: <span class="math">\begin{equation}
 f(x) = I g(x),
 \end{equation}</span> i.e. <span class="math notranslate nohighlight">\(W = I\)</span> and <span class="math notranslate nohighlight">\(P = L\)</span>.</p>
 <section id="1.-Shared-independent-multi-output-kernel-(MOK)-and-shared-independent-inducing-variables">
-<h3>1. Shared independent multi-output kernel (MOK) and shared independent inducing variables<a class="headerlink" href="#1.-Shared-independent-multi-output-kernel-(MOK)-and-shared-independent-inducing-variables" title="Permalink to this headline">#</a></h3>
+<h3>1. Shared independent multi-output kernel (MOK) and shared independent inducing variables<a class="headerlink" href="#1.-Shared-independent-multi-output-kernel-(MOK)-and-shared-independent-inducing-variables" title="Permalink to this heading">#</a></h3>
 <p>Here the priors on all outputs are constrained to have the same kernel hyperparameters. We also share the inducing inputs between all outputs. The different GPs are independent both in the prior and the approximate posterior.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
@@ -987,10 +1001,10 @@ f(x) = I g(x),
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2022-06-07 09:02:00.752319: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcuda.so.1&#39;; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory
-2022-06-07 09:02:00.752358: W tensorflow/stream_executor/cuda/cuda_driver.cc:269] failed call to cuInit: UNKNOWN ERROR (303)
-2022-06-07 09:02:00.752384: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (bb5e1c5f504d): /proc/driver/nvidia/version does not exist
-2022-06-07 09:02:00.752744: I tensorflow/core/platform/cpu_feature_guard.cc:151] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA
+2022-06-10 06:42:27.512527: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcuda.so.1&#39;; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory
+2022-06-10 06:42:27.512555: W tensorflow/stream_executor/cuda/cuda_driver.cc:269] failed call to cuInit: UNKNOWN ERROR (303)
+2022-06-10 06:42:27.512577: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (0091ed1183cb): /proc/driver/nvidia/version does not exist
+2022-06-10 06:42:27.512891: I tensorflow/core/platform/cpu_feature_guard.cc:151] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA
 To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.
 /home/circleci/project/gpflow/experimental/utils.py:42: UserWarning: You&#39;re calling gpflow.experimental.check_shapes.checker.ShapeChecker.__init__ which is considered *experimental*. Expect: breaking changes, poor documentation, and bugs.
   warn(
@@ -1048,7 +1062,7 @@ To enable them in other operations, rebuild TensorFlow with the appropriate comp
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2022-06-07 09:02:00.851903: W tensorflow/python/util/util.cc:368] Sets are not currently considered sequences, but this may change in the future, so consider avoiding using them.
+2022-06-10 06:42:27.608630: W tensorflow/python/util/util.cc:368] Sets are not currently considered sequences, but this may change in the future, so consider avoiding using them.
  This problem is unconstrained.
 </pre></div></div>
 </div>
@@ -4747,7 +4761,7 @@ CONVERGENCE: REL_REDUCTION_OF_F_&lt;=_FACTR*EPSMCH
 </div>
 </section>
 <section id="2.-Separate-independent-MOK-and-shared-independent-inducing-variables">
-<h3>2. Separate independent MOK and shared independent inducing variables<a class="headerlink" href="#2.-Separate-independent-MOK-and-shared-independent-inducing-variables" title="Permalink to this headline">#</a></h3>
+<h3>2. Separate independent MOK and shared independent inducing variables<a class="headerlink" href="#2.-Separate-independent-MOK-and-shared-independent-inducing-variables" title="Permalink to this heading">#</a></h3>
 <p>Here we allow different hyperparameters for the priors of each output. We still share the inducing inputs between all outputs.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
@@ -8901,7 +8915,7 @@ STOP: TOTAL NO. of ITERATIONS REACHED LIMIT
 </div>
 </section>
 <section id="3.-Separate-independent-kernel-and-separate-independent-inducing-variables">
-<h3>3. Separate independent kernel and separate independent inducing variables<a class="headerlink" href="#3.-Separate-independent-kernel-and-separate-independent-inducing-variables" title="Permalink to this headline">#</a></h3>
+<h3>3. Separate independent kernel and separate independent inducing variables<a class="headerlink" href="#3.-Separate-independent-kernel-and-separate-independent-inducing-variables" title="Permalink to this heading">#</a></h3>
 <p>Here we allow different hyperparameters for the priors of each output. We now allow different inducing inputs for each output.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
@@ -13035,15 +13049,15 @@ STOP: TOTAL NO. of ITERATIONS REACHED LIMIT
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-ListWrapper([&lt;gpflow.inducing_variables.inducing_variables.InducingPoints object at 0x7f6240373280&gt;, &lt;gpflow.inducing_variables.inducing_variables.InducingPoints object at 0x7f62403732b0&gt;, &lt;gpflow.inducing_variables.inducing_variables.InducingPoints object at 0x7f6240372f20&gt;])
+ListWrapper([&lt;gpflow.inducing_variables.inducing_variables.InducingPoints object at 0x7f1e3c777100&gt;, &lt;gpflow.inducing_variables.inducing_variables.InducingPoints object at 0x7f1e3c777190&gt;, &lt;gpflow.inducing_variables.inducing_variables.InducingPoints object at 0x7f1e3c776da0&gt;])
 </pre></div></div>
 </div>
 </section>
 </section>
 <section id="Model-f(x)-by-doing-inference-in-the-g-space">
-<h2>Model <span class="math notranslate nohighlight">\(f(x)\)</span> by doing inference in the <span class="math notranslate nohighlight">\(g\)</span> space<a class="headerlink" href="#Model-f(x)-by-doing-inference-in-the-g-space" title="Permalink to this headline">#</a></h2>
+<h2>Model <span class="math notranslate nohighlight">\(f(x)\)</span> by doing inference in the <span class="math notranslate nohighlight">\(g\)</span> space<a class="headerlink" href="#Model-f(x)-by-doing-inference-in-the-g-space" title="Permalink to this heading">#</a></h2>
 <section id="Mixed-kernel-and-uncorrelated-inducing-variables">
-<h3>Mixed kernel and uncorrelated inducing variables<a class="headerlink" href="#Mixed-kernel-and-uncorrelated-inducing-variables" title="Permalink to this headline">#</a></h3>
+<h3>Mixed kernel and uncorrelated inducing variables<a class="headerlink" href="#Mixed-kernel-and-uncorrelated-inducing-variables" title="Permalink to this heading">#</a></h3>
 <p>Remember the general case: <span class="math notranslate nohighlight">\(f(x) = W g(x)\)</span>, where <span class="math notranslate nohighlight">\(g(x) \in \mathbb{R}^L\)</span>, <span class="math notranslate nohighlight">\(f(x) \in \mathbb{R}^P\)</span> and <span class="math notranslate nohighlight">\(W \in \mathbb{R}^{P \times L}\)</span>, where <span class="math notranslate nohighlight">\(L \leq P\)</span>. We assume that the outputs of <span class="math notranslate nohighlight">\(g\)</span> are uncorrelated, and by <em>mixing</em> them with <span class="math notranslate nohighlight">\(W\)</span> they become correlated. With this setup we perform the optimal routine to calculate the conditional. Namely, calculate the conditional of the uncorrelated latent <span class="math notranslate nohighlight">\(g\)</span> and afterwards project the mean and variance using
 the mixing matrix: <span class="math notranslate nohighlight">\(\mu_f = W \mu_g\)</span> and <span class="math notranslate nohighlight">\(\Sigma_f = W\Sigma_g W^\top\)</span></p>
 <ul class="simple">
@@ -17154,10 +17168,10 @@ STOP: TOTAL NO. of ITERATIONS REACHED LIMIT
 </section>
 </section>
 <section id="Illustration-of-GPflow’s-multi-output-capabilities">
-<h2>Illustration of GPflow’s multi-output capabilities<a class="headerlink" href="#Illustration-of-GPflow’s-multi-output-capabilities" title="Permalink to this headline">#</a></h2>
+<h2>Illustration of GPflow’s multi-output capabilities<a class="headerlink" href="#Illustration-of-GPflow’s-multi-output-capabilities" title="Permalink to this heading">#</a></h2>
 <p>This section shows the inheritance structure in GPflow’s multi-output framework.</p>
 <section id="Multi-output-kernels-(MOK)-class-diagram">
-<h3>Multi-output kernels (MOK) class diagram<a class="headerlink" href="#Multi-output-kernels-(MOK)-class-diagram" title="Permalink to this headline">#</a></h3>
+<h3>Multi-output kernels (MOK) class diagram<a class="headerlink" href="#Multi-output-kernels-(MOK)-class-diagram" title="Permalink to this heading">#</a></h3>
 <p>We include three multi-output kernels: - <code class="docutils literal notranslate"><span class="pre">SharedIndependent</span></code>: This kernel is included mainly as an illustration of specifying a conditional using the multiple dispatch framework. The same functionality is provided by using a normal kernel and passing in multiple approximate posteriors by stacking <code class="docutils literal notranslate"><span class="pre">q_mu</span></code> and <code class="docutils literal notranslate"><span class="pre">q_sqrt</span></code>. - <code class="docutils literal notranslate"><span class="pre">SeparateIndependent</span></code>: This kernel allows you to use different priors for each output GP. - <code class="docutils literal notranslate"><span class="pre">LinearCoregionalization</span></code>: This kernel describes the prior of the linear
 model of coregionalization. As shown previously, this implementation supports various inducing point approximations. <img alt="Multi-output kernels" src="../../_images/multioutput_kernels.svg" /></p>
 <p>We include several base classes. Two are noteworthy: - <code class="docutils literal notranslate"><span class="pre">MultioutputKernel</span></code> is included to be the base class for all multi-output kernels. - <code class="docutils literal notranslate"><span class="pre">IndepedentLatent</span></code> is the base class for all multi-output kernels which are constructed from independent latent processes. Including this kernel allows the specification of a default approximation method which, while not the most efficient, does take advantage of <em>some</em> structure. It can be applied to <em>any</em> kernel constructed from independent latent
@@ -17166,36 +17180,28 @@ processes.</p>
 specifying <code class="docutils literal notranslate"><span class="pre">conditionals()</span></code> for the otherwise simple multi-output kernels <code class="docutils literal notranslate"><span class="pre">SeparateIndependent</span></code> and <code class="docutils literal notranslate"><span class="pre">SharedIndependent</span></code>. - we did not want to specify too much of an implementation in <code class="docutils literal notranslate"><span class="pre">IndependentLatent</span></code>, leaving implementation details to child classes. Using <code class="docutils literal notranslate"><span class="pre">SeparateIndependent</span></code> as the base class would force all child classes to be a <code class="docutils literal notranslate"><span class="pre">Combination</span></code> kernel.</p>
 </section>
 <section id="Multi-output-inducing-variables-class-diagram">
-<h3>Multi-output inducing variables class diagram<a class="headerlink" href="#Multi-output-inducing-variables-class-diagram" title="Permalink to this headline">#</a></h3>
+<h3>Multi-output inducing variables class diagram<a class="headerlink" href="#Multi-output-inducing-variables-class-diagram" title="Permalink to this heading">#</a></h3>
 <p><img alt="Multi-output features" src="../../_images/multioutput_features.svg" /></p>
 <section id="Inducing-points">
-<h4>Inducing points<a class="headerlink" href="#Inducing-points" title="Permalink to this headline">#</a></h4>
+<h4>Inducing points<a class="headerlink" href="#Inducing-points" title="Permalink to this heading">#</a></h4>
 <p>The goal of this class is to provide inducing variables that can be used with <em>any</em> kernel, even if the method ends up being slow.</p>
 <p>The multiouput framework extends <code class="docutils literal notranslate"><span class="pre">InducingPoints</span></code> to work with multi-output kernels. Just like for single-output kernels, we want <code class="docutils literal notranslate"><span class="pre">InducingPoints</span></code> to work for all <code class="docutils literal notranslate"><span class="pre">MultioutputKernel</span></code>s. We do this by defining <code class="docutils literal notranslate"><span class="pre">InducingPoints</span></code> to take <em>all</em> outputs for specific inducing inputs as inducing variables.</p>
 </section>
 <section id="Fallback-shared/separate-independent-inducing-variables">
-<h4>Fallback shared/separate independent inducing variables<a class="headerlink" href="#Fallback-shared/separate-independent-inducing-variables" title="Permalink to this headline">#</a></h4>
+<h4>Fallback shared/separate independent inducing variables<a class="headerlink" href="#Fallback-shared/separate-independent-inducing-variables" title="Permalink to this heading">#</a></h4>
 <p>The goal of these classes is to provide a reasonably efficient implementation for kernels that give exploitable independence structure in the prior of inducing variables (that is, subclasses of <code class="docutils literal notranslate"><span class="pre">IndependentLatent</span></code>), while only needing to implement <code class="docutils literal notranslate"><span class="pre">Kuu()</span></code> and <code class="docutils literal notranslate"><span class="pre">Kuf()</span></code> methods.</p>
 </section>
 <section id="Shared/separate-independent-inducing-variables">
-<h4>Shared/separate independent inducing variables<a class="headerlink" href="#Shared/separate-independent-inducing-variables" title="Permalink to this headline">#</a></h4>
+<h4>Shared/separate independent inducing variables<a class="headerlink" href="#Shared/separate-independent-inducing-variables" title="Permalink to this heading">#</a></h4>
 <p>The goal of these classes is to provide the most efficient code path for kernels that allow exploiting independence structure in the prior of inducing variables.</p>
 <p>For more specialized multi-output kernels (i.e. <code class="docutils literal notranslate"><span class="pre">{Shared|Separate}Independent</span></code> or <code class="docutils literal notranslate"><span class="pre">LinearCoregionalization</span></code>) we define <code class="docutils literal notranslate"><span class="pre">{Shared|Separate}IndependentInducingVariables</span></code>. These wrap (a list of) single-output inducing variables to define groups of a-priori independent inducing variables, which leads to a <span class="math notranslate nohighlight">\(\mathbf{K}_{\bf uu}\)</span> that can be represented as a <code class="docutils literal notranslate"><span class="pre">[L,</span> <span class="pre">M,</span> <span class="pre">M]</span></code> tensor. We saw the use of these previously.</p>
 <p><code class="docutils literal notranslate"><span class="pre">{Shared|Separate}IndependentInducingVariables</span></code> inherit from <code class="docutils literal notranslate"><span class="pre">Fallback{Shared|Separate}IndependentInducingVariables</span></code>, so the multiple dispatch will fall back on the slower but general implementation.</p>
 </section>
 </section>
 <section id="Implemented-combinations">
-<h3>Implemented combinations<a class="headerlink" href="#Implemented-combinations" title="Permalink to this headline">#</a></h3>
+<h3>Implemented combinations<a class="headerlink" href="#Implemented-combinations" title="Permalink to this heading">#</a></h3>
 <p>Multiple dispatch is applied to both <code class="docutils literal notranslate"><span class="pre">Kuu()</span></code>, <code class="docutils literal notranslate"><span class="pre">Kuf()</span></code>, and <code class="docutils literal notranslate"><span class="pre">conditional()</span></code>. The return values of the covariances can therefore be tailored to a specific implementation of <code class="docutils literal notranslate"><span class="pre">conditional()</span></code>. The following table lists combinations which are currently available in GPflow. Thanks to the multiple dispatch code, implementing your own outside of GPflow should require only a small amount of code!</p>
 <table class="table">
-<colgroup>
-<col style="width: 11%" />
-<col style="width: 6%" />
-<col style="width: 3%" />
-<col style="width: 3%" />
-<col style="width: 9%" />
-<col style="width: 69%" />
-</colgroup>
 <thead>
 <tr class="row-odd"><th class="head"><p>Inducing variable class</p></th>
 <th class="head"><p>Kernel</p></th>
@@ -17297,7 +17303,7 @@ which calls <code class="docutils literal notranslate"><span class="pre">base_co
 </section>
 </section>
 <section id="Debugging:-introspect">
-<h2>Debugging: introspect<a class="headerlink" href="#Debugging:-introspect" title="Permalink to this headline">#</a></h2>
+<h2>Debugging: introspect<a class="headerlink" href="#Debugging:-introspect" title="Permalink to this heading">#</a></h2>
 <p>Given all these possibilities it can be hard to determine which conditional will be called for which set of kernel and inducing variable. The following method lets you proactively introspect which implementation will be executed. This can be useful when debugging new code.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[28]:
@@ -17339,12 +17345,12 @@ which calls <code class="docutils literal notranslate"><span class="pre">base_co
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-&lt;code object shared_independent_conditional at 0x7f62536b0870, file &#34;/home/circleci/project/gpflow/conditionals/multioutput/conditionals.py&#34;, line 44&gt;
+&lt;code object shared_independent_conditional at 0x7f1e652e8870, file &#34;/home/circleci/project/gpflow/conditionals/multioutput/conditionals.py&#34;, line 44&gt;
 </pre></div></div>
 </div>
 </section>
 <section id="Further-Reading:">
-<h2>Further Reading:<a class="headerlink" href="#Further-Reading:" title="Permalink to this headline">#</a></h2>
+<h2>Further Reading:<a class="headerlink" href="#Further-Reading:" title="Permalink to this heading">#</a></h2>
 <ul class="simple">
 <li><p><a class="reference internal" href="coregionalisation.html"><span class="doc">A simple demonstration of coregionalization</span></a>, which details other GPflow features for multi-output prediction without fully observed outputs.</p></li>
 </ul>
@@ -17352,33 +17358,35 @@ which calls <code class="docutils literal notranslate"><span class="pre">base_co
 </section>
 
 
-              </div>
+              </article>
               
-              
-          </main>
-          
 
+              
+          </div>
+          
       </div>
     </div>
+
+  
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script src="../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf"></script>
-<footer class="footer mt-5 mt-md-0">
-  <div class="container">
-    
-    <div class="footer-item">
-      <p class="copyright">
+  <script src="../../_static/scripts/pydata-sphinx-theme.js?digest=92025949c220c2e29695"></script>
+
+<footer class="bd-footer"><div class="bd-footer__inner container">
+  
+  <div class="footer-item">
+    <p class="copyright">
     &copy; Copyright 2022, The GPflow Contributors.<br>
 </p>
-    </div>
-    
-    <div class="footer-item">
-      <p class="sphinx-version">
-Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.5.0.<br>
-</p>
-    </div>
-    
   </div>
+  
+  <div class="footer-item">
+    <p class="sphinx-version">
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 5.0.1.<br>
+</p>
+  </div>
+  
+</div>
 </footer>
   </body>
 </html>

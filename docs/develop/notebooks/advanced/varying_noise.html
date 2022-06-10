@@ -1,18 +1,22 @@
 
 <!DOCTYPE html>
 
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
     <title>Gaussian process regression with varying output noise &#8212; GPflow 2.5.2 documentation</title>
-    
-  <!-- Loaded before other Sphinx assets -->
-  <link href="../../_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
-<link href="../../_static/styles/pydata-sphinx-theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
+<script>
+  document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+  document.documentElement.dataset.theme = localStorage.getItem("theme") || "light"
+</script>
 
-    
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=92025949c220c2e29695" rel="stylesheet">
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=92025949c220c2e29695" rel="stylesheet">
+
+
   <link rel="stylesheet"
     href="../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
   <link rel="preload" as="font" type="font/woff2" crossorigin
@@ -22,13 +26,14 @@
 
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/pydata-custom.css" />
-    
+
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf">
+  <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=92025949c220c2e29695">
 
     <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
     <script src="../../_static/jquery.js"></script>
     <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="../../_static/doctools.js"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="https://unpkg.com/@jupyter-widgets/html-manager@^0.20.1/dist/embed-amd.js"></script>
@@ -38,34 +43,41 @@
     <link rel="search" title="Search" href="../../search.html" />
     <link rel="next" title="Custom mean functions: metalearning with GPs" href="../tailor/external-mean-function.html" />
     <link rel="prev" title="Variational Fourier Features in the GPflow framework" href="variational_fourier_features.html" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="docsearch:language" content="None">
-    
-
-    <!-- Google Analytics -->
-    
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="docsearch:language" content="en">
   </head>
-  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="60">
-    
-    <div class="container-fluid" id="banner"></div>
+  
+  
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="180" data-default-mode="">
+    <div class="bd-header-announcement container-fluid" id="banner">
+      
+
+    </div>
 
     
-    <nav class="navbar navbar-light navbar-expand-lg bg-light fixed-top bd-navbar" id="navbar-main"><div class="container-xl">
+    <nav class="bd-header navbar navbar-light navbar-expand-lg bg-light fixed-top bd-navbar" id="navbar-main"><div class="bd-header__inner container-xl">
 
   <div id="navbar-start">
     
     
+  
 
-<a class="navbar-brand" href="../../index.html">
-  <img src="../../_static/gpflow_logo.svg" class="logo" alt="logo">
+
+<a class="navbar-brand logo" href="../../index.html">
+  
+  
+  
+  
+    <img src="../../_static/gpflow_logo.svg" class="logo__image only-light" alt="Logo image">
+    <img src="../../_static/gpflow_logo.svg" class="logo__image only-dark" alt="Logo image">
+  
+  
 </a>
-
-
     
   </div>
 
   <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar-collapsible" aria-controls="navbar-collapsible" aria-expanded="false" aria-label="Toggle navigation">
-    <span class="navbar-toggler-icon"></span>
+    <span class="fas fa-bars"></span>
   </button>
 
   
@@ -126,7 +138,7 @@
       
       <div class="navbar-end-item">
         <div class="dropdown" id="version_switcher">
-    <button type="button" class="btn btn-primary btn-sm navbar-btn dropdown-toggle" id="version_switcher_button" data-toggle="dropdown">
+    <button type="button" class="btn btn-sm navbar-btn dropdown-toggle" id="version_switcher_button" data-toggle="dropdown">
         develop  <!-- this text may get changed later by javascript -->
         <span class="caret"></span>
     </button>
@@ -166,6 +178,10 @@ function checkPageExistsAndRedirect(event) {
 (function () {
     $.getJSON("https://gpflow.github.io/GPflow/versions.json", function(data, textStatus, jqXHR) {
         const currentFilePath = "notebooks/advanced/varying_noise.html";
+        let btn = document.getElementById("version_switcher_button");
+        // Set empty strings by default so that these attributes exist and can be used in CSS selectors
+        btn.dataset["activeVersionName"] = "";
+        btn.dataset["activeVersion"] = "";
         // create links to the corresponding page in the other docs versions
         $.each(data, function(index, entry) {
             // if no custom name specified (e.g., "latest"), use version string
@@ -193,7 +209,6 @@ function checkPageExistsAndRedirect(event) {
             // version's entry
             if (entry.version == "develop") {
                 node.classList.add("active");
-                let btn = document.getElementById("version_switcher_button");
                 btn.innerText = btn.dataset["activeVersionName"] = entry.name;
                 btn.dataset["activeVersion"] = entry.version;
             }
@@ -209,13 +224,13 @@ function checkPageExistsAndRedirect(event) {
     </nav>
     
 
-    <div class="container-xl">
-      <div class="row">
+    <div class="bd-container container-xl">
+      <div class="bd-container__inner row">
           
-            
-            <!-- Only show if we have sidebars configured, else just a small margin  -->
-            <div class="col-12 col-md-3 bd-sidebar">
-              <div class="sidebar-start-items"><form class="bd-search d-flex align-items-center" action="../../search.html" method="get">
+
+<!-- Only show if we have sidebars configured, else just a small margin  -->
+<div class="bd-sidebar-primary col-12 col-md-3 bd-sidebar">
+  <div class="sidebar-start-items"><form class="bd-search d-flex align-items-center" action="../../search.html" method="get">
   <i class="icon fas fa-search"></i>
   <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
 </form><nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
@@ -413,19 +428,20 @@ function checkPageExistsAndRedirect(event) {
 
   </div>
 </nav>
-              </div>
-              <div class="sidebar-end-items">
-              </div>
-            </div>
-            
-          
+  </div>
+  <div class="sidebar-end-items">
+  </div>
+</div>
+
 
           
-          <div class="d-none d-xl-block col-xl-2 bd-toc">
-            
-              
-              <div class="toc-item">
-                
+
+
+<div class="bd-sidebar-secondary d-none d-xl-block col-xl-2 bd-toc">
+  
+    
+    <div class="toc-item">
+      
 <div class="tocsection onthispage mt-5 pt-1 pb-3">
     <i class="fas fa-list"></i> On this page
 </div>
@@ -504,23 +520,21 @@ function checkPageExistsAndRedirect(event) {
 </ul>
 
 </nav>
-              </div>
-              
-              <div class="toc-item">
-                
-              </div>
-              
-            
-          </div>
-          
+    </div>
+    
+    <div class="toc-item">
+      
+    </div>
+    
+  
+</div>
+
 
           
           
-            
-          
-          <main class="col-12 col-md-9 col-xl-7 py-md-5 pl-md-5 pr-md-4 bd-content" role="main">
+          <div class="bd-content col-12 col-md-9 col-xl-7">
               
-              <div>
+              <article class="bd-article" role="main">
                 
   
 <style>
@@ -779,7 +793,7 @@ div.rendered_html tbody tr:hover {
 }
 </style>
 <section id="Gaussian-process-regression-with-varying-output-noise">
-<h1>Gaussian process regression with varying output noise<a class="headerlink" href="#Gaussian-process-regression-with-varying-output-noise" title="Permalink to this headline">#</a></h1>
+<h1>Gaussian process regression with varying output noise<a class="headerlink" href="#Gaussian-process-regression-with-varying-output-noise" title="Permalink to this heading">#</a></h1>
 <p>This notebook shows how to construct a Gaussian process model where different noise is assumed for different data points. The model is:</p>
 <p><span class="math">\begin{align}
 f(\cdot) &\sim \mathcal{GP}\big(0, k(\cdot, \cdot)\big) \\
@@ -808,16 +822,16 @@ y_i | f, x_i &\sim \mathcal N\big(y_i; f(x_i), \sigma^2_i\big)
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2022-06-07 09:05:14.978346: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcudart.so.11.0&#39;; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory
-2022-06-07 09:05:14.978375: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.
+2022-06-10 06:45:38.845312: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcudart.so.11.0&#39;; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory
+2022-06-10 06:45:38.845346: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.
 /home/circleci/project/gpflow/experimental/utils.py:42: UserWarning: You&#39;re calling gpflow.experimental.check_shapes.decorator.check_shapes which is considered *experimental*. Expect: breaking changes, poor documentation, and bugs.
   warn(
 </pre></div></div>
 </div>
 <section id="Demo-1:-known-noise-variances">
-<h2>Demo 1: known noise variances<a class="headerlink" href="#Demo-1:-known-noise-variances" title="Permalink to this headline">#</a></h2>
+<h2>Demo 1: known noise variances<a class="headerlink" href="#Demo-1:-known-noise-variances" title="Permalink to this heading">#</a></h2>
 <section id="Generate-synthetic-data">
-<h3>Generate synthetic data<a class="headerlink" href="#Generate-synthetic-data" title="Permalink to this headline">#</a></h3>
+<h3>Generate synthetic data<a class="headerlink" href="#Generate-synthetic-data" title="Permalink to this heading">#</a></h3>
 <p>We create a utility function to generate synthetic data, including noise that varies amongst the data:</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
@@ -865,7 +879,7 @@ y_i | f, x_i &\sim \mathcal N\big(y_i; f(x_i), \sigma^2_i\big)
 </div>
 </section>
 <section id="Make-a-Y-matrix-that-includes-the-variances">
-<h3>Make a Y matrix that includes the variances<a class="headerlink" href="#Make-a-Y-matrix-that-includes-the-variances" title="Permalink to this headline">#</a></h3>
+<h3>Make a Y matrix that includes the variances<a class="headerlink" href="#Make-a-Y-matrix-that-includes-the-variances" title="Permalink to this heading">#</a></h3>
 <p>We need to tell the GP model what the variance is for each data point. To do this, we’ll concatenate the observations with the variances into a single data matrix:</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
@@ -877,7 +891,7 @@ y_i | f, x_i &\sim \mathcal N\big(y_i; f(x_i), \sigma^2_i\big)
 </div>
 </section>
 <section id="Make-a-new-likelihood">
-<h3>Make a new likelihood<a class="headerlink" href="#Make-a-new-likelihood" title="Permalink to this headline">#</a></h3>
+<h3>Make a new likelihood<a class="headerlink" href="#Make-a-new-likelihood" title="Permalink to this heading">#</a></h3>
 <p>To cope with this data structure, we’ll build a new likelihood. Note how the code extracts the observations <code class="docutils literal notranslate"><span class="pre">Y</span></code> and the variances <code class="docutils literal notranslate"><span class="pre">NoiseVar</span></code> from the data. For more information on creating new likelihoods, see <a class="reference internal" href="../tailor/likelihood_design.html"><span class="doc">Likelihood design</span></a>. Here, we’re implementing the <code class="docutils literal notranslate"><span class="pre">log_prob</span></code> function (which computes the log-probability of the data given the latent function) and <code class="docutils literal notranslate"><span class="pre">variational_expectations</span></code>, which computes the expected log-probability under a Gaussian
 distribution on the function, and is needed in the evaluation of the evidence lower bound (ELBO). Check out the docstring for the <code class="docutils literal notranslate"><span class="pre">Likelihood</span></code> object for more information on what these functions do.</p>
 <div class="nbinput nblast docutils container">
@@ -919,7 +933,7 @@ distribution on the function, and is needed in the evaluation of the evidence lo
 </div>
 </section>
 <section id="Put-it-together-with-Variational-Gaussian-Process-(VGP)">
-<h3>Put it together with Variational Gaussian Process (VGP)<a class="headerlink" href="#Put-it-together-with-Variational-Gaussian-Process-(VGP)" title="Permalink to this headline">#</a></h3>
+<h3>Put it together with Variational Gaussian Process (VGP)<a class="headerlink" href="#Put-it-together-with-Variational-Gaussian-Process-(VGP)" title="Permalink to this heading">#</a></h3>
 <p>Here we’ll build a variational GP model with the previous likelihood on the dataset that we generated. We’ll use the natural gradient optimizer (see <a class="reference internal" href="natural_gradients.html"><span class="doc">Natural gradients</span></a> for more information).</p>
 <p>The variational GP object is capable of variational inference with any GPflow-derived likelihood. Usually, the inference is an inexact (but pretty good) approximation, but in the special case considered here, where the noise is Gaussian, it will achieve exact inference. Optimizing over the variational parameters is easy using the natural gradients method, which provably converges in a single step.</p>
 <p>Note: We mark the variational parameters as not trainable so that they are not included in the <code class="docutils literal notranslate"><span class="pre">model.trainable_variables</span></code> when we optimize using the Adam optimizer. We train the variational parameters separately using the natural gradient method.</p>
@@ -939,10 +953,10 @@ distribution on the function, and is needed in the evaluation of the evidence lo
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2022-06-07 09:05:18.624461: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcuda.so.1&#39;; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory
-2022-06-07 09:05:18.624495: W tensorflow/stream_executor/cuda/cuda_driver.cc:269] failed call to cuInit: UNKNOWN ERROR (303)
-2022-06-07 09:05:18.624515: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (bb5e1c5f504d): /proc/driver/nvidia/version does not exist
-2022-06-07 09:05:18.624808: I tensorflow/core/platform/cpu_feature_guard.cc:151] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA
+2022-06-10 06:45:42.158283: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcuda.so.1&#39;; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory
+2022-06-10 06:45:42.158314: W tensorflow/stream_executor/cuda/cuda_driver.cc:269] failed call to cuInit: UNKNOWN ERROR (303)
+2022-06-10 06:45:42.158334: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (0091ed1183cb): /proc/driver/nvidia/version does not exist
+2022-06-10 06:45:42.158598: I tensorflow/core/platform/cpu_feature_guard.cc:151] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA
 To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.
 /home/circleci/project/gpflow/experimental/utils.py:42: UserWarning: You&#39;re calling gpflow.experimental.check_shapes.checker.ShapeChecker.__init__ which is considered *experimental*. Expect: breaking changes, poor documentation, and bugs.
   warn(
@@ -970,7 +984,7 @@ To enable them in other operations, rebuild TensorFlow with the appropriate comp
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2022-06-07 09:05:18.721945: W tensorflow/python/util/util.cc:368] Sets are not currently considered sequences, but this may change in the future, so consider avoiding using them.
+2022-06-10 06:45:42.246167: W tensorflow/python/util/util.cc:368] Sets are not currently considered sequences, but this may change in the future, so consider avoiding using them.
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
@@ -1009,7 +1023,7 @@ To enable them in other operations, rebuild TensorFlow with the appropriate comp
 </div>
 </section>
 <section id="Questions-for-the-reader">
-<h3>Questions for the reader<a class="headerlink" href="#Questions-for-the-reader" title="Permalink to this headline">#</a></h3>
+<h3>Questions for the reader<a class="headerlink" href="#Questions-for-the-reader" title="Permalink to this heading">#</a></h3>
 <ol class="arabic simple">
 <li><p>What is the difference in meaning between the orange vertical bars and the blue regions in the prediction?</p></li>
 <li><p>Why did we not implement <code class="docutils literal notranslate"><span class="pre">_conditional_mean</span></code> and <code class="docutils literal notranslate"><span class="pre">_conditional_variance</span></code> in the HeteroskedasticGaussian likelihood? What could be done here?</p></li>
@@ -1018,7 +1032,7 @@ To enable them in other operations, rebuild TensorFlow with the appropriate comp
 </section>
 </section>
 <section id="Demo-2:-grouped-noise-variances">
-<h2>Demo 2: grouped noise variances<a class="headerlink" href="#Demo-2:-grouped-noise-variances" title="Permalink to this headline">#</a></h2>
+<h2>Demo 2: grouped noise variances<a class="headerlink" href="#Demo-2:-grouped-noise-variances" title="Permalink to this heading">#</a></h2>
 <p>In this demo, we won’t assume that the noise variances are known, but we will assume that they’re known in two groups. This example represents a case where we might know that an instrument has varying fidelity for different regions, but we do not know what those fidelities are.</p>
 <p>Of course it would be straightforward to add more groups, or even one group per data point. We’ll stick with two for simplicity.</p>
 <div class="nbinput nblast docutils container">
@@ -1030,7 +1044,7 @@ To enable them in other operations, rebuild TensorFlow with the appropriate comp
 </div>
 </div>
 <section id="Generate-data">
-<h3>Generate data<a class="headerlink" href="#Generate-data" title="Permalink to this headline">#</a></h3>
+<h3>Generate data<a class="headerlink" href="#Generate-data" title="Permalink to this heading">#</a></h3>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
 </pre></div>
@@ -1067,7 +1081,7 @@ To enable them in other operations, rebuild TensorFlow with the appropriate comp
 </div>
 </section>
 <section id="Data-structure">
-<h3>Data structure<a class="headerlink" href="#Data-structure" title="Permalink to this headline">#</a></h3>
+<h3>Data structure<a class="headerlink" href="#Data-structure" title="Permalink to this heading">#</a></h3>
 <p>In this case, we need to let the model know which group each data point belongs to. We’ll use a similar trick to the above, stacking the group identifier with the data:</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
@@ -1079,7 +1093,7 @@ To enable them in other operations, rebuild TensorFlow with the appropriate comp
 </div>
 </section>
 <section id="Build-a-likelihood">
-<h3>Build a likelihood<a class="headerlink" href="#Build-a-likelihood" title="Permalink to this headline">#</a></h3>
+<h3>Build a likelihood<a class="headerlink" href="#Build-a-likelihood" title="Permalink to this heading">#</a></h3>
 <p>This time, we’ll use a builtin likelihood, <code class="docutils literal notranslate"><span class="pre">SwitchedLikelihood</span></code>, which is a container for other likelihoods, and applies them to the first <code class="docutils literal notranslate"><span class="pre">Y_data</span></code> column depending on the index in the second. We’re able to access and optimize the parameters of those likelihoods. Here, we’ll (incorrectly) initialize the variances of our likelihoods to 1, to demonstrate how we can recover reasonable values for these through maximum-likelihood estimation.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
@@ -1139,7 +1153,7 @@ To enable them in other operations, rebuild TensorFlow with the appropriate comp
 </div>
 </section>
 <section id="Optimizing-the-noise-variances">
-<h3>Optimizing the noise variances<a class="headerlink" href="#Optimizing-the-noise-variances" title="Permalink to this headline">#</a></h3>
+<h3>Optimizing the noise variances<a class="headerlink" href="#Optimizing-the-noise-variances" title="Permalink to this heading">#</a></h3>
 <p>Here we’ll optimize over both the noise variance and the variational parameters, applying natural gradients interleaved with the Adam optimizer.</p>
 <p>As before, we mark the variational parameters as not trainable, in order to train them separately with the natural gradient method.</p>
 <div class="nbinput nblast docutils container">
@@ -1163,7 +1177,7 @@ To enable them in other operations, rebuild TensorFlow with the appropriate comp
 </div>
 </section>
 <section id="Plotting-the-fitted-model">
-<h3>Plotting the fitted model<a class="headerlink" href="#Plotting-the-fitted-model" title="Permalink to this headline">#</a></h3>
+<h3>Plotting the fitted model<a class="headerlink" href="#Plotting-the-fitted-model" title="Permalink to this heading">#</a></h3>
 <p>Now that the noise variances have been estimated, we can see the final model fit. The predictive variance is higher on the left side of the plot, where we know that the data have different variance. We’ll plot the known underlying function in green to see how effectively we’ve recovered the ground truth. We can also print the model to examine the estimated noise variances:</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
@@ -1224,39 +1238,41 @@ To enable them in other operations, rebuild TensorFlow with the appropriate comp
 </section>
 </section>
 <section id="Further-reading">
-<h2>Further reading<a class="headerlink" href="#Further-reading" title="Permalink to this headline">#</a></h2>
+<h2>Further reading<a class="headerlink" href="#Further-reading" title="Permalink to this heading">#</a></h2>
 <p>To model the variance using a second GP, see the <a class="reference internal" href="heteroskedastic.html"><span class="doc">Heteroskedastic regression notebook</span></a>.</p>
 </section>
 </section>
 
 
-              </div>
+              </article>
               
-              
-          </main>
-          
 
+              
+          </div>
+          
       </div>
     </div>
+
+  
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script src="../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf"></script>
-<footer class="footer mt-5 mt-md-0">
-  <div class="container">
-    
-    <div class="footer-item">
-      <p class="copyright">
+  <script src="../../_static/scripts/pydata-sphinx-theme.js?digest=92025949c220c2e29695"></script>
+
+<footer class="bd-footer"><div class="bd-footer__inner container">
+  
+  <div class="footer-item">
+    <p class="copyright">
     &copy; Copyright 2022, The GPflow Contributors.<br>
 </p>
-    </div>
-    
-    <div class="footer-item">
-      <p class="sphinx-version">
-Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.5.0.<br>
-</p>
-    </div>
-    
   </div>
+  
+  <div class="footer-item">
+    <p class="sphinx-version">
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 5.0.1.<br>
+</p>
+  </div>
+  
+</div>
 </footer>
   </body>
 </html>

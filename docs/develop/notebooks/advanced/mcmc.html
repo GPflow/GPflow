@@ -1,18 +1,22 @@
 
 <!DOCTYPE html>
 
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
     <title>MCMC (Markov Chain Monte Carlo) &#8212; GPflow 2.5.2 documentation</title>
-    
-  <!-- Loaded before other Sphinx assets -->
-  <link href="../../_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
-<link href="../../_static/styles/pydata-sphinx-theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
+<script>
+  document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+  document.documentElement.dataset.theme = localStorage.getItem("theme") || "light"
+</script>
 
-    
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=92025949c220c2e29695" rel="stylesheet">
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=92025949c220c2e29695" rel="stylesheet">
+
+
   <link rel="stylesheet"
     href="../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
   <link rel="preload" as="font" type="font/woff2" crossorigin
@@ -22,13 +26,14 @@
 
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/pydata-custom.css" />
-    
+
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf">
+  <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=92025949c220c2e29695">
 
     <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
     <script src="../../_static/jquery.js"></script>
     <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="../../_static/doctools.js"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="https://unpkg.com/@jupyter-widgets/html-manager@^0.20.1/dist/embed-amd.js"></script>
@@ -38,34 +43,41 @@
     <link rel="search" title="Search" href="../../search.html" />
     <link rel="next" title="Multiclass classification" href="multiclass_classification.html" />
     <link rel="prev" title="Manipulating kernels" href="kernels.html" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="docsearch:language" content="None">
-    
-
-    <!-- Google Analytics -->
-    
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="docsearch:language" content="en">
   </head>
-  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="60">
-    
-    <div class="container-fluid" id="banner"></div>
+  
+  
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="180" data-default-mode="">
+    <div class="bd-header-announcement container-fluid" id="banner">
+      
+
+    </div>
 
     
-    <nav class="navbar navbar-light navbar-expand-lg bg-light fixed-top bd-navbar" id="navbar-main"><div class="container-xl">
+    <nav class="bd-header navbar navbar-light navbar-expand-lg bg-light fixed-top bd-navbar" id="navbar-main"><div class="bd-header__inner container-xl">
 
   <div id="navbar-start">
     
     
+  
 
-<a class="navbar-brand" href="../../index.html">
-  <img src="../../_static/gpflow_logo.svg" class="logo" alt="logo">
+
+<a class="navbar-brand logo" href="../../index.html">
+  
+  
+  
+  
+    <img src="../../_static/gpflow_logo.svg" class="logo__image only-light" alt="Logo image">
+    <img src="../../_static/gpflow_logo.svg" class="logo__image only-dark" alt="Logo image">
+  
+  
 </a>
-
-
     
   </div>
 
   <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar-collapsible" aria-controls="navbar-collapsible" aria-expanded="false" aria-label="Toggle navigation">
-    <span class="navbar-toggler-icon"></span>
+    <span class="fas fa-bars"></span>
   </button>
 
   
@@ -126,7 +138,7 @@
       
       <div class="navbar-end-item">
         <div class="dropdown" id="version_switcher">
-    <button type="button" class="btn btn-primary btn-sm navbar-btn dropdown-toggle" id="version_switcher_button" data-toggle="dropdown">
+    <button type="button" class="btn btn-sm navbar-btn dropdown-toggle" id="version_switcher_button" data-toggle="dropdown">
         develop  <!-- this text may get changed later by javascript -->
         <span class="caret"></span>
     </button>
@@ -166,6 +178,10 @@ function checkPageExistsAndRedirect(event) {
 (function () {
     $.getJSON("https://gpflow.github.io/GPflow/versions.json", function(data, textStatus, jqXHR) {
         const currentFilePath = "notebooks/advanced/mcmc.html";
+        let btn = document.getElementById("version_switcher_button");
+        // Set empty strings by default so that these attributes exist and can be used in CSS selectors
+        btn.dataset["activeVersionName"] = "";
+        btn.dataset["activeVersion"] = "";
         // create links to the corresponding page in the other docs versions
         $.each(data, function(index, entry) {
             // if no custom name specified (e.g., "latest"), use version string
@@ -193,7 +209,6 @@ function checkPageExistsAndRedirect(event) {
             // version's entry
             if (entry.version == "develop") {
                 node.classList.add("active");
-                let btn = document.getElementById("version_switcher_button");
                 btn.innerText = btn.dataset["activeVersionName"] = entry.name;
                 btn.dataset["activeVersion"] = entry.version;
             }
@@ -209,13 +224,13 @@ function checkPageExistsAndRedirect(event) {
     </nav>
     
 
-    <div class="container-xl">
-      <div class="row">
+    <div class="bd-container container-xl">
+      <div class="bd-container__inner row">
           
-            
-            <!-- Only show if we have sidebars configured, else just a small margin  -->
-            <div class="col-12 col-md-3 bd-sidebar">
-              <div class="sidebar-start-items"><form class="bd-search d-flex align-items-center" action="../../search.html" method="get">
+
+<!-- Only show if we have sidebars configured, else just a small margin  -->
+<div class="bd-sidebar-primary col-12 col-md-3 bd-sidebar">
+  <div class="sidebar-start-items"><form class="bd-search d-flex align-items-center" action="../../search.html" method="get">
   <i class="icon fas fa-search"></i>
   <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
 </form><nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
@@ -413,19 +428,20 @@ function checkPageExistsAndRedirect(event) {
 
   </div>
 </nav>
-              </div>
-              <div class="sidebar-end-items">
-              </div>
-            </div>
-            
-          
+  </div>
+  <div class="sidebar-end-items">
+  </div>
+</div>
+
 
           
-          <div class="d-none d-xl-block col-xl-2 bd-toc">
-            
-              
-              <div class="toc-item">
-                
+
+
+<div class="bd-sidebar-secondary d-none d-xl-block col-xl-2 bd-toc">
+  
+    
+    <div class="toc-item">
+      
 <div class="tocsection onthispage mt-5 pt-1 pb-3">
     <i class="fas fa-list"></i> On this page
 </div>
@@ -477,23 +493,21 @@ function checkPageExistsAndRedirect(event) {
 </ul>
 
 </nav>
-              </div>
-              
-              <div class="toc-item">
-                
-              </div>
-              
-            
-          </div>
-          
+    </div>
+    
+    <div class="toc-item">
+      
+    </div>
+    
+  
+</div>
+
 
           
           
-            
-          
-          <main class="col-12 col-md-9 col-xl-7 py-md-5 pl-md-5 pr-md-4 bd-content" role="main">
+          <div class="bd-content col-12 col-md-9 col-xl-7">
               
-              <div>
+              <article class="bd-article" role="main">
                 
   
 <style>
@@ -752,7 +766,7 @@ div.rendered_html tbody tr:hover {
 }
 </style>
 <section id="MCMC-(Markov-Chain-Monte-Carlo)">
-<h1>MCMC (Markov Chain Monte Carlo)<a class="headerlink" href="#MCMC-(Markov-Chain-Monte-Carlo)" title="Permalink to this headline">#</a></h1>
+<h1>MCMC (Markov Chain Monte Carlo)<a class="headerlink" href="#MCMC-(Markov-Chain-Monte-Carlo)" title="Permalink to this heading">#</a></h1>
 <p>GPflow allows you to approximate the posterior over the latent functions of its models (and over the hyperparameters after setting a prior for those) using Hamiltonian Monte Carlo (HMC)</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
@@ -787,8 +801,8 @@ div.rendered_html tbody tr:hover {
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2022-06-07 08:59:51.155334: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcudart.so.11.0&#39;; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory
-2022-06-07 08:59:51.155362: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.
+2022-06-10 06:40:21.264384: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcudart.so.11.0&#39;; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory
+2022-06-10 06:40:21.264412: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.
 /home/circleci/project/gpflow/experimental/utils.py:42: UserWarning: You&#39;re calling gpflow.experimental.check_shapes.decorator.check_shapes which is considered *experimental*. Expect: breaking changes, poor documentation, and bugs.
   warn(
 </pre></div></div>
@@ -800,21 +814,21 @@ div.rendered_html tbody tr:hover {
 <li><p><a class="reference external" href="#Example-3:-Fully-Bayesian-inference-for-generalized-GP-models-with-HMC">Example 3</a>: Full Bayesian inference for Gaussian process models</p></li>
 </ul>
 <section id="Example-1:-GP-regression">
-<h2>Example 1: GP regression<a class="headerlink" href="#Example-1:-GP-regression" title="Permalink to this headline">#</a></h2>
+<h2>Example 1: GP regression<a class="headerlink" href="#Example-1:-GP-regression" title="Permalink to this heading">#</a></h2>
 <p>We first consider the GP regression (with Gaussian noise) for which the marginal likelihood <span class="math notranslate nohighlight">\(p(\mathbf y\,|\,\theta)\)</span> can be computed exactly.</p>
 <p>The GPR model parameterized by <span class="math notranslate nohighlight">\(\theta = [\tau]\)</span> is given by <span class="math">\begin{equation}
 Y_i = f(X_i) + \varepsilon_i
 \end{equation}</span> where <span class="math notranslate nohighlight">\(f \sim \mathcal{GP}(\mu(.), k(., .))\)</span>, and <span class="math notranslate nohighlight">\(\varepsilon \sim \mathcal{N}(0, \tau^2 I)\)</span>.</p>
 <p>See the <a class="reference internal" href="../basics/regression.html"><span class="doc">Basic (Gaussian likelihood) GP regression model</span></a> for more details on GPR and for a treatment of the direct likelihood maximization.</p>
 <section id="Data-for-a-one-dimensional-regression-problem">
-<h3>Data for a one-dimensional regression problem<a class="headerlink" href="#Data-for-a-one-dimensional-regression-problem" title="Permalink to this headline">#</a></h3>
+<h3>Data for a one-dimensional regression problem<a class="headerlink" href="#Data-for-a-one-dimensional-regression-problem" title="Permalink to this heading">#</a></h3>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">RandomState</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
 
-<span class="n">N</span> <span class="o">=</span> <span class="mi">30</span>
+<span class="n">N</span> <span class="o">=</span> <span class="mi">15</span>
 
 
 <span class="k">def</span> <span class="nf">synthetic_data</span><span class="p">(</span><span class="n">num</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">rng</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">RandomState</span><span class="p">):</span>
@@ -843,7 +857,7 @@ Y_i = f(X_i) + \varepsilon_i
 </div>
 </section>
 <section id="MCMC-for-hyperparameters-\theta">
-<h3>MCMC for hyperparameters <span class="math notranslate nohighlight">\(\theta\)</span><a class="headerlink" href="#MCMC-for-hyperparameters-\theta" title="Permalink to this headline">#</a></h3>
+<h3>MCMC for hyperparameters <span class="math notranslate nohighlight">\(\theta\)</span><a class="headerlink" href="#MCMC-for-hyperparameters-\theta" title="Permalink to this heading">#</a></h3>
 <p>We now want to sample from the posterior over <span class="math notranslate nohighlight">\(\theta\)</span>: <span class="math">\begin{equation}
 p(\theta|\mathbf{y}) \propto p(\mathbf{y}|\theta)p(\theta)
 \end{equation}</span></p>
@@ -863,10 +877,10 @@ p(\theta|\mathbf{y}) \propto p(\mathbf{y}|\theta)p(\theta)
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2022-06-07 08:59:53.550254: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcuda.so.1&#39;; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory
-2022-06-07 08:59:53.550285: W tensorflow/stream_executor/cuda/cuda_driver.cc:269] failed call to cuInit: UNKNOWN ERROR (303)
-2022-06-07 08:59:53.550303: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (bb5e1c5f504d): /proc/driver/nvidia/version does not exist
-2022-06-07 08:59:53.550580: I tensorflow/core/platform/cpu_feature_guard.cc:151] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA
+2022-06-10 06:40:23.716274: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcuda.so.1&#39;; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory
+2022-06-10 06:40:23.716301: W tensorflow/stream_executor/cuda/cuda_driver.cc:269] failed call to cuInit: UNKNOWN ERROR (303)
+2022-06-10 06:40:23.716321: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (0091ed1183cb): /proc/driver/nvidia/version does not exist
+2022-06-10 06:40:23.716607: I tensorflow/core/platform/cpu_feature_guard.cc:151] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA
 To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.
 /home/circleci/project/gpflow/experimental/utils.py:42: UserWarning: You&#39;re calling gpflow.experimental.check_shapes.checker.ShapeChecker.__init__ which is considered *experimental*. Expect: breaking changes, poor documentation, and bugs.
   warn(
@@ -889,7 +903,7 @@ To enable them in other operations, rebuild TensorFlow with the appropriate comp
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2022-06-07 08:59:53.589734: W tensorflow/python/util/util.cc:368] Sets are not currently considered sequences, but this may change in the future, so consider avoiding using them.
+2022-06-10 06:40:23.757032: W tensorflow/python/util/util.cc:368] Sets are not currently considered sequences, but this may change in the future, so consider avoiding using them.
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -897,13 +911,13 @@ To enable them in other operations, rebuild TensorFlow with the appropriate comp
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-WARNING:tensorflow:AutoGraph could not transform &lt;function _c3_mro at 0x7f1b5dee2e60&gt; and will run it as-is.
+WARNING:tensorflow:AutoGraph could not transform &lt;function _c3_mro at 0x7ff15293ae60&gt; and will run it as-is.
 Cause: for/else statement not yet supported
 To silence this warning, decorate the function with @tf.autograph.experimental.do_not_convert
-WARNING: AutoGraph could not transform &lt;function _c3_mro at 0x7f1b5dee2e60&gt; and will run it as-is.
+WARNING: AutoGraph could not transform &lt;function _c3_mro at 0x7ff15293ae60&gt; and will run it as-is.
 Cause: for/else statement not yet supported
 To silence this warning, decorate the function with @tf.autograph.experimental.do_not_convert
-log posterior density at optimum: -2.4371366970713524
+log posterior density at optimum: -11.460240793868852
 </pre></div></div>
 </div>
 <p>Thirdly, we add priors to the hyperparameters.</p>
@@ -931,11 +945,11 @@ log posterior density at optimum: -2.4371366970713524
 <tr><th>name                   </th><th>class    </th><th>transform       </th><th>prior  </th><th>trainable  </th><th>shape  </th><th>dtype  </th><th>value               </th></tr>
 </thead>
 <tbody>
-<tr><td>GPR.mean_function.A    </td><td>Parameter</td><td>Identity        </td><td>Normal </td><td>True       </td><td>(1, 1) </td><td>float64</td><td>[[-1.06377032]]     </td></tr>
-<tr><td>GPR.mean_function.b    </td><td>Parameter</td><td>Identity        </td><td>Normal </td><td>True       </td><td>()     </td><td>float64</td><td>3.547460344400593   </td></tr>
-<tr><td>GPR.kernel.variance    </td><td>Parameter</td><td>Softplus        </td><td>Gamma  </td><td>True       </td><td>()     </td><td>float64</td><td>0.9357531803031482  </td></tr>
-<tr><td>GPR.kernel.lengthscales</td><td>Parameter</td><td>Softplus        </td><td>Gamma  </td><td>True       </td><td>()     </td><td>float64</td><td>0.10390237142109002 </td></tr>
-<tr><td>GPR.likelihood.variance</td><td>Parameter</td><td>Softplus + Shift</td><td>Gamma  </td><td>True       </td><td>()     </td><td>float64</td><td>0.005756764054345556</td></tr>
+<tr><td>GPR.mean_function.A    </td><td>Parameter</td><td>Identity        </td><td>Normal </td><td>True       </td><td>(1, 1) </td><td>float64</td><td>[[-0.79273871]]     </td></tr>
+<tr><td>GPR.mean_function.b    </td><td>Parameter</td><td>Identity        </td><td>Normal </td><td>True       </td><td>()     </td><td>float64</td><td>3.3783916339450335  </td></tr>
+<tr><td>GPR.kernel.variance    </td><td>Parameter</td><td>Softplus        </td><td>Gamma  </td><td>True       </td><td>()     </td><td>float64</td><td>0.8535572417463158  </td></tr>
+<tr><td>GPR.kernel.lengthscales</td><td>Parameter</td><td>Softplus        </td><td>Gamma  </td><td>True       </td><td>()     </td><td>float64</td><td>0.07944856776432568 </td></tr>
+<tr><td>GPR.likelihood.variance</td><td>Parameter</td><td>Softplus + Shift</td><td>Gamma  </td><td>True       </td><td>()     </td><td>float64</td><td>0.016521436772623972</td></tr>
 </tbody>
 </table></div>
 </div>
@@ -945,7 +959,7 @@ log posterior density at optimum: -2.4371366970713524
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">num_burnin_steps</span> <span class="o">=</span> <span class="n">ci_niter</span><span class="p">(</span><span class="mi">300</span><span class="p">)</span>
-<span class="n">num_samples</span> <span class="o">=</span> <span class="n">ci_niter</span><span class="p">(</span><span class="mi">500</span><span class="p">)</span>
+<span class="n">num_samples</span> <span class="o">=</span> <span class="n">ci_niter</span><span class="p">(</span><span class="mi">1000</span><span class="p">)</span>
 
 <span class="c1"># Note that here we need model.trainable_parameters, not trainable_variables - only parameters can have priors!</span>
 <span class="n">hmc_helper</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">optimizers</span><span class="o">.</span><span class="n">SamplingHelper</span><span class="p">(</span>
@@ -1137,10 +1151,11 @@ log posterior density at optimum: -2.4371366970713524
 <img alt="../../_images/notebooks_advanced_mcmc_23_0.png" src="../../_images/notebooks_advanced_mcmc_23_0.png" />
 </div>
 </div>
+<p>This example demonstrates the multi-modality of the true posterior over hyperparameters: the data could be explained both by long lengthscale, small signal variance, and high noise variance, as well as by shorter lengthscale, higher signal variance, and low noise variance.</p>
 </section>
 </section>
 <section id="Example-2:-Sparse-MC-for-multiclass-classification">
-<h2>Example 2: Sparse MC for multiclass classification<a class="headerlink" href="#Example-2:-Sparse-MC-for-multiclass-classification" title="Permalink to this headline">#</a></h2>
+<h2>Example 2: Sparse MC for multiclass classification<a class="headerlink" href="#Example-2:-Sparse-MC-for-multiclass-classification" title="Permalink to this heading">#</a></h2>
 <p>We now consider the multiclass classification problem (see the <a class="reference internal" href="multiclass_classification.html"><span class="doc">Multiclass classification</span></a> notebook). Here the marginal likelihood is not available in closed form. Instead we use a sparse variational approximation where we approximate the posterior for each GP as <span class="math notranslate nohighlight">\(q(f_c) \propto p(f_c|\mathbf{u}_c)q(\mathbf{u}_c)\)</span></p>
 <p>In the standard Sparse Variational GP (SVGP) formulation, <span class="math notranslate nohighlight">\(q(\mathbf{u_c})\)</span> is parameterized as a multivariate Gaussian.</p>
 <p>An alternative is to directly sample from the optimal <span class="math notranslate nohighlight">\(q(\mathbf{u}_c)\)</span>; this is what Sparse Variational GP using MCMC (SGPMC) does.</p>
@@ -1191,7 +1206,7 @@ log posterior density at optimum: -2.4371366970713524
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../../_images/notebooks_advanced_mcmc_28_0.png" src="../../_images/notebooks_advanced_mcmc_28_0.png" />
+<img alt="../../_images/notebooks_advanced_mcmc_29_0.png" src="../../_images/notebooks_advanced_mcmc_29_0.png" />
 </div>
 </div>
 <p>We then build the SGPMC model.</p>
@@ -1313,7 +1328,7 @@ log posterior density at optimum: -79.76549027468613
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../../_images/notebooks_advanced_mcmc_37_0.png" src="../../_images/notebooks_advanced_mcmc_37_0.png" />
+<img alt="../../_images/notebooks_advanced_mcmc_38_0.png" src="../../_images/notebooks_advanced_mcmc_38_0.png" />
 </div>
 </div>
 <p>You can also display the sequence of sampled hyperparameters.</p>
@@ -1338,12 +1353,12 @@ log posterior density at optimum: -79.76549027468613
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../../_images/notebooks_advanced_mcmc_39_0.png" src="../../_images/notebooks_advanced_mcmc_39_0.png" />
+<img alt="../../_images/notebooks_advanced_mcmc_40_0.png" src="../../_images/notebooks_advanced_mcmc_40_0.png" />
 </div>
 </div>
 </section>
 <section id="Example-3:-Fully-Bayesian-inference-for-generalized-GP-models-with-HMC">
-<h2>Example 3: Fully Bayesian inference for generalized GP models with HMC<a class="headerlink" href="#Example-3:-Fully-Bayesian-inference-for-generalized-GP-models-with-HMC" title="Permalink to this headline">#</a></h2>
+<h2>Example 3: Fully Bayesian inference for generalized GP models with HMC<a class="headerlink" href="#Example-3:-Fully-Bayesian-inference-for-generalized-GP-models-with-HMC" title="Permalink to this heading">#</a></h2>
 <p>You can construct very flexible models with Gaussian processes by combining them with different likelihoods (sometimes called ‘families’ in the GLM literature). This makes inference of the GP intractable because the likelihoods are not generally conjugate to the Gaussian process. The general form of the model is <span class="math">\begin{align}
 \theta &\sim p(\theta) \\
 f &\sim \mathcal {GP}(m(x; \theta),\, k(x, x'; \theta)) \\
@@ -1359,7 +1374,7 @@ y_i &\sim p(y | g(f(x_i))\,.
 \end{align}</span></p>
 <p>Joint HMC over <span class="math notranslate nohighlight">\(v\)</span> and the function values is not widely adopted in the literature because of the difficulty in differentiating <span class="math notranslate nohighlight">\(LL^\top=K\)</span>. We’ve made this derivative available in TensorFlow, and so application of HMC is relatively straightforward.</p>
 <section id="Exponential-Regression">
-<h3>Exponential Regression<a class="headerlink" href="#Exponential-Regression" title="Permalink to this headline">#</a></h3>
+<h3>Exponential Regression<a class="headerlink" href="#Exponential-Regression" title="Permalink to this heading">#</a></h3>
 <p>We consider an exponential regression model: <span class="math">\begin{align}
 \theta &\sim p(\theta) \\
 f &\sim \mathcal {GP}(0, k(x, x'; \theta)) \\
@@ -1391,7 +1406,7 @@ y_i &\sim \mathcal {Exp} (e^{f_i})
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../../_images/notebooks_advanced_mcmc_43_0.png" src="../../_images/notebooks_advanced_mcmc_43_0.png" />
+<img alt="../../_images/notebooks_advanced_mcmc_44_0.png" src="../../_images/notebooks_advanced_mcmc_44_0.png" />
 </div>
 </div>
 <p>GPflow’s model for fully-Bayesian MCMC is called GPMC. It’s constructed like any other model, but contains a parameter <code class="docutils literal notranslate"><span class="pre">V</span></code> which represents the centered values of the function.</p>
@@ -1528,7 +1543,7 @@ y_i &\sim \mathcal {Exp} (e^{f_i})
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../../_images/notebooks_advanced_mcmc_55_0.png" src="../../_images/notebooks_advanced_mcmc_55_0.png" />
+<img alt="../../_images/notebooks_advanced_mcmc_56_0.png" src="../../_images/notebooks_advanced_mcmc_56_0.png" />
 </div>
 </div>
 <p>You can also display the sequence of sampled hyperparameters.</p>
@@ -1559,7 +1574,7 @@ y_i &\sim \mathcal {Exp} (e^{f_i})
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../../_images/notebooks_advanced_mcmc_57_0.png" src="../../_images/notebooks_advanced_mcmc_57_0.png" />
+<img alt="../../_images/notebooks_advanced_mcmc_58_0.png" src="../../_images/notebooks_advanced_mcmc_58_0.png" />
 </div>
 </div>
 <p>You can also inspect the marginal of the posterior samples.</p>
@@ -1579,13 +1594,13 @@ y_i &\sim \mathcal {Exp} (e^{f_i})
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../../_images/notebooks_advanced_mcmc_59_0.png" src="../../_images/notebooks_advanced_mcmc_59_0.png" />
+<img alt="../../_images/notebooks_advanced_mcmc_60_0.png" src="../../_images/notebooks_advanced_mcmc_60_0.png" />
 </div>
 </div>
 </section>
 </section>
 <section id="Prior-on-constrained-and-unconstrained-parameters">
-<h2>Prior on constrained and unconstrained parameters<a class="headerlink" href="#Prior-on-constrained-and-unconstrained-parameters" title="Permalink to this headline">#</a></h2>
+<h2>Prior on constrained and unconstrained parameters<a class="headerlink" href="#Prior-on-constrained-and-unconstrained-parameters" title="Permalink to this heading">#</a></h2>
 <p>GPflow’s <code class="docutils literal notranslate"><span class="pre">Parameter</span></code> class provides options for setting a prior. <code class="docutils literal notranslate"><span class="pre">Parameter</span></code> wraps a constrained tensor and provides computation of the gradient with respect to unconstrained transformation of that tensor. The user can set a prior either in <strong>constrained</strong> space or <strong>unconstrained</strong> space.</p>
 <p>By default, the prior for the <code class="docutils literal notranslate"><span class="pre">Parameter</span></code> is set on the <em>constrained</em> space. To explicitly set the space on which the prior is defined, use the <code class="docutils literal notranslate"><span class="pre">prior_on</span></code> keyword argument:</p>
 <div class="nbinput nblast docutils container">
@@ -1688,47 +1703,49 @@ y_i &\sim \mathcal {Exp} (e^{f_i})
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../../_images/notebooks_advanced_mcmc_68_0.png" src="../../_images/notebooks_advanced_mcmc_68_0.png" />
+<img alt="../../_images/notebooks_advanced_mcmc_69_0.png" src="../../_images/notebooks_advanced_mcmc_69_0.png" />
 </div>
 </div>
 <div class="nboutput nblast docutils container">
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../../_images/notebooks_advanced_mcmc_68_1.png" src="../../_images/notebooks_advanced_mcmc_68_1.png" />
+<img alt="../../_images/notebooks_advanced_mcmc_69_1.png" src="../../_images/notebooks_advanced_mcmc_69_1.png" />
 </div>
 </div>
 </section>
 </section>
 
 
-              </div>
+              </article>
               
+
               
-          </main>
+          </div>
           
-
       </div>
     </div>
+
+  
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script src="../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf"></script>
-<footer class="footer mt-5 mt-md-0">
-  <div class="container">
-    
-    <div class="footer-item">
-      <p class="copyright">
+  <script src="../../_static/scripts/pydata-sphinx-theme.js?digest=92025949c220c2e29695"></script>
+
+<footer class="bd-footer"><div class="bd-footer__inner container">
+  
+  <div class="footer-item">
+    <p class="copyright">
     &copy; Copyright 2022, The GPflow Contributors.<br>
 </p>
-    </div>
-    
-    <div class="footer-item">
-      <p class="sphinx-version">
-Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.5.0.<br>
-</p>
-    </div>
-    
   </div>
+  
+  <div class="footer-item">
+    <p class="sphinx-version">
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 5.0.1.<br>
+</p>
+  </div>
+  
+</div>
 </footer>
   </body>
 </html>

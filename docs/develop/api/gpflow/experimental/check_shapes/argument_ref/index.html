@@ -1,18 +1,22 @@
 
 <!DOCTYPE html>
 
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
     <title>gpflow.experimental.check_shapes.argument_ref &#8212; GPflow 2.5.2 documentation</title>
-    
-  <!-- Loaded before other Sphinx assets -->
-  <link href="../../../../../_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
-<link href="../../../../../_static/styles/pydata-sphinx-theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
+<script>
+  document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+  document.documentElement.dataset.theme = localStorage.getItem("theme") || "light"
+</script>
 
-    
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../../../_static/styles/theme.css?digest=92025949c220c2e29695" rel="stylesheet">
+<link href="../../../../../_static/styles/pydata-sphinx-theme.css?digest=92025949c220c2e29695" rel="stylesheet">
+
+
   <link rel="stylesheet"
     href="../../../../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
   <link rel="preload" as="font" type="font/woff2" crossorigin
@@ -22,13 +26,14 @@
 
     <link rel="stylesheet" type="text/css" href="../../../../../_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="../../../../../_static/pydata-custom.css" />
-    
+
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../../../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf">
+  <link rel="preload" as="script" href="../../../../../_static/scripts/pydata-sphinx-theme.js?digest=92025949c220c2e29695">
 
     <script data-url_root="../../../../../" id="documentation_options" src="../../../../../_static/documentation_options.js"></script>
     <script src="../../../../../_static/jquery.js"></script>
     <script src="../../../../../_static/underscore.js"></script>
+    <script src="../../../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="../../../../../_static/doctools.js"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="https://unpkg.com/@jupyter-widgets/html-manager@^0.20.1/dist/embed-amd.js"></script>
@@ -36,34 +41,41 @@
     <link rel="search" title="Search" href="../../../../../search.html" />
     <link rel="next" title="gpflow.experimental.check_shapes.bool_specs" href="../bool_specs/index.html" />
     <link rel="prev" title="gpflow.experimental.check_shapes.accessors" href="../accessors/index.html" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="docsearch:language" content="None">
-    
-
-    <!-- Google Analytics -->
-    
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="docsearch:language" content="en">
   </head>
-  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="60">
-    
-    <div class="container-fluid" id="banner"></div>
+  
+  
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="180" data-default-mode="">
+    <div class="bd-header-announcement container-fluid" id="banner">
+      
+
+    </div>
 
     
-    <nav class="navbar navbar-light navbar-expand-lg bg-light fixed-top bd-navbar" id="navbar-main"><div class="container-xl">
+    <nav class="bd-header navbar navbar-light navbar-expand-lg bg-light fixed-top bd-navbar" id="navbar-main"><div class="bd-header__inner container-xl">
 
   <div id="navbar-start">
     
     
+  
 
-<a class="navbar-brand" href="../../../../../index.html">
-  <img src="../../../../../_static/gpflow_logo.svg" class="logo" alt="logo">
+
+<a class="navbar-brand logo" href="../../../../../index.html">
+  
+  
+  
+  
+    <img src="../../../../../_static/gpflow_logo.svg" class="logo__image only-light" alt="Logo image">
+    <img src="../../../../../_static/gpflow_logo.svg" class="logo__image only-dark" alt="Logo image">
+  
+  
 </a>
-
-
     
   </div>
 
   <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar-collapsible" aria-controls="navbar-collapsible" aria-expanded="false" aria-label="Toggle navigation">
-    <span class="navbar-toggler-icon"></span>
+    <span class="fas fa-bars"></span>
   </button>
 
   
@@ -124,7 +136,7 @@
       
       <div class="navbar-end-item">
         <div class="dropdown" id="version_switcher">
-    <button type="button" class="btn btn-primary btn-sm navbar-btn dropdown-toggle" id="version_switcher_button" data-toggle="dropdown">
+    <button type="button" class="btn btn-sm navbar-btn dropdown-toggle" id="version_switcher_button" data-toggle="dropdown">
         develop  <!-- this text may get changed later by javascript -->
         <span class="caret"></span>
     </button>
@@ -164,6 +176,10 @@ function checkPageExistsAndRedirect(event) {
 (function () {
     $.getJSON("https://gpflow.github.io/GPflow/versions.json", function(data, textStatus, jqXHR) {
         const currentFilePath = "api/gpflow/experimental/check_shapes/argument_ref/index.html";
+        let btn = document.getElementById("version_switcher_button");
+        // Set empty strings by default so that these attributes exist and can be used in CSS selectors
+        btn.dataset["activeVersionName"] = "";
+        btn.dataset["activeVersion"] = "";
         // create links to the corresponding page in the other docs versions
         $.each(data, function(index, entry) {
             // if no custom name specified (e.g., "latest"), use version string
@@ -191,7 +207,6 @@ function checkPageExistsAndRedirect(event) {
             // version's entry
             if (entry.version == "develop") {
                 node.classList.add("active");
-                let btn = document.getElementById("version_switcher_button");
                 btn.innerText = btn.dataset["activeVersionName"] = entry.name;
                 btn.dataset["activeVersion"] = entry.version;
             }
@@ -207,13 +222,13 @@ function checkPageExistsAndRedirect(event) {
     </nav>
     
 
-    <div class="container-xl">
-      <div class="row">
+    <div class="bd-container container-xl">
+      <div class="bd-container__inner row">
           
-            
-            <!-- Only show if we have sidebars configured, else just a small margin  -->
-            <div class="col-12 col-md-3 bd-sidebar">
-              <div class="sidebar-start-items"><form class="bd-search d-flex align-items-center" action="../../../../../search.html" method="get">
+
+<!-- Only show if we have sidebars configured, else just a small margin  -->
+<div class="bd-sidebar-primary col-12 col-md-3 bd-sidebar">
+  <div class="sidebar-start-items"><form class="bd-search d-flex align-items-center" action="../../../../../search.html" method="get">
   <i class="icon fas fa-search"></i>
   <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
 </form><nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
@@ -525,19 +540,20 @@ function checkPageExistsAndRedirect(event) {
 
   </div>
 </nav>
-              </div>
-              <div class="sidebar-end-items">
-              </div>
-            </div>
-            
-          
+  </div>
+  <div class="sidebar-end-items">
+  </div>
+</div>
+
 
           
-          <div class="d-none d-xl-block col-xl-2 bd-toc">
-            
-              
-              <div class="toc-item">
-                
+
+
+<div class="bd-sidebar-secondary d-none d-xl-block col-xl-2 bd-toc">
+  
+    
+    <div class="toc-item">
+      
 <div class="tocsection onthispage mt-5 pt-1 pb-3">
     <i class="fas fa-list"></i> On this page
 </div>
@@ -594,38 +610,36 @@ function checkPageExistsAndRedirect(event) {
 </ul>
 
 </nav>
-              </div>
-              
-              <div class="toc-item">
-                
-              </div>
-              
-            
-          </div>
-          
+    </div>
+    
+    <div class="toc-item">
+      
+    </div>
+    
+  
+</div>
+
 
           
           
-            
-          
-          <main class="col-12 col-md-9 col-xl-7 py-md-5 pl-md-5 pr-md-4 bd-content" role="main">
+          <div class="bd-content col-12 col-md-9 col-xl-7">
               
-              <div>
+              <article class="bd-article" role="main">
                 
   <section id="gpflow-experimental-check-shapes-argument-ref">
-<h1>gpflow.experimental.check_shapes.argument_ref<a class="headerlink" href="#gpflow-experimental-check-shapes-argument-ref" title="Permalink to this headline">#</a></h1>
+<h1>gpflow.experimental.check_shapes.argument_ref<a class="headerlink" href="#gpflow-experimental-check-shapes-argument-ref" title="Permalink to this heading">#</a></h1>
 <span class="target" id="module-gpflow.experimental.check_shapes.argument_ref"></span><p>Code for (de)referencing arguments.</p>
 <section id="classes">
-<h2>Classes<a class="headerlink" href="#classes" title="Permalink to this headline">#</a></h2>
+<h2>Classes<a class="headerlink" href="#classes" title="Permalink to this heading">#</a></h2>
 <section id="gpflow-experimental-check-shapes-argument-ref-allelementsref">
-<h3>gpflow.experimental.check_shapes.argument_ref.AllElementsRef<a class="headerlink" href="#gpflow-experimental-check-shapes-argument-ref-allelementsref" title="Permalink to this headline">#</a></h3>
+<h3>gpflow.experimental.check_shapes.argument_ref.AllElementsRef<a class="headerlink" href="#gpflow-experimental-check-shapes-argument-ref-allelementsref" title="Permalink to this heading">#</a></h3>
 <dl class="py class">
 <dt class="sig sig-object py" id="gpflow.experimental.check_shapes.argument_ref.AllElementsRef">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.experimental.check_shapes.argument_ref.</span></span><span class="sig-name descname"><span class="pre">AllElementsRef</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/gpflow/experimental/check_shapes/argument_ref.html#AllElementsRef"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.experimental.check_shapes.argument_ref.AllElementsRef" title="Permalink to this definition">#</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#gpflow.experimental.check_shapes.argument_ref.DelegatingArgumentRef" title="gpflow.experimental.check_shapes.argument_ref.DelegatingArgumentRef"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.experimental.check_shapes.argument_ref.DelegatingArgumentRef</span></code></a></p>
+<dd><p>Bases: <a class="reference internal" href="#gpflow.experimental.check_shapes.argument_ref.DelegatingArgumentRef" title="gpflow.experimental.check_shapes.argument_ref.DelegatingArgumentRef"><code class="xref py py-class docutils literal notranslate"><span class="pre">DelegatingArgumentRef</span></code></a></p>
 <p>A reference to all elements in a collection.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>source</strong> (<a class="reference internal" href="#gpflow.experimental.check_shapes.argument_ref.ArgumentRef" title="gpflow.experimental.check_shapes.argument_ref.ArgumentRef"><code class="xref py py-class docutils literal notranslate"><span class="pre">ArgumentRef</span></code></a>) – </p>
 </dd>
 </dl>
@@ -634,13 +648,13 @@ function checkPageExistsAndRedirect(event) {
 <span class="sig-name descname"><span class="pre">map_value</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">context</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/gpflow/experimental/check_shapes/argument_ref.html#AllElementsRef.map_value"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.experimental.check_shapes.argument_ref.AllElementsRef.map_value" title="Permalink to this definition">#</a></dt>
 <dd><p>Map this value, from <cite>self.source</cite> to new value(s).</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>value</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>) – </p></li>
 <li><p><strong>context</strong> (<a class="reference internal" href="../index.html#gpflow.experimental.check_shapes.ErrorContext" title="gpflow.experimental.check_shapes.error_contexts.ErrorContext"><code class="xref py py-class docutils literal notranslate"><span class="pre">ErrorContext</span></code></a>) – </p></li>
 </ul>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Iterable</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <a class="reference internal" href="../index.html#gpflow.experimental.check_shapes.ErrorContext" title="gpflow.experimental.check_shapes.error_contexts.ErrorContext"><code class="xref py py-class docutils literal notranslate"><span class="pre">ErrorContext</span></code></a>]]</p>
 </dd>
 </dl>
@@ -650,24 +664,24 @@ function checkPageExistsAndRedirect(event) {
 
 </section>
 <section id="gpflow-experimental-check-shapes-argument-ref-argumentref">
-<h3>gpflow.experimental.check_shapes.argument_ref.ArgumentRef<a class="headerlink" href="#gpflow-experimental-check-shapes-argument-ref-argumentref" title="Permalink to this headline">#</a></h3>
+<h3>gpflow.experimental.check_shapes.argument_ref.ArgumentRef<a class="headerlink" href="#gpflow-experimental-check-shapes-argument-ref-argumentref" title="Permalink to this heading">#</a></h3>
 <dl class="py class">
 <dt class="sig sig-object py" id="gpflow.experimental.check_shapes.argument_ref.ArgumentRef">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.experimental.check_shapes.argument_ref.</span></span><span class="sig-name descname"><span class="pre">ArgumentRef</span></span><a class="reference internal" href="../../../../../_modules/gpflow/experimental/check_shapes/argument_ref.html#ArgumentRef"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.experimental.check_shapes.argument_ref.ArgumentRef" title="Permalink to this definition">#</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">abc.ABC</span></code></p>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ABC</span></code></p>
 <p>A reference to an argument.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="gpflow.experimental.check_shapes.argument_ref.ArgumentRef.get">
 <em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">get</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">arg_map</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">context</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/gpflow/experimental/check_shapes/argument_ref.html#ArgumentRef.get"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.experimental.check_shapes.argument_ref.ArgumentRef.get" title="Permalink to this definition">#</a></dt>
 <dd><p>Get the value(s) of this argument from the given argument map.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>arg_map</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Mapping</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>]) – </p></li>
 <li><p><strong>context</strong> (<a class="reference internal" href="../index.html#gpflow.experimental.check_shapes.ErrorContext" title="gpflow.experimental.check_shapes.error_contexts.ErrorContext"><code class="xref py py-class docutils literal notranslate"><span class="pre">ErrorContext</span></code></a>) – </p></li>
 </ul>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Sequence</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <a class="reference internal" href="../index.html#gpflow.experimental.check_shapes.ErrorContext" title="gpflow.experimental.check_shapes.error_contexts.ErrorContext"><code class="xref py py-class docutils literal notranslate"><span class="pre">ErrorContext</span></code></a>]]</p>
 </dd>
 </dl>
@@ -678,7 +692,7 @@ function checkPageExistsAndRedirect(event) {
 <em class="property"><span class="pre">abstract</span><span class="w"> </span><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">is_result</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#gpflow.experimental.check_shapes.argument_ref.ArgumentRef.is_result" title="Permalink to this definition">#</a></dt>
 <dd><p>Whether this is a reference to the function result.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></p>
 </dd>
 </dl>
@@ -690,7 +704,7 @@ function checkPageExistsAndRedirect(event) {
 <dd><p>Name of the argument this reference eventually starts from.</p>
 <p>Returns <cite>RESULT_TOKEN</cite> if this in an argument to the function result.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></p>
 </dd>
 </dl>
@@ -700,14 +714,14 @@ function checkPageExistsAndRedirect(event) {
 
 </section>
 <section id="gpflow-experimental-check-shapes-argument-ref-attributeargumentref">
-<h3>gpflow.experimental.check_shapes.argument_ref.AttributeArgumentRef<a class="headerlink" href="#gpflow-experimental-check-shapes-argument-ref-attributeargumentref" title="Permalink to this headline">#</a></h3>
+<h3>gpflow.experimental.check_shapes.argument_ref.AttributeArgumentRef<a class="headerlink" href="#gpflow-experimental-check-shapes-argument-ref-attributeargumentref" title="Permalink to this heading">#</a></h3>
 <dl class="py class">
 <dt class="sig sig-object py" id="gpflow.experimental.check_shapes.argument_ref.AttributeArgumentRef">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.experimental.check_shapes.argument_ref.</span></span><span class="sig-name descname"><span class="pre">AttributeArgumentRef</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">attribute_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/gpflow/experimental/check_shapes/argument_ref.html#AttributeArgumentRef"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.experimental.check_shapes.argument_ref.AttributeArgumentRef" title="Permalink to this definition">#</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#gpflow.experimental.check_shapes.argument_ref.DelegatingArgumentRef" title="gpflow.experimental.check_shapes.argument_ref.DelegatingArgumentRef"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.experimental.check_shapes.argument_ref.DelegatingArgumentRef</span></code></a></p>
+<dd><p>Bases: <a class="reference internal" href="#gpflow.experimental.check_shapes.argument_ref.DelegatingArgumentRef" title="gpflow.experimental.check_shapes.argument_ref.DelegatingArgumentRef"><code class="xref py py-class docutils literal notranslate"><span class="pre">DelegatingArgumentRef</span></code></a></p>
 <p>A reference to an attribute on an argument.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>source</strong> (<a class="reference internal" href="#gpflow.experimental.check_shapes.argument_ref.ArgumentRef" title="gpflow.experimental.check_shapes.argument_ref.ArgumentRef"><code class="xref py py-class docutils literal notranslate"><span class="pre">ArgumentRef</span></code></a>) – </p></li>
 <li><p><strong>attribute_name</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>) – </p></li>
@@ -720,10 +734,10 @@ function checkPageExistsAndRedirect(event) {
 <dd><p>Pre-map this error context from <cite>self.source</cite>.</p>
 <p>The mapped value will both be used for error messages and passed to <cite>map_value</cite> above.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>context</strong> (<a class="reference internal" href="../index.html#gpflow.experimental.check_shapes.ErrorContext" title="gpflow.experimental.check_shapes.error_contexts.ErrorContext"><code class="xref py py-class docutils literal notranslate"><span class="pre">ErrorContext</span></code></a>) – </p>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><a class="reference internal" href="../index.html#gpflow.experimental.check_shapes.ErrorContext" title="gpflow.experimental.check_shapes.error_contexts.ErrorContext"><code class="xref py py-class docutils literal notranslate"><span class="pre">ErrorContext</span></code></a></p>
 </dd>
 </dl>
@@ -734,13 +748,13 @@ function checkPageExistsAndRedirect(event) {
 <span class="sig-name descname"><span class="pre">map_value</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">context</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/gpflow/experimental/check_shapes/argument_ref.html#AttributeArgumentRef.map_value"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.experimental.check_shapes.argument_ref.AttributeArgumentRef.map_value" title="Permalink to this definition">#</a></dt>
 <dd><p>Map this value, from <cite>self.source</cite> to new value(s).</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>value</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>) – </p></li>
 <li><p><strong>context</strong> (<a class="reference internal" href="../index.html#gpflow.experimental.check_shapes.ErrorContext" title="gpflow.experimental.check_shapes.error_contexts.ErrorContext"><code class="xref py py-class docutils literal notranslate"><span class="pre">ErrorContext</span></code></a>) – </p></li>
 </ul>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Iterable</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <a class="reference internal" href="../index.html#gpflow.experimental.check_shapes.ErrorContext" title="gpflow.experimental.check_shapes.error_contexts.ErrorContext"><code class="xref py py-class docutils literal notranslate"><span class="pre">ErrorContext</span></code></a>]]</p>
 </dd>
 </dl>
@@ -750,14 +764,14 @@ function checkPageExistsAndRedirect(event) {
 
 </section>
 <section id="gpflow-experimental-check-shapes-argument-ref-delegatingargumentref">
-<h3>gpflow.experimental.check_shapes.argument_ref.DelegatingArgumentRef<a class="headerlink" href="#gpflow-experimental-check-shapes-argument-ref-delegatingargumentref" title="Permalink to this headline">#</a></h3>
+<h3>gpflow.experimental.check_shapes.argument_ref.DelegatingArgumentRef<a class="headerlink" href="#gpflow-experimental-check-shapes-argument-ref-delegatingargumentref" title="Permalink to this heading">#</a></h3>
 <dl class="py class">
 <dt class="sig sig-object py" id="gpflow.experimental.check_shapes.argument_ref.DelegatingArgumentRef">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.experimental.check_shapes.argument_ref.</span></span><span class="sig-name descname"><span class="pre">DelegatingArgumentRef</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/gpflow/experimental/check_shapes/argument_ref.html#DelegatingArgumentRef"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.experimental.check_shapes.argument_ref.DelegatingArgumentRef" title="Permalink to this definition">#</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#gpflow.experimental.check_shapes.argument_ref.ArgumentRef" title="gpflow.experimental.check_shapes.argument_ref.ArgumentRef"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.experimental.check_shapes.argument_ref.ArgumentRef</span></code></a></p>
+<dd><p>Bases: <a class="reference internal" href="#gpflow.experimental.check_shapes.argument_ref.ArgumentRef" title="gpflow.experimental.check_shapes.argument_ref.ArgumentRef"><code class="xref py py-class docutils literal notranslate"><span class="pre">ArgumentRef</span></code></a></p>
 <p>Abstract base class for <a class="reference internal" href="#gpflow.experimental.check_shapes.argument_ref.ArgumentRef" title="gpflow.experimental.check_shapes.argument_ref.ArgumentRef"><code class="xref py py-class docutils literal notranslate"><span class="pre">ArgumentRef</span></code></a>s that delegates to a source.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>source</strong> (<a class="reference internal" href="#gpflow.experimental.check_shapes.argument_ref.ArgumentRef" title="gpflow.experimental.check_shapes.argument_ref.ArgumentRef"><code class="xref py py-class docutils literal notranslate"><span class="pre">ArgumentRef</span></code></a>) – </p>
 </dd>
 </dl>
@@ -766,13 +780,13 @@ function checkPageExistsAndRedirect(event) {
 <span class="sig-name descname"><span class="pre">get</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">arg_map</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">context</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/gpflow/experimental/check_shapes/argument_ref.html#DelegatingArgumentRef.get"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.experimental.check_shapes.argument_ref.DelegatingArgumentRef.get" title="Permalink to this definition">#</a></dt>
 <dd><p>Get the value(s) of this argument from the given argument map.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>arg_map</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Mapping</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>]) – </p></li>
 <li><p><strong>context</strong> (<a class="reference internal" href="../index.html#gpflow.experimental.check_shapes.ErrorContext" title="gpflow.experimental.check_shapes.error_contexts.ErrorContext"><code class="xref py py-class docutils literal notranslate"><span class="pre">ErrorContext</span></code></a>) – </p></li>
 </ul>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Sequence</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <a class="reference internal" href="../index.html#gpflow.experimental.check_shapes.ErrorContext" title="gpflow.experimental.check_shapes.error_contexts.ErrorContext"><code class="xref py py-class docutils literal notranslate"><span class="pre">ErrorContext</span></code></a>]]</p>
 </dd>
 </dl>
@@ -783,7 +797,7 @@ function checkPageExistsAndRedirect(event) {
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">is_result</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#gpflow.experimental.check_shapes.argument_ref.DelegatingArgumentRef.is_result" title="Permalink to this definition">#</a></dt>
 <dd><p>Whether this is a reference to the function result.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></p>
 </dd>
 </dl>
@@ -795,10 +809,10 @@ function checkPageExistsAndRedirect(event) {
 <dd><p>Pre-map this error context from <cite>self.source</cite>.</p>
 <p>The mapped value will both be used for error messages and passed to <cite>map_value</cite> above.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>context</strong> (<a class="reference internal" href="../index.html#gpflow.experimental.check_shapes.ErrorContext" title="gpflow.experimental.check_shapes.error_contexts.ErrorContext"><code class="xref py py-class docutils literal notranslate"><span class="pre">ErrorContext</span></code></a>) – </p>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><a class="reference internal" href="../index.html#gpflow.experimental.check_shapes.ErrorContext" title="gpflow.experimental.check_shapes.error_contexts.ErrorContext"><code class="xref py py-class docutils literal notranslate"><span class="pre">ErrorContext</span></code></a></p>
 </dd>
 </dl>
@@ -809,13 +823,13 @@ function checkPageExistsAndRedirect(event) {
 <em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">map_value</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">context</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/gpflow/experimental/check_shapes/argument_ref.html#DelegatingArgumentRef.map_value"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.experimental.check_shapes.argument_ref.DelegatingArgumentRef.map_value" title="Permalink to this definition">#</a></dt>
 <dd><p>Map this value, from <cite>self.source</cite> to new value(s).</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>value</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>) – </p></li>
 <li><p><strong>context</strong> (<a class="reference internal" href="../index.html#gpflow.experimental.check_shapes.ErrorContext" title="gpflow.experimental.check_shapes.error_contexts.ErrorContext"><code class="xref py py-class docutils literal notranslate"><span class="pre">ErrorContext</span></code></a>) – </p></li>
 </ul>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Iterable</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <a class="reference internal" href="../index.html#gpflow.experimental.check_shapes.ErrorContext" title="gpflow.experimental.check_shapes.error_contexts.ErrorContext"><code class="xref py py-class docutils literal notranslate"><span class="pre">ErrorContext</span></code></a>]]</p>
 </dd>
 </dl>
@@ -827,7 +841,7 @@ function checkPageExistsAndRedirect(event) {
 <dd><p>Name of the argument this reference eventually starts from.</p>
 <p>Returns <cite>RESULT_TOKEN</cite> if this in an argument to the function result.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></p>
 </dd>
 </dl>
@@ -837,14 +851,14 @@ function checkPageExistsAndRedirect(event) {
 
 </section>
 <section id="gpflow-experimental-check-shapes-argument-ref-indexargumentref">
-<h3>gpflow.experimental.check_shapes.argument_ref.IndexArgumentRef<a class="headerlink" href="#gpflow-experimental-check-shapes-argument-ref-indexargumentref" title="Permalink to this headline">#</a></h3>
+<h3>gpflow.experimental.check_shapes.argument_ref.IndexArgumentRef<a class="headerlink" href="#gpflow-experimental-check-shapes-argument-ref-indexargumentref" title="Permalink to this heading">#</a></h3>
 <dl class="py class">
 <dt class="sig sig-object py" id="gpflow.experimental.check_shapes.argument_ref.IndexArgumentRef">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.experimental.check_shapes.argument_ref.</span></span><span class="sig-name descname"><span class="pre">IndexArgumentRef</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">index</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/gpflow/experimental/check_shapes/argument_ref.html#IndexArgumentRef"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.experimental.check_shapes.argument_ref.IndexArgumentRef" title="Permalink to this definition">#</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#gpflow.experimental.check_shapes.argument_ref.DelegatingArgumentRef" title="gpflow.experimental.check_shapes.argument_ref.DelegatingArgumentRef"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.experimental.check_shapes.argument_ref.DelegatingArgumentRef</span></code></a></p>
+<dd><p>Bases: <a class="reference internal" href="#gpflow.experimental.check_shapes.argument_ref.DelegatingArgumentRef" title="gpflow.experimental.check_shapes.argument_ref.DelegatingArgumentRef"><code class="xref py py-class docutils literal notranslate"><span class="pre">DelegatingArgumentRef</span></code></a></p>
 <p>A reference to an element in a list.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>source</strong> (<a class="reference internal" href="#gpflow.experimental.check_shapes.argument_ref.ArgumentRef" title="gpflow.experimental.check_shapes.argument_ref.ArgumentRef"><code class="xref py py-class docutils literal notranslate"><span class="pre">ArgumentRef</span></code></a>) – </p></li>
 <li><p><strong>index</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>) – </p></li>
@@ -857,10 +871,10 @@ function checkPageExistsAndRedirect(event) {
 <dd><p>Pre-map this error context from <cite>self.source</cite>.</p>
 <p>The mapped value will both be used for error messages and passed to <cite>map_value</cite> above.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>context</strong> (<a class="reference internal" href="../index.html#gpflow.experimental.check_shapes.ErrorContext" title="gpflow.experimental.check_shapes.error_contexts.ErrorContext"><code class="xref py py-class docutils literal notranslate"><span class="pre">ErrorContext</span></code></a>) – </p>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><a class="reference internal" href="../index.html#gpflow.experimental.check_shapes.ErrorContext" title="gpflow.experimental.check_shapes.error_contexts.ErrorContext"><code class="xref py py-class docutils literal notranslate"><span class="pre">ErrorContext</span></code></a></p>
 </dd>
 </dl>
@@ -871,13 +885,13 @@ function checkPageExistsAndRedirect(event) {
 <span class="sig-name descname"><span class="pre">map_value</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">context</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/gpflow/experimental/check_shapes/argument_ref.html#IndexArgumentRef.map_value"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.experimental.check_shapes.argument_ref.IndexArgumentRef.map_value" title="Permalink to this definition">#</a></dt>
 <dd><p>Map this value, from <cite>self.source</cite> to new value(s).</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>value</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>) – </p></li>
 <li><p><strong>context</strong> (<a class="reference internal" href="../index.html#gpflow.experimental.check_shapes.ErrorContext" title="gpflow.experimental.check_shapes.error_contexts.ErrorContext"><code class="xref py py-class docutils literal notranslate"><span class="pre">ErrorContext</span></code></a>) – </p></li>
 </ul>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Iterable</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <a class="reference internal" href="../index.html#gpflow.experimental.check_shapes.ErrorContext" title="gpflow.experimental.check_shapes.error_contexts.ErrorContext"><code class="xref py py-class docutils literal notranslate"><span class="pre">ErrorContext</span></code></a>]]</p>
 </dd>
 </dl>
@@ -887,14 +901,14 @@ function checkPageExistsAndRedirect(event) {
 
 </section>
 <section id="gpflow-experimental-check-shapes-argument-ref-keysref">
-<h3>gpflow.experimental.check_shapes.argument_ref.KeysRef<a class="headerlink" href="#gpflow-experimental-check-shapes-argument-ref-keysref" title="Permalink to this headline">#</a></h3>
+<h3>gpflow.experimental.check_shapes.argument_ref.KeysRef<a class="headerlink" href="#gpflow-experimental-check-shapes-argument-ref-keysref" title="Permalink to this heading">#</a></h3>
 <dl class="py class">
 <dt class="sig sig-object py" id="gpflow.experimental.check_shapes.argument_ref.KeysRef">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.experimental.check_shapes.argument_ref.</span></span><span class="sig-name descname"><span class="pre">KeysRef</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/gpflow/experimental/check_shapes/argument_ref.html#KeysRef"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.experimental.check_shapes.argument_ref.KeysRef" title="Permalink to this definition">#</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#gpflow.experimental.check_shapes.argument_ref.DelegatingArgumentRef" title="gpflow.experimental.check_shapes.argument_ref.DelegatingArgumentRef"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.experimental.check_shapes.argument_ref.DelegatingArgumentRef</span></code></a></p>
+<dd><p>Bases: <a class="reference internal" href="#gpflow.experimental.check_shapes.argument_ref.DelegatingArgumentRef" title="gpflow.experimental.check_shapes.argument_ref.DelegatingArgumentRef"><code class="xref py py-class docutils literal notranslate"><span class="pre">DelegatingArgumentRef</span></code></a></p>
 <p>A reference to all keys of a mapping.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>source</strong> (<a class="reference internal" href="#gpflow.experimental.check_shapes.argument_ref.ArgumentRef" title="gpflow.experimental.check_shapes.argument_ref.ArgumentRef"><code class="xref py py-class docutils literal notranslate"><span class="pre">ArgumentRef</span></code></a>) – </p>
 </dd>
 </dl>
@@ -903,13 +917,13 @@ function checkPageExistsAndRedirect(event) {
 <span class="sig-name descname"><span class="pre">map_value</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">context</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/gpflow/experimental/check_shapes/argument_ref.html#KeysRef.map_value"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.experimental.check_shapes.argument_ref.KeysRef.map_value" title="Permalink to this definition">#</a></dt>
 <dd><p>Map this value, from <cite>self.source</cite> to new value(s).</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>value</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>) – </p></li>
 <li><p><strong>context</strong> (<a class="reference internal" href="../index.html#gpflow.experimental.check_shapes.ErrorContext" title="gpflow.experimental.check_shapes.error_contexts.ErrorContext"><code class="xref py py-class docutils literal notranslate"><span class="pre">ErrorContext</span></code></a>) – </p></li>
 </ul>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Iterable</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <a class="reference internal" href="../index.html#gpflow.experimental.check_shapes.ErrorContext" title="gpflow.experimental.check_shapes.error_contexts.ErrorContext"><code class="xref py py-class docutils literal notranslate"><span class="pre">ErrorContext</span></code></a>]]</p>
 </dd>
 </dl>
@@ -919,14 +933,14 @@ function checkPageExistsAndRedirect(event) {
 
 </section>
 <section id="gpflow-experimental-check-shapes-argument-ref-rootargumentref">
-<h3>gpflow.experimental.check_shapes.argument_ref.RootArgumentRef<a class="headerlink" href="#gpflow-experimental-check-shapes-argument-ref-rootargumentref" title="Permalink to this headline">#</a></h3>
+<h3>gpflow.experimental.check_shapes.argument_ref.RootArgumentRef<a class="headerlink" href="#gpflow-experimental-check-shapes-argument-ref-rootargumentref" title="Permalink to this heading">#</a></h3>
 <dl class="py class">
 <dt class="sig sig-object py" id="gpflow.experimental.check_shapes.argument_ref.RootArgumentRef">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.experimental.check_shapes.argument_ref.</span></span><span class="sig-name descname"><span class="pre">RootArgumentRef</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">argument_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/gpflow/experimental/check_shapes/argument_ref.html#RootArgumentRef"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.experimental.check_shapes.argument_ref.RootArgumentRef" title="Permalink to this definition">#</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#gpflow.experimental.check_shapes.argument_ref.ArgumentRef" title="gpflow.experimental.check_shapes.argument_ref.ArgumentRef"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.experimental.check_shapes.argument_ref.ArgumentRef</span></code></a></p>
+<dd><p>Bases: <a class="reference internal" href="#gpflow.experimental.check_shapes.argument_ref.ArgumentRef" title="gpflow.experimental.check_shapes.argument_ref.ArgumentRef"><code class="xref py py-class docutils literal notranslate"><span class="pre">ArgumentRef</span></code></a></p>
 <p>A reference to a single argument.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>argument_name</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>) – </p>
 </dd>
 </dl>
@@ -935,13 +949,13 @@ function checkPageExistsAndRedirect(event) {
 <span class="sig-name descname"><span class="pre">get</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">arg_map</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">context</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/gpflow/experimental/check_shapes/argument_ref.html#RootArgumentRef.get"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.experimental.check_shapes.argument_ref.RootArgumentRef.get" title="Permalink to this definition">#</a></dt>
 <dd><p>Get the value(s) of this argument from the given argument map.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>arg_map</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Mapping</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>]) – </p></li>
 <li><p><strong>context</strong> (<a class="reference internal" href="../index.html#gpflow.experimental.check_shapes.ErrorContext" title="gpflow.experimental.check_shapes.error_contexts.ErrorContext"><code class="xref py py-class docutils literal notranslate"><span class="pre">ErrorContext</span></code></a>) – </p></li>
 </ul>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Sequence</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <a class="reference internal" href="../index.html#gpflow.experimental.check_shapes.ErrorContext" title="gpflow.experimental.check_shapes.error_contexts.ErrorContext"><code class="xref py py-class docutils literal notranslate"><span class="pre">ErrorContext</span></code></a>]]</p>
 </dd>
 </dl>
@@ -952,7 +966,7 @@ function checkPageExistsAndRedirect(event) {
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">is_result</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#gpflow.experimental.check_shapes.argument_ref.RootArgumentRef.is_result" title="Permalink to this definition">#</a></dt>
 <dd><p>Whether this is a reference to the function result.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></p>
 </dd>
 </dl>
@@ -964,7 +978,7 @@ function checkPageExistsAndRedirect(event) {
 <dd><p>Name of the argument this reference eventually starts from.</p>
 <p>Returns <cite>RESULT_TOKEN</cite> if this in an argument to the function result.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Return type</dt>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></p>
 </dd>
 </dl>
@@ -974,14 +988,14 @@ function checkPageExistsAndRedirect(event) {
 
 </section>
 <section id="gpflow-experimental-check-shapes-argument-ref-valuesref">
-<h3>gpflow.experimental.check_shapes.argument_ref.ValuesRef<a class="headerlink" href="#gpflow-experimental-check-shapes-argument-ref-valuesref" title="Permalink to this headline">#</a></h3>
+<h3>gpflow.experimental.check_shapes.argument_ref.ValuesRef<a class="headerlink" href="#gpflow-experimental-check-shapes-argument-ref-valuesref" title="Permalink to this heading">#</a></h3>
 <dl class="py class">
 <dt class="sig sig-object py" id="gpflow.experimental.check_shapes.argument_ref.ValuesRef">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.experimental.check_shapes.argument_ref.</span></span><span class="sig-name descname"><span class="pre">ValuesRef</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/gpflow/experimental/check_shapes/argument_ref.html#ValuesRef"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.experimental.check_shapes.argument_ref.ValuesRef" title="Permalink to this definition">#</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#gpflow.experimental.check_shapes.argument_ref.DelegatingArgumentRef" title="gpflow.experimental.check_shapes.argument_ref.DelegatingArgumentRef"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.experimental.check_shapes.argument_ref.DelegatingArgumentRef</span></code></a></p>
+<dd><p>Bases: <a class="reference internal" href="#gpflow.experimental.check_shapes.argument_ref.DelegatingArgumentRef" title="gpflow.experimental.check_shapes.argument_ref.DelegatingArgumentRef"><code class="xref py py-class docutils literal notranslate"><span class="pre">DelegatingArgumentRef</span></code></a></p>
 <p>A reference to all values of a mapping.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>source</strong> (<a class="reference internal" href="#gpflow.experimental.check_shapes.argument_ref.ArgumentRef" title="gpflow.experimental.check_shapes.argument_ref.ArgumentRef"><code class="xref py py-class docutils literal notranslate"><span class="pre">ArgumentRef</span></code></a>) – </p>
 </dd>
 </dl>
@@ -990,13 +1004,13 @@ function checkPageExistsAndRedirect(event) {
 <span class="sig-name descname"><span class="pre">map_value</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">context</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../../_modules/gpflow/experimental/check_shapes/argument_ref.html#ValuesRef.map_value"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.experimental.check_shapes.argument_ref.ValuesRef.map_value" title="Permalink to this definition">#</a></dt>
 <dd><p>Map this value, from <cite>self.source</cite> to new value(s).</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>value</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>) – </p></li>
 <li><p><strong>context</strong> (<a class="reference internal" href="../index.html#gpflow.experimental.check_shapes.ErrorContext" title="gpflow.experimental.check_shapes.error_contexts.ErrorContext"><code class="xref py py-class docutils literal notranslate"><span class="pre">ErrorContext</span></code></a>) – </p></li>
 </ul>
 </dd>
-<dt class="field-even">Return type</dt>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Iterable</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <a class="reference internal" href="../index.html#gpflow.experimental.check_shapes.ErrorContext" title="gpflow.experimental.check_shapes.error_contexts.ErrorContext"><code class="xref py py-class docutils literal notranslate"><span class="pre">ErrorContext</span></code></a>]]</p>
 </dd>
 </dl>
@@ -1009,33 +1023,35 @@ function checkPageExistsAndRedirect(event) {
 </section>
 
 
-              </div>
+              </article>
               
-              
-          </main>
-          
 
+              
+          </div>
+          
       </div>
     </div>
+
+  
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script src="../../../../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf"></script>
-<footer class="footer mt-5 mt-md-0">
-  <div class="container">
-    
-    <div class="footer-item">
-      <p class="copyright">
+  <script src="../../../../../_static/scripts/pydata-sphinx-theme.js?digest=92025949c220c2e29695"></script>
+
+<footer class="bd-footer"><div class="bd-footer__inner container">
+  
+  <div class="footer-item">
+    <p class="copyright">
     &copy; Copyright 2022, The GPflow Contributors.<br>
 </p>
-    </div>
-    
-    <div class="footer-item">
-      <p class="sphinx-version">
-Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.5.0.<br>
-</p>
-    </div>
-    
   </div>
+  
+  <div class="footer-item">
+    <p class="sphinx-version">
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 5.0.1.<br>
+</p>
+  </div>
+  
+</div>
 </footer>
   </body>
 </html>

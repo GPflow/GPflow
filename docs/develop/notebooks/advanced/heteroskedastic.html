@@ -1,18 +1,22 @@
 
 <!DOCTYPE html>
 
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
     <title>Heteroskedastic Likelihood and Multi-Latent GP &#8212; GPflow 2.5.2 documentation</title>
-    
-  <!-- Loaded before other Sphinx assets -->
-  <link href="../../_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
-<link href="../../_static/styles/pydata-sphinx-theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
+<script>
+  document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+  document.documentElement.dataset.theme = localStorage.getItem("theme") || "light"
+</script>
 
-    
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=92025949c220c2e29695" rel="stylesheet">
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=92025949c220c2e29695" rel="stylesheet">
+
+
   <link rel="stylesheet"
     href="../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
   <link rel="preload" as="font" type="font/woff2" crossorigin
@@ -22,13 +26,14 @@
 
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/pydata-custom.css" />
-    
+
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf">
+  <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=92025949c220c2e29695">
 
     <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
     <script src="../../_static/jquery.js"></script>
     <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="../../_static/doctools.js"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="https://unpkg.com/@jupyter-widgets/html-manager@^0.20.1/dist/embed-amd.js"></script>
@@ -38,34 +43,41 @@
     <link rel="search" title="Search" href="../../search.html" />
     <link rel="next" title="Manipulating kernels" href="kernels.html" />
     <link rel="prev" title="Stochastic Variational Inference for scalability with SVGP" href="gps_for_big_data.html" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="docsearch:language" content="None">
-    
-
-    <!-- Google Analytics -->
-    
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="docsearch:language" content="en">
   </head>
-  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="60">
-    
-    <div class="container-fluid" id="banner"></div>
+  
+  
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="180" data-default-mode="">
+    <div class="bd-header-announcement container-fluid" id="banner">
+      
+
+    </div>
 
     
-    <nav class="navbar navbar-light navbar-expand-lg bg-light fixed-top bd-navbar" id="navbar-main"><div class="container-xl">
+    <nav class="bd-header navbar navbar-light navbar-expand-lg bg-light fixed-top bd-navbar" id="navbar-main"><div class="bd-header__inner container-xl">
 
   <div id="navbar-start">
     
     
+  
 
-<a class="navbar-brand" href="../../index.html">
-  <img src="../../_static/gpflow_logo.svg" class="logo" alt="logo">
+
+<a class="navbar-brand logo" href="../../index.html">
+  
+  
+  
+  
+    <img src="../../_static/gpflow_logo.svg" class="logo__image only-light" alt="Logo image">
+    <img src="../../_static/gpflow_logo.svg" class="logo__image only-dark" alt="Logo image">
+  
+  
 </a>
-
-
     
   </div>
 
   <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar-collapsible" aria-controls="navbar-collapsible" aria-expanded="false" aria-label="Toggle navigation">
-    <span class="navbar-toggler-icon"></span>
+    <span class="fas fa-bars"></span>
   </button>
 
   
@@ -126,7 +138,7 @@
       
       <div class="navbar-end-item">
         <div class="dropdown" id="version_switcher">
-    <button type="button" class="btn btn-primary btn-sm navbar-btn dropdown-toggle" id="version_switcher_button" data-toggle="dropdown">
+    <button type="button" class="btn btn-sm navbar-btn dropdown-toggle" id="version_switcher_button" data-toggle="dropdown">
         develop  <!-- this text may get changed later by javascript -->
         <span class="caret"></span>
     </button>
@@ -166,6 +178,10 @@ function checkPageExistsAndRedirect(event) {
 (function () {
     $.getJSON("https://gpflow.github.io/GPflow/versions.json", function(data, textStatus, jqXHR) {
         const currentFilePath = "notebooks/advanced/heteroskedastic.html";
+        let btn = document.getElementById("version_switcher_button");
+        // Set empty strings by default so that these attributes exist and can be used in CSS selectors
+        btn.dataset["activeVersionName"] = "";
+        btn.dataset["activeVersion"] = "";
         // create links to the corresponding page in the other docs versions
         $.each(data, function(index, entry) {
             // if no custom name specified (e.g., "latest"), use version string
@@ -193,7 +209,6 @@ function checkPageExistsAndRedirect(event) {
             // version's entry
             if (entry.version == "develop") {
                 node.classList.add("active");
-                let btn = document.getElementById("version_switcher_button");
                 btn.innerText = btn.dataset["activeVersionName"] = entry.name;
                 btn.dataset["activeVersion"] = entry.version;
             }
@@ -209,13 +224,13 @@ function checkPageExistsAndRedirect(event) {
     </nav>
     
 
-    <div class="container-xl">
-      <div class="row">
+    <div class="bd-container container-xl">
+      <div class="bd-container__inner row">
           
-            
-            <!-- Only show if we have sidebars configured, else just a small margin  -->
-            <div class="col-12 col-md-3 bd-sidebar">
-              <div class="sidebar-start-items"><form class="bd-search d-flex align-items-center" action="../../search.html" method="get">
+
+<!-- Only show if we have sidebars configured, else just a small margin  -->
+<div class="bd-sidebar-primary col-12 col-md-3 bd-sidebar">
+  <div class="sidebar-start-items"><form class="bd-search d-flex align-items-center" action="../../search.html" method="get">
   <i class="icon fas fa-search"></i>
   <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
 </form><nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
@@ -413,19 +428,20 @@ function checkPageExistsAndRedirect(event) {
 
   </div>
 </nav>
-              </div>
-              <div class="sidebar-end-items">
-              </div>
-            </div>
-            
-          
+  </div>
+  <div class="sidebar-end-items">
+  </div>
+</div>
+
 
           
-          <div class="d-none d-xl-block col-xl-2 bd-toc">
-            
-              
-              <div class="toc-item">
-                
+
+
+<div class="bd-sidebar-secondary d-none d-xl-block col-xl-2 bd-toc">
+  
+    
+    <div class="toc-item">
+      
 <div class="tocsection onthispage mt-5 pt-1 pb-3">
     <i class="fas fa-list"></i> On this page
 </div>
@@ -506,23 +522,21 @@ function checkPageExistsAndRedirect(event) {
 </ul>
 
 </nav>
-              </div>
-              
-              <div class="toc-item">
-                
-              </div>
-              
-            
-          </div>
-          
+    </div>
+    
+    <div class="toc-item">
+      
+    </div>
+    
+  
+</div>
+
 
           
           
-            
-          
-          <main class="col-12 col-md-9 col-xl-7 py-md-5 pl-md-5 pr-md-4 bd-content" role="main">
+          <div class="bd-content col-12 col-md-9 col-xl-7">
               
-              <div>
+              <article class="bd-article" role="main">
                 
   
 <style>
@@ -781,13 +795,13 @@ div.rendered_html tbody tr:hover {
 }
 </style>
 <section id="Heteroskedastic-Likelihood-and-Multi-Latent-GP">
-<h1>Heteroskedastic Likelihood and Multi-Latent GP<a class="headerlink" href="#Heteroskedastic-Likelihood-and-Multi-Latent-GP" title="Permalink to this headline">#</a></h1>
+<h1>Heteroskedastic Likelihood and Multi-Latent GP<a class="headerlink" href="#Heteroskedastic-Likelihood-and-Multi-Latent-GP" title="Permalink to this heading">#</a></h1>
 <section id="Standard-(Homoskedastic)-Regression">
-<h2>Standard (Homoskedastic) Regression<a class="headerlink" href="#Standard-(Homoskedastic)-Regression" title="Permalink to this headline">#</a></h2>
+<h2>Standard (Homoskedastic) Regression<a class="headerlink" href="#Standard-(Homoskedastic)-Regression" title="Permalink to this heading">#</a></h2>
 <p>In standard GP regression, the GP latent function is used to learn the location parameter of a likelihood distribution (usually a Gaussian) as a function of the input <span class="math notranslate nohighlight">\(x\)</span>, whereas the scale parameter is considered constant. This is a homoskedastic model, which is unable to capture variations of the noise distribution with the input <span class="math notranslate nohighlight">\(x\)</span>.</p>
 </section>
 <section id="Heteroskedastic-Regression">
-<h2>Heteroskedastic Regression<a class="headerlink" href="#Heteroskedastic-Regression" title="Permalink to this headline">#</a></h2>
+<h2>Heteroskedastic Regression<a class="headerlink" href="#Heteroskedastic-Regression" title="Permalink to this heading">#</a></h2>
 <p>This notebooks shows how to construct a model which uses multiple (here two) GP latent functions to learn both the location and the scale of the Gaussian likelihood distribution. It does so by connecting a <strong>Multi-Output Kernel</strong>, which generates multiple GP latent functions, to a <strong>Heteroskedastic Likelihood</strong>, which maps the latent GPs into a single likelihood.</p>
 <p>The generative model is described as:</p>
 <div class="math notranslate nohighlight">
@@ -818,15 +832,15 @@ div.rendered_html tbody tr:hover {
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2022-06-07 08:58:28.535728: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcudart.so.11.0&#39;; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory
-2022-06-07 08:58:28.535757: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.
+2022-06-10 06:39:15.666326: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcudart.so.11.0&#39;; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory
+2022-06-10 06:39:15.666359: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.
 /home/circleci/project/gpflow/experimental/utils.py:42: UserWarning: You&#39;re calling gpflow.experimental.check_shapes.decorator.check_shapes which is considered *experimental*. Expect: breaking changes, poor documentation, and bugs.
   warn(
 </pre></div></div>
 </div>
 </section>
 <section id="Data-Generation">
-<h2>Data Generation<a class="headerlink" href="#Data-Generation" title="Permalink to this headline">#</a></h2>
+<h2>Data Generation<a class="headerlink" href="#Data-Generation" title="Permalink to this heading">#</a></h2>
 <p>We generate heteroskedastic data by substituting the random latent functions <span class="math notranslate nohighlight">\(f_1\)</span> and <span class="math notranslate nohighlight">\(f_2\)</span> of the generative model by deterministic <span class="math notranslate nohighlight">\(\sin\)</span> and <span class="math notranslate nohighlight">\(\cos\)</span> functions. The input <span class="math notranslate nohighlight">\(X\)</span> is built with <span class="math notranslate nohighlight">\(N=1001\)</span> uniformly spaced values in the interval <span class="math notranslate nohighlight">\([0, 4\pi]\)</span>. The outputs <span class="math notranslate nohighlight">\(Y\)</span> are still sampled from a Gaussian likelihood.</p>
 <div class="math notranslate nohighlight">
 \[x_i \in [0, 4\pi], \quad i = 1,\dots,N\]</div>
@@ -869,7 +883,7 @@ div.rendered_html tbody tr:hover {
 </div>
 </div>
 <section id="Plot-Data">
-<h3>Plot Data<a class="headerlink" href="#Plot-Data" title="Permalink to this headline">#</a></h3>
+<h3>Plot Data<a class="headerlink" href="#Plot-Data" title="Permalink to this heading">#</a></h3>
 <p>Note how the distribution density (shaded area) and the outputs <span class="math notranslate nohighlight">\(Y\)</span> both change depending on the input <span class="math notranslate nohighlight">\(X\)</span>.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
@@ -904,9 +918,9 @@ div.rendered_html tbody tr:hover {
 </section>
 </section>
 <section id="Build-Model">
-<h2>Build Model<a class="headerlink" href="#Build-Model" title="Permalink to this headline">#</a></h2>
+<h2>Build Model<a class="headerlink" href="#Build-Model" title="Permalink to this heading">#</a></h2>
 <section id="Likelihood">
-<h3>Likelihood<a class="headerlink" href="#Likelihood" title="Permalink to this headline">#</a></h3>
+<h3>Likelihood<a class="headerlink" href="#Likelihood" title="Permalink to this heading">#</a></h3>
 <p>This implements the following part of the generative model:</p>
 <div class="math notranslate nohighlight">
 \[\text{loc}(x) = f_1(x)\]</div>
@@ -940,16 +954,16 @@ Likelihood&#39;s expected latent_dim: 2
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2022-06-07 08:58:30.883923: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcuda.so.1&#39;; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory
-2022-06-07 08:58:30.883952: W tensorflow/stream_executor/cuda/cuda_driver.cc:269] failed call to cuInit: UNKNOWN ERROR (303)
-2022-06-07 08:58:30.883972: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (bb5e1c5f504d): /proc/driver/nvidia/version does not exist
-2022-06-07 08:58:30.884242: I tensorflow/core/platform/cpu_feature_guard.cc:151] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA
+2022-06-10 06:39:18.601425: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcuda.so.1&#39;; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory
+2022-06-10 06:39:18.601460: W tensorflow/stream_executor/cuda/cuda_driver.cc:269] failed call to cuInit: UNKNOWN ERROR (303)
+2022-06-10 06:39:18.601487: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (0091ed1183cb): /proc/driver/nvidia/version does not exist
+2022-06-10 06:39:18.601871: I tensorflow/core/platform/cpu_feature_guard.cc:151] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA
 To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.
 </pre></div></div>
 </div>
 </section>
 <section id="Kernel">
-<h3>Kernel<a class="headerlink" href="#Kernel" title="Permalink to this headline">#</a></h3>
+<h3>Kernel<a class="headerlink" href="#Kernel" title="Permalink to this heading">#</a></h3>
 <p>This implements the following part of the generative model:</p>
 <div class="math notranslate nohighlight">
 \[f_1(x) \sim \mathcal{GP}(0, k_1(\cdot, \cdot))\]</div>
@@ -972,7 +986,7 @@ To enable them in other operations, rebuild TensorFlow with the appropriate comp
 </div>
 </section>
 <section id="Inducing-Points">
-<h3>Inducing Points<a class="headerlink" href="#Inducing-Points" title="Permalink to this headline">#</a></h3>
+<h3>Inducing Points<a class="headerlink" href="#Inducing-Points" title="Permalink to this heading">#</a></h3>
 <p>Since we will use the <strong>SVGP</strong> model to perform inference, we need to implement the inducing variables <span class="math notranslate nohighlight">\(U_1\)</span> and <span class="math notranslate nohighlight">\(U_2\)</span>, both with size <span class="math notranslate nohighlight">\(M=20\)</span>, which are used to approximate <span class="math notranslate nohighlight">\(f_1\)</span> and <span class="math notranslate nohighlight">\(f_2\)</span> respectively, and initialize the inducing points positions <span class="math notranslate nohighlight">\(Z_1\)</span> and <span class="math notranslate nohighlight">\(Z_2\)</span>. This gives a total of <span class="math notranslate nohighlight">\(2M=40\)</span> inducing variables and inducing points.</p>
 <p>The inducing variables and their corresponding inputs will be Separate and Independent, but both <span class="math notranslate nohighlight">\(Z_1\)</span> and <span class="math notranslate nohighlight">\(Z_2\)</span> will be initialized as <span class="math notranslate nohighlight">\(Z\)</span>, which are placed as <span class="math notranslate nohighlight">\(M=20\)</span> equally spaced points in <span class="math notranslate nohighlight">\([\min(X), \max(X)]\)</span>.</p>
 <div class="nbinput docutils container">
@@ -1004,7 +1018,7 @@ To enable them in other operations, rebuild TensorFlow with the appropriate comp
 </div>
 </section>
 <section id="SVGP-Model">
-<h3>SVGP Model<a class="headerlink" href="#SVGP-Model" title="Permalink to this headline">#</a></h3>
+<h3>SVGP Model<a class="headerlink" href="#SVGP-Model" title="Permalink to this heading">#</a></h3>
 <p>Build the <strong>SVGP</strong> model by composing the <strong>Kernel</strong>, the <strong>Likelihood</strong> and the <strong>Inducing Variables</strong>.</p>
 <p>Note that the model needs to be instructed about the number of latent GPs by passing <code class="docutils literal notranslate"><span class="pre">num_latent_gps=likelihood.latent_dim</span></code>.</p>
 <div class="nbinput docutils container">
@@ -1027,7 +1041,7 @@ To enable them in other operations, rebuild TensorFlow with the appropriate comp
 </pre></div>
 </div>
 <div class="output_area rendered_html docutils container">
-&lt;gpflow.models.svgp.SVGP object at 0x7f7952d6d630&gt;
+&lt;gpflow.models.svgp.SVGP object at 0x7f45908e5720&gt;
 <table>
 <thead>
 <tr><th>name                                              </th><th>class    </th><th>transform     </th><th>prior  </th><th>trainable  </th><th>shape      </th><th>dtype  </th><th>value           </th></tr>
@@ -1047,9 +1061,9 @@ To enable them in other operations, rebuild TensorFlow with the appropriate comp
 </section>
 </section>
 <section id="Model-Optimization">
-<h2>Model Optimization<a class="headerlink" href="#Model-Optimization" title="Permalink to this headline">#</a></h2>
+<h2>Model Optimization<a class="headerlink" href="#Model-Optimization" title="Permalink to this heading">#</a></h2>
 <section id="Build-Optimizers-(NatGrad-+-Adam)">
-<h3>Build Optimizers (NatGrad + Adam)<a class="headerlink" href="#Build-Optimizers-(NatGrad-+-Adam)" title="Permalink to this headline">#</a></h3>
+<h3>Build Optimizers (NatGrad + Adam)<a class="headerlink" href="#Build-Optimizers-(NatGrad-+-Adam)" title="Permalink to this heading">#</a></h3>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
@@ -1079,12 +1093,12 @@ To enable them in other operations, rebuild TensorFlow with the appropriate comp
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2022-06-07 08:58:31.051146: W tensorflow/python/util/util.cc:368] Sets are not currently considered sequences, but this may change in the future, so consider avoiding using them.
+2022-06-10 06:39:18.852685: W tensorflow/python/util/util.cc:368] Sets are not currently considered sequences, but this may change in the future, so consider avoiding using them.
 </pre></div></div>
 </div>
 </section>
 <section id="Run-Optimization-Loop">
-<h3>Run Optimization Loop<a class="headerlink" href="#Run-Optimization-Loop" title="Permalink to this headline">#</a></h3>
+<h3>Run Optimization Loop<a class="headerlink" href="#Run-Optimization-Loop" title="Permalink to this heading">#</a></h3>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
@@ -1190,7 +1204,7 @@ Epoch 100 - Loss:  1449.6072
 </pre></div>
 </div>
 <div class="output_area rendered_html docutils container">
-&lt;gpflow.models.svgp.SVGP object at 0x7f7952d6d630&gt;
+&lt;gpflow.models.svgp.SVGP object at 0x7f45908e5720&gt;
 <table>
 <thead>
 <tr><th>name                                              </th><th>class    </th><th>transform     </th><th>prior  </th><th>trainable  </th><th>shape      </th><th>dtype  </th><th>value                                               </th></tr>
@@ -1210,39 +1224,41 @@ Epoch 100 - Loss:  1449.6072
 </section>
 </section>
 <section id="Further-reading">
-<h2>Further reading<a class="headerlink" href="#Further-reading" title="Permalink to this headline">#</a></h2>
+<h2>Further reading<a class="headerlink" href="#Further-reading" title="Permalink to this heading">#</a></h2>
 <p>See <a class="reference external" href="http://proceedings.mlr.press/v51/saul16.html">Chained Gaussian Processes</a> by Saul et al. (AISTATS 2016).</p>
 </section>
 </section>
 
 
-              </div>
+              </article>
               
-              
-          </main>
-          
 
+              
+          </div>
+          
       </div>
     </div>
+
+  
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script src="../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf"></script>
-<footer class="footer mt-5 mt-md-0">
-  <div class="container">
-    
-    <div class="footer-item">
-      <p class="copyright">
+  <script src="../../_static/scripts/pydata-sphinx-theme.js?digest=92025949c220c2e29695"></script>
+
+<footer class="bd-footer"><div class="bd-footer__inner container">
+  
+  <div class="footer-item">
+    <p class="copyright">
     &copy; Copyright 2022, The GPflow Contributors.<br>
 </p>
-    </div>
-    
-    <div class="footer-item">
-      <p class="sphinx-version">
-Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.5.0.<br>
-</p>
-    </div>
-    
   </div>
+  
+  <div class="footer-item">
+    <p class="sphinx-version">
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 5.0.1.<br>
+</p>
+  </div>
+  
+</div>
 </footer>
   </body>
 </html>

@@ -2,7 +2,7 @@
  "cells": [
   {
    "cell_type": "markdown",
-   "id": "80cf1ad1",
+   "id": "0208c9db",
    "metadata": {},
    "source": [
     "# Variational Fourier Features in the GPflow framework\n",
@@ -17,13 +17,13 @@
   {
    "cell_type": "code",
    "execution_count": 1,
-   "id": "d7b7a660",
+   "id": "8f41f201",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-07T09:04:29.214632Z",
-     "iopub.status.busy": "2022-06-07T09:04:29.214329Z",
-     "iopub.status.idle": "2022-06-07T09:04:32.209947Z",
-     "shell.execute_reply": "2022-06-07T09:04:32.209272Z"
+     "iopub.execute_input": "2022-06-10T06:44:48.130199Z",
+     "iopub.status.busy": "2022-06-10T06:44:48.129788Z",
+     "iopub.status.idle": "2022-06-10T06:44:51.515132Z",
+     "shell.execute_reply": "2022-06-10T06:44:51.514438Z"
     }
    },
    "outputs": [
@@ -31,8 +31,8 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2022-06-07 09:04:29.418743: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcudart.so.11.0'; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory\n",
-      "2022-06-07 09:04:29.418773: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.\n"
+      "2022-06-10 06:44:48.375354: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcudart.so.11.0'; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory\n",
+      "2022-06-10 06:44:48.375413: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.\n"
      ]
     },
     {
@@ -60,13 +60,13 @@
   {
    "cell_type": "code",
    "execution_count": 2,
-   "id": "a9f8a556",
+   "id": "6cf909ad",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-07T09:04:32.213044Z",
-     "iopub.status.busy": "2022-06-07T09:04:32.212561Z",
-     "iopub.status.idle": "2022-06-07T09:04:32.216252Z",
-     "shell.execute_reply": "2022-06-07T09:04:32.215645Z"
+     "iopub.execute_input": "2022-06-10T06:44:51.518386Z",
+     "iopub.status.busy": "2022-06-10T06:44:51.517900Z",
+     "iopub.status.idle": "2022-06-10T06:44:51.521515Z",
+     "shell.execute_reply": "2022-06-10T06:44:51.520973Z"
     }
    },
    "outputs": [],
@@ -81,13 +81,13 @@
   {
    "cell_type": "code",
    "execution_count": 3,
-   "id": "683ff875",
+   "id": "1f400ede",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-07T09:04:32.218978Z",
-     "iopub.status.busy": "2022-06-07T09:04:32.218644Z",
-     "iopub.status.idle": "2022-06-07T09:04:32.866173Z",
-     "shell.execute_reply": "2022-06-07T09:04:32.865284Z"
+     "iopub.execute_input": "2022-06-10T06:44:51.524751Z",
+     "iopub.status.busy": "2022-06-10T06:44:51.523830Z",
+     "iopub.status.idle": "2022-06-10T06:44:52.247159Z",
+     "shell.execute_reply": "2022-06-10T06:44:52.246506Z"
     }
    },
    "outputs": [],
@@ -99,7 +99,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "9c884689",
+   "id": "f66e5b1d",
    "metadata": {},
    "source": [
     "The VFF inducing variables are defined as a projection $u_m = \\mathcal{P}_{\\phi_m}(f)$ (eq. (59)) of the GP $f(\\cdot)$ onto a truncated Fourier basis, $\\phi_m = [1, \\cos(\\omega_1(x-a)),\\dots,\\cos(\\omega_M(x-a)),\\sin(\\omega_1(x-a)),\\dots,\\sin(\\omega_M(x-a))]$ (eq. (47)). To represent this we define a new inducing variables class that derives from the `InducingVariables` base class."
@@ -108,13 +108,13 @@
   {
    "cell_type": "code",
    "execution_count": 4,
-   "id": "95fb1ee8",
+   "id": "92e75884",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-07T09:04:32.870265Z",
-     "iopub.status.busy": "2022-06-07T09:04:32.869576Z",
-     "iopub.status.idle": "2022-06-07T09:04:32.877689Z",
-     "shell.execute_reply": "2022-06-07T09:04:32.876787Z"
+     "iopub.execute_input": "2022-06-10T06:44:52.251028Z",
+     "iopub.status.busy": "2022-06-10T06:44:52.250548Z",
+     "iopub.status.idle": "2022-06-10T06:44:52.256234Z",
+     "shell.execute_reply": "2022-06-10T06:44:52.255564Z"
     }
    },
    "outputs": [],
@@ -147,7 +147,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "84c78423",
+   "id": "94e2a669",
    "metadata": {},
    "source": [
     "Next, we need to define how to compute $\\mathrm{K}_\\mathbf{uu} = \\operatorname{cov}(u_m, u_{m'})$ (eq. (61)) and $\\mathrm{K}_\\mathbf{uf} = \\operatorname{cov}(u_m, f(x_n))$ (eq. (60))."
@@ -156,13 +156,13 @@
   {
    "cell_type": "code",
    "execution_count": 5,
-   "id": "09f2a50c",
+   "id": "70f179d2",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-07T09:04:32.881223Z",
-     "iopub.status.busy": "2022-06-07T09:04:32.880796Z",
-     "iopub.status.idle": "2022-06-07T09:04:32.908263Z",
-     "shell.execute_reply": "2022-06-07T09:04:32.907285Z"
+     "iopub.execute_input": "2022-06-10T06:44:52.259102Z",
+     "iopub.status.busy": "2022-06-10T06:44:52.258813Z",
+     "iopub.status.idle": "2022-06-10T06:44:52.291595Z",
+     "shell.execute_reply": "2022-06-10T06:44:52.290046Z"
     }
    },
    "outputs": [],
@@ -276,7 +276,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "4fc36984",
+   "id": "bca35c3d",
    "metadata": {},
    "source": [
     "In principle, this is all we need; however, to be able to take advantage of the structure of `Kuu`, we need to also implement new versions of the KL divergence from the prior to the approximate posterior (`prior_kl`) and the computation of the Gaussian process conditional (posterior) equations:"
@@ -285,13 +285,13 @@
   {
    "cell_type": "code",
    "execution_count": 6,
-   "id": "7b396ac6",
+   "id": "aa8aed06",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-07T09:04:32.911855Z",
-     "iopub.status.busy": "2022-06-07T09:04:32.911457Z",
-     "iopub.status.idle": "2022-06-07T09:04:32.921629Z",
-     "shell.execute_reply": "2022-06-07T09:04:32.920617Z"
+     "iopub.execute_input": "2022-06-10T06:44:52.298858Z",
+     "iopub.status.busy": "2022-06-10T06:44:52.298188Z",
+     "iopub.status.idle": "2022-06-10T06:44:52.311469Z",
+     "shell.execute_reply": "2022-06-10T06:44:52.310197Z"
     }
    },
    "outputs": [],
@@ -352,13 +352,13 @@
   {
    "cell_type": "code",
    "execution_count": 7,
-   "id": "0fa90ce3",
+   "id": "3aab4e36",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-07T09:04:32.926723Z",
-     "iopub.status.busy": "2022-06-07T09:04:32.926118Z",
-     "iopub.status.idle": "2022-06-07T09:04:32.944135Z",
-     "shell.execute_reply": "2022-06-07T09:04:32.943501Z"
+     "iopub.execute_input": "2022-06-10T06:44:52.316748Z",
+     "iopub.status.busy": "2022-06-10T06:44:52.316175Z",
+     "iopub.status.idle": "2022-06-10T06:44:52.332701Z",
+     "shell.execute_reply": "2022-06-10T06:44:52.332083Z"
     }
    },
    "outputs": [],
@@ -486,7 +486,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "73eccf90",
+   "id": "7eaf4b99",
    "metadata": {},
    "source": [
     "We now have to register our Posterior object:"
@@ -495,13 +495,13 @@
   {
    "cell_type": "code",
    "execution_count": 8,
-   "id": "1dffc6a7",
+   "id": "b410e1f5",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-07T09:04:32.947568Z",
-     "iopub.status.busy": "2022-06-07T09:04:32.947204Z",
-     "iopub.status.idle": "2022-06-07T09:04:32.951091Z",
-     "shell.execute_reply": "2022-06-07T09:04:32.950452Z"
+     "iopub.execute_input": "2022-06-10T06:44:52.335372Z",
+     "iopub.status.busy": "2022-06-10T06:44:52.335090Z",
+     "iopub.status.idle": "2022-06-10T06:44:52.338293Z",
+     "shell.execute_reply": "2022-06-10T06:44:52.337737Z"
     }
    },
    "outputs": [],
@@ -513,7 +513,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "529d49eb",
+   "id": "c3cea498",
    "metadata": {},
    "source": [
     "`gpflow.conditionals.conditional` is a short-hand for calling the fused prediction code path:"
@@ -522,13 +522,13 @@
   {
    "cell_type": "code",
    "execution_count": 9,
-   "id": "c8305865",
+   "id": "747cb0cd",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-07T09:04:32.983193Z",
-     "iopub.status.busy": "2022-06-07T09:04:32.982743Z",
-     "iopub.status.idle": "2022-06-07T09:04:33.105026Z",
-     "shell.execute_reply": "2022-06-07T09:04:33.104293Z"
+     "iopub.execute_input": "2022-06-10T06:44:52.386734Z",
+     "iopub.status.busy": "2022-06-10T06:44:52.386126Z",
+     "iopub.status.idle": "2022-06-10T06:44:52.563290Z",
+     "shell.execute_reply": "2022-06-10T06:44:52.562557Z"
     }
    },
    "outputs": [
@@ -545,10 +545,10 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2022-06-07 09:04:32.986880: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcuda.so.1'; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory\n",
-      "2022-06-07 09:04:32.986917: W tensorflow/stream_executor/cuda/cuda_driver.cc:269] failed call to cuInit: UNKNOWN ERROR (303)\n",
-      "2022-06-07 09:04:32.986936: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (bb5e1c5f504d): /proc/driver/nvidia/version does not exist\n",
-      "2022-06-07 09:04:32.987246: I tensorflow/core/platform/cpu_feature_guard.cc:151] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA\n",
+      "2022-06-10 06:44:52.393216: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcuda.so.1'; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory\n",
+      "2022-06-10 06:44:52.393282: W tensorflow/stream_executor/cuda/cuda_driver.cc:269] failed call to cuInit: UNKNOWN ERROR (303)\n",
+      "2022-06-10 06:44:52.393313: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (0091ed1183cb): /proc/driver/nvidia/version does not exist\n",
+      "2022-06-10 06:44:52.393710: I tensorflow/core/platform/cpu_feature_guard.cc:151] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA\n",
       "To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.\n",
       "/home/circleci/project/gpflow/experimental/utils.py:42: UserWarning: You're calling gpflow.experimental.check_shapes.checker.ShapeChecker.__init__ which is considered *experimental*. Expect: breaking changes, poor documentation, and bugs.\n",
       "  warn(\n"
@@ -578,7 +578,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "f852001d",
+   "id": "16419b59",
    "metadata": {},
    "source": [
     "We can also call the cached path:\n"
@@ -587,13 +587,13 @@
   {
    "cell_type": "code",
    "execution_count": 10,
-   "id": "cc8308aa",
+   "id": "8530ff8b",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-07T09:04:33.108356Z",
-     "iopub.status.busy": "2022-06-07T09:04:33.107978Z",
-     "iopub.status.idle": "2022-06-07T09:04:33.170192Z",
-     "shell.execute_reply": "2022-06-07T09:04:33.169495Z"
+     "iopub.execute_input": "2022-06-10T06:44:52.566029Z",
+     "iopub.status.busy": "2022-06-10T06:44:52.565736Z",
+     "iopub.status.idle": "2022-06-10T06:44:52.641593Z",
+     "shell.execute_reply": "2022-06-10T06:44:52.640891Z"
     }
    },
    "outputs": [],
@@ -607,7 +607,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "4d494606",
+   "id": "e28b9768",
    "metadata": {},
    "source": [
     "We now demonstrate how to use these new types of inducing variables with the `SVGP` model class. First, let's create some toy data:"
@@ -616,13 +616,13 @@
   {
    "cell_type": "code",
    "execution_count": 11,
-   "id": "bc446440",
+   "id": "d76291ce",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-07T09:04:33.174048Z",
-     "iopub.status.busy": "2022-06-07T09:04:33.173649Z",
-     "iopub.status.idle": "2022-06-07T09:04:33.180127Z",
-     "shell.execute_reply": "2022-06-07T09:04:33.179268Z"
+     "iopub.execute_input": "2022-06-10T06:44:52.644887Z",
+     "iopub.status.busy": "2022-06-10T06:44:52.644578Z",
+     "iopub.status.idle": "2022-06-10T06:44:52.649753Z",
+     "shell.execute_reply": "2022-06-10T06:44:52.649115Z"
     }
    },
    "outputs": [],
@@ -647,13 +647,13 @@
   {
    "cell_type": "code",
    "execution_count": 12,
-   "id": "c892ff0a",
+   "id": "6bc75093",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-07T09:04:33.183145Z",
-     "iopub.status.busy": "2022-06-07T09:04:33.182820Z",
-     "iopub.status.idle": "2022-06-07T09:04:33.354924Z",
-     "shell.execute_reply": "2022-06-07T09:04:33.354077Z"
+     "iopub.execute_input": "2022-06-10T06:44:52.652279Z",
+     "iopub.status.busy": "2022-06-10T06:44:52.651984Z",
+     "iopub.status.idle": "2022-06-10T06:44:52.858045Z",
+     "shell.execute_reply": "2022-06-10T06:44:52.857360Z"
     }
    },
    "outputs": [
@@ -680,7 +680,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "b346bd2b",
+   "id": "795d77d5",
    "metadata": {},
    "source": [
     "Setting up an SVGP model with variational Fourier feature inducing variables is as simple as replacing the `inducing_variable` argument:"
@@ -689,13 +689,13 @@
   {
    "cell_type": "code",
    "execution_count": 13,
-   "id": "479eefc1",
+   "id": "f89c2aa4",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-07T09:04:33.358720Z",
-     "iopub.status.busy": "2022-06-07T09:04:33.358287Z",
-     "iopub.status.idle": "2022-06-07T09:04:33.564694Z",
-     "shell.execute_reply": "2022-06-07T09:04:33.564015Z"
+     "iopub.execute_input": "2022-06-10T06:44:52.860897Z",
+     "iopub.status.busy": "2022-06-10T06:44:52.860581Z",
+     "iopub.status.idle": "2022-06-10T06:44:53.111010Z",
+     "shell.execute_reply": "2022-06-10T06:44:53.109752Z"
     }
    },
    "outputs": [
@@ -703,7 +703,7 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2022-06-07 09:04:33.394780: W tensorflow/python/util/util.cc:368] Sets are not currently considered sequences, but this may change in the future, so consider avoiding using them.\n"
+      "2022-06-10 06:44:52.917936: W tensorflow/python/util/util.cc:368] Sets are not currently considered sequences, but this may change in the future, so consider avoiding using them.\n"
      ]
     }
    ],
@@ -724,13 +724,13 @@
   {
    "cell_type": "code",
    "execution_count": 14,
-   "id": "a872f124",
+   "id": "352d01fb",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-07T09:04:33.567544Z",
-     "iopub.status.busy": "2022-06-07T09:04:33.567219Z",
-     "iopub.status.idle": "2022-06-07T09:05:03.448517Z",
-     "shell.execute_reply": "2022-06-07T09:05:03.447469Z"
+     "iopub.execute_input": "2022-06-10T06:44:53.116905Z",
+     "iopub.status.busy": "2022-06-10T06:44:53.116401Z",
+     "iopub.status.idle": "2022-06-10T06:45:26.924843Z",
+     "shell.execute_reply": "2022-06-10T06:45:26.924130Z"
     }
    },
    "outputs": [
@@ -773,7 +773,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "6fd8ea3f",
+   "id": "8b13fba4",
    "metadata": {},
    "source": [
     "For comparison we also construct an SVGP model using inducing points and an exact GPR model:"
@@ -782,13 +782,13 @@
   {
    "cell_type": "code",
    "execution_count": 15,
-   "id": "f93abcfc",
+   "id": "02550303",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-07T09:05:03.452964Z",
-     "iopub.status.busy": "2022-06-07T09:05:03.452450Z",
-     "iopub.status.idle": "2022-06-07T09:05:03.503416Z",
-     "shell.execute_reply": "2022-06-07T09:05:03.502438Z"
+     "iopub.execute_input": "2022-06-10T06:45:26.927859Z",
+     "iopub.status.busy": "2022-06-10T06:45:26.927558Z",
+     "iopub.status.idle": "2022-06-10T06:45:26.959584Z",
+     "shell.execute_reply": "2022-06-10T06:45:26.958954Z"
     }
    },
    "outputs": [],
@@ -808,13 +808,13 @@
   {
    "cell_type": "code",
    "execution_count": 16,
-   "id": "61777f8f",
+   "id": "2fc6601d",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-07T09:05:03.507609Z",
-     "iopub.status.busy": "2022-06-07T09:05:03.507103Z",
-     "iopub.status.idle": "2022-06-07T09:05:09.045784Z",
-     "shell.execute_reply": "2022-06-07T09:05:09.044796Z"
+     "iopub.execute_input": "2022-06-10T06:45:26.962724Z",
+     "iopub.status.busy": "2022-06-10T06:45:26.962409Z",
+     "iopub.status.idle": "2022-06-10T06:45:32.331903Z",
+     "shell.execute_reply": "2022-06-10T06:45:32.331272Z"
     }
    },
    "outputs": [
@@ -857,13 +857,13 @@
   {
    "cell_type": "code",
    "execution_count": 17,
-   "id": "84777683",
+   "id": "0871a7ac",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-07T09:05:09.050083Z",
-     "iopub.status.busy": "2022-06-07T09:05:09.049612Z",
-     "iopub.status.idle": "2022-06-07T09:05:09.087748Z",
-     "shell.execute_reply": "2022-06-07T09:05:09.086985Z"
+     "iopub.execute_input": "2022-06-10T06:45:32.334685Z",
+     "iopub.status.busy": "2022-06-10T06:45:32.334331Z",
+     "iopub.status.idle": "2022-06-10T06:45:32.361147Z",
+     "shell.execute_reply": "2022-06-10T06:45:32.360451Z"
     }
    },
    "outputs": [
@@ -902,13 +902,13 @@
   {
    "cell_type": "code",
    "execution_count": 18,
-   "id": "0cb04024",
+   "id": "efbb2433",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-07T09:05:09.091484Z",
-     "iopub.status.busy": "2022-06-07T09:05:09.091045Z",
-     "iopub.status.idle": "2022-06-07T09:05:09.260709Z",
-     "shell.execute_reply": "2022-06-07T09:05:09.260013Z"
+     "iopub.execute_input": "2022-06-10T06:45:32.363901Z",
+     "iopub.status.busy": "2022-06-10T06:45:32.363516Z",
+     "iopub.status.idle": "2022-06-10T06:45:32.532073Z",
+     "shell.execute_reply": "2022-06-10T06:45:32.531370Z"
     },
     "lines_to_next_cell": 1
    },
@@ -935,13 +935,13 @@
   {
    "cell_type": "code",
    "execution_count": 19,
-   "id": "e4cb85fd",
+   "id": "d447bb86",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-07T09:05:09.264664Z",
-     "iopub.status.busy": "2022-06-07T09:05:09.264299Z",
-     "iopub.status.idle": "2022-06-07T09:05:09.605366Z",
-     "shell.execute_reply": "2022-06-07T09:05:09.604599Z"
+     "iopub.execute_input": "2022-06-10T06:45:32.534743Z",
+     "iopub.status.busy": "2022-06-10T06:45:32.534441Z",
+     "iopub.status.idle": "2022-06-10T06:45:32.932688Z",
+     "shell.execute_reply": "2022-06-10T06:45:32.931559Z"
     }
    },
    "outputs": [

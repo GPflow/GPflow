@@ -1,18 +1,22 @@
 
 <!DOCTYPE html>
 
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
     <title>Basic (Gaussian likelihood) GP regression model &#8212; GPflow 2.5.2 documentation</title>
-    
-  <!-- Loaded before other Sphinx assets -->
-  <link href="../../_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
-<link href="../../_static/styles/pydata-sphinx-theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
+<script>
+  document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+  document.documentElement.dataset.theme = localStorage.getItem("theme") || "light"
+</script>
 
-    
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=92025949c220c2e29695" rel="stylesheet">
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=92025949c220c2e29695" rel="stylesheet">
+
+
   <link rel="stylesheet"
     href="../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
   <link rel="preload" as="font" type="font/woff2" crossorigin
@@ -22,13 +26,14 @@
 
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="../../_static/pydata-custom.css" />
-    
+
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf">
+  <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=92025949c220c2e29695">
 
     <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
     <script src="../../_static/jquery.js"></script>
     <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="../../_static/doctools.js"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="https://unpkg.com/@jupyter-widgets/html-manager@^0.20.1/dist/embed-amd.js"></script>
@@ -38,34 +43,41 @@
     <link rel="search" title="Search" href="../../search.html" />
     <link rel="next" title="More details on models with many observation points" href="../advanced/advanced_many_points.html" />
     <link rel="prev" title="Monitoring Optimisation" href="monitoring.html" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="docsearch:language" content="None">
-    
-
-    <!-- Google Analytics -->
-    
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="docsearch:language" content="en">
   </head>
-  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="60">
-    
-    <div class="container-fluid" id="banner"></div>
+  
+  
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="180" data-default-mode="">
+    <div class="bd-header-announcement container-fluid" id="banner">
+      
+
+    </div>
 
     
-    <nav class="navbar navbar-light navbar-expand-lg bg-light fixed-top bd-navbar" id="navbar-main"><div class="container-xl">
+    <nav class="bd-header navbar navbar-light navbar-expand-lg bg-light fixed-top bd-navbar" id="navbar-main"><div class="bd-header__inner container-xl">
 
   <div id="navbar-start">
     
     
+  
 
-<a class="navbar-brand" href="../../index.html">
-  <img src="../../_static/gpflow_logo.svg" class="logo" alt="logo">
+
+<a class="navbar-brand logo" href="../../index.html">
+  
+  
+  
+  
+    <img src="../../_static/gpflow_logo.svg" class="logo__image only-light" alt="Logo image">
+    <img src="../../_static/gpflow_logo.svg" class="logo__image only-dark" alt="Logo image">
+  
+  
 </a>
-
-
     
   </div>
 
   <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar-collapsible" aria-controls="navbar-collapsible" aria-expanded="false" aria-label="Toggle navigation">
-    <span class="navbar-toggler-icon"></span>
+    <span class="fas fa-bars"></span>
   </button>
 
   
@@ -126,7 +138,7 @@
       
       <div class="navbar-end-item">
         <div class="dropdown" id="version_switcher">
-    <button type="button" class="btn btn-primary btn-sm navbar-btn dropdown-toggle" id="version_switcher_button" data-toggle="dropdown">
+    <button type="button" class="btn btn-sm navbar-btn dropdown-toggle" id="version_switcher_button" data-toggle="dropdown">
         develop  <!-- this text may get changed later by javascript -->
         <span class="caret"></span>
     </button>
@@ -166,6 +178,10 @@ function checkPageExistsAndRedirect(event) {
 (function () {
     $.getJSON("https://gpflow.github.io/GPflow/versions.json", function(data, textStatus, jqXHR) {
         const currentFilePath = "notebooks/basics/regression.html";
+        let btn = document.getElementById("version_switcher_button");
+        // Set empty strings by default so that these attributes exist and can be used in CSS selectors
+        btn.dataset["activeVersionName"] = "";
+        btn.dataset["activeVersion"] = "";
         // create links to the corresponding page in the other docs versions
         $.each(data, function(index, entry) {
             // if no custom name specified (e.g., "latest"), use version string
@@ -193,7 +209,6 @@ function checkPageExistsAndRedirect(event) {
             // version's entry
             if (entry.version == "develop") {
                 node.classList.add("active");
-                let btn = document.getElementById("version_switcher_button");
                 btn.innerText = btn.dataset["activeVersionName"] = entry.name;
                 btn.dataset["activeVersion"] = entry.version;
             }
@@ -209,13 +224,13 @@ function checkPageExistsAndRedirect(event) {
     </nav>
     
 
-    <div class="container-xl">
-      <div class="row">
+    <div class="bd-container container-xl">
+      <div class="bd-container__inner row">
           
-            
-            <!-- Only show if we have sidebars configured, else just a small margin  -->
-            <div class="col-12 col-md-3 bd-sidebar">
-              <div class="sidebar-start-items"><form class="bd-search d-flex align-items-center" action="../../search.html" method="get">
+
+<!-- Only show if we have sidebars configured, else just a small margin  -->
+<div class="bd-sidebar-primary col-12 col-md-3 bd-sidebar">
+  <div class="sidebar-start-items"><form class="bd-search d-flex align-items-center" action="../../search.html" method="get">
   <i class="icon fas fa-search"></i>
   <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
 </form><nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
@@ -413,19 +428,20 @@ function checkPageExistsAndRedirect(event) {
 
   </div>
 </nav>
-              </div>
-              <div class="sidebar-end-items">
-              </div>
-            </div>
-            
-          
+  </div>
+  <div class="sidebar-end-items">
+  </div>
+</div>
+
 
           
-          <div class="d-none d-xl-block col-xl-2 bd-toc">
-            
-              
-              <div class="toc-item">
-                
+
+
+<div class="bd-sidebar-secondary d-none d-xl-block col-xl-2 bd-toc">
+  
+    
+    <div class="toc-item">
+      
 <div class="tocsection onthispage mt-5 pt-1 pb-3">
     <i class="fas fa-list"></i> On this page
 </div>
@@ -470,23 +486,21 @@ function checkPageExistsAndRedirect(event) {
 </ul>
 
 </nav>
-              </div>
-              
-              <div class="toc-item">
-                
-              </div>
-              
-            
-          </div>
-          
+    </div>
+    
+    <div class="toc-item">
+      
+    </div>
+    
+  
+</div>
+
 
           
           
-            
-          
-          <main class="col-12 col-md-9 col-xl-7 py-md-5 pl-md-5 pr-md-4 bd-content" role="main">
+          <div class="bd-content col-12 col-md-9 col-xl-7">
               
-              <div>
+              <article class="bd-article" role="main">
                 
   
 <style>
@@ -745,7 +759,7 @@ div.rendered_html tbody tr:hover {
 }
 </style>
 <section id="Basic-(Gaussian-likelihood)-GP-regression-model">
-<h1>Basic (Gaussian likelihood) GP regression model<a class="headerlink" href="#Basic-(Gaussian-likelihood)-GP-regression-model" title="Permalink to this headline">#</a></h1>
+<h1>Basic (Gaussian likelihood) GP regression model<a class="headerlink" href="#Basic-(Gaussian-likelihood)-GP-regression-model" title="Permalink to this heading">#</a></h1>
 <p>This notebook shows the different steps for creating and using a standard GP regression model, including: - reading and formatting data - choosing a kernel function - choosing a mean function (optional) - creating the model - viewing, getting, and setting model parameters - optimizing the model parameters - making predictions</p>
 <p>We focus here on the implementation of the models in GPflow; for more intuition on these models, see <a class="reference external" href="https://drafts.distill.pub/gp/">A Practical Guide to Gaussian Processes</a> and <a class="reference external" href="https://distill.pub/2019/visual-exploration-gaussian-processes/">A Visual Exploration of Gaussian Processes</a>.</p>
 <div class="nbinput docutils container">
@@ -769,8 +783,8 @@ div.rendered_html tbody tr:hover {
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2022-06-07 09:15:57.396382: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcudart.so.11.0&#39;; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory
-2022-06-07 09:15:57.396486: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.
+2022-06-10 06:52:57.021018: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcudart.so.11.0&#39;; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory
+2022-06-10 06:52:57.021045: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.
 /home/circleci/project/gpflow/experimental/utils.py:42: UserWarning: You&#39;re calling gpflow.experimental.check_shapes.decorator.check_shapes which is considered *experimental*. Expect: breaking changes, poor documentation, and bugs.
   warn(
 </pre></div></div>
@@ -799,7 +813,7 @@ div.rendered_html tbody tr:hover {
 Y_i = f(X_i) + \varepsilon_i\,,
 \end{equation}</span> where <span class="math notranslate nohighlight">\(f \sim \mathcal{GP}(\mu(\cdot), k(\cdot, \cdot'))\)</span>, and <span class="math notranslate nohighlight">\(\varepsilon \sim \mathcal{N}(0, \tau^2 I)\)</span>.</p>
 <section id="Choose-a-kernel">
-<h2>Choose a kernel<a class="headerlink" href="#Choose-a-kernel" title="Permalink to this headline">#</a></h2>
+<h2>Choose a kernel<a class="headerlink" href="#Choose-a-kernel" title="Permalink to this heading">#</a></h2>
 <p>Several kernels (covariance functions) are implemented in GPflow. You can easily combine them to create new ones (see <a class="reference internal" href="../advanced/kernels.html"><span class="doc">Manipulating kernels</span></a>). You can also implement new covariance functions, as shown in the <a class="reference internal" href="../tailor/kernel_design.html"><span class="doc">Kernel design</span></a> notebook. Here, we will use a simple one:</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
@@ -814,10 +828,10 @@ Y_i = f(X_i) + \varepsilon_i\,,
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2022-06-07 09:16:00.858991: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcuda.so.1&#39;; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory
-2022-06-07 09:16:00.859024: W tensorflow/stream_executor/cuda/cuda_driver.cc:269] failed call to cuInit: UNKNOWN ERROR (303)
-2022-06-07 09:16:00.859045: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (bb5e1c5f504d): /proc/driver/nvidia/version does not exist
-2022-06-07 09:16:00.859314: I tensorflow/core/platform/cpu_feature_guard.cc:151] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA
+2022-06-10 06:52:59.989004: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcuda.so.1&#39;; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory
+2022-06-10 06:52:59.989036: W tensorflow/stream_executor/cuda/cuda_driver.cc:269] failed call to cuInit: UNKNOWN ERROR (303)
+2022-06-10 06:52:59.989054: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (0091ed1183cb): /proc/driver/nvidia/version does not exist
+2022-06-10 06:52:59.989326: I tensorflow/core/platform/cpu_feature_guard.cc:151] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA
 To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.
 </pre></div></div>
 </div>
@@ -847,14 +861,14 @@ To enable them in other operations, rebuild TensorFlow with the appropriate comp
 <p>The Matern 5/2 kernel has two parameters: <code class="docutils literal notranslate"><span class="pre">lengthscales</span></code>, which encodes the “wiggliness” of the GP, and <code class="docutils literal notranslate"><span class="pre">variance</span></code>, which tunes the amplitude. They are both set to 1.0 as the default value. For more details on the meaning of the other columns, see <a class="reference internal" href="../advanced/kernels.html"><span class="doc">Manipulating kernels</span></a>.</p>
 </section>
 <section id="Choose-a-mean-function-(optional)">
-<h2>Choose a mean function (optional)<a class="headerlink" href="#Choose-a-mean-function-(optional)" title="Permalink to this headline">#</a></h2>
+<h2>Choose a mean function (optional)<a class="headerlink" href="#Choose-a-mean-function-(optional)" title="Permalink to this heading">#</a></h2>
 <p>It is common to choose <span class="math notranslate nohighlight">\(\mu = 0\)</span>, which is the GPflow default.</p>
 <p>However, if there is a clear pattern (such as a mean value of <code class="docutils literal notranslate"><span class="pre">Y</span></code> that is far away from 0, or a linear trend in the data), mean functions can be beneficial. Some simple ones are provided in the <code class="docutils literal notranslate"><span class="pre">gpflow.mean_functions</span></code> module.</p>
 <p>Here’s how to define a linear mean function:</p>
 <p><code class="docutils literal notranslate"><span class="pre">meanf</span> <span class="pre">=</span> <span class="pre">gpflow.mean_functions.Linear()</span></code></p>
 </section>
 <section id="Construct-a-model">
-<h2>Construct a model<a class="headerlink" href="#Construct-a-model" title="Permalink to this headline">#</a></h2>
+<h2>Construct a model<a class="headerlink" href="#Construct-a-model" title="Permalink to this heading">#</a></h2>
 <p>A GPflow model is created by instantiating one of the GPflow model classes, in this case GPR. We’ll make a kernel <code class="docutils literal notranslate"><span class="pre">k</span></code> and instantiate a GPR object using the generated data and the kernel. We’ll also set the variance of the likelihood to a sensible initial guess.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
@@ -920,7 +934,7 @@ To enable them in other operations, rebuild TensorFlow with the appropriate comp
 </div>
 </section>
 <section id="Optimize-the-model-parameters">
-<h2>Optimize the model parameters<a class="headerlink" href="#Optimize-the-model-parameters" title="Permalink to this headline">#</a></h2>
+<h2>Optimize the model parameters<a class="headerlink" href="#Optimize-the-model-parameters" title="Permalink to this heading">#</a></h2>
 <p>To obtain meaningful predictions, you need to tune the model parameters (that is, the parameters of the kernel, the likelihood, and the mean function if applicable) to the data at hand.</p>
 <p>There are several optimizers available in GPflow. Here we use the <code class="docutils literal notranslate"><span class="pre">Scipy</span></code> optimizer, which by default implements the L-BFGS-B algorithm. (You can select other algorithms by using the <code class="docutils literal notranslate"><span class="pre">method=</span></code> keyword argument to its <code class="docutils literal notranslate"><span class="pre">minimize</span></code> method; see <a class="reference external" href="https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.minimize.html">the SciPy documentation</a> for details of available options.)</p>
 <div class="nbinput nblast docutils container">
@@ -946,7 +960,7 @@ To enable them in other operations, rebuild TensorFlow with the appropriate comp
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2022-06-07 09:16:00.970532: W tensorflow/python/util/util.cc:368] Sets are not currently considered sequences, but this may change in the future, so consider avoiding using them.
+2022-06-10 06:53:00.114066: W tensorflow/python/util/util.cc:368] Sets are not currently considered sequences, but this may change in the future, so consider avoiding using them.
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -954,10 +968,10 @@ To enable them in other operations, rebuild TensorFlow with the appropriate comp
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-WARNING:tensorflow:AutoGraph could not transform &lt;function _c3_mro at 0x7fa070e7ee60&gt; and will run it as-is.
+WARNING:tensorflow:AutoGraph could not transform &lt;function _c3_mro at 0x7f5e2e0aae60&gt; and will run it as-is.
 Cause: for/else statement not yet supported
 To silence this warning, decorate the function with @tf.autograph.experimental.do_not_convert
-WARNING: AutoGraph could not transform &lt;function _c3_mro at 0x7fa070e7ee60&gt; and will run it as-is.
+WARNING: AutoGraph could not transform &lt;function _c3_mro at 0x7f5e2e0aae60&gt; and will run it as-is.
 Cause: for/else statement not yet supported
 To silence this warning, decorate the function with @tf.autograph.experimental.do_not_convert
 ╒═════════════════════════╤═══════════╤══════════════════╤═════════╤═════════════╤═════════╤═════════╤═══════════╕
@@ -975,7 +989,7 @@ To silence this warning, decorate the function with @tf.autograph.experimental.d
 <p>The local optimum found by Maximum Likelihood might not be the one you want (for example, it might be overfitting or oversmooth). This depends on the initial values of the hyperparameters, and is specific to each dataset. As an alternative to Maximum Likelihood, <a class="reference internal" href="../advanced/mcmc.html"><span class="doc">Markov Chain Monte Carlo (MCMC)</span></a> is also available.</p>
 </section>
 <section id="Make-predictions">
-<h2>Make predictions<a class="headerlink" href="#Make-predictions" title="Permalink to this headline">#</a></h2>
+<h2>Make predictions<a class="headerlink" href="#Make-predictions" title="Permalink to this heading">#</a></h2>
 <p>We can now use the model to make some predictions at the new points <code class="docutils literal notranslate"><span class="pre">Xnew</span></code>. You might be interested in predicting two different quantities: the latent function values <code class="docutils literal notranslate"><span class="pre">f(Xnew)</span></code> (the denoised signal), or the values of new observations <code class="docutils literal notranslate"><span class="pre">y(Xnew)</span></code> (signal + noise). Because we are dealing with Gaussian probabilistic models, the predictions typically produce a mean and variance as output. Alternatively, you can obtain samples of <code class="docutils literal notranslate"><span class="pre">f(Xnew)</span></code> or the log density of the new data points
 <code class="docutils literal notranslate"><span class="pre">(Xnew,</span> <span class="pre">Ynew)</span></code>.</p>
 <p>GPflow models have several prediction methods:</p>
@@ -1027,11 +1041,11 @@ To silence this warning, decorate the function with @tf.autograph.experimental.d
 </div>
 </section>
 <section id="GP-regression-in-higher-dimensions">
-<h2>GP regression in higher dimensions<a class="headerlink" href="#GP-regression-in-higher-dimensions" title="Permalink to this headline">#</a></h2>
+<h2>GP regression in higher dimensions<a class="headerlink" href="#GP-regression-in-higher-dimensions" title="Permalink to this heading">#</a></h2>
 <p>Very little changes when the input space has more than one dimension. By default, the <code class="docutils literal notranslate"><span class="pre">lengthscales</span></code> is an isotropic (scalar) parameter. It is generally recommended that you allow to tune a different lengthscale for each dimension (Automatic Relevance Determination, ARD): simply initialize <code class="docutils literal notranslate"><span class="pre">lengthscales</span></code> with an array of length <span class="math notranslate nohighlight">\(D\)</span> corresponding to the input dimension of <code class="docutils literal notranslate"><span class="pre">X</span></code>. See <a class="reference internal" href="../advanced/kernels.html"><span class="doc">Manipulating kernels</span></a> for further information.</p>
 </section>
 <section id="Further-reading">
-<h2>Further reading<a class="headerlink" href="#Further-reading" title="Permalink to this headline">#</a></h2>
+<h2>Further reading<a class="headerlink" href="#Further-reading" title="Permalink to this heading">#</a></h2>
 <ul class="simple">
 <li><p><a class="reference internal" href="../advanced/gps_for_big_data.html"><span class="doc">Stochastic Variational Inference for scalability with SVGP</span></a> for cases where there are a large number of observations.</p></li>
 <li><p><a class="reference internal" href="../advanced/ordinal_regression.html"><span class="doc">Ordinal regression</span></a> if the data is ordinal.</p></li>
@@ -1041,33 +1055,35 @@ To silence this warning, decorate the function with @tf.autograph.experimental.d
 </section>
 
 
-              </div>
+              </article>
               
-              
-          </main>
-          
 
+              
+          </div>
+          
       </div>
     </div>
+
+  
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script src="../../_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf"></script>
-<footer class="footer mt-5 mt-md-0">
-  <div class="container">
-    
-    <div class="footer-item">
-      <p class="copyright">
+  <script src="../../_static/scripts/pydata-sphinx-theme.js?digest=92025949c220c2e29695"></script>
+
+<footer class="bd-footer"><div class="bd-footer__inner container">
+  
+  <div class="footer-item">
+    <p class="copyright">
     &copy; Copyright 2022, The GPflow Contributors.<br>
 </p>
-    </div>
-    
-    <div class="footer-item">
-      <p class="sphinx-version">
-Created using <a href="http://sphinx-doc.org/">Sphinx</a> 4.5.0.<br>
-</p>
-    </div>
-    
   </div>
+  
+  <div class="footer-item">
+    <p class="sphinx-version">
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 5.0.1.<br>
+</p>
+  </div>
+  
+</div>
 </footer>
   </body>
 </html>
