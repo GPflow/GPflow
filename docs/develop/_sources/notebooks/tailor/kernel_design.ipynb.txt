@@ -2,7 +2,7 @@
  "cells": [
   {
    "cell_type": "markdown",
-   "id": "ec94af8c",
+   "id": "a1e6e8da",
    "metadata": {},
    "source": [
     "# Kernel Design\n",
@@ -17,13 +17,13 @@
   {
    "cell_type": "code",
    "execution_count": 1,
-   "id": "c447ef68",
+   "id": "842ee5b3",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-10T07:00:40.911133Z",
-     "iopub.status.busy": "2022-06-10T07:00:40.910671Z",
-     "iopub.status.idle": "2022-06-10T07:00:44.353464Z",
-     "shell.execute_reply": "2022-06-10T07:00:44.352812Z"
+     "iopub.execute_input": "2022-06-10T10:02:28.283242Z",
+     "iopub.status.busy": "2022-06-10T10:02:28.282836Z",
+     "iopub.status.idle": "2022-06-10T10:02:31.896248Z",
+     "shell.execute_reply": "2022-06-10T10:02:31.895380Z"
     }
    },
    "outputs": [
@@ -31,8 +31,8 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2022-06-10 07:00:41.124328: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcudart.so.11.0'; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory\n",
-      "2022-06-10 07:00:41.124356: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.\n"
+      "2022-06-10 10:02:28.482944: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcudart.so.11.0'; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory\n",
+      "2022-06-10 10:02:28.482978: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.\n"
      ]
     },
     {
@@ -57,7 +57,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "947ac71b",
+   "id": "f9dcdc43",
    "metadata": {},
    "source": [
     "To make this new kernel class, we inherit from the base class `gpflow.kernels.Kernel` and implement the three functions below. **NOTE:** Depending on the kernel to be implemented, other classes can be more adequate. For example, if the kernel to be implemented is isotropic stationary, you can immediately subclass `gpflow.kernels.IsotropicStationary` (at which point you\n",
@@ -80,13 +80,13 @@
   {
    "cell_type": "code",
    "execution_count": 2,
-   "id": "0fa789a4",
+   "id": "6a44355c",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-10T07:00:44.356893Z",
-     "iopub.status.busy": "2022-06-10T07:00:44.356441Z",
-     "iopub.status.idle": "2022-06-10T07:00:44.386063Z",
-     "shell.execute_reply": "2022-06-10T07:00:44.385012Z"
+     "iopub.execute_input": "2022-06-10T10:02:31.900849Z",
+     "iopub.status.busy": "2022-06-10T10:02:31.900274Z",
+     "iopub.status.idle": "2022-06-10T10:02:31.929363Z",
+     "shell.execute_reply": "2022-06-10T10:02:31.928491Z"
     }
    },
    "outputs": [
@@ -94,10 +94,10 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2022-06-10 07:00:44.360152: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcuda.so.1'; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory\n",
-      "2022-06-10 07:00:44.360185: W tensorflow/stream_executor/cuda/cuda_driver.cc:269] failed call to cuInit: UNKNOWN ERROR (303)\n",
-      "2022-06-10 07:00:44.360205: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (0091ed1183cb): /proc/driver/nvidia/version does not exist\n",
-      "2022-06-10 07:00:44.360484: I tensorflow/core/platform/cpu_feature_guard.cc:151] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA\n",
+      "2022-06-10 10:02:31.904232: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcuda.so.1'; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory\n",
+      "2022-06-10 10:02:31.904267: W tensorflow/stream_executor/cuda/cuda_driver.cc:269] failed call to cuInit: UNKNOWN ERROR (303)\n",
+      "2022-06-10 10:02:31.904287: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (97739b7bc232): /proc/driver/nvidia/version does not exist\n",
+      "2022-06-10 10:02:31.904572: I tensorflow/core/platform/cpu_feature_guard.cc:151] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA\n",
       "To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.\n"
      ]
     },
@@ -142,7 +142,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "8a62e4ee",
+   "id": "b73cc20d",
    "metadata": {},
    "source": [
     "We can now evaluate our new kernel function and draw samples from a Gaussian process with this covariance:"
@@ -151,13 +151,13 @@
   {
    "cell_type": "code",
    "execution_count": 3,
-   "id": "2aa6dcf9",
+   "id": "d7f89112",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-10T07:00:44.389999Z",
-     "iopub.status.busy": "2022-06-10T07:00:44.389637Z",
-     "iopub.status.idle": "2022-06-10T07:01:24.614742Z",
-     "shell.execute_reply": "2022-06-10T07:01:24.613951Z"
+     "iopub.execute_input": "2022-06-10T10:02:31.933029Z",
+     "iopub.status.busy": "2022-06-10T10:02:31.932536Z",
+     "iopub.status.idle": "2022-06-10T10:02:41.060367Z",
+     "shell.execute_reply": "2022-06-10T10:02:41.059717Z"
     }
    },
    "outputs": [
@@ -198,7 +198,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "7ee5026e",
+   "id": "d180f225",
    "metadata": {},
    "source": [
     "## Using the kernel in a model\n",
@@ -215,13 +215,13 @@
   {
    "cell_type": "code",
    "execution_count": 4,
-   "id": "ed2b1f09",
+   "id": "7d685415",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-10T07:01:24.618211Z",
-     "iopub.status.busy": "2022-06-10T07:01:24.617758Z",
-     "iopub.status.idle": "2022-06-10T07:01:30.117011Z",
-     "shell.execute_reply": "2022-06-10T07:01:30.116274Z"
+     "iopub.execute_input": "2022-06-10T10:02:41.065282Z",
+     "iopub.status.busy": "2022-06-10T10:02:41.064922Z",
+     "iopub.status.idle": "2022-06-10T10:02:45.508439Z",
+     "shell.execute_reply": "2022-06-10T10:02:45.507832Z"
     }
    },
    "outputs": [
@@ -231,14 +231,14 @@
      "text": [
       "/home/circleci/project/gpflow/experimental/utils.py:42: UserWarning: You're calling gpflow.experimental.check_shapes.checker.ShapeChecker.__init__ which is considered *experimental*. Expect: breaking changes, poor documentation, and bugs.\n",
       "  warn(\n",
-      "2022-06-10 07:01:24.659396: W tensorflow/python/util/util.cc:368] Sets are not currently considered sequences, but this may change in the future, so consider avoiding using them.\n"
+      "2022-06-10 10:02:41.091061: W tensorflow/python/util/util.cc:368] Sets are not currently considered sequences, but this may change in the future, so consider avoiding using them.\n"
      ]
     },
     {
      "name": "stdout",
      "output_type": "stream",
      "text": [
-      "WARNING:tensorflow:AutoGraph could not transform <function _c3_mro at 0x7f3cd9e92e60> and will run it as-is.\n",
+      "WARNING:tensorflow:AutoGraph could not transform <function _c3_mro at 0x7fc84f762e60> and will run it as-is.\n",
       "Cause: for/else statement not yet supported\n",
       "To silence this warning, decorate the function with @tf.autograph.experimental.do_not_convert\n"
      ]
@@ -247,7 +247,7 @@
      "name": "stdout",
      "output_type": "stream",
      "text": [
-      "WARNING: AutoGraph could not transform <function _c3_mro at 0x7f3cd9e92e60> and will run it as-is.\n",
+      "WARNING: AutoGraph could not transform <function _c3_mro at 0x7fc84f762e60> and will run it as-is.\n",
       "Cause: for/else statement not yet supported\n",
       "To silence this warning, decorate the function with @tf.autograph.experimental.do_not_convert\n"
      ]
@@ -317,7 +317,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "2c2b8faa",
+   "id": "a484baec",
    "metadata": {},
    "source": [
     "## See also\n",

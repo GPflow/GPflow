@@ -276,12 +276,23 @@ function checkPageExistsAndRedirect(event) {
 <span class="kn">from</span> <span class="nn">..base</span> <span class="kn">import</span> <span class="n">MeanAndVariance</span>
 <span class="kn">from</span> <span class="nn">..config</span> <span class="kn">import</span> <span class="n">default_float</span><span class="p">,</span> <span class="n">default_jitter</span>
 <span class="kn">from</span> <span class="nn">..expectations</span> <span class="kn">import</span> <span class="n">expectation</span>
+<span class="kn">from</span> <span class="nn">..experimental.check_shapes</span> <span class="kn">import</span> <span class="n">check_shapes</span>
 <span class="kn">from</span> <span class="nn">..inducing_variables</span> <span class="kn">import</span> <span class="n">InducingPoints</span><span class="p">,</span> <span class="n">InducingVariables</span>
 <span class="kn">from</span> <span class="nn">..kernels</span> <span class="kn">import</span> <span class="n">Kernel</span>
 <span class="kn">from</span> <span class="nn">..probability_distributions</span> <span class="kn">import</span> <span class="n">Gaussian</span>
 
 
-<div class="viewcode-block" id="uncertain_conditional"><a class="viewcode-back" href="../../../api/gpflow/conditionals/index.html#gpflow.conditionals.uncertain_conditional">[docs]</a><span class="k">def</span> <span class="nf">uncertain_conditional</span><span class="p">(</span>
+<div class="viewcode-block" id="uncertain_conditional"><a class="viewcode-back" href="../../../api/gpflow/conditionals/index.html#gpflow.conditionals.uncertain_conditional">[docs]</a><span class="nd">@check_shapes</span><span class="p">(</span>
+    <span class="s2">&quot;Xnew_mu: [batch..., N, Din]&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Xnew_var: [batch..., N, n, n]&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;inducing_variable: [M, Din, broadcast t]&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;q_mu: [M, Dout]&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;q_sqrt: [t, M, M]&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;return[0]: [batch..., N, Dout]&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;return[1]: [batch..., N, t, t] if full_output_cov&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;return[1]: [batch..., N, Dout] if not full_output_cov&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="k">def</span> <span class="nf">uncertain_conditional</span><span class="p">(</span>
     <span class="n">Xnew_mu</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
     <span class="n">Xnew_var</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
     <span class="n">inducing_variable</span><span class="p">:</span> <span class="n">InducingVariables</span><span class="p">,</span>
@@ -298,18 +309,16 @@ function checkPageExistsAndRedirect(event) {
 <span class="sd">    Calculates the conditional for uncertain inputs Xnew, p(Xnew) = N(Xnew_mu, Xnew_var).</span>
 <span class="sd">    See ``conditional`` documentation for further reference.</span>
 
-<span class="sd">    :param Xnew_mu: mean of the inputs, size [N, D]in</span>
-<span class="sd">    :param Xnew_var: covariance matrix of the inputs, size [N, n, n]</span>
+<span class="sd">    :param Xnew_mu: mean of the inputs</span>
+<span class="sd">    :param Xnew_var: covariance matrix of the inputs</span>
 <span class="sd">    :param inducing_variable: gpflow.InducingVariable object, only InducingPoints is supported</span>
 <span class="sd">    :param kernel: gpflow kernel object.</span>
-<span class="sd">    :param q_mu: mean inducing points, size [M, Dout]</span>
-<span class="sd">    :param q_sqrt: cholesky of the covariance matrix of the inducing points, size [t, M, M]</span>
+<span class="sd">    :param q_mu: mean inducing points</span>
+<span class="sd">    :param q_sqrt: cholesky of the covariance matrix of the inducing points</span>
 <span class="sd">    :param full_output_cov: boolean wheter to compute covariance between output dimension.</span>
 <span class="sd">        Influences the shape of return value ``fvar``. Default is False</span>
 <span class="sd">    :param white: boolean whether to use whitened representation. Default is False.</span>
-<span class="sd">    :return fmean, fvar: mean and covariance of the conditional, size ``fmean`` is [N, Dout],</span>
-<span class="sd">        size ``fvar`` depends on ``full_output_cov``: if True ``f_var`` is [N, t, t],</span>
-<span class="sd">        if False then ``f_var`` is [N, Dout]</span>
+<span class="sd">    :return fmean, fvar: mean and covariance of the conditional</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">inducing_variable</span><span class="p">,</span> <span class="n">InducingPoints</span><span class="p">):</span>

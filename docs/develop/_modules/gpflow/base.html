@@ -277,6 +277,7 @@ function checkPageExistsAndRedirect(event) {
 <span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Final</span>
 
 <span class="kn">from</span> <span class="nn">.config</span> <span class="kn">import</span> <span class="n">default_float</span><span class="p">,</span> <span class="n">default_summary_fmt</span>
+<span class="kn">from</span> <span class="nn">.experimental.check_shapes</span> <span class="kn">import</span> <span class="n">check_shapes</span>
 <span class="kn">from</span> <span class="nn">.type_flags</span> <span class="kn">import</span> <span class="n">GENERIC_NP_ARRAYS</span><span class="p">,</span> <span class="n">NP_TYPE_CHECKING</span>
 
 <span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>  <span class="c1"># pragma: no cover</span>
@@ -436,7 +437,8 @@ function checkPageExistsAndRedirect(event) {
         <span class="bp">self</span><span class="o">.</span><span class="n">prior</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Prior</span><span class="p">]</span> <span class="o">=</span> <span class="n">prior</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">prior_on</span> <span class="o">=</span> <span class="n">prior_on</span>  <span class="c1"># type: ignore  # see https://github.com/python/mypy/issues/3004</span>
 
-<div class="viewcode-block" id="Parameter.log_prior_density"><a class="viewcode-back" href="../../api/gpflow/index.html#gpflow.base.Parameter.log_prior_density">[docs]</a>    <span class="k">def</span> <span class="nf">log_prior_density</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<div class="viewcode-block" id="Parameter.log_prior_density"><a class="viewcode-back" href="../../api/gpflow/index.html#gpflow.base.Parameter.log_prior_density">[docs]</a>    <span class="nd">@check_shapes</span><span class="p">(</span><span class="s2">&quot;return: []&quot;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">log_prior_density</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot; Log of the prior probability density of the constrained variable. &quot;&quot;&quot;</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">prior</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>

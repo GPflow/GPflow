@@ -2,7 +2,7 @@
  "cells": [
   {
    "cell_type": "markdown",
-   "id": "20a84e9c",
+   "id": "56f8d1a4",
    "metadata": {},
    "source": [
     "# Comparing FITC approximation to VFE approximation\n",
@@ -12,13 +12,13 @@
   {
    "cell_type": "code",
    "execution_count": 1,
-   "id": "71da4d6e",
+   "id": "3c207b27",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-10T07:16:59.326532Z",
-     "iopub.status.busy": "2022-06-10T07:16:59.326213Z",
-     "iopub.status.idle": "2022-06-10T07:17:02.510006Z",
-     "shell.execute_reply": "2022-06-10T07:17:02.509367Z"
+     "iopub.execute_input": "2022-06-10T10:15:34.804870Z",
+     "iopub.status.busy": "2022-06-10T10:15:34.804522Z",
+     "iopub.status.idle": "2022-06-10T10:15:38.060811Z",
+     "shell.execute_reply": "2022-06-10T10:15:38.060126Z"
     }
    },
    "outputs": [
@@ -26,8 +26,8 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2022-06-10 07:16:59.525944: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcudart.so.11.0'; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory\n",
-      "2022-06-10 07:16:59.525980: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.\n"
+      "2022-06-10 10:15:34.975597: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcudart.so.11.0'; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory\n",
+      "2022-06-10 10:15:34.975625: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.\n"
      ]
     },
     {
@@ -63,7 +63,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "82d144a7",
+   "id": "40634e11",
    "metadata": {},
    "source": [
     "First, we load the training data and plot it together with the exact GP solution (using the `GPR` model):"
@@ -72,13 +72,13 @@
   {
    "cell_type": "code",
    "execution_count": 2,
-   "id": "92dde30f",
+   "id": "c0914d90",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-10T07:17:02.513496Z",
-     "iopub.status.busy": "2022-06-10T07:17:02.513052Z",
-     "iopub.status.idle": "2022-06-10T07:17:06.821608Z",
-     "shell.execute_reply": "2022-06-10T07:17:06.821016Z"
+     "iopub.execute_input": "2022-06-10T10:15:38.064268Z",
+     "iopub.status.busy": "2022-06-10T10:15:38.063757Z",
+     "iopub.status.idle": "2022-06-10T10:15:42.470562Z",
+     "shell.execute_reply": "2022-06-10T10:15:42.469807Z"
     }
    },
    "outputs": [
@@ -86,21 +86,21 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2022-06-10 07:17:02.518285: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcuda.so.1'; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory\n",
-      "2022-06-10 07:17:02.518320: W tensorflow/stream_executor/cuda/cuda_driver.cc:269] failed call to cuInit: UNKNOWN ERROR (303)\n",
-      "2022-06-10 07:17:02.518339: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (0091ed1183cb): /proc/driver/nvidia/version does not exist\n",
-      "2022-06-10 07:17:02.518604: I tensorflow/core/platform/cpu_feature_guard.cc:151] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA\n",
+      "2022-06-10 10:15:38.069410: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcuda.so.1'; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory\n",
+      "2022-06-10 10:15:38.069443: W tensorflow/stream_executor/cuda/cuda_driver.cc:269] failed call to cuInit: UNKNOWN ERROR (303)\n",
+      "2022-06-10 10:15:38.069463: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (97739b7bc232): /proc/driver/nvidia/version does not exist\n",
+      "2022-06-10 10:15:38.069743: I tensorflow/core/platform/cpu_feature_guard.cc:151] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA\n",
       "To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.\n",
       "/home/circleci/project/gpflow/experimental/utils.py:42: UserWarning: You're calling gpflow.experimental.check_shapes.checker.ShapeChecker.__init__ which is considered *experimental*. Expect: breaking changes, poor documentation, and bugs.\n",
       "  warn(\n",
-      "2022-06-10 07:17:02.550550: W tensorflow/python/util/util.cc:368] Sets are not currently considered sequences, but this may change in the future, so consider avoiding using them.\n"
+      "2022-06-10 10:15:38.103061: W tensorflow/python/util/util.cc:368] Sets are not currently considered sequences, but this may change in the future, so consider avoiding using them.\n"
      ]
     },
     {
      "name": "stdout",
      "output_type": "stream",
      "text": [
-      "WARNING:tensorflow:AutoGraph could not transform <function _c3_mro at 0x7fd11cffae60> and will run it as-is.\n",
+      "WARNING:tensorflow:AutoGraph could not transform <function _c3_mro at 0x7ffbe9b0ae60> and will run it as-is.\n",
       "Cause: for/else statement not yet supported\n",
       "To silence this warning, decorate the function with @tf.autograph.experimental.do_not_convert\n"
      ]
@@ -109,7 +109,7 @@
      "name": "stdout",
      "output_type": "stream",
      "text": [
-      "WARNING: AutoGraph could not transform <function _c3_mro at 0x7fd11cffae60> and will run it as-is.\n",
+      "WARNING: AutoGraph could not transform <function _c3_mro at 0x7ffbe9b0ae60> and will run it as-is.\n",
       "Cause: for/else statement not yet supported\n",
       "To silence this warning, decorate the function with @tf.autograph.experimental.do_not_convert\n"
      ]
@@ -169,13 +169,13 @@
   {
    "cell_type": "code",
    "execution_count": 3,
-   "id": "d32ccb80",
+   "id": "398d9530",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-10T07:17:06.825361Z",
-     "iopub.status.busy": "2022-06-10T07:17:06.825069Z",
-     "iopub.status.idle": "2022-06-10T07:17:06.829023Z",
-     "shell.execute_reply": "2022-06-10T07:17:06.828377Z"
+     "iopub.execute_input": "2022-06-10T10:15:42.474977Z",
+     "iopub.status.busy": "2022-06-10T10:15:42.474652Z",
+     "iopub.status.idle": "2022-06-10T10:15:42.478701Z",
+     "shell.execute_reply": "2022-06-10T10:15:42.478000Z"
     }
    },
    "outputs": [],
@@ -188,7 +188,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "07e0a3cd",
+   "id": "57a43cd0",
    "metadata": {},
    "source": [
     "We now construct two sparse model using the VFE (`SGPR` model) and FITC (`GPRFITC` model) optimization objectives, with the inducing points being initialized on top of the training inputs, and the model hyperparameters (kernel variance and lengthscales, and likelihood variance) being initialized to the values obtained in the optimization of the exact `GPR` model:"
@@ -197,13 +197,13 @@
   {
    "cell_type": "code",
    "execution_count": 4,
-   "id": "59f9269d",
+   "id": "e4b25331",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-10T07:17:06.832113Z",
-     "iopub.status.busy": "2022-06-10T07:17:06.831838Z",
-     "iopub.status.idle": "2022-06-10T07:17:56.099035Z",
-     "shell.execute_reply": "2022-06-10T07:17:56.098339Z"
+     "iopub.execute_input": "2022-06-10T10:15:42.481337Z",
+     "iopub.status.busy": "2022-06-10T10:15:42.481044Z",
+     "iopub.status.idle": "2022-06-10T10:16:32.312837Z",
+     "shell.execute_reply": "2022-06-10T10:16:32.312220Z"
     }
    },
    "outputs": [
@@ -211,14 +211,14 @@
      "name": "stdout",
      "output_type": "stream",
      "text": [
-      "WARNING:tensorflow:5 out of the last 14 calls to <function Scipy.eval_func.<locals>._tf_eval at 0x7fcff4270c10> triggered tf.function retracing. Tracing is expensive and the excessive number of tracings could be due to (1) creating @tf.function repeatedly in a loop, (2) passing tensors with different shapes, (3) passing Python objects instead of tensors. For (1), please define your @tf.function outside of the loop. For (2), @tf.function has experimental_relax_shapes=True option that relaxes argument shapes that can avoid unnecessary retracing. For (3), please refer to https://www.tensorflow.org/guide/function#controlling_retracing and https://www.tensorflow.org/api_docs/python/tf/function for  more details.\n"
+      "WARNING:tensorflow:5 out of the last 14 calls to <function Scipy.eval_func.<locals>._tf_eval at 0x7ffab0427370> triggered tf.function retracing. Tracing is expensive and the excessive number of tracings could be due to (1) creating @tf.function repeatedly in a loop, (2) passing tensors with different shapes, (3) passing Python objects instead of tensors. For (1), please define your @tf.function outside of the loop. For (2), @tf.function has experimental_relax_shapes=True option that relaxes argument shapes that can avoid unnecessary retracing. For (3), please refer to https://www.tensorflow.org/guide/function#controlling_retracing and https://www.tensorflow.org/api_docs/python/tf/function for  more details.\n"
      ]
     },
     {
      "name": "stdout",
      "output_type": "stream",
      "text": [
-      "WARNING:tensorflow:5 out of the last 14 calls to <function Scipy.eval_func.<locals>._tf_eval at 0x7fcfec34bd90> triggered tf.function retracing. Tracing is expensive and the excessive number of tracings could be due to (1) creating @tf.function repeatedly in a loop, (2) passing tensors with different shapes, (3) passing Python objects instead of tensors. For (1), please define your @tf.function outside of the loop. For (2), @tf.function has experimental_relax_shapes=True option that relaxes argument shapes that can avoid unnecessary retracing. For (3), please refer to https://www.tensorflow.org/guide/function#controlling_retracing and https://www.tensorflow.org/api_docs/python/tf/function for  more details.\n"
+      "WARNING:tensorflow:5 out of the last 14 calls to <function Scipy.eval_func.<locals>._tf_eval at 0x7ffab019ab90> triggered tf.function retracing. Tracing is expensive and the excessive number of tracings could be due to (1) creating @tf.function repeatedly in a loop, (2) passing tensors with different shapes, (3) passing Python objects instead of tensors. For (1), please define your @tf.function outside of the loop. For (2), @tf.function has experimental_relax_shapes=True option that relaxes argument shapes that can avoid unnecessary retracing. For (3), please refer to https://www.tensorflow.org/guide/function#controlling_retracing and https://www.tensorflow.org/api_docs/python/tf/function for  more details.\n"
      ]
     },
     {
@@ -246,13 +246,13 @@
   {
    "cell_type": "code",
    "execution_count": 5,
-   "id": "0729ff33",
+   "id": "acca0421",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-10T07:17:56.101765Z",
-     "iopub.status.busy": "2022-06-10T07:17:56.101467Z",
-     "iopub.status.idle": "2022-06-10T07:19:42.656388Z",
-     "shell.execute_reply": "2022-06-10T07:19:42.655604Z"
+     "iopub.execute_input": "2022-06-10T10:16:32.315438Z",
+     "iopub.status.busy": "2022-06-10T10:16:32.315161Z",
+     "iopub.status.idle": "2022-06-10T10:18:10.506651Z",
+     "shell.execute_reply": "2022-06-10T10:18:10.506006Z"
     }
    },
    "outputs": [
@@ -282,7 +282,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "4099c5fc",
+   "id": "2206f3c1",
    "metadata": {},
    "source": [
     "Plotting a comparison of the two algorithms, we see that VFE stays at the optimum of exact GPR, whereas the FITC approximation eventually ends up with several inducing points on top of each other, and a worse fit:"
@@ -291,13 +291,13 @@
   {
    "cell_type": "code",
    "execution_count": 6,
-   "id": "4418f315",
+   "id": "507e5413",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-10T07:19:42.659515Z",
-     "iopub.status.busy": "2022-06-10T07:19:42.659228Z",
-     "iopub.status.idle": "2022-06-10T07:19:43.565728Z",
-     "shell.execute_reply": "2022-06-10T07:19:43.564936Z"
+     "iopub.execute_input": "2022-06-10T10:18:10.509377Z",
+     "iopub.status.busy": "2022-06-10T10:18:10.509094Z",
+     "iopub.status.idle": "2022-06-10T10:18:11.273141Z",
+     "shell.execute_reply": "2022-06-10T10:18:11.272542Z"
     }
    },
    "outputs": [
@@ -352,7 +352,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "0ab8255f",
+   "id": "ae494ad8",
    "metadata": {},
    "source": [
     "A more detailed discussion of the comparison between these sparse approximations can be found in [Understanding Probabilistic Sparse Gaussian Process Approximations](http://papers.nips.cc/paper/6477-understanding-probabilistic-sparse-gaussian-process-approximations) by Bauer, van der Wilk, and Rasmussen (2017)."

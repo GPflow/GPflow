@@ -273,6 +273,7 @@ function checkPageExistsAndRedirect(event) {
 <span class="kn">import</span> <span class="nn">tensorflow</span> <span class="k">as</span> <span class="nn">tf</span>
 
 <span class="kn">from</span> <span class="nn">..base</span> <span class="kn">import</span> <span class="n">MeanAndVariance</span>
+<span class="kn">from</span> <span class="nn">..experimental.check_shapes</span> <span class="kn">import</span> <span class="n">check_shapes</span>
 <span class="kn">from</span> <span class="nn">..inducing_variables</span> <span class="kn">import</span> <span class="n">InducingVariables</span>
 <span class="kn">from</span> <span class="nn">..kernels</span> <span class="kn">import</span> <span class="n">Kernel</span>
 <span class="kn">from</span> <span class="nn">..posteriors</span> <span class="kn">import</span> <span class="n">BasePosterior</span><span class="p">,</span> <span class="n">VGPPosterior</span><span class="p">,</span> <span class="n">get_posterior_class</span>
@@ -280,6 +281,17 @@ function checkPageExistsAndRedirect(event) {
 
 
 <div class="viewcode-block" id="_sparse_conditional"><a class="viewcode-back" href="../../../api/gpflow/conditionals/index.html#gpflow.conditionals.conditionals._sparse_conditional">[docs]</a><span class="nd">@conditional</span><span class="o">.</span><span class="n">_gpflow_internal_register</span><span class="p">(</span><span class="nb">object</span><span class="p">,</span> <span class="n">InducingVariables</span><span class="p">,</span> <span class="n">Kernel</span><span class="p">,</span> <span class="nb">object</span><span class="p">)</span>
+<span class="nd">@check_shapes</span><span class="p">(</span>
+    <span class="s2">&quot;Xnew: [batch..., N, D]&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;inducing_variable: [M, D, broadcast R]&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;f: [M, R]&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;q_sqrt: [M_R_or_R_M_M...]&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;return[0]: [batch..., N, R]&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;return[1]: [batch..., N, R] if (not full_cov) and (not full_output_cov)&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;return[1]: [batch..., R, N, N] if full_cov and (not full_output_cov)&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;return[1]: [batch..., N, R, R] if (not full_cov) and full_output_cov&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;return[1]: [batch..., N, R, N, R] if full_cov and full_output_cov&quot;</span><span class="p">,</span>
+<span class="p">)</span>
 <span class="k">def</span> <span class="nf">_sparse_conditional</span><span class="p">(</span>
     <span class="n">Xnew</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
     <span class="n">inducing_variable</span><span class="p">:</span> <span class="n">InducingVariables</span><span class="p">,</span>
@@ -306,8 +318,8 @@ function checkPageExistsAndRedirect(event) {
 <span class="sd">      conditional in the single-output case.</span>
 <span class="sd">    - See the multiouput notebook for more information about the multiouput framework.</span>
 
-<span class="sd">    :param Xnew: data matrix: [N, D]</span>
-<span class="sd">    :param f: data matrix: [M, R]</span>
+<span class="sd">    :param Xnew: data matrix</span>
+<span class="sd">    :param f: data matrix</span>
 <span class="sd">    :param full_cov: return the covariance between the datapoints</span>
 <span class="sd">    :param full_output_cov: return the covariance between the outputs.</span>
 <span class="sd">        NOTE: as we are using a single-output kernel with repetitions</span>
@@ -315,12 +327,7 @@ function checkPageExistsAndRedirect(event) {
 <span class="sd">    :param q_sqrt: matrix of standard-deviations or Cholesky matrices,</span>
 <span class="sd">        size [M, R] or [R, M, M].</span>
 <span class="sd">    :param white: boolean of whether to use the whitened representation</span>
-<span class="sd">    :return:</span>
-<span class="sd">        - mean:     [N, R]</span>
-<span class="sd">        - variance: [N, R], [R, N, N], [N, R, R] or [N, R, N, R]</span>
-
-<span class="sd">        Please see `gpflow.conditional._expand_independent_outputs` for more information</span>
-<span class="sd">        about the shape of the variance, depending on `full_cov` and `full_output_cov`.</span>
+<span class="sd">    :return: mean and variance</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">posterior_class</span> <span class="o">=</span> <span class="n">get_posterior_class</span><span class="p">(</span><span class="n">kernel</span><span class="p">,</span> <span class="n">inducing_variable</span><span class="p">)</span>
 
@@ -337,6 +344,16 @@ function checkPageExistsAndRedirect(event) {
 
 
 <div class="viewcode-block" id="_dense_conditional"><a class="viewcode-back" href="../../../api/gpflow/conditionals/index.html#gpflow.conditionals.conditionals._dense_conditional">[docs]</a><span class="nd">@conditional</span><span class="o">.</span><span class="n">_gpflow_internal_register</span><span class="p">(</span><span class="nb">object</span><span class="p">,</span> <span class="nb">object</span><span class="p">,</span> <span class="n">Kernel</span><span class="p">,</span> <span class="nb">object</span><span class="p">)</span>
+<span class="nd">@check_shapes</span><span class="p">(</span>
+    <span class="s2">&quot;Xnew: [batch..., N, D]&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;X: [M, D]&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;f: [M, R]&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;return[0]: [batch..., N, R]&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;return[1]: [batch..., N, R] if (not full_cov) and (not full_output_cov)&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;return[1]: [batch..., R, N, N] if full_cov and (not full_output_cov)&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;return[1]: [batch..., N, R, R] if (not full_cov) and full_output_cov&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;return[1]: [batch..., N, R, N, R] if full_cov and full_output_cov&quot;</span><span class="p">,</span>
+<span class="p">)</span>
 <span class="k">def</span> <span class="nf">_dense_conditional</span><span class="p">(</span>
     <span class="n">Xnew</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
     <span class="n">X</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
@@ -373,18 +390,16 @@ function checkPageExistsAndRedirect(event) {
 <span class="sd">    We assume R independent GPs, represented by the columns of f (and the</span>
 <span class="sd">    first dimension of q_sqrt).</span>
 
-<span class="sd">    :param Xnew: data matrix, size [N, D]. Evaluate the GP at these new points</span>
-<span class="sd">    :param X: data points, size [M, D].</span>
+<span class="sd">    :param Xnew: data matrix. Evaluate the GP at these new points</span>
+<span class="sd">    :param X: data points.</span>
 <span class="sd">    :param kernel: GPflow kernel.</span>
-<span class="sd">    :param f: data matrix, [M, R], representing the function values at X,</span>
+<span class="sd">    :param f: data matrix, representing the function values at X,</span>
 <span class="sd">        for R functions.</span>
 <span class="sd">    :param q_sqrt: matrix of standard-deviations or Cholesky matrices,</span>
 <span class="sd">        size [M, R] or [R, M, M].</span>
 <span class="sd">    :param white: boolean of whether to use the whitened representation as</span>
 <span class="sd">        described above.</span>
-<span class="sd">    :return:</span>
-<span class="sd">        - mean:     [N, R]</span>
-<span class="sd">        - variance: [N, R] (full_cov = False), [R, N, N] (full_cov = True)</span>
+<span class="sd">    :return: mean and variance</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">posterior</span> <span class="o">=</span> <span class="n">VGPPosterior</span><span class="p">(</span>
         <span class="n">kernel</span><span class="o">=</span><span class="n">kernel</span><span class="p">,</span>

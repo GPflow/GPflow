@@ -272,16 +272,21 @@ function checkPageExistsAndRedirect(event) {
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="kn">import</span> <span class="nn">collections.abc</span> <span class="k">as</span> <span class="nn">cabc</span>
 <span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">singledispatch</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">tensorflow</span> <span class="k">as</span> <span class="nn">tf</span>
 <span class="kn">import</span> <span class="nn">tensorflow_probability</span> <span class="k">as</span> <span class="nn">tfp</span>
 
-<span class="kn">from</span> <span class="nn">...base</span> <span class="kn">import</span> <span class="n">AnyNDArray</span>
 <span class="kn">from</span> <span class="nn">.base_types</span> <span class="kn">import</span> <span class="n">Shape</span>
 <span class="kn">from</span> <span class="nn">.error_contexts</span> <span class="kn">import</span> <span class="n">ErrorContext</span><span class="p">,</span> <span class="n">IndexContext</span><span class="p">,</span> <span class="n">ObjectTypeContext</span><span class="p">,</span> <span class="n">StackContext</span>
 <span class="kn">from</span> <span class="nn">.exceptions</span> <span class="kn">import</span> <span class="n">NoShapeError</span>
+
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>  <span class="c1"># pragma: no cover</span>
+    <span class="c1"># Avoid cyclic imports:</span>
+    <span class="kn">from</span> <span class="nn">...base</span> <span class="kn">import</span> <span class="n">AnyNDArray</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="n">AnyNDArray</span> <span class="o">=</span> <span class="n">Any</span>
 
 
 <div class="viewcode-block" id="get_shape"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/index.html#gpflow.experimental.check_shapes.get_shape">[docs]</a><span class="nd">@singledispatch</span>

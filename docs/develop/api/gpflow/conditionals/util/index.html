@@ -651,17 +651,41 @@ function checkPageExistsAndRedirect(event) {
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>Kmn</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – </p></li>
-<li><p><strong>Lm</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – </p></li>
-<li><p><strong>Knn</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – </p></li>
-<li><p><strong>f</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – </p></li>
+<li><p><strong>Kmn</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – <ul>
+<li><p><strong>Kmn</strong> has shape [<em>M</em>, <em>batch</em>…, <em>N</em>].</p></li>
+</ul>
+</p></li>
+<li><p><strong>Lm</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – <ul>
+<li><p><strong>Lm</strong> has shape [<em>M</em>, <em>M</em>].</p></li>
+</ul>
+</p></li>
+<li><p><strong>Knn</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – <ul>
+<li><p><strong>Knn</strong> has shape [<em>batch</em>…, <em>N</em>, <em>N</em>] if <em>full_cov</em>.</p></li>
+<li><p><strong>Knn</strong> has shape [<em>batch</em>…, <em>N</em>] if not <em>full_cov</em>.</p></li>
+</ul>
+</p></li>
+<li><p><strong>f</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – <ul>
+<li><p><strong>f</strong> has shape [<em>M</em>, <em>R</em>].</p></li>
+</ul>
+</p></li>
+<li><p><strong>q_sqrt</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]) – <ul>
+<li><p><strong>q_sqrt</strong> has shape [<em>M_R_or_R_M_M</em>…].</p></li>
+</ul>
+</p></li>
 <li><p><strong>full_cov</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – </p></li>
-<li><p><strong>q_sqrt</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]) – </p></li>
 <li><p><strong>white</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – </p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]</p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><strong>return[0]</strong> has shape [<em>batch</em>…, <em>N</em>, <em>R</em>].</p></li>
+<li><p><strong>return[1]</strong> has shape [<em>batch</em>…, <em>N</em>, <em>R</em>] if not <em>full_cov</em>.</p></li>
+<li><p><strong>return[1]</strong> has shape [<em>batch</em>…, <em>R</em>, <em>N</em>, <em>N</em>] if <em>full_cov</em>.</p></li>
+</ul>
+</p>
 </dd>
 </dl>
 </dd></dl>
@@ -676,7 +700,12 @@ function checkPageExistsAndRedirect(event) {
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>fvar</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – has shape [N, P] (full_cov = False) or [P, N, N] (full_cov = True).</p></li>
+<li><p><strong>fvar</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – <ul>
+<li><p><strong>fvar</strong> has shape [<em>batch</em>…, <em>N</em>, <em>P</em>] if not <em>full_cov</em>.</p></li>
+<li><p><strong>fvar</strong> has shape [<em>batch</em>…, <em>P</em>, <em>N</em>, <em>N</em>] if <em>full_cov</em>.</p></li>
+</ul>
+<p>Single-output covariance.</p>
+</p></li>
 <li><p><strong>full_cov</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – </p></li>
 <li><p><strong>full_output_cov</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – </p></li>
 </ul>
@@ -685,16 +714,13 @@ function checkPageExistsAndRedirect(event) {
 <dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></p>
 </dd>
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p><ol class="arabic simple">
-<li><p>full_cov: True and full_output_cov: True
-fvar [N, P, N, P]</p></li>
-<li><p>full_cov: True and full_output_cov: False
-fvar [P, N, N]</p></li>
-<li><p>full_cov: False and full_output_cov: True
-fvar [N, P, P]</p></li>
-<li><p>full_cov: False and full_output_cov: False
-fvar [N, P]</p></li>
-</ol>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><strong>return</strong> has shape [<em>batch</em>…, <em>N</em>, <em>P</em>, <em>N</em>, <em>P</em>] if <em>full_cov</em> and <em>full_output_cov</em>.</p></li>
+<li><p><strong>return</strong> has shape [<em>batch</em>…, <em>N</em>, <em>P</em>, <em>P</em>] if (not <em>full_cov</em>) and <em>full_output_cov</em>.</p></li>
+<li><p><strong>return</strong> has shape [<em>batch</em>…, <em>N</em>, <em>P</em>] if (not <em>full_cov</em>) and (not <em>full_output_cov</em>).</p></li>
+<li><p><strong>return</strong> has shape [<em>batch</em>…, <em>P</em>, <em>N</em>, <em>N</em>] if <em>full_cov</em> and (not <em>full_output_cov</em>).</p></li>
+</ul>
+<p>Multi-output covariance.</p>
 </p>
 </dd>
 </dl>
@@ -711,14 +737,32 @@ points are all fully correlated, in both the prior and posterior.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>Kmn</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – [M, N, P]</p></li>
-<li><p><strong>Kmm</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – [M, M]</p></li>
-<li><p><strong>Knn</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – [N, P] or [N, P, N, P]</p></li>
-<li><p><strong>f</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – data matrix, [M, 1]</p></li>
-<li><p><strong>q_sqrt</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]) – [1, M, M] or [1, L]</p></li>
 <li><p><strong>full_cov</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – calculate covariance between inputs</p></li>
 <li><p><strong>full_output_cov</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – calculate covariance between outputs</p></li>
 <li><p><strong>white</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – use whitened representation</p></li>
+<li><p><strong>Kmn</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – <ul>
+<li><p><strong>Kmn</strong> has shape [<em>M</em>, <em>N</em>, <em>P</em>].</p></li>
+</ul>
+</p></li>
+<li><p><strong>Kmm</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – <ul>
+<li><p><strong>Kmm</strong> has shape [<em>M</em>, <em>M</em>].</p></li>
+</ul>
+</p></li>
+<li><p><strong>Knn</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – <ul>
+<li><p><strong>Knn</strong> has shape [<em>N</em>, <em>P</em>, <em>N</em>, <em>P</em>] if <em>full_cov</em> and <em>full_output_cov</em>.</p></li>
+<li><p><strong>Knn</strong> has shape [<em>N</em>, <em>P</em>, <em>P</em>] if (not <em>full_cov</em>) and <em>full_output_cov</em>.</p></li>
+<li><p><strong>Knn</strong> has shape [<em>N</em>, <em>P</em>] if (not <em>full_cov</em>) and (not <em>full_output_cov</em>).</p></li>
+<li><p><strong>Knn</strong> has shape [<em>P</em>, <em>N</em>, <em>N</em>] if <em>full_cov</em> and (not <em>full_output_cov</em>).</p></li>
+</ul>
+</p></li>
+<li><p><strong>f</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – <ul>
+<li><p><strong>f</strong> has shape [<em>M</em>, 1].</p></li>
+</ul>
+</p></li>
+<li><p><strong>q_sqrt</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]) – <ul>
+<li><p><strong>q_sqrt</strong> has shape [<em>_1_L_or_1_M_M</em>…].</p></li>
+</ul>
+</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
@@ -726,9 +770,13 @@ points are all fully correlated, in both the prior and posterior.</p>
 </dd>
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p><ul class="simple">
-<li><p>mean: [N, P]</p></li>
-<li><p>variance: [N, P], [N, P, P], [P, N, N], [N, P, N, P]</p></li>
+<li><p><strong>return[0]</strong> has shape [<em>N</em>, <em>P</em>].</p></li>
+<li><p><strong>return[1]</strong> has shape [<em>N</em>, <em>P</em>, <em>N</em>, <em>P</em>] if <em>full_cov</em> and <em>full_output_cov</em>.</p></li>
+<li><p><strong>return[1]</strong> has shape [<em>N</em>, <em>P</em>, <em>P</em>] if (not <em>full_cov</em>) and <em>full_output_cov</em>.</p></li>
+<li><p><strong>return[1]</strong> has shape [<em>N</em>, <em>P</em>] if (not <em>full_cov</em>) and (not <em>full_output_cov</em>).</p></li>
+<li><p><strong>return[1]</strong> has shape [<em>P</em>, <em>N</em>, <em>N</em>] if <em>full_cov</em> and (not <em>full_output_cov</em>).</p></li>
 </ul>
+<p>mean, variance</p>
 </p>
 </dd>
 </dl>
@@ -746,14 +794,32 @@ Note: This conditional can handle ‘repetitions’ R, given in <cite>f</cite> a
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>Kmn</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – [M, N, P]</p></li>
-<li><p><strong>Kmm</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – [M, M]</p></li>
-<li><p><strong>Knn</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – [N, P] or [N, P, P] or [P, N, N] or [N, P, N, P]</p></li>
-<li><p><strong>f</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – data matrix, [M, R]</p></li>
-<li><p><strong>q_sqrt</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]) – [R, M, M] or [M, R]</p></li>
 <li><p><strong>full_cov</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – calculate covariance between inputs</p></li>
 <li><p><strong>full_output_cov</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – calculate covariance between outputs</p></li>
 <li><p><strong>white</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – use whitened representation</p></li>
+<li><p><strong>Kmn</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – <ul>
+<li><p><strong>Kmn</strong> has shape [<em>M</em>, <em>N</em>, <em>P</em>].</p></li>
+</ul>
+</p></li>
+<li><p><strong>Kmm</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – <ul>
+<li><p><strong>Kmm</strong> has shape [<em>M</em>, <em>M</em>].</p></li>
+</ul>
+</p></li>
+<li><p><strong>Knn</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – <ul>
+<li><p><strong>Knn</strong> has shape [<em>N</em>, <em>P</em>, <em>N</em>, <em>P</em>] if <em>full_cov</em> and <em>full_output_cov</em>.</p></li>
+<li><p><strong>Knn</strong> has shape [<em>N</em>, <em>P</em>, <em>P</em>] if (not <em>full_cov</em>) and <em>full_output_cov</em>.</p></li>
+<li><p><strong>Knn</strong> has shape [<em>N</em>, <em>P</em>] if (not <em>full_cov</em>) and (not <em>full_output_cov</em>).</p></li>
+<li><p><strong>Knn</strong> has shape [<em>P</em>, <em>N</em>, <em>N</em>] if <em>full_cov</em> and (not <em>full_output_cov</em>).</p></li>
+</ul>
+</p></li>
+<li><p><strong>f</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – <ul>
+<li><p><strong>f</strong> has shape [<em>M</em>, <em>R</em>].</p></li>
+</ul>
+</p></li>
+<li><p><strong>q_sqrt</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]) – <ul>
+<li><p><strong>q_sqrt</strong> has shape [<em>M_R_or_R_M_M</em>…].</p></li>
+</ul>
+</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
@@ -761,9 +827,13 @@ Note: This conditional can handle ‘repetitions’ R, given in <cite>f</cite> a
 </dd>
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p><ul class="simple">
-<li><p>mean: [R, N, P]</p></li>
-<li><p>variance: [R, N, P], [R, N, P, P], [R, P, N, N], [R, N, P, N, P]</p></li>
+<li><p><strong>return[0]</strong> has shape [<em>R</em>, <em>N</em>, <em>P</em>].</p></li>
+<li><p><strong>return[1]</strong> has shape [<em>R</em>, <em>N</em>, <em>P</em>, <em>N</em>, <em>P</em>] if <em>full_cov</em> and <em>full_output_cov</em>.</p></li>
+<li><p><strong>return[1]</strong> has shape [<em>R</em>, <em>N</em>, <em>P</em>, <em>P</em>] if (not <em>full_cov</em>) and <em>full_output_cov</em>.</p></li>
+<li><p><strong>return[1]</strong> has shape [<em>R</em>, <em>N</em>, <em>P</em>] if (not <em>full_cov</em>) and (not <em>full_output_cov</em>).</p></li>
+<li><p><strong>return[1]</strong> has shape [<em>R</em>, <em>P</em>, <em>N</em>, <em>N</em>] if <em>full_cov</em> and (not <em>full_output_cov</em>).</p></li>
 </ul>
+<p>mean, variance</p>
 </p>
 </dd>
 </dl>
@@ -780,14 +850,32 @@ Note: This conditional can handle ‘repetitions’ R, given in <cite>f</cite> a
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>Kmn</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – [M, L, N, P]</p></li>
-<li><p><strong>Kmm</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – [L, M, M]</p></li>
-<li><p><strong>Knn</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – [N, P]  or  [N, P, P]  or  [P, N, N]  or  [N, P, N, P]</p></li>
-<li><p><strong>f</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – data matrix, [M, L]</p></li>
-<li><p><strong>q_sqrt</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]) – [L, M, M]  or  [M, L]</p></li>
 <li><p><strong>full_cov</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – calculate covariance between inputs</p></li>
 <li><p><strong>full_output_cov</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – calculate covariance between outputs</p></li>
 <li><p><strong>white</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – use whitened representation</p></li>
+<li><p><strong>Kmn</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – <ul>
+<li><p><strong>Kmn</strong> has shape [<em>M</em>, <em>L</em>, <em>N</em>, <em>P</em>].</p></li>
+</ul>
+</p></li>
+<li><p><strong>Kmm</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – <ul>
+<li><p><strong>Kmm</strong> has shape [<em>L</em>, <em>M</em>, <em>M</em>].</p></li>
+</ul>
+</p></li>
+<li><p><strong>Knn</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – <ul>
+<li><p><strong>Knn</strong> has shape [<em>N</em>, <em>P</em>, <em>N</em>, <em>P</em>] if <em>full_cov</em> and <em>full_output_cov</em>.</p></li>
+<li><p><strong>Knn</strong> has shape [<em>N</em>, <em>P</em>, <em>P</em>] if (not <em>full_cov</em>) and <em>full_output_cov</em>.</p></li>
+<li><p><strong>Knn</strong> has shape [<em>N</em>, <em>P</em>] if (not <em>full_cov</em>) and (not <em>full_output_cov</em>).</p></li>
+<li><p><strong>Knn</strong> has shape [<em>P</em>, <em>N</em>, <em>N</em>] if <em>full_cov</em> and (not <em>full_output_cov</em>).</p></li>
+</ul>
+</p></li>
+<li><p><strong>f</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – <ul>
+<li><p><strong>f</strong> has shape [<em>M</em>, <em>L</em>].</p></li>
+</ul>
+</p></li>
+<li><p><strong>q_sqrt</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]) – <ul>
+<li><p><strong>q_sqrt</strong> has shape [<em>M_L_or_L_M_M</em>…].</p></li>
+</ul>
+</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
@@ -795,9 +883,13 @@ Note: This conditional can handle ‘repetitions’ R, given in <cite>f</cite> a
 </dd>
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p><ul class="simple">
-<li><p>mean: [N, P]</p></li>
-<li><p>variance: [N, P], [N, P, P], [P, N, N], [N, P, N, P]</p></li>
+<li><p><strong>return[0]</strong> has shape [<em>N</em>, <em>P</em>].</p></li>
+<li><p><strong>return[1]</strong> has shape [<em>N</em>, <em>P</em>, <em>N</em>, <em>P</em>] if <em>full_cov</em> and <em>full_output_cov</em>.</p></li>
+<li><p><strong>return[1]</strong> has shape [<em>N</em>, <em>P</em>, <em>P</em>] if (not <em>full_cov</em>) and <em>full_output_cov</em>.</p></li>
+<li><p><strong>return[1]</strong> has shape [<em>N</em>, <em>P</em>] if (not <em>full_cov</em>) and (not <em>full_output_cov</em>).</p></li>
+<li><p><strong>return[1]</strong> has shape [<em>P</em>, <em>N</em>, <em>N</em>] if <em>full_cov</em> and (not <em>full_output_cov</em>).</p></li>
 </ul>
+<p>mean, variance</p>
 </p>
 </dd>
 </dl>
@@ -811,22 +903,40 @@ Note: This conditional can handle ‘repetitions’ R, given in <cite>f</cite> a
 <span class="sig-prename descclassname"><span class="pre">gpflow.conditionals.util.</span></span><span class="sig-name descname"><span class="pre">mix_latent_gp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">W</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">g_mean</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">g_var</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_cov</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_output_cov</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/gpflow/conditionals/util.html#mix_latent_gp"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.conditionals.util.mix_latent_gp" title="Permalink to this definition">#</a></dt>
 <dd><p>Takes the mean and variance of an uncorrelated L-dimensional latent GP
 and returns the mean and the variance of the mixed GP, <cite>f = W g</cite>,
-where both f and g are GPs, with W having a shape [P, L]</p>
+where both f and g are GPs.</p>
 <dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>return[0]</strong> has shape [<em>batch</em>…, <em>N</em>, <em>P</em>].</p></li>
+<li><p><strong>return[1]</strong> has shape [<em>batch</em>…, <em>N</em>, <em>P</em>, <em>N</em>, <em>P</em>] if <em>full_cov</em> and <em>full_output_cov</em>.</p></li>
+<li><p><strong>return[1]</strong> has shape [<em>batch</em>…, <em>N</em>, <em>P</em>, <em>P</em>] if (not <em>full_cov</em>) and <em>full_output_cov</em>.</p></li>
+<li><p><strong>return[1]</strong> has shape [<em>batch</em>…, <em>N</em>, <em>P</em>] if (not <em>full_cov</em>) and (not <em>full_output_cov</em>).</p></li>
+<li><p><strong>return[1]</strong> has shape [<em>batch</em>…, <em>P</em>, <em>N</em>, <em>N</em>] if <em>full_cov</em> and (not <em>full_output_cov</em>).</p></li>
+</ul>
+<p>f_mean and f_var</p>
+</p>
+</dd>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>W</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – [P, L]</p></li>
-<li><p><strong>g_mean</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – […, N, L]</p></li>
-<li><p><strong>g_var</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – […, N, L] (full_cov = False) or [L, …, N, N] (full_cov = True)</p></li>
+<li><p><strong>W</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – <ul>
+<li><p><strong>W</strong> has shape [<em>P</em>, <em>L</em>].</p></li>
+</ul>
+</p></li>
+<li><p><strong>g_mean</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – <ul>
+<li><p><strong>g_mean</strong> has shape [<em>batch</em>…, <em>N</em>, <em>L</em>].</p></li>
+</ul>
+</p></li>
+<li><p><strong>g_var</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – <ul>
+<li><p><strong>g_var</strong> has shape [<em>L</em>, <em>batch</em>…, <em>N</em>, <em>N</em>] if <em>full_cov</em>.</p></li>
+<li><p><strong>g_var</strong> has shape [<em>batch</em>…, <em>N</em>, <em>L</em>] if not <em>full_cov</em>.</p></li>
+</ul>
+</p></li>
 <li><p><strong>full_cov</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – </p></li>
 <li><p><strong>full_output_cov</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – </p></li>
 </ul>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]</p>
-</dd>
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>f_mean and f_var, shape depends on <cite>full_cov</cite> and <cite>full_output_cov</cite></p>
 </dd>
 </dl>
 </dd></dl>
@@ -841,12 +951,21 @@ where both f and g are GPs, with W having a shape [P, L]</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>A</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – </p></li>
+<li><p><strong>A</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – <ul>
+<li><p><strong>A</strong> has shape [<em>left</em>…, <em>right</em>…].</p></li>
+</ul>
+</p></li>
 <li><p><strong>num_rolls</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>) – </p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><strong>return</strong> has shape [<em>right</em>…, <em>left</em>…].</p></li>
+</ul>
+</p>
 </dd>
 </dl>
 </dd></dl>
@@ -861,12 +980,21 @@ where both f and g are GPs, with W having a shape [P, L]</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>A</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – </p></li>
+<li><p><strong>A</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – <ul>
+<li><p><strong>A</strong> has shape [<em>left</em>…, <em>right</em>…].</p></li>
+</ul>
+</p></li>
 <li><p><strong>num_rolls</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>) – </p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><strong>return</strong> has shape [<em>right</em>…, <em>left</em>…].</p></li>
+</ul>
+</p>
 </dd>
 </dl>
 </dd></dl>
@@ -879,21 +1007,31 @@ where both f and g are GPs, with W having a shape [P, L]</p>
 <span class="sig-prename descclassname"><span class="pre">gpflow.conditionals.util.</span></span><span class="sig-name descname"><span class="pre">sample_mvn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mean</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cov</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_cov</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_samples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/gpflow/conditionals/util.html#sample_mvn"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.conditionals.util.sample_mvn" title="Permalink to this definition">#</a></dt>
 <dd><p>Returns a sample from a D-dimensional Multivariate Normal distribution.</p>
 <dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>return</strong> has shape [<em>batch</em>…, <em>N</em>, <em>D</em>] if <em>num_samples</em> is <em>None</em>.</p></li>
+<li><p><strong>return</strong> has shape [<em>batch</em>…, <em>S</em>, <em>N</em>, <em>D</em>] if <em>num_samples</em> is not <em>None</em>.</p></li>
+</ul>
+<p>sample from the MVN</p>
+</p>
+</dd>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>mean</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – […, N, D]</p></li>
-<li><p><strong>cov</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – […, N, D] or […, N, D, D]</p></li>
-<li><p><strong>full_cov</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – if <cite>True</cite> return a “full” covariance matrix, otherwise a “diag”:
-- “full”: cov holds the full covariance matrix (without jitter)
-- “diag”: cov holds the diagonal elements of the covariance matrix</p></li>
+<li><p><strong>mean</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – <ul>
+<li><p><strong>mean</strong> has shape [<em>batch</em>…, <em>N</em>, <em>D</em>].</p></li>
+</ul>
+</p></li>
+<li><p><strong>cov</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – <ul>
+<li><p><strong>cov</strong> has shape [<em>batch</em>…, <em>N</em>, <em>D</em>, <em>D</em>] if <em>full_cov</em>.</p></li>
+<li><p><strong>cov</strong> has shape [<em>batch</em>…, <em>N</em>, <em>D</em>] if not <em>full_cov</em>.</p></li>
+</ul>
+</p></li>
+<li><p><strong>full_cov</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – </p></li>
 <li><p><strong>num_samples</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>]) – </p></li>
 </ul>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></p>
-</dd>
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>sample from the MVN of shape […, (S), N, D], S = num_samples</p>
 </dd>
 </dl>
 </dd></dl>
@@ -905,13 +1043,7 @@ where both f and g are GPs, with W having a shape [P, L]</p>
 <dt class="sig sig-object py" id="gpflow.conditionals.util.separate_independent_conditional_implementation">
 <span class="sig-prename descclassname"><span class="pre">gpflow.conditionals.util.</span></span><span class="sig-name descname"><span class="pre">separate_independent_conditional_implementation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Kmns</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Kmms</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Knns</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_cov</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q_sqrt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">white</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/gpflow/conditionals/util.html#separate_independent_conditional_implementation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.conditionals.util.separate_independent_conditional_implementation" title="Permalink to this definition">#</a></dt>
 <dd><p>Multi-output GP with independent GP priors.</p>
-<p>Number of latent processes equals the number of outputs (L = P).
-The covariance matrices used to calculate the conditional have the following shape:</p>
-<ul class="simple">
-<li><p>Kuu: [P, M, M]</p></li>
-<li><p>Kuf: [P, M, N]</p></li>
-<li><p>Kff: [P, N] or [P, N, N]</p></li>
-</ul>
+<p>Number of latent processes equals the number of outputs (L = P).</p>
 <p>Further reference:</p>
 <ul class="simple">
 <li><p>See <cite>gpflow.conditionals._conditional</cite> for a detailed explanation of
@@ -922,17 +1054,41 @@ conditional in the single-output case.</p></li>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>Kmns</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – </p></li>
-<li><p><strong>Kmms</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – </p></li>
-<li><p><strong>Knns</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – </p></li>
-<li><p><strong>f</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – </p></li>
+<li><p><strong>Kmns</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – <ul>
+<li><p><strong>Kmns</strong> has shape [<em>P</em>, <em>M</em>, <em>batch</em>…, <em>N</em>].</p></li>
+</ul>
+</p></li>
+<li><p><strong>Kmms</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – <ul>
+<li><p><strong>Kmms</strong> has shape [<em>P</em>, <em>M</em>, <em>M</em>].</p></li>
+</ul>
+</p></li>
+<li><p><strong>Knns</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – <ul>
+<li><p><strong>Knns</strong> has shape [<em>P</em>, <em>batch</em>…, <em>N</em>, <em>N</em>] if <em>full_cov</em>.</p></li>
+<li><p><strong>Knns</strong> has shape [<em>P</em>, <em>batch</em>…, <em>N</em>] if not <em>full_cov</em>.</p></li>
+</ul>
+</p></li>
+<li><p><strong>f</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – <ul>
+<li><p><strong>f</strong> has shape [<em>M</em>, <em>P</em>].</p></li>
+</ul>
+</p></li>
+<li><p><strong>q_sqrt</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]) – <ul>
+<li><p><strong>q_sqrt</strong> has shape [<em>M_R_or_R_M_M</em>…].</p></li>
+</ul>
+</p></li>
 <li><p><strong>full_cov</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – </p></li>
-<li><p><strong>q_sqrt</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]) – </p></li>
 <li><p><strong>white</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – </p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]</p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><strong>return[0]</strong> has shape [<em>batch</em>…, <em>N</em>, <em>R</em>].</p></li>
+<li><p><strong>return[1]</strong> has shape [<em>batch</em>…, <em>N</em>, <em>R</em>] if not <em>full_cov</em>.</p></li>
+<li><p><strong>return[1]</strong> has shape [<em>batch</em>…, <em>R</em>, <em>N</em>, <em>N</em>] if <em>full_cov</em>.</p></li>
+</ul>
+</p>
 </dd>
 </dl>
 </dd></dl>

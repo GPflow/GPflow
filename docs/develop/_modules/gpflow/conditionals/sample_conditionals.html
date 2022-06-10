@@ -273,6 +273,7 @@ function checkPageExistsAndRedirect(event) {
 <span class="kn">import</span> <span class="nn">tensorflow</span> <span class="k">as</span> <span class="nn">tf</span>
 
 <span class="kn">from</span> <span class="nn">..base</span> <span class="kn">import</span> <span class="n">SamplesMeanAndVariance</span>
+<span class="kn">from</span> <span class="nn">..experimental.check_shapes</span> <span class="kn">import</span> <span class="n">check_shapes</span>
 <span class="kn">from</span> <span class="nn">..inducing_variables</span> <span class="kn">import</span> <span class="n">InducingVariables</span>
 <span class="kn">from</span> <span class="nn">..kernels</span> <span class="kn">import</span> <span class="n">Kernel</span>
 <span class="kn">from</span> <span class="nn">.dispatch</span> <span class="kn">import</span> <span class="n">conditional</span><span class="p">,</span> <span class="n">sample_conditional</span>
@@ -281,6 +282,17 @@ function checkPageExistsAndRedirect(event) {
 
 <div class="viewcode-block" id="_sample_conditional"><a class="viewcode-back" href="../../../api/gpflow/conditionals/index.html#gpflow.conditionals.sample_conditionals._sample_conditional">[docs]</a><span class="nd">@sample_conditional</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="nb">object</span><span class="p">,</span> <span class="nb">object</span><span class="p">,</span> <span class="n">Kernel</span><span class="p">,</span> <span class="nb">object</span><span class="p">)</span>
 <span class="nd">@sample_conditional</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="nb">object</span><span class="p">,</span> <span class="n">InducingVariables</span><span class="p">,</span> <span class="n">Kernel</span><span class="p">,</span> <span class="nb">object</span><span class="p">)</span>
+<span class="nd">@check_shapes</span><span class="p">(</span>
+    <span class="s2">&quot;Xnew: [batch..., N, D]&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;inducing_variable: [M, D, maybe_R...]&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;f: [M, R]&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;return[0]: [batch..., N, R] if num_samples is None&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;return[0]: [batch..., num_samples, N, R] if num_samples is not None&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;return[1]: [batch..., N, R]&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;return[2]: [batch..., N, R] if (not full_cov) and (not full_output_cov)&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;return[2]: [batch..., R, N, N] if full_cov and (not full_output_cov)&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;return[2]: [batch..., N, R, R] if (not full_cov) and full_output_cov&quot;</span><span class="p">,</span>
+<span class="p">)</span>
 <span class="k">def</span> <span class="nf">_sample_conditional</span><span class="p">(</span>
     <span class="n">Xnew</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
     <span class="n">inducing_variable</span><span class="p">:</span> <span class="n">InducingVariables</span><span class="p">,</span>
@@ -301,8 +313,6 @@ function checkPageExistsAndRedirect(event) {
 <span class="sd">    The dispatcher will make sure that we use the most efficient one.</span>
 
 <span class="sd">    :return: samples, mean, cov</span>
-<span class="sd">        samples has shape [num_samples, N, P] or [N, P] if num_samples is None</span>
-<span class="sd">        mean and cov as for conditional()</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">if</span> <span class="n">full_cov</span> <span class="ow">and</span> <span class="n">full_output_cov</span><span class="p">:</span>
