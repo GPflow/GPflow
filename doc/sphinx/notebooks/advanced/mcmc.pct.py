@@ -6,9 +6,9 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.4.0
+#       jupytext_version: 1.13.8
 #   kernelspec:
-#     display_name: Python 3
+#     display_name: Python 3 (ipykernel)
 #     language: python
 #     name: python3
 # ---
@@ -72,7 +72,7 @@ tf.random.set_seed(123)
 # %%
 rng = np.random.RandomState(42)
 
-N = 30
+N = 15
 
 
 def synthetic_data(num: int, rng: np.random.RandomState):
@@ -132,7 +132,7 @@ gpflow.utilities.print_summary(model)
 
 # %%
 num_burnin_steps = ci_niter(300)
-num_samples = ci_niter(500)
+num_samples = ci_niter(1000)
 
 # Note that here we need model.trainable_parameters, not trainable_variables - only parameters can have priors!
 hmc_helper = gpflow.optimizers.SamplingHelper(
@@ -270,6 +270,9 @@ plt.ylabel("$f|X,Y$")
 plt.title("Posterior GP samples")
 
 plt.show()
+
+# %% [markdown]
+# This example demonstrates the multi-modality of the true posterior over hyperparameters: the data could be explained both by long lengthscale, small signal variance, and high noise variance, as well as by shorter lengthscale, higher signal variance, and low noise variance.
 
 # %% [markdown]
 # ## Example 2: Sparse MC for multiclass classification
