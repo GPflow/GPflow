@@ -12,19 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from collections import namedtuple
-from typing import Optional, Tuple
+from typing import NamedTuple, Optional, Tuple
 
 import numpy as np
 import tensorflow as tf
 
-from .. import likelihoods, posteriors
+from .. import posteriors
 from ..base import InputData, MeanAndVariance, RegressionData
 from ..config import default_float, default_jitter
 from ..covariances.dispatch import Kuf, Kuu
 from ..experimental.check_shapes import check_shapes, inherit_check_shapes
 from ..inducing_variables import InducingPoints
 from ..kernels import Kernel
+from ..likelihoods import Gaussian
 from ..mean_functions import MeanFunction
 from ..utilities import add_noise_cov, assert_params_false, to_default_float
 from .model import GPModel
@@ -50,7 +50,8 @@ class SGPRBase_deprecated(GPModel, InternalDataTrainingLossMixin):
         *,
         mean_function: Optional[MeanFunction] = None,
         num_latent_gps: Optional[int] = None,
-        noise_variance: float = 1.0,
+        noise_variance: Optional[float] = None,
+        likelihood: Optional[Gaussian] = None,
     ):
         """
         This method only works with a Gaussian likelihood, its variance is
@@ -63,7 +64,13 @@ class SGPRBase_deprecated(GPModel, InternalDataTrainingLossMixin):
         :param kernel: An appropriate GPflow kernel object.
         :param mean_function: An appropriate GPflow mean function object.
         """
-        likelihood = likelihoods.Gaussian(noise_variance)
+        assert (noise_variance is None) or (
+            likelihood is None
+        ), "Cannot set both `noise_variance` and `likelihood`."
+        if likelihood is None:
+            if noise_variance is None:
+                noise_variance = 1.0
+            likelihood = Gaussian(noise_variance)
         X_data, Y_data = data_input_to_tensor(data)
         num_latent_gps = Y_data.shape[-1] if num_latent_gps is None else num_latent_gps
         super().__init__(kernel, likelihood, mean_function, num_latent_gps=num_latent_gps)
@@ -96,7 +103,9 @@ class SGPRBase_deprecated(GPModel, InternalDataTrainingLossMixin):
         which computes each individual element of the trace term.
         """
         X_data, Y_data = self.data
-        num_data = to_default_float(tf.shape(Y_data)[0])
+
+        sigma_sq = tf.squeeze(self.likelihood.variance_at(X_data), axis=-1)  # [N]
+        sigma = tf.sqrt(sigma_sq)  # [N]
 
         Kdiag = self.kernel(X_data, full_cov=False)
         kuu = Kuu(self.inducing_variable, self.kernel, jitter=default_jitter())
@@ -106,23 +115,31 @@ class SGPRBase_deprecated(GPModel, InternalDataTrainingLossMixin):
 
         L = tf.linalg.cholesky(kuu)
         A = tf.linalg.triangular_solve(L, kuf, lower=True)
-        AAT = tf.linalg.matmul(A, A, transpose_b=True)
-        B = I + AAT / self.likelihood.variance
+
+        A_sigma = tf.linalg.triangular_solve(L, kuf / sigma, lower=True)
+        AAT_sigma = tf.linalg.matmul(A_sigma, A_sigma, transpose_b=True)
+        B = I + AAT_sigma
         LB = tf.linalg.cholesky(B)
 
         # Using the Trace bound, from Titsias' presentation
         c = tf.reduce_sum(Kdiag) - tf.reduce_sum(tf.square(A))
 
         # Alternative bound on max eigenval:
-        corrected_noise = self.likelihood.variance + c
+        cn_var = sigma_sq + c
+        cn_std = tf.sqrt(cn_var)
 
-        const = -0.5 * num_data * tf.math.log(2 * np.pi * self.likelihood.variance)
+        const = -0.5 * tf.reduce_sum(tf.math.log(2 * np.pi * sigma_sq))
         logdet = -tf.reduce_sum(tf.math.log(tf.linalg.diag_part(LB)))
 
+        A_cn = tf.linalg.triangular_solve(L, kuf / cn_std, lower=True)
+        AAT_cn = tf.linalg.matmul(A_cn, A_cn, transpose_b=True)
+
         err = Y_data - self.mean_function(X_data)
-        LC = tf.linalg.cholesky(I + AAT / corrected_noise)
-        v = tf.linalg.triangular_solve(LC, tf.linalg.matmul(A, err) / corrected_noise, lower=True)
-        quad = -0.5 * tf.reduce_sum(tf.square(err)) / corrected_noise + 0.5 * tf.reduce_sum(
+        LC = tf.linalg.cholesky(I + AAT_cn)
+        v = tf.linalg.triangular_solve(
+            LC, tf.linalg.matmul(A_cn, err / cn_std[:, None]), lower=True
+        )
+        quad = -0.5 * tf.reduce_sum(tf.square(err / cn_std[:, None])) + 0.5 * tf.reduce_sum(
             tf.square(v)
         )
 
@@ -136,7 +153,14 @@ class SGPR_deprecated(SGPRBase_deprecated):
     The key reference is :cite:t:`titsias2009variational`.
     """
 
-    CommonTensors = namedtuple("CommonTensors", ["A", "B", "LB", "AAT", "L"])
+    class CommonTensors(NamedTuple):
+        sigma_sq: tf.Tensor
+        sigma: tf.Tensor
+        A: tf.Tensor
+        B: tf.Tensor
+        LB: tf.Tensor
+        AAT: tf.Tensor
+        L: tf.Tensor
 
     # type-ignore is because of changed method signature:
     @inherit_check_shapes
@@ -144,37 +168,42 @@ class SGPR_deprecated(SGPRBase_deprecated):
         return self.elbo()
 
     @check_shapes(
+        "return.sigma_sq: [N]",
+        "return.sigma: [N]",
         "return.A: [M, N]",
         "return.B: [M, M]",
         "return.LB: [M, M]",
         "return.AAT: [M, M]",
     )
     def _common_calculation(self) -> "SGPR.CommonTensors":
-        """
+        r"""
         Matrices used in log-det calculation
 
         :return:
+            * :math:`\sigma^2`,
+            * :math:`\sigma`,
             * :math:`A = L⁻¹K_{uf}/σ`, where :math:`LLᵀ = Kᵤᵤ`,
             * :math:`B = AAT+I`,
             * :math:`LB` where :math`LBLBᵀ = B`,
             * :math:`AAT = AAᵀ`,
         """
-        x, _ = self.data
-        iv = self.inducing_variable
-        sigma_sq = self.likelihood.variance
+        x, _ = self.data  # [N]
+        iv = self.inducing_variable  # [M]
 
-        kuf = Kuf(iv, self.kernel, x)
-        kuu = Kuu(iv, self.kernel, jitter=default_jitter())
-        L = tf.linalg.cholesky(kuu)
-        sigma = tf.sqrt(sigma_sq)
+        sigma_sq = tf.squeeze(self.likelihood.variance_at(x), axis=-1)  # [N]
+        sigma = tf.sqrt(sigma_sq)  # [N]
+
+        kuf = Kuf(iv, self.kernel, x)  # [M, N]
+        kuu = Kuu(iv, self.kernel, jitter=default_jitter())  # [M, M]
+        L = tf.linalg.cholesky(kuu)  # [M, M]
 
         # Compute intermediate matrices
-        A = tf.linalg.triangular_solve(L, kuf, lower=True) / sigma
+        A = tf.linalg.triangular_solve(L, kuf / sigma, lower=True)
         AAT = tf.linalg.matmul(A, A, transpose_b=True)
         B = add_noise_cov(AAT, tf.cast(1.0, AAT.dtype))
         LB = tf.linalg.cholesky(B)
 
-        return self.CommonTensors(A, B, LB, AAT, L)
+        return self.CommonTensors(sigma_sq, sigma, A, B, LB, AAT, L)
 
     @check_shapes(
         "return: []",
@@ -189,17 +218,16 @@ class SGPR_deprecated(SGPRBase_deprecated):
         :param common: A named tuple containing matrices that will be used
         :return: log_det, lower bound on :math:`-.5 * \textrm{output_dim} * \log |K + σ²I|`
         """
+        sigma_sq = common.sigma_sq
         LB = common.LB
         AAT = common.AAT
 
         x, y = self.data
-        num_data = to_default_float(tf.shape(x)[0])
         outdim = to_default_float(tf.shape(y)[1])
         kdiag = self.kernel(x, full_cov=False)
-        sigma_sq = self.likelihood.variance
 
         # tr(K) / σ²
-        trace_k = tf.reduce_sum(kdiag) / sigma_sq
+        trace_k = tf.reduce_sum(kdiag / sigma_sq)
         # tr(Q) / σ²
         trace_q = tf.reduce_sum(tf.linalg.diag_part(AAT))
         # tr(K - Q) / σ²
@@ -208,8 +236,8 @@ class SGPR_deprecated(SGPRBase_deprecated):
         # 0.5 * log(det(B))
         half_logdet_b = tf.reduce_sum(tf.math.log(tf.linalg.diag_part(LB)))
 
-        # N * log(σ²)
-        log_sigma_sq = num_data * tf.math.log(sigma_sq)
+        # sum log(σ²)
+        log_sigma_sq = tf.reduce_sum(tf.math.log(sigma_sq))
 
         logdet_k = -outdim * (half_logdet_b + 0.5 * log_sigma_sq + 0.5 * trace)
         return logdet_k
@@ -222,19 +250,18 @@ class SGPR_deprecated(SGPRBase_deprecated):
         :param common: A named tuple containing matrices that will be used
         :return: Lower bound on -.5 yᵀ(K + σ²I)⁻¹y
         """
+        sigma = common.sigma
         A = common.A
         LB = common.LB
 
         x, y = self.data
-        err = y - self.mean_function(x)
-        sigma_sq = self.likelihood.variance
-        sigma = tf.sqrt(sigma_sq)
+        err = (y - self.mean_function(x)) / sigma[..., None]
 
         Aerr = tf.linalg.matmul(A, err)
-        c = tf.linalg.triangular_solve(LB, Aerr, lower=True) / sigma
+        c = tf.linalg.triangular_solve(LB, Aerr, lower=True)
 
         # σ⁻² yᵀy
-        err_inner_prod = tf.reduce_sum(tf.square(err)) / sigma_sq
+        err_inner_prod = tf.reduce_sum(tf.square(err))
         c_inner_prod = tf.reduce_sum(tf.square(c))
 
         quad = -0.5 * (err_inner_prod - c_inner_prod)
@@ -277,15 +304,18 @@ class SGPR_deprecated(SGPRBase_deprecated):
         kuf = Kuf(self.inducing_variable, self.kernel, X_data)
         kuu = Kuu(self.inducing_variable, self.kernel, jitter=default_jitter())
         Kus = Kuf(self.inducing_variable, self.kernel, Xnew)
-        sigma = tf.sqrt(self.likelihood.variance)
-        L = tf.linalg.cholesky(kuu)
-        A = tf.linalg.triangular_solve(L, kuf, lower=True) / sigma
+
+        sigma_sq = tf.squeeze(self.likelihood.variance_at(X_data), axis=-1)
+        sigma = tf.sqrt(sigma_sq)
+
+        L = tf.linalg.cholesky(kuu)  # cache alpha, qinv
+        A = tf.linalg.triangular_solve(L, kuf / sigma, lower=True)
         B = tf.linalg.matmul(A, A, transpose_b=True) + tf.eye(
             num_inducing, dtype=default_float()
         )  # cache qinv
-        LB = tf.linalg.cholesky(B)
-        Aerr = tf.linalg.matmul(A, err)
-        c = tf.linalg.triangular_solve(LB, Aerr, lower=True) / sigma
+        LB = tf.linalg.cholesky(B)  # cache alpha
+        Aerr = tf.linalg.matmul(A, err / sigma[..., None])
+        c = tf.linalg.triangular_solve(LB, Aerr, lower=True)  # cache alpha
         tmp1 = tf.linalg.triangular_solve(L, Kus, lower=True)
         tmp2 = tf.linalg.triangular_solve(LB, tmp1, lower=True)
         mean = tf.linalg.matmul(tmp2, c, transpose_a=True)
@@ -324,20 +354,21 @@ class SGPR_deprecated(SGPRBase_deprecated):
         kuf = Kuf(self.inducing_variable, self.kernel, X_data)
         kuu = Kuu(self.inducing_variable, self.kernel, jitter=default_jitter())
 
-        sig = kuu + (self.likelihood.variance ** -1) * tf.matmul(kuf, kuf, transpose_b=True)
+        var = tf.squeeze(self.likelihood.variance_at(X_data), axis=-1)
+        std = tf.sqrt(var)
+        scaled_kuf = kuf / std
+        sig = kuu + tf.matmul(scaled_kuf, scaled_kuf, transpose_b=True)
         sig_sqrt = tf.linalg.cholesky(sig)
 
         sig_sqrt_kuu = tf.linalg.triangular_solve(sig_sqrt, kuu)
 
         cov = tf.linalg.matmul(sig_sqrt_kuu, sig_sqrt_kuu, transpose_a=True)
         err = Y_data - self.mean_function(X_data)
-        mu = (
-            tf.linalg.matmul(
-                sig_sqrt_kuu,
-                tf.linalg.triangular_solve(sig_sqrt, tf.linalg.matmul(kuf, err)),
-                transpose_a=True,
-            )
-            / self.likelihood.variance
+        scaled_err = err / std[..., None]
+        mu = tf.linalg.matmul(
+            sig_sqrt_kuu,
+            tf.linalg.triangular_solve(sig_sqrt, tf.linalg.matmul(scaled_kuf, scaled_err)),
+            transpose_a=True,
         )
 
         return mu, cov
@@ -372,11 +403,13 @@ class GPRFITC(SGPRBase_deprecated):
         kuf = Kuf(self.inducing_variable, self.kernel, X_data)
         kuu = Kuu(self.inducing_variable, self.kernel, jitter=default_jitter())
 
+        sigma_sq = tf.squeeze(self.likelihood.variance_at(X_data), axis=-1)
+
         Luu = tf.linalg.cholesky(kuu)  # => Luu Luu^T = kuu
         V = tf.linalg.triangular_solve(Luu, kuf)  # => V^T V = Qff = kuf^T kuu^-1 kuf
 
         diagQff = tf.reduce_sum(tf.square(V), 0)
-        nu = Kdiag - diagQff + self.likelihood.variance
+        nu = Kdiag - diagQff + sigma_sq
 
         B = tf.eye(num_inducing, dtype=default_float()) + tf.linalg.matmul(
             V / nu, V, transpose_b=True
@@ -520,7 +553,7 @@ class SGPR_with_posterior(SGPR_deprecated):
             kernel=self.kernel,
             data=self.data,
             inducing_variable=self.inducing_variable,
-            likelihood_variance=self.likelihood.variance,
+            likelihood=self.likelihood,
             num_latent_gps=self.num_latent_gps,
             mean_function=self.mean_function,
             precompute_cache=precompute_cache,

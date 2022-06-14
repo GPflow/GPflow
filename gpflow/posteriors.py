@@ -20,7 +20,7 @@ from typing import Optional, Tuple, Type, Union, cast
 import tensorflow as tf
 
 from . import covariances, kernels, mean_functions
-from .base import MeanAndVariance, Module, Parameter, RegressionData, TensorType
+from .base import MeanAndVariance, Module, RegressionData, TensorType
 from .conditionals.util import (
     base_conditional,
     base_conditional_with_lm,
@@ -42,8 +42,9 @@ from .inducing_variables import (
     SharedIndependentInducingVariables,
 )
 from .kernels import Kernel
+from .likelihoods import Gaussian
 from .mean_functions import MeanFunction
-from .utilities import Dispatcher, add_noise_cov, assert_params_false
+from .utilities import Dispatcher, add_likelihood_noise_cov, assert_params_false
 from .utilities.ops import eye, leading_transpose
 
 
@@ -349,13 +350,12 @@ class GPRPosterior(AbstractPosterior):
     @check_shapes(
         "data[0]: [N, D]",
         "data[1]: [N, Q]",
-        "likelihood_variance: []",
     )
     def __init__(
         self,
         kernel: Kernel,
         data: RegressionData,
-        likelihood_variance: Parameter,
+        likelihood: Gaussian,
         mean_function: MeanFunction,
         *,
         precompute_cache: Optional[PrecomputeCacheType],
@@ -363,7 +363,7 @@ class GPRPosterior(AbstractPosterior):
         X, Y = data
         super().__init__(kernel, X, mean_function=mean_function)
         self.Y_data = Y
-        self.likelihood_variance = likelihood_variance
+        self.likelihood = likelihood
 
         if precompute_cache is not None:
             self.update_cache(precompute_cache)
@@ -432,7 +432,7 @@ class GPRPosterior(AbstractPosterior):
     def _precompute(self) -> Tuple[PrecomputedValue, ...]:
         X_data = cast(tf.Tensor, self.X_data)
         Kmm = self.kernel(X_data)
-        Kmm_plus_s = add_noise_cov(Kmm, self.likelihood_variance)
+        Kmm_plus_s = add_likelihood_noise_cov(Kmm, self.likelihood, X_data)
 
         Lm = tf.linalg.cholesky(Kmm_plus_s)
         Kmm_plus_s_inv = tf.linalg.cholesky_solve(Lm, tf.eye(tf.shape(X_data)[0], dtype=Lm.dtype))
@@ -459,7 +459,7 @@ class GPRPosterior(AbstractPosterior):
         Kmm = self.kernel(self.X_data)
         Knn = self.kernel(Xnew, full_cov=full_cov)
         Kmn = self.kernel(self.X_data, Xnew)
-        Kmm_plus_s = add_noise_cov(Kmm, self.likelihood_variance)
+        Kmm_plus_s = add_likelihood_noise_cov(Kmm, self.likelihood, self.X_data)
 
         return base_conditional(
             Kmn, Kmm_plus_s, Knn, err, full_cov=full_cov, white=False
@@ -476,14 +476,13 @@ class SGPRPosterior(AbstractPosterior):
         "data[0]: [N, D]",
         "data[1]: [N, Q]",
         "inducing_variable: [M, D, 1]",
-        "likelihood_variance: []",
     )
     def __init__(
         self,
         kernel: Kernel,
         data: RegressionData,
         inducing_variable: InducingPoints,
-        likelihood_variance: Parameter,
+        likelihood: Gaussian,
         num_latent_gps: int,
         mean_function: MeanFunction,
         *,
@@ -492,7 +491,7 @@ class SGPRPosterior(AbstractPosterior):
         X, Y = data
         super().__init__(kernel, X, mean_function=mean_function)
         self.Y_data = Y
-        self.likelihood_variance = likelihood_variance
+        self.likelihood = likelihood
         self.inducing_variable = inducing_variable
         self.num_latent_gps = num_latent_gps
 
@@ -510,15 +509,18 @@ class SGPRPosterior(AbstractPosterior):
         err = self.Y_data - self.mean_function(self.X_data)
         kuf = Kuf(self.inducing_variable, self.kernel, self.X_data)
         kuu = Kuu(self.inducing_variable, self.kernel, jitter=default_jitter())
-        sigma = tf.sqrt(self.likelihood_variance)
+
+        sigma_sq = tf.squeeze(self.likelihood.variance_at(self.X_data), axis=-1)
+        sigma = tf.sqrt(sigma_sq)
+
         L = tf.linalg.cholesky(kuu)  # cache alpha, qinv
-        A = tf.linalg.triangular_solve(L, kuf, lower=True) / sigma
+        A = tf.linalg.triangular_solve(L, kuf / sigma, lower=True)
         B = tf.linalg.matmul(A, A, transpose_b=True) + tf.eye(
             num_inducing, dtype=default_float()
         )  # cache qinv
         LB = tf.linalg.cholesky(B)  # cache alpha
-        Aerr = tf.linalg.matmul(A, err)
-        c = tf.linalg.triangular_solve(LB, Aerr, lower=True) / sigma  # cache alpha
+        Aerr = tf.linalg.matmul(A, err / sigma[..., None])
+        c = tf.linalg.triangular_solve(LB, Aerr, lower=True)  # cache alpha
 
         # get intermediate variables
         Linv = tf.linalg.triangular_solve(L, tf.eye(num_inducing, dtype=default_float()))
@@ -573,24 +575,28 @@ class SGPRPosterior(AbstractPosterior):
         Compute the mean and variance of the latent function at some new points
         Xnew. Does not make use of caching
         """
+        # taken directly from the deprecated SGPR implementation
+
         assert_params_false(self._conditional_fused, full_output_cov=full_output_cov)
 
-        # taken directly from the deprecated SGPR implementation
         num_inducing = self.inducing_variable.num_inducing
         assert self.mean_function is not None
         err = self.Y_data - self.mean_function(self.X_data)
         kuf = Kuf(self.inducing_variable, self.kernel, self.X_data)
         kuu = Kuu(self.inducing_variable, self.kernel, jitter=default_jitter())
         Kus = Kuf(self.inducing_variable, self.kernel, Xnew)
-        sigma = tf.sqrt(self.likelihood_variance)
+
+        sigma_sq = tf.squeeze(self.likelihood.variance_at(self.X_data), axis=-1)
+        sigma = tf.sqrt(sigma_sq)
+
         L = tf.linalg.cholesky(kuu)  # cache alpha, qinv
-        A = tf.linalg.triangular_solve(L, kuf, lower=True) / sigma
+        A = tf.linalg.triangular_solve(L, kuf / sigma, lower=True)
         B = tf.linalg.matmul(A, A, transpose_b=True) + tf.eye(
             num_inducing, dtype=default_float()
         )  # cache qinv
         LB = tf.linalg.cholesky(B)  # cache alpha
-        Aerr = tf.linalg.matmul(A, err)
-        c = tf.linalg.triangular_solve(LB, Aerr, lower=True) / sigma  # cache alpha
+        Aerr = tf.linalg.matmul(A, err / sigma[..., None])
+        c = tf.linalg.triangular_solve(LB, Aerr, lower=True)  # cache alpha
         tmp1 = tf.linalg.triangular_solve(L, Kus, lower=True)
         tmp2 = tf.linalg.triangular_solve(LB, tmp1, lower=True)
         mean = tf.linalg.matmul(tmp2, c, transpose_a=True)

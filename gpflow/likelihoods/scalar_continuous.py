@@ -19,9 +19,8 @@ import numpy as np
 import tensorflow as tf
 
 from .. import logdensities
-from ..base import MeanAndVariance, Parameter, TensorType
+from ..base import MeanAndVariance, TensorType
 from ..experimental.check_shapes import check_shapes, inherit_check_shapes
-from ..utilities import positive
 from ..utilities.parameter_or_function import (
     ConstantOrFunction,
     ParameterOrFunction,
@@ -96,6 +95,15 @@ class Gaussian(ScalarLikelihood):
                 evaluate_parameter_or_function(self.scale, X, lower_bound=self.scale_lower_bound)
                 ** 2
             )
+
+    @check_shapes(
+        "X: [batch..., N, D]",
+        "return: [batch..., N, 1]",
+    )
+    def variance_at(self, X: TensorType) -> tf.Tensor:
+        variance = self._variance(X)
+        shape = tf.concat([tf.shape(X)[:-1], [1]], 0)
+        return tf.broadcast_to(variance, shape)
 
     @inherit_check_shapes
     def _scalar_log_prob(self, X: TensorType, F: TensorType, Y: TensorType) -> tf.Tensor:

@@ -14,34 +14,30 @@
 
 from typing import Callable
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pytest
+from matplotlib.axes import Axes
 
 import gpflow
 from gpflow import default_float
 from gpflow.base import AnyNDArray, RegressionData
 from gpflow.config import default_float
-from gpflow.experimental.check_shapes import ShapeChecker
 from gpflow.functions import Linear
 from gpflow.kernels import Kernel
 from gpflow.likelihoods import Gaussian
-from gpflow.models import SVGP, VGP, GPModel, training_loss_closure
+from gpflow.models import CGLB, GPR, GPRFITC, SGPR, SVGP, VGP, GPModel
 from gpflow.models.util import InducingPointsLike
 
 
 class Datum:
-    cs = ShapeChecker().check_shape
-
     rng = np.random.default_rng(20220630)
     n = 100
-    X: AnyNDArray = cs(rng.random((n, 1), dtype=default_float()), "[N, 1]")
+    X: AnyNDArray = rng.random((n, 1), dtype=default_float())
     noise_slope = -0.7
     noise_offset = 0.7
-    noise = cs(
-        (noise_slope * X + noise_offset) * rng.standard_normal((n, 1), dtype=default_float()),
-        "[N, 1]",
-    )
-    Y = cs(np.sin(5 * X) + noise, "[N, 1]")
+    noise = (noise_slope * X + noise_offset) * rng.standard_normal((n, 1), dtype=default_float())
+    Y = np.sin(5 * X) + noise
     data = X, Y
 
 
@@ -60,10 +56,45 @@ def create_linear_noise() -> Gaussian:
     return Gaussian(scale=Linear())
 
 
+def gpr(data: RegressionData) -> GPModel:
+    return GPR(
+        data,
+        kernel=create_kernel(),
+        likelihood=create_linear_noise(),
+    )
+
+
 def vgp(data: RegressionData) -> GPModel:
     return VGP(
         data,
         kernel=create_kernel(),
+        likelihood=create_linear_noise(),
+    )
+
+
+def sgpr(data: RegressionData) -> GPModel:
+    return SGPR(
+        data,
+        kernel=create_kernel(),
+        inducing_variable=create_inducing(),
+        likelihood=create_linear_noise(),
+    )
+
+
+def gprfitc(data: RegressionData) -> GPModel:
+    return GPRFITC(
+        data,
+        kernel=create_kernel(),
+        inducing_variable=create_inducing(),
+        likelihood=create_linear_noise(),
+    )
+
+
+def cglb(data: RegressionData) -> GPModel:
+    return CGLB(
+        data,
+        kernel=create_kernel(),
+        inducing_variable=create_inducing(),
         likelihood=create_linear_noise(),
     )
 
@@ -77,19 +108,60 @@ def svgp(data: RegressionData) -> GPModel:
 
 
 CREATE_MODELS = (
+    gpr,
     vgp,
+    sgpr,
+    gprfitc,
+    # cglb,
     svgp,
 )
 
 
 @pytest.mark.parametrize("create_model", CREATE_MODELS)
 def test_infer_noise(create_model: Callable[[RegressionData], GPModel]) -> None:
+    do_compile = False
+    do_optimise = True
     model = create_model(Datum.data)
-    gpflow.optimizers.Scipy().minimize(
-        training_loss_closure(model, Datum.data),
-        variables=model.trainable_variables,
+    loss_fn = gpflow.models.training_loss_closure(model, Datum.data, compile=do_compile)
+    if do_optimise:
+        gpflow.optimizers.Scipy().minimize(
+            loss_fn,
+            variables=model.trainable_variables,
+            compile=do_compile,
+        )
+    noise_scale = model.likelihood.scale
+    gpflow.utilities.print_summary(noise_scale)
+
+    n_rows = 2
+    n_columns = 1
+    plot_width = n_columns * 6.0
+    plot_height = n_rows * 4.0
+    _fig, (f_ax, y_ax) = plt.subplots(
+        nrows=n_rows, ncols=n_columns, figsize=(plot_width, plot_height)
     )
 
-    noise_scale = model.likelihood.scale
+    plot_x: AnyNDArray = np.linspace(-0.1, 1.1, num=200, dtype=default_float())[:, None]
+
+    def plot_dist(ax: Axes, title: str, plot_mean: AnyNDArray, plot_cov: AnyNDArray) -> None:
+        # pylint: disable=cell-var-from-loop
+        plot_mean = plot_mean[:, 0]
+        plot_cov = plot_cov[:, 0]
+        plot_std = np.sqrt(plot_cov)
+        plot_lower = plot_mean - plot_std
+        plot_upper = plot_mean + plot_std
+        (mean_line,) = ax.plot(plot_x, plot_mean)
+        color = mean_line.get_color()
+        ax.fill_between(plot_x[:, 0], plot_lower, plot_upper, color=color, alpha=0.3)
+        ax.scatter(Datum.X, Datum.Y, color=color)
+        ax.set_title(title)
+        ax.set_ylim(-2.0, 2.0)
+
+    plot_dist(f_ax, "f", *model.predict_f(plot_x, full_cov=False))
+    plot_dist(y_ax, "y", *model.predict_y(plot_x, full_cov=False))
+
+    plt.tight_layout()
+    plt.savefig(f"/home/jesper/src/GPflow/{create_model.__name__}.png")
+    plt.close()
+
     np.testing.assert_allclose(Datum.noise_slope, noise_scale.A, atol=0.1)
     np.testing.assert_allclose(Datum.noise_offset, noise_scale.b, atol=0.1)

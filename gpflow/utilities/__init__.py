@@ -1,6 +1,6 @@
 from .bijectors import positive, triangular, triangular_size
 from .misc import is_variable, set_trainable, to_default_float, to_default_int, training_loop
-from .model_utils import add_noise_cov, assert_params_false
+from .model_utils import add_likelihood_noise_cov, add_noise_cov, assert_params_false
 from .multipledispatch import Dispatcher
 from .traversal import (
     deepcopy,
@@ -18,6 +18,7 @@ from .traversal import (
 
 __all__ = [
     "Dispatcher",
+    "add_likelihood_noise_cov",
     "add_noise_cov",
     "assert_params_false",
     "bijectors",
