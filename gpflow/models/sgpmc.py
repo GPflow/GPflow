@@ -98,7 +98,7 @@ class SGPMC(GPModel, InternalDataTrainingLossMixin):
         # get the (marginals of) q(f): exactly predicting!
         X_data, Y_data = self.data
         fmean, fvar = self.predict_f(X_data, full_cov=False)
-        return tf.reduce_sum(self.likelihood.variational_expectations(fmean, fvar, Y_data))
+        return tf.reduce_sum(self.likelihood.variational_expectations(X_data, fmean, fvar, Y_data))
 
     def predict_f(
         self, Xnew: InputData, full_cov: bool = False, full_output_cov: bool = False

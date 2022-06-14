@@ -24,6 +24,7 @@ from gpflow.base import TensorType
 from gpflow.conditionals import conditional
 from gpflow.inducing_variables import InducingPoints, InducingVariables
 from gpflow.kernels import Kernel
+from gpflow.likelihoods import Gaussian
 from gpflow.mean_functions import Zero
 from gpflow.models.util import inducingpoint_wrapper
 from gpflow.posteriors import (
@@ -642,7 +643,7 @@ def test_gpr_posterior_update_cache_with_variables_no_precompute(
     posterior = GPRPosterior(
         kernel=kernel,
         data=(X, Y),
-        likelihood_variance=gpflow.Parameter(0.1),
+        likelihood=Gaussian(0.1),
         precompute_cache=precompute_cache_type,
         mean_function=Zero(),
     )
@@ -672,7 +673,7 @@ def test_sgpr_posterior_update_cache_with_variables_no_precompute(
         kernel=kernel,
         data=(X, Y),
         inducing_variable=InducingPoints(Z),
-        likelihood_variance=gpflow.Parameter(0.1),
+        likelihood=Gaussian(0.1),
         num_latent_gps=1,
         precompute_cache=precompute_cache_type,
         mean_function=Zero(),

@@ -12,16 +12,29 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Any, Callable
+import abc
+from math import sqrt
+from typing import Any, Callable, Optional, Union
 
 import numpy as np
 import tensorflow as tf
 
 from .. import logdensities
-from ..base import MeanAndVariance, Parameter, TensorType
+from ..base import MeanAndVariance, Parameter, TensorData, TensorType
+from ..config import default_float, default_positive_minimum
+from ..experimental.check_shapes import check_shapes, inherit_check_shapes
+from ..functions import (
+    ConstantOrFunction,
+    Function,
+    ParameterOrFunction,
+    evaluate_constant_or_function,
+    prepare_constant_or_function,
+)
 from ..utilities import positive
 from .base import ScalarLikelihood
 from .utils import inv_probit
+
+DEFAULT_LOWER_BOUND = 1e-6
 
 
 class Gaussian(ScalarLikelihood):
@@ -35,51 +48,93 @@ class Gaussian(ScalarLikelihood):
     likelihood variance by default.
     """
 
-    DEFAULT_VARIANCE_LOWER_BOUND = 1e-6
-
     def __init__(
         self,
-        variance: float = 1.0,
-        variance_lower_bound: float = DEFAULT_VARIANCE_LOWER_BOUND,
+        variance: Optional[ConstantOrFunction] = None,
+        *,
+        scale: Optional[ConstantOrFunction] = None,
+        variance_lower_bound: float = DEFAULT_LOWER_BOUND,
         **kwargs: Any,
     ) -> None:
         """
         :param variance: The noise variance; must be greater than
-            ``variance_lower_bound``.
+            ``variance_lower_bound``. This is mutually exclusive with `scale`.
+        :param scale: The noise scale; must be greater than
+            ``sqrt(variance_lower_bound)``. This is mutually exclusive with `variance`.
         :param variance_lower_bound: The lower (exclusive) bound of ``variance``.
         :param kwargs: Keyword arguments forwarded to :class:`ScalarLikelihood`.
         """
         super().__init__(**kwargs)
 
-        if variance <= variance_lower_bound:
-            raise ValueError(
-                f"The variance of the Gaussian likelihood must be strictly greater than {variance_lower_bound}"
+        self.variance_lower_bound = variance_lower_bound
+        self.scale_lower_bound = sqrt(variance_lower_bound)
+        if scale is None:
+            if variance is None:
+                variance = 1.0
+            self.variance: Optional[ParameterOrFunction] = prepare_constant_or_function(
+                variance, lower_bound=self.variance_lower_bound
+            )
+            self.scale: Optional[ParameterOrFunction] = None
+        else:
+            if variance is None:
+                self.variance = None
+                self.scale = prepare_constant_or_function(scale, lower_bound=self.scale_lower_bound)
+            else:
+                assert False, "Cannot set both `variance` and `scale`."
+
+    @check_shapes(
+        "X: [batch..., N, D]",
+        "return: [broadcast batch..., broadcast N, broadcast P]",
+    )
+    def _variance(self, X: TensorType) -> tf.Tensor:
+        if self.variance is not None:
+            return evaluate_constant_or_function(
+                self.variance, X, lower_bound=self.variance_lower_bound
+            )
+        else:
+            assert self.scale is not None  # For mypy.
+            return (
+                evaluate_constant_or_function(self.scale, X, lower_bound=self.scale_lower_bound)
+                ** 2
             )
 
-        self.variance = Parameter(variance, transform=positive(lower=variance_lower_bound))
+    @check_shapes(
+        "X: [batch..., N, D]",
+        "return: [batch..., N, 1]",
+    )
+    def variance_at(self, X: TensorType) -> tf.Tensor:
+        variance = self._variance(X)
+        shape = tf.concat([tf.shape(X)[:-1], [1]], 0)
+        return tf.broadcast_to(variance, shape)
 
-    def _scalar_log_prob(self, F: TensorType, Y: TensorType) -> tf.Tensor:
-        return logdensities.gaussian(Y, F, self.variance)
+    def _scalar_log_prob(self, X: TensorType, F: TensorType, Y: TensorType) -> tf.Tensor:
+        return logdensities.gaussian(Y, F, self._variance(X))
 
-    def _conditional_mean(self, F: TensorType) -> tf.Tensor:  # pylint: disable=R0201
+    def _conditional_mean(self, X: TensorType, F: TensorType) -> tf.Tensor:  # pylint: disable=R0201
         return tf.identity(F)
 
-    def _conditional_variance(self, F: TensorType) -> tf.Tensor:
-        return tf.fill(tf.shape(F), tf.squeeze(self.variance))
+    def _conditional_variance(self, X: TensorType, F: TensorType) -> tf.Tensor:
+        shape = tf.shape(F)
+        return tf.broadcast_to(self._variance(X), shape)
 
-    def _predict_mean_and_var(self, Fmu: TensorType, Fvar: TensorType) -> MeanAndVariance:
-        return tf.identity(Fmu), Fvar + self.variance
+    def _predict_mean_and_var(
+        self, X: TensorType, Fmu: TensorType, Fvar: TensorType
+    ) -> MeanAndVariance:
+        return tf.identity(Fmu), Fvar + self._variance(X)
 
-    def _predict_log_density(self, Fmu: TensorType, Fvar: TensorType, Y: TensorType) -> tf.Tensor:
-        return tf.reduce_sum(logdensities.gaussian(Y, Fmu, Fvar + self.variance), axis=-1)
+    def _predict_log_density(
+        self, X: TensorType, Fmu: TensorType, Fvar: TensorType, Y: TensorType
+    ) -> tf.Tensor:
+        return tf.reduce_sum(logdensities.gaussian(Y, Fmu, Fvar + self._variance(X)), axis=-1)
 
     def _variational_expectations(
-        self, Fmu: TensorType, Fvar: TensorType, Y: TensorType
+        self, X: TensorType, Fmu: TensorType, Fvar: TensorType, Y: TensorType
     ) -> tf.Tensor:
+        variance = self._variance(X)
         return tf.reduce_sum(
             -0.5 * np.log(2 * np.pi)
-            - 0.5 * tf.math.log(self.variance)
-            - 0.5 * ((Y - Fmu) ** 2 + Fvar) / self.variance,
+            - 0.5 * tf.math.log(variance)
+            - 0.5 * ((Y - Fmu) ** 2 + Fvar) / variance,
             axis=-1,
         )
 
@@ -89,42 +144,57 @@ class Exponential(ScalarLikelihood):
         super().__init__(**kwargs)
         self.invlink = invlink
 
-    def _scalar_log_prob(self, F: TensorType, Y: TensorType) -> tf.Tensor:
+    def _scalar_log_prob(self, X: TensorType, F: TensorType, Y: TensorType) -> tf.Tensor:
         return logdensities.exponential(Y, self.invlink(F))
 
-    def _conditional_mean(self, F: TensorType) -> tf.Tensor:
+    def _conditional_mean(self, X: TensorType, F: TensorType) -> tf.Tensor:
         return self.invlink(F)
 
-    def _conditional_variance(self, F: TensorType) -> tf.Tensor:
+    def _conditional_variance(self, X: TensorType, F: TensorType) -> tf.Tensor:
         return tf.square(self.invlink(F))
 
     def _variational_expectations(
-        self, Fmu: TensorType, Fvar: TensorType, Y: TensorType
+        self, X: TensorType, Fmu: TensorType, Fvar: TensorType, Y: TensorType
     ) -> tf.Tensor:
         if self.invlink is tf.exp:
             return tf.reduce_sum(-tf.exp(-Fmu + Fvar / 2) * Y - Fmu, axis=-1)
-        return super()._variational_expectations(Fmu, Fvar, Y)
+        return super()._variational_expectations(X, Fmu, Fvar, Y)
 
 
 class StudentT(ScalarLikelihood):
-    def __init__(self, scale: float = 1.0, df: float = 3.0, **kwargs: Any) -> None:
+    def __init__(
+        self,
+        scale: ConstantOrFunction = 1.0,
+        df: float = 3.0,
+        scale_lower_bound: float = DEFAULT_LOWER_BOUND,
+        **kwargs: Any,
+    ) -> None:
         """
         :param scale float: scale parameter
         :param df float: degrees of freedom
         """
         super().__init__(**kwargs)
         self.df = df
-        self.scale = Parameter(scale, transform=positive())
+        self.scale_lower_bound = scale_lower_bound
+        self.scale = prepare_constant_or_function(scale, lower_bound=self.scale_lower_bound)
 
-    def _scalar_log_prob(self, F: TensorType, Y: TensorType) -> tf.Tensor:
-        return logdensities.student_t(Y, F, self.scale, self.df)
+    @check_shapes(
+        "X: [batch..., N, D]",
+        "return: [broadcast batch..., broadcast N, broadcast P]",
+    )
+    def _scale(self, X: TensorType) -> tf.Tensor:
+        return evaluate_constant_or_function(self.scale, X, lower_bound=self.scale_lower_bound)
 
-    def _conditional_mean(self, F: TensorType) -> tf.Tensor:
+    def _scalar_log_prob(self, X: TensorType, F: TensorType, Y: TensorType) -> tf.Tensor:
+        return logdensities.student_t(Y, F, self._scale(X), self.df)
+
+    def _conditional_mean(self, X: TensorType, F: TensorType) -> tf.Tensor:
         return F
 
-    def _conditional_variance(self, F: TensorType) -> tf.Tensor:
-        var = (self.scale ** 2) * (self.df / (self.df - 2.0))
-        return tf.fill(tf.shape(F), tf.squeeze(var))
+    def _conditional_variance(self, X: TensorType, F: TensorType) -> tf.Tensor:
+        shape = tf.shape(F)
+        var = (self._scale(X) ** 2) * (self.df / (self.df - 2.0))
+        return tf.broadcast_to(var, shape)
 
 
 class Gamma(ScalarLikelihood):
@@ -132,34 +202,49 @@ class Gamma(ScalarLikelihood):
     Use the transformed GP to give the *scale* (inverse rate) of the Gamma
     """
 
-    def __init__(self, invlink: Callable[[tf.Tensor], tf.Tensor] = tf.exp, **kwargs: Any) -> None:
+    def __init__(
+        self,
+        invlink: Callable[[tf.Tensor], tf.Tensor] = tf.exp,
+        shape: ConstantOrFunction = 1.0,
+        shape_lower_bound: float = DEFAULT_LOWER_BOUND,
+        **kwargs: Any,
+    ) -> None:
         super().__init__(**kwargs)
         self.invlink = invlink
-        self.shape = Parameter(1.0, transform=positive())
+        self.shape_lower_bound = shape_lower_bound
+        self.shape = prepare_constant_or_function(shape, lower_bound=self.shape_lower_bound)
 
-    def _scalar_log_prob(self, F: TensorType, Y: TensorType) -> tf.Tensor:
-        return logdensities.gamma(Y, self.shape, self.invlink(F))
+    @check_shapes(
+        "X: [batch..., N, D]",
+        "return: [broadcast batch..., broadcast N, broadcast P]",
+    )
+    def _shape(self, X: TensorType) -> tf.Tensor:
+        return evaluate_constant_or_function(self.shape, X, lower_bound=self.shape_lower_bound)
 
-    def _conditional_mean(self, F: TensorType) -> tf.Tensor:
-        return self.shape * self.invlink(F)
+    def _scalar_log_prob(self, X: TensorType, F: TensorType, Y: TensorType) -> tf.Tensor:
+        return logdensities.gamma(Y, self._shape(X), self.invlink(F))
 
-    def _conditional_variance(self, F: TensorType) -> tf.Tensor:
+    def _conditional_mean(self, X: TensorType, F: TensorType) -> tf.Tensor:
+        return self._shape(X) * self.invlink(F)
+
+    def _conditional_variance(self, X: TensorType, F: TensorType) -> tf.Tensor:
         scale = self.invlink(F)
-        return self.shape * (scale ** 2)
+        return self._shape(X) * (scale ** 2)
 
     def _variational_expectations(
-        self, Fmu: TensorType, Fvar: TensorType, Y: TensorType
+        self, X: TensorType, Fmu: TensorType, Fvar: TensorType, Y: TensorType
     ) -> tf.Tensor:
         if self.invlink is tf.exp:
+            shape = self._shape(X)
             return tf.reduce_sum(
-                -self.shape * Fmu
-                - tf.math.lgamma(self.shape)
-                + (self.shape - 1.0) * tf.math.log(Y)
+                -shape * Fmu
+                - tf.math.lgamma(shape)
+                + (shape - 1.0) * tf.math.log(Y)
                 - Y * tf.exp(-Fmu + Fvar / 2.0),
                 axis=-1,
             )
         else:
-            return super()._variational_expectations(Fmu, Fvar, Y)
+            return super()._variational_expectations(X, Fmu, Fvar, Y)
 
 
 class Beta(ScalarLikelihood):
@@ -182,22 +267,34 @@ class Beta(ScalarLikelihood):
     def __init__(
         self,
         invlink: Callable[[tf.Tensor], tf.Tensor] = inv_probit,
-        scale: float = 1.0,
+        scale: ConstantOrFunction = 1.0,
+        scale_lower_bound: float = DEFAULT_LOWER_BOUND,
         **kwargs: Any,
     ) -> None:
         super().__init__(**kwargs)
-        self.scale = Parameter(scale, transform=positive())
+        self.scale_lower_bound = DEFAULT_LOWER_BOUND
+        self.scale = prepare_constant_or_function(scale, lower_bound=self.scale_lower_bound)
         self.invlink = invlink
 
-    def _scalar_log_prob(self, F: TensorType, Y: TensorType) -> tf.Tensor:
+    @check_shapes(
+        "X: [batch..., N, D]",
+        "return: [broadcast batch..., broadcast N, broadcast P]",
+    )
+    def _scale(self, X: TensorType) -> tf.Tensor:
+        return evaluate_constant_or_function(self.scale, X, lower_bound=self.scale_lower_bound)
+
+    def _scalar_log_prob(self, X: TensorType, F: TensorType, Y: TensorType) -> tf.Tensor:
         mean = self.invlink(F)
-        alpha = mean * self.scale
-        beta = self.scale - alpha
+        scale = self._scale(X)
+        alpha = mean * scale
+        beta = scale - alpha
         return logdensities.beta(Y, alpha, beta)
 
-    def _conditional_mean(self, F: TensorType) -> tf.Tensor:
+    def _conditional_mean(self, X: TensorType, F: TensorType) -> tf.Tensor:
         return self.invlink(F)
 
-    def _conditional_variance(self, F: TensorType) -> tf.Tensor:
+    def _conditional_variance(self, X: TensorType, F: TensorType) -> tf.Tensor:
         mean = self.invlink(F)
-        return (mean - tf.square(mean)) / (self.scale + 1.0)
+        var = (mean - tf.square(mean)) / (self._scale(X) + 1.0)
+        shape = tf.shape(F)
+        return tf.broadcast_to(var, shape)

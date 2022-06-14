@@ -36,6 +36,7 @@ class Data:
     g_var = 0.345
     rng = np.random.RandomState(123)
     N = 5
+    X = rng.randn(N, 2)
     Y = rng.randn(N, 1)
     # single "GP" (for the mean):
     f_mean = rng.randn(N, 1)
@@ -88,16 +89,18 @@ def test_log_prob(equivalent_likelihoods: EquivalentLikelihoods) -> None:
     """
     homoskedastic_likelihood, heteroskedastic_likelihood = equivalent_likelihoods
     np.testing.assert_array_almost_equal(
-        homoskedastic_likelihood.log_prob(Data.f_mean, Data.Y),
-        heteroskedastic_likelihood.log_prob(Data.F2_mean, Data.Y),
+        homoskedastic_likelihood.log_prob(Data.X, Data.f_mean, Data.Y),
+        heteroskedastic_likelihood.log_prob(Data.X, Data.F2_mean, Data.Y),
     )
 
 
 def test_variational_expectations(equivalent_likelihoods: EquivalentLikelihoods) -> None:
     homoskedastic_likelihood, heteroskedastic_likelihood = equivalent_likelihoods
     np.testing.assert_array_almost_equal(
-        homoskedastic_likelihood.variational_expectations(Data.f_mean, Data.f_var, Data.Y),
-        heteroskedastic_likelihood.variational_expectations(Data.F2_mean, Data.F2_var, Data.Y),
+        homoskedastic_likelihood.variational_expectations(Data.X, Data.f_mean, Data.f_var, Data.Y),
+        heteroskedastic_likelihood.variational_expectations(
+            Data.X, Data.F2_mean, Data.F2_var, Data.Y
+        ),
         decimal=2,  # student-t case has a max absolute difference of 0.0034
     )
 
@@ -105,33 +108,33 @@ def test_variational_expectations(equivalent_likelihoods: EquivalentLikelihoods)
 def test_predict_mean_and_var(equivalent_likelihoods: EquivalentLikelihoods) -> None:
     homoskedastic_likelihood, heteroskedastic_likelihood = equivalent_likelihoods
     np.testing.assert_allclose(
-        homoskedastic_likelihood.predict_mean_and_var(Data.f_mean, Data.f_var),
-        heteroskedastic_likelihood.predict_mean_and_var(Data.F2_mean, Data.F2_var),
+        homoskedastic_likelihood.predict_mean_and_var(Data.X, Data.f_mean, Data.f_var),
+        heteroskedastic_likelihood.predict_mean_and_var(Data.X, Data.F2_mean, Data.F2_var),
     )
 
 
 def test_conditional_mean(equivalent_likelihoods: EquivalentLikelihoods) -> None:
     homoskedastic_likelihood, heteroskedastic_likelihood = equivalent_likelihoods
     np.testing.assert_allclose(
-        homoskedastic_likelihood.conditional_mean(Data.f_mean),
-        heteroskedastic_likelihood.conditional_mean(Data.F2_mean),
+        homoskedastic_likelihood.conditional_mean(Data.X, Data.f_mean),
+        heteroskedastic_likelihood.conditional_mean(Data.X, Data.F2_mean),
     )
 
 
 def test_conditional_variance(equivalent_likelihoods: EquivalentLikelihoods) -> None:
     homoskedastic_likelihood, heteroskedastic_likelihood = equivalent_likelihoods
     np.testing.assert_allclose(
-        homoskedastic_likelihood.conditional_variance(Data.f_mean),
-        heteroskedastic_likelihood.conditional_variance(Data.F2_mean),
+        homoskedastic_likelihood.conditional_variance(Data.X, Data.f_mean),
+        heteroskedastic_likelihood.conditional_variance(Data.X, Data.F2_mean),
     )
 
 
 def test_predict_log_density(equivalent_likelihoods: EquivalentLikelihoods) -> None:
     homoskedastic_likelihood, heteroskedastic_likelihood = equivalent_likelihoods
-    ll1 = homoskedastic_likelihood.predict_log_density(Data.f_mean, Data.f_var, Data.Y)
-    ll2 = heteroskedastic_likelihood.predict_log_density(Data.F2_mean, Data.F2_var, Data.Y)
+    ll1 = homoskedastic_likelihood.predict_log_density(Data.X, Data.f_mean, Data.f_var, Data.Y)
+    ll2 = heteroskedastic_likelihood.predict_log_density(Data.X, Data.F2_mean, Data.F2_var, Data.Y)
     np.testing.assert_array_almost_equal(
-        homoskedastic_likelihood.predict_log_density(Data.f_mean, Data.f_var, Data.Y),
-        heteroskedastic_likelihood.predict_log_density(Data.F2_mean, Data.F2_var, Data.Y),
+        homoskedastic_likelihood.predict_log_density(Data.X, Data.f_mean, Data.f_var, Data.Y),
+        heteroskedastic_likelihood.predict_log_density(Data.X, Data.F2_mean, Data.F2_var, Data.Y),
         decimal=1,  # student-t has a max absolute difference of 0.025
     )

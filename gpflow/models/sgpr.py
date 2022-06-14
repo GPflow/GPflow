@@ -22,10 +22,13 @@ from .. import likelihoods, posteriors
 from ..base import InputData, MeanAndVariance, RegressionData
 from ..config import default_float, default_jitter
 from ..covariances.dispatch import Kuf, Kuu
+from ..debugger import print_locals
 from ..inducing_variables import InducingPoints
 from ..kernels import Kernel
+from ..likelihoods import Gaussian
 from ..mean_functions import MeanFunction
 from ..utilities import add_noise_cov, to_default_float
+from ..utilities.model_utils import add_noise_variance
 from .model import GPModel
 from .training_mixins import InternalDataTrainingLossMixin
 from .util import InducingPointsLike, data_input_to_tensor, inducingpoint_wrapper
@@ -45,7 +48,8 @@ class SGPRBase_deprecated(GPModel, InternalDataTrainingLossMixin):
         *,
         mean_function: Optional[MeanFunction] = None,
         num_latent_gps: Optional[int] = None,
-        noise_variance: float = 1.0,
+        noise_variance: Optional[float] = None,
+        likelihood: Optional[Gaussian] = None,
     ):
         """
         This method only works with a Gaussian likelihood, its variance is
@@ -58,7 +62,13 @@ class SGPRBase_deprecated(GPModel, InternalDataTrainingLossMixin):
         :param kernel: An appropriate GPflow kernel object.
         :param mean_function: An appropriate GPflow mean function object.
         """
-        likelihood = likelihoods.Gaussian(noise_variance)
+        assert (noise_variance is None) or (
+            likelihood is None
+        ), "Cannot set both `noise_variance` and `likelihood`."
+        if likelihood is None:
+            if noise_variance is None:
+                noise_variance = 1.0
+            likelihood = Gaussian(noise_variance)
         X_data, Y_data = data_input_to_tensor(data)
         num_latent_gps = Y_data.shape[-1] if num_latent_gps is None else num_latent_gps
         super().__init__(kernel, likelihood, mean_function, num_latent_gps=num_latent_gps)
@@ -118,6 +128,9 @@ class SGPRBase_deprecated(GPModel, InternalDataTrainingLossMixin):
             tf.square(v)
         )
 
+        print_locals()
+        raise "no"  # type: ignore[misc]
+
         return const + logdet + quad
 
 
@@ -142,20 +155,22 @@ class SGPR_deprecated(SGPRBase_deprecated):
             B = AAT+I, LBLBᵀ = B`
             A is M x N, B is M x M, LB is M x M, AAT is M x M
         """
-        x, _ = self.data
-        iv = self.inducing_variable
-        sigma_sq = self.likelihood.variance
+        x, _ = self.data  # [N]
+        iv = self.inducing_variable  # [M]
+        sigma_sq = self.likelihood.variance_at(x)[..., 0]  # [N]
 
-        kuf = Kuf(iv, self.kernel, x)
-        kuu = Kuu(iv, self.kernel, jitter=default_jitter())
-        L = tf.linalg.cholesky(kuu)
-        sigma = tf.sqrt(sigma_sq)
+        kuf = Kuf(iv, self.kernel, x)  # [M, N]
+        kuu = Kuu(iv, self.kernel, jitter=default_jitter())  # [M, M]
+        L = tf.linalg.cholesky(kuu)  # [M, M]
+        sigma = tf.sqrt(sigma_sq)  # [N]
 
         # Compute intermediate matrices
-        A = tf.linalg.triangular_solve(L, kuf, lower=True) / sigma
+        A = tf.linalg.triangular_solve(L, kuf * sigma[..., None], lower=True)
         AAT = tf.linalg.matmul(A, A, transpose_b=True)
         B = add_noise_cov(AAT, tf.cast(1.0, AAT.dtype))
         LB = tf.linalg.cholesky(B)
+
+        print_locals()
 
         return self.CommonTensors(A, B, LB, AAT, L)
 
@@ -192,6 +207,9 @@ class SGPR_deprecated(SGPRBase_deprecated):
         log_sigma_sq = num_data * tf.math.log(sigma_sq)
 
         logdet_k = -outdim * (half_logdet_b + 0.5 * log_sigma_sq + 0.5 * trace)
+
+        print_locals()
+
         return logdet_k
 
     def quad_term(self, common: "SGPR.CommonTensors") -> tf.Tensor:
@@ -215,6 +233,7 @@ class SGPR_deprecated(SGPRBase_deprecated):
         c_inner_prod = tf.reduce_sum(tf.square(c))
 
         quad = -0.5 * (err_inner_prod - c_inner_prod)
+        print_locals()
         return quad
 
     def elbo(self) -> tf.Tensor:
@@ -230,6 +249,7 @@ class SGPR_deprecated(SGPRBase_deprecated):
         const = -0.5 * num_data * output_dim * np.log(2 * np.pi)
         logdet = self.logdet_term(common)
         quad = self.quad_term(common)
+        print_locals()
         return const + logdet + quad
 
     def predict_f(
@@ -275,6 +295,8 @@ class SGPR_deprecated(SGPRBase_deprecated):
             )
             var = tf.tile(var[:, None], [1, self.num_latent_gps])
 
+        print_locals()
+        raise "no"  # type: ignore[misc]
         return mean + self.mean_function(Xnew), var
 
     def compute_qu(self) -> Tuple[tf.Tensor, tf.Tensor]:
@@ -305,6 +327,8 @@ class SGPR_deprecated(SGPRBase_deprecated):
             / self.likelihood.variance
         )
 
+        print_locals()
+        raise "no"  # type: ignore[misc]
         return mu, cov
 
 
@@ -469,7 +493,7 @@ class SGPR_with_posterior(SGPR_deprecated):
             kernel=self.kernel,
             data=self.data,
             inducing_variable=self.inducing_variable,
-            likelihood_variance=self.likelihood.variance,
+            likelihood=self.likelihood,
             num_latent_gps=self.num_latent_gps,
             mean_function=self.mean_function,
             precompute_cache=precompute_cache,

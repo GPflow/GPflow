@@ -25,28 +25,32 @@ from gpflow.utilities import to_default_float, to_default_int
 tf.random.set_seed(99012)
 
 
+@pytest.mark.parametrize("dimX", [3])
 @pytest.mark.parametrize("num, dimF", [[10, 5], [3, 2]])
 @pytest.mark.parametrize("dimY", [10, 2, 1])
-def test_softmax_y_shape_assert(num: int, dimF: int, dimY: int) -> None:
+def test_softmax_y_shape_assert(num: int, dimX: int, dimF: int, dimY: int) -> None:
     """
     SoftMax assumes the class is given as a label (not, e.g., one-hot
     encoded), and hence just uses the first column of Y. To prevent
     silent errors, there is a tf assertion that ensures Y only has one
     dimension. This test checks that this assert works as intended.
     """
+    X = tf.random.normal((num, dimX))
     F = tf.random.normal((num, dimF))
     dY: AnyNDArray = np.vstack((np.random.randn(num - 3, dimY), np.ones((3, dimY)))) > 0
     Y = tf.convert_to_tensor(dY, dtype=default_int())
     likelihood = Softmax(dimF)
     try:
-        likelihood.log_prob(F, Y)
+        likelihood.log_prob(X, F, Y)
     except tf.errors.InvalidArgumentError as e:
         assert "Condition x == y did not hold." in e.message
 
 
+@pytest.mark.parametrize("dimX", [3])
 @pytest.mark.parametrize("num", [10, 3])
 @pytest.mark.parametrize("dimF, dimY", [[2, 1]])
-def test_softmax_bernoulli_equivalence(num: int, dimF: int, dimY: int) -> None:
+def test_softmax_bernoulli_equivalence(num: int, dimX: int, dimF: int, dimY: int) -> None:
+    X = tf.random.normal((num, dimX))
     dF: AnyNDArray = np.vstack(
         (np.random.randn(num - 3, dimF), np.array([[-3.0, 0.0], [3, 0.0], [0.0, 0.0]]))
     )
@@ -65,28 +69,28 @@ def test_softmax_bernoulli_equivalence(num: int, dimF: int, dimY: int) -> None:
     bernoulli_likelihood.num_gauss_hermite_points = 40
 
     assert_allclose(
-        softmax_likelihood.conditional_mean(F)[:, :1],
-        bernoulli_likelihood.conditional_mean(F[:, :1]),
+        softmax_likelihood.conditional_mean(X, F)[:, :1],
+        bernoulli_likelihood.conditional_mean(X, F[:, :1]),
     )
 
     assert_allclose(
-        softmax_likelihood.conditional_variance(F)[:, :1],
-        bernoulli_likelihood.conditional_variance(F[:, :1]),
+        softmax_likelihood.conditional_variance(X, F)[:, :1],
+        bernoulli_likelihood.conditional_variance(X, F[:, :1]),
     )
 
     assert_allclose(
-        softmax_likelihood.log_prob(F, Ylabel),
-        bernoulli_likelihood.log_prob(F[:, :1], Y.numpy()),
+        softmax_likelihood.log_prob(X, F, Ylabel),
+        bernoulli_likelihood.log_prob(X, F[:, :1], Y.numpy()),
     )
 
-    mean1, var1 = softmax_likelihood.predict_mean_and_var(F, Fvar)
-    mean2, var2 = bernoulli_likelihood.predict_mean_and_var(F[:, :1], Fvar[:, :1])
+    mean1, var1 = softmax_likelihood.predict_mean_and_var(X, F, Fvar)
+    mean2, var2 = bernoulli_likelihood.predict_mean_and_var(X, F[:, :1], Fvar[:, :1])
 
     assert_allclose(mean1[:, 0, None], mean2, rtol=2e-3)
     assert_allclose(var1[:, 0, None], var2, rtol=2e-3)
 
-    ls_ve = softmax_likelihood.variational_expectations(F, Fvar, Ylabel)
-    lb_ve = bernoulli_likelihood.variational_expectations(F[:, :1], Fvar[:, :1], Y.numpy())
+    ls_ve = softmax_likelihood.variational_expectations(X, F, Fvar, Ylabel)
+    lb_ve = bernoulli_likelihood.variational_expectations(X, F[:, :1], Fvar[:, :1], Y.numpy())
     assert_allclose(ls_ve, lb_ve, rtol=5e-3)
 
 
@@ -101,15 +105,16 @@ def test_robust_max_multiclass_symmetric(
     """
     rng = np.random.RandomState(1)
     p = 1.0 / num_classes
+    X = tf.ones((num_points, 1), dtype=default_float())
     F = tf.ones((num_points, num_classes), dtype=default_float())
     Y = tf.convert_to_tensor(rng.randint(num_classes, size=(num_points, 1)), dtype=default_float())
 
     likelihood = MultiClass(num_classes)
     likelihood.invlink.epsilon = tf.convert_to_tensor(epsilon, dtype=default_float())
 
-    mu, _ = likelihood.predict_mean_and_var(F, F)
-    pred = likelihood.predict_log_density(F, F, Y)
-    variational_expectations = likelihood.variational_expectations(F, F, Y)
+    mu, _ = likelihood.predict_mean_and_var(X, F, F)
+    pred = likelihood.predict_log_density(X, F, F, Y)
+    variational_expectations = likelihood.variational_expectations(X, F, F, Y)
 
     expected_mu: AnyNDArray = (
         p * (1.0 - epsilon) + (1.0 - p) * epsilon / (num_classes - 1)
@@ -160,10 +165,11 @@ def test_robust_max_multiclass_predict_log_density(
             return tf.ones((num_points, 1), dtype=default_float()) * mock_prob
 
     likelihood = MultiClass(num_classes, invlink=MockRobustMax(num_classes, epsilon))
+    X = tf.ones((num_points, 2))
     F = tf.ones((num_points, num_classes))
     rng = np.random.RandomState(1)
     Y = to_default_int(rng.randint(num_classes, size=(num_points, 1)))
-    prediction = likelihood.predict_log_density(F, F, Y)
+    prediction = likelihood.predict_log_density(X, F, F, Y)
 
     assert_allclose(prediction, expected_prediction, tol, tol)
 

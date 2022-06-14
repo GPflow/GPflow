@@ -12,25 +12,29 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Any, Sequence, Type
+from typing import Any, Sequence, Tuple, Type
 
 import numpy as np
 import pytest
+import tensorflow_probability as tfp
 from numpy.testing import assert_allclose
 
 import gpflow
-from gpflow.base import AnyNDArray, TensorType
+from gpflow.base import AnyNDArray, Parameter, TensorType
 from gpflow.config import default_int
-from gpflow.inducing_variables import InducingPoints
-from gpflow.mean_functions import (
+from gpflow.functions import (
     Additive,
     Constant,
     Linear,
     MeanFunction,
+    Polynomial,
     Product,
     SwitchedMeanFunction,
     Zero,
+    evaluate_constant_or_function,
+    prepare_constant_or_function,
 )
+from gpflow.inducing_variables import InducingPoints
 
 rng = np.random.RandomState(99021)
 
@@ -38,6 +42,93 @@ rng = np.random.RandomState(99021)
 class Datum:
     input_dim, output_dim = 3, 2
     N, Ntest, M = 20, 30, 10
+
+
+def test_prepare_constant_or_function__constant__no_bound() -> None:
+    initial = 5.0
+    param = prepare_constant_or_function(initial)
+    assert isinstance(param, Parameter)
+    assert isinstance(param.transform, tfp.bijectors.Identity)
+    assert_allclose(initial, param)
+
+    X = np.array(
+        [
+            [0.0, 0.0],
+            [0.0, 1.0],
+            [0.0, 2.0],
+            [1.0, 0.0],
+            [1.0, 1.0],
+            [1.0, 2.0],
+        ]
+    )
+    assert_allclose(initial, evaluate_constant_or_function(param, X))
+
+
+def test_prepare_constant_or_function__constant__bound() -> None:
+    initial = 5.0
+
+    with pytest.raises(Exception):
+        prepare_constant_or_function(initial, lower_bound=initial + 1e-3)
+
+    lower_bound = initial - 1e-3
+    param = prepare_constant_or_function(initial, lower_bound=lower_bound)
+    assert isinstance(param, Parameter)
+    assert isinstance(param.transform, tfp.bijectors.Chain)
+    assert_allclose(initial, param)
+
+    X = np.array(
+        [
+            [0.0, 0.0],
+            [0.0, 1.0],
+            [0.0, 2.0],
+            [1.0, 0.0],
+            [1.0, 1.0],
+            [1.0, 2.0],
+        ]
+    )
+    assert_allclose(initial, evaluate_constant_or_function(param, X, lower_bound=lower_bound))
+
+
+def test_prepare_constant_or_function__function__no_bound() -> None:
+    initial = Linear([[0.5], [2.0]], 1.0)
+    func = prepare_constant_or_function(initial)
+    assert initial is func
+
+    X = np.array(
+        [
+            [0.0, 0.0],
+            [0.0, 1.0],
+            [0.0, 2.0],
+            [1.0, 0.0],
+            [1.0, 1.0],
+            [1.0, 2.0],
+        ]
+    )
+    assert_allclose(
+        [[1.0], [3.0], [5.0], [1.5], [3.5], [5.5]], evaluate_constant_or_function(func, X)
+    )
+
+
+def test_prepare_constant_or_function__function__bound() -> None:
+    initial = Linear([[0.5], [2.0]], 1.0)
+    lower_bound = 3.2
+    func = prepare_constant_or_function(initial, lower_bound=lower_bound)
+    assert initial is func
+
+    X = np.array(
+        [
+            [0.0, 0.0],
+            [0.0, 1.0],
+            [0.0, 2.0],
+            [1.0, 0.0],
+            [1.0, 1.0],
+            [1.0, 2.0],
+        ]
+    )
+    assert_allclose(
+        [[3.2], [3.2], [5.0], [3.2], [3.5], [5.5]],
+        evaluate_constant_or_function(func, X, lower_bound=lower_bound),
+    )
 
 
 _mean_functions = [
@@ -186,6 +277,42 @@ def test_linear_mean_functions_associative_property(mean_functions: Sequence[Mea
     assert_allclose(var_lhs, var_b)
     assert_allclose(mu_b, mu_rhs)
     assert_allclose(var_b, var_rhs)
+
+
+@pytest.mark.parametrize("batch", [(), (1, 2)])
+@pytest.mark.parametrize("degree", [0, 1, 3])
+@pytest.mark.parametrize("input_dim", [0, 1, 3])
+@pytest.mark.parametrize("output_dim", [1, 2])
+def test_polynomial__sanity(
+    batch: Tuple[int, ...], degree: int, input_dim: int, output_dim: int
+) -> None:
+    p = Polynomial(degree, input_dim, output_dim)
+    X = np.ones(batch + (input_dim,))
+    Y = p(X)
+    assert (batch) + (output_dim,) == Y.shape
+    assert_allclose(1.0, Y)  # Polynomial is initialised to constant 1.0.
+
+
+def test_polynomial__1d() -> None:
+    # Test on a 1D quadratic function, where we can easily work out the maths.
+    p = Polynomial(degree=2, w=[[1.0], [2.0], [3.0]])
+    X = np.array([[1.0], [2.0]])
+    Y = p(X)
+    assert_allclose(
+        [
+            [1.0 + 2.0 * 1.0 + 3.0 * (1.0 ** 2)],
+            [1.0 + 2.0 * 2.0 + 3.0 * (2.0 ** 2)],
+        ],
+        Y,
+    )
+
+
+def test_polynomial__linear() -> None:
+    # Test on a 3D linear function, where we can easily work out the maths.
+    p = Polynomial(degree=1, input_dim=3, w=[[1.0], [2.0], [3.0], [4.0]])
+    X = np.array([1.0, 2.0, 3.0])
+    Y = p(X)
+    assert_allclose([1.0 + 2.0 * 3.0 + 3.0 * 2.0 + 4.0 * 1.0], Y)
 
 
 @pytest.mark.parametrize("N, D", [[10, 3]])

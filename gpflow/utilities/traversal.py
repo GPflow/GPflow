@@ -338,7 +338,7 @@ def _str_tensor_value(value: AnyNDArray) -> str:
     value_str = value_str[:max_chars]
     regexp = _first_three_elements_regexp()
     match = regexp.match(value_str)
-    assert match is not None
+    assert match is not None, value_str
     brackets, elem1, elem2, elem3 = match.groups()
 
     out = f"{elem1}"

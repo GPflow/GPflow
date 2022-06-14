@@ -32,6 +32,7 @@ from .conditionals.util import (
 )
 from .config import default_float, default_jitter
 from .covariances import Kuf, Kuu
+from .debugger import print_locals
 from .inducing_variables import (
     FallbackSeparateIndependentInducingVariables,
     FallbackSharedIndependentInducingVariables,
@@ -41,8 +42,9 @@ from .inducing_variables import (
     SharedIndependentInducingVariables,
 )
 from .kernels import Kernel
+from .likelihoods import Gaussian
 from .mean_functions import MeanFunction
-from .utilities import Dispatcher, add_noise_cov
+from .utilities import Dispatcher, add_noise_cov, add_noise_variance
 from .utilities.ops import eye, leading_transpose
 
 
@@ -294,7 +296,7 @@ class GPRPosterior(AbstractPosterior):
         self,
         kernel: Kernel,
         data: RegressionData,
-        likelihood_variance: Parameter,
+        likelihood: Gaussian,
         mean_function: MeanFunction,
         *,
         precompute_cache: Optional[PrecomputeCacheType],
@@ -302,7 +304,7 @@ class GPRPosterior(AbstractPosterior):
         X, Y = data
         super().__init__(kernel, X, mean_function=mean_function)
         self.Y_data = Y
-        self.likelihood_variance = likelihood_variance
+        self.likelihood = likelihood
 
         if precompute_cache is not None:
             self.update_cache(precompute_cache)
@@ -365,7 +367,7 @@ class GPRPosterior(AbstractPosterior):
     def _precompute(self) -> Tuple[PrecomputedValue, ...]:
         X_data = cast(tf.Tensor, self.X_data)
         Kmm = self.kernel(X_data)
-        Kmm_plus_s = add_noise_cov(Kmm, self.likelihood_variance)
+        Kmm_plus_s = add_noise_variance(Kmm, self.likelihood, X_data)
 
         Lm = tf.linalg.cholesky(Kmm_plus_s)
         Kmm_plus_s_inv = tf.linalg.cholesky_solve(Lm, tf.eye(tf.shape(X_data)[0], dtype=Lm.dtype))
@@ -396,7 +398,7 @@ class GPRPosterior(AbstractPosterior):
         Kmm = self.kernel(self.X_data)
         Knn = self.kernel(Xnew, full_cov=full_cov)
         Kmn = self.kernel(self.X_data, Xnew)
-        Kmm_plus_s = add_noise_cov(Kmm, self.likelihood_variance)
+        Kmm_plus_s = add_noise_variance(Kmm, self.likelihood, self.X_data)
 
         return base_conditional(
             Kmn, Kmm_plus_s, Knn, err, full_cov=full_cov, white=False
@@ -414,7 +416,7 @@ class SGPRPosterior(AbstractPosterior):
         kernel: Kernel,
         data: RegressionData,
         inducing_variable: InducingPoints,
-        likelihood_variance: Parameter,
+        likelihood: Gaussian,
         num_latent_gps: int,
         mean_function: MeanFunction,
         *,
@@ -423,7 +425,7 @@ class SGPRPosterior(AbstractPosterior):
         X, Y = data
         super().__init__(kernel, X, mean_function=mean_function)
         self.Y_data = Y
-        self.likelihood_variance = likelihood_variance
+        self.likelihood = likelihood
         self.inducing_variable = inducing_variable
         self.num_latent_gps = num_latent_gps
 
@@ -457,6 +459,9 @@ class SGPRPosterior(AbstractPosterior):
         LinvT = tf.transpose(Linv)
         alpha = LinvT @ tf.transpose(LBinv) @ c
         Qinv = LinvT @ tmp @ Linv
+
+        print_locals()
+        raise "no"  # type: ignore[misc]
 
         return PrecomputedValue.wrap_alpha_Qinv(alpha, Qinv)
 
@@ -530,6 +535,8 @@ class SGPRPosterior(AbstractPosterior):
                 - tf.reduce_sum(tf.square(tmp1), 0)
             )
             var = tf.tile(var[:, None], [1, self.num_latent_gps])
+
+        print_locals()
 
         return mean, var
 

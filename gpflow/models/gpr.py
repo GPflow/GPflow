@@ -20,10 +20,12 @@ import gpflow
 
 from .. import posteriors
 from ..base import InputData, MeanAndVariance, RegressionData
+from ..experimental.check_shapes import check_shapes
 from ..kernels import Kernel
+from ..likelihoods import Gaussian
 from ..logdensities import multivariate_normal
 from ..mean_functions import MeanFunction
-from ..utilities.model_utils import add_noise_cov
+from ..utilities.model_utils import add_noise_variance
 from .model import GPModel
 from .training_mixins import InternalDataTrainingLossMixin
 from .util import data_input_to_tensor
@@ -57,9 +59,16 @@ class GPR_deprecated(GPModel, InternalDataTrainingLossMixin):
         data: RegressionData,
         kernel: Kernel,
         mean_function: Optional[MeanFunction] = None,
-        noise_variance: float = 1.0,
+        noise_variance: Optional[float] = None,
+        likelihood: Optional[Gaussian] = None,
     ):
-        likelihood = gpflow.likelihoods.Gaussian(noise_variance)
+        assert (noise_variance is None) or (
+            likelihood is None
+        ), "Cannot set both `noise_variance` and `likelihood`."
+        if likelihood is None:
+            if noise_variance is None:
+                noise_variance = 1.0
+            likelihood = gpflow.likelihoods.Gaussian(noise_variance)
         _, Y_data = data
         super().__init__(kernel, likelihood, mean_function, num_latent_gps=Y_data.shape[-1])
         self.data = data_input_to_tensor(data)
@@ -67,13 +76,6 @@ class GPR_deprecated(GPModel, InternalDataTrainingLossMixin):
     # type-ignore is because of changed method signature:
     def maximum_log_likelihood_objective(self) -> tf.Tensor:  # type: ignore[override]
         return self.log_marginal_likelihood()
-
-    def _add_noise_cov(self, K: tf.Tensor) -> tf.Tensor:
-        """
-        Returns K + σ² I, where σ² is the likelihood noise variance (scalar),
-        and I is the corresponding identity matrix.
-        """
-        return add_noise_cov(K, self.likelihood.variance)
 
     def log_marginal_likelihood(self) -> tf.Tensor:
         r"""
@@ -85,7 +87,7 @@ class GPR_deprecated(GPModel, InternalDataTrainingLossMixin):
         """
         X, Y = self.data
         K = self.kernel(X)
-        ks = self._add_noise_cov(K)
+        ks = add_noise_variance(K, self.likelihood, X)
         L = tf.linalg.cholesky(ks)
         m = self.mean_function(X)
 
@@ -111,7 +113,7 @@ class GPR_deprecated(GPModel, InternalDataTrainingLossMixin):
         kmm = self.kernel(X)
         knn = self.kernel(Xnew, full_cov=full_cov)
         kmn = self.kernel(X, Xnew)
-        kmm_plus_s = self._add_noise_cov(kmm)
+        kmm_plus_s = add_noise_variance(kmm, self.likelihood, X)
 
         conditional = gpflow.conditionals.base_conditional
         f_mean_zero, f_var = conditional(
@@ -153,7 +155,7 @@ class GPR_with_posterior(GPR_deprecated):
         return posteriors.GPRPosterior(
             kernel=self.kernel,
             data=self.data,
-            likelihood_variance=self.likelihood.variance,
+            likelihood=self.likelihood,
             mean_function=self.mean_function,
             precompute_cache=precompute_cache,
         )

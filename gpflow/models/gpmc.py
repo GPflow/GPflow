@@ -92,7 +92,7 @@ class GPMC(GPModel, InternalDataTrainingLossMixin):
         )
         F = tf.linalg.matmul(L, self.V) + self.mean_function(X_data)
 
-        return tf.reduce_sum(self.likelihood.log_prob(F, Y_data))
+        return tf.reduce_sum(self.likelihood.log_prob(X_data, F, Y_data))
 
     def predict_f(
         self, Xnew: InputData, full_cov: bool = False, full_output_cov: bool = False
