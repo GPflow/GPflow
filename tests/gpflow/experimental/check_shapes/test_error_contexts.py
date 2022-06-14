@@ -17,6 +17,7 @@ from unittest.mock import MagicMock
 import pytest
 from lark.exceptions import UnexpectedCharacters, UnexpectedEOF, UnexpectedToken
 
+from gpflow.experimental.check_shapes import set_enable_function_call_precompute
 from gpflow.experimental.check_shapes.error_contexts import (
     ArgumentContext,
     AttributeContext,
@@ -355,7 +356,23 @@ f called at: {__file__}:{call_line}
     )
 
 
-def test_function_call_context__precompute() -> None:
+def test_function_call_context__precompute__disabled() -> None:
+    set_enable_function_call_precompute(False)
+
+    def f() -> ErrorContext:
+        return FunctionCallContext(f).precompute()
+
+    context = f()
+
+    assert f"""
+f called at: <Unknown file>:<Unknown line> (Disabled. Call gpflow.experimental.check_shapes.set_enable_function_call_precompute(True) to see this. (Slow.))
+""" == to_str(
+        context
+    )
+    check_eq(context)
+
+
+def test_function_call_context__precompute__enabled() -> None:
     def f() -> ErrorContext:
         return FunctionCallContext(f).precompute()
 
@@ -636,7 +653,7 @@ Actual:   [2, None]
             ShapeContext(make_shape_spec("x", 3), None),
             """
 Expected: [x, 3]
-Actual:   <Tensor has unknown shape>
+Actual:   <Tensor is None or has unknown shape>
 """,
         ),
     ],

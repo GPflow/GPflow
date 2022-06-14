@@ -19,6 +19,7 @@ from enum import Enum
 from typing import Iterator, Union
 
 _enabled = True
+_function_call_precompute_enabled = False
 
 
 class DocstringFormat(Enum):
@@ -108,3 +109,28 @@ def get_rewrite_docstrings() -> DocstringFormat:
     Get how :mod:`check_shapes` should rewrite docstrings.
     """
     return _docstring_format
+
+
+def set_enable_function_call_precompute(enabled: bool) -> None:
+    """
+    Set whether to precompute function call path and line numbers for debugging.
+
+    This is disabled by default, because it is (relatively) slow. Enabling this can give better
+    error messages.
+
+    Example:
+
+    .. literalinclude:: /examples/test_check_shapes_examples.py
+       :start-after: [disable_function_call_precompute]
+       :end-before: [disable_function_call_precompute]
+       :dedent:
+    """
+    global _function_call_precompute_enabled
+    _function_call_precompute_enabled = enabled
+
+
+def get_enable_function_call_precompute() -> bool:
+    """
+    Get whether to precompute function call path and line numbers for debugging.
+    """
+    return _function_call_precompute_enabled

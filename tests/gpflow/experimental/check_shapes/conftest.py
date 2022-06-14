@@ -18,8 +18,10 @@ import pytest
 from gpflow.experimental.check_shapes.config import (
     DocstringFormat,
     get_enable_check_shapes,
+    get_enable_function_call_precompute,
     get_rewrite_docstrings,
     set_enable_check_shapes,
+    set_enable_function_call_precompute,
     set_rewrite_docstrings,
 )
 
@@ -31,8 +33,11 @@ def reset_settings() -> Iterable[None]:
     # 2: If a test manipulates `check_shapes` settings, they are reset after the test.
     old_enable = get_enable_check_shapes()
     old_rewrite_docstrings = get_rewrite_docstrings()
+    old_function_call_precompute = get_enable_function_call_precompute()
     set_enable_check_shapes(True)
     set_rewrite_docstrings(DocstringFormat.SPHINX)
+    set_enable_function_call_precompute(True)
     yield
+    set_enable_function_call_precompute(old_function_call_precompute)
     set_rewrite_docstrings(old_rewrite_docstrings)
     set_enable_check_shapes(old_enable)

@@ -17,8 +17,10 @@ from gpflow.experimental.check_shapes.config import (
     DocstringFormat,
     disable_check_shapes,
     get_enable_check_shapes,
+    get_enable_function_call_precompute,
     get_rewrite_docstrings,
     set_enable_check_shapes,
+    set_enable_function_call_precompute,
     set_rewrite_docstrings,
 )
 
@@ -62,3 +64,11 @@ def test_get_set_rewrite_docstrings() -> None:
     assert DocstringFormat.SPHINX == get_rewrite_docstrings()
     set_rewrite_docstrings(DocstringFormat.NONE)
     assert DocstringFormat.NONE == get_rewrite_docstrings()
+
+
+def test_get_set_enable_function_call_precompute() -> None:
+    assert get_enable_function_call_precompute()
+    set_enable_function_call_precompute(False)
+    assert not get_enable_function_call_precompute()
+    set_enable_function_call_precompute(True)
+    assert get_enable_function_call_precompute()
