@@ -21,6 +21,7 @@ from typing import Any, Callable
 import numpy as np
 import pytest
 import tensorflow as tf
+from packaging.version import Version
 
 from gpflow.base import AnyNDArray
 from gpflow.experimental.check_shapes import check_shape as cs
@@ -138,7 +139,8 @@ _Loss = Callable[[], tf.Tensor]
             tf.function(input_signature=[]),
         ),
         (
-            tf.function(experimental_relax_shapes=True),
+            # See: https://github.com/tensorflow/tensorflow/issues/56414
+            tf.function(experimental_relax_shapes=Version(tf.__version__) < Version("2.9.0")),
             tf.function(experimental_relax_shapes=True),
         ),
     ],
