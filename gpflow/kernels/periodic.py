@@ -76,7 +76,7 @@ class Periodic(Kernel):
     def active_dims(self, value: ActiveDims) -> None:
         # type-ignore below is because mypy doesn't understand that getter and the setter of
         # `active_dims` have different types.
-        self.base_kernel.active_dims = value  # type: ignore
+        self.base_kernel.active_dims = value  # type: ignore[assignment]
 
     def K_diag(self, X: TensorType) -> tf.Tensor:
         return self.base_kernel.K_diag(X)

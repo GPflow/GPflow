@@ -57,7 +57,7 @@ class InternalDataTrainingLossMixin:
         Returns the training loss for this model.
         """
         # Type-ignore is because _training_loss should be added by implementing class.
-        return self._training_loss()  # type: ignore
+        return self._training_loss()  # type: ignore[attr-defined]
 
     def training_loss_closure(self, *, compile: bool = True) -> Callable[[], tf.Tensor]:
         """
@@ -95,7 +95,7 @@ class ExternalDataTrainingLossMixin:
         :param data: the data to be used for computing the model objective.
         """
         # Type-ignore is because _training_loss should be added by implementing class.
-        return self._training_loss(data)  # type: ignore
+        return self._training_loss(data)  # type: ignore[attr-defined]
 
     def training_loss_closure(
         self,

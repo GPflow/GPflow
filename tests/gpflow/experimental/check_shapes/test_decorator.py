@@ -475,7 +475,7 @@ def test_check_shapes__invalid_argument() -> None:
     with pytest.raises(TypeError):
         # Linter disables, because we're intentionally making an invalid call.
         # pylint: disable=unexpected-keyword-arg,no-value-for-parameter
-        f(c=t(2, 3))  # type: ignore
+        f(c=t(2, 3))  # type: ignore[call-arg]
 
 
 def test_check_shapes__argument_refs() -> None:

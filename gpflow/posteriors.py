@@ -1017,7 +1017,7 @@ def create_posterior(
 ) -> BasePosterior:
     posterior_class = get_posterior_class(kernel, inducing_variable)
     precompute_cache = _validate_precompute_cache_type(precompute_cache)
-    return posterior_class(  # type: ignore
+    return posterior_class(  # type: ignore[no-any-return]
         kernel,
         inducing_variable,
         q_mu,

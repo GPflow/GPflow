@@ -112,7 +112,7 @@ def test_jitter_setting() -> None:
 
 def test_jitter_errorcheck() -> None:
     with pytest.raises(TypeError):
-        set_default_jitter("not a float")  # type: ignore
+        set_default_jitter("not a float")  # type: ignore[arg-type]
     with pytest.raises(ValueError):
         set_default_jitter(-1e-10)
 

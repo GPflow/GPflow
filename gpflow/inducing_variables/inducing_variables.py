@@ -78,7 +78,7 @@ class InducingPointsBase(InducingVariables):
             Z = Parameter(Z)
         self.Z = Z
 
-    @property  # type: ignore  # mypy doesn't like decorated properties.
+    @property  # type: ignore[misc]  # mypy doesn't like decorated properties.
     @check_shapes(
         "return: []",
     )

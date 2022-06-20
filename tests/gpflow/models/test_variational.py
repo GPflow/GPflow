@@ -34,17 +34,15 @@ rng = np.random.RandomState(1)
 def univariate_log_marginal_likelihood(
     y: AnyNDArray, K: AnyNDArray, noise_var: AnyNDArray
 ) -> AnyNDArray:
-    return (  # type: ignore
-        -0.5 * y * y / (K + noise_var)  # type: ignore
-        - 0.5 * np.log(K + noise_var)
-        - 0.5 * np.log(np.pi * 2.0)
+    return (  # type: ignore[no-any-return]
+        -0.5 * y * y / (K + noise_var) - 0.5 * np.log(K + noise_var) - 0.5 * np.log(np.pi * 2.0)
     )
 
 
 def univariate_posterior(
     y: AnyNDArray, K: AnyNDArray, noise_var: AnyNDArray
 ) -> Tuple[AnyNDArray, AnyNDArray]:
-    mean = K * y / (K + noise_var)  # type: ignore
+    mean = K * y / (K + noise_var)
     variance: AnyNDArray = K - K / (K + noise_var)
     return mean, variance
 

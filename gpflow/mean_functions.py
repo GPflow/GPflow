@@ -96,7 +96,7 @@ class Identity(Linear):
         return X
 
     @property
-    def A(self) -> tf.Tensor:  # type: ignore
+    def A(self) -> tf.Tensor:  # type: ignore[override]
         if self.input_dim is None:
             raise ValueError(
                 "An input_dim needs to be specified when using the "
@@ -105,7 +105,7 @@ class Identity(Linear):
         return tf.eye(self.input_dim, dtype=default_float())
 
     @property
-    def b(self) -> tf.Tensor:  # type: ignore
+    def b(self) -> tf.Tensor:  # type: ignore[override]
         if self.input_dim is None:
             raise ValueError(
                 "An input_dim needs to be specified when using the "
@@ -114,11 +114,11 @@ class Identity(Linear):
 
         return tf.zeros(self.input_dim, dtype=default_float())
 
-    @A.setter  # type: ignore
+    @A.setter  # type: ignore[attr-defined, no-redef]
     def A(self, A: tf.Tensor) -> None:
         pass
 
-    @b.setter  # type: ignore
+    @b.setter  # type: ignore[attr-defined, no-redef]
     def b(self, b: tf.Tensor) -> None:
         pass
 

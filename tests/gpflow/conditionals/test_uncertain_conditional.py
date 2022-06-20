@@ -129,7 +129,7 @@ class Data:
 
 
 class DataMC1(Data):
-    Y: AnyNDArray = Data.cs(  # type: ignore
+    Y: AnyNDArray = Data.cs(  # type: ignore[misc]
         np.hstack([np.sin(Data.X), np.sin(Data.X) * 2, Data.X ** 2]), "[N, D_out]"
     )
     data = (Data.X, Y)

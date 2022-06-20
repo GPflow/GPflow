@@ -554,7 +554,7 @@ class ObjectTypeContext(ErrorContext):
         return id(self.obj)
 
 
-@dataclass(frozen=True)  # type: ignore  # mypy doesn't like abstract `dataclasses`.
+@dataclass(frozen=True)  # type: ignore[misc]  # mypy doesn't like abstract `dataclasses`.
 class ParserInputContext(ErrorContext, ABC):
     """
     Abstract base class for contexts that relate to parser input.

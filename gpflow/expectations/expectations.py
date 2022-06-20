@@ -122,7 +122,7 @@ def _init_expectation(
     obj2, feat2 = obj2 if isinstance(obj2, tuple) else (obj2, None)
     return (
         # type-ignore instead of cast, because it dependes on versions whether a cast is necessary.
-        p,  # type: ignore
+        p,  # type: ignore[return-value]
         cast(ExpectationObject, obj1),
         cast(Optional[InducingVariables], feat1),
         cast(ExpectationObject, obj2),

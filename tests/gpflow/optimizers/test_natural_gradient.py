@@ -102,7 +102,7 @@ def assert_gpr_vs_vgp(
 
     @tf.function
     def minimize_step() -> None:
-        opt.minimize(m2.training_loss, var_list=[params])  # type: ignore
+        opt.minimize(m2.training_loss, var_list=[params])  # type: ignore[list-item]
 
     for _ in range(maxiter):
         minimize_step()

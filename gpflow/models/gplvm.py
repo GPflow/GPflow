@@ -150,7 +150,7 @@ class BayesianGPLVM(GPModel, InternalDataTrainingLossMixin):
         assert self.X_prior_var.shape[1] == self.num_latent_gps
 
     # type-ignore is because of changed method signature:
-    def maximum_log_likelihood_objective(self) -> tf.Tensor:  # type: ignore
+    def maximum_log_likelihood_objective(self) -> tf.Tensor:  # type: ignore[override]
         return self.elbo()
 
     def elbo(self) -> tf.Tensor:

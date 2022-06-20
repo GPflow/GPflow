@@ -131,7 +131,7 @@ class SGPR_deprecated(SGPRBase_deprecated):
     CommonTensors = namedtuple("CommonTensors", ["A", "B", "LB", "AAT", "L"])
 
     # type-ignore is because of changed method signature:
-    def maximum_log_likelihood_objective(self) -> tf.Tensor:  # type: ignore
+    def maximum_log_likelihood_objective(self) -> tf.Tensor:  # type: ignore[override]
         return self.elbo()
 
     def _common_calculation(self) -> "SGPR.CommonTensors":
@@ -346,7 +346,7 @@ class GPRFITC(SGPRBase_deprecated):
         return err, nu, Luu, L, alpha, beta, gamma
 
     # type-ignore is because of changed method signature:
-    def maximum_log_likelihood_objective(self) -> tf.Tensor:  # type: ignore
+    def maximum_log_likelihood_objective(self) -> tf.Tensor:  # type: ignore[override]
         return self.fitc_log_marginal_likelihood()
 
     def fitc_log_marginal_likelihood(self) -> tf.Tensor:

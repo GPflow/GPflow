@@ -618,10 +618,10 @@ def test_periodic_active_dims_matches() -> None:
     # type-ignores below, is because mypy doesn't understand that the setter and the getter for
     # `active_dims` have different types.
 
-    kernel.active_dims = [2]  # type: ignore
+    kernel.active_dims = [2]  # type: ignore[assignment]
     assert kernel.active_dims == base_kernel.active_dims
 
-    base_kernel.active_dims = [3]  # type: ignore
+    base_kernel.active_dims = [3]  # type: ignore[assignment]
     assert kernel.active_dims == base_kernel.active_dims
 
 

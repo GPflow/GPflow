@@ -141,7 +141,7 @@ class SVGP_deprecated(GPModel, ExternalDataTrainingLossMixin):
         )
 
     # type-ignore is because of changed method signature:
-    def maximum_log_likelihood_objective(self, data: RegressionData) -> tf.Tensor:  # type: ignore
+    def maximum_log_likelihood_objective(self, data: RegressionData) -> tf.Tensor:  # type: ignore[override]
         return self.elbo(data)
 
     def elbo(self, data: RegressionData) -> tf.Tensor:

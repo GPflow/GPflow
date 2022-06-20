@@ -80,15 +80,15 @@ class SGPMC(GPModel, InternalDataTrainingLossMixin):
         )
 
     # type-ignore is because of changed method signature:
-    def log_posterior_density(self) -> tf.Tensor:  # type: ignore
+    def log_posterior_density(self) -> tf.Tensor:  # type: ignore[override]
         return self.log_likelihood_lower_bound() + self.log_prior_density()
 
     # type-ignore is because of changed method signature:
-    def _training_loss(self) -> tf.Tensor:  # type: ignore
+    def _training_loss(self) -> tf.Tensor:  # type: ignore[override]
         return -self.log_posterior_density()
 
     # type-ignore is because of changed method signature:
-    def maximum_log_likelihood_objective(self) -> tf.Tensor:  # type: ignore
+    def maximum_log_likelihood_objective(self) -> tf.Tensor:  # type: ignore[override]
         return self.log_likelihood_lower_bound()
 
     def log_likelihood_lower_bound(self) -> tf.Tensor:

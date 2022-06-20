@@ -111,7 +111,7 @@ class SamplingHelper:
 
             return log_prob, grad_fn
 
-        return _target_log_prob_fn_closure  # type: ignore
+        return _target_log_prob_fn_closure  # type: ignore[no-any-return]
 
     def convert_to_constrained_values(
         self, hmc_samples: Sequence[tf.Tensor]

@@ -95,7 +95,7 @@ def test_all_static(module: ModuleType) -> None:
     all_assignment: Optional[ast.Assign] = None
     for t in tree.body:
         if is_all_assignment(t):
-            all_assignment = t  # type: ignore
+            all_assignment = t  # type: ignore[assignment]
     assert all_assignment is not None, f"No `__all__` found in module {module}."
 
     error_message = "__all__ must be a static list of constant strings. Some tools expect this."

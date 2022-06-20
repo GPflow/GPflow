@@ -277,7 +277,7 @@ class ReducingCombination(Combination):
 class Sum(ReducingCombination):
     @property
     def _reduce(self) -> Callable[[Sequence[TensorType]], TensorType]:
-        return tf.add_n  # type: ignore
+        return tf.add_n  # type: ignore[no-any-return]
 
 
 class Product(ReducingCombination):

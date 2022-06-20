@@ -35,8 +35,7 @@ def gh_points_and_weights(n_gh: int) -> Tuple[tf.Tensor, tf.Tensor]:
     :returns: Points z and weights dz, both tensors with shape [n_gh],
         to compute uni-dimensional gaussian expectation
     """
-    # Type-ignore is because for some versions mypy can't find np.polynomial.hermite
-    z, dz = np.polynomial.hermite.hermgauss(n_gh)  # type: ignore
+    z, dz = np.polynomial.hermite.hermgauss(n_gh)
     z = z * np.sqrt(2)
     dz = dz / np.sqrt(np.pi)
     z, dz = z.astype(default_float()), dz.astype(default_float())

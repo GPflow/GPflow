@@ -94,7 +94,7 @@ class VGP_deprecated(GPModel, InternalDataTrainingLossMixin):
         )
 
     # type-ignore is because of changed method signature:
-    def maximum_log_likelihood_objective(self) -> tf.Tensor:  # type: ignore
+    def maximum_log_likelihood_objective(self) -> tf.Tensor:  # type: ignore[override]
         return self.elbo()
 
     def elbo(self) -> tf.Tensor:
@@ -291,7 +291,7 @@ class VGPOpperArchambeau(GPModel, InternalDataTrainingLossMixin):
         )
 
     # type-ignore is because of changed method signature:
-    def maximum_log_likelihood_objective(self) -> tf.Tensor:  # type: ignore
+    def maximum_log_likelihood_objective(self) -> tf.Tensor:  # type: ignore[override]
         return self.elbo()
 
     def elbo(self) -> tf.Tensor:

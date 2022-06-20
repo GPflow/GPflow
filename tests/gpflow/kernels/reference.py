@@ -84,4 +84,4 @@ def ref_periodic_kernel(
     elif base_name == "Matern52":
         dist = np.sqrt(5) * np.sum(np.abs(sine_base), axis=-1)
         exp_dist = (1 + dist + dist ** 2 / 3) * np.exp(-dist)
-    return signal_variance * exp_dist  # type: ignore
+    return signal_variance * exp_dist
