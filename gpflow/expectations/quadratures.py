@@ -53,9 +53,9 @@ def get_eval_func(
             raise TypeError("If `inducing_variable` is supplied, `obj` must be a kernel.")
         return lambda x: tf.transpose(Kuf(inducing_variable, obj, x))[slice]
     elif isinstance(obj, mfn.MeanFunction):
-        return lambda x: obj(x)[slice]  # type: ignore
+        return lambda x: obj(x)[slice]  # type: ignore[misc]
     elif isinstance(obj, kernels.Kernel):
-        return lambda x: obj(x, full_cov=False)  # type: ignore
+        return lambda x: obj(x, full_cov=False)  # type: ignore[call-arg, misc]
 
     raise NotImplementedError()
 

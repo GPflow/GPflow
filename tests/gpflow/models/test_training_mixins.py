@@ -7,7 +7,7 @@ from gpflow.base import RegressionData
 
 class DummyModel(gpflow.models.BayesianModel, gpflow.models.ExternalDataTrainingLossMixin):
     # type-ignore is because of changed method signature:
-    def maximum_log_likelihood_objective(self, data: RegressionData) -> tf.Tensor:  # type: ignore
+    def maximum_log_likelihood_objective(self, data: RegressionData) -> tf.Tensor:  # type: ignore[override]
         X, Y = data
         return tf.reduce_sum(X * Y)
 

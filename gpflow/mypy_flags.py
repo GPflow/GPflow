@@ -14,15 +14,11 @@
 """
 Code for printing flags for mypy, depending on library versions.
 """
-from .type_flags import MYPY_FLAGS
+from .type_flags import compute_mypy_flags
 
 
 def print_mypy_flags() -> None:
-    for flag, value in MYPY_FLAGS.items():
-        if value:
-            print("--always-true", flag)
-        else:
-            print("--always-false", flag)
+    print(compute_mypy_flags())
 
 
 if __name__ == "__main__":

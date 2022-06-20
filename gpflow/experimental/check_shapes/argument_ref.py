@@ -94,7 +94,7 @@ class RootArgumentRef(ArgumentRef):
         return self.argument_name
 
 
-@dataclass(frozen=True)  # type: ignore
+@dataclass(frozen=True)  # type: ignore[misc]
 class DelegatingArgumentRef(ArgumentRef):
     """ Abstract base class for :class:`ArgumentRef`\ s that delegates to a source. """
 

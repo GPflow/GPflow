@@ -159,7 +159,7 @@ def test_mcmc_helper_target_function_no_transforms(prior_on: PriorOn) -> None:
     np.testing.assert_allclose(target_log_prob_fn(), expected_log_prob)
 
     # Test the wrapped closure
-    log_prob, grad_fn = target_log_prob_fn.__original_wrapped__()  # type: ignore
+    log_prob, grad_fn = target_log_prob_fn.__original_wrapped__()  # type: ignore[attr-defined]
     grad, nones = grad_fn(1, [None] * len(model.trainable_parameters))
     assert len(grad) == len(model.trainable_parameters)
     assert nones == [None] * len(model.trainable_parameters)

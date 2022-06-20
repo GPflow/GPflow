@@ -516,7 +516,7 @@ class ShapeChecker:
             shape_check.expected_end -= 1
 
         if not shape_check.finished:
-            waiting_for: Set[str] = set(unknown_len_variables) - {None}  # type: ignore
+            waiting_for: Set[str] = set(unknown_len_variables) - {None}  # type: ignore[assignment]
             for name in waiting_for:
                 self._variables[name].waiting_for_varrank.add(shape_check)
 

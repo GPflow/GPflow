@@ -45,7 +45,7 @@ class DocumentableDispatcher:
 
     def implementations(self) -> Mapping[Callable[..., Any], List[Type[Any]]]:
         implementations: Dict[Callable[..., Any], List[Type[Any]]] = {}
-        for args, impl in self.obj.funcs.items():  # type: ignore
+        for args, impl in self.obj.funcs.items():
             implementations.setdefault(impl, []).append(args)
         return implementations
 

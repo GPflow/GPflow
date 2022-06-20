@@ -75,7 +75,7 @@ class FallbackSharedIndependentInducingVariables(MultioutputInducingVariables):
         super().__init__()
         self.inducing_variable = inducing_variable
 
-    @property  # type: ignore  # mypy doesn't like decorated properties.
+    @property  # type: ignore[misc]  # mypy doesn't like decorated properties.
     @check_shapes(
         "return: []",
     )
@@ -135,7 +135,7 @@ class FallbackSeparateIndependentInducingVariables(MultioutputInducingVariables)
         super().__init__()
         self.inducing_variable_list = inducing_variable_list
 
-    @property  # type: ignore  # mypy doesn't like decorated properties.
+    @property  # type: ignore[misc]  # mypy doesn't like decorated properties.
     @check_shapes(
         "return: []",
     )

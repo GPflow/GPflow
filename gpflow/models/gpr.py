@@ -65,7 +65,7 @@ class GPR_deprecated(GPModel, InternalDataTrainingLossMixin):
         self.data = data_input_to_tensor(data)
 
     # type-ignore is because of changed method signature:
-    def maximum_log_likelihood_objective(self) -> tf.Tensor:  # type: ignore
+    def maximum_log_likelihood_objective(self) -> tf.Tensor:  # type: ignore[override]
         return self.log_marginal_likelihood()
 
     def _add_noise_cov(self, K: tf.Tensor) -> tf.Tensor:

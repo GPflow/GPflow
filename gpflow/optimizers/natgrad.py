@@ -176,7 +176,7 @@ class NaturalGradient(tf.optimizers.Optimizer):
         for parameters. Custom transformations that implement the `XiTransform`
         interface are also possible.
         """
-        parameters = [(v[0], v[1], (v[2] if len(v) > 2 else None)) for v in var_list]  # type: ignore
+        parameters = [(v[0], v[1], (v[2] if len(v) > 2 else None)) for v in var_list]  # type: ignore[misc]
         self._natgrad_steps(loss_fn, parameters)
 
     def _natgrad_steps(

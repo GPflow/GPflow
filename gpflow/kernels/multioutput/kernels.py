@@ -207,7 +207,7 @@ class LinearCoregionalization(IndependentLatent, Combination):
 
     @property
     def num_latent_gps(self) -> int:
-        return self.W.shape[-1]  # type: ignore # L
+        return self.W.shape[-1]  # type: ignore[no-any-return]  # L
 
     @property
     def latent_kernels(self) -> Tuple[Kernel, ...]:

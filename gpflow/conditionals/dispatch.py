@@ -20,7 +20,7 @@ conditional = Dispatcher("conditional")
 conditional._gpflow_internal_register = conditional.register
 
 # type-ignore below is because mypy doesn't like it when we assign to a function.
-conditional.register = deprecated(  # type: ignore
+conditional.register = deprecated(  # type: ignore[assignment]
     reason="Registering new implementations of conditional() is deprecated. "
     "Instead, create your own subclass of gpflow.posteriors.AbstractPosterior "
     "and register an implementation of gpflow.posteriors.get_posterior_class "

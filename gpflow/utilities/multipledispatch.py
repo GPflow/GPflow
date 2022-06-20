@@ -75,7 +75,7 @@ class Dispatcher(GeneratorDispatcher):
         """
         n = len(types)
         for signature in self.ordering:
-            if len(signature) == n and all(map(issubclass, types, signature)):  # type: ignore
+            if len(signature) == n and all(map(issubclass, types, signature)):  # type: ignore[arg-type]
                 result: AnyCallable = self.funcs[signature]
                 return result
             elif len(signature) and isvariadic(signature[-1]):

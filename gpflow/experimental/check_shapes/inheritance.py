@@ -72,6 +72,6 @@ class _InheritCheckShapes:
             f" on class '{owner.__name__}'."
         )
 
-        self._func.class_name = owner.__name__  # type: ignore
+        self._func.class_name = owner.__name__  # type: ignore[attr-defined]
         wrapped = overridden_check_shapes(self._func)
         setattr(owner, name, wrapped)

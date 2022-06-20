@@ -93,7 +93,7 @@ class MonitorTaskGroup:
             running at every step (`period = 1`).
         """
         self._tasks: Collection[MonitorTask] = []
-        self.tasks = task_or_tasks  # type: ignore
+        self.tasks = task_or_tasks  # type: ignore[assignment]
         self._period = period
 
     @property
