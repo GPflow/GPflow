@@ -47,7 +47,7 @@ def test_example__basic() -> None:
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Mapping, Optional, Sequence, Tuple
+from typing import Iterable, Mapping, Optional, Sequence, Tuple
 from unittest.mock import MagicMock
 
 import numpy as np
@@ -55,9 +55,11 @@ import pytest
 
 from gpflow.base import AnyNDArray
 from gpflow.experimental.check_shapes import (
+    DocstringFormat,
     ErrorContext,
     Shape,
     ShapeChecker,
+    ShapeCheckingState,
     check_shape,
     check_shapes,
     disable_check_shapes,
@@ -71,6 +73,53 @@ from gpflow.experimental.check_shapes import (
     set_enable_function_call_precompute,
     set_rewrite_docstrings,
 )
+
+
+def test_example__disable__manual() -> None:
+    old_value = get_enable_check_shapes()
+
+    try:
+
+        # [disable__manual]
+
+        set_enable_check_shapes(ShapeCheckingState.DISABLED)
+
+        # [disable__manual]
+
+    finally:
+        set_enable_check_shapes(old_value)
+
+
+def test_example__disable__context_manager() -> None:
+    def performance_sensitive_function() -> None:
+        pass
+
+    # [disable__context_manager]
+
+    with disable_check_shapes():
+        performance_sensitive_function()
+
+    # [disable__context_manager]
+
+
+def test_example__pytest_fixture() -> None:
+    # pylint: disable=unused-variable
+    # [pytest_fixture]
+
+    @pytest.fixture(autouse=True)
+    def enable_shape_checks() -> Iterable[None]:
+        old_enable = get_enable_check_shapes()
+        old_rewrite_docstrings = get_rewrite_docstrings()
+        old_function_call_precompute = get_enable_function_call_precompute()
+        set_enable_check_shapes(ShapeCheckingState.ENABLED)
+        set_rewrite_docstrings(DocstringFormat.SPHINX)
+        set_enable_function_call_precompute(True)
+        yield
+        set_enable_function_call_precompute(old_function_call_precompute)
+        set_rewrite_docstrings(old_rewrite_docstrings)
+        set_enable_check_shapes(old_enable)
+
+    # [pytest_fixture]
 
 
 def test_example__argument_ref_attribute() -> None:
@@ -667,38 +716,6 @@ def test_example__shape_checker__raw() -> None:
     linear_model(np.ones((4, 3)), np.ones((3,)))
 
 
-def test_example__disable__context_manager() -> None:
-    def performance_sensitive_function() -> None:
-        pass
-
-    # [disable__context_manager]
-
-    with disable_check_shapes():
-        performance_sensitive_function()
-
-    # [disable__context_manager]
-
-
-def test_example__disable__manual() -> None:
-    def performance_sensitive_function() -> None:
-        pass
-
-    old_value = get_enable_check_shapes()
-
-    try:
-
-        # [disable__manual]
-
-        set_enable_check_shapes(False)
-
-        performance_sensitive_function()
-
-        # [disable__manual]
-
-    finally:
-        set_enable_check_shapes(old_value)
-
-
 def test_example__disable_function_call_precompute() -> None:
     def buggy_function() -> None:
         pass
@@ -778,7 +795,7 @@ def test_example__doc_rewrite__disable() -> None:
 
 
 def test_example__custom_type() -> None:
-    # pylint: disable=protected-access
+    # pylint: disable=protected-access,unused_variable
 
     # [custom_type]
 

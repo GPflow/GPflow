@@ -24,6 +24,68 @@ Example:
    :dedent:
 
 
+Speed, and interactions with `tf.function`
+++++++++++++++++++++++++++++++++++++++++++
+
+Shape checking has some performance impact. Shape checking can be disabled to help alleviate this.
+Shape checking can be set to one of three different states.
+
+* ``ENABLED``. Shapes are checked wherever they can.
+* ``EAGER_MODE_ONLY``. Shapes are not checked within anything wrapped in :func:`tf.function`.
+* ``DISABLED``. Shapes are never checked.
+
+The state can be set with :func:`set_enable_check_shapes`:
+
+.. literalinclude:: /examples/test_check_shapes_examples.py
+   :start-after: [disable__manual]
+   :end-before: [disable__manual]
+   :dedent:
+
+Alternatively you can use :func:`disable_check_shapes` to disable shape checking in smaller scopes:
+
+.. literalinclude:: /examples/test_check_shapes_examples.py
+   :start-after: [disable__context_manager]
+   :end-before: [disable__context_manager]
+   :dedent:
+
+Beware that any function declared while shape checking is disabled, will continue not to check
+shapes, even if shape checking is otherwise enabled again.
+
+The default state is ``EAGER_MODE_ONLY``; which is appropriate for smaller project, experiments, and
+notebooks. Write and debug your code in eager mode, and add :func:`tf.function` when your code is
+correct and you want it to run fast. For larger project you probably want to modify this setting. In
+particular you may want to enable all shape checks in your unit tests. If you use
+`pytest <https://docs.pytest.org/>`_ you can do this by updating your root ``conftest.py`` with:
+
+.. literalinclude:: /examples/test_check_shapes_examples.py
+   :start-after: [pytest_fixture]
+   :end-before: [pytest_fixture]
+   :dedent:
+
+
+If shape checking is set to ``ENABLED`` and your code is wrapped in :func:`tf.function` shape checks
+are performed while tracing graphs, but *not* compiled into the actual graphs.  This is considered a
+feature as that means that :func:`check_shapes` doesn't impact the execution speed of your functions
+after they have been compiled.
+
+
+Best-effort checking
+++++++++++++++++++++
+
+This library will perform shape checks on a best-effort basis. Many things can prevent this library
+from being able to check shapes. For example:
+
+* Unknown shapes. Sometimes the library is not able to determine the shape of an object, and thus
+  cannot check that object. For example ``Optional`` arguments with value ``None`` cannot be
+  checked, and compiled TensorFlow code can have variables with an unknown shape.
+
+* Use of variable-rank dimensions (see below). In general we cannot infer the size of variable-rank
+  dimensions if there are multiple variable-rank specifications within the same shape specification
+  (e.g. ``cov: [m..., n...]``). This library will try to learn the size of these variable-rank
+  dimensions from neighbouring shape specifications, but this is not always possible. Use of
+  ``broadcast`` with variable-rank dimensions makes it even harder to infer these values.
+
+
 Check specification
 +++++++++++++++++++
 
@@ -272,23 +334,6 @@ places:
      :dedent:
 
 
-Best-effort checking
-++++++++++++++++++++
-
-This library will perform shape checks on a best-effort basis. Many things can prevent this library
-from being able to check shapes. For example:
-
-* Unknown shapes. Sometimes the library is not able to determine the shape of an object, and thus
-  cannot check that object. For example ``Optional`` arguments with value ``None`` cannot be
-  checked, and compiled TensorFlow code can have variables with an unknown shape.
-
-* Use of variable-rank dimensions. In general we cannot infer the size of variable-rank dimensions
-  if there are multiple variable-rank specifications within the same shape specification (e.g.
-  ``cov: [m..., n...]``). This library will try to learn the size of these variable-rank dimensions
-  from neighbouring shape specifications, but this is not always possible. Use of ``broadcast`` with
-  variable-rank dimensions makes it even harder to infer these values.
-
-
 Shape reuse
 +++++++++++
 
@@ -365,39 +410,6 @@ You can use the function :func:`get_shape_checker` to get the :class:`ShapeCheck
 immediately surrounding :func:`check_shapes` decorator.
 
 
-Speed, and interactions with `tf.function`
-++++++++++++++++++++++++++++++++++++++++++
-
-If you want to wrap your function in both :func:`tf.function` and :func:`check_shapes` it is
-recommended you put the :func:`tf.function` outermost so that the shape checks are inside
-:func:`tf.function`.  Shape checks are performed while tracing graphs, but *not* compiled into the
-actual graphs.  This is considered a feature as that means that :func:`check_shapes` doesn't impact
-the execution speed of compiled functions. However, it also means that tensor dimensions of dynamic
-size are not verified in compiled mode.
-
-Disabling shape checking
-------------------------
-
-If your code is very performance sensitive and :mod:`check_shapes` is causing an unacceptable
-slowdown it can be disabled. Preferably use the context mananger :func:`disable_check_shapes`:
-
-.. literalinclude:: /examples/test_check_shapes_examples.py
-   :start-after: [disable__context_manager]
-   :end-before: [disable__context_manager]
-   :dedent:
-
-Alternatively :mod:`check_shapes` can also be disable globally with
-:func:`set_enable_check_shapes`:
-
-.. literalinclude:: /examples/test_check_shapes_examples.py
-   :start-after: [disable__manual]
-   :end-before: [disable__manual]
-   :dedent:
-
-Beware that any function declared while shape checking is disabled, will continue not to check
-shapes, even if shape checking is otherwise enabled again.
-
-
 Documenting shapes
 ++++++++++++++++++
 
@@ -463,6 +475,7 @@ from .checker import ShapeChecker
 from .checker_context import check_shape, get_shape_checker
 from .config import (
     DocstringFormat,
+    ShapeCheckingState,
     disable_check_shapes,
     get_enable_check_shapes,
     get_enable_function_call_precompute,
@@ -482,6 +495,7 @@ __all__ = [
     "ErrorContext",
     "Shape",
     "ShapeChecker",
+    "ShapeCheckingState",
     "accessors",
     "argument_ref",
     "base_types",

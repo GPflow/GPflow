@@ -16,6 +16,17 @@ from typing import Iterable
 import pytest
 from _pytest.logging import LogCaptureFixture
 
+from gpflow.experimental.check_shapes.config import (
+    DocstringFormat,
+    ShapeCheckingState,
+    get_enable_check_shapes,
+    get_enable_function_call_precompute,
+    get_rewrite_docstrings,
+    set_enable_check_shapes,
+    set_enable_function_call_precompute,
+    set_rewrite_docstrings,
+)
+
 
 @pytest.fixture(autouse=True)
 def test_auto_graph_compile(caplog: LogCaptureFixture) -> Iterable[None]:
@@ -24,3 +35,21 @@ def test_auto_graph_compile(caplog: LogCaptureFixture) -> Iterable[None]:
     for when in ["setup", "call", "teardown"]:
         for record in caplog.get_records(when):
             assert not record.msg.startswith("AutoGraph could not transform"), record.getMessage()
+
+
+@pytest.fixture(autouse=True)
+def enable_shape_checks() -> Iterable[None]:
+    # Ensure that:
+    # 1: `check_shapes` is enabled when running these tests.
+    # 2: If a test manipulates `check_shapes` settings, they are reset after the test.
+    # See also: tests/conftest.py
+    old_enable = get_enable_check_shapes()
+    old_rewrite_docstrings = get_rewrite_docstrings()
+    old_function_call_precompute = get_enable_function_call_precompute()
+    set_enable_check_shapes(ShapeCheckingState.ENABLED)
+    set_rewrite_docstrings(DocstringFormat.SPHINX)
+    set_enable_function_call_precompute(True)
+    yield
+    set_enable_function_call_precompute(old_function_call_precompute)
+    set_rewrite_docstrings(old_rewrite_docstrings)
+    set_enable_check_shapes(old_enable)

@@ -43,13 +43,13 @@ This release contains contributions from:
 
 ## Known Caveats
 
-* <CAVEATS REGARDING THE RELEASE (BUT NOT BREAKING CHANGES).>
-* <ADDING/BUMPING DEPENDENCIES SHOULD GO HERE>
-* <KNOWN LACK OF SUPPORT ON SOME PLATFORM SHOULD GO HERE>
+* Shape checking is now, by default, disabled within `tf.function`. Use `set_enable_check_shapes` to
+  change this behaviour.
 
 ## Major Features and Improvements
 
 * `gpflow.experimental.check_shapes`
+  - Can now be in three different states - ENABLED, EAGER_MODE_ONLY, and DISABLE.
   - Now support multiple variable-rank dimensions at the same time, e.g. `cov: [n..., n...]`.
 
 ## Bug Fixes and Other Changes
