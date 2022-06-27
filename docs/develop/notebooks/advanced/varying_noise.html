@@ -822,8 +822,8 @@ y_i | f, x_i &\sim \mathcal N\big(y_i; f(x_i), \sigma^2_i\big)
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2022-06-10 16:29:15.424089: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcudart.so.11.0&#39;; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory
-2022-06-10 16:29:15.424122: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.
+2022-06-27 15:05:37.322345: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcudart.so.11.0&#39;; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory
+2022-06-27 15:05:37.322372: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.
 /home/circleci/project/gpflow/experimental/utils.py:42: UserWarning: You&#39;re calling gpflow.experimental.check_shapes.decorator.check_shapes which is considered *experimental*. Expect: breaking changes, poor documentation, and bugs.
   warn(
 </pre></div></div>
@@ -953,17 +953,17 @@ distribution on the function, and is needed in the evaluation of the evidence lo
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2022-06-10 16:29:18.421382: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcuda.so.1&#39;; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory
-2022-06-10 16:29:18.421409: W tensorflow/stream_executor/cuda/cuda_driver.cc:269] failed call to cuInit: UNKNOWN ERROR (303)
-2022-06-10 16:29:18.421428: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (141dfd1f541c): /proc/driver/nvidia/version does not exist
-2022-06-10 16:29:18.421682: I tensorflow/core/platform/cpu_feature_guard.cc:151] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA
+2022-06-27 15:05:40.731130: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcuda.so.1&#39;; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory
+2022-06-27 15:05:40.731194: W tensorflow/stream_executor/cuda/cuda_driver.cc:269] failed call to cuInit: UNKNOWN ERROR (303)
+2022-06-27 15:05:40.731217: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (fb69db4454ce): /proc/driver/nvidia/version does not exist
+2022-06-27 15:05:40.731472: I tensorflow/core/platform/cpu_feature_guard.cc:193] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA
 To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.
 /home/circleci/project/gpflow/experimental/utils.py:42: UserWarning: You&#39;re calling gpflow.experimental.check_shapes.checker.ShapeChecker.__init__ which is considered *experimental*. Expect: breaking changes, poor documentation, and bugs.
   warn(
 </pre></div></div>
 </div>
 <p>Notice that we specify num_latent_gps=1, as the VGP model would normally infer this from the shape of Y_data, but we handle the second column manually in the HeteroskedasticGaussian likelihood.</p>
-<div class="nbinput docutils container">
+<div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
 </pre></div>
 </div>
@@ -978,14 +978,6 @@ To enable them in other operations, rebuild TensorFlow with the appropriate comp
     <span class="n">adam</span><span class="o">.</span><span class="n">minimize</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">training_loss</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">trainable_variables</span><span class="p">)</span>
 </pre></div>
 </div>
-</div>
-<div class="nboutput nblast docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area stderr docutils container">
-<div class="highlight"><pre>
-2022-06-10 16:29:18.627915: W tensorflow/python/util/util.cc:368] Sets are not currently considered sequences, but this may change in the future, so consider avoiding using them.
-</pre></div></div>
 </div>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
@@ -1225,10 +1217,10 @@ To enable them in other operations, rebuild TensorFlow with the appropriate comp
 <tr><th>name                                  </th><th>class    </th><th>transform       </th><th>prior  </th><th>trainable  </th><th>shape        </th><th>dtype  </th><th>value                                               </th></tr>
 </thead>
 <tbody>
-<tr><td>VGP.kernel.variance                   </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()           </td><td>float64</td><td>2.0487746335100323                                  </td></tr>
-<tr><td>VGP.kernel.lengthscales               </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()           </td><td>float64</td><td>0.2174351066754891                                  </td></tr>
-<tr><td>VGP.likelihood.likelihoods[0].variance</td><td>Parameter</td><td>Softplus + Shift</td><td>       </td><td>True       </td><td>()           </td><td>float64</td><td>0.2914816857759118                                  </td></tr>
-<tr><td>VGP.likelihood.likelihoods[1].variance</td><td>Parameter</td><td>Softplus + Shift</td><td>       </td><td>True       </td><td>()           </td><td>float64</td><td>0.60554469904506                                    </td></tr>
+<tr><td>VGP.kernel.variance                   </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()           </td><td>float64</td><td>2.048774633510037                                   </td></tr>
+<tr><td>VGP.kernel.lengthscales               </td><td>Parameter</td><td>Softplus        </td><td>       </td><td>True       </td><td>()           </td><td>float64</td><td>0.21743510667548932                                 </td></tr>
+<tr><td>VGP.likelihood.likelihoods[0].variance</td><td>Parameter</td><td>Softplus + Shift</td><td>       </td><td>True       </td><td>()           </td><td>float64</td><td>0.29148168577591177                                 </td></tr>
+<tr><td>VGP.likelihood.likelihoods[1].variance</td><td>Parameter</td><td>Softplus + Shift</td><td>       </td><td>True       </td><td>()           </td><td>float64</td><td>0.6055446990450576                                  </td></tr>
 <tr><td>VGP.num_data                          </td><td>Parameter</td><td>Identity        </td><td>       </td><td>False      </td><td>()           </td><td>int32  </td><td>100                                                 </td></tr>
 <tr><td>VGP.q_mu                              </td><td>Parameter</td><td>Identity        </td><td>       </td><td>False      </td><td>(100, 1)     </td><td>float64</td><td>[[1.15102310e+00...                                 </td></tr>
 <tr><td>VGP.q_sqrt                            </td><td>Parameter</td><td>FillTriangular  </td><td>       </td><td>False      </td><td>(1, 100, 100)</td><td>float64</td><td>[[[2.06898404e-01, 0.00000000e+00, 0.00000000e+00...</td></tr>
@@ -1268,7 +1260,7 @@ To enable them in other operations, rebuild TensorFlow with the appropriate comp
   
   <div class="footer-item">
     <p class="sphinx-version">
-Created using <a href="http://sphinx-doc.org/">Sphinx</a> 5.0.1.<br>
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 5.0.2.<br>
 </p>
   </div>
   

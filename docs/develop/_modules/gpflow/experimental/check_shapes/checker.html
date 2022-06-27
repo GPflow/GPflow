@@ -270,8 +270,8 @@ function checkPageExistsAndRedirect(event) {
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">Class responsible for remembering and checking shapes.</span>
 <span class="sd">&quot;&quot;&quot;</span>
-<span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Set</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">TypeVar</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">field</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">DefaultDict</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Set</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">TypeVar</span><span class="p">,</span> <span class="n">Union</span>
 
 <span class="kn">from</span> <span class="nn">..utils</span> <span class="kn">import</span> <span class="n">experimental</span>
 <span class="kn">from</span> <span class="nn">.base_types</span> <span class="kn">import</span> <span class="n">Dimension</span><span class="p">,</span> <span class="n">Shape</span>
@@ -441,6 +441,33 @@ function checkPageExistsAndRedirect(event) {
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">expected_begin</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">expected_end</span>
 
 
+<span class="nd">@dataclass</span>
+<span class="k">class</span> <span class="nc">_VariableState</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Structure of stuff we need to know about each variable.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">uses</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">ParsedTensorSpec</span><span class="p">,</span> <span class="n">ErrorContext</span><span class="p">]]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">list</span><span class="p">)</span>
+    <span class="sd">&quot;&quot;&quot; List of specs where this variable is used. &quot;&quot;&quot;</span>
+
+    <span class="n">observed_dim</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">_ObservedDim</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Observed size of this variable, if the variable is rank-1.</span>
+
+<span class="sd">    Set this `None` if this variable is varrank.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">observed_dims</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">_ObservedDims</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Observed shape of this variable, if the variable is varrank.</span>
+
+<span class="sd">    Set this `None` if this variable is rank-1.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">waiting_for_varrank</span><span class="p">:</span> <span class="n">Set</span><span class="p">[</span><span class="n">_ShapeCheck</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">set</span><span class="p">)</span>
+    <span class="sd">&quot;&quot;&quot; Checks that are waiting for the rank of this variable to be determined. &quot;&quot;&quot;</span>
+
+
 <div class="viewcode-block" id="ShapeChecker"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/index.html#gpflow.experimental.check_shapes.ShapeChecker">[docs]</a><span class="k">class</span> <span class="nc">ShapeChecker</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Mechanism for checking the shapes of tensors.</span>
@@ -458,19 +485,9 @@ function checkPageExistsAndRedirect(event) {
 
     <span class="nd">@experimental</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_variables</span><span class="p">:</span> <span class="n">DefaultDict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">_VariableState</span><span class="p">]</span> <span class="o">=</span> <span class="n">DefaultDict</span><span class="p">(</span><span class="n">_VariableState</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_observed_shapes</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">Shape</span><span class="p">,</span> <span class="n">ParsedTensorSpec</span><span class="p">,</span> <span class="n">ErrorContext</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[]</span>
-
-        <span class="c1"># Mapping from unresolved varrank variables to the checks that are waiting for the rank to</span>
-        <span class="c1"># be determined.</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_waiting_for_varrank</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Set</span><span class="p">[</span><span class="n">_ShapeCheck</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
-
-        <span class="c1"># Here we&#39;re (ab-)using `Dict[ , None]` instead of `set`, because `dict`s retain ordering.</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_specs_by_variable</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">ParsedTensorSpec</span><span class="p">,</span> <span class="n">ErrorContext</span><span class="p">],</span> <span class="kc">None</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_rank1_variables</span><span class="p">:</span> <span class="n">Set</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_varrank_variables</span><span class="p">:</span> <span class="n">Set</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_additional_context</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">ErrorContext</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_observed_dims</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">_ObservedDim</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_observed_dimses</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">_ObservedDims</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
 
 <div class="viewcode-block" id="ShapeChecker.add_context"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/index.html#gpflow.experimental.check_shapes.ShapeChecker.add_context">[docs]</a>    <span class="k">def</span> <span class="nf">add_context</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="n">ErrorContext</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -536,11 +553,11 @@ function checkPageExistsAndRedirect(event) {
             <span class="n">shape_check</span> <span class="o">=</span> <span class="n">shape_check_queue</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
 
             <span class="c1"># Note that self._match_dims may not be able to match all dims. If that is the case it</span>
-            <span class="c1"># adds the check to `self._waiting_for_varrank`:</span>
+            <span class="c1"># adds the check to `_VariableState.waiting_for_varrank`:</span>
             <span class="n">dim_checks</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_match_dims</span><span class="p">(</span><span class="n">shape_check</span><span class="p">)</span>
             <span class="k">for</span> <span class="n">dim_spec</span><span class="p">,</span> <span class="n">actual_dims</span><span class="p">,</span> <span class="n">shape_possibly_truncated</span> <span class="ow">in</span> <span class="n">dim_checks</span><span class="p">:</span>
-                <span class="c1"># Note that self._check_dim may revive checks from `self._waiting_for_varrank` and</span>
-                <span class="c1"># add them back to `shape_check_queue`:</span>
+                <span class="c1"># Note that self._check_dim may revive checks from</span>
+                <span class="c1"># `_VariableState.waiting_for_varrank` and add them back to `shape_check_queue`:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_check_dim</span><span class="p">(</span><span class="n">dim_spec</span><span class="p">,</span> <span class="n">actual_dims</span><span class="p">,</span> <span class="n">shape_possibly_truncated</span><span class="p">,</span> <span class="n">shape_check_queue</span><span class="p">)</span></div>
 
     <span class="k">def</span> <span class="nf">_parse_checks</span><span class="p">(</span>
@@ -553,7 +570,7 @@ function checkPageExistsAndRedirect(event) {
 <span class="sd">        Sanity check, register and parse the given ``checks`` into :class:`_ShapeCheck` objects.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">shape_checks</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="n">new_variables</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="n">variable_type_errors</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">call_context</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">ErrorContext</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">check</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">checks</span><span class="p">):</span>
             <span class="n">shaped</span><span class="p">,</span> <span class="n">tensor_spec</span><span class="p">,</span> <span class="o">*</span><span class="n">contexts</span> <span class="o">=</span> <span class="n">check</span>
@@ -592,40 +609,35 @@ function checkPageExistsAndRedirect(event) {
             <span class="k">for</span> <span class="n">dim_spec</span> <span class="ow">in</span> <span class="n">parsed_shape_check</span><span class="o">.</span><span class="n">dims</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">dim_spec</span><span class="o">.</span><span class="n">variable_name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                     <span class="k">continue</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_specs_by_variable</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">dim_spec</span><span class="o">.</span><span class="n">variable_name</span><span class="p">,</span> <span class="p">{})[</span>
-                    <span class="p">(</span><span class="n">parsed_tensor_check</span><span class="p">,</span> <span class="n">context</span><span class="p">)</span>
-                <span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="n">variable</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_variables</span><span class="p">[</span><span class="n">dim_spec</span><span class="o">.</span><span class="n">variable_name</span><span class="p">]</span>
+                <span class="n">variable</span><span class="o">.</span><span class="n">uses</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">parsed_tensor_check</span><span class="p">,</span> <span class="n">context</span><span class="p">))</span>
                 <span class="k">if</span> <span class="n">dim_spec</span><span class="o">.</span><span class="n">variable_rank</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">_varrank_variables</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">dim_spec</span><span class="o">.</span><span class="n">variable_name</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">variable</span><span class="o">.</span><span class="n">observed_dims</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="n">variable</span><span class="o">.</span><span class="n">observed_dims</span> <span class="o">=</span> <span class="n">_ObservedDims</span><span class="p">()</span>
+                        <span class="k">if</span> <span class="n">variable</span><span class="o">.</span><span class="n">observed_dim</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                            <span class="n">variable_type_errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">dim_spec</span><span class="o">.</span><span class="n">variable_name</span><span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">_rank1_variables</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">dim_spec</span><span class="o">.</span><span class="n">variable_name</span><span class="p">)</span>
-                <span class="n">new_variables</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">dim_spec</span><span class="o">.</span><span class="n">variable_name</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">variable</span><span class="o">.</span><span class="n">observed_dim</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="n">variable</span><span class="o">.</span><span class="n">observed_dim</span> <span class="o">=</span> <span class="n">_ObservedDim</span><span class="p">()</span>
+                        <span class="k">if</span> <span class="n">variable</span><span class="o">.</span><span class="n">observed_dims</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                            <span class="n">variable_type_errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">dim_spec</span><span class="o">.</span><span class="n">variable_name</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_check_variable_use</span><span class="p">(</span><span class="n">new_variables</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">variable_type_errors</span><span class="p">:</span>
+            <span class="n">error_contexts</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">StackContext</span><span class="p">(</span>
+                    <span class="n">VariableContext</span><span class="p">(</span><span class="n">variable</span><span class="p">),</span>
+                    <span class="n">ParallelContext</span><span class="p">(</span>
+                        <span class="nb">tuple</span><span class="p">(</span>
+                            <span class="n">StackContext</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">TensorSpecContext</span><span class="p">(</span><span class="n">s</span><span class="p">))</span>
+                            <span class="k">for</span> <span class="n">s</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_variables</span><span class="p">[</span><span class="n">variable</span><span class="p">]</span><span class="o">.</span><span class="n">uses</span>
+                        <span class="p">)</span>
+                    <span class="p">),</span>
+                <span class="p">)</span>
+                <span class="k">for</span> <span class="n">variable</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">variable_type_errors</span><span class="p">)</span>
+            <span class="p">]</span>
+            <span class="k">raise</span> <span class="n">VariableTypeError</span><span class="p">(</span><span class="n">ParallelContext</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="n">error_contexts</span><span class="p">)))</span>
 
         <span class="k">return</span> <span class="n">shape_checks</span>
-
-    <span class="k">def</span> <span class="nf">_check_variable_use</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">variables</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Check that the given variables are used in either a rank-1 or a variable-rank context, and</span>
-<span class="sd">        not both.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">error_contexts</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">for</span> <span class="n">variable</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">variables</span><span class="p">):</span>
-            <span class="k">if</span> <span class="p">(</span><span class="n">variable</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rank1_variables</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">variable</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_varrank_variables</span><span class="p">):</span>
-                <span class="n">error_contexts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-                    <span class="n">StackContext</span><span class="p">(</span>
-                        <span class="n">VariableContext</span><span class="p">(</span><span class="n">variable</span><span class="p">),</span>
-                        <span class="n">ParallelContext</span><span class="p">(</span>
-                            <span class="nb">tuple</span><span class="p">(</span>
-                                <span class="n">StackContext</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">TensorSpecContext</span><span class="p">(</span><span class="n">s</span><span class="p">))</span>
-                                <span class="k">for</span> <span class="n">s</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_specs_by_variable</span><span class="p">[</span><span class="n">variable</span><span class="p">]</span>
-                            <span class="p">)</span>
-                        <span class="p">),</span>
-                    <span class="p">)</span>
-                <span class="p">)</span>
-        <span class="k">if</span> <span class="n">error_contexts</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">VariableTypeError</span><span class="p">(</span><span class="n">ParallelContext</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="n">error_contexts</span><span class="p">)))</span>
 
     <span class="k">def</span> <span class="nf">_match_dims</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">shape_check</span><span class="p">:</span> <span class="n">_ShapeCheck</span>
@@ -634,7 +646,7 @@ function checkPageExistsAndRedirect(event) {
 <span class="sd">        Match expected dimensions against actual dimensions.</span>
 
 <span class="sd">        If some dimensions cannot be determined, the remaining dimensions are added to</span>
-<span class="sd">        `self._waiting_for_varrank`.</span>
+<span class="sd">        `_VariableState.waiting_for_varrank`.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># Determine rank of expected dimensions:</span>
 
@@ -668,12 +680,9 @@ function checkPageExistsAndRedirect(event) {
             <span class="n">rank</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
             <span class="k">if</span> <span class="n">expected_dim</span><span class="o">.</span><span class="n">variable_rank</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">expected_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                    <span class="n">observed_dims</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_observed_dimses</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">expected_name</span><span class="p">)</span>
-                    <span class="k">if</span> <span class="p">(</span>
-                        <span class="p">(</span><span class="n">observed_dims</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span>
-                        <span class="ow">and</span> <span class="n">observed_dims</span><span class="o">.</span><span class="n">known_rank</span>
-                        <span class="ow">and</span> <span class="p">(</span><span class="n">observed_dims</span><span class="o">.</span><span class="n">sizes</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span>
-                    <span class="p">):</span>
+                    <span class="n">observed_dims</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_variables</span><span class="p">[</span><span class="n">expected_name</span><span class="p">]</span><span class="o">.</span><span class="n">observed_dims</span>
+                    <span class="k">assert</span> <span class="n">observed_dims</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+                    <span class="k">if</span> <span class="n">observed_dims</span><span class="o">.</span><span class="n">known_rank</span> <span class="ow">and</span> <span class="p">(</span><span class="n">observed_dims</span><span class="o">.</span><span class="n">sizes</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">):</span>
                         <span class="n">rank</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">observed_dims</span><span class="o">.</span><span class="n">sizes</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">rank</span> <span class="o">=</span> <span class="mi">1</span>
@@ -681,8 +690,8 @@ function checkPageExistsAndRedirect(event) {
             <span class="k">if</span> <span class="n">rank</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">leading_broadcast</span><span class="p">:</span>
                 <span class="n">all_trailing_shapes_known</span> <span class="o">=</span> <span class="n">n_allocated_none</span> <span class="o">==</span> <span class="mi">0</span>
                 <span class="k">if</span> <span class="n">all_trailing_shapes_known</span><span class="p">:</span>
-                    <span class="c1"># We know where the dimension ends, because everything after this has known size,</span>
-                    <span class="c1"># so we can infer the start from the `unallocated_len`.</span>
+                    <span class="c1"># We know where the dimension ends, because everything after this has known</span>
+                    <span class="c1"># size, so we can infer the start from the `unallocated_len`.</span>
                     <span class="n">rank</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">rank</span><span class="p">,</span> <span class="n">unallocated_len</span><span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="c1"># We don&#39;t know where this dimension starts, because of broadcasting, and we</span>
@@ -763,9 +772,9 @@ function checkPageExistsAndRedirect(event) {
             <span class="n">shape_check</span><span class="o">.</span><span class="n">expected_end</span> <span class="o">-=</span> <span class="mi">1</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">shape_check</span><span class="o">.</span><span class="n">finished</span><span class="p">:</span>
-            <span class="n">waiting_for</span><span class="p">:</span> <span class="n">Set</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">unknown_len_variables</span><span class="p">)</span> <span class="o">-</span> <span class="p">{</span><span class="kc">None</span><span class="p">}</span>  <span class="c1"># type: ignore</span>
+            <span class="n">waiting_for</span><span class="p">:</span> <span class="n">Set</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">unknown_len_variables</span><span class="p">)</span> <span class="o">-</span> <span class="p">{</span><span class="kc">None</span><span class="p">}</span>  <span class="c1"># type: ignore[assignment]</span>
             <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">waiting_for</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_waiting_for_varrank</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="nb">set</span><span class="p">())</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">shape_check</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_variables</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">waiting_for_varrank</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">shape_check</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">dim_checks</span>
 
@@ -788,14 +797,18 @@ function checkPageExistsAndRedirect(event) {
                 <span class="c1"># Anonymous dimension spec - we don&#39;t care about the actual values.</span>
                 <span class="k">return</span>
 
-            <span class="n">observed_dims</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_observed_dimses</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">expected_name</span><span class="p">,</span> <span class="n">_ObservedDims</span><span class="p">())</span>
+            <span class="n">variable</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_variables</span><span class="p">[</span><span class="n">expected_name</span><span class="p">]</span>
+            <span class="n">observed_dims</span> <span class="o">=</span> <span class="n">variable</span><span class="o">.</span><span class="n">observed_dims</span>
+            <span class="k">assert</span> <span class="n">observed_dims</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+
             <span class="bp">self</span><span class="o">.</span><span class="n">_assert</span><span class="p">(</span>
                 <span class="n">observed_dims</span><span class="o">.</span><span class="n">check_and_update</span><span class="p">(</span>
                     <span class="n">actual_dims</span><span class="p">,</span> <span class="n">expected</span><span class="o">.</span><span class="n">broadcastable</span><span class="p">,</span> <span class="n">shape_possibly_truncated</span>
                 <span class="p">)</span>
             <span class="p">)</span>
-            <span class="k">if</span> <span class="n">observed_dims</span><span class="o">.</span><span class="n">known_rank</span><span class="p">:</span>
-                <span class="n">shape_checks</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_waiting_for_varrank</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">expected_name</span><span class="p">,</span> <span class="nb">set</span><span class="p">()))</span>
+            <span class="k">if</span> <span class="n">observed_dims</span><span class="o">.</span><span class="n">known_rank</span> <span class="ow">and</span> <span class="n">variable</span><span class="o">.</span><span class="n">waiting_for_varrank</span><span class="p">:</span>
+                <span class="n">shape_checks</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">variable</span><span class="o">.</span><span class="n">waiting_for_varrank</span><span class="p">)</span>
+                <span class="n">variable</span><span class="o">.</span><span class="n">waiting_for_varrank</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
 
         <span class="k">else</span><span class="p">:</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">actual_dims</span><span class="p">:</span>
@@ -812,8 +825,9 @@ function checkPageExistsAndRedirect(event) {
                 <span class="n">observed_dim</span> <span class="o">=</span> <span class="n">_ObservedDim</span><span class="p">()</span>
                 <span class="k">assert</span> <span class="n">observed_dim</span><span class="o">.</span><span class="n">check_and_update</span><span class="p">(</span><span class="n">expected</span><span class="o">.</span><span class="n">constant</span><span class="p">,</span> <span class="n">broadcast</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
             <span class="k">elif</span> <span class="n">expected</span><span class="o">.</span><span class="n">variable_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">expected_name</span> <span class="o">=</span> <span class="n">expected</span><span class="o">.</span><span class="n">variable_name</span>
-                <span class="n">observed_dim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_observed_dims</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">expected_name</span><span class="p">,</span> <span class="n">_ObservedDim</span><span class="p">())</span>
+                <span class="n">maybe_observed_dim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_variables</span><span class="p">[</span><span class="n">expected</span><span class="o">.</span><span class="n">variable_name</span><span class="p">]</span><span class="o">.</span><span class="n">observed_dim</span>
+                <span class="k">assert</span> <span class="n">maybe_observed_dim</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+                <span class="n">observed_dim</span> <span class="o">=</span> <span class="n">maybe_observed_dim</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="c1"># Anonymous dimension - we don&#39;t care about the actual value.</span>
                 <span class="k">return</span>
@@ -861,7 +875,7 @@ function checkPageExistsAndRedirect(event) {
   
   <div class="footer-item">
     <p class="sphinx-version">
-Created using <a href="http://sphinx-doc.org/">Sphinx</a> 5.0.1.<br>
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 5.0.2.<br>
 </p>
   </div>
   

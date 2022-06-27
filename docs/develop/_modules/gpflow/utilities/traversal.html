@@ -366,12 +366,12 @@ function checkPageExistsAndRedirect(event) {
         <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">var</span><span class="p">,</span> <span class="s2">&quot;transform&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">var</span><span class="o">.</span><span class="n">transform</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">var</span><span class="o">.</span><span class="n">transform</span><span class="p">,</span> <span class="n">tfp</span><span class="o">.</span><span class="n">bijectors</span><span class="o">.</span><span class="n">Chain</span><span class="p">):</span>
                 <span class="k">return</span> <span class="s2">&quot; + &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">b</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span> <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">var</span><span class="o">.</span><span class="n">transform</span><span class="o">.</span><span class="n">bijectors</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
-            <span class="k">return</span> <span class="n">var</span><span class="o">.</span><span class="n">transform</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span>  <span class="c1"># type: ignore</span>
+            <span class="k">return</span> <span class="n">var</span><span class="o">.</span><span class="n">transform</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span>  <span class="c1"># type: ignore[no-any-return]</span>
         <span class="k">return</span> <span class="kc">None</span>
 
     <span class="k">def</span> <span class="nf">get_prior</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span> <span class="n">var</span><span class="p">:</span> <span class="n">LeafComponent</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
         <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">var</span><span class="p">,</span> <span class="s2">&quot;prior&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">var</span><span class="o">.</span><span class="n">prior</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">var</span><span class="o">.</span><span class="n">prior</span><span class="o">.</span><span class="n">name</span>  <span class="c1"># type: ignore</span>
+            <span class="k">return</span> <span class="n">var</span><span class="o">.</span><span class="n">prior</span><span class="o">.</span><span class="n">name</span>  <span class="c1"># type: ignore[no-any-return]</span>
         <span class="k">return</span> <span class="kc">None</span>
 
     <span class="c1"># list of (column_name: str, column_getter: Callable[[tf.Variable], str]) tuples:</span>
@@ -394,7 +394,7 @@ function checkPageExistsAndRedirect(event) {
         <span class="k">for</span> <span class="n">path</span><span class="p">,</span> <span class="n">variable</span> <span class="ow">in</span> <span class="n">merged_leaf_components</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
     <span class="p">]</span>
     <span class="c1"># mypy claims it&#39;s wrong to pass a `None` tablefmt below. I think `tabulate` has bad type hints.</span>
-    <span class="k">return</span> <span class="n">tabulate</span><span class="p">(</span><span class="n">column_values</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="n">column_names</span><span class="p">,</span> <span class="n">tablefmt</span><span class="o">=</span><span class="n">tablefmt</span><span class="p">)</span>  <span class="c1"># type: ignore</span></div>
+    <span class="k">return</span> <span class="n">tabulate</span><span class="p">(</span><span class="n">column_values</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="n">column_names</span><span class="p">,</span> <span class="n">tablefmt</span><span class="o">=</span><span class="n">tablefmt</span><span class="p">)</span>  <span class="c1"># type: ignore[arg-type]</span></div>
 
 
 <div class="viewcode-block" id="leaf_components"><a class="viewcode-back" href="../../../api/gpflow/utilities/index.html#gpflow.utilities.leaf_components">[docs]</a><span class="k">def</span> <span class="nf">leaf_components</span><span class="p">(</span><span class="nb">input</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">Module</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Mapping</span><span class="p">[</span><span class="n">Path</span><span class="p">,</span> <span class="n">LeafVariable</span><span class="p">]:</span>
@@ -516,7 +516,7 @@ function checkPageExistsAndRedirect(event) {
 <span class="sd">        (see https://docs.python.org/3/library/copy.html).</span>
 <span class="sd">    :return: Returns a deepcopy of an input object.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">reset_cache_bijectors</span><span class="p">(</span><span class="n">input_module</span><span class="p">),</span> <span class="n">memo</span><span class="p">)</span>  <span class="c1"># type: ignore</span></div>
+    <span class="k">return</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">reset_cache_bijectors</span><span class="p">(</span><span class="n">input_module</span><span class="p">),</span> <span class="n">memo</span><span class="p">)</span>  <span class="c1"># type: ignore[no-any-return]</span></div>
 
 
 <div class="viewcode-block" id="freeze"><a class="viewcode-back" href="../../../api/gpflow/utilities/index.html#gpflow.utilities.freeze">[docs]</a><span class="k">def</span> <span class="nf">freeze</span><span class="p">(</span><span class="n">input_module</span><span class="p">:</span> <span class="n">M</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">M</span><span class="p">:</span>
@@ -641,7 +641,7 @@ function checkPageExistsAndRedirect(event) {
   
   <div class="footer-item">
     <p class="sphinx-version">
-Created using <a href="http://sphinx-doc.org/">Sphinx</a> 5.0.1.<br>
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 5.0.2.<br>
 </p>
   </div>
   

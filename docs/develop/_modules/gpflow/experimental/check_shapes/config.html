@@ -274,7 +274,44 @@ function checkPageExistsAndRedirect(event) {
 <span class="kn">from</span> <span class="nn">enum</span> <span class="kn">import</span> <span class="n">Enum</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Iterator</span><span class="p">,</span> <span class="n">Union</span>
 
-<span class="n">_enabled</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="kn">import</span> <span class="nn">tensorflow</span> <span class="k">as</span> <span class="nn">tf</span>
+
+
+<div class="viewcode-block" id="ShapeCheckingState"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/index.html#gpflow.experimental.check_shapes.ShapeCheckingState">[docs]</a><span class="k">class</span> <span class="nc">ShapeCheckingState</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Different states of whether to actually check shapes.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">ENABLED</span> <span class="o">=</span> <span class="s2">&quot;enabled&quot;</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Always check shapes.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">EAGER_MODE_ONLY</span> <span class="o">=</span> <span class="s2">&quot;eager_mode_only&quot;</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Only check shapes if `tf.inside_function()` is `False`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">DISABLED</span> <span class="o">=</span> <span class="s2">&quot;disabled&quot;</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Never check shapes.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__bool__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return whether we currently should check shapes.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span> <span class="ow">is</span> <span class="n">ShapeCheckingState</span><span class="o">.</span><span class="n">ENABLED</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">elif</span> <span class="bp">self</span> <span class="ow">is</span> <span class="n">ShapeCheckingState</span><span class="o">.</span><span class="n">EAGER_MODE_ONLY</span><span class="p">:</span>
+            <span class="c1"># pylint: disable=no-member</span>
+            <span class="k">return</span> <span class="ow">not</span> <span class="n">tf</span><span class="o">.</span><span class="n">inside_function</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="bp">self</span> <span class="ow">is</span> <span class="n">ShapeCheckingState</span><span class="o">.</span><span class="n">DISABLED</span><span class="p">,</span> <span class="bp">self</span>
+            <span class="k">return</span> <span class="kc">False</span></div>
+
+
+<span class="n">_enabled</span> <span class="o">=</span> <span class="n">ShapeCheckingState</span><span class="o">.</span><span class="n">EAGER_MODE_ONLY</span>
 
 
 <div class="viewcode-block" id="DocstringFormat"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/index.html#gpflow.experimental.check_shapes.DocstringFormat">[docs]</a><span class="k">class</span> <span class="nc">DocstringFormat</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
@@ -295,8 +332,10 @@ function checkPageExistsAndRedirect(event) {
 
 <span class="n">_docstring_format</span> <span class="o">=</span> <span class="n">DocstringFormat</span><span class="o">.</span><span class="n">SPHINX</span>
 
+<span class="n">_function_call_precompute_enabled</span> <span class="o">=</span> <span class="kc">False</span>
 
-<div class="viewcode-block" id="set_enable_check_shapes"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/index.html#gpflow.experimental.check_shapes.set_enable_check_shapes">[docs]</a><span class="k">def</span> <span class="nf">set_enable_check_shapes</span><span class="p">(</span><span class="n">enabled</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+
+<div class="viewcode-block" id="set_enable_check_shapes"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/index.html#gpflow.experimental.check_shapes.set_enable_check_shapes">[docs]</a><span class="k">def</span> <span class="nf">set_enable_check_shapes</span><span class="p">(</span><span class="n">enabled</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">ShapeCheckingState</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">bool</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Set whether to enable :mod:`check_shapes`.</span>
 
@@ -313,10 +352,18 @@ function checkPageExistsAndRedirect(event) {
 <span class="sd">    See also :func:`disable_check_shapes`.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">global</span> <span class="n">_enabled</span>
-    <span class="n">_enabled</span> <span class="o">=</span> <span class="n">enabled</span></div>
+    <span class="k">if</span> <span class="n">enabled</span> <span class="o">==</span> <span class="kc">True</span><span class="p">:</span>  <span class="c1"># pylint: disable=singleton-comparison</span>
+        <span class="n">_enabled</span> <span class="o">=</span> <span class="n">ShapeCheckingState</span><span class="o">.</span><span class="n">ENABLED</span>
+    <span class="k">elif</span> <span class="n">enabled</span> <span class="o">==</span> <span class="kc">False</span><span class="p">:</span>  <span class="c1"># pylint: disable=singleton-comparison</span>
+        <span class="n">_enabled</span> <span class="o">=</span> <span class="n">ShapeCheckingState</span><span class="o">.</span><span class="n">DISABLED</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">enabled</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">_enabled</span> <span class="o">=</span> <span class="n">ShapeCheckingState</span><span class="p">(</span><span class="n">enabled</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">enabled</span><span class="p">,</span> <span class="n">ShapeCheckingState</span><span class="p">),</span> <span class="nb">type</span><span class="p">(</span><span class="n">ShapeCheckingState</span><span class="p">)</span>
+        <span class="n">_enabled</span> <span class="o">=</span> <span class="n">enabled</span></div>
 
 
-<div class="viewcode-block" id="get_enable_check_shapes"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/index.html#gpflow.experimental.check_shapes.get_enable_check_shapes">[docs]</a><span class="k">def</span> <span class="nf">get_enable_check_shapes</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<div class="viewcode-block" id="get_enable_check_shapes"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/index.html#gpflow.experimental.check_shapes.get_enable_check_shapes">[docs]</a><span class="k">def</span> <span class="nf">get_enable_check_shapes</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">ShapeCheckingState</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Get whether to enable :mod:`check_shapes`.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -336,7 +383,7 @@ function checkPageExistsAndRedirect(event) {
 <span class="sd">       :dedent:</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">old_value</span> <span class="o">=</span> <span class="n">get_enable_check_shapes</span><span class="p">()</span>
-    <span class="n">set_enable_check_shapes</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">set_enable_check_shapes</span><span class="p">(</span><span class="n">ShapeCheckingState</span><span class="o">.</span><span class="n">DISABLED</span><span class="p">)</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="k">yield</span>
     <span class="k">finally</span><span class="p">:</span>
@@ -364,6 +411,31 @@ function checkPageExistsAndRedirect(event) {
 <span class="sd">    Get how :mod:`check_shapes` should rewrite docstrings.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">_docstring_format</span></div>
+
+
+<div class="viewcode-block" id="set_enable_function_call_precompute"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/index.html#gpflow.experimental.check_shapes.set_enable_function_call_precompute">[docs]</a><span class="k">def</span> <span class="nf">set_enable_function_call_precompute</span><span class="p">(</span><span class="n">enabled</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Set whether to precompute function call path and line numbers for debugging.</span>
+
+<span class="sd">    This is disabled by default, because it is (relatively) slow. Enabling this can give better</span>
+<span class="sd">    error messages.</span>
+
+<span class="sd">    Example:</span>
+
+<span class="sd">    .. literalinclude:: /examples/test_check_shapes_examples.py</span>
+<span class="sd">       :start-after: [disable_function_call_precompute]</span>
+<span class="sd">       :end-before: [disable_function_call_precompute]</span>
+<span class="sd">       :dedent:</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">global</span> <span class="n">_function_call_precompute_enabled</span>
+    <span class="n">_function_call_precompute_enabled</span> <span class="o">=</span> <span class="n">enabled</span></div>
+
+
+<div class="viewcode-block" id="get_enable_function_call_precompute"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/index.html#gpflow.experimental.check_shapes.get_enable_function_call_precompute">[docs]</a><span class="k">def</span> <span class="nf">get_enable_function_call_precompute</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Get whether to precompute function call path and line numbers for debugging.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">_function_call_precompute_enabled</span></div>
 </pre></div>
 
               </article>
@@ -390,7 +462,7 @@ function checkPageExistsAndRedirect(event) {
   
   <div class="footer-item">
     <p class="sphinx-version">
-Created using <a href="http://sphinx-doc.org/">Sphinx</a> 5.0.1.<br>
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 5.0.2.<br>
 </p>
   </div>
   
