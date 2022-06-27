@@ -42,7 +42,7 @@ from .inducing_variables import (
 )
 from .kernels import Kernel
 from .mean_functions import MeanFunction
-from .utilities import Dispatcher, add_noise_cov
+from .utilities import Dispatcher, add_noise_cov, assert_params_false
 from .utilities.ops import eye, leading_transpose
 
 
@@ -318,6 +318,8 @@ class GPRPosterior(AbstractPosterior):
         Computes predictive mean and (co)variance at Xnew, *excluding* mean_function.
         Relies on cached alpha and Qinv.
         """
+        assert_params_false(self._conditional_with_precompute, full_output_cov=full_output_cov)
+
         (alpha,) = cache
         (Qinv,) = cache
 
@@ -388,6 +390,7 @@ class GPRPosterior(AbstractPosterior):
         Computes predictive mean and (co)variance at Xnew, *excluding* mean_function
         Does not make use of caching
         """
+        assert_params_false(self._conditional_fused, full_output_cov=full_output_cov)
 
         # taken directly from the deprecated GPR implementation
         assert self.mean_function is not None
@@ -471,6 +474,8 @@ class SGPRPosterior(AbstractPosterior):
         Computes predictive mean and (co)variance at Xnew, *excluding* mean_function.
         Relies on cached alpha and Qinv.
         """
+        assert_params_false(self._conditional_with_precompute, full_output_cov=full_output_cov)
+
         alpha, Qinv = cache
 
         Kus = Kuf(self.inducing_variable, self.kernel, Xnew)
@@ -496,6 +501,7 @@ class SGPRPosterior(AbstractPosterior):
         Compute the mean and variance of the latent function at some new points
         Xnew. Does not make use of caching
         """
+        assert_params_false(self._conditional_fused, full_output_cov=full_output_cov)
 
         # taken directly from the deprecated SGPR implementation
         num_inducing = self.inducing_variable.num_inducing
@@ -561,6 +567,8 @@ class VGPPosterior(AbstractPosterior):
         full_cov: bool = False,
         full_output_cov: bool = False,
     ) -> MeanAndVariance:
+        assert_params_false(self._conditional_with_precompute, full_output_cov=full_output_cov)
+
         (Lm,) = cache
         Kmn = self.kernel(self.X_data, Xnew)  # [M, ..., N]
         Knn = self.kernel(

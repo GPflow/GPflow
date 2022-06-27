@@ -25,7 +25,7 @@ from ..covariances.dispatch import Kuf, Kuu
 from ..inducing_variables import InducingPoints
 from ..kernels import Kernel
 from ..mean_functions import MeanFunction
-from ..utilities import add_noise_cov, to_default_float
+from ..utilities import add_noise_cov, assert_params_false, to_default_float
 from .model import GPModel
 from .training_mixins import InternalDataTrainingLossMixin
 from .util import InducingPointsLike, data_input_to_tensor, inducingpoint_wrapper
@@ -235,13 +235,15 @@ class SGPR_deprecated(SGPRBase_deprecated):
     def predict_f(
         self, Xnew: InputData, full_cov: bool = False, full_output_cov: bool = False
     ) -> MeanAndVariance:
-
-        # could copy into posterior into a fused version
         """
         Compute the mean and variance of the latent function at some new points
         Xnew. For a derivation of the terms in here, see the associated SGPR
         notebook.
         """
+        # could copy into posterior into a fused version
+
+        assert_params_false(self.predict_f, full_output_cov=full_output_cov)
+
         X_data, Y_data = self.data
         num_inducing = self.inducing_variable.num_inducing
         err = Y_data - self.mean_function(X_data)
@@ -409,6 +411,8 @@ class GPRFITC(SGPRBase_deprecated):
         Compute the mean and variance of the latent function at some new points
         Xnew.
         """
+        assert_params_false(self.predict_f, full_output_cov=full_output_cov)
+
         _, _, Luu, L, _, _, gamma = self.common_terms()
         Kus = Kuf(self.inducing_variable, self.kernel, Xnew)  # [M, N]
 
