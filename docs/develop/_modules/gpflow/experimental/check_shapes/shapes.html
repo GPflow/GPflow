@@ -270,9 +270,8 @@ function checkPageExistsAndRedirect(event) {
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">Code for extracting shapes from object.</span>
 <span class="sd">&quot;&quot;&quot;</span>
-<span class="kn">import</span> <span class="nn">collections.abc</span> <span class="k">as</span> <span class="nn">cabc</span>
-<span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">singledispatch</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">import</span> <span class="nn">inspect</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Type</span><span class="p">,</span> <span class="n">Union</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">tensorflow</span> <span class="k">as</span> <span class="nn">tf</span>
@@ -287,30 +286,67 @@ function checkPageExistsAndRedirect(event) {
     <span class="kn">from</span> <span class="nn">...base</span> <span class="kn">import</span> <span class="n">AnyNDArray</span>
 <span class="k">else</span><span class="p">:</span>
     <span class="n">AnyNDArray</span> <span class="o">=</span> <span class="n">Any</span>
+<span class="n">GetShape</span> <span class="o">=</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">,</span> <span class="n">ErrorContext</span><span class="p">],</span> <span class="n">Shape</span><span class="p">]</span>
 
 
-<div class="viewcode-block" id="get_shape"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/index.html#gpflow.experimental.check_shapes.get_shape">[docs]</a><span class="nd">@singledispatch</span>
-<span class="k">def</span> <span class="nf">get_shape</span><span class="p">(</span><span class="n">shaped</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="n">ErrorContext</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Shape</span><span class="p">:</span>
+<span class="n">_GET_SHAPES</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">Type</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span> <span class="n">GetShape</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+
+
+<div class="viewcode-block" id="register_get_shape"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/index.html#gpflow.experimental.check_shapes.register_get_shape">[docs]</a><span class="k">def</span> <span class="nf">register_get_shape</span><span class="p">(</span><span class="n">shape_type</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">GetShape</span><span class="p">],</span> <span class="n">GetShape</span><span class="p">]:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Register a function for extracting the shape from a given type of objects.</span>
+
+<span class="sd">    Example:</span>
+
+<span class="sd">    .. literalinclude:: /examples/test_check_shapes_examples.py</span>
+<span class="sd">       :start-after: [custom_type]</span>
+<span class="sd">       :end-before: [custom_type]</span>
+<span class="sd">       :dedent:</span>
+
+<span class="sd">    See also :func:`get_shape`.</span>
+
+<span class="sd">    :param shape_type: Type of objects to extract shapes from.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Yes, what&#39;s happening here looks extremely much like `functools.singledispatch`;</span>
+    <span class="c1"># however we cannot actually use `functools.singledispatch`, because it uses a for/else</span>
+    <span class="c1"># statement, which TensorFlow doesn&#39;t know how to compile...</span>
+
+    <span class="k">def</span> <span class="nf">_register</span><span class="p">(</span><span class="n">getter</span><span class="p">:</span> <span class="n">GetShape</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">GetShape</span><span class="p">:</span>
+        <span class="n">_GET_SHAPES</span><span class="p">[</span><span class="n">shape_type</span><span class="p">]</span> <span class="o">=</span> <span class="n">getter</span>
+        <span class="k">return</span> <span class="n">getter</span>
+
+    <span class="k">return</span> <span class="n">_register</span></div>
+
+
+<div class="viewcode-block" id="get_shape"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/index.html#gpflow.experimental.check_shapes.get_shape">[docs]</a><span class="k">def</span> <span class="nf">get_shape</span><span class="p">(</span><span class="n">shaped</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="n">ErrorContext</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Shape</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Returns the shape of the given object.</span>
+
+<span class="sd">    See also :func:`register_get_shape`.</span>
 
 <span class="sd">    :param shaped: The objects whose shape to extract.</span>
 <span class="sd">    :param context: Context we are getting the shape in, for improved error messages.</span>
 <span class="sd">    :returns: The shape of ``shaped``, or ``None`` if the shape exists, but is unknown.</span>
 <span class="sd">    :raises NoShapeError: If objects of this type does not have shapes.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">inspect</span><span class="o">.</span><span class="n">getmro</span><span class="p">(</span><span class="n">shaped</span><span class="o">.</span><span class="vm">__class__</span><span class="p">):</span>
+        <span class="n">getter</span> <span class="o">=</span> <span class="n">_GET_SHAPES</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">getter</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">getter</span><span class="p">(</span><span class="n">shaped</span><span class="p">,</span> <span class="n">context</span><span class="p">)</span>
+
     <span class="k">raise</span> <span class="n">NoShapeError</span><span class="p">(</span><span class="n">StackContext</span><span class="p">(</span><span class="n">context</span><span class="p">,</span> <span class="n">ObjectTypeContext</span><span class="p">(</span><span class="n">shaped</span><span class="p">)))</span></div>
 
 
-<div class="viewcode-block" id="get_scalar_shape"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/shapes/index.html#gpflow.experimental.check_shapes.get_scalar_shape">[docs]</a><span class="nd">@get_shape</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="nb">bool</span><span class="p">)</span>
-<span class="nd">@get_shape</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
-<span class="nd">@get_shape</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
-<span class="nd">@get_shape</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
+<div class="viewcode-block" id="get_scalar_shape"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/shapes/index.html#gpflow.experimental.check_shapes.get_scalar_shape">[docs]</a><span class="nd">@register_get_shape</span><span class="p">(</span><span class="nb">bool</span><span class="p">)</span>
+<span class="nd">@register_get_shape</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+<span class="nd">@register_get_shape</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
+<span class="nd">@register_get_shape</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">get_scalar_shape</span><span class="p">(</span><span class="n">shaped</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="n">ErrorContext</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Shape</span><span class="p">:</span>
     <span class="k">return</span> <span class="p">()</span></div>
 
 
-<div class="viewcode-block" id="get_sequence_shape"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/shapes/index.html#gpflow.experimental.check_shapes.get_sequence_shape">[docs]</a><span class="nd">@get_shape</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">cabc</span><span class="o">.</span><span class="n">Sequence</span><span class="p">)</span>
+<div class="viewcode-block" id="get_sequence_shape"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/shapes/index.html#gpflow.experimental.check_shapes.get_sequence_shape">[docs]</a><span class="nd">@register_get_shape</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>
+<span class="nd">@register_get_shape</span><span class="p">(</span><span class="nb">tuple</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">get_sequence_shape</span><span class="p">(</span><span class="n">shaped</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span> <span class="n">context</span><span class="p">:</span> <span class="n">ErrorContext</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Shape</span><span class="p">:</span>
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">shaped</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
         <span class="c1"># If the sequence doesn&#39;t have any elements we cannot use the first element to determine the</span>
@@ -322,15 +358,15 @@ function checkPageExistsAndRedirect(event) {
     <span class="k">return</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">shaped</span><span class="p">),)</span> <span class="o">+</span> <span class="n">child_shape</span></div>
 
 
-<div class="viewcode-block" id="get_ndarray_shape"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/shapes/index.html#gpflow.experimental.check_shapes.get_ndarray_shape">[docs]</a><span class="nd">@get_shape</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span>
+<div class="viewcode-block" id="get_ndarray_shape"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/shapes/index.html#gpflow.experimental.check_shapes.get_ndarray_shape">[docs]</a><span class="nd">@register_get_shape</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">get_ndarray_shape</span><span class="p">(</span><span class="n">shaped</span><span class="p">:</span> <span class="n">AnyNDArray</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="n">ErrorContext</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Shape</span><span class="p">:</span>
     <span class="n">result</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="n">shaped</span><span class="o">.</span><span class="n">shape</span>
     <span class="k">return</span> <span class="n">result</span></div>
 
 
-<div class="viewcode-block" id="get_tensorflow_shape"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/shapes/index.html#gpflow.experimental.check_shapes.get_tensorflow_shape">[docs]</a><span class="nd">@get_shape</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span>
-<span class="nd">@get_shape</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">Variable</span><span class="p">)</span>
-<span class="nd">@get_shape</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">tfp</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">DeferredTensor</span><span class="p">)</span>
+<div class="viewcode-block" id="get_tensorflow_shape"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/shapes/index.html#gpflow.experimental.check_shapes.get_tensorflow_shape">[docs]</a><span class="nd">@register_get_shape</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span>
+<span class="nd">@register_get_shape</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">Variable</span><span class="p">)</span>
+<span class="nd">@register_get_shape</span><span class="p">(</span><span class="n">tfp</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">DeferredTensor</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">get_tensorflow_shape</span><span class="p">(</span>
     <span class="n">shaped</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">Variable</span><span class="p">,</span> <span class="n">tfp</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">DeferredTensor</span><span class="p">],</span> <span class="n">context</span><span class="p">:</span> <span class="n">ErrorContext</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Shape</span><span class="p">:</span>

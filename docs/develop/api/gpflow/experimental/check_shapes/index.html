@@ -742,6 +742,11 @@ function checkPageExistsAndRedirect(event) {
     </a>
    </li>
    <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#gpflow-experimental-check-shapes-register-get-shape">
+     gpflow.experimental.check_shapes.register_get_shape
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
     <a class="reference internal nav-link" href="#gpflow-experimental-check-shapes-set-enable-check-shapes">
      gpflow.experimental.check_shapes.set_enable_check_shapes
     </a>
@@ -1438,16 +1443,17 @@ inherited from a super class.</p>
 <p>This library has built-in support for checking the shapes of:</p>
 <ul class="simple">
 <li><p>Python built-in scalars: <code class="docutils literal notranslate"><span class="pre">bool</span></code>, <code class="docutils literal notranslate"><span class="pre">int</span></code>, <code class="docutils literal notranslate"><span class="pre">float</span></code> and <code class="docutils literal notranslate"><span class="pre">str</span></code>.</p></li>
-<li><p>Python sequences: <code class="xref py py-class docutils literal notranslate"><span class="pre">collections.abc.Sequences</span></code>, including <code class="docutils literal notranslate"><span class="pre">tuple</span></code> and <code class="docutils literal notranslate"><span class="pre">list</span></code>.</p></li>
+<li><p>Python built-in sequences: <code class="docutils literal notranslate"><span class="pre">tuple</span></code> and <code class="docutils literal notranslate"><span class="pre">list</span></code>.</p></li>
 <li><p>NumPy <code class="docutils literal notranslate"><span class="pre">ndarray</span></code>s.</p></li>
 <li><p>TensorFlow <code class="docutils literal notranslate"><span class="pre">Tensor</span></code>s and <code class="docutils literal notranslate"><span class="pre">Variable</span></code>s.</p></li>
-<li><p>TensorFlow Probability <code class="docutils literal notranslate"><span class="pre">DeferredTensor</span></code>s.</p></li>
+<li><p>TensorFlow Probability <code class="docutils literal notranslate"><span class="pre">DeferredTensor</span></code>s, including <code class="docutils literal notranslate"><span class="pre">TransformedVariable</span></code> and
+<a class="reference internal" href="../../index.html#gpflow.Parameter" title="gpflow.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">gpflow.Parameter</span></code></a>.</p></li>
 </ul>
 <section id="shapes-of-custom-types">
 <h3>Shapes of custom types<a class="headerlink" href="#shapes-of-custom-types" title="Permalink to this heading">#</a></h3>
 <p><code class="xref py py-mod docutils literal notranslate"><span class="pre">check_shapes</span></code> uses the function <a class="reference internal" href="#gpflow.experimental.check_shapes.get_shape" title="gpflow.experimental.check_shapes.get_shape"><code class="xref py py-func docutils literal notranslate"><span class="pre">get_shape()</span></code></a> to extract the shape of an object.
-<a class="reference internal" href="#gpflow.experimental.check_shapes.get_shape" title="gpflow.experimental.check_shapes.get_shape"><code class="xref py py-func docutils literal notranslate"><span class="pre">get_shape()</span></code></a> uses <code class="xref py py-func docutils literal notranslate"><span class="pre">functools.singledispatch()</span></code> to branch on the type of object to get the
-shape from, and you can extend this to extract shapes for you own custom types:</p>
+You can use <a class="reference internal" href="#gpflow.experimental.check_shapes.register_get_shape" title="gpflow.experimental.check_shapes.register_get_shape"><code class="xref py py-func docutils literal notranslate"><span class="pre">register_get_shape()</span></code></a> to extend <a class="reference internal" href="#gpflow.experimental.check_shapes.get_shape" title="gpflow.experimental.check_shapes.get_shape"><code class="xref py py-func docutils literal notranslate"><span class="pre">get_shape()</span></code></a> to extract shapes for you own
+custom types:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">LinearModel</span><span class="p">:</span>
     <span class="nd">@check_shapes</span><span class="p">(</span>
         <span class="s2">&quot;weights: [n_features]&quot;</span><span class="p">,</span>
@@ -1464,7 +1470,7 @@ shape from, and you can extend this to extract shapes for you own custom types:<
         <span class="n">prediction</span><span class="p">:</span> <span class="n">AnyNDArray</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;...i,i -&gt; ...&quot;</span><span class="p">,</span> <span class="n">features</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_weights</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">prediction</span>
 
-<span class="nd">@get_shape</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">LinearModel</span><span class="p">)</span>
+<span class="nd">@register_get_shape</span><span class="p">(</span><span class="n">LinearModel</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">get_linear_model_shape</span><span class="p">(</span><span class="n">model</span><span class="p">:</span> <span class="n">LinearModel</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="n">ErrorContext</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Shape</span><span class="p">:</span>
     <span class="n">shape</span><span class="p">:</span> <span class="n">Shape</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">_weights</span><span class="o">.</span><span class="n">shape</span>
     <span class="k">return</span> <span class="n">shape</span>
@@ -1831,27 +1837,8 @@ messages.</p></li>
 <dl class="py function">
 <dt class="sig sig-object py" id="gpflow.experimental.check_shapes.get_shape">
 <span class="sig-prename descclassname"><span class="pre">gpflow.experimental.check_shapes.</span></span><span class="sig-name descname"><span class="pre">get_shape</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shaped</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">context</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/gpflow/experimental/check_shapes/shapes.html#get_shape"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.experimental.check_shapes.get_shape" title="Permalink to this definition">#</a></dt>
-<dt class="sig sig-object py">
-<span class="sig-prename descclassname"><span class="pre">gpflow.experimental.check_shapes.</span></span><span class="sig-name descname"><span class="pre">get_shape</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shaped</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">context</span></span></em><span class="sig-paren">)</span></dt>
-<dt class="sig sig-object py">
-<span class="sig-prename descclassname"><span class="pre">gpflow.experimental.check_shapes.</span></span><span class="sig-name descname"><span class="pre">get_shape</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shaped</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">context</span></span></em><span class="sig-paren">)</span></dt>
-<dt class="sig sig-object py">
-<span class="sig-prename descclassname"><span class="pre">gpflow.experimental.check_shapes.</span></span><span class="sig-name descname"><span class="pre">get_shape</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shaped</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">context</span></span></em><span class="sig-paren">)</span></dt>
-<dt class="sig sig-object py">
-<span class="sig-prename descclassname"><span class="pre">gpflow.experimental.check_shapes.</span></span><span class="sig-name descname"><span class="pre">get_shape</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shaped</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">context</span></span></em><span class="sig-paren">)</span></dt>
-<dt class="sig sig-object py">
-<span class="sig-prename descclassname"><span class="pre">gpflow.experimental.check_shapes.</span></span><span class="sig-name descname"><span class="pre">get_shape</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shaped</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">context</span></span></em><span class="sig-paren">)</span></dt>
-<dt class="sig sig-object py">
-<span class="sig-prename descclassname"><span class="pre">gpflow.experimental.check_shapes.</span></span><span class="sig-name descname"><span class="pre">get_shape</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shaped</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">context</span></span></em><span class="sig-paren">)</span></dt>
-<dt class="sig sig-object py">
-<span class="sig-prename descclassname"><span class="pre">gpflow.experimental.check_shapes.</span></span><span class="sig-name descname"><span class="pre">get_shape</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shaped</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">context</span></span></em><span class="sig-paren">)</span></dt>
-<dt class="sig sig-object py">
-<span class="sig-prename descclassname"><span class="pre">gpflow.experimental.check_shapes.</span></span><span class="sig-name descname"><span class="pre">get_shape</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shaped</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">context</span></span></em><span class="sig-paren">)</span></dt>
-<dt class="sig sig-object py">
-<span class="sig-prename descclassname"><span class="pre">gpflow.experimental.check_shapes.</span></span><span class="sig-name descname"><span class="pre">get_shape</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shaped</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">context</span></span></em><span class="sig-paren">)</span></dt>
-<dt class="sig sig-object py">
-<span class="sig-prename descclassname"><span class="pre">gpflow.experimental.check_shapes.</span></span><span class="sig-name descname"><span class="pre">get_shape</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shaped</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">context</span></span></em><span class="sig-paren">)</span></dt>
 <dd><p>Returns the shape of the given object.</p>
+<p>See also <a class="reference internal" href="#gpflow.experimental.check_shapes.register_get_shape" title="gpflow.experimental.check_shapes.register_get_shape"><code class="xref py py-func docutils literal notranslate"><span class="pre">register_get_shape()</span></code></a>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -1925,6 +1912,57 @@ super-class.</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">TypeVar</span></code>(<code class="docutils literal notranslate"><span class="pre">C</span></code>, bound= <code class="xref py py-data docutils literal notranslate"><span class="pre">Callable</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">...</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>])</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="gpflow-experimental-check-shapes-register-get-shape">
+<h3>gpflow.experimental.check_shapes.register_get_shape<a class="headerlink" href="#gpflow-experimental-check-shapes-register-get-shape" title="Permalink to this heading">#</a></h3>
+<dl class="py function">
+<dt class="sig sig-object py" id="gpflow.experimental.check_shapes.register_get_shape">
+<span class="sig-prename descclassname"><span class="pre">gpflow.experimental.check_shapes.</span></span><span class="sig-name descname"><span class="pre">register_get_shape</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shape_type</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/gpflow/experimental/check_shapes/shapes.html#register_get_shape"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.experimental.check_shapes.register_get_shape" title="Permalink to this definition">#</a></dt>
+<dd><p>Register a function for extracting the shape from a given type of objects.</p>
+<p>Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">LinearModel</span><span class="p">:</span>
+    <span class="nd">@check_shapes</span><span class="p">(</span>
+        <span class="s2">&quot;weights: [n_features]&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">AnyNDArray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_weights</span> <span class="o">=</span> <span class="n">weights</span>
+
+    <span class="nd">@check_shapes</span><span class="p">(</span>
+        <span class="s2">&quot;self: [n_features]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;features: [batch..., n_features]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return: [batch...]&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">def</span> <span class="nf">predict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">features</span><span class="p">:</span> <span class="n">AnyNDArray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AnyNDArray</span><span class="p">:</span>
+        <span class="n">prediction</span><span class="p">:</span> <span class="n">AnyNDArray</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;...i,i -&gt; ...&quot;</span><span class="p">,</span> <span class="n">features</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_weights</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">prediction</span>
+
+<span class="nd">@register_get_shape</span><span class="p">(</span><span class="n">LinearModel</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">get_linear_model_shape</span><span class="p">(</span><span class="n">model</span><span class="p">:</span> <span class="n">LinearModel</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="n">ErrorContext</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Shape</span><span class="p">:</span>
+    <span class="n">shape</span><span class="p">:</span> <span class="n">Shape</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">_weights</span><span class="o">.</span><span class="n">shape</span>
+    <span class="k">return</span> <span class="n">shape</span>
+
+<span class="nd">@check_shapes</span><span class="p">(</span>
+    <span class="s2">&quot;model: [n_features]&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;test_features: [n_rows, n_features]&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;test_labels: [n_rows]&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;return: []&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="k">def</span> <span class="nf">loss</span><span class="p">(</span><span class="n">model</span><span class="p">:</span> <span class="n">LinearModel</span><span class="p">,</span> <span class="n">test_features</span><span class="p">:</span> <span class="n">AnyNDArray</span><span class="p">,</span> <span class="n">test_labels</span><span class="p">:</span> <span class="n">AnyNDArray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+    <span class="n">prediction</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">test_features</span><span class="p">)</span>
+    <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">((</span><span class="n">prediction</span> <span class="o">-</span> <span class="n">test_labels</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">))))</span>
+</pre></div>
+</div>
+<p>See also <a class="reference internal" href="#gpflow.experimental.check_shapes.get_shape" title="gpflow.experimental.check_shapes.get_shape"><code class="xref py py-func docutils literal notranslate"><span class="pre">get_shape()</span></code></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>shape_type</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Type</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>]) – Type of objects to extract shapes from.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="xref py py-data docutils literal notranslate"><span class="pre">Callable</span></code>[[<code class="xref py py-data docutils literal notranslate"><span class="pre">Callable</span></code>[[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <a class="reference internal" href="#gpflow.experimental.check_shapes.ErrorContext" title="gpflow.experimental.check_shapes.error_contexts.ErrorContext"><code class="xref py py-class docutils literal notranslate"><span class="pre">ErrorContext</span></code></a>], <code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>], <code class="xref py py-data docutils literal notranslate"><span class="pre">...</span></code>]]]], <code class="xref py py-data docutils literal notranslate"><span class="pre">Callable</span></code>[[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <a class="reference internal" href="#gpflow.experimental.check_shapes.ErrorContext" title="gpflow.experimental.check_shapes.error_contexts.ErrorContext"><code class="xref py py-class docutils literal notranslate"><span class="pre">ErrorContext</span></code></a>], <code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>], <code class="xref py py-data docutils literal notranslate"><span class="pre">...</span></code>]]]]</p>
 </dd>
 </dl>
 </dd></dl>
