@@ -16,7 +16,7 @@
 # pylint: disable=no-member  # PyLint struggles with TensorFlow.
 
 from time import perf_counter
-from typing import Any, Callable
+from typing import Any, Callable, Optional
 
 import numpy as np
 import pytest
@@ -115,50 +115,100 @@ def test_check_shapes__tensorflow__keras() -> None:
     test_layer(SubLayer())
 
 
-_F = Callable[[tf.Tensor], tf.Tensor]
+_Err = Callable[[tf.Tensor, tf.Tensor], tf.Tensor]
 _Loss = Callable[[], tf.Tensor]
+
+_ID_WRAPPER = lambda x: x
+_TF_FUNCTION = tf.function
+_SHAPED_TF_FUNCTION_ERR = tf.function(
+    input_signature=[
+        tf.TensorSpec(shape=[None], dtype=tf.float64),
+        tf.TensorSpec(shape=[], dtype=tf.float64),
+    ]
+)
+
+_SHAPED_TF_FUNCTION_LOSS = tf.function(input_signature=[])
+_UNSHAPED_TF_FUNCTION_ERR = tf.function(
+    input_signature=[
+        tf.TensorSpec(shape=None, dtype=tf.float64),
+        tf.TensorSpec(shape=None, dtype=tf.float64),
+    ]
+)
+_UNSHAPED_TF_FUNCTION_LOSS = tf.function(input_signature=[])
+_RELAXED_TF_FUNCTION = tf.function(experimental_relax_shapes=True)
+
+_NONE_SHAPE = None
+_TARGET_SHAPE = tf.TensorShape([])
+_V_SHAPE = tf.TensorShape([50])
+_UNKNOWN_SHAPE = tf.TensorShape(None)
 
 
 @pytest.mark.parametrize(
-    "f_wrapper,loss_wrapper",
+    "err_wrapper,loss_wrapper",
     [
-        (
-            lambda x: x,
-            lambda x: x,
-        ),
-        (
-            tf.function,
-            tf.function,
-        ),
-        (
-            tf.function(input_signature=[tf.TensorSpec(shape=[None], dtype=tf.float64)]),
-            tf.function(input_signature=[]),
-        ),
-        (
-            tf.function(input_signature=[tf.TensorSpec(shape=None, dtype=tf.float64)]),
-            tf.function(input_signature=[]),
-        ),
-        (
-            # See: https://github.com/tensorflow/tensorflow/issues/56414
-            tf.function(experimental_relax_shapes=Version(tf.__version__) < Version("2.9.0")),
-            tf.function(experimental_relax_shapes=True),
-        ),
+        (_ID_WRAPPER, _ID_WRAPPER),
+        (_TF_FUNCTION, _TF_FUNCTION),
+        (_SHAPED_TF_FUNCTION_ERR, _SHAPED_TF_FUNCTION_LOSS),
+        (_UNSHAPED_TF_FUNCTION_ERR, _UNSHAPED_TF_FUNCTION_LOSS),
+        (_RELAXED_TF_FUNCTION, _RELAXED_TF_FUNCTION),
     ],
 )
+@pytest.mark.parametrize("target_shape", [_NONE_SHAPE, _TARGET_SHAPE, _UNKNOWN_SHAPE])
+@pytest.mark.parametrize("v_shape", [_NONE_SHAPE, _V_SHAPE, _UNKNOWN_SHAPE])
 def test_check_shapes__tensorflow_compilation(
-    f_wrapper: Callable[[_F], _F], loss_wrapper: Callable[[_Loss], _Loss]
+    err_wrapper: Callable[[_Err], _Err],
+    loss_wrapper: Callable[[_Loss], _Loss],
+    target_shape: Optional[tf.TensorShape],
+    v_shape: Optional[tf.TensorShape],
 ) -> None:
-    target = 0.5
+    # Yeah, this test seems to be pushing the limits of TensorFlow compilation (which is probably
+    # good), but a bunch of this is fragile.
+    tf_version = Version(tf.__version__)
 
-    @f_wrapper
-    @check_shapes(
-        "x: [n]",
-        "return: [n]",
-    )
-    def f(x: tf.Tensor) -> tf.Tensor:
-        return (x - target) ** 2
+    if (target_shape is _UNKNOWN_SHAPE) or (v_shape is _UNKNOWN_SHAPE):
+        if (err_wrapper is _TF_FUNCTION) or (err_wrapper is _RELAXED_TF_FUNCTION):
+            if Version("2.7.0") <= tf_version < Version("2.8.0"):
+                pytest.skip("TensorFlow 2.7.* segfaults when trying to compile this.")
+            if Version("2.8.0") <= tf_version < Version("2.9.0"):
+                pytest.skip("TensorFlow 2.8.* is missing a TraceType(?) when trying compile this.")
 
-    v = tf.Variable(np.linspace(0.0, 1.0))
+    # See: https://github.com/tensorflow/tensorflow/issues/56414
+    if err_wrapper is _RELAXED_TF_FUNCTION:
+        if Version("2.9.0") <= tf_version < Version("2.10.0"):
+            err_wrapper = _TF_FUNCTION
+
+    if Version(tf.__version__) < Version("2.5.0"):
+        # TensorFlow <= 2.4.0 doesn't like the optional `z` argument:
+
+        class SqErr:
+            @check_shapes(
+                "x: [broadcast n...]",
+                "y: [broadcast n...]",
+                "return: [n...]",
+            )
+            def __call__(self, x: tf.Tensor, y: tf.Tensor) -> tf.Tensor:
+                return (x - y) ** 2
+
+    else:
+
+        class SqErr:  # type: ignore[no-redef]
+            @check_shapes(
+                "x: [broadcast n...]",
+                "y: [broadcast n...]",
+                "z: [broadcast n...]",
+                "return: [n...]",
+            )
+            def __call__(
+                self, x: tf.Tensor, y: tf.Tensor, z: Optional[tf.Tensor] = None
+            ) -> tf.Tensor:
+                # z only declared to test the case of `None` arguments.
+                return (x - y) ** 2
+
+    sq_err = err_wrapper(SqErr())
+
+    dtype = np.float64
+    target = tf.Variable(0.5, dtype=dtype, shape=target_shape)
+    v = tf.Variable(np.linspace(0.0, 1.0), dtype=dtype, shape=v_shape)
 
     @loss_wrapper
     @check_shapes(
@@ -166,7 +216,7 @@ def test_check_shapes__tensorflow_compilation(
     )
     def loss() -> tf.Tensor:
         # keepdims is just to add an extra dimension to make the check more interesting.
-        return tf.reduce_sum(f(v), keepdims=True)
+        return tf.reduce_sum(sq_err(v, target), keepdims=True)
 
     optimiser = tf.keras.optimizers.SGD(learning_rate=0.25)
     for _ in range(10):

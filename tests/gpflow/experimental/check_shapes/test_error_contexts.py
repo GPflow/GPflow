@@ -54,9 +54,9 @@ def to_str(context: ErrorContext) -> str:
 
 def check_eq(context: ErrorContext) -> None:
     # Sanity checking of __eq__ and __hash__
-    assert context == context
+    assert context == context  # pylint: disable=comparison-with-itself
     assert context != TestContext()
-    assert context != None
+    assert context != None  # pylint: disable=singleton-comparison
     assert context in {context}
 
 

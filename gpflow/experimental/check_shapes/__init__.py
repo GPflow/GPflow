@@ -450,18 +450,19 @@ Supported types
 This library has built-in support for checking the shapes of:
 
 * Python built-in scalars: ``bool``, ``int``, ``float`` and ``str``.
-* Python sequences: :class:`collections.abc.Sequences`, including ``tuple`` and ``list``.
+* Python built-in sequences: ``tuple`` and ``list``.
 * NumPy ``ndarray``\ s.
 * TensorFlow ``Tensor``\ s and ``Variable``\ s.
-* TensorFlow Probability ``DeferredTensor``\ s.
+* TensorFlow Probability ``DeferredTensor``\ s, including ``TransformedVariable`` and
+  :class:`gpflow.Parameter`.
 
 
 Shapes of custom types
 ----------------------
 
 :mod:`check_shapes` uses the function :func:`get_shape` to extract the shape of an object.
-:func:`get_shape` uses :func:`functools.singledispatch` to branch on the type of object to get the
-shape from, and you can extend this to extract shapes for you own custom types:
+You can use :func:`register_get_shape` to extend :func:`get_shape` to extract shapes for you own
+custom types:
 
 .. literalinclude:: /examples/test_check_shapes_examples.py
    :start-after: [custom_type]
@@ -487,7 +488,7 @@ from .config import (
 from .decorator import check_shapes
 from .error_contexts import ErrorContext
 from .inheritance import inherit_check_shapes
-from .shapes import get_shape
+from .shapes import get_shape, register_get_shape
 
 __all__ = [
     "Dimension",
@@ -518,6 +519,7 @@ __all__ = [
     "inherit_check_shapes",
     "inheritance",
     "parser",
+    "register_get_shape",
     "set_enable_check_shapes",
     "set_enable_function_call_precompute",
     "set_rewrite_docstrings",

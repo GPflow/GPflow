@@ -40,6 +40,8 @@ This release contains contributions from:
 ## Breaking Changes
 
 * Change to `InducingVariables` API. `InducingVariables` must now have a `shape` property.
+* `gpflow.experimental.check_shapes.get_shape.register` has been replaced with
+  `gpflow.experimental.check_shapes.register_get_shape`.
 
 ## Known Caveats
 
@@ -51,6 +53,8 @@ This release contains contributions from:
 * `gpflow.experimental.check_shapes`
   - Can now be in three different states - ENABLED, EAGER_MODE_ONLY, and DISABLE.
   - Now support multiple variable-rank dimensions at the same time, e.g. `cov: [n..., n...]`.
+  - Now uses custom function `register_get_shape` instead of `get_shape.register`, for better
+    compatibility with TensorFlow.
 
 ## Bug Fixes and Other Changes
 
