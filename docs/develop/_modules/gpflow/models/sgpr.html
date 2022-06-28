@@ -281,7 +281,7 @@ function checkPageExistsAndRedirect(event) {
 <span class="kn">from</span> <span class="nn">..inducing_variables</span> <span class="kn">import</span> <span class="n">InducingPoints</span>
 <span class="kn">from</span> <span class="nn">..kernels</span> <span class="kn">import</span> <span class="n">Kernel</span>
 <span class="kn">from</span> <span class="nn">..mean_functions</span> <span class="kn">import</span> <span class="n">MeanFunction</span>
-<span class="kn">from</span> <span class="nn">..utilities</span> <span class="kn">import</span> <span class="n">add_noise_cov</span><span class="p">,</span> <span class="n">to_default_float</span>
+<span class="kn">from</span> <span class="nn">..utilities</span> <span class="kn">import</span> <span class="n">add_noise_cov</span><span class="p">,</span> <span class="n">assert_params_false</span><span class="p">,</span> <span class="n">to_default_float</span>
 <span class="kn">from</span> <span class="nn">.model</span> <span class="kn">import</span> <span class="n">GPModel</span>
 <span class="kn">from</span> <span class="nn">.training_mixins</span> <span class="kn">import</span> <span class="n">InternalDataTrainingLossMixin</span>
 <span class="kn">from</span> <span class="nn">.util</span> <span class="kn">import</span> <span class="n">InducingPointsLike</span><span class="p">,</span> <span class="n">data_input_to_tensor</span><span class="p">,</span> <span class="n">inducingpoint_wrapper</span>
@@ -491,13 +491,15 @@ function checkPageExistsAndRedirect(event) {
 <div class="viewcode-block" id="SGPR_deprecated.predict_f"><a class="viewcode-back" href="../../../api/gpflow/models/sgpr/index.html#gpflow.models.SGPR_deprecated.predict_f">[docs]</a>    <span class="k">def</span> <span class="nf">predict_f</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">Xnew</span><span class="p">:</span> <span class="n">InputData</span><span class="p">,</span> <span class="n">full_cov</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">full_output_cov</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MeanAndVariance</span><span class="p">:</span>
-
-        <span class="c1"># could copy into posterior into a fused version</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Compute the mean and variance of the latent function at some new points</span>
 <span class="sd">        Xnew. For a derivation of the terms in here, see the associated SGPR</span>
 <span class="sd">        notebook.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># could copy into posterior into a fused version</span>
+
+        <span class="n">assert_params_false</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">predict_f</span><span class="p">,</span> <span class="n">full_output_cov</span><span class="o">=</span><span class="n">full_output_cov</span><span class="p">)</span>
+
         <span class="n">X_data</span><span class="p">,</span> <span class="n">Y_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span>
         <span class="n">num_inducing</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">inducing_variable</span><span class="o">.</span><span class="n">num_inducing</span>
         <span class="n">err</span> <span class="o">=</span> <span class="n">Y_data</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">mean_function</span><span class="p">(</span><span class="n">X_data</span><span class="p">)</span>
@@ -665,6 +667,8 @@ function checkPageExistsAndRedirect(event) {
 <span class="sd">        Compute the mean and variance of the latent function at some new points</span>
 <span class="sd">        Xnew.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">assert_params_false</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">predict_f</span><span class="p">,</span> <span class="n">full_output_cov</span><span class="o">=</span><span class="n">full_output_cov</span><span class="p">)</span>
+
         <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">Luu</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">gamma</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">common_terms</span><span class="p">()</span>
         <span class="n">Kus</span> <span class="o">=</span> <span class="n">Kuf</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">inducing_variable</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">kernel</span><span class="p">,</span> <span class="n">Xnew</span><span class="p">)</span>  <span class="c1"># [M, N]</span>
 

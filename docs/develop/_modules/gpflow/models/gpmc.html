@@ -280,7 +280,7 @@ function checkPageExistsAndRedirect(event) {
 <span class="kn">from</span> <span class="nn">..kernels</span> <span class="kn">import</span> <span class="n">Kernel</span>
 <span class="kn">from</span> <span class="nn">..likelihoods</span> <span class="kn">import</span> <span class="n">Likelihood</span>
 <span class="kn">from</span> <span class="nn">..mean_functions</span> <span class="kn">import</span> <span class="n">MeanFunction</span>
-<span class="kn">from</span> <span class="nn">..utilities</span> <span class="kn">import</span> <span class="n">to_default_float</span>
+<span class="kn">from</span> <span class="nn">..utilities</span> <span class="kn">import</span> <span class="n">assert_params_false</span><span class="p">,</span> <span class="n">to_default_float</span>
 <span class="kn">from</span> <span class="nn">.model</span> <span class="kn">import</span> <span class="n">GPModel</span>
 <span class="kn">from</span> <span class="nn">.training_mixins</span> <span class="kn">import</span> <span class="n">InternalDataTrainingLossMixin</span>
 <span class="kn">from</span> <span class="nn">.util</span> <span class="kn">import</span> <span class="n">data_input_to_tensor</span>
@@ -363,6 +363,8 @@ function checkPageExistsAndRedirect(event) {
 <span class="sd">        where F* are points on the GP at Xnew, F=LV are points on the GP at X.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">assert_params_false</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">predict_f</span><span class="p">,</span> <span class="n">full_output_cov</span><span class="o">=</span><span class="n">full_output_cov</span><span class="p">)</span>
+
         <span class="n">X_data</span><span class="p">,</span> <span class="n">_Y_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span>
         <span class="n">mu</span><span class="p">,</span> <span class="n">var</span> <span class="o">=</span> <span class="n">conditional</span><span class="p">(</span>
             <span class="n">Xnew</span><span class="p">,</span> <span class="n">X_data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">kernel</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">V</span><span class="p">,</span> <span class="n">full_cov</span><span class="o">=</span><span class="n">full_cov</span><span class="p">,</span> <span class="n">q_sqrt</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">white</span><span class="o">=</span><span class="kc">True</span>

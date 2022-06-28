@@ -281,7 +281,7 @@ function checkPageExistsAndRedirect(event) {
 <span class="kn">from</span> <span class="nn">..kernels</span> <span class="kn">import</span> <span class="n">Kernel</span>
 <span class="kn">from</span> <span class="nn">..mean_functions</span> <span class="kn">import</span> <span class="n">MeanFunction</span><span class="p">,</span> <span class="n">Zero</span>
 <span class="kn">from</span> <span class="nn">..probability_distributions</span> <span class="kn">import</span> <span class="n">DiagonalGaussian</span>
-<span class="kn">from</span> <span class="nn">..utilities</span> <span class="kn">import</span> <span class="n">positive</span><span class="p">,</span> <span class="n">to_default_float</span>
+<span class="kn">from</span> <span class="nn">..utilities</span> <span class="kn">import</span> <span class="n">assert_params_false</span><span class="p">,</span> <span class="n">positive</span><span class="p">,</span> <span class="n">to_default_float</span>
 <span class="kn">from</span> <span class="nn">..utilities.ops</span> <span class="kn">import</span> <span class="n">pca_reduce</span>
 <span class="kn">from</span> <span class="nn">.gpr</span> <span class="kn">import</span> <span class="n">GPR</span>
 <span class="kn">from</span> <span class="nn">.model</span> <span class="kn">import</span> <span class="n">GPModel</span>
@@ -477,8 +477,7 @@ function checkPageExistsAndRedirect(event) {
 
 <span class="sd">        :param Xnew: points at which to predict</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">full_output_cov</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+        <span class="n">assert_params_false</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">predict_f</span><span class="p">,</span> <span class="n">full_output_cov</span><span class="o">=</span><span class="n">full_output_cov</span><span class="p">)</span>
 
         <span class="n">pX</span> <span class="o">=</span> <span class="n">DiagonalGaussian</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">X_data_mean</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">X_data_var</span><span class="p">)</span>
 

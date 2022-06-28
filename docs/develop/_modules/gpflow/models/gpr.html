@@ -279,7 +279,7 @@ function checkPageExistsAndRedirect(event) {
 <span class="kn">from</span> <span class="nn">..kernels</span> <span class="kn">import</span> <span class="n">Kernel</span>
 <span class="kn">from</span> <span class="nn">..logdensities</span> <span class="kn">import</span> <span class="n">multivariate_normal</span>
 <span class="kn">from</span> <span class="nn">..mean_functions</span> <span class="kn">import</span> <span class="n">MeanFunction</span>
-<span class="kn">from</span> <span class="nn">..utilities.model_utils</span> <span class="kn">import</span> <span class="n">add_noise_cov</span>
+<span class="kn">from</span> <span class="nn">..utilities</span> <span class="kn">import</span> <span class="n">add_noise_cov</span><span class="p">,</span> <span class="n">assert_params_false</span>
 <span class="kn">from</span> <span class="nn">.model</span> <span class="kn">import</span> <span class="n">GPModel</span>
 <span class="kn">from</span> <span class="nn">.training_mixins</span> <span class="kn">import</span> <span class="n">InternalDataTrainingLossMixin</span>
 <span class="kn">from</span> <span class="nn">.util</span> <span class="kn">import</span> <span class="n">data_input_to_tensor</span>
@@ -361,6 +361,8 @@ function checkPageExistsAndRedirect(event) {
 <span class="sd">        where F* are points on the GP at new data points, Y are noisy observations at training data</span>
 <span class="sd">        points.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">assert_params_false</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">predict_f</span><span class="p">,</span> <span class="n">full_output_cov</span><span class="o">=</span><span class="n">full_output_cov</span><span class="p">)</span>
+
         <span class="n">X</span><span class="p">,</span> <span class="n">Y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span>
         <span class="n">err</span> <span class="o">=</span> <span class="n">Y</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">mean_function</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
 
