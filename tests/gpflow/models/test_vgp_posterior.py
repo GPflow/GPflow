@@ -34,7 +34,7 @@ def _get_data_for_tests() -> Tuple[AnyNDArray, AnyNDArray, AnyNDArray]:
     "likelihood", [gpflow.likelihoods.Gaussian(), gpflow.likelihoods.Exponential()]
 )
 @pytest.mark.parametrize("full_cov", [True, False])
-@pytest.mark.parametrize("full_output_cov", [True, False])
+@pytest.mark.parametrize("full_output_cov", [False])
 def test_old_vs_new_gp_fused(
     likelihood: gpflow.likelihoods.Likelihood,
     full_cov: bool,
@@ -57,7 +57,7 @@ def test_old_vs_new_gp_fused(
     "likelihood", [gpflow.likelihoods.Gaussian(), gpflow.likelihoods.Exponential()]
 )
 @pytest.mark.parametrize("full_cov", [True, False])
-@pytest.mark.parametrize("full_output_cov", [True, False])
+@pytest.mark.parametrize("full_output_cov", [False])
 def test_old_vs_new_with_posterior(
     cache_type: PrecomputeCacheType,
     likelihood: gpflow.likelihoods.Likelihood,

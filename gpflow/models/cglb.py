@@ -19,7 +19,7 @@ import tensorflow as tf
 from ..base import InputData, MeanAndVariance, Parameter, RegressionData, TensorType
 from ..config import default_float, default_int
 from ..covariances import Kuf
-from ..utilities import add_noise_cov, to_default_float
+from ..utilities import add_noise_cov, assert_params_false, to_default_float
 from .sgpr import SGPR
 
 
@@ -181,6 +181,8 @@ class CGLB(SGPR):
         :param cg_tolerance: float or None: If None, the cached value of
             :math:`v` is used. If float, conjugate gradient is run until :math:`rᵀQ⁻¹r < ϵ`.
         """
+        assert_params_false(self.predict_f, full_output_cov=full_output_cov)
+
         x, y = self.data
         err = y - self.mean_function(x)
         kxx = self.kernel(x, x)
@@ -250,12 +252,7 @@ class CGLB(SGPR):
         Compute the mean and variance of the held-out data at the
         input points.
         """
-        if full_cov or full_output_cov:
-            # See https://github.com/GPflow/GPflow/issues/1461
-            raise NotImplementedError(
-                "The predict_y method currently supports only the argument values full_cov=False"
-                " and full_output_cov=False"
-            )
+        assert_params_false(self.predict_y, full_cov=full_cov, full_output_cov=full_output_cov)
 
         f_mean, f_var = self.predict_f(
             xnew, full_cov=full_cov, full_output_cov=full_output_cov, cg_tolerance=cg_tolerance
@@ -272,11 +269,9 @@ class CGLB(SGPR):
         """
         Compute the log density of the data at the new data points.
         """
-        if full_cov or full_output_cov:
-            raise NotImplementedError(
-                "The predict_log_density method currently supports only the argument values"
-                " full_cov=False and full_output_cov=False"
-            )
+        assert_params_false(
+            self.predict_log_density, full_cov=full_cov, full_output_cov=full_output_cov
+        )
 
         x, y = data
         f_mean, f_var = self.predict_f(

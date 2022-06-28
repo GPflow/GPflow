@@ -24,7 +24,7 @@ from ..config import default_float, default_jitter
 from ..kernels import Kernel
 from ..likelihoods import Likelihood
 from ..mean_functions import MeanFunction
-from ..utilities import to_default_float
+from ..utilities import assert_params_false, to_default_float
 from .model import GPModel
 from .training_mixins import InternalDataTrainingLossMixin
 from .util import data_input_to_tensor
@@ -107,6 +107,8 @@ class GPMC(GPModel, InternalDataTrainingLossMixin):
         where F* are points on the GP at Xnew, F=LV are points on the GP at X.
 
         """
+        assert_params_false(self.predict_f, full_output_cov=full_output_cov)
+
         X_data, _Y_data = self.data
         mu, var = conditional(
             Xnew, X_data, self.kernel, self.V, full_cov=full_cov, q_sqrt=None, white=True

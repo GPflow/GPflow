@@ -25,7 +25,7 @@ from ..inducing_variables import InducingPoints
 from ..kernels import Kernel
 from ..mean_functions import MeanFunction, Zero
 from ..probability_distributions import DiagonalGaussian
-from ..utilities import positive, to_default_float
+from ..utilities import assert_params_false, positive, to_default_float
 from ..utilities.ops import pca_reduce
 from .gpr import GPR
 from .model import GPModel
@@ -221,8 +221,7 @@ class BayesianGPLVM(GPModel, InternalDataTrainingLossMixin):
 
         :param Xnew: points at which to predict
         """
-        if full_output_cov:
-            raise NotImplementedError
+        assert_params_false(self.predict_f, full_output_cov=full_output_cov)
 
         pX = DiagonalGaussian(self.X_data_mean, self.X_data_var)
 

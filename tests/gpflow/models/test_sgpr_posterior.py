@@ -59,7 +59,7 @@ def sgpr_model(dummy_data: Tuple[InputData, InputData, OutputData]) -> SGPR:
 
 
 @pytest.mark.parametrize("full_cov", [True, False])
-@pytest.mark.parametrize("full_output_cov", [True, False])
+@pytest.mark.parametrize("full_output_cov", [False])
 def test_old_vs_new_gp_fused(
     sgpr_deprecated_model: SGPR_deprecated,
     sgpr_model: SGPR,
@@ -84,7 +84,7 @@ def test_old_vs_new_gp_fused(
 # TODO: move to common test_model_utils
 @pytest.mark.parametrize("cache_type", [PrecomputeCacheType.TENSOR, PrecomputeCacheType.VARIABLE])
 @pytest.mark.parametrize("full_cov", [True, False])
-@pytest.mark.parametrize("full_output_cov", [True, False])
+@pytest.mark.parametrize("full_output_cov", [False])
 def test_old_vs_new_with_posterior(
     sgpr_deprecated_model: SGPR_deprecated,
     sgpr_model: SGPR,

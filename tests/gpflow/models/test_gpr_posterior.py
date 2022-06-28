@@ -30,7 +30,7 @@ def _get_data_for_tests() -> Tuple[AnyNDArray, AnyNDArray, AnyNDArray]:
 
 
 @pytest.mark.parametrize("full_cov", [True, False])
-@pytest.mark.parametrize("full_output_cov", [True, False])
+@pytest.mark.parametrize("full_output_cov", [False])
 def test_old_vs_new_gp_fused(full_cov: bool, full_output_cov: bool) -> None:
     X, X_new, Y = _get_data_for_tests()
     mold, mnew = make_models((X, Y))
@@ -46,7 +46,7 @@ def test_old_vs_new_gp_fused(full_cov: bool, full_output_cov: bool) -> None:
 
 @pytest.mark.parametrize("cache_type", [PrecomputeCacheType.TENSOR, PrecomputeCacheType.VARIABLE])
 @pytest.mark.parametrize("full_cov", [True, False])
-@pytest.mark.parametrize("full_output_cov", [True, False])
+@pytest.mark.parametrize("full_output_cov", [False])
 def test_old_vs_new_with_posterior(
     cache_type: PrecomputeCacheType, full_cov: bool, full_output_cov: bool
 ) -> None:

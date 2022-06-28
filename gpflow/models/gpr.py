@@ -23,7 +23,7 @@ from ..base import InputData, MeanAndVariance, RegressionData
 from ..kernels import Kernel
 from ..logdensities import multivariate_normal
 from ..mean_functions import MeanFunction
-from ..utilities.model_utils import add_noise_cov
+from ..utilities import add_noise_cov, assert_params_false
 from .model import GPModel
 from .training_mixins import InternalDataTrainingLossMixin
 from .util import data_input_to_tensor
@@ -105,6 +105,8 @@ class GPR_deprecated(GPModel, InternalDataTrainingLossMixin):
         where F* are points on the GP at new data points, Y are noisy observations at training data
         points.
         """
+        assert_params_false(self.predict_f, full_output_cov=full_output_cov)
+
         X, Y = self.data
         err = Y - self.mean_function(X)
 

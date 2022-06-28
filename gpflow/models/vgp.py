@@ -27,7 +27,7 @@ from ..kernels import Kernel
 from ..kullback_leiblers import gauss_kl
 from ..likelihoods import Likelihood
 from ..mean_functions import MeanFunction
-from ..utilities import is_variable, triangular, triangular_size
+from ..utilities import assert_params_false, is_variable, triangular, triangular_size
 from .model import GPModel
 from .training_mixins import InternalDataTrainingLossMixin
 from .util import data_input_to_tensor
@@ -134,6 +134,8 @@ class VGP_deprecated(GPModel, InternalDataTrainingLossMixin):
     def predict_f(
         self, Xnew: InputData, full_cov: bool = False, full_output_cov: bool = False
     ) -> MeanAndVariance:
+        assert_params_false(self.predict_f, full_output_cov=full_output_cov)
+
         X_data, _Y_data = self.data
         mu, var = conditional(
             Xnew,
@@ -368,8 +370,7 @@ class VGPOpperArchambeau(GPModel, InternalDataTrainingLossMixin):
 
         Note: This model currently does not allow full output covariances
         """
-        if full_output_cov:
-            raise NotImplementedError
+        assert_params_false(self.predict_f, full_output_cov=full_output_cov)
 
         X_data, _ = self.data
         # compute kernel things

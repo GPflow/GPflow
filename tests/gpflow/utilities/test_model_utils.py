@@ -3,7 +3,16 @@ import tensorflow as tf
 
 import gpflow
 from gpflow.base import TensorType
-from gpflow.utilities import add_noise_cov
+from gpflow.utilities import add_noise_cov, assert_params_false
+
+
+def test_assert_params_false__False() -> None:
+    assert_params_false(test_assert_params_false__False, foo=False, bar=False)
+
+
+def test_assert_params_false__True() -> None:
+    with pytest.raises(NotImplementedError):
+        assert_params_false(test_assert_params_false__True, foo=False, bar=True)
 
 
 @pytest.mark.parametrize(
