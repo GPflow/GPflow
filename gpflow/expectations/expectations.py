@@ -116,7 +116,7 @@ def _init_expectation(
     if isinstance(p, tuple):
         mu, cov = p
         classes = [DiagonalGaussian, Gaussian, MarkovGaussian]
-        p = classes[cov.ndim - 2](*p)
+        p = classes[cov.ndim - 2](*p)  # type: ignore[abstract]
 
     obj1, feat1 = obj1 if isinstance(obj1, tuple) else (obj1, None)
     obj2, feat2 = obj2 if isinstance(obj2, tuple) else (obj2, None)

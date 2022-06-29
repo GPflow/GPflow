@@ -9,6 +9,8 @@ from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 
 import gpflow
+from gpflow.experimental.check_shapes import check_shape as cs
+from gpflow.experimental.check_shapes import check_shapes
 from gpflow.models import GPR, GPModel
 from gpflow.monitor import (
     ExecuteCallback,
@@ -34,6 +36,10 @@ class DummyTask(MonitorTask):
 class DummyStepCallback:
     current_step = 0
 
+    @check_shapes(
+        "variables[all]: [...]",
+        "values[all]: [...]",
+    )
     def callback(
         self, step: int, variables: Sequence[tf.Variable], values: Sequence[tf.Tensor]
     ) -> None:
@@ -41,10 +47,11 @@ class DummyStepCallback:
 
 
 @pytest.fixture
+@check_shapes()
 def model() -> GPModel:
     data = (
-        np.random.randn(Data.num_data, 2),  # [N, 2]
-        np.random.randn(Data.num_data, 2),  # [N, 1]
+        cs(np.random.randn(Data.num_data, 2), "[N, 2]"),
+        cs(np.random.randn(Data.num_data, 2), "[N, 2]"),
     )
     kernel = gpflow.kernels.SquaredExponential(lengthscales=[1.0, 2.0])
     return GPR(data, kernel, noise_variance=0.01)
@@ -54,6 +61,9 @@ def model() -> GPModel:
 def monitor(model: GPModel, tmp_path: Path) -> Monitor:
     tmp_path_str = str(tmp_path)
 
+    @check_shapes(
+        "return: []",
+    )
     def lml_callback() -> tf.Tensor:
         return model.log_marginal_likelihood()
 

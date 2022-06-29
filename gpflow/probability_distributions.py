@@ -16,26 +16,64 @@
 # Eventually, it would be nice to not have to have our own classes for
 # probability distributions. The TensorFlow "distributions" framework would
 # be a good replacement.
+from abc import ABC, abstractmethod
+
 from .base import TensorType
+from .experimental.check_shapes import ErrorContext, Shape, check_shapes, register_get_shape
 
 
-class ProbabilityDistribution:
+class ProbabilityDistribution(ABC):
     """
     This is the base class for a probability distributions,
     over which we take the expectations in the expectations framework.
     """
 
+    @property
+    @abstractmethod
+    def shape(self) -> Shape:
+        """
+        Return the shape of this distribution.
+
+        Shape should be some variation of ``[N, D]``, where:
+
+        * ``N`` is the number of data points.
+        * ``D`` is the number of input dimensions.
+        """
+
+
+@register_get_shape(ProbabilityDistribution)
+def get_probability_distribution_shape(
+    shaped: ProbabilityDistribution, context: ErrorContext
+) -> Shape:
+    return shaped.shape
+
 
 class Gaussian(ProbabilityDistribution):
+    @check_shapes(
+        "mu: [N, D]",
+        "cov: [N, D, D]",
+    )
     def __init__(self, mu: TensorType, cov: TensorType):
-        self.mu = mu  # [N, D]
-        self.cov = cov  # [N, D, D]
+        self.mu = mu
+        self.cov = cov
+
+    @property
+    def shape(self) -> Shape:
+        return self.mu.shape  # type: ignore[no-any-return]
 
 
 class DiagonalGaussian(ProbabilityDistribution):
+    @check_shapes(
+        "mu: [N, D]",
+        "cov: [N, D]",
+    )
     def __init__(self, mu: TensorType, cov: TensorType):
-        self.mu = mu  # [N, D]
-        self.cov = cov  # [N, D]
+        self.mu = mu
+        self.cov = cov
+
+    @property
+    def shape(self) -> Shape:
+        return self.mu.shape  # type: ignore[no-any-return]
 
 
 class MarkovGaussian(ProbabilityDistribution):
@@ -48,6 +86,19 @@ class MarkovGaussian(ProbabilityDistribution):
     Cov[x_t, x_{t+1}] = cov[t, :, :] * cov[t+1, :, :]
     """
 
+    @check_shapes(
+        "mu: [N_plus_1, D]",
+        "cov: [2, N_plus_1, D, D]",
+    )
     def __init__(self, mu: TensorType, cov: TensorType):
-        self.mu = mu  # N+[1, D]
-        self.cov = cov  # 2 x (N+1)[, D, D]
+        self.mu = mu
+        self.cov = cov
+
+    @property
+    def shape(self) -> Shape:
+        shape = self.mu.shape
+        if shape is None:
+            return shape
+        N_plus_1, D = shape
+        N = N_plus_1 - 1
+        return N, D

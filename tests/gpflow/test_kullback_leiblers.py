@@ -24,6 +24,7 @@ from numpy.testing import assert_allclose, assert_almost_equal
 import gpflow
 from gpflow import Parameter, default_float, default_jitter
 from gpflow.base import AnyNDArray, TensorType
+from gpflow.experimental.check_shapes import ShapeChecker, check_shapes
 from gpflow.inducing_variables import InducingPoints
 from gpflow.kernels import Kernel
 from gpflow.kullback_leiblers import gauss_kl, prior_kl
@@ -48,11 +49,17 @@ def kernel() -> Kernel:
 
 
 @pytest.fixture(scope="module")
+@check_shapes(
+    "return: [N, 1, 1]",
+)
 def inducing_points() -> InducingPoints:
     return InducingPoints(rng.randn(Nn, 1))
 
 
 @pytest.fixture(scope="module")
+@check_shapes(
+    "return: [N, L]",
+)
 def mu() -> Parameter:
     return Parameter(rng.randn(Nn, Ln))
 
@@ -62,16 +69,28 @@ def mu() -> Parameter:
 # ------------------------------------------
 
 
+@check_shapes(
+    "return: [N, M, M]",
+)
 def make_sqrt(N: int, M: int) -> TensorType:
-    return np.array([np.tril(rng.randn(M, M)) for _ in range(N)])  # [N, M, M]
+    return np.array([np.tril(rng.randn(M, M)) for _ in range(N)])
 
 
+@check_shapes(
+    "return: [N, M, M]",
+)
 def make_K_batch(N: int, M: int) -> TensorType:
     K_np = rng.randn(N, M, M)
     beye: AnyNDArray = np.array([np.eye(M) for _ in range(N)])
     return 0.1 * (K_np + np.transpose(K_np, (0, 2, 1))) + beye
 
 
+@check_shapes(
+    "q_mu: [broadcast batch...]",
+    "q_sigma: [broadcast batch...]",
+    "p_var: [broadcast batch...]",
+    "return: []",
+)
 def compute_kl_1d(q_mu: TensorType, q_sigma: TensorType, p_var: TensorType = 1.0) -> TensorType:
     p_var = tf.ones_like(q_sigma) if p_var is None else p_var
     q_var = tf.square(q_sigma)
@@ -85,16 +104,18 @@ def compute_kl_1d(q_mu: TensorType, q_sigma: TensorType, p_var: TensorType = 1.0
 
 
 class Datum:
+    cs = ShapeChecker().check_shape
+
     M, N = 5, 4
 
-    mu = rng.randn(M, N)  # [M, N]
-    A = rng.randn(M, M)
-    I = np.eye(M)  # [M, M]
-    K: AnyNDArray = A @ A.T + default_jitter() * I  # [M, M]
-    sqrt = make_sqrt(N, M)  # [N, M, M]
-    sqrt_diag = rng.randn(M, N)  # [M, N]
-    K_batch = make_K_batch(N, M)
-    K_cholesky = np.linalg.cholesky(K)
+    mu = cs(rng.randn(M, N), "[M, N]")
+    A = cs(rng.randn(M, M), "[M, M]")
+    I = cs(np.eye(M), "[M, M]")
+    K = cs(A @ A.T + default_jitter() * I, "[M, M]")
+    sqrt = cs(make_sqrt(N, M), "[N, M, M]")
+    sqrt_diag = cs(rng.randn(M, N), "[M, N]")
+    K_batch = cs(make_K_batch(N, M), "[N, M, M]")
+    K_cholesky = cs(np.linalg.cholesky(K), "[M, M]")
 
 
 @pytest.mark.parametrize("diag", [True, False])
@@ -225,7 +246,7 @@ def test_unknown_size_inputs() -> None:
 
 @pytest.mark.parametrize("white", [True, False])
 def test_q_sqrt_constraints(
-    inducing_points: bool, kernel: Kernel, mu: AnyNDArray, white: bool
+    inducing_points: InducingPoints, kernel: Kernel, mu: AnyNDArray, white: bool
 ) -> None:
     """Test that sending in an unconstrained q_sqrt returns the same conditional
     evaluation and gradients. This is important to match the behaviour of the KL, which
