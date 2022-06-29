@@ -92,8 +92,8 @@ class MultioutputKernel(Kernel):
         "return: [P, batch..., N, batch2..., N2] if full_cov and (not full_output_cov) and (X2 is not None)",
         "return: [batch..., N, P, N, P] if full_cov and full_output_cov and (X2 is None)",
         "return: [P, batch..., N, N] if full_cov and (not full_output_cov) and (X2 is None)",
-        "return: [batch..., N, P, P] if (not full_cov) and full_output_cov",
-        "return: [batch..., N, P] if (not full_cov) and (not full_output_cov)",
+        "return: [batch..., N, P, P] if (not full_cov) and full_output_cov and (X2 is None)",
+        "return: [batch..., N, P] if (not full_cov) and (not full_output_cov) and (X2 is None)",
     )
     def __call__(
         self,

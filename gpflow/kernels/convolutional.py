@@ -81,14 +81,14 @@ class Convolutional(Kernel):
         N = tf.shape(X)[-2]
         D = tf.shape(X)[-1]
         flat_batch = tf.reduce_prod(batch)
-        num_data = tf.reduce_prod(batch) * N
+        num_data = flat_batch * N
         X = cs(
             tf.transpose(tf.reshape(X, [num_data, -1, self.colour_channels]), [0, 2, 1]),
-            "[C, num_data, W_x_H]",
+            "[num_data, C, W_x_H]",
         )
         X = cs(
             tf.reshape(X, [-1, self.image_shape[0], self.image_shape[1], 1], name="rX"),
-            "[C_x_num_data, W, H, 1]",
+            "[num_data_x_C, W, H, 1]",
         )
         patches = cs(
             tf.image.extract_patches(
@@ -98,7 +98,7 @@ class Convolutional(Kernel):
                 [1, 1, 1, 1],
                 "VALID",
             ),
-            "[C_x_num_data, n_x_patches, n_y_patches, S]",
+            "[num_data_x_C, n_x_patches, n_y_patches, S]",
         )
         shp = tf.shape(patches)
         reshaped_patches = cs(
