@@ -26,13 +26,14 @@ allows this to be done whilst additionally learning parameters of the
 parametric function.
 """
 
-from typing import Collection, Optional
+from typing import Collection, Iterator, Optional, Tuple
 
 import numpy as np
 import tensorflow as tf
 
 from .base import Module, Parameter, TensorType
 from .config import default_float, default_int
+from .experimental.check_shapes import check_shape as cs
 from .experimental.check_shapes import check_shapes, inherit_check_shapes
 
 
@@ -163,6 +164,78 @@ class Zero(Constant):
     def __call__(self, X: TensorType) -> tf.Tensor:
         output_shape = tf.concat([tf.shape(X)[:-1], [self.output_dim]], axis=0)
         return tf.zeros(output_shape, dtype=X.dtype)
+
+
+class Polynomial(MeanFunction):
+    """
+    A generic polynomial mean function.
+    """
+
+    @check_shapes("w: [broadcast output_dim, broadcast n_terms]")
+    def __init__(
+        self, degree: int, input_dim: int = 1, output_dim: int = 1, w: Optional[TensorType] = None
+    ) -> None:
+        """
+        :param degree: The degree of the polynomial.
+        :param input_dim: Number of inputs / variables this polynomial is defined over.
+        :param output_dim: Number of outputs / polynomials.
+        :param w: Initial weights of the terms of the polynomial. The inner dimension (``n_terms``)
+            should correspond to the powers returned by ``compute_powers``.
+        """
+        powers = cs(tuple(self.compute_powers(degree, input_dim)), "[n_terms, input_dim]")
+        if w is None:
+            w = cs([1.0] + (len(powers) - 1) * [0.0], "[n_terms]")
+        w_shape = (output_dim, len(powers))
+        self.powers = tf.constant(powers, dtype=default_float())
+        self.w = Parameter(tf.broadcast_to(w, w_shape))
+
+    @staticmethod
+    def compute_powers(degree: int, input_dim: int) -> Iterator[Tuple[int, ...]]:
+        """
+        Computes integer tuples corresponding to the powers to raise inputs to.
+
+        Specifically this returns, in lexicographical order, all tuples where:
+        * The tuple has length `input_dim`.
+        * The values are non-negative integers.
+        * The sum of the tuple is no greater than `degree`.
+
+        For example::
+
+            compute_powers(degree=2, input_dim=3)
+
+        returns::
+
+            (0, 0, 0)
+            (0, 0, 1)
+            (0, 0, 2)
+            (0, 1, 0)
+            (0, 1, 1)
+            (0, 2, 0)
+            (1, 0, 0)
+            (1, 0, 1)
+            (1, 1, 0)
+            (2, 0, 0)
+
+        where a tuple::
+
+            (1, 0, 2)
+
+        will translate to a the term::
+
+            w[i] * (x[0]**1) * (x[1]**0) * (x[2]**2)
+        """
+        if not input_dim:
+            yield ()
+            return
+        for i in range(degree + 1):
+            for inner in Polynomial.compute_powers(degree - i, input_dim - 1):
+                yield (i,) + inner
+
+    @inherit_check_shapes
+    def __call__(self, X: TensorType) -> tf.Tensor:
+        raised = cs(tf.pow(X[..., None, :], self.powers), "[batch..., n_terms, input_dim]")
+        prod = cs(tf.math.reduce_prod(raised, axis=-1), "[batch..., n_terms]")
+        return tf.einsum("...i,ji->...j", prod, self.w)
 
 
 class SwitchedMeanFunction(MeanFunction):
