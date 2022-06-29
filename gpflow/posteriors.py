@@ -509,15 +509,20 @@ class SGPRPosterior(AbstractPosterior):
         kuf = Kuf(self.inducing_variable, self.kernel, self.X_data)
         kuu = Kuu(self.inducing_variable, self.kernel, jitter=default_jitter())
         Kus = Kuf(self.inducing_variable, self.kernel, Xnew)
-        sigma = tf.sqrt(self.likelihood_variance)
+
+        # sigma = tf.sqrt(self.likelihood_variance)
+        sigma = tf.sqrt(self.likelihood.variance_at(self.X_data))
+        err /= sigma
+        inv_sigma = tf.math.reciprocal(sigma)[..., 0]
         L = tf.linalg.cholesky(kuu)  # cache alpha, qinv
-        A = tf.linalg.triangular_solve(L, kuf, lower=True) / sigma
+        A = tf.linalg.triangular_solve(L, inv_sigma * kuf, lower=True)
         B = tf.linalg.matmul(A, A, transpose_b=True) + tf.eye(
             num_inducing, dtype=default_float()
         )  # cache qinv
         LB = tf.linalg.cholesky(B)  # cache alpha
         Aerr = tf.linalg.matmul(A, err)
-        c = tf.linalg.triangular_solve(LB, Aerr, lower=True) / sigma  # cache alpha
+        # c = tf.linalg.triangular_solve(LB, Aerr, lower=True) / sigma  # cache alpha
+        c = tf.linalg.triangular_solve(LB, Aerr, lower=True)  # cache alpha
         tmp1 = tf.linalg.triangular_solve(L, Kus, lower=True)
         tmp2 = tf.linalg.triangular_solve(LB, tmp1, lower=True)
         mean = tf.linalg.matmul(tmp2, c, transpose_a=True)

@@ -62,7 +62,12 @@ plot_distribution(X, Y)
 
 # %%
 kernel = gf.kernels.Matern52()
-base_model = gf.models.GPR(data=(X, Y), kernel=kernel, mean_function=None)
+base_model = gf.models.SGPR(data=(X, Y), kernel=kernel, inducing_variable=X[:3, :])
+base_model.likelihood.variance.assign(0.1)
+
+base_model.maximum_log_likelihood_objective()
+
+
 opt = gf.optimizers.Scipy()
 opt_logs = opt.minimize(
     base_model.training_loss, base_model.trainable_variables, options=dict(maxiter=100)

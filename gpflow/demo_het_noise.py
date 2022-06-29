@@ -4,10 +4,12 @@ from typing import Tuple
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.axes import Axes
+import tensorflow as tf
+import tensorflow_probability as tfp
 
 import gpflow
 from gpflow import default_float
-from gpflow.base import AnyNDArray
+from gpflow.base import AnyNDArray, Parameter
 from gpflow.experimental.check_shapes import check_shape as cs
 from gpflow.experimental.check_shapes import check_shapes
 from gpflow.functions import Linear
@@ -24,7 +26,7 @@ Data = Tuple[AnyNDArray, AnyNDArray]
 
 OUT_DIR = Path(__file__).parent
 
-
+tf.config.run_functions_eagerly(True)  # debugging
 DATA_X_MIN = 0.0
 DATA_X_MAX = 1.0
 DATA_DIFF = DATA_X_MAX - DATA_X_MIN
@@ -123,7 +125,15 @@ def create_linear_1() -> Linear:
 
 
 def create_linear_noise() -> Gaussian:
-    return Gaussian(scale=Linear(A=[[0.5]], b=0.2))
+    linear = Linear(A=[[0.]], b=0.2)
+    linear.A.prior = tfp.distributions.Normal(np.float64(0.), np.float64(2.))
+    gpflow.utilities.set_trainable(linear.b, True) # Try pure constant noise
+    gpflow.utilities.set_trainable(linear.A, True)
+    linear.b = Parameter(0.2, transform=gpflow.utilities.positive())
+
+    linear.b.prior = tfp.distributions.Normal(np.float64(0.), np.float64(1.))
+
+    return Gaussian(scale=linear)
 
 
 @check_model_shapes

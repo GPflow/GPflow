@@ -162,10 +162,12 @@ class SGPR_deprecated(SGPRBase_deprecated):
         kuf = Kuf(iv, self.kernel, x)  # [M, N]
         kuu = Kuu(iv, self.kernel, jitter=default_jitter())  # [M, M]
         L = tf.linalg.cholesky(kuu)  # [M, M]
-        sigma = tf.sqrt(sigma_sq)  # [N]
+        sigma = tf.sqrt(sigma_sq) # [N]
+        inv_sigma = tf.math.reciprocal(sigma)
 
         # Compute intermediate matrices
-        A = tf.linalg.triangular_solve(L, kuf * sigma[..., None], lower=True)
+        kuf_sigma = inv_sigma * kuf
+        A = tf.linalg.triangular_solve(L, kuf_sigma, lower=True)
         AAT = tf.linalg.matmul(A, A, transpose_b=True)
         B = add_noise_cov(AAT, tf.cast(1.0, AAT.dtype))
         LB = tf.linalg.cholesky(B)
@@ -191,10 +193,11 @@ class SGPR_deprecated(SGPRBase_deprecated):
         num_data = to_default_float(tf.shape(x)[0])
         outdim = to_default_float(tf.shape(y)[1])
         kdiag = self.kernel(x, full_cov=False)
-        sigma_sq = self.likelihood.variance
+        # sigma_sq = self.likelihood.variance
+        sigma_sq = self.likelihood.variance_at(x)[..., 0]  # [N]
 
         # tr(K) / σ²
-        trace_k = tf.reduce_sum(kdiag) / sigma_sq
+        trace_k = tf.reduce_sum(kdiag / sigma_sq)
         # tr(Q) / σ²
         trace_q = tf.reduce_sum(tf.linalg.diag_part(AAT))
         # tr(K - Q) / σ²
@@ -204,7 +207,9 @@ class SGPR_deprecated(SGPRBase_deprecated):
         half_logdet_b = tf.reduce_sum(tf.math.log(tf.linalg.diag_part(LB)))
 
         # N * log(σ²)
-        log_sigma_sq = num_data * tf.math.log(sigma_sq)
+        # log_sigma_sq = num_data * tf.math.log(sigma_sq)
+        # More generally, sum log(σ²)
+        log_sigma_sq = tf.reduce_sum(tf.math.log(sigma_sq))
 
         logdet_k = -outdim * (half_logdet_b + 0.5 * log_sigma_sq + 0.5 * trace)
 
@@ -222,14 +227,18 @@ class SGPR_deprecated(SGPRBase_deprecated):
 
         x, y = self.data
         err = y - self.mean_function(x)
-        sigma_sq = self.likelihood.variance
-        sigma = tf.sqrt(sigma_sq)
+        # sigma_sq = self.likelihood.variance
+        # sigma = tf.sqrt(sigma_sq)
+        var = self.likelihood.variance_at(x)
+        sigma = tf.sqrt(var)
+        inv_sigma = tf.math.reciprocal(sigma)
 
+        err *= inv_sigma
         Aerr = tf.linalg.matmul(A, err)
-        c = tf.linalg.triangular_solve(LB, Aerr, lower=True) / sigma
+        c = tf.linalg.triangular_solve(LB, Aerr, lower=True)
 
         # σ⁻² yᵀy
-        err_inner_prod = tf.reduce_sum(tf.square(err)) / sigma_sq
+        err_inner_prod = tf.reduce_sum(tf.square(err))
         c_inner_prod = tf.reduce_sum(tf.square(c))
 
         quad = -0.5 * (err_inner_prod - c_inner_prod)
@@ -268,15 +277,17 @@ class SGPR_deprecated(SGPRBase_deprecated):
         kuf = Kuf(self.inducing_variable, self.kernel, X_data)
         kuu = Kuu(self.inducing_variable, self.kernel, jitter=default_jitter())
         Kus = Kuf(self.inducing_variable, self.kernel, Xnew)
-        sigma = tf.sqrt(self.likelihood.variance)
+        # sigma = tf.sqrt(self.likelihood.variance)
+        sigma = tf.sqrt(self.likelihood.variance_at(self.X_data)[..., 0])
+        inv_sigma = tf.math.reciprocal(sigma)
         L = tf.linalg.cholesky(kuu)
-        A = tf.linalg.triangular_solve(L, kuf, lower=True) / sigma
+        A = tf.linalg.triangular_solve(L, inv_sigma * kuf, lower=True)
         B = tf.linalg.matmul(A, A, transpose_b=True) + tf.eye(
             num_inducing, dtype=default_float()
         )  # cache qinv
         LB = tf.linalg.cholesky(B)
         Aerr = tf.linalg.matmul(A, err)
-        c = tf.linalg.triangular_solve(LB, Aerr, lower=True) / sigma
+        c = tf.linalg.triangular_solve(LB, inv_sigma * Aerr, lower=True)
         tmp1 = tf.linalg.triangular_solve(L, Kus, lower=True)
         tmp2 = tf.linalg.triangular_solve(LB, tmp1, lower=True)
         mean = tf.linalg.matmul(tmp2, c, transpose_a=True)
@@ -311,7 +322,10 @@ class SGPR_deprecated(SGPRBase_deprecated):
         kuf = Kuf(self.inducing_variable, self.kernel, X_data)
         kuu = Kuu(self.inducing_variable, self.kernel, jitter=default_jitter())
 
-        sig = kuu + (self.likelihood.variance ** -1) * tf.matmul(kuf, kuf, transpose_b=True)
+        var = self.likelihood.variance_at(self.X_data)[..., 0]
+        inv_var = tf.math.reciprocal(var)
+        sig = kuu + inv_var * tf.matmul(kuf, kuf, transpose_b=True)
+        # sig = kuu + (self.likelihood.variance ** -1) * tf.matmul(kuf, kuf, transpose_b=True)
         sig_sqrt = tf.linalg.cholesky(sig)
 
         sig_sqrt_kuu = tf.linalg.triangular_solve(sig_sqrt, kuu)
@@ -319,12 +333,12 @@ class SGPR_deprecated(SGPRBase_deprecated):
         cov = tf.linalg.matmul(sig_sqrt_kuu, sig_sqrt_kuu, transpose_a=True)
         err = Y_data - self.mean_function(X_data)
         mu = (
+            inv_var *
             tf.linalg.matmul(
                 sig_sqrt_kuu,
                 tf.linalg.triangular_solve(sig_sqrt, tf.linalg.matmul(kuf, err)),
                 transpose_a=True,
             )
-            / self.likelihood.variance
         )
 
         print_locals()
@@ -356,7 +370,7 @@ class GPRFITC(SGPRBase_deprecated):
         V = tf.linalg.triangular_solve(Luu, kuf)  # => V^T V = Qff = kuf^T kuu^-1 kuf
 
         diagQff = tf.reduce_sum(tf.square(V), 0)
-        nu = Kdiag - diagQff + self.likelihood.variance
+        nu = Kdiag - diagQff + var
 
         B = tf.eye(num_inducing, dtype=default_float()) + tf.linalg.matmul(
             V / nu, V, transpose_b=True
