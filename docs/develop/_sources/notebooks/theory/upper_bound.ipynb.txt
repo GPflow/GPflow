@@ -2,7 +2,7 @@
  "cells": [
   {
    "cell_type": "markdown",
-   "id": "7c9f3a24",
+   "id": "d4c86299",
    "metadata": {},
    "source": [
     "# Discussion of the GP marginal likelihood upper bound\n",
@@ -13,13 +13,13 @@
   {
    "cell_type": "code",
    "execution_count": 1,
-   "id": "1576ae2a",
+   "id": "735486b4",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-28T15:21:31.950062Z",
-     "iopub.status.busy": "2022-06-28T15:21:31.949752Z",
-     "iopub.status.idle": "2022-06-28T15:21:35.253405Z",
-     "shell.execute_reply": "2022-06-28T15:21:35.252821Z"
+     "iopub.execute_input": "2022-06-29T11:14:17.472424Z",
+     "iopub.status.busy": "2022-06-29T11:14:17.472133Z",
+     "iopub.status.idle": "2022-06-29T11:14:21.112960Z",
+     "shell.execute_reply": "2022-06-29T11:14:21.112402Z"
     }
    },
    "outputs": [
@@ -27,8 +27,8 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2022-06-28 15:21:32.906849: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcudart.so.11.0'; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory\n",
-      "2022-06-28 15:21:32.906876: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.\n"
+      "2022-06-29 11:14:18.513397: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcudart.so.11.0'; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory\n",
+      "2022-06-29 11:14:18.513422: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.\n"
      ]
     },
     {
@@ -36,6 +36,8 @@
      "output_type": "stream",
      "text": [
       "/home/circleci/project/gpflow/experimental/utils.py:42: UserWarning: You're calling gpflow.experimental.check_shapes.decorator.check_shapes which is considered *experimental*. Expect: breaking changes, poor documentation, and bugs.\n",
+      "  warn(\n",
+      "/home/circleci/project/gpflow/experimental/utils.py:42: UserWarning: You're calling gpflow.experimental.check_shapes.inheritance.inherit_check_shapes which is considered *experimental*. Expect: breaking changes, poor documentation, and bugs.\n",
       "  warn(\n"
      ]
     }
@@ -66,13 +68,13 @@
   {
    "cell_type": "code",
    "execution_count": 2,
-   "id": "751f310d",
+   "id": "21d34f57",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-28T15:21:35.256345Z",
-     "iopub.status.busy": "2022-06-28T15:21:35.256123Z",
-     "iopub.status.idle": "2022-06-28T15:21:35.259707Z",
-     "shell.execute_reply": "2022-06-28T15:21:35.259225Z"
+     "iopub.execute_input": "2022-06-29T11:14:21.115987Z",
+     "iopub.status.busy": "2022-06-29T11:14:21.115766Z",
+     "iopub.status.idle": "2022-06-29T11:14:21.119291Z",
+     "shell.execute_reply": "2022-06-29T11:14:21.118835Z"
     }
    },
    "outputs": [],
@@ -83,13 +85,13 @@
   {
    "cell_type": "code",
    "execution_count": 3,
-   "id": "804ebe5e",
+   "id": "57c27df8",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-28T15:21:35.262237Z",
-     "iopub.status.busy": "2022-06-28T15:21:35.262038Z",
-     "iopub.status.idle": "2022-06-28T15:21:35.267338Z",
-     "shell.execute_reply": "2022-06-28T15:21:35.266656Z"
+     "iopub.execute_input": "2022-06-29T11:14:21.121759Z",
+     "iopub.status.busy": "2022-06-29T11:14:21.121564Z",
+     "iopub.status.idle": "2022-06-29T11:14:21.126121Z",
+     "shell.execute_reply": "2022-06-29T11:14:21.125669Z"
     }
    },
    "outputs": [],
@@ -111,7 +113,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "6827b1a5",
+   "id": "264f5679",
    "metadata": {},
    "source": [
     "## Full model"
@@ -120,13 +122,13 @@
   {
    "cell_type": "code",
    "execution_count": 4,
-   "id": "21a394d8",
+   "id": "c0fd2cbc",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-28T15:21:35.269837Z",
-     "iopub.status.busy": "2022-06-28T15:21:35.269656Z",
-     "iopub.status.idle": "2022-06-28T15:21:37.481015Z",
-     "shell.execute_reply": "2022-06-28T15:21:37.480305Z"
+     "iopub.execute_input": "2022-06-29T11:14:21.128375Z",
+     "iopub.status.busy": "2022-06-29T11:14:21.128199Z",
+     "iopub.status.idle": "2022-06-29T11:14:23.343627Z",
+     "shell.execute_reply": "2022-06-29T11:14:23.342782Z"
     }
    },
    "outputs": [
@@ -134,13 +136,13 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2022-06-28 15:21:35.271706: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcuda.so.1'; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory\n",
-      "2022-06-28 15:21:35.271732: W tensorflow/stream_executor/cuda/cuda_driver.cc:269] failed call to cuInit: UNKNOWN ERROR (303)\n",
-      "2022-06-28 15:21:35.271750: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (9ab0ee389f83): /proc/driver/nvidia/version does not exist\n",
-      "2022-06-28 15:21:35.271989: I tensorflow/core/platform/cpu_feature_guard.cc:193] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA\n",
-      "To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.\n",
       "/home/circleci/project/gpflow/experimental/utils.py:42: UserWarning: You're calling gpflow.experimental.check_shapes.checker.ShapeChecker.__init__ which is considered *experimental*. Expect: breaking changes, poor documentation, and bugs.\n",
-      "  warn(\n"
+      "  warn(\n",
+      "2022-06-29 11:14:21.130614: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcuda.so.1'; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory\n",
+      "2022-06-29 11:14:21.130644: W tensorflow/stream_executor/cuda/cuda_driver.cc:269] failed call to cuInit: UNKNOWN ERROR (303)\n",
+      "2022-06-29 11:14:21.130663: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (db43c8a98066): /proc/driver/nvidia/version does not exist\n",
+      "2022-06-29 11:14:21.130997: I tensorflow/core/platform/cpu_feature_guard.cc:193] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA\n",
+      "To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.\n"
      ]
     },
     {
@@ -166,7 +168,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "a85d8fb1",
+   "id": "85ff9ae6",
    "metadata": {},
    "source": [
     "## Upper bounds for sparse variational models\n",
@@ -176,13 +178,13 @@
   {
    "cell_type": "code",
    "execution_count": 5,
-   "id": "afaa79ed",
+   "id": "840f5c1d",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-28T15:21:37.483724Z",
-     "iopub.status.busy": "2022-06-28T15:21:37.483500Z",
-     "iopub.status.idle": "2022-06-28T15:21:50.337175Z",
-     "shell.execute_reply": "2022-06-28T15:21:50.336558Z"
+     "iopub.execute_input": "2022-06-29T11:14:23.348680Z",
+     "iopub.status.busy": "2022-06-29T11:14:23.347807Z",
+     "iopub.status.idle": "2022-06-29T11:14:36.963848Z",
+     "shell.execute_reply": "2022-06-29T11:14:36.963310Z"
     }
    },
    "outputs": [
@@ -330,13 +332,13 @@
   {
    "cell_type": "code",
    "execution_count": 6,
-   "id": "3475279c",
+   "id": "97974286",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-28T15:21:50.339746Z",
-     "iopub.status.busy": "2022-06-28T15:21:50.339536Z",
-     "iopub.status.idle": "2022-06-28T15:21:50.489215Z",
-     "shell.execute_reply": "2022-06-28T15:21:50.488646Z"
+     "iopub.execute_input": "2022-06-29T11:14:36.966368Z",
+     "iopub.status.busy": "2022-06-29T11:14:36.966157Z",
+     "iopub.status.idle": "2022-06-29T11:14:37.095513Z",
+     "shell.execute_reply": "2022-06-29T11:14:37.094993Z"
     }
    },
    "outputs": [
@@ -365,7 +367,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "132d63e7",
+   "id": "77f156b4",
    "metadata": {},
    "source": [
     "We see that the lower bound increases as more inducing points are added. Note that the upper bound does _not_ monotonically decrease! This is because as we train the sparse model, we also get better estimates of the hyperparameters. The upper bound will be different for this different setting of the hyperparameters, and is sometimes looser. The upper bound also converges to the true lml slower than the lower bound."
@@ -373,7 +375,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "e15a74e8",
+   "id": "1f5d7991",
    "metadata": {},
    "source": [
     "### Upper bounds for fixed hyperparameters\n",
@@ -383,13 +385,13 @@
   {
    "cell_type": "code",
    "execution_count": 7,
-   "id": "23fc2618",
+   "id": "3430bedc",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-28T15:21:50.491979Z",
-     "iopub.status.busy": "2022-06-28T15:21:50.491768Z",
-     "iopub.status.idle": "2022-06-28T15:21:59.586706Z",
-     "shell.execute_reply": "2022-06-28T15:21:59.586122Z"
+     "iopub.execute_input": "2022-06-29T11:14:37.098214Z",
+     "iopub.status.busy": "2022-06-29T11:14:37.098006Z",
+     "iopub.status.idle": "2022-06-29T11:14:46.734732Z",
+     "shell.execute_reply": "2022-06-29T11:14:46.734187Z"
     }
    },
    "outputs": [
@@ -550,13 +552,13 @@
   {
    "cell_type": "code",
    "execution_count": 8,
-   "id": "ec3fdb75",
+   "id": "7ad07b9d",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-28T15:21:59.589401Z",
-     "iopub.status.busy": "2022-06-28T15:21:59.589164Z",
-     "iopub.status.idle": "2022-06-28T15:21:59.715342Z",
-     "shell.execute_reply": "2022-06-28T15:21:59.714800Z"
+     "iopub.execute_input": "2022-06-29T11:14:46.737353Z",
+     "iopub.status.busy": "2022-06-29T11:14:46.737138Z",
+     "iopub.status.idle": "2022-06-29T11:14:46.891367Z",
+     "shell.execute_reply": "2022-06-29T11:14:46.890860Z"
     }
    },
    "outputs": [
@@ -585,13 +587,13 @@
   {
    "cell_type": "code",
    "execution_count": 9,
-   "id": "3e0f4431",
+   "id": "519d4e68",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-28T15:21:59.718047Z",
-     "iopub.status.busy": "2022-06-28T15:21:59.717825Z",
-     "iopub.status.idle": "2022-06-28T15:21:59.721142Z",
-     "shell.execute_reply": "2022-06-28T15:21:59.720620Z"
+     "iopub.execute_input": "2022-06-29T11:14:46.893886Z",
+     "iopub.status.busy": "2022-06-29T11:14:46.893674Z",
+     "iopub.status.idle": "2022-06-29T11:14:46.896915Z",
+     "shell.execute_reply": "2022-06-29T11:14:46.896450Z"
     }
    },
    "outputs": [],
@@ -601,7 +603,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "6086a916",
+   "id": "3a2e8aeb",
    "metadata": {},
    "source": [
     "Now, as the hyperparameters are fixed, the bound _does_ monotonically decrease. We chose the optimal hyperparameters here, but the picture should be the same for any hyperparameter setting. This shows that we increasingly get a better estimate of the marginal likelihood as we add more inducing points."
@@ -609,7 +611,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "79803f17",
+   "id": "b17c09ec",
    "metadata": {},
    "source": [
     "### A tight estimate bound does not imply a converged model"
@@ -618,13 +620,13 @@
   {
    "cell_type": "code",
    "execution_count": 10,
-   "id": "73277b67",
+   "id": "83c48f62",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-28T15:21:59.757986Z",
-     "iopub.status.busy": "2022-06-28T15:21:59.757707Z",
-     "iopub.status.idle": "2022-06-28T15:22:00.756062Z",
-     "shell.execute_reply": "2022-06-28T15:22:00.755519Z"
+     "iopub.execute_input": "2022-06-29T11:14:46.922037Z",
+     "iopub.status.busy": "2022-06-29T11:14:46.921856Z",
+     "iopub.status.idle": "2022-06-29T11:14:47.972501Z",
+     "shell.execute_reply": "2022-06-29T11:14:47.971964Z"
     }
    },
    "outputs": [
@@ -655,7 +657,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "74210b6d",
+   "id": "285f6de0",
    "metadata": {},
    "source": [
     "In this case we show that for the hyperparameter setting, the bound is very tight. However, this does _not_ imply that we have enough inducing points, but simply that we have correctly identified the marginal likelihood for this particular hyperparameter setting. In this specific case, where we used a single inducing point, the model collapses to not using the GP at all (lengthscale is really long to model only the mean). The rest of the variance is explained by noise. This GP can be perfectly approximated with a single inducing point."
@@ -664,13 +666,13 @@
   {
    "cell_type": "code",
    "execution_count": 11,
-   "id": "6edbd5f2",
+   "id": "600f347a",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-28T15:22:00.758845Z",
-     "iopub.status.busy": "2022-06-28T15:22:00.758629Z",
-     "iopub.status.idle": "2022-06-28T15:22:00.951542Z",
-     "shell.execute_reply": "2022-06-28T15:22:00.951016Z"
+     "iopub.execute_input": "2022-06-29T11:14:47.975200Z",
+     "iopub.status.busy": "2022-06-29T11:14:47.974984Z",
+     "iopub.status.idle": "2022-06-29T11:14:48.158988Z",
+     "shell.execute_reply": "2022-06-29T11:14:48.158479Z"
     }
    },
    "outputs": [
@@ -704,13 +706,13 @@
   {
    "cell_type": "code",
    "execution_count": 12,
-   "id": "c76cd83b",
+   "id": "626429a1",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-28T15:22:00.954059Z",
-     "iopub.status.busy": "2022-06-28T15:22:00.953846Z",
-     "iopub.status.idle": "2022-06-28T15:22:00.963089Z",
-     "shell.execute_reply": "2022-06-28T15:22:00.962521Z"
+     "iopub.execute_input": "2022-06-29T11:14:48.161650Z",
+     "iopub.status.busy": "2022-06-29T11:14:48.161437Z",
+     "iopub.status.idle": "2022-06-29T11:14:48.170778Z",
+     "shell.execute_reply": "2022-06-29T11:14:48.170314Z"
     }
    },
    "outputs": [
@@ -743,7 +745,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "15345a89",
+   "id": "8e05628d",
    "metadata": {},
    "source": [
     "This can be diagnosed by showing that there are other hyperparameter settings with higher upper bounds. This indicates that there might be better hyperparameter settings, but we cannot identify them due to the lack of inducing points. An example of this can be seen in the previous section."

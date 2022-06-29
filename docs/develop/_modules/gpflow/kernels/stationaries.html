@@ -274,6 +274,7 @@ function checkPageExistsAndRedirect(event) {
 <span class="kn">import</span> <span class="nn">tensorflow</span> <span class="k">as</span> <span class="nn">tf</span>
 
 <span class="kn">from</span> <span class="nn">..base</span> <span class="kn">import</span> <span class="n">Parameter</span><span class="p">,</span> <span class="n">TensorType</span>
+<span class="kn">from</span> <span class="nn">..experimental.check_shapes</span> <span class="kn">import</span> <span class="n">check_shapes</span><span class="p">,</span> <span class="n">inherit_check_shapes</span>
 <span class="kn">from</span> <span class="nn">..utilities</span> <span class="kn">import</span> <span class="n">positive</span>
 <span class="kn">from</span> <span class="nn">..utilities.ops</span> <span class="kn">import</span> <span class="n">difference_matrix</span><span class="p">,</span> <span class="n">square_distance</span>
 <span class="kn">from</span> <span class="nn">.base</span> <span class="kn">import</span> <span class="n">ActiveDims</span><span class="p">,</span> <span class="n">Kernel</span>
@@ -290,6 +291,10 @@ function checkPageExistsAndRedirect(event) {
 <span class="sd">    dimension, otherwise the kernel is isotropic (has a single lengthscale).</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
+    <span class="nd">@check_shapes</span><span class="p">(</span>
+        <span class="s2">&quot;variance: []&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;lengthscales: [broadcast n_active_dims]&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">variance</span><span class="p">:</span> <span class="n">TensorType</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span> <span class="n">lengthscales</span><span class="p">:</span> <span class="n">TensorType</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
@@ -321,10 +326,15 @@ function checkPageExistsAndRedirect(event) {
         <span class="n">ndims</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lengthscales</span><span class="o">.</span><span class="n">shape</span><span class="o">.</span><span class="n">ndims</span>
         <span class="k">return</span> <span class="n">ndims</span> <span class="o">&gt;</span> <span class="mi">0</span>
 
+    <span class="nd">@check_shapes</span><span class="p">(</span>
+        <span class="s2">&quot;X: [broadcast any...]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return: [any...]&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
     <span class="k">def</span> <span class="nf">scale</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TensorType</span><span class="p">:</span>
         <span class="n">X_scaled</span> <span class="o">=</span> <span class="n">X</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">lengthscales</span> <span class="k">if</span> <span class="n">X</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">X</span>
         <span class="k">return</span> <span class="n">X_scaled</span>
 
+    <span class="nd">@inherit_check_shapes</span>
     <span class="k">def</span> <span class="nf">K_diag</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">tf</span><span class="o">.</span><span class="n">fill</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">X</span><span class="p">)[:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">tf</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">variance</span><span class="p">))</span></div>
 
@@ -345,10 +355,15 @@ function checkPageExistsAndRedirect(event) {
 <span class="sd">        Euclidean distance. Should operate element-wise on r.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
+    <span class="nd">@inherit_check_shapes</span>
     <span class="k">def</span> <span class="nf">K</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">X2</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">TensorType</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
         <span class="n">r2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">scaled_squared_euclid_dist</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">X2</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">K_r2</span><span class="p">(</span><span class="n">r2</span><span class="p">)</span>
 
+    <span class="nd">@check_shapes</span><span class="p">(</span>
+        <span class="s2">&quot;r2: [batch..., N]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return: [batch..., N]&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
     <span class="k">def</span> <span class="nf">K_r2</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">r2</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
         <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;K_r&quot;</span><span class="p">):</span>
             <span class="c1"># Clipping around the (single) float precision which is ~1e-45.</span>
@@ -356,7 +371,13 @@ function checkPageExistsAndRedirect(event) {
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">K_r</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>  <span class="c1"># pylint: disable=no-member</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span>
 
-<div class="viewcode-block" id="IsotropicStationary.scaled_squared_euclid_dist"><a class="viewcode-back" href="../../../api/gpflow/kernels/index.html#gpflow.kernels.IsotropicStationary.scaled_squared_euclid_dist">[docs]</a>    <span class="k">def</span> <span class="nf">scaled_squared_euclid_dist</span><span class="p">(</span>
+<div class="viewcode-block" id="IsotropicStationary.scaled_squared_euclid_dist"><a class="viewcode-back" href="../../../api/gpflow/kernels/index.html#gpflow.kernels.IsotropicStationary.scaled_squared_euclid_dist">[docs]</a>    <span class="nd">@check_shapes</span><span class="p">(</span>
+        <span class="s2">&quot;X: [batch..., N, D]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;X2: [batch2..., N2, D]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return: [batch..., N, batch2..., N2] if X2 is not None&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return: [batch..., N, N] if X2 is None&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">def</span> <span class="nf">scaled_squared_euclid_dist</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">X2</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">TensorType</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -378,6 +399,10 @@ function checkPageExistsAndRedirect(event) {
 <span class="sd">    input dimension.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
+    <span class="nd">@check_shapes</span><span class="p">(</span>
+        <span class="s2">&quot;variance: []&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;lengthscales: [broadcast n_active_dims]&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">variance</span><span class="p">:</span> <span class="n">TensorType</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span> <span class="n">lengthscales</span><span class="p">:</span> <span class="n">TensorType</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
@@ -398,16 +423,27 @@ function checkPageExistsAndRedirect(event) {
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ard</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">lengthscales</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lengthscales</span><span class="o">.</span><span class="n">numpy</span><span class="p">())</span>
 
+    <span class="nd">@inherit_check_shapes</span>
     <span class="k">def</span> <span class="nf">K</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">X2</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">TensorType</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">K_d</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">scaled_difference_matrix</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">X2</span><span class="p">))</span>
 
-<div class="viewcode-block" id="AnisotropicStationary.scaled_difference_matrix"><a class="viewcode-back" href="../../../api/gpflow/kernels/index.html#gpflow.kernels.AnisotropicStationary.scaled_difference_matrix">[docs]</a>    <span class="k">def</span> <span class="nf">scaled_difference_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">X2</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">TensorType</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<div class="viewcode-block" id="AnisotropicStationary.scaled_difference_matrix"><a class="viewcode-back" href="../../../api/gpflow/kernels/index.html#gpflow.kernels.AnisotropicStationary.scaled_difference_matrix">[docs]</a>    <span class="nd">@check_shapes</span><span class="p">(</span>
+        <span class="s2">&quot;X: [batch..., N, D]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;X2: [batch2..., N2, D]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return: [batch..., N, batch2..., N2, D] if X2 is not None&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return: [batch..., N, N, D] if X2 is None&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">def</span> <span class="nf">scaled_difference_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">X2</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">TensorType</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns [(X - X2ᵀ) / ℓ]. If X has shape [..., N, D] and</span>
 <span class="sd">        X2 has shape [..., M, D], the output will have shape [..., N, M, D].</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">difference_matrix</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="n">X</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="n">X2</span><span class="p">))</span></div>
 
+    <span class="nd">@check_shapes</span><span class="p">(</span>
+        <span class="s2">&quot;d: [batch..., N, D]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return: [batch..., N]&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
     <span class="k">def</span> <span class="nf">K_d</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">d</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
 
@@ -425,6 +461,7 @@ function checkPageExistsAndRedirect(event) {
 <span class="sd">    Functions drawn from a GP with this kernel are infinitely differentiable!</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
+    <span class="nd">@inherit_check_shapes</span>
     <span class="k">def</span> <span class="nf">K_r2</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">r2</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">variance</span> <span class="o">*</span> <span class="n">tf</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">r2</span><span class="p">)</span>
 
@@ -452,6 +489,7 @@ function checkPageExistsAndRedirect(event) {
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">variance</span><span class="o">=</span><span class="n">variance</span><span class="p">,</span> <span class="n">lengthscales</span><span class="o">=</span><span class="n">lengthscales</span><span class="p">,</span> <span class="n">active_dims</span><span class="o">=</span><span class="n">active_dims</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">alpha</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="n">alpha</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="n">positive</span><span class="p">())</span>
 
+    <span class="nd">@inherit_check_shapes</span>
     <span class="k">def</span> <span class="nf">K_r2</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">r2</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">variance</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">r2</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">alpha</span><span class="p">)</span> <span class="o">**</span> <span class="p">(</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">alpha</span><span class="p">)</span></div>
 
@@ -461,6 +499,10 @@ function checkPageExistsAndRedirect(event) {
 <span class="sd">    The Exponential kernel. It is equivalent to a Matern12 kernel with doubled lengthscales.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
+    <span class="nd">@check_shapes</span><span class="p">(</span>
+        <span class="s2">&quot;r: [batch..., N]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return: [batch..., N]&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
     <span class="k">def</span> <span class="nf">K_r</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">r</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">variance</span> <span class="o">*</span> <span class="n">tf</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">r</span><span class="p">)</span></div>
 
@@ -477,6 +519,10 @@ function checkPageExistsAndRedirect(event) {
 <span class="sd">    σ² is the variance parameter</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
+    <span class="nd">@check_shapes</span><span class="p">(</span>
+        <span class="s2">&quot;r: [batch..., N]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return: [batch..., N]&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
     <span class="k">def</span> <span class="nf">K_r</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">r</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">variance</span> <span class="o">*</span> <span class="n">tf</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">r</span><span class="p">)</span></div>
 
@@ -493,6 +539,10 @@ function checkPageExistsAndRedirect(event) {
 <span class="sd">    σ² is the variance parameter.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
+    <span class="nd">@check_shapes</span><span class="p">(</span>
+        <span class="s2">&quot;r: [batch..., N]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return: [batch..., N]&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
     <span class="k">def</span> <span class="nf">K_r</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">r</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
         <span class="n">sqrt3</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">3.0</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">variance</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">sqrt3</span> <span class="o">*</span> <span class="n">r</span><span class="p">)</span> <span class="o">*</span> <span class="n">tf</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">sqrt3</span> <span class="o">*</span> <span class="n">r</span><span class="p">)</span></div>
@@ -510,6 +560,10 @@ function checkPageExistsAndRedirect(event) {
 <span class="sd">    σ² is the variance parameter.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
+    <span class="nd">@check_shapes</span><span class="p">(</span>
+        <span class="s2">&quot;r: [batch..., N]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return: [batch..., N]&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
     <span class="k">def</span> <span class="nf">K_r</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">r</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
         <span class="n">sqrt5</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">5.0</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">variance</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">sqrt5</span> <span class="o">*</span> <span class="n">r</span> <span class="o">+</span> <span class="mf">5.0</span> <span class="o">/</span> <span class="mf">3.0</span> <span class="o">*</span> <span class="n">tf</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">r</span><span class="p">))</span> <span class="o">*</span> <span class="n">tf</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">sqrt5</span> <span class="o">*</span> <span class="n">r</span><span class="p">)</span></div>
@@ -528,6 +582,7 @@ function checkPageExistsAndRedirect(event) {
 <span class="sd">    σ² is the variance parameter.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
+    <span class="nd">@inherit_check_shapes</span>
     <span class="k">def</span> <span class="nf">K_d</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">d</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
         <span class="n">d</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">reduce_sum</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">variance</span> <span class="o">*</span> <span class="n">tf</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">d</span><span class="p">)</span></div>

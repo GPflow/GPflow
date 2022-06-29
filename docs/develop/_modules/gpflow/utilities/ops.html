@@ -369,9 +369,10 @@ function checkPageExistsAndRedirect(event) {
 
 
 <div class="viewcode-block" id="square_distance"><a class="viewcode-back" href="../../../api/gpflow/utilities/ops/index.html#gpflow.utilities.ops.square_distance">[docs]</a><span class="nd">@check_shapes</span><span class="p">(</span>
-    <span class="s2">&quot;X: [batch..., D]&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;X2: [batch2..., D]&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;return: [batch..., batch2...]&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;X: [batch..., N, D]&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;X2: [batch2..., N2, D]&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;return: [batch..., N, batch2..., N2] if X2 is not None&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;return: [batch..., N, N] if X2 is None&quot;</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="k">def</span> <span class="nf">square_distance</span><span class="p">(</span><span class="n">X</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">X2</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;</span>
@@ -380,12 +381,6 @@ function checkPageExistsAndRedirect(event) {
 <span class="sd">    Due to the implementation and floating-point imprecision, the</span>
 <span class="sd">    result may actually be very slightly negative for entries very</span>
 <span class="sd">    close to each other.</span>
-
-<span class="sd">    This function can deal with leading dimensions in X and X2.</span>
-<span class="sd">    In the sample case, where X and X2 are both 2 dimensional,</span>
-<span class="sd">    for example, X is [N, D] and X2 is [M, D], then a tensor of shape</span>
-<span class="sd">    [N, M] is returned. If X is [N1, S1, D] and X2 is [N2, S2, D]</span>
-<span class="sd">    then the output will be [N1, S1, N2, S2].</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">X2</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">Xs</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">reduce_sum</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">X</span><span class="p">),</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
@@ -400,19 +395,14 @@ function checkPageExistsAndRedirect(event) {
 
 
 <div class="viewcode-block" id="difference_matrix"><a class="viewcode-back" href="../../../api/gpflow/utilities/ops/index.html#gpflow.utilities.ops.difference_matrix">[docs]</a><span class="nd">@check_shapes</span><span class="p">(</span>
-    <span class="s2">&quot;X: [batch..., D]&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;X2: [batch2..., D]&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;return: [batch..., batch2..., D]&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;X: [batch..., N, D]&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;X2: [batch2..., N2, D]&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;return: [batch..., N, batch2..., N2, D] if X2 is not None&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;return: [batch..., N, N, D] if X2 is None&quot;</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="k">def</span> <span class="nf">difference_matrix</span><span class="p">(</span><span class="n">X</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">X2</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Returns (X - X2ᵀ)</span>
-
-<span class="sd">    This function can deal with leading dimensions in X and X2.</span>
-<span class="sd">    For example, If X has shape [M, D] and X2 has shape [N, D],</span>
-<span class="sd">    the output will have shape [M, N, D]. If X has shape [I, J, M, D]</span>
-<span class="sd">    and X2 has shape [K, L, N, D], the output will have shape</span>
-<span class="sd">    [I, J, M, K, L, N, D].</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">X2</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">X2</span> <span class="o">=</span> <span class="n">X</span>

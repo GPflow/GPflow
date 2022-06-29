@@ -274,6 +274,7 @@ function checkPageExistsAndRedirect(event) {
 <span class="kn">import</span> <span class="nn">tensorflow</span> <span class="k">as</span> <span class="nn">tf</span>
 
 <span class="kn">from</span> <span class="nn">..base</span> <span class="kn">import</span> <span class="n">Parameter</span><span class="p">,</span> <span class="n">TensorType</span>
+<span class="kn">from</span> <span class="nn">..experimental.check_shapes</span> <span class="kn">import</span> <span class="n">check_shapes</span><span class="p">,</span> <span class="n">inherit_check_shapes</span>
 <span class="kn">from</span> <span class="nn">..utilities</span> <span class="kn">import</span> <span class="n">positive</span>
 <span class="kn">from</span> <span class="nn">..utilities.ops</span> <span class="kn">import</span> <span class="n">difference_matrix</span>
 <span class="kn">from</span> <span class="nn">.base</span> <span class="kn">import</span> <span class="n">ActiveDims</span><span class="p">,</span> <span class="n">Kernel</span><span class="p">,</span> <span class="n">NormalizedActiveDims</span>
@@ -308,6 +309,9 @@ function checkPageExistsAndRedirect(event) {
 <span class="sd">        the constructor doesn&#39;t have it as an argument.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
+    <span class="nd">@check_shapes</span><span class="p">(</span>
+        <span class="s2">&quot;period: [broadcast n_active_dims]&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_kernel</span><span class="p">:</span> <span class="n">IsotropicStationary</span><span class="p">,</span> <span class="n">period</span><span class="p">:</span> <span class="n">TensorType</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        :param base_kernel: the base kernel to make periodic; must inherit from Stationary</span>
@@ -334,9 +338,11 @@ function checkPageExistsAndRedirect(event) {
         <span class="c1"># `active_dims` have different types.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">base_kernel</span><span class="o">.</span><span class="n">active_dims</span> <span class="o">=</span> <span class="n">value</span>  <span class="c1"># type: ignore[assignment]</span>
 
+    <span class="nd">@inherit_check_shapes</span>
     <span class="k">def</span> <span class="nf">K_diag</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">base_kernel</span><span class="o">.</span><span class="n">K_diag</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
 
+    <span class="nd">@inherit_check_shapes</span>
     <span class="k">def</span> <span class="nf">K</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">X2</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">TensorType</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
         <span class="n">r</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="p">(</span><span class="n">difference_matrix</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">X2</span><span class="p">))</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">period</span>
         <span class="n">scaled_sine</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">r</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">base_kernel</span><span class="o">.</span><span class="n">lengthscales</span>

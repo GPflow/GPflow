@@ -689,20 +689,15 @@ function checkPageExistsAndRedirect(event) {
 <dt class="sig sig-object py" id="gpflow.utilities.ops.difference_matrix">
 <span class="sig-prename descclassname"><span class="pre">gpflow.utilities.ops.</span></span><span class="sig-name descname"><span class="pre">difference_matrix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">X2</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/gpflow/utilities/ops.html#difference_matrix"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.utilities.ops.difference_matrix" title="Permalink to this definition">#</a></dt>
 <dd><p>Returns (X - X2ᵀ)</p>
-<p>This function can deal with leading dimensions in X and X2.
-For example, If X has shape [M, D] and X2 has shape [N, D],
-the output will have shape [M, N, D]. If X has shape [I, J, M, D]
-and X2 has shape [K, L, N, D], the output will have shape
-[I, J, M, K, L, N, D].</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>X</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – <ul>
-<li><p><strong>X</strong> has shape [<em>batch</em>…, <em>D</em>].</p></li>
+<li><p><strong>X</strong> has shape [<em>batch</em>…, <em>N</em>, <em>D</em>].</p></li>
 </ul>
 </p></li>
 <li><p><strong>X2</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]) – <ul>
-<li><p><strong>X2</strong> has shape [<em>batch2</em>…, <em>D</em>].</p></li>
+<li><p><strong>X2</strong> has shape [<em>batch2</em>…, <em>N2</em>, <em>D</em>].</p></li>
 </ul>
 </p></li>
 </ul>
@@ -712,7 +707,8 @@ and X2 has shape [K, L, N, D], the output will have shape
 </dd>
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p><ul class="simple">
-<li><p><strong>return</strong> has shape [<em>batch</em>…, <em>batch2</em>…, <em>D</em>].</p></li>
+<li><p><strong>return</strong> has shape [<em>batch</em>…, <em>N</em>, <em>N</em>, <em>D</em>] if <em>X2</em> is <em>None</em>.</p></li>
+<li><p><strong>return</strong> has shape [<em>batch</em>…, <em>N</em>, <em>batch2</em>…, <em>N2</em>, <em>D</em>] if <em>X2</em> is not <em>None</em>.</p></li>
 </ul>
 </p>
 </dd>
@@ -841,20 +837,15 @@ to the tensor rank, viewing leading dimensions <cite>…</cite> as zero index.</
 <p>Due to the implementation and floating-point imprecision, the
 result may actually be very slightly negative for entries very
 close to each other.</p>
-<p>This function can deal with leading dimensions in X and X2.
-In the sample case, where X and X2 are both 2 dimensional,
-for example, X is [N, D] and X2 is [M, D], then a tensor of shape
-[N, M] is returned. If X is [N1, S1, D] and X2 is [N2, S2, D]
-then the output will be [N1, S1, N2, S2].</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>X</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – <ul>
-<li><p><strong>X</strong> has shape [<em>batch</em>…, <em>D</em>].</p></li>
+<li><p><strong>X</strong> has shape [<em>batch</em>…, <em>N</em>, <em>D</em>].</p></li>
 </ul>
 </p></li>
 <li><p><strong>X2</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]) – <ul>
-<li><p><strong>X2</strong> has shape [<em>batch2</em>…, <em>D</em>].</p></li>
+<li><p><strong>X2</strong> has shape [<em>batch2</em>…, <em>N2</em>, <em>D</em>].</p></li>
 </ul>
 </p></li>
 </ul>
@@ -864,7 +855,8 @@ then the output will be [N1, S1, N2, S2].</p>
 </dd>
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p><ul class="simple">
-<li><p><strong>return</strong> has shape [<em>batch</em>…, <em>batch2</em>…].</p></li>
+<li><p><strong>return</strong> has shape [<em>batch</em>…, <em>N</em>, <em>N</em>] if <em>X2</em> is <em>None</em>.</p></li>
+<li><p><strong>return</strong> has shape [<em>batch</em>…, <em>N</em>, <em>batch2</em>…, <em>N2</em>] if <em>X2</em> is not <em>None</em>.</p></li>
 </ul>
 </p>
 </dd>

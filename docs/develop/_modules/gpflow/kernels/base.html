@@ -285,12 +285,13 @@ function checkPageExistsAndRedirect(event) {
 
 <span class="kn">import</span> <span class="nn">abc</span>
 <span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">partial</span><span class="p">,</span> <span class="n">reduce</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span><span class="p">,</span> <span class="n">overload</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">tensorflow</span> <span class="k">as</span> <span class="nn">tf</span>
 
 <span class="kn">from</span> <span class="nn">..base</span> <span class="kn">import</span> <span class="n">AnyNDArray</span><span class="p">,</span> <span class="n">Module</span><span class="p">,</span> <span class="n">TensorType</span>
+<span class="kn">from</span> <span class="nn">..experimental.check_shapes</span> <span class="kn">import</span> <span class="n">check_shapes</span>
 
 <span class="n">ActiveDims</span> <span class="o">=</span> <span class="n">Union</span><span class="p">[</span><span class="nb">slice</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">int</span><span class="p">]]</span>
 <span class="n">NormalizedActiveDims</span> <span class="o">=</span> <span class="n">Union</span><span class="p">[</span><span class="nb">slice</span><span class="p">,</span> <span class="n">AnyNDArray</span><span class="p">]</span>
@@ -344,13 +345,29 @@ function checkPageExistsAndRedirect(event) {
         <span class="n">other_dims</span> <span class="o">=</span> <span class="n">other</span><span class="o">.</span><span class="n">active_dims</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
         <span class="k">return</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">this_dims</span> <span class="o">==</span> <span class="n">other_dims</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="Kernel.slice"><a class="viewcode-back" href="../../../api/gpflow/kernels/index.html#gpflow.kernels.base.Kernel.slice">[docs]</a>    <span class="k">def</span> <span class="nf">slice</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">X2</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">TensorType</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
+    <span class="nd">@overload</span>
+    <span class="k">def</span> <span class="nf">slice</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">X2</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
+        <span class="o">...</span>
+
+    <span class="nd">@overload</span>
+    <span class="k">def</span> <span class="nf">slice</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">X2</span><span class="p">:</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
+        <span class="o">...</span>
+
+<div class="viewcode-block" id="Kernel.slice"><a class="viewcode-back" href="../../../api/gpflow/kernels/index.html#gpflow.kernels.base.Kernel.slice">[docs]</a>    <span class="nd">@check_shapes</span><span class="p">(</span>
+        <span class="s2">&quot;X: [batch..., N, D]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;X2: [batch2..., N2, D]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return[0]: [batch..., N, I]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return[1]: [batch2..., N2, I]&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">def</span> <span class="nf">slice</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">X2</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">TensorType</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Optional</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]]:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Slice the correct dimensions for use in the kernel, as indicated by `self.active_dims`.</span>
 
-<span class="sd">        :param X: Input 1 [N, D].</span>
-<span class="sd">        :param X2: Input 2 [M, D], can be None.</span>
-<span class="sd">        :return: Sliced X, X2, [N, I], I - input dimension.</span>
+<span class="sd">        :param X: Input 1.</span>
+<span class="sd">        :param X2: Input 2, can be None.</span>
+<span class="sd">        :return: Sliced X, X2.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">dims</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">active_dims</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dims</span><span class="p">,</span> <span class="nb">slice</span><span class="p">):</span>
@@ -363,15 +380,19 @@ function checkPageExistsAndRedirect(event) {
                 <span class="n">X2</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span><span class="n">X2</span><span class="p">,</span> <span class="n">dims</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">X</span><span class="p">,</span> <span class="n">X2</span></div>
 
-<div class="viewcode-block" id="Kernel.slice_cov"><a class="viewcode-back" href="../../../api/gpflow/kernels/index.html#gpflow.kernels.base.Kernel.slice_cov">[docs]</a>    <span class="k">def</span> <span class="nf">slice_cov</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cov</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<div class="viewcode-block" id="Kernel.slice_cov"><a class="viewcode-back" href="../../../api/gpflow/kernels/index.html#gpflow.kernels.base.Kernel.slice_cov">[docs]</a>    <span class="nd">@check_shapes</span><span class="p">(</span>
+        <span class="s2">&quot;cov: [N, *D_or_DD]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return: [N, I, I]&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">def</span> <span class="nf">slice_cov</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cov</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Slice the correct dimensions for use in the kernel, as indicated by</span>
 <span class="sd">        `self.active_dims` for covariance matrices. This requires slicing the</span>
 <span class="sd">        rows *and* columns. This will also turn flattened diagonal</span>
 <span class="sd">        matrices into a tensor of full diagonal matrices.</span>
 
-<span class="sd">        :param cov: Tensor of covariance matrices, [N, D, D] or [N, D].</span>
-<span class="sd">        :return: [N, I, I].</span>
+<span class="sd">        :param cov: Tensor of covariance matrices.</span>
+<span class="sd">        :return: Sliced covariance matrices.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">cov</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">convert_to_tensor</span><span class="p">(</span><span class="n">cov</span><span class="p">)</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">cov</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span>  <span class="c1"># Hint for mypy.</span>
@@ -397,6 +418,9 @@ function checkPageExistsAndRedirect(event) {
 
         <span class="k">return</span> <span class="n">cov</span></div>
 
+    <span class="nd">@check_shapes</span><span class="p">(</span>
+        <span class="s2">&quot;ard_parameter: [any...]&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
     <span class="k">def</span> <span class="nf">_validate_ard_active_dims</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ard_parameter</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Validate that ARD parameter matches the number of active_dims (provided active_dims</span>
@@ -416,13 +440,30 @@ function checkPageExistsAndRedirect(event) {
             <span class="p">)</span>
 
     <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="nd">@check_shapes</span><span class="p">(</span>
+        <span class="s2">&quot;X: [batch..., N, D]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;X2: [batch2..., N2, D]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return: [batch..., N, batch2..., N2] if X2 is not None&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return: [batch..., N, N] if X2 is None&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
     <span class="k">def</span> <span class="nf">K</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">X2</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">TensorType</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span>
 
     <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="nd">@check_shapes</span><span class="p">(</span>
+        <span class="s2">&quot;X: [batch..., N, D]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return: [batch..., N]&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
     <span class="k">def</span> <span class="nf">K_diag</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span>
 
+    <span class="nd">@check_shapes</span><span class="p">(</span>
+        <span class="s2">&quot;X: [batch..., N, D]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;X2: [batch2..., N2, D]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return: [batch..., N, batch2..., N2] if full_cov and (X2 is not None)&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return: [batch..., N, N] if full_cov and (X2 is None)&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return: [batch..., N] if not full_cov&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
     <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">X</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span>

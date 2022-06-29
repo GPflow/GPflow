@@ -787,12 +787,25 @@ X2 has shape […, M, D], the output will have shape […, N, M, D].</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>X</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>, <a class="reference internal" href="../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>]) – </p></li>
-<li><p><strong>X2</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>, <a class="reference internal" href="../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>, <code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code>]) – </p></li>
+<li><p><strong>X</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>, <a class="reference internal" href="../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>]) – <ul>
+<li><p><strong>X</strong> has shape [<em>batch</em>…, <em>N</em>, <em>D</em>].</p></li>
+</ul>
+</p></li>
+<li><p><strong>X2</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>, <a class="reference internal" href="../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>, <code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code>]) – <ul>
+<li><p><strong>X2</strong> has shape [<em>batch2</em>…, <em>N2</em>, <em>D</em>].</p></li>
+</ul>
+</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><strong>return</strong> has shape [<em>batch</em>…, <em>N</em>, <em>N</em>, <em>D</em>] if <em>X2</em> is <em>None</em>.</p></li>
+<li><p><strong>return</strong> has shape [<em>batch</em>…, <em>N</em>, <em>batch2</em>…, <em>N2</em>, <em>D</em>] if <em>X2</em> is not <em>None</em>.</p></li>
+</ul>
+</p>
 </dd>
 </dl>
 </dd></dl>
@@ -948,13 +961,21 @@ in an image:</p>
 channels.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>X</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>, <a class="reference internal" href="../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>]) – (N x input_dim)</p>
+<dd class="field-odd"><p><strong>X</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>, <a class="reference internal" href="../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>]) – <ul class="simple">
+<li><p><strong>X</strong> has shape [<em>batch</em>…, <em>N</em>, <em>D</em>].</p></li>
+</ul>
+<p>Images.</p>
+</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></p>
 </dd>
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Patches (N, num_patches, patch_shape)</p>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><strong>return</strong> has shape [<em>batch</em>…, <em>N</em>, <em>P</em>, <em>S</em>].</p></li>
+</ul>
+<p>Patches.</p>
+</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1106,12 +1127,25 @@ Euclidean distance. Should operate element-wise on r.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>X</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>, <a class="reference internal" href="../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>]) – </p></li>
-<li><p><strong>X2</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>, <a class="reference internal" href="../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>, <code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code>]) – </p></li>
+<li><p><strong>X</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>, <a class="reference internal" href="../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>]) – <ul>
+<li><p><strong>X</strong> has shape [<em>batch</em>…, <em>N</em>, <em>D</em>].</p></li>
+</ul>
+</p></li>
+<li><p><strong>X2</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>, <a class="reference internal" href="../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>, <code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code>]) – <ul>
+<li><p><strong>X2</strong> has shape [<em>batch2</em>…, <em>N2</em>, <em>D</em>].</p></li>
+</ul>
+</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><strong>return</strong> has shape [<em>batch</em>…, <em>N</em>, <em>N</em>] if <em>X2</em> is <em>None</em>.</p></li>
+<li><p><strong>return</strong> has shape [<em>batch</em>…, <em>N</em>, <em>batch2</em>…, <em>N2</em>] if <em>X2</em> is not <em>None</em>.</p></li>
+</ul>
+</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1151,20 +1185,35 @@ Returns True if they are defined on different/separate dimensions and False othe
 
 <dl class="py method">
 <dt class="sig sig-object py" id="gpflow.kernels.Kernel.slice">
-<span class="sig-name descname"><span class="pre">slice</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">X2</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/kernels/base.html#Kernel.slice"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.kernels.Kernel.slice" title="Permalink to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">slice</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">TensorType</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">X2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">TensorType</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">tf.Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">tf.Tensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/gpflow/kernels/base.html#Kernel.slice"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.kernels.Kernel.slice" title="Permalink to this definition">#</a></dt>
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">slice</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">TensorType</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">X2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">tf.Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">]</span></span></span></span></dt>
 <dd><p>Slice the correct dimensions for use in the kernel, as indicated by <cite>self.active_dims</cite>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>X</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>, <a class="reference internal" href="../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>]) – Input 1 [N, D].</p></li>
-<li><p><strong>X2</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>, <a class="reference internal" href="../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>, <code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code>]) – Input 2 [M, D], can be None.</p></li>
+<li><p><strong>X</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>, <a class="reference internal" href="../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>]) – <ul>
+<li><p><strong>X</strong> has shape [<em>batch</em>…, <em>N</em>, <em>D</em>].</p></li>
+</ul>
+<p>Input 1.</p>
+</p></li>
+<li><p><strong>X2</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>, <a class="reference internal" href="../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>, <code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code>]) – <ul>
+<li><p><strong>X2</strong> has shape [<em>batch2</em>…, <em>N2</em>, <em>D</em>].</p></li>
+</ul>
+<p>Input 2, can be None.</p>
+</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]</p>
+<dd class="field-even"><p><code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]]</p>
 </dd>
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Sliced X, X2, [N, I], I - input dimension.</p>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><strong>return[0]</strong> has shape [<em>batch</em>…, <em>N</em>, <em>I</em>].</p></li>
+<li><p><strong>return[1]</strong> has shape [<em>batch2</em>…, <em>N2</em>, <em>I</em>].</p></li>
+</ul>
+<p>Sliced X, X2.</p>
+</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1178,13 +1227,21 @@ rows <em>and</em> columns. This will also turn flattened diagonal
 matrices into a tensor of full diagonal matrices.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>cov</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>, <a class="reference internal" href="../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>]) – Tensor of covariance matrices, [N, D, D] or [N, D].</p>
+<dd class="field-odd"><p><strong>cov</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>, <a class="reference internal" href="../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>]) – <ul class="simple">
+<li><p><strong>cov</strong> has shape [<em>N</em>, <em>D_or_DD</em>…].</p></li>
+</ul>
+<p>Tensor of covariance matrices.</p>
+</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></p>
 </dd>
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>[N, I, I].</p>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><strong>return</strong> has shape [<em>N</em>, <em>I</em>, <em>I</em>].</p></li>
+</ul>
+<p>Sliced covariance matrices.</p>
+</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1249,8 +1306,16 @@ The kernel equation is</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>X</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>, <a class="reference internal" href="../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>]) – data matrix, [N1, D]</p></li>
-<li><p><strong>X2</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>, <a class="reference internal" href="../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>, <code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code>]) – data matrix, [N2, D]</p></li>
+<li><p><strong>X</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>, <a class="reference internal" href="../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>]) – <ul>
+<li><p><strong>X</strong> has shape [<em>batch</em>…, <em>N</em>, <em>D</em>].</p></li>
+</ul>
+<p>data matrix</p>
+</p></li>
+<li><p><strong>X2</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>, <a class="reference internal" href="../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>, <code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code>]) – <ul>
+<li><p><strong>X2</strong> has shape [<em>batch2</em>…, <em>N2</em>, <em>D</em>].</p></li>
+</ul>
+<p>data matrix</p>
+</p></li>
 <li><p><strong>full_output_cov</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – calculate correlation between outputs.</p></li>
 </ul>
 </dd>
@@ -1258,11 +1323,13 @@ The kernel equation is</p>
 <dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></p>
 </dd>
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p><p>cov[f(X), f(X2)] with shape:</p>
-<ul class="simple">
-<li><p>[N1, P, N2, P] if <cite>full_output_cov</cite> = True</p></li>
-<li><p>[P, N1, N2] if <cite>full_output_cov</cite> = False</p></li>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><strong>return</strong> has shape [<em>P</em>, <em>batch</em>…, <em>N</em>, <em>N</em>] if (not <em>full_output_cov</em>) and (<em>X2</em> is <em>None</em>).</p></li>
+<li><p><strong>return</strong> has shape [<em>P</em>, <em>batch</em>…, <em>N</em>, <em>batch2</em>…, <em>N2</em>] if (not <em>full_output_cov</em>) and (<em>X2</em> is not <em>None</em>).</p></li>
+<li><p><strong>return</strong> has shape [<em>batch</em>…, <em>N</em>, <em>P</em>, <em>N</em>, <em>P</em>] if <em>full_output_cov</em> and (<em>X2</em> is <em>None</em>).</p></li>
+<li><p><strong>return</strong> has shape [<em>batch</em>…, <em>N</em>, <em>P</em>, <em>batch2</em>…, <em>N2</em>, <em>P</em>] if <em>full_output_cov</em> and (<em>X2</em> is not <em>None</em>).</p></li>
 </ul>
+<p>cov[f(X), f(X2)]</p>
 </p>
 </dd>
 </dl>
@@ -1275,7 +1342,11 @@ The kernel equation is</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>X</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>, <a class="reference internal" href="../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>]) – data matrix, [N, D]</p></li>
+<li><p><strong>X</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>, <a class="reference internal" href="../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>]) – <ul>
+<li><p><strong>X</strong> has shape [<em>batch</em>…, <em>N</em>, <em>D</em>].</p></li>
+</ul>
+<p>data matrix</p>
+</p></li>
 <li><p><strong>full_output_cov</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – calculate correlation between outputs.</p></li>
 </ul>
 </dd>
@@ -1283,11 +1354,11 @@ The kernel equation is</p>
 <dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></p>
 </dd>
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p><p>var[f(X)] with shape:</p>
-<ul class="simple">
-<li><p>[N, P, N, P] if <cite>full_output_cov</cite> = True</p></li>
-<li><p>[N, P] if <cite>full_output_cov</cite> = False</p></li>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><strong>return</strong> has shape [<em>batch</em>…, <em>N</em>, <em>P</em>, <em>P</em>] if <em>full_output_cov</em>.</p></li>
+<li><p><strong>return</strong> has shape [<em>batch</em>…, <em>N</em>, <em>P</em>] if not <em>full_output_cov</em>.</p></li>
 </ul>
+<p>var[f(X)]</p>
 </p>
 </dd>
 </dl>
@@ -1396,18 +1467,8 @@ r  is the Euclidean distance between the input points, scaled by the lengthscale
 <dt class="sig sig-object py" id="gpflow.kernels.MultioutputKernel">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.kernels.</span></span><span class="sig-name descname"><span class="pre">MultioutputKernel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">active_dims</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/kernels/multioutput/kernels.html#MultioutputKernel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.kernels.MultioutputKernel" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#gpflow.kernels.Kernel" title="gpflow.kernels.base.Kernel"><code class="xref py py-class docutils literal notranslate"><span class="pre">Kernel</span></code></a></p>
-<p>Multi Output Kernel class.
-This kernel can represent correlation between outputs of different datapoints.
-Therefore, subclasses of Mok should implement <cite>K</cite> which returns:</p>
-<ul class="simple">
-<li><p>[N, P, N, P] if full_output_cov = True</p></li>
-<li><p>[P, N, N] if full_output_cov = False</p></li>
-</ul>
-<p>and <cite>K_diag</cite> returns:</p>
-<ul class="simple">
-<li><p>[N, P, P] if full_output_cov = True</p></li>
-<li><p>[N, P] if full_output_cov = False</p></li>
-</ul>
+<p>Multi Output Kernel class.</p>
+<p>This kernel can represent correlation between outputs of different datapoints.</p>
 <p>The <cite>full_output_cov</cite> argument holds whether the kernel should calculate
 the covariance between the outputs. In case there is no correlation but
 <cite>full_output_cov</cite> is set to True the covariance matrix will be filled with zeros
@@ -1427,8 +1488,16 @@ until the appropriate size is reached.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>X</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>, <a class="reference internal" href="../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>]) – data matrix, [N1, D]</p></li>
-<li><p><strong>X2</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>, <a class="reference internal" href="../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>, <code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code>]) – data matrix, [N2, D]</p></li>
+<li><p><strong>X</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>, <a class="reference internal" href="../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>]) – <ul>
+<li><p><strong>X</strong> has shape [<em>batch</em>…, <em>N</em>, <em>D</em>].</p></li>
+</ul>
+<p>data matrix</p>
+</p></li>
+<li><p><strong>X2</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>, <a class="reference internal" href="../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>, <code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code>]) – <ul>
+<li><p><strong>X2</strong> has shape [<em>batch2</em>…, <em>N2</em>, <em>D</em>].</p></li>
+</ul>
+<p>data matrix</p>
+</p></li>
 <li><p><strong>full_output_cov</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – calculate correlation between outputs.</p></li>
 </ul>
 </dd>
@@ -1436,11 +1505,13 @@ until the appropriate size is reached.</p>
 <dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></p>
 </dd>
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p><p>cov[f(X), f(X2)] with shape:</p>
-<ul class="simple">
-<li><p>[N1, P, N2, P] if <cite>full_output_cov</cite> = True</p></li>
-<li><p>[P, N1, N2] if <cite>full_output_cov</cite> = False</p></li>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><strong>return</strong> has shape [<em>P</em>, <em>batch</em>…, <em>N</em>, <em>N</em>] if (not <em>full_output_cov</em>) and (<em>X2</em> is <em>None</em>).</p></li>
+<li><p><strong>return</strong> has shape [<em>P</em>, <em>batch</em>…, <em>N</em>, <em>batch2</em>…, <em>N2</em>] if (not <em>full_output_cov</em>) and (<em>X2</em> is not <em>None</em>).</p></li>
+<li><p><strong>return</strong> has shape [<em>batch</em>…, <em>N</em>, <em>P</em>, <em>N</em>, <em>P</em>] if <em>full_output_cov</em> and (<em>X2</em> is <em>None</em>).</p></li>
+<li><p><strong>return</strong> has shape [<em>batch</em>…, <em>N</em>, <em>P</em>, <em>batch2</em>…, <em>N2</em>, <em>P</em>] if <em>full_output_cov</em> and (<em>X2</em> is not <em>None</em>).</p></li>
 </ul>
+<p>cov[f(X), f(X2)]</p>
 </p>
 </dd>
 </dl>
@@ -1453,7 +1524,11 @@ until the appropriate size is reached.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>X</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>, <a class="reference internal" href="../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>]) – data matrix, [N, D]</p></li>
+<li><p><strong>X</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>, <a class="reference internal" href="../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>]) – <ul>
+<li><p><strong>X</strong> has shape [<em>batch</em>…, <em>N</em>, <em>D</em>].</p></li>
+</ul>
+<p>data matrix</p>
+</p></li>
 <li><p><strong>full_output_cov</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – calculate correlation between outputs.</p></li>
 </ul>
 </dd>
@@ -1461,11 +1536,11 @@ until the appropriate size is reached.</p>
 <dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></p>
 </dd>
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p><p>var[f(X)] with shape:</p>
-<ul class="simple">
-<li><p>[N, P, N, P] if <cite>full_output_cov</cite> = True</p></li>
-<li><p>[N, P] if <cite>full_output_cov</cite> = False</p></li>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><strong>return</strong> has shape [<em>batch</em>…, <em>N</em>, <em>P</em>, <em>P</em>] if <em>full_output_cov</em>.</p></li>
+<li><p><strong>return</strong> has shape [<em>batch</em>…, <em>N</em>, <em>P</em>] if not <em>full_output_cov</em>.</p></li>
 </ul>
+<p>var[f(X)]</p>
 </p>
 </dd>
 </dl>
@@ -1639,8 +1714,16 @@ d is the degree parameter.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>X</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>, <a class="reference internal" href="../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>]) – data matrix, [N1, D]</p></li>
-<li><p><strong>X2</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>, <a class="reference internal" href="../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>, <code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code>]) – data matrix, [N2, D]</p></li>
+<li><p><strong>X</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>, <a class="reference internal" href="../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>]) – <ul>
+<li><p><strong>X</strong> has shape [<em>batch</em>…, <em>N</em>, <em>D</em>].</p></li>
+</ul>
+<p>data matrix</p>
+</p></li>
+<li><p><strong>X2</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>, <a class="reference internal" href="../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>, <code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code>]) – <ul>
+<li><p><strong>X2</strong> has shape [<em>batch2</em>…, <em>N2</em>, <em>D</em>].</p></li>
+</ul>
+<p>data matrix</p>
+</p></li>
 <li><p><strong>full_output_cov</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – calculate correlation between outputs.</p></li>
 </ul>
 </dd>
@@ -1648,11 +1731,13 @@ d is the degree parameter.</p>
 <dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></p>
 </dd>
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p><p>cov[f(X), f(X2)] with shape:</p>
-<ul class="simple">
-<li><p>[N1, P, N2, P] if <cite>full_output_cov</cite> = True</p></li>
-<li><p>[P, N1, N2] if <cite>full_output_cov</cite> = False</p></li>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><strong>return</strong> has shape [<em>P</em>, <em>batch</em>…, <em>N</em>, <em>N</em>] if (not <em>full_output_cov</em>) and (<em>X2</em> is <em>None</em>).</p></li>
+<li><p><strong>return</strong> has shape [<em>P</em>, <em>batch</em>…, <em>N</em>, <em>batch2</em>…, <em>N2</em>] if (not <em>full_output_cov</em>) and (<em>X2</em> is not <em>None</em>).</p></li>
+<li><p><strong>return</strong> has shape [<em>batch</em>…, <em>N</em>, <em>P</em>, <em>N</em>, <em>P</em>] if <em>full_output_cov</em> and (<em>X2</em> is <em>None</em>).</p></li>
+<li><p><strong>return</strong> has shape [<em>batch</em>…, <em>N</em>, <em>P</em>, <em>batch2</em>…, <em>N2</em>, <em>P</em>] if <em>full_output_cov</em> and (<em>X2</em> is not <em>None</em>).</p></li>
 </ul>
+<p>cov[f(X), f(X2)]</p>
 </p>
 </dd>
 </dl>
@@ -1665,7 +1750,11 @@ d is the degree parameter.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>X</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>, <a class="reference internal" href="../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>]) – data matrix, [N, D]</p></li>
+<li><p><strong>X</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>, <a class="reference internal" href="../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>]) – <ul>
+<li><p><strong>X</strong> has shape [<em>batch</em>…, <em>N</em>, <em>D</em>].</p></li>
+</ul>
+<p>data matrix</p>
+</p></li>
 <li><p><strong>full_output_cov</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – calculate correlation between outputs.</p></li>
 </ul>
 </dd>
@@ -1673,11 +1762,11 @@ d is the degree parameter.</p>
 <dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></p>
 </dd>
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p><p>var[f(X)] with shape:</p>
-<ul class="simple">
-<li><p>[N, P, N, P] if <cite>full_output_cov</cite> = True</p></li>
-<li><p>[N, P] if <cite>full_output_cov</cite> = False</p></li>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><strong>return</strong> has shape [<em>batch</em>…, <em>N</em>, <em>P</em>, <em>P</em>] if <em>full_output_cov</em>.</p></li>
+<li><p><strong>return</strong> has shape [<em>batch</em>…, <em>N</em>, <em>P</em>] if not <em>full_output_cov</em>.</p></li>
 </ul>
+<p>var[f(X)]</p>
 </p>
 </dd>
 </dl>
@@ -1738,8 +1827,16 @@ Use <cite>gpflow.kernels</cite> instead for more efficient code.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>X</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>, <a class="reference internal" href="../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>]) – data matrix, [N1, D]</p></li>
-<li><p><strong>X2</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>, <a class="reference internal" href="../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>, <code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code>]) – data matrix, [N2, D]</p></li>
+<li><p><strong>X</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>, <a class="reference internal" href="../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>]) – <ul>
+<li><p><strong>X</strong> has shape [<em>batch</em>…, <em>N</em>, <em>D</em>].</p></li>
+</ul>
+<p>data matrix</p>
+</p></li>
+<li><p><strong>X2</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>, <a class="reference internal" href="../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>, <code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code>]) – <ul>
+<li><p><strong>X2</strong> has shape [<em>batch2</em>…, <em>N2</em>, <em>D</em>].</p></li>
+</ul>
+<p>data matrix</p>
+</p></li>
 <li><p><strong>full_output_cov</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – calculate correlation between outputs.</p></li>
 </ul>
 </dd>
@@ -1747,11 +1844,13 @@ Use <cite>gpflow.kernels</cite> instead for more efficient code.</p>
 <dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></p>
 </dd>
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p><p>cov[f(X), f(X2)] with shape:</p>
-<ul class="simple">
-<li><p>[N1, P, N2, P] if <cite>full_output_cov</cite> = True</p></li>
-<li><p>[P, N1, N2] if <cite>full_output_cov</cite> = False</p></li>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><strong>return</strong> has shape [<em>P</em>, <em>batch</em>…, <em>N</em>, <em>N</em>] if (not <em>full_output_cov</em>) and (<em>X2</em> is <em>None</em>).</p></li>
+<li><p><strong>return</strong> has shape [<em>P</em>, <em>batch</em>…, <em>N</em>, <em>batch2</em>…, <em>N2</em>] if (not <em>full_output_cov</em>) and (<em>X2</em> is not <em>None</em>).</p></li>
+<li><p><strong>return</strong> has shape [<em>batch</em>…, <em>N</em>, <em>P</em>, <em>N</em>, <em>P</em>] if <em>full_output_cov</em> and (<em>X2</em> is <em>None</em>).</p></li>
+<li><p><strong>return</strong> has shape [<em>batch</em>…, <em>N</em>, <em>P</em>, <em>batch2</em>…, <em>N2</em>, <em>P</em>] if <em>full_output_cov</em> and (<em>X2</em> is not <em>None</em>).</p></li>
 </ul>
+<p>cov[f(X), f(X2)]</p>
 </p>
 </dd>
 </dl>
@@ -1764,7 +1863,11 @@ Use <cite>gpflow.kernels</cite> instead for more efficient code.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>X</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>, <a class="reference internal" href="../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>]) – data matrix, [N, D]</p></li>
+<li><p><strong>X</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>, <a class="reference internal" href="../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>]) – <ul>
+<li><p><strong>X</strong> has shape [<em>batch</em>…, <em>N</em>, <em>D</em>].</p></li>
+</ul>
+<p>data matrix</p>
+</p></li>
 <li><p><strong>full_output_cov</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – calculate correlation between outputs.</p></li>
 </ul>
 </dd>
@@ -1772,11 +1875,11 @@ Use <cite>gpflow.kernels</cite> instead for more efficient code.</p>
 <dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></p>
 </dd>
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p><p>var[f(X)] with shape:</p>
-<ul class="simple">
-<li><p>[N, P, N, P] if <cite>full_output_cov</cite> = True</p></li>
-<li><p>[N, P] if <cite>full_output_cov</cite> = False</p></li>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><strong>return</strong> has shape [<em>batch</em>…, <em>N</em>, <em>P</em>, <em>P</em>] if <em>full_output_cov</em>.</p></li>
+<li><p><strong>return</strong> has shape [<em>batch</em>…, <em>N</em>, <em>P</em>] if not <em>full_output_cov</em>.</p></li>
 </ul>
+<p>var[f(X)]</p>
 </p>
 </dd>
 </dl>

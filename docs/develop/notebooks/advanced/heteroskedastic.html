@@ -832,9 +832,11 @@ div.rendered_html tbody tr:hover {
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2022-06-28 14:52:24.340969: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcudart.so.11.0&#39;; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory
-2022-06-28 14:52:24.340997: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.
+2022-06-29 10:40:23.659790: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcudart.so.11.0&#39;; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory
+2022-06-29 10:40:23.659818: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.
 /home/circleci/project/gpflow/experimental/utils.py:42: UserWarning: You&#39;re calling gpflow.experimental.check_shapes.decorator.check_shapes which is considered *experimental*. Expect: breaking changes, poor documentation, and bugs.
+  warn(
+/home/circleci/project/gpflow/experimental/utils.py:42: UserWarning: You&#39;re calling gpflow.experimental.check_shapes.inheritance.inherit_check_shapes which is considered *experimental*. Expect: breaking changes, poor documentation, and bugs.
   warn(
 </pre></div></div>
 </div>
@@ -954,10 +956,10 @@ Likelihood&#39;s expected latent_dim: 2
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-2022-06-28 14:52:27.043547: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcuda.so.1&#39;; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory
-2022-06-28 14:52:27.043593: W tensorflow/stream_executor/cuda/cuda_driver.cc:269] failed call to cuInit: UNKNOWN ERROR (303)
-2022-06-28 14:52:27.043613: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (9ab0ee389f83): /proc/driver/nvidia/version does not exist
-2022-06-28 14:52:27.043855: I tensorflow/core/platform/cpu_feature_guard.cc:193] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA
+2022-06-29 10:40:26.420893: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library &#39;libcuda.so.1&#39;; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory
+2022-06-29 10:40:26.420924: W tensorflow/stream_executor/cuda/cuda_driver.cc:269] failed call to cuInit: UNKNOWN ERROR (303)
+2022-06-29 10:40:26.420942: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (db43c8a98066): /proc/driver/nvidia/version does not exist
+2022-06-29 10:40:26.421243: I tensorflow/core/platform/cpu_feature_guard.cc:193] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA
 To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.
 </pre></div></div>
 </div>
@@ -970,7 +972,7 @@ To enable them in other operations, rebuild TensorFlow with the appropriate comp
 <div class="math notranslate nohighlight">
 \[f_2(x) \sim \mathcal{GP}(0, k_2(\cdot, \cdot))\]</div>
 <p>with both kernels being modeled as separate and independent <span class="math notranslate nohighlight">\(\text{SquaredExponential}\)</span> kernels.</p>
-<div class="nbinput nblast docutils container">
+<div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
 </div>
@@ -984,12 +986,21 @@ To enable them in other operations, rebuild TensorFlow with the appropriate comp
 </pre></div>
 </div>
 </div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+/home/circleci/project/gpflow/experimental/utils.py:42: UserWarning: You&#39;re calling gpflow.experimental.check_shapes.checker.ShapeChecker.__init__ which is considered *experimental*. Expect: breaking changes, poor documentation, and bugs.
+  warn(
+</pre></div></div>
+</div>
 </section>
 <section id="Inducing-Points">
 <h3>Inducing Points<a class="headerlink" href="#Inducing-Points" title="Permalink to this heading">#</a></h3>
 <p>Since we will use the <strong>SVGP</strong> model to perform inference, we need to implement the inducing variables <span class="math notranslate nohighlight">\(U_1\)</span> and <span class="math notranslate nohighlight">\(U_2\)</span>, both with size <span class="math notranslate nohighlight">\(M=20\)</span>, which are used to approximate <span class="math notranslate nohighlight">\(f_1\)</span> and <span class="math notranslate nohighlight">\(f_2\)</span> respectively, and initialize the inducing points positions <span class="math notranslate nohighlight">\(Z_1\)</span> and <span class="math notranslate nohighlight">\(Z_2\)</span>. This gives a total of <span class="math notranslate nohighlight">\(2M=40\)</span> inducing variables and inducing points.</p>
 <p>The inducing variables and their corresponding inputs will be Separate and Independent, but both <span class="math notranslate nohighlight">\(Z_1\)</span> and <span class="math notranslate nohighlight">\(Z_2\)</span> will be initialized as <span class="math notranslate nohighlight">\(Z\)</span>, which are placed as <span class="math notranslate nohighlight">\(M=20\)</span> equally spaced points in <span class="math notranslate nohighlight">\([\min(X), \max(X)]\)</span>.</p>
-<div class="nbinput docutils container">
+<div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
 </div>
@@ -1006,15 +1017,6 @@ To enable them in other operations, rebuild TensorFlow with the appropriate comp
 <span class="p">)</span>
 </pre></div>
 </div>
-</div>
-<div class="nboutput nblast docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area stderr docutils container">
-<div class="highlight"><pre>
-/home/circleci/project/gpflow/experimental/utils.py:42: UserWarning: You&#39;re calling gpflow.experimental.check_shapes.checker.ShapeChecker.__init__ which is considered *experimental*. Expect: breaking changes, poor documentation, and bugs.
-  warn(
-</pre></div></div>
 </div>
 </section>
 <section id="SVGP-Model">
@@ -1041,7 +1043,7 @@ To enable them in other operations, rebuild TensorFlow with the appropriate comp
 </pre></div>
 </div>
 <div class="output_area rendered_html docutils container">
-&lt;gpflow.models.svgp.SVGP object at 0x7f99e41a4d00&gt;
+&lt;gpflow.models.svgp.SVGP object at 0x7fbebc19cc10&gt;
 <table>
 <thead>
 <tr><th>name                                              </th><th>class    </th><th>transform     </th><th>prior  </th><th>trainable  </th><th>shape      </th><th>dtype  </th><th>value           </th></tr>
@@ -1196,7 +1198,7 @@ Epoch 100 - Loss:  1449.6072
 </pre></div>
 </div>
 <div class="output_area rendered_html docutils container">
-&lt;gpflow.models.svgp.SVGP object at 0x7f99e41a4d00&gt;
+&lt;gpflow.models.svgp.SVGP object at 0x7fbebc19cc10&gt;
 <table>
 <thead>
 <tr><th>name                                              </th><th>class    </th><th>transform     </th><th>prior  </th><th>trainable  </th><th>shape      </th><th>dtype  </th><th>value                                               </th></tr>
