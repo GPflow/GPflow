@@ -58,23 +58,27 @@ class Gaussian(ScalarLikelihood):
 
         self.variance = Parameter(variance, transform=positive(lower=variance_lower_bound))
 
-    def _scalar_log_prob(self, F: TensorType, Y: TensorType) -> tf.Tensor:
+    def _scalar_log_prob(self, X: TensorType, F: TensorType, Y: TensorType) -> tf.Tensor:
         return logdensities.gaussian(Y, F, self.variance)
 
-    def _conditional_mean(self, F: TensorType) -> tf.Tensor:  # pylint: disable=R0201
+    def _conditional_mean(self, X: TensorType, F: TensorType) -> tf.Tensor:  # pylint: disable=R0201
         return tf.identity(F)
 
-    def _conditional_variance(self, F: TensorType) -> tf.Tensor:
+    def _conditional_variance(self, X: TensorType, F: TensorType) -> tf.Tensor:
         return tf.fill(tf.shape(F), tf.squeeze(self.variance))
 
-    def _predict_mean_and_var(self, Fmu: TensorType, Fvar: TensorType) -> MeanAndVariance:
+    def _predict_mean_and_var(
+        self, X: TensorType, Fmu: TensorType, Fvar: TensorType
+    ) -> MeanAndVariance:
         return tf.identity(Fmu), Fvar + self.variance
 
-    def _predict_log_density(self, Fmu: TensorType, Fvar: TensorType, Y: TensorType) -> tf.Tensor:
+    def _predict_log_density(
+        self, X: TensorType, Fmu: TensorType, Fvar: TensorType, Y: TensorType
+    ) -> tf.Tensor:
         return tf.reduce_sum(logdensities.gaussian(Y, Fmu, Fvar + self.variance), axis=-1)
 
     def _variational_expectations(
-        self, Fmu: TensorType, Fvar: TensorType, Y: TensorType
+        self, X: TensorType, Fmu: TensorType, Fvar: TensorType, Y: TensorType
     ) -> tf.Tensor:
         return tf.reduce_sum(
             -0.5 * np.log(2 * np.pi)
@@ -89,21 +93,21 @@ class Exponential(ScalarLikelihood):
         super().__init__(**kwargs)
         self.invlink = invlink
 
-    def _scalar_log_prob(self, F: TensorType, Y: TensorType) -> tf.Tensor:
+    def _scalar_log_prob(self, X: TensorType, F: TensorType, Y: TensorType) -> tf.Tensor:
         return logdensities.exponential(Y, self.invlink(F))
 
-    def _conditional_mean(self, F: TensorType) -> tf.Tensor:
+    def _conditional_mean(self, X: TensorType, F: TensorType) -> tf.Tensor:
         return self.invlink(F)
 
-    def _conditional_variance(self, F: TensorType) -> tf.Tensor:
+    def _conditional_variance(self, X: TensorType, F: TensorType) -> tf.Tensor:
         return tf.square(self.invlink(F))
 
     def _variational_expectations(
-        self, Fmu: TensorType, Fvar: TensorType, Y: TensorType
+        self, X: TensorType, Fmu: TensorType, Fvar: TensorType, Y: TensorType
     ) -> tf.Tensor:
         if self.invlink is tf.exp:
             return tf.reduce_sum(-tf.exp(-Fmu + Fvar / 2) * Y - Fmu, axis=-1)
-        return super()._variational_expectations(Fmu, Fvar, Y)
+        return super()._variational_expectations(X, Fmu, Fvar, Y)
 
 
 class StudentT(ScalarLikelihood):
@@ -116,13 +120,13 @@ class StudentT(ScalarLikelihood):
         self.df = df
         self.scale = Parameter(scale, transform=positive())
 
-    def _scalar_log_prob(self, F: TensorType, Y: TensorType) -> tf.Tensor:
+    def _scalar_log_prob(self, X: TensorType, F: TensorType, Y: TensorType) -> tf.Tensor:
         return logdensities.student_t(Y, F, self.scale, self.df)
 
-    def _conditional_mean(self, F: TensorType) -> tf.Tensor:
+    def _conditional_mean(self, X: TensorType, F: TensorType) -> tf.Tensor:
         return F
 
-    def _conditional_variance(self, F: TensorType) -> tf.Tensor:
+    def _conditional_variance(self, X: TensorType, F: TensorType) -> tf.Tensor:
         var = (self.scale ** 2) * (self.df / (self.df - 2.0))
         return tf.fill(tf.shape(F), tf.squeeze(var))
 
@@ -137,18 +141,18 @@ class Gamma(ScalarLikelihood):
         self.invlink = invlink
         self.shape = Parameter(1.0, transform=positive())
 
-    def _scalar_log_prob(self, F: TensorType, Y: TensorType) -> tf.Tensor:
+    def _scalar_log_prob(self, X: TensorType, F: TensorType, Y: TensorType) -> tf.Tensor:
         return logdensities.gamma(Y, self.shape, self.invlink(F))
 
-    def _conditional_mean(self, F: TensorType) -> tf.Tensor:
+    def _conditional_mean(self, X: TensorType, F: TensorType) -> tf.Tensor:
         return self.shape * self.invlink(F)
 
-    def _conditional_variance(self, F: TensorType) -> tf.Tensor:
+    def _conditional_variance(self, X: TensorType, F: TensorType) -> tf.Tensor:
         scale = self.invlink(F)
         return self.shape * (scale ** 2)
 
     def _variational_expectations(
-        self, Fmu: TensorType, Fvar: TensorType, Y: TensorType
+        self, X: TensorType, Fmu: TensorType, Fvar: TensorType, Y: TensorType
     ) -> tf.Tensor:
         if self.invlink is tf.exp:
             return tf.reduce_sum(
@@ -159,7 +163,7 @@ class Gamma(ScalarLikelihood):
                 axis=-1,
             )
         else:
-            return super()._variational_expectations(Fmu, Fvar, Y)
+            return super()._variational_expectations(X, Fmu, Fvar, Y)
 
 
 class Beta(ScalarLikelihood):
@@ -189,15 +193,15 @@ class Beta(ScalarLikelihood):
         self.scale = Parameter(scale, transform=positive())
         self.invlink = invlink
 
-    def _scalar_log_prob(self, F: TensorType, Y: TensorType) -> tf.Tensor:
+    def _scalar_log_prob(self, X: TensorType, F: TensorType, Y: TensorType) -> tf.Tensor:
         mean = self.invlink(F)
         alpha = mean * self.scale
         beta = self.scale - alpha
         return logdensities.beta(Y, alpha, beta)
 
-    def _conditional_mean(self, F: TensorType) -> tf.Tensor:
+    def _conditional_mean(self, X: TensorType, F: TensorType) -> tf.Tensor:
         return self.invlink(F)
 
-    def _conditional_variance(self, F: TensorType) -> tf.Tensor:
+    def _conditional_variance(self, X: TensorType, F: TensorType) -> tf.Tensor:
         mean = self.invlink(F)
         return (mean - tf.square(mean)) / (self.scale + 1.0)

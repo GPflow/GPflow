@@ -218,7 +218,7 @@ def ndiagquad(
 @check_shapes(
     "Fmu: [N, Din]",
     "Fvar: [N, Din]",
-    "Ys.values(): [broadcast N, Dout]",
+    "Ys.values(): [broadcast N, .]",
     "return: [broadcast n_funs, N, P]",
 )
 def ndiag_mc(

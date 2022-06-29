@@ -33,6 +33,7 @@ class MultiLatentLikelihood(QuadratureLikelihood):
 
     def __init__(self, latent_dim: int, **kwargs: Any) -> None:
         super().__init__(
+            input_dim=None,
             latent_dim=latent_dim,
             observation_dim=1,
             **kwargs,
@@ -59,7 +60,7 @@ class MultiLatentTFPConditional(MultiLatentLikelihood):
         super().__init__(latent_dim, **kwargs)
         self.conditional_distribution = conditional_distribution
 
-    def _log_prob(self, Fs: TensorType, Y: TensorType) -> tf.Tensor:
+    def _log_prob(self, X: TensorType, Fs: TensorType, Y: TensorType) -> tf.Tensor:
         """
         The log probability density log p(Y|F)
 
@@ -69,7 +70,7 @@ class MultiLatentTFPConditional(MultiLatentLikelihood):
         """
         return tf.squeeze(self.conditional_distribution(Fs).log_prob(Y), -1)
 
-    def _conditional_mean(self, Fs: TensorType) -> tf.Tensor:
+    def _conditional_mean(self, X: TensorType, Fs: TensorType) -> tf.Tensor:
         """
         The conditional marginal mean of Y|F: [E(Y₁|F)]
 
@@ -78,7 +79,7 @@ class MultiLatentTFPConditional(MultiLatentLikelihood):
         """
         return self.conditional_distribution(Fs).mean()
 
-    def _conditional_variance(self, Fs: TensorType) -> tf.Tensor:
+    def _conditional_variance(self, X: TensorType, Fs: TensorType) -> tf.Tensor:
         """
         The conditional marginal variance of Y|F: [Var(Y₁|F)]
 

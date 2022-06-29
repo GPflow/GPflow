@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.4.0
+#       jupytext_version: 1.13.8
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -91,9 +91,9 @@ Y_data = np.hstack([Y, NoiseVar])
 class HeteroskedasticGaussian(gpflow.likelihoods.Likelihood):
     def __init__(self, **kwargs):
         # this likelihood expects a single latent function F, and two columns in the data matrix Y:
-        super().__init__(latent_dim=1, observation_dim=2, **kwargs)
+        super().__init__(input_dim=1, latent_dim=1, observation_dim=2, **kwargs)
 
-    def _log_prob(self, F, Y):
+    def _log_prob(self, X, F, Y):
         # log_prob is used by the quadrature fallback of variational_expectations and predict_log_density.
         # Because variational_expectations is implemented analytically below, this is not actually needed,
         # but is included for pedagogical purposes.
@@ -101,7 +101,7 @@ class HeteroskedasticGaussian(gpflow.likelihoods.Likelihood):
         Y, NoiseVar = Y[:, 0], Y[:, 1]
         return gpflow.logdensities.gaussian(Y, F, NoiseVar)
 
-    def _variational_expectations(self, Fmu, Fvar, Y):
+    def _variational_expectations(self, X, Fmu, Fvar, Y):
         Y, NoiseVar = Y[:, 0], Y[:, 1]
         Fmu, Fvar = Fmu[:, 0], Fvar[:, 0]
         return (
@@ -113,10 +113,10 @@ class HeteroskedasticGaussian(gpflow.likelihoods.Likelihood):
     # The following two methods are abstract in the base class.
     # They need to be implemented even if not used.
 
-    def _predict_log_density(self, Fmu, Fvar, Y):
+    def _predict_log_density(self, X, Fmu, Fvar, Y):
         raise NotImplementedError
 
-    def _predict_mean_and_var(self, Fmu, Fvar):
+    def _predict_mean_and_var(self, X, Fmu, Fvar):
         raise NotImplementedError
 
 

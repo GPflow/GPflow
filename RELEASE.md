@@ -39,6 +39,8 @@ This release contains contributions from:
 
 ## Breaking Changes
 
+* All likelihood methods now take an extra `X` argument. If you have written custom likelihoods or
+  you have custom code calling likelihoods directly you will need to add this extra argument.
 * Change to `InducingVariables` API. `InducingVariables` must now have a `shape` property.
 * `gpflow.experimental.check_shapes.get_shape.register` has been replaced with
   `gpflow.experimental.check_shapes.register_get_shape`.
@@ -50,6 +52,9 @@ This release contains contributions from:
 
 ## Major Features and Improvements
 
+* Improved handling of variable noise
+  - All likelihood methods now take an `X` argument, allowing you to easily implement
+    heteroscedastic likelihoods.
 * `gpflow.experimental.check_shapes`
   - Can now be in three different states - ENABLED, EAGER_MODE_ONLY, and DISABLE.
   - Now support multiple variable-rank dimensions at the same time, e.g. `cov: [n..., n...]`.

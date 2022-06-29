@@ -152,7 +152,7 @@ class SVGP_deprecated(GPModel, ExternalDataTrainingLossMixin):
         X, Y = data
         kl = self.prior_kl()
         f_mean, f_var = self.predict_f(X, full_cov=False, full_output_cov=False)
-        var_exp = self.likelihood.variational_expectations(f_mean, f_var, Y)
+        var_exp = self.likelihood.variational_expectations(X, f_mean, f_var, Y)
         if self.num_data is not None:
             num_data = tf.cast(self.num_data, kl.dtype)
             minibatch_size = tf.cast(tf.shape(X)[0], kl.dtype)

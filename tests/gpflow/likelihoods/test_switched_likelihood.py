@@ -25,11 +25,13 @@ from gpflow.inducing_variables import InducingPoints
 from gpflow.likelihoods import Gaussian, StudentT, SwitchedLikelihood
 
 
+@pytest.mark.parametrize("X_list", [[tf.random.normal((i, 2)) for i in range(3, 6)]])
 @pytest.mark.parametrize("Y_list", [[tf.random.normal((i, 2)) for i in range(3, 6)]])
 @pytest.mark.parametrize("F_list", [[tf.random.normal((i, 2)) for i in range(3, 6)]])
 @pytest.mark.parametrize("Fvar_list", [[tf.exp(tf.random.normal((i, 2))) for i in range(3, 6)]])
 @pytest.mark.parametrize("Y_label", [[tf.ones((i, 2)) * (i - 3.0) for i in range(3, 6)]])
 def test_switched_likelihood_log_prob(
+    X_list: Sequence[TensorType],
     Y_list: Sequence[TensorType],
     F_list: Sequence[TensorType],
     Fvar_list: Sequence[TensorType],
@@ -42,6 +44,7 @@ def test_switched_likelihood_log_prob(
     Y_perm = list(range(3 + 4 + 5))
     np.random.shuffle(Y_perm)
     # shuffle the original data
+    X_sw = np.concatenate(X_list)[Y_perm, :]
     Y_sw = np.hstack([np.concatenate(Y_list), np.concatenate(Y_label)])[Y_perm, :3]
     F_sw = np.concatenate(F_list)[Y_perm, :]
     likelihoods = [Gaussian()] * 3
@@ -49,17 +52,19 @@ def test_switched_likelihood_log_prob(
         lik.variance = Parameter(np.exp(np.random.randn()), dtype=np.float32)
     switched_likelihood = SwitchedLikelihood(likelihoods)
 
-    switched_results = switched_likelihood.log_prob(F_sw, Y_sw)
-    results = [lik.log_prob(f, y) for lik, y, f in zip(likelihoods, Y_list, F_list)]
+    switched_results = switched_likelihood.log_prob(X_sw, F_sw, Y_sw)
+    results = [lik.log_prob(x, f, y) for lik, x, y, f in zip(likelihoods, X_list, Y_list, F_list)]
 
     assert_allclose(switched_results, np.concatenate(results)[Y_perm])
 
 
+@pytest.mark.parametrize("X_list", [[tf.random.normal((i, 2)) for i in range(3, 6)]])
 @pytest.mark.parametrize("Y_list", [[tf.random.normal((i, 2)) for i in range(3, 6)]])
 @pytest.mark.parametrize("F_list", [[tf.random.normal((i, 2)) for i in range(3, 6)]])
 @pytest.mark.parametrize("Fvar_list", [[tf.exp(tf.random.normal((i, 2))) for i in range(3, 6)]])
 @pytest.mark.parametrize("Y_label", [[tf.ones((i, 2)) * (i - 3.0) for i in range(3, 6)]])
 def test_switched_likelihood_predict_log_density(
+    X_list: Sequence[TensorType],
     Y_list: Sequence[TensorType],
     F_list: Sequence[TensorType],
     Fvar_list: Sequence[TensorType],
@@ -68,6 +73,7 @@ def test_switched_likelihood_predict_log_density(
     Y_perm = list(range(3 + 4 + 5))
     np.random.shuffle(Y_perm)
     # shuffle the original data
+    X_sw = np.concatenate(X_list)[Y_perm, :]
     Y_sw = np.hstack([np.concatenate(Y_list), np.concatenate(Y_label)])[Y_perm, :3]
     F_sw = np.concatenate(F_list)[Y_perm, :]
     Fvar_sw = np.concatenate(Fvar_list)[Y_perm, :]
@@ -77,20 +83,22 @@ def test_switched_likelihood_predict_log_density(
         lik.variance = Parameter(np.exp(np.random.randn()), dtype=np.float32)
     switched_likelihood = SwitchedLikelihood(likelihoods)
 
-    switched_results = switched_likelihood.predict_log_density(F_sw, Fvar_sw, Y_sw)
+    switched_results = switched_likelihood.predict_log_density(X_sw, F_sw, Fvar_sw, Y_sw)
     # likelihood
     results = [
-        lik.predict_log_density(f, fvar, y)
-        for lik, y, f, fvar in zip(likelihoods, Y_list, F_list, Fvar_list)
+        lik.predict_log_density(x, f, fvar, y)
+        for lik, x, y, f, fvar in zip(likelihoods, X_list, Y_list, F_list, Fvar_list)
     ]
     assert_allclose(switched_results, np.concatenate(results)[Y_perm])
 
 
+@pytest.mark.parametrize("X_list", [[tf.random.normal((i, 2)) for i in range(3, 6)]])
 @pytest.mark.parametrize("Y_list", [[tf.random.normal((i, 2)) for i in range(3, 6)]])
 @pytest.mark.parametrize("F_list", [[tf.random.normal((i, 2)) for i in range(3, 6)]])
 @pytest.mark.parametrize("Fvar_list", [[tf.exp(tf.random.normal((i, 2))) for i in range(3, 6)]])
 @pytest.mark.parametrize("Y_label", [[tf.ones((i, 2)) * (i - 3.0) for i in range(3, 6)]])
 def test_switched_likelihood_variational_expectations(
+    X_list: Sequence[TensorType],
     Y_list: Sequence[TensorType],
     F_list: Sequence[TensorType],
     Fvar_list: Sequence[TensorType],
@@ -99,6 +107,7 @@ def test_switched_likelihood_variational_expectations(
     Y_perm = list(range(3 + 4 + 5))
     np.random.shuffle(Y_perm)
     # shuffle the original data
+    X_sw = np.concatenate(X_list)[Y_perm, :]
     Y_sw = np.hstack([np.concatenate(Y_list), np.concatenate(Y_label)])[Y_perm, :3]
     F_sw = np.concatenate(F_list)[Y_perm, :]
     Fvar_sw = np.concatenate(Fvar_list)[Y_perm, :]
@@ -108,10 +117,10 @@ def test_switched_likelihood_variational_expectations(
         lik.variance = Parameter(np.exp(np.random.randn()), dtype=np.float32)
     switched_likelihood = SwitchedLikelihood(likelihoods)
 
-    switched_results = switched_likelihood.variational_expectations(F_sw, Fvar_sw, Y_sw)
+    switched_results = switched_likelihood.variational_expectations(X_sw, F_sw, Fvar_sw, Y_sw)
     results = [
-        lik.variational_expectations(f, fvar, y)
-        for lik, y, f, fvar in zip(likelihoods, Y_list, F_list, Fvar_list)
+        lik.variational_expectations(x, f, fvar, y)
+        for lik, x, y, f, fvar in zip(likelihoods, X_list, Y_list, F_list, Fvar_list)
     ]
     assert_allclose(switched_results, np.concatenate(results)[Y_perm])
 

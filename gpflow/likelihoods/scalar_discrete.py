@@ -50,17 +50,17 @@ class Poisson(ScalarLikelihood):
         self.invlink = invlink
         self.binsize: AnyNDArray = np.array(binsize, dtype=default_float())
 
-    def _scalar_log_prob(self, F: TensorType, Y: TensorType) -> tf.Tensor:
+    def _scalar_log_prob(self, X: TensorType, F: TensorType, Y: TensorType) -> tf.Tensor:
         return logdensities.poisson(Y, self.invlink(F) * self.binsize)
 
-    def _conditional_variance(self, F: TensorType) -> tf.Tensor:
+    def _conditional_variance(self, X: TensorType, F: TensorType) -> tf.Tensor:
         return self.invlink(F) * self.binsize
 
-    def _conditional_mean(self, F: TensorType) -> tf.Tensor:
+    def _conditional_mean(self, X: TensorType, F: TensorType) -> tf.Tensor:
         return self.invlink(F) * self.binsize
 
     def _variational_expectations(
-        self, Fmu: TensorType, Fvar: TensorType, Y: TensorType
+        self, X: TensorType, Fmu: TensorType, Fvar: TensorType, Y: TensorType
     ) -> tf.Tensor:
         if self.invlink is tf.exp:
             return tf.reduce_sum(
@@ -70,7 +70,7 @@ class Poisson(ScalarLikelihood):
                 + Y * tf.math.log(self.binsize),
                 axis=-1,
             )
-        return super()._variational_expectations(Fmu, Fvar, Y)
+        return super()._variational_expectations(X, Fmu, Fvar, Y)
 
 
 class Bernoulli(ScalarLikelihood):
@@ -80,26 +80,30 @@ class Bernoulli(ScalarLikelihood):
         super().__init__(**kwargs)
         self.invlink = invlink
 
-    def _scalar_log_prob(self, F: TensorType, Y: TensorType) -> tf.Tensor:
+    def _scalar_log_prob(self, X: TensorType, F: TensorType, Y: TensorType) -> tf.Tensor:
         return logdensities.bernoulli(Y, self.invlink(F))
 
-    def _predict_mean_and_var(self, Fmu: TensorType, Fvar: TensorType) -> MeanAndVariance:
+    def _predict_mean_and_var(
+        self, X: TensorType, Fmu: TensorType, Fvar: TensorType
+    ) -> MeanAndVariance:
         if self.invlink is inv_probit:
             p = inv_probit(Fmu / tf.sqrt(1 + Fvar))
             return p, p - tf.square(p)
         else:
             # for other invlink, use quadrature
-            return super()._predict_mean_and_var(Fmu, Fvar)
+            return super()._predict_mean_and_var(X, Fmu, Fvar)
 
-    def _predict_log_density(self, Fmu: TensorType, Fvar: TensorType, Y: TensorType) -> tf.Tensor:
-        p = self.predict_mean_and_var(Fmu, Fvar)[0]
+    def _predict_log_density(
+        self, X: TensorType, Fmu: TensorType, Fvar: TensorType, Y: TensorType
+    ) -> tf.Tensor:
+        p = self.predict_mean_and_var(X, Fmu, Fvar)[0]
         return tf.reduce_sum(logdensities.bernoulli(Y, p), axis=-1)
 
-    def _conditional_mean(self, F: TensorType) -> tf.Tensor:
+    def _conditional_mean(self, X: TensorType, F: TensorType) -> tf.Tensor:
         return self.invlink(F)
 
-    def _conditional_variance(self, F: TensorType) -> tf.Tensor:
-        p = self.conditional_mean(F)
+    def _conditional_variance(self, X: TensorType, F: TensorType) -> tf.Tensor:
+        p = self.conditional_mean(X, F)
         return p - (p ** 2)
 
 
@@ -134,7 +138,7 @@ class Ordinal(ScalarLikelihood):
         self.num_bins = bin_edges.size + 1
         self.sigma = Parameter(1.0, transform=positive())
 
-    def _scalar_log_prob(self, F: TensorType, Y: TensorType) -> tf.Tensor:
+    def _scalar_log_prob(self, X: TensorType, F: TensorType, Y: TensorType) -> tf.Tensor:
         Y = to_default_int(Y)
         scaled_bins_left = tf.concat([self.bin_edges / self.sigma, np.array([np.inf])], 0)
         scaled_bins_right = tf.concat([np.array([-np.inf]), self.bin_edges / self.sigma], 0)
@@ -161,12 +165,12 @@ class Ordinal(ScalarLikelihood):
             scaled_bins_right - tf.reshape(F, (-1, 1)) / self.sigma
         )
 
-    def _conditional_mean(self, F: TensorType) -> tf.Tensor:
+    def _conditional_mean(self, X: TensorType, F: TensorType) -> tf.Tensor:
         phi = self._make_phi(F)
         Ys = tf.reshape(np.arange(self.num_bins, dtype=default_float()), (-1, 1))
         return tf.reshape(tf.linalg.matmul(phi, Ys), tf.shape(F))
 
-    def _conditional_variance(self, F: TensorType) -> tf.Tensor:
+    def _conditional_variance(self, X: TensorType, F: TensorType) -> tf.Tensor:
         phi = self._make_phi(F)
         Ys = tf.reshape(np.arange(self.num_bins, dtype=default_float()), (-1, 1))
         E_y = phi @ Ys
