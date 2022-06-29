@@ -14,6 +14,7 @@
 
 from typing import cast
 
+import numpy as np
 import pytest
 from _pytest.fixtures import SubRequest
 
@@ -31,3 +32,8 @@ def _full_output_cov_fixture(request: SubRequest) -> bool:
 @pytest.fixture(name="whiten", params=[True, False])
 def _whiten_fixture(request: SubRequest) -> bool:
     return cast(bool, request.param)
+
+
+@pytest.fixture(name="rng")
+def _rng_fixture() -> np.random.Generator:
+    return np.random.default_rng(20220523)

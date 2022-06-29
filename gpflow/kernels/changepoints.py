@@ -17,6 +17,8 @@ from typing import Optional, Sequence
 import tensorflow as tf
 
 from ..base import Parameter, TensorType
+from ..experimental.check_shapes import check_shape as cs
+from ..experimental.check_shapes import check_shapes, inherit_check_shapes
 from ..utilities import positive
 from .base import Combination, Kernel
 
@@ -42,6 +44,10 @@ class ChangePoints(Combination):
     The key reference is :cite:t:`lloyd2014`.
     """
 
+    @check_shapes(
+        "locations: [n_change_points]",
+        "steepness: [broadcast n_change_points]",
+    )
     def __init__(
         self,
         kernels: Sequence[Kernel],
@@ -76,40 +82,91 @@ class ChangePoints(Combination):
         # it is not clear how to flatten out nested change-points
         self.kernels = list(kernels)
 
+    @inherit_check_shapes
     def K(self, X: tf.Tensor, X2: Optional[tf.Tensor] = None) -> tf.Tensor:
-        sig_X = self._sigmoids(X)  # N1 x 1 x Ncp
-        sig_X2 = self._sigmoids(X2) if X2 is not None else sig_X  # N2 x 1 x Ncp
+        cs(X, "[batch..., N, 1]  # The `ChangePoints` kernel requires a 1D input space.")
+
+        rank = tf.rank(X) - 2
+        batch = tf.shape(X)[:-2]
+        N = tf.shape(X)[-2]
+        Ncp = tf.shape(self.locations)[0]
+        sig_X = cs(self._sigmoids(X), "[batch..., N, 1, Ncp]")
+
+        if X2 is None:
+            rank2 = 0
+            batch2 = tf.constant([], dtype=tf.int32)
+            N2 = N
+            sig_X2 = sig_X
+            sig_X = cs(
+                tf.reshape(sig_X, tf.concat([batch, [N, 1, Ncp]], 0)), "[batch..., N, 1, Ncp]"
+            )
+            sig_X2 = cs(
+                tf.reshape(sig_X2, tf.concat([batch, [1, N, Ncp]], 0)), "[batch..., 1, N, Ncp]"
+            )
+        else:
+            rank2 = tf.rank(X2) - 2
+            batch2 = tf.shape(X2)[:-2]
+            N2 = tf.shape(X2)[-2]
+
+            sig_X2 = cs(self._sigmoids(X2), "[batch2..., N2, 1, Ncp]")
+
+            ones = tf.ones((rank,), dtype=tf.int32)
+            ones2 = tf.ones((rank2,), dtype=tf.int32)
+            sig_X = cs(
+                tf.reshape(sig_X, tf.concat([batch, [N], ones2, [1, Ncp]], 0)),
+                "[batch..., N, ..., 1, Ncp]",
+            )
+            sig_X2 = cs(
+                tf.reshape(sig_X2, tf.concat([ones, [1], batch2, [N2, Ncp]], 0)),
+                "[..., 1, batch2..., N2, Ncp]",
+            )
 
         # `starters` are the sigmoids going from 0 -> 1, whilst `stoppers` go
-        # from 1 -> 0, dimensions are N1 x N2 x Ncp
-        starters = sig_X * tf.transpose(sig_X2, perm=(1, 0, 2))
-        stoppers = (1 - sig_X) * tf.transpose((1 - sig_X2), perm=(1, 0, 2))
+        # from 1 -> 0.
+        starters = cs(sig_X * sig_X2, "[batch..., N, batch2..., N2, Ncp]")
+        stoppers = cs((1 - sig_X) * (1 - sig_X2), "[batch..., N, batch2..., N2, Ncp]")
 
         # prepend `starters` with ones and append ones to `stoppers` since the
         # first kernel has no start and the last kernel has no end
-        N1 = tf.shape(X)[0]
-        N2 = tf.shape(X2)[0] if X2 is not None else N1
-        ones = tf.ones((N1, N2, 1), dtype=X.dtype)
-        starters = tf.concat([ones, starters], axis=2)
-        stoppers = tf.concat([stoppers, ones], axis=2)
+        ones = tf.ones(tf.concat([batch, [N], batch2, [N2, 1]], 0), dtype=X.dtype)
+        starters = cs(tf.concat([ones, starters], axis=-1), "[batch..., N, batch2..., N2, Nkern]")
+        stoppers = cs(tf.concat([stoppers, ones], axis=-1), "[batch..., N, batch2..., N2, Nkern]")
 
         # now combine with the underlying kernels
-        kernel_stack = tf.stack([k(X, X2) for k in self.kernels], axis=2)
-        return tf.reduce_sum(kernel_stack * starters * stoppers, axis=2)
+        kernel_stack = cs(
+            tf.stack([k(X, X2) for k in self.kernels], axis=-1),
+            "[batch..., N, batch2..., N2, Nkern]",
+        )
+        return tf.reduce_sum(kernel_stack * starters * stoppers, axis=-1)
 
+    @inherit_check_shapes
     def K_diag(self, X: tf.Tensor) -> tf.Tensor:
-        N = tf.shape(X)[0]
-        sig_X = tf.reshape(self._sigmoids(X), (N, -1))  # N x Ncp
+        cs(X, "[batch..., N, 1]  # The `ChangePoints` kernel requires a 1D input space.")
 
-        ones = tf.ones((N, 1), dtype=X.dtype)
-        starters = tf.concat([ones, sig_X * sig_X], axis=1)  # N x Ncp
-        stoppers = tf.concat([(1 - sig_X) * (1 - sig_X), ones], axis=1)
+        rank = tf.rank(X) - 2
+        batch = tf.shape(X)[:-2]
+        N = tf.shape(X)[-2]
+        Ncp = tf.shape(self.locations)[0]
 
-        kernel_stack = tf.stack([k(X, full_cov=False) for k in self.kernels], axis=1)
-        return tf.reduce_sum(kernel_stack * starters * stoppers, axis=1)
+        sig_X = cs(
+            tf.reshape(self._sigmoids(X), tf.concat([batch, [N, Ncp]], 0)), "[batch..., N, Ncp]"
+        )
 
+        ones = tf.ones(tf.concat([batch, [N, 1]], 0), dtype=X.dtype)
+        starters = cs(tf.concat([ones, sig_X * sig_X], axis=-1), "[batch..., N, Nkern]")
+        stoppers = cs(tf.concat([(1 - sig_X) * (1 - sig_X), ones], axis=-1), "[batch..., N, Nkern]")
+
+        kernel_stack = cs(
+            tf.stack([k(X, full_cov=False) for k in self.kernels], axis=-1), "[batch..., N, Nkern]"
+        )
+        return tf.reduce_sum(kernel_stack * starters * stoppers, axis=-1)
+
+    @check_shapes(
+        "X: [batch...]",
+        "return: [batch..., Ncp]",
+    )
     def _sigmoids(self, X: tf.Tensor) -> tf.Tensor:
         locations = tf.sort(self.locations)  # ensure locations are ordered
-        locations = tf.reshape(locations, (1, 1, -1))
-        steepness = tf.reshape(self.steepness, (1, 1, -1))
-        return tf.sigmoid(steepness * (X[:, :, None] - locations))
+        locations = tf.reshape(locations, (-1,))
+        steepness = tf.reshape(self.steepness, (-1,))
+        return tf.sigmoid(steepness * (X[..., None] - locations))

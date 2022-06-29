@@ -19,6 +19,7 @@ from numpy.testing import assert_allclose
 import gpflow
 from gpflow import set_trainable
 from gpflow.base import AnyNDArray
+from gpflow.experimental.check_shapes import ShapeChecker
 from gpflow.mean_functions import Constant
 from gpflow.models import VGP
 
@@ -26,28 +27,33 @@ rng = np.random.RandomState(0)
 
 
 class Datum:
+    cs = ShapeChecker().check_shape
+
     N1, N2 = 6, 16
-    X: Sequence[AnyNDArray] = [rng.rand(N1, 2) * 1, rng.rand(N2, 2) * 1]
+    X: Sequence[AnyNDArray] = [
+        cs(rng.rand(N1, 2) * 1, "[N1, 2]"),
+        cs(rng.rand(N2, 2) * 1, "[N2, 2]"),
+    ]
     Y = [
         np.sin(x[:, :1]) + 0.9 * np.cos(x[:, 1:2] * 1.6) + rng.randn(x.shape[0], 1) * 0.8 for x in X
     ]
     label: Sequence[AnyNDArray] = [np.zeros((N1, 1)), np.ones((N2, 1))]
-    X_augmented0: AnyNDArray = np.hstack([X[0], label[0]])
-    X_augmented1: AnyNDArray = np.hstack([X[1], label[1]])
-    X_augmented: AnyNDArray = np.vstack([X_augmented0, X_augmented1])
+    X_augmented0: AnyNDArray = cs(np.hstack([X[0], label[0]]), "[N1, 3]")
+    X_augmented1: AnyNDArray = cs(np.hstack([X[1], label[1]]), "[N2, 3]")
+    X_augmented: AnyNDArray = cs(np.vstack([X_augmented0, X_augmented1]), "[N3, 3]")
 
-    Y_augmented0: AnyNDArray = np.hstack([Y[0], label[0]])
-    Y_augmented1: AnyNDArray = np.hstack([Y[1], label[1]])
-    Y_augmented: AnyNDArray = np.vstack([Y_augmented0, Y_augmented1])
+    Y_augmented0: AnyNDArray = cs(np.hstack([Y[0], label[0]]), "[N1, 2]")
+    Y_augmented1: AnyNDArray = cs(np.hstack([Y[1], label[1]]), "[N2, 2]")
+    Y_augmented: AnyNDArray = cs(np.vstack([Y_augmented0, Y_augmented1]), "[N3, 2]")
 
     # For predict tests
     N = 10
     Xtest: AnyNDArray = rng.rand(N, 2) * N
-    Xtest_augmented0: AnyNDArray = np.hstack([Xtest, np.zeros((N, 1))])
-    Xtest_augmented1: AnyNDArray = np.hstack([Xtest, np.ones((N, 1))])
-    Ytest = np.sin(Xtest[:, :1]) + 0.9 * np.cos(Xtest[:, 1:2] * 1.6)
-    Ytest_augmented0: AnyNDArray = np.hstack([Ytest, np.zeros((N, 1))])
-    Ytest_augmented1: AnyNDArray = np.hstack([Ytest, np.ones((N, 1))])
+    Xtest_augmented0: AnyNDArray = cs(np.hstack([Xtest, np.zeros((N, 1))]), "[N, 3]")
+    Xtest_augmented1: AnyNDArray = cs(np.hstack([Xtest, np.ones((N, 1))]), "[N, 3]")
+    Ytest = cs(np.sin(Xtest[:, :1]) + 0.9 * np.cos(Xtest[:, 1:2] * 1.6), "[N, 1]")
+    Ytest_augmented0: AnyNDArray = cs(np.hstack([Ytest, np.zeros((N, 1))]), "[N, 2]")
+    Ytest_augmented1: AnyNDArray = cs(np.hstack([Ytest, np.ones((N, 1))]), "[N, 2]")
 
 
 def _prepare_models() -> Tuple[VGP, VGP, VGP]:

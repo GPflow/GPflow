@@ -14,7 +14,6 @@
 
 # -*- coding: utf-8 -*-
 
-from typing import cast
 from unittest.mock import patch
 
 import numpy as np

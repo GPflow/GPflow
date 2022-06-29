@@ -18,6 +18,7 @@ import numpy as np
 import tensorflow as tf
 
 from ..base import Parameter, TensorType
+from ..experimental.check_shapes import check_shapes, inherit_check_shapes
 from ..utilities import positive
 from ..utilities.ops import difference_matrix
 from .base import ActiveDims, Kernel, NormalizedActiveDims
@@ -52,6 +53,9 @@ class Periodic(Kernel):
         the constructor doesn't have it as an argument.
     """
 
+    @check_shapes(
+        "period: [broadcast n_active_dims]",
+    )
     def __init__(self, base_kernel: IsotropicStationary, period: TensorType = 1.0) -> None:
         """
         :param base_kernel: the base kernel to make periodic; must inherit from Stationary
@@ -78,9 +82,11 @@ class Periodic(Kernel):
         # `active_dims` have different types.
         self.base_kernel.active_dims = value  # type: ignore[assignment]
 
+    @inherit_check_shapes
     def K_diag(self, X: TensorType) -> tf.Tensor:
         return self.base_kernel.K_diag(X)
 
+    @inherit_check_shapes
     def K(self, X: TensorType, X2: Optional[TensorType] = None) -> tf.Tensor:
         r = np.pi * (difference_matrix(X, X2)) / self.period
         scaled_sine = tf.sin(r) / self.base_kernel.lengthscales
