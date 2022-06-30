@@ -276,6 +276,7 @@ function checkPageExistsAndRedirect(event) {
 <span class="kn">from</span> <span class="nn">.base</span> <span class="kn">import</span> <span class="n">TensorType</span>
 <span class="kn">from</span> <span class="nn">.config</span> <span class="kn">import</span> <span class="n">default_float</span><span class="p">,</span> <span class="n">default_jitter</span>
 <span class="kn">from</span> <span class="nn">.covariances</span> <span class="kn">import</span> <span class="n">Kuu</span>
+<span class="kn">from</span> <span class="nn">.experimental.check_shapes</span> <span class="kn">import</span> <span class="n">check_shapes</span>
 <span class="kn">from</span> <span class="nn">.inducing_variables</span> <span class="kn">import</span> <span class="n">InducingVariables</span>
 <span class="kn">from</span> <span class="nn">.kernels</span> <span class="kn">import</span> <span class="n">Kernel</span>
 <span class="kn">from</span> <span class="nn">.utilities</span> <span class="kn">import</span> <span class="n">Dispatcher</span><span class="p">,</span> <span class="n">to_default_float</span>
@@ -284,6 +285,12 @@ function checkPageExistsAndRedirect(event) {
 
 
 <div class="viewcode-block" id="_"><a class="viewcode-back" href="../../api/gpflow/kullback_leiblers/index.html#gpflow.kullback_leiblers._">[docs]</a><span class="nd">@prior_kl</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">InducingVariables</span><span class="p">,</span> <span class="n">Kernel</span><span class="p">,</span> <span class="nb">object</span><span class="p">,</span> <span class="nb">object</span><span class="p">)</span>
+<span class="nd">@check_shapes</span><span class="p">(</span>
+    <span class="s2">&quot;inducing_variable: [N, D, broadcast L]&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;q_mu: [M, L]&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;q_sqrt: [M_L_or_L_M_M...]&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;return: []&quot;</span><span class="p">,</span>
+<span class="p">)</span>
 <span class="k">def</span> <span class="nf">_</span><span class="p">(</span>
     <span class="n">inducing_variable</span><span class="p">:</span> <span class="n">InducingVariables</span><span class="p">,</span>
     <span class="n">kernel</span><span class="p">:</span> <span class="n">Kernel</span><span class="p">,</span>
@@ -298,7 +305,14 @@ function checkPageExistsAndRedirect(event) {
         <span class="k">return</span> <span class="n">gauss_kl</span><span class="p">(</span><span class="n">q_mu</span><span class="p">,</span> <span class="n">q_sqrt</span><span class="p">,</span> <span class="n">K</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="gauss_kl"><a class="viewcode-back" href="../../api/gpflow/kullback_leiblers/index.html#gpflow.kullback_leiblers.gauss_kl">[docs]</a><span class="k">def</span> <span class="nf">gauss_kl</span><span class="p">(</span>
+<div class="viewcode-block" id="gauss_kl"><a class="viewcode-back" href="../../api/gpflow/kullback_leiblers/index.html#gpflow.kullback_leiblers.gauss_kl">[docs]</a><span class="nd">@check_shapes</span><span class="p">(</span>
+    <span class="s2">&quot;q_mu: [M, L]&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;q_sqrt: [M_L_or_L_M_M...]&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;K: [broadcast L, M, M]&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;K_cholesky: [broadcast L, M, M]&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;return: []&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="k">def</span> <span class="nf">gauss_kl</span><span class="p">(</span>
     <span class="n">q_mu</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">q_sqrt</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">K</span><span class="p">:</span> <span class="n">TensorType</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">K_cholesky</span><span class="p">:</span> <span class="n">TensorType</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;</span>
@@ -339,19 +353,6 @@ function checkPageExistsAndRedirect(event) {
 
     <span class="n">is_white</span> <span class="o">=</span> <span class="p">(</span><span class="n">K</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">K_cholesky</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span>
     <span class="n">is_diag</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">q_sqrt</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span>
-
-    <span class="n">shape_constraints</span> <span class="o">=</span> <span class="p">[</span>
-        <span class="p">(</span><span class="n">q_mu</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;M&quot;</span><span class="p">,</span> <span class="s2">&quot;L&quot;</span><span class="p">]),</span>
-        <span class="p">(</span><span class="n">q_sqrt</span><span class="p">,</span> <span class="p">([</span><span class="s2">&quot;M&quot;</span><span class="p">,</span> <span class="s2">&quot;L&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="n">is_diag</span> <span class="k">else</span> <span class="p">[</span><span class="s2">&quot;L&quot;</span><span class="p">,</span> <span class="s2">&quot;M&quot;</span><span class="p">,</span> <span class="s2">&quot;M&quot;</span><span class="p">])),</span>
-    <span class="p">]</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="n">is_white</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">K</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">shape_constraints</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">K</span><span class="p">,</span> <span class="p">([</span><span class="s2">&quot;L&quot;</span><span class="p">,</span> <span class="s2">&quot;M&quot;</span><span class="p">,</span> <span class="s2">&quot;M&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">K</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span> <span class="k">else</span> <span class="p">[</span><span class="s2">&quot;M&quot;</span><span class="p">,</span> <span class="s2">&quot;M&quot;</span><span class="p">])))</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">shape_constraints</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-                <span class="p">(</span><span class="n">K_cholesky</span><span class="p">,</span> <span class="p">([</span><span class="s2">&quot;L&quot;</span><span class="p">,</span> <span class="s2">&quot;M&quot;</span><span class="p">,</span> <span class="s2">&quot;M&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">K_cholesky</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span> <span class="k">else</span> <span class="p">[</span><span class="s2">&quot;M&quot;</span><span class="p">,</span> <span class="s2">&quot;M&quot;</span><span class="p">]))</span>
-            <span class="p">)</span>
-    <span class="n">tf</span><span class="o">.</span><span class="n">debugging</span><span class="o">.</span><span class="n">assert_shapes</span><span class="p">(</span><span class="n">shape_constraints</span><span class="p">,</span> <span class="n">message</span><span class="o">=</span><span class="s2">&quot;gauss_kl() arguments&quot;</span><span class="p">)</span>
 
     <span class="n">M</span><span class="p">,</span> <span class="n">L</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">q_mu</span><span class="p">)[</span><span class="mi">0</span><span class="p">],</span> <span class="n">tf</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">q_mu</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
 
@@ -417,7 +418,6 @@ function checkPageExistsAndRedirect(event) {
         <span class="n">scale</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="k">if</span> <span class="n">is_batched</span> <span class="k">else</span> <span class="n">to_default_float</span><span class="p">(</span><span class="n">L</span><span class="p">)</span>
         <span class="n">twoKL</span> <span class="o">+=</span> <span class="n">scale</span> <span class="o">*</span> <span class="n">sum_log_sqdiag_Lp</span>
 
-    <span class="n">tf</span><span class="o">.</span><span class="n">debugging</span><span class="o">.</span><span class="n">assert_shapes</span><span class="p">([(</span><span class="n">twoKL</span><span class="p">,</span> <span class="p">())],</span> <span class="n">message</span><span class="o">=</span><span class="s2">&quot;gauss_kl() return value&quot;</span><span class="p">)</span>  <span class="c1"># returns scalar</span>
     <span class="k">return</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">twoKL</span></div>
 </pre></div>
 

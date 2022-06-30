@@ -288,6 +288,7 @@ function checkPageExistsAndRedirect(event) {
 <span class="p">)</span>
 <span class="kn">from</span> <span class="nn">.config</span> <span class="kn">import</span> <span class="n">default_float</span><span class="p">,</span> <span class="n">default_jitter</span>
 <span class="kn">from</span> <span class="nn">.covariances</span> <span class="kn">import</span> <span class="n">Kuf</span><span class="p">,</span> <span class="n">Kuu</span>
+<span class="kn">from</span> <span class="nn">.experimental.check_shapes</span> <span class="kn">import</span> <span class="n">check_shapes</span><span class="p">,</span> <span class="n">inherit_check_shapes</span>
 <span class="kn">from</span> <span class="nn">.inducing_variables</span> <span class="kn">import</span> <span class="p">(</span>
     <span class="n">FallbackSeparateIndependentInducingVariables</span><span class="p">,</span>
     <span class="n">FallbackSharedIndependentInducingVariables</span><span class="p">,</span>
@@ -310,8 +311,11 @@ function checkPageExistsAndRedirect(event) {
 
 
 <span class="k">class</span> <span class="nc">_DeltaDist</span><span class="p">(</span><span class="n">_QDistribution</span><span class="p">):</span>
+    <span class="nd">@check_shapes</span><span class="p">(</span>
+        <span class="s2">&quot;q_mu: [M, L]&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">q_mu</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">q_mu</span> <span class="o">=</span> <span class="n">q_mu</span>  <span class="c1"># [M, L]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">q_mu</span> <span class="o">=</span> <span class="n">q_mu</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">q_sqrt</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
@@ -319,15 +323,23 @@ function checkPageExistsAndRedirect(event) {
 
 
 <span class="k">class</span> <span class="nc">_DiagNormal</span><span class="p">(</span><span class="n">_QDistribution</span><span class="p">):</span>
+    <span class="nd">@check_shapes</span><span class="p">(</span>
+        <span class="s2">&quot;q_mu: [M, L]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;q_sqrt: [M, L]&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">q_mu</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">q_sqrt</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">q_mu</span> <span class="o">=</span> <span class="n">q_mu</span>  <span class="c1"># [M, L]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">q_sqrt</span> <span class="o">=</span> <span class="n">q_sqrt</span>  <span class="c1"># [M, L]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">q_mu</span> <span class="o">=</span> <span class="n">q_mu</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">q_sqrt</span> <span class="o">=</span> <span class="n">q_sqrt</span>
 
 
 <span class="k">class</span> <span class="nc">_MvNormal</span><span class="p">(</span><span class="n">_QDistribution</span><span class="p">):</span>
+    <span class="nd">@check_shapes</span><span class="p">(</span>
+        <span class="s2">&quot;q_mu: [M, L]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;q_sqrt: [L, M, M]  # lower-triangular&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">q_mu</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">q_sqrt</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">q_mu</span> <span class="o">=</span> <span class="n">q_mu</span>  <span class="c1"># [M, L]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">q_sqrt</span> <span class="o">=</span> <span class="n">q_sqrt</span>  <span class="c1"># [L, M, M], lower-triangular</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">q_mu</span> <span class="o">=</span> <span class="n">q_mu</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">q_sqrt</span> <span class="o">=</span> <span class="n">q_sqrt</span>
 
 
 <div class="viewcode-block" id="PrecomputeCacheType"><a class="viewcode-back" href="../../api/gpflow/posteriors/index.html#gpflow.posteriors.PrecomputeCacheType">[docs]</a><span class="k">class</span> <span class="nc">PrecomputeCacheType</span><span class="p">(</span><span class="n">enum</span><span class="o">.</span><span class="n">Enum</span><span class="p">):</span>
@@ -371,6 +383,10 @@ function checkPageExistsAndRedirect(event) {
         <span class="p">)</span>
 
 <div class="viewcode-block" id="PrecomputedValue.wrap_alpha_Qinv"><a class="viewcode-back" href="../../api/gpflow/posteriors/index.html#gpflow.posteriors.PrecomputedValue.wrap_alpha_Qinv">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="nd">@check_shapes</span><span class="p">(</span>
+        <span class="s2">&quot;alpha: [M_L_or_L_M_M...]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;Qinv: [M_M_or_L_M_M...]&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
     <span class="k">def</span> <span class="nf">wrap_alpha_Qinv</span><span class="p">(</span><span class="n">alpha</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">Qinv</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="s2">&quot;PrecomputedValue&quot;</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Wraps `alpha` and `Qinv` in `PrecomputedValue`\ s.</span>
@@ -418,6 +434,9 @@ function checkPageExistsAndRedirect(event) {
 
 
 <div class="viewcode-block" id="AbstractPosterior"><a class="viewcode-back" href="../../api/gpflow/posteriors/index.html#gpflow.posteriors.AbstractPosterior">[docs]</a><span class="k">class</span> <span class="nc">AbstractPosterior</span><span class="p">(</span><span class="n">Module</span><span class="p">,</span> <span class="n">ABC</span><span class="p">):</span>
+    <span class="nd">@check_shapes</span><span class="p">(</span>
+        <span class="s2">&quot;X_data: [N_D_or_M_D_P...]&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">kernel</span><span class="p">:</span> <span class="n">Kernel</span><span class="p">,</span>
@@ -441,6 +460,11 @@ function checkPageExistsAndRedirect(event) {
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_precompute_cache</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">PrecomputeCacheType</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
 
+    <span class="nd">@check_shapes</span><span class="p">(</span>
+        <span class="s2">&quot;Xnew: [batch..., D]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;mean: [batch..., Q]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return: [batch..., Q]&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
     <span class="k">def</span> <span class="nf">_add_mean_function</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Xnew</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">mean</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mean_function</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">mean</span>
@@ -456,7 +480,15 @@ function checkPageExistsAndRedirect(event) {
 <span class="sd">        `cache` argument.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
-<div class="viewcode-block" id="AbstractPosterior.fused_predict_f"><a class="viewcode-back" href="../../api/gpflow/posteriors/index.html#gpflow.posteriors.AbstractPosterior.fused_predict_f">[docs]</a>    <span class="k">def</span> <span class="nf">fused_predict_f</span><span class="p">(</span>
+<div class="viewcode-block" id="AbstractPosterior.fused_predict_f"><a class="viewcode-back" href="../../api/gpflow/posteriors/index.html#gpflow.posteriors.AbstractPosterior.fused_predict_f">[docs]</a>    <span class="nd">@check_shapes</span><span class="p">(</span>
+        <span class="s2">&quot;Xnew: [batch..., N, D]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return[0]: [batch..., N, P]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return[1]: [batch..., N, P, N, P] if full_cov and full_output_cov&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return[1]: [batch..., P, N, N] if full_cov and (not full_output_cov)&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return[1]: [batch..., N, P, P] if (not full_cov) and full_output_cov&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return[1]: [batch..., N, P] if (not full_cov) and (not full_output_cov)&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">def</span> <span class="nf">fused_predict_f</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">Xnew</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">full_cov</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">full_output_cov</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MeanAndVariance</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -469,6 +501,14 @@ function checkPageExistsAndRedirect(event) {
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_add_mean_function</span><span class="p">(</span><span class="n">Xnew</span><span class="p">,</span> <span class="n">mean</span><span class="p">),</span> <span class="n">cov</span></div>
 
     <span class="nd">@abstractmethod</span>
+    <span class="nd">@check_shapes</span><span class="p">(</span>
+        <span class="s2">&quot;Xnew: [batch..., N, D]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return[0]: [batch..., N, P]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return[1]: [batch..., N, P, N, P] if full_cov and full_output_cov&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return[1]: [batch..., P, N, N] if full_cov and (not full_output_cov)&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return[1]: [batch..., N, P, P] if (not full_cov) and full_output_cov&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return[1]: [batch..., N, P] if (not full_cov) and (not full_output_cov)&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
     <span class="k">def</span> <span class="nf">_conditional_fused</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">Xnew</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">full_cov</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">full_output_cov</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MeanAndVariance</span><span class="p">:</span>
@@ -477,7 +517,15 @@ function checkPageExistsAndRedirect(event) {
 <span class="sd">        Does not make use of caching</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
-<div class="viewcode-block" id="AbstractPosterior.predict_f"><a class="viewcode-back" href="../../api/gpflow/posteriors/index.html#gpflow.posteriors.AbstractPosterior.predict_f">[docs]</a>    <span class="k">def</span> <span class="nf">predict_f</span><span class="p">(</span>
+<div class="viewcode-block" id="AbstractPosterior.predict_f"><a class="viewcode-back" href="../../api/gpflow/posteriors/index.html#gpflow.posteriors.AbstractPosterior.predict_f">[docs]</a>    <span class="nd">@check_shapes</span><span class="p">(</span>
+        <span class="s2">&quot;Xnew: [batch..., N, D]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return[0]: [batch..., N, P]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return[1]: [batch..., N, P, N, P] if full_cov and full_output_cov&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return[1]: [batch..., P, N, N] if full_cov and (not full_output_cov)&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return[1]: [batch..., N, P, P] if (not full_cov) and full_output_cov&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return[1]: [batch..., N, P] if (not full_cov) and (not full_output_cov)&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">def</span> <span class="nf">predict_f</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">Xnew</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">full_cov</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">full_output_cov</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MeanAndVariance</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -494,6 +542,14 @@ function checkPageExistsAndRedirect(event) {
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_add_mean_function</span><span class="p">(</span><span class="n">Xnew</span><span class="p">,</span> <span class="n">mean</span><span class="p">),</span> <span class="n">cov</span></div>
 
     <span class="nd">@abstractmethod</span>
+    <span class="nd">@check_shapes</span><span class="p">(</span>
+        <span class="s2">&quot;Xnew: [batch..., N, D]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return[0]: [batch..., N, P]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return[1]: [batch..., N, P, N, P] if full_cov and full_output_cov&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return[1]: [batch..., P, N, N] if full_cov and (not full_output_cov)&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return[1]: [batch..., N, P, P] if (not full_cov) and full_output_cov&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return[1]: [batch..., N, P] if (not full_cov) and (not full_output_cov)&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
     <span class="k">def</span> <span class="nf">_conditional_with_precompute</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">cache</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
@@ -546,6 +602,11 @@ function checkPageExistsAndRedirect(event) {
 
 
 <div class="viewcode-block" id="GPRPosterior"><a class="viewcode-back" href="../../api/gpflow/posteriors/index.html#gpflow.posteriors.GPRPosterior">[docs]</a><span class="k">class</span> <span class="nc">GPRPosterior</span><span class="p">(</span><span class="n">AbstractPosterior</span><span class="p">):</span>
+    <span class="nd">@check_shapes</span><span class="p">(</span>
+        <span class="s2">&quot;data[0]: [N, D]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;data[1]: [N, Q]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;likelihood_variance: []&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">kernel</span><span class="p">:</span> <span class="n">Kernel</span><span class="p">,</span>
@@ -563,6 +624,7 @@ function checkPageExistsAndRedirect(event) {
         <span class="k">if</span> <span class="n">precompute_cache</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">update_cache</span><span class="p">(</span><span class="n">precompute_cache</span><span class="p">)</span>
 
+    <span class="nd">@inherit_check_shapes</span>
     <span class="k">def</span> <span class="nf">_conditional_with_precompute</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">cache</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
@@ -639,6 +701,7 @@ function checkPageExistsAndRedirect(event) {
         <span class="p">)</span>
         <span class="k">return</span> <span class="p">(</span><span class="n">PrecomputedValue</span><span class="p">(</span><span class="n">Kmm_plus_s_inv</span><span class="p">,</span> <span class="p">(</span><span class="n">M_dynamic</span><span class="p">,</span> <span class="n">M_dynamic</span><span class="p">)),)</span>
 
+    <span class="nd">@inherit_check_shapes</span>
     <span class="k">def</span> <span class="nf">_conditional_fused</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">Xnew</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">full_cov</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">full_output_cov</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MeanAndVariance</span><span class="p">:</span>
@@ -668,6 +731,12 @@ function checkPageExistsAndRedirect(event) {
 <span class="sd">    models to compute faster predictions on unseen points.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
+    <span class="nd">@check_shapes</span><span class="p">(</span>
+        <span class="s2">&quot;data[0]: [N, D]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;data[1]: [N, Q]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;inducing_variable: [M, D, 1]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;likelihood_variance: []&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">kernel</span><span class="p">:</span> <span class="n">Kernel</span><span class="p">,</span>
@@ -719,6 +788,7 @@ function checkPageExistsAndRedirect(event) {
 
         <span class="k">return</span> <span class="n">PrecomputedValue</span><span class="o">.</span><span class="n">wrap_alpha_Qinv</span><span class="p">(</span><span class="n">alpha</span><span class="p">,</span> <span class="n">Qinv</span><span class="p">)</span>
 
+    <span class="nd">@inherit_check_shapes</span>
     <span class="k">def</span> <span class="nf">_conditional_with_precompute</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">cache</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
@@ -750,6 +820,7 @@ function checkPageExistsAndRedirect(event) {
 
         <span class="k">return</span> <span class="n">mean</span><span class="p">,</span> <span class="n">var</span>
 
+    <span class="nd">@inherit_check_shapes</span>
     <span class="k">def</span> <span class="nf">_conditional_fused</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">Xnew</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">full_cov</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">full_output_cov</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MeanAndVariance</span><span class="p">:</span>
@@ -797,6 +868,11 @@ function checkPageExistsAndRedirect(event) {
 
 
 <div class="viewcode-block" id="VGPPosterior"><a class="viewcode-back" href="../../api/gpflow/posteriors/index.html#gpflow.posteriors.VGPPosterior">[docs]</a><span class="k">class</span> <span class="nc">VGPPosterior</span><span class="p">(</span><span class="n">AbstractPosterior</span><span class="p">):</span>
+    <span class="nd">@check_shapes</span><span class="p">(</span>
+        <span class="s2">&quot;X: [N, D]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;q_mu: [N, P]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;q_sqrt: [N_P_or_P_N_N...]&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">kernel</span><span class="p">:</span> <span class="n">Kernel</span><span class="p">,</span>
@@ -816,6 +892,7 @@ function checkPageExistsAndRedirect(event) {
         <span class="k">if</span> <span class="n">precompute_cache</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">update_cache</span><span class="p">(</span><span class="n">precompute_cache</span><span class="p">)</span>
 
+    <span class="nd">@inherit_check_shapes</span>
     <span class="k">def</span> <span class="nf">_conditional_with_precompute</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">cache</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
@@ -853,6 +930,7 @@ function checkPageExistsAndRedirect(event) {
 
         <span class="k">return</span> <span class="p">(</span><span class="n">PrecomputedValue</span><span class="p">(</span><span class="n">Lm</span><span class="p">,</span> <span class="p">(</span><span class="n">M_dynamic</span><span class="p">,</span> <span class="n">M_dynamic</span><span class="p">)),)</span>
 
+    <span class="nd">@inherit_check_shapes</span>
     <span class="k">def</span> <span class="nf">_conditional_fused</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">Xnew</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">full_cov</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">full_output_cov</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MeanAndVariance</span><span class="p">:</span>
@@ -861,6 +939,11 @@ function checkPageExistsAndRedirect(event) {
 
 
 <div class="viewcode-block" id="BasePosterior"><a class="viewcode-back" href="../../api/gpflow/posteriors/index.html#gpflow.posteriors.BasePosterior">[docs]</a><span class="k">class</span> <span class="nc">BasePosterior</span><span class="p">(</span><span class="n">AbstractPosterior</span><span class="p">):</span>
+    <span class="nd">@check_shapes</span><span class="p">(</span>
+        <span class="s2">&quot;inducing_variable: [M, D, broadcast P]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;q_mu: [...]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;q_sqrt: [...]&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">kernel</span><span class="p">:</span> <span class="n">Kernel</span><span class="p">,</span>
@@ -958,6 +1041,16 @@ function checkPageExistsAndRedirect(event) {
 
 
 <div class="viewcode-block" id="IndependentPosterior"><a class="viewcode-back" href="../../api/gpflow/posteriors/index.html#gpflow.posteriors.IndependentPosterior">[docs]</a><span class="k">class</span> <span class="nc">IndependentPosterior</span><span class="p">(</span><span class="n">BasePosterior</span><span class="p">):</span>
+    <span class="nd">@check_shapes</span><span class="p">(</span>
+        <span class="s2">&quot;mean: [batch..., N, P]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;cov: [batch..., P, N, N] if full_cov&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;cov: [batch..., N, P] if not full_cov&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return[0]: [batch..., N, P]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return[1]: [batch..., N, P, N, P] if full_cov and full_output_cov&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return[1]: [batch..., N, P, P] if (not full_cov) and full_output_cov&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return[1]: [batch..., P, N, N] if full_cov and (not full_output_cov)&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return[1]: [batch..., N, P] if (not full_cov) and (not full_output_cov)&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
     <span class="k">def</span> <span class="nf">_post_process_mean_and_cov</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">mean</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">cov</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">full_cov</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">full_output_cov</span><span class="p">:</span> <span class="nb">bool</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MeanAndVariance</span><span class="p">:</span>
@@ -986,6 +1079,7 @@ function checkPageExistsAndRedirect(event) {
 
         <span class="k">return</span> <span class="n">Kff</span>
 
+    <span class="nd">@inherit_check_shapes</span>
     <span class="k">def</span> <span class="nf">_conditional_with_precompute</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">cache</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
@@ -1019,6 +1113,7 @@ function checkPageExistsAndRedirect(event) {
 
 <div class="viewcode-block" id="IndependentPosteriorSingleOutput"><a class="viewcode-back" href="../../api/gpflow/posteriors/index.html#gpflow.posteriors.IndependentPosteriorSingleOutput">[docs]</a><span class="k">class</span> <span class="nc">IndependentPosteriorSingleOutput</span><span class="p">(</span><span class="n">IndependentPosterior</span><span class="p">):</span>
     <span class="c1"># could almost be the same as IndependentPosteriorMultiOutput ...</span>
+    <span class="nd">@inherit_check_shapes</span>
     <span class="k">def</span> <span class="nf">_conditional_fused</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">Xnew</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">full_cov</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">full_output_cov</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MeanAndVariance</span><span class="p">:</span>
@@ -1036,6 +1131,7 @@ function checkPageExistsAndRedirect(event) {
 
 
 <div class="viewcode-block" id="IndependentPosteriorMultiOutput"><a class="viewcode-back" href="../../api/gpflow/posteriors/index.html#gpflow.posteriors.IndependentPosteriorMultiOutput">[docs]</a><span class="k">class</span> <span class="nc">IndependentPosteriorMultiOutput</span><span class="p">(</span><span class="n">IndependentPosterior</span><span class="p">):</span>
+    <span class="nd">@inherit_check_shapes</span>
     <span class="k">def</span> <span class="nf">_conditional_fused</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">Xnew</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">full_cov</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">full_output_cov</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MeanAndVariance</span><span class="p">:</span>
@@ -1081,19 +1177,26 @@ function checkPageExistsAndRedirect(event) {
 
 
 <div class="viewcode-block" id="LinearCoregionalizationPosterior"><a class="viewcode-back" href="../../api/gpflow/posteriors/index.html#gpflow.posteriors.LinearCoregionalizationPosterior">[docs]</a><span class="k">class</span> <span class="nc">LinearCoregionalizationPosterior</span><span class="p">(</span><span class="n">IndependentPosteriorMultiOutput</span><span class="p">):</span>
+    <span class="nd">@check_shapes</span><span class="p">(</span>
+        <span class="s2">&quot;mean: [batch..., N, L]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;cov: [batch..., L, N, N] if full_cov&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;cov: [batch..., N, L] if not full_cov&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return[0]: [batch..., N, P]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return[1]: [batch..., N, P, N, P] if full_cov and full_output_cov&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return[1]: [batch..., N, P, P] if (not full_cov) and full_output_cov&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return[1]: [batch..., P, N, N] if full_cov and (not full_output_cov)&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return[1]: [batch..., N, P] if (not full_cov) and (not full_output_cov)&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
     <span class="k">def</span> <span class="nf">_post_process_mean_and_cov</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">mean</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">cov</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">full_cov</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">full_output_cov</span><span class="p">:</span> <span class="nb">bool</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MeanAndVariance</span><span class="p">:</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        mean: [N, L]</span>
-<span class="sd">        cov: [L, N, N] or [N, L]</span>
-<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">cov</span> <span class="o">=</span> <span class="n">expand_independent_outputs</span><span class="p">(</span><span class="n">cov</span><span class="p">,</span> <span class="n">full_cov</span><span class="p">,</span> <span class="n">full_output_cov</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
         <span class="n">mean</span><span class="p">,</span> <span class="n">cov</span> <span class="o">=</span> <span class="n">mix_latent_gp</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kernel</span><span class="o">.</span><span class="n">W</span><span class="p">,</span> <span class="n">mean</span><span class="p">,</span> <span class="n">cov</span><span class="p">,</span> <span class="n">full_cov</span><span class="p">,</span> <span class="n">full_output_cov</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">mean</span><span class="p">,</span> <span class="n">cov</span></div>
 
 
 <div class="viewcode-block" id="FullyCorrelatedPosterior"><a class="viewcode-back" href="../../api/gpflow/posteriors/index.html#gpflow.posteriors.FullyCorrelatedPosterior">[docs]</a><span class="k">class</span> <span class="nc">FullyCorrelatedPosterior</span><span class="p">(</span><span class="n">BasePosterior</span><span class="p">):</span>
+    <span class="nd">@inherit_check_shapes</span>
     <span class="k">def</span> <span class="nf">_conditional_with_precompute</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">cache</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
@@ -1161,6 +1264,7 @@ function checkPageExistsAndRedirect(event) {
 
         <span class="k">return</span> <span class="n">mean</span><span class="p">,</span> <span class="n">cov</span>
 
+    <span class="nd">@inherit_check_shapes</span>
     <span class="k">def</span> <span class="nf">_conditional_fused</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">Xnew</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">full_cov</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">full_output_cov</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MeanAndVariance</span><span class="p">:</span>
@@ -1198,6 +1302,7 @@ function checkPageExistsAndRedirect(event) {
 
 
 <div class="viewcode-block" id="FallbackIndependentLatentPosterior"><a class="viewcode-back" href="../../api/gpflow/posteriors/index.html#gpflow.posteriors.FallbackIndependentLatentPosterior">[docs]</a><span class="k">class</span> <span class="nc">FallbackIndependentLatentPosterior</span><span class="p">(</span><span class="n">FullyCorrelatedPosterior</span><span class="p">):</span>  <span class="c1"># XXX</span>
+    <span class="nd">@inherit_check_shapes</span>
     <span class="k">def</span> <span class="nf">_conditional_fused</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">Xnew</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">full_cov</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">full_output_cov</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MeanAndVariance</span><span class="p">:</span>

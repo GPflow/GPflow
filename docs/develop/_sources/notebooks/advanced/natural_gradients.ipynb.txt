@@ -2,7 +2,7 @@
  "cells": [
   {
    "cell_type": "markdown",
-   "id": "a3a740f4",
+   "id": "7ef481b1",
    "metadata": {},
    "source": [
     "# Natural gradients\n",
@@ -13,13 +13,13 @@
   {
    "cell_type": "code",
    "execution_count": 1,
-   "id": "93b2a816",
+   "id": "bc4b1f0e",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-29T10:44:49.880205Z",
-     "iopub.status.busy": "2022-06-29T10:44:49.879908Z",
-     "iopub.status.idle": "2022-06-29T10:44:53.430291Z",
-     "shell.execute_reply": "2022-06-29T10:44:53.429658Z"
+     "iopub.execute_input": "2022-06-30T13:19:32.386076Z",
+     "iopub.status.busy": "2022-06-30T13:19:32.385499Z",
+     "iopub.status.idle": "2022-06-30T13:19:35.963443Z",
+     "shell.execute_reply": "2022-06-30T13:19:35.962736Z"
     }
    },
    "outputs": [
@@ -27,8 +27,8 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2022-06-29 10:44:50.315806: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcudart.so.11.0'; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory\n",
-      "2022-06-29 10:44:50.315832: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.\n"
+      "2022-06-30 13:19:32.788090: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcudart.so.11.0'; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory\n",
+      "2022-06-30 13:19:32.788122: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.\n"
      ]
     },
     {
@@ -45,10 +45,10 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2022-06-29 10:44:53.421629: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcuda.so.1'; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory\n",
-      "2022-06-29 10:44:53.421656: W tensorflow/stream_executor/cuda/cuda_driver.cc:269] failed call to cuInit: UNKNOWN ERROR (303)\n",
-      "2022-06-29 10:44:53.421673: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (db43c8a98066): /proc/driver/nvidia/version does not exist\n",
-      "2022-06-29 10:44:53.421908: I tensorflow/core/platform/cpu_feature_guard.cc:193] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA\n",
+      "2022-06-30 13:19:35.953994: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcuda.so.1'; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory\n",
+      "2022-06-30 13:19:35.954026: W tensorflow/stream_executor/cuda/cuda_driver.cc:269] failed call to cuInit: UNKNOWN ERROR (303)\n",
+      "2022-06-30 13:19:35.954045: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (8fecc56a0288): /proc/driver/nvidia/version does not exist\n",
+      "2022-06-30 13:19:35.954308: I tensorflow/core/platform/cpu_feature_guard.cc:193] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA\n",
       "To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.\n"
      ]
     }
@@ -89,7 +89,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "4e5f0378",
+   "id": "fa61b8ff",
    "metadata": {},
    "source": [
     "## VGP is a GPR"
@@ -97,7 +97,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "0971eccb",
+   "id": "e66a7844",
    "metadata": {},
    "source": [
     "The following section demonstrates how natural gradients can turn VGP into GPR *in a single step, if the likelihood is Gaussian*."
@@ -105,7 +105,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "ad3eb3a5",
+   "id": "c8e207f7",
    "metadata": {},
    "source": [
     "Let's start by first creating a standard GPR model with Gaussian likelihood:"
@@ -114,13 +114,13 @@
   {
    "cell_type": "code",
    "execution_count": 2,
-   "id": "d8f978f3",
+   "id": "d439f041",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-29T10:44:53.433546Z",
-     "iopub.status.busy": "2022-06-29T10:44:53.433072Z",
-     "iopub.status.idle": "2022-06-29T10:44:53.461378Z",
-     "shell.execute_reply": "2022-06-29T10:44:53.460659Z"
+     "iopub.execute_input": "2022-06-30T13:19:35.967042Z",
+     "iopub.status.busy": "2022-06-30T13:19:35.966557Z",
+     "iopub.status.idle": "2022-06-30T13:19:36.001107Z",
+     "shell.execute_reply": "2022-06-30T13:19:36.000484Z"
     }
    },
    "outputs": [
@@ -139,7 +139,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "76e70d07",
+   "id": "2abd4fa0",
    "metadata": {},
    "source": [
     "The log marginal likelihood of the exact GP model is:"
@@ -148,13 +148,13 @@
   {
    "cell_type": "code",
    "execution_count": 3,
-   "id": "921701f2",
+   "id": "6ec4fe09",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-29T10:44:53.465068Z",
-     "iopub.status.busy": "2022-06-29T10:44:53.464743Z",
-     "iopub.status.idle": "2022-06-29T10:44:53.485154Z",
-     "shell.execute_reply": "2022-06-29T10:44:53.484532Z"
+     "iopub.execute_input": "2022-06-30T13:19:36.003987Z",
+     "iopub.status.busy": "2022-06-30T13:19:36.003704Z",
+     "iopub.status.idle": "2022-06-30T13:19:36.023369Z",
+     "shell.execute_reply": "2022-06-30T13:19:36.022763Z"
     }
    },
    "outputs": [
@@ -175,7 +175,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "c9e4091b",
+   "id": "09d86a63",
    "metadata": {},
    "source": [
     "Now we will create an approximate model which approximates the true posterior via a variational Gaussian distribution.<br>We initialize the distribution to be zero mean and unit variance."
@@ -184,13 +184,13 @@
   {
    "cell_type": "code",
    "execution_count": 4,
-   "id": "165d796e",
+   "id": "2a0c94a1",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-29T10:44:53.489396Z",
-     "iopub.status.busy": "2022-06-29T10:44:53.489058Z",
-     "iopub.status.idle": "2022-06-29T10:44:53.667522Z",
-     "shell.execute_reply": "2022-06-29T10:44:53.666697Z"
+     "iopub.execute_input": "2022-06-30T13:19:36.026048Z",
+     "iopub.status.busy": "2022-06-30T13:19:36.025772Z",
+     "iopub.status.idle": "2022-06-30T13:19:36.200085Z",
+     "shell.execute_reply": "2022-06-30T13:19:36.199430Z"
     }
    },
    "outputs": [],
@@ -201,7 +201,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "259676c5",
+   "id": "d4295b45",
    "metadata": {},
    "source": [
     "The log marginal likelihood lower bound (evidence lower bound or ELBO) of the approximate GP model is:"
@@ -210,13 +210,13 @@
   {
    "cell_type": "code",
    "execution_count": 5,
-   "id": "5d856242",
+   "id": "574fd887",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-29T10:44:53.671860Z",
-     "iopub.status.busy": "2022-06-29T10:44:53.671488Z",
-     "iopub.status.idle": "2022-06-29T10:44:53.697784Z",
-     "shell.execute_reply": "2022-06-29T10:44:53.697227Z"
+     "iopub.execute_input": "2022-06-30T13:19:36.203128Z",
+     "iopub.status.busy": "2022-06-30T13:19:36.202846Z",
+     "iopub.status.idle": "2022-06-30T13:19:36.225346Z",
+     "shell.execute_reply": "2022-06-30T13:19:36.224821Z"
     }
    },
    "outputs": [
@@ -237,7 +237,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "460fe167",
+   "id": "68a37bc5",
    "metadata": {},
    "source": [
     "Obviously, our initial guess for the variational distribution is not correct, which results in a lower bound to the likelihood of the exact GPR model. We can optimize the variational parameters in order to get a tighter bound."
@@ -245,7 +245,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "5b5a567c",
+   "id": "76d06cb1",
    "metadata": {},
    "source": [
     "In fact, we only need to take **one step** in the natural gradient direction to recover the exact posterior:"
@@ -254,13 +254,13 @@
   {
    "cell_type": "code",
    "execution_count": 6,
-   "id": "cb9305b2",
+   "id": "7e95d348",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-29T10:44:53.701841Z",
-     "iopub.status.busy": "2022-06-29T10:44:53.701292Z",
-     "iopub.status.idle": "2022-06-29T10:44:53.763232Z",
-     "shell.execute_reply": "2022-06-29T10:44:53.762451Z"
+     "iopub.execute_input": "2022-06-30T13:19:36.227983Z",
+     "iopub.status.busy": "2022-06-30T13:19:36.227721Z",
+     "iopub.status.idle": "2022-06-30T13:19:36.287282Z",
+     "shell.execute_reply": "2022-06-30T13:19:36.286609Z"
     }
    },
    "outputs": [],
@@ -272,7 +272,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "80b10200",
+   "id": "faaa1ed6",
    "metadata": {},
    "source": [
     "The ELBO of the approximate GP model after a single NatGrad step:"
@@ -281,13 +281,13 @@
   {
    "cell_type": "code",
    "execution_count": 7,
-   "id": "0ae1127a",
+   "id": "8634f236",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-29T10:44:53.806859Z",
-     "iopub.status.busy": "2022-06-29T10:44:53.806483Z",
-     "iopub.status.idle": "2022-06-29T10:44:53.830186Z",
-     "shell.execute_reply": "2022-06-29T10:44:53.829626Z"
+     "iopub.execute_input": "2022-06-30T13:19:36.322118Z",
+     "iopub.status.busy": "2022-06-30T13:19:36.321769Z",
+     "iopub.status.idle": "2022-06-30T13:19:36.343621Z",
+     "shell.execute_reply": "2022-06-30T13:19:36.343073Z"
     }
    },
    "outputs": [
@@ -308,7 +308,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "47133354",
+   "id": "2a57357a",
    "metadata": {},
    "source": [
     "## Optimize both variational parameters and kernel hyperparameters together\n",
@@ -318,7 +318,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "2d8279e3",
+   "id": "df5131bb",
    "metadata": {},
    "source": [
     "The trick is to forbid Adam from updating the variational parameters by setting them to not trainable."
@@ -327,13 +327,13 @@
   {
    "cell_type": "code",
    "execution_count": 8,
-   "id": "d4d83e18",
+   "id": "b0fcee37",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-29T10:44:53.833073Z",
-     "iopub.status.busy": "2022-06-29T10:44:53.832747Z",
-     "iopub.status.idle": "2022-06-29T10:44:53.849990Z",
-     "shell.execute_reply": "2022-06-29T10:44:53.849298Z"
+     "iopub.execute_input": "2022-06-30T13:19:36.346405Z",
+     "iopub.status.busy": "2022-06-30T13:19:36.346141Z",
+     "iopub.status.idle": "2022-06-30T13:19:36.361750Z",
+     "shell.execute_reply": "2022-06-30T13:19:36.361148Z"
     }
    },
    "outputs": [],
@@ -349,13 +349,13 @@
   {
    "cell_type": "code",
    "execution_count": 9,
-   "id": "daed501f",
+   "id": "9f3212d1",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-29T10:44:53.852847Z",
-     "iopub.status.busy": "2022-06-29T10:44:53.852532Z",
-     "iopub.status.idle": "2022-06-29T10:44:54.023427Z",
-     "shell.execute_reply": "2022-06-29T10:44:54.022730Z"
+     "iopub.execute_input": "2022-06-30T13:19:36.364496Z",
+     "iopub.status.busy": "2022-06-30T13:19:36.364145Z",
+     "iopub.status.idle": "2022-06-30T13:19:36.525530Z",
+     "shell.execute_reply": "2022-06-30T13:19:36.524845Z"
     }
    },
    "outputs": [
@@ -405,13 +405,13 @@
   {
    "cell_type": "code",
    "execution_count": 10,
-   "id": "378127ba",
+   "id": "0cf25a02",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-29T10:44:54.026471Z",
-     "iopub.status.busy": "2022-06-29T10:44:54.026176Z",
-     "iopub.status.idle": "2022-06-29T10:44:54.556289Z",
-     "shell.execute_reply": "2022-06-29T10:44:54.555501Z"
+     "iopub.execute_input": "2022-06-30T13:19:36.528323Z",
+     "iopub.status.busy": "2022-06-30T13:19:36.528032Z",
+     "iopub.status.idle": "2022-06-30T13:19:37.019495Z",
+     "shell.execute_reply": "2022-06-30T13:19:37.018817Z"
     }
    },
    "outputs": [
@@ -461,7 +461,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "700847f2",
+   "id": "1c489a90",
    "metadata": {},
    "source": [
     "Compare GPR and VGP lengthscales after optimization:"
@@ -470,13 +470,13 @@
   {
    "cell_type": "code",
    "execution_count": 11,
-   "id": "e523c63a",
+   "id": "fca84279",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-29T10:44:54.559333Z",
-     "iopub.status.busy": "2022-06-29T10:44:54.558996Z",
-     "iopub.status.idle": "2022-06-29T10:44:54.565443Z",
-     "shell.execute_reply": "2022-06-29T10:44:54.564659Z"
+     "iopub.execute_input": "2022-06-30T13:19:37.022452Z",
+     "iopub.status.busy": "2022-06-30T13:19:37.022176Z",
+     "iopub.status.idle": "2022-06-30T13:19:37.027827Z",
+     "shell.execute_reply": "2022-06-30T13:19:37.027263Z"
     }
    },
    "outputs": [
@@ -496,7 +496,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "3c71b901",
+   "id": "a77094aa",
    "metadata": {},
    "source": [
     "## Natural gradients also work for the sparse model\n",
@@ -508,13 +508,13 @@
   {
    "cell_type": "code",
    "execution_count": 12,
-   "id": "50bb01b9",
+   "id": "f808a4a6",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-29T10:44:54.568081Z",
-     "iopub.status.busy": "2022-06-29T10:44:54.567810Z",
-     "iopub.status.idle": "2022-06-29T10:44:54.613706Z",
-     "shell.execute_reply": "2022-06-29T10:44:54.612808Z"
+     "iopub.execute_input": "2022-06-30T13:19:37.030295Z",
+     "iopub.status.busy": "2022-06-30T13:19:37.030040Z",
+     "iopub.status.idle": "2022-06-30T13:19:37.076235Z",
+     "shell.execute_reply": "2022-06-30T13:19:37.075332Z"
     }
    },
    "outputs": [],
@@ -532,7 +532,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "16980a1d",
+   "id": "69995be2",
    "metadata": {},
    "source": [
     "Analytically optimal sparse model ELBO:"
@@ -541,13 +541,13 @@
   {
    "cell_type": "code",
    "execution_count": 13,
-   "id": "0fd7c77a",
+   "id": "9c436ba8",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-29T10:44:54.617041Z",
-     "iopub.status.busy": "2022-06-29T10:44:54.616707Z",
-     "iopub.status.idle": "2022-06-29T10:44:54.647616Z",
-     "shell.execute_reply": "2022-06-29T10:44:54.646829Z"
+     "iopub.execute_input": "2022-06-30T13:19:37.080153Z",
+     "iopub.status.busy": "2022-06-30T13:19:37.079769Z",
+     "iopub.status.idle": "2022-06-30T13:19:37.110234Z",
+     "shell.execute_reply": "2022-06-30T13:19:37.109674Z"
     }
    },
    "outputs": [
@@ -568,7 +568,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "3d250142",
+   "id": "67a7b5f7",
    "metadata": {},
    "source": [
     "SVGP ELBO before natural gradient step:"
@@ -577,13 +577,13 @@
   {
    "cell_type": "code",
    "execution_count": 14,
-   "id": "07f15bc2",
+   "id": "14fd9d75",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-29T10:44:54.650613Z",
-     "iopub.status.busy": "2022-06-29T10:44:54.650236Z",
-     "iopub.status.idle": "2022-06-29T10:44:54.688056Z",
-     "shell.execute_reply": "2022-06-29T10:44:54.687279Z"
+     "iopub.execute_input": "2022-06-30T13:19:37.112941Z",
+     "iopub.status.busy": "2022-06-30T13:19:37.112683Z",
+     "iopub.status.idle": "2022-06-30T13:19:37.145828Z",
+     "shell.execute_reply": "2022-06-30T13:19:37.145284Z"
     }
    },
    "outputs": [
@@ -605,13 +605,13 @@
   {
    "cell_type": "code",
    "execution_count": 15,
-   "id": "c8d730df",
+   "id": "e6398efd",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-29T10:44:54.691484Z",
-     "iopub.status.busy": "2022-06-29T10:44:54.691081Z",
-     "iopub.status.idle": "2022-06-29T10:44:58.768466Z",
-     "shell.execute_reply": "2022-06-29T10:44:58.767799Z"
+     "iopub.execute_input": "2022-06-30T13:19:37.148467Z",
+     "iopub.status.busy": "2022-06-30T13:19:37.148149Z",
+     "iopub.status.idle": "2022-06-30T13:19:41.236645Z",
+     "shell.execute_reply": "2022-06-30T13:19:41.235936Z"
     }
    },
    "outputs": [],
@@ -624,7 +624,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "da88baca",
+   "id": "d586fe2a",
    "metadata": {},
    "source": [
     "SVGP ELBO after a single natural gradient step:"
@@ -633,13 +633,13 @@
   {
    "cell_type": "code",
    "execution_count": 16,
-   "id": "03f8ed7a",
+   "id": "77a756f3",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-29T10:44:58.772077Z",
-     "iopub.status.busy": "2022-06-29T10:44:58.771711Z",
-     "iopub.status.idle": "2022-06-29T10:44:58.807736Z",
-     "shell.execute_reply": "2022-06-29T10:44:58.807161Z"
+     "iopub.execute_input": "2022-06-30T13:19:41.241086Z",
+     "iopub.status.busy": "2022-06-30T13:19:41.240785Z",
+     "iopub.status.idle": "2022-06-30T13:19:41.281216Z",
+     "shell.execute_reply": "2022-06-30T13:19:41.280475Z"
     }
    },
    "outputs": [
@@ -660,7 +660,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "cb6fa455",
+   "id": "f41c45c2",
    "metadata": {},
    "source": [
     "## Minibatches\n",
@@ -671,13 +671,13 @@
   {
    "cell_type": "code",
    "execution_count": 17,
-   "id": "011e08ea",
+   "id": "d1dc91df",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-29T10:44:58.810515Z",
-     "iopub.status.busy": "2022-06-29T10:44:58.810227Z",
-     "iopub.status.idle": "2022-06-29T10:45:02.626330Z",
-     "shell.execute_reply": "2022-06-29T10:45:02.625477Z"
+     "iopub.execute_input": "2022-06-30T13:19:41.284239Z",
+     "iopub.status.busy": "2022-06-30T13:19:41.283929Z",
+     "iopub.status.idle": "2022-06-30T13:19:45.059147Z",
+     "shell.execute_reply": "2022-06-30T13:19:45.057999Z"
     }
    },
    "outputs": [],
@@ -701,7 +701,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "359f2b0c",
+   "id": "34036e72",
    "metadata": {},
    "source": [
     "Minibatch SVGP ELBO after NatGrad optimization:"
@@ -710,13 +710,13 @@
   {
    "cell_type": "code",
    "execution_count": 18,
-   "id": "e21dc33e",
+   "id": "7f22d24d",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-29T10:45:02.629644Z",
-     "iopub.status.busy": "2022-06-29T10:45:02.629352Z",
-     "iopub.status.idle": "2022-06-29T10:45:05.652908Z",
-     "shell.execute_reply": "2022-06-29T10:45:05.652333Z"
+     "iopub.execute_input": "2022-06-30T13:19:45.065878Z",
+     "iopub.status.busy": "2022-06-30T13:19:45.064307Z",
+     "iopub.status.idle": "2022-06-30T13:19:48.032351Z",
+     "shell.execute_reply": "2022-06-30T13:19:48.031771Z"
     }
    },
    "outputs": [
@@ -737,7 +737,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "77ea8cfc",
+   "id": "33d02807",
    "metadata": {},
    "source": [
     "## Comparison with ordinary gradients in the conjugate case\n",
@@ -754,13 +754,13 @@
   {
    "cell_type": "code",
    "execution_count": 19,
-   "id": "06b72527",
+   "id": "6d80e066",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-29T10:45:05.656400Z",
-     "iopub.status.busy": "2022-06-29T10:45:05.656084Z",
-     "iopub.status.idle": "2022-06-29T10:45:05.705115Z",
-     "shell.execute_reply": "2022-06-29T10:45:05.704467Z"
+     "iopub.execute_input": "2022-06-30T13:19:48.034976Z",
+     "iopub.status.busy": "2022-06-30T13:19:48.034709Z",
+     "iopub.status.idle": "2022-06-30T13:19:48.085980Z",
+     "shell.execute_reply": "2022-06-30T13:19:48.085309Z"
     }
    },
    "outputs": [],
@@ -793,7 +793,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "e81c779b",
+   "id": "2ce2e185",
    "metadata": {},
    "source": [
     "Let's optimize the models:"
@@ -802,13 +802,13 @@
   {
    "cell_type": "code",
    "execution_count": 20,
-   "id": "6547e5dc",
+   "id": "30191ea0",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-29T10:45:05.708216Z",
-     "iopub.status.busy": "2022-06-29T10:45:05.707912Z",
-     "iopub.status.idle": "2022-06-29T10:45:12.418951Z",
-     "shell.execute_reply": "2022-06-29T10:45:12.418231Z"
+     "iopub.execute_input": "2022-06-30T13:19:48.089031Z",
+     "iopub.status.busy": "2022-06-30T13:19:48.088801Z",
+     "iopub.status.idle": "2022-06-30T13:19:54.490707Z",
+     "shell.execute_reply": "2022-06-30T13:19:54.490071Z"
     }
    },
    "outputs": [],
@@ -838,7 +838,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "686f75d2",
+   "id": "e25cc138",
    "metadata": {},
    "source": [
     "SVGP ELBO after ordinary `Adam` optimization:"
@@ -847,13 +847,13 @@
   {
    "cell_type": "code",
    "execution_count": 21,
-   "id": "cbcb0b83",
+   "id": "a9e844b7",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-29T10:45:12.422218Z",
-     "iopub.status.busy": "2022-06-29T10:45:12.421865Z",
-     "iopub.status.idle": "2022-06-29T10:45:15.640243Z",
-     "shell.execute_reply": "2022-06-29T10:45:15.639361Z"
+     "iopub.execute_input": "2022-06-30T13:19:54.494238Z",
+     "iopub.status.busy": "2022-06-30T13:19:54.493901Z",
+     "iopub.status.idle": "2022-06-30T13:19:57.519649Z",
+     "shell.execute_reply": "2022-06-30T13:19:57.518988Z"
     }
    },
    "outputs": [
@@ -874,7 +874,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "48781a67",
+   "id": "449ffd36",
    "metadata": {},
    "source": [
     "SVGP ELBO after `NaturalGradient` and `Adam` optimization:"
@@ -883,13 +883,13 @@
   {
    "cell_type": "code",
    "execution_count": 22,
-   "id": "1284a09a",
+   "id": "20cd93f9",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-29T10:45:15.643606Z",
-     "iopub.status.busy": "2022-06-29T10:45:15.643228Z",
-     "iopub.status.idle": "2022-06-29T10:45:19.148217Z",
-     "shell.execute_reply": "2022-06-29T10:45:19.147625Z"
+     "iopub.execute_input": "2022-06-30T13:19:57.522754Z",
+     "iopub.status.busy": "2022-06-30T13:19:57.522214Z",
+     "iopub.status.idle": "2022-06-30T13:20:00.593230Z",
+     "shell.execute_reply": "2022-06-30T13:20:00.592623Z"
     }
    },
    "outputs": [
@@ -910,7 +910,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "81dbb5c5",
+   "id": "cdefcc9c",
    "metadata": {},
    "source": [
     "## Comparison with ordinary gradients in the non-conjugate case\n",
@@ -925,13 +925,13 @@
   {
    "cell_type": "code",
    "execution_count": 23,
-   "id": "8368f6ff",
+   "id": "cd674285",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-29T10:45:19.151946Z",
-     "iopub.status.busy": "2022-06-29T10:45:19.151635Z",
-     "iopub.status.idle": "2022-06-29T10:45:19.194671Z",
-     "shell.execute_reply": "2022-06-29T10:45:19.193815Z"
+     "iopub.execute_input": "2022-06-30T13:20:00.595881Z",
+     "iopub.status.busy": "2022-06-30T13:20:00.595610Z",
+     "iopub.status.idle": "2022-06-30T13:20:00.637298Z",
+     "shell.execute_reply": "2022-06-30T13:20:00.636719Z"
     }
    },
    "outputs": [],
@@ -963,13 +963,13 @@
   {
    "cell_type": "code",
    "execution_count": 24,
-   "id": "e4cff8af",
+   "id": "944025de",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-29T10:45:19.197808Z",
-     "iopub.status.busy": "2022-06-29T10:45:19.197496Z",
-     "iopub.status.idle": "2022-06-29T10:45:32.579810Z",
-     "shell.execute_reply": "2022-06-29T10:45:32.579087Z"
+     "iopub.execute_input": "2022-06-30T13:20:00.640149Z",
+     "iopub.status.busy": "2022-06-30T13:20:00.639884Z",
+     "iopub.status.idle": "2022-06-30T13:20:12.284344Z",
+     "shell.execute_reply": "2022-06-30T13:20:12.283651Z"
     }
    },
    "outputs": [],
@@ -988,7 +988,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "fa8d9eb5",
+   "id": "67003a44",
    "metadata": {},
    "source": [
     "VGP ELBO after ordinary `Adam` optimization:"
@@ -997,13 +997,13 @@
   {
    "cell_type": "code",
    "execution_count": 25,
-   "id": "2c206bd2",
+   "id": "cdf9fd98",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-29T10:45:32.583305Z",
-     "iopub.status.busy": "2022-06-29T10:45:32.583004Z",
-     "iopub.status.idle": "2022-06-29T10:45:32.604214Z",
-     "shell.execute_reply": "2022-06-29T10:45:32.603634Z"
+     "iopub.execute_input": "2022-06-30T13:20:12.287409Z",
+     "iopub.status.busy": "2022-06-30T13:20:12.287091Z",
+     "iopub.status.idle": "2022-06-30T13:20:12.306869Z",
+     "shell.execute_reply": "2022-06-30T13:20:12.306341Z"
     }
    },
    "outputs": [
@@ -1024,7 +1024,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "bfd04d57",
+   "id": "45bd232e",
    "metadata": {},
    "source": [
     "VGP ELBO after `NaturalGradient` + `Adam` optimization:"
@@ -1033,13 +1033,13 @@
   {
    "cell_type": "code",
    "execution_count": 26,
-   "id": "a475d76d",
+   "id": "9aea071f",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-29T10:45:32.607067Z",
-     "iopub.status.busy": "2022-06-29T10:45:32.606782Z",
-     "iopub.status.idle": "2022-06-29T10:45:32.627549Z",
-     "shell.execute_reply": "2022-06-29T10:45:32.626992Z"
+     "iopub.execute_input": "2022-06-30T13:20:12.309638Z",
+     "iopub.status.busy": "2022-06-30T13:20:12.309347Z",
+     "iopub.status.idle": "2022-06-30T13:20:12.328022Z",
+     "shell.execute_reply": "2022-06-30T13:20:12.327501Z"
     }
    },
    "outputs": [
@@ -1060,7 +1060,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "63a61a22",
+   "id": "206cb9bd",
    "metadata": {},
    "source": [
     "We can also choose to run natural gradients in another parameterization.<br>\n",
@@ -1070,13 +1070,13 @@
   {
    "cell_type": "code",
    "execution_count": 27,
-   "id": "a9584efd",
+   "id": "89a52e5b",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-29T10:45:32.630165Z",
-     "iopub.status.busy": "2022-06-29T10:45:32.629876Z",
-     "iopub.status.idle": "2022-06-29T10:45:32.652485Z",
-     "shell.execute_reply": "2022-06-29T10:45:32.651713Z"
+     "iopub.execute_input": "2022-06-30T13:20:12.330542Z",
+     "iopub.status.busy": "2022-06-30T13:20:12.330287Z",
+     "iopub.status.idle": "2022-06-30T13:20:12.351822Z",
+     "shell.execute_reply": "2022-06-30T13:20:12.351264Z"
     }
    },
    "outputs": [],
@@ -1101,13 +1101,13 @@
   {
    "cell_type": "code",
    "execution_count": 28,
-   "id": "bebaf7f8",
+   "id": "e42c5e47",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-29T10:45:32.656611Z",
-     "iopub.status.busy": "2022-06-29T10:45:32.656260Z",
-     "iopub.status.idle": "2022-06-29T10:45:43.951405Z",
-     "shell.execute_reply": "2022-06-29T10:45:43.950493Z"
+     "iopub.execute_input": "2022-06-30T13:20:12.355531Z",
+     "iopub.status.busy": "2022-06-30T13:20:12.355080Z",
+     "iopub.status.idle": "2022-06-30T13:20:22.710537Z",
+     "shell.execute_reply": "2022-06-30T13:20:22.709852Z"
     }
    },
    "outputs": [
@@ -1132,7 +1132,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "762fe345",
+   "id": "5df008c8",
    "metadata": {},
    "source": [
     "VGP ELBO after `NaturalGradient` with `XiSqrtMeanVar` + `Adam` optimization:"
@@ -1141,13 +1141,13 @@
   {
    "cell_type": "code",
    "execution_count": 29,
-   "id": "68c6086e",
+   "id": "f3328173",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-06-29T10:45:43.954827Z",
-     "iopub.status.busy": "2022-06-29T10:45:43.954516Z",
-     "iopub.status.idle": "2022-06-29T10:45:43.977129Z",
-     "shell.execute_reply": "2022-06-29T10:45:43.976300Z"
+     "iopub.execute_input": "2022-06-30T13:20:22.713692Z",
+     "iopub.status.busy": "2022-06-30T13:20:22.713412Z",
+     "iopub.status.idle": "2022-06-30T13:20:22.732768Z",
+     "shell.execute_reply": "2022-06-30T13:20:22.732205Z"
     }
    },
    "outputs": [
@@ -1168,7 +1168,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "207cb28c",
+   "id": "b47ea0f1",
    "metadata": {},
    "source": [
     "With sufficiently small steps, it shouldn't make a difference which transform is used, but for large\n",
