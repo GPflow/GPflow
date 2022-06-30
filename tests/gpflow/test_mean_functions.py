@@ -21,6 +21,7 @@ from numpy.testing import assert_allclose
 import gpflow
 from gpflow.base import AnyNDArray, TensorType
 from gpflow.config import default_int
+from gpflow.experimental.check_shapes import check_shapes
 from gpflow.inducing_variables import InducingPoints
 from gpflow.mean_functions import (
     Additive,
@@ -109,6 +110,10 @@ _constant_functions = [Constant(c=rng.randn(Datum.output_dim, 1).reshape(-1)) fo
 _constant_functions.append(Constant(c=-1.0 * _constant_functions[0].c))
 
 
+@check_shapes(
+    "X: [N, D]",
+    "Y: [N, Q]",
+)
 def _create_GPR_model_with_bias(
     X: TensorType, Y: TensorType, mean_function: MeanFunction
 ) -> gpflow.models.GPR:

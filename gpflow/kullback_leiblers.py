@@ -20,6 +20,7 @@ from packaging.version import Version
 from .base import TensorType
 from .config import default_float, default_jitter
 from .covariances import Kuu
+from .experimental.check_shapes import check_shapes
 from .inducing_variables import InducingVariables
 from .kernels import Kernel
 from .utilities import Dispatcher, to_default_float
@@ -28,6 +29,12 @@ prior_kl = Dispatcher("prior_kl")
 
 
 @prior_kl.register(InducingVariables, Kernel, object, object)
+@check_shapes(
+    "inducing_variable: [N, D, broadcast L]",
+    "q_mu: [M, L]",
+    "q_sqrt: [M_L_or_L_M_M...]",
+    "return: []",
+)
 def _(
     inducing_variable: InducingVariables,
     kernel: Kernel,
@@ -42,6 +49,13 @@ def _(
         return gauss_kl(q_mu, q_sqrt, K)
 
 
+@check_shapes(
+    "q_mu: [M, L]",
+    "q_sqrt: [M_L_or_L_M_M...]",
+    "K: [broadcast L, M, M]",
+    "K_cholesky: [broadcast L, M, M]",
+    "return: []",
+)
 def gauss_kl(
     q_mu: TensorType, q_sqrt: TensorType, K: TensorType = None, *, K_cholesky: TensorType = None
 ) -> tf.Tensor:
@@ -83,19 +97,6 @@ def gauss_kl(
 
     is_white = (K is None) and (K_cholesky is None)
     is_diag = len(q_sqrt.shape) == 2
-
-    shape_constraints = [
-        (q_mu, ["M", "L"]),
-        (q_sqrt, (["M", "L"] if is_diag else ["L", "M", "M"])),
-    ]
-    if not is_white:
-        if K is not None:
-            shape_constraints.append((K, (["L", "M", "M"] if len(K.shape) == 3 else ["M", "M"])))
-        else:
-            shape_constraints.append(
-                (K_cholesky, (["L", "M", "M"] if len(K_cholesky.shape) == 3 else ["M", "M"]))
-            )
-    tf.debugging.assert_shapes(shape_constraints, message="gauss_kl() arguments")
 
     M, L = tf.shape(q_mu)[0], tf.shape(q_mu)[1]
 
@@ -161,5 +162,4 @@ def gauss_kl(
         scale = 1.0 if is_batched else to_default_float(L)
         twoKL += scale * sum_log_sqdiag_Lp
 
-    tf.debugging.assert_shapes([(twoKL, ())], message="gauss_kl() return value")  # returns scalar
     return 0.5 * twoKL

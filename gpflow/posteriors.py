@@ -32,6 +32,7 @@ from .conditionals.util import (
 )
 from .config import default_float, default_jitter
 from .covariances import Kuf, Kuu
+from .experimental.check_shapes import check_shapes, inherit_check_shapes
 from .inducing_variables import (
     FallbackSeparateIndependentInducingVariables,
     FallbackSharedIndependentInducingVariables,
@@ -54,8 +55,11 @@ class _QDistribution(Module):
 
 
 class _DeltaDist(_QDistribution):
+    @check_shapes(
+        "q_mu: [M, L]",
+    )
     def __init__(self, q_mu: TensorType) -> None:
-        self.q_mu = q_mu  # [M, L]
+        self.q_mu = q_mu
 
     @property
     def q_sqrt(self) -> Optional[tf.Tensor]:
@@ -63,15 +67,23 @@ class _DeltaDist(_QDistribution):
 
 
 class _DiagNormal(_QDistribution):
+    @check_shapes(
+        "q_mu: [M, L]",
+        "q_sqrt: [M, L]",
+    )
     def __init__(self, q_mu: TensorType, q_sqrt: TensorType) -> None:
-        self.q_mu = q_mu  # [M, L]
-        self.q_sqrt = q_sqrt  # [M, L]
+        self.q_mu = q_mu
+        self.q_sqrt = q_sqrt
 
 
 class _MvNormal(_QDistribution):
+    @check_shapes(
+        "q_mu: [M, L]",
+        "q_sqrt: [L, M, M]  # lower-triangular",
+    )
     def __init__(self, q_mu: TensorType, q_sqrt: TensorType) -> None:
-        self.q_mu = q_mu  # [M, L]
-        self.q_sqrt = q_sqrt  # [L, M, M], lower-triangular
+        self.q_mu = q_mu
+        self.q_sqrt = q_sqrt
 
 
 class PrecomputeCacheType(enum.Enum):
@@ -115,6 +127,10 @@ class PrecomputedValue:
         )
 
     @staticmethod
+    @check_shapes(
+        "alpha: [M_L_or_L_M_M...]",
+        "Qinv: [M_M_or_L_M_M...]",
+    )
     def wrap_alpha_Qinv(alpha: TensorType, Qinv: TensorType) -> Tuple["PrecomputedValue", ...]:
         """
         Wraps `alpha` and `Qinv` in `PrecomputedValue`\ s.
@@ -162,6 +178,9 @@ def _validate_precompute_cache_type(
 
 
 class AbstractPosterior(Module, ABC):
+    @check_shapes(
+        "X_data: [N_D_or_M_D_P...]",
+    )
     def __init__(
         self,
         kernel: Kernel,
@@ -185,6 +204,11 @@ class AbstractPosterior(Module, ABC):
 
         self._precompute_cache: Optional[PrecomputeCacheType] = None
 
+    @check_shapes(
+        "Xnew: [batch..., D]",
+        "mean: [batch..., Q]",
+        "return: [batch..., Q]",
+    )
     def _add_mean_function(self, Xnew: TensorType, mean: TensorType) -> tf.Tensor:
         if self.mean_function is None:
             return mean
@@ -200,6 +224,14 @@ class AbstractPosterior(Module, ABC):
         `cache` argument.
         """
 
+    @check_shapes(
+        "Xnew: [batch..., N, D]",
+        "return[0]: [batch..., N, P]",
+        "return[1]: [batch..., N, P, N, P] if full_cov and full_output_cov",
+        "return[1]: [batch..., P, N, N] if full_cov and (not full_output_cov)",
+        "return[1]: [batch..., N, P, P] if (not full_cov) and full_output_cov",
+        "return[1]: [batch..., N, P] if (not full_cov) and (not full_output_cov)",
+    )
     def fused_predict_f(
         self, Xnew: TensorType, full_cov: bool = False, full_output_cov: bool = False
     ) -> MeanAndVariance:
@@ -213,6 +245,14 @@ class AbstractPosterior(Module, ABC):
         return self._add_mean_function(Xnew, mean), cov
 
     @abstractmethod
+    @check_shapes(
+        "Xnew: [batch..., N, D]",
+        "return[0]: [batch..., N, P]",
+        "return[1]: [batch..., N, P, N, P] if full_cov and full_output_cov",
+        "return[1]: [batch..., P, N, N] if full_cov and (not full_output_cov)",
+        "return[1]: [batch..., N, P, P] if (not full_cov) and full_output_cov",
+        "return[1]: [batch..., N, P] if (not full_cov) and (not full_output_cov)",
+    )
     def _conditional_fused(
         self, Xnew: TensorType, full_cov: bool = False, full_output_cov: bool = False
     ) -> MeanAndVariance:
@@ -221,6 +261,14 @@ class AbstractPosterior(Module, ABC):
         Does not make use of caching
         """
 
+    @check_shapes(
+        "Xnew: [batch..., N, D]",
+        "return[0]: [batch..., N, P]",
+        "return[1]: [batch..., N, P, N, P] if full_cov and full_output_cov",
+        "return[1]: [batch..., P, N, N] if full_cov and (not full_output_cov)",
+        "return[1]: [batch..., N, P, P] if (not full_cov) and full_output_cov",
+        "return[1]: [batch..., N, P] if (not full_cov) and (not full_output_cov)",
+    )
     def predict_f(
         self, Xnew: TensorType, full_cov: bool = False, full_output_cov: bool = False
     ) -> MeanAndVariance:
@@ -238,6 +286,14 @@ class AbstractPosterior(Module, ABC):
         return self._add_mean_function(Xnew, mean), cov
 
     @abstractmethod
+    @check_shapes(
+        "Xnew: [batch..., N, D]",
+        "return[0]: [batch..., N, P]",
+        "return[1]: [batch..., N, P, N, P] if full_cov and full_output_cov",
+        "return[1]: [batch..., P, N, N] if full_cov and (not full_output_cov)",
+        "return[1]: [batch..., N, P, P] if (not full_cov) and full_output_cov",
+        "return[1]: [batch..., N, P] if (not full_cov) and (not full_output_cov)",
+    )
     def _conditional_with_precompute(
         self,
         cache: Tuple[tf.Tensor, ...],
@@ -290,6 +346,11 @@ class AbstractPosterior(Module, ABC):
 
 
 class GPRPosterior(AbstractPosterior):
+    @check_shapes(
+        "data[0]: [N, D]",
+        "data[1]: [N, Q]",
+        "likelihood_variance: []",
+    )
     def __init__(
         self,
         kernel: Kernel,
@@ -307,6 +368,7 @@ class GPRPosterior(AbstractPosterior):
         if precompute_cache is not None:
             self.update_cache(precompute_cache)
 
+    @inherit_check_shapes
     def _conditional_with_precompute(
         self,
         cache: Tuple[tf.Tensor, ...],
@@ -383,6 +445,7 @@ class GPRPosterior(AbstractPosterior):
         )
         return (PrecomputedValue(Kmm_plus_s_inv, (M_dynamic, M_dynamic)),)
 
+    @inherit_check_shapes
     def _conditional_fused(
         self, Xnew: TensorType, full_cov: bool = False, full_output_cov: bool = False
     ) -> MeanAndVariance:
@@ -412,6 +475,12 @@ class SGPRPosterior(AbstractPosterior):
     models to compute faster predictions on unseen points.
     """
 
+    @check_shapes(
+        "data[0]: [N, D]",
+        "data[1]: [N, Q]",
+        "inducing_variable: [M, D, 1]",
+        "likelihood_variance: []",
+    )
     def __init__(
         self,
         kernel: Kernel,
@@ -463,6 +532,7 @@ class SGPRPosterior(AbstractPosterior):
 
         return PrecomputedValue.wrap_alpha_Qinv(alpha, Qinv)
 
+    @inherit_check_shapes
     def _conditional_with_precompute(
         self,
         cache: Tuple[tf.Tensor, ...],
@@ -494,6 +564,7 @@ class SGPRPosterior(AbstractPosterior):
 
         return mean, var
 
+    @inherit_check_shapes
     def _conditional_fused(
         self, Xnew: TensorType, full_cov: bool = False, full_output_cov: bool = False
     ) -> MeanAndVariance:
@@ -541,6 +612,11 @@ class SGPRPosterior(AbstractPosterior):
 
 
 class VGPPosterior(AbstractPosterior):
+    @check_shapes(
+        "X: [N, D]",
+        "q_mu: [N, P]",
+        "q_sqrt: [N_P_or_P_N_N...]",
+    )
     def __init__(
         self,
         kernel: Kernel,
@@ -560,6 +636,7 @@ class VGPPosterior(AbstractPosterior):
         if precompute_cache is not None:
             self.update_cache(precompute_cache)
 
+    @inherit_check_shapes
     def _conditional_with_precompute(
         self,
         cache: Tuple[tf.Tensor, ...],
@@ -597,6 +674,7 @@ class VGPPosterior(AbstractPosterior):
 
         return (PrecomputedValue(Lm, (M_dynamic, M_dynamic)),)
 
+    @inherit_check_shapes
     def _conditional_fused(
         self, Xnew: TensorType, full_cov: bool = False, full_output_cov: bool = False
     ) -> MeanAndVariance:
@@ -605,6 +683,11 @@ class VGPPosterior(AbstractPosterior):
 
 
 class BasePosterior(AbstractPosterior):
+    @check_shapes(
+        "inducing_variable: [M, D, broadcast P]",
+        "q_mu: [...]",
+        "q_sqrt: [...]",
+    )
     def __init__(
         self,
         kernel: Kernel,
@@ -702,6 +785,16 @@ class BasePosterior(AbstractPosterior):
 
 
 class IndependentPosterior(BasePosterior):
+    @check_shapes(
+        "mean: [batch..., N, P]",
+        "cov: [batch..., P, N, N] if full_cov",
+        "cov: [batch..., N, P] if not full_cov",
+        "return[0]: [batch..., N, P]",
+        "return[1]: [batch..., N, P, N, P] if full_cov and full_output_cov",
+        "return[1]: [batch..., N, P, P] if (not full_cov) and full_output_cov",
+        "return[1]: [batch..., P, N, N] if full_cov and (not full_output_cov)",
+        "return[1]: [batch..., N, P] if (not full_cov) and (not full_output_cov)",
+    )
     def _post_process_mean_and_cov(
         self, mean: TensorType, cov: TensorType, full_cov: bool, full_output_cov: bool
     ) -> MeanAndVariance:
@@ -730,6 +823,7 @@ class IndependentPosterior(BasePosterior):
 
         return Kff
 
+    @inherit_check_shapes
     def _conditional_with_precompute(
         self,
         cache: Tuple[tf.Tensor, ...],
@@ -763,6 +857,7 @@ class IndependentPosterior(BasePosterior):
 
 class IndependentPosteriorSingleOutput(IndependentPosterior):
     # could almost be the same as IndependentPosteriorMultiOutput ...
+    @inherit_check_shapes
     def _conditional_fused(
         self, Xnew: TensorType, full_cov: bool = False, full_output_cov: bool = False
     ) -> MeanAndVariance:
@@ -780,6 +875,7 @@ class IndependentPosteriorSingleOutput(IndependentPosterior):
 
 
 class IndependentPosteriorMultiOutput(IndependentPosterior):
+    @inherit_check_shapes
     def _conditional_fused(
         self, Xnew: TensorType, full_cov: bool = False, full_output_cov: bool = False
     ) -> MeanAndVariance:
@@ -825,19 +921,26 @@ class IndependentPosteriorMultiOutput(IndependentPosterior):
 
 
 class LinearCoregionalizationPosterior(IndependentPosteriorMultiOutput):
+    @check_shapes(
+        "mean: [batch..., N, L]",
+        "cov: [batch..., L, N, N] if full_cov",
+        "cov: [batch..., N, L] if not full_cov",
+        "return[0]: [batch..., N, P]",
+        "return[1]: [batch..., N, P, N, P] if full_cov and full_output_cov",
+        "return[1]: [batch..., N, P, P] if (not full_cov) and full_output_cov",
+        "return[1]: [batch..., P, N, N] if full_cov and (not full_output_cov)",
+        "return[1]: [batch..., N, P] if (not full_cov) and (not full_output_cov)",
+    )
     def _post_process_mean_and_cov(
         self, mean: TensorType, cov: TensorType, full_cov: bool, full_output_cov: bool
     ) -> MeanAndVariance:
-        """
-        mean: [N, L]
-        cov: [L, N, N] or [N, L]
-        """
         cov = expand_independent_outputs(cov, full_cov, full_output_cov=False)
         mean, cov = mix_latent_gp(self.kernel.W, mean, cov, full_cov, full_output_cov)
         return mean, cov
 
 
 class FullyCorrelatedPosterior(BasePosterior):
+    @inherit_check_shapes
     def _conditional_with_precompute(
         self,
         cache: Tuple[tf.Tensor, ...],
@@ -905,6 +1008,7 @@ class FullyCorrelatedPosterior(BasePosterior):
 
         return mean, cov
 
+    @inherit_check_shapes
     def _conditional_fused(
         self, Xnew: TensorType, full_cov: bool = False, full_output_cov: bool = False
     ) -> MeanAndVariance:
@@ -942,6 +1046,7 @@ class FullyCorrelatedPosterior(BasePosterior):
 
 
 class FallbackIndependentLatentPosterior(FullyCorrelatedPosterior):  # XXX
+    @inherit_check_shapes
     def _conditional_fused(
         self, Xnew: TensorType, full_cov: bool = False, full_output_cov: bool = False
     ) -> MeanAndVariance:

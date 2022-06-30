@@ -33,6 +33,7 @@ import tensorflow as tf
 
 from .base import Module, Parameter, TensorType
 from .config import default_float, default_int
+from .experimental.check_shapes import check_shapes, inherit_check_shapes
 
 
 class MeanFunction(Module):
@@ -47,6 +48,10 @@ class MeanFunction(Module):
     example.
     """
 
+    @check_shapes(
+        "X: [batch..., D]",
+        "return: [batch..., Q]",
+    )
     def __call__(self, X: TensorType) -> tf.Tensor:
         raise NotImplementedError("Implement the __call__ method for this mean function")
 
@@ -62,13 +67,14 @@ class Linear(MeanFunction):
     y_i = A x_i + b
     """
 
+    @check_shapes(
+        "A: [broadcast D, broadcast Q]",
+        "b: [broadcast Q]",
+    )
     def __init__(self, A: TensorType = None, b: TensorType = None) -> None:
         """
         A is a matrix which maps each element of X to Y, b is an additive
         constant.
-
-        If X has N rows and D columns, and Y is intended to have Q columns,
-        then A must be [D, Q], b must be a vector of length Q.
         """
         MeanFunction.__init__(self)
         A = np.ones((1, 1), dtype=default_float()) if A is None else A
@@ -76,6 +82,7 @@ class Linear(MeanFunction):
         self.A = Parameter(np.atleast_2d(A))
         self.b = Parameter(b)
 
+    @inherit_check_shapes
     def __call__(self, X: TensorType) -> tf.Tensor:
         return tf.tensordot(X, self.A, [[-1], [0]]) + self.b
 
@@ -92,6 +99,7 @@ class Identity(Linear):
         Linear.__init__(self)
         self.input_dim = input_dim
 
+    @inherit_check_shapes
     def __call__(self, X: TensorType) -> tf.Tensor:
         return X
 
@@ -124,11 +132,15 @@ class Identity(Linear):
 
 
 class Constant(MeanFunction):
+    @check_shapes(
+        "c: [broadcast Q]",
+    )
     def __init__(self, c: TensorType = None) -> None:
         super().__init__()
         c = np.zeros(1) if c is None else c
         self.c = Parameter(c)
 
+    @inherit_check_shapes
     def __call__(self, X: TensorType) -> tf.Tensor:
         tile_shape = tf.concat(
             [tf.shape(X)[:-1], [1]],
@@ -147,6 +159,7 @@ class Zero(Constant):
         self.output_dim = output_dim
         del self.c
 
+    @inherit_check_shapes
     def __call__(self, X: TensorType) -> tf.Tensor:
         output_shape = tf.concat([tf.shape(X)[:-1], [self.output_dim]], axis=0)
         return tf.zeros(output_shape, dtype=X.dtype)
@@ -165,6 +178,7 @@ class SwitchedMeanFunction(MeanFunction):
             assert isinstance(m, MeanFunction)
         self.meanfunctions = meanfunction_list
 
+    @inherit_check_shapes
     def __call__(self, X: TensorType) -> tf.Tensor:
         ind = tf.gather(tf.transpose(X), tf.shape(X)[1] - 1)  # ind = X[:,-1]
         ind = tf.cast(ind, tf.int32)
@@ -187,6 +201,7 @@ class Additive(MeanFunction):
         self.add_1 = first_part
         self.add_2 = second_part
 
+    @inherit_check_shapes
     def __call__(self, X: TensorType) -> tf.Tensor:
         return tf.add(self.add_1(X), self.add_2(X))
 
@@ -198,5 +213,6 @@ class Product(MeanFunction):
         self.prod_1 = first_part
         self.prod_2 = second_part
 
+    @inherit_check_shapes
     def __call__(self, X: TensorType) -> tf.Tensor:
         return tf.multiply(self.prod_1(X), self.prod_2(X))
