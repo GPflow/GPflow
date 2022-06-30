@@ -12,16 +12,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import List, Tuple
+from typing import List, Sequence, Tuple
 
 import numpy as np
 import tensorflow as tf
 
 from ..base import TensorType
 from ..config import default_float
+from ..experimental.check_shapes import check_shapes, inherit_check_shapes
 from .base import GaussianQuadrature
 
 
+@check_shapes(
+    "return[0]: [N]",
+    "return[1]: [N]",
+)
 def gh_points_and_weights(n_gh: int) -> Tuple[tf.Tensor, tf.Tensor]:
     r"""
     Given the number of Gauss-Hermite points n_gh,
@@ -32,8 +37,7 @@ def gh_points_and_weights(n_gh: int) -> Tuple[tf.Tensor, tf.Tensor]:
     E[f(X)] = ∫ f(x) p(x) dx = \sum_{i=1}^{n_gh} f(mean + stddev*z_i) dz_i
 
     :param n_gh: Number of Gauss-Hermite points
-    :returns: Points z and weights dz, both tensors with shape [n_gh],
-        to compute uni-dimensional gaussian expectation
+    :returns: Points z and weights dz to compute uni-dimensional gaussian expectation
     """
     z, dz = np.polynomial.hermite.hermgauss(n_gh)
     z = z * np.sqrt(2)
@@ -42,7 +46,11 @@ def gh_points_and_weights(n_gh: int) -> Tuple[tf.Tensor, tf.Tensor]:
     return tf.convert_to_tensor(z), tf.convert_to_tensor(dz)
 
 
-def list_to_flat_grid(xs: List[TensorType]) -> tf.Tensor:
+@check_shapes(
+    "xs[all]: [.]",
+    "return: [N_product, D]",
+)
+def list_to_flat_grid(xs: Sequence[TensorType]) -> tf.Tensor:
     """
     :param xs: List with d rank-1 Tensors, with shapes N1, N2, ..., Nd
     :return: Tensor with shape [N1*N2*...*Nd, d] representing the flattened
@@ -51,11 +59,19 @@ def list_to_flat_grid(xs: List[TensorType]) -> tf.Tensor:
     return tf.reshape(tf.stack(tf.meshgrid(*xs), axis=-1), (-1, len(xs)))
 
 
-def reshape_Z_dZ(zs: List[TensorType], dzs: List[TensorType]) -> tf.Tensor:
+@check_shapes(
+    "zs[all]: [.]",
+    "dzs[all]: [.]",
+    "return[0]: [N_product, D]",
+    "return[1]: [N_product, 1]",
+)
+def reshape_Z_dZ(
+    zs: Sequence[TensorType], dzs: Sequence[TensorType]
+) -> Tuple[tf.Tensor, tf.Tensor]:
     """
     :param zs: List with d rank-1 Tensors, with shapes N1, N2, ..., Nd
     :param dzs: List with d rank-1 Tensors, with shapes N1, N2, ..., Nd
-    :returns: points Z, Tensor with shape [N1*N2*...*Nd, d],
+    :returns: points Z, Tensor with shape [N1*N2*...*Nd, D],
         and weights dZ, Tensor with shape [N1*N2*...*Nd, 1]
     """
     Z = list_to_flat_grid(zs)
@@ -63,7 +79,11 @@ def reshape_Z_dZ(zs: List[TensorType], dzs: List[TensorType]) -> tf.Tensor:
     return Z, dZ
 
 
-def repeat_as_list(x: TensorType, n: int) -> tf.Tensor:
+@check_shapes(
+    "x: [batch...]",
+    "return: [n, batch...]",
+)
+def repeat_as_list(x: TensorType, n: int) -> Sequence[tf.Tensor]:
     """
     :param x: Array/Tensor to be repeated
     :param n: Integer with the number of repetitions
@@ -72,11 +92,15 @@ def repeat_as_list(x: TensorType, n: int) -> tf.Tensor:
     return [x for _ in range(n)]
 
 
-def ndgh_points_and_weights(dim: int, n_gh: int) -> tf.Tensor:
+@check_shapes(
+    "return[0]: [n_quad_points, D]",
+    "return[1]: [n_quad_points, 1]",
+)
+def ndgh_points_and_weights(dim: int, n_gh: int) -> Tuple[tf.Tensor, tf.Tensor]:
     r"""
     :param dim: dimension of the multivariate normal
     :param n_gh: number of Gauss-Hermite points per dimension
-    :returns: points Z, Tensor with shape [n_gh**dim, dim],
+    :returns: points Z, Tensor with shape [n_gh**dim, D],
         and weights dZ, Tensor with shape [n_gh**dim, 1]
     """
     z, dz = gh_points_and_weights(n_gh)
@@ -98,6 +122,7 @@ class NDiagGHQuadrature(GaussianQuadrature):
         self.Z = tf.ensure_shape(Z, (self.n_gh_total, self.dim))
         self.dZ = tf.ensure_shape(dZ, (self.n_gh_total, 1))
 
+    @inherit_check_shapes
     def _build_X_W(self, mean: TensorType, var: TensorType) -> Tuple[tf.Tensor, tf.Tensor]:
         """
         :param mean: Array/Tensor with shape [b1, b2, ..., bX, dim], usually [N, dim],
