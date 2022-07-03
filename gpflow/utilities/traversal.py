@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import copy
+import numpy as np
 import re
 from functools import lru_cache
 from typing import Any, Callable, Dict, Mapping, Optional, Pattern, Tuple, Type, TypeVar, Union
@@ -330,7 +331,7 @@ def _first_three_elements_regexp() -> Pattern[str]:
 
 
 def _str_tensor_value(value: AnyNDArray) -> str:
-    value_str = str(value)
+    value_str = str(np.around(value, 5))
     if value.size <= 3:
         return value_str
 
