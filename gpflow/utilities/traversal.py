@@ -13,11 +13,11 @@
 # limitations under the License.
 
 import copy
-import numpy as np
 import re
 from functools import lru_cache
 from typing import Any, Callable, Dict, Mapping, Optional, Pattern, Tuple, Type, TypeVar, Union
 
+import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
 from packaging.version import Version
