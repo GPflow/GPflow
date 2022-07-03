@@ -61,12 +61,13 @@ This release contains contributions from:
 * <SIMILAR TO ABOVE SECTION, BUT FOR OTHER IMPORTANT CHANGES / BUG FIXES>
 * <IF A CHANGE CLOSES A GITHUB ISSUE, IT SHOULD BE DOCUMENTED HERE>
 * <NOTES SHOULD BE GROUPED PER AREA>
+* Add support for Apple Silicon Macs (`arm64`) via the `tensorflow-macos` dependency. (#1850)
 
 ## Thanks to our Contributors
 
 This release contains contributions from:
 
-jesnie
+jesnie, corwinpro
 
 
 # Release 2.5.2
