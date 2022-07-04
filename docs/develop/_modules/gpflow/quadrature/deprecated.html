@@ -278,18 +278,27 @@ function checkPageExistsAndRedirect(event) {
 
 <span class="kn">from</span> <span class="nn">..base</span> <span class="kn">import</span> <span class="n">AnyNDArray</span><span class="p">,</span> <span class="n">TensorType</span>
 <span class="kn">from</span> <span class="nn">..config</span> <span class="kn">import</span> <span class="n">default_float</span>
+<span class="kn">from</span> <span class="nn">..experimental.check_shapes</span> <span class="kn">import</span> <span class="n">check_shapes</span>
 <span class="kn">from</span> <span class="nn">..utilities</span> <span class="kn">import</span> <span class="n">to_default_float</span>
 <span class="kn">from</span> <span class="nn">.gauss_hermite</span> <span class="kn">import</span> <span class="n">NDiagGHQuadrature</span>
 
 
-<div class="viewcode-block" id="hermgauss"><a class="viewcode-back" href="../../../api/gpflow/quadrature/index.html#gpflow.quadrature.hermgauss">[docs]</a><span class="k">def</span> <span class="nf">hermgauss</span><span class="p">(</span><span class="n">n</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">AnyNDArray</span><span class="p">,</span> <span class="n">AnyNDArray</span><span class="p">]:</span>
+<div class="viewcode-block" id="hermgauss"><a class="viewcode-back" href="../../../api/gpflow/quadrature/index.html#gpflow.quadrature.hermgauss">[docs]</a><span class="nd">@check_shapes</span><span class="p">(</span>
+    <span class="s2">&quot;return[0]: [n_quad_points]&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;return[1]: [n_quad_points]&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="k">def</span> <span class="nf">hermgauss</span><span class="p">(</span><span class="n">n</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">AnyNDArray</span><span class="p">,</span> <span class="n">AnyNDArray</span><span class="p">]:</span>
     <span class="c1"># Type-ignore is because for some versions mypy can&#39;t find np.polynomial.hermite</span>
     <span class="n">x</span><span class="p">,</span> <span class="n">w</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">polynomial</span><span class="o">.</span><span class="n">hermite</span><span class="o">.</span><span class="n">hermgauss</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
     <span class="n">x</span><span class="p">,</span> <span class="n">w</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">default_float</span><span class="p">()),</span> <span class="n">w</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">default_float</span><span class="p">())</span>
     <span class="k">return</span> <span class="n">x</span><span class="p">,</span> <span class="n">w</span></div>
 
 
-<div class="viewcode-block" id="mvhermgauss"><a class="viewcode-back" href="../../../api/gpflow/quadrature/index.html#gpflow.quadrature.mvhermgauss">[docs]</a><span class="k">def</span> <span class="nf">mvhermgauss</span><span class="p">(</span><span class="n">H</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">D</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">AnyNDArray</span><span class="p">,</span> <span class="n">AnyNDArray</span><span class="p">]:</span>
+<div class="viewcode-block" id="mvhermgauss"><a class="viewcode-back" href="../../../api/gpflow/quadrature/index.html#gpflow.quadrature.mvhermgauss">[docs]</a><span class="nd">@check_shapes</span><span class="p">(</span>
+    <span class="s2">&quot;return[0]: [n_quad_points, D]&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;return[1]: [n_quad_points]&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="k">def</span> <span class="nf">mvhermgauss</span><span class="p">(</span><span class="n">H</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">D</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">AnyNDArray</span><span class="p">,</span> <span class="n">AnyNDArray</span><span class="p">]:</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Return the evaluation locations &#39;xn&#39;, and weights &#39;wn&#39; for a multivariate</span>
 <span class="sd">    Gauss-Hermite quadrature.</span>
@@ -307,7 +316,12 @@ function checkPageExistsAndRedirect(event) {
     <span class="k">return</span> <span class="n">x</span><span class="p">,</span> <span class="n">w</span></div>
 
 
-<div class="viewcode-block" id="mvnquad"><a class="viewcode-back" href="../../../api/gpflow/quadrature/index.html#gpflow.quadrature.mvnquad">[docs]</a><span class="k">def</span> <span class="nf">mvnquad</span><span class="p">(</span>
+<div class="viewcode-block" id="mvnquad"><a class="viewcode-back" href="../../../api/gpflow/quadrature/index.html#gpflow.quadrature.mvnquad">[docs]</a><span class="nd">@check_shapes</span><span class="p">(</span>
+    <span class="s2">&quot;means: [N, Din]&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;covs: [N, Din, Din]&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;return: [N, Dout...]&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="k">def</span> <span class="nf">mvnquad</span><span class="p">(</span>
     <span class="n">func</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">],</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">],</span>
     <span class="n">means</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span>
     <span class="n">covs</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span>
@@ -318,14 +332,13 @@ function checkPageExistsAndRedirect(event) {
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Computes N Gaussian expectation integrals of a single function &#39;f&#39;</span>
 <span class="sd">    using Gauss-Hermite quadrature.</span>
+
 <span class="sd">    :param f: integrand function. Takes one input of shape ?xD.</span>
-<span class="sd">    :param means: NxD</span>
-<span class="sd">    :param covs: NxDxD</span>
 <span class="sd">    :param H: Number of Gauss-Hermite evaluation points.</span>
 <span class="sd">    :param Din: Number of input dimensions. Needs to be known at call-time.</span>
 <span class="sd">    :param Dout: Number of output dimensions. Defaults to (). Dout is assumed</span>
-<span class="sd">    to leave out the item index, i.e. f actually maps (?xD)-&gt;(?x*Dout).</span>
-<span class="sd">    :return: quadratures (N,*Dout)</span>
+<span class="sd">        to leave out the item index, i.e. f actually maps (?xD)-&gt;(?x*Dout).</span>
+<span class="sd">    :return: quadratures</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># Figure out input shape information</span>
     <span class="k">if</span> <span class="n">Din</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -372,7 +385,13 @@ function checkPageExistsAndRedirect(event) {
     <span class="k">return</span> <span class="n">tf</span><span class="o">.</span><span class="n">reduce_sum</span><span class="p">(</span><span class="n">fX</span> <span class="o">*</span> <span class="n">wr</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="ndiagquad"><a class="viewcode-back" href="../../../api/gpflow/quadrature/index.html#gpflow.quadrature.ndiagquad">[docs]</a><span class="k">def</span> <span class="nf">ndiagquad</span><span class="p">(</span>
+<div class="viewcode-block" id="ndiagquad"><a class="viewcode-back" href="../../../api/gpflow/quadrature/index.html#gpflow.quadrature.ndiagquad">[docs]</a><span class="nd">@check_shapes</span><span class="p">(</span>
+    <span class="s2">&quot;Fmu: [broadcast Din, N...]&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Fvar: [broadcast Din, N...]&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Ys.values(): [N...]&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;return: [broadcast Dout, N...]&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="k">def</span> <span class="nf">ndiagquad</span><span class="p">(</span>
     <span class="n">funcs</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">],</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]]],</span>
     <span class="n">H</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">Fmu</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">TensorType</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">TensorType</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="n">List</span><span class="p">[</span><span class="n">TensorType</span><span class="p">]],</span>
@@ -452,7 +471,13 @@ function checkPageExistsAndRedirect(event) {
     <span class="k">return</span> <span class="n">result</span></div>
 
 
-<div class="viewcode-block" id="ndiag_mc"><a class="viewcode-back" href="../../../api/gpflow/quadrature/index.html#gpflow.quadrature.ndiag_mc">[docs]</a><span class="k">def</span> <span class="nf">ndiag_mc</span><span class="p">(</span>
+<div class="viewcode-block" id="ndiag_mc"><a class="viewcode-back" href="../../../api/gpflow/quadrature/index.html#gpflow.quadrature.ndiag_mc">[docs]</a><span class="nd">@check_shapes</span><span class="p">(</span>
+    <span class="s2">&quot;Fmu: [N, Din]&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Fvar: [N, Din]&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Ys.values(): [broadcast N, Dout]&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;return: [broadcast n_funs, N, P]&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="k">def</span> <span class="nf">ndiag_mc</span><span class="p">(</span>
     <span class="n">funcs</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">],</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]]],</span>
     <span class="n">S</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">Fmu</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span>

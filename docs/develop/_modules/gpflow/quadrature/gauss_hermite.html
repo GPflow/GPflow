@@ -268,17 +268,22 @@ function checkPageExistsAndRedirect(event) {
 <span class="c1"># See the License for the specific language governing permissions and</span>
 <span class="c1"># limitations under the License.</span>
 
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">Tuple</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">tensorflow</span> <span class="k">as</span> <span class="nn">tf</span>
 
 <span class="kn">from</span> <span class="nn">..base</span> <span class="kn">import</span> <span class="n">TensorType</span>
 <span class="kn">from</span> <span class="nn">..config</span> <span class="kn">import</span> <span class="n">default_float</span>
+<span class="kn">from</span> <span class="nn">..experimental.check_shapes</span> <span class="kn">import</span> <span class="n">check_shapes</span><span class="p">,</span> <span class="n">inherit_check_shapes</span>
 <span class="kn">from</span> <span class="nn">.base</span> <span class="kn">import</span> <span class="n">GaussianQuadrature</span>
 
 
-<div class="viewcode-block" id="gh_points_and_weights"><a class="viewcode-back" href="../../../api/gpflow/quadrature/gauss_hermite/index.html#gpflow.quadrature.gauss_hermite.gh_points_and_weights">[docs]</a><span class="k">def</span> <span class="nf">gh_points_and_weights</span><span class="p">(</span><span class="n">n_gh</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
+<div class="viewcode-block" id="gh_points_and_weights"><a class="viewcode-back" href="../../../api/gpflow/quadrature/gauss_hermite/index.html#gpflow.quadrature.gauss_hermite.gh_points_and_weights">[docs]</a><span class="nd">@check_shapes</span><span class="p">(</span>
+    <span class="s2">&quot;return[0]: [N]&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;return[1]: [N]&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="k">def</span> <span class="nf">gh_points_and_weights</span><span class="p">(</span><span class="n">n_gh</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
     <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Given the number of Gauss-Hermite points n_gh,</span>
 <span class="sd">    returns the points z and the weights dz to perform the following</span>
@@ -288,8 +293,7 @@ function checkPageExistsAndRedirect(event) {
 <span class="sd">    E[f(X)] = ∫ f(x) p(x) dx = \sum_{i=1}^{n_gh} f(mean + stddev*z_i) dz_i</span>
 
 <span class="sd">    :param n_gh: Number of Gauss-Hermite points</span>
-<span class="sd">    :returns: Points z and weights dz, both tensors with shape [n_gh],</span>
-<span class="sd">        to compute uni-dimensional gaussian expectation</span>
+<span class="sd">    :returns: Points z and weights dz to compute uni-dimensional gaussian expectation</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">z</span><span class="p">,</span> <span class="n">dz</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">polynomial</span><span class="o">.</span><span class="n">hermite</span><span class="o">.</span><span class="n">hermgauss</span><span class="p">(</span><span class="n">n_gh</span><span class="p">)</span>
     <span class="n">z</span> <span class="o">=</span> <span class="n">z</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
@@ -298,7 +302,11 @@ function checkPageExistsAndRedirect(event) {
     <span class="k">return</span> <span class="n">tf</span><span class="o">.</span><span class="n">convert_to_tensor</span><span class="p">(</span><span class="n">z</span><span class="p">),</span> <span class="n">tf</span><span class="o">.</span><span class="n">convert_to_tensor</span><span class="p">(</span><span class="n">dz</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="list_to_flat_grid"><a class="viewcode-back" href="../../../api/gpflow/quadrature/gauss_hermite/index.html#gpflow.quadrature.gauss_hermite.list_to_flat_grid">[docs]</a><span class="k">def</span> <span class="nf">list_to_flat_grid</span><span class="p">(</span><span class="n">xs</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">TensorType</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<div class="viewcode-block" id="list_to_flat_grid"><a class="viewcode-back" href="../../../api/gpflow/quadrature/gauss_hermite/index.html#gpflow.quadrature.gauss_hermite.list_to_flat_grid">[docs]</a><span class="nd">@check_shapes</span><span class="p">(</span>
+    <span class="s2">&quot;xs[all]: [.]&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;return: [N_product, D]&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="k">def</span> <span class="nf">list_to_flat_grid</span><span class="p">(</span><span class="n">xs</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">TensorType</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    :param xs: List with d rank-1 Tensors, with shapes N1, N2, ..., Nd</span>
 <span class="sd">    :return: Tensor with shape [N1*N2*...*Nd, d] representing the flattened</span>
@@ -307,11 +315,19 @@ function checkPageExistsAndRedirect(event) {
     <span class="k">return</span> <span class="n">tf</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">meshgrid</span><span class="p">(</span><span class="o">*</span><span class="n">xs</span><span class="p">),</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">xs</span><span class="p">)))</span></div>
 
 
-<div class="viewcode-block" id="reshape_Z_dZ"><a class="viewcode-back" href="../../../api/gpflow/quadrature/gauss_hermite/index.html#gpflow.quadrature.gauss_hermite.reshape_Z_dZ">[docs]</a><span class="k">def</span> <span class="nf">reshape_Z_dZ</span><span class="p">(</span><span class="n">zs</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">TensorType</span><span class="p">],</span> <span class="n">dzs</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">TensorType</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<div class="viewcode-block" id="reshape_Z_dZ"><a class="viewcode-back" href="../../../api/gpflow/quadrature/gauss_hermite/index.html#gpflow.quadrature.gauss_hermite.reshape_Z_dZ">[docs]</a><span class="nd">@check_shapes</span><span class="p">(</span>
+    <span class="s2">&quot;zs[all]: [.]&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;dzs[all]: [.]&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;return[0]: [N_product, D]&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;return[1]: [N_product, 1]&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="k">def</span> <span class="nf">reshape_Z_dZ</span><span class="p">(</span>
+    <span class="n">zs</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">TensorType</span><span class="p">],</span> <span class="n">dzs</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">TensorType</span><span class="p">]</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    :param zs: List with d rank-1 Tensors, with shapes N1, N2, ..., Nd</span>
 <span class="sd">    :param dzs: List with d rank-1 Tensors, with shapes N1, N2, ..., Nd</span>
-<span class="sd">    :returns: points Z, Tensor with shape [N1*N2*...*Nd, d],</span>
+<span class="sd">    :returns: points Z, Tensor with shape [N1*N2*...*Nd, D],</span>
 <span class="sd">        and weights dZ, Tensor with shape [N1*N2*...*Nd, 1]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">Z</span> <span class="o">=</span> <span class="n">list_to_flat_grid</span><span class="p">(</span><span class="n">zs</span><span class="p">)</span>
@@ -319,7 +335,11 @@ function checkPageExistsAndRedirect(event) {
     <span class="k">return</span> <span class="n">Z</span><span class="p">,</span> <span class="n">dZ</span></div>
 
 
-<div class="viewcode-block" id="repeat_as_list"><a class="viewcode-back" href="../../../api/gpflow/quadrature/gauss_hermite/index.html#gpflow.quadrature.gauss_hermite.repeat_as_list">[docs]</a><span class="k">def</span> <span class="nf">repeat_as_list</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">n</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<div class="viewcode-block" id="repeat_as_list"><a class="viewcode-back" href="../../../api/gpflow/quadrature/gauss_hermite/index.html#gpflow.quadrature.gauss_hermite.repeat_as_list">[docs]</a><span class="nd">@check_shapes</span><span class="p">(</span>
+    <span class="s2">&quot;x: [batch...]&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;return: [n, batch...]&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="k">def</span> <span class="nf">repeat_as_list</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">n</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    :param x: Array/Tensor to be repeated</span>
 <span class="sd">    :param n: Integer with the number of repetitions</span>
@@ -328,11 +348,15 @@ function checkPageExistsAndRedirect(event) {
     <span class="k">return</span> <span class="p">[</span><span class="n">x</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">)]</span></div>
 
 
-<div class="viewcode-block" id="ndgh_points_and_weights"><a class="viewcode-back" href="../../../api/gpflow/quadrature/gauss_hermite/index.html#gpflow.quadrature.gauss_hermite.ndgh_points_and_weights">[docs]</a><span class="k">def</span> <span class="nf">ndgh_points_and_weights</span><span class="p">(</span><span class="n">dim</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">n_gh</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<div class="viewcode-block" id="ndgh_points_and_weights"><a class="viewcode-back" href="../../../api/gpflow/quadrature/gauss_hermite/index.html#gpflow.quadrature.gauss_hermite.ndgh_points_and_weights">[docs]</a><span class="nd">@check_shapes</span><span class="p">(</span>
+    <span class="s2">&quot;return[0]: [n_quad_points, D]&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;return[1]: [n_quad_points, 1]&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="k">def</span> <span class="nf">ndgh_points_and_weights</span><span class="p">(</span><span class="n">dim</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">n_gh</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
     <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    :param dim: dimension of the multivariate normal</span>
 <span class="sd">    :param n_gh: number of Gauss-Hermite points per dimension</span>
-<span class="sd">    :returns: points Z, Tensor with shape [n_gh**dim, dim],</span>
+<span class="sd">    :returns: points Z, Tensor with shape [n_gh**dim, D],</span>
 <span class="sd">        and weights dZ, Tensor with shape [n_gh**dim, 1]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">z</span><span class="p">,</span> <span class="n">dz</span> <span class="o">=</span> <span class="n">gh_points_and_weights</span><span class="p">(</span><span class="n">n_gh</span><span class="p">)</span>
@@ -354,6 +378,7 @@ function checkPageExistsAndRedirect(event) {
         <span class="bp">self</span><span class="o">.</span><span class="n">Z</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">ensure_shape</span><span class="p">(</span><span class="n">Z</span><span class="p">,</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_gh_total</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="p">))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dZ</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">ensure_shape</span><span class="p">(</span><span class="n">dZ</span><span class="p">,</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_gh_total</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
 
+    <span class="nd">@inherit_check_shapes</span>
     <span class="k">def</span> <span class="nf">_build_X_W</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mean</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">var</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        :param mean: Array/Tensor with shape [b1, b2, ..., bX, dim], usually [N, dim],</span>

@@ -638,8 +638,12 @@ E[f(X)] = ∫ f(x) p(x) dx = sum_{i=1}^{n_gh} f(mean + stddev*z_i) dz_i</p>
 <dd class="field-even"><p><code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]</p>
 </dd>
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Points z and weights dz, both tensors with shape [n_gh],
-to compute uni-dimensional gaussian expectation</p>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><strong>return[0]</strong> has shape [<em>N</em>].</p></li>
+<li><p><strong>return[1]</strong> has shape [<em>N</em>].</p></li>
+</ul>
+<p>Points z and weights dz to compute uni-dimensional gaussian expectation</p>
+</p>
 </dd>
 </dl>
 </dd></dl>
@@ -652,14 +656,22 @@ to compute uni-dimensional gaussian expectation</p>
 <span class="sig-prename descclassname"><span class="pre">gpflow.quadrature.gauss_hermite.</span></span><span class="sig-name descname"><span class="pre">list_to_flat_grid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">xs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/gpflow/quadrature/gauss_hermite.html#list_to_flat_grid"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.quadrature.gauss_hermite.list_to_flat_grid" title="Permalink to this definition">#</a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>xs</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>, <a class="reference internal" href="../../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>]]) – List with d rank-1 Tensors, with shapes N1, N2, …, Nd</p>
+<dd class="field-odd"><p><strong>xs</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Sequence</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>, <a class="reference internal" href="../../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>]]) – <ul class="simple">
+<li><p><strong>xs[all]</strong> has shape [.].</p></li>
+</ul>
+<p>List with d rank-1 Tensors, with shapes N1, N2, …, Nd</p>
+</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></p>
 </dd>
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Tensor with shape [N1*N2*…*Nd, d] representing the flattened
+<dd class="field-odd"><p><ul class="simple">
+<li><p><strong>return</strong> has shape [<em>N_product</em>, <em>D</em>].</p></li>
+</ul>
+<p>Tensor with shape [N1*N2*…*Nd, d] representing the flattened
 d-dimensional grid built from the input tensors xs</p>
+</p>
 </dd>
 </dl>
 </dd></dl>
@@ -678,11 +690,16 @@ d-dimensional grid built from the input tensors xs</p>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></p>
+<dd class="field-even"><p><code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]</p>
 </dd>
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>points Z, Tensor with shape [n_gh**dim, dim],
+<dd class="field-odd"><p><ul class="simple">
+<li><p><strong>return[0]</strong> has shape [<em>n_quad_points</em>, <em>D</em>].</p></li>
+<li><p><strong>return[1]</strong> has shape [<em>n_quad_points</em>, 1].</p></li>
+</ul>
+<p>points Z, Tensor with shape [n_gh**dim, D],
 and weights dZ, Tensor with shape [n_gh**dim, 1]</p>
+</p>
 </dd>
 </dl>
 </dd></dl>
@@ -696,15 +713,23 @@ and weights dZ, Tensor with shape [n_gh**dim, 1]</p>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>x</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>, <a class="reference internal" href="../../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>]) – Array/Tensor to be repeated</p></li>
+<li><p><strong>x</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>, <a class="reference internal" href="../../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>]) – <ul>
+<li><p><strong>x</strong> has shape [<em>batch</em>…].</p></li>
+</ul>
+<p>Array/Tensor to be repeated</p>
+</p></li>
 <li><p><strong>n</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>) – Integer with the number of repetitions</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></p>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Sequence</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]</p>
 </dd>
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>List of n repetitions of Tensor x</p>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><strong>return</strong> has shape [<em>n</em>, <em>batch</em>…].</p></li>
+</ul>
+<p>List of n repetitions of Tensor x</p>
+</p>
 </dd>
 </dl>
 </dd></dl>
@@ -718,16 +743,29 @@ and weights dZ, Tensor with shape [n_gh**dim, 1]</p>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>zs</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>, <a class="reference internal" href="../../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>]]) – List with d rank-1 Tensors, with shapes N1, N2, …, Nd</p></li>
-<li><p><strong>dzs</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">List</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>, <a class="reference internal" href="../../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>]]) – List with d rank-1 Tensors, with shapes N1, N2, …, Nd</p></li>
+<li><p><strong>zs</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Sequence</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>, <a class="reference internal" href="../../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>]]) – <ul>
+<li><p><strong>zs[all]</strong> has shape [.].</p></li>
+</ul>
+<p>List with d rank-1 Tensors, with shapes N1, N2, …, Nd</p>
+</p></li>
+<li><p><strong>dzs</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Sequence</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Variable</span></code>, <a class="reference internal" href="../../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>]]) – <ul>
+<li><p><strong>dzs[all]</strong> has shape [.].</p></li>
+</ul>
+<p>List with d rank-1 Tensors, with shapes N1, N2, …, Nd</p>
+</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code></p>
+<dd class="field-even"><p><code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]</p>
 </dd>
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>points Z, Tensor with shape [N1*N2*…*Nd, d],
+<dd class="field-odd"><p><ul class="simple">
+<li><p><strong>return[0]</strong> has shape [<em>N_product</em>, <em>D</em>].</p></li>
+<li><p><strong>return[1]</strong> has shape [<em>N_product</em>, 1].</p></li>
+</ul>
+<p>points Z, Tensor with shape [N1*N2*…*Nd, D],
 and weights dZ, Tensor with shape [N1*N2*…*Nd, 1]</p>
+</p>
 </dd>
 </dl>
 </dd></dl>
