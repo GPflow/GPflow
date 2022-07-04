@@ -21,6 +21,7 @@ from .. import kernels
 from .. import mean_functions as mfn
 from ..base import TensorType
 from ..covariances import Kuf
+from ..experimental.check_shapes import check_shapes
 from ..inducing_variables import InducingVariables
 from ..probability_distributions import DiagonalGaussian, Gaussian, MarkovGaussian
 from ..quadrature import mvnquad
@@ -66,6 +67,12 @@ def get_eval_func(
     (InducingVariables, NoneType),
     object,
     (InducingVariables, NoneType),
+)
+@check_shapes(
+    "p: [N, D]",
+    "inducing_variable1: [M1, D, P]",
+    "inducing_variable2: [M2, D, P]",
+    "return: [N, ...]",
 )
 def _quadrature_expectation_gaussian(
     p: Union[Gaussian, DiagonalGaussian],
@@ -124,6 +131,12 @@ def _quadrature_expectation_gaussian(
 
 @dispatch.quadrature_expectation.register(
     MarkovGaussian, object, (InducingVariables, NoneType), object, (InducingVariables, NoneType)
+)
+@check_shapes(
+    "p: [N, D]",
+    "inducing_variable1: [M1, D, P]",
+    "inducing_variable2: [M2, D, P]",
+    "return: [N, ...]",
 )
 def _quadrature_expectation_markov(
     p: MarkovGaussian,

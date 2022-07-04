@@ -16,6 +16,7 @@ from typing import Optional, Tuple, Union, cast
 import tensorflow as tf
 
 from ..base import TensorType
+from ..experimental.check_shapes import check_shapes
 from ..inducing_variables import InducingVariables
 from ..kernels import Kernel
 from ..mean_functions import MeanFunction
@@ -104,6 +105,11 @@ def quadrature_expectation(
     return dispatch.quadrature_expectation(p, obj1, feat1, obj2, feat2, nghp=nghp)
 
 
+@check_shapes(
+    "return[0]: [N, D]",
+    "return[2]: [M1, D, P]",
+    "return[4]: [M2, D, P]",
+)
 def _init_expectation(
     p: ProbabilityDistributionLike, obj1: PackedExpectationObject, obj2: PackedExpectationObject
 ) -> Tuple[

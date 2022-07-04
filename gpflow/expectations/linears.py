@@ -18,6 +18,7 @@ import tensorflow as tf
 
 from .. import kernels
 from .. import mean_functions as mfn
+from ..experimental.check_shapes import check_shapes
 from ..inducing_variables import InducingPoints
 from ..probability_distributions import DiagonalGaussian, Gaussian, MarkovGaussian
 from . import dispatch
@@ -27,6 +28,10 @@ NoneType: Type[None] = type(None)
 
 
 @dispatch.expectation.register(Gaussian, kernels.Linear, NoneType, NoneType, NoneType)
+@check_shapes(
+    "p: [N, D]",
+    "return: [N]",
+)
 def _expectation_gaussian_linear(
     p: Gaussian, kernel: kernels.Linear, _: None, __: None, ___: None, nghp: None = None
 ) -> tf.Tensor:
@@ -45,6 +50,11 @@ def _expectation_gaussian_linear(
 
 
 @dispatch.expectation.register(Gaussian, kernels.Linear, InducingPoints, NoneType, NoneType)
+@check_shapes(
+    "p: [N, D]",
+    "inducing_variable: [M, D, P]",
+    "return: [N, M]",
+)
 def _expectation_gaussian_linear_inducingpoints(
     p: Gaussian,
     kernel: kernels.Linear,
@@ -67,6 +77,11 @@ def _expectation_gaussian_linear_inducingpoints(
 
 
 @dispatch.expectation.register(Gaussian, kernels.Linear, InducingPoints, mfn.Identity, NoneType)
+@check_shapes(
+    "p: [N, D]",
+    "inducing_variable: [M, D, P]",
+    "return: [N, M, D]",
+)
 def _expectation_gaussian_linear_inducingpoints__identity(
     p: Gaussian,
     kernel: kernels.Linear,
@@ -92,6 +107,11 @@ def _expectation_gaussian_linear_inducingpoints__identity(
 
 @dispatch.expectation.register(
     MarkovGaussian, kernels.Linear, InducingPoints, mfn.Identity, NoneType
+)
+@check_shapes(
+    "p: [N, D]",
+    "inducing_variable: [M, D, P]",
+    "return: [N, M, D]",
 )
 def _expectation_markov_linear_inducingpoints__identity(
     p: MarkovGaussian,
@@ -120,6 +140,12 @@ def _expectation_markov_linear_inducingpoints__identity(
 
 @dispatch.expectation.register(
     (Gaussian, DiagonalGaussian), kernels.Linear, InducingPoints, kernels.Linear, InducingPoints
+)
+@check_shapes(
+    "p: [N, D]",
+    "feat1: [M, D, P]",
+    "feat2: [M, D, P]",
+    "return: [N, M, M]",
 )
 def _expectation_gaussian_linear_inducingpoints__linear_inducingpoints(
     p: Union[Gaussian, DiagonalGaussian],

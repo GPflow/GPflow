@@ -18,6 +18,7 @@ import tensorflow as tf
 
 from .. import kernels
 from .. import mean_functions as mfn
+from ..experimental.check_shapes import check_shapes
 from ..inducing_variables import InducingPoints
 from ..probability_distributions import DiagonalGaussian, Gaussian, MarkovGaussian
 from ..utilities.ops import square_distance
@@ -28,6 +29,10 @@ NoneType: Type[None] = type(None)
 
 
 @dispatch.expectation.register(Gaussian, kernels.SquaredExponential, NoneType, NoneType, NoneType)
+@check_shapes(
+    "p: [N, D]",
+    "return: [N]",
+)
 def _expectation_gaussian_sqe(
     p: Gaussian, kernel: kernels.SquaredExponential, _: None, __: None, ___: None, nghp: None = None
 ) -> tf.Tensor:
@@ -43,6 +48,11 @@ def _expectation_gaussian_sqe(
 
 @dispatch.expectation.register(
     Gaussian, kernels.SquaredExponential, InducingPoints, NoneType, NoneType
+)
+@check_shapes(
+    "p: [N, D]",
+    "inducing_variable: [M, D, P]",
+    "return: [N, M]",
 )
 def _expectation_gaussian_sqe_inducingpoints(
     p: Gaussian,
@@ -88,6 +98,11 @@ def _expectation_gaussian_sqe_inducingpoints(
 
 @dispatch.expectation.register(
     Gaussian, mfn.Identity, NoneType, kernels.SquaredExponential, InducingPoints
+)
+@check_shapes(
+    "p: [N, D]",
+    "inducing_variable: [M, D, P]",
+    "return: [N, D, M]",
 )
 def _expectation_gaussian__sqe_inducingpoints(
     p: Gaussian,
@@ -137,6 +152,11 @@ def _expectation_gaussian__sqe_inducingpoints(
 
 @dispatch.expectation.register(
     MarkovGaussian, mfn.Identity, NoneType, kernels.SquaredExponential, InducingPoints
+)
+@check_shapes(
+    "p: [N, D]",
+    "inducing_variable: [M, D, P]",
+    "return: [N, D, M]",
 )
 def _expectation_markov__sqe_inducingpoints(
     p: MarkovGaussian,
@@ -190,6 +210,12 @@ def _expectation_markov__sqe_inducingpoints(
     InducingPoints,
     kernels.SquaredExponential,
     InducingPoints,
+)
+@check_shapes(
+    "p: [N, D]",
+    "feat1: [M, D, P]",
+    "feat2: [M, D, P]",
+    "return: [N, M, M]",
 )
 def _expectation_gaussian_sqe_inducingpoints__sqe_inducingpoints(
     p: Union[Gaussian, DiagonalGaussian],
