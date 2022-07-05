@@ -18,6 +18,7 @@ from typing import Any, Callable, Iterable, Tuple, Union
 import tensorflow as tf
 
 from ..base import TensorType
+from ..experimental.check_shapes import check_shapes
 
 
 class GaussianQuadrature:
@@ -28,9 +29,20 @@ class GaussianQuadrature:
     """
 
     @abc.abstractmethod
+    @check_shapes(
+        "mean: [batch..., D]",
+        "var: [batch..., D]",
+        "return[0]: [N_quad_points, batch..., D]",
+        "return[1]: [N_quad_points, broadcast batch..., 1]",
+    )
     def _build_X_W(self, mean: TensorType, var: TensorType) -> Tuple[tf.Tensor, tf.Tensor]:
         raise NotImplementedError
 
+    @check_shapes(
+        "mean: [batch..., D]",
+        "var: [batch..., D]",
+        "return: [n_funs..., batch..., broadcast D]",
+    )
     def __call__(
         self,
         fun: Union[Callable[..., tf.Tensor], Iterable[Callable[..., tf.Tensor]]],
@@ -50,25 +62,19 @@ class GaussianQuadrature:
             E[f(X)] = sum_{i=1}^{N_quad_points} f(x_i) * w_i
 
         where x_i, w_i must be provided by the inheriting class through self._build_X_W.
-        The computations broadcast along batch-dimensions, represented by [b1, b2, ..., bX].
 
         :param fun: Callable or Iterable of Callables that operates elementwise, with
-            signature f(X, *args, **kwargs). Moreover, it must satisfy the shape-mapping::
+            signature f(X, \*args, \*\*kwargs). Moreover, it must satisfy the shape-mapping::
 
-                X shape: [N_quad_points, b1, b2, ..., bX, d],
-                    usually [N_quad_points, N, d]
-                f(X) shape: [N_quad_points, b1, b2, ...., bX, d'],
-                    usually [N_quad_points, N, 1] or [N_quad_points, N, d]
+                X shape: [N_quad_points, batch..., d].
+                f(X) shape: [N_quad_points, batch..., broadcast d].
 
             In most cases, f should only operate over the last dimension of X
-        :param mean: Array/Tensor with shape [b1, b2, ..., bX, d], usually [N, d],
-            representing the mean of a d-Variate Gaussian distribution
-        :param var: Array/Tensor with shape b1, b2, ..., bX, d], usually [N, d],
-            representing the variance of a d-Variate Gaussian distribution
-        :param *args: Passed to fun
-        :param **kargs: Passed to fun
-        :return: Array/Tensor with shape [b1, b2, ...., bX, d\'],
-            usually [N, d] or [N, 1]
+        :param mean: Array/Tensor representing the mean of a d-Variate Gaussian distribution
+        :param var: Array/Tensor representing the variance of a d-Variate Gaussian distribution
+        :param args: Passed to fun
+        :param kargs: Passed to fun
+        :return: Gaussian expectation of fun
         """
 
         X, W = self._build_X_W(mean, var)
@@ -76,6 +82,11 @@ class GaussianQuadrature:
             return [tf.reduce_sum(f(X, *args, **kwargs) * W, axis=0) for f in fun]
         return tf.reduce_sum(fun(X, *args, **kwargs) * W, axis=0)
 
+    @check_shapes(
+        "mean: [batch..., D]",
+        "var: [batch..., D]",
+        "return: [batch..., broadcast D]",
+    )
     def logspace(
         self,
         fun: Union[Callable[..., tf.Tensor], Iterable[Callable[..., tf.Tensor]]],
@@ -95,25 +106,20 @@ class GaussianQuadrature:
             log E[exp[f(X)]] = log sum_{i=1}^{N_quad_points} exp[f(x_i) + log w_i]
 
         where x_i, w_i must be provided by the inheriting class through self._build_X_W.
-        The computations broadcast along batch-dimensions, represented by [b1, b2, ..., bX].
+        The computations broadcast along batch-dimensions, represented by [batch...].
 
         :param fun: Callable or Iterable of Callables that operates elementwise, with
             signature f(X, \*args, \*\*kwargs). Moreover, it must satisfy the shape-mapping::
 
-                X shape: [N_quad_points, b1, b2, ..., bX, d],
-                    usually [N_quad_points, N, d]
-                f(X) shape: [N_quad_points, b1, b2, ...., bX, d'],
-                    usually [N_quad_points, N, 1] or [N_quad_points, N, d]
+                X shape: [N_quad_points, batch..., d].
+                f(X) shape: [N_quad_points, batch..., broadcast d].
 
             In most cases, f should only operate over the last dimension of X
-        :param mean: Array/Tensor with shape [b1, b2, ..., bX, d], usually [N, d],
-            representing the mean of a d-Variate Gaussian distribution
-        :param var: Array/Tensor with shape b1, b2, ..., bX, d], usually [N, d],
-            representing the variance of a d-Variate Gaussian distribution
+        :param mean: Array/Tensor representing the mean of a d-Variate Gaussian distribution
+        :param var: Array/Tensor representing the variance of a d-Variate Gaussian distribution
         :param args: Passed to fun
         :param kwargs: Passed to fun
-        :return: Array/Tensor with shape [b1, b2, ...., bX, d\'],
-            usually [N, d] or [N, 1]
+        :return: Gaussian log-expectation of the exponential of a function f
         """
 
         X, W = self._build_X_W(mean, var)
