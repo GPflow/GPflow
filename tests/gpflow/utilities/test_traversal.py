@@ -328,7 +328,7 @@ def test_leaf_components_registers_variable_properties(
     for path, variable in leaf_components(module).items():
         param_name = path.split(".")[-2] + "." + path.split(".")[-1]
         assert isinstance(variable, gpflow.Parameter)
-        np.testing.assert_equal(variable.numpy(), expected_param_dicts[param_name]["value"])
+        np.testing.assert_almost_equal(variable.numpy(), expected_param_dicts[param_name]["value"])
         assert variable.trainable == expected_param_dicts[param_name]["trainable"]
         assert variable.shape == expected_param_dicts[param_name]["shape"]
 
@@ -349,7 +349,7 @@ def test_leaf_components_registers_compose_kernel_variable_properties(
         path_as_list = path.split(".")
         param_name = path_as_list[-3] + "." + path_as_list[-2] + "." + path_as_list[-1]
         assert isinstance(variable, gpflow.Parameter)
-        np.testing.assert_equal(variable.numpy(), expected_param_dicts[param_name]["value"])
+        np.testing.assert_almost_equal(variable.numpy(), expected_param_dicts[param_name]["value"])
         assert variable.trainable == expected_param_dicts[param_name]["trainable"]
         assert variable.shape == expected_param_dicts[param_name]["shape"]
 
