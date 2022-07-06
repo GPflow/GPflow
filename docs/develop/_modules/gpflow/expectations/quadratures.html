@@ -277,6 +277,7 @@ function checkPageExistsAndRedirect(event) {
 <span class="kn">from</span> <span class="nn">..</span> <span class="kn">import</span> <span class="n">mean_functions</span> <span class="k">as</span> <span class="n">mfn</span>
 <span class="kn">from</span> <span class="nn">..base</span> <span class="kn">import</span> <span class="n">TensorType</span>
 <span class="kn">from</span> <span class="nn">..covariances</span> <span class="kn">import</span> <span class="n">Kuf</span>
+<span class="kn">from</span> <span class="nn">..experimental.check_shapes</span> <span class="kn">import</span> <span class="n">check_shapes</span>
 <span class="kn">from</span> <span class="nn">..inducing_variables</span> <span class="kn">import</span> <span class="n">InducingVariables</span>
 <span class="kn">from</span> <span class="nn">..probability_distributions</span> <span class="kn">import</span> <span class="n">DiagonalGaussian</span><span class="p">,</span> <span class="n">Gaussian</span><span class="p">,</span> <span class="n">MarkovGaussian</span>
 <span class="kn">from</span> <span class="nn">..quadrature</span> <span class="kn">import</span> <span class="n">mvnquad</span>
@@ -322,6 +323,12 @@ function checkPageExistsAndRedirect(event) {
     <span class="p">(</span><span class="n">InducingVariables</span><span class="p">,</span> <span class="n">NoneType</span><span class="p">),</span>
     <span class="nb">object</span><span class="p">,</span>
     <span class="p">(</span><span class="n">InducingVariables</span><span class="p">,</span> <span class="n">NoneType</span><span class="p">),</span>
+<span class="p">)</span>
+<span class="nd">@check_shapes</span><span class="p">(</span>
+    <span class="s2">&quot;p: [N, D]&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;inducing_variable1: [M1, D, P]&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;inducing_variable2: [M2, D, P]&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;return: [N, ...]&quot;</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="k">def</span> <span class="nf">_quadrature_expectation_gaussian</span><span class="p">(</span>
     <span class="n">p</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Gaussian</span><span class="p">,</span> <span class="n">DiagonalGaussian</span><span class="p">],</span>
@@ -380,6 +387,12 @@ function checkPageExistsAndRedirect(event) {
 
 <span class="nd">@dispatch</span><span class="o">.</span><span class="n">quadrature_expectation</span><span class="o">.</span><span class="n">register</span><span class="p">(</span>
     <span class="n">MarkovGaussian</span><span class="p">,</span> <span class="nb">object</span><span class="p">,</span> <span class="p">(</span><span class="n">InducingVariables</span><span class="p">,</span> <span class="n">NoneType</span><span class="p">),</span> <span class="nb">object</span><span class="p">,</span> <span class="p">(</span><span class="n">InducingVariables</span><span class="p">,</span> <span class="n">NoneType</span><span class="p">)</span>
+<span class="p">)</span>
+<span class="nd">@check_shapes</span><span class="p">(</span>
+    <span class="s2">&quot;p: [N, D]&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;inducing_variable1: [M1, D, P]&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;inducing_variable2: [M2, D, P]&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;return: [N, ...]&quot;</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="k">def</span> <span class="nf">_quadrature_expectation_markov</span><span class="p">(</span>
     <span class="n">p</span><span class="p">:</span> <span class="n">MarkovGaussian</span><span class="p">,</span>

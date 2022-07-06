@@ -272,6 +272,7 @@ function checkPageExistsAndRedirect(event) {
 <span class="kn">import</span> <span class="nn">tensorflow</span> <span class="k">as</span> <span class="nn">tf</span>
 
 <span class="kn">from</span> <span class="nn">..base</span> <span class="kn">import</span> <span class="n">TensorType</span>
+<span class="kn">from</span> <span class="nn">..experimental.check_shapes</span> <span class="kn">import</span> <span class="n">check_shapes</span>
 <span class="kn">from</span> <span class="nn">..inducing_variables</span> <span class="kn">import</span> <span class="n">InducingVariables</span>
 <span class="kn">from</span> <span class="nn">..kernels</span> <span class="kn">import</span> <span class="n">Kernel</span>
 <span class="kn">from</span> <span class="nn">..mean_functions</span> <span class="kn">import</span> <span class="n">MeanFunction</span>
@@ -360,6 +361,11 @@ function checkPageExistsAndRedirect(event) {
     <span class="k">return</span> <span class="n">dispatch</span><span class="o">.</span><span class="n">quadrature_expectation</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">obj1</span><span class="p">,</span> <span class="n">feat1</span><span class="p">,</span> <span class="n">obj2</span><span class="p">,</span> <span class="n">feat2</span><span class="p">,</span> <span class="n">nghp</span><span class="o">=</span><span class="n">nghp</span><span class="p">)</span></div>
 
 
+<span class="nd">@check_shapes</span><span class="p">(</span>
+    <span class="s2">&quot;return[0]: [N, D]&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;return[2]: [M1, D, P]&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;return[4]: [M2, D, P]&quot;</span><span class="p">,</span>
+<span class="p">)</span>
 <span class="k">def</span> <span class="nf">_init_expectation</span><span class="p">(</span>
     <span class="n">p</span><span class="p">:</span> <span class="n">ProbabilityDistributionLike</span><span class="p">,</span> <span class="n">obj1</span><span class="p">:</span> <span class="n">PackedExpectationObject</span><span class="p">,</span> <span class="n">obj2</span><span class="p">:</span> <span class="n">PackedExpectationObject</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span>
