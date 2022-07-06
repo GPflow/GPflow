@@ -16,12 +16,18 @@ import numpy as np  # pylint: disable=unused-import  # Used by Sphinx to generat
 import tensorflow as tf
 
 from ..base import TensorLike, TensorType
+from ..experimental.check_shapes import check_shapes
 from ..inducing_variables import InducingPatches, InducingPoints, Multiscale
 from ..kernels import Convolutional, Kernel, SquaredExponential
 from .dispatch import Kuf
 
 
 @Kuf.register(InducingPoints, Kernel, TensorLike)
+@check_shapes(
+    "inducing_variable: [M, D, 1]",
+    "Xnew: [batch..., N, D]",
+    "return: [M, batch..., N]",
+)
 def Kuf_kernel_inducingpoints(
     inducing_variable: InducingPoints, kernel: Kernel, Xnew: TensorType
 ) -> tf.Tensor:
@@ -29,6 +35,11 @@ def Kuf_kernel_inducingpoints(
 
 
 @Kuf.register(Multiscale, SquaredExponential, TensorLike)
+@check_shapes(
+    "inducing_variable: [M, D, 1]",
+    "Xnew: [batch..., N, D]",
+    "return: [M, batch..., N]",
+)
 def Kuf_sqexp_multiscale(
     inducing_variable: Multiscale, kernel: SquaredExponential, Xnew: TensorType
 ) -> tf.Tensor:
@@ -42,6 +53,11 @@ def Kuf_sqexp_multiscale(
 
 
 @Kuf.register(InducingPatches, Convolutional, object)
+@check_shapes(
+    "inducing_variable: [M, D, 1]",
+    "Xnew: [batch..., N, D2]",
+    "return: [M, batch..., N]",
+)
 def Kuf_conv_patch(
     inducing_variable: InducingPatches, kernel: Convolutional, Xnew: TensorType
 ) -> tf.Tensor:

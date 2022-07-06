@@ -17,6 +17,7 @@ from typing import Callable, Union
 import tensorflow as tf
 
 from ...base import TensorType
+from ...experimental.check_shapes import check_shapes
 from ...inducing_variables import (
     FallbackSeparateIndependentInducingVariables,
     FallbackSharedIndependentInducingVariables,
@@ -34,22 +35,37 @@ from ..dispatch import Kuf
 
 
 @Kuf.register(InducingPoints, MultioutputKernel, object)
+@check_shapes(
+    "inducing_variable: [M, D, 1]",
+    "Xnew: [batch..., N, D]",
+    "return: [M, P, batch..., N, P]",
+)
 def Kuf_generic(
     inducing_variable: InducingPoints, kernel: MultioutputKernel, Xnew: TensorType
 ) -> tf.Tensor:
-    return kernel(inducing_variable.Z, Xnew, full_cov=True, full_output_cov=True)  # [M, P, N, P]
+    return kernel(inducing_variable.Z, Xnew, full_cov=True, full_output_cov=True)
 
 
 @Kuf.register(SharedIndependentInducingVariables, SharedIndependent, object)
+@check_shapes(
+    "inducing_variable: [M, D, P]",
+    "Xnew: [batch..., N, D]",
+    "return: [M, batch..., N]",
+)
 def Kuf_shared_shared(
     inducing_variable: SharedIndependentInducingVariables,
     kernel: SharedIndependent,
     Xnew: tf.Tensor,
 ) -> tf.Tensor:
-    return Kuf(inducing_variable.inducing_variable, kernel.kernel, Xnew)  # [M, N]
+    return Kuf(inducing_variable.inducing_variable, kernel.kernel, Xnew)
 
 
 @Kuf.register(SeparateIndependentInducingVariables, SharedIndependent, object)
+@check_shapes(
+    "inducing_variable: [M, D, P]",
+    "Xnew: [batch..., N, D]",
+    "return: [L, M, batch..., N]",
+)
 def Kuf_separate_shared(
     inducing_variable: SeparateIndependentInducingVariables,
     kernel: SharedIndependent,
@@ -57,10 +73,15 @@ def Kuf_separate_shared(
 ) -> tf.Tensor:
     return tf.stack(
         [Kuf(f, kernel.kernel, Xnew) for f in inducing_variable.inducing_variable_list], axis=0
-    )  # [L, M, N]
+    )
 
 
 @Kuf.register(SharedIndependentInducingVariables, SeparateIndependent, object)
+@check_shapes(
+    "inducing_variable: [M, D, P]",
+    "Xnew: [batch..., N, D]",
+    "return: [L, M, batch..., N]",
+)
 def Kuf_shared_separate(
     inducing_variable: SharedIndependentInducingVariables,
     kernel: SeparateIndependent,
@@ -68,21 +89,37 @@ def Kuf_shared_separate(
 ) -> tf.Tensor:
     return tf.stack(
         [Kuf(inducing_variable.inducing_variable, k, Xnew) for k in kernel.kernels], axis=0
-    )  # [L, M, N]
+    )
 
 
 @Kuf.register(SeparateIndependentInducingVariables, SeparateIndependent, object)
+@check_shapes(
+    "inducing_variable: [M, D, P]",
+    "Xnew: [batch..., N, D]",
+    "return: [L, M, batch..., N]",
+)
 def Kuf_separate_separate(
     inducing_variable: SeparateIndependentInducingVariables,
     kernel: SeparateIndependent,
     Xnew: TensorType,
 ) -> tf.Tensor:
+    n_iv = len(inducing_variable.inducing_variable_list)
+    n_k = len(kernel.kernels)
+    assert (
+        n_iv == n_k
+    ), f"Must have same number of inducing variables and kernels. Found {n_iv} and {n_k}."
+
     Kufs = [
         Kuf(f, k, Xnew) for f, k in zip(inducing_variable.inducing_variable_list, kernel.kernels)
     ]
-    return tf.stack(Kufs, axis=0)  # [L, M, N]
+    return tf.stack(Kufs, axis=0)
 
 
+@check_shapes(
+    "inducing_variable: [M, D, L]",
+    "Xnew: [batch..., N, D]",
+    "return: [M, L, batch..., N, P]",
+)
 def _fallback_Kuf(
     kuf_impl: Callable[
         [
@@ -98,14 +135,20 @@ def _fallback_Kuf(
     kernel: LinearCoregionalization,
     Xnew: TensorType,
 ) -> tf.Tensor:
-    K = tf.transpose(kuf_impl(inducing_variable, kernel, Xnew), [1, 0, 2])  # [M, L, N]
-    return K[:, :, :, None] * tf.transpose(kernel.W)[None, :, None, :]  # [M, L, N, P]
+    K = tf.transpose(kuf_impl(inducing_variable, kernel, Xnew), [1, 0, 2])
+    return K[:, :, :, None] * tf.transpose(kernel.W)[None, :, None, :]
 
 
 @Kuf.register(
     FallbackSeparateIndependentInducingVariables,
     LinearCoregionalization,
     object,
+)
+@check_shapes(
+    "inducing_variable: [M, D, L]",
+    "kernel.W: [P, L]",
+    "Xnew: [batch..., N, D]",
+    "return: [M, L, batch..., N, P]",
 )
 def Kuf_fallback_separate_linear_coregionalization(
     inducing_variable: FallbackSeparateIndependentInducingVariables,
@@ -123,6 +166,12 @@ def Kuf_fallback_separate_linear_coregionalization(
     LinearCoregionalization,
     object,
 )
+@check_shapes(
+    "inducing_variable: [M, D, P]",
+    "kernel.W: [P, L]",
+    "Xnew: [batch..., N, D]",
+    "return: [M, L, batch..., N, P]",
+)
 def Kuf_fallback_shared_linear_coregionalization(
     inducing_variable: FallbackSharedIndependentInducingVariables,
     kernel: LinearCoregionalization,
@@ -135,23 +184,41 @@ def Kuf_fallback_shared_linear_coregionalization(
 
 
 @Kuf.register(SharedIndependentInducingVariables, LinearCoregionalization, object)
+@check_shapes(
+    "inducing_variable: [M, D, L]",
+    "kernel.W: [P, L]",
+    "Xnew: [batch..., N, D]",
+    "return: [L, M, batch..., N]",
+)
 def Kuf_shared_linear_coregionalization(
     inducing_variable: SharedIndependentInducingVariables,
-    kernel: SeparateIndependent,
+    kernel: LinearCoregionalization,
     Xnew: TensorType,
 ) -> tf.Tensor:
     return tf.stack(
         [Kuf(inducing_variable.inducing_variable, k, Xnew) for k in kernel.kernels], axis=0
-    )  # [L, M, N]
+    )
 
 
 @Kuf.register(SeparateIndependentInducingVariables, LinearCoregionalization, object)
+@check_shapes(
+    "inducing_variable: [M, D, L]",
+    "kernel.W: [P, L]",
+    "Xnew: [batch..., N, D]",
+    "return: [L, M, batch..., N]",
+)
 def Kuf_separate_linear_coregionalization(
     inducing_variable: SeparateIndependentInducingVariables,
     kernel: LinearCoregionalization,
     Xnew: TensorType,
 ) -> tf.Tensor:
+    n_iv = len(inducing_variable.inducing_variable_list)
+    n_k = len(kernel.kernels)
+    assert (
+        n_iv == n_k
+    ), f"Must have same number of inducing variables and kernels. Found {n_iv} and {n_k}."
+
     return tf.stack(
         [Kuf(f, k, Xnew) for f, k in zip(inducing_variable.inducing_variable_list, kernel.kernels)],
         axis=0,
-    )  # [L, M, N]
+    )
