@@ -289,6 +289,7 @@ function checkPageExistsAndRedirect(event) {
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">latent_dim</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">input_dim</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
             <span class="n">latent_dim</span><span class="o">=</span><span class="n">latent_dim</span><span class="p">,</span>
             <span class="n">observation_dim</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
             <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
@@ -315,7 +316,7 @@ function checkPageExistsAndRedirect(event) {
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">latent_dim</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">conditional_distribution</span> <span class="o">=</span> <span class="n">conditional_distribution</span>
 
-    <span class="k">def</span> <span class="nf">_log_prob</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Fs</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">Y</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">_log_prob</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">Fs</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">Y</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        The log probability density log p(Y|F)</span>
 
@@ -325,7 +326,7 @@ function checkPageExistsAndRedirect(event) {
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">tf</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conditional_distribution</span><span class="p">(</span><span class="n">Fs</span><span class="p">)</span><span class="o">.</span><span class="n">log_prob</span><span class="p">(</span><span class="n">Y</span><span class="p">),</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_conditional_mean</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Fs</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">_conditional_mean</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">Fs</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        The conditional marginal mean of Y|F: [E(Y₁|F)]</span>
 
@@ -334,7 +335,7 @@ function checkPageExistsAndRedirect(event) {
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">conditional_distribution</span><span class="p">(</span><span class="n">Fs</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">_conditional_variance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Fs</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">_conditional_variance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">Fs</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        The conditional marginal variance of Y|F: [Var(Y₁|F)]</span>
 
