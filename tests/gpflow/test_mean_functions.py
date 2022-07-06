@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Any, Sequence, Type
+from typing import Any, Sequence, Tuple, Type
 
 import numpy as np
 import pytest
@@ -28,6 +28,7 @@ from gpflow.mean_functions import (
     Constant,
     Linear,
     MeanFunction,
+    Polynomial,
     Product,
     SwitchedMeanFunction,
     Zero,
@@ -48,6 +49,7 @@ _mean_functions = [
         b=rng.randn(Datum.output_dim, 1).reshape(-1),
     ),
     Constant(c=rng.randn(Datum.output_dim, 1).reshape(-1)),
+    Polynomial(degree=2, input_dim=Datum.input_dim, output_dim=Datum.output_dim),
 ]
 
 
@@ -191,6 +193,60 @@ def test_linear_mean_functions_associative_property(mean_functions: Sequence[Mea
     assert_allclose(var_lhs, var_b)
     assert_allclose(mu_b, mu_rhs)
     assert_allclose(var_b, var_rhs)
+
+
+@pytest.mark.parametrize("batch", [(), (1, 2)])
+@pytest.mark.parametrize("degree", [0, 1, 3])
+@pytest.mark.parametrize("input_dim", [0, 1, 3])
+@pytest.mark.parametrize("output_dim", [1, 2])
+def test_polynomial__sanity(
+    batch: Tuple[int, ...], degree: int, input_dim: int, output_dim: int
+) -> None:
+    p = Polynomial(degree, input_dim, output_dim)
+    X = np.ones(batch + (input_dim,))
+    Y = p(X)
+    assert (batch) + (output_dim,) == Y.shape
+    assert_allclose(1.0, Y)  # Polynomial is initialised to constant 1.0.
+
+
+def test_polynomial__compute_powers() -> None:
+    assert_allclose(
+        [
+            (0, 0, 0),
+            (0, 0, 1),
+            (0, 0, 2),
+            (0, 1, 0),
+            (0, 1, 1),
+            (0, 2, 0),
+            (1, 0, 0),
+            (1, 0, 1),
+            (1, 1, 0),
+            (2, 0, 0),
+        ],
+        list(Polynomial.compute_powers(degree=2, input_dim=3)),
+    )
+
+
+def test_polynomial__1d() -> None:
+    # Test on a 1D quadratic function, where we can easily work out the maths.
+    p = Polynomial(degree=2, w=[1.0, 2.0, 3.0])
+    X = np.array([[1.0], [2.0]])
+    Y = p(X)
+    assert_allclose(
+        [
+            [1.0 + 2.0 * 1.0 + 3.0 * (1.0 ** 2)],
+            [1.0 + 2.0 * 2.0 + 3.0 * (2.0 ** 2)],
+        ],
+        Y,
+    )
+
+
+def test_polynomial__linear() -> None:
+    # Test on a 3D linear function, where we can easily work out the maths.
+    p = Polynomial(degree=1, input_dim=3, w=[1.0, 2.0, 3.0, 4.0])
+    X = np.array([1.0, 2.0, 3.0])
+    Y = p(X)
+    assert_allclose([1.0 + 2.0 * 3.0 + 3.0 * 2.0 + 4.0 * 1.0], Y)
 
 
 @pytest.mark.parametrize("N, D", [[10, 3]])
