@@ -271,12 +271,17 @@ function checkPageExistsAndRedirect(event) {
 <span class="kn">import</span> <span class="nn">tensorflow</span> <span class="k">as</span> <span class="nn">tf</span>
 
 <span class="kn">from</span> <span class="nn">..config</span> <span class="kn">import</span> <span class="n">default_float</span>
+<span class="kn">from</span> <span class="nn">..experimental.check_shapes</span> <span class="kn">import</span> <span class="n">check_shapes</span>
 <span class="kn">from</span> <span class="nn">..inducing_variables</span> <span class="kn">import</span> <span class="n">InducingPatches</span><span class="p">,</span> <span class="n">InducingPoints</span><span class="p">,</span> <span class="n">Multiscale</span>
 <span class="kn">from</span> <span class="nn">..kernels</span> <span class="kn">import</span> <span class="n">Convolutional</span><span class="p">,</span> <span class="n">Kernel</span><span class="p">,</span> <span class="n">SquaredExponential</span>
 <span class="kn">from</span> <span class="nn">.dispatch</span> <span class="kn">import</span> <span class="n">Kuu</span>
 
 
 <div class="viewcode-block" id="Kuu_kernel_inducingpoints"><a class="viewcode-back" href="../../../api/gpflow/covariances/index.html#gpflow.covariances.kuus.Kuu_kernel_inducingpoints">[docs]</a><span class="nd">@Kuu</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">InducingPoints</span><span class="p">,</span> <span class="n">Kernel</span><span class="p">)</span>
+<span class="nd">@check_shapes</span><span class="p">(</span>
+    <span class="s2">&quot;inducing_variable: [M, D, 1]&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;return: [M, M]&quot;</span><span class="p">,</span>
+<span class="p">)</span>
 <span class="k">def</span> <span class="nf">Kuu_kernel_inducingpoints</span><span class="p">(</span>
     <span class="n">inducing_variable</span><span class="p">:</span> <span class="n">InducingPoints</span><span class="p">,</span> <span class="n">kernel</span><span class="p">:</span> <span class="n">Kernel</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">jitter</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
@@ -286,6 +291,10 @@ function checkPageExistsAndRedirect(event) {
 
 
 <div class="viewcode-block" id="Kuu_sqexp_multiscale"><a class="viewcode-back" href="../../../api/gpflow/covariances/index.html#gpflow.covariances.kuus.Kuu_sqexp_multiscale">[docs]</a><span class="nd">@Kuu</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">Multiscale</span><span class="p">,</span> <span class="n">SquaredExponential</span><span class="p">)</span>
+<span class="nd">@check_shapes</span><span class="p">(</span>
+    <span class="s2">&quot;inducing_variable: [M, D, 1]&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;return: [M, M]&quot;</span><span class="p">,</span>
+<span class="p">)</span>
 <span class="k">def</span> <span class="nf">Kuu_sqexp_multiscale</span><span class="p">(</span>
     <span class="n">inducing_variable</span><span class="p">:</span> <span class="n">Multiscale</span><span class="p">,</span> <span class="n">kernel</span><span class="p">:</span> <span class="n">SquaredExponential</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">jitter</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
@@ -301,6 +310,10 @@ function checkPageExistsAndRedirect(event) {
 
 
 <div class="viewcode-block" id="Kuu_conv_patch"><a class="viewcode-back" href="../../../api/gpflow/covariances/index.html#gpflow.covariances.kuus.Kuu_conv_patch">[docs]</a><span class="nd">@Kuu</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">InducingPatches</span><span class="p">,</span> <span class="n">Convolutional</span><span class="p">)</span>
+<span class="nd">@check_shapes</span><span class="p">(</span>
+    <span class="s2">&quot;inducing_variable: [M, D, 1]&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;return: [M, M]&quot;</span><span class="p">,</span>
+<span class="p">)</span>
 <span class="k">def</span> <span class="nf">Kuu_conv_patch</span><span class="p">(</span>
     <span class="n">inducing_variable</span><span class="p">:</span> <span class="n">InducingPatches</span><span class="p">,</span> <span class="n">kernel</span><span class="p">:</span> <span class="n">Convolutional</span><span class="p">,</span> <span class="n">jitter</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
