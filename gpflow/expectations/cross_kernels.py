@@ -18,6 +18,7 @@ import tensorflow as tf
 
 from .. import kernels
 from ..base import TensorType
+from ..experimental.check_shapes import check_shapes
 from ..inducing_variables import InducingPoints
 from ..probability_distributions import DiagonalGaussian, Gaussian
 from . import dispatch
@@ -30,6 +31,12 @@ from .expectations import expectation
     InducingPoints,
     kernels.Linear,
     InducingPoints,
+)
+@check_shapes(
+    "p: [N, D]",
+    "feat1: [M1, D, P]",
+    "feat2: [M2, D, P]",
+    "return: [N, M1, M2]",
 )
 def _expectation_gaussian_sqe_inducingpoints__linear_inducingpoints(
     p: Union[Gaussian, DiagonalGaussian],
@@ -120,6 +127,12 @@ def _expectation_gaussian_sqe_inducingpoints__linear_inducingpoints(
     InducingPoints,
     kernels.SquaredExponential,
     InducingPoints,
+)
+@check_shapes(
+    "p: [N, D]",
+    "feat1: [M1, D, P]",
+    "feat2: [M2, D, P]",
+    "return: [N, M1, M2]",
 )
 def _expectation_gaussian_linear_inducingpoints__sqe_inducingpoints(
     p: Union[Gaussian, DiagonalGaussian],

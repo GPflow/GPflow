@@ -18,6 +18,7 @@ import tensorflow as tf
 
 from .. import kernels
 from .. import mean_functions as mfn
+from ..experimental.check_shapes import check_shapes
 from ..inducing_variables import InducingPoints, InducingVariables
 from ..probability_distributions import DiagonalGaussian, Gaussian, MarkovGaussian
 from . import dispatch
@@ -30,6 +31,11 @@ NoneType: Type[None] = type(None)
 
 @dispatch.expectation.register(
     (Gaussian, MarkovGaussian), mfn.Identity, NoneType, kernels.Linear, InducingPoints
+)
+@check_shapes(
+    "p: [N, D]",
+    "inducing_variable: [M, D, P]",
+    "return: [N, D, M]",
 )
 def _expectation_gaussian__linear_inducingpoints(
     p: Union[Gaussian, MarkovGaussian],
@@ -53,6 +59,11 @@ def _expectation_gaussian__linear_inducingpoints(
 @dispatch.expectation.register(
     (Gaussian, MarkovGaussian), kernels.Kernel, InducingVariables, mfn.MeanFunction, NoneType
 )
+@check_shapes(
+    "p: [N, D]",
+    "inducing_variable: [M, D, P]",
+    "return: [N, M, Q]",
+)
 def _expectation_gaussian_kernel_inducingvariables__meanfunction(
     p: Union[Gaussian, MarkovGaussian],
     kernel: kernels.Kernel,
@@ -72,6 +83,11 @@ def _expectation_gaussian_kernel_inducingvariables__meanfunction(
 
 
 @dispatch.expectation.register(Gaussian, mfn.Constant, NoneType, kernels.Kernel, InducingPoints)
+@check_shapes(
+    "p: [N, D]",
+    "inducing_variable: [M, D, P]",
+    "return: [N, Q, M]",
+)
 def _expectation_gaussian_constant__kernel_inducingpoints(
     p: Gaussian,
     constant_mean: mfn.Constant,
@@ -95,6 +111,11 @@ def _expectation_gaussian_constant__kernel_inducingpoints(
 
 
 @dispatch.expectation.register(Gaussian, mfn.Linear, NoneType, kernels.Kernel, InducingPoints)
+@check_shapes(
+    "p: [N, D]",
+    "inducing_variable: [M, D, P]",
+    "return: [N, Q, M]",
+)
 def _expectation_gaussian_linear__kernel_inducingpoints(
     p: Gaussian,
     linear_mean: mfn.Linear,
