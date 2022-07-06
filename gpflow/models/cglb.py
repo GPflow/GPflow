@@ -257,7 +257,7 @@ class CGLB(SGPR):
         f_mean, f_var = self.predict_f(
             xnew, full_cov=full_cov, full_output_cov=full_output_cov, cg_tolerance=cg_tolerance
         )
-        return self.likelihood.predict_mean_and_var(f_mean, f_var)
+        return self.likelihood.predict_mean_and_var(xnew, f_mean, f_var)
 
     def predict_log_density(
         self,
@@ -277,7 +277,7 @@ class CGLB(SGPR):
         f_mean, f_var = self.predict_f(
             x, full_cov=full_cov, full_output_cov=full_output_cov, cg_tolerance=cg_tolerance
         )
-        return self.likelihood.predict_log_density(f_mean, f_var, y)
+        return self.likelihood.predict_log_density(x, f_mean, f_var, y)
 
 
 class NystromPreconditioner:

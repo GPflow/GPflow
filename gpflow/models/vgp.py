@@ -127,7 +127,7 @@ class VGP_deprecated(GPModel, InternalDataTrainingLossMixin):
         fvar = tf.transpose(fvar)
 
         # Get variational expectations.
-        var_exp = self.likelihood.variational_expectations(fmean, fvar, Y_data)
+        var_exp = self.likelihood.variational_expectations(X_data, fmean, fvar, Y_data)
 
         return tf.reduce_sum(var_exp) - KL
 
@@ -346,7 +346,7 @@ class VGPOpperArchambeau(GPModel, InternalDataTrainingLossMixin):
             + tf.reduce_sum(K_alpha * self.q_alpha)
         )
 
-        v_exp = self.likelihood.variational_expectations(f_mean, f_var, Y_data)
+        v_exp = self.likelihood.variational_expectations(X_data, f_mean, f_var, Y_data)
         return tf.reduce_sum(v_exp) - KL
 
     def predict_f(
