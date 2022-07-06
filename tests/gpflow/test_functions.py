@@ -22,8 +22,7 @@ import gpflow
 from gpflow.base import AnyNDArray, TensorType
 from gpflow.config import default_int
 from gpflow.experimental.check_shapes import check_shapes
-from gpflow.inducing_variables import InducingPoints
-from gpflow.mean_functions import (
+from gpflow.functions import (
     Additive,
     Constant,
     Linear,
@@ -33,6 +32,7 @@ from gpflow.mean_functions import (
     SwitchedMeanFunction,
     Zero,
 )
+from gpflow.inducing_variables import InducingPoints
 
 rng = np.random.RandomState(99021)
 
@@ -74,7 +74,7 @@ def test_mean_functions_output_shape(
     elif operation == "*":
         mean_composed = mean_function_1 * mean_function_2
     else:
-        raise (NotImplementedError)
+        raise NotImplementedError
 
     Y_composed = mean_composed(X)
     assert Y_composed.shape in [(Datum.N, Datum.output_dim), (Datum.N, 1)]
@@ -93,7 +93,7 @@ def test_mean_functions_composite_type(
         mean_composed = mean_function_1 * mean_function_2
         assert isinstance(mean_composed, Product)
     else:
-        raise (NotImplementedError)
+        raise NotImplementedError
 
 
 _linear_functions = [
@@ -363,7 +363,7 @@ def test_models_with_mean_functions_changes(model_class: Type[Any]) -> None:
             data, kernel=kernel, likelihood=likelihood, mean_function=non_zero_mean
         )
     else:
-        raise (NotImplementedError)
+        raise NotImplementedError
 
     mu_zero, var_zero = model_zero_mean.predict_f(Xnew)
     mu_non_zero, var_non_zero = model_non_zero_mean.predict_f(Xnew)

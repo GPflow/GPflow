@@ -31,6 +31,7 @@ __all__ = [
     "multipledispatch",
     "ops",
     "parameter_dict",
+    "parameter_or_function",
     "positive",
     "print_summary",
     "read_values",
