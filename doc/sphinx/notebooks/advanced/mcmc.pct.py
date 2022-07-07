@@ -8,7 +8,7 @@
 #       format_version: '1.3'
 #       jupytext_version: 1.13.8
 #   kernelspec:
-#     display_name: Python 3 (ipykernel)
+#     display_name: Python 3
 #     language: python
 #     name: python3
 # ---
@@ -297,10 +297,10 @@ kernel = gpflow.kernels.SquaredExponential(lengthscales=0.1)
 K = kernel.K(X) + np.eye(N) * 1e-6
 
 f = rng.multivariate_normal(mean=np.zeros(N), cov=K, size=(C)).T
-Y = np.argmax(f, 1).flatten().astype(int)
+Y = np.argmax(f, 1)[:, None].astype(int)
 # One-hot encoding
 Y_hot = np.zeros((N, C), dtype=bool)
-Y_hot[np.arange(N), Y] = 1
+Y_hot[np.arange(N), Y.squeeze(-1)] = 1
 
 data = (X, Y)
 

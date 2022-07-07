@@ -19,6 +19,7 @@ import tensorflow as tf
 
 from .. import logdensities
 from ..base import MeanAndVariance, Parameter, TensorType
+from ..experimental.check_shapes import inherit_check_shapes
 from ..utilities import positive
 from .base import ScalarLikelihood
 from .utils import inv_probit
@@ -58,25 +59,31 @@ class Gaussian(ScalarLikelihood):
 
         self.variance = Parameter(variance, transform=positive(lower=variance_lower_bound))
 
+    @inherit_check_shapes
     def _scalar_log_prob(self, X: TensorType, F: TensorType, Y: TensorType) -> tf.Tensor:
         return logdensities.gaussian(Y, F, self.variance)
 
+    @inherit_check_shapes
     def _conditional_mean(self, X: TensorType, F: TensorType) -> tf.Tensor:  # pylint: disable=R0201
         return tf.identity(F)
 
+    @inherit_check_shapes
     def _conditional_variance(self, X: TensorType, F: TensorType) -> tf.Tensor:
         return tf.fill(tf.shape(F), tf.squeeze(self.variance))
 
+    @inherit_check_shapes
     def _predict_mean_and_var(
         self, X: TensorType, Fmu: TensorType, Fvar: TensorType
     ) -> MeanAndVariance:
         return tf.identity(Fmu), Fvar + self.variance
 
+    @inherit_check_shapes
     def _predict_log_density(
         self, X: TensorType, Fmu: TensorType, Fvar: TensorType, Y: TensorType
     ) -> tf.Tensor:
         return tf.reduce_sum(logdensities.gaussian(Y, Fmu, Fvar + self.variance), axis=-1)
 
+    @inherit_check_shapes
     def _variational_expectations(
         self, X: TensorType, Fmu: TensorType, Fvar: TensorType, Y: TensorType
     ) -> tf.Tensor:
@@ -93,15 +100,19 @@ class Exponential(ScalarLikelihood):
         super().__init__(**kwargs)
         self.invlink = invlink
 
+    @inherit_check_shapes
     def _scalar_log_prob(self, X: TensorType, F: TensorType, Y: TensorType) -> tf.Tensor:
         return logdensities.exponential(Y, self.invlink(F))
 
+    @inherit_check_shapes
     def _conditional_mean(self, X: TensorType, F: TensorType) -> tf.Tensor:
         return self.invlink(F)
 
+    @inherit_check_shapes
     def _conditional_variance(self, X: TensorType, F: TensorType) -> tf.Tensor:
         return tf.square(self.invlink(F))
 
+    @inherit_check_shapes
     def _variational_expectations(
         self, X: TensorType, Fmu: TensorType, Fvar: TensorType, Y: TensorType
     ) -> tf.Tensor:
@@ -120,12 +131,15 @@ class StudentT(ScalarLikelihood):
         self.df = df
         self.scale = Parameter(scale, transform=positive())
 
+    @inherit_check_shapes
     def _scalar_log_prob(self, X: TensorType, F: TensorType, Y: TensorType) -> tf.Tensor:
         return logdensities.student_t(Y, F, self.scale, self.df)
 
+    @inherit_check_shapes
     def _conditional_mean(self, X: TensorType, F: TensorType) -> tf.Tensor:
         return F
 
+    @inherit_check_shapes
     def _conditional_variance(self, X: TensorType, F: TensorType) -> tf.Tensor:
         var = (self.scale ** 2) * (self.df / (self.df - 2.0))
         return tf.fill(tf.shape(F), tf.squeeze(var))
@@ -141,16 +155,20 @@ class Gamma(ScalarLikelihood):
         self.invlink = invlink
         self.shape = Parameter(1.0, transform=positive())
 
+    @inherit_check_shapes
     def _scalar_log_prob(self, X: TensorType, F: TensorType, Y: TensorType) -> tf.Tensor:
         return logdensities.gamma(Y, self.shape, self.invlink(F))
 
+    @inherit_check_shapes
     def _conditional_mean(self, X: TensorType, F: TensorType) -> tf.Tensor:
         return self.shape * self.invlink(F)
 
+    @inherit_check_shapes
     def _conditional_variance(self, X: TensorType, F: TensorType) -> tf.Tensor:
         scale = self.invlink(F)
         return self.shape * (scale ** 2)
 
+    @inherit_check_shapes
     def _variational_expectations(
         self, X: TensorType, Fmu: TensorType, Fvar: TensorType, Y: TensorType
     ) -> tf.Tensor:
@@ -193,15 +211,18 @@ class Beta(ScalarLikelihood):
         self.scale = Parameter(scale, transform=positive())
         self.invlink = invlink
 
+    @inherit_check_shapes
     def _scalar_log_prob(self, X: TensorType, F: TensorType, Y: TensorType) -> tf.Tensor:
         mean = self.invlink(F)
         alpha = mean * self.scale
         beta = self.scale - alpha
         return logdensities.beta(Y, alpha, beta)
 
+    @inherit_check_shapes
     def _conditional_mean(self, X: TensorType, F: TensorType) -> tf.Tensor:
         return self.invlink(F)
 
+    @inherit_check_shapes
     def _conditional_variance(self, X: TensorType, F: TensorType) -> tf.Tensor:
         mean = self.invlink(F)
         return (mean - tf.square(mean)) / (self.scale + 1.0)

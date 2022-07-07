@@ -22,6 +22,7 @@ from _pytest.fixtures import SubRequest
 
 import gpflow
 from gpflow.base import AnyNDArray, TensorType
+from gpflow.experimental.check_shapes import ShapeChecker
 from gpflow.likelihoods import HeteroskedasticTFPConditional
 
 tf.random.set_seed(99012)
@@ -33,19 +34,21 @@ EquivalentLikelihoods = Tuple[
 
 
 class Data:
+    cs = ShapeChecker().check_shape
+
     g_var = 0.345
     rng = np.random.RandomState(123)
     N = 5
-    X = rng.randn(N, 2)
-    Y = rng.randn(N, 1)
+    X = cs(rng.randn(N, 2), "[N, D]")
+    Y = cs(rng.randn(N, 1), "[N, P]")
     # single "GP" (for the mean):
-    f_mean = rng.randn(N, 1)
-    f_var: AnyNDArray = rng.randn(N, 1) ** 2  # ensure positivity
-    equivalent_f2 = np.log(g_var) / 2
-    f2_mean = np.full((N, 1), equivalent_f2)
-    f2_var = np.zeros((N, 1))
-    F2_mean = np.c_[f_mean, f2_mean]
-    F2_var = np.c_[f_var, f2_var]
+    f_mean = cs(rng.randn(N, 1), "[N, Q]")
+    f_var: AnyNDArray = cs(rng.randn(N, 1) ** 2, "[N, Q]")  # ensure positivity
+    equivalent_f2 = cs(np.log(g_var) / 2, "[]")
+    f2_mean = cs(np.full((N, 1), equivalent_f2), "[N, Q]")
+    f2_var = cs(np.zeros((N, 1)), "[N, Q]")
+    F2_mean = cs(np.c_[f_mean, f2_mean], "[N, Q2]")
+    F2_var = cs(np.c_[f_var, f2_var], "[N, Q2]")
 
 
 def student_t_class_factory(df: int = 3) -> Type[tfp.distributions.StudentT]:
