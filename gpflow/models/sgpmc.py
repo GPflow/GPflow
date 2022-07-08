@@ -20,6 +20,7 @@ import tensorflow_probability as tfp
 
 from ..base import InputData, MeanAndVariance, Parameter, RegressionData
 from ..conditionals import conditional
+from ..experimental.check_shapes import check_shapes, inherit_check_shapes
 from ..kernels import Kernel
 from ..likelihoods import Likelihood
 from ..mean_functions import MeanFunction
@@ -54,6 +55,10 @@ class SGPMC(GPModel, InternalDataTrainingLossMixin):
 
     """
 
+    @check_shapes(
+        "data[0]: [N, D]",
+        "data[1]: [N, P]",
+    )
     def __init__(
         self,
         data: RegressionData,
@@ -80,14 +85,17 @@ class SGPMC(GPModel, InternalDataTrainingLossMixin):
         )
 
     # type-ignore is because of changed method signature:
+    @inherit_check_shapes
     def log_posterior_density(self) -> tf.Tensor:  # type: ignore[override]
         return self.log_likelihood_lower_bound() + self.log_prior_density()
 
     # type-ignore is because of changed method signature:
+    @inherit_check_shapes
     def _training_loss(self) -> tf.Tensor:  # type: ignore[override]
         return -self.log_posterior_density()
 
     # type-ignore is because of changed method signature:
+    @inherit_check_shapes
     def maximum_log_likelihood_objective(self) -> tf.Tensor:  # type: ignore[override]
         return self.log_likelihood_lower_bound()
 
@@ -100,6 +108,7 @@ class SGPMC(GPModel, InternalDataTrainingLossMixin):
         fmean, fvar = self.predict_f(X_data, full_cov=False)
         return tf.reduce_sum(self.likelihood.variational_expectations(X_data, fmean, fvar, Y_data))
 
+    @inherit_check_shapes
     def predict_f(
         self, Xnew: InputData, full_cov: bool = False, full_output_cov: bool = False
     ) -> MeanAndVariance:

@@ -21,6 +21,7 @@ import tensorflow as tf
 
 import gpflow
 from gpflow.base import InputData, OutputData
+from gpflow.experimental.check_shapes import check_shapes
 from gpflow.inducing_variables import InducingPoints
 from gpflow.models.sgpr import SGPR, SGPR_deprecated
 from gpflow.posteriors import PrecomputeCacheType
@@ -34,6 +35,11 @@ Z = np.random.randn(20, INPUT_DIM)
 
 
 @pytest.fixture(name="dummy_data", scope="module")
+@check_shapes(
+    "return[0]: [N, D]  # X",
+    "return[1]: [N_new, D]  # X_new",
+    "return[2]: [N, P]  # Y",
+)
 def _dummy_data() -> Tuple[InputData, InputData, OutputData]:
     X = tf.convert_to_tensor(np.random.randn(100, INPUT_DIM), dtype=tf.float64)
     Y = tf.convert_to_tensor(np.random.randn(100, OUTPUT_DIM), dtype=tf.float64)
@@ -43,6 +49,11 @@ def _dummy_data() -> Tuple[InputData, InputData, OutputData]:
 
 
 @pytest.fixture(name="sgpr_deprecated_model", scope="module")
+@check_shapes(
+    "dummy_data[0]: [N, D]  # X",
+    "dummy_data[1]: [N_new, D]  # X_new",
+    "dummy_data[2]: [N, P]  # Y",
+)
 def _sgpr_deprecated_model(dummy_data: Tuple[InputData, InputData, OutputData]) -> SGPR_deprecated:
     X, _, Y = dummy_data
     return SGPR_deprecated(
@@ -51,6 +62,11 @@ def _sgpr_deprecated_model(dummy_data: Tuple[InputData, InputData, OutputData]) 
 
 
 @pytest.fixture(name="sgpr_model", scope="module")
+@check_shapes(
+    "dummy_data[0]: [N, D]  # X",
+    "dummy_data[1]: [N_new, D]  # X_new",
+    "dummy_data[2]: [N, P]  # Y",
+)
 def sgpr_model(dummy_data: Tuple[InputData, InputData, OutputData]) -> SGPR:
     X, _, Y = dummy_data
     return SGPR(

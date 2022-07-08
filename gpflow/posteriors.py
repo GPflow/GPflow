@@ -426,6 +426,9 @@ class GPRPosterior(AbstractPosterior):
 
         return mean, cov
 
+    @check_shapes(
+        "return[0].value: [M, M]",
+    )
     def _precompute(self) -> Tuple[PrecomputedValue, ...]:
         X_data = cast(tf.Tensor, self.X_data)
         Kmm = self.kernel(X_data)
@@ -437,12 +440,6 @@ class GPRPosterior(AbstractPosterior):
         M = X_data.shape[0]
         M_dynamic = M is None
 
-        tf.debugging.assert_shapes(
-            [
-                (Kmm_plus_s_inv, ["M", "M"]),
-                (Kmm, ["M", "M"]),
-            ]
-        )
         return (PrecomputedValue(Kmm_plus_s_inv, (M_dynamic, M_dynamic)),)
 
     @inherit_check_shapes
@@ -502,6 +499,10 @@ class SGPRPosterior(AbstractPosterior):
         if precompute_cache is not None:
             self.update_cache(precompute_cache)
 
+    @check_shapes(
+        "return[0].value: [M, L]",
+        "return[1].value: [M, M]",
+    )
     def _precompute(self) -> Tuple[PrecomputedValue, ...]:
         # taken directly from the deprecated SGPR implementation
         num_inducing = self.inducing_variable.num_inducing
@@ -662,6 +663,9 @@ class VGPPosterior(AbstractPosterior):
             white=self.white,
         )
 
+    @check_shapes(
+        "return[0].value: [M, M]",
+    )
     def _precompute(self) -> Tuple[PrecomputedValue, ...]:
         X_data = cast(tf.Tensor, self.X_data)
         Kmm = self.kernel(X_data) + eye(
@@ -723,6 +727,10 @@ class BasePosterior(AbstractPosterior):
         else:
             self._q_dist = _MvNormal(q_mu, q_sqrt)
 
+    @check_shapes(
+        "return[0].value: [M_L_or_L_M_M...]",
+        "return[1].value: [L, M, M]",
+    )
     def _precompute(self) -> Tuple[PrecomputedValue, ...]:
         Kuu = covariances.Kuu(self.X_data, self.kernel, jitter=default_jitter())  # [(R), M, M]
         q_mu = self._q_dist.q_mu
@@ -774,12 +782,6 @@ class BasePosterior(AbstractPosterior):
 
         M, L = tf.unstack(tf.shape(self._q_dist.q_mu), num=2)
         Qinv = tf.broadcast_to(Qinv, [L, M, M])
-
-        tf.debugging.assert_shapes(
-            [
-                (Qinv, ["L", "M", "M"]),
-            ]
-        )
 
         return PrecomputedValue.wrap_alpha_Qinv(alpha, Qinv)
 

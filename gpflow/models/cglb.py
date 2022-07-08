@@ -19,6 +19,7 @@ import tensorflow as tf
 from ..base import InputData, MeanAndVariance, Parameter, RegressionData, TensorType
 from ..config import default_float, default_int
 from ..covariances import Kuf
+from ..experimental.check_shapes import check_shapes, inherit_check_shapes
 from ..utilities import add_noise_cov, assert_params_false, to_default_float
 from .sgpr import SGPR
 
@@ -49,6 +50,10 @@ class CGLB(SGPR):
 
     """
 
+    @check_shapes(
+        "data[0]: [N, D]",
+        "data[1]: [N, P]",
+    )
     def __init__(
         self,
         data: RegressionData,
@@ -66,10 +71,14 @@ class CGLB(SGPR):
         self._max_cg_iters = max_cg_iters
         self._restart_cg_iters = restart_cg_iters
 
-    @property
+    @property  # type: ignore[misc]  # Mypy doesn't like decorated properties.
+    @check_shapes(
+        "return: [N, P]",
+    )
     def aux_vec(self) -> Parameter:
         return self._v
 
+    @inherit_check_shapes
     def logdet_term(self, common: SGPR.CommonTensors) -> tf.Tensor:
         r"""
         Compute a lower bound on :math:`-0.5 * \log |K + σ²I|` based on a
@@ -104,6 +113,7 @@ class CGLB(SGPR):
         logtrace = num_data * tf.math.log(1 + trace / num_data)
         return -output_dim * (logdet_b + 0.5 * logsigma_sq + 0.5 * logtrace)
 
+    @inherit_check_shapes
     def quad_term(self, common: SGPR.CommonTensors) -> tf.Tensor:
         """
         Computes a lower bound on the quadratic term in the log
@@ -159,9 +169,10 @@ class CGLB(SGPR):
 
         return -ub
 
+    @inherit_check_shapes
     def predict_f(
         self,
-        xnew: InputData,
+        Xnew: InputData,
         full_cov: bool = False,
         full_output_cov: bool = False,
         cg_tolerance: Optional[float] = 1e-3,
@@ -186,7 +197,7 @@ class CGLB(SGPR):
         x, y = self.data
         err = y - self.mean_function(x)
         kxx = self.kernel(x, x)
-        ksf = self.kernel(xnew, x)
+        ksf = self.kernel(Xnew, x)
         sigma_sq = self.likelihood.variance
         sigma = tf.sqrt(sigma_sq)
         iv = self.inducing_variable
@@ -216,7 +227,7 @@ class CGLB(SGPR):
         cg_mean = matmul(ksf, v, transpose_b=True)
         res = err - matmul(kmat, v, transpose_b=True)
 
-        Kus = Kuf(iv, kernel, xnew)
+        Kus = Kuf(iv, kernel, Xnew)
         Ares = matmul(A, res)  # The god of war!
         c = trisolve(LB, Ares, lower=True) / sigma
         tmp1 = trisolve(L, Kus, lower=True)
@@ -225,25 +236,26 @@ class CGLB(SGPR):
 
         if full_cov:
             var = (
-                kernel(xnew)
+                kernel(Xnew)
                 + matmul(tmp2, tmp2, transpose_a=True)
                 - matmul(tmp1, tmp1, transpose_a=True)
             )
             var = tf.tile(var[None, ...], [self.num_latent_gps, 1, 1])  # [P, N, N]
         else:
             var = (
-                kernel(xnew, full_cov=False)
+                kernel(Xnew, full_cov=False)
                 + tf.reduce_sum(tf.square(tmp2), 0)
                 - tf.reduce_sum(tf.square(tmp1), 0)
             )
             var = tf.tile(var[:, None], [1, self.num_latent_gps])
 
-        mean = sgpr_mean + cg_mean + self.mean_function(xnew)
+        mean = sgpr_mean + cg_mean + self.mean_function(Xnew)
         return mean, var
 
+    @inherit_check_shapes
     def predict_y(
         self,
-        xnew: InputData,
+        Xnew: InputData,
         full_cov: bool = False,
         full_output_cov: bool = False,
         cg_tolerance: Optional[float] = 1e-3,
@@ -255,10 +267,11 @@ class CGLB(SGPR):
         assert_params_false(self.predict_y, full_cov=full_cov, full_output_cov=full_output_cov)
 
         f_mean, f_var = self.predict_f(
-            xnew, full_cov=full_cov, full_output_cov=full_output_cov, cg_tolerance=cg_tolerance
+            Xnew, full_cov=full_cov, full_output_cov=full_output_cov, cg_tolerance=cg_tolerance
         )
-        return self.likelihood.predict_mean_and_var(xnew, f_mean, f_var)
+        return self.likelihood.predict_mean_and_var(Xnew, f_mean, f_var)
 
+    @inherit_check_shapes
     def predict_log_density(
         self,
         data: RegressionData,
@@ -287,17 +300,26 @@ class NystromPreconditioner:
     :math:`A = σ⁻²L⁻¹Kᵤₓ` and :math:`B = AAᵀ + I = LᵦLᵦᵀ`
     """
 
+    @check_shapes(
+        "A: [M, N]",
+        "LB: [M, M]",
+    )
     def __init__(self, A: tf.Tensor, LB: tf.Tensor, sigma_sq: float) -> None:
         self.A = A
         self.LB = LB
         self.sigma_sq = sigma_sq
 
+    @check_shapes(
+        "v: [B, N]",
+        "return[0]: [B, N]",
+        "return[1]: []",
+    )
     def __call__(self, v: TensorType) -> Tuple[tf.Tensor, tf.Tensor]:
         """
         Computes :math:`vᵀQ^{-1}` and `vᵀQ^{-1}v`. Note that this is
         implemented as multipication of a row vector on the right.
 
-        :param v: Vector we want to backsolve. Shape [B, N].
+        :param v: Vector we want to backsolve.
         """
         sigma_sq = self.sigma_sq
         A = self.A
@@ -306,7 +328,6 @@ class NystromPreconditioner:
         trans = tf.transpose
         trisolve = tf.linalg.triangular_solve
         matmul = tf.linalg.matmul
-        sum = tf.reduce_sum
 
         v = trans(v)
         Av = matmul(A, v)
@@ -314,10 +335,16 @@ class NystromPreconditioner:
         LBinvtLBinvAv = trisolve(trans(LB), LBinvAv, lower=False)
 
         rv = v - matmul(A, LBinvtLBinvAv, transpose_a=True)
-        vtrv = sum(rv * v)
+        vtrv = tf.reduce_sum(rv * v)
         return trans(rv) / sigma_sq, vtrv / sigma_sq
 
 
+@check_shapes(
+    "K: [N, N]",
+    "b: [B, N]",
+    "initial: [P, N]",
+    "return: [P, N]",
+)
 def cglb_conjugate_gradient(
     K: TensorType,
     b: TensorType,
@@ -340,9 +367,9 @@ def cglb_conjugate_gradient(
     and stop the algorithm when :math:`r_i = b - Kv_i` satisfies
     :math:`||rᵢᵀ||_{Q⁻¹r}^2 = rᵢᵀQ⁻¹rᵢ <= ϵ`.
 
-    :param K: Matrix we want to backsolve from. Must be PSD. Shape [N, N].
-    :param b: Vector we want to backsolve. Shape [B, N].
-    :param initial: Initial vector solution. Shape [N].
+    :param K: Matrix we want to backsolve from. Must be PSD.
+    :param b: Vector we want to backsolve.
+    :param initial: Initial vector solution.
     :param preconditioner: Preconditioner function.
     :param cg_tolerance: Expected maximum error. This value is used
         as a decision boundary against stopping criteria.

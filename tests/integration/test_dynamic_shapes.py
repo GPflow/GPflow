@@ -88,8 +88,12 @@ def test_svgp(whiten: bool, q_diag: bool) -> None:
 
     # test with explicitly unknown shapes:
     tensor_spec = tf.TensorSpec(shape=None, dtype=default_float())
+
+    # lambda because: https://github.com/GPflow/GPflow/issues/1929
+    elbo_lambda = lambda data: model.elbo(data)
+
     elbo = tf.function(
-        model.elbo,
+        elbo_lambda,
         input_signature=[(tensor_spec, tensor_spec)],
     )
 
@@ -154,10 +158,13 @@ def test_svgp_multiclass() -> None:
     )
     gpflow.set_trainable(model.inducing_variable, False)
 
+    # lambda because: https://github.com/GPflow/GPflow/issues/1929
+    elbo_lambda = lambda data: model.elbo(data)
+
     # test with explicitly unknown shapes:
     tensor_spec = tf.TensorSpec(shape=None, dtype=default_float())
     elbo = tf.function(
-        model.elbo,
+        elbo_lambda,
         input_signature=[(tensor_spec, tensor_spec)],
     )
 

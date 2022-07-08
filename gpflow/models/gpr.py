@@ -20,6 +20,7 @@ import gpflow
 
 from .. import posteriors
 from ..base import InputData, MeanAndVariance, RegressionData
+from ..experimental.check_shapes import check_shapes, inherit_check_shapes
 from ..kernels import Kernel
 from ..logdensities import multivariate_normal
 from ..mean_functions import MeanFunction
@@ -52,6 +53,10 @@ class GPR_deprecated(GPModel, InternalDataTrainingLossMixin):
             \mathcal N(Y \,|\, 0, \mathbf{K} + \sigma_n^2 \mathbf{I})
     """
 
+    @check_shapes(
+        "data[0]: [N, D]",
+        "data[1]: [N, P]",
+    )
     def __init__(
         self,
         data: RegressionData,
@@ -65,9 +70,14 @@ class GPR_deprecated(GPModel, InternalDataTrainingLossMixin):
         self.data = data_input_to_tensor(data)
 
     # type-ignore is because of changed method signature:
+    @inherit_check_shapes
     def maximum_log_likelihood_objective(self) -> tf.Tensor:  # type: ignore[override]
         return self.log_marginal_likelihood()
 
+    @check_shapes(
+        "K: [batch..., N, N]",
+        "return: [batch..., N, N]",
+    )
     def _add_noise_cov(self, K: tf.Tensor) -> tf.Tensor:
         """
         Returns K + σ² I, where σ² is the likelihood noise variance (scalar),
@@ -75,6 +85,9 @@ class GPR_deprecated(GPModel, InternalDataTrainingLossMixin):
         """
         return add_noise_cov(K, self.likelihood.variance)
 
+    @check_shapes(
+        "return: []",
+    )
     def log_marginal_likelihood(self) -> tf.Tensor:
         r"""
         Computes the log marginal likelihood.
@@ -93,6 +106,7 @@ class GPR_deprecated(GPModel, InternalDataTrainingLossMixin):
         log_prob = multivariate_normal(Y, m, L)
         return tf.reduce_sum(log_prob)
 
+    @inherit_check_shapes
     def predict_f(
         self, Xnew: InputData, full_cov: bool = False, full_output_cov: bool = False
     ) -> MeanAndVariance:
@@ -160,6 +174,7 @@ class GPR_with_posterior(GPR_deprecated):
             precompute_cache=precompute_cache,
         )
 
+    @inherit_check_shapes
     def predict_f(
         self, Xnew: InputData, full_cov: bool = False, full_output_cov: bool = False
     ) -> MeanAndVariance:

@@ -22,6 +22,7 @@ from .. import likelihoods, posteriors
 from ..base import InputData, MeanAndVariance, RegressionData
 from ..config import default_float, default_jitter
 from ..covariances.dispatch import Kuf, Kuu
+from ..experimental.check_shapes import check_shapes, inherit_check_shapes
 from ..inducing_variables import InducingPoints
 from ..kernels import Kernel
 from ..mean_functions import MeanFunction
@@ -37,6 +38,10 @@ class SGPRBase_deprecated(GPModel, InternalDataTrainingLossMixin):
     and upper_bound() methods.
     """
 
+    @check_shapes(
+        "data[0]: [N, D]",
+        "data[1]: [N, P]",
+    )
     def __init__(
         self,
         data: RegressionData,
@@ -68,6 +73,9 @@ class SGPRBase_deprecated(GPModel, InternalDataTrainingLossMixin):
 
         self.inducing_variable: InducingPoints = inducingpoint_wrapper(inducing_variable)
 
+    @check_shapes(
+        "return: []",
+    )
     def upper_bound(self) -> tf.Tensor:
         """
         Upper bound for the sparse GP regression marginal likelihood.  Note that
@@ -131,16 +139,25 @@ class SGPR_deprecated(SGPRBase_deprecated):
     CommonTensors = namedtuple("CommonTensors", ["A", "B", "LB", "AAT", "L"])
 
     # type-ignore is because of changed method signature:
+    @inherit_check_shapes
     def maximum_log_likelihood_objective(self) -> tf.Tensor:  # type: ignore[override]
         return self.elbo()
 
+    @check_shapes(
+        "return.A: [M, N]",
+        "return.B: [M, M]",
+        "return.LB: [M, M]",
+        "return.AAT: [M, M]",
+    )
     def _common_calculation(self) -> "SGPR.CommonTensors":
         """
         Matrices used in log-det calculation
 
-        :return: A , B, LB, AAT with :math:`LLᵀ = Kᵤᵤ , A = L⁻¹K_{uf}/σ, AAT = AAᵀ,
-            B = AAT+I, LBLBᵀ = B`
-            A is M x N, B is M x M, LB is M x M, AAT is M x M
+        :return:
+            * :math:`A = L⁻¹K_{uf}/σ`, where :math:`LLᵀ = Kᵤᵤ`,
+            * :math:`B = AAT+I`,
+            * :math:`LB` where :math`LBLBᵀ = B`,
+            * :math:`AAT = AAᵀ`,
         """
         x, _ = self.data
         iv = self.inducing_variable
@@ -159,6 +176,9 @@ class SGPR_deprecated(SGPRBase_deprecated):
 
         return self.CommonTensors(A, B, LB, AAT, L)
 
+    @check_shapes(
+        "return: []",
+    )
     def logdet_term(self, common: "SGPR.CommonTensors") -> tf.Tensor:
         r"""
         Bound from Jensen's Inequality:
@@ -194,6 +214,9 @@ class SGPR_deprecated(SGPRBase_deprecated):
         logdet_k = -outdim * (half_logdet_b + 0.5 * log_sigma_sq + 0.5 * trace)
         return logdet_k
 
+    @check_shapes(
+        "return: []",
+    )
     def quad_term(self, common: "SGPR.CommonTensors") -> tf.Tensor:
         """
         :param common: A named tuple containing matrices that will be used
@@ -217,6 +240,9 @@ class SGPR_deprecated(SGPRBase_deprecated):
         quad = -0.5 * (err_inner_prod - c_inner_prod)
         return quad
 
+    @check_shapes(
+        "return: []",
+    )
     def elbo(self) -> tf.Tensor:
         """
         Construct a tensorflow function to compute the bound on the marginal
@@ -232,6 +258,7 @@ class SGPR_deprecated(SGPRBase_deprecated):
         quad = self.quad_term(common)
         return const + logdet + quad
 
+    @inherit_check_shapes
     def predict_f(
         self, Xnew: InputData, full_cov: bool = False, full_output_cov: bool = False
     ) -> MeanAndVariance:
@@ -279,11 +306,17 @@ class SGPR_deprecated(SGPRBase_deprecated):
 
         return mean + self.mean_function(Xnew), var
 
+    @check_shapes(
+        "return[0]: [M, P]",
+        "return[1]: [M, M]",
+    )
     def compute_qu(self) -> Tuple[tf.Tensor, tf.Tensor]:
         """
         Computes the mean and variance of q(u) = N(mu, cov), the variational distribution on
-        inducing outputs. SVGP with this q(u) should predict identically to
-        SGPR.
+        inducing outputs.
+
+        SVGP with this q(u) should predict identically to SGPR.
+
         :return: mu, cov
         """
         X_data, Y_data = self.data
@@ -320,6 +353,15 @@ class GPRFITC(SGPRBase_deprecated):
     obviously gradients are automatic in GPflow.
     """
 
+    @check_shapes(
+        "return[0]: [N, R]",
+        "return[1]: [N]",
+        "return[2]: [M, M]",
+        "return[3]: [M, M]",
+        "return[4]: [M, R]",
+        "return[5]: [N, R]",
+        "return[6]: [M, R]",
+    )
     def common_terms(
         self,
     ) -> Tuple[tf.Tensor, tf.Tensor, tf.Tensor, tf.Tensor, tf.Tensor, tf.Tensor, tf.Tensor]:
@@ -341,16 +383,20 @@ class GPRFITC(SGPRBase_deprecated):
         )
         L = tf.linalg.cholesky(B)
         beta = err / tf.expand_dims(nu, 1)  # size [N, R]
-        alpha = tf.linalg.matmul(V, beta)  # size [N, R]
+        alpha = tf.linalg.matmul(V, beta)  # size [M, R]
 
-        gamma = tf.linalg.triangular_solve(L, alpha, lower=True)  # size [N, R]
+        gamma = tf.linalg.triangular_solve(L, alpha, lower=True)  # size [M, R]
 
         return err, nu, Luu, L, alpha, beta, gamma
 
     # type-ignore is because of changed method signature:
+    @inherit_check_shapes
     def maximum_log_likelihood_objective(self) -> tf.Tensor:  # type: ignore[override]
         return self.fitc_log_marginal_likelihood()
 
+    @check_shapes(
+        "return: []",
+    )
     def fitc_log_marginal_likelihood(self) -> tf.Tensor:
         """
         Construct a tensorflow function to compute the bound on the marginal
@@ -404,6 +450,7 @@ class GPRFITC(SGPRBase_deprecated):
 
         return mahalanobisTerm + logNormalizingTerm * self.num_latent_gps
 
+    @inherit_check_shapes
     def predict_f(
         self, Xnew: InputData, full_cov: bool = False, full_output_cov: bool = False
     ) -> MeanAndVariance:
@@ -479,6 +526,7 @@ class SGPR_with_posterior(SGPR_deprecated):
             precompute_cache=precompute_cache,
         )
 
+    @inherit_check_shapes
     def predict_f(
         self, Xnew: InputData, full_cov: bool = False, full_output_cov: bool = False
     ) -> MeanAndVariance:

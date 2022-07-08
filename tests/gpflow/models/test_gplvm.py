@@ -86,7 +86,7 @@ def test_bayesian_gplvm_2d() -> None:
     np.testing.assert_allclose(mu_fFull, mu_f)
 
     for i in range(Data.D):
-        np.testing.assert_allclose(var_f[:, i], np.diag(var_fFull[:, :, i]))
+        np.testing.assert_allclose(var_f[:, i], np.diag(var_fFull[i, :, :]))
 
 
 def test_gplvm_constructor_checks() -> None:

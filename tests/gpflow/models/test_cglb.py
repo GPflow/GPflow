@@ -19,12 +19,19 @@ import tensorflow as tf
 
 from gpflow.base import AnyNDArray, RegressionData
 from gpflow.config import default_float
+from gpflow.experimental.check_shapes import check_shapes
 from gpflow.kernels import SquaredExponential
 from gpflow.models import CGLB, GPR, SGPR
 from gpflow.models.cglb import NystromPreconditioner, cglb_conjugate_gradient
 from gpflow.utilities import to_default_float as tdf
 
 
+@check_shapes(
+    "return[0][0]: [N, D]  # X",
+    "return[0][1]: [N, P]  # Y",
+    "return[1]: [M, D]  # Z, inducing points",
+    "return[2]: [Nnew, D]  # Xnew",
+)
 def data(rng: np.random.RandomState) -> Tuple[RegressionData, tf.Tensor, tf.Tensor]:
     n: int = 100
     t: int = 20
