@@ -19,6 +19,7 @@ from numpy.testing import assert_allclose
 
 from gpflow.base import AnyNDArray, TensorType
 from gpflow.config import default_float, default_int
+from gpflow.experimental.check_shapes import inherit_check_shapes
 from gpflow.likelihoods import Bernoulli, MultiClass, RobustMax, Softmax
 from gpflow.utilities import to_default_float, to_default_int
 
@@ -154,11 +155,12 @@ def test_robust_max_multiclass_predict_log_density(
     epsilon: float,
 ) -> None:
     class MockRobustMax(RobustMax):
+        @inherit_check_shapes
         def prob_is_largest(
             self,
             Y: TensorType,
-            Fmu: TensorType,
-            Fvar: TensorType,
+            mu: TensorType,
+            var: TensorType,
             gh_x: TensorType,
             gh_w: TensorType,
         ) -> tf.Tensor:

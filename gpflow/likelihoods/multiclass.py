@@ -20,6 +20,7 @@ import tensorflow_probability as tfp
 
 from ..base import MeanAndVariance, Module, Parameter, TensorType
 from ..config import default_float
+from ..experimental.check_shapes import check_shapes, inherit_check_shapes
 from ..quadrature import hermgauss
 from ..utilities import to_default_float, to_default_int
 from .base import Likelihood, MonteCarloLikelihood
@@ -37,12 +38,15 @@ class Softmax(MonteCarloLikelihood):
         super().__init__(input_dim=None, latent_dim=num_classes, observation_dim=None, **kwargs)
         self.num_classes = self.latent_dim
 
+    @inherit_check_shapes
     def _log_prob(self, X: TensorType, F: TensorType, Y: TensorType) -> tf.Tensor:
         return -tf.nn.sparse_softmax_cross_entropy_with_logits(logits=F, labels=Y[:, 0])
 
+    @inherit_check_shapes
     def _conditional_mean(self, X: TensorType, F: TensorType) -> tf.Tensor:
         return tf.nn.softmax(F)
 
+    @inherit_check_shapes
     def _conditional_variance(self, X: TensorType, F: TensorType) -> tf.Tensor:
         p = self.conditional_mean(X, F)
         return p - p ** 2
@@ -71,6 +75,9 @@ class RobustMax(Module):
     where :math:`k` is the number of classes.
     """
 
+    @check_shapes(
+        "epsilon: []",
+    )
     def __init__(self, num_classes: int, epsilon: float = 1e-3, **kwargs: Any) -> None:
         """
         `epsilon` represents the fraction of 'errors' in the labels of the
@@ -84,19 +91,36 @@ class RobustMax(Module):
         self.num_classes = num_classes
         self._squash = 1e-6
 
+    @check_shapes(
+        "F: [broadcast batch..., latent_dim]",
+        "return: [batch..., latent_dim]",
+    )
     def __call__(self, F: TensorType) -> tf.Tensor:
         i = tf.argmax(F, 1)
-        return tf.one_hot(
-            i, self.num_classes, tf.squeeze(1.0 - self.epsilon), tf.squeeze(self.eps_k1)
-        )
+        return tf.one_hot(i, self.num_classes, 1.0 - self.epsilon, self.eps_k1)
 
-    @property
+    @property  # type: ignore[misc]  # Mypy doesn't like decorated properties.
+    @check_shapes(
+        "return: []",
+    )
     def eps_k1(self) -> tf.Tensor:
         return self.epsilon / (self.num_classes - 1.0)
 
+    @check_shapes(
+        "val: [batch...]",
+        "return: [batch...]",
+    )
     def safe_sqrt(self, val: TensorType) -> tf.Tensor:
-        return tf.sqrt(tf.clip_by_value(val, 1e-10, np.inf))
+        return tf.sqrt(tf.maximum(val, 1e-10))
 
+    @check_shapes(
+        "Y: [broadcast batch..., observation_dim]",
+        "mu: [broadcast batch..., latent_dim]",
+        "var: [broadcast batch..., latent_dim]",
+        "gh_x: [n_quad_points]",
+        "gh_w: [n_quad_points]",
+        "return: [batch..., observation_dim]",
+    )
     def prob_is_largest(
         self, Y: TensorType, mu: TensorType, var: TensorType, gh_x: TensorType, gh_w: TensorType
     ) -> tf.Tensor:
@@ -154,6 +178,7 @@ class MultiClass(Likelihood):
 
         self.invlink = invlink
 
+    @inherit_check_shapes
     def _log_prob(self, X: TensorType, F: TensorType, Y: TensorType) -> tf.Tensor:
         hits = tf.equal(tf.expand_dims(tf.argmax(F, 1), 1), tf.cast(Y, tf.int64))
         yes = tf.ones(tf.shape(Y), dtype=default_float()) - self.invlink.epsilon
@@ -161,6 +186,7 @@ class MultiClass(Likelihood):
         p = tf.where(hits, yes, no)
         return tf.reduce_sum(tf.math.log(p), axis=-1)
 
+    @inherit_check_shapes
     def _variational_expectations(
         self, X: TensorType, Fmu: TensorType, Fvar: TensorType, Y: TensorType
     ) -> tf.Tensor:
@@ -171,6 +197,7 @@ class MultiClass(Likelihood):
         )
         return tf.reduce_sum(ve, axis=-1)
 
+    @inherit_check_shapes
     def _predict_mean_and_var(
         self, X: TensorType, Fmu: TensorType, Fvar: TensorType
     ) -> MeanAndVariance:
@@ -182,6 +209,7 @@ class MultiClass(Likelihood):
         ps = tf.transpose(tf.stack([tf.reshape(p, (-1,)) for p in ps]))
         return ps, ps - tf.square(ps)
 
+    @inherit_check_shapes
     def _predict_log_density(
         self, X: TensorType, Fmu: TensorType, Fvar: TensorType, Y: TensorType
     ) -> tf.Tensor:
@@ -189,6 +217,13 @@ class MultiClass(Likelihood):
             tf.math.log(self._predict_non_logged_density(X, Fmu, Fvar, Y)), axis=-1
         )
 
+    @check_shapes(
+        "X: [broadcast batch..., input_dim]",
+        "Fmu: [broadcast batch..., latent_dim]",
+        "Fvar: [broadcast batch..., latent_dim]",
+        "Y: [broadcast batch..., observation_dim]",
+        "return: [batch..., observation_dim]",
+    )
     def _predict_non_logged_density(
         self, X: TensorType, Fmu: TensorType, Fvar: TensorType, Y: TensorType
     ) -> tf.Tensor:
@@ -197,9 +232,11 @@ class MultiClass(Likelihood):
         den = p * (1.0 - self.invlink.epsilon) + (1.0 - p) * (self.invlink.eps_k1)
         return den
 
+    @inherit_check_shapes
     def _conditional_mean(self, X: TensorType, F: TensorType) -> tf.Tensor:
         return self.invlink(F)
 
+    @inherit_check_shapes
     def _conditional_variance(self, X: TensorType, F: TensorType) -> tf.Tensor:
         p = self.conditional_mean(X, F)
         return p - tf.square(p)

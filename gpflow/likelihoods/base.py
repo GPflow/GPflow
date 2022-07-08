@@ -17,6 +17,7 @@ from typing import Any, Callable, Iterable, Optional, Sequence, Union
 import tensorflow as tf
 
 from ..base import MeanAndVariance, Module, TensorType
+from ..experimental.check_shapes import check_shapes, inherit_check_shapes
 from ..quadrature import GaussianQuadrature, NDiagGHQuadrature, ndiag_mc
 
 DEFAULT_NUM_GAUSS_HERMITE_POINTS = 20
@@ -55,112 +56,88 @@ class Likelihood(Module, abc.ABC):
         self.latent_dim = latent_dim
         self.observation_dim = observation_dim
 
-    def _check_last_dims_valid(self, X: TensorType, F: TensorType, Y: TensorType) -> None:
-        """
-        Assert that the dimensions of the latent functions F and the data Y are compatible.
-
-        :param X: input tensor, with shape [..., input_dim]
-        :param F: function evaluation tensor, with shape [..., latent_dim]
-        :param Y: observation tensor, with shape [..., observation_dim]
-        """
-        self._check_input_dims(X)
-        self._check_latent_dims(F)
-        self._check_data_dims(Y)
-
-    def _check_return_shape(
-        self, result: TensorType, X: TensorType, F: TensorType, Y: TensorType
-    ) -> None:
-        """
-        Check that the shape of a computed statistic of the data
-        is the broadcasted shape from F and Y.
-
-        :param result: result tensor, with shape [...]
-        :param X: input tensor, with shape [..., input_dim]
-        :param F: function evaluation tensor, with shape [..., latent_dim]
-        :param Y: observation tensor, with shape [..., observation_dim]
-        """
-        expected_shape = tf.broadcast_dynamic_shape(tf.shape(F)[:-1], tf.shape(Y)[:-1])
-        tf.debugging.assert_equal(tf.shape(result), expected_shape)
-
-    def _check_input_dims(self, X: TensorType) -> None:
-        """
-        Ensure that a tensor of inputs X has input_dim as right-most dimension.
-
-        :param X: function evaluation tensor, with shape [..., input_dim]
-        """
-        tf.debugging.assert_shapes([(X, (..., self.input_dim))])
-
-    def _check_latent_dims(self, F: TensorType) -> None:
-        """
-        Ensure that a tensor of latent functions F has latent_dim as right-most dimension.
-
-        :param F: function evaluation tensor, with shape [..., latent_dim]
-        """
-        tf.debugging.assert_shapes([(F, (..., self.latent_dim))])
-
-    def _check_data_dims(self, Y: TensorType) -> None:
-        """
-        Ensure that a tensor of data Y has observation_dim as right-most dimension.
-
-        :param Y: observation tensor, with shape [..., observation_dim]
-        """
-        tf.debugging.assert_shapes([(Y, (..., self.observation_dim))])
-
+    @check_shapes(
+        "X: [broadcast batch..., input_dim]",
+        "F: [broadcast batch..., latent_dim]",
+        "Y: [broadcast batch..., observation_dim]",
+        "return: [batch...]",
+    )
     def log_prob(self, X: TensorType, F: TensorType, Y: TensorType) -> tf.Tensor:
         """
         The log probability density log p(Y|X,F)
 
-        :param X: input tensor, with shape [..., input_dim]
-        :param F: function evaluation tensor, with shape [..., latent_dim]
-        :param Y: observation tensor, with shape [..., observation_dim]:
-        :returns: log pdf, with shape [...]
+        :param X: input tensor
+        :param F: function evaluation tensor
+        :param Y: observation tensor
+        :returns: log pdf
         """
-        self._check_last_dims_valid(X, F, Y)
-        res = self._log_prob(X, F, Y)
-        self._check_return_shape(res, X, F, Y)
-        return res
+        return self._log_prob(X, F, Y)
 
     @abc.abstractmethod
+    @check_shapes(
+        "X: [broadcast batch..., input_dim]",
+        "F: [broadcast batch..., latent_dim]",
+        "Y: [broadcast batch..., observation_dim]",
+        "return: [batch...]",
+    )
     def _log_prob(self, X: TensorType, F: TensorType, Y: TensorType) -> tf.Tensor:
         raise NotImplementedError
 
+    @check_shapes(
+        "X: [broadcast batch..., input_dim]",
+        "F: [broadcast batch..., latent_dim]",
+        "return: [batch..., observation_dim]",
+    )
     def conditional_mean(self, X: TensorType, F: TensorType) -> tf.Tensor:
         """
         The conditional mean of Y|X,F: [E[Y₁|X,F], ..., E[Yₖ|X,F]]
         where K = observation_dim
 
-        :param X: input tensor, with shape [..., input_dim]
-        :param F: function evaluation tensor, with shape [..., latent_dim]
-        :returns: mean [..., observation_dim]
+        :param X: input tensor
+        :param F: function evaluation tensor
+        :returns: mean
         """
-        self._check_input_dims(X)
-        self._check_latent_dims(F)
-        expected_Y = self._conditional_mean(X, F)
-        self._check_data_dims(expected_Y)
-        return expected_Y
+        return self._conditional_mean(X, F)
 
+    @check_shapes(
+        "X: [broadcast batch..., input_dim]",
+        "F: [broadcast batch..., latent_dim]",
+        "return: [batch..., observation_dim]",
+    )
     def _conditional_mean(self, X: TensorType, F: TensorType) -> tf.Tensor:
         raise NotImplementedError
 
+    @check_shapes(
+        "X: [broadcast batch..., input_dim]",
+        "F: [broadcast batch..., latent_dim]",
+        "return: [batch..., observation_dim]",
+    )
     def conditional_variance(self, X: TensorType, F: TensorType) -> tf.Tensor:
         """
         The conditional marginal variance of Y|X,F: [var(Y₁|X,F), ..., var(Yₖ|X,F)]
         where K = observation_dim
 
-        :param X: input tensor, with shape [..., input_dim]
-        :param F: function evaluation tensor, with shape [..., latent_dim]
-        :returns: variance [..., observation_dim]
+        :param X: input tensor
+        :param F: function evaluation tensor
+        :returns: variance
         """
-        self._check_input_dims(X)
-        if F is not None:
-            self._check_latent_dims(F)
-        var_Y = self._conditional_variance(X, F)
-        self._check_data_dims(var_Y)
-        return var_Y
+        return self._conditional_variance(X, F)
 
+    @check_shapes(
+        "X: [broadcast batch..., input_dim]",
+        "F: [broadcast batch..., latent_dim]",
+        "return: [batch..., observation_dim]",
+    )
     def _conditional_variance(self, X: TensorType, F: TensorType) -> tf.Tensor:
         raise NotImplementedError
 
+    @check_shapes(
+        "X: [broadcast batch..., input_dim]",
+        "Fmu: [broadcast batch..., latent_dim]",
+        "Fvar: [broadcast batch..., latent_dim]",
+        "return[0]: [batch..., observation_dim]",
+        "return[1]: [batch..., observation_dim]",
+    )
     def predict_mean_and_var(
         self, X: TensorType, Fmu: TensorType, Fvar: TensorType
     ) -> MeanAndVariance:
@@ -183,26 +160,33 @@ class Likelihood(Module, abc.ABC):
 
            ∫∫ y² p(y|f)q(f) df dy  - [ ∫∫ y p(y|f)q(f) df dy ]²
 
-
-        :param X: input tensor, with shape [..., input_dim]
-        :param Fmu: mean function evaluation tensor, with shape [..., latent_dim]
-        :param Fvar: variance of function evaluation tensor, with shape [..., latent_dim]
-        :returns: mean and variance, both with shape [..., observation_dim]
+        :param X: input tensor
+        :param Fmu: mean function evaluation tensor
+        :param Fvar: variance of function evaluation tensor
+        :returns: mean and variance
         """
-        self._check_input_dims(X)
-        self._check_latent_dims(Fmu)
-        self._check_latent_dims(Fvar)
-        mu, var = self._predict_mean_and_var(X, Fmu, Fvar)
-        self._check_data_dims(mu)
-        self._check_data_dims(var)
-        return mu, var
+        return self._predict_mean_and_var(X, Fmu, Fvar)
 
     @abc.abstractmethod
+    @check_shapes(
+        "X: [broadcast batch..., input_dim]",
+        "Fmu: [broadcast batch..., latent_dim]",
+        "Fvar: [broadcast batch..., latent_dim]",
+        "return[0]: [batch..., observation_dim]",
+        "return[1]: [batch..., observation_dim]",
+    )
     def _predict_mean_and_var(
         self, X: TensorType, Fmu: TensorType, Fvar: TensorType
     ) -> MeanAndVariance:
         raise NotImplementedError
 
+    @check_shapes(
+        "X: [broadcast batch..., input_dim]",
+        "Fmu: [broadcast batch..., latent_dim]",
+        "Fvar: [broadcast batch..., latent_dim]",
+        "Y: [broadcast batch..., observation_dim]",
+        "return: [batch...]",
+    )
     def predict_log_density(
         self, X: TensorType, Fmu: TensorType, Fvar: TensorType, Y: TensorType
     ) -> tf.Tensor:
@@ -221,24 +205,34 @@ class Likelihood(Module, abc.ABC):
 
             log ∫ p(y=Y|F)q(F) df
 
-        :param X: input tensor, with shape [..., input_dim]
-        :param Fmu: mean function evaluation tensor, with shape [..., latent_dim]
-        :param Fvar: variance of function evaluation tensor, with shape [..., latent_dim]
-        :param Y: observation tensor, with shape [..., observation_dim]:
-        :returns: log predictive density, with shape [...]
+        :param X: input tensor
+        :param Fmu: mean function evaluation tensor
+        :param Fvar: variance of function evaluation tensor
+        :param Y: observation tensor
+        :returns: log predictive density
         """
-        tf.debugging.assert_equal(tf.shape(Fmu), tf.shape(Fvar))
-        self._check_last_dims_valid(X, Fmu, Y)
-        res = self._predict_log_density(X, Fmu, Fvar, Y)
-        self._check_return_shape(res, X, Fmu, Y)
-        return res
+        return self._predict_log_density(X, Fmu, Fvar, Y)
 
     @abc.abstractmethod
+    @check_shapes(
+        "X: [broadcast batch..., input_dim]",
+        "Fmu: [broadcast batch..., latent_dim]",
+        "Fvar: [broadcast batch..., latent_dim]",
+        "Y: [broadcast batch..., observation_dim]",
+        "return: [batch...]",
+    )
     def _predict_log_density(
         self, X: TensorType, Fmu: TensorType, Fvar: TensorType, Y: TensorType
     ) -> tf.Tensor:
         raise NotImplementedError
 
+    @check_shapes(
+        "X: [broadcast batch..., input_dim]",
+        "Fmu: [broadcast batch..., latent_dim]",
+        "Fvar: [broadcast batch..., latent_dim]",
+        "Y: [broadcast batch..., observation_dim]",
+        "return: [batch...]",
+    )
     def variational_expectations(
         self, X: TensorType, Fmu: TensorType, Fvar: TensorType, Y: TensorType
     ) -> tf.Tensor:
@@ -260,23 +254,22 @@ class Likelihood(Module, abc.ABC):
         This only works if the broadcasting dimension of the statistics of q(f) (mean and variance)
         are broadcastable with that of the data Y.
 
-        :param X: input tensor, with shape [..., input_dim]
-        :param Fmu: mean function evaluation tensor, with shape [..., latent_dim]
-        :param Fvar: variance of function evaluation tensor, with shape [..., latent_dim]
-        :param Y: observation tensor, with shape [..., observation_dim]:
-        :returns: expected log density of the data given q(F), with shape [...]
+        :param X: input tensor
+        :param Fmu: mean function evaluation tensor
+        :param Fvar: variance of function evaluation tensor
+        :param Y: observation tensor
+        :returns: expected log density of the data given q(F)
         """
-        tf.debugging.assert_equal(tf.shape(Fmu), tf.shape(Fvar))
-        # raises an error if X[:-1], Y[:-1], and Fmu[:-1] do not broadcast together
-        tf.broadcast_dynamic_shape(tf.shape(X)[:-1], tf.shape(Fmu)[:-1])
-        tf.broadcast_dynamic_shape(tf.shape(X)[:-1], tf.shape(Y)[:-1])
-
-        self._check_last_dims_valid(X, Fmu, Y)
-        ret = self._variational_expectations(X, Fmu, Fvar, Y)
-        self._check_return_shape(ret, X, Fmu, Y)
-        return ret
+        return self._variational_expectations(X, Fmu, Fvar, Y)
 
     @abc.abstractmethod
+    @check_shapes(
+        "X: [broadcast batch..., input_dim]",
+        "Fmu: [broadcast batch..., latent_dim]",
+        "Fvar: [broadcast batch..., latent_dim]",
+        "Y: [broadcast batch..., observation_dim]",
+        "return: [batch...]",
+    )
     def _variational_expectations(
         self, X: TensorType, Fmu: TensorType, Fvar: TensorType, Y: TensorType
     ) -> tf.Tensor:
@@ -314,6 +307,12 @@ class QuadratureLikelihood(Likelihood, abc.ABC):
         assert self.latent_dim is not None
         return self.latent_dim
 
+    @check_shapes(
+        "F: [broadcast batch..., latent_dim]",
+        "X: [broadcast batch..., input_dim]",
+        "Y: [broadcast batch..., observation_dim]",
+        "return: [batch..., d]",
+    )
     def _quadrature_log_prob(self, F: TensorType, X: TensorType, Y: TensorType) -> tf.Tensor:
         """
         Returns the appropriate log prob integrand for quadrature.
@@ -326,6 +325,10 @@ class QuadratureLikelihood(Likelihood, abc.ABC):
         """
         return tf.expand_dims(self.log_prob(X, F, Y), axis=-1)
 
+    @check_shapes(
+        "quadrature_result: [batch..., d]",
+        "return: [batch...]",
+    )
     def _quadrature_reduction(self, quadrature_result: TensorType) -> tf.Tensor:
         """
         Converts the quadrature integral appropriately.
@@ -338,38 +341,41 @@ class QuadratureLikelihood(Likelihood, abc.ABC):
         """
         return tf.squeeze(quadrature_result, axis=-1)
 
+    @inherit_check_shapes
     def _predict_log_density(
         self, X: TensorType, Fmu: TensorType, Fvar: TensorType, Y: TensorType
     ) -> tf.Tensor:
         r"""
         Here, we implement a default Gauss-Hermite quadrature routine, but some
         likelihoods (Gaussian, Poisson) will implement specific cases.
-        :param X: input tensor, with shape [..., input_dim]
-        :param Fmu: mean function evaluation tensor, with shape [..., latent_dim]
-        :param Fvar: variance of function evaluation tensor, with shape [..., latent_dim]
-        :param Y: observation tensor, with shape [..., observation_dim]:
-        :returns: log predictive density, with shape [...]
+        :param X: input tensor
+        :param Fmu: mean function evaluation tensor
+        :param Fvar: variance of function evaluation tensor
+        :param Y: observation tensor
+        :returns: log predictive density
         """
         return self._quadrature_reduction(
             self.quadrature.logspace(self._quadrature_log_prob, Fmu, Fvar, X=X, Y=Y)
         )
 
+    @inherit_check_shapes
     def _variational_expectations(
         self, X: TensorType, Fmu: TensorType, Fvar: TensorType, Y: TensorType
     ) -> tf.Tensor:
         r"""
         Here, we implement a default Gauss-Hermite quadrature routine, but some
         likelihoods (Gaussian, Poisson) will implement specific cases.
-        :param X: input tensor, with shape [..., input_dim]
-        :param Fmu: mean function evaluation tensor, with shape [..., latent_dim]
-        :param Fvar: variance of function evaluation tensor, with shape [..., latent_dim]
-        :param Y: observation tensor, with shape [..., observation_dim]:
-        :returns: variational expectations, with shape [...]
+        :param X: input tensor
+        :param Fmu: mean function evaluation tensor
+        :param Fvar: variance of function evaluation tensor
+        :param Y: observation tensor
+        :returns: variational expectations
         """
         return self._quadrature_reduction(
             self.quadrature(self._quadrature_log_prob, Fmu, Fvar, X=X, Y=Y)
         )
 
+    @inherit_check_shapes
     def _predict_mean_and_var(
         self, X: TensorType, Fmu: TensorType, Fvar: TensorType
     ) -> MeanAndVariance:
@@ -377,10 +383,10 @@ class QuadratureLikelihood(Likelihood, abc.ABC):
         Here, we implement a default Gauss-Hermite quadrature routine, but some
         likelihoods (e.g. Gaussian) will implement specific cases.
 
-        :param X: input tensor, with shape [..., input_dim]
-        :param Fmu: mean function evaluation tensor, with shape [..., latent_dim]
-        :param Fvar: variance of function evaluation tensor, with shape [..., latent_dim]
-        :returns: mean and variance of Y, both with shape [..., observation_dim]
+        :param X: input tensor
+        :param Fmu: mean function evaluation tensor
+        :param Fvar: variance of function evaluation tensor
+        :returns: mean and variance of Y
         """
 
         def conditional_mean(F: TensorType, X_: TensorType) -> tf.Tensor:
@@ -419,24 +425,23 @@ class ScalarLikelihood(QuadratureLikelihood, abc.ABC):
     def __init__(self, **kwargs: Any) -> None:
         super().__init__(input_dim=None, latent_dim=None, observation_dim=None, **kwargs)
 
-    def _check_last_dims_valid(self, X: TensorType, F: TensorType, Y: TensorType) -> None:
-        """
-        Assert that the dimensions of the latent functions and the data are compatible
-        :param F: function evaluation tensor, with shape [..., latent_dim]
-        :param Y: observation tensor, with shape [..., latent_dim]
-        """
-        tf.debugging.assert_shapes([(F, (..., "num_latent")), (Y, (..., "num_latent"))])
-
+    @inherit_check_shapes
     def _log_prob(self, X: TensorType, F: TensorType, Y: TensorType) -> tf.Tensor:
         r"""
         Compute log p(Y|X,F), where by convention we sum out the last axis as it represented
         independent latent functions and observations.
-        :param F: function evaluation tensor, with shape [..., latent_dim]
-        :param Y: observation tensor, with shape [..., latent_dim]
+        :param F: function evaluation tensor
+        :param Y: observation tensor
         """
         return tf.reduce_sum(self._scalar_log_prob(X, F, Y), axis=-1)
 
     @abc.abstractmethod
+    @check_shapes(
+        "X: [broadcast batch..., input_dim]",
+        "F: [broadcast batch..., latent_dim]",
+        "Y: [broadcast batch..., observation_dim]",
+        "return: [batch..., latent_dim]",
+    )
     def _scalar_log_prob(self, X: TensorType, F: TensorType, Y: TensorType) -> tf.Tensor:
         raise NotImplementedError
 
@@ -450,6 +455,7 @@ class ScalarLikelihood(QuadratureLikelihood, abc.ABC):
         """
         return 1
 
+    @inherit_check_shapes
     def _quadrature_log_prob(self, F: TensorType, X: TensorType, Y: TensorType) -> tf.Tensor:
         """
         Returns the appropriate log prob integrand for quadrature.
@@ -462,6 +468,7 @@ class ScalarLikelihood(QuadratureLikelihood, abc.ABC):
         """
         return self._scalar_log_prob(X, F, Y)
 
+    @inherit_check_shapes
     def _quadrature_reduction(self, quadrature_result: TensorType) -> tf.Tensor:
         """
         Converts the quadrature integral appropriately.
@@ -485,6 +492,10 @@ class SwitchedLikelihood(ScalarLikelihood):
         super().__init__(**kwargs)
         self.likelihoods = list(likelihood_list)
 
+    @check_shapes(
+        "args[all]: [batch..., .]",
+        "return: [batch..., ...]",
+    )
     def _partition_and_stitch(self, args: Sequence[TensorType], func_name: str) -> tf.Tensor:
         """
         args is a list of tensors, to be passed to self.likelihoods.<func_name>
@@ -515,22 +526,23 @@ class SwitchedLikelihood(ScalarLikelihood):
 
         return results
 
-    def _check_last_dims_valid(self, X: TensorType, F: TensorType, Y: TensorType) -> None:
-        tf.assert_equal(tf.shape(F)[-1], tf.shape(Y)[-1] - 1)
-
+    @inherit_check_shapes
     def _scalar_log_prob(self, X: TensorType, F: TensorType, Y: TensorType) -> tf.Tensor:
         return self._partition_and_stitch([X, F, Y], "_scalar_log_prob")
 
+    @inherit_check_shapes
     def _predict_log_density(
         self, X: TensorType, Fmu: TensorType, Fvar: TensorType, Y: TensorType
     ) -> tf.Tensor:
         return self._partition_and_stitch([X, Fmu, Fvar, Y], "predict_log_density")
 
+    @inherit_check_shapes
     def _variational_expectations(
         self, X: TensorType, Fmu: TensorType, Fvar: TensorType, Y: TensorType
     ) -> tf.Tensor:
         return self._partition_and_stitch([X, Fmu, Fvar, Y], "variational_expectations")
 
+    @inherit_check_shapes
     def _predict_mean_and_var(
         self, X: TensorType, Fmu: TensorType, Fvar: TensorType
     ) -> MeanAndVariance:
@@ -540,9 +552,11 @@ class SwitchedLikelihood(ScalarLikelihood):
         var = tf.concat(var_list, axis=1)
         return mu, var
 
+    @inherit_check_shapes
     def _conditional_mean(self, X: TensorType, F: TensorType) -> tf.Tensor:
         raise NotImplementedError
 
+    @inherit_check_shapes
     def _conditional_variance(self, X: TensorType, F: TensorType) -> tf.Tensor:
         raise NotImplementedError
 
@@ -552,6 +566,12 @@ class MonteCarloLikelihood(Likelihood):
         super().__init__(*args, **kwargs)
         self.num_monte_carlo_points = 100
 
+    @check_shapes(
+        "Fmu: [batch..., latent_dim]",
+        "Fvar: [batch..., latent_dim]",
+        "Ys.values(): [batch..., .]",
+        "return: [broadcast n_funcs, batch..., .]",
+    )
     def _mc_quadrature(
         self,
         funcs: Union[Callable[..., tf.Tensor], Iterable[Callable[..., tf.Tensor]]],
@@ -563,6 +583,7 @@ class MonteCarloLikelihood(Likelihood):
     ) -> tf.Tensor:
         return ndiag_mc(funcs, self.num_monte_carlo_points, Fmu, Fvar, logspace, epsilon, **Ys)
 
+    @inherit_check_shapes
     def _predict_mean_and_var(
         self, X: TensorType, Fmu: TensorType, Fvar: TensorType, epsilon: Optional[TensorType] = None
     ) -> MeanAndVariance:
@@ -604,6 +625,7 @@ class MonteCarloLikelihood(Likelihood):
         V_y = E_y2 - tf.square(E_y)
         return E_y, V_y  # [N, D]
 
+    @inherit_check_shapes
     def _predict_log_density(
         self,
         X: TensorType,
@@ -638,6 +660,7 @@ class MonteCarloLikelihood(Likelihood):
             axis=-1,
         )
 
+    @inherit_check_shapes
     def _variational_expectations(
         self,
         X: TensorType,
