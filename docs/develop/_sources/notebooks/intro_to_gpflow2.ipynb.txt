@@ -2,7 +2,7 @@
  "cells": [
   {
    "cell_type": "markdown",
-   "id": "e399222b",
+   "id": "40f84c3d",
    "metadata": {},
    "source": [
     "GPflow with TensorFlow 2\n",
@@ -17,13 +17,13 @@
   {
    "cell_type": "code",
    "execution_count": 1,
-   "id": "6afbea48",
+   "id": "d8c4b267",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-07-06T14:02:04.903592Z",
-     "iopub.status.busy": "2022-07-06T14:02:04.903256Z",
-     "iopub.status.idle": "2022-07-06T14:02:09.209162Z",
-     "shell.execute_reply": "2022-07-06T14:02:09.208493Z"
+     "iopub.execute_input": "2022-07-11T16:02:46.568873Z",
+     "iopub.status.busy": "2022-07-11T16:02:46.568378Z",
+     "iopub.status.idle": "2022-07-11T16:02:51.038859Z",
+     "shell.execute_reply": "2022-07-11T16:02:51.038247Z"
     }
    },
    "outputs": [
@@ -31,8 +31,8 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2022-07-06 14:02:06.099514: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcudart.so.11.0'; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory\n",
-      "2022-07-06 14:02:06.099541: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.\n"
+      "2022-07-11 16:02:47.784109: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcudart.so.11.0'; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory\n",
+      "2022-07-11 16:02:47.784136: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.\n"
      ]
     },
     {
@@ -70,7 +70,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "e71dd254",
+   "id": "aab92d8b",
    "metadata": {},
    "source": [
     "Make `tensorboard` work inside notebook:"
@@ -79,13 +79,13 @@
   {
    "cell_type": "code",
    "execution_count": 2,
-   "id": "e0694d92",
+   "id": "28eecb85",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-07-06T14:02:09.212483Z",
-     "iopub.status.busy": "2022-07-06T14:02:09.212010Z",
-     "iopub.status.idle": "2022-07-06T14:02:09.531177Z",
-     "shell.execute_reply": "2022-07-06T14:02:09.530441Z"
+     "iopub.execute_input": "2022-07-11T16:02:51.042285Z",
+     "iopub.status.busy": "2022-07-11T16:02:51.041817Z",
+     "iopub.status.idle": "2022-07-11T16:02:51.358185Z",
+     "shell.execute_reply": "2022-07-11T16:02:51.357253Z"
     }
    },
    "outputs": [],
@@ -107,7 +107,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "070cccd6",
+   "id": "a47a2418",
    "metadata": {},
    "source": [
     "Set up random seeds and default float for `gpflow` tensors:"
@@ -116,13 +116,13 @@
   {
    "cell_type": "code",
    "execution_count": 3,
-   "id": "91676d36",
+   "id": "ada12b4e",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-07-06T14:02:09.534675Z",
-     "iopub.status.busy": "2022-07-06T14:02:09.534361Z",
-     "iopub.status.idle": "2022-07-06T14:02:09.538330Z",
-     "shell.execute_reply": "2022-07-06T14:02:09.537673Z"
+     "iopub.execute_input": "2022-07-11T16:02:51.362620Z",
+     "iopub.status.busy": "2022-07-11T16:02:51.362055Z",
+     "iopub.status.idle": "2022-07-11T16:02:51.368360Z",
+     "shell.execute_reply": "2022-07-11T16:02:51.367520Z"
     }
    },
    "outputs": [],
@@ -134,7 +134,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "14323e1a",
+   "id": "93b5feec",
    "metadata": {},
    "source": [
     "## Loading data using TensorFlow Datasets\n",
@@ -145,13 +145,13 @@
   {
    "cell_type": "code",
    "execution_count": 4,
-   "id": "efbbe69d",
+   "id": "41c5c0ba",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-07-06T14:02:09.541133Z",
-     "iopub.status.busy": "2022-07-06T14:02:09.540873Z",
-     "iopub.status.idle": "2022-07-06T14:02:09.786418Z",
-     "shell.execute_reply": "2022-07-06T14:02:09.785831Z"
+     "iopub.execute_input": "2022-07-11T16:02:51.372086Z",
+     "iopub.status.busy": "2022-07-11T16:02:51.371692Z",
+     "iopub.status.idle": "2022-07-11T16:02:51.621299Z",
+     "shell.execute_reply": "2022-07-11T16:02:51.620719Z"
     }
    },
    "outputs": [
@@ -159,10 +159,10 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2022-07-06 14:02:09.544647: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcuda.so.1'; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory\n",
-      "2022-07-06 14:02:09.544677: W tensorflow/stream_executor/cuda/cuda_driver.cc:269] failed call to cuInit: UNKNOWN ERROR (303)\n",
-      "2022-07-06 14:02:09.544703: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (65d0a3501d57): /proc/driver/nvidia/version does not exist\n",
-      "2022-07-06 14:02:09.545024: I tensorflow/core/platform/cpu_feature_guard.cc:193] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA\n",
+      "2022-07-11 16:02:51.377127: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcuda.so.1'; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory\n",
+      "2022-07-11 16:02:51.377161: W tensorflow/stream_executor/cuda/cuda_driver.cc:269] failed call to cuInit: UNKNOWN ERROR (303)\n",
+      "2022-07-11 16:02:51.377190: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (307ccffa4c75): /proc/driver/nvidia/version does not exist\n",
+      "2022-07-11 16:02:51.377827: I tensorflow/core/platform/cpu_feature_guard.cc:193] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA\n",
       "To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.\n"
      ]
     },
@@ -201,7 +201,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "dd8ca7f6",
+   "id": "4747cc2d",
    "metadata": {},
    "source": [
     "Working with TensorFlow Datasets is an efficient way to rapidly shuffle, iterate, and batch from data. For `prefetch` size we use `tf.data.experimental.AUTOTUNE` as recommended by TensorFlow [guidelines](https://www.tensorflow.org/guide/data_performance)."
@@ -210,13 +210,13 @@
   {
    "cell_type": "code",
    "execution_count": 5,
-   "id": "9f97b972",
+   "id": "2ae3b962",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-07-06T14:02:09.789299Z",
-     "iopub.status.busy": "2022-07-06T14:02:09.788988Z",
-     "iopub.status.idle": "2022-07-06T14:02:09.800075Z",
-     "shell.execute_reply": "2022-07-06T14:02:09.799422Z"
+     "iopub.execute_input": "2022-07-11T16:02:51.647075Z",
+     "iopub.status.busy": "2022-07-11T16:02:51.646731Z",
+     "iopub.status.idle": "2022-07-11T16:02:51.657623Z",
+     "shell.execute_reply": "2022-07-11T16:02:51.656993Z"
     }
    },
    "outputs": [
@@ -255,7 +255,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "8be4c61c",
+   "id": "d4237863",
    "metadata": {},
    "source": [
     "## Define a GP model\n",
@@ -266,13 +266,13 @@
   {
    "cell_type": "code",
    "execution_count": 6,
-   "id": "62cd5c45",
+   "id": "3436defe",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-07-06T14:02:09.803007Z",
-     "iopub.status.busy": "2022-07-06T14:02:09.802767Z",
-     "iopub.status.idle": "2022-07-06T14:02:09.842956Z",
-     "shell.execute_reply": "2022-07-06T14:02:09.842233Z"
+     "iopub.execute_input": "2022-07-11T16:02:51.660349Z",
+     "iopub.status.busy": "2022-07-11T16:02:51.660065Z",
+     "iopub.status.idle": "2022-07-11T16:02:51.697482Z",
+     "shell.execute_reply": "2022-07-11T16:02:51.696839Z"
     }
    },
    "outputs": [],
@@ -288,7 +288,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "46d5f80b",
+   "id": "7f8d081e",
    "metadata": {},
    "source": [
     "You can set a module (or a particular parameter) to be non-trainable using the auxiliary method ```set_trainable(module, False)```:"
@@ -297,13 +297,13 @@
   {
    "cell_type": "code",
    "execution_count": 7,
-   "id": "06f8ab5b",
+   "id": "cdae31c9",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-07-06T14:02:09.846470Z",
-     "iopub.status.busy": "2022-07-06T14:02:09.846129Z",
-     "iopub.status.idle": "2022-07-06T14:02:09.870784Z",
-     "shell.execute_reply": "2022-07-06T14:02:09.870166Z"
+     "iopub.execute_input": "2022-07-11T16:02:51.700627Z",
+     "iopub.status.busy": "2022-07-11T16:02:51.700345Z",
+     "iopub.status.idle": "2022-07-11T16:02:51.722959Z",
+     "shell.execute_reply": "2022-07-11T16:02:51.722332Z"
     }
    },
    "outputs": [],
@@ -319,7 +319,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "7a2520f9",
+   "id": "5810dcfe",
    "metadata": {},
    "source": [
     "We can use ```param.assign(value)``` to assign a value to a parameter:"
@@ -328,13 +328,13 @@
   {
    "cell_type": "code",
    "execution_count": 8,
-   "id": "7593bc6a",
+   "id": "d924f397",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-07-06T14:02:09.874027Z",
-     "iopub.status.busy": "2022-07-06T14:02:09.873584Z",
-     "iopub.status.idle": "2022-07-06T14:02:09.879461Z",
-     "shell.execute_reply": "2022-07-06T14:02:09.878985Z"
+     "iopub.execute_input": "2022-07-11T16:02:51.725961Z",
+     "iopub.status.busy": "2022-07-11T16:02:51.725643Z",
+     "iopub.status.idle": "2022-07-11T16:02:51.731681Z",
+     "shell.execute_reply": "2022-07-11T16:02:51.731166Z"
     }
    },
    "outputs": [
@@ -355,7 +355,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "d907ce88",
+   "id": "cfd081c4",
    "metadata": {},
    "source": [
     "All these changes are reflected when we use ```print_summary(model)``` to print a detailed summary of the model. By default the output is displayed in a minimalistic and simple table."
@@ -364,13 +364,13 @@
   {
    "cell_type": "code",
    "execution_count": 9,
-   "id": "558dd3d4",
+   "id": "d8666c21",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-07-06T14:02:09.921784Z",
-     "iopub.status.busy": "2022-07-06T14:02:09.921425Z",
-     "iopub.status.idle": "2022-07-06T14:02:09.936136Z",
-     "shell.execute_reply": "2022-07-06T14:02:09.935408Z"
+     "iopub.execute_input": "2022-07-11T16:02:51.734218Z",
+     "iopub.status.busy": "2022-07-11T16:02:51.733937Z",
+     "iopub.status.idle": "2022-07-11T16:02:51.747146Z",
+     "shell.execute_reply": "2022-07-11T16:02:51.746584Z"
     }
    },
    "outputs": [
@@ -404,7 +404,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "7233eb37",
+   "id": "52204589",
    "metadata": {},
    "source": [
     "We can change default printing so that it will look nicer in our notebook:"
@@ -413,13 +413,13 @@
   {
    "cell_type": "code",
    "execution_count": 10,
-   "id": "5571d97b",
+   "id": "138d9058",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-07-06T14:02:09.938910Z",
-     "iopub.status.busy": "2022-07-06T14:02:09.938667Z",
-     "iopub.status.idle": "2022-07-06T14:02:09.952222Z",
-     "shell.execute_reply": "2022-07-06T14:02:09.951609Z"
+     "iopub.execute_input": "2022-07-11T16:02:51.749947Z",
+     "iopub.status.busy": "2022-07-11T16:02:51.749628Z",
+     "iopub.status.idle": "2022-07-11T16:02:51.765530Z",
+     "shell.execute_reply": "2022-07-11T16:02:51.764901Z"
     }
    },
    "outputs": [
@@ -456,7 +456,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "77a5fb40",
+   "id": "a6981b8f",
    "metadata": {},
    "source": [
     "Jupyter notebooks also format GPflow classes (that are subclasses of `gpflow.base.Module`) in the same nice way when at the end of a cell (this is independent of the `default_summary_fmt`):"
@@ -465,20 +465,20 @@
   {
    "cell_type": "code",
    "execution_count": 11,
-   "id": "a1ea5841",
+   "id": "c2048160",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-07-06T14:02:09.954968Z",
-     "iopub.status.busy": "2022-07-06T14:02:09.954691Z",
-     "iopub.status.idle": "2022-07-06T14:02:09.974880Z",
-     "shell.execute_reply": "2022-07-06T14:02:09.974293Z"
+     "iopub.execute_input": "2022-07-11T16:02:51.768217Z",
+     "iopub.status.busy": "2022-07-11T16:02:51.767941Z",
+     "iopub.status.idle": "2022-07-11T16:02:51.786807Z",
+     "shell.execute_reply": "2022-07-11T16:02:51.786262Z"
     }
    },
    "outputs": [
     {
      "data": {
       "text/html": [
-       "&lt;gpflow.models.svgp.SVGP object at 0x7fb91de5dc90&gt;\n",
+       "&lt;gpflow.models.svgp.SVGP object at 0x7fbf48ed0d60&gt;\n",
        "<table>\n",
        "<thead>\n",
        "<tr><th>name                    </th><th>class    </th><th>transform       </th><th>prior  </th><th>trainable  </th><th>shape      </th><th>dtype  </th><th>value           </th></tr>\n",
@@ -494,7 +494,7 @@
        "</table>"
       ],
       "text/plain": [
-       "<gpflow.models.svgp.SVGP object at 0x7fb91de5dc90>\n",
+       "<gpflow.models.svgp.SVGP object at 0x7fbf48ed0d60>\n",
        "name                      class      transform         prior    trainable    shape        dtype    value\n",
        "------------------------  ---------  ----------------  -------  -----------  -----------  -------  ----------------\n",
        "SVGP.kernel.variance      Parameter  Softplus                   True         ()           float64  2.0\n",
@@ -516,7 +516,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "87dd429e",
+   "id": "a315e788",
    "metadata": {},
    "source": [
     "## Training using training_loss and training_loss_closure\n",
@@ -532,13 +532,13 @@
   {
    "cell_type": "code",
    "execution_count": 12,
-   "id": "9f29b162",
+   "id": "1082a12b",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-07-06T14:02:09.977525Z",
-     "iopub.status.busy": "2022-07-06T14:02:09.977251Z",
-     "iopub.status.idle": "2022-07-06T14:02:10.050866Z",
-     "shell.execute_reply": "2022-07-06T14:02:10.050095Z"
+     "iopub.execute_input": "2022-07-11T16:02:51.789479Z",
+     "iopub.status.busy": "2022-07-11T16:02:51.789210Z",
+     "iopub.status.idle": "2022-07-11T16:02:51.858790Z",
+     "shell.execute_reply": "2022-07-11T16:02:51.858223Z"
     }
    },
    "outputs": [
@@ -564,7 +564,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "92cdf1e3",
+   "id": "a926ecaa",
    "metadata": {},
    "source": [
     "This also works for the Scipy optimizer, though it will do the full optimization on a single call to minimize():"
@@ -573,13 +573,13 @@
   {
    "cell_type": "code",
    "execution_count": 13,
-   "id": "2db65e50",
+   "id": "3bdc0664",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-07-06T14:02:10.054028Z",
-     "iopub.status.busy": "2022-07-06T14:02:10.053725Z",
-     "iopub.status.idle": "2022-07-06T14:02:14.458116Z",
-     "shell.execute_reply": "2022-07-06T14:02:14.457457Z"
+     "iopub.execute_input": "2022-07-11T16:02:51.861613Z",
+     "iopub.status.busy": "2022-07-11T16:02:51.861337Z",
+     "iopub.status.idle": "2022-07-11T16:02:56.028217Z",
+     "shell.execute_reply": "2022-07-11T16:02:56.027632Z"
     }
    },
    "outputs": [
@@ -616,7 +616,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "3d2ac177",
+   "id": "50137e25",
    "metadata": {},
    "source": [
     "You can obtain a compiled version using training_loss_closure, whose `compile` argument is True by default:"
@@ -625,20 +625,20 @@
   {
    "cell_type": "code",
    "execution_count": 14,
-   "id": "6abe1e40",
+   "id": "28b927c8",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-07-06T14:02:14.461413Z",
-     "iopub.status.busy": "2022-07-06T14:02:14.461106Z",
-     "iopub.status.idle": "2022-07-06T14:02:14.466098Z",
-     "shell.execute_reply": "2022-07-06T14:02:14.465543Z"
+     "iopub.execute_input": "2022-07-11T16:02:56.031004Z",
+     "iopub.status.busy": "2022-07-11T16:02:56.030717Z",
+     "iopub.status.idle": "2022-07-11T16:02:56.061754Z",
+     "shell.execute_reply": "2022-07-11T16:02:56.060655Z"
     }
    },
    "outputs": [
     {
      "data": {
       "text/plain": [
-       "<bound method InternalDataTrainingLossMixin.training_loss of <gpflow.models.vgp.VGP object at 0x7fba18a36a70>>"
+       "<bound method InternalDataTrainingLossMixin.training_loss of <gpflow.models.vgp.VGP object at 0x7fbf48bf7160>>"
       ]
      },
      "execution_count": 14,
@@ -654,7 +654,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "bd01d81a",
+   "id": "4cc5cd33",
    "metadata": {},
    "source": [
     "### External data\n",
@@ -666,13 +666,13 @@
   {
    "cell_type": "code",
    "execution_count": 15,
-   "id": "b3732bf6",
+   "id": "8f5ff868",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-07-06T14:02:14.469041Z",
-     "iopub.status.busy": "2022-07-06T14:02:14.468744Z",
-     "iopub.status.idle": "2022-07-06T14:02:14.516425Z",
-     "shell.execute_reply": "2022-07-06T14:02:14.515605Z"
+     "iopub.execute_input": "2022-07-11T16:02:56.066259Z",
+     "iopub.status.busy": "2022-07-11T16:02:56.065757Z",
+     "iopub.status.idle": "2022-07-11T16:02:56.105807Z",
+     "shell.execute_reply": "2022-07-11T16:02:56.105229Z"
     }
    },
    "outputs": [
@@ -694,7 +694,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "63edece8",
+   "id": "fb68aa89",
    "metadata": {},
    "source": [
     "To make optimizing it easy, it has a `training_loss_closure()` method, that takes the data and returns a closure that computes the training loss on this data:"
@@ -703,13 +703,13 @@
   {
    "cell_type": "code",
    "execution_count": 16,
-   "id": "d31b4e94",
+   "id": "b9a9ebef",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-07-06T14:02:14.520409Z",
-     "iopub.status.busy": "2022-07-06T14:02:14.519981Z",
-     "iopub.status.idle": "2022-07-06T14:02:16.962907Z",
-     "shell.execute_reply": "2022-07-06T14:02:16.962028Z"
+     "iopub.execute_input": "2022-07-11T16:02:56.109498Z",
+     "iopub.status.busy": "2022-07-11T16:02:56.109199Z",
+     "iopub.status.idle": "2022-07-11T16:02:58.380225Z",
+     "shell.execute_reply": "2022-07-11T16:02:58.379550Z"
     }
    },
    "outputs": [
@@ -734,7 +734,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "143ce384",
+   "id": "ba2ef942",
    "metadata": {},
    "source": [
     "SVGP can handle mini-batching, and an iterator from a batched tf.data.Dataset can be passed to the model's training_loss_closure():"
@@ -743,13 +743,13 @@
   {
    "cell_type": "code",
    "execution_count": 17,
-   "id": "b0be858d",
+   "id": "2395355f",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-07-06T14:02:16.965767Z",
-     "iopub.status.busy": "2022-07-06T14:02:16.965479Z",
-     "iopub.status.idle": "2022-07-06T14:02:18.123428Z",
-     "shell.execute_reply": "2022-07-06T14:02:18.122855Z"
+     "iopub.execute_input": "2022-07-11T16:02:58.383745Z",
+     "iopub.status.busy": "2022-07-11T16:02:58.383444Z",
+     "iopub.status.idle": "2022-07-11T16:02:59.491564Z",
+     "shell.execute_reply": "2022-07-11T16:02:59.491001Z"
     },
     "lines_to_next_cell": 1
    },
@@ -775,7 +775,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "c4cd4d94",
+   "id": "098e3452",
    "metadata": {},
    "source": [
     "As previously, training_loss_closure takes an optional `compile` argument for tf.function compilation (True by default)."
@@ -783,7 +783,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "3c41ee21",
+   "id": "0a8b0684",
    "metadata": {},
    "source": [
     "## Training using Gradient Tapes\n",
@@ -796,13 +796,13 @@
   {
    "cell_type": "code",
    "execution_count": 18,
-   "id": "fff4a6df",
+   "id": "33fee901",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-07-06T14:02:18.127204Z",
-     "iopub.status.busy": "2022-07-06T14:02:18.126896Z",
-     "iopub.status.idle": "2022-07-06T14:02:18.131198Z",
-     "shell.execute_reply": "2022-07-06T14:02:18.130589Z"
+     "iopub.execute_input": "2022-07-11T16:02:59.494500Z",
+     "iopub.status.busy": "2022-07-11T16:02:59.494186Z",
+     "iopub.status.idle": "2022-07-11T16:02:59.498231Z",
+     "shell.execute_reply": "2022-07-11T16:02:59.497700Z"
     }
    },
    "outputs": [],
@@ -818,7 +818,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "621e82a9",
+   "id": "1526c96f",
    "metadata": {},
    "source": [
     "We can use the functionality of TensorFlow Datasets to define a simple training loop that iterates over batches of the training dataset:"
@@ -827,13 +827,13 @@
   {
    "cell_type": "code",
    "execution_count": 19,
-   "id": "58953526",
+   "id": "634e9816",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-07-06T14:02:18.134586Z",
-     "iopub.status.busy": "2022-07-06T14:02:18.134302Z",
-     "iopub.status.idle": "2022-07-06T14:02:18.138699Z",
-     "shell.execute_reply": "2022-07-06T14:02:18.138123Z"
+     "iopub.execute_input": "2022-07-11T16:02:59.500704Z",
+     "iopub.status.busy": "2022-07-11T16:02:59.500420Z",
+     "iopub.status.idle": "2022-07-11T16:02:59.504545Z",
+     "shell.execute_reply": "2022-07-11T16:02:59.504056Z"
     }
    },
    "outputs": [],
@@ -854,13 +854,13 @@
   {
    "cell_type": "code",
    "execution_count": 20,
-   "id": "2d4202ca",
+   "id": "6464ce3f",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-07-06T14:02:18.141823Z",
-     "iopub.status.busy": "2022-07-06T14:02:18.141548Z",
-     "iopub.status.idle": "2022-07-06T14:02:19.094464Z",
-     "shell.execute_reply": "2022-07-06T14:02:19.093823Z"
+     "iopub.execute_input": "2022-07-11T16:02:59.506900Z",
+     "iopub.status.busy": "2022-07-11T16:02:59.506625Z",
+     "iopub.status.idle": "2022-07-11T16:03:00.430195Z",
+     "shell.execute_reply": "2022-07-11T16:03:00.429582Z"
     }
    },
    "outputs": [
@@ -906,7 +906,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "1369bf51",
+   "id": "99d90d35",
    "metadata": {},
    "source": [
     "## Monitoring\n",
@@ -918,13 +918,13 @@
   {
    "cell_type": "code",
    "execution_count": 21,
-   "id": "ddd65a69",
+   "id": "c1e26715",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-07-06T14:02:19.097965Z",
-     "iopub.status.busy": "2022-07-06T14:02:19.097659Z",
-     "iopub.status.idle": "2022-07-06T14:02:19.120050Z",
-     "shell.execute_reply": "2022-07-06T14:02:19.119288Z"
+     "iopub.execute_input": "2022-07-11T16:03:00.434145Z",
+     "iopub.status.busy": "2022-07-11T16:03:00.433846Z",
+     "iopub.status.idle": "2022-07-11T16:03:00.454990Z",
+     "shell.execute_reply": "2022-07-11T16:03:00.454394Z"
     },
     "lines_to_next_cell": 2
    },
@@ -1004,7 +1004,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "d2ae7b40",
+   "id": "0d16fd1e",
    "metadata": {
     "lines_to_next_cell": 2
    },
@@ -1016,13 +1016,13 @@
   {
    "cell_type": "code",
    "execution_count": 22,
-   "id": "b627395f",
+   "id": "d784395a",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-07-06T14:02:19.123951Z",
-     "iopub.status.busy": "2022-07-06T14:02:19.123565Z",
-     "iopub.status.idle": "2022-07-06T14:02:25.685148Z",
-     "shell.execute_reply": "2022-07-06T14:02:25.684198Z"
+     "iopub.execute_input": "2022-07-11T16:03:00.459519Z",
+     "iopub.status.busy": "2022-07-11T16:03:00.459039Z",
+     "iopub.status.idle": "2022-07-11T16:03:06.080486Z",
+     "shell.execute_reply": "2022-07-11T16:03:06.079835Z"
     }
    },
    "outputs": [
@@ -1121,7 +1121,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "3d468b6b",
+   "id": "98ba2ee2",
    "metadata": {},
    "source": [
     "Then, we can use TensorBoard to examine the training procedure in more detail"
@@ -1130,13 +1130,13 @@
   {
    "cell_type": "code",
    "execution_count": 23,
-   "id": "c5380138",
+   "id": "04610527",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-07-06T14:02:25.689652Z",
-     "iopub.status.busy": "2022-07-06T14:02:25.689198Z",
-     "iopub.status.idle": "2022-07-06T14:02:25.693052Z",
-     "shell.execute_reply": "2022-07-06T14:02:25.692290Z"
+     "iopub.execute_input": "2022-07-11T16:03:06.083730Z",
+     "iopub.status.busy": "2022-07-11T16:03:06.083436Z",
+     "iopub.status.idle": "2022-07-11T16:03:06.086449Z",
+     "shell.execute_reply": "2022-07-11T16:03:06.085819Z"
     }
    },
    "outputs": [],
@@ -1146,7 +1146,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "00a6f1a2",
+   "id": "f9e82a20",
    "metadata": {},
    "source": [
     "## Saving and loading models\n",
@@ -1159,13 +1159,13 @@
   {
    "cell_type": "code",
    "execution_count": 24,
-   "id": "c9656117",
+   "id": "b1088851",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-07-06T14:02:25.696523Z",
-     "iopub.status.busy": "2022-07-06T14:02:25.696224Z",
-     "iopub.status.idle": "2022-07-06T14:02:25.701116Z",
-     "shell.execute_reply": "2022-07-06T14:02:25.700340Z"
+     "iopub.execute_input": "2022-07-11T16:03:06.089121Z",
+     "iopub.status.busy": "2022-07-11T16:03:06.088861Z",
+     "iopub.status.idle": "2022-07-11T16:03:06.092316Z",
+     "shell.execute_reply": "2022-07-11T16:03:06.091809Z"
     }
    },
    "outputs": [],
@@ -1176,7 +1176,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "00dfcaee",
+   "id": "a6592d2b",
    "metadata": {},
    "source": [
     "Create `Checkpoint` object:"
@@ -1185,13 +1185,13 @@
   {
    "cell_type": "code",
    "execution_count": 25,
-   "id": "5997df83",
+   "id": "da7039c5",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-07-06T14:02:25.704749Z",
-     "iopub.status.busy": "2022-07-06T14:02:25.704330Z",
-     "iopub.status.idle": "2022-07-06T14:02:25.709388Z",
-     "shell.execute_reply": "2022-07-06T14:02:25.708568Z"
+     "iopub.execute_input": "2022-07-11T16:03:06.094900Z",
+     "iopub.status.busy": "2022-07-11T16:03:06.094662Z",
+     "iopub.status.idle": "2022-07-11T16:03:06.098086Z",
+     "shell.execute_reply": "2022-07-11T16:03:06.097555Z"
     }
    },
    "outputs": [],
@@ -1202,7 +1202,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "1afcfa55",
+   "id": "8f18c2b7",
    "metadata": {},
    "source": [
     "Save the variable `a` and change its value right after:"
@@ -1211,13 +1211,13 @@
   {
    "cell_type": "code",
    "execution_count": 26,
-   "id": "d08ed549",
+   "id": "90273355",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-07-06T14:02:25.713106Z",
-     "iopub.status.busy": "2022-07-06T14:02:25.712670Z",
-     "iopub.status.idle": "2022-07-06T14:02:25.725915Z",
-     "shell.execute_reply": "2022-07-06T14:02:25.725128Z"
+     "iopub.execute_input": "2022-07-11T16:03:06.100638Z",
+     "iopub.status.busy": "2022-07-11T16:03:06.100405Z",
+     "iopub.status.idle": "2022-07-11T16:03:06.109129Z",
+     "shell.execute_reply": "2022-07-11T16:03:06.108588Z"
     }
    },
    "outputs": [],
@@ -1228,7 +1228,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "94f2ac76",
+   "id": "8d35a4b9",
    "metadata": {},
    "source": [
     "Now we can restore the old variable value:"
@@ -1237,13 +1237,13 @@
   {
    "cell_type": "code",
    "execution_count": 27,
-   "id": "c081913c",
+   "id": "68fa64ca",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-07-06T14:02:25.729689Z",
-     "iopub.status.busy": "2022-07-06T14:02:25.729290Z",
-     "iopub.status.idle": "2022-07-06T14:02:25.736909Z",
-     "shell.execute_reply": "2022-07-06T14:02:25.736025Z"
+     "iopub.execute_input": "2022-07-11T16:03:06.111890Z",
+     "iopub.status.busy": "2022-07-11T16:03:06.111627Z",
+     "iopub.status.idle": "2022-07-11T16:03:06.117464Z",
+     "shell.execute_reply": "2022-07-11T16:03:06.116815Z"
     }
    },
    "outputs": [
@@ -1266,7 +1266,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "4ead9f04",
+   "id": "013ac4aa",
    "metadata": {},
    "source": [
     "In the example below, we modify a simple training loop to save the model every 100 epochs using the `CheckpointManager`."
@@ -1275,13 +1275,13 @@
   {
    "cell_type": "code",
    "execution_count": 28,
-   "id": "450b8545",
+   "id": "b777a3d5",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-07-06T14:02:25.740532Z",
-     "iopub.status.busy": "2022-07-06T14:02:25.740170Z",
-     "iopub.status.idle": "2022-07-06T14:02:25.784473Z",
-     "shell.execute_reply": "2022-07-06T14:02:25.783649Z"
+     "iopub.execute_input": "2022-07-11T16:03:06.120258Z",
+     "iopub.status.busy": "2022-07-11T16:03:06.119990Z",
+     "iopub.status.idle": "2022-07-11T16:03:06.159578Z",
+     "shell.execute_reply": "2022-07-11T16:03:06.158950Z"
     }
    },
    "outputs": [],
@@ -1321,13 +1321,13 @@
   {
    "cell_type": "code",
    "execution_count": 29,
-   "id": "7a28ae03",
+   "id": "a8846aa4",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-07-06T14:02:25.788254Z",
-     "iopub.status.busy": "2022-07-06T14:02:25.787915Z",
-     "iopub.status.idle": "2022-07-06T14:02:32.309726Z",
-     "shell.execute_reply": "2022-07-06T14:02:32.308722Z"
+     "iopub.execute_input": "2022-07-11T16:03:06.162821Z",
+     "iopub.status.busy": "2022-07-11T16:03:06.162521Z",
+     "iopub.status.idle": "2022-07-11T16:03:11.442960Z",
+     "shell.execute_reply": "2022-07-11T16:03:11.442354Z"
     }
    },
    "outputs": [
@@ -1429,7 +1429,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "409df95c",
+   "id": "6211925b",
    "metadata": {},
    "source": [
     "After the models have been saved, we can restore them using ```tf.train.Checkpoint.restore``` and assert that their performance corresponds to that logged during training."
@@ -1438,13 +1438,13 @@
   {
    "cell_type": "code",
    "execution_count": 30,
-   "id": "41eeed39",
+   "id": "5e3bae53",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-07-06T14:02:32.313605Z",
-     "iopub.status.busy": "2022-07-06T14:02:32.313220Z",
-     "iopub.status.idle": "2022-07-06T14:02:32.506437Z",
-     "shell.execute_reply": "2022-07-06T14:02:32.505530Z"
+     "iopub.execute_input": "2022-07-11T16:03:11.445938Z",
+     "iopub.status.busy": "2022-07-11T16:03:11.445639Z",
+     "iopub.status.idle": "2022-07-11T16:03:11.604772Z",
+     "shell.execute_reply": "2022-07-11T16:03:11.604180Z"
     }
    },
    "outputs": [
@@ -1470,7 +1470,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "752b6b6e",
+   "id": "114349d1",
    "metadata": {},
    "source": [
     "### Copying (hyper)parameter values between models\n",
@@ -1483,13 +1483,13 @@
   {
    "cell_type": "code",
    "execution_count": 31,
-   "id": "9f373afb",
+   "id": "0179421b",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-07-06T14:02:32.510310Z",
-     "iopub.status.busy": "2022-07-06T14:02:32.509930Z",
-     "iopub.status.idle": "2022-07-06T14:02:32.527909Z",
-     "shell.execute_reply": "2022-07-06T14:02:32.526972Z"
+     "iopub.execute_input": "2022-07-11T16:03:11.607460Z",
+     "iopub.status.busy": "2022-07-11T16:03:11.607162Z",
+     "iopub.status.idle": "2022-07-11T16:03:11.621980Z",
+     "shell.execute_reply": "2022-07-11T16:03:11.621375Z"
     }
    },
    "outputs": [],
@@ -1500,13 +1500,13 @@
   {
    "cell_type": "code",
    "execution_count": 32,
-   "id": "7e2943dc",
+   "id": "f12ec8a9",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-07-06T14:02:32.531515Z",
-     "iopub.status.busy": "2022-07-06T14:02:32.531154Z",
-     "iopub.status.idle": "2022-07-06T14:02:32.543434Z",
-     "shell.execute_reply": "2022-07-06T14:02:32.542503Z"
+     "iopub.execute_input": "2022-07-11T16:03:11.624823Z",
+     "iopub.status.busy": "2022-07-11T16:03:11.624536Z",
+     "iopub.status.idle": "2022-07-11T16:03:11.633697Z",
+     "shell.execute_reply": "2022-07-11T16:03:11.633140Z"
     }
    },
    "outputs": [
@@ -1540,7 +1540,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "d7354a09",
+   "id": "a1c5a6a8",
    "metadata": {},
    "source": [
     "Such a dictionary can be assigned back to this model (or another model with the same tree of parameters) as follows:"
@@ -1549,13 +1549,13 @@
   {
    "cell_type": "code",
    "execution_count": 33,
-   "id": "74c6ebfa",
+   "id": "e1c5c3b5",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-07-06T14:02:32.547297Z",
-     "iopub.status.busy": "2022-07-06T14:02:32.546831Z",
-     "iopub.status.idle": "2022-07-06T14:02:32.557392Z",
-     "shell.execute_reply": "2022-07-06T14:02:32.556716Z"
+     "iopub.execute_input": "2022-07-11T16:03:11.636394Z",
+     "iopub.status.busy": "2022-07-11T16:03:11.636111Z",
+     "iopub.status.idle": "2022-07-11T16:03:11.645150Z",
+     "shell.execute_reply": "2022-07-11T16:03:11.644562Z"
     }
    },
    "outputs": [],
@@ -1566,7 +1566,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "a795bc23",
+   "id": "030eb8a9",
    "metadata": {},
    "source": [
     "### TensorFlow `saved_model`\n",
@@ -1577,25 +1577,26 @@
   {
    "cell_type": "code",
    "execution_count": 34,
-   "id": "f92c3f51",
+   "id": "417a8889",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-07-06T14:02:32.561500Z",
-     "iopub.status.busy": "2022-07-06T14:02:32.561191Z",
-     "iopub.status.idle": "2022-07-06T14:02:32.565061Z",
-     "shell.execute_reply": "2022-07-06T14:02:32.564403Z"
+     "iopub.execute_input": "2022-07-11T16:03:11.647941Z",
+     "iopub.status.busy": "2022-07-11T16:03:11.647676Z",
+     "iopub.status.idle": "2022-07-11T16:03:11.651228Z",
+     "shell.execute_reply": "2022-07-11T16:03:11.650720Z"
     }
    },
    "outputs": [],
    "source": [
+    "predict_f = lambda Xnew: model.predict_f(Xnew)\n",
     "model.predict_f_compiled = tf.function(\n",
-    "    model.predict_f, input_signature=[tf.TensorSpec(shape=[None, 1], dtype=tf.float64)]\n",
+    "    predict_f, input_signature=[tf.TensorSpec(shape=[None, 1], dtype=tf.float64)]\n",
     ")"
    ]
   },
   {
    "cell_type": "markdown",
-   "id": "8755e5c0",
+   "id": "0cda6243",
    "metadata": {},
    "source": [
     "We also save the original prediction for later comparison. Here `samples_input` needs to be a tensor so that `tf.function` will compile a single graph:"
@@ -1604,13 +1605,13 @@
   {
    "cell_type": "code",
    "execution_count": 35,
-   "id": "7cf8c68b",
+   "id": "32d4f4ff",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-07-06T14:02:32.568676Z",
-     "iopub.status.busy": "2022-07-06T14:02:32.568323Z",
-     "iopub.status.idle": "2022-07-06T14:02:33.199026Z",
-     "shell.execute_reply": "2022-07-06T14:02:33.198240Z"
+     "iopub.execute_input": "2022-07-11T16:03:11.653716Z",
+     "iopub.status.busy": "2022-07-11T16:03:11.653477Z",
+     "iopub.status.idle": "2022-07-11T16:03:12.222130Z",
+     "shell.execute_reply": "2022-07-11T16:03:12.221430Z"
     }
    },
    "outputs": [],
@@ -1621,7 +1622,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "36c50846",
+   "id": "8c300f62",
    "metadata": {
     "lines_to_next_cell": 0
    },
@@ -1632,13 +1633,13 @@
   {
    "cell_type": "code",
    "execution_count": 36,
-   "id": "a5ff840c",
+   "id": "1ec2246d",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-07-06T14:02:33.203497Z",
-     "iopub.status.busy": "2022-07-06T14:02:33.203086Z",
-     "iopub.status.idle": "2022-07-06T14:02:33.765322Z",
-     "shell.execute_reply": "2022-07-06T14:02:33.764205Z"
+     "iopub.execute_input": "2022-07-11T16:03:12.225210Z",
+     "iopub.status.busy": "2022-07-11T16:03:12.224893Z",
+     "iopub.status.idle": "2022-07-11T16:03:12.716757Z",
+     "shell.execute_reply": "2022-07-11T16:03:12.716133Z"
     }
    },
    "outputs": [
@@ -1646,7 +1647,7 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "WARNING:absl:Function `predict_f` contains input name(s) Xnew with unsupported characters which will be renamed to xnew in the SavedModel.\n"
+      "WARNING:absl:Function `<lambda>` contains input name(s) Xnew with unsupported characters which will be renamed to xnew in the SavedModel.\n"
      ]
     },
     {
@@ -1689,7 +1690,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "b2fd2c15",
+   "id": "b191c4d2",
    "metadata": {},
    "source": [
     "We can load the module back as a new instance and compare the prediction results:"
@@ -1698,13 +1699,13 @@
   {
    "cell_type": "code",
    "execution_count": 37,
-   "id": "bfbeec42",
+   "id": "541dffd0",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-07-06T14:02:33.769008Z",
-     "iopub.status.busy": "2022-07-06T14:02:33.768665Z",
-     "iopub.status.idle": "2022-07-06T14:02:33.988800Z",
-     "shell.execute_reply": "2022-07-06T14:02:33.987977Z"
+     "iopub.execute_input": "2022-07-11T16:03:12.719801Z",
+     "iopub.status.busy": "2022-07-11T16:03:12.719507Z",
+     "iopub.status.idle": "2022-07-11T16:03:12.920592Z",
+     "shell.execute_reply": "2022-07-11T16:03:12.919966Z"
     }
    },
    "outputs": [],
@@ -1717,7 +1718,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "a417f6e3",
+   "id": "7916446e",
    "metadata": {},
    "source": [
     "## User config update\n",
@@ -1728,13 +1729,13 @@
   {
    "cell_type": "code",
    "execution_count": 38,
-   "id": "7f5fe34a",
+   "id": "048542dd",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-07-06T14:02:33.993252Z",
-     "iopub.status.busy": "2022-07-06T14:02:33.992920Z",
-     "iopub.status.idle": "2022-07-06T14:02:33.998799Z",
-     "shell.execute_reply": "2022-07-06T14:02:33.998095Z"
+     "iopub.execute_input": "2022-07-11T16:03:12.923691Z",
+     "iopub.status.busy": "2022-07-11T16:03:12.923400Z",
+     "iopub.status.idle": "2022-07-11T16:03:12.927960Z",
+     "shell.execute_reply": "2022-07-11T16:03:12.927440Z"
     }
    },
    "outputs": [
@@ -1768,13 +1769,13 @@
   {
    "cell_type": "code",
    "execution_count": 39,
-   "id": "8e6d714f",
+   "id": "ad2b8daf",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-07-06T14:02:34.001759Z",
-     "iopub.status.busy": "2022-07-06T14:02:34.001486Z",
-     "iopub.status.idle": "2022-07-06T14:02:34.017360Z",
-     "shell.execute_reply": "2022-07-06T14:02:34.016481Z"
+     "iopub.execute_input": "2022-07-11T16:03:12.930285Z",
+     "iopub.status.busy": "2022-07-11T16:03:12.930050Z",
+     "iopub.status.idle": "2022-07-11T16:03:12.940327Z",
+     "shell.execute_reply": "2022-07-11T16:03:12.939781Z"
     }
    },
    "outputs": [

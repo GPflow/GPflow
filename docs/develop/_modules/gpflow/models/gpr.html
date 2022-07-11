@@ -276,6 +276,7 @@ function checkPageExistsAndRedirect(event) {
 
 <span class="kn">from</span> <span class="nn">..</span> <span class="kn">import</span> <span class="n">posteriors</span>
 <span class="kn">from</span> <span class="nn">..base</span> <span class="kn">import</span> <span class="n">InputData</span><span class="p">,</span> <span class="n">MeanAndVariance</span><span class="p">,</span> <span class="n">RegressionData</span>
+<span class="kn">from</span> <span class="nn">..experimental.check_shapes</span> <span class="kn">import</span> <span class="n">check_shapes</span><span class="p">,</span> <span class="n">inherit_check_shapes</span>
 <span class="kn">from</span> <span class="nn">..kernels</span> <span class="kn">import</span> <span class="n">Kernel</span>
 <span class="kn">from</span> <span class="nn">..logdensities</span> <span class="kn">import</span> <span class="n">multivariate_normal</span>
 <span class="kn">from</span> <span class="nn">..mean_functions</span> <span class="kn">import</span> <span class="n">MeanFunction</span>
@@ -308,6 +309,10 @@ function checkPageExistsAndRedirect(event) {
 <span class="sd">            \mathcal N(Y \,|\, 0, \mathbf{K} + \sigma_n^2 \mathbf{I})</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
+    <span class="nd">@check_shapes</span><span class="p">(</span>
+        <span class="s2">&quot;data[0]: [N, D]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;data[1]: [N, P]&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">data</span><span class="p">:</span> <span class="n">RegressionData</span><span class="p">,</span>
@@ -321,9 +326,14 @@ function checkPageExistsAndRedirect(event) {
         <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">data_input_to_tensor</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
 
     <span class="c1"># type-ignore is because of changed method signature:</span>
-<div class="viewcode-block" id="GPR_deprecated.maximum_log_likelihood_objective"><a class="viewcode-back" href="../../../api/gpflow/models/gpr/index.html#gpflow.models.gpr.GPR_deprecated.maximum_log_likelihood_objective">[docs]</a>    <span class="k">def</span> <span class="nf">maximum_log_likelihood_objective</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>  <span class="c1"># type: ignore[override]</span>
+<div class="viewcode-block" id="GPR_deprecated.maximum_log_likelihood_objective"><a class="viewcode-back" href="../../../api/gpflow/models/gpr/index.html#gpflow.models.gpr.GPR_deprecated.maximum_log_likelihood_objective">[docs]</a>    <span class="nd">@inherit_check_shapes</span>
+    <span class="k">def</span> <span class="nf">maximum_log_likelihood_objective</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>  <span class="c1"># type: ignore[override]</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">log_marginal_likelihood</span><span class="p">()</span></div>
 
+    <span class="nd">@check_shapes</span><span class="p">(</span>
+        <span class="s2">&quot;K: [batch..., N, N]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return: [batch..., N, N]&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
     <span class="k">def</span> <span class="nf">_add_noise_cov</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">K</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns K + σ² I, where σ² is the likelihood noise variance (scalar),</span>
@@ -331,7 +341,10 @@ function checkPageExistsAndRedirect(event) {
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">add_noise_cov</span><span class="p">(</span><span class="n">K</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">likelihood</span><span class="o">.</span><span class="n">variance</span><span class="p">)</span>
 
-<div class="viewcode-block" id="GPR_deprecated.log_marginal_likelihood"><a class="viewcode-back" href="../../../api/gpflow/models/gpr/index.html#gpflow.models.gpr.GPR_deprecated.log_marginal_likelihood">[docs]</a>    <span class="k">def</span> <span class="nf">log_marginal_likelihood</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<div class="viewcode-block" id="GPR_deprecated.log_marginal_likelihood"><a class="viewcode-back" href="../../../api/gpflow/models/gpr/index.html#gpflow.models.gpr.GPR_deprecated.log_marginal_likelihood">[docs]</a>    <span class="nd">@check_shapes</span><span class="p">(</span>
+        <span class="s2">&quot;return: []&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">def</span> <span class="nf">log_marginal_likelihood</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
         <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Computes the log marginal likelihood.</span>
 
@@ -349,7 +362,8 @@ function checkPageExistsAndRedirect(event) {
         <span class="n">log_prob</span> <span class="o">=</span> <span class="n">multivariate_normal</span><span class="p">(</span><span class="n">Y</span><span class="p">,</span> <span class="n">m</span><span class="p">,</span> <span class="n">L</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">tf</span><span class="o">.</span><span class="n">reduce_sum</span><span class="p">(</span><span class="n">log_prob</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="GPR_deprecated.predict_f"><a class="viewcode-back" href="../../../api/gpflow/models/gpr/index.html#gpflow.models.gpr.GPR_deprecated.predict_f">[docs]</a>    <span class="k">def</span> <span class="nf">predict_f</span><span class="p">(</span>
+<div class="viewcode-block" id="GPR_deprecated.predict_f"><a class="viewcode-back" href="../../../api/gpflow/models/gpr/index.html#gpflow.models.gpr.GPR_deprecated.predict_f">[docs]</a>    <span class="nd">@inherit_check_shapes</span>
+    <span class="k">def</span> <span class="nf">predict_f</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">Xnew</span><span class="p">:</span> <span class="n">InputData</span><span class="p">,</span> <span class="n">full_cov</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">full_output_cov</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MeanAndVariance</span><span class="p">:</span>
         <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
@@ -416,7 +430,8 @@ function checkPageExistsAndRedirect(event) {
             <span class="n">precompute_cache</span><span class="o">=</span><span class="n">precompute_cache</span><span class="p">,</span>
         <span class="p">)</span></div>
 
-<div class="viewcode-block" id="GPR_with_posterior.predict_f"><a class="viewcode-back" href="../../../api/gpflow/models/gpr/index.html#gpflow.models.gpr.GPR_with_posterior.predict_f">[docs]</a>    <span class="k">def</span> <span class="nf">predict_f</span><span class="p">(</span>
+<div class="viewcode-block" id="GPR_with_posterior.predict_f"><a class="viewcode-back" href="../../../api/gpflow/models/gpr/index.html#gpflow.models.gpr.GPR_with_posterior.predict_f">[docs]</a>    <span class="nd">@inherit_check_shapes</span>
+    <span class="k">def</span> <span class="nf">predict_f</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">Xnew</span><span class="p">:</span> <span class="n">InputData</span><span class="p">,</span> <span class="n">full_cov</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">full_output_cov</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MeanAndVariance</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>

@@ -278,6 +278,7 @@ function checkPageExistsAndRedirect(event) {
 <span class="kn">from</span> <span class="nn">..base</span> <span class="kn">import</span> <span class="n">InputData</span><span class="p">,</span> <span class="n">MeanAndVariance</span><span class="p">,</span> <span class="n">RegressionData</span>
 <span class="kn">from</span> <span class="nn">..config</span> <span class="kn">import</span> <span class="n">default_float</span><span class="p">,</span> <span class="n">default_jitter</span>
 <span class="kn">from</span> <span class="nn">..covariances.dispatch</span> <span class="kn">import</span> <span class="n">Kuf</span><span class="p">,</span> <span class="n">Kuu</span>
+<span class="kn">from</span> <span class="nn">..experimental.check_shapes</span> <span class="kn">import</span> <span class="n">check_shapes</span><span class="p">,</span> <span class="n">inherit_check_shapes</span>
 <span class="kn">from</span> <span class="nn">..inducing_variables</span> <span class="kn">import</span> <span class="n">InducingPoints</span>
 <span class="kn">from</span> <span class="nn">..kernels</span> <span class="kn">import</span> <span class="n">Kernel</span>
 <span class="kn">from</span> <span class="nn">..mean_functions</span> <span class="kn">import</span> <span class="n">MeanFunction</span>
@@ -293,6 +294,10 @@ function checkPageExistsAndRedirect(event) {
 <span class="sd">    and upper_bound() methods.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
+    <span class="nd">@check_shapes</span><span class="p">(</span>
+        <span class="s2">&quot;data[0]: [N, D]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;data[1]: [N, P]&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">data</span><span class="p">:</span> <span class="n">RegressionData</span><span class="p">,</span>
@@ -324,7 +329,10 @@ function checkPageExistsAndRedirect(event) {
 
         <span class="bp">self</span><span class="o">.</span><span class="n">inducing_variable</span><span class="p">:</span> <span class="n">InducingPoints</span> <span class="o">=</span> <span class="n">inducingpoint_wrapper</span><span class="p">(</span><span class="n">inducing_variable</span><span class="p">)</span>
 
-<div class="viewcode-block" id="SGPRBase_deprecated.upper_bound"><a class="viewcode-back" href="../../../api/gpflow/models/sgpr/index.html#gpflow.models.SGPRBase_deprecated.upper_bound">[docs]</a>    <span class="k">def</span> <span class="nf">upper_bound</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<div class="viewcode-block" id="SGPRBase_deprecated.upper_bound"><a class="viewcode-back" href="../../../api/gpflow/models/sgpr/index.html#gpflow.models.SGPRBase_deprecated.upper_bound">[docs]</a>    <span class="nd">@check_shapes</span><span class="p">(</span>
+        <span class="s2">&quot;return: []&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">def</span> <span class="nf">upper_bound</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Upper bound for the sparse GP regression marginal likelihood.  Note that</span>
 <span class="sd">        the same inducing points are used for calculating the upper bound, as are</span>
@@ -387,16 +395,25 @@ function checkPageExistsAndRedirect(event) {
     <span class="n">CommonTensors</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s2">&quot;CommonTensors&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="s2">&quot;B&quot;</span><span class="p">,</span> <span class="s2">&quot;LB&quot;</span><span class="p">,</span> <span class="s2">&quot;AAT&quot;</span><span class="p">,</span> <span class="s2">&quot;L&quot;</span><span class="p">])</span>
 
     <span class="c1"># type-ignore is because of changed method signature:</span>
-<div class="viewcode-block" id="SGPR_deprecated.maximum_log_likelihood_objective"><a class="viewcode-back" href="../../../api/gpflow/models/sgpr/index.html#gpflow.models.SGPR_deprecated.maximum_log_likelihood_objective">[docs]</a>    <span class="k">def</span> <span class="nf">maximum_log_likelihood_objective</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>  <span class="c1"># type: ignore[override]</span>
+<div class="viewcode-block" id="SGPR_deprecated.maximum_log_likelihood_objective"><a class="viewcode-back" href="../../../api/gpflow/models/sgpr/index.html#gpflow.models.SGPR_deprecated.maximum_log_likelihood_objective">[docs]</a>    <span class="nd">@inherit_check_shapes</span>
+    <span class="k">def</span> <span class="nf">maximum_log_likelihood_objective</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>  <span class="c1"># type: ignore[override]</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">elbo</span><span class="p">()</span></div>
 
+    <span class="nd">@check_shapes</span><span class="p">(</span>
+        <span class="s2">&quot;return.A: [M, N]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return.B: [M, M]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return.LB: [M, M]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return.AAT: [M, M]&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
     <span class="k">def</span> <span class="nf">_common_calculation</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;SGPR.CommonTensors&quot;</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Matrices used in log-det calculation</span>
 
-<span class="sd">        :return: A , B, LB, AAT with :math:`LLᵀ = Kᵤᵤ , A = L⁻¹K_{uf}/σ, AAT = AAᵀ,</span>
-<span class="sd">            B = AAT+I, LBLBᵀ = B`</span>
-<span class="sd">            A is M x N, B is M x M, LB is M x M, AAT is M x M</span>
+<span class="sd">        :return:</span>
+<span class="sd">            * :math:`A = L⁻¹K_{uf}/σ`, where :math:`LLᵀ = Kᵤᵤ`,</span>
+<span class="sd">            * :math:`B = AAT+I`,</span>
+<span class="sd">            * :math:`LB` where :math`LBLBᵀ = B`,</span>
+<span class="sd">            * :math:`AAT = AAᵀ`,</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">x</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span>
         <span class="n">iv</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">inducing_variable</span>
@@ -415,7 +432,10 @@ function checkPageExistsAndRedirect(event) {
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">CommonTensors</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">B</span><span class="p">,</span> <span class="n">LB</span><span class="p">,</span> <span class="n">AAT</span><span class="p">,</span> <span class="n">L</span><span class="p">)</span>
 
-<div class="viewcode-block" id="SGPR_deprecated.logdet_term"><a class="viewcode-back" href="../../../api/gpflow/models/sgpr/index.html#gpflow.models.SGPR_deprecated.logdet_term">[docs]</a>    <span class="k">def</span> <span class="nf">logdet_term</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">common</span><span class="p">:</span> <span class="s2">&quot;SGPR.CommonTensors&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<div class="viewcode-block" id="SGPR_deprecated.logdet_term"><a class="viewcode-back" href="../../../api/gpflow/models/sgpr/index.html#gpflow.models.SGPR_deprecated.logdet_term">[docs]</a>    <span class="nd">@check_shapes</span><span class="p">(</span>
+        <span class="s2">&quot;return: []&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">def</span> <span class="nf">logdet_term</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">common</span><span class="p">:</span> <span class="s2">&quot;SGPR.CommonTensors&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
         <span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Bound from Jensen&#39;s Inequality:</span>
 
@@ -450,7 +470,10 @@ function checkPageExistsAndRedirect(event) {
         <span class="n">logdet_k</span> <span class="o">=</span> <span class="o">-</span><span class="n">outdim</span> <span class="o">*</span> <span class="p">(</span><span class="n">half_logdet_b</span> <span class="o">+</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">log_sigma_sq</span> <span class="o">+</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">trace</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">logdet_k</span></div>
 
-<div class="viewcode-block" id="SGPR_deprecated.quad_term"><a class="viewcode-back" href="../../../api/gpflow/models/sgpr/index.html#gpflow.models.SGPR_deprecated.quad_term">[docs]</a>    <span class="k">def</span> <span class="nf">quad_term</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">common</span><span class="p">:</span> <span class="s2">&quot;SGPR.CommonTensors&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<div class="viewcode-block" id="SGPR_deprecated.quad_term"><a class="viewcode-back" href="../../../api/gpflow/models/sgpr/index.html#gpflow.models.SGPR_deprecated.quad_term">[docs]</a>    <span class="nd">@check_shapes</span><span class="p">(</span>
+        <span class="s2">&quot;return: []&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">def</span> <span class="nf">quad_term</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">common</span><span class="p">:</span> <span class="s2">&quot;SGPR.CommonTensors&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        :param common: A named tuple containing matrices that will be used</span>
 <span class="sd">        :return: Lower bound on -.5 yᵀ(K + σ²I)⁻¹y</span>
@@ -473,7 +496,10 @@ function checkPageExistsAndRedirect(event) {
         <span class="n">quad</span> <span class="o">=</span> <span class="o">-</span><span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">err_inner_prod</span> <span class="o">-</span> <span class="n">c_inner_prod</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">quad</span></div>
 
-<div class="viewcode-block" id="SGPR_deprecated.elbo"><a class="viewcode-back" href="../../../api/gpflow/models/sgpr/index.html#gpflow.models.SGPR_deprecated.elbo">[docs]</a>    <span class="k">def</span> <span class="nf">elbo</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<div class="viewcode-block" id="SGPR_deprecated.elbo"><a class="viewcode-back" href="../../../api/gpflow/models/sgpr/index.html#gpflow.models.SGPR_deprecated.elbo">[docs]</a>    <span class="nd">@check_shapes</span><span class="p">(</span>
+        <span class="s2">&quot;return: []&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">def</span> <span class="nf">elbo</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Construct a tensorflow function to compute the bound on the marginal</span>
 <span class="sd">        likelihood. For a derivation of the terms in here, see the associated</span>
@@ -488,7 +514,8 @@ function checkPageExistsAndRedirect(event) {
         <span class="n">quad</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">quad_term</span><span class="p">(</span><span class="n">common</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">const</span> <span class="o">+</span> <span class="n">logdet</span> <span class="o">+</span> <span class="n">quad</span></div>
 
-<div class="viewcode-block" id="SGPR_deprecated.predict_f"><a class="viewcode-back" href="../../../api/gpflow/models/sgpr/index.html#gpflow.models.SGPR_deprecated.predict_f">[docs]</a>    <span class="k">def</span> <span class="nf">predict_f</span><span class="p">(</span>
+<div class="viewcode-block" id="SGPR_deprecated.predict_f"><a class="viewcode-back" href="../../../api/gpflow/models/sgpr/index.html#gpflow.models.SGPR_deprecated.predict_f">[docs]</a>    <span class="nd">@inherit_check_shapes</span>
+    <span class="k">def</span> <span class="nf">predict_f</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">Xnew</span><span class="p">:</span> <span class="n">InputData</span><span class="p">,</span> <span class="n">full_cov</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">full_output_cov</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MeanAndVariance</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -535,11 +562,17 @@ function checkPageExistsAndRedirect(event) {
 
         <span class="k">return</span> <span class="n">mean</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">mean_function</span><span class="p">(</span><span class="n">Xnew</span><span class="p">),</span> <span class="n">var</span></div>
 
-<div class="viewcode-block" id="SGPR_deprecated.compute_qu"><a class="viewcode-back" href="../../../api/gpflow/models/sgpr/index.html#gpflow.models.SGPR_deprecated.compute_qu">[docs]</a>    <span class="k">def</span> <span class="nf">compute_qu</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
+<div class="viewcode-block" id="SGPR_deprecated.compute_qu"><a class="viewcode-back" href="../../../api/gpflow/models/sgpr/index.html#gpflow.models.SGPR_deprecated.compute_qu">[docs]</a>    <span class="nd">@check_shapes</span><span class="p">(</span>
+        <span class="s2">&quot;return[0]: [M, P]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return[1]: [M, M]&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">def</span> <span class="nf">compute_qu</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Computes the mean and variance of q(u) = N(mu, cov), the variational distribution on</span>
-<span class="sd">        inducing outputs. SVGP with this q(u) should predict identically to</span>
-<span class="sd">        SGPR.</span>
+<span class="sd">        inducing outputs.</span>
+
+<span class="sd">        SVGP with this q(u) should predict identically to SGPR.</span>
+
 <span class="sd">        :return: mu, cov</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">X_data</span><span class="p">,</span> <span class="n">Y_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span>
@@ -576,6 +609,15 @@ function checkPageExistsAndRedirect(event) {
 <span class="sd">    obviously gradients are automatic in GPflow.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
+    <span class="nd">@check_shapes</span><span class="p">(</span>
+        <span class="s2">&quot;return[0]: [N, R]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return[1]: [N]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return[2]: [M, M]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return[3]: [M, M]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return[4]: [M, R]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return[5]: [N, R]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return[6]: [M, R]&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
     <span class="k">def</span> <span class="nf">common_terms</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
@@ -597,17 +639,21 @@ function checkPageExistsAndRedirect(event) {
         <span class="p">)</span>
         <span class="n">L</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">cholesky</span><span class="p">(</span><span class="n">B</span><span class="p">)</span>
         <span class="n">beta</span> <span class="o">=</span> <span class="n">err</span> <span class="o">/</span> <span class="n">tf</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">nu</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>  <span class="c1"># size [N, R]</span>
-        <span class="n">alpha</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">V</span><span class="p">,</span> <span class="n">beta</span><span class="p">)</span>  <span class="c1"># size [N, R]</span>
+        <span class="n">alpha</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">V</span><span class="p">,</span> <span class="n">beta</span><span class="p">)</span>  <span class="c1"># size [M, R]</span>
 
-        <span class="n">gamma</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">triangular_solve</span><span class="p">(</span><span class="n">L</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">lower</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># size [N, R]</span>
+        <span class="n">gamma</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">triangular_solve</span><span class="p">(</span><span class="n">L</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">lower</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># size [M, R]</span>
 
         <span class="k">return</span> <span class="n">err</span><span class="p">,</span> <span class="n">nu</span><span class="p">,</span> <span class="n">Luu</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">beta</span><span class="p">,</span> <span class="n">gamma</span>
 
     <span class="c1"># type-ignore is because of changed method signature:</span>
-<div class="viewcode-block" id="GPRFITC.maximum_log_likelihood_objective"><a class="viewcode-back" href="../../../api/gpflow/models/index.html#gpflow.models.GPRFITC.maximum_log_likelihood_objective">[docs]</a>    <span class="k">def</span> <span class="nf">maximum_log_likelihood_objective</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>  <span class="c1"># type: ignore[override]</span>
+<div class="viewcode-block" id="GPRFITC.maximum_log_likelihood_objective"><a class="viewcode-back" href="../../../api/gpflow/models/index.html#gpflow.models.GPRFITC.maximum_log_likelihood_objective">[docs]</a>    <span class="nd">@inherit_check_shapes</span>
+    <span class="k">def</span> <span class="nf">maximum_log_likelihood_objective</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>  <span class="c1"># type: ignore[override]</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">fitc_log_marginal_likelihood</span><span class="p">()</span></div>
 
-<div class="viewcode-block" id="GPRFITC.fitc_log_marginal_likelihood"><a class="viewcode-back" href="../../../api/gpflow/models/index.html#gpflow.models.GPRFITC.fitc_log_marginal_likelihood">[docs]</a>    <span class="k">def</span> <span class="nf">fitc_log_marginal_likelihood</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<div class="viewcode-block" id="GPRFITC.fitc_log_marginal_likelihood"><a class="viewcode-back" href="../../../api/gpflow/models/index.html#gpflow.models.GPRFITC.fitc_log_marginal_likelihood">[docs]</a>    <span class="nd">@check_shapes</span><span class="p">(</span>
+        <span class="s2">&quot;return: []&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">def</span> <span class="nf">fitc_log_marginal_likelihood</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Construct a tensorflow function to compute the bound on the marginal</span>
 <span class="sd">        likelihood.</span>
@@ -660,7 +706,8 @@ function checkPageExistsAndRedirect(event) {
 
         <span class="k">return</span> <span class="n">mahalanobisTerm</span> <span class="o">+</span> <span class="n">logNormalizingTerm</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_latent_gps</span></div>
 
-<div class="viewcode-block" id="GPRFITC.predict_f"><a class="viewcode-back" href="../../../api/gpflow/models/index.html#gpflow.models.GPRFITC.predict_f">[docs]</a>    <span class="k">def</span> <span class="nf">predict_f</span><span class="p">(</span>
+<div class="viewcode-block" id="GPRFITC.predict_f"><a class="viewcode-back" href="../../../api/gpflow/models/index.html#gpflow.models.GPRFITC.predict_f">[docs]</a>    <span class="nd">@inherit_check_shapes</span>
+    <span class="k">def</span> <span class="nf">predict_f</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">Xnew</span><span class="p">:</span> <span class="n">InputData</span><span class="p">,</span> <span class="n">full_cov</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">full_output_cov</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MeanAndVariance</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -735,7 +782,8 @@ function checkPageExistsAndRedirect(event) {
             <span class="n">precompute_cache</span><span class="o">=</span><span class="n">precompute_cache</span><span class="p">,</span>
         <span class="p">)</span></div>
 
-<div class="viewcode-block" id="SGPR_with_posterior.predict_f"><a class="viewcode-back" href="../../../api/gpflow/models/sgpr/index.html#gpflow.models.SGPR_with_posterior.predict_f">[docs]</a>    <span class="k">def</span> <span class="nf">predict_f</span><span class="p">(</span>
+<div class="viewcode-block" id="SGPR_with_posterior.predict_f"><a class="viewcode-back" href="../../../api/gpflow/models/sgpr/index.html#gpflow.models.SGPR_with_posterior.predict_f">[docs]</a>    <span class="nd">@inherit_check_shapes</span>
+    <span class="k">def</span> <span class="nf">predict_f</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">Xnew</span><span class="p">:</span> <span class="n">InputData</span><span class="p">,</span> <span class="n">full_cov</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">full_output_cov</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MeanAndVariance</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>

@@ -277,6 +277,7 @@ function checkPageExistsAndRedirect(event) {
 <span class="kn">from</span> <span class="nn">..base</span> <span class="kn">import</span> <span class="n">InputData</span><span class="p">,</span> <span class="n">MeanAndVariance</span><span class="p">,</span> <span class="n">OutputData</span><span class="p">,</span> <span class="n">Parameter</span><span class="p">,</span> <span class="n">RegressionData</span><span class="p">,</span> <span class="n">TensorType</span>
 <span class="kn">from</span> <span class="nn">..config</span> <span class="kn">import</span> <span class="n">default_float</span><span class="p">,</span> <span class="n">default_jitter</span>
 <span class="kn">from</span> <span class="nn">..expectations</span> <span class="kn">import</span> <span class="n">expectation</span>
+<span class="kn">from</span> <span class="nn">..experimental.check_shapes</span> <span class="kn">import</span> <span class="n">check_shapes</span><span class="p">,</span> <span class="n">inherit_check_shapes</span>
 <span class="kn">from</span> <span class="nn">..inducing_variables</span> <span class="kn">import</span> <span class="n">InducingPoints</span>
 <span class="kn">from</span> <span class="nn">..kernels</span> <span class="kn">import</span> <span class="n">Kernel</span>
 <span class="kn">from</span> <span class="nn">..mean_functions</span> <span class="kn">import</span> <span class="n">MeanFunction</span><span class="p">,</span> <span class="n">Zero</span>
@@ -294,6 +295,10 @@ function checkPageExistsAndRedirect(event) {
 <span class="sd">    Standard GPLVM where the likelihood can be optimised with respect to the latent X.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
+    <span class="nd">@check_shapes</span><span class="p">(</span>
+        <span class="s2">&quot;data: [N, P]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;X_data_mean: [N, Q]&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">data</span><span class="p">:</span> <span class="n">OutputData</span><span class="p">,</span>
@@ -305,9 +310,9 @@ function checkPageExistsAndRedirect(event) {
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Initialise GPLVM object. This method only works with a Gaussian likelihood.</span>
 
-<span class="sd">        :param data: y data matrix, size N (number of points) x D (dimensions)</span>
+<span class="sd">        :param data: y data matrix.</span>
 <span class="sd">        :param latent_dim: the number of latent dimensions (Q)</span>
-<span class="sd">        :param X_data_mean: latent positions ([N, Q]), for the initialisation of the latent space.</span>
+<span class="sd">        :param X_data_mean: latent positions, for the initialisation of the latent space.</span>
 <span class="sd">        :param kernel: kernel specification, by default Squared Exponential</span>
 <span class="sd">        :param mean_function: mean function, by default None.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -333,6 +338,13 @@ function checkPageExistsAndRedirect(event) {
 
 
 <div class="viewcode-block" id="BayesianGPLVM"><a class="viewcode-back" href="../../../api/gpflow/models/index.html#gpflow.models.BayesianGPLVM">[docs]</a><span class="k">class</span> <span class="nc">BayesianGPLVM</span><span class="p">(</span><span class="n">GPModel</span><span class="p">,</span> <span class="n">InternalDataTrainingLossMixin</span><span class="p">):</span>
+    <span class="nd">@check_shapes</span><span class="p">(</span>
+        <span class="s2">&quot;data: [N, P]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;X_data_mean: [N, Q]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;X_data_var: [N, Q]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;X_prior_mean: [N, Q]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;X_prior_var: [N, Q]&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">data</span><span class="p">:</span> <span class="n">OutputData</span><span class="p">,</span>
@@ -347,7 +359,7 @@ function checkPageExistsAndRedirect(event) {
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Initialise Bayesian GPLVM object. This method only works with a Gaussian likelihood.</span>
 
-<span class="sd">        :param data: data matrix, size N (number of points) x D (dimensions)</span>
+<span class="sd">        :param data: data matrix, size N (number of points) x P (dimensions)</span>
 <span class="sd">        :param X_data_mean: initial latent positions, size N (number of points) x</span>
 <span class="sd">            Q (latent dimensions).</span>
 <span class="sd">        :param X_data_var: variance of latent positions ([N, Q]), for the initialisation of the</span>
@@ -363,17 +375,12 @@ function checkPageExistsAndRedirect(event) {
         <span class="n">num_data</span><span class="p">,</span> <span class="n">num_latent_gps</span> <span class="o">=</span> <span class="n">X_data_mean</span><span class="o">.</span><span class="n">shape</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">kernel</span><span class="p">,</span> <span class="n">likelihoods</span><span class="o">.</span><span class="n">Gaussian</span><span class="p">(),</span> <span class="n">num_latent_gps</span><span class="o">=</span><span class="n">num_latent_gps</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">data_input_to_tensor</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
-        <span class="k">assert</span> <span class="n">X_data_var</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">2</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">X_data_mean</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="n">X_data_mean</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">X_data_var</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="n">X_data_var</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="n">positive</span><span class="p">())</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">num_data</span> <span class="o">=</span> <span class="n">num_data</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">output_dim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-
-        <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">X_data_mean</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="n">X_data_var</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
-        <span class="k">assert</span> <span class="n">X_data_mean</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="s2">&quot;X mean and Y must be same size.&quot;</span>
-        <span class="k">assert</span> <span class="n">X_data_var</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="s2">&quot;X var and Y must be same size.&quot;</span>
 
         <span class="k">if</span> <span class="p">(</span><span class="n">inducing_variable</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="o">==</span> <span class="p">(</span><span class="n">num_inducing_variables</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
@@ -400,16 +407,15 @@ function checkPageExistsAndRedirect(event) {
         <span class="bp">self</span><span class="o">.</span><span class="n">X_prior_mean</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">convert_to_tensor</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">atleast_1d</span><span class="p">(</span><span class="n">X_prior_mean</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">default_float</span><span class="p">())</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">X_prior_var</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">convert_to_tensor</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">atleast_1d</span><span class="p">(</span><span class="n">X_prior_var</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">default_float</span><span class="p">())</span>
 
-        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">X_prior_mean</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_data</span>
-        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">X_prior_mean</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_latent_gps</span>
-        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">X_prior_var</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_data</span>
-        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">X_prior_var</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_latent_gps</span>
-
     <span class="c1"># type-ignore is because of changed method signature:</span>
-<div class="viewcode-block" id="BayesianGPLVM.maximum_log_likelihood_objective"><a class="viewcode-back" href="../../../api/gpflow/models/index.html#gpflow.models.BayesianGPLVM.maximum_log_likelihood_objective">[docs]</a>    <span class="k">def</span> <span class="nf">maximum_log_likelihood_objective</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>  <span class="c1"># type: ignore[override]</span>
+<div class="viewcode-block" id="BayesianGPLVM.maximum_log_likelihood_objective"><a class="viewcode-back" href="../../../api/gpflow/models/index.html#gpflow.models.BayesianGPLVM.maximum_log_likelihood_objective">[docs]</a>    <span class="nd">@inherit_check_shapes</span>
+    <span class="k">def</span> <span class="nf">maximum_log_likelihood_objective</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>  <span class="c1"># type: ignore[override]</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">elbo</span><span class="p">()</span></div>
 
-<div class="viewcode-block" id="BayesianGPLVM.elbo"><a class="viewcode-back" href="../../../api/gpflow/models/index.html#gpflow.models.BayesianGPLVM.elbo">[docs]</a>    <span class="k">def</span> <span class="nf">elbo</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<div class="viewcode-block" id="BayesianGPLVM.elbo"><a class="viewcode-back" href="../../../api/gpflow/models/index.html#gpflow.models.BayesianGPLVM.elbo">[docs]</a>    <span class="nd">@check_shapes</span><span class="p">(</span>
+        <span class="s2">&quot;return: []&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">def</span> <span class="nf">elbo</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Construct a tensorflow function to compute the bound on the marginal</span>
 <span class="sd">        likelihood.</span>
@@ -465,7 +471,8 @@ function checkPageExistsAndRedirect(event) {
         <span class="n">bound</span> <span class="o">-=</span> <span class="n">KL</span>
         <span class="k">return</span> <span class="n">bound</span></div>
 
-<div class="viewcode-block" id="BayesianGPLVM.predict_f"><a class="viewcode-back" href="../../../api/gpflow/models/index.html#gpflow.models.BayesianGPLVM.predict_f">[docs]</a>    <span class="k">def</span> <span class="nf">predict_f</span><span class="p">(</span>
+<div class="viewcode-block" id="BayesianGPLVM.predict_f"><a class="viewcode-back" href="../../../api/gpflow/models/index.html#gpflow.models.BayesianGPLVM.predict_f">[docs]</a>    <span class="nd">@inherit_check_shapes</span>
+    <span class="k">def</span> <span class="nf">predict_f</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">Xnew</span><span class="p">:</span> <span class="n">InputData</span><span class="p">,</span> <span class="n">full_cov</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">full_output_cov</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MeanAndVariance</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -510,8 +517,8 @@ function checkPageExistsAndRedirect(event) {
                 <span class="o">+</span> <span class="n">tf</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">tmp2</span><span class="p">,</span> <span class="n">tmp2</span><span class="p">,</span> <span class="n">transpose_a</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
                 <span class="o">-</span> <span class="n">tf</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">tmp1</span><span class="p">,</span> <span class="n">tmp1</span><span class="p">,</span> <span class="n">transpose_a</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="p">)</span>
-            <span class="n">shape</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">Y_data</span><span class="p">)[</span><span class="mi">1</span><span class="p">]])</span>
-            <span class="n">var</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">var</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">shape</span><span class="p">)</span>
+            <span class="n">shape</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">tf</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">Y_data</span><span class="p">)[</span><span class="mi">1</span><span class="p">],</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+            <span class="n">var</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">var</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">shape</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">var</span> <span class="o">=</span> <span class="p">(</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">kernel</span><span class="p">(</span><span class="n">Xnew</span><span class="p">,</span> <span class="n">full_cov</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
@@ -522,7 +529,8 @@ function checkPageExistsAndRedirect(event) {
             <span class="n">var</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">var</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">shape</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">mean</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">mean_function</span><span class="p">(</span><span class="n">Xnew</span><span class="p">),</span> <span class="n">var</span></div>
 
-<div class="viewcode-block" id="BayesianGPLVM.predict_log_density"><a class="viewcode-back" href="../../../api/gpflow/models/index.html#gpflow.models.BayesianGPLVM.predict_log_density">[docs]</a>    <span class="k">def</span> <span class="nf">predict_log_density</span><span class="p">(</span>
+<div class="viewcode-block" id="BayesianGPLVM.predict_log_density"><a class="viewcode-back" href="../../../api/gpflow/models/index.html#gpflow.models.BayesianGPLVM.predict_log_density">[docs]</a>    <span class="nd">@inherit_check_shapes</span>
+    <span class="k">def</span> <span class="nf">predict_log_density</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">RegressionData</span><span class="p">,</span> <span class="n">full_cov</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">full_output_cov</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span></div></div>

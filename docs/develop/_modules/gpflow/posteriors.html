@@ -682,6 +682,9 @@ function checkPageExistsAndRedirect(event) {
 
         <span class="k">return</span> <span class="n">mean</span><span class="p">,</span> <span class="n">cov</span>
 
+    <span class="nd">@check_shapes</span><span class="p">(</span>
+        <span class="s2">&quot;return[0].value: [M, M]&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
     <span class="k">def</span> <span class="nf">_precompute</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">PrecomputedValue</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
         <span class="n">X_data</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">X_data</span><span class="p">)</span>
         <span class="n">Kmm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">kernel</span><span class="p">(</span><span class="n">X_data</span><span class="p">)</span>
@@ -693,12 +696,6 @@ function checkPageExistsAndRedirect(event) {
         <span class="n">M</span> <span class="o">=</span> <span class="n">X_data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
         <span class="n">M_dynamic</span> <span class="o">=</span> <span class="n">M</span> <span class="ow">is</span> <span class="kc">None</span>
 
-        <span class="n">tf</span><span class="o">.</span><span class="n">debugging</span><span class="o">.</span><span class="n">assert_shapes</span><span class="p">(</span>
-            <span class="p">[</span>
-                <span class="p">(</span><span class="n">Kmm_plus_s_inv</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;M&quot;</span><span class="p">,</span> <span class="s2">&quot;M&quot;</span><span class="p">]),</span>
-                <span class="p">(</span><span class="n">Kmm</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;M&quot;</span><span class="p">,</span> <span class="s2">&quot;M&quot;</span><span class="p">]),</span>
-            <span class="p">]</span>
-        <span class="p">)</span>
         <span class="k">return</span> <span class="p">(</span><span class="n">PrecomputedValue</span><span class="p">(</span><span class="n">Kmm_plus_s_inv</span><span class="p">,</span> <span class="p">(</span><span class="n">M_dynamic</span><span class="p">,</span> <span class="n">M_dynamic</span><span class="p">)),)</span>
 
     <span class="nd">@inherit_check_shapes</span>
@@ -758,6 +755,10 @@ function checkPageExistsAndRedirect(event) {
         <span class="k">if</span> <span class="n">precompute_cache</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">update_cache</span><span class="p">(</span><span class="n">precompute_cache</span><span class="p">)</span>
 
+    <span class="nd">@check_shapes</span><span class="p">(</span>
+        <span class="s2">&quot;return[0].value: [M, L]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return[1].value: [M, M]&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
     <span class="k">def</span> <span class="nf">_precompute</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">PrecomputedValue</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
         <span class="c1"># taken directly from the deprecated SGPR implementation</span>
         <span class="n">num_inducing</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">inducing_variable</span><span class="o">.</span><span class="n">num_inducing</span>
@@ -918,6 +919,9 @@ function checkPageExistsAndRedirect(event) {
             <span class="n">white</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">white</span><span class="p">,</span>
         <span class="p">)</span>
 
+    <span class="nd">@check_shapes</span><span class="p">(</span>
+        <span class="s2">&quot;return[0].value: [M, M]&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
     <span class="k">def</span> <span class="nf">_precompute</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">PrecomputedValue</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
         <span class="n">X_data</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">X_data</span><span class="p">)</span>
         <span class="n">Kmm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">kernel</span><span class="p">(</span><span class="n">X_data</span><span class="p">)</span> <span class="o">+</span> <span class="n">eye</span><span class="p">(</span>
@@ -979,6 +983,10 @@ function checkPageExistsAndRedirect(event) {
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_q_dist</span> <span class="o">=</span> <span class="n">_MvNormal</span><span class="p">(</span><span class="n">q_mu</span><span class="p">,</span> <span class="n">q_sqrt</span><span class="p">)</span>
 
+    <span class="nd">@check_shapes</span><span class="p">(</span>
+        <span class="s2">&quot;return[0].value: [M_L_or_L_M_M...]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return[1].value: [L, M, M]&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
     <span class="k">def</span> <span class="nf">_precompute</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">PrecomputedValue</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
         <span class="n">Kuu</span> <span class="o">=</span> <span class="n">covariances</span><span class="o">.</span><span class="n">Kuu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">X_data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">kernel</span><span class="p">,</span> <span class="n">jitter</span><span class="o">=</span><span class="n">default_jitter</span><span class="p">())</span>  <span class="c1"># [(R), M, M]</span>
         <span class="n">q_mu</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_q_dist</span><span class="o">.</span><span class="n">q_mu</span>
@@ -1030,12 +1038,6 @@ function checkPageExistsAndRedirect(event) {
 
         <span class="n">M</span><span class="p">,</span> <span class="n">L</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">unstack</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_q_dist</span><span class="o">.</span><span class="n">q_mu</span><span class="p">),</span> <span class="n">num</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
         <span class="n">Qinv</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">broadcast_to</span><span class="p">(</span><span class="n">Qinv</span><span class="p">,</span> <span class="p">[</span><span class="n">L</span><span class="p">,</span> <span class="n">M</span><span class="p">,</span> <span class="n">M</span><span class="p">])</span>
-
-        <span class="n">tf</span><span class="o">.</span><span class="n">debugging</span><span class="o">.</span><span class="n">assert_shapes</span><span class="p">(</span>
-            <span class="p">[</span>
-                <span class="p">(</span><span class="n">Qinv</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;L&quot;</span><span class="p">,</span> <span class="s2">&quot;M&quot;</span><span class="p">,</span> <span class="s2">&quot;M&quot;</span><span class="p">]),</span>
-            <span class="p">]</span>
-        <span class="p">)</span>
 
         <span class="k">return</span> <span class="n">PrecomputedValue</span><span class="o">.</span><span class="n">wrap_alpha_Qinv</span><span class="p">(</span><span class="n">alpha</span><span class="p">,</span> <span class="n">Qinv</span><span class="p">)</span></div>
 

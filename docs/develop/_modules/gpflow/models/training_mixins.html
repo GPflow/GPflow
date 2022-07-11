@@ -291,6 +291,7 @@ function checkPageExistsAndRedirect(event) {
 <span class="kn">from</span> <span class="nn">tensorflow.python.data.ops.iterator_ops</span> <span class="kn">import</span> <span class="n">OwnedIterator</span> <span class="k">as</span> <span class="n">DatasetOwnedIterator</span>
 
 <span class="kn">from</span> <span class="nn">..base</span> <span class="kn">import</span> <span class="n">InputData</span><span class="p">,</span> <span class="n">OutputData</span><span class="p">,</span> <span class="n">RegressionData</span>
+<span class="kn">from</span> <span class="nn">..experimental.check_shapes</span> <span class="kn">import</span> <span class="n">check_shapes</span><span class="p">,</span> <span class="n">inherit_check_shapes</span>
 
 <span class="n">Data</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s2">&quot;Data&quot;</span><span class="p">,</span> <span class="n">RegressionData</span><span class="p">,</span> <span class="n">InputData</span><span class="p">,</span> <span class="n">OutputData</span><span class="p">)</span>
 
@@ -308,7 +309,10 @@ function checkPageExistsAndRedirect(event) {
 <span class="sd">    own their own data.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-<div class="viewcode-block" id="InternalDataTrainingLossMixin.training_loss"><a class="viewcode-back" href="../../../api/gpflow/models/index.html#gpflow.models.InternalDataTrainingLossMixin.training_loss">[docs]</a>    <span class="k">def</span> <span class="nf">training_loss</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<div class="viewcode-block" id="InternalDataTrainingLossMixin.training_loss"><a class="viewcode-back" href="../../../api/gpflow/models/index.html#gpflow.models.InternalDataTrainingLossMixin.training_loss">[docs]</a>    <span class="nd">@check_shapes</span><span class="p">(</span>
+        <span class="s2">&quot;return: []&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">def</span> <span class="nf">training_loss</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns the training loss for this model.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -344,7 +348,12 @@ function checkPageExistsAndRedirect(event) {
 <span class="sd">    their own data.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-<div class="viewcode-block" id="ExternalDataTrainingLossMixin.training_loss"><a class="viewcode-back" href="../../../api/gpflow/models/index.html#gpflow.models.ExternalDataTrainingLossMixin.training_loss">[docs]</a>    <span class="k">def</span> <span class="nf">training_loss</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">Data</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<div class="viewcode-block" id="ExternalDataTrainingLossMixin.training_loss"><a class="viewcode-back" href="../../../api/gpflow/models/index.html#gpflow.models.ExternalDataTrainingLossMixin.training_loss">[docs]</a>    <span class="nd">@check_shapes</span><span class="p">(</span>
+        <span class="s2">&quot;data[0]: [N, D]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;data[1]: [N, P]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return: []&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">def</span> <span class="nf">training_loss</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">Data</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns the training loss for this model.</span>
 
@@ -373,8 +382,10 @@ function checkPageExistsAndRedirect(event) {
 
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">DatasetOwnedIterator</span><span class="p">):</span>
             <span class="k">if</span> <span class="nb">compile</span><span class="p">:</span>
+                <span class="c1"># lambda because: https://github.com/GPflow/GPflow/issues/1929</span>
+                <span class="n">training_loss_lambda</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">d</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">training_loss</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
                 <span class="n">input_signature</span> <span class="o">=</span> <span class="p">[</span><span class="n">data</span><span class="o">.</span><span class="n">element_spec</span><span class="p">]</span>
-                <span class="n">training_loss</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">function</span><span class="p">(</span><span class="n">training_loss</span><span class="p">,</span> <span class="n">input_signature</span><span class="o">=</span><span class="n">input_signature</span><span class="p">)</span>
+                <span class="n">training_loss</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">function</span><span class="p">(</span><span class="n">training_loss_lambda</span><span class="p">,</span> <span class="n">input_signature</span><span class="o">=</span><span class="n">input_signature</span><span class="p">)</span>
 
             <span class="k">def</span> <span class="nf">closure</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
                 <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">DatasetOwnedIterator</span><span class="p">)</span>  <span class="c1"># Hint for mypy.</span>
