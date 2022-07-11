@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.6.0
+#       jupytext_version: 1.13.8
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -503,8 +503,9 @@ gpflow.utilities.multiple_assign(model, params)
 # In order to save the model we need to explicitly store the `tf.function`-compiled functions that we wish to export:
 
 # %%
+predict_f = lambda Xnew: model.predict_f(Xnew)
 model.predict_f_compiled = tf.function(
-    model.predict_f, input_signature=[tf.TensorSpec(shape=[None, 1], dtype=tf.float64)]
+    predict_f, input_signature=[tf.TensorSpec(shape=[None, 1], dtype=tf.float64)]
 )
 
 # %% [markdown]

@@ -20,6 +20,7 @@ from numpy.testing import assert_allclose
 
 import gpflow
 from gpflow.base import AnyNDArray
+from gpflow.experimental.check_shapes import check_shapes
 from gpflow.kernels import SquaredExponential
 from gpflow.likelihoods import Gaussian
 from tests.gpflow.kernels.reference import ref_rbf_kernel
@@ -31,6 +32,12 @@ rng = np.random.RandomState(1)
 # ------------------------------------------
 
 
+@check_shapes(
+    "y: []",
+    "K: []",
+    "noise_var: []",
+    "return: []",
+)
 def univariate_log_marginal_likelihood(
     y: AnyNDArray, K: AnyNDArray, noise_var: AnyNDArray
 ) -> AnyNDArray:
@@ -39,6 +46,13 @@ def univariate_log_marginal_likelihood(
     )
 
 
+@check_shapes(
+    "y: []",
+    "K: []",
+    "noise_var: []",
+    "return[0]: []",
+    "return[1]: []",
+)
 def univariate_posterior(
     y: AnyNDArray, K: AnyNDArray, noise_var: AnyNDArray
 ) -> Tuple[AnyNDArray, AnyNDArray]:
@@ -47,6 +61,13 @@ def univariate_posterior(
     return mean, variance
 
 
+@check_shapes(
+    "meanA: []",
+    "meanB: []",
+    "varA: []",
+    "varB: []",
+    "return: []",
+)
 def univariate_prior_KL(
     meanA: AnyNDArray, meanB: AnyNDArray, varA: AnyNDArray, varB: AnyNDArray
 ) -> AnyNDArray:
@@ -64,6 +85,13 @@ def univariate_prior_KL(
     )
 
 
+@check_shapes(
+    "meanA: [N, 1]",
+    "covA: [N, N]",
+    "meanB: [N, 1]",
+    "covB: [N, N]",
+    "return: [1, 1]",
+)
 def multivariate_prior_KL(
     meanA: AnyNDArray, covA: AnyNDArray, meanB: AnyNDArray, covB: AnyNDArray
 ) -> AnyNDArray:
@@ -132,10 +160,10 @@ def test_reference_implementation_consistency() -> None:
 
     multivariate_KL = multivariate_prior_KL(q_mean, p_mean, q_cov, p_cov)
     univariate_KL = univariate_prior_KL(
-        q_mean.reshape(-1), p_mean.reshape(-1), q_cov.reshape(-1), p_cov.reshape(-1)
+        q_mean.squeeze(), p_mean.squeeze(), q_cov.squeeze(), p_cov.squeeze()
     )
 
-    assert_allclose(univariate_KL.squeeze(), multivariate_KL.squeeze(), atol=4)
+    assert_allclose(univariate_KL, multivariate_KL.squeeze(), atol=4)
 
 
 @pytest.mark.parametrize("diag", [True, False])

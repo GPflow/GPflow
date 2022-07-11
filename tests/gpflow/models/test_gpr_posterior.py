@@ -5,10 +5,15 @@ import pytest
 
 import gpflow
 from gpflow.base import AnyNDArray
+from gpflow.experimental.check_shapes import check_shapes
 from gpflow.models.gpr import GPR_deprecated, GPR_with_posterior
 from gpflow.posteriors import PrecomputeCacheType
 
 
+@check_shapes(
+    "regression_data[0]: [N, D]",
+    "regression_data[1]: [N, P]",
+)
 def make_models(
     regression_data: gpflow.base.RegressionData,
 ) -> Tuple[GPR_deprecated, GPR_with_posterior]:
@@ -21,6 +26,11 @@ def make_models(
     return mold, mnew
 
 
+@check_shapes(
+    "return[0]: [N, D]  # X",
+    "return[1]: [batch_new..., N_new, D]  # X_new",
+    "return[2]: [N, P]  # Y",
+)
 def _get_data_for_tests() -> Tuple[AnyNDArray, AnyNDArray, AnyNDArray]:
     """Helper function to create testing data"""
     X = np.random.randn(5, 6)

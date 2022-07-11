@@ -19,6 +19,7 @@ import tensorflow as tf
 
 from ..base import InputData, MeanAndVariance, Module, RegressionData
 from ..conditionals.util import sample_mvn
+from ..experimental.check_shapes import check_shapes, inherit_check_shapes
 from ..kernels import Kernel, MultioutputKernel
 from ..likelihoods import Likelihood, SwitchedLikelihood
 from ..mean_functions import MeanFunction, Zero
@@ -28,6 +29,9 @@ from ..utilities import assert_params_false, to_default_float
 class BayesianModel(Module, metaclass=abc.ABCMeta):
     """ Bayesian model. """
 
+    @check_shapes(
+        "return: []",
+    )
     def log_prior_density(self) -> tf.Tensor:
         """
         Sum of the log prior probability densities of all (constrained) variables in this model.
@@ -37,6 +41,9 @@ class BayesianModel(Module, metaclass=abc.ABCMeta):
         else:
             return to_default_float(0.0)
 
+    @check_shapes(
+        "return: []",
+    )
     def log_posterior_density(self, *args: Any, **kwargs: Any) -> tf.Tensor:
         """
         This may be the posterior with respect to the hyperparameters (e.g. for
@@ -46,6 +53,9 @@ class BayesianModel(Module, metaclass=abc.ABCMeta):
         """
         return self.maximum_log_likelihood_objective(*args, **kwargs) + self.log_prior_density()
 
+    @check_shapes(
+        "return: []",
+    )
     def _training_loss(self, *args: Any, **kwargs: Any) -> tf.Tensor:
         """
         Training loss definition. To allow MAP (maximum a-posteriori) estimation,
@@ -54,6 +64,9 @@ class BayesianModel(Module, metaclass=abc.ABCMeta):
         return -(self.maximum_log_likelihood_objective(*args, **kwargs) + self.log_prior_density())
 
     @abc.abstractmethod
+    @check_shapes(
+        "return: []",
+    )
     def maximum_log_likelihood_objective(self, *args: Any, **kwargs: Any) -> tf.Tensor:
         """
         Objective for maximum likelihood estimation. Should be maximized. E.g.
@@ -110,6 +123,10 @@ class GPModel(BayesianModel):
         self.likelihood = likelihood
 
     @staticmethod
+    @check_shapes(
+        "data[0]: [batch..., N, D]",
+        "data[1]: [batch..., N, P]",
+    )
     def calc_num_latent_gps_from_data(
         data: RegressionData, kernel: Kernel, likelihood: Likelihood
     ) -> int:
@@ -148,11 +165,24 @@ class GPModel(BayesianModel):
         return num_latent_gps
 
     @abc.abstractmethod
+    @check_shapes(
+        "Xnew: [batch..., N, D]",
+        "return[0]: [batch..., N, P]",
+        "return[1]: [batch..., N, P, N, P] if full_cov and full_output_cov",
+        "return[1]: [batch..., P, N, N] if full_cov and (not full_output_cov)",
+        "return[1]: [batch..., N, P, P] if (not full_cov) and full_output_cov",
+        "return[1]: [batch..., N, P] if (not full_cov) and (not full_output_cov)",
+    )
     def predict_f(
         self, Xnew: InputData, full_cov: bool = False, full_output_cov: bool = False
     ) -> MeanAndVariance:
         raise NotImplementedError
 
+    @check_shapes(
+        "Xnew: [batch..., N, D]",
+        "return: [batch..., N, P] if (num_samples is None)",
+        "return: [batch..., S, N, P] if (num_samples is not None)",
+    )
     def predict_f_samples(
         self,
         Xnew: InputData,
@@ -163,9 +193,10 @@ class GPModel(BayesianModel):
         """
         Produce samples from the posterior latent function(s) at the input points.
 
-        :param Xnew: InputData
-            Input locations at which to draw samples, shape [..., N, D]
-            where N is the number of rows and D is the input dimension of each point.
+        Currently, the method does not support `full_output_cov=True` and `full_cov=True`.
+
+        :param Xnew:
+            Input locations at which to draw samples.
         :param num_samples:
             Number of samples to draw.
             If `None`, a single sample is drawn and the return shape is [..., N, P],
@@ -178,8 +209,6 @@ class GPModel(BayesianModel):
         :param full_output_cov:
             If True, draw correlated samples over the outputs.
             If False, draw samples that are uncorrelated over the outputs.
-
-        Currently, the method does not support `full_output_cov=True` and `full_cov=True`.
         """
         if full_cov and full_output_cov:
             raise NotImplementedError(
@@ -204,6 +233,14 @@ class GPModel(BayesianModel):
             )  # [..., (S), N, P]
         return samples  # [..., (S), N, P]
 
+    @check_shapes(
+        "Xnew: [batch..., N, D]",
+        "return[0]: [batch..., N, P]",
+        "return[1]: [batch..., N, P, N, P] if full_cov and full_output_cov",
+        "return[1]: [batch..., P, N, N] if full_cov and (not full_output_cov)",
+        "return[1]: [batch..., N, P, P] if (not full_cov) and full_output_cov",
+        "return[1]: [batch..., N, P] if (not full_cov) and (not full_output_cov)",
+    )
     def predict_y(
         self, Xnew: InputData, full_cov: bool = False, full_output_cov: bool = False
     ) -> MeanAndVariance:
@@ -216,6 +253,11 @@ class GPModel(BayesianModel):
         f_mean, f_var = self.predict_f(Xnew, full_cov=full_cov, full_output_cov=full_output_cov)
         return self.likelihood.predict_mean_and_var(Xnew, f_mean, f_var)
 
+    @check_shapes(
+        "data[0]: [batch..., N, D]",
+        "data[1]: [batch..., N, P]",
+        "return: [batch..., N]",
+    )
     def predict_log_density(
         self, data: RegressionData, full_cov: bool = False, full_output_cov: bool = False
     ) -> tf.Tensor:
