@@ -221,7 +221,6 @@ class SeparateIndependent(MultioutputKernel, Combination):
     ) -> tf.Tensor:
         rank = tf.rank(X) - 1
         if X2 is None:
-            ones = tf.ones((rank,), dtype=tf.int32)
             if full_output_cov:
                 Kxxs = cs(
                     tf.stack([k.K(X, X2) for k in self.kernels], axis=-1), "[batch..., N, N, P]"
@@ -240,7 +239,6 @@ class SeparateIndependent(MultioutputKernel, Combination):
                 )
         else:
             rank2 = tf.rank(X2) - 1
-            ones12 = tf.ones((rank + rank2,), dtype=tf.int32)
             if full_output_cov:
                 Kxxs = cs(
                     tf.stack([k.K(X, X2) for k in self.kernels], axis=-1),

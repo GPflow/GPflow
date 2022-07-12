@@ -689,8 +689,8 @@ class VGPPosterior(AbstractPosterior):
 class BasePosterior(AbstractPosterior):
     @check_shapes(
         "inducing_variable: [M, D, broadcast P]",
-        "q_mu: [...]",
-        "q_sqrt: [...]",
+        "q_mu: [N, P]",
+        "q_sqrt: [N_P_or_P_N_N...]",
     )
     def __init__(
         self,
@@ -711,15 +711,25 @@ class BasePosterior(AbstractPosterior):
         if precompute_cache is not None:
             self.update_cache(precompute_cache)
 
-    @property
+    @property  # type: ignore[misc]
+    @check_shapes(
+        "return: [N, P]",
+    )
     def q_mu(self) -> tf.Tensor:
         return self._q_dist.q_mu
 
-    @property
+    @property  # type: ignore[misc]
+    @check_shapes(
+        "return: [N_P_or_P_N_N...]",
+    )
     def q_sqrt(self) -> tf.Tensor:
         return self._q_dist.q_sqrt
 
-    def _set_qdist(self, q_mu: TensorType, q_sqrt: TensorType) -> tf.Tensor:
+    @check_shapes(
+        "q_mu: [N, P]",
+        "q_sqrt: [N_P_or_P_N_N...]",
+    )
+    def _set_qdist(self, q_mu: TensorType, q_sqrt: TensorType) -> None:
         if q_sqrt is None:
             self._q_dist = _DeltaDist(q_mu)
         elif len(q_sqrt.shape) == 2:  # q_diag
@@ -802,6 +812,11 @@ class IndependentPosterior(BasePosterior):
     ) -> MeanAndVariance:
         return mean, expand_independent_outputs(cov, full_cov, full_output_cov)
 
+    @check_shapes(
+        "Xnew: [N, D]",
+        "return: [broadcast P, N, N] if full_cov",
+        "return: [broadcast P, N] if (not full_cov)",
+    )
     def _get_Kff(self, Xnew: TensorType, full_cov: bool) -> tf.Tensor:
 
         # TODO: this assumes that Xnew has shape [N, D] and no leading dims

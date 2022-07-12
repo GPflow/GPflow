@@ -35,7 +35,7 @@ import tensorflow as tf
 from tensorflow.python.data.ops.iterator_ops import OwnedIterator as DatasetOwnedIterator
 
 from ..base import InputData, OutputData, RegressionData
-from ..experimental.check_shapes import check_shapes, inherit_check_shapes
+from ..experimental.check_shapes import check_shapes
 
 Data = TypeVar("Data", RegressionData, InputData, OutputData)
 

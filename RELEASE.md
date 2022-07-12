@@ -41,6 +41,10 @@ This release contains contributions from:
 
 * All likelihood methods now take an extra `X` argument. If you have written custom likelihoods or
   you have custom code calling likelihoods directly you will need to add this extra argument.
+* On the `CGLB` model `xnew` parameters have changed name to `Xnew`, to be consistent with the other
+  models.
+* On the `GPLVM` model the variance returned by `predict_f` with `full_cov=True` has changed shape
+  from `[batch..., N, N, P]` to `[batch..., P, N, N]` to be consistent with the other models.
 * Change to `InducingVariables` API. `InducingVariables` must now have a `shape` property.
 * `gpflow.experimental.check_shapes.get_shape.register` has been replaced with
   `gpflow.experimental.check_shapes.register_get_shape`.

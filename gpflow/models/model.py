@@ -19,7 +19,7 @@ import tensorflow as tf
 
 from ..base import InputData, MeanAndVariance, Module, RegressionData
 from ..conditionals.util import sample_mvn
-from ..experimental.check_shapes import check_shapes, inherit_check_shapes
+from ..experimental.check_shapes import check_shapes
 from ..kernels import Kernel, MultioutputKernel
 from ..likelihoods import Likelihood, SwitchedLikelihood
 from ..mean_functions import MeanFunction, Zero

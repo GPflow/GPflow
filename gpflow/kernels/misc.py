@@ -269,7 +269,6 @@ class Coregion(Kernel):
         B = cs(self.output_covariance(), "[O, O]")
         X = cs(tf.cast(X[..., 0], tf.int32), "[batch..., N]")
         if X2 is None:
-            rank = tf.rank(X) - 1
             batch = tf.shape(X)[:-1]
             N = tf.shape(X)[-1]
             O = tf.shape(B)[-1]

@@ -143,7 +143,6 @@ class ChangePoints(Combination):
     def K_diag(self, X: tf.Tensor) -> tf.Tensor:
         cs(X, "[batch..., N, 1]  # The `ChangePoints` kernel requires a 1D input space.")
 
-        rank = tf.rank(X) - 2
         batch = tf.shape(X)[:-2]
         N = tf.shape(X)[-2]
         Ncp = tf.shape(self.locations)[0]

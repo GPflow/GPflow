@@ -134,8 +134,6 @@ def test_conditional_variance(equivalent_likelihoods: EquivalentLikelihoods) -> 
 
 def test_predict_log_density(equivalent_likelihoods: EquivalentLikelihoods) -> None:
     homoskedastic_likelihood, heteroskedastic_likelihood = equivalent_likelihoods
-    ll1 = homoskedastic_likelihood.predict_log_density(Data.X, Data.f_mean, Data.f_var, Data.Y)
-    ll2 = heteroskedastic_likelihood.predict_log_density(Data.X, Data.F2_mean, Data.F2_var, Data.Y)
     np.testing.assert_array_almost_equal(
         homoskedastic_likelihood.predict_log_density(Data.X, Data.f_mean, Data.f_var, Data.Y),
         heteroskedastic_likelihood.predict_log_density(Data.X, Data.F2_mean, Data.F2_var, Data.Y),

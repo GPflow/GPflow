@@ -8,6 +8,7 @@ from tensorflow_probability.python.distributions import Gamma, Uniform
 
 import gpflow
 from gpflow.base import AnyNDArray, PriorOn
+from gpflow.experimental.check_shapes import ShapeChecker, check_shapes
 from gpflow.models import GPR
 from gpflow.utilities import to_default_float
 
@@ -15,12 +16,17 @@ np.random.seed(1)
 
 
 def build_data() -> Tuple[AnyNDArray, AnyNDArray]:
+    cs = ShapeChecker().check_shape
     N = 30
-    X = np.random.rand(N, 1)
-    Y = np.sin(12 * X) + 0.66 * np.cos(25 * X) + np.random.randn(N, 1) * 0.1 + 3
+    X = cs(np.random.rand(N, 1), "[N, 1]")
+    Y = cs(np.sin(12 * X) + 0.66 * np.cos(25 * X) + np.random.randn(N, 1) * 0.1 + 3, "[N, 1]")
     return (X, Y)
 
 
+@check_shapes(
+    "data[0]: [N, 1]",
+    "data[1]: [N, 1]",
+)
 def build_model(data: Tuple[AnyNDArray, AnyNDArray]) -> GPR:
 
     kernel = gpflow.kernels.Matern52(lengthscales=0.3)
@@ -34,6 +40,10 @@ def build_model(data: Tuple[AnyNDArray, AnyNDArray]) -> GPR:
     return model
 
 
+@check_shapes(
+    "data[0]: [N, 1]",
+    "data[1]: [N, 1]",
+)
 def build_model_with_uniform_prior_no_transforms(
     data: Tuple[AnyNDArray, AnyNDArray], prior_on: PriorOn, prior_width: float
 ) -> GPR:
