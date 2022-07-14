@@ -45,6 +45,8 @@ This release contains contributions from:
   models.
 * On the `GPLVM` model the variance returned by `predict_f` with `full_cov=True` has changed shape
   from `[batch..., N, N, P]` to `[batch..., P, N, N]` to be consistent with the other models.
+* `gpflow.likelihoods.Gaussian.DEFAULT_VARIANCE_LOWER_BOUND` has been replaced with
+  `gpflow.likelihoods.scalar_continuous.DEFAULT_LOWER_BOUND`.
 * Change to `InducingVariables` API. `InducingVariables` must now have a `shape` property.
 * `gpflow.experimental.check_shapes.get_shape.register` has been replaced with
   `gpflow.experimental.check_shapes.register_get_shape`.
@@ -59,6 +61,14 @@ This release contains contributions from:
 * Improved handling of variable noise
   - All likelihood methods now take an `X` argument, allowing you to easily implement
     heteroscedastic likelihoods.
+  - The `Gaussian` likelihood can now be parametrized by either a `variance` or a `scale`
+  - Some existing likelihoods can now take a function (of X) instead of a parameter, allowing them
+    to become heteroscedastic. The parameters are:
+    - `Gaussian` `variance`
+    - `Gaussian` `scale`
+    - `StudentT` `scale`
+    - `Gamma` `shape`
+    - `Beta` `scale`
 * `gpflow.experimental.check_shapes`
   - Can now be in three different states - ENABLED, EAGER_MODE_ONLY, and DISABLE.
   - Now support multiple variable-rank dimensions at the same time, e.g. `cov: [n..., n...]`.

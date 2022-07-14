@@ -47,7 +47,7 @@ def positive(lower: Optional[float] = None, base: Optional[str] = None) -> tfp.b
 
 def triangular() -> tfp.bijectors.Bijector:
     """
-    Returns instance of a triangular bijector.
+    Returns instance of a (lower) triangular bijector.
     """
     return tfp.bijectors.FillTriangular()
 
