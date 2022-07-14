@@ -25,7 +25,7 @@ from gpflow.experimental.check_shapes import ShapeChecker
 from gpflow.functions import Linear
 from gpflow.kernels import Kernel
 from gpflow.likelihoods import Gaussian
-from gpflow.models import SVGP, VGP, GPModel, training_loss_closure
+from gpflow.models import GPR, GPRFITC, SGPR, SVGP, VGP, GPModel, training_loss_closure
 from gpflow.models.util import InducingPointsLike
 
 
@@ -60,10 +60,36 @@ def create_linear_noise() -> Gaussian:
     return Gaussian(scale=Linear())
 
 
+def gpr(data: RegressionData) -> GPModel:
+    return GPR(
+        data,
+        kernel=create_kernel(),
+        likelihood=create_linear_noise(),
+    )
+
+
 def vgp(data: RegressionData) -> GPModel:
     return VGP(
         data,
         kernel=create_kernel(),
+        likelihood=create_linear_noise(),
+    )
+
+
+def sgpr(data: RegressionData) -> GPModel:
+    return SGPR(
+        data,
+        kernel=create_kernel(),
+        inducing_variable=create_inducing(),
+        likelihood=create_linear_noise(),
+    )
+
+
+def gprfitc(data: RegressionData) -> GPModel:
+    return GPRFITC(
+        data,
+        kernel=create_kernel(),
+        inducing_variable=create_inducing(),
         likelihood=create_linear_noise(),
     )
 
@@ -77,7 +103,10 @@ def svgp(data: RegressionData) -> GPModel:
 
 
 CREATE_MODELS = (
+    gpr,
     vgp,
+    sgpr,
+    gprfitc,
     svgp,
 )
 

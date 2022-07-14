@@ -303,6 +303,7 @@ def test_upper_bound_few_inducing_points() -> None:
         gpflow.kernels.SquaredExponential(),
         inducing_variable=DatumUpper.X[:10, :].copy(),
         mean_function=Constant(),
+        likelihood=gpflow.likelihoods.Gaussian(scale=gpflow.functions.Linear()),
     )
     opt = gpflow.optimizers.Scipy()
 
@@ -314,13 +315,10 @@ def test_upper_bound_few_inducing_points() -> None:
 
     full_gp = gpflow.models.GPR(
         (DatumUpper.X, DatumUpper.Y),
-        kernel=gpflow.kernels.SquaredExponential(),
-        mean_function=Constant(),
+        kernel=model_vfe.kernel,
+        mean_function=model_vfe.mean_function,
+        likelihood=model_vfe.likelihood,
     )
-    full_gp.kernel.lengthscales.assign(model_vfe.kernel.lengthscales)
-    full_gp.kernel.variance.assign(model_vfe.kernel.variance)
-    full_gp.likelihood.variance.assign(model_vfe.likelihood.variance)
-    full_gp.mean_function.c.assign(model_vfe.mean_function.c)
 
     lml_upper = model_vfe.upper_bound()
     lml_vfe = model_vfe.elbo()
