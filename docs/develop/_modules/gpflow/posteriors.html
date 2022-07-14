@@ -945,8 +945,8 @@ function checkPageExistsAndRedirect(event) {
 <div class="viewcode-block" id="BasePosterior"><a class="viewcode-back" href="../../api/gpflow/posteriors/index.html#gpflow.posteriors.BasePosterior">[docs]</a><span class="k">class</span> <span class="nc">BasePosterior</span><span class="p">(</span><span class="n">AbstractPosterior</span><span class="p">):</span>
     <span class="nd">@check_shapes</span><span class="p">(</span>
         <span class="s2">&quot;inducing_variable: [M, D, broadcast P]&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;q_mu: [...]&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;q_sqrt: [...]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;q_mu: [N, P]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;q_sqrt: [N_P_or_P_N_N...]&quot;</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -967,15 +967,25 @@ function checkPageExistsAndRedirect(event) {
         <span class="k">if</span> <span class="n">precompute_cache</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">update_cache</span><span class="p">(</span><span class="n">precompute_cache</span><span class="p">)</span>
 
-    <span class="nd">@property</span>
+    <span class="nd">@property</span>  <span class="c1"># type: ignore[misc]</span>
+    <span class="nd">@check_shapes</span><span class="p">(</span>
+        <span class="s2">&quot;return: [N, P]&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
     <span class="k">def</span> <span class="nf">q_mu</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_q_dist</span><span class="o">.</span><span class="n">q_mu</span>
 
-    <span class="nd">@property</span>
+    <span class="nd">@property</span>  <span class="c1"># type: ignore[misc]</span>
+    <span class="nd">@check_shapes</span><span class="p">(</span>
+        <span class="s2">&quot;return: [N_P_or_P_N_N...]&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
     <span class="k">def</span> <span class="nf">q_sqrt</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_q_dist</span><span class="o">.</span><span class="n">q_sqrt</span>
 
-    <span class="k">def</span> <span class="nf">_set_qdist</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">q_mu</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">q_sqrt</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+    <span class="nd">@check_shapes</span><span class="p">(</span>
+        <span class="s2">&quot;q_mu: [N, P]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;q_sqrt: [N_P_or_P_N_N...]&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">def</span> <span class="nf">_set_qdist</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">q_mu</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">q_sqrt</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">q_sqrt</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_q_dist</span> <span class="o">=</span> <span class="n">_DeltaDist</span><span class="p">(</span><span class="n">q_mu</span><span class="p">)</span>
         <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">q_sqrt</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>  <span class="c1"># q_diag</span>
@@ -1058,6 +1068,11 @@ function checkPageExistsAndRedirect(event) {
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MeanAndVariance</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">mean</span><span class="p">,</span> <span class="n">expand_independent_outputs</span><span class="p">(</span><span class="n">cov</span><span class="p">,</span> <span class="n">full_cov</span><span class="p">,</span> <span class="n">full_output_cov</span><span class="p">)</span>
 
+    <span class="nd">@check_shapes</span><span class="p">(</span>
+        <span class="s2">&quot;Xnew: [N, D]&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return: [broadcast P, N, N] if full_cov&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;return: [broadcast P, N] if (not full_cov)&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
     <span class="k">def</span> <span class="nf">_get_Kff</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Xnew</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">,</span> <span class="n">full_cov</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
 
         <span class="c1"># TODO: this assumes that Xnew has shape [N, D] and no leading dims</span>

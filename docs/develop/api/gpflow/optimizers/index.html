@@ -362,6 +362,11 @@ function checkPageExistsAndRedirect(event) {
    </li>
   </ul>
  </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../functions/index.html">
+   gpflow.functions
+  </a>
+ </li>
  <li class="toctree-l1 has-children">
   <a class="reference internal" href="../inducing_variables/index.html">
    gpflow.inducing_variables
@@ -421,11 +426,6 @@ function checkPageExistsAndRedirect(event) {
  <li class="toctree-l1">
   <a class="reference internal" href="../logdensities/index.html">
    gpflow.logdensities
-  </a>
- </li>
- <li class="toctree-l1">
-  <a class="reference internal" href="../mean_functions/index.html">
-   gpflow.mean_functions
   </a>
  </li>
  <li class="toctree-l1 has-children">
@@ -537,6 +537,11 @@ function checkPageExistsAndRedirect(event) {
    <li class="toctree-l2">
     <a class="reference internal" href="../utilities/ops/index.html">
      gpflow.utilities.ops
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../utilities/parameter_or_function/index.html">
+     gpflow.utilities.parameter_or_function
     </a>
    </li>
   </ul>
@@ -688,11 +693,18 @@ The same optimizer can be reinstantiated later
 <span class="sig-name descname"><span class="pre">minimize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">loss_fn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">var_list</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/optimizers/natgrad.html#NaturalGradient.minimize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.optimizers.NaturalGradient.minimize" title="Permalink to this definition">#</a></dt>
 <dd><p>Minimizes objective function of the model.
 Natural Gradient optimizer works with variational parameters only.</p>
+<p>GPflow implements the <cite>XiNat</cite> (default) and <cite>XiSqrtMeanVar</cite> transformations
+for parameters. Custom transformations that implement the <cite>XiTransform</cite>
+interface are also possible.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>loss_fn</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Callable</span></code>[[], <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]) – Loss function.</p></li>
-<li><p><strong>var_list</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Sequence</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<a class="reference internal" href="../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>, <a class="reference internal" href="../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>], <code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<a class="reference internal" href="../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>, <a class="reference internal" href="../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>, <a class="reference internal" href="#gpflow.optimizers.XiTransform" title="gpflow.optimizers.natgrad.XiTransform"><code class="xref py py-class docutils literal notranslate"><span class="pre">XiTransform</span></code></a>]]]) – <p>List of pair tuples of variational parameters or
+<li><p><strong>var_list</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Sequence</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<a class="reference internal" href="../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>, <a class="reference internal" href="../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>], <code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<a class="reference internal" href="../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>, <a class="reference internal" href="../index.html#gpflow.Parameter" title="gpflow.base.Parameter"><code class="xref py py-class docutils literal notranslate"><span class="pre">Parameter</span></code></a>, <a class="reference internal" href="#gpflow.optimizers.XiTransform" title="gpflow.optimizers.natgrad.XiTransform"><code class="xref py py-class docutils literal notranslate"><span class="pre">XiTransform</span></code></a>]]]) – <ul>
+<li><p><strong>var_list[all][0]</strong> has shape [<em>N</em>, <em>D</em>].</p></li>
+<li><p><strong>var_list[all][1]</strong> has shape [<em>D</em>, <em>N</em>, <em>N</em>].</p></li>
+</ul>
+<p>List of pair tuples of variational parameters or
 triplet tuple with variational parameters and ξ transformation.
 If ξ is not specified, will use self.xi_transform.
 For example, <cite>var_list</cite> could be:</p>
@@ -705,13 +717,8 @@ For example, <cite>var_list</cite> could be:</p>
 </p></li>
 </ul>
 </dd>
-</dl>
-<p>GPflow implements the <cite>XiNat</cite> (default) and <cite>XiSqrtMeanVar</cite> transformations
-for parameters. Custom transformations that implement the <cite>XiTransform</cite>
-interface are also possible.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></p>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></p>
 </dd>
 </dl>
 </dd></dl>
@@ -861,15 +868,28 @@ of Gaussian likelihood.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>mean</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – the mean parameter (N, D)</p></li>
-<li><p><strong>varsqrt</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – the varsqrt parameter (D, N, N)</p></li>
+<li><p><strong>mean</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – <ul>
+<li><p><strong>mean</strong> has shape [<em>N</em>, <em>D</em>].</p></li>
+</ul>
+<p>the mean parameter</p>
+</p></li>
+<li><p><strong>varsqrt</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – <ul>
+<li><p><strong>varsqrt</strong> has shape [<em>D</em>, <em>N</em>, <em>N</em>].</p></li>
+</ul>
+<p>the varsqrt parameter</p>
+</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]</p>
 </dd>
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>tuple (xi1, xi2), the xi parameters (N, D), (D, N, N)</p>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><strong>return[0]</strong> has shape [<em>N</em>, <em>D</em>].</p></li>
+<li><p><strong>return[1]</strong> has shape [<em>D</em>, <em>N</em>, <em>N</em>].</p></li>
+</ul>
+<p>tuple (xi1, xi2), the xi parameters</p>
+</p>
 </dd>
 </dl>
 </dd></dl>
@@ -881,15 +901,28 @@ of Gaussian likelihood.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>nat1</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – the θ₁ parameter</p></li>
-<li><p><strong>nat2</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – the θ₂ parameter</p></li>
+<li><p><strong>nat1</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – <ul>
+<li><p><strong>nat1</strong> has shape [<em>N</em>, <em>D</em>].</p></li>
+</ul>
+<p>the θ₁ parameter</p>
+</p></li>
+<li><p><strong>nat2</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – <ul>
+<li><p><strong>nat2</strong> has shape [<em>D</em>, <em>N</em>, <em>N</em>].</p></li>
+</ul>
+<p>the θ₂ parameter</p>
+</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]</p>
 </dd>
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>tuple <cite>xi1</cite>, <cite>xi2</cite></p>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><strong>return[0]</strong> has shape [<em>N</em>, <em>D</em>].</p></li>
+<li><p><strong>return[1]</strong> has shape [<em>D</em>, <em>N</em>, <em>N</em>].</p></li>
+</ul>
+<p>tuple <cite>xi1</cite>, <cite>xi2</cite></p>
+</p>
 </dd>
 </dl>
 </dd></dl>
@@ -901,15 +934,28 @@ of Gaussian likelihood.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>xi1</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – the ξ₁ parameter</p></li>
-<li><p><strong>xi2</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – the ξ₂ parameter</p></li>
+<li><p><strong>xi1</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – <ul>
+<li><p><strong>xi1</strong> has shape [<em>N</em>, <em>D</em>].</p></li>
+</ul>
+<p>the ξ₁ parameter</p>
+</p></li>
+<li><p><strong>xi2</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – <ul>
+<li><p><strong>xi2</strong> has shape [<em>D</em>, <em>N</em>, <em>N</em>].</p></li>
+</ul>
+<p>the ξ₂ parameter</p>
+</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]</p>
 </dd>
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>tuple (mean, varsqrt), the meanvarsqrt parameters</p>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><strong>return[0]</strong> has shape [<em>N</em>, <em>D</em>].</p></li>
+<li><p><strong>return[1]</strong> has shape [<em>D</em>, <em>N</em>, <em>N</em>].</p></li>
+</ul>
+<p>tuple (mean, varsqrt), the meanvarsqrt parameters</p>
+</p>
 </dd>
 </dl>
 </dd></dl>
@@ -932,15 +978,28 @@ so saves the conversion to and from Xi.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>mean</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – the mean parameter (N, D)</p></li>
-<li><p><strong>varsqrt</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – the varsqrt parameter (D, N, N)</p></li>
+<li><p><strong>mean</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – <ul>
+<li><p><strong>mean</strong> has shape [<em>N</em>, <em>D</em>].</p></li>
+</ul>
+<p>the mean parameter</p>
+</p></li>
+<li><p><strong>varsqrt</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – <ul>
+<li><p><strong>varsqrt</strong> has shape [<em>D</em>, <em>N</em>, <em>N</em>].</p></li>
+</ul>
+<p>the varsqrt parameter</p>
+</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]</p>
 </dd>
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>tuple (xi1, xi2), the xi parameters (N, D), (D, N, N)</p>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><strong>return[0]</strong> has shape [<em>N</em>, <em>D</em>].</p></li>
+<li><p><strong>return[1]</strong> has shape [<em>D</em>, <em>N</em>, <em>N</em>].</p></li>
+</ul>
+<p>tuple (xi1, xi2), the xi parameters</p>
+</p>
 </dd>
 </dl>
 </dd></dl>
@@ -952,15 +1011,28 @@ so saves the conversion to and from Xi.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>nat1</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – the θ₁ parameter</p></li>
-<li><p><strong>nat2</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – the θ₂ parameter</p></li>
+<li><p><strong>nat1</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – <ul>
+<li><p><strong>nat1</strong> has shape [<em>N</em>, <em>D</em>].</p></li>
+</ul>
+<p>the θ₁ parameter</p>
+</p></li>
+<li><p><strong>nat2</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – <ul>
+<li><p><strong>nat2</strong> has shape [<em>D</em>, <em>N</em>, <em>N</em>].</p></li>
+</ul>
+<p>the θ₂ parameter</p>
+</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]</p>
 </dd>
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>tuple <cite>xi1</cite>, <cite>xi2</cite></p>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><strong>return[0]</strong> has shape [<em>N</em>, <em>D</em>].</p></li>
+<li><p><strong>return[1]</strong> has shape [<em>D</em>, <em>N</em>, <em>N</em>].</p></li>
+</ul>
+<p>tuple <cite>xi1</cite>, <cite>xi2</cite></p>
+</p>
 </dd>
 </dl>
 </dd></dl>
@@ -972,15 +1044,28 @@ so saves the conversion to and from Xi.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>xi1</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – the ξ₁ parameter</p></li>
-<li><p><strong>xi2</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – the ξ₂ parameter</p></li>
+<li><p><strong>xi1</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – <ul>
+<li><p><strong>xi1</strong> has shape [<em>N</em>, <em>D</em>].</p></li>
+</ul>
+<p>the ξ₁ parameter</p>
+</p></li>
+<li><p><strong>xi2</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – <ul>
+<li><p><strong>xi2</strong> has shape [<em>D</em>, <em>N</em>, <em>N</em>].</p></li>
+</ul>
+<p>the ξ₂ parameter</p>
+</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]</p>
 </dd>
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>tuple (mean, varsqrt), the meanvarsqrt parameters</p>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><strong>return[0]</strong> has shape [<em>N</em>, <em>D</em>].</p></li>
+<li><p><strong>return[1]</strong> has shape [<em>D</em>, <em>N</em>, <em>N</em>].</p></li>
+</ul>
+<p>tuple (mean, varsqrt), the meanvarsqrt parameters</p>
+</p>
 </dd>
 </dl>
 </dd></dl>
@@ -995,9 +1080,7 @@ so saves the conversion to and from Xi.</p>
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.optimizers.</span></span><span class="sig-name descname"><span class="pre">XiTransform</span></span><a class="reference internal" href="../../../_modules/gpflow/optimizers/natgrad.html#XiTransform"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.optimizers.XiTransform" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>XiTransform is the base class that implements three transformations necessary
-for the natural gradient calculation wrt any parameterization.
-This class does not handle any shape information, but it is assumed that
-the parameters pairs are always of shape (N, D) and (D, N, N).</p>
+for the natural gradient calculation wrt any parameterization.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="gpflow.optimizers.XiTransform.meanvarsqrt_to_xi">
 <em class="property"><span class="pre">abstract</span><span class="w"> </span><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">meanvarsqrt_to_xi</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mean</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">varsqrt</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/optimizers/natgrad.html#XiTransform.meanvarsqrt_to_xi"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.optimizers.XiTransform.meanvarsqrt_to_xi" title="Permalink to this definition">#</a></dt>
@@ -1005,15 +1088,28 @@ the parameters pairs are always of shape (N, D) and (D, N, N).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>mean</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – the mean parameter (N, D)</p></li>
-<li><p><strong>varsqrt</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – the varsqrt parameter (D, N, N)</p></li>
+<li><p><strong>mean</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – <ul>
+<li><p><strong>mean</strong> has shape [<em>N</em>, <em>D</em>].</p></li>
+</ul>
+<p>the mean parameter</p>
+</p></li>
+<li><p><strong>varsqrt</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – <ul>
+<li><p><strong>varsqrt</strong> has shape [<em>D</em>, <em>N</em>, <em>N</em>].</p></li>
+</ul>
+<p>the varsqrt parameter</p>
+</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]</p>
 </dd>
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>tuple (xi1, xi2), the xi parameters (N, D), (D, N, N)</p>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><strong>return[0]</strong> has shape [<em>N</em>, <em>D</em>].</p></li>
+<li><p><strong>return[1]</strong> has shape [<em>D</em>, <em>N</em>, <em>N</em>].</p></li>
+</ul>
+<p>tuple (xi1, xi2), the xi parameters</p>
+</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1025,15 +1121,28 @@ the parameters pairs are always of shape (N, D) and (D, N, N).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>nat1</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – the θ₁ parameter</p></li>
-<li><p><strong>nat2</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – the θ₂ parameter</p></li>
+<li><p><strong>nat1</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – <ul>
+<li><p><strong>nat1</strong> has shape [<em>N</em>, <em>D</em>].</p></li>
+</ul>
+<p>the θ₁ parameter</p>
+</p></li>
+<li><p><strong>nat2</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – <ul>
+<li><p><strong>nat2</strong> has shape [<em>D</em>, <em>N</em>, <em>N</em>].</p></li>
+</ul>
+<p>the θ₂ parameter</p>
+</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]</p>
 </dd>
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>tuple <cite>xi1</cite>, <cite>xi2</cite></p>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><strong>return[0]</strong> has shape [<em>N</em>, <em>D</em>].</p></li>
+<li><p><strong>return[1]</strong> has shape [<em>D</em>, <em>N</em>, <em>N</em>].</p></li>
+</ul>
+<p>tuple <cite>xi1</cite>, <cite>xi2</cite></p>
+</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1045,15 +1154,28 @@ the parameters pairs are always of shape (N, D) and (D, N, N).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>xi1</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – the ξ₁ parameter</p></li>
-<li><p><strong>xi2</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – the ξ₂ parameter</p></li>
+<li><p><strong>xi1</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – <ul>
+<li><p><strong>xi1</strong> has shape [<em>N</em>, <em>D</em>].</p></li>
+</ul>
+<p>the ξ₁ parameter</p>
+</p></li>
+<li><p><strong>xi2</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>) – <ul>
+<li><p><strong>xi2</strong> has shape [<em>D</em>, <em>N</em>, <em>N</em>].</p></li>
+</ul>
+<p>the ξ₂ parameter</p>
+</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p><code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Tensor</span></code>]</p>
 </dd>
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>tuple (mean, varsqrt), the meanvarsqrt parameters</p>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><strong>return[0]</strong> has shape [<em>N</em>, <em>D</em>].</p></li>
+<li><p><strong>return[1]</strong> has shape [<em>D</em>, <em>N</em>, <em>N</em>].</p></li>
+</ul>
+<p>tuple (mean, varsqrt), the meanvarsqrt parameters</p>
+</p>
 </dd>
 </dl>
 </dd></dl>
