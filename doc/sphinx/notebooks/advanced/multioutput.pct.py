@@ -191,7 +191,7 @@ def optimize_model_with_scipy(model):
         model.training_loss_closure(data),
         variables=model.trainable_variables,
         method="l-bfgs-b",
-        options={"disp": True, "maxiter": MAXITER},
+        options={"disp": 50, "maxiter": MAXITER},
     )
 
 
