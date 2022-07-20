@@ -62,15 +62,15 @@
 #
 # We cache two separate values: $\alpha$ and $Q^{-1}$. These correspond to the parts of the mean and covariance functions respectively which do not depend upon the test points. In the case of the GPR these are the same value:
 # \begin{equation*}
-#     \alpha = Q^{-1} = [K_{mm} + \sigma^2I]^{-1}
+# \alpha = Q^{-1} = [K_{mm} + \sigma^2I]^{-1}
 # \end{equation*}
 # in the case of the VGP and SVGP model these are:
 # \begin{equation*}
-#     \alpha = K_{uu}^{-1}\mathbf{u}\\ Q^{-1} = K_{uu}^{-1}
+# \alpha = K_{uu}^{-1}\mathbf{u}\\ Q^{-1} = K_{uu}^{-1}
 # \end{equation*}
 # and in the case of the SGPR model these are:
 # \begin{equation*}
-#     \alpha = L^{-T}L_B^{-T}\mathbf{c}\\ Q^{-1} = L^{-T}(I - B^{-1})L^{-1}
+# \alpha = L^{-T}L_B^{-T}\mathbf{c}\\ Q^{-1} = L^{-T}(I - B^{-1})L^{-1}
 # \end{equation*}
 #
 #

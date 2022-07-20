@@ -5,8 +5,8 @@ jupyter:
     text_representation:
       extension: .md
       format_name: markdown
-      format_version: '1.2'
-      jupytext_version: 1.3.3
+      format_version: '1.3'
+      jupytext_version: 1.14.0
   kernelspec:
     display_name: Python 3
     language: python
@@ -71,19 +71,19 @@ For notational convenience, we'll define $\mathbf L^{-1}\mathbf K_{uf}\sigma^{-1
 We also apply the [matrix determinant lemma](https://en.wikipedia.org/wiki/Matrix_determinant_lemma) to the same:
 
 \begin{equation}
-|{\mathbf Q_{ff}} + \sigma^2 {\mathbf I}| = |{\mathbf K_{uu}} + 
- \mathbf K_{uf}\mathbf K_{fu}\sigma^{-2}| \, |\mathbf K_{uu}^{-1}| \, |\sigma^{2}\mathbf I|
+|{\mathbf Q_{ff}} + \sigma^2 {\mathbf I}| = |{\mathbf K_{uu}} +
+\mathbf K_{uf}\mathbf K_{fu}\sigma^{-2}| \, |\mathbf K_{uu}^{-1}| \, |\sigma^{2}\mathbf I|
 \end{equation}
 
 Substituting $\mathbf K_{uu} = {\mathbf {L L}^\top}$:
 \begin{equation}
-|{\mathbf Q_{ff}} + \sigma^2 {\mathbf I}| = |{\mathbf {L L}^\top} + 
- \mathbf K_{uf}\mathbf K_{fu}\sigma^{-2}| \, |\mathbf L^{-\top}|\,| \mathbf L^{-1}| \, |\sigma^{2}\mathbf I|
+|{\mathbf Q_{ff}} + \sigma^2 {\mathbf I}| = |{\mathbf {L L}^\top} +
+\mathbf K_{uf}\mathbf K_{fu}\sigma^{-2}| \, |\mathbf L^{-\top}|\,| \mathbf L^{-1}| \, |\sigma^{2}\mathbf I|
 \end{equation}
 
 \begin{equation}
-|{\mathbf Q_{ff}} + \sigma^2 {\mathbf I}| = |\mathbf I + 
- \mathbf L^{-1}\mathbf K_{uf}\mathbf K_{fu} \mathbf L^{-\top}\sigma^{-2}| \, |\sigma^{2}\mathbf I|
+|{\mathbf Q_{ff}} + \sigma^2 {\mathbf I}| = |\mathbf I +
+\mathbf L^{-1}\mathbf K_{uf}\mathbf K_{fu} \mathbf L^{-\top}\sigma^{-2}| \, |\sigma^{2}\mathbf I|
 \end{equation}
 
 \begin{equation}
@@ -105,7 +105,7 @@ With these two definitions, we're ready to expand the bound:
 \end{equation}
 
 \begin{equation}
-= -\tfrac{N}{2}\log{2\pi} 
+= -\tfrac{N}{2}\log{2\pi}
 -\tfrac{1}{2}\log|\mathbf B|
 -\tfrac{N}{2}\log\sigma^{2}
 -\tfrac{1}{2}\sigma^{-2}\mathbf y^\top\mathbf y
@@ -119,7 +119,7 @@ where $\sigma^{-2}\textrm{tr}(\mathbf Q) = \textrm{tr}(\mathbf {AA}^\top)$.
 Finally, we define $\mathbf c \triangleq \mathbf L_{\mathbf B}^{-1}\mathbf A\mathbf y \sigma^{-1}$, with $\mathbf {L_BL_B}^\top = \mathbf B$, so that:
 
 \begin{equation}
-\sigma^{-2}\mathbf y^\top\mathbf A^{\top} \mathbf B^{-1}\mathbf A\mathbf y = 
+\sigma^{-2}\mathbf y^\top\mathbf A^{\top} \mathbf B^{-1}\mathbf A\mathbf y =
 \mathbf c^\top \mathbf c
 \end{equation}
 
@@ -167,7 +167,7 @@ p(\mathbf f^\star) = \mathcal N(\mathbf f^\star\,|\, \mathbf K_{\star u}\mathbf 
 Note from our above definitions we have:
 
 \begin{equation}
-\mathbf K_{uu}^{-1}\mathbf \Lambda^{-1} \mathbf K_{uu}^{-1} = 
+\mathbf K_{uu}^{-1}\mathbf \Lambda^{-1} \mathbf K_{uu}^{-1} =
 \mathbf L^{-\top}\mathbf B^{-1}\mathbf L^{-1}
 \end{equation}
 
@@ -194,4 +194,3 @@ The code in `SGPR` implements this equation, with an additional switch depending
 [2] Hensman et al: Gaussian Processes for Big Data, UAI, 2013
 
 [3] Matthews et al: On Sparse Variational Methods and the Kullback-Leibler Divergence between Stochastic Processes, AISTATS, 2016
-

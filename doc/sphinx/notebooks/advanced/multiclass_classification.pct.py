@@ -36,7 +36,7 @@
 # Another convenient one is the robust max:
 # \begin{equation}
 # \pi_c(\mathbf{f}) = \begin{cases} 1 - \epsilon, & \mbox{if } c = \arg \max_c f_c \\
-#  \epsilon /(C-1), & \mbox{ otherwise} \end{cases}
+# \epsilon /(C-1), & \mbox{ otherwise} \end{cases}
 # \end{equation}
 #
 #

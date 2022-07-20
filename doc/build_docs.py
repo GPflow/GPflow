@@ -20,7 +20,7 @@ import subprocess
 from itertools import chain
 from pathlib import Path
 from time import perf_counter
-from typing import Optional
+from typing import Collection, Optional
 
 from generate_module_rst import generate_module_rst
 from tabulate import tabulate
@@ -38,8 +38,11 @@ _NOTEBOOKS_TMP = _BUILD_TMP / "notebooks"
 _DOCTREE_TMP = _TMP / "doctree"
 
 
-def _create_fake_notebook(destination_relative_path: Path, max_notebooks: int) -> None:
-    print(f"Generating fake, due to --max_notebooks={max_notebooks}")
+def _create_fake_notebook(
+    destination_relative_path: Path, limit_notebooks: Collection[str]
+) -> None:
+    limiting_command = f"--limit_notebooks {' '.join(limit_notebooks)}"
+    print(f"Generating fake, due to {limiting_command}")
 
     destination = _NOTEBOOKS_TMP / destination_relative_path
     title = f"Fake {destination.name}"
@@ -51,12 +54,12 @@ def _create_fake_notebook(destination_relative_path: Path, max_notebooks: int) -
 
 Fake {destination.name} due to::
 
-   --max_notebooks={max_notebooks}
+   {limiting_command}
 """
     )
 
 
-def _build_notebooks(max_notebooks: Optional[int]) -> None:
+def _build_notebooks(limit_notebooks: Optional[Collection[str]]) -> None:
     # Building the notebooks is really slow. Let's time it so we know which notebooks we can /
     # should optimise.
     timings = []
@@ -74,7 +77,7 @@ def _build_notebooks(max_notebooks: Optional[int]) -> None:
             destination_relative_path = destination_relative_path.with_suffix("")
         destination_relative_path = destination_relative_path.with_suffix(".ipynb")
 
-        if max_notebooks is None or i < max_notebooks:
+        if limit_notebooks is None or destination_relative_path.stem in limit_notebooks:
             subprocess.run(
                 [
                     "jupytext",
@@ -88,7 +91,7 @@ def _build_notebooks(max_notebooks: Optional[int]) -> None:
                 cwd=_NOTEBOOKS_TMP,
             ).check_returncode()
         else:
-            _create_fake_notebook(destination_relative_path, max_notebooks)
+            _create_fake_notebook(destination_relative_path, limit_notebooks)
 
         after = perf_counter()
         timings.append((after - before, source_relative_path))
@@ -114,10 +117,11 @@ def main() -> None:
         help="Directory to write docs to.",
     )
     parser.add_argument(
-        "--max_notebooks",
-        "--max-notebooks",
-        type=int,
-        help="Limit number of notebooks built to this number. Useful when debugging.",
+        "--limit_notebooks",
+        "--limit-notebooks",
+        type=str,
+        nargs="*",
+        help="Only process the notebooks with this base/stem name. Useful when debugging.",
     )
     parser.add_argument(
         "--fail_on_warning",
@@ -137,7 +141,7 @@ def main() -> None:
 
     shutil.copytree(_SPHINX_SRC, _BUILD_TMP)
     (_BUILD_TMP / "build_version.txt").write_text(branch.version)
-    _build_notebooks(args.max_notebooks)
+    _build_notebooks(args.limit_notebooks)
     generate_module_rst(gpflow, _BUILD_TMP / "api")
 
     sphinx_commands = [
