@@ -2,7 +2,7 @@
  "cells": [
   {
    "cell_type": "markdown",
-   "id": "a0f091a6",
+   "id": "95f129cf",
    "metadata": {
     "id": "eYrSpUncKGSk"
    },
@@ -12,7 +12,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "e42e9dd6",
+   "id": "10339162",
    "metadata": {
     "id": "PLuPjfS7KLQ-"
    },
@@ -24,7 +24,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "5221dbeb",
+   "id": "fde6f067",
    "metadata": {
     "id": "EACkO-iRKM5T"
    },
@@ -68,7 +68,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "4601b2b9",
+   "id": "82ca30df",
    "metadata": {
     "id": "GX1U-fYPKPrt"
    },
@@ -77,15 +77,15 @@
     "\n",
     "We cache two separate values: $\\alpha$ and $Q^{-1}$. These correspond to the parts of the mean and covariance functions respectively which do not depend upon the test points. In the case of the GPR these are the same value:\n",
     "\\begin{equation*}\n",
-    "    \\alpha = Q^{-1} = [K_{mm} + \\sigma^2I]^{-1}\n",
+    "\\alpha = Q^{-1} = [K_{mm} + \\sigma^2I]^{-1}\n",
     "\\end{equation*}\n",
     "in the case of the VGP and SVGP model these are:\n",
     "\\begin{equation*}\n",
-    "    \\alpha = K_{uu}^{-1}\\mathbf{u}\\\\ Q^{-1} = K_{uu}^{-1}\n",
+    "\\alpha = K_{uu}^{-1}\\mathbf{u}\\\\ Q^{-1} = K_{uu}^{-1}\n",
     "\\end{equation*}\n",
     "and in the case of the SGPR model these are:\n",
     "\\begin{equation*}\n",
-    "    \\alpha = L^{-T}L_B^{-T}\\mathbf{c}\\\\ Q^{-1} = L^{-T}(I - B^{-1})L^{-1}\n",
+    "\\alpha = L^{-T}L_B^{-T}\\mathbf{c}\\\\ Q^{-1} = L^{-T}(I - B^{-1})L^{-1}\n",
     "\\end{equation*}\n",
     "\n",
     "\n",
@@ -95,13 +95,13 @@
   {
    "cell_type": "code",
    "execution_count": 1,
-   "id": "e3f368b3",
+   "id": "34c88775",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-07-20T13:09:28.617339Z",
-     "iopub.status.busy": "2022-07-20T13:09:28.617035Z",
-     "iopub.status.idle": "2022-07-20T13:09:32.135726Z",
-     "shell.execute_reply": "2022-07-20T13:09:32.135089Z"
+     "iopub.execute_input": "2022-07-21T10:55:05.575122Z",
+     "iopub.status.busy": "2022-07-21T10:55:05.574839Z",
+     "iopub.status.idle": "2022-07-21T10:55:09.029220Z",
+     "shell.execute_reply": "2022-07-21T10:55:09.028540Z"
     }
    },
    "outputs": [
@@ -109,8 +109,8 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2022-07-20 13:09:28.819124: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcudart.so.11.0'; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory\n",
-      "2022-07-20 13:09:28.819160: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.\n"
+      "2022-07-21 10:55:05.745062: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcudart.so.11.0'; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory\n",
+      "2022-07-21 10:55:05.745089: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.\n"
      ]
     },
     {
@@ -139,7 +139,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "bec73895",
+   "id": "6541e1eb",
    "metadata": {
     "id": "FzCgor4nKUcW"
    },
@@ -153,13 +153,13 @@
   {
    "cell_type": "code",
    "execution_count": 2,
-   "id": "40818e68",
+   "id": "c47b5d96",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-07-20T13:09:32.139145Z",
-     "iopub.status.busy": "2022-07-20T13:09:32.138688Z",
-     "iopub.status.idle": "2022-07-20T13:09:32.174265Z",
-     "shell.execute_reply": "2022-07-20T13:09:32.173642Z"
+     "iopub.execute_input": "2022-07-21T10:55:09.032401Z",
+     "iopub.status.busy": "2022-07-21T10:55:09.031995Z",
+     "iopub.status.idle": "2022-07-21T10:55:09.065058Z",
+     "shell.execute_reply": "2022-07-21T10:55:09.064467Z"
     },
     "id": "BMnIdXNiKU6t"
    },
@@ -170,10 +170,10 @@
      "text": [
       "/home/circleci/project/gpflow/experimental/utils.py:42: UserWarning: You're calling gpflow.experimental.check_shapes.checker.ShapeChecker.__init__ which is considered *experimental*. Expect: breaking changes, poor documentation, and bugs.\n",
       "  warn(\n",
-      "2022-07-20 13:09:32.141191: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcuda.so.1'; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory\n",
-      "2022-07-20 13:09:32.141217: W tensorflow/stream_executor/cuda/cuda_driver.cc:269] failed call to cuInit: UNKNOWN ERROR (303)\n",
-      "2022-07-20 13:09:32.141236: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (743ae1591448): /proc/driver/nvidia/version does not exist\n",
-      "2022-07-20 13:09:32.141481: I tensorflow/core/platform/cpu_feature_guard.cc:193] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA\n",
+      "2022-07-21 10:55:09.034513: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcuda.so.1'; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory\n",
+      "2022-07-21 10:55:09.034538: W tensorflow/stream_executor/cuda/cuda_driver.cc:269] failed call to cuInit: UNKNOWN ERROR (303)\n",
+      "2022-07-21 10:55:09.034556: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (ec81a0fa4f1a): /proc/driver/nvidia/version does not exist\n",
+      "2022-07-21 10:55:09.034790: I tensorflow/core/platform/cpu_feature_guard.cc:193] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA\n",
       "To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.\n"
      ]
     }
@@ -187,7 +187,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "470fb69f",
+   "id": "abb8fbc1",
    "metadata": {},
    "source": [
     "The `predict_f` method on the `GPModel` class performs no caching."
@@ -196,13 +196,13 @@
   {
    "cell_type": "code",
    "execution_count": 3,
-   "id": "8a9dbd1b",
+   "id": "be837b7f",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-07-20T13:09:32.177200Z",
-     "iopub.status.busy": "2022-07-20T13:09:32.176896Z",
-     "iopub.status.idle": "2022-07-20T13:09:44.764629Z",
-     "shell.execute_reply": "2022-07-20T13:09:44.763842Z"
+     "iopub.execute_input": "2022-07-21T10:55:09.067881Z",
+     "iopub.status.busy": "2022-07-21T10:55:09.067388Z",
+     "iopub.status.idle": "2022-07-21T10:55:10.369063Z",
+     "shell.execute_reply": "2022-07-21T10:55:10.368471Z"
     }
    },
    "outputs": [
@@ -210,7 +210,7 @@
      "name": "stdout",
      "output_type": "stream",
      "text": [
-      "154 ms ± 2.56 ms per loop (mean ± std. dev. of 7 runs, 10 loops each)\n"
+      "152 ms ± 9.06 ms per loop (mean ± std. dev. of 7 runs, 1 loop each)\n"
      ]
     }
    ],
@@ -222,13 +222,13 @@
   {
    "cell_type": "code",
    "execution_count": 4,
-   "id": "7d70a4ea",
+   "id": "9a9f2245",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-07-20T13:09:44.767382Z",
-     "iopub.status.busy": "2022-07-20T13:09:44.767100Z",
-     "iopub.status.idle": "2022-07-20T13:09:44.910356Z",
-     "shell.execute_reply": "2022-07-20T13:09:44.909698Z"
+     "iopub.execute_input": "2022-07-21T10:55:10.371621Z",
+     "iopub.status.busy": "2022-07-21T10:55:10.371328Z",
+     "iopub.status.idle": "2022-07-21T10:55:10.511297Z",
+     "shell.execute_reply": "2022-07-21T10:55:10.510483Z"
     }
    },
    "outputs": [],
@@ -240,13 +240,13 @@
   {
    "cell_type": "code",
    "execution_count": 5,
-   "id": "1c8a1cdf",
+   "id": "69e5208c",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-07-20T13:09:44.913455Z",
-     "iopub.status.busy": "2022-07-20T13:09:44.913160Z",
-     "iopub.status.idle": "2022-07-20T13:10:00.628731Z",
-     "shell.execute_reply": "2022-07-20T13:10:00.627964Z"
+     "iopub.execute_input": "2022-07-21T10:55:10.514267Z",
+     "iopub.status.busy": "2022-07-21T10:55:10.513992Z",
+     "iopub.status.idle": "2022-07-21T10:55:25.879747Z",
+     "shell.execute_reply": "2022-07-21T10:55:25.878828Z"
     }
    },
    "outputs": [
@@ -254,7 +254,7 @@
      "name": "stdout",
      "output_type": "stream",
      "text": [
-      "194 ms ± 4.38 ms per loop (mean ± std. dev. of 7 runs, 10 loops each)\n"
+      "190 ms ± 5.1 ms per loop (mean ± std. dev. of 7 runs, 10 loops each)\n"
      ]
     }
    ],
@@ -265,7 +265,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "bf61c757",
+   "id": "82936e0b",
    "metadata": {},
    "source": [
     "## SVGP Example\n",
@@ -276,13 +276,13 @@
   {
    "cell_type": "code",
    "execution_count": 6,
-   "id": "8a73e9b0",
+   "id": "ad32abfb",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-07-20T13:10:00.631556Z",
-     "iopub.status.busy": "2022-07-20T13:10:00.631254Z",
-     "iopub.status.idle": "2022-07-20T13:10:00.674117Z",
-     "shell.execute_reply": "2022-07-20T13:10:00.673464Z"
+     "iopub.execute_input": "2022-07-21T10:55:25.883083Z",
+     "iopub.status.busy": "2022-07-21T10:55:25.882767Z",
+     "iopub.status.idle": "2022-07-21T10:55:25.932705Z",
+     "shell.execute_reply": "2022-07-21T10:55:25.931623Z"
     },
     "id": "BMnIdXNiKU6t"
    },
@@ -297,7 +297,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "dd4f438c",
+   "id": "a5e943f3",
    "metadata": {},
    "source": [
     "The `predict_f` method on the `GPModel` class performs no caching."
@@ -306,13 +306,13 @@
   {
    "cell_type": "code",
    "execution_count": 7,
-   "id": "0e8fb3b0",
+   "id": "da01383f",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-07-20T13:10:00.677373Z",
-     "iopub.status.busy": "2022-07-20T13:10:00.677076Z",
-     "iopub.status.idle": "2022-07-20T13:10:17.435735Z",
-     "shell.execute_reply": "2022-07-20T13:10:17.435023Z"
+     "iopub.execute_input": "2022-07-21T10:55:25.936070Z",
+     "iopub.status.busy": "2022-07-21T10:55:25.935736Z",
+     "iopub.status.idle": "2022-07-21T10:55:27.729728Z",
+     "shell.execute_reply": "2022-07-21T10:55:27.729096Z"
     }
    },
    "outputs": [
@@ -320,7 +320,7 @@
      "name": "stdout",
      "output_type": "stream",
      "text": [
-      "206 ms ± 5.58 ms per loop (mean ± std. dev. of 7 runs, 10 loops each)\n"
+      "200 ms ± 1.19 ms per loop (mean ± std. dev. of 7 runs, 1 loop each)\n"
      ]
     }
    ],
@@ -331,7 +331,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "1e088735",
+   "id": "c6795e80",
    "metadata": {},
    "source": [
     "And again using the posterior object and caching"
@@ -340,13 +340,13 @@
   {
    "cell_type": "code",
    "execution_count": 8,
-   "id": "fa9a51a6",
+   "id": "d134a13c",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-07-20T13:10:17.438580Z",
-     "iopub.status.busy": "2022-07-20T13:10:17.438300Z",
-     "iopub.status.idle": "2022-07-20T13:10:17.722260Z",
-     "shell.execute_reply": "2022-07-20T13:10:17.721620Z"
+     "iopub.execute_input": "2022-07-21T10:55:27.733557Z",
+     "iopub.status.busy": "2022-07-21T10:55:27.733208Z",
+     "iopub.status.idle": "2022-07-21T10:55:27.994467Z",
+     "shell.execute_reply": "2022-07-21T10:55:27.993799Z"
     }
    },
    "outputs": [],
@@ -357,13 +357,13 @@
   {
    "cell_type": "code",
    "execution_count": 9,
-   "id": "5f861428",
+   "id": "8055a7bc",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-07-20T13:10:17.762179Z",
-     "iopub.status.busy": "2022-07-20T13:10:17.761812Z",
-     "iopub.status.idle": "2022-07-20T13:10:26.431481Z",
-     "shell.execute_reply": "2022-07-20T13:10:26.430816Z"
+     "iopub.execute_input": "2022-07-21T10:55:28.025532Z",
+     "iopub.status.busy": "2022-07-21T10:55:28.025144Z",
+     "iopub.status.idle": "2022-07-21T10:55:36.087248Z",
+     "shell.execute_reply": "2022-07-21T10:55:36.086516Z"
     }
    },
    "outputs": [
@@ -371,7 +371,7 @@
      "name": "stdout",
      "output_type": "stream",
      "text": [
-      "109 ms ± 3.31 ms per loop (mean ± std. dev. of 7 runs, 10 loops each)\n"
+      "100 ms ± 253 µs per loop (mean ± std. dev. of 7 runs, 10 loops each)\n"
      ]
     }
    ],
@@ -382,7 +382,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "9ee39b0f",
+   "id": "89235d98",
    "metadata": {},
    "source": [
     "## SGPR Example\n",
@@ -393,13 +393,13 @@
   {
    "cell_type": "code",
    "execution_count": 10,
-   "id": "572884ce",
+   "id": "3df4eab0",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-07-20T13:10:26.434388Z",
-     "iopub.status.busy": "2022-07-20T13:10:26.434072Z",
-     "iopub.status.idle": "2022-07-20T13:10:26.454672Z",
-     "shell.execute_reply": "2022-07-20T13:10:26.454045Z"
+     "iopub.execute_input": "2022-07-21T10:55:36.089939Z",
+     "iopub.status.busy": "2022-07-21T10:55:36.089662Z",
+     "iopub.status.idle": "2022-07-21T10:55:36.109601Z",
+     "shell.execute_reply": "2022-07-21T10:55:36.108880Z"
     }
    },
    "outputs": [],
@@ -409,7 +409,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "46790e69",
+   "id": "2d4147f0",
    "metadata": {},
    "source": [
     "The predict_f method on the instance performs no caching."
@@ -418,13 +418,13 @@
   {
    "cell_type": "code",
    "execution_count": 11,
-   "id": "f22d0162",
+   "id": "51ed894c",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-07-20T13:10:26.457817Z",
-     "iopub.status.busy": "2022-07-20T13:10:26.457515Z",
-     "iopub.status.idle": "2022-07-20T13:10:28.965353Z",
-     "shell.execute_reply": "2022-07-20T13:10:28.964707Z"
+     "iopub.execute_input": "2022-07-21T10:55:36.112531Z",
+     "iopub.status.busy": "2022-07-21T10:55:36.112243Z",
+     "iopub.status.idle": "2022-07-21T10:55:38.623269Z",
+     "shell.execute_reply": "2022-07-21T10:55:38.622671Z"
     }
    },
    "outputs": [
@@ -432,7 +432,7 @@
      "name": "stdout",
      "output_type": "stream",
      "text": [
-      "299 ms ± 17.3 ms per loop (mean ± std. dev. of 7 runs, 1 loop each)\n"
+      "300 ms ± 7.73 ms per loop (mean ± std. dev. of 7 runs, 1 loop each)\n"
      ]
     }
    ],
@@ -443,7 +443,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "4497644d",
+   "id": "8ac9d38b",
    "metadata": {},
    "source": [
     "Using the posterior object instead:"
@@ -452,13 +452,13 @@
   {
    "cell_type": "code",
    "execution_count": 12,
-   "id": "fa3a7ac7",
+   "id": "96648f99",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-07-20T13:10:28.968192Z",
-     "iopub.status.busy": "2022-07-20T13:10:28.967898Z",
-     "iopub.status.idle": "2022-07-20T13:10:29.626866Z",
-     "shell.execute_reply": "2022-07-20T13:10:29.626209Z"
+     "iopub.execute_input": "2022-07-21T10:55:38.626306Z",
+     "iopub.status.busy": "2022-07-21T10:55:38.626009Z",
+     "iopub.status.idle": "2022-07-21T10:55:39.280615Z",
+     "shell.execute_reply": "2022-07-21T10:55:39.279948Z"
     }
    },
    "outputs": [],
@@ -469,13 +469,13 @@
   {
    "cell_type": "code",
    "execution_count": 13,
-   "id": "c2568f3b",
+   "id": "14758653",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-07-20T13:10:29.629866Z",
-     "iopub.status.busy": "2022-07-20T13:10:29.629584Z",
-     "iopub.status.idle": "2022-07-20T13:10:38.831357Z",
-     "shell.execute_reply": "2022-07-20T13:10:38.830714Z"
+     "iopub.execute_input": "2022-07-21T10:55:39.283475Z",
+     "iopub.status.busy": "2022-07-21T10:55:39.283191Z",
+     "iopub.status.idle": "2022-07-21T10:55:47.782219Z",
+     "shell.execute_reply": "2022-07-21T10:55:47.781606Z"
     }
    },
    "outputs": [
@@ -483,7 +483,7 @@
      "name": "stdout",
      "output_type": "stream",
      "text": [
-      "114 ms ± 4.77 ms per loop (mean ± std. dev. of 7 runs, 10 loops each)\n"
+      "104 ms ± 4.3 ms per loop (mean ± std. dev. of 7 runs, 10 loops each)\n"
      ]
     }
    ],
