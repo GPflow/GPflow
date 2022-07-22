@@ -60,6 +60,13 @@ def test_check_shapes__tensorflow() -> None:
 def test_check_shapes__tensorflow__keras() -> None:
     # pylint: disable=arguments-differ,abstract-method,no-value-for-parameter,unexpected-keyword-arg
 
+    @check_shapes(
+        "x: [*]",
+        "return: [*]",
+    )
+    def f(x: tf.Tensor) -> tf.Tensor:
+        return x + 3
+
     class SuperLayer(tf.keras.layers.Layer):
         def __init__(self) -> None:
             super().__init__()
@@ -69,9 +76,10 @@ def test_check_shapes__tensorflow__keras() -> None:
             "x: [batch, input_dim]",
             "y: [batch, 1]",
             "return: [batch, input_dim]",
+            tf_decorator=True,
         )
         def call(self, x: tf.Tensor, y: tf.Tensor) -> tf.Tensor:
-            return x + y + self._b
+            return f(x) + y + self._b
 
     class SubLayer(SuperLayer):
         @inherit_check_shapes
@@ -86,6 +94,7 @@ def test_check_shapes__tensorflow__keras() -> None:
         @check_shapes(
             "xy: [batch, input_dim_plus_one]",
             "return: [batch, input_dim]",
+            tf_decorator=True,
         )
         def call(self, xy: tf.Tensor) -> tf.Tensor:
             x = cs(xy[:, :-1], "[batch, input_dim]")
@@ -299,3 +308,43 @@ def test_check_shapes__disable__speed(func_wrapper: Callable[[Any], Any]) -> Non
 
     assert t_no_checks < t_with_checks
     assert t_disabled_checks < t_with_checks
+
+
+def test_issue_1864() -> None:
+    @tf.function
+    @check_shapes(
+        "x: [*]",
+        "return: [*]",
+    )
+    def f(x: tf.Tensor) -> tf.Tensor:
+        for _ in tf.range(3):
+            x = x + 1.0
+        return x
+
+    x = tf.constant(7.0)
+    f(x)
+
+
+def test_issue_1936() -> None:
+    @tf.function
+    @check_shapes(
+        "x: [*]",
+        "return: [*]",
+    )
+    def f_if(x: tf.Tensor) -> tf.Tensor:
+        if tf.size(x) == 0:
+            return x
+        else:
+            return x + x
+
+    @tf.function
+    @check_shapes(
+        "x: [*]",
+        "return: [*]",
+    )
+    def f_tf_cond(x: tf.Tensor) -> tf.Tensor:
+        return tf.cond(tf.size(x) == 0, lambda: x, lambda: x + x)
+
+    x = tf.constant(7.0)
+    f_tf_cond(x)
+    f_if(x)
