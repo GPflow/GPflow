@@ -307,7 +307,7 @@ function checkPageExistsAndRedirect(event) {
 
 
 <div class="viewcode-block" id="check_shapes"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/index.html#gpflow.experimental.check_shapes.decorator.check_shapes">[docs]</a><span class="nd">@experimental</span>
-<span class="k">def</span> <span class="nf">check_shapes</span><span class="p">(</span><span class="o">*</span><span class="n">specs</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">C</span><span class="p">],</span> <span class="n">C</span><span class="p">]:</span>
+<span class="k">def</span> <span class="nf">check_shapes</span><span class="p">(</span><span class="o">*</span><span class="n">specs</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">tf_decorator</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">C</span><span class="p">],</span> <span class="n">C</span><span class="p">]:</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Decorator that checks the shapes of tensor arguments.</span>
 
@@ -319,6 +319,10 @@ function checkPageExistsAndRedirect(event) {
 <span class="sd">       :dedent:</span>
 
 <span class="sd">    :param specs: Specification of arguments to check. See: `Check specification`_.</span>
+<span class="sd">    :param tf_decorator: Whether to wrap the shape check with</span>
+<span class="sd">        ``tf.compat.v1.flags.tf_decorator.make_decorator``.</span>
+<span class="sd">        Setting this `True` seems to solve some problems, particularly related to Keras models,</span>
+<span class="sd">        but create some other problems, particularly related to branching on tensors.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">get_enable_check_shapes</span><span class="p">():</span>
         <span class="k">return</span> <span class="n">null_check_shapes</span>
@@ -345,7 +349,15 @@ function checkPageExistsAndRedirect(event) {
                 <span class="c1"># TypeError is raised if *args and **kwargs don&#39;t actually match the arguments of</span>
                 <span class="c1"># `func`. In that case we just call `func` normally, which will also result in an</span>
                 <span class="c1"># error, but an error with the error message the user is used to.</span>
-                <span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">TypeError</span> <span class="k">as</span> <span class="n">e2</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                        <span class="s2">&quot;Error calling wrapped function (see above error).&quot;</span>
+                        <span class="s2">&quot; If you believe your parameters actually are correct, the error can&quot;</span>
+                        <span class="s2">&quot; sometimes be fixed by setting `tf_decorator=True` on your `@check_shapes`&quot;</span>
+                        <span class="s2">&quot; decorator.&quot;</span>
+                    <span class="p">)</span> <span class="kn">from</span> <span class="nn">e2</span>
                 <span class="k">raise</span> <span class="ne">AssertionError</span><span class="p">(</span>
                     <span class="s2">&quot;The above line should fail so this line should never be reached.&quot;</span>
                 <span class="p">)</span> <span class="kn">from</span> <span class="nn">e</span>
@@ -402,7 +414,8 @@ function checkPageExistsAndRedirect(event) {
             <span class="k">return</span> <span class="n">result</span>
 
         <span class="c1"># Make TensorFlow understand our decoration:</span>
-        <span class="n">tf</span><span class="o">.</span><span class="n">compat</span><span class="o">.</span><span class="n">v1</span><span class="o">.</span><span class="n">flags</span><span class="o">.</span><span class="n">tf_decorator</span><span class="o">.</span><span class="n">make_decorator</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="n">wrapped</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">tf_decorator</span><span class="p">:</span>
+            <span class="n">tf</span><span class="o">.</span><span class="n">compat</span><span class="o">.</span><span class="n">v1</span><span class="o">.</span><span class="n">flags</span><span class="o">.</span><span class="n">tf_decorator</span><span class="o">.</span><span class="n">make_decorator</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="n">wrapped</span><span class="p">)</span>
 
         <span class="n">update_wrapper</span><span class="p">(</span><span class="n">wrapped</span><span class="p">,</span> <span class="n">func</span><span class="p">)</span>
         <span class="n">set_check_shapes</span><span class="p">(</span><span class="n">wrapped</span><span class="p">,</span> <span class="n">_check_shapes</span><span class="p">)</span>
