@@ -4,21 +4,17 @@ import traceback
 from math import ceil
 from pathlib import Path
 from time import perf_counter
-from typing import Any, Callable, Mapping, Tuple, TypeVar
+from typing import Any, Callable, Mapping, TypeVar
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from matplotlib.axes import Axes
 from scipy.stats import norm
 from scipy.stats.qmc import Halton
 from tabulate import tabulate
 
 import gpflow
-from gpflow import default_float
-from gpflow.base import AnyNDArray
 from gpflow.datasets import Dataset, get_regression_data, regression_datasets
-from gpflow.experimental.check_shapes import check_shape as cs
 from gpflow.experimental.check_shapes import check_shapes
 from gpflow.functions import Linear
 from gpflow.kernels import Kernel
@@ -30,6 +26,8 @@ TIMESTAMP = datetime.datetime.now().isoformat()
 SCRIPT_NAME = Path(__file__).stem
 RUN_ID = SCRIPT_NAME + "-" + TIMESTAMP
 RESULTS_DIR = Path(os.environ["PROWLER_IO_HOME"]) / "experiment_results"
+# RUN_ID = SCRIPT_NAME + str(2) # + "-" + TIMESTAMP
+# RESULTS_DIR = Path('C:/src/GPflow') / "experiment_results"
 OUTPUT_DIR = RESULTS_DIR / RUN_ID
 OUTPUT_DIR.mkdir(parents=True)
 LATEST_DIR = RESULTS_DIR / "latest"
@@ -128,9 +126,20 @@ def create_constant_noise(data: Dataset, rng: np.random.Generator) -> Gaussian:
 
 def create_linear(data: Dataset, rng: np.random.Generator) -> Linear:
     D = data.D  # type: ignore[attr-defined]
+
+    # First determine the noise amplitude at the origin
+    origin_noise = rng.lognormal(-1.0, 1.0, [])
+
+    # Now decide what fraction the noise changes along each axis, maximum permitted value of 1
+    fractional_noise_gradient = rng.normal(0.0, 0.2, [D, 1])
+
+    # Ensure noise_gradient is consistent with the chosen origin noise amplitude
+    noise_gradient = fractional_noise_gradient * origin_noise
+    # todo may be better to enforce this positivity-along-axis behaviour in the parameterisation
+
     return Linear(
-        A=rng.gamma(5.0, 0.2, [D, 1]),
-        b=rng.gamma(5.0, 0.2, []),
+        A=noise_gradient,
+        b=origin_noise,
     )
 
 
