@@ -115,6 +115,31 @@ class Linear(MeanFunction, Function):
         return tf.tensordot(X, self.A, [[-1], [0]]) + self.b
 
 
+class LinearNoise(MeanFunction, Function):
+    """
+    y_i = (A x_i + 1) * b
+    """
+
+    @check_shapes(
+        "A: [broadcast D, broadcast Q]",
+        "b: [broadcast Q]",
+    )
+    def __init__(self, A: TensorType = None, b: TensorType = None) -> None:
+        """
+        A is a matrix which maps each element of X to Y, b is an additive
+        constant.
+        """
+        MeanFunction.__init__(self)
+        A = np.ones((1, 1), dtype=default_float()) if A is None else A
+        b = np.zeros(1, dtype=default_float()) if b is None else b
+        self.A = Parameter(np.atleast_2d(A))
+        self.b = Parameter(b)
+
+    @inherit_check_shapes
+    def __call__(self, X: TensorType) -> tf.Tensor:
+        return (tf.tensordot(X, self.A, [[-1], [0]]) + 1.) * self.b
+
+
 class Identity(Linear, Function):
     """
     y_i = x_i

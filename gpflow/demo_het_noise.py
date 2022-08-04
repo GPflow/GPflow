@@ -12,11 +12,15 @@ import pandas as pd
 from scipy.stats import norm
 from scipy.stats.qmc import Halton
 from tabulate import tabulate
-
+from tensorflow_probability.python.bijectors import Exp
+import tensorflow_probability as tfp
+# todo use randominit from trieste import GaussianProcessRegression
+# todo or train gp first constant noise then retrain
 import gpflow
+from gpflow import Parameter
 from gpflow.datasets import Dataset, get_regression_data, regression_datasets
 from gpflow.experimental.check_shapes import check_shapes
-from gpflow.functions import Linear
+from gpflow.functions import Linear, LinearNoise
 from gpflow.kernels import Kernel
 from gpflow.likelihoods import Gaussian
 from gpflow.models import GPR, SGPR, SVGP, VGP, GPModel
@@ -34,8 +38,8 @@ LATEST_DIR = RESULTS_DIR / "latest"
 if LATEST_DIR.is_symlink():
     LATEST_DIR.unlink()
 LATEST_DIR.symlink_to(RUN_ID)
-
-
+VARIANCE_LOWER_BOUND = 1e-6
+OPT_METHOD = 'l-bfgs-b'
 # def homo_data() -> Data:
 #     rng = np.random.default_rng(20220614)
 #     n = 20
@@ -131,20 +135,31 @@ def create_linear(data: Dataset, rng: np.random.Generator) -> Linear:
     origin_noise = rng.lognormal(-1.0, 1.0, [])
 
     # Now decide what fraction the noise changes along each axis, maximum permitted value of 1
-    fractional_noise_gradient = rng.normal(0.0, 0.2, [D, 1])
+    fractional_noise_gradient = rng.normal(0.0, 0.01, [D, 1])  # np.zeros((D, 1)) # todo hack
 
     # Ensure noise_gradient is consistent with the chosen origin noise amplitude
-    noise_gradient = fractional_noise_gradient * origin_noise
-    # todo may be better to enforce this positivity-along-axis behaviour in the parameterisation
+    if False:
+        # todo may be better to enforce this positivity-along-axis behaviour in the parameterisation
+        linear_noise_fn = LinearNoise(
+            A=fractional_noise_gradient,
+            b=origin_noise,
+        )
+    else:
+        noise_gradient = fractional_noise_gradient * origin_noise
+        linear_noise_fn = Linear(
+            A=noise_gradient,
+            b=origin_noise,
+        )
 
-    return Linear(
-        A=noise_gradient,
-        b=origin_noise,
-    )
+    linear_noise_fn.b = Parameter(linear_noise_fn.b.numpy(), transform=Exp())
+    linear_noise_fn.b.prior = tfp.distributions.LogNormal(loc=np.float64(-1.), scale=np.float64(1.0))
+    # linear_noise_fn.A.prior = tfp.distributions.Normal(loc=np.float64(0.), scale=np.float64(0.1))
+
+    return linear_noise_fn
 
 
 def create_linear_noise(data: Dataset, rng: np.random.Generator) -> Gaussian:
-    return Gaussian(scale=create_linear(data, rng), variance_lower_bound=1e-2)
+    return Gaussian(scale=create_linear(data, rng), variance_lower_bound=VARIANCE_LOWER_BOUND)
 
 
 @create_model(sparse=False)
@@ -384,15 +399,29 @@ def run_model(
 
     if do_optimise:
         t_before = perf_counter()
+        if model.likelihood.scale is not None:
+            # First optimise with het noise
+            gpflow.utilities.set_trainable(model.likelihood.scale.A, False)
+            loss_fn = gpflow.models.training_loss_closure(model, data.train, compile=do_compile)
+            _ = gpflow.optimizers.Scipy().minimize(
+                loss_fn,
+                variables=model.trainable_variables,
+                compile=do_compile,
+                options={"disp": 10, "maxiter": 1_000},
+                method=OPT_METHOD,
+            )
+            gpflow.utilities.set_trainable(model.likelihood.scale.A, True)
+
         loss_fn = gpflow.models.training_loss_closure(model, data.train, compile=do_compile)
         opt_log = gpflow.optimizers.Scipy().minimize(
             loss_fn,
             variables=model.trainable_variables,
             compile=do_compile,
             options={"disp": 10, "maxiter": 1_000},
+            method=OPT_METHOD,
         )
         t_after = perf_counter()
-        n_iter = opt_log.nit
+        n_iter = opt_log.nit # if opt_log.nit > 0 else 1
         t_train = t_after - t_before
         res["opt/n_iter"] = n_iter
         res["time/training/s"] = t_train
@@ -459,6 +488,7 @@ def main() -> None:
     res_list = []
 
     for data_name in regression_datasets:
+        # todo try: # prevent crash killing other expts
         print("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
         print(data_name)
         data = get_regression_data(data_name)

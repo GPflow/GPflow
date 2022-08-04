@@ -21,7 +21,7 @@ import pandas
 logging.getLogger().setLevel(logging.INFO)
 import zipfile
 
-DATASET_DIR = "/home/jesper/prowler_io_home/datasets"
+DATASET_DIR = "/home/fergus/datasets"
 BASE_SEED = 42
 uci_base_url = "https://archive.ics.uci.edu/ml/machine-learning-databases/"
 
@@ -212,14 +212,14 @@ class Power(Dataset):
         return data[:, :-1], data[:, -1].reshape(-1, 1)
 
 
-@add_regression
-class Protein(Dataset):
-    N, D, name = 45730, 9, "protein"
-    url = uci_base_url + "00265/CASP.csv"
-
-    def read_data(self):
-        data = pandas.read_csv(self.datapath).values
-        return data[:, 1:], data[:, 0].reshape(-1, 1)
+# @add_regression
+# class Protein(Dataset):
+#     N, D, name = 45730, 9, "protein"
+#     url = uci_base_url + "00265/CASP.csv"
+#
+#     def read_data(self):
+#         data = pandas.read_csv(self.datapath).values
+#         return data[:, 1:], data[:, 0].reshape(-1, 1)
 
 
 @add_regression
@@ -232,10 +232,10 @@ class WineRed(Dataset):
         return data[:, :-1], data[:, -1].reshape(-1, 1)
 
 
-@add_regression
-class WineWhite(WineRed):
-    N, D, name = 4898, 11, "winewhite"
-    url = uci_base_url + "wine-quality/winequality-white.csv"
+# @add_regression
+# class WineWhite(WineRed):
+#     N, D, name = 4898, 11, "winewhite"
+#     url = uci_base_url + "wine-quality/winequality-white.csv"
 
 
 @add_regression
@@ -250,6 +250,9 @@ class Yacht(Dataset):
 
 regression_datasets = list(_ALL_REGRESSION_DATATSETS.keys())
 regression_datasets.sort()
+
+#todo remove this hack for selecting single dataset only
+regression_datasets = [regression_datasets[-2]]
 
 
 def get_regression_data(name, *args, **kwargs):
