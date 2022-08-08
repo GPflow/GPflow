@@ -2,7 +2,7 @@
  "cells": [
   {
    "cell_type": "markdown",
-   "id": "56ecacaa",
+   "id": "e061ad0a",
    "metadata": {},
    "source": [
     "# Custom mean functions: metalearning with GPs\n",
@@ -16,13 +16,13 @@
   {
    "cell_type": "code",
    "execution_count": 1,
-   "id": "bc3fe465",
+   "id": "e5c3f296",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-07-22T15:04:01.087730Z",
-     "iopub.status.busy": "2022-07-22T15:04:01.087287Z",
-     "iopub.status.idle": "2022-07-22T15:04:05.453979Z",
-     "shell.execute_reply": "2022-07-22T15:04:05.453150Z"
+     "iopub.execute_input": "2022-08-08T14:41:22.380205Z",
+     "iopub.status.busy": "2022-08-08T14:41:22.379938Z",
+     "iopub.status.idle": "2022-08-08T14:41:26.211216Z",
+     "shell.execute_reply": "2022-08-08T14:41:26.210049Z"
     }
    },
    "outputs": [
@@ -30,8 +30,8 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2022-07-22 15:04:01.527765: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcudart.so.11.0'; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory\n",
-      "2022-07-22 15:04:01.527792: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.\n"
+      "2022-08-08 14:41:22.696267: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcudart.so.11.0'; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory\n",
+      "2022-08-08 14:41:22.696295: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.\n"
      ]
     },
     {
@@ -39,7 +39,13 @@
      "output_type": "stream",
      "text": [
       "/home/circleci/project/gpflow/experimental/utils.py:42: UserWarning: You're calling gpflow.experimental.check_shapes.decorator.check_shapes which is considered *experimental*. Expect: breaking changes, poor documentation, and bugs.\n",
-      "  warn(\n",
+      "  warn(\n"
+     ]
+    },
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
       "/home/circleci/project/gpflow/experimental/utils.py:42: UserWarning: You're calling gpflow.experimental.check_shapes.inheritance.inherit_check_shapes which is considered *experimental*. Expect: breaking changes, poor documentation, and bugs.\n",
       "  warn(\n"
      ]
@@ -68,7 +74,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "60c33e66",
+   "id": "865e7558",
    "metadata": {
     "lines_to_next_cell": 2
    },
@@ -80,13 +86,13 @@
   {
    "cell_type": "code",
    "execution_count": 2,
-   "id": "447b1344",
+   "id": "0a023783",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-07-22T15:04:05.458524Z",
-     "iopub.status.busy": "2022-07-22T15:04:05.457967Z",
-     "iopub.status.idle": "2022-07-22T15:04:05.463465Z",
-     "shell.execute_reply": "2022-07-22T15:04:05.462760Z"
+     "iopub.execute_input": "2022-08-08T14:41:26.214507Z",
+     "iopub.status.busy": "2022-08-08T14:41:26.214099Z",
+     "iopub.status.idle": "2022-08-08T14:41:26.218786Z",
+     "shell.execute_reply": "2022-08-08T14:41:26.218220Z"
     }
    },
    "outputs": [],
@@ -111,7 +117,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "766175ca",
+   "id": "55a5caeb",
    "metadata": {},
    "source": [
     "We generate 10 tasks for illustration."
@@ -120,13 +126,13 @@
   {
    "cell_type": "code",
    "execution_count": 3,
-   "id": "c76b2a22",
+   "id": "d4684f86",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-07-22T15:04:05.466864Z",
-     "iopub.status.busy": "2022-07-22T15:04:05.466555Z",
-     "iopub.status.idle": "2022-07-22T15:04:06.267938Z",
-     "shell.execute_reply": "2022-07-22T15:04:06.177291Z"
+     "iopub.execute_input": "2022-08-08T14:41:26.221157Z",
+     "iopub.status.busy": "2022-08-08T14:41:26.220917Z",
+     "iopub.status.idle": "2022-08-08T14:41:26.423331Z",
+     "shell.execute_reply": "2022-08-08T14:41:26.328134Z"
     }
    },
    "outputs": [
@@ -136,10 +142,10 @@
      "text": [
       "/home/circleci/project/gpflow/experimental/utils.py:42: UserWarning: You're calling gpflow.experimental.check_shapes.checker.ShapeChecker.__init__ which is considered *experimental*. Expect: breaking changes, poor documentation, and bugs.\n",
       "  warn(\n",
-      "2022-07-22 15:04:05.468818: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcuda.so.1'; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory\n",
-      "2022-07-22 15:04:05.468845: W tensorflow/stream_executor/cuda/cuda_driver.cc:269] failed call to cuInit: UNKNOWN ERROR (303)\n",
-      "2022-07-22 15:04:05.468864: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (0931c1205a12): /proc/driver/nvidia/version does not exist\n",
-      "2022-07-22 15:04:05.469116: I tensorflow/core/platform/cpu_feature_guard.cc:193] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA\n",
+      "2022-08-08 14:41:26.222950: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcuda.so.1'; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory\n",
+      "2022-08-08 14:41:26.222975: W tensorflow/stream_executor/cuda/cuda_driver.cc:269] failed call to cuInit: UNKNOWN ERROR (303)\n",
+      "2022-08-08 14:41:26.222994: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (8b132faa90e0): /proc/driver/nvidia/version does not exist\n",
+      "2022-08-08 14:41:26.223226: I tensorflow/core/platform/cpu_feature_guard.cc:193] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA\n",
       "To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.\n"
      ]
     }
@@ -151,13 +157,13 @@
   {
    "cell_type": "code",
    "execution_count": 4,
-   "id": "75899e09",
+   "id": "eda335a6",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-07-22T15:04:06.273000Z",
-     "iopub.status.busy": "2022-07-22T15:04:06.272587Z",
-     "iopub.status.idle": "2022-07-22T15:04:06.397053Z",
-     "shell.execute_reply": "2022-07-22T15:04:06.396153Z"
+     "iopub.execute_input": "2022-08-08T14:41:26.425943Z",
+     "iopub.status.busy": "2022-08-08T14:41:26.425692Z",
+     "iopub.status.idle": "2022-08-08T14:41:26.541614Z",
+     "shell.execute_reply": "2022-08-08T14:41:26.541106Z"
     }
    },
    "outputs": [
@@ -180,7 +186,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "378f8861",
+   "id": "718d367e",
    "metadata": {
     "lines_to_next_cell": 2
    },
@@ -191,13 +197,13 @@
   {
    "cell_type": "code",
    "execution_count": 5,
-   "id": "f3620389",
+   "id": "1cffcf43",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-07-22T15:04:06.402184Z",
-     "iopub.status.busy": "2022-07-22T15:04:06.401763Z",
-     "iopub.status.idle": "2022-07-22T15:04:06.412109Z",
-     "shell.execute_reply": "2022-07-22T15:04:06.411245Z"
+     "iopub.execute_input": "2022-08-08T14:41:26.544327Z",
+     "iopub.status.busy": "2022-08-08T14:41:26.544086Z",
+     "iopub.status.idle": "2022-08-08T14:41:26.550105Z",
+     "shell.execute_reply": "2022-08-08T14:41:26.549621Z"
     }
    },
    "outputs": [],
@@ -250,13 +256,13 @@
   {
    "cell_type": "code",
    "execution_count": 6,
-   "id": "05a9c7f1",
+   "id": "e882a9b3",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-07-22T15:04:06.416000Z",
-     "iopub.status.busy": "2022-07-22T15:04:06.415613Z",
-     "iopub.status.idle": "2022-07-22T15:04:06.768480Z",
-     "shell.execute_reply": "2022-07-22T15:04:06.767278Z"
+     "iopub.execute_input": "2022-08-08T14:41:26.552240Z",
+     "iopub.status.busy": "2022-08-08T14:41:26.552017Z",
+     "iopub.status.idle": "2022-08-08T14:41:26.724591Z",
+     "shell.execute_reply": "2022-08-08T14:41:26.723894Z"
     }
    },
    "outputs": [],
@@ -275,7 +281,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "2d995d26",
+   "id": "2b02c160",
    "metadata": {},
    "source": [
     "## Create the mean function\n",
@@ -285,13 +291,13 @@
   {
    "cell_type": "code",
    "execution_count": 7,
-   "id": "a6b07325",
+   "id": "315e29ad",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-07-22T15:04:06.820675Z",
-     "iopub.status.busy": "2022-07-22T15:04:06.820176Z",
-     "iopub.status.idle": "2022-07-22T15:04:06.827424Z",
-     "shell.execute_reply": "2022-07-22T15:04:06.826510Z"
+     "iopub.execute_input": "2022-08-08T14:41:26.748203Z",
+     "iopub.status.busy": "2022-08-08T14:41:26.747931Z",
+     "iopub.status.idle": "2022-08-08T14:41:26.752082Z",
+     "shell.execute_reply": "2022-08-08T14:41:26.751595Z"
     }
    },
    "outputs": [],
@@ -312,7 +318,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "19f3c1f7",
+   "id": "664cc865",
    "metadata": {},
    "source": [
     "## Build the GP metamodel\n",
@@ -326,13 +332,13 @@
   {
    "cell_type": "code",
    "execution_count": 8,
-   "id": "383e51bf",
+   "id": "21e1f23c",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-07-22T15:04:06.831588Z",
-     "iopub.status.busy": "2022-07-22T15:04:06.831152Z",
-     "iopub.status.idle": "2022-07-22T15:04:06.836769Z",
-     "shell.execute_reply": "2022-07-22T15:04:06.835928Z"
+     "iopub.execute_input": "2022-08-08T14:41:26.754653Z",
+     "iopub.status.busy": "2022-08-08T14:41:26.754428Z",
+     "iopub.status.idle": "2022-08-08T14:41:26.757954Z",
+     "shell.execute_reply": "2022-08-08T14:41:26.757469Z"
     }
    },
    "outputs": [],
@@ -351,13 +357,13 @@
   {
    "cell_type": "code",
    "execution_count": 9,
-   "id": "ade49fb9",
+   "id": "2fbaeff1",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-07-22T15:04:06.840898Z",
-     "iopub.status.busy": "2022-07-22T15:04:06.840268Z",
-     "iopub.status.idle": "2022-07-22T15:04:06.848896Z",
-     "shell.execute_reply": "2022-07-22T15:04:06.848043Z"
+     "iopub.execute_input": "2022-08-08T14:41:26.760107Z",
+     "iopub.status.busy": "2022-08-08T14:41:26.759886Z",
+     "iopub.status.idle": "2022-08-08T14:41:26.764601Z",
+     "shell.execute_reply": "2022-08-08T14:41:26.764129Z"
     }
    },
    "outputs": [],
@@ -396,7 +402,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "06d763dd",
+   "id": "63e79f9d",
    "metadata": {},
    "source": [
     "Next, we define the training loop for metalearning."
@@ -405,13 +411,13 @@
   {
    "cell_type": "code",
    "execution_count": 10,
-   "id": "7fb5703a",
+   "id": "4b76f37c",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-07-22T15:04:06.853047Z",
-     "iopub.status.busy": "2022-07-22T15:04:06.852639Z",
-     "iopub.status.idle": "2022-07-22T15:09:13.372414Z",
-     "shell.execute_reply": "2022-07-22T15:09:13.371807Z"
+     "iopub.execute_input": "2022-08-08T14:41:26.766937Z",
+     "iopub.status.busy": "2022-08-08T14:41:26.766695Z",
+     "iopub.status.idle": "2022-08-08T14:46:30.553667Z",
+     "shell.execute_reply": "2022-08-08T14:46:30.553071Z"
     }
    },
    "outputs": [
@@ -426,7 +432,7 @@
      "name": "stdout",
      "output_type": "stream",
      "text": [
-      ">>>> iteration took 64.00 s\n",
+      ">>>> iteration took 61.57 s\n",
       "Currently in meta-iteration/epoch 1\n"
      ]
     },
@@ -434,7 +440,7 @@
      "name": "stdout",
      "output_type": "stream",
      "text": [
-      ">>>> iteration took 60.52 s\n",
+      ">>>> iteration took 60.21 s\n",
       "Currently in meta-iteration/epoch 2\n"
      ]
     },
@@ -442,7 +448,7 @@
      "name": "stdout",
      "output_type": "stream",
      "text": [
-      ">>>> iteration took 61.49 s\n",
+      ">>>> iteration took 60.41 s\n",
       "Currently in meta-iteration/epoch 3\n"
      ]
     },
@@ -450,7 +456,7 @@
      "name": "stdout",
      "output_type": "stream",
      "text": [
-      ">>>> iteration took 60.47 s\n",
+      ">>>> iteration took 60.66 s\n",
       "Currently in meta-iteration/epoch 4\n"
      ]
     },
@@ -458,7 +464,7 @@
      "name": "stdout",
      "output_type": "stream",
      "text": [
-      ">>>> iteration took 59.98 s\n"
+      ">>>> iteration took 60.90 s\n"
      ]
     }
    ],
@@ -495,7 +501,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "4f2b304c",
+   "id": "86011838",
    "metadata": {},
    "source": [
     "Finally, we use the optimized mean function for all of the test tasks. **NOTE:** We do not do any further optimization for the hyperparameters in this step."
@@ -504,13 +510,13 @@
   {
    "cell_type": "code",
    "execution_count": 11,
-   "id": "b565be5c",
+   "id": "74e3698b",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-07-22T15:09:13.375999Z",
-     "iopub.status.busy": "2022-07-22T15:09:13.375725Z",
-     "iopub.status.idle": "2022-07-22T15:09:13.536624Z",
-     "shell.execute_reply": "2022-07-22T15:09:13.536126Z"
+     "iopub.execute_input": "2022-08-08T14:46:30.556985Z",
+     "iopub.status.busy": "2022-08-08T14:46:30.556703Z",
+     "iopub.status.idle": "2022-08-08T14:46:30.721085Z",
+     "shell.execute_reply": "2022-08-08T14:46:30.720097Z"
     }
    },
    "outputs": [],
@@ -520,7 +526,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "021155f3",
+   "id": "49279fd3",
    "metadata": {
     "lines_to_next_cell": 2
    },
@@ -532,13 +538,13 @@
   {
    "cell_type": "code",
    "execution_count": 12,
-   "id": "398e39cd",
+   "id": "cb64c6fd",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-07-22T15:09:13.539322Z",
-     "iopub.status.busy": "2022-07-22T15:09:13.539073Z",
-     "iopub.status.idle": "2022-07-22T15:09:13.541982Z",
-     "shell.execute_reply": "2022-07-22T15:09:13.541502Z"
+     "iopub.execute_input": "2022-08-08T14:46:30.723696Z",
+     "iopub.status.busy": "2022-08-08T14:46:30.723460Z",
+     "iopub.status.idle": "2022-08-08T14:46:30.726310Z",
+     "shell.execute_reply": "2022-08-08T14:46:30.725815Z"
     }
    },
    "outputs": [],
@@ -550,13 +556,13 @@
   {
    "cell_type": "code",
    "execution_count": 13,
-   "id": "08e76652",
+   "id": "f6e740d8",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-07-22T15:09:13.544210Z",
-     "iopub.status.busy": "2022-07-22T15:09:13.543986Z",
-     "iopub.status.idle": "2022-07-22T15:09:14.931593Z",
-     "shell.execute_reply": "2022-07-22T15:09:14.931050Z"
+     "iopub.execute_input": "2022-08-08T14:46:30.728577Z",
+     "iopub.status.busy": "2022-08-08T14:46:30.728349Z",
+     "iopub.status.idle": "2022-08-08T14:46:32.152134Z",
+     "shell.execute_reply": "2022-08-08T14:46:32.151596Z"
     }
    },
    "outputs": [
@@ -708,13 +714,13 @@
   {
    "cell_type": "code",
    "execution_count": 14,
-   "id": "c286fca6",
+   "id": "484339b7",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-07-22T15:09:14.934311Z",
-     "iopub.status.busy": "2022-07-22T15:09:14.934026Z",
-     "iopub.status.idle": "2022-07-22T15:09:14.937696Z",
-     "shell.execute_reply": "2022-07-22T15:09:14.937189Z"
+     "iopub.execute_input": "2022-08-08T14:46:32.154785Z",
+     "iopub.status.busy": "2022-08-08T14:46:32.154493Z",
+     "iopub.status.idle": "2022-08-08T14:46:32.158286Z",
+     "shell.execute_reply": "2022-08-08T14:46:32.157762Z"
     }
    },
    "outputs": [
@@ -734,7 +740,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "18c0dc26",
+   "id": "e0affde0",
    "metadata": {},
    "source": [
     "We achieve comparable results to those reported in the paper.\n",
@@ -744,7 +750,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "29c1aa69",
+   "id": "529697df",
    "metadata": {},
    "source": [
     "## References\n",
@@ -772,7 +778,7 @@
    "name": "python",
    "nbconvert_exporter": "python",
    "pygments_lexer": "ipython3",
-   "version": "3.10.5"
+   "version": "3.10.6"
   }
  },
  "nbformat": 4,

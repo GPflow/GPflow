@@ -260,6 +260,7 @@ function checkPageExistsAndRedirect(event) {
 
 <span class="kn">from</span> <span class="nn">..base</span> <span class="kn">import</span> <span class="n">TensorType</span>
 <span class="kn">from</span> <span class="nn">..experimental.check_shapes</span> <span class="kn">import</span> <span class="n">check_shapes</span>
+<span class="kn">from</span> <span class="nn">..likelihoods</span> <span class="kn">import</span> <span class="n">Gaussian</span>
 
 
 <div class="viewcode-block" id="assert_params_false"><a class="viewcode-back" href="../../../api/gpflow/utilities/index.html#gpflow.utilities.assert_params_false">[docs]</a><span class="k">def</span> <span class="nf">assert_params_false</span><span class="p">(</span>
@@ -282,17 +283,27 @@ function checkPageExistsAndRedirect(event) {
 
 <div class="viewcode-block" id="add_noise_cov"><a class="viewcode-back" href="../../../api/gpflow/utilities/index.html#gpflow.utilities.add_noise_cov">[docs]</a><span class="nd">@check_shapes</span><span class="p">(</span>
     <span class="s2">&quot;K: [batch..., N, N]&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;likelihood_variance: []&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;likelihood_variance: [broadcast batch..., broadcast N]&quot;</span><span class="p">,</span>
     <span class="s2">&quot;return: [batch..., N, N]&quot;</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="k">def</span> <span class="nf">add_noise_cov</span><span class="p">(</span><span class="n">K</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">likelihood_variance</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Returns K + σ² I, where σ² is the likelihood noise variance and I is the corresponding identity</span>
-<span class="sd">    matrix.</span>
+<span class="sd">    Returns K + σ², where σ² is the diagonal likelihood noise variance.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">k_diag</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">diag_part</span><span class="p">(</span><span class="n">K</span><span class="p">)</span>
-    <span class="n">s_diag</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">fill</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">k_diag</span><span class="p">),</span> <span class="n">likelihood_variance</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">tf</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">set_diag</span><span class="p">(</span><span class="n">K</span><span class="p">,</span> <span class="n">k_diag</span> <span class="o">+</span> <span class="n">s_diag</span><span class="p">)</span></div>
+    <span class="k">return</span> <span class="n">tf</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">set_diag</span><span class="p">(</span><span class="n">K</span><span class="p">,</span> <span class="n">k_diag</span> <span class="o">+</span> <span class="n">likelihood_variance</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="add_likelihood_noise_cov"><a class="viewcode-back" href="../../../api/gpflow/utilities/index.html#gpflow.utilities.add_likelihood_noise_cov">[docs]</a><span class="nd">@check_shapes</span><span class="p">(</span>
+    <span class="s2">&quot;K: [batch..., N, N]&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;X: [batch..., N, D]&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;return: [batch..., N, N]&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="k">def</span> <span class="nf">add_likelihood_noise_cov</span><span class="p">(</span><span class="n">K</span><span class="p">:</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">likelihood</span><span class="p">:</span> <span class="n">Gaussian</span><span class="p">,</span> <span class="n">X</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns K + σ², where σ² is the likelihood noise variance.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">add_noise_cov</span><span class="p">(</span><span class="n">K</span><span class="p">,</span> <span class="n">tf</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">likelihood</span><span class="o">.</span><span class="n">variance_at</span><span class="p">(</span><span class="n">X</span><span class="p">),</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">))</span></div>
 </pre></div>
 
               </article>
@@ -319,7 +330,7 @@ function checkPageExistsAndRedirect(event) {
   
   <div class="footer-item">
     <p class="sphinx-version">
-Created using <a href="http://sphinx-doc.org/">Sphinx</a> 5.0.2.<br>
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 5.1.1.<br>
 </p>
   </div>
   
