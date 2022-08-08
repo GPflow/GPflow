@@ -73,6 +73,8 @@ This release contains contributions from:
     - `StudentT` `scale`
     - `Gamma` `shape`
     - `Beta` `scale`
+  - The `GPR` and `SGPR` can now be configured with a custom Gaussian likelihood, allowing you to
+    make them heteroscedastic.
 * `gpflow.experimental.check_shapes`
   - Can now be in three different states - ENABLED, EAGER_MODE_ONLY, and DISABLE.
   - Now support multiple variable-rank dimensions at the same time, e.g. `cov: [n..., n...]`.

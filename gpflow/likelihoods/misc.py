@@ -16,7 +16,7 @@ from .base import MonteCarloLikelihood
 from .scalar_continuous import Gaussian
 
 
-class GaussianMC(MonteCarloLikelihood, Gaussian):
+class GaussianMC(MonteCarloLikelihood, Gaussian):  # type: ignore[misc]
     """
     Stochastic version of Gaussian likelihood for demonstration purposes only.
     """
