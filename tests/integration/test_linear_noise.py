@@ -26,7 +26,7 @@ from gpflow.config import default_float
 from gpflow.functions import Linear
 from gpflow.kernels import Kernel
 from gpflow.likelihoods import Gaussian
-from gpflow.models import CGLB, GPR, GPRFITC, SGPR, SVGP, VGP, GPModel
+from gpflow.models import CGLB, GPR, GPRFITC, SGPR, SVGP, VGP, GPModel, training_loss_closure
 from gpflow.models.util import InducingPointsLike
 
 

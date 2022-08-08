@@ -24,13 +24,16 @@
 # y_i | f, x_i &\sim \mathcal N\big(y_i; f(x_i), \sigma^2_i\big)
 # \end{align}
 #
-# We'll demonstrate three methods. In the first demonstration we'll show how to fit the noise variance to a simple function. In the second demonstration we'll assume that the data comes from two different groups and show how to learn separate noise variance for the groups. In the final demonstration we'll assume you have multiple samples at each location $x$ and show how to use the empirical variance.
-# variances.
+# We'll demonstrate three methods:
+# * First we'll show how to fit the noise variance to a simple function.
+# * In the second demonstration we'll assume that the data comes from two different groups and show how to learn separate noise variance for the groups.
+# * Third we'll assume you have multiple samples at each location $x$ and show how to use the empirical variance.
+#
+# Finally we'll also talk about training and how two-stage optimization can improve results.
 
 # %%
 import numpy as np
 import tensorflow as tf
-import gpflow
 from gpflow.ci_utils import reduce_in_tests
 from gpflow.optimizers import NaturalGradient
 from gpflow import set_trainable
@@ -44,6 +47,8 @@ from gpflow import Parameter
 from gpflow.utilities import print_summary
 
 # %matplotlib inline
+
+gf.config.set_default_summary_fmt("notebook")
 
 optimizer_config = dict(maxiter=reduce_in_tests(100))
 n_data = reduce_in_tests(300)
@@ -153,7 +158,7 @@ plot_distribution(X, Y, X_plot, mean.numpy(), var.numpy())
 # ### Generate data
 
 # %%
-def get_groups(X):
+def get_group(X):
     return np.where((((0.2 < X) & (X < 0.4)) | ((0.7 < X) & (X < 0.8))), 0, 1)
 
 
@@ -161,7 +166,7 @@ def generate_data():
     rng = np.random.default_rng(42)  # for reproducibility
     X = rng.uniform(0.0, 1.0, (n_data, 1))
     signal = np.sin(6 * X)
-    noise_scale = 0.1 + 0.4 * get_groups(X)
+    noise_scale = 0.1 + 0.4 * get_group(X)
     noise = noise_scale * rng.standard_normal((n_data, 1))
     Y = signal + noise
     return X, Y
@@ -176,25 +181,14 @@ X, Y = generate_data()
 plot_distribution(X, Y)
 
 # %% [markdown]
-# ### Data structure
-#
-# In this case, we need to let the model know which group each data point belongs to, so we'll stack the group with the $x$ data:
-
-# %%
-X_data = np.hstack([X, get_groups(X)])
-X_plot_data = np.hstack([X_plot, get_groups(X_plot)])
-
-# %% [markdown]
 # ### Fit a naive model
 #
 # Again we'll start by fitting a naive GPR, to demonstrate the problem.
-#
-# Notice how we need to set the active dimensions of the kernel, for the kernel not to apply to the group column.
 
 # %%
 model = gf.models.GPR(
-    data=(X_data, Y),
-    kernel=gf.kernels.Matern52(active_dims=[0]),
+    data=(X, Y),
+    kernel=gf.kernels.Matern52(),
 )
 gf.optimizers.Scipy().minimize(
     model.training_loss, model.trainable_variables, options=optimizer_config
@@ -202,8 +196,17 @@ gf.optimizers.Scipy().minimize(
 print_summary(model)
 
 # %%
-mean, var = model.predict_y(X_plot_data)
+mean, var = model.predict_y(X_plot)
 plot_distribution(X, Y, X_plot, mean.numpy(), var.numpy())
+
+# %% [markdown]
+# ### Data structure
+#
+# To model the different noise groups, we need to let the model know which group each data point belongs to. We'll do that by appending a column with the group to the $x$ data:
+
+# %%
+X_and_group = np.hstack([X, get_group(X)])
+X_plot_and_group = np.hstack([X_plot, get_group(X_plot)])
 
 # %% [markdown]
 # ### Use multiple functions for the noise variance
@@ -214,7 +217,7 @@ plot_distribution(X, Y, X_plot, mean.numpy(), var.numpy())
 
 # %%
 model = gf.models.GPR(
-    data=(X_data, Y),
+    data=(X_and_group, Y),
     kernel=gf.kernels.Matern52(active_dims=[0]),
     likelihood=gf.likelihoods.Gaussian(
         variance=gf.functions.SwitchedFunction(
@@ -231,7 +234,7 @@ gf.optimizers.Scipy().minimize(
 print_summary(model)
 
 # %%
-mean, var = model.predict_y(X_plot_data)
+mean, var = model.predict_y(X_plot_and_group)
 plot_distribution(X, Y, X_plot, mean.numpy(), var.numpy())
 
 # %% [markdown]
@@ -333,6 +336,113 @@ print_summary(model)
 # %%
 mean, var = model.predict_f(X_plot)
 plot_distribution(X_flat, Y_flat, X_plot, mean.numpy(), var.numpy())
+
+
+# %% [markdown]
+# ## Training and two-stage optimization
+#
+# It can be difficult to get stable training when also having to optimise the noise function. Two-stage optimization can help with this.
+
+# %% [markdown]
+# We'll demonstrate this on a real, and more challenging dataset.
+
+# %%
+def load_data():
+    def normalize(a):
+        mean = np.average(a, axis=0, keepdims=True)
+        std = np.std(a, axis=0, keepdims=True)
+        return (a - mean) / std
+    
+    data = np.loadtxt("data/yacht_hydrodynamics.data")
+    data = normalize(data)
+
+    N = len(data)
+    
+    indices = np.arange(N)
+    rng = np.random.default_rng(42)
+    rng.shuffle(indices)
+    
+    N_test = round(0.1 * N)
+
+    return (
+        data[indices[N_test:], :-1],
+        data[indices[N_test:], -1:],
+        data[indices[:N_test], :-1],
+        data[indices[:N_test], -1:],
+    )
+    
+X_train, Y_train, X_test, Y_test = load_data()
+
+
+# %% [markdown]
+# This data has 6D input, so we don't know how to plot it. We'll use "negative log predictive density" (NLPD) to evaluate our fit.
+
+# %%
+def nlpd(model):
+    return -np.mean(model.predict_log_density((X_test, Y_test)))
+
+
+# %% [markdown]
+# As usual we'll start with a naive model:
+
+# %%
+model = gf.models.GPR(
+    data=(X_train, Y_train),
+    kernel=gf.kernels.Matern52(lengthscales=np.ones(6)),
+)
+gf.optimizers.Scipy().minimize(
+    model.training_loss, model.trainable_variables, options=optimizer_config
+)
+print_summary(model)
+naive_nlpd = nlpd(model)
+print("Naive NLPD", naive_nlpd)
+
+# %% [markdown]
+# Next we'll try adding a simple linear noise model:
+
+# %%
+model = gf.models.GPR(
+    data=(X_train, Y_train),
+    kernel=gf.kernels.Matern52(lengthscales=np.ones(6)),
+    likelihood=gf.likelihoods.Gaussian(scale=gf.functions.Linear(A=np.zeros((6, 1)), b=np.ones(()))),
+)
+gf.optimizers.Scipy().minimize(
+    model.training_loss, model.trainable_variables, options=optimizer_config
+)
+print_summary(model)
+simple_linear_nlpd = nlpd(model)
+print("Naive NLPD", naive_nlpd)
+print("Simple linear NLPD", simple_linear_nlpd)
+print(model.likelihood.scale.A)
+
+# %% [markdown]
+# Notice how this made very little difference to our fit. To get a better fit we'll try a two-stage optimization:
+# * First we'll fix the slope of the noise model, and essentiall optimise a model that assumes constant noise.
+# * Then we'll fit both the noise slope and everything else.
+
+# %%
+model = gf.models.GPR(
+    data=(X_train, Y_train),
+    kernel=gf.kernels.Matern52(),
+    likelihood=gf.likelihoods.Gaussian(scale=gf.functions.Linear(A=np.zeros((6, 1)), b=np.ones(()))),
+)
+gf.set_trainable(model.likelihood.scale.A, False)
+gf.set_trainable(model.likelihood.scale.b, False)
+gf.optimizers.Scipy().minimize(
+    model.training_loss, model.trainable_variables, options=optimizer_config
+)
+print_summary(model)
+gf.set_trainable(model.likelihood.scale.A, True)
+gf.set_trainable(model.likelihood.scale.b, True)
+gf.optimizers.Scipy().minimize(
+    model.training_loss, model.trainable_variables, options=optimizer_config
+)
+print_summary(model)
+two_stage_linear_nlpd = nlpd(model)
+print("Naive NLPD", naive_nlpd)
+print("Simple linear NLPD", simple_linear_nlpd)
+print("Two stage linear NLPD", simple_linear_nlpd)
+print(model.likelihood.scale.A)
 
 # %% [markdown]
 # ## Further reading

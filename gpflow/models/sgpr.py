@@ -176,12 +176,12 @@ class SGPR_deprecated(SGPRBase_deprecated):
         "return.AAT: [M, M]",
     )
     def _common_calculation(self) -> "SGPR.CommonTensors":
-        r"""
+        """
         Matrices used in log-det calculation
 
         :return:
-            * :math:`\sigma^2`,
-            * :math:`\sigma`,
+            * :math:`σ²`,
+            * :math:`σ`,
             * :math:`A = L⁻¹K_{uf}/σ`, where :math:`LLᵀ = Kᵤᵤ`,
             * :math:`B = AAT+I`,
             * :math:`LB` where :math`LBLBᵀ = B`,
@@ -315,7 +315,7 @@ class SGPR_deprecated(SGPRBase_deprecated):
         )  # cache qinv
         LB = tf.linalg.cholesky(B)  # cache alpha
         Aerr = tf.linalg.matmul(A, err / sigma[..., None])
-        c = tf.linalg.triangular_solve(LB, Aerr, lower=True)  # cache alpha
+        c = tf.linalg.triangular_solve(LB, Aerr, lower=True)
         tmp1 = tf.linalg.triangular_solve(L, Kus, lower=True)
         tmp2 = tf.linalg.triangular_solve(LB, tmp1, lower=True)
         mean = tf.linalg.matmul(tmp2, c, transpose_a=True)
