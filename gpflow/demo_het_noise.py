@@ -21,6 +21,7 @@ from gpflow import Parameter
 from gpflow.datasets import Dataset, get_regression_data, regression_datasets
 from gpflow.experimental.check_shapes import check_shapes
 from gpflow.functions import Linear, LinearNoise
+from gpflow.initialisation import find_best_model_initialization
 from gpflow.kernels import Kernel
 from gpflow.likelihoods import Gaussian
 from gpflow.models import GPR, SGPR, SVGP, VGP, GPModel
@@ -39,7 +40,9 @@ if LATEST_DIR.is_symlink():
     LATEST_DIR.unlink()
 LATEST_DIR.symlink_to(RUN_ID)
 VARIANCE_LOWER_BOUND = 1e-6
-OPT_METHOD = 'l-bfgs-b'
+N_INITS = 1_000
+N_REPS=1
+OPT_METHOD =  'l-bfgs-b' # 'bfgs' #
 # def homo_data() -> Data:
 #     rng = np.random.default_rng(20220614)
 #     n = 20
@@ -108,10 +111,15 @@ def create_model(sparse: bool) -> Callable[[C], C]:
 
 def create_kernel(data: Dataset, rng: np.random.Generator) -> Kernel:
     D = data.D  # type: ignore[attr-defined]
-    return gpflow.kernels.RBF(
+    kernel = gpflow.kernels.RBF(
         variance=rng.gamma(5.0, 0.2, []),
         lengthscales=rng.gamma(5.0, 0.2, [D]),
     )
+    length_prior =  tfp.distributions.LogNormal(loc=np.float64(0.), scale=np.float64(0.5))
+    kernel.variance.prior = tfp.distributions.LogNormal(loc=np.float64(-1.), scale=np.float64(1.0))
+    kernel.lengthscales = Parameter(kernel.lengthscales.numpy(), transform=Exp(), prior=length_prior)
+
+    return kernel
 
 
 def create_inducing(data: Dataset, rng: np.random.Generator) -> InducingPointsLike:
@@ -138,12 +146,16 @@ def create_linear(data: Dataset, rng: np.random.Generator) -> Linear:
     fractional_noise_gradient = rng.normal(0.0, 0.01, [D, 1])  # np.zeros((D, 1)) # todo hack
 
     # Ensure noise_gradient is consistent with the chosen origin noise amplitude
-    if False:
-        # todo may be better to enforce this positivity-along-axis behaviour in the parameterisation
+    b_transform = Exp()
+    if True: # Use parameterisation where 0th and 1st order terms are not independent
         linear_noise_fn = LinearNoise(
             A=fractional_noise_gradient,
             b=origin_noise,
         )
+        b_prior = tfp.distributions.LogNormal(loc=np.float64(-1.), scale=np.float64(1.0))
+        linear_noise_fn.b =  Parameter(linear_noise_fn.b.numpy(), transform=b_transform, prior=b_prior)
+        # linear_noise_fn.b =  Parameter(1e-2, transform=b_transform)
+        linear_noise_fn.A.prior =  tfp.distributions.Cauchy(loc=np.float64(0.), scale=np.float64(0.01)) # 0.05 was old scale # tfp.distributions.Normal(loc=np.float64(0.), scale=np.float64(0.03))  #
     else:
         noise_gradient = fractional_noise_gradient * origin_noise
         linear_noise_fn = Linear(
@@ -151,9 +163,9 @@ def create_linear(data: Dataset, rng: np.random.Generator) -> Linear:
             b=origin_noise,
         )
 
-    linear_noise_fn.b = Parameter(linear_noise_fn.b.numpy(), transform=Exp())
-    linear_noise_fn.b.prior = tfp.distributions.LogNormal(loc=np.float64(-1.), scale=np.float64(1.0))
-    # linear_noise_fn.A.prior = tfp.distributions.Normal(loc=np.float64(0.), scale=np.float64(0.1))
+        linear_noise_fn.b = Parameter(linear_noise_fn.b.numpy(), transform=b_transform)
+        linear_noise_fn.b.prior = tfp.distributions.LogNormal(loc=np.float64(-1.), scale=np.float64(1.0))
+        linear_noise_fn.A.prior = tfp.distributions.Cauchy(loc=np.float64(0.), scale=np.float64(0.01))  #  tfp.distributions.Normal(loc=np.float64(0.), scale=np.float64(0.1))
 
     return linear_noise_fn
 
@@ -328,7 +340,6 @@ models = [
     # svgp_linear,
 ]
 
-
 def plot_model(data: Dataset, model: GPModel) -> None:
     pass
 
@@ -399,18 +410,7 @@ def run_model(
 
     if do_optimise:
         t_before = perf_counter()
-        if model.likelihood.scale is not None:
-            # First optimise with het noise
-            gpflow.utilities.set_trainable(model.likelihood.scale.A, False)
-            loss_fn = gpflow.models.training_loss_closure(model, data.train, compile=do_compile)
-            _ = gpflow.optimizers.Scipy().minimize(
-                loss_fn,
-                variables=model.trainable_variables,
-                compile=do_compile,
-                options={"disp": 10, "maxiter": 1_000},
-                method=OPT_METHOD,
-            )
-            gpflow.utilities.set_trainable(model.likelihood.scale.A, True)
+        model = find_best_model_initialization(model, N_INITS)
 
         loss_fn = gpflow.models.training_loss_closure(model, data.train, compile=do_compile)
         opt_log = gpflow.optimizers.Scipy().minimize(
@@ -502,7 +502,7 @@ def main() -> None:
             rep = 0
             success_reps = 0
             model_plotted = False
-            while success_reps < 5:
+            while success_reps < N_REPS:
                 print("--------------------------------------------------")
                 print(f"{data_name}/{model_name}/{rep} (n={data.N})")
                 rng = np.random.default_rng(20220721 + rep)

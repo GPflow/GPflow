@@ -252,7 +252,7 @@ regression_datasets = list(_ALL_REGRESSION_DATATSETS.keys())
 regression_datasets.sort()
 
 #todo remove this hack for selecting single dataset only
-regression_datasets = [regression_datasets[-2]]
+regression_datasets = [regression_datasets[0]] # -2 for winered
 
 
 def get_regression_data(name, *args, **kwargs):
