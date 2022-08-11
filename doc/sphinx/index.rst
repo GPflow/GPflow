@@ -1,24 +1,107 @@
-GPflow Documentation
-==================================
+GPflow
+======
+
+GPflow is a package for building Gaussian Process models in python, using `TensorFlow
+<http://www.tensorflow.org>`_. A Gaussian Process is a kind of supervised learning model.
+Some advantages of Gaussian Processes are:
+
+* Uncertainty is an inherent part of Gaussian Processes. A Gaussian Process can tell you when
+  it does not know the answer.
+* Works well with small datasets. If your data is limited Gaussian Procceses can get the most from
+  your data.
+* Can scale to large datasets. Although Gaussian Processes, admittedly, can be computationally
+  intensive there are ways to scale them to large datasets.
+
+GPflow was originally created by `James Hensman <http://www.lancaster.ac.uk/staff/hensmanj/>`_
+and `Alexander G. de G. Matthews <http://mlg.eng.cam.ac.uk/?portfolio=alex-matthews>`_.
+Today it is primarily maintained by the company `Secondmind <https://www.secondmind.ai/>`_.
+
+Documentation
+-------------
+
+If you're new to GPflow we suggest you continue to:
+
+.. toctree::
+   :maxdepth: 2
+
+   getting_started
+
+For more in-depth documentation see:
 
 .. toctree::
    :maxdepth: 1
-   :caption: Intro:
 
-   intro
-   manual
-   notebooks/intro_to_gpflow2
-
-.. toctree::
-   :maxdepth: 1
-   :caption: Examples:
-
-   notebooks_file
-   derivations
-
-.. toctree::
-   :maxdepth: 1
-   :caption: References:
-
+   user_guide
    API reference <api/gpflow/index>
+   benchmarks
    bibliography
+
+
+Contact
+-------
+
+* GPflow is an open source project, and you can find this project on `GitHub
+  <https://github.com/GPflow/GPflow>`_.
+* If you find any bugs, please `file a ticket <https://github.com/GPflow/GPflow/issues/new/choose>`_.
+* If you need help, please use `Stack Overflow <https://stackoverflow.com/tags/gpflow>`_.
+* If you otherwise need to contact us, the easiest way to get in touch is
+  through our `Slack workspace
+  <https://join.slack.com/t/gpflow/shared_invite/enQtOTE5MDA0Nzg5NjA2LTYwZWI3MzhjYjNlZWI1MWExYzZjMGNhOWIwZWMzMGY0YjVkYzAyYjQ4NjgzNDUyZTgyNzcwYjAyY2QzMWRmYjE>`_.
+
+
+If you feel you have some relevant skills and are interested in contributing then please read our
+`notes for contributors <https://github.com/GPflow/GPflow/blob/develop/CONTRIBUTING.md>`_ and contact
+us. We maintain a `full list of contributors
+<https://github.com/GPflow/GPflow/blob/develop/CONTRIBUTORS.md>`_.
+
+
+Citing GPflow
+-------------
+
+To cite GPflow, please reference :cite:t:`GPflow2017`. Sample BibTeX is given below:
+
+.. code-block:: bib
+
+    @ARTICLE{GPflow2017,
+        author = {Matthews, Alexander G. de G. and
+                  {van der Wilk}, Mark and
+                  Nickson, Tom and
+                  Fujii, Keisuke. and
+                  {Boukouvalas}, Alexis and
+                  {Le{\'o}n-Villagr{\'a}}, Pablo and
+                  Ghahramani, Zoubin and
+                  Hensman, James},
+        title = "{{GP}flow: A {G}aussian process library using {T}ensor{F}low}",
+        journal = {Journal of Machine Learning Research},
+        year = {2017},
+        month = {apr},
+        volume = {18},
+        number = {40},
+        pages = {1-6},
+        url = {http://jmlr.org/papers/v18/16-537.html}
+    }
+
+Since the publication of the GPflow paper, the software has been significantly extended
+with the framework for interdomain approximations and multioutput priors. We review the
+framework and describe the design in :cite:t:`GPflow2020multioutput`, which can be cited by users:
+
+.. code-block:: bib
+
+    @article{GPflow2020multioutput,
+      author = {{van der Wilk}, Mark and
+                Dutordoir, Vincent and
+                John, ST and
+                Artemev, Artem and
+                Adam, Vincent and
+                Hensman, James},
+      title = {A Framework for Interdomain and Multioutput {G}aussian Processes},
+      year = {2020},
+      journal = {arXiv:2003.01115},
+      url = {https://arxiv.org/abs/2003.01115}
+    }
+
+
+Acknowledgements
+----------------
+
+James Hensman was supported by an MRC fellowship and Alexander G. de G. Matthews was supported by EPSRC grants EP/I036575/1 and EP/N014162/1.
