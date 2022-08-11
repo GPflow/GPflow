@@ -1,0 +1,938 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>gpflow.experimental.check_shapes.parser &#8212; GPflow 2.5.2 documentation</title>
+<script>
+  document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+  document.documentElement.dataset.theme = localStorage.getItem("theme") || "light"
+</script>
+
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../../_static/styles/theme.css?digest=92025949c220c2e29695" rel="stylesheet">
+<link href="../../../../_static/styles/pydata-sphinx-theme.css?digest=92025949c220c2e29695" rel="stylesheet">
+
+
+  <link rel="stylesheet"
+    href="../../../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pydata-custom.css" />
+
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=92025949c220c2e29695">
+
+    <script data-url_root="../../../../" id="documentation_options" src="../../../../_static/documentation_options.js"></script>
+    <script src="../../../../_static/jquery.js"></script>
+    <script src="../../../../_static/underscore.js"></script>
+    <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../../../../_static/doctools.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="docsearch:language" content="en">
+  </head>
+  
+  
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="180" data-default-mode="">
+    <div class="bd-header-announcement container-fluid" id="banner">
+      
+
+    </div>
+
+    
+    <nav class="bd-header navbar navbar-light navbar-expand-lg bg-light fixed-top bd-navbar" id="navbar-main"><div class="bd-header__inner container-xl">
+
+  <div id="navbar-start">
+    
+    
+  
+
+
+<a class="navbar-brand logo" href="../../../../index.html">
+  
+  
+  
+  
+    <img src="../../../../_static/gpflow_logo.svg" class="logo__image only-light" alt="Logo image">
+    <img src="../../../../_static/gpflow_logo.svg" class="logo__image only-dark" alt="Logo image">
+  
+  
+</a>
+    
+  </div>
+
+  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar-collapsible" aria-controls="navbar-collapsible" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="fas fa-bars"></span>
+  </button>
+
+  
+  <div id="navbar-collapsible" class="col-lg-9 collapse navbar-collapse">
+    <div id="navbar-center" class="mr-auto">
+      
+      <div class="navbar-center-item">
+        <ul id="navbar-main-elements" class="navbar-nav">
+    <li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../../getting_started.html">
+  Getting Started
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../../user_guide.html">
+  User Guide
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../../api/gpflow/index.html">
+  API reference
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../../bibliography.html">
+  Bibliography
+ </a>
+</li>
+
+    
+</ul>
+      </div>
+      
+    </div>
+
+    <div id="navbar-end">
+      
+      <div class="navbar-end-item">
+        <div class="dropdown" id="version_switcher">
+    <button type="button" class="btn btn-sm navbar-btn dropdown-toggle" id="version_switcher_button" data-toggle="dropdown">
+        develop  <!-- this text may get changed later by javascript -->
+        <span class="caret"></span>
+    </button>
+    <div id="version_switcher_menu" class="dropdown-menu list-group-flush py-0" aria-labelledby="version_switcher_button">
+    <!-- dropdown will be populated by javascript on page load -->
+    </div>
+</div>
+
+<!-- NOTE: this JS must live here (not in our global JS file) because it relies
+     on being processed by Jinja before it is run (specifically for replacing
+     variables _modules/gpflow/experimental/check_shapes/parser and {'json_url': 'https://gpflow.github.io/GPflow/versions.json', 'version_match': 'develop'}.
+-->
+
+<script type="text/javascript">
+// Check if corresponding page path exists in other version of docs
+// and, if so, go there instead of the homepage of the other docs version
+function checkPageExistsAndRedirect(event) {
+    const currentFilePath = "_modules/gpflow/experimental/check_shapes/parser.html",
+          tryUrl = event.target.getAttribute("href");
+    let otherDocsHomepage = tryUrl.replace(currentFilePath, "");
+    $.ajax({
+        type: 'HEAD',
+        url: tryUrl,
+        // if the page exists, go there
+        success: function() {
+            location.href = tryUrl;
+        }
+    }).fail(function() {
+        location.href = otherDocsHomepage;
+    });
+    // this prevents the browser from following the href of the clicked node
+    // (which is fine because this function takes care of redirecting)
+    return false;
+}
+
+// Populate the version switcher from the JSON config file
+(function () {
+    $.getJSON("https://gpflow.github.io/GPflow/versions.json", function(data, textStatus, jqXHR) {
+        const currentFilePath = "_modules/gpflow/experimental/check_shapes/parser.html";
+        let btn = document.getElementById("version_switcher_button");
+        // Set empty strings by default so that these attributes exist and can be used in CSS selectors
+        btn.dataset["activeVersionName"] = "";
+        btn.dataset["activeVersion"] = "";
+        // create links to the corresponding page in the other docs versions
+        $.each(data, function(index, entry) {
+            // if no custom name specified (e.g., "latest"), use version string
+            if (!("name" in entry)) {
+                entry.name = entry.version;
+            }
+            // create the node
+            const node = document.createElement("a");
+            node.setAttribute("class", "list-group-item list-group-item-action py-1");
+            node.textContent = `${entry.name}`;
+            node.setAttribute("href", `${entry.url}${currentFilePath}`);
+            // on click, AJAX calls will check if the linked page exists before
+            // trying to redirect, and if not, will redirect to the homepage
+            // for that version of the docs.
+            node.onclick = checkPageExistsAndRedirect;
+            // Add dataset values for the version and name in case people want
+            // to apply CSS styling based on this information.
+            node.dataset["versionName"] = entry.name;
+            node.dataset["version"] = entry.version;
+
+            $("#version_switcher_menu").append(node);
+            // replace dropdown button text with the preferred display name of
+            // this version, rather than using sphinx's  variable.
+            // also highlight the dropdown entry for the currently-viewed
+            // version's entry
+            if (entry.version == "develop") {
+                node.classList.add("active");
+                btn.innerText = btn.dataset["activeVersionName"] = entry.name;
+                btn.dataset["activeVersion"] = entry.version;
+            }
+        });
+    });
+})();
+</script>
+      </div>
+      
+    </div>
+  </div>
+</div>
+    </nav>
+    
+
+    <div class="bd-container container-xl">
+      <div class="bd-container__inner row">
+          
+
+<!-- Only show if we have sidebars configured, else just a small margin  -->
+<div class="bd-sidebar-primary col-12 col-md-3 bd-sidebar">
+  <div class="sidebar-start-items"><form class="bd-search d-flex align-items-center" action="../../../../search.html" method="get">
+  <i class="icon fas fa-search"></i>
+  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
+</form><nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
+  <div class="bd-toc-item active">
+    
+  </div>
+</nav>
+  </div>
+  <div class="sidebar-end-items">
+  </div>
+</div>
+
+
+          
+
+
+<div class="bd-sidebar-secondary d-none d-xl-block col-xl-2 bd-toc">
+  
+</div>
+
+
+          
+          
+          <div class="bd-content col-12 col-md-9 col-xl-7">
+              
+              <article class="bd-article" role="main">
+                
+  <h1>Source code for gpflow.experimental.check_shapes.parser</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright 2022 The GPflow Contributors. All Rights Reserved.</span>
+<span class="c1">#</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+<span class="c1">#</span>
+<span class="c1"># http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c1">#</span>
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
+
+<span class="c1"># pylint: disable=unused-argument</span>
+
+<span class="kn">from</span> <span class="nn">abc</span> <span class="kn">import</span> <span class="n">ABC</span>
+<span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">replace</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Collection</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Type</span>
+
+<span class="kn">from</span> <span class="nn">lark.exceptions</span> <span class="kn">import</span> <span class="n">UnexpectedInput</span>
+<span class="kn">from</span> <span class="nn">lark.lark</span> <span class="kn">import</span> <span class="n">Lark</span>
+<span class="kn">from</span> <span class="nn">lark.lexer</span> <span class="kn">import</span> <span class="n">PatternRE</span><span class="p">,</span> <span class="n">PatternStr</span><span class="p">,</span> <span class="n">Token</span>
+<span class="kn">from</span> <span class="nn">lark.tree</span> <span class="kn">import</span> <span class="n">Tree</span>
+
+<span class="kn">from</span> <span class="nn">.argument_ref</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">RESULT_TOKEN</span><span class="p">,</span>
+    <span class="n">AllElementsRef</span><span class="p">,</span>
+    <span class="n">ArgumentRef</span><span class="p">,</span>
+    <span class="n">AttributeArgumentRef</span><span class="p">,</span>
+    <span class="n">IndexArgumentRef</span><span class="p">,</span>
+    <span class="n">KeysRef</span><span class="p">,</span>
+    <span class="n">RootArgumentRef</span><span class="p">,</span>
+    <span class="n">ValuesRef</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">.bool_specs</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">BoolTest</span><span class="p">,</span>
+    <span class="n">ParsedAndBoolSpec</span><span class="p">,</span>
+    <span class="n">ParsedArgumentRefBoolSpec</span><span class="p">,</span>
+    <span class="n">ParsedBoolSpec</span><span class="p">,</span>
+    <span class="n">ParsedNotBoolSpec</span><span class="p">,</span>
+    <span class="n">ParsedOrBoolSpec</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">.config</span> <span class="kn">import</span> <span class="n">DocstringFormat</span><span class="p">,</span> <span class="n">get_rewrite_docstrings</span>
+<span class="kn">from</span> <span class="nn">.error_contexts</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">ArgumentContext</span><span class="p">,</span>
+    <span class="n">ErrorContext</span><span class="p">,</span>
+    <span class="n">LarkUnexpectedInputContext</span><span class="p">,</span>
+    <span class="n">MultipleElementBoolContext</span><span class="p">,</span>
+    <span class="n">StackContext</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">.exceptions</span> <span class="kn">import</span> <span class="n">CheckShapesError</span><span class="p">,</span> <span class="n">DocstringParseError</span><span class="p">,</span> <span class="n">SpecificationParseError</span>
+<span class="kn">from</span> <span class="nn">.specs</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">ParsedArgumentSpec</span><span class="p">,</span>
+    <span class="n">ParsedDimensionSpec</span><span class="p">,</span>
+    <span class="n">ParsedFunctionSpec</span><span class="p">,</span>
+    <span class="n">ParsedNoteSpec</span><span class="p">,</span>
+    <span class="n">ParsedShapeSpec</span><span class="p">,</span>
+    <span class="n">ParsedTensorSpec</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">_VARIABLE_RANK_LEADING_TOKEN</span> <span class="o">=</span> <span class="s2">&quot;*&quot;</span>
+<span class="n">_VARIABLE_RANK_TRAILING_TOKEN</span> <span class="o">=</span> <span class="s2">&quot;...&quot;</span>
+
+
+<span class="k">def</span> <span class="nf">_tree_children</span><span class="p">(</span><span class="n">tree</span><span class="p">:</span> <span class="n">Tree</span><span class="p">[</span><span class="n">Token</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">Tree</span><span class="p">[</span><span class="n">Token</span><span class="p">]]:</span>
+    <span class="sd">&quot;&quot;&quot; Return all the children of `tree` that are trees themselves. &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">child</span> <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">tree</span><span class="o">.</span><span class="n">children</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">child</span><span class="p">,</span> <span class="n">Tree</span><span class="p">))</span>
+
+
+<span class="k">def</span> <span class="nf">_token_children</span><span class="p">(</span><span class="n">tree</span><span class="p">:</span> <span class="n">Tree</span><span class="p">[</span><span class="n">Token</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+    <span class="sd">&quot;&quot;&quot; Return the values of all the children of `tree` that are tokens. &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">child</span><span class="o">.</span><span class="n">value</span> <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">tree</span><span class="o">.</span><span class="n">children</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">child</span><span class="p">,</span> <span class="n">Token</span><span class="p">))</span>
+
+
+<span class="k">class</span> <span class="nc">_TreeVisitor</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Functionality for visiting the nodes of parse-trees.</span>
+
+<span class="sd">    This differs from the classes built-in in Lark, in that it allows passing `*args` and</span>
+<span class="sd">    `**kwargs`.</span>
+
+<span class="sd">    Subclasses should add methods with the same name as Lark rules. Those methods should take the</span>
+<span class="sd">    parse tree of the rule, followed by any other `*args` and `**kwargs` you want. They may return</span>
+<span class="sd">    anything.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">visit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tree</span><span class="p">:</span> <span class="n">Tree</span><span class="p">[</span><span class="n">Token</span><span class="p">],</span> <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="n">tree</span><span class="o">.</span><span class="n">data</span>
+        <span class="n">visit</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="n">visit</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;No method found with name </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">.&quot;</span>
+        <span class="k">return</span> <span class="n">visit</span><span class="p">(</span><span class="n">tree</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">_ParseSpec</span><span class="p">(</span><span class="n">_TreeVisitor</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_source</span> <span class="o">=</span> <span class="n">source</span>
+
+    <span class="k">def</span> <span class="nf">argument_spec</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tree</span><span class="p">:</span> <span class="n">Tree</span><span class="p">[</span><span class="n">Token</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">ParsedArgumentSpec</span><span class="p">:</span>
+        <span class="n">argument_ref</span><span class="p">,</span> <span class="n">shape_spec</span><span class="p">,</span> <span class="o">*</span><span class="n">other_specs</span> <span class="o">=</span> <span class="n">_tree_children</span><span class="p">(</span><span class="n">tree</span><span class="p">)</span>
+        <span class="n">argument</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">argument_ref</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+        <span class="n">shape</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">shape_spec</span><span class="p">)</span>
+        <span class="n">condition</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">note</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">for</span> <span class="n">other_spec</span> <span class="ow">in</span> <span class="n">other_specs</span><span class="p">:</span>
+            <span class="n">other</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">other_spec</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">ParsedBoolSpec</span><span class="p">):</span>
+                <span class="k">assert</span> <span class="n">condition</span> <span class="ow">is</span> <span class="kc">None</span>
+                <span class="n">condition</span> <span class="o">=</span> <span class="n">other</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">ParsedNoteSpec</span><span class="p">)</span>
+                <span class="k">assert</span> <span class="n">note</span> <span class="ow">is</span> <span class="kc">None</span>
+                <span class="n">note</span> <span class="o">=</span> <span class="n">other</span>
+        <span class="n">tensor</span> <span class="o">=</span> <span class="n">ParsedTensorSpec</span><span class="p">(</span><span class="n">shape</span><span class="p">,</span> <span class="n">note</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">ParsedArgumentSpec</span><span class="p">(</span><span class="n">argument</span><span class="p">,</span> <span class="n">tensor</span><span class="p">,</span> <span class="n">condition</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">bool_spec_or</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tree</span><span class="p">:</span> <span class="n">Tree</span><span class="p">[</span><span class="n">Token</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">ParsedBoolSpec</span><span class="p">:</span>
+        <span class="n">left</span><span class="p">,</span> <span class="n">right</span> <span class="o">=</span> <span class="n">_tree_children</span><span class="p">(</span><span class="n">tree</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">ParsedOrBoolSpec</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">left</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">right</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">bool_spec_and</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tree</span><span class="p">:</span> <span class="n">Tree</span><span class="p">[</span><span class="n">Token</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">ParsedBoolSpec</span><span class="p">:</span>
+        <span class="n">left</span><span class="p">,</span> <span class="n">right</span> <span class="o">=</span> <span class="n">_tree_children</span><span class="p">(</span><span class="n">tree</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">ParsedAndBoolSpec</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">left</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">right</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">bool_spec_not</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tree</span><span class="p">:</span> <span class="n">Tree</span><span class="p">[</span><span class="n">Token</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">ParsedBoolSpec</span><span class="p">:</span>
+        <span class="p">(</span><span class="n">right</span><span class="p">,)</span> <span class="o">=</span> <span class="n">_tree_children</span><span class="p">(</span><span class="n">tree</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">ParsedNotBoolSpec</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">right</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">bool_spec_argument_ref_is_none</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tree</span><span class="p">:</span> <span class="n">Tree</span><span class="p">[</span><span class="n">Token</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">ParsedBoolSpec</span><span class="p">:</span>
+        <span class="p">(</span><span class="n">argument_ref</span><span class="p">,)</span> <span class="o">=</span> <span class="n">_tree_children</span><span class="p">(</span><span class="n">tree</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">ParsedArgumentRefBoolSpec</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">argument_ref</span><span class="p">,</span> <span class="kc">True</span><span class="p">),</span> <span class="n">BoolTest</span><span class="o">.</span><span class="n">IS_NONE</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">bool_spec_argument_ref_is_not_none</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tree</span><span class="p">:</span> <span class="n">Tree</span><span class="p">[</span><span class="n">Token</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">ParsedBoolSpec</span><span class="p">:</span>
+        <span class="p">(</span><span class="n">argument_ref</span><span class="p">,)</span> <span class="o">=</span> <span class="n">_tree_children</span><span class="p">(</span><span class="n">tree</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">ParsedArgumentRefBoolSpec</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">argument_ref</span><span class="p">,</span> <span class="kc">True</span><span class="p">),</span> <span class="n">BoolTest</span><span class="o">.</span><span class="n">IS_NOT_NONE</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">bool_spec_argument_ref</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tree</span><span class="p">:</span> <span class="n">Tree</span><span class="p">[</span><span class="n">Token</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">ParsedBoolSpec</span><span class="p">:</span>
+        <span class="p">(</span><span class="n">argument_ref</span><span class="p">,)</span> <span class="o">=</span> <span class="n">_tree_children</span><span class="p">(</span><span class="n">tree</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">ParsedArgumentRefBoolSpec</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">argument_ref</span><span class="p">,</span> <span class="kc">True</span><span class="p">),</span> <span class="n">BoolTest</span><span class="o">.</span><span class="n">BOOL</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">argument_ref_root</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tree</span><span class="p">:</span> <span class="n">Tree</span><span class="p">[</span><span class="n">Token</span><span class="p">],</span> <span class="n">is_for_bool_spec</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ArgumentRef</span><span class="p">:</span>
+        <span class="p">(</span><span class="n">token</span><span class="p">,)</span> <span class="o">=</span> <span class="n">_token_children</span><span class="p">(</span><span class="n">tree</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">RootArgumentRef</span><span class="p">(</span><span class="n">token</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">argument_ref_attribute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tree</span><span class="p">:</span> <span class="n">Tree</span><span class="p">[</span><span class="n">Token</span><span class="p">],</span> <span class="n">is_for_bool_spec</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ArgumentRef</span><span class="p">:</span>
+        <span class="p">(</span><span class="n">source</span><span class="p">,)</span> <span class="o">=</span> <span class="n">_tree_children</span><span class="p">(</span><span class="n">tree</span><span class="p">)</span>
+        <span class="p">(</span><span class="n">token</span><span class="p">,)</span> <span class="o">=</span> <span class="n">_token_children</span><span class="p">(</span><span class="n">tree</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">AttributeArgumentRef</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">is_for_bool_spec</span><span class="p">),</span> <span class="n">token</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">argument_ref_index</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tree</span><span class="p">:</span> <span class="n">Tree</span><span class="p">[</span><span class="n">Token</span><span class="p">],</span> <span class="n">is_for_bool_spec</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ArgumentRef</span><span class="p">:</span>
+        <span class="p">(</span><span class="n">source</span><span class="p">,)</span> <span class="o">=</span> <span class="n">_tree_children</span><span class="p">(</span><span class="n">tree</span><span class="p">)</span>
+        <span class="p">(</span><span class="n">token</span><span class="p">,)</span> <span class="o">=</span> <span class="n">_token_children</span><span class="p">(</span><span class="n">tree</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">IndexArgumentRef</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">is_for_bool_spec</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">token</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">argument_ref_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tree</span><span class="p">:</span> <span class="n">Tree</span><span class="p">[</span><span class="n">Token</span><span class="p">],</span> <span class="n">is_for_bool_spec</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ArgumentRef</span><span class="p">:</span>
+        <span class="p">(</span><span class="n">source</span><span class="p">,)</span> <span class="o">=</span> <span class="n">_tree_children</span><span class="p">(</span><span class="n">tree</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_disallow_multiple_element_bool_spec</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">is_for_bool_spec</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">AllElementsRef</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">is_for_bool_spec</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">argument_ref_keys</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tree</span><span class="p">:</span> <span class="n">Tree</span><span class="p">[</span><span class="n">Token</span><span class="p">],</span> <span class="n">is_for_bool_spec</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ArgumentRef</span><span class="p">:</span>
+        <span class="p">(</span><span class="n">source</span><span class="p">,)</span> <span class="o">=</span> <span class="n">_tree_children</span><span class="p">(</span><span class="n">tree</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_disallow_multiple_element_bool_spec</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">is_for_bool_spec</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">KeysRef</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">is_for_bool_spec</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">argument_ref_values</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tree</span><span class="p">:</span> <span class="n">Tree</span><span class="p">[</span><span class="n">Token</span><span class="p">],</span> <span class="n">is_for_bool_spec</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ArgumentRef</span><span class="p">:</span>
+        <span class="p">(</span><span class="n">source</span><span class="p">,)</span> <span class="o">=</span> <span class="n">_tree_children</span><span class="p">(</span><span class="n">tree</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_disallow_multiple_element_bool_spec</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">is_for_bool_spec</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">ValuesRef</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">is_for_bool_spec</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">_disallow_multiple_element_bool_spec</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">source</span><span class="p">:</span> <span class="n">Tree</span><span class="p">[</span><span class="n">Token</span><span class="p">],</span> <span class="n">is_for_bool_spec</span><span class="p">:</span> <span class="nb">bool</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">is_for_bool_spec</span><span class="p">:</span>
+            <span class="n">meta</span> <span class="o">=</span> <span class="n">source</span><span class="o">.</span><span class="n">meta</span>
+            <span class="k">raise</span> <span class="n">SpecificationParseError</span><span class="p">(</span>
+                <span class="n">MultipleElementBoolContext</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_source</span><span class="p">,</span> <span class="n">meta</span><span class="o">.</span><span class="n">end_line</span><span class="p">,</span> <span class="n">meta</span><span class="o">.</span><span class="n">end_column</span><span class="p">)</span>
+            <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">tensor_spec</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tree</span><span class="p">:</span> <span class="n">Tree</span><span class="p">[</span><span class="n">Token</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">ParsedTensorSpec</span><span class="p">:</span>
+        <span class="n">shape_spec</span><span class="p">,</span> <span class="o">*</span><span class="n">note_specs</span> <span class="o">=</span> <span class="n">_tree_children</span><span class="p">(</span><span class="n">tree</span><span class="p">)</span>
+        <span class="n">shape</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">shape_spec</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">note_specs</span><span class="p">:</span>
+            <span class="p">(</span><span class="n">note_spec</span><span class="p">,)</span> <span class="o">=</span> <span class="n">note_specs</span>
+            <span class="n">note</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">note_spec</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">note</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="n">ParsedTensorSpec</span><span class="p">(</span><span class="n">shape</span><span class="p">,</span> <span class="n">note</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">shape_spec</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tree</span><span class="p">:</span> <span class="n">Tree</span><span class="p">[</span><span class="n">Token</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">ParsedShapeSpec</span><span class="p">:</span>
+        <span class="p">(</span><span class="n">dimension_specs</span><span class="p">,)</span> <span class="o">=</span> <span class="n">_tree_children</span><span class="p">(</span><span class="n">tree</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">ParsedShapeSpec</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">dimension_specs</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">dimension_specs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tree</span><span class="p">:</span> <span class="n">Tree</span><span class="p">[</span><span class="n">Token</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">ParsedDimensionSpec</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">dimension_spec</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">dimension_spec</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">_tree_children</span><span class="p">(</span><span class="n">tree</span><span class="p">))</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">dimension_spec_broadcast</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tree</span><span class="p">:</span> <span class="n">Tree</span><span class="p">[</span><span class="n">Token</span><span class="p">],</span> <span class="n">i</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ParsedDimensionSpec</span><span class="p">:</span>
+        <span class="p">(</span><span class="n">dimension_spec</span><span class="p">,)</span> <span class="o">=</span> <span class="n">_tree_children</span><span class="p">(</span><span class="n">tree</span><span class="p">)</span>
+        <span class="n">child</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">dimension_spec</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">child</span><span class="p">,</span> <span class="n">ParsedDimensionSpec</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">replace</span><span class="p">(</span><span class="n">child</span><span class="p">,</span> <span class="n">broadcastable</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">dimension_spec_constant</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tree</span><span class="p">:</span> <span class="n">Tree</span><span class="p">[</span><span class="n">Token</span><span class="p">],</span> <span class="n">i</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ParsedDimensionSpec</span><span class="p">:</span>
+        <span class="p">(</span><span class="n">token</span><span class="p">,)</span> <span class="o">=</span> <span class="n">_token_children</span><span class="p">(</span><span class="n">tree</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">ParsedDimensionSpec</span><span class="p">(</span>
+            <span class="n">constant</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">token</span><span class="p">),</span> <span class="n">variable_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">variable_rank</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">broadcastable</span><span class="o">=</span><span class="kc">False</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">dimension_spec_variable</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tree</span><span class="p">:</span> <span class="n">Tree</span><span class="p">[</span><span class="n">Token</span><span class="p">],</span> <span class="n">i</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ParsedDimensionSpec</span><span class="p">:</span>
+        <span class="p">(</span><span class="n">token</span><span class="p">,)</span> <span class="o">=</span> <span class="n">_token_children</span><span class="p">(</span><span class="n">tree</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">ParsedDimensionSpec</span><span class="p">(</span>
+            <span class="n">constant</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">variable_name</span><span class="o">=</span><span class="n">token</span><span class="p">,</span> <span class="n">variable_rank</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">broadcastable</span><span class="o">=</span><span class="kc">False</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">dimension_spec_anonymous</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tree</span><span class="p">:</span> <span class="n">Tree</span><span class="p">[</span><span class="n">Token</span><span class="p">],</span> <span class="n">i</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ParsedDimensionSpec</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">ParsedDimensionSpec</span><span class="p">(</span>
+            <span class="n">constant</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">variable_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">variable_rank</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">broadcastable</span><span class="o">=</span><span class="kc">False</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">dimension_spec_variable_rank</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tree</span><span class="p">:</span> <span class="n">Tree</span><span class="p">[</span><span class="n">Token</span><span class="p">],</span> <span class="n">i</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ParsedDimensionSpec</span><span class="p">:</span>
+        <span class="p">(</span><span class="n">token1</span><span class="p">,</span> <span class="n">token2</span><span class="p">)</span> <span class="o">=</span> <span class="n">_token_children</span><span class="p">(</span><span class="n">tree</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">token1</span> <span class="o">==</span> <span class="n">_VARIABLE_RANK_LEADING_TOKEN</span><span class="p">:</span>
+            <span class="n">variable_name</span> <span class="o">=</span> <span class="n">token2</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="n">token2</span> <span class="o">==</span> <span class="n">_VARIABLE_RANK_TRAILING_TOKEN</span>
+            <span class="n">variable_name</span> <span class="o">=</span> <span class="n">token1</span>
+        <span class="k">return</span> <span class="n">ParsedDimensionSpec</span><span class="p">(</span>
+            <span class="n">constant</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">variable_name</span><span class="o">=</span><span class="n">variable_name</span><span class="p">,</span> <span class="n">variable_rank</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">broadcastable</span><span class="o">=</span><span class="kc">False</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">dimension_spec_anonymous_variable_rank</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">tree</span><span class="p">:</span> <span class="n">Tree</span><span class="p">[</span><span class="n">Token</span><span class="p">],</span> <span class="n">i</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ParsedDimensionSpec</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">ParsedDimensionSpec</span><span class="p">(</span>
+            <span class="n">constant</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">variable_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">variable_rank</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">broadcastable</span><span class="o">=</span><span class="kc">False</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">note_spec</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tree</span><span class="p">:</span> <span class="n">Tree</span><span class="p">[</span><span class="n">Token</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">ParsedNoteSpec</span><span class="p">:</span>
+        <span class="n">_hash_token</span><span class="p">,</span> <span class="o">*</span><span class="n">note_tokens</span> <span class="o">=</span> <span class="n">_token_children</span><span class="p">(</span><span class="n">tree</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">ParsedNoteSpec</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">token</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">token</span> <span class="ow">in</span> <span class="n">note_tokens</span><span class="p">))</span>
+
+
+<span class="k">class</span> <span class="nc">_RewritedocString</span><span class="p">(</span><span class="n">_TreeVisitor</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">function_spec</span><span class="p">:</span> <span class="n">ParsedFunctionSpec</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_source</span> <span class="o">=</span> <span class="n">source</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_spec_lines</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_argument_specs_to_sphinx</span><span class="p">(</span><span class="n">function_spec</span><span class="o">.</span><span class="n">arguments</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_notes</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">note</span><span class="o">.</span><span class="n">note</span> <span class="k">for</span> <span class="n">note</span> <span class="ow">in</span> <span class="n">function_spec</span><span class="o">.</span><span class="n">notes</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_indent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_guess_indent</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_argument_specs_to_sphinx</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">argument_specs</span><span class="p">:</span> <span class="n">Collection</span><span class="p">[</span><span class="n">ParsedArgumentSpec</span><span class="p">],</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]]:</span>
+        <span class="n">result</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">spec</span> <span class="ow">in</span> <span class="n">argument_specs</span><span class="p">:</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">spec</span><span class="o">.</span><span class="n">argument_ref</span><span class="o">.</span><span class="n">root_argument_name</span><span class="p">,</span> <span class="p">[])</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_argument_spec_to_sphinx</span><span class="p">(</span><span class="n">spec</span><span class="p">)</span>
+            <span class="p">)</span>
+        <span class="k">for</span> <span class="n">lines</span> <span class="ow">in</span> <span class="n">result</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="n">lines</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">result</span>
+
+    <span class="k">def</span> <span class="nf">_argument_spec_to_sphinx</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">argument_spec</span><span class="p">:</span> <span class="n">ParsedArgumentSpec</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="n">tensor_spec</span> <span class="o">=</span> <span class="n">argument_spec</span><span class="o">.</span><span class="n">tensor</span>
+        <span class="n">shape_spec</span> <span class="o">=</span> <span class="n">tensor_spec</span><span class="o">.</span><span class="n">shape</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;* **</span><span class="si">{</span><span class="nb">repr</span><span class="p">(</span><span class="n">argument_spec</span><span class="o">.</span><span class="n">argument_ref</span><span class="p">)</span><span class="si">}</span><span class="s2">**&quot;</span><span class="p">)</span>
+        <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot; has shape [&quot;</span><span class="p">)</span>
+        <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_shape_spec_to_sphinx</span><span class="p">(</span><span class="n">shape_spec</span><span class="p">))</span>
+        <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;]&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">argument_spec</span><span class="o">.</span><span class="n">condition</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot; if &quot;</span><span class="p">)</span>
+            <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_bool_spec_to_sphinx</span><span class="p">(</span><span class="n">argument_spec</span><span class="o">.</span><span class="n">condition</span><span class="p">,</span> <span class="kc">False</span><span class="p">))</span>
+
+        <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">tensor_spec</span><span class="o">.</span><span class="n">note</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">note_spec</span> <span class="o">=</span> <span class="n">tensor_spec</span><span class="o">.</span><span class="n">note</span>
+            <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">)</span>
+            <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">note_spec</span><span class="o">.</span><span class="n">note</span><span class="p">)</span>
+        <span class="k">return</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">out</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_bool_spec_to_sphinx</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bool_spec</span><span class="p">:</span> <span class="n">ParsedBoolSpec</span><span class="p">,</span> <span class="n">paren_wrap</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">bool_spec</span><span class="p">,</span> <span class="n">ParsedOrBoolSpec</span><span class="p">):</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_bool_spec_to_sphinx</span><span class="p">(</span><span class="n">bool_spec</span><span class="o">.</span><span class="n">left</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+                <span class="o">+</span> <span class="s2">&quot; or &quot;</span>
+                <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bool_spec_to_sphinx</span><span class="p">(</span><span class="n">bool_spec</span><span class="o">.</span><span class="n">right</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+            <span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">bool_spec</span><span class="p">,</span> <span class="n">ParsedAndBoolSpec</span><span class="p">):</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_bool_spec_to_sphinx</span><span class="p">(</span><span class="n">bool_spec</span><span class="o">.</span><span class="n">left</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+                <span class="o">+</span> <span class="s2">&quot; and &quot;</span>
+                <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bool_spec_to_sphinx</span><span class="p">(</span><span class="n">bool_spec</span><span class="o">.</span><span class="n">right</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+            <span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">bool_spec</span><span class="p">,</span> <span class="n">ParsedNotBoolSpec</span><span class="p">):</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="s2">&quot;not &quot;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_bool_spec_to_sphinx</span><span class="p">(</span><span class="n">bool_spec</span><span class="o">.</span><span class="n">right</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">bool_spec</span><span class="p">,</span> <span class="n">ParsedArgumentRefBoolSpec</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">bool_spec</span><span class="o">.</span><span class="n">bool_test</span> <span class="o">==</span> <span class="n">BoolTest</span><span class="o">.</span><span class="n">BOOL</span><span class="p">:</span>
+                <span class="n">paren_wrap</span> <span class="o">=</span> <span class="kc">False</span>  <span class="c1"># Never wrap a stand-alone argument.</span>
+                <span class="n">result</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;*</span><span class="si">{</span><span class="n">bool_spec</span><span class="o">.</span><span class="n">argument_ref</span><span class="si">!r}</span><span class="s2">*&quot;</span>
+            <span class="k">elif</span> <span class="n">bool_spec</span><span class="o">.</span><span class="n">bool_test</span> <span class="o">==</span> <span class="n">BoolTest</span><span class="o">.</span><span class="n">IS_NONE</span><span class="p">:</span>
+                <span class="n">result</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;*</span><span class="si">{</span><span class="n">bool_spec</span><span class="o">.</span><span class="n">argument_ref</span><span class="si">!r}</span><span class="s2">* is *None*&quot;</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">assert</span> <span class="n">bool_spec</span><span class="o">.</span><span class="n">bool_test</span> <span class="o">==</span> <span class="n">BoolTest</span><span class="o">.</span><span class="n">IS_NOT_NONE</span>
+                <span class="n">result</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;*</span><span class="si">{</span><span class="n">bool_spec</span><span class="o">.</span><span class="n">argument_ref</span><span class="si">!r}</span><span class="s2">* is not *None*&quot;</span>
+
+        <span class="k">if</span> <span class="n">paren_wrap</span><span class="p">:</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="n">result</span><span class="si">}</span><span class="s2">)&quot;</span>
+
+        <span class="k">return</span> <span class="n">result</span>
+
+    <span class="k">def</span> <span class="nf">_shape_spec_to_sphinx</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">shape_spec</span><span class="p">:</span> <span class="n">ParsedShapeSpec</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_dim_spec_to_sphinx</span><span class="p">(</span><span class="n">dim</span><span class="p">)</span> <span class="k">for</span> <span class="n">dim</span> <span class="ow">in</span> <span class="n">shape_spec</span><span class="o">.</span><span class="n">dims</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_dim_spec_to_sphinx</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dim_spec</span><span class="p">:</span> <span class="n">ParsedDimensionSpec</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="n">tokens</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">if</span> <span class="n">dim_spec</span><span class="o">.</span><span class="n">broadcastable</span><span class="p">:</span>
+            <span class="n">tokens</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;broadcast &quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">dim_spec</span><span class="o">.</span><span class="n">constant</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">tokens</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">dim_spec</span><span class="o">.</span><span class="n">constant</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="n">dim_spec</span><span class="o">.</span><span class="n">variable_name</span><span class="p">:</span>
+            <span class="n">tokens</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;*</span><span class="si">{</span><span class="n">dim_spec</span><span class="o">.</span><span class="n">variable_name</span><span class="si">}</span><span class="s2">*&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">dim_spec</span><span class="o">.</span><span class="n">variable_rank</span><span class="p">:</span>
+                <span class="n">tokens</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">dim_spec</span><span class="o">.</span><span class="n">variable_rank</span><span class="p">:</span>
+            <span class="n">tokens</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;...&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">tokens</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_guess_indent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">docstring</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Infer the level of indentation of a docstring.</span>
+
+<span class="sd">        Returns `None` if the indentation could not be inferred.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Algorithm adapted from:</span>
+        <span class="c1">#     https://www.python.org/dev/peps/pep-0257/#handling-docstring-indentation</span>
+
+        <span class="c1"># Convert tabs to spaces (following the normal Python rules)</span>
+        <span class="c1"># and split into a list of lines:</span>
+        <span class="n">lines</span> <span class="o">=</span> <span class="n">docstring</span><span class="o">.</span><span class="n">expandtabs</span><span class="p">()</span><span class="o">.</span><span class="n">splitlines</span><span class="p">()</span>
+        <span class="c1"># Determine minimum indentation (first line doesn&#39;t count):</span>
+        <span class="n">no_indent</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+        <span class="n">indent</span> <span class="o">=</span> <span class="n">no_indent</span>
+        <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">lines</span><span class="p">[</span><span class="mi">1</span><span class="p">:]:</span>
+            <span class="n">stripped</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">lstrip</span><span class="p">()</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">stripped</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="n">line_indent</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">line</span><span class="p">)</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">stripped</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">indent</span> <span class="o">==</span> <span class="n">no_indent</span> <span class="ow">or</span> <span class="n">line_indent</span> <span class="o">&lt;</span> <span class="n">indent</span><span class="p">:</span>
+                <span class="n">indent</span> <span class="o">=</span> <span class="n">line_indent</span>
+        <span class="k">return</span> <span class="n">indent</span> <span class="k">if</span> <span class="n">indent</span> <span class="o">!=</span> <span class="n">no_indent</span> <span class="k">else</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="nf">_insert_spec_lines</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">out</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">pos</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">spec_lines</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">docs</span><span class="p">:</span> <span class="n">Tree</span><span class="p">[</span><span class="n">Token</span><span class="p">]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="n">leading_str</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_source</span><span class="p">[</span><span class="n">pos</span> <span class="p">:</span> <span class="n">docs</span><span class="o">.</span><span class="n">meta</span><span class="o">.</span><span class="n">start_pos</span><span class="p">]</span><span class="o">.</span><span class="n">rstrip</span><span class="p">()</span>
+        <span class="n">docs_start</span> <span class="o">=</span> <span class="n">pos</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">leading_str</span><span class="p">)</span>
+        <span class="n">docs_str</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_source</span><span class="p">[</span><span class="n">docs_start</span> <span class="p">:</span> <span class="n">docs</span><span class="o">.</span><span class="n">meta</span><span class="o">.</span><span class="n">end_pos</span><span class="p">]</span>
+        <span class="n">trailing_str</span> <span class="o">=</span> <span class="n">docs_str</span><span class="o">.</span><span class="n">lstrip</span><span class="p">()</span>
+
+        <span class="n">docs_indent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_guess_indent</span><span class="p">(</span><span class="n">docs_str</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">docs_indent</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_indent</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">docs_indent</span> <span class="o">=</span> <span class="mi">4</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">docs_indent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_indent</span> <span class="o">+</span> <span class="mi">4</span>
+        <span class="n">indent_str</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="n">docs_indent</span> <span class="o">*</span> <span class="s2">&quot; &quot;</span>
+
+        <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">leading_str</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">spec_line</span> <span class="ow">in</span> <span class="n">spec_lines</span><span class="p">:</span>
+            <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">indent_str</span><span class="p">)</span>
+            <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">spec_line</span><span class="p">)</span>
+        <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">indent_str</span><span class="p">)</span>
+        <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">trailing_str</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">docs</span><span class="o">.</span><span class="n">meta</span><span class="o">.</span><span class="n">end_pos</span>
+
+    <span class="k">def</span> <span class="nf">_insert_param_info_fields</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">is_first_info_field</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+        <span class="n">spec_lines</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]],</span>
+        <span class="n">out</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+        <span class="n">pos</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="n">leading_str</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_source</span><span class="p">[</span><span class="n">pos</span><span class="p">:]</span><span class="o">.</span><span class="n">rstrip</span><span class="p">()</span>
+        <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">leading_str</span><span class="p">)</span>
+        <span class="n">pos</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="n">leading_str</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_source</span><span class="p">:</span>
+            <span class="c1"># Case where nothing preceeds these fields. Just write them.</span>
+            <span class="n">needed_newlines</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">elif</span> <span class="n">is_first_info_field</span><span class="p">:</span>
+            <span class="c1"># Free-form documentation preceeds these fields. Have 2 newlines to separate them.</span>
+            <span class="n">needed_newlines</span> <span class="o">=</span> <span class="mi">2</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Another info-field preceeds these fields.</span>
+            <span class="n">needed_newlines</span> <span class="o">=</span> <span class="mi">1</span>
+
+        <span class="n">indent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_indent</span> <span class="ow">or</span> <span class="mi">0</span>
+        <span class="n">indent_str</span> <span class="o">=</span> <span class="n">indent</span> <span class="o">*</span> <span class="s2">&quot; &quot;</span>
+        <span class="n">indent_one_str</span> <span class="o">=</span> <span class="mi">4</span> <span class="o">*</span> <span class="s2">&quot; &quot;</span>
+
+        <span class="k">for</span> <span class="n">arg_name</span><span class="p">,</span> <span class="n">arg_lines</span> <span class="ow">in</span> <span class="n">spec_lines</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">needed_newlines</span> <span class="o">*</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">needed_newlines</span> <span class="o">=</span> <span class="mi">1</span>
+
+            <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">indent_str</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">arg_name</span> <span class="o">==</span> <span class="n">RESULT_TOKEN</span><span class="p">:</span>
+                <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;:returns:&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;:param </span><span class="si">{</span><span class="n">arg_name</span><span class="si">}</span><span class="s2">:&quot;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">arg_line</span> <span class="ow">in</span> <span class="n">arg_lines</span><span class="p">:</span>
+                <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">indent_str</span><span class="p">)</span>
+                <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">indent_one_str</span><span class="p">)</span>
+                <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">arg_line</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">pos</span>
+
+    <span class="k">def</span> <span class="nf">docstring</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tree</span><span class="p">:</span> <span class="n">Tree</span><span class="p">[</span><span class="n">Token</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="c1"># The strategy here is:</span>
+        <span class="c1"># * `out` contains a list of strings that will be concatenated and form the final result.</span>
+        <span class="c1"># * `pos` is the position such that `self._source[:pos]` has already been added to `out`,</span>
+        <span class="c1">#   and `self._source[pos:]` still needs to be added.</span>
+        <span class="c1"># * When visiting children we pass `out` and `pos`, and the children add content to `out`</span>
+        <span class="c1">#   and return a new `pos`.</span>
+        <span class="n">docs</span><span class="p">,</span> <span class="n">info_fields</span> <span class="o">=</span> <span class="n">_tree_children</span><span class="p">(</span><span class="n">tree</span><span class="p">)</span>
+        <span class="n">out</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">pos</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_notes</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">docs</span><span class="o">.</span><span class="n">meta</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
+                <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_source</span><span class="p">[</span><span class="n">pos</span> <span class="p">:</span> <span class="n">docs</span><span class="o">.</span><span class="n">meta</span><span class="o">.</span><span class="n">end_pos</span><span class="p">])</span>
+                <span class="n">pos</span> <span class="o">=</span> <span class="n">docs</span><span class="o">.</span><span class="n">meta</span><span class="o">.</span><span class="n">end_pos</span>
+            <span class="n">indent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_indent</span> <span class="ow">or</span> <span class="mi">0</span>
+            <span class="n">indent_str</span> <span class="o">=</span> <span class="n">indent</span> <span class="o">*</span> <span class="s2">&quot; &quot;</span>
+            <span class="k">for</span> <span class="n">note</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_notes</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">out</span><span class="p">:</span>
+                    <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">indent_str</span><span class="p">)</span>
+                <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">note</span><span class="p">)</span>
+
+        <span class="n">pos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">info_fields</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">pos</span><span class="p">)</span>
+        <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_source</span><span class="p">[</span><span class="n">pos</span><span class="p">:])</span>
+
+        <span class="k">return</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">out</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">info_fields</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tree</span><span class="p">:</span> <span class="n">Tree</span><span class="p">[</span><span class="n">Token</span><span class="p">],</span> <span class="n">out</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">pos</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="n">spec_lines</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_spec_lines</span><span class="p">)</span>
+        <span class="n">is_first_info_field</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">_tree_children</span><span class="p">(</span><span class="n">tree</span><span class="p">):</span>
+            <span class="c1"># This will remove the self._spec_lines corresponding to found `:param:`&#39;s.</span>
+            <span class="n">pos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">child</span><span class="p">,</span> <span class="n">spec_lines</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">pos</span><span class="p">)</span>
+            <span class="n">is_first_info_field</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="c1"># Add any remaining `:param:`s:</span>
+        <span class="n">pos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_insert_param_info_fields</span><span class="p">(</span><span class="n">is_first_info_field</span><span class="p">,</span> <span class="n">spec_lines</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">pos</span><span class="p">)</span>
+
+        <span class="c1"># Make sure info fields are terminated by a new-line:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_spec_lines</span><span class="p">:</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">pos</span> <span class="o">&gt;=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_source</span><span class="p">))</span> <span class="ow">or</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_source</span><span class="p">[</span><span class="n">pos</span><span class="p">]</span> <span class="o">!=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">):</span>
+                <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">pos</span>
+
+    <span class="k">def</span> <span class="nf">info_field_param</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">tree</span><span class="p">:</span> <span class="n">Tree</span><span class="p">[</span><span class="n">Token</span><span class="p">],</span> <span class="n">spec_lines</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]],</span> <span class="n">out</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">pos</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="n">info_field_args</span><span class="p">,</span> <span class="n">docs</span> <span class="o">=</span> <span class="n">_tree_children</span><span class="p">(</span><span class="n">tree</span><span class="p">)</span>
+        <span class="n">arg_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">info_field_args</span><span class="p">)</span>
+        <span class="n">arg_lines</span> <span class="o">=</span> <span class="n">spec_lines</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">arg_name</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">arg_lines</span><span class="p">:</span>
+            <span class="n">pos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_insert_spec_lines</span><span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="n">pos</span><span class="p">,</span> <span class="n">arg_lines</span><span class="p">,</span> <span class="n">docs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">pos</span>
+
+    <span class="k">def</span> <span class="nf">info_field_returns</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">tree</span><span class="p">:</span> <span class="n">Tree</span><span class="p">[</span><span class="n">Token</span><span class="p">],</span> <span class="n">spec_lines</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]],</span> <span class="n">out</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">pos</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="p">(</span><span class="n">docs</span><span class="p">,)</span> <span class="o">=</span> <span class="n">_tree_children</span><span class="p">(</span><span class="n">tree</span><span class="p">)</span>
+        <span class="n">return_lines</span> <span class="o">=</span> <span class="n">spec_lines</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">RESULT_TOKEN</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">return_lines</span><span class="p">:</span>
+            <span class="n">pos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_insert_spec_lines</span><span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="n">pos</span><span class="p">,</span> <span class="n">return_lines</span><span class="p">,</span> <span class="n">docs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">pos</span>
+
+    <span class="k">def</span> <span class="nf">info_field_other</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">tree</span><span class="p">:</span> <span class="n">Tree</span><span class="p">[</span><span class="n">Token</span><span class="p">],</span> <span class="n">spec_lines</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]],</span> <span class="n">out</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">pos</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">pos</span>
+
+    <span class="k">def</span> <span class="nf">info_field_args</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tree</span><span class="p">:</span> <span class="n">Tree</span><span class="p">[</span><span class="n">Token</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="n">tokens</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">_token_children</span><span class="p">(</span><span class="n">tree</span><span class="p">))</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">tokens</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">tokens</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+
+<span class="k">class</span> <span class="nc">_CachedParser</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Small wrapper around Lark so that we can reuse as much code as possible between the different</span>
+<span class="sd">    things we parse.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">grammar_filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">start_symbol</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">parser_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">re_terminal_descriptions</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
+        <span class="n">transformer_class</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">_TreeVisitor</span><span class="p">],</span>
+        <span class="n">exception_class</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">CheckShapesError</span><span class="p">],</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cache</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="o">...</span><span class="p">]],</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_parser</span> <span class="o">=</span> <span class="n">Lark</span><span class="o">.</span><span class="n">open</span><span class="p">(</span>
+            <span class="n">grammar_filename</span><span class="p">,</span>
+            <span class="n">rel_to</span><span class="o">=</span><span class="vm">__file__</span><span class="p">,</span>
+            <span class="n">propagate_positions</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">start</span><span class="o">=</span><span class="n">start_symbol</span><span class="p">,</span>
+            <span class="n">parser</span><span class="o">=</span><span class="n">parser_name</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_terminal_descriptions</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_transformer_class</span> <span class="o">=</span> <span class="n">transformer_class</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_exception_class</span> <span class="o">=</span> <span class="n">exception_class</span>
+
+        <span class="c1"># Pre-compute nice terminal descriptions for our error messages:</span>
+        <span class="n">missing</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="n">unused</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">re_terminal_descriptions</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">terminal</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parser</span><span class="o">.</span><span class="n">terminals</span><span class="p">:</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="n">terminal</span><span class="o">.</span><span class="n">name</span>
+            <span class="n">pattern</span> <span class="o">=</span> <span class="n">terminal</span><span class="o">.</span><span class="n">pattern</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">PatternStr</span><span class="p">):</span>
+                <span class="n">description</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;&quot;</span><span class="si">{</span><span class="n">pattern</span><span class="o">.</span><span class="n">value</span><span class="si">}</span><span class="s1">&quot;&#39;</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">PatternRE</span><span class="p">)</span>
+                <span class="n">unused_description</span> <span class="o">=</span> <span class="n">unused</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+                <span class="c1"># If we enter this `if` then the parser is misconfigured, so we never get here, even</span>
+                <span class="c1"># during tests.</span>
+                <span class="k">if</span> <span class="n">unused_description</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># pragma: no cover</span>
+                    <span class="n">missing</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+                    <span class="n">description</span> <span class="o">=</span> <span class="s2">&quot;ERROR&quot;</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">description</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">re_terminal_descriptions</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="si">}</span><span class="s2"> (re=</span><span class="si">{</span><span class="n">pattern</span><span class="o">.</span><span class="n">value</span><span class="si">}</span><span class="s2">)&quot;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_terminal_descriptions</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">description</span>
+        <span class="k">assert</span> <span class="ow">not</span> <span class="n">unused</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Redundant terminal descriptions were provided: </span><span class="si">{</span><span class="nb">sorted</span><span class="p">(</span><span class="n">unused</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">assert</span> <span class="ow">not</span> <span class="n">missing</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Some RE terminals did not have a description: </span><span class="si">{</span><span class="nb">sorted</span><span class="p">(</span><span class="n">missing</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+
+    <span class="k">def</span> <span class="nf">parse</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">transformer_args</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="n">context</span><span class="p">:</span> <span class="n">ErrorContext</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+        <span class="n">sentinel</span> <span class="o">=</span> <span class="nb">object</span><span class="p">()</span>
+        <span class="n">cache_key</span> <span class="o">=</span> <span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">transformer_args</span><span class="p">)</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cache</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">cache_key</span><span class="p">,</span> <span class="n">sentinel</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">result</span> <span class="ow">is</span> <span class="n">sentinel</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">tree</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parser</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+            <span class="k">except</span> <span class="n">UnexpectedInput</span> <span class="k">as</span> <span class="n">ui</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">_exception_class</span><span class="p">(</span>
+                    <span class="n">StackContext</span><span class="p">(</span>
+                        <span class="n">context</span><span class="p">,</span> <span class="n">LarkUnexpectedInputContext</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">ui</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_terminal_descriptions</span><span class="p">)</span>
+                    <span class="p">)</span>
+                <span class="p">)</span> <span class="kn">from</span> <span class="nn">ui</span>
+
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_transformer_class</span><span class="p">(</span><span class="o">*</span><span class="n">transformer_args</span><span class="p">)</span><span class="o">.</span><span class="n">visit</span><span class="p">(</span><span class="n">tree</span><span class="p">)</span>
+            <span class="k">except</span> <span class="n">CheckShapesError</span> <span class="k">as</span> <span class="n">cse</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">_exception_class</span><span class="p">(</span><span class="n">StackContext</span><span class="p">(</span><span class="n">context</span><span class="p">,</span> <span class="n">cse</span><span class="o">.</span><span class="n">context</span><span class="p">))</span> <span class="kn">from</span> <span class="nn">cse</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">_cache</span><span class="p">[</span><span class="n">cache_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">result</span>
+        <span class="k">return</span> <span class="n">result</span>
+
+
+<span class="n">_TENSOR_SPEC_PARSER</span> <span class="o">=</span> <span class="n">_CachedParser</span><span class="p">(</span>
+    <span class="n">grammar_filename</span><span class="o">=</span><span class="s2">&quot;check_shapes.lark&quot;</span><span class="p">,</span>
+    <span class="n">start_symbol</span><span class="o">=</span><span class="s2">&quot;tensor_spec&quot;</span><span class="p">,</span>
+    <span class="n">parser_name</span><span class="o">=</span><span class="s2">&quot;lalr&quot;</span><span class="p">,</span>
+    <span class="n">re_terminal_descriptions</span><span class="o">=</span><span class="p">{</span>
+        <span class="s2">&quot;NOTE_TEXT&quot;</span><span class="p">:</span> <span class="s2">&quot;note / comment text&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;CNAME&quot;</span><span class="p">:</span> <span class="s2">&quot;variable name&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;INT&quot;</span><span class="p">:</span> <span class="s2">&quot;integer&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;WS&quot;</span><span class="p">:</span> <span class="s2">&quot;whitespace&quot;</span><span class="p">,</span>
+    <span class="p">},</span>
+    <span class="n">transformer_class</span><span class="o">=</span><span class="n">_ParseSpec</span><span class="p">,</span>
+    <span class="n">exception_class</span><span class="o">=</span><span class="n">SpecificationParseError</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">_ARGUMENT_SPEC_PARSER</span> <span class="o">=</span> <span class="n">_CachedParser</span><span class="p">(</span>
+    <span class="n">grammar_filename</span><span class="o">=</span><span class="s2">&quot;check_shapes.lark&quot;</span><span class="p">,</span>
+    <span class="n">start_symbol</span><span class="o">=</span><span class="s2">&quot;argument_or_note_spec&quot;</span><span class="p">,</span>
+    <span class="n">parser_name</span><span class="o">=</span><span class="s2">&quot;lalr&quot;</span><span class="p">,</span>
+    <span class="n">re_terminal_descriptions</span><span class="o">=</span><span class="p">{</span>
+        <span class="s2">&quot;NOTE_TEXT&quot;</span><span class="p">:</span> <span class="s2">&quot;note / comment text&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;CNAME&quot;</span><span class="p">:</span> <span class="s2">&quot;variable name&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;INT&quot;</span><span class="p">:</span> <span class="s2">&quot;integer&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;WS&quot;</span><span class="p">:</span> <span class="s2">&quot;whitespace&quot;</span><span class="p">,</span>
+    <span class="p">},</span>
+    <span class="n">transformer_class</span><span class="o">=</span><span class="n">_ParseSpec</span><span class="p">,</span>
+    <span class="n">exception_class</span><span class="o">=</span><span class="n">SpecificationParseError</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">_SPHINX_DOCSTRING_PARSER</span> <span class="o">=</span> <span class="n">_CachedParser</span><span class="p">(</span>
+    <span class="n">grammar_filename</span><span class="o">=</span><span class="s2">&quot;docstring.lark&quot;</span><span class="p">,</span>
+    <span class="n">start_symbol</span><span class="o">=</span><span class="s2">&quot;docstring&quot;</span><span class="p">,</span>
+    <span class="n">parser_name</span><span class="o">=</span><span class="s2">&quot;earley&quot;</span><span class="p">,</span>
+    <span class="n">re_terminal_descriptions</span><span class="o">=</span><span class="p">{</span>
+        <span class="s2">&quot;ANY&quot;</span><span class="p">:</span> <span class="s2">&quot;any text&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;CNAME&quot;</span><span class="p">:</span> <span class="s2">&quot;variable name&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;INFO_FIELD_OTHER&quot;</span><span class="p">:</span> <span class="s2">&quot;Sphinx info field&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;PARAM&quot;</span><span class="p">:</span> <span class="s2">&quot;Sphinx parameter field&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;RETURNS&quot;</span><span class="p">:</span> <span class="s2">&quot;Sphinx `return` field&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;WS&quot;</span><span class="p">:</span> <span class="s2">&quot;whitespace&quot;</span><span class="p">,</span>
+    <span class="p">},</span>
+    <span class="n">transformer_class</span><span class="o">=</span><span class="n">_RewritedocString</span><span class="p">,</span>
+    <span class="n">exception_class</span><span class="o">=</span><span class="n">DocstringParseError</span><span class="p">,</span>
+<span class="p">)</span>
+
+
+<div class="viewcode-block" id="parse_tensor_spec"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/parser/index.html#gpflow.experimental.check_shapes.parser.parse_tensor_spec">[docs]</a><span class="k">def</span> <span class="nf">parse_tensor_spec</span><span class="p">(</span><span class="n">tensor_spec</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="n">ErrorContext</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ParsedTensorSpec</span><span class="p">:</span>
+
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Parse a `check_shapes` tensor specification.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">_TENSOR_SPEC_PARSER</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">tensor_spec</span><span class="p">,</span> <span class="p">(</span><span class="n">tensor_spec</span><span class="p">,),</span> <span class="n">context</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">ParsedTensorSpec</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">result</span></div>
+
+
+<div class="viewcode-block" id="parse_function_spec"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/parser/index.html#gpflow.experimental.check_shapes.parser.parse_function_spec">[docs]</a><span class="k">def</span> <span class="nf">parse_function_spec</span><span class="p">(</span><span class="n">function_spec</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">context</span><span class="p">:</span> <span class="n">ErrorContext</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ParsedFunctionSpec</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Parse all `check_shapes` argument or note specification for a single function.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">arguments</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">notes</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">spec</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">function_spec</span><span class="p">):</span>
+        <span class="n">argument_context</span> <span class="o">=</span> <span class="n">StackContext</span><span class="p">(</span><span class="n">context</span><span class="p">,</span> <span class="n">ArgumentContext</span><span class="p">(</span><span class="n">i</span><span class="p">))</span>
+        <span class="n">parsed_spec</span> <span class="o">=</span> <span class="n">_ARGUMENT_SPEC_PARSER</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">spec</span><span class="p">,</span> <span class="p">(</span><span class="n">spec</span><span class="p">,),</span> <span class="n">argument_context</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">parsed_spec</span><span class="p">,</span> <span class="n">ParsedArgumentSpec</span><span class="p">):</span>
+            <span class="n">arguments</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">parsed_spec</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">parsed_spec</span><span class="p">,</span> <span class="n">ParsedNoteSpec</span><span class="p">)</span>
+            <span class="n">notes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">parsed_spec</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">ParsedFunctionSpec</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="n">arguments</span><span class="p">),</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">notes</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="parse_and_rewrite_docstring"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/parser/index.html#gpflow.experimental.check_shapes.parser.parse_and_rewrite_docstring">[docs]</a><span class="k">def</span> <span class="nf">parse_and_rewrite_docstring</span><span class="p">(</span>
+    <span class="n">docstring</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">function_spec</span><span class="p">:</span> <span class="n">ParsedFunctionSpec</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="n">ErrorContext</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Rewrite `docstring` to include the shapes specified by the `argument_specs`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">docstring</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="n">docstring_format</span> <span class="o">=</span> <span class="n">get_rewrite_docstrings</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">docstring_format</span> <span class="o">==</span> <span class="n">DocstringFormat</span><span class="o">.</span><span class="n">NONE</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">docstring</span>
+
+    <span class="k">assert</span> <span class="n">docstring_format</span> <span class="o">==</span> <span class="n">DocstringFormat</span><span class="o">.</span><span class="n">SPHINX</span><span class="p">,</span> <span class="p">(</span>
+        <span class="sa">f</span><span class="s2">&quot;Current docstring format is </span><span class="si">{</span><span class="n">docstring_format</span><span class="si">}</span><span class="s2">, but I don&#39;t know how to rewrite that.&quot;</span>
+        <span class="s2">&quot; See `gpflow.experimental.check_shapes.config.set_rewrite_docstrings`.&quot;</span>
+    <span class="p">)</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">_SPHINX_DOCSTRING_PARSER</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">docstring</span><span class="p">,</span> <span class="p">(</span><span class="n">docstring</span><span class="p">,</span> <span class="n">function_spec</span><span class="p">),</span> <span class="n">context</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">result</span></div>
+</pre></div>
+
+              </article>
+              
+
+              
+          </div>
+          
+      </div>
+    </div>
+
+  
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../../../_static/scripts/pydata-sphinx-theme.js?digest=92025949c220c2e29695"></script>
+
+<footer class="bd-footer"><div class="bd-footer__inner container">
+  
+  <div class="footer-item">
+    <p class="copyright">
+    &copy; Copyright 2022, The GPflow Contributors.<br>
+</p>
+  </div>
+  
+  <div class="footer-item">
+    <p class="sphinx-version">
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 5.0.2.<br>
+</p>
+  </div>
+  
+</div>
+</footer>
+  </body>
+</html>

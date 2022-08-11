@@ -1,0 +1,866 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>gpflow.experimental.check_shapes.checker &#8212; GPflow 2.5.2 documentation</title>
+<script>
+  document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+  document.documentElement.dataset.theme = localStorage.getItem("theme") || "light"
+</script>
+
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../../_static/styles/theme.css?digest=92025949c220c2e29695" rel="stylesheet">
+<link href="../../../../_static/styles/pydata-sphinx-theme.css?digest=92025949c220c2e29695" rel="stylesheet">
+
+
+  <link rel="stylesheet"
+    href="../../../../_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../../../_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pydata-custom.css" />
+
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=92025949c220c2e29695">
+
+    <script data-url_root="../../../../" id="documentation_options" src="../../../../_static/documentation_options.js"></script>
+    <script src="../../../../_static/jquery.js"></script>
+    <script src="../../../../_static/underscore.js"></script>
+    <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../../../../_static/doctools.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="docsearch:language" content="en">
+  </head>
+  
+  
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="180" data-default-mode="">
+    <div class="bd-header-announcement container-fluid" id="banner">
+      
+
+    </div>
+
+    
+    <nav class="bd-header navbar navbar-light navbar-expand-lg bg-light fixed-top bd-navbar" id="navbar-main"><div class="bd-header__inner container-xl">
+
+  <div id="navbar-start">
+    
+    
+  
+
+
+<a class="navbar-brand logo" href="../../../../index.html">
+  
+  
+  
+  
+    <img src="../../../../_static/gpflow_logo.svg" class="logo__image only-light" alt="Logo image">
+    <img src="../../../../_static/gpflow_logo.svg" class="logo__image only-dark" alt="Logo image">
+  
+  
+</a>
+    
+  </div>
+
+  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar-collapsible" aria-controls="navbar-collapsible" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="fas fa-bars"></span>
+  </button>
+
+  
+  <div id="navbar-collapsible" class="col-lg-9 collapse navbar-collapse">
+    <div id="navbar-center" class="mr-auto">
+      
+      <div class="navbar-center-item">
+        <ul id="navbar-main-elements" class="navbar-nav">
+    <li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../../getting_started.html">
+  Getting Started
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../../user_guide.html">
+  User Guide
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../../api/gpflow/index.html">
+  API reference
+ </a>
+</li>
+
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="../../../../bibliography.html">
+  Bibliography
+ </a>
+</li>
+
+    
+</ul>
+      </div>
+      
+    </div>
+
+    <div id="navbar-end">
+      
+      <div class="navbar-end-item">
+        <div class="dropdown" id="version_switcher">
+    <button type="button" class="btn btn-sm navbar-btn dropdown-toggle" id="version_switcher_button" data-toggle="dropdown">
+        develop  <!-- this text may get changed later by javascript -->
+        <span class="caret"></span>
+    </button>
+    <div id="version_switcher_menu" class="dropdown-menu list-group-flush py-0" aria-labelledby="version_switcher_button">
+    <!-- dropdown will be populated by javascript on page load -->
+    </div>
+</div>
+
+<!-- NOTE: this JS must live here (not in our global JS file) because it relies
+     on being processed by Jinja before it is run (specifically for replacing
+     variables _modules/gpflow/experimental/check_shapes/checker and {'json_url': 'https://gpflow.github.io/GPflow/versions.json', 'version_match': 'develop'}.
+-->
+
+<script type="text/javascript">
+// Check if corresponding page path exists in other version of docs
+// and, if so, go there instead of the homepage of the other docs version
+function checkPageExistsAndRedirect(event) {
+    const currentFilePath = "_modules/gpflow/experimental/check_shapes/checker.html",
+          tryUrl = event.target.getAttribute("href");
+    let otherDocsHomepage = tryUrl.replace(currentFilePath, "");
+    $.ajax({
+        type: 'HEAD',
+        url: tryUrl,
+        // if the page exists, go there
+        success: function() {
+            location.href = tryUrl;
+        }
+    }).fail(function() {
+        location.href = otherDocsHomepage;
+    });
+    // this prevents the browser from following the href of the clicked node
+    // (which is fine because this function takes care of redirecting)
+    return false;
+}
+
+// Populate the version switcher from the JSON config file
+(function () {
+    $.getJSON("https://gpflow.github.io/GPflow/versions.json", function(data, textStatus, jqXHR) {
+        const currentFilePath = "_modules/gpflow/experimental/check_shapes/checker.html";
+        let btn = document.getElementById("version_switcher_button");
+        // Set empty strings by default so that these attributes exist and can be used in CSS selectors
+        btn.dataset["activeVersionName"] = "";
+        btn.dataset["activeVersion"] = "";
+        // create links to the corresponding page in the other docs versions
+        $.each(data, function(index, entry) {
+            // if no custom name specified (e.g., "latest"), use version string
+            if (!("name" in entry)) {
+                entry.name = entry.version;
+            }
+            // create the node
+            const node = document.createElement("a");
+            node.setAttribute("class", "list-group-item list-group-item-action py-1");
+            node.textContent = `${entry.name}`;
+            node.setAttribute("href", `${entry.url}${currentFilePath}`);
+            // on click, AJAX calls will check if the linked page exists before
+            // trying to redirect, and if not, will redirect to the homepage
+            // for that version of the docs.
+            node.onclick = checkPageExistsAndRedirect;
+            // Add dataset values for the version and name in case people want
+            // to apply CSS styling based on this information.
+            node.dataset["versionName"] = entry.name;
+            node.dataset["version"] = entry.version;
+
+            $("#version_switcher_menu").append(node);
+            // replace dropdown button text with the preferred display name of
+            // this version, rather than using sphinx's  variable.
+            // also highlight the dropdown entry for the currently-viewed
+            // version's entry
+            if (entry.version == "develop") {
+                node.classList.add("active");
+                btn.innerText = btn.dataset["activeVersionName"] = entry.name;
+                btn.dataset["activeVersion"] = entry.version;
+            }
+        });
+    });
+})();
+</script>
+      </div>
+      
+    </div>
+  </div>
+</div>
+    </nav>
+    
+
+    <div class="bd-container container-xl">
+      <div class="bd-container__inner row">
+          
+
+<!-- Only show if we have sidebars configured, else just a small margin  -->
+<div class="bd-sidebar-primary col-12 col-md-3 bd-sidebar">
+  <div class="sidebar-start-items"><form class="bd-search d-flex align-items-center" action="../../../../search.html" method="get">
+  <i class="icon fas fa-search"></i>
+  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" >
+</form><nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
+  <div class="bd-toc-item active">
+    
+  </div>
+</nav>
+  </div>
+  <div class="sidebar-end-items">
+  </div>
+</div>
+
+
+          
+
+
+<div class="bd-sidebar-secondary d-none d-xl-block col-xl-2 bd-toc">
+  
+</div>
+
+
+          
+          
+          <div class="bd-content col-12 col-md-9 col-xl-7">
+              
+              <article class="bd-article" role="main">
+                
+  <h1>Source code for gpflow.experimental.check_shapes.checker</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright 2022 The GPflow Contributors. All Rights Reserved.</span>
+<span class="c1">#</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+<span class="c1">#</span>
+<span class="c1"># http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c1">#</span>
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Class responsible for remembering and checking shapes.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">field</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">DefaultDict</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Set</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">TypeVar</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">from</span> <span class="nn">..utils</span> <span class="kn">import</span> <span class="n">experimental</span>
+<span class="kn">from</span> <span class="nn">.base_types</span> <span class="kn">import</span> <span class="n">Dimension</span><span class="p">,</span> <span class="n">Shape</span>
+<span class="kn">from</span> <span class="nn">.config</span> <span class="kn">import</span> <span class="n">get_enable_check_shapes</span>
+<span class="kn">from</span> <span class="nn">.error_contexts</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">ErrorContext</span><span class="p">,</span>
+    <span class="n">FunctionCallContext</span><span class="p">,</span>
+    <span class="n">IndexContext</span><span class="p">,</span>
+    <span class="n">NoteContext</span><span class="p">,</span>
+    <span class="n">ParallelContext</span><span class="p">,</span>
+    <span class="n">ShapeContext</span><span class="p">,</span>
+    <span class="n">StackContext</span><span class="p">,</span>
+    <span class="n">TensorSpecContext</span><span class="p">,</span>
+    <span class="n">VariableContext</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">.exceptions</span> <span class="kn">import</span> <span class="n">ShapeMismatchError</span><span class="p">,</span> <span class="n">VariableTypeError</span>
+<span class="kn">from</span> <span class="nn">.parser</span> <span class="kn">import</span> <span class="n">parse_tensor_spec</span>
+<span class="kn">from</span> <span class="nn">.shapes</span> <span class="kn">import</span> <span class="n">get_shape</span>
+<span class="kn">from</span> <span class="nn">.specs</span> <span class="kn">import</span> <span class="n">ParsedDimensionSpec</span><span class="p">,</span> <span class="n">ParsedShapeSpec</span><span class="p">,</span> <span class="n">ParsedTensorSpec</span>
+
+<span class="n">S</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s2">&quot;S&quot;</span><span class="p">)</span>
+
+
+<span class="n">TensorSpecLike</span> <span class="o">=</span> <span class="n">Union</span><span class="p">[</span><span class="n">ParsedTensorSpec</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="n">Shape</span><span class="p">]</span>
+<span class="n">_Shape</span> <span class="o">=</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Dimension</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
+
+
+<span class="k">def</span> <span class="nf">_as_parsed_tensor_spec</span><span class="p">(</span><span class="n">tensor_spec</span><span class="p">:</span> <span class="n">TensorSpecLike</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="n">ErrorContext</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ParsedTensorSpec</span><span class="p">:</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">tensor_spec</span><span class="p">,</span> <span class="n">ParsedTensorSpec</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">tensor_spec</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">tensor_spec</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">parse_tensor_spec</span><span class="p">(</span><span class="n">tensor_spec</span><span class="p">,</span> <span class="n">context</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">dimension_specs</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">tensor_spec</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">dim</span> <span class="ow">in</span> <span class="n">tensor_spec</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dim</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+                    <span class="n">dimension_specs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ParsedDimensionSpec</span><span class="p">(</span><span class="n">dim</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="kc">False</span><span class="p">))</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">assert</span> <span class="n">dim</span> <span class="ow">is</span> <span class="kc">None</span>
+                    <span class="n">dimension_specs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ParsedDimensionSpec</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="kc">False</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="n">tensor_spec</span> <span class="ow">is</span> <span class="kc">None</span>
+            <span class="n">dimension_specs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ParsedDimensionSpec</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="kc">False</span><span class="p">))</span>
+        <span class="n">shape</span> <span class="o">=</span> <span class="n">ParsedShapeSpec</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="n">dimension_specs</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">ParsedTensorSpec</span><span class="p">(</span><span class="n">shape</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+
+<span class="nd">@dataclass</span>
+<span class="k">class</span> <span class="nc">_ObservedDim</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Storage of observed size of a single dimension variable.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="nf">check_and_update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">actual</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">broadcast</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Attempt to merge new data into this observation.</span>
+
+<span class="sd">        Returns whether the new data is compatible with existing observations. If this method</span>
+<span class="sd">        returns `False` this object may have been left in an invalid state and should not be used</span>
+<span class="sd">        again.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">actual</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">broadcast</span> <span class="ow">and</span> <span class="n">actual</span> <span class="o">==</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="c1"># Update contains no information. Nothing to do.</span>
+            <span class="k">return</span> <span class="kc">True</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">size</span> <span class="o">=</span> <span class="n">actual</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="n">actual</span>
+
+
+<span class="nd">@dataclass</span>
+<span class="k">class</span> <span class="nc">_ObservedDims</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Storage of observed sizes of a var-rank / batch variable.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">sizes</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">_ObservedDim</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">known_rank</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="k">def</span> <span class="nf">check_and_update</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">actual</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="o">...</span><span class="p">]],</span>
+        <span class="n">broadcast</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+        <span class="n">shape_possibly_truncated</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Attempt to merge new data into this observation.</span>
+
+<span class="sd">        Returns whether the new data is compatible with existing observations. If this method</span>
+<span class="sd">        returns `False` this object may have been left in an invalid state and should not be used</span>
+<span class="sd">        again.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">actual</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># Update contains no information. Nothing to do.</span>
+            <span class="k">return</span> <span class="kc">True</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sizes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sizes</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">assert</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">known_rank</span>
+
+        <span class="c1"># First make sure lengths are set up and matches.</span>
+        <span class="n">longer</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sizes</span><span class="p">)</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">actual</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">known_rank</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">shape_possibly_truncated</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">longer</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="kc">False</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">longer</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">longer</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">sizes</span> <span class="o">=</span> <span class="p">[</span><span class="n">_ObservedDim</span><span class="p">()</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="o">-</span><span class="n">longer</span><span class="p">)]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">sizes</span>
+                <span class="n">longer</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">if</span> <span class="n">shape_possibly_truncated</span><span class="p">:</span>
+                <span class="k">pass</span>  <span class="c1"># We don&#39;t know anything about total rank.</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">longer</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="kc">False</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">known_rank</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">assert</span> <span class="n">longer</span> <span class="o">&gt;=</span> <span class="mi">0</span>
+
+        <span class="c1"># Then match individual dimensions.</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">actual_dim</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">actual</span><span class="p">):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">sizes</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="n">longer</span><span class="p">]</span><span class="o">.</span><span class="n">check_and_update</span><span class="p">(</span><span class="n">actual_dim</span><span class="p">,</span> <span class="n">broadcast</span><span class="p">):</span>
+                <span class="k">return</span> <span class="kc">False</span>
+
+        <span class="k">return</span> <span class="kc">True</span>
+
+
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">eq</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">_ShapeCheck</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A shape check that is waiting to be performed.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">actual</span><span class="p">:</span> <span class="n">_Shape</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Actual observed shape.</span>
+
+<span class="sd">    Only `actual[actual_begin:actual_end]` is still waiting to be checked. The beginning and end may</span>
+<span class="sd">    already have been checked.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">actual_begin</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">actual_end</span><span class="p">:</span> <span class="nb">int</span>
+
+    <span class="n">expected</span><span class="p">:</span> <span class="n">ParsedShapeSpec</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Specification to check against.</span>
+
+<span class="sd">    Only `expected[expected_begin:expected_end]` is still waiting to be checked. The beginning and</span>
+<span class="sd">    end may already have been checked.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">expected_begin</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">expected_end</span><span class="p">:</span> <span class="nb">int</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">finished</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Whether this entire check has been performed.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">expected_begin</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">expected_end</span>
+
+
+<span class="nd">@dataclass</span>
+<span class="k">class</span> <span class="nc">_VariableState</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Structure of stuff we need to know about each variable.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">uses</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">ParsedTensorSpec</span><span class="p">,</span> <span class="n">ErrorContext</span><span class="p">]]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">list</span><span class="p">)</span>
+    <span class="sd">&quot;&quot;&quot; List of specs where this variable is used. &quot;&quot;&quot;</span>
+
+    <span class="n">observed_dim</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">_ObservedDim</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Observed size of this variable, if the variable is rank-1.</span>
+
+<span class="sd">    Set this `None` if this variable is varrank.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">observed_dims</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">_ObservedDims</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Observed shape of this variable, if the variable is varrank.</span>
+
+<span class="sd">    Set this `None` if this variable is rank-1.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">waiting_for_varrank</span><span class="p">:</span> <span class="n">Set</span><span class="p">[</span><span class="n">_ShapeCheck</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">set</span><span class="p">)</span>
+    <span class="sd">&quot;&quot;&quot; Checks that are waiting for the rank of this variable to be determined. &quot;&quot;&quot;</span>
+
+
+<div class="viewcode-block" id="ShapeChecker"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/index.html#gpflow.experimental.check_shapes.ShapeChecker">[docs]</a><span class="k">class</span> <span class="nc">ShapeChecker</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Mechanism for checking the shapes of tensors.</span>
+
+<span class="sd">    This remembers observed shapes and specifications, so that tensors can be checked for</span>
+<span class="sd">    compatibility across multiple calls, and so that we can provide good error messages.</span>
+
+<span class="sd">    Example:</span>
+
+<span class="sd">    .. literalinclude:: /examples/test_check_shapes_examples.py</span>
+<span class="sd">       :start-after: [shape_checker__raw]</span>
+<span class="sd">       :end-before: [shape_checker__raw]</span>
+<span class="sd">       :dedent:</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="nd">@experimental</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_variables</span><span class="p">:</span> <span class="n">DefaultDict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">_VariableState</span><span class="p">]</span> <span class="o">=</span> <span class="n">DefaultDict</span><span class="p">(</span><span class="n">_VariableState</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_observed_shapes</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">Shape</span><span class="p">,</span> <span class="n">ParsedTensorSpec</span><span class="p">,</span> <span class="n">ErrorContext</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_additional_context</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">ErrorContext</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+
+<div class="viewcode-block" id="ShapeChecker.add_context"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/index.html#gpflow.experimental.check_shapes.ShapeChecker.add_context">[docs]</a>    <span class="k">def</span> <span class="nf">add_context</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="n">ErrorContext</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Add arbirtary context to the shape checker.</span>
+
+<span class="sd">        This context will be included in any error messages.</span>
+
+<span class="sd">        :param context: Context to add to this shape checker.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_additional_context</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">context</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ShapeChecker.check_shape"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/index.html#gpflow.experimental.check_shapes.ShapeChecker.check_shape">[docs]</a>    <span class="k">def</span> <span class="nf">check_shape</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">shaped</span><span class="p">:</span> <span class="n">S</span><span class="p">,</span> <span class="n">tensor_spec</span><span class="p">:</span> <span class="n">TensorSpecLike</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">ErrorContext</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">S</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Raise an error if a tensor has the wrong shape.</span>
+
+<span class="sd">        This remembers observed shapes and specifications, so that tensors can be checked for</span>
+<span class="sd">        compatibility across multiple calls, and so that we can provide good error messages.</span>
+
+<span class="sd">        :param shaped: The object whose shape to check.</span>
+<span class="sd">        :param tensor_spec: Specification to check the tensor against.</span>
+<span class="sd">            Usually this is a ``str`` in the format described in `Shape specification`_.</span>
+<span class="sd">            Alternatively this can be a pre-parsed :class:`ParsedTensorSpec`, or an actual</span>
+<span class="sd">            :class:`Shape`.</span>
+<span class="sd">        :param context: Information about where ``shaped`` is coming from, for improved error</span>
+<span class="sd">            messages.</span>
+<span class="sd">        :returns: ``shaped``, for convenience.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">get_enable_check_shapes</span><span class="p">():</span>
+            <span class="k">return</span> <span class="n">shaped</span>
+
+        <span class="k">if</span> <span class="n">context</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">context</span> <span class="o">=</span> <span class="n">FunctionCallContext</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">check_shape</span><span class="p">)</span><span class="o">.</span><span class="n">precompute</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">check_shapes</span><span class="p">([(</span><span class="n">shaped</span><span class="p">,</span> <span class="n">tensor_spec</span><span class="p">,</span> <span class="n">context</span><span class="p">)])</span>
+
+        <span class="k">return</span> <span class="n">shaped</span></div>
+
+<div class="viewcode-block" id="ShapeChecker.check_shapes"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/index.html#gpflow.experimental.check_shapes.ShapeChecker.check_shapes">[docs]</a>    <span class="k">def</span> <span class="nf">check_shapes</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">checks</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span>
+            <span class="n">Union</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">TensorSpecLike</span><span class="p">],</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">TensorSpecLike</span><span class="p">,</span> <span class="n">ErrorContext</span><span class="p">]]</span>
+        <span class="p">],</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Raise an error if any tensor has the wrong shape.</span>
+
+<span class="sd">        This remembers observed shapes and specifications, so that tensors can be checked for</span>
+<span class="sd">        compatibility across multiple calls, and so that we can provide good error messages.</span>
+
+<span class="sd">        :param checks: Checks to perform. The elements can either be ``(shaped, tensor_spec)`` or</span>
+<span class="sd">            ``(shaped, tensor_spec, context)`` tuples. Where: ``shaped`` is the tensor whose shape</span>
+<span class="sd">            to check; ``tensor_spec`` is the specification to check it against (see `Shape</span>
+<span class="sd">            specification`_); and ``context`` contains (optional) information about where ``shaped``</span>
+<span class="sd">            came from - for better error messages.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">get_enable_check_shapes</span><span class="p">():</span>
+            <span class="k">return</span>
+
+        <span class="n">shape_check_queue</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parse_checks</span><span class="p">(</span><span class="n">checks</span><span class="p">)</span>
+        <span class="k">while</span> <span class="n">shape_check_queue</span><span class="p">:</span>
+            <span class="n">shape_check</span> <span class="o">=</span> <span class="n">shape_check_queue</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+
+            <span class="c1"># Note that self._match_dims may not be able to match all dims. If that is the case it</span>
+            <span class="c1"># adds the check to `_VariableState.waiting_for_varrank`:</span>
+            <span class="n">dim_checks</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_match_dims</span><span class="p">(</span><span class="n">shape_check</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">dim_spec</span><span class="p">,</span> <span class="n">actual_dims</span><span class="p">,</span> <span class="n">shape_possibly_truncated</span> <span class="ow">in</span> <span class="n">dim_checks</span><span class="p">:</span>
+                <span class="c1"># Note that self._check_dim may revive checks from</span>
+                <span class="c1"># `_VariableState.waiting_for_varrank` and add them back to `shape_check_queue`:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_check_dim</span><span class="p">(</span><span class="n">dim_spec</span><span class="p">,</span> <span class="n">actual_dims</span><span class="p">,</span> <span class="n">shape_possibly_truncated</span><span class="p">,</span> <span class="n">shape_check_queue</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">_parse_checks</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">checks</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span>
+            <span class="n">Union</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">TensorSpecLike</span><span class="p">],</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">TensorSpecLike</span><span class="p">,</span> <span class="n">ErrorContext</span><span class="p">]]</span>
+        <span class="p">],</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">_ShapeCheck</span><span class="p">]:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Sanity check, register and parse the given ``checks`` into :class:`_ShapeCheck` objects.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">shape_checks</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">variable_type_errors</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">call_context</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">ErrorContext</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">check</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">checks</span><span class="p">):</span>
+            <span class="n">shaped</span><span class="p">,</span> <span class="n">tensor_spec</span><span class="p">,</span> <span class="o">*</span><span class="n">contexts</span> <span class="o">=</span> <span class="n">check</span>
+
+            <span class="c1"># Determine error context:</span>
+            <span class="k">if</span> <span class="n">contexts</span><span class="p">:</span>
+                <span class="p">(</span><span class="n">context</span><span class="p">,)</span> <span class="o">=</span> <span class="n">contexts</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">call_context</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">call_context</span> <span class="o">=</span> <span class="n">FunctionCallContext</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">check_shapes</span><span class="p">)</span><span class="o">.</span><span class="n">precompute</span><span class="p">()</span>
+                <span class="n">context</span> <span class="o">=</span> <span class="n">StackContext</span><span class="p">(</span><span class="n">call_context</span><span class="p">,</span> <span class="n">IndexContext</span><span class="p">(</span><span class="n">i</span><span class="p">))</span>
+
+            <span class="n">parsed_tensor_check</span> <span class="o">=</span> <span class="n">_as_parsed_tensor_spec</span><span class="p">(</span><span class="n">tensor_spec</span><span class="p">,</span> <span class="n">context</span><span class="p">)</span>
+            <span class="n">parsed_shape_check</span> <span class="o">=</span> <span class="n">parsed_tensor_check</span><span class="o">.</span><span class="n">shape</span>
+
+            <span class="c1"># Determine shape:</span>
+            <span class="k">if</span> <span class="n">shaped</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">shape</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">shape</span> <span class="o">=</span> <span class="n">get_shape</span><span class="p">(</span><span class="n">shaped</span><span class="p">,</span> <span class="n">context</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_observed_shapes</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">shape</span><span class="p">,</span> <span class="n">parsed_tensor_check</span><span class="p">,</span> <span class="n">context</span><span class="p">))</span>
+
+            <span class="k">if</span> <span class="n">shape</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">shape_checks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                    <span class="n">_ShapeCheck</span><span class="p">(</span>
+                        <span class="n">actual</span><span class="o">=</span><span class="n">shape</span><span class="p">,</span>
+                        <span class="n">actual_begin</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                        <span class="n">actual_end</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">shape</span><span class="p">),</span>
+                        <span class="n">expected</span><span class="o">=</span><span class="n">parsed_shape_check</span><span class="p">,</span>
+                        <span class="n">expected_begin</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                        <span class="n">expected_end</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">parsed_shape_check</span><span class="o">.</span><span class="n">dims</span><span class="p">),</span>
+                    <span class="p">)</span>
+                <span class="p">)</span>
+
+            <span class="c1"># Record used variables:</span>
+            <span class="k">for</span> <span class="n">dim_spec</span> <span class="ow">in</span> <span class="n">parsed_shape_check</span><span class="o">.</span><span class="n">dims</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">dim_spec</span><span class="o">.</span><span class="n">variable_name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="k">continue</span>
+                <span class="n">variable</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_variables</span><span class="p">[</span><span class="n">dim_spec</span><span class="o">.</span><span class="n">variable_name</span><span class="p">]</span>
+                <span class="n">variable</span><span class="o">.</span><span class="n">uses</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">parsed_tensor_check</span><span class="p">,</span> <span class="n">context</span><span class="p">))</span>
+                <span class="k">if</span> <span class="n">dim_spec</span><span class="o">.</span><span class="n">variable_rank</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">variable</span><span class="o">.</span><span class="n">observed_dims</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="n">variable</span><span class="o">.</span><span class="n">observed_dims</span> <span class="o">=</span> <span class="n">_ObservedDims</span><span class="p">()</span>
+                        <span class="k">if</span> <span class="n">variable</span><span class="o">.</span><span class="n">observed_dim</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                            <span class="n">variable_type_errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">dim_spec</span><span class="o">.</span><span class="n">variable_name</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">variable</span><span class="o">.</span><span class="n">observed_dim</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="n">variable</span><span class="o">.</span><span class="n">observed_dim</span> <span class="o">=</span> <span class="n">_ObservedDim</span><span class="p">()</span>
+                        <span class="k">if</span> <span class="n">variable</span><span class="o">.</span><span class="n">observed_dims</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                            <span class="n">variable_type_errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">dim_spec</span><span class="o">.</span><span class="n">variable_name</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">variable_type_errors</span><span class="p">:</span>
+            <span class="n">error_contexts</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">StackContext</span><span class="p">(</span>
+                    <span class="n">VariableContext</span><span class="p">(</span><span class="n">variable</span><span class="p">),</span>
+                    <span class="n">ParallelContext</span><span class="p">(</span>
+                        <span class="nb">tuple</span><span class="p">(</span>
+                            <span class="n">StackContext</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">TensorSpecContext</span><span class="p">(</span><span class="n">s</span><span class="p">))</span>
+                            <span class="k">for</span> <span class="n">s</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_variables</span><span class="p">[</span><span class="n">variable</span><span class="p">]</span><span class="o">.</span><span class="n">uses</span>
+                        <span class="p">)</span>
+                    <span class="p">),</span>
+                <span class="p">)</span>
+                <span class="k">for</span> <span class="n">variable</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">variable_type_errors</span><span class="p">)</span>
+            <span class="p">]</span>
+            <span class="k">raise</span> <span class="n">VariableTypeError</span><span class="p">(</span><span class="n">ParallelContext</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="n">error_contexts</span><span class="p">)))</span>
+
+        <span class="k">return</span> <span class="n">shape_checks</span>
+
+    <span class="k">def</span> <span class="nf">_match_dims</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">shape_check</span><span class="p">:</span> <span class="n">_ShapeCheck</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">ParsedDimensionSpec</span><span class="p">,</span> <span class="n">_Shape</span><span class="p">,</span> <span class="nb">bool</span><span class="p">]]:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Match expected dimensions against actual dimensions.</span>
+
+<span class="sd">        If some dimensions cannot be determined, the remaining dimensions are added to</span>
+<span class="sd">        `_VariableState.waiting_for_varrank`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Determine rank of expected dimensions:</span>
+
+        <span class="c1"># Length of the current shape, which we have not yet matched against a dimension spec:</span>
+        <span class="n">unallocated_len</span> <span class="o">=</span> <span class="n">shape_check</span><span class="o">.</span><span class="n">actual_end</span> <span class="o">-</span> <span class="n">shape_check</span><span class="o">.</span><span class="n">actual_begin</span>
+
+        <span class="c1"># Length of dimension specs, `None` if it cannot be determined:</span>
+        <span class="n">allocated_sizes</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="c1"># Count of `None`s in `allocated_sizes`:</span>
+        <span class="n">n_allocated_none</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="c1"># Mapping from variables, that we don&#39;t know the rank of, to whether they&#39;re used with</span>
+        <span class="c1"># `broadcast`.</span>
+        <span class="n">unknown_len_variables</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="c1"># The length of a shape is allowed to be short if the dimension, and all leading dimensions</span>
+        <span class="c1"># are `broadcast`, so pre-compute where this applies.</span>
+        <span class="n">leading_broadcast</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">leading_broadcasts</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">shape_check</span><span class="o">.</span><span class="n">expected_end</span><span class="p">):</span>
+            <span class="n">expected_dim</span> <span class="o">=</span> <span class="n">shape_check</span><span class="o">.</span><span class="n">expected</span><span class="o">.</span><span class="n">dims</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">leading_broadcast</span> <span class="o">&amp;=</span> <span class="n">expected_dim</span><span class="o">.</span><span class="n">broadcastable</span>
+            <span class="n">leading_broadcasts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">leading_broadcast</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">shape_check</span><span class="o">.</span><span class="n">expected_begin</span><span class="p">,</span> <span class="n">shape_check</span><span class="o">.</span><span class="n">expected_end</span><span class="p">)[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
+            <span class="n">leading_broadcast</span> <span class="o">=</span> <span class="n">leading_broadcasts</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">expected_dim</span> <span class="o">=</span> <span class="n">shape_check</span><span class="o">.</span><span class="n">expected</span><span class="o">.</span><span class="n">dims</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">expected_name</span> <span class="o">=</span> <span class="n">expected_dim</span><span class="o">.</span><span class="n">variable_name</span>
+
+            <span class="n">rank</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">if</span> <span class="n">expected_dim</span><span class="o">.</span><span class="n">variable_rank</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">expected_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">observed_dims</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_variables</span><span class="p">[</span><span class="n">expected_name</span><span class="p">]</span><span class="o">.</span><span class="n">observed_dims</span>
+                    <span class="k">assert</span> <span class="n">observed_dims</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+                    <span class="k">if</span> <span class="n">observed_dims</span><span class="o">.</span><span class="n">known_rank</span> <span class="ow">and</span> <span class="p">(</span><span class="n">observed_dims</span><span class="o">.</span><span class="n">sizes</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">):</span>
+                        <span class="n">rank</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">observed_dims</span><span class="o">.</span><span class="n">sizes</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">rank</span> <span class="o">=</span> <span class="mi">1</span>
+
+            <span class="k">if</span> <span class="n">rank</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">leading_broadcast</span><span class="p">:</span>
+                <span class="n">all_trailing_shapes_known</span> <span class="o">=</span> <span class="n">n_allocated_none</span> <span class="o">==</span> <span class="mi">0</span>
+                <span class="k">if</span> <span class="n">all_trailing_shapes_known</span><span class="p">:</span>
+                    <span class="c1"># We know where the dimension ends, because everything after this has known</span>
+                    <span class="c1"># size, so we can infer the start from the `unallocated_len`.</span>
+                    <span class="n">rank</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">rank</span><span class="p">,</span> <span class="n">unallocated_len</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># We don&#39;t know where this dimension starts, because of broadcasting, and we</span>
+                    <span class="c1"># don&#39;t know where it ends, because something after this has an unknown size</span>
+                    <span class="c1"># - all bets are off...</span>
+                    <span class="n">rank</span> <span class="o">=</span> <span class="kc">None</span>
+
+            <span class="k">if</span> <span class="n">rank</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">n_allocated_none</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="n">unknown_len_variables</span><span class="p">[</span><span class="n">expected_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">leading_broadcast</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">unallocated_len</span> <span class="o">-=</span> <span class="n">rank</span>
+
+            <span class="n">allocated_sizes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">rank</span><span class="p">)</span>
+
+        <span class="n">allocated_sizes</span> <span class="o">=</span> <span class="n">allocated_sizes</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>  <span class="c1"># This list was built in reverse order.</span>
+
+        <span class="c1"># Determine length of variables with outknown length:</span>
+
+        <span class="c1"># Number of variables with unknown length.</span>
+        <span class="n">n_unknown</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">unknown_len_variables</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">n_unknown</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_assert</span><span class="p">(</span><span class="n">unallocated_len</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_assert</span><span class="p">(</span><span class="n">unallocated_len</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">n_unknown</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="p">(</span><span class="n">expected_name</span><span class="p">,)</span> <span class="o">=</span> <span class="n">unknown_len_variables</span>
+                <span class="k">if</span> <span class="n">expected_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">broadcastable</span> <span class="o">=</span> <span class="n">unknown_len_variables</span><span class="p">[</span><span class="n">expected_name</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="n">n_allocated_none</span> <span class="o">&lt;=</span> <span class="mi">1</span> <span class="ow">or</span> <span class="p">(</span><span class="ow">not</span> <span class="n">broadcastable</span><span class="p">):</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_assert</span><span class="p">(</span><span class="n">unallocated_len</span> <span class="o">%</span> <span class="n">n_allocated_none</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
+                        <span class="n">unknown_len</span> <span class="o">=</span> <span class="n">unallocated_len</span> <span class="o">//</span> <span class="n">n_allocated_none</span>
+                        <span class="n">allocated_sizes</span> <span class="o">=</span> <span class="p">[</span><span class="n">unknown_len</span> <span class="k">if</span> <span class="n">s</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">s</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">allocated_sizes</span><span class="p">]</span>
+
+        <span class="n">dim_checks</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="c1"># Take as much as we can from the left side:</span>
+
+        <span class="n">allocated_i</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">while</span> <span class="ow">not</span> <span class="n">shape_check</span><span class="o">.</span><span class="n">finished</span><span class="p">:</span>
+            <span class="n">expected_rank</span> <span class="o">=</span> <span class="n">allocated_sizes</span><span class="p">[</span><span class="n">allocated_i</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">expected_rank</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">break</span>
+
+            <span class="n">dim_checks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="p">(</span>
+                    <span class="n">shape_check</span><span class="o">.</span><span class="n">expected</span><span class="o">.</span><span class="n">dims</span><span class="p">[</span><span class="n">shape_check</span><span class="o">.</span><span class="n">expected_begin</span><span class="p">],</span>
+                    <span class="n">shape_check</span><span class="o">.</span><span class="n">actual</span><span class="p">[</span>
+                        <span class="n">shape_check</span><span class="o">.</span><span class="n">actual_begin</span> <span class="p">:</span> <span class="n">shape_check</span><span class="o">.</span><span class="n">actual_begin</span> <span class="o">+</span> <span class="n">expected_rank</span>
+                    <span class="p">],</span>
+                    <span class="n">leading_broadcasts</span><span class="p">[</span><span class="n">shape_check</span><span class="o">.</span><span class="n">expected_begin</span><span class="p">],</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+            <span class="n">allocated_i</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="n">shape_check</span><span class="o">.</span><span class="n">actual_begin</span> <span class="o">+=</span> <span class="n">expected_rank</span>
+            <span class="n">shape_check</span><span class="o">.</span><span class="n">expected_begin</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="c1"># Take as much as we can from the right side:</span>
+
+        <span class="n">allocated_i</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">allocated_sizes</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+        <span class="k">while</span> <span class="ow">not</span> <span class="n">shape_check</span><span class="o">.</span><span class="n">finished</span><span class="p">:</span>
+            <span class="n">expected_rank</span> <span class="o">=</span> <span class="n">allocated_sizes</span><span class="p">[</span><span class="n">allocated_i</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">expected_rank</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">break</span>
+
+            <span class="n">dim_checks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="p">(</span>
+                    <span class="n">shape_check</span><span class="o">.</span><span class="n">expected</span><span class="o">.</span><span class="n">dims</span><span class="p">[</span><span class="n">shape_check</span><span class="o">.</span><span class="n">expected_end</span> <span class="o">-</span> <span class="mi">1</span><span class="p">],</span>
+                    <span class="n">shape_check</span><span class="o">.</span><span class="n">actual</span><span class="p">[</span>
+                        <span class="n">shape_check</span><span class="o">.</span><span class="n">actual_end</span> <span class="o">-</span> <span class="n">expected_rank</span> <span class="p">:</span> <span class="n">shape_check</span><span class="o">.</span><span class="n">actual_end</span>
+                    <span class="p">],</span>
+                    <span class="n">leading_broadcasts</span><span class="p">[</span><span class="n">shape_check</span><span class="o">.</span><span class="n">expected_begin</span><span class="p">],</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+            <span class="n">allocated_i</span> <span class="o">-=</span> <span class="mi">1</span>
+            <span class="n">shape_check</span><span class="o">.</span><span class="n">actual_end</span> <span class="o">-=</span> <span class="n">expected_rank</span>
+            <span class="n">shape_check</span><span class="o">.</span><span class="n">expected_end</span> <span class="o">-=</span> <span class="mi">1</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">shape_check</span><span class="o">.</span><span class="n">finished</span><span class="p">:</span>
+            <span class="n">waiting_for</span><span class="p">:</span> <span class="n">Set</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">unknown_len_variables</span><span class="p">)</span> <span class="o">-</span> <span class="p">{</span><span class="kc">None</span><span class="p">}</span>  <span class="c1"># type: ignore[assignment]</span>
+            <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">waiting_for</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_variables</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">waiting_for_varrank</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">shape_check</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">dim_checks</span>
+
+    <span class="k">def</span> <span class="nf">_check_dim</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">expected</span><span class="p">:</span> <span class="n">ParsedDimensionSpec</span><span class="p">,</span>
+        <span class="n">actual_dims</span><span class="p">:</span> <span class="n">_Shape</span><span class="p">,</span>
+        <span class="n">shape_possibly_truncated</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+        <span class="n">shape_checks</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">_ShapeCheck</span><span class="p">],</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Checks that ``actual_dim`` matches ``expected``.</span>
+
+<span class="sd">        Newly learned information may enable the evaluation of deferred shape checks - any such will</span>
+<span class="sd">        be added to ``shape_checks``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">expected</span><span class="o">.</span><span class="n">variable_rank</span><span class="p">:</span>
+            <span class="n">expected_name</span> <span class="o">=</span> <span class="n">expected</span><span class="o">.</span><span class="n">variable_name</span>
+            <span class="k">if</span> <span class="n">expected_name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="c1"># Anonymous dimension spec - we don&#39;t care about the actual values.</span>
+                <span class="k">return</span>
+
+            <span class="n">variable</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_variables</span><span class="p">[</span><span class="n">expected_name</span><span class="p">]</span>
+            <span class="n">observed_dims</span> <span class="o">=</span> <span class="n">variable</span><span class="o">.</span><span class="n">observed_dims</span>
+            <span class="k">assert</span> <span class="n">observed_dims</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">_assert</span><span class="p">(</span>
+                <span class="n">observed_dims</span><span class="o">.</span><span class="n">check_and_update</span><span class="p">(</span>
+                    <span class="n">actual_dims</span><span class="p">,</span> <span class="n">expected</span><span class="o">.</span><span class="n">broadcastable</span><span class="p">,</span> <span class="n">shape_possibly_truncated</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="n">observed_dims</span><span class="o">.</span><span class="n">known_rank</span> <span class="ow">and</span> <span class="n">variable</span><span class="o">.</span><span class="n">waiting_for_varrank</span><span class="p">:</span>
+                <span class="n">shape_checks</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">variable</span><span class="o">.</span><span class="n">waiting_for_varrank</span><span class="p">)</span>
+                <span class="n">variable</span><span class="o">.</span><span class="n">waiting_for_varrank</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">actual_dims</span><span class="p">:</span>
+                <span class="c1"># Broadcastable dimension was not matched against anything.</span>
+                <span class="k">assert</span> <span class="n">shape_possibly_truncated</span>
+                <span class="k">return</span>
+
+            <span class="p">(</span><span class="n">actual_dim</span><span class="p">,)</span> <span class="o">=</span> <span class="n">actual_dims</span>
+            <span class="k">if</span> <span class="n">actual_dim</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="c1"># Acutal dimension is unknown - nothing to check.</span>
+                <span class="k">return</span>
+
+            <span class="k">if</span> <span class="n">expected</span><span class="o">.</span><span class="n">constant</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">observed_dim</span> <span class="o">=</span> <span class="n">_ObservedDim</span><span class="p">()</span>
+                <span class="k">assert</span> <span class="n">observed_dim</span><span class="o">.</span><span class="n">check_and_update</span><span class="p">(</span><span class="n">expected</span><span class="o">.</span><span class="n">constant</span><span class="p">,</span> <span class="n">broadcast</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">expected</span><span class="o">.</span><span class="n">variable_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">maybe_observed_dim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_variables</span><span class="p">[</span><span class="n">expected</span><span class="o">.</span><span class="n">variable_name</span><span class="p">]</span><span class="o">.</span><span class="n">observed_dim</span>
+                <span class="k">assert</span> <span class="n">maybe_observed_dim</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+                <span class="n">observed_dim</span> <span class="o">=</span> <span class="n">maybe_observed_dim</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Anonymous dimension - we don&#39;t care about the actual value.</span>
+                <span class="k">return</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_assert</span><span class="p">(</span><span class="n">observed_dim</span><span class="o">.</span><span class="n">check_and_update</span><span class="p">(</span><span class="n">actual_dim</span><span class="p">,</span> <span class="n">expected</span><span class="o">.</span><span class="n">broadcastable</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">_assert</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">condition</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Raise a nicely formatted :class:`ShapeMismatchError` if ``condition`` is not ``True``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">condition</span><span class="p">:</span>
+            <span class="n">contexts</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">ErrorContext</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">contexts</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_additional_context</span><span class="p">)</span>
+
+            <span class="k">for</span> <span class="n">shape</span><span class="p">,</span> <span class="n">tensor_spec</span><span class="p">,</span> <span class="n">context</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_observed_shapes</span><span class="p">:</span>
+                <span class="n">shape_error_context</span><span class="p">:</span> <span class="n">ErrorContext</span> <span class="o">=</span> <span class="n">ShapeContext</span><span class="p">(</span><span class="n">tensor_spec</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">shape</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">tensor_spec</span><span class="o">.</span><span class="n">note</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">shape_error_context</span> <span class="o">=</span> <span class="n">ParallelContext</span><span class="p">(</span>
+                        <span class="p">(</span><span class="n">NoteContext</span><span class="p">(</span><span class="n">tensor_spec</span><span class="o">.</span><span class="n">note</span><span class="p">),</span> <span class="n">shape_error_context</span><span class="p">)</span>
+                    <span class="p">)</span>
+                <span class="n">contexts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">StackContext</span><span class="p">(</span><span class="n">context</span><span class="p">,</span> <span class="n">shape_error_context</span><span class="p">))</span>
+            <span class="k">raise</span> <span class="n">ShapeMismatchError</span><span class="p">(</span><span class="n">ParallelContext</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="n">contexts</span><span class="p">)))</span></div>
+</pre></div>
+
+              </article>
+              
+
+              
+          </div>
+          
+      </div>
+    </div>
+
+  
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../../../_static/scripts/pydata-sphinx-theme.js?digest=92025949c220c2e29695"></script>
+
+<footer class="bd-footer"><div class="bd-footer__inner container">
+  
+  <div class="footer-item">
+    <p class="copyright">
+    &copy; Copyright 2022, The GPflow Contributors.<br>
+</p>
+  </div>
+  
+  <div class="footer-item">
+    <p class="sphinx-version">
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 5.0.2.<br>
+</p>
+  </div>
+  
+</div>
+</footer>
+  </body>
+</html>
