@@ -295,9 +295,91 @@ function checkPageExistsAndRedirect(event) {
     
     <div class="toc-item">
       
+<div class="tocsection onthispage mt-5 pt-1 pb-3">
+    <i class="fas fa-list"></i> On this page
+</div>
 
 <nav id="bd-toc-nav">
-    
+    <ul class="visible nav section-nav flex-column">
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#White">
+   White
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#Constant">
+   Constant
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#Linear">
+   Linear
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#Polynomial">
+   Polynomial
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#RBF">
+   RBF
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#Rational-Quadratic">
+   Rational Quadratic
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#Exponential">
+   Exponential
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#Matern-family">
+   Matern family
+  </a>
+  <ul class="nav section-nav flex-column">
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#Matern-1/2">
+     Matern 1/2
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#Matern-3/2">
+     Matern 3/2
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#Matern-5/2">
+     Matern 5/2
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#Cosine">
+   Cosine
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#Periodic">
+   Periodic
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#ArcCosine">
+   ArcCosine
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#Change-points">
+   Change-points
+  </a>
+ </li>
+</ul>
+
 </nav>
     </div>
     
@@ -315,8 +397,537 @@ function checkPageExistsAndRedirect(event) {
               
               <article class="bd-article" role="main">
                 
-  <section id="Kernels">
+  
+<style>
+/* CSS for nbsphinx extension */
+
+/* remove conflicting styling from Sphinx themes */
+div.nbinput.container div.prompt *,
+div.nboutput.container div.prompt *,
+div.nbinput.container div.input_area pre,
+div.nboutput.container div.output_area pre,
+div.nbinput.container div.input_area .highlight,
+div.nboutput.container div.output_area .highlight {
+    border: none;
+    padding: 0;
+    margin: 0;
+    box-shadow: none;
+}
+
+div.nbinput.container > div[class*=highlight],
+div.nboutput.container > div[class*=highlight] {
+    margin: 0;
+}
+
+div.nbinput.container div.prompt *,
+div.nboutput.container div.prompt * {
+    background: none;
+}
+
+div.nboutput.container div.output_area .highlight,
+div.nboutput.container div.output_area pre {
+    background: unset;
+}
+
+div.nboutput.container div.output_area div.highlight {
+    color: unset;  /* override Pygments text color */
+}
+
+/* avoid gaps between output lines */
+div.nboutput.container div[class*=highlight] pre {
+    line-height: normal;
+}
+
+/* input/output containers */
+div.nbinput.container,
+div.nboutput.container {
+    display: -webkit-flex;
+    display: flex;
+    align-items: flex-start;
+    margin: 0;
+    width: 100%;
+}
+@media (max-width: 540px) {
+    div.nbinput.container,
+    div.nboutput.container {
+        flex-direction: column;
+    }
+}
+
+/* input container */
+div.nbinput.container {
+    padding-top: 5px;
+}
+
+/* last container */
+div.nblast.container {
+    padding-bottom: 5px;
+}
+
+/* input prompt */
+div.nbinput.container div.prompt pre {
+    color: #307FC1;
+}
+
+/* output prompt */
+div.nboutput.container div.prompt pre {
+    color: #BF5B3D;
+}
+
+/* all prompts */
+div.nbinput.container div.prompt,
+div.nboutput.container div.prompt {
+    width: 4.5ex;
+    padding-top: 5px;
+    position: relative;
+    user-select: none;
+}
+
+div.nbinput.container div.prompt > div,
+div.nboutput.container div.prompt > div {
+    position: absolute;
+    right: 0;
+    margin-right: 0.3ex;
+}
+
+@media (max-width: 540px) {
+    div.nbinput.container div.prompt,
+    div.nboutput.container div.prompt {
+        width: unset;
+        text-align: left;
+        padding: 0.4em;
+    }
+    div.nboutput.container div.prompt.empty {
+        padding: 0;
+    }
+
+    div.nbinput.container div.prompt > div,
+    div.nboutput.container div.prompt > div {
+        position: unset;
+    }
+}
+
+/* disable scrollbars on prompts */
+div.nbinput.container div.prompt pre,
+div.nboutput.container div.prompt pre {
+    overflow: hidden;
+}
+
+/* input/output area */
+div.nbinput.container div.input_area,
+div.nboutput.container div.output_area {
+    -webkit-flex: 1;
+    flex: 1;
+    overflow: auto;
+}
+@media (max-width: 540px) {
+    div.nbinput.container div.input_area,
+    div.nboutput.container div.output_area {
+        width: 100%;
+    }
+}
+
+/* input area */
+div.nbinput.container div.input_area {
+    border: 1px solid #e0e0e0;
+    border-radius: 2px;
+    /*background: #f5f5f5;*/
+}
+
+/* override MathJax center alignment in output cells */
+div.nboutput.container div[class*=MathJax] {
+    text-align: left !important;
+}
+
+/* override sphinx.ext.imgmath center alignment in output cells */
+div.nboutput.container div.math p {
+    text-align: left;
+}
+
+/* standard error */
+div.nboutput.container div.output_area.stderr {
+    background: #fdd;
+}
+
+/* ANSI colors */
+.ansi-black-fg { color: #3E424D; }
+.ansi-black-bg { background-color: #3E424D; }
+.ansi-black-intense-fg { color: #282C36; }
+.ansi-black-intense-bg { background-color: #282C36; }
+.ansi-red-fg { color: #E75C58; }
+.ansi-red-bg { background-color: #E75C58; }
+.ansi-red-intense-fg { color: #B22B31; }
+.ansi-red-intense-bg { background-color: #B22B31; }
+.ansi-green-fg { color: #00A250; }
+.ansi-green-bg { background-color: #00A250; }
+.ansi-green-intense-fg { color: #007427; }
+.ansi-green-intense-bg { background-color: #007427; }
+.ansi-yellow-fg { color: #DDB62B; }
+.ansi-yellow-bg { background-color: #DDB62B; }
+.ansi-yellow-intense-fg { color: #B27D12; }
+.ansi-yellow-intense-bg { background-color: #B27D12; }
+.ansi-blue-fg { color: #208FFB; }
+.ansi-blue-bg { background-color: #208FFB; }
+.ansi-blue-intense-fg { color: #0065CA; }
+.ansi-blue-intense-bg { background-color: #0065CA; }
+.ansi-magenta-fg { color: #D160C4; }
+.ansi-magenta-bg { background-color: #D160C4; }
+.ansi-magenta-intense-fg { color: #A03196; }
+.ansi-magenta-intense-bg { background-color: #A03196; }
+.ansi-cyan-fg { color: #60C6C8; }
+.ansi-cyan-bg { background-color: #60C6C8; }
+.ansi-cyan-intense-fg { color: #258F8F; }
+.ansi-cyan-intense-bg { background-color: #258F8F; }
+.ansi-white-fg { color: #C5C1B4; }
+.ansi-white-bg { background-color: #C5C1B4; }
+.ansi-white-intense-fg { color: #A1A6B2; }
+.ansi-white-intense-bg { background-color: #A1A6B2; }
+
+.ansi-default-inverse-fg { color: #FFFFFF; }
+.ansi-default-inverse-bg { background-color: #000000; }
+
+.ansi-bold { font-weight: bold; }
+.ansi-underline { text-decoration: underline; }
+
+
+div.nbinput.container div.input_area div[class*=highlight] > pre,
+div.nboutput.container div.output_area div[class*=highlight] > pre,
+div.nboutput.container div.output_area div[class*=highlight].math,
+div.nboutput.container div.output_area.rendered_html,
+div.nboutput.container div.output_area > div.output_javascript,
+div.nboutput.container div.output_area:not(.rendered_html) > img{
+    padding: 5px;
+    margin: 0;
+}
+
+/* fix copybtn overflow problem in chromium (needed for 'sphinx_copybutton') */
+div.nbinput.container div.input_area > div[class^='highlight'],
+div.nboutput.container div.output_area > div[class^='highlight']{
+    overflow-y: hidden;
+}
+
+/* hide copybtn icon on prompts (needed for 'sphinx_copybutton') */
+.prompt .copybtn {
+    display: none;
+}
+
+/* Some additional styling taken form the Jupyter notebook CSS */
+.jp-RenderedHTMLCommon table,
+div.rendered_html table {
+  border: none;
+  border-collapse: collapse;
+  border-spacing: 0;
+  color: black;
+  font-size: 12px;
+  table-layout: fixed;
+}
+.jp-RenderedHTMLCommon thead,
+div.rendered_html thead {
+  border-bottom: 1px solid black;
+  vertical-align: bottom;
+}
+.jp-RenderedHTMLCommon tr,
+.jp-RenderedHTMLCommon th,
+.jp-RenderedHTMLCommon td,
+div.rendered_html tr,
+div.rendered_html th,
+div.rendered_html td {
+  text-align: right;
+  vertical-align: middle;
+  padding: 0.5em 0.5em;
+  line-height: normal;
+  white-space: normal;
+  max-width: none;
+  border: none;
+}
+.jp-RenderedHTMLCommon th,
+div.rendered_html th {
+  font-weight: bold;
+}
+.jp-RenderedHTMLCommon tbody tr:nth-child(odd),
+div.rendered_html tbody tr:nth-child(odd) {
+  background: #f5f5f5;
+}
+.jp-RenderedHTMLCommon tbody tr:hover,
+div.rendered_html tbody tr:hover {
+  background: rgba(66, 165, 245, 0.2);
+}
+</style>
+<section id="Kernels">
 <h1>Kernels<a class="headerlink" href="#Kernels" title="Permalink to this heading">#</a></h1>
+<p>Remember how we assume that our data is generated by:</p>
+<p><span class="math">\begin{equation}
+Y_i = f(X_i) + \varepsilon_i \,, \quad \varepsilon_i \sim \mathcal{N}(0, \sigma^2).
+\end{equation}</span></p>
+<p>And in <a class="reference external" href="basic_usage.html">Basic Usage</a> we defined our model as:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">model</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">GPR</span><span class="p">(</span>
+    <span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">),</span>
+    <span class="n">kernel</span><span class="o">=</span><span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">RBF</span><span class="p">(),</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">kernel</span></code> defines what kind of shapes <span class="math notranslate nohighlight">\(f\)</span> can take.</p>
+<p>A kernel is a function that takes <span class="math notranslate nohighlight">\(X\)</span> values and returns a <span class="math notranslate nohighlight">\(N \times N\)</span> covariance matrix telling us how those <span class="math notranslate nohighlight">\(X\)</span> coordinates relate to each other. A kernel is sometimes also known as a covariance function.</p>
+<section id="White">
+<h2>White<a class="headerlink" href="#White" title="Permalink to this heading">#</a></h2>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">White</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/notebooks_getting_started_kernels_4_0.png" src="../../_images/notebooks_getting_started_kernels_4_0.png" />
+</div>
+</div>
+</section>
+<section id="Constant">
+<h2>Constant<a class="headerlink" href="#Constant" title="Permalink to this heading">#</a></h2>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">Constant</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/notebooks_getting_started_kernels_6_0.png" src="../../_images/notebooks_getting_started_kernels_6_0.png" />
+</div>
+</div>
+</section>
+<section id="Linear">
+<h2>Linear<a class="headerlink" href="#Linear" title="Permalink to this heading">#</a></h2>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">Linear</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/notebooks_getting_started_kernels_8_0.png" src="../../_images/notebooks_getting_started_kernels_8_0.png" />
+</div>
+</div>
+</section>
+<section id="Polynomial">
+<h2>Polynomial<a class="headerlink" href="#Polynomial" title="Permalink to this heading">#</a></h2>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">Polynomial</span><span class="p">(</span><span class="n">degree</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/notebooks_getting_started_kernels_10_0.png" src="../../_images/notebooks_getting_started_kernels_10_0.png" />
+</div>
+</div>
+</section>
+<section id="RBF">
+<h2>RBF<a class="headerlink" href="#RBF" title="Permalink to this heading">#</a></h2>
+<p>The RBF (aka Squared Exponential, exponentiated quadratic) kernel… Infinitely differentiable</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">RBF</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/notebooks_getting_started_kernels_12_0.png" src="../../_images/notebooks_getting_started_kernels_12_0.png" />
+</div>
+</div>
+</section>
+<section id="Rational-Quadratic">
+<h2>Rational Quadratic<a class="headerlink" href="#Rational-Quadratic" title="Permalink to this heading">#</a></h2>
+<p>As <span class="math notranslate nohighlight">\(\alpha \rightarrow \infty\)</span> this approaches the squared exponential.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">RationalQuadratic</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/notebooks_getting_started_kernels_14_0.png" src="../../_images/notebooks_getting_started_kernels_14_0.png" />
+</div>
+</div>
+</section>
+<section id="Exponential">
+<h2>Exponential<a class="headerlink" href="#Exponential" title="Permalink to this heading">#</a></h2>
+<p>Equivivalent to Matern12 with doubled lengthscale.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">Exponential</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/notebooks_getting_started_kernels_16_0.png" src="../../_images/notebooks_getting_started_kernels_16_0.png" />
+</div>
+</div>
+</section>
+<section id="Matern-family">
+<h2>Matern family<a class="headerlink" href="#Matern-family" title="Permalink to this heading">#</a></h2>
+<section id="Matern-1/2">
+<h3>Matern 1/2<a class="headerlink" href="#Matern-1/2" title="Permalink to this heading">#</a></h3>
+<p>Not differentiable</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">Matern12</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/notebooks_getting_started_kernels_19_0.png" src="../../_images/notebooks_getting_started_kernels_19_0.png" />
+</div>
+</div>
+</section>
+<section id="Matern-3/2">
+<h3>Matern 3/2<a class="headerlink" href="#Matern-3/2" title="Permalink to this heading">#</a></h3>
+<p>Once differentiable</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">Matern32</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/notebooks_getting_started_kernels_21_0.png" src="../../_images/notebooks_getting_started_kernels_21_0.png" />
+</div>
+</div>
+</section>
+<section id="Matern-5/2">
+<h3>Matern 5/2<a class="headerlink" href="#Matern-5/2" title="Permalink to this heading">#</a></h3>
+<p>Twice differentiable</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">Matern52</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/notebooks_getting_started_kernels_23_0.png" src="../../_images/notebooks_getting_started_kernels_23_0.png" />
+</div>
+</div>
+</section>
+</section>
+<section id="Cosine">
+<h2>Cosine<a class="headerlink" href="#Cosine" title="Permalink to this heading">#</a></h2>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">Cosine</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/notebooks_getting_started_kernels_25_0.png" src="../../_images/notebooks_getting_started_kernels_25_0.png" />
+</div>
+</div>
+</section>
+<section id="Periodic">
+<h2>Periodic<a class="headerlink" href="#Periodic" title="Permalink to this heading">#</a></h2>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">Periodic</span><span class="p">(</span><span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">RBF</span><span class="p">(),</span> <span class="n">period</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/notebooks_getting_started_kernels_27_0.png" src="../../_images/notebooks_getting_started_kernels_27_0.png" />
+</div>
+</div>
+</section>
+<section id="ArcCosine">
+<h2>ArcCosine<a class="headerlink" href="#ArcCosine" title="Permalink to this heading">#</a></h2>
+<p>???</p>
+</section>
+<section id="Change-points">
+<h2>Change-points<a class="headerlink" href="#Change-points" title="Permalink to this heading">#</a></h2>
+<p>ChangePoints</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">ChangePoints</span><span class="p">(</span>
+    <span class="n">kernels</span><span class="o">=</span><span class="p">[</span>
+        <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">RBF</span><span class="p">(</span><span class="n">lengthscales</span><span class="o">=</span><span class="mf">0.1</span><span class="p">),</span>
+        <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">RBF</span><span class="p">(</span><span class="n">lengthscales</span><span class="o">=</span><span class="mf">1.0</span><span class="p">),</span>
+        <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">RBF</span><span class="p">(</span><span class="n">lengthscales</span><span class="o">=</span><span class="mf">0.3</span><span class="p">),</span>
+    <span class="p">],</span>
+    <span class="n">locations</span><span class="o">=</span><span class="p">[</span><span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.7</span><span class="p">],</span>
+    <span class="n">steepness</span><span class="o">=</span><span class="mf">1000.0</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/notebooks_getting_started_kernels_30_0.png" src="../../_images/notebooks_getting_started_kernels_30_0.png" />
+</div>
+</div>
 <ul class="simple">
 <li><p>Present different kernels</p>
 <ul>
@@ -324,8 +935,19 @@ function checkPageExistsAndRedirect(event) {
 </ul>
 </li>
 <li><p>Demonstrate kernel composition</p></li>
-<li><p>Can we have a cool example?</p></li>
+<li><p>Talk about multidimensional input</p>
+<ul>
+<li><p>ARD</p></li>
+<li><p>Active dims</p></li>
 </ul>
+</li>
+<li><p>Can we have a cool example?</p>
+<ul>
+<li><p>Mauna Loa dataset?</p></li>
+</ul>
+</li>
+</ul>
+</section>
 </section>
 
 
