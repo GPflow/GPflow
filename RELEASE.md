@@ -83,10 +83,11 @@ This release contains contributions from:
 
 ## Bug Fixes and Other Changes
 
-* <SIMILAR TO ABOVE SECTION, BUT FOR OTHER IMPORTANT CHANGES / BUG FIXES>
-* <IF A CHANGE CLOSES A GITHUB ISSUE, IT SHOULD BE DOCUMENTED HERE>
-* <NOTES SHOULD BE GROUPED PER AREA>
 * Add support for Apple Silicon Macs (`arm64`) via the `tensorflow-macos` dependency. (#1850)
+* New implementation of GPR and SGPR posterior objects. This primarily improves numerical stability.
+  (#1960)
+  - For the GPR this is also a speed improvement when using a GPU.
+  - For the SGPR this is a mixed bag, performance-wise.
 
 ## Thanks to our Contributors
 
