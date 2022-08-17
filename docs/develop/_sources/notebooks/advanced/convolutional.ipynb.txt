@@ -2,7 +2,7 @@
  "cells": [
   {
    "cell_type": "markdown",
-   "id": "7c892457",
+   "id": "ff3a8c06",
    "metadata": {},
    "source": [
     "# Convolutional Gaussian Processes\n",
@@ -15,7 +15,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "d4341a52",
+   "id": "4b91b12a",
    "metadata": {},
    "source": [
     "## Generate dataset\n",
@@ -25,13 +25,13 @@
   {
    "cell_type": "code",
    "execution_count": 1,
-   "id": "ed7cee74",
+   "id": "035daa69",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-08-08T14:20:23.336493Z",
-     "iopub.status.busy": "2022-08-08T14:20:23.336190Z",
-     "iopub.status.idle": "2022-08-08T14:20:27.598894Z",
-     "shell.execute_reply": "2022-08-08T14:20:27.598243Z"
+     "iopub.execute_input": "2022-08-17T16:09:33.935809Z",
+     "iopub.status.busy": "2022-08-17T16:09:33.935538Z",
+     "iopub.status.idle": "2022-08-17T16:09:38.105899Z",
+     "shell.execute_reply": "2022-08-17T16:09:38.105240Z"
     }
    },
    "outputs": [
@@ -39,8 +39,8 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2022-08-08 14:20:24.308911: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcudart.so.11.0'; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory\n",
-      "2022-08-08 14:20:24.308939: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.\n"
+      "2022-08-17 16:09:34.792193: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcudart.so.11.0'; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory\n",
+      "2022-08-17 16:09:34.792219: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.\n"
      ]
     },
     {
@@ -48,13 +48,7 @@
      "output_type": "stream",
      "text": [
       "/home/circleci/project/gpflow/experimental/utils.py:42: UserWarning: You're calling gpflow.experimental.check_shapes.decorator.check_shapes which is considered *experimental*. Expect: breaking changes, poor documentation, and bugs.\n",
-      "  warn(\n"
-     ]
-    },
-    {
-     "name": "stderr",
-     "output_type": "stream",
-     "text": [
+      "  warn(\n",
       "/home/circleci/project/gpflow/experimental/utils.py:42: UserWarning: You're calling gpflow.experimental.check_shapes.inheritance.inherit_check_shapes which is considered *experimental*. Expect: breaking changes, poor documentation, and bugs.\n",
       "  warn(\n"
      ]
@@ -92,13 +86,13 @@
   {
    "cell_type": "code",
    "execution_count": 2,
-   "id": "d029ee04",
+   "id": "73a279e0",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-08-08T14:20:27.602198Z",
-     "iopub.status.busy": "2022-08-08T14:20:27.601724Z",
-     "iopub.status.idle": "2022-08-08T14:20:27.610659Z",
-     "shell.execute_reply": "2022-08-08T14:20:27.610090Z"
+     "iopub.execute_input": "2022-08-17T16:09:38.109105Z",
+     "iopub.status.busy": "2022-08-17T16:09:38.108667Z",
+     "iopub.status.idle": "2022-08-17T16:09:38.116403Z",
+     "shell.execute_reply": "2022-08-17T16:09:38.115895Z"
     }
    },
    "outputs": [],
@@ -145,13 +139,13 @@
   {
    "cell_type": "code",
    "execution_count": 3,
-   "id": "189701f5",
+   "id": "892b64f7",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-08-08T14:20:27.613063Z",
-     "iopub.status.busy": "2022-08-08T14:20:27.612788Z",
-     "iopub.status.idle": "2022-08-08T14:20:27.624095Z",
-     "shell.execute_reply": "2022-08-08T14:20:27.623477Z"
+     "iopub.execute_input": "2022-08-17T16:09:38.118894Z",
+     "iopub.status.busy": "2022-08-17T16:09:38.118635Z",
+     "iopub.status.idle": "2022-08-17T16:09:38.129222Z",
+     "shell.execute_reply": "2022-08-17T16:09:38.128724Z"
     }
    },
    "outputs": [],
@@ -163,26 +157,24 @@
   {
    "cell_type": "code",
    "execution_count": 4,
-   "id": "17a83170",
+   "id": "5ae51a22",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-08-08T14:20:27.627037Z",
-     "iopub.status.busy": "2022-08-08T14:20:27.626686Z",
-     "iopub.status.idle": "2022-08-08T14:20:27.883258Z",
-     "shell.execute_reply": "2022-08-08T14:20:27.882558Z"
+     "iopub.execute_input": "2022-08-17T16:09:38.131620Z",
+     "iopub.status.busy": "2022-08-17T16:09:38.131367Z",
+     "iopub.status.idle": "2022-08-17T16:09:38.411815Z",
+     "shell.execute_reply": "2022-08-17T16:09:38.411263Z"
     }
    },
    "outputs": [
     {
      "data": {
-      "image/png": "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\n",
+      "image/png": "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\n",
       "text/plain": [
-       "<Figure size 576x216 with 4 Axes>"
+       "<Figure size 800x300 with 4 Axes>"
       ]
      },
-     "metadata": {
-      "needs_background": "light"
-     },
+     "metadata": {},
      "output_type": "display_data"
     }
    ],
@@ -196,7 +188,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "036d3584",
+   "id": "bb3c032c",
    "metadata": {},
    "source": [
     "## Squared Exponential kernel"
@@ -205,13 +197,13 @@
   {
    "cell_type": "code",
    "execution_count": 5,
-   "id": "a82d5ed6",
+   "id": "318ae620",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-08-08T14:20:27.886165Z",
-     "iopub.status.busy": "2022-08-08T14:20:27.885842Z",
-     "iopub.status.idle": "2022-08-08T14:20:27.930803Z",
-     "shell.execute_reply": "2022-08-08T14:20:27.930001Z"
+     "iopub.execute_input": "2022-08-17T16:09:38.414898Z",
+     "iopub.status.busy": "2022-08-17T16:09:38.414618Z",
+     "iopub.status.idle": "2022-08-17T16:09:38.453477Z",
+     "shell.execute_reply": "2022-08-17T16:09:38.452867Z"
     }
    },
    "outputs": [
@@ -221,10 +213,10 @@
      "text": [
       "/home/circleci/project/gpflow/experimental/utils.py:42: UserWarning: You're calling gpflow.experimental.check_shapes.checker.ShapeChecker.__init__ which is considered *experimental*. Expect: breaking changes, poor documentation, and bugs.\n",
       "  warn(\n",
-      "2022-08-08 14:20:27.888726: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcuda.so.1'; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory\n",
-      "2022-08-08 14:20:27.888754: W tensorflow/stream_executor/cuda/cuda_driver.cc:269] failed call to cuInit: UNKNOWN ERROR (303)\n",
-      "2022-08-08 14:20:27.888774: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (8b132faa90e0): /proc/driver/nvidia/version does not exist\n",
-      "2022-08-08 14:20:27.889028: I tensorflow/core/platform/cpu_feature_guard.cc:193] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA\n",
+      "2022-08-17 16:09:38.416931: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcuda.so.1'; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory\n",
+      "2022-08-17 16:09:38.416956: W tensorflow/stream_executor/cuda/cuda_driver.cc:269] failed call to cuInit: UNKNOWN ERROR (303)\n",
+      "2022-08-17 16:09:38.416973: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (259883b73fff): /proc/driver/nvidia/version does not exist\n",
+      "2022-08-17 16:09:38.417231: I tensorflow/core/platform/cpu_feature_guard.cc:193] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA\n",
       "To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.\n"
      ]
     }
@@ -240,13 +232,13 @@
   {
    "cell_type": "code",
    "execution_count": 6,
-   "id": "62be5257",
+   "id": "07d294da",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-08-08T14:20:27.933573Z",
-     "iopub.status.busy": "2022-08-08T14:20:27.933208Z",
-     "iopub.status.idle": "2022-08-08T14:20:31.885602Z",
-     "shell.execute_reply": "2022-08-08T14:20:31.884967Z"
+     "iopub.execute_input": "2022-08-17T16:09:38.456495Z",
+     "iopub.status.busy": "2022-08-17T16:09:38.456215Z",
+     "iopub.status.idle": "2022-08-17T16:09:42.225479Z",
+     "shell.execute_reply": "2022-08-17T16:09:42.224826Z"
     }
    },
    "outputs": [
@@ -267,13 +259,13 @@
   {
    "cell_type": "code",
    "execution_count": 7,
-   "id": "a08f0e75",
+   "id": "d026d1e9",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-08-08T14:20:31.888471Z",
-     "iopub.status.busy": "2022-08-08T14:20:31.888149Z",
-     "iopub.status.idle": "2022-08-08T14:20:33.161756Z",
-     "shell.execute_reply": "2022-08-08T14:20:33.161116Z"
+     "iopub.execute_input": "2022-08-17T16:09:42.228432Z",
+     "iopub.status.busy": "2022-08-17T16:09:42.228154Z",
+     "iopub.status.idle": "2022-08-17T16:09:43.667339Z",
+     "shell.execute_reply": "2022-08-17T16:09:43.666662Z"
     }
    },
    "outputs": [
@@ -342,15 +334,7 @@
       "\n",
       "At iterate   25    f=  6.03741D+01    |proj g|=  3.66168D-02\n",
       "\n",
-      "At iterate   26    f=  6.03735D+01    |proj g|=  1.01438D-01\n",
-      "\n",
-      "At iterate   27    f=  6.03723D+01    |proj g|=  3.97105D-02\n",
-      "\n",
-      "At iterate   28    f=  6.03721D+01    |proj g|=  1.89009D-02\n",
-      "\n",
-      "At iterate   29    f=  6.03719D+01    |proj g|=  1.17457D-02\n",
-      "\n",
-      "At iterate   30    f=  6.03716D+01    |proj g|=  1.04475D-02\n"
+      "At iterate   26    f=  6.03735D+01    |proj g|=  1.01438D-01\n"
      ]
     },
     {
@@ -364,6 +348,14 @@
      "name": "stdout",
      "output_type": "stream",
      "text": [
+      "\n",
+      "At iterate   27    f=  6.03723D+01    |proj g|=  3.97105D-02\n",
+      "\n",
+      "At iterate   28    f=  6.03721D+01    |proj g|=  1.89009D-02\n",
+      "\n",
+      "At iterate   29    f=  6.03719D+01    |proj g|=  1.17457D-02\n",
+      "\n",
+      "At iterate   30    f=  6.03716D+01    |proj g|=  1.04475D-02\n",
       "\n",
       "At iterate   31    f=  6.03716D+01    |proj g|=  1.80645D-02\n",
       "\n",
@@ -383,7 +375,6 @@
       "\n",
       "At iterate   39    f=  6.03714D+01    |proj g|=  2.42994D-04\n",
       "\n",
-      "38.036 iter/s\n",
       "At iterate   40    f=  6.03714D+01    |proj g|=  5.85343D-04\n",
       "\n",
       "           * * *\n",
@@ -402,7 +393,8 @@
       " 5152     40     48      1     0     0   5.853D-04   6.037D+01\n",
       "  F =   60.371382131218326     \n",
       "\n",
-      "CONVERGENCE: REL_REDUCTION_OF_F_<=_FACTR*EPSMCH             \n"
+      "CONVERGENCE: REL_REDUCTION_OF_F_<=_FACTR*EPSMCH             \n",
+      "33.635 iter/s\n"
      ]
     }
    ],
@@ -421,13 +413,13 @@
   {
    "cell_type": "code",
    "execution_count": 8,
-   "id": "1ed3f468",
+   "id": "e5effbdc",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-08-08T14:20:33.164515Z",
-     "iopub.status.busy": "2022-08-08T14:20:33.164200Z",
-     "iopub.status.idle": "2022-08-08T14:20:33.240100Z",
-     "shell.execute_reply": "2022-08-08T14:20:33.239516Z"
+     "iopub.execute_input": "2022-08-17T16:09:43.707355Z",
+     "iopub.status.busy": "2022-08-17T16:09:43.706988Z",
+     "iopub.status.idle": "2022-08-17T16:09:43.767770Z",
+     "shell.execute_reply": "2022-08-17T16:09:43.767109Z"
     }
    },
    "outputs": [
@@ -450,7 +442,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "eb8787c2",
+   "id": "4e066a55",
    "metadata": {},
    "source": [
     "## Convolutional kernel"
@@ -459,13 +451,13 @@
   {
    "cell_type": "code",
    "execution_count": 9,
-   "id": "feb091c4",
+   "id": "f9b0d3fb",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-08-08T14:20:33.288622Z",
-     "iopub.status.busy": "2022-08-08T14:20:33.288207Z",
-     "iopub.status.idle": "2022-08-08T14:20:33.373968Z",
-     "shell.execute_reply": "2022-08-08T14:20:33.373323Z"
+     "iopub.execute_input": "2022-08-17T16:09:43.771398Z",
+     "iopub.status.busy": "2022-08-17T16:09:43.771116Z",
+     "iopub.status.idle": "2022-08-17T16:09:43.880592Z",
+     "shell.execute_reply": "2022-08-17T16:09:43.879733Z"
     }
    },
    "outputs": [],
@@ -491,13 +483,13 @@
   {
    "cell_type": "code",
    "execution_count": 10,
-   "id": "cb7c4e11",
+   "id": "202d1369",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-08-08T14:20:33.376874Z",
-     "iopub.status.busy": "2022-08-08T14:20:33.376592Z",
-     "iopub.status.idle": "2022-08-08T14:20:33.390988Z",
-     "shell.execute_reply": "2022-08-08T14:20:33.390357Z"
+     "iopub.execute_input": "2022-08-17T16:09:43.883988Z",
+     "iopub.status.busy": "2022-08-17T16:09:43.883677Z",
+     "iopub.status.idle": "2022-08-17T16:09:43.900070Z",
+     "shell.execute_reply": "2022-08-17T16:09:43.899423Z"
     }
    },
    "outputs": [],
@@ -508,13 +500,13 @@
   {
    "cell_type": "code",
    "execution_count": 11,
-   "id": "56ec7442",
+   "id": "2325a817",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-08-08T14:20:33.393854Z",
-     "iopub.status.busy": "2022-08-08T14:20:33.393576Z",
-     "iopub.status.idle": "2022-08-08T14:20:33.411385Z",
-     "shell.execute_reply": "2022-08-08T14:20:33.410802Z"
+     "iopub.execute_input": "2022-08-17T16:09:43.903092Z",
+     "iopub.status.busy": "2022-08-17T16:09:43.902794Z",
+     "iopub.status.idle": "2022-08-17T16:09:43.922041Z",
+     "shell.execute_reply": "2022-08-17T16:09:43.921319Z"
     }
    },
    "outputs": [],
@@ -527,13 +519,13 @@
   {
    "cell_type": "code",
    "execution_count": 12,
-   "id": "fa20176b",
+   "id": "9d1a9799",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-08-08T14:20:33.414125Z",
-     "iopub.status.busy": "2022-08-08T14:20:33.413857Z",
-     "iopub.status.idle": "2022-08-08T14:20:34.192801Z",
-     "shell.execute_reply": "2022-08-08T14:20:34.191943Z"
+     "iopub.execute_input": "2022-08-17T16:09:43.924692Z",
+     "iopub.status.busy": "2022-08-17T16:09:43.924424Z",
+     "iopub.status.idle": "2022-08-17T16:09:44.960410Z",
+     "shell.execute_reply": "2022-08-17T16:09:44.959623Z"
     }
    },
    "outputs": [
@@ -554,13 +546,13 @@
   {
    "cell_type": "code",
    "execution_count": 13,
-   "id": "7a6a091c",
+   "id": "01c1404e",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-08-08T14:20:34.196001Z",
-     "iopub.status.busy": "2022-08-08T14:20:34.195669Z",
-     "iopub.status.idle": "2022-08-08T14:20:37.142680Z",
-     "shell.execute_reply": "2022-08-08T14:20:37.141806Z"
+     "iopub.execute_input": "2022-08-17T16:09:44.963152Z",
+     "iopub.status.busy": "2022-08-17T16:09:44.962840Z",
+     "iopub.status.idle": "2022-08-17T16:09:47.953349Z",
+     "shell.execute_reply": "2022-08-17T16:09:47.952716Z"
     }
    },
    "outputs": [
@@ -594,7 +586,13 @@
      "output_type": "stream",
      "text": [
       "\n",
-      "At iterate    2    f=  7.03607D+01    |proj g|=  6.56137D+00\n",
+      "At iterate    2    f=  7.03607D+01    |proj g|=  6.56137D+00\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate    3    f=  6.98680D+01    |proj g|=  2.96447D+00\n"
      ]
@@ -604,13 +602,7 @@
      "output_type": "stream",
      "text": [
       "\n",
-      "At iterate    4    f=  6.93739D+01    |proj g|=  2.88465D+00\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate    4    f=  6.93739D+01    |proj g|=  2.88465D+00\n",
       "\n",
       "At iterate    5    f=  6.88717D+01    |proj g|=  5.27202D+00\n"
      ]
@@ -640,13 +632,6 @@
      "output_type": "stream",
      "text": [
       "\n",
-      "3.739 iter/s\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
       "At iterate   10    f=  6.48453D+01    |proj g|=  1.39257D+00\n",
       "\n",
       "           * * *\n",
@@ -665,7 +650,8 @@
       " 1081     10     11      1     0     0   1.393D+00   6.485D+01\n",
       "  F =   64.845328136876162     \n",
       "\n",
-      "STOP: TOTAL NO. of ITERATIONS REACHED LIMIT                 \n"
+      "STOP: TOTAL NO. of ITERATIONS REACHED LIMIT                 \n",
+      "3.683 iter/s\n"
      ]
     }
    ],
@@ -683,13 +669,13 @@
   {
    "cell_type": "code",
    "execution_count": 14,
-   "id": "44ed92fe",
+   "id": "822f72c2",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-08-08T14:20:37.145328Z",
-     "iopub.status.busy": "2022-08-08T14:20:37.145091Z",
-     "iopub.status.idle": "2022-08-08T14:20:54.255765Z",
-     "shell.execute_reply": "2022-08-08T14:20:54.255147Z"
+     "iopub.execute_input": "2022-08-17T16:09:47.956261Z",
+     "iopub.status.busy": "2022-08-17T16:09:47.955951Z",
+     "iopub.status.idle": "2022-08-17T16:10:04.842239Z",
+     "shell.execute_reply": "2022-08-17T16:10:04.841573Z"
     }
    },
    "outputs": [
@@ -770,8 +756,16 @@
      "text": [
       "\n",
       "At iterate   10    f=  3.68864D+01    |proj g|=  4.40037D+01\n",
+      "\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "At iterate   11    f=  3.60668D+01    |proj g|=  7.87412D+00\n",
       "\n",
-      "At iterate   11    f=  3.60668D+01    |proj g|=  7.87412D+00\n"
+      "At iterate   12    f=  3.58935D+01    |proj g|=  1.41535D+01\n"
      ]
     },
     {
@@ -779,15 +773,7 @@
      "output_type": "stream",
      "text": [
       "\n",
-      "At iterate   12    f=  3.58935D+01    |proj g|=  1.41535D+01\n",
-      "\n",
-      "At iterate   13    f=  3.45651D+01    |proj g|=  7.04865D+01\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate   13    f=  3.45651D+01    |proj g|=  7.04865D+01\n",
       "\n",
       "At iterate   14    f=  3.13752D+01    |proj g|=  4.56939D+01\n",
       "\n",
@@ -1285,13 +1271,13 @@
   {
    "cell_type": "code",
    "execution_count": 15,
-   "id": "5bb37e15",
+   "id": "95b95e5f",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-08-08T14:20:54.323164Z",
-     "iopub.status.busy": "2022-08-08T14:20:54.258171Z",
-     "iopub.status.idle": "2022-08-08T14:21:09.829722Z",
-     "shell.execute_reply": "2022-08-08T14:21:09.829088Z"
+     "iopub.execute_input": "2022-08-17T16:10:04.844852Z",
+     "iopub.status.busy": "2022-08-17T16:10:04.844542Z",
+     "iopub.status.idle": "2022-08-17T16:10:20.545633Z",
+     "shell.execute_reply": "2022-08-17T16:10:20.544775Z"
     }
    },
    "outputs": [
@@ -1493,7 +1479,9 @@
       "\n",
       "At iterate   34    f=  2.67495D+01    |proj g|=  4.01797D-02\n",
       "\n",
-      "At iterate   35    f=  2.67495D+01    |proj g|=  9.46539D-02\n"
+      "At iterate   35    f=  2.67495D+01    |proj g|=  9.46539D-02\n",
+      "\n",
+      "At iterate   36    f=  2.67495D+01    |proj g|=  1.81388D-01\n"
      ]
     },
     {
@@ -1501,9 +1489,9 @@
      "output_type": "stream",
      "text": [
       "\n",
-      "At iterate   36    f=  2.67495D+01    |proj g|=  1.81388D-01\n",
+      "At iterate   37    f=  2.67494D+01    |proj g|=  4.67147D-02\n",
       "\n",
-      "At iterate   37    f=  2.67494D+01    |proj g|=  4.67147D-02\n"
+      "At iterate   38    f=  2.67494D+01    |proj g|=  4.56626D-02\n"
      ]
     },
     {
@@ -1511,9 +1499,9 @@
      "output_type": "stream",
      "text": [
       "\n",
-      "At iterate   38    f=  2.67494D+01    |proj g|=  4.56626D-02\n",
+      "At iterate   39    f=  2.67494D+01    |proj g|=  4.03325D-02\n",
       "\n",
-      "At iterate   39    f=  2.67494D+01    |proj g|=  4.03325D-02\n"
+      "At iterate   40    f=  2.67494D+01    |proj g|=  2.37251D-02\n"
      ]
     },
     {
@@ -1521,9 +1509,9 @@
      "output_type": "stream",
      "text": [
       "\n",
-      "At iterate   40    f=  2.67494D+01    |proj g|=  2.37251D-02\n",
+      "At iterate   41    f=  2.67494D+01    |proj g|=  3.60650D-02\n",
       "\n",
-      "At iterate   41    f=  2.67494D+01    |proj g|=  3.60650D-02\n"
+      "At iterate   42    f=  2.67494D+01    |proj g|=  1.48639D-01\n"
      ]
     },
     {
@@ -1531,9 +1519,9 @@
      "output_type": "stream",
      "text": [
       "\n",
-      "At iterate   42    f=  2.67494D+01    |proj g|=  1.48639D-01\n",
+      "At iterate   43    f=  2.67494D+01    |proj g|=  1.04997D-01\n",
       "\n",
-      "At iterate   43    f=  2.67494D+01    |proj g|=  1.04997D-01\n"
+      "At iterate   44    f=  2.67493D+01    |proj g|=  8.52702D-02\n"
      ]
     },
     {
@@ -1541,9 +1529,9 @@
      "output_type": "stream",
      "text": [
       "\n",
-      "At iterate   44    f=  2.67493D+01    |proj g|=  8.52702D-02\n",
+      "At iterate   45    f=  2.67493D+01    |proj g|=  2.24150D-01\n",
       "\n",
-      "At iterate   45    f=  2.67493D+01    |proj g|=  2.24150D-01\n"
+      "At iterate   46    f=  2.67492D+01    |proj g|=  2.77971D-02\n"
      ]
     },
     {
@@ -1551,9 +1539,9 @@
      "output_type": "stream",
      "text": [
       "\n",
-      "At iterate   46    f=  2.67492D+01    |proj g|=  2.77971D-02\n",
+      "At iterate   47    f=  2.67492D+01    |proj g|=  7.01161D-02\n",
       "\n",
-      "At iterate   47    f=  2.67492D+01    |proj g|=  7.01161D-02\n"
+      "At iterate   48    f=  2.67492D+01    |proj g|=  5.04371D-02\n"
      ]
     },
     {
@@ -1561,9 +1549,9 @@
      "output_type": "stream",
      "text": [
       "\n",
-      "At iterate   48    f=  2.67492D+01    |proj g|=  5.04371D-02\n",
+      "At iterate   49    f=  2.67492D+01    |proj g|=  5.91164D-02\n",
       "\n",
-      "At iterate   49    f=  2.67492D+01    |proj g|=  5.91164D-02\n"
+      "At iterate   50    f=  2.67492D+01    |proj g|=  3.42234D-02\n"
      ]
     },
     {
@@ -1571,17 +1559,15 @@
      "output_type": "stream",
      "text": [
       "\n",
-      "At iterate   50    f=  2.67492D+01    |proj g|=  3.42234D-02\n",
+      "At iterate   51    f=  2.67492D+01    |proj g|=  1.35007D-01\n",
       "\n",
-      "At iterate   51    f=  2.67492D+01    |proj g|=  1.35007D-01\n"
+      "At iterate   52    f=  2.67491D+01    |proj g|=  2.08262D-01\n"
      ]
     },
     {
      "name": "stdout",
      "output_type": "stream",
      "text": [
-      "\n",
-      "At iterate   52    f=  2.67491D+01    |proj g|=  2.08262D-01\n",
       "\n",
       "At iterate   53    f=  2.67490D+01    |proj g|=  2.03729D-01\n"
      ]
@@ -1739,15 +1725,15 @@
      "output_type": "stream",
      "text": [
       "\n",
-      "At iterate   83    f=  2.67440D+01    |proj g|=  2.31826D-01\n"
+      "At iterate   83    f=  2.67440D+01    |proj g|=  2.31826D-01\n",
+      "\n",
+      "At iterate   84    f=  2.67435D+01    |proj g|=  3.62591D-01\n"
      ]
     },
     {
      "name": "stdout",
      "output_type": "stream",
      "text": [
-      "\n",
-      "At iterate   84    f=  2.67435D+01    |proj g|=  3.62591D-01\n",
       "\n",
       "At iterate   85    f=  2.67428D+01    |proj g|=  6.75926D-01\n"
      ]
@@ -1874,16 +1860,23 @@
   {
    "cell_type": "code",
    "execution_count": 16,
-   "id": "0285ede4",
+   "id": "1929146d",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-08-08T14:21:09.832440Z",
-     "iopub.status.busy": "2022-08-08T14:21:09.832143Z",
-     "iopub.status.idle": "2022-08-08T14:21:30.857648Z",
-     "shell.execute_reply": "2022-08-08T14:21:30.856983Z"
+     "iopub.execute_input": "2022-08-17T16:10:20.549444Z",
+     "iopub.status.busy": "2022-08-17T16:10:20.549069Z",
+     "iopub.status.idle": "2022-08-17T16:10:42.552872Z",
+     "shell.execute_reply": "2022-08-17T16:10:42.552247Z"
     }
    },
    "outputs": [
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      " This problem is unconstrained.\n"
+     ]
+    },
     {
      "name": "stdout",
      "output_type": "stream",
@@ -1898,13 +1891,6 @@
       "At X0         0 variables are exactly at the bounds\n",
       "\n",
       "At iterate    0    f=  2.67363D+01    |proj g|=  3.15890D-01\n"
-     ]
-    },
-    {
-     "name": "stderr",
-     "output_type": "stream",
-     "text": [
-      " This problem is unconstrained.\n"
      ]
     },
     {
@@ -1994,7 +1980,9 @@
      "output_type": "stream",
      "text": [
       "\n",
-      "At iterate   15    f=  1.77800D+01    |proj g|=  4.28107D+00\n"
+      "At iterate   15    f=  1.77800D+01    |proj g|=  4.28107D+00\n",
+      "\n",
+      "At iterate   16    f=  1.77399D+01    |proj g|=  5.38815D-01\n"
      ]
     },
     {
@@ -2002,15 +1990,7 @@
      "output_type": "stream",
      "text": [
       "\n",
-      "At iterate   16    f=  1.77399D+01    |proj g|=  5.38815D-01\n",
-      "\n",
-      "At iterate   17    f=  1.77171D+01    |proj g|=  1.45748D+00\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate   17    f=  1.77171D+01    |proj g|=  1.45748D+00\n",
       "\n",
       "At iterate   18    f=  1.77002D+01    |proj g|=  8.60301D-01\n"
      ]
@@ -2040,7 +2020,9 @@
      "output_type": "stream",
      "text": [
       "\n",
-      "At iterate   23    f=  1.75675D+01    |proj g|=  1.71359D+00\n"
+      "At iterate   23    f=  1.75675D+01    |proj g|=  1.71359D+00\n",
+      "\n",
+      "At iterate   24    f=  1.75597D+01    |proj g|=  9.01336D-01\n"
      ]
     },
     {
@@ -2048,15 +2030,7 @@
      "output_type": "stream",
      "text": [
       "\n",
-      "At iterate   24    f=  1.75597D+01    |proj g|=  9.01336D-01\n",
-      "\n",
-      "At iterate   25    f=  1.75532D+01    |proj g|=  4.75464D-01\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate   25    f=  1.75532D+01    |proj g|=  4.75464D-01\n",
       "\n",
       "At iterate   26    f=  1.75458D+01    |proj g|=  7.28402D-01\n"
      ]
@@ -2066,7 +2040,9 @@
      "output_type": "stream",
      "text": [
       "\n",
-      "At iterate   27    f=  1.75438D+01    |proj g|=  1.03329D+00\n"
+      "At iterate   27    f=  1.75438D+01    |proj g|=  1.03329D+00\n",
+      "\n",
+      "At iterate   28    f=  1.75401D+01    |proj g|=  3.09040D-01\n"
      ]
     },
     {
@@ -2074,9 +2050,9 @@
      "output_type": "stream",
      "text": [
       "\n",
-      "At iterate   28    f=  1.75401D+01    |proj g|=  3.09040D-01\n",
+      "At iterate   29    f=  1.75372D+01    |proj g|=  2.97689D-01\n",
       "\n",
-      "At iterate   29    f=  1.75372D+01    |proj g|=  2.97689D-01\n"
+      "At iterate   30    f=  1.75283D+01    |proj g|=  3.93077D-01\n"
      ]
     },
     {
@@ -2084,17 +2060,15 @@
      "output_type": "stream",
      "text": [
       "\n",
-      "At iterate   30    f=  1.75283D+01    |proj g|=  3.93077D-01\n",
+      "At iterate   31    f=  1.75172D+01    |proj g|=  4.99012D-01\n",
       "\n",
-      "At iterate   31    f=  1.75172D+01    |proj g|=  4.99012D-01\n"
+      "At iterate   32    f=  1.75019D+01    |proj g|=  4.42903D-01\n"
      ]
     },
     {
      "name": "stdout",
      "output_type": "stream",
      "text": [
-      "\n",
-      "At iterate   32    f=  1.75019D+01    |proj g|=  4.42903D-01\n",
       "\n",
       "At iterate   33    f=  1.74767D+01    |proj g|=  8.11521D-01\n"
      ]
@@ -2114,7 +2088,13 @@
      "output_type": "stream",
      "text": [
       "\n",
-      "At iterate   36    f=  1.74518D+01    |proj g|=  5.30937D-01\n",
+      "At iterate   36    f=  1.74518D+01    |proj g|=  5.30937D-01\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate   37    f=  1.74498D+01    |proj g|=  2.79222D-01\n"
      ]
@@ -2172,14 +2152,14 @@
      "output_type": "stream",
      "text": [
       "\n",
-      "At iterate   47    f=  1.74016D+01    |proj g|=  9.82946D-01\n"
+      "At iterate   47    f=  1.74016D+01    |proj g|=  9.82946D-01\n",
+      "\n"
      ]
     },
     {
      "name": "stdout",
      "output_type": "stream",
      "text": [
-      "\n",
       "At iterate   48    f=  1.73960D+01    |proj g|=  3.56201D-01\n",
       "\n",
       "At iterate   49    f=  1.73897D+01    |proj g|=  4.66155D-01\n"
@@ -2191,7 +2171,13 @@
      "text": [
       "\n",
       "At iterate   50    f=  1.73790D+01    |proj g|=  8.06765D-01\n",
-      "\n",
+      "\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "At iterate   51    f=  1.73687D+01    |proj g|=  6.68134D-01\n"
      ]
     },
@@ -2238,7 +2224,9 @@
      "output_type": "stream",
      "text": [
       "\n",
-      "At iterate   59    f=  1.72966D+01    |proj g|=  1.61551D+00\n"
+      "At iterate   59    f=  1.72966D+01    |proj g|=  1.61551D+00\n",
+      "\n",
+      "At iterate   60    f=  1.72792D+01    |proj g|=  8.95599D-01\n"
      ]
     },
     {
@@ -2246,15 +2234,7 @@
      "output_type": "stream",
      "text": [
       "\n",
-      "At iterate   60    f=  1.72792D+01    |proj g|=  8.95599D-01\n",
-      "\n",
-      "At iterate   61    f=  1.72629D+01    |proj g|=  4.38795D-01\n"
-     ]
-    },
-    {
-     "name": "stdout",
-     "output_type": "stream",
-     "text": [
+      "At iterate   61    f=  1.72629D+01    |proj g|=  4.38795D-01\n",
       "\n",
       "At iterate   62    f=  1.72463D+01    |proj g|=  1.98290D-01\n"
      ]
@@ -2323,16 +2303,22 @@
      "text": [
       "\n",
       "At iterate   74    f=  1.71522D+01    |proj g|=  2.92592D-01\n",
-      "\n",
-      "At iterate   75    f=  1.71470D+01    |proj g|=  2.37492D-01\n"
+      "\n"
      ]
     },
     {
      "name": "stdout",
      "output_type": "stream",
      "text": [
+      "At iterate   75    f=  1.71470D+01    |proj g|=  2.37492D-01\n",
       "\n",
-      "At iterate   76    f=  1.71289D+01    |proj g|=  7.56450D-01\n",
+      "At iterate   76    f=  1.71289D+01    |proj g|=  7.56450D-01\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
       "\n",
       "At iterate   77    f=  1.71213D+01    |proj g|=  4.03391D-01\n"
      ]
@@ -2506,13 +2492,13 @@
   {
    "cell_type": "code",
    "execution_count": 17,
-   "id": "b1b718cc",
+   "id": "3613ade2",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-08-08T14:21:30.860847Z",
-     "iopub.status.busy": "2022-08-08T14:21:30.860535Z",
-     "iopub.status.idle": "2022-08-08T14:21:30.927811Z",
-     "shell.execute_reply": "2022-08-08T14:21:30.926475Z"
+     "iopub.execute_input": "2022-08-17T16:10:42.555520Z",
+     "iopub.status.busy": "2022-08-17T16:10:42.555295Z",
+     "iopub.status.idle": "2022-08-17T16:10:42.568305Z",
+     "shell.execute_reply": "2022-08-17T16:10:42.567787Z"
     }
    },
    "outputs": [
@@ -2547,13 +2533,13 @@
   {
    "cell_type": "code",
    "execution_count": 18,
-   "id": "2bcccf0e",
+   "id": "6aa268bd",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-08-08T14:21:30.931394Z",
-     "iopub.status.busy": "2022-08-08T14:21:30.930945Z",
-     "iopub.status.idle": "2022-08-08T14:21:30.976884Z",
-     "shell.execute_reply": "2022-08-08T14:21:30.976111Z"
+     "iopub.execute_input": "2022-08-17T16:10:42.570776Z",
+     "iopub.status.busy": "2022-08-17T16:10:42.570513Z",
+     "iopub.status.idle": "2022-08-17T16:10:42.593873Z",
+     "shell.execute_reply": "2022-08-17T16:10:42.593311Z"
     }
    },
    "outputs": [
@@ -2588,7 +2574,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "213f9f4f",
+   "id": "e34d6a29",
    "metadata": {},
    "source": [
     "## Conclusion\n",
