@@ -18,7 +18,7 @@ import numpy as np
 import tensorflow as tf
 
 from .. import posteriors
-from ..base import InputData, MeanAndVariance, RegressionData
+from ..base import InputData, MeanAndVariance, RegressionData, TensorData
 from ..config import default_float, default_jitter
 from ..covariances.dispatch import Kuf, Kuu
 from ..experimental.check_shapes import check_shapes, inherit_check_shapes
@@ -41,6 +41,7 @@ class SGPRBase_deprecated(GPModel, InternalDataTrainingLossMixin):
     @check_shapes(
         "data[0]: [N, D]",
         "data[1]: [N, P]",
+        "noise_variance: []",
     )
     def __init__(
         self,
@@ -50,7 +51,7 @@ class SGPRBase_deprecated(GPModel, InternalDataTrainingLossMixin):
         *,
         mean_function: Optional[MeanFunction] = None,
         num_latent_gps: Optional[int] = None,
-        noise_variance: Optional[float] = None,
+        noise_variance: Optional[TensorData] = None,
         likelihood: Optional[Gaussian] = None,
     ):
         """

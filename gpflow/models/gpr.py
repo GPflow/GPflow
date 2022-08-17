@@ -19,7 +19,7 @@ import tensorflow as tf
 import gpflow
 
 from .. import posteriors
-from ..base import InputData, MeanAndVariance, RegressionData
+from ..base import InputData, MeanAndVariance, RegressionData, TensorData
 from ..experimental.check_shapes import check_shapes, inherit_check_shapes
 from ..kernels import Kernel
 from ..likelihoods import Gaussian
@@ -57,13 +57,14 @@ class GPR_deprecated(GPModel, InternalDataTrainingLossMixin):
     @check_shapes(
         "data[0]: [N, D]",
         "data[1]: [N, P]",
+        "noise_variance: []",
     )
     def __init__(
         self,
         data: RegressionData,
         kernel: Kernel,
         mean_function: Optional[MeanFunction] = None,
-        noise_variance: Optional[float] = None,
+        noise_variance: Optional[TensorData] = None,
         likelihood: Optional[Gaussian] = None,
     ):
         assert (noise_variance is None) or (
