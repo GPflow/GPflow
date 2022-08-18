@@ -34,6 +34,8 @@
 # %%
 import numpy as np
 import tensorflow as tf
+from tensorflow_probability.python.bijectors import Exp
+
 from gpflow.ci_utils import reduce_in_tests
 from gpflow.optimizers import NaturalGradient
 from gpflow import set_trainable
@@ -50,15 +52,15 @@ from gpflow.utilities import print_summary
 
 gf.config.set_default_summary_fmt("notebook")
 
-optimizer_config = dict(maxiter=reduce_in_tests(100))
+optimizer_config = dict(maxiter=reduce_in_tests(1_000))
 n_data = reduce_in_tests(300)
 X_plot = np.linspace(0.0, 1.0, reduce_in_tests(101))[:, None]
+gp_kernel = gf.kernels.RBF
 
+%% [markdown]
+To help us later we'll first define a small function for plotting data with predictions:
 
-# %% [markdown]
-# To help us later we'll first define a small function for plotting data with predictions:
-
-# %%
+%%
 def plot_distribution(X, Y, X_plot=None, mean=None, var=None):
     X = X.squeeze(axis=-1)
     Y = Y.squeeze(axis=-1)
@@ -111,7 +113,7 @@ plot_distribution(X, Y)
 # %%
 model = gf.models.GPR(
     data=(X, Y),
-    kernel=gf.kernels.Matern52(),
+    kernel=gp_kernel(),
 )
 gf.optimizers.Scipy().minimize(
     model.training_loss, model.trainable_variables, options=optimizer_config
@@ -134,7 +136,7 @@ plot_distribution(X, Y, X_plot, mean.numpy(), var.numpy())
 # %%
 model = gf.models.GPR(
     data=(X, Y),
-    kernel=gf.kernels.Matern52(),
+    kernel=gp_kernel(),
     likelihood=gf.likelihoods.Gaussian(scale=gf.functions.Polynomial(degree=2)),
 )
 gf.optimizers.Scipy().minimize(
@@ -188,7 +190,7 @@ plot_distribution(X, Y)
 # %%
 model = gf.models.GPR(
     data=(X, Y),
-    kernel=gf.kernels.Matern52(),
+    kernel=gp_kernel(),
 )
 gf.optimizers.Scipy().minimize(
     model.training_loss, model.trainable_variables, options=optimizer_config
@@ -218,14 +220,14 @@ X_plot_and_group = np.hstack([X_plot, get_group(X_plot)])
 # %%
 model = gf.models.GPR(
     data=(X_and_group, Y),
-    kernel=gf.kernels.Matern52(active_dims=[0]),
+    kernel=gp_kernel(active_dims=[0]),
     likelihood=gf.likelihoods.Gaussian(
         variance=gf.functions.SwitchedFunction(
             [
                 gf.functions.Constant(1.0),
                 gf.functions.Constant(1.0),
             ]
-        )
+        ),
     ),
 )
 gf.optimizers.Scipy().minimize(
@@ -292,7 +294,7 @@ Y_mean = np.mean(Y, axis=-1, keepdims=True)
 # %%
 model = gf.models.GPR(
     data=(X, Y_mean),
-    kernel=gf.kernels.Matern52(),
+    kernel=gp_kernel(),
 )
 gf.optimizers.Scipy().minimize(
     model.training_loss, model.trainable_variables, options=optimizer_config
@@ -305,8 +307,8 @@ plot_distribution(X_flat, Y_flat, X_plot, mean.numpy(), var.numpy())
 
 
 # %% [markdown]
-# ### Create custom function for the noise variance
-#
+### Create custom function for the noise variance
+
 # We're modelling the `Y_mean` and its standard error is `Y_var / n_repeats`. We will create a simple function that ignores its input and returns these values as a constant. This will obviously only work for the `X` that corresponds to the `Y` we computed the variance of - that is good enough for model training, but notice that it will not allow us to use `predict_y`.
 
 # %%
@@ -325,7 +327,7 @@ class FixedVarianceOfMean(gf.functions.Function):
 # %%
 model = gf.models.GPR(
     data=(X, Y_mean),
-    kernel=gf.kernels.Matern52(active_dims=[0]),
+    kernel=gp_kernel(active_dims=[0]),
     likelihood=gf.likelihoods.Gaussian(variance=FixedVarianceOfMean(Y)),
 )
 gf.optimizers.Scipy().minimize(
@@ -359,7 +361,7 @@ def load_data():
     N = len(data)
     
     indices = np.arange(N)
-    rng = np.random.default_rng(42)
+    rng = np.random.default_rng(1)
     rng.shuffle(indices)
     
     N_test = round(0.1 * N)
@@ -388,61 +390,62 @@ def nlpd(model):
 # %%
 model = gf.models.GPR(
     data=(X_train, Y_train),
-    kernel=gf.kernels.Matern52(lengthscales=np.ones(6)),
+    kernel=gp_kernel(lengthscales=np.ones(6)),
 )
+model.likelihood.variance.assign(0.1)
 gf.optimizers.Scipy().minimize(
     model.training_loss, model.trainable_variables, options=optimizer_config
 )
 print_summary(model)
 naive_nlpd = nlpd(model)
-print("Naive NLPD", naive_nlpd)
 
 # %% [markdown]
 # Next we'll try adding a simple linear noise model:
 
 # %%
+def build_linear_likelihood():
+    likelihood = gf.likelihoods.Gaussian(scale=gf.functions.Linear(A=np.zeros((6, 1)), b=0.1))
+    likelihood.scale.b = Parameter(likelihood.scale.b.numpy(), transform=Exp())
+    return likelihood
+
 model = gf.models.GPR(
     data=(X_train, Y_train),
-    kernel=gf.kernels.Matern52(lengthscales=np.ones(6)),
-    likelihood=gf.likelihoods.Gaussian(scale=gf.functions.Linear(A=np.zeros((6, 1)), b=np.ones(()))),
+    kernel=gp_kernel(lengthscales=np.ones(6)),
+    likelihood=build_linear_likelihood(),
 )
 gf.optimizers.Scipy().minimize(
     model.training_loss, model.trainable_variables, options=optimizer_config
 )
 print_summary(model)
 simple_linear_nlpd = nlpd(model)
-print("Naive NLPD", naive_nlpd)
-print("Simple linear NLPD", simple_linear_nlpd)
-print(model.likelihood.scale.A)
 
 # %% [markdown]
-# Notice how this made very little difference to our fit. To get a better fit we'll try a two-stage optimization:
-# * First we'll fix the slope of the noise model, and essentiall optimise a model that assumes constant noise.
+# This makes a modest improvement to our predictions. For more complex tasks it may be worth trying two-stage
+# optimization:
+# * First we'll fix the slope of the noise model, and essentially optimise a model that assumes constant noise.
 # * Then we'll fit both the noise slope and everything else.
 
 # %%
 model = gf.models.GPR(
     data=(X_train, Y_train),
-    kernel=gf.kernels.Matern52(),
-    likelihood=gf.likelihoods.Gaussian(scale=gf.functions.Linear(A=np.zeros((6, 1)), b=np.ones(()))),
+    kernel=gp_kernel(lengthscales=np.ones(6)),
+    likelihood=build_linear_likelihood(),
 )
 gf.set_trainable(model.likelihood.scale.A, False)
-gf.set_trainable(model.likelihood.scale.b, False)
 gf.optimizers.Scipy().minimize(
     model.training_loss, model.trainable_variables, options=optimizer_config
 )
 print_summary(model)
 gf.set_trainable(model.likelihood.scale.A, True)
-gf.set_trainable(model.likelihood.scale.b, True)
 gf.optimizers.Scipy().minimize(
     model.training_loss, model.trainable_variables, options=optimizer_config
 )
 print_summary(model)
+
 two_stage_linear_nlpd = nlpd(model)
 print("Naive NLPD", naive_nlpd)
 print("Simple linear NLPD", simple_linear_nlpd)
-print("Two stage linear NLPD", simple_linear_nlpd)
-print(model.likelihood.scale.A)
+print("Two stage linear NLPD", two_stage_linear_nlpd)
 
 # %% [markdown]
 # ## Further reading
