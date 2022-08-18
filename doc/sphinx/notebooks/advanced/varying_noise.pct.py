@@ -55,12 +55,14 @@ gf.config.set_default_summary_fmt("notebook")
 optimizer_config = dict(maxiter=reduce_in_tests(1_000))
 n_data = reduce_in_tests(300)
 X_plot = np.linspace(0.0, 1.0, reduce_in_tests(101))[:, None]
+
 gp_kernel = gf.kernels.RBF
+INITIAL_LIKELIHOOD_VARIANCE = 0.1
 
-%% [markdown]
-To help us later we'll first define a small function for plotting data with predictions:
+# %% [markdown]
+# To help us later we'll first define a small function for plotting data with predictions:
 
-%%
+# %%
 def plot_distribution(X, Y, X_plot=None, mean=None, var=None):
     X = X.squeeze(axis=-1)
     Y = Y.squeeze(axis=-1)
@@ -307,8 +309,8 @@ plot_distribution(X_flat, Y_flat, X_plot, mean.numpy(), var.numpy())
 
 
 # %% [markdown]
-### Create custom function for the noise variance
-
+# ### Create custom function for the noise variance
+#
 # We're modelling the `Y_mean` and its standard error is `Y_var / n_repeats`. We will create a simple function that ignores its input and returns these values as a constant. This will obviously only work for the `X` that corresponds to the `Y` we computed the variance of - that is good enough for model training, but notice that it will not allow us to use `predict_y`.
 
 # %%
@@ -392,7 +394,7 @@ model = gf.models.GPR(
     data=(X_train, Y_train),
     kernel=gp_kernel(lengthscales=np.ones(6)),
 )
-model.likelihood.variance.assign(0.1)
+model.likelihood.variance.assign(INITIAL_LIKELIHOOD_VARIANCE)
 gf.optimizers.Scipy().minimize(
     model.training_loss, model.trainable_variables, options=optimizer_config
 )
@@ -404,7 +406,7 @@ naive_nlpd = nlpd(model)
 
 # %%
 def build_linear_likelihood():
-    likelihood = gf.likelihoods.Gaussian(scale=gf.functions.Linear(A=np.zeros((6, 1)), b=0.1))
+    likelihood = gf.likelihoods.Gaussian(scale=gf.functions.Linear(A=np.zeros((6, 1)), b=INITIAL_LIKELIHOOD_VARIANCE))
     likelihood.scale.b = Parameter(likelihood.scale.b.numpy(), transform=Exp())
     return likelihood
 
