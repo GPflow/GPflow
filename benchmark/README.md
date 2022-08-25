@@ -22,7 +22,7 @@ can use the `plot.py` script. There are a couple of reasons one might want to do
 
 * You've changed the plotting code and want to regenerate plots.
 * You want to compare results from different git branches.
-* You want to compare results from different envirenments (Different Python or TF versions?
+* You want to compare results from different environments (Different Python or TF versions?
   Different hardware?)
 
 To run `plot.py` you need to tell it which "suite" to run, where to find previous results, and where
