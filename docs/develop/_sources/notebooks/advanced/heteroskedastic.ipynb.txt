@@ -2,7 +2,7 @@
  "cells": [
   {
    "cell_type": "markdown",
-   "id": "8d2cb260",
+   "id": "416da177",
    "metadata": {},
    "source": [
     "# Heteroskedastic Likelihood and Multi-Latent GP"
@@ -10,7 +10,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "a96cfa44",
+   "id": "accbacd7",
    "metadata": {},
    "source": [
     "## Standard (Homoskedastic) Regression\n",
@@ -34,13 +34,13 @@
   {
    "cell_type": "code",
    "execution_count": 1,
-   "id": "c41a5b88",
+   "id": "2cf22b00",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-08-26T08:32:47.838073Z",
-     "iopub.status.busy": "2022-08-26T08:32:47.837535Z",
-     "iopub.status.idle": "2022-08-26T08:32:52.386994Z",
-     "shell.execute_reply": "2022-08-26T08:32:52.386349Z"
+     "iopub.execute_input": "2022-08-30T14:09:17.132886Z",
+     "iopub.status.busy": "2022-08-30T14:09:17.132452Z",
+     "iopub.status.idle": "2022-08-30T14:09:21.922590Z",
+     "shell.execute_reply": "2022-08-30T14:09:21.921683Z"
     },
     "lines_to_next_cell": 2
    },
@@ -49,8 +49,8 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2022-08-26 08:32:48.887913: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcudart.so.11.0'; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory\n",
-      "2022-08-26 08:32:48.887940: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.\n"
+      "2022-08-30 14:09:18.202306: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcudart.so.11.0'; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory\n",
+      "2022-08-30 14:09:18.202334: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.\n"
      ]
     },
     {
@@ -74,7 +74,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "18633626",
+   "id": "fe74916d",
    "metadata": {},
    "source": [
     "## Data Generation\n",
@@ -91,13 +91,13 @@
   {
    "cell_type": "code",
    "execution_count": 2,
-   "id": "a46c472c",
+   "id": "3c062d7a",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-08-26T08:32:52.390456Z",
-     "iopub.status.busy": "2022-08-26T08:32:52.389981Z",
-     "iopub.status.idle": "2022-08-26T08:32:52.395253Z",
-     "shell.execute_reply": "2022-08-26T08:32:52.394597Z"
+     "iopub.execute_input": "2022-08-30T14:09:21.926462Z",
+     "iopub.status.busy": "2022-08-30T14:09:21.925925Z",
+     "iopub.status.idle": "2022-08-30T14:09:21.931517Z",
+     "shell.execute_reply": "2022-08-30T14:09:21.930873Z"
     },
     "lines_to_next_cell": 1
    },
@@ -128,7 +128,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "b4886634",
+   "id": "ad7ee711",
    "metadata": {},
    "source": [
     "### Plot Data\n",
@@ -138,13 +138,13 @@
   {
    "cell_type": "code",
    "execution_count": 3,
-   "id": "7aaefe58",
+   "id": "33a4a50c",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-08-26T08:32:52.397797Z",
-     "iopub.status.busy": "2022-08-26T08:32:52.397530Z",
-     "iopub.status.idle": "2022-08-26T08:32:52.601550Z",
-     "shell.execute_reply": "2022-08-26T08:32:52.600955Z"
+     "iopub.execute_input": "2022-08-30T14:09:21.934328Z",
+     "iopub.status.busy": "2022-08-30T14:09:21.934008Z",
+     "iopub.status.idle": "2022-08-30T14:09:22.138970Z",
+     "shell.execute_reply": "2022-08-30T14:09:22.138376Z"
     },
     "lines_to_next_cell": 2
    },
@@ -181,7 +181,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "eb144110",
+   "id": "db1a21bf",
    "metadata": {},
    "source": [
     "## Build Model"
@@ -189,7 +189,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "b01f4236",
+   "id": "f2eb7893",
    "metadata": {},
    "source": [
     "### Likelihood\n",
@@ -202,13 +202,13 @@
   {
    "cell_type": "code",
    "execution_count": 4,
-   "id": "8ca5f9e9",
+   "id": "23e30d36",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-08-26T08:32:52.605691Z",
-     "iopub.status.busy": "2022-08-26T08:32:52.605400Z",
-     "iopub.status.idle": "2022-08-26T08:32:52.665674Z",
-     "shell.execute_reply": "2022-08-26T08:32:52.665072Z"
+     "iopub.execute_input": "2022-08-30T14:09:22.145508Z",
+     "iopub.status.busy": "2022-08-30T14:09:22.145195Z",
+     "iopub.status.idle": "2022-08-30T14:09:22.191514Z",
+     "shell.execute_reply": "2022-08-30T14:09:22.190814Z"
     }
    },
    "outputs": [
@@ -225,10 +225,10 @@
      "text": [
       "/home/circleci/project/gpflow/experimental/utils.py:42: UserWarning: You're calling gpflow.experimental.check_shapes.checker.ShapeChecker.__init__ which is considered *experimental*. Expect: breaking changes, poor documentation, and bugs.\n",
       "  warn(\n",
-      "2022-08-26 08:32:52.611688: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcuda.so.1'; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory\n",
-      "2022-08-26 08:32:52.611718: W tensorflow/stream_executor/cuda/cuda_driver.cc:269] failed call to cuInit: UNKNOWN ERROR (303)\n",
-      "2022-08-26 08:32:52.611736: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (d4698e236800): /proc/driver/nvidia/version does not exist\n",
-      "2022-08-26 08:32:52.611981: I tensorflow/core/platform/cpu_feature_guard.cc:193] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA\n",
+      "2022-08-30 14:09:22.151516: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcuda.so.1'; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory\n",
+      "2022-08-30 14:09:22.151541: W tensorflow/stream_executor/cuda/cuda_driver.cc:269] failed call to cuInit: UNKNOWN ERROR (303)\n",
+      "2022-08-30 14:09:22.151561: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (8d4dcf3c5e86): /proc/driver/nvidia/version does not exist\n",
+      "2022-08-30 14:09:22.151824: I tensorflow/core/platform/cpu_feature_guard.cc:193] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA\n",
       "To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.\n"
      ]
     }
@@ -244,7 +244,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "e7202149",
+   "id": "64a654a7",
    "metadata": {},
    "source": [
     "### Kernel\n",
@@ -258,13 +258,13 @@
   {
    "cell_type": "code",
    "execution_count": 5,
-   "id": "64d2acee",
+   "id": "7345ce2a",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-08-26T08:32:52.668558Z",
-     "iopub.status.busy": "2022-08-26T08:32:52.668269Z",
-     "iopub.status.idle": "2022-08-26T08:32:52.685914Z",
-     "shell.execute_reply": "2022-08-26T08:32:52.685279Z"
+     "iopub.execute_input": "2022-08-30T14:09:22.196038Z",
+     "iopub.status.busy": "2022-08-30T14:09:22.195680Z",
+     "iopub.status.idle": "2022-08-30T14:09:22.214877Z",
+     "shell.execute_reply": "2022-08-30T14:09:22.214067Z"
     }
    },
    "outputs": [],
@@ -280,7 +280,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "fb52a4f5",
+   "id": "4031e22f",
    "metadata": {},
    "source": [
     "### Inducing Points\n",
@@ -292,13 +292,13 @@
   {
    "cell_type": "code",
    "execution_count": 6,
-   "id": "73afd198",
+   "id": "ba670774",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-08-26T08:32:52.737384Z",
-     "iopub.status.busy": "2022-08-26T08:32:52.736886Z",
-     "iopub.status.idle": "2022-08-26T08:32:52.748941Z",
-     "shell.execute_reply": "2022-08-26T08:32:52.748173Z"
+     "iopub.execute_input": "2022-08-30T14:09:22.361216Z",
+     "iopub.status.busy": "2022-08-30T14:09:22.360841Z",
+     "iopub.status.idle": "2022-08-30T14:09:22.369958Z",
+     "shell.execute_reply": "2022-08-30T14:09:22.369281Z"
     }
    },
    "outputs": [],
@@ -318,7 +318,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "8dd01efc",
+   "id": "e12d5056",
    "metadata": {},
    "source": [
     "### SVGP Model\n",
@@ -330,20 +330,20 @@
   {
    "cell_type": "code",
    "execution_count": 7,
-   "id": "4202860f",
+   "id": "248fba02",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-08-26T08:32:52.752250Z",
-     "iopub.status.busy": "2022-08-26T08:32:52.751878Z",
-     "iopub.status.idle": "2022-08-26T08:32:52.819532Z",
-     "shell.execute_reply": "2022-08-26T08:32:52.818742Z"
+     "iopub.execute_input": "2022-08-30T14:09:22.374040Z",
+     "iopub.status.busy": "2022-08-30T14:09:22.373656Z",
+     "iopub.status.idle": "2022-08-30T14:09:22.424988Z",
+     "shell.execute_reply": "2022-08-30T14:09:22.424271Z"
     }
    },
    "outputs": [
     {
      "data": {
       "text/html": [
-       "&lt;gpflow.models.svgp.SVGP object at 0x7f7c5c9a3730&gt;\n",
+       "&lt;gpflow.models.svgp.SVGP object at 0x7f9bb63fae30&gt;\n",
        "<table>\n",
        "<thead>\n",
        "<tr><th>name                                              </th><th>class    </th><th>transform     </th><th>prior  </th><th>trainable  </th><th>shape      </th><th>dtype  </th><th>value           </th></tr>\n",
@@ -361,7 +361,7 @@
        "</table>"
       ],
       "text/plain": [
-       "<gpflow.models.svgp.SVGP object at 0x7f7c5c9a3730>\n",
+       "<gpflow.models.svgp.SVGP object at 0x7f9bb63fae30>\n",
        "╒════════════════════════════════════════════════════╤═══════════╤════════════════╤═════════╤═════════════╤═════════════╤═════════╤══════════════════╕\n",
        "│ name                                               │ class     │ transform      │ prior   │ trainable   │ shape       │ dtype   │ value            │\n",
        "╞════════════════════════════════════════════════════╪═══════════╪════════════════╪═════════╪═════════════╪═════════════╪═════════╪══════════════════╡\n",
@@ -401,7 +401,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "8de86911",
+   "id": "db6ab022",
    "metadata": {},
    "source": [
     "## Model Optimization\n",
@@ -412,13 +412,13 @@
   {
    "cell_type": "code",
    "execution_count": 8,
-   "id": "59eb7b67",
+   "id": "37bd3175",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-08-26T08:32:52.823871Z",
-     "iopub.status.busy": "2022-08-26T08:32:52.823459Z",
-     "iopub.status.idle": "2022-08-26T08:32:52.865441Z",
-     "shell.execute_reply": "2022-08-26T08:32:52.864796Z"
+     "iopub.execute_input": "2022-08-30T14:09:22.428159Z",
+     "iopub.status.busy": "2022-08-30T14:09:22.427790Z",
+     "iopub.status.idle": "2022-08-30T14:09:22.464775Z",
+     "shell.execute_reply": "2022-08-30T14:09:22.464124Z"
     }
    },
    "outputs": [],
@@ -444,7 +444,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "28a09b4d",
+   "id": "dc944af6",
    "metadata": {},
    "source": [
     "### Run Optimization Loop"
@@ -453,13 +453,13 @@
   {
    "cell_type": "code",
    "execution_count": 9,
-   "id": "5b4a4abe",
+   "id": "217595a9",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-08-26T08:32:52.868044Z",
-     "iopub.status.busy": "2022-08-26T08:32:52.867752Z",
-     "iopub.status.idle": "2022-08-26T08:33:18.902001Z",
-     "shell.execute_reply": "2022-08-26T08:33:18.901421Z"
+     "iopub.execute_input": "2022-08-30T14:09:22.467419Z",
+     "iopub.status.busy": "2022-08-30T14:09:22.467110Z",
+     "iopub.status.idle": "2022-08-30T14:09:48.982339Z",
+     "shell.execute_reply": "2022-08-30T14:09:48.981701Z"
     }
    },
    "outputs": [
@@ -560,7 +560,7 @@
     {
      "data": {
       "text/html": [
-       "&lt;gpflow.models.svgp.SVGP object at 0x7f7c5c9a3730&gt;\n",
+       "&lt;gpflow.models.svgp.SVGP object at 0x7f9bb63fae30&gt;\n",
        "<table>\n",
        "<thead>\n",
        "<tr><th>name                                              </th><th>class    </th><th>transform     </th><th>prior  </th><th>trainable  </th><th>shape      </th><th>dtype  </th><th>value                                   </th></tr>\n",
@@ -578,7 +578,7 @@
        "</table>"
       ],
       "text/plain": [
-       "<gpflow.models.svgp.SVGP object at 0x7f7c5c9a3730>\n",
+       "<gpflow.models.svgp.SVGP object at 0x7f9bb63fae30>\n",
        "╒════════════════════════════════════════════════════╤═══════════╤════════════════╤═════════╤═════════════╤═════════════╤═════════╤══════════════════════════════════════════╕\n",
        "│ name                                               │ class     │ transform      │ prior   │ trainable   │ shape       │ dtype   │ value                                    │\n",
        "╞════════════════════════════════════════════════════╪═══════════╪════════════════╪═════════╪═════════════╪═════════════╪═════════╪══════════════════════════════════════════╡\n",
@@ -625,7 +625,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "bc1fb45c",
+   "id": "e3293d37",
    "metadata": {},
    "source": [
     "## Further reading\n",
