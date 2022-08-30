@@ -665,8 +665,9 @@ def test_gpr_posterior_update_cache_with_variables_no_precompute(
     register_posterior_test(posterior, GPRPosterior)
 
     assert posterior.cache
-    (Kmm_plus_s_inv,) = posterior.cache
-    assert isinstance(Kmm_plus_s_inv, tf.Variable)
+    err, Lm = posterior.cache
+    assert isinstance(err, tf.Variable)
+    assert isinstance(Lm, tf.Variable)
 
 
 @pytest.mark.parametrize(
@@ -696,9 +697,10 @@ def test_sgpr_posterior_update_cache_with_variables_no_precompute(
     register_posterior_test(posterior, SGPRPosterior)
 
     assert posterior.cache
-    alpha, Qinv = posterior.cache
-    assert isinstance(alpha, tf.Variable)
-    assert isinstance(Qinv, tf.Variable)
+    L, LB, c = posterior.cache
+    assert isinstance(L, tf.Variable)
+    assert isinstance(LB, tf.Variable)
+    assert isinstance(c, tf.Variable)
 
 
 @pytest.mark.parametrize(
