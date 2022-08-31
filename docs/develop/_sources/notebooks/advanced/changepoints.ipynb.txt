@@ -2,7 +2,7 @@
  "cells": [
   {
    "cell_type": "markdown",
-   "id": "5df9ec8c",
+   "id": "e23cc6a6",
    "metadata": {},
    "source": [
     "# Change points\n",
@@ -21,13 +21,13 @@
   {
    "cell_type": "code",
    "execution_count": 1,
-   "id": "26189900",
+   "id": "60f543e0",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-08-30T13:58:14.296918Z",
-     "iopub.status.busy": "2022-08-30T13:58:14.296640Z",
-     "iopub.status.idle": "2022-08-30T13:58:18.488032Z",
-     "shell.execute_reply": "2022-08-30T13:58:18.487435Z"
+     "iopub.execute_input": "2022-08-31T15:15:54.606487Z",
+     "iopub.status.busy": "2022-08-31T15:15:54.606179Z",
+     "iopub.status.idle": "2022-08-31T15:15:59.295712Z",
+     "shell.execute_reply": "2022-08-31T15:15:59.295093Z"
     }
    },
    "outputs": [
@@ -35,8 +35,8 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "2022-08-30 13:58:14.455083: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcudart.so.11.0'; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory\n",
-      "2022-08-30 13:58:14.455107: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.\n"
+      "2022-08-31 15:15:54.787938: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcudart.so.11.0'; dlerror: libcudart.so.11.0: cannot open shared object file: No such file or directory\n",
+      "2022-08-31 15:15:54.787963: I tensorflow/stream_executor/cuda/cudart_stub.cc:29] Ignore above cudart dlerror if you do not have a GPU set up on your machine.\n"
      ]
     },
     {
@@ -69,7 +69,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "f839eca3",
+   "id": "25991ab9",
    "metadata": {},
    "source": [
     "We demonstrate the use of the kernel by drawing a number of samples from different parameterizations. Firstly, a simple single change-point between two kernels of differing lengthscales."
@@ -78,13 +78,13 @@
   {
    "cell_type": "code",
    "execution_count": 2,
-   "id": "e3850969",
+   "id": "e68dd946",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-08-30T13:58:18.491255Z",
-     "iopub.status.busy": "2022-08-30T13:58:18.490812Z",
-     "iopub.status.idle": "2022-08-30T13:58:18.908246Z",
-     "shell.execute_reply": "2022-08-30T13:58:18.907693Z"
+     "iopub.execute_input": "2022-08-31T15:15:59.298991Z",
+     "iopub.status.busy": "2022-08-31T15:15:59.298525Z",
+     "iopub.status.idle": "2022-08-31T15:16:00.905600Z",
+     "shell.execute_reply": "2022-08-31T15:16:00.905028Z"
     }
    },
    "outputs": [
@@ -94,10 +94,10 @@
      "text": [
       "/home/circleci/project/gpflow/experimental/utils.py:42: UserWarning: You're calling gpflow.experimental.check_shapes.checker.ShapeChecker.__init__ which is considered *experimental*. Expect: breaking changes, poor documentation, and bugs.\n",
       "  warn(\n",
-      "2022-08-30 13:58:18.493700: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcuda.so.1'; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory\n",
-      "2022-08-30 13:58:18.493724: W tensorflow/stream_executor/cuda/cuda_driver.cc:269] failed call to cuInit: UNKNOWN ERROR (303)\n",
-      "2022-08-30 13:58:18.493742: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (8d4dcf3c5e86): /proc/driver/nvidia/version does not exist\n",
-      "2022-08-30 13:58:18.493972: I tensorflow/core/platform/cpu_feature_guard.cc:193] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA\n",
+      "2022-08-31 15:15:59.301496: W tensorflow/stream_executor/platform/default/dso_loader.cc:64] Could not load dynamic library 'libcuda.so.1'; dlerror: libcuda.so.1: cannot open shared object file: No such file or directory\n",
+      "2022-08-31 15:15:59.301522: W tensorflow/stream_executor/cuda/cuda_driver.cc:269] failed call to cuInit: UNKNOWN ERROR (303)\n",
+      "2022-08-31 15:15:59.301540: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:156] kernel driver does not appear to be running on this host (3562feafd7c5): /proc/driver/nvidia/version does not exist\n",
+      "2022-08-31 15:15:59.301783: I tensorflow/core/platform/cpu_feature_guard.cc:193] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 AVX512F FMA\n",
       "To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.\n"
      ]
     },
@@ -125,7 +125,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "febc352b",
+   "id": "83e03f25",
    "metadata": {},
    "source": [
     "Secondly, an implementation of a \"change window\" in which we change from one kernel to another, then back to the original."
@@ -134,13 +134,13 @@
   {
    "cell_type": "code",
    "execution_count": 3,
-   "id": "735e193a",
+   "id": "d0b8a83b",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-08-30T13:58:18.911334Z",
-     "iopub.status.busy": "2022-08-30T13:58:18.911027Z",
-     "iopub.status.idle": "2022-08-30T13:58:19.312256Z",
-     "shell.execute_reply": "2022-08-30T13:58:19.311671Z"
+     "iopub.execute_input": "2022-08-31T15:16:00.908660Z",
+     "iopub.status.busy": "2022-08-31T15:16:00.908379Z",
+     "iopub.status.idle": "2022-08-31T15:16:02.525779Z",
+     "shell.execute_reply": "2022-08-31T15:16:02.525175Z"
     }
    },
    "outputs": [
@@ -168,7 +168,7 @@
   },
   {
    "cell_type": "markdown",
-   "id": "78869bb3",
+   "id": "4ecbd2ae",
    "metadata": {},
    "source": [
     "And finally, allowing different change-points to occur more or less abruptly by defining different steepness parameters."
@@ -177,13 +177,13 @@
   {
    "cell_type": "code",
    "execution_count": 4,
-   "id": "88b10125",
+   "id": "cd9a3f6d",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2022-08-30T13:58:19.315077Z",
-     "iopub.status.busy": "2022-08-30T13:58:19.314809Z",
-     "iopub.status.idle": "2022-08-30T13:58:19.698089Z",
-     "shell.execute_reply": "2022-08-30T13:58:19.697511Z"
+     "iopub.execute_input": "2022-08-31T15:16:02.528539Z",
+     "iopub.status.busy": "2022-08-31T15:16:02.528261Z",
+     "iopub.status.idle": "2022-08-31T15:16:03.935223Z",
+     "shell.execute_reply": "2022-08-31T15:16:03.934154Z"
     }
    },
    "outputs": [
