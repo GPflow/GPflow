@@ -261,6 +261,64 @@ jobs:
             git commit -m "Build documentation for <<pipeline.git.branch>> [ci skip]"
             git push origin gh-pages
 
+  run_benchmarks:
+    docker:
+      - image: cimg/python:<<pipeline.parameters.max_py_ver>>
+    parameters:
+      tmp_results_dir:
+        type: string
+        default: "/tmp/results"
+      checkout_dir:
+        type: string
+        default: "/tmp/checkout"
+      results_dir:
+        type: string
+        default: "/tmp/checkout/ci_benchmark_results"
+      plots_dir:
+        type: string
+        default: "/tmp/checkout/ci_benchmark_results/plots"
+    steps:
+      - install_gpflow:
+          py_ver: <<pipeline.parameters.max_py_ver>>
+          tf_ver: <<pipeline.parameters.max_tf_ver>>
+          tfp_ver: <<pipeline.parameters.max_tfp_ver>>
+      - run:
+          name: Run benchmarks
+          command: |
+            source .venv/bin/activate
+            rm -rf <<parameters.tmp_results_dir>>
+            mkdir -p <<parameters.tmp_results_dir>>
+            python -m benchmark.run --no_plot ci <<parameters.tmp_results_dir>>
+      - add_ssh_keys:
+          fingerprints:  # Add key to give write-access below
+            - "b5:9b:f3:74:26:00:b3:c3:de:3a:b3:03:ee:0b:0b:64"
+      - run:
+          name: Generate and commit plots
+          command: |
+            source .venv/bin/activate
+
+            echo Checking out
+            mkdir -p <<parameters.checkout_dir>>
+            git clone -b <<pipeline.git.branch>> git@github.com:GPflow/GPflow.git <<parameters.checkout_dir>>
+
+            echo Moving results
+            mkdir -p <<parameters.results_dir>>
+            mv <<parameters.tmp_results_dir>>/* <<parameters.results_dir>>
+
+            echo Plotting
+            rm -rf <<parameters.plots_dir>>
+            python -m benchmark.plot --no_subdir ci <<parameters.results_dir>> <<parameters.plots_dir>>
+
+            echo Pushing
+            cd <<parameters.checkout_dir>>
+            git config user.email "benchmark.bot@gpflow.com"
+            git config user.name "Benchmarks Bot"
+            git add .
+            git commit -m "Run benchmarks [ci skip]"
+            git push origin <<pipeline.git.branch>>
+
+            echo Done
+
   deploy:
     docker:
       - image: cimg/python:<<pipeline.parameters.min_py_ver>>
@@ -308,7 +366,11 @@ jobs:
 
 workflows:
   version: 2.1
+
   build_test_and_deploy:
+    when:
+      not:
+        equal: [scheduled_pipeline, <<pipeline.trigger_source>>]
     jobs:
       - verify-install:
           name: verify-install-min
@@ -442,3 +504,11 @@ workflows:
               only: /^v[0-9]+(\.[0-9]+)*(-rc[0-9]+)?/
             branches:
               ignore: /.*/
+
+  run_benchmarks:
+    when:
+      and:
+        - equal: [scheduled_pipeline, <<pipeline.trigger_source>>]
+        - equal: [run_benchmarks, <<pipeline.schedule.name>>]
+    jobs:
+      - run_benchmarks

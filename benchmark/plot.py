@@ -120,7 +120,8 @@ def plot(
                     )
 
             fig.tight_layout()
-            fig.savefig(dest / f"{benchmark_set.name}_{'_'.join(file_key)}.png")
+            file_tokens = (benchmark_set.name,) + file_key
+            fig.savefig(dest / f"{'_'.join(file_tokens)}.png")
             plt.close(fig)
 
 
