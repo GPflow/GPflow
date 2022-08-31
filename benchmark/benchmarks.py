@@ -62,7 +62,7 @@ make_benchmark_suite(
     description="Suite that is run in our CI pipeline, to monitor long-term performance.",
     sets=[
         BenchmarkSet(
-            name="metrics",
+            name="timeline",
             datasets=[
                 ds.boston,
             ],
@@ -79,10 +79,10 @@ make_benchmark_suite(
             do_optimise=[True],
             do_predict=True,
             do_posterior=True,
-            file_by=GroupingSpec((GK.DATASET,), minimise=False),
+            file_by=GroupingSpec((GK.DATASET, GK.PLOTTER), minimise=True),
             row_by=GroupingSpec((GK.METRIC,), minimise=False),
-            column_by=GroupingSpec((GK.PLOTTER,), minimise=False),
-            line_by=None,
+            column_by=GroupingSpec((), minimise=False),
+            line_by=GroupingSpec((GK.MODEL,), minimise=False),
             repetitions=5,
         )
     ],

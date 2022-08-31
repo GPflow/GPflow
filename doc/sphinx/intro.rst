@@ -79,6 +79,16 @@ GPLVM
 For visualisation, the GPLVM :cite:p:`lawrence2003gaussian` and Bayesian GPLVM :cite:p:`titsias2010bayesian` models are implemented
 in GPflow (`GPLVM notebook <notebooks/basics/GPLVM.html>`_).
 
+Benchmarks
+----------
+
+To monitor regressions we regularly run a set of benchmarks. See:
+
+.. toctree::
+   :maxdepth: 1
+
+   benchmarks
+
 Contributing
 ------------
 All constructive input is gratefully received. For more information, see the `notes for contributors <https://github.com/GPflow/GPflow/blob/master/contributing.md>`_.
