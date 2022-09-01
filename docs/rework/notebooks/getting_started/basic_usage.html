@@ -243,6 +243,15 @@ function checkPageExistsAndRedirect(event) {
   </a>
  </li>
  <li class="toctree-l1">
+  <a class="reference internal" href="mauna_loa.html">
+   Case Study:
+   <span class="math notranslate nohighlight">
+    \(CO_2\)
+   </span>
+   Levels
+  </a>
+ </li>
+ <li class="toctree-l1">
   <a class="reference internal" href="large_data.html">
    Large Data
   </a>
@@ -622,9 +631,10 @@ div.rendered_html tbody tr:hover {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">gpflow</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+
+<span class="kn">import</span> <span class="nn">gpflow</span>
 </pre></div>
 </div>
 </div>
@@ -702,19 +712,21 @@ Y_i = f(X_i) + \varepsilon_i \,, \quad \varepsilon_i \sim \mathcal{N}(0, \sigma^
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">model</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">GPR</span><span class="p">(</span>
     <span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">),</span>
-    <span class="n">kernel</span><span class="o">=</span><span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">RBF</span><span class="p">(),</span>
+    <span class="n">kernel</span><span class="o">=</span><span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">SquaredExponential</span><span class="p">(),</span>
 <span class="p">)</span>
 </pre></div>
 </div>
 </div>
-<p>Here we use a <code class="docutils literal notranslate"><span class="pre">GPR</span></code> model with an <code class="docutils literal notranslate"><span class="pre">RBF</span></code> kernel. We’ll go into more details about what that means in other chapters, but these are sensible defaults for small, simple problems.</p>
+<p>Here we use a <code class="docutils literal notranslate"><span class="pre">GPR</span></code> model with an <code class="docutils literal notranslate"><span class="pre">SquaredExponential</span></code> kernel. We’ll go into more details about what that means in other chapters, but these are sensible defaults for small, simple problems.</p>
 <p>Next we need to train the model:</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">opt</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">optimizers</span><span class="o">.</span><span class="n">Scipy</span><span class="p">()</span>
-<span class="n">opt</span><span class="o">.</span><span class="n">minimize</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">training_loss</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">trainable_variables</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">maxiter</span><span class="o">=</span><span class="mi">100</span><span class="p">))</span>
+<span class="n">opt</span><span class="o">.</span><span class="n">minimize</span><span class="p">(</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">training_loss</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">trainable_variables</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">maxiter</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+<span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -800,8 +812,7 @@ Y_i = f(X_i) + \varepsilon_i \,, \quad \varepsilon_i \sim \mathcal{N}(0, \sigma^
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="s2">&quot;kx&quot;</span><span class="p">,</span> <span class="n">mew</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;input data&quot;</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="s2">&quot;kx&quot;</span><span class="p">,</span> <span class="n">mew</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;input data&quot;</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Xplot</span><span class="p">,</span> <span class="n">f_mean</span><span class="p">,</span> <span class="s2">&quot;-&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;C0&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;mean&quot;</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Xplot</span><span class="p">,</span> <span class="n">f_lower</span><span class="p">,</span> <span class="s2">&quot;--&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;C0&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;f 95</span><span class="si">% c</span><span class="s2">onfidence&quot;</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Xplot</span><span class="p">,</span> <span class="n">f_upper</span><span class="p">,</span> <span class="s2">&quot;--&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;C0&quot;</span><span class="p">)</span>
@@ -877,6 +888,7 @@ value for <code class="docutils literal notranslate"><span class="pre">full_cov<
          [0.04001305, 0.12785843, 0.11399897]]])&gt;)
 </pre></div></div>
 </div>
+<p>Technically the marginal variance vector we get with <code class="docutils literal notranslate"><span class="pre">predict_f(...,</span> <span class="pre">full_cov=False)</span></code> is just the diagonal of the full covariance matrix we get with <code class="docutils literal notranslate"><span class="pre">predict_f(...,</span> <span class="pre">full_cov=True)</span></code>, but the former is faster to compute, so prefer that when possible.</p>
 </section>
 <section id="What’s-next?">
 <h2>What’s next?<a class="headerlink" href="#What’s-next?" title="Permalink to this heading">#</a></h2>

@@ -243,6 +243,15 @@ function checkPageExistsAndRedirect(event) {
   </a>
  </li>
  <li class="toctree-l1">
+  <a class="reference internal" href="mauna_loa.html">
+   Case Study:
+   <span class="math notranslate nohighlight">
+    \(CO_2\)
+   </span>
+   Levels
+  </a>
+ </li>
+ <li class="toctree-l1">
   <a class="reference internal" href="large_data.html">
    Large Data
   </a>
@@ -302,81 +311,68 @@ function checkPageExistsAndRedirect(event) {
 <nav id="bd-toc-nav">
     <ul class="visible nav section-nav flex-column">
  <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#White">
-   White
+  <a class="reference internal nav-link" href="#What-is-a-kernel?">
+   What is a kernel?
   </a>
  </li>
  <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#Constant">
-   Constant
+  <a class="reference internal nav-link" href="#Visualising-a-kernel">
+   Visualising a kernel
   </a>
  </li>
  <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#Linear">
-   Linear
+  <a class="reference internal nav-link" href="#The-Matern-family">
+   The Matern family
   </a>
  </li>
  <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#Polynomial">
-   Polynomial
+  <a class="reference internal nav-link" href="#Kernel-parameters">
+   Kernel parameters
   </a>
  </li>
  <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#RBF">
-   RBF
-  </a>
- </li>
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#Rational-Quadratic">
-   Rational Quadratic
-  </a>
- </li>
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#Exponential">
-   Exponential
-  </a>
- </li>
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#Matern-family">
-   Matern family
+  <a class="reference internal nav-link" href="#Composition">
+   Composition
   </a>
   <ul class="nav section-nav flex-column">
    <li class="toc-h3 nav-item toc-entry">
-    <a class="reference internal nav-link" href="#Matern-1/2">
-     Matern 1/2
+    <a class="reference internal nav-link" href="#Periodic">
+     Periodic
     </a>
    </li>
    <li class="toc-h3 nav-item toc-entry">
-    <a class="reference internal nav-link" href="#Matern-3/2">
-     Matern 3/2
+    <a class="reference internal nav-link" href="#Change-points">
+     Change-points
     </a>
    </li>
    <li class="toc-h3 nav-item toc-entry">
-    <a class="reference internal nav-link" href="#Matern-5/2">
-     Matern 5/2
+    <a class="reference internal nav-link" href="#Some-other-simple-kernels">
+     Some other simple kernels
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#Binary-operators">
+     Binary operators
     </a>
    </li>
   </ul>
  </li>
  <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#Cosine">
-   Cosine
+  <a class="reference internal nav-link" href="#Multiple-dimensional-data">
+   Multiple-dimensional data
   </a>
- </li>
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#Periodic">
-   Periodic
-  </a>
- </li>
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#ArcCosine">
-   ArcCosine
-  </a>
- </li>
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#Change-points">
-   Change-points
-  </a>
+  <ul class="nav section-nav flex-column">
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#Multi-dimensional-parameters">
+     Multi-dimensional parameters
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#Active-dimensions">
+     Active dimensions
+    </a>
+   </li>
+  </ul>
  </li>
 </ul>
 
@@ -655,85 +651,117 @@ div.rendered_html tbody tr:hover {
 </style>
 <section id="Kernels">
 <h1>Kernels<a class="headerlink" href="#Kernels" title="Permalink to this heading">#</a></h1>
+<p>In this chapter we will be explaining what kernels are, how they affect your models, and how you can create them.</p>
+<p>These are the imports we will be using below:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">deepcopy</span>
+
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">tensorflow</span> <span class="k">as</span> <span class="nn">tf</span>
+<span class="kn">from</span> <span class="nn">matplotlib.axes</span> <span class="kn">import</span> <span class="n">Axes</span>
+<span class="kn">from</span> <span class="nn">matplotlib.cm</span> <span class="kn">import</span> <span class="n">coolwarm</span>
+
+<span class="kn">import</span> <span class="nn">gpflow</span>
+</pre></div>
+</div>
+</div>
+<section id="What-is-a-kernel?">
+<h2>What is a kernel?<a class="headerlink" href="#What-is-a-kernel?" title="Permalink to this heading">#</a></h2>
 <p>Remember how we assume that our data is generated by:</p>
 <p><span class="math">\begin{equation}
 Y_i = f(X_i) + \varepsilon_i \,, \quad \varepsilon_i \sim \mathcal{N}(0, \sigma^2).
 \end{equation}</span></p>
 <p>And in <a class="reference external" href="basic_usage.html">Basic Usage</a> we defined our model as:</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">model</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">GPR</span><span class="p">(</span>
     <span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">),</span>
-    <span class="n">kernel</span><span class="o">=</span><span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">RBF</span><span class="p">(),</span>
+    <span class="n">kernel</span><span class="o">=</span><span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">SquaredExponential</span><span class="p">(),</span>
 <span class="p">)</span>
 </pre></div>
 </div>
 </div>
-<p>The <code class="docutils literal notranslate"><span class="pre">kernel</span></code> defines what kind of shapes <span class="math notranslate nohighlight">\(f\)</span> can take.</p>
-<p>A kernel is a function that takes <span class="math notranslate nohighlight">\(X\)</span> values and returns a <span class="math notranslate nohighlight">\(N \times N\)</span> covariance matrix telling us how those <span class="math notranslate nohighlight">\(X\)</span> coordinates relate to each other. A kernel is sometimes also known as a covariance function.</p>
-<section id="White">
-<h2>White<a class="headerlink" href="#White" title="Permalink to this heading">#</a></h2>
-<div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">White</span><span class="p">()</span>
-</pre></div>
-</div>
-</div>
-<div class="nboutput nblast docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<img alt="../../_images/notebooks_getting_started_kernels_4_0.png" src="../../_images/notebooks_getting_started_kernels_4_0.png" />
-</div>
-</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">kernel</span></code> defines what kind of shapes <span class="math notranslate nohighlight">\(f\)</span> can take, and it is one of the primary ways you fit your model to your data.</p>
+<p>Technically, a kernel is a function that takes <span class="math notranslate nohighlight">\(X\)</span> values and returns a <span class="math notranslate nohighlight">\(N \times N\)</span> covariance matrix telling us how those <span class="math notranslate nohighlight">\(X\)</span> coordinates relate to each other. However, for many users it may be more useful to develop an intuitive understanding of how the different kernels behave than to study the maths.</p>
+<p>A kernel is sometimes also known as a covariance function.</p>
+<p>Below we will introduce the most important kernels, and how they can be composed to create new kernels that fit any structure in your data. To see the full list of kernels implemented in GPflow vist our <a class="reference external" href="all_kernels.html">kernel list</a>.</p>
 </section>
-<section id="Constant">
-<h2>Constant<a class="headerlink" href="#Constant" title="Permalink to this heading">#</a></h2>
-<div class="nbinput docutils container">
+<section id="Visualising-a-kernel">
+<h2>Visualising a kernel<a class="headerlink" href="#Visualising-a-kernel" title="Permalink to this heading">#</a></h2>
+<p>This is the function we will use to visualise some kernels below:</p>
+<div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">Constant</span><span class="p">()</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">plot_kernel_samples</span><span class="p">(</span><span class="n">ax</span><span class="p">:</span> <span class="n">Axes</span><span class="p">,</span> <span class="n">kernel</span><span class="p">:</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">Kernel</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+    <span class="n">Y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">GPR</span><span class="p">((</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">),</span> <span class="n">kernel</span><span class="o">=</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">kernel</span><span class="p">))</span>
+    <span class="n">Xplot</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mf">0.6</span><span class="p">,</span> <span class="mf">0.6</span><span class="p">,</span> <span class="mi">100</span><span class="p">)[:,</span> <span class="kc">None</span><span class="p">]</span>
+    <span class="n">tf</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">set_seed</span><span class="p">(</span><span class="mi">20220903</span><span class="p">)</span>
+    <span class="n">fs</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">predict_f_samples</span><span class="p">(</span><span class="n">Xplot</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Xplot</span><span class="p">,</span> <span class="n">fs</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">kernel</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="n">bottom</span><span class="o">=-</span><span class="mf">2.0</span><span class="p">,</span> <span class="n">top</span><span class="o">=</span><span class="mf">2.0</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;Example $f$s&quot;</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">plot_kernel_prediction</span><span class="p">(</span>
+    <span class="n">ax</span><span class="p">:</span> <span class="n">Axes</span><span class="p">,</span> <span class="n">kernel</span><span class="p">:</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">Kernel</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">optimise</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="o">-</span><span class="mf">0.5</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.4</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.5</span><span class="p">]])</span>
+    <span class="n">Y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mf">1.0</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.6</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.4</span><span class="p">]])</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">GPR</span><span class="p">((</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">),</span> <span class="n">kernel</span><span class="o">=</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">kernel</span><span class="p">),</span> <span class="n">noise_variance</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">optimise</span><span class="p">:</span>
+        <span class="n">gpflow</span><span class="o">.</span><span class="n">set_trainable</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">likelihood</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+        <span class="n">opt</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">optimizers</span><span class="o">.</span><span class="n">Scipy</span><span class="p">()</span>
+        <span class="n">opt</span><span class="o">.</span><span class="n">minimize</span><span class="p">(</span>
+            <span class="n">model</span><span class="o">.</span><span class="n">training_loss</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">trainable_variables</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">maxiter</span><span class="o">=</span><span class="mi">1000</span><span class="p">)</span>
+        <span class="p">)</span>
+
+    <span class="n">Xplot</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mf">0.6</span><span class="p">,</span> <span class="mf">0.6</span><span class="p">,</span> <span class="mi">100</span><span class="p">)[:,</span> <span class="kc">None</span><span class="p">]</span>
+
+    <span class="n">f_mean</span><span class="p">,</span> <span class="n">f_var</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">predict_f</span><span class="p">(</span><span class="n">Xplot</span><span class="p">,</span> <span class="n">full_cov</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">f_lower</span> <span class="o">=</span> <span class="n">f_mean</span> <span class="o">-</span> <span class="mf">1.96</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">f_var</span><span class="p">)</span>
+    <span class="n">f_upper</span> <span class="o">=</span> <span class="n">f_mean</span> <span class="o">+</span> <span class="mf">1.96</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">f_var</span><span class="p">)</span>
+
+    <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;black&quot;</span><span class="p">)</span>
+    <span class="p">(</span><span class="n">mean_line</span><span class="p">,)</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Xplot</span><span class="p">,</span> <span class="n">f_mean</span><span class="p">,</span> <span class="s2">&quot;-&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">kernel</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span>
+    <span class="n">color</span> <span class="o">=</span> <span class="n">mean_line</span><span class="o">.</span><span class="n">get_color</span><span class="p">()</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Xplot</span><span class="p">,</span> <span class="n">f_lower</span><span class="p">,</span> <span class="s2">&quot;--&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Xplot</span><span class="p">,</span> <span class="n">f_upper</span><span class="p">,</span> <span class="s2">&quot;--&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">fill_between</span><span class="p">(</span><span class="n">Xplot</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">f_lower</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">f_upper</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.1</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="n">bottom</span><span class="o">=-</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">top</span><span class="o">=</span><span class="mf">2.0</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;Example data fit&quot;</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">plot_kernel</span><span class="p">(</span><span class="n">kernel</span><span class="p">:</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">Kernel</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">optimise</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">fig</span><span class="p">,</span> <span class="p">(</span><span class="n">samples_ax</span><span class="p">,</span> <span class="n">prediction_ax</span><span class="p">)</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">nrows</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">ncols</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">plot_kernel_samples</span><span class="p">(</span><span class="n">samples_ax</span><span class="p">,</span> <span class="n">kernel</span><span class="p">)</span>
+    <span class="n">plot_kernel_prediction</span><span class="p">(</span><span class="n">prediction_ax</span><span class="p">,</span> <span class="n">kernel</span><span class="p">,</span> <span class="n">optimise</span><span class="o">=</span><span class="n">optimise</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
-<div class="nboutput nblast docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<img alt="../../_images/notebooks_getting_started_kernels_6_0.png" src="../../_images/notebooks_getting_started_kernels_6_0.png" />
-</div>
-</div>
 </section>
-<section id="Linear">
-<h2>Linear<a class="headerlink" href="#Linear" title="Permalink to this heading">#</a></h2>
+<section id="The-Matern-family">
+<h2>The Matern family<a class="headerlink" href="#The-Matern-family" title="Permalink to this heading">#</a></h2>
+<p>The <a class="reference external" href="https://en.wikipedia.org/wiki/Mat%C3%A9rn_covariance_function">Matern family of kernels</a> covers the most popular and widely used kernels.</p>
+<p>A Matern kernel has a parameter called <span class="math notranslate nohighlight">\(\nu\)</span>, which determines the smoothness of <span class="math notranslate nohighlight">\(f\)</span> - the higher the <span class="math notranslate nohighlight">\(\nu\)</span>, the smoother <span class="math notranslate nohighlight">\(f\)</span>. The maths of the kernels simplifies significantly when <span class="math notranslate nohighlight">\(\nu\)</span> is one of <span class="math notranslate nohighlight">\(\frac{1}{2}\)</span>, <span class="math notranslate nohighlight">\(\frac{3}{2}\)</span>, <span class="math notranslate nohighlight">\(\frac{5}{2}\)</span>, etc., so those are the ones usually used in practice. As <span class="math notranslate nohighlight">\(\nu\)</span> diverges towards <span class="math notranslate nohighlight">\(\infty\)</span>, we recover the squared exponential kernel we used in <a class="reference external" href="basic_usage.html">Basic Usage</a>.</p>
+<p>GPflow implements the following kernels from the Matern Family: * <code class="docutils literal notranslate"><span class="pre">Matern12</span></code> * <code class="docutils literal notranslate"><span class="pre">Matern32</span></code> * <code class="docutils literal notranslate"><span class="pre">Matern52</span></code> * <code class="docutils literal notranslate"><span class="pre">SquaredExponential</span></code></p>
+<p>As mentioned above the <span class="math notranslate nohighlight">\(\nu\)</span> parameter determines smoothnes, and in particular a squared exponential kernel will infer an <span class="math notranslate nohighlight">\(f\)</span> that is infinitely many times differentiable, a <code class="docutils literal notranslate"><span class="pre">Matern52</span></code> an <span class="math notranslate nohighlight">\(f\)</span> that is twice differentiable, a <code class="docutils literal notranslate"><span class="pre">Matern32</span></code> an <span class="math notranslate nohighlight">\(f\)</span> that is once differentiable, and a <code class="docutils literal notranslate"><span class="pre">Matern12</span></code> an <span class="math notranslate nohighlight">\(f\)</span> that is not differentiable.</p>
+<p>Note that the squared exponential kernel is also sometimes known as the SE-, radial basis function-, RBF-, or exponentiated quadratic kernel.</p>
+<p>Let’s look at some samples:</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">Linear</span><span class="p">()</span>
-</pre></div>
-</div>
-</div>
-<div class="nboutput nblast docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<img alt="../../_images/notebooks_getting_started_kernels_8_0.png" src="../../_images/notebooks_getting_started_kernels_8_0.png" />
-</div>
-</div>
-</section>
-<section id="Polynomial">
-<h2>Polynomial<a class="headerlink" href="#Polynomial" title="Permalink to this heading">#</a></h2>
-<div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">Polynomial</span><span class="p">(</span><span class="n">degree</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plot_kernel</span><span class="p">(</span><span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">Matern12</span><span class="p">())</span>
 </pre></div>
 </div>
 </div>
@@ -744,15 +772,26 @@ Y_i = f(X_i) + \varepsilon_i \,, \quad \varepsilon_i \sim \mathcal{N}(0, \sigma^
 <img alt="../../_images/notebooks_getting_started_kernels_10_0.png" src="../../_images/notebooks_getting_started_kernels_10_0.png" />
 </div>
 </div>
-</section>
-<section id="RBF">
-<h2>RBF<a class="headerlink" href="#RBF" title="Permalink to this heading">#</a></h2>
-<p>The RBF (aka Squared Exponential, exponentiated quadratic) kernel… Infinitely differentiable</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plot_kernel</span><span class="p">(</span><span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">Matern32</span><span class="p">())</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/notebooks_getting_started_kernels_11_0.png" src="../../_images/notebooks_getting_started_kernels_11_0.png" />
+</div>
+</div>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">RBF</span><span class="p">()</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plot_kernel</span><span class="p">(</span><span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">Matern52</span><span class="p">())</span>
 </pre></div>
 </div>
 </div>
@@ -763,15 +802,11 @@ Y_i = f(X_i) + \varepsilon_i \,, \quad \varepsilon_i \sim \mathcal{N}(0, \sigma^
 <img alt="../../_images/notebooks_getting_started_kernels_12_0.png" src="../../_images/notebooks_getting_started_kernels_12_0.png" />
 </div>
 </div>
-</section>
-<section id="Rational-Quadratic">
-<h2>Rational Quadratic<a class="headerlink" href="#Rational-Quadratic" title="Permalink to this heading">#</a></h2>
-<p>As <span class="math notranslate nohighlight">\(\alpha \rightarrow \infty\)</span> this approaches the squared exponential.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">RationalQuadratic</span><span class="p">()</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plot_kernel</span><span class="p">(</span><span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">SquaredExponential</span><span class="p">())</span>
 </pre></div>
 </div>
 </div>
@@ -779,18 +814,20 @@ Y_i = f(X_i) + \varepsilon_i \,, \quad \varepsilon_i \sim \mathcal{N}(0, \sigma^
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../../_images/notebooks_getting_started_kernels_14_0.png" src="../../_images/notebooks_getting_started_kernels_14_0.png" />
+<img alt="../../_images/notebooks_getting_started_kernels_13_0.png" src="../../_images/notebooks_getting_started_kernels_13_0.png" />
 </div>
 </div>
-</section>
-<section id="Exponential">
-<h2>Exponential<a class="headerlink" href="#Exponential" title="Permalink to this heading">#</a></h2>
-<p>Equivivalent to Matern12 with doubled lengthscale.</p>
+<p>And all of them together:</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">Exponential</span><span class="p">()</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">nrows</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">ncols</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">plot_kernel_prediction</span><span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">Matern12</span><span class="p">())</span>
+<span class="n">plot_kernel_prediction</span><span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">Matern32</span><span class="p">())</span>
+<span class="n">plot_kernel_prediction</span><span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">Matern52</span><span class="p">())</span>
+<span class="n">plot_kernel_prediction</span><span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">SquaredExponential</span><span class="p">())</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
 </pre></div>
 </div>
 </div>
@@ -798,20 +835,56 @@ Y_i = f(X_i) + \varepsilon_i \,, \quad \varepsilon_i \sim \mathcal{N}(0, \sigma^
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../../_images/notebooks_getting_started_kernels_16_0.png" src="../../_images/notebooks_getting_started_kernels_16_0.png" />
+<img alt="../../_images/notebooks_getting_started_kernels_15_0.png" src="../../_images/notebooks_getting_started_kernels_15_0.png" />
 </div>
 </div>
 </section>
-<section id="Matern-family">
-<h2>Matern family<a class="headerlink" href="#Matern-family" title="Permalink to this heading">#</a></h2>
-<section id="Matern-1/2">
-<h3>Matern 1/2<a class="headerlink" href="#Matern-1/2" title="Permalink to this heading">#</a></h3>
-<p>Not differentiable</p>
+<section id="Kernel-parameters">
+<h2>Kernel parameters<a class="headerlink" href="#Kernel-parameters" title="Permalink to this heading">#</a></h2>
+<p>The kernel classes generally have parameters that can affect the shape of <span class="math notranslate nohighlight">\(f\)</span>.</p>
+<p>For example, all the Matern Family kernels mentioned above have two parameters: * <code class="docutils literal notranslate"><span class="pre">variance</span></code>, which determines the scale along the <span class="math notranslate nohighlight">\(y\)</span> axis, and * <code class="docutils literal notranslate"><span class="pre">lengthscales</span></code>, which determines the scale along the <span class="math notranslate nohighlight">\(x\)</span> axis.</p>
+<p>For example:</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">Matern12</span><span class="p">()</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plot_kernel</span><span class="p">(</span>
+    <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">SquaredExponential</span><span class="p">(</span><span class="n">variance</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">lengthscales</span><span class="o">=</span><span class="mf">0.2</span><span class="p">),</span> <span class="n">optimise</span><span class="o">=</span><span class="kc">False</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/notebooks_getting_started_kernels_17_0.png" src="../../_images/notebooks_getting_started_kernels_17_0.png" />
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plot_kernel</span><span class="p">(</span>
+    <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">SquaredExponential</span><span class="p">(</span><span class="n">variance</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">lengthscales</span><span class="o">=</span><span class="mf">0.2</span><span class="p">),</span> <span class="n">optimise</span><span class="o">=</span><span class="kc">False</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/notebooks_getting_started_kernels_18_0.png" src="../../_images/notebooks_getting_started_kernels_18_0.png" />
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plot_kernel</span><span class="p">(</span>
+    <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">SquaredExponential</span><span class="p">(</span><span class="n">variance</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">lengthscales</span><span class="o">=</span><span class="mf">1.0</span><span class="p">),</span> <span class="n">optimise</span><span class="o">=</span><span class="kc">False</span>
+<span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -822,34 +895,22 @@ Y_i = f(X_i) + \varepsilon_i \,, \quad \varepsilon_i \sim \mathcal{N}(0, \sigma^
 <img alt="../../_images/notebooks_getting_started_kernels_19_0.png" src="../../_images/notebooks_getting_started_kernels_19_0.png" />
 </div>
 </div>
+<p>These parameters are usually set automatically during model training, and ideally you don’t need to worry too much about them. In the above examples we did not optimise the model, to demonstrate how model parameters impact predictions. For more about parameters and their training see <a class="reference external" href="parameters_and_their_optimisation.html">Parameters and Their Optimisation</a>.</p>
+<p>To see which parameters each kernel takes, look up their <a class="reference external" href="../../api/gpflow/kernels/index.html">API documentation</a>.</p>
 </section>
-<section id="Matern-3/2">
-<h3>Matern 3/2<a class="headerlink" href="#Matern-3/2" title="Permalink to this heading">#</a></h3>
-<p>Once differentiable</p>
+<section id="Composition">
+<h2>Composition<a class="headerlink" href="#Composition" title="Permalink to this heading">#</a></h2>
+<p>Often you can just pick an appropriate Matern kernl, train it, and you will have a reasonable model.</p>
+<p>However, if you need to squeeze extra performance out of your model, and if your data has interesting structure, you can create a new kernel tailored specifically for your problem.</p>
+<p>While it is possible to create new kernels from the ground up, it is also possible to combine existing kernels to create new ones.</p>
+<section id="Periodic">
+<h3>Periodic<a class="headerlink" href="#Periodic" title="Permalink to this heading">#</a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">Periodic</span></code> kernel is a composite kernel that wraps another kernel, and creates a version that repeats:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">Matern32</span><span class="p">()</span>
-</pre></div>
-</div>
-</div>
-<div class="nboutput nblast docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<img alt="../../_images/notebooks_getting_started_kernels_21_0.png" src="../../_images/notebooks_getting_started_kernels_21_0.png" />
-</div>
-</div>
-</section>
-<section id="Matern-5/2">
-<h3>Matern 5/2<a class="headerlink" href="#Matern-5/2" title="Permalink to this heading">#</a></h3>
-<p>Twice differentiable</p>
-<div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">Matern52</span><span class="p">()</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plot_kernel</span><span class="p">(</span><span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">Periodic</span><span class="p">(</span><span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">SquaredExponential</span><span class="p">(),</span> <span class="n">period</span><span class="o">=</span><span class="mf">0.3</span><span class="p">))</span>
 </pre></div>
 </div>
 </div>
@@ -861,14 +922,25 @@ Y_i = f(X_i) + \varepsilon_i \,, \quad \varepsilon_i \sim \mathcal{N}(0, \sigma^
 </div>
 </div>
 </section>
-</section>
-<section id="Cosine">
-<h2>Cosine<a class="headerlink" href="#Cosine" title="Permalink to this heading">#</a></h2>
+<section id="Change-points">
+<h3>Change-points<a class="headerlink" href="#Change-points" title="Permalink to this heading">#</a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">ChangePoints</span></code> kernel allows you to use different kernels for different regions of <span class="math notranslate nohighlight">\(X\)</span>. The <code class="docutils literal notranslate"><span class="pre">kernels</span></code> parameter determines which kernels to use, and the <code class="docutils literal notranslate"><span class="pre">locations</span></code> parameter determines where to switch between the kernels. <code class="docutils literal notranslate"><span class="pre">steepness</span></code> sets how rapid the transition between the kernels is.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">Cosine</span><span class="p">()</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plot_kernel</span><span class="p">(</span>
+    <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">ChangePoints</span><span class="p">(</span>
+        <span class="n">kernels</span><span class="o">=</span><span class="p">[</span>
+            <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">SquaredExponential</span><span class="p">(</span><span class="n">lengthscales</span><span class="o">=</span><span class="mf">1.0</span><span class="p">),</span>
+            <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">SquaredExponential</span><span class="p">(</span><span class="n">lengthscales</span><span class="o">=</span><span class="mf">3.0</span><span class="p">),</span>
+            <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">SquaredExponential</span><span class="p">(</span><span class="n">lengthscales</span><span class="o">=</span><span class="mf">2.0</span><span class="p">),</span>
+        <span class="p">],</span>
+        <span class="n">locations</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">],</span>
+        <span class="n">steepness</span><span class="o">=</span><span class="mf">1000.0</span><span class="p">,</span>
+    <span class="p">),</span>
+    <span class="n">optimise</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -880,13 +952,15 @@ Y_i = f(X_i) + \varepsilon_i \,, \quad \varepsilon_i \sim \mathcal{N}(0, \sigma^
 </div>
 </div>
 </section>
-<section id="Periodic">
-<h2>Periodic<a class="headerlink" href="#Periodic" title="Permalink to this heading">#</a></h2>
+<section id="Some-other-simple-kernels">
+<h3>Some other simple kernels<a class="headerlink" href="#Some-other-simple-kernels" title="Permalink to this heading">#</a></h3>
+<p>Before we continue, I want to introduce a couple of simple kernels that rarely are used alone, but can be very useful when combined with other kernels.</p>
+<p>First we have the <code class="docutils literal notranslate"><span class="pre">Constant</span></code> kernel, which makes <span class="math notranslate nohighlight">\(f\)</span> a constant value:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">Periodic</span><span class="p">(</span><span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">RBF</span><span class="p">(),</span> <span class="n">period</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plot_kernel</span><span class="p">(</span><span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">Constant</span><span class="p">())</span>
 </pre></div>
 </div>
 </div>
@@ -894,30 +968,15 @@ Y_i = f(X_i) + \varepsilon_i \,, \quad \varepsilon_i \sim \mathcal{N}(0, \sigma^
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../../_images/notebooks_getting_started_kernels_27_0.png" src="../../_images/notebooks_getting_started_kernels_27_0.png" />
+<img alt="../../_images/notebooks_getting_started_kernels_28_0.png" src="../../_images/notebooks_getting_started_kernels_28_0.png" />
 </div>
 </div>
-</section>
-<section id="ArcCosine">
-<h2>ArcCosine<a class="headerlink" href="#ArcCosine" title="Permalink to this heading">#</a></h2>
-<p>???</p>
-</section>
-<section id="Change-points">
-<h2>Change-points<a class="headerlink" href="#Change-points" title="Permalink to this heading">#</a></h2>
-<p>ChangePoints</p>
+<p>Finally, I want to introduce the <code class="docutils literal notranslate"><span class="pre">Linear</span></code> kernel, which creates a stright line through <span class="math notranslate nohighlight">\((0, 0)\)</span>:</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">ChangePoints</span><span class="p">(</span>
-    <span class="n">kernels</span><span class="o">=</span><span class="p">[</span>
-        <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">RBF</span><span class="p">(</span><span class="n">lengthscales</span><span class="o">=</span><span class="mf">0.1</span><span class="p">),</span>
-        <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">RBF</span><span class="p">(</span><span class="n">lengthscales</span><span class="o">=</span><span class="mf">1.0</span><span class="p">),</span>
-        <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">RBF</span><span class="p">(</span><span class="n">lengthscales</span><span class="o">=</span><span class="mf">0.3</span><span class="p">),</span>
-    <span class="p">],</span>
-    <span class="n">locations</span><span class="o">=</span><span class="p">[</span><span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.7</span><span class="p">],</span>
-    <span class="n">steepness</span><span class="o">=</span><span class="mf">1000.0</span><span class="p">,</span>
-<span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plot_kernel</span><span class="p">(</span><span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">Linear</span><span class="p">())</span>
 </pre></div>
 </div>
 </div>
@@ -928,25 +987,214 @@ Y_i = f(X_i) + \varepsilon_i \,, \quad \varepsilon_i \sim \mathcal{N}(0, \sigma^
 <img alt="../../_images/notebooks_getting_started_kernels_30_0.png" src="../../_images/notebooks_getting_started_kernels_30_0.png" />
 </div>
 </div>
-<ul class="simple">
-<li><p>Present different kernels</p>
-<ul>
-<li><p>and talk about their properties</p></li>
-</ul>
-</li>
-<li><p>Demonstrate kernel composition</p></li>
-<li><p>Talk about multidimensional input</p>
-<ul>
-<li><p>ARD</p></li>
-<li><p>Active dims</p></li>
-</ul>
-</li>
-<li><p>Can we have a cool example?</p>
-<ul>
-<li><p>Mauna Loa dataset?</p></li>
-</ul>
-</li>
-</ul>
+</section>
+<section id="Binary-operators">
+<h3>Binary operators<a class="headerlink" href="#Binary-operators" title="Permalink to this heading">#</a></h3>
+<p>Other than the kernels that explicitly takes other kernels as parameters, you can compose kernels with the <code class="docutils literal notranslate"><span class="pre">+</span></code> and <code class="docutils literal notranslate"><span class="pre">*</span></code> binary operators.</p>
+<p>For example you can add a constant and a linear to get a <span class="math notranslate nohighlight">\(f\)</span> that is a straight line that does not pass through <span class="math notranslate nohighlight">\((0, 0)\)</span>:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plot_kernel</span><span class="p">(</span><span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">Linear</span><span class="p">()</span> <span class="o">+</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">Constant</span><span class="p">())</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/notebooks_getting_started_kernels_33_0.png" src="../../_images/notebooks_getting_started_kernels_33_0.png" />
+</div>
+</div>
+<p>Or you can add a linear and a periodic kernel to repeating pattern with a linear trend:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plot_kernel</span><span class="p">(</span>
+    <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">Periodic</span><span class="p">(</span><span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">SquaredExponential</span><span class="p">(),</span> <span class="n">period</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
+    <span class="o">+</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">Linear</span><span class="p">()</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/notebooks_getting_started_kernels_35_0.png" src="../../_images/notebooks_getting_started_kernels_35_0.png" />
+</div>
+</div>
+<p>You can multiply to linear kernels to get a quadratic (though please you <code class="docutils literal notranslate"><span class="pre">gpflow.kernels.Polynomial</span></code> if you really want a quadratic):</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plot_kernel</span><span class="p">(</span><span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">Linear</span><span class="p">()</span> <span class="o">*</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">Linear</span><span class="p">())</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/notebooks_getting_started_kernels_37_0.png" src="../../_images/notebooks_getting_started_kernels_37_0.png" />
+</div>
+</div>
+<p>Or you can scale a periodic by a linear:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plot_kernel</span><span class="p">(</span>
+    <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">Periodic</span><span class="p">(</span><span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">SquaredExponential</span><span class="p">(),</span> <span class="n">period</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
+    <span class="o">*</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">Linear</span><span class="p">()</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/notebooks_getting_started_kernels_39_0.png" src="../../_images/notebooks_getting_started_kernels_39_0.png" />
+</div>
+</div>
+</section>
+</section>
+<section id="Multiple-dimensional-data">
+<h2>Multiple-dimensional data<a class="headerlink" href="#Multiple-dimensional-data" title="Permalink to this heading">#</a></h2>
+<p>So far we’ve been using 1D input and 1D output data, because it’s easy to understand and to plot.</p>
+<p>However, with real data you often have multiple input dimensions, or even output dimensions.</p>
+<p>Admittedly, GPflow has poor support for multiple output dimensions. We do have <a class="reference external" href="../advanced/multioutput.html">a section on how to handle multiple outputs in a principled way</a>, but be warned it is an advanced section.</p>
+<p>GPflow has much better support for multiple input dimensions. When you have multiple input dimensions it is interesting how <span class="math notranslate nohighlight">\(f\)</span> behaves along every one of those dimensions, and hence it is interesting how your kernel handles each dimension.</p>
+<p>First we define a function to plot a kernel with 2D input:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">plot_2d_kernel_samples</span><span class="p">(</span><span class="n">ax</span><span class="p">:</span> <span class="n">Axes</span><span class="p">,</span> <span class="n">kernel</span><span class="p">:</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">Kernel</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">n_grid</span> <span class="o">=</span> <span class="mi">30</span>
+    <span class="n">X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+    <span class="n">Y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">GPR</span><span class="p">((</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">),</span> <span class="n">kernel</span><span class="o">=</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">kernel</span><span class="p">))</span>
+
+    <span class="n">Xplots</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mf">0.6</span><span class="p">,</span> <span class="mf">0.6</span><span class="p">,</span> <span class="n">n_grid</span><span class="p">)</span>
+    <span class="n">Xplot1</span><span class="p">,</span> <span class="n">Xplot2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">meshgrid</span><span class="p">(</span><span class="n">Xplots</span><span class="p">,</span> <span class="n">Xplots</span><span class="p">)</span>
+    <span class="n">Xplot</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">Xplot1</span><span class="p">,</span> <span class="n">Xplot2</span><span class="p">],</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">Xplot</span> <span class="o">=</span> <span class="n">Xplot</span><span class="o">.</span><span class="n">reshape</span><span class="p">([</span><span class="n">n_grid</span> <span class="o">**</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
+
+    <span class="n">tf</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">set_seed</span><span class="p">(</span><span class="mi">20220903</span><span class="p">)</span>
+    <span class="n">fs</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">predict_f_samples</span><span class="p">(</span><span class="n">Xplot</span><span class="p">,</span> <span class="n">num_samples</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">fs</span> <span class="o">=</span> <span class="n">fs</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="n">n_grid</span><span class="p">,</span> <span class="n">n_grid</span><span class="p">))</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">plot_surface</span><span class="p">(</span><span class="n">Xplot1</span><span class="p">,</span> <span class="n">Xplot2</span><span class="p">,</span> <span class="n">fs</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="n">coolwarm</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;Example $f$&quot;</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">plot_2d_kernel_prediction</span><span class="p">(</span><span class="n">ax</span><span class="p">:</span> <span class="n">Axes</span><span class="p">,</span> <span class="n">kernel</span><span class="p">:</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">Kernel</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">n_grid</span> <span class="o">=</span> <span class="mi">30</span>
+    <span class="n">X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+        <span class="p">[</span>
+            <span class="p">[</span><span class="o">-</span><span class="mf">0.4</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.5</span><span class="p">],</span>
+            <span class="p">[</span><span class="mf">0.1</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.3</span><span class="p">],</span>
+            <span class="p">[</span><span class="mf">0.4</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.4</span><span class="p">],</span>
+            <span class="p">[</span><span class="mf">0.5</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.5</span><span class="p">],</span>
+            <span class="p">[</span><span class="o">-</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">],</span>
+            <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">],</span>
+            <span class="p">[</span><span class="mf">0.4</span><span class="p">,</span> <span class="mf">0.4</span><span class="p">],</span>
+            <span class="p">[</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">],</span>
+        <span class="p">]</span>
+    <span class="p">)</span>
+    <span class="n">Y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mf">0.8</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.5</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.3</span><span class="p">],</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.2</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.7</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.5</span><span class="p">]])</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">GPR</span><span class="p">((</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">),</span> <span class="n">kernel</span><span class="o">=</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">kernel</span><span class="p">),</span> <span class="n">noise_variance</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">)</span>
+    <span class="n">gpflow</span><span class="o">.</span><span class="n">set_trainable</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">likelihood</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+    <span class="n">opt</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">optimizers</span><span class="o">.</span><span class="n">Scipy</span><span class="p">()</span>
+    <span class="n">opt</span><span class="o">.</span><span class="n">minimize</span><span class="p">(</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">training_loss</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">trainable_variables</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">maxiter</span><span class="o">=</span><span class="mi">1000</span><span class="p">)</span>
+    <span class="p">)</span>
+
+    <span class="n">Xplots</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mf">0.6</span><span class="p">,</span> <span class="mf">0.6</span><span class="p">,</span> <span class="n">n_grid</span><span class="p">)</span>
+    <span class="n">Xplot1</span><span class="p">,</span> <span class="n">Xplot2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">meshgrid</span><span class="p">(</span><span class="n">Xplots</span><span class="p">,</span> <span class="n">Xplots</span><span class="p">)</span>
+    <span class="n">Xplot</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">Xplot1</span><span class="p">,</span> <span class="n">Xplot2</span><span class="p">],</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">Xplot</span> <span class="o">=</span> <span class="n">Xplot</span><span class="o">.</span><span class="n">reshape</span><span class="p">([</span><span class="n">n_grid</span> <span class="o">**</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
+
+    <span class="n">f_mean</span><span class="p">,</span> <span class="n">f_var</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">predict_f</span><span class="p">(</span><span class="n">Xplot</span><span class="p">,</span> <span class="n">full_cov</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">f_mean</span> <span class="o">=</span> <span class="n">f_mean</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="n">n_grid</span><span class="p">,</span> <span class="n">n_grid</span><span class="p">))</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">plot_surface</span><span class="p">(</span><span class="n">Xplot1</span><span class="p">,</span> <span class="n">Xplot2</span><span class="p">,</span> <span class="n">f_mean</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="n">coolwarm</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.7</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">X</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">X</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">Y</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">s</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="s2">&quot;black&quot;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;Example data fit&quot;</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">plot_2d_kernel</span><span class="p">(</span><span class="n">kernel</span><span class="p">:</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">Kernel</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">fig</span><span class="p">,</span> <span class="p">(</span><span class="n">samples_ax</span><span class="p">,</span> <span class="n">prediction_ax</span><span class="p">)</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span>
+        <span class="n">nrows</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">ncols</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">subplot_kw</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;projection&quot;</span><span class="p">:</span> <span class="s2">&quot;3d&quot;</span><span class="p">}</span>
+    <span class="p">)</span>
+    <span class="n">plot_2d_kernel_samples</span><span class="p">(</span><span class="n">samples_ax</span><span class="p">,</span> <span class="n">kernel</span><span class="p">)</span>
+    <span class="n">plot_2d_kernel_prediction</span><span class="p">(</span><span class="n">prediction_ax</span><span class="p">,</span> <span class="n">kernel</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>Now, if we just use a kernel with default parameters, like we did above, with multi-dimensional input data it will work:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plot_2d_kernel</span><span class="p">(</span><span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">SquaredExponential</span><span class="p">())</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/notebooks_getting_started_kernels_44_0.png" src="../../_images/notebooks_getting_started_kernels_44_0.png" />
+</div>
+</div>
+<p>However, in many cases this behaviour is not what we want. The problem is that by default the kernel will use the same parameters for all the input dimensions, and in practice it is rare that all the input dimensions behave in the same way.</p>
+<section id="Multi-dimensional-parameters">
+<h3>Multi-dimensional parameters<a class="headerlink" href="#Multi-dimensional-parameters" title="Permalink to this heading">#</a></h3>
+<p>Many kernels allow relevant parameters to be a vector of values - one for each input dimension - instead of just a single value, and this is an easy way to have a kernel that behaves differently for each input dimension.</p>
+<p>Simply initialise the parameter to a vector with one entry per input dimension:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plot_2d_kernel</span><span class="p">(</span><span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">SquaredExponential</span><span class="p">(</span><span class="n">lengthscales</span><span class="o">=</span><span class="p">[</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">]))</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/notebooks_getting_started_kernels_47_0.png" src="../../_images/notebooks_getting_started_kernels_47_0.png" />
+</div>
+</div>
+<p>Notice that even though we explicitly initialise the <code class="docutils literal notranslate"><span class="pre">lengthscales</span></code> the values are still optimised / scaled, so usually you do not have to worry too much about setting the value right.</p>
+<p>Again, see our section on <a class="reference external" href="parameters_and_their_optimisation.html">Parameters and Their Optimisation</a> to better understand how parameters are set and trained.</p>
+</section>
+<section id="Active-dimensions">
+<h3>Active dimensions<a class="headerlink" href="#Active-dimensions" title="Permalink to this heading">#</a></h3>
+<p>Another way to customise kernel behavior along different dimensions is “active dimensions”. Most kernels take an argument <code class="docutils literal notranslate"><span class="pre">active_dims</span></code> that determines which input dimensions that kernel cares about. The kernel will simply ignore input dimensions not listed in <code class="docutils literal notranslate"><span class="pre">active_dims</span></code>. You can combine this with <code class="docutils literal notranslate"><span class="pre">+</span></code> addition of kernels to create a kernel that has specific behaviour along each dimension:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[23]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plot_2d_kernel</span><span class="p">(</span>
+    <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">Matern52</span><span class="p">(</span><span class="n">active_dims</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">+</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">kernels</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">active_dims</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../../_images/notebooks_getting_started_kernels_50_0.png" src="../../_images/notebooks_getting_started_kernels_50_0.png" />
+</div>
+</div>
+</section>
 </section>
 </section>
 
