@@ -212,6 +212,35 @@ jobs:
           tfp_ver: <<pipeline.parameters.max_tfp_ver>>
           pytest_filter: docs
 
+  build-notebooks:
+    # Note that /tmp/gpflow_build_docs is hard-coded a couple of times below. This path is hardcoded
+    # in doc/build_docs.py.
+    docker:
+      # At the time of writing we cannot generate documentation for type numpy with older versions,
+      # so we need to use `max` versions here.
+      - image: cimg/python:<<pipeline.parameters.max_py_ver>>
+        environment:
+          DOCS: True  # This is used in gpflow/ci_utils.py
+    parallelism: 10
+    steps:
+      - install_gpflow:
+          py_ver: <<pipeline.parameters.max_py_ver>>
+          tf_ver: <<pipeline.parameters.max_tf_ver>>
+          tfp_ver: <<pipeline.parameters.max_tfp_ver>>
+      - run:
+          name: Build notebooks
+          no_output_timeout: 60m
+          command: |
+            source .venv/bin/activate
+            mkdir -p /tmp/gpflow_build_docs
+            python doc/build_docs.py --shard ${CIRCLE_NODE_INDEX}/${CIRCLE_NODE_TOTAL}
+            # Each shard must output unique files, so clean up output directory:
+            find /tmp/gpflow_build_docs -type f -and -not -name \*.ipynb -delete
+      - persist_to_workspace:
+          root: /tmp/
+          paths:
+            - gpflow_build_docs
+
   build-docs:
     docker:
       # At the time of writing we cannot generate documentation for type numpy with older versions,
@@ -229,13 +258,15 @@ jobs:
           command: |
             sudo apt update
             sudo apt install pandoc
+      - attach_workspace:
+          at: /tmp/
       - run:
           name: Build documentation
           no_output_timeout: 60m
           command: |
             source .venv/bin/activate
             mkdir docs_tmp
-            time python doc/build_docs.py <<pipeline.git.branch>> docs_tmp
+            python doc/build_docs.py --shard collect <<pipeline.git.branch>> docs_tmp
       - add_ssh_keys:
           fingerprints:  # Add key to give write-access below
             - "b5:9b:f3:74:26:00:b3:c3:de:3a:b3:03:ee:0b:0b:64"
@@ -491,9 +522,17 @@ workflows:
           filters:
             tags:
               only: /^v[0-9]+(\.[0-9]+)*(-rc[0-9]+)?/
-      - build-docs:
+      - build-notebooks:
           requires:
             - all-tests
+          filters:
+            branches:
+              only:
+                - master
+                - develop
+      - build-docs:
+          requires:
+            - build-notebooks
           filters:
             branches:
               only:
