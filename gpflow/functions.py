@@ -24,7 +24,7 @@ The GPflow :class:`MeanFunction <gpflow.mean_functions.MeanFunction>` class
 allows this to be done whilst additionally learning parameters of the
 parametric function.
 """
-from typing import Collection, Iterator, Optional, Tuple
+from typing import Collection, Optional, Sequence, Tuple
 
 import numpy as np
 import tensorflow as tf
@@ -38,7 +38,7 @@ from .experimental.check_shapes import check_shapes, inherit_check_shapes
 class Function(Module):
     """
     The base function class.
-    To implement a function, write the __call__ method. This takes a
+    To implement a function, write the ``__call__`` method. This takes a
     tensor X and returns a tensor f(X). In accordance with the GPflow
     standard, each row of X represents one datum, and each row of Y is computed
     independently for each row of X.
@@ -217,11 +217,12 @@ class Polynomial(MeanFunction, Function):
         self.w = Parameter(tf.broadcast_to(w, w_shape))
 
     @staticmethod
-    def compute_powers(degree: int, input_dim: int) -> Iterator[Tuple[int, ...]]:
+    def compute_powers(degree: int, input_dim: int) -> Sequence[Tuple[int, ...]]:
         """
         Computes integer tuples corresponding to the powers to raise inputs to.
 
         Specifically this returns, in lexicographical order, all tuples where:
+
         * The tuple has length `input_dim`.
         * The values are non-negative integers.
         * The sum of the tuple is no greater than `degree`.
@@ -252,11 +253,12 @@ class Polynomial(MeanFunction, Function):
             w[i] * (x[0]**1) * (x[1]**0) * (x[2]**2)
         """
         if not input_dim:
-            yield ()
-            return
+            return [()]
+        result = []
         for i in range(degree + 1):
             for inner in Polynomial.compute_powers(degree - i, input_dim - 1):
-                yield (i,) + inner
+                result.append((i,) + inner)
+        return result
 
     @inherit_check_shapes
     def __call__(self, X: TensorType) -> tf.Tensor:
