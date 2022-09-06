@@ -276,7 +276,10 @@ jobs:
         default: "/tmp/checkout/ci_benchmark_results"
       plots_dir:
         type: string
-        default: "/tmp/checkout/ci_benchmark_results/plots"
+        default: "/tmp/checkout/docs/benchmark_plots"
+      branch:
+        type: string
+        default: "gh-pages"
     steps:
       - install_gpflow:
           py_ver: <<pipeline.parameters.max_py_ver>>
@@ -299,7 +302,7 @@ jobs:
 
             echo Checking out
             mkdir -p <<parameters.checkout_dir>>
-            git clone -b <<pipeline.git.branch>> git@github.com:GPflow/GPflow.git <<parameters.checkout_dir>>
+            git clone -b <<parameters.branch>> git@github.com:GPflow/GPflow.git <<parameters.checkout_dir>>
 
             echo Moving results
             mkdir -p <<parameters.results_dir>>
@@ -315,7 +318,7 @@ jobs:
             git config user.name "Benchmarks Bot"
             git add .
             git commit -m "Run benchmarks [ci skip]"
-            git push origin <<pipeline.git.branch>>
+            git push origin <<parameters.branch>>
 
             echo Done
 
