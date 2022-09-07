@@ -267,7 +267,7 @@ function checkPageExistsAndRedirect(event) {
 <span class="sd">allows this to be done whilst additionally learning parameters of the</span>
 <span class="sd">parametric function.</span>
 <span class="sd">&quot;&quot;&quot;</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Collection</span><span class="p">,</span> <span class="n">Iterator</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Collection</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">tensorflow</span> <span class="k">as</span> <span class="nn">tf</span>
@@ -281,7 +281,7 @@ function checkPageExistsAndRedirect(event) {
 <div class="viewcode-block" id="Function"><a class="viewcode-back" href="../../api/gpflow/functions/index.html#gpflow.functions.Function">[docs]</a><span class="k">class</span> <span class="nc">Function</span><span class="p">(</span><span class="n">Module</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    The base function class.</span>
-<span class="sd">    To implement a function, write the __call__ method. This takes a</span>
+<span class="sd">    To implement a function, write the ``__call__`` method. This takes a</span>
 <span class="sd">    tensor X and returns a tensor f(X). In accordance with the GPflow</span>
 <span class="sd">    standard, each row of X represents one datum, and each row of Y is computed</span>
 <span class="sd">    independently for each row of X.</span>
@@ -460,11 +460,12 @@ function checkPageExistsAndRedirect(event) {
         <span class="bp">self</span><span class="o">.</span><span class="n">w</span> <span class="o">=</span> <span class="n">Parameter</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">broadcast_to</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">w_shape</span><span class="p">))</span>
 
 <div class="viewcode-block" id="Polynomial.compute_powers"><a class="viewcode-back" href="../../api/gpflow/functions/index.html#gpflow.functions.Polynomial.compute_powers">[docs]</a>    <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">compute_powers</span><span class="p">(</span><span class="n">degree</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">input_dim</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterator</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">]]:</span>
+    <span class="k">def</span> <span class="nf">compute_powers</span><span class="p">(</span><span class="n">degree</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">input_dim</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">]]:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Computes integer tuples corresponding to the powers to raise inputs to.</span>
 
 <span class="sd">        Specifically this returns, in lexicographical order, all tuples where:</span>
+
 <span class="sd">        * The tuple has length `input_dim`.</span>
 <span class="sd">        * The values are non-negative integers.</span>
 <span class="sd">        * The sum of the tuple is no greater than `degree`.</span>
@@ -495,11 +496,12 @@ function checkPageExistsAndRedirect(event) {
 <span class="sd">            w[i] * (x[0]**1) * (x[1]**0) * (x[2]**2)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">input_dim</span><span class="p">:</span>
-            <span class="k">yield</span> <span class="p">()</span>
-            <span class="k">return</span>
+            <span class="k">return</span> <span class="p">[()]</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">degree</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
             <span class="k">for</span> <span class="n">inner</span> <span class="ow">in</span> <span class="n">Polynomial</span><span class="o">.</span><span class="n">compute_powers</span><span class="p">(</span><span class="n">degree</span> <span class="o">-</span> <span class="n">i</span><span class="p">,</span> <span class="n">input_dim</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
-                <span class="k">yield</span> <span class="p">(</span><span class="n">i</span><span class="p">,)</span> <span class="o">+</span> <span class="n">inner</span></div>
+                <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">i</span><span class="p">,)</span> <span class="o">+</span> <span class="n">inner</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">result</span></div>
 
     <span class="nd">@inherit_check_shapes</span>
     <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">:</span> <span class="n">TensorType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tf</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>

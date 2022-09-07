@@ -249,15 +249,6 @@ function checkPageExistsAndRedirect(event) {
   </a>
  </li>
  <li class="toctree-l1">
-  <a class="reference internal" href="mauna_loa.html">
-   Case Study:
-   <span class="math notranslate nohighlight">
-    \(CO_2\)
-   </span>
-   Levels
-  </a>
- </li>
- <li class="toctree-l1">
   <a class="reference internal" href="large_data.html">
    Large Data
   </a>
@@ -337,8 +328,8 @@ function checkPageExistsAndRedirect(event) {
   </a>
  </li>
  <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#Composition">
-   Composition
+  <a class="reference internal nav-link" href="#Kernel-composition">
+   Kernel composition
   </a>
   <ul class="nav section-nav flex-column">
    <li class="toc-h3 nav-item toc-entry">
@@ -357,8 +348,8 @@ function checkPageExistsAndRedirect(event) {
     </a>
    </li>
    <li class="toc-h3 nav-item toc-entry">
-    <a class="reference internal nav-link" href="#Binary-operators">
-     Binary operators
+    <a class="reference internal nav-link" href="#Addition-and-multiplication">
+     Addition and multiplication
     </a>
    </li>
   </ul>
@@ -700,7 +691,7 @@ Y_i = f(X_i) + \varepsilon_i \,, \quad \varepsilon_i \sim \mathcal{N}(0, \sigma^
 </section>
 <section id="Visualising-a-kernel">
 <h2>Visualising a kernel<a class="headerlink" href="#Visualising-a-kernel" title="Permalink to this heading">#</a></h2>
-<p>This is the function we will use to visualise some kernels below:</p>
+<p>In this chapter we will investigate many different kernels. To be able to understand a kernel it is helpful to plot some samples from it. So, we will first write a helper function for plotting a kernel:</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
@@ -711,7 +702,9 @@ Y_i = f(X_i) + \varepsilon_i \,, \quad \varepsilon_i \sim \mathcal{N}(0, \sigma^
     <span class="n">model</span> <span class="o">=</span> <span class="n">gpflow</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">GPR</span><span class="p">((</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">),</span> <span class="n">kernel</span><span class="o">=</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">kernel</span><span class="p">))</span>
     <span class="n">Xplot</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mf">0.6</span><span class="p">,</span> <span class="mf">0.6</span><span class="p">,</span> <span class="mi">100</span><span class="p">)[:,</span> <span class="kc">None</span><span class="p">]</span>
     <span class="n">tf</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">set_seed</span><span class="p">(</span><span class="mi">20220903</span><span class="p">)</span>
-    <span class="n">fs</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">predict_f_samples</span><span class="p">(</span><span class="n">Xplot</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+    <span class="n">n_samples</span> <span class="o">=</span> <span class="mi">3</span>
+    <span class="c1"># predict_f_samples draws n_samples examples of the function f, and returns their values at Xplot.</span>
+    <span class="n">fs</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">predict_f_samples</span><span class="p">(</span><span class="n">Xplot</span><span class="p">,</span> <span class="n">n_samples</span><span class="p">)</span>
     <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Xplot</span><span class="p">,</span> <span class="n">fs</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">kernel</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span>
     <span class="n">ax</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="n">bottom</span><span class="o">=-</span><span class="mf">2.0</span><span class="p">,</span> <span class="n">top</span><span class="o">=</span><span class="mf">2.0</span><span class="p">)</span>
     <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;Example $f$s&quot;</span><span class="p">)</span>
@@ -914,8 +907,8 @@ Y_i = f(X_i) + \varepsilon_i \,, \quad \varepsilon_i \sim \mathcal{N}(0, \sigma^
 <p>These parameters are usually set automatically during model training, and ideally you don’t need to worry too much about them. In the above examples we did not optimise the model, to demonstrate how model parameters impact predictions. For more about parameters and their training see our section on <a class="reference external" href="parameters_and_their_optimisation.html">Parameters and Their Optimisation</a>.</p>
 <p>To see which parameters each kernel takes, look up their <a class="reference external" href="../../api/gpflow/kernels/index.html">API documentation</a>.</p>
 </section>
-<section id="Composition">
-<h2>Composition<a class="headerlink" href="#Composition" title="Permalink to this heading">#</a></h2>
+<section id="Kernel-composition">
+<h2>Kernel composition<a class="headerlink" href="#Kernel-composition" title="Permalink to this heading">#</a></h2>
 <p>Often you can just pick an appropriate Matérn kernel, train it, and you will have a reasonable model.</p>
 <p>However, if you need more performance from your model, and if your data has interesting structure, you can create a new kernel tailored specifically for your problem.</p>
 <p>You can create a new kernel from the bottom up by extending the <code class="docutils literal notranslate"><span class="pre">`gpflow.kernels.Kernel</span></code> class &lt;../../api/gpflow/kernels/index.html#gpflow-kernels-kernel&gt;`__, but that is advanced usage, and we are not going to demonstrate that here.</p>
@@ -1005,9 +998,9 @@ Y_i = f(X_i) + \varepsilon_i \,, \quad \varepsilon_i \sim \mathcal{N}(0, \sigma^
 </div>
 </div>
 </section>
-<section id="Binary-operators">
-<h3>Binary operators<a class="headerlink" href="#Binary-operators" title="Permalink to this heading">#</a></h3>
-<p>Other than the kernels that explicitly takes other kernels as parameters, you can compose kernels with the <code class="docutils literal notranslate"><span class="pre">+</span></code> and <code class="docutils literal notranslate"><span class="pre">*</span></code> binary operators.</p>
+<section id="Addition-and-multiplication">
+<h3>Addition and multiplication<a class="headerlink" href="#Addition-and-multiplication" title="Permalink to this heading">#</a></h3>
+<p>Other than the kernels that explicitly takes other kernels as parameters, you can compose kernels with the <code class="docutils literal notranslate"><span class="pre">+</span></code> and <code class="docutils literal notranslate"><span class="pre">*</span></code> binary operators. Beware that this adds and multiplies the covariance matrices returned by the kernels, which does not necessarly have an intuitive effect on the <span class="math notranslate nohighlight">\(f\)</span> function that is generated by the kernel.</p>
 <p>For example you can add a constant and a linear to get a <span class="math notranslate nohighlight">\(f\)</span> that is a straight line that does not pass through <span class="math notranslate nohighlight">\((0, 0)\)</span>:</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
@@ -1084,9 +1077,9 @@ Y_i = f(X_i) + \varepsilon_i \,, \quad \varepsilon_i \sim \mathcal{N}(0, \sigma^
 <h2>Multiple-dimensional data<a class="headerlink" href="#Multiple-dimensional-data" title="Permalink to this heading">#</a></h2>
 <p>So far we’ve been using 1D input and 1D output data, because it’s easy to understand and to plot.</p>
 <p>However, with real data you often have multiple input dimensions, or even output dimensions.</p>
-<p>Admittedly, GPflow has poor support for multiple output dimensions. We do have <a class="reference external" href="../advanced/multioutput.html">a section on how to handle multiple outputs in a principled way</a>, but be warned it is an advanced section.</p>
-<p>GPflow has much better support for multiple input dimensions. When you have multiple input dimensions it is interesting how <span class="math notranslate nohighlight">\(f\)</span> behaves along every one of those dimensions, and hence it is interesting how your kernel handles each dimension.</p>
-<p>First we define a function to plot a kernel with 2D input:</p>
+<p>GPflow has great support for multiple input dimensions. When you have multiple input dimensions it is interesting how <span class="math notranslate nohighlight">\(f\)</span> behaves along every one of those dimensions, and hence it is interesting how your kernel handles each dimension.</p>
+<p>Working with multiple output dimensions is more complicated. We have a <a class="reference external" href="../advanced/multioutput.html">guide on how to do this in a principled way</a>, but be aware that this is an advanced topic.</p>
+<p>Let us define a function to plot a kernel with 2D input:</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
 </pre></div>
