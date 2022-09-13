@@ -28,7 +28,7 @@ import traceback
 from datetime import timedelta
 from pathlib import Path
 from time import perf_counter
-from typing import TYPE_CHECKING, Generic, Mapping, Optional, TypeVar
+from typing import Mapping, Optional
 
 import numpy as np
 import pandas as pd
@@ -44,6 +44,7 @@ from benchmark.metric_api import Metric
 from benchmark.model_api import MODEL_FACTORIES
 from benchmark.paths import setup_dest
 from benchmark.plot import plot as plot_
+from benchmark.sharding import ShardingStrategy
 
 BASE_SEED = 20220721
 ONE_HOUR_S = 60 * 60
@@ -151,12 +152,13 @@ def _collect_metrics_process(
     metrics_queue.put(metrics)
 
 
-def run(
-    metadata: BenchmarkMetadata, suite: BenchmarkSuite, dest: Path, cache_dir: Path, plot: bool
-) -> None:
-    """ Collect data for a benchmark suite. """
-    with open(dest / "metadata.json", "wt") as f:
-        json.dump(metadata.to_json(), f, indent=4)
+def _run_benchmarks(
+    metadata: BenchmarkMetadata,
+    shard: ShardingStrategy,
+    suite: BenchmarkSuite,
+    dest: Path,
+    cache_dir: Path,
+) -> Optional[pd.DataFrame]:
     data_cache_dir = cache_dir / "data"
 
     # Run all tasks in separate processes, to make sure all memory etc. is released.
@@ -165,81 +167,131 @@ def run(
     tasks = suite.get_tasks()
     global_repetition = 0
     total_repetitions = sum(t.repetitions for t in tasks)
-    task_repetition = {t: 0 for t in tasks}
     max_task_repetitions = max(t.repetitions for t in tasks)
 
     metrics_list = []
+    metrics_df: Optional[pd.DataFrame] = None
 
     t_before = perf_counter()
-    for random_seed in range(BASE_SEED, BASE_SEED + 3 * max_task_repetitions):
+    for task_repetition in range(max_task_repetitions):
         for task in tasks:
-            if task_repetition[task] >= task.repetitions:
+            if task_repetition >= task.repetitions:
                 continue
 
-            t_now = perf_counter()
-            fraction_done = global_repetition / total_repetitions
-            if global_repetition == 0:
-                eta_str = "???"
-            else:
-                velocity = (t_now - t_before) / global_repetition
-                t_end = velocity * total_repetitions + t_before
-                t_remaining = t_end - t_now
-                eta_str = f"{timedelta(seconds=t_remaining)}"
-            print("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
-            print(
-                f"Running: {task.name}/rep={task_repetition[task]}"
-                f" {fraction_done: .2%} done."
-                f" ETA: {eta_str}."
-            )
-            print("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
-
-            metrics: Optional[Mapping[Metric, float]] = None
-            metrics_queue: "mp.Queue[Optional[Mapping[Metric, float]]]" = mp_ctx.Queue()
-            metrics_process = mp_ctx.Process(
-                target=_collect_metrics_process,
-                args=(task, data_cache_dir, random_seed, metrics_queue),
-            )
-            metrics_process.start()
-            metrics = metrics_queue.get(timeout=ONE_HOUR_S)
-            metrics_process.join()
-            assert metrics_process.exitcode == 0
-            if metrics is None:
-                print("Model failed. Retrying with another random seed.")
+            if global_repetition % shard.shard_n != shard.shard_i:
+                global_repetition += 1
                 continue
 
-            for metric, metric_value in metrics.items():
-                metrics_list.append(
-                    (
-                        metadata.run_id,
-                        task.dataset_name,
-                        task.model_name,
-                        task.do_compile,
-                        task.do_optimise,
-                        task_repetition[task],
-                        metric.name,
-                        metric_value,
-                    )
+            for retry in range(3):
+                t_now = perf_counter()
+                fraction_done = global_repetition / total_repetitions
+                if global_repetition == 0:
+                    eta_str = "???"
+                else:
+                    velocity = (t_now - t_before) / global_repetition
+                    t_end = velocity * total_repetitions + t_before
+                    t_remaining = t_end - t_now
+                    eta_str = f"{timedelta(seconds=t_remaining)}"
+                print("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
+                print(f"Running: {task.name}/rep={task_repetition} (retry {retry})")
+                print(f"{fraction_done: .2%} done. ETA: {eta_str}.")
+                print("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
+
+                random_seed = BASE_SEED + task_repetition + retry * task.repetitions
+                metrics_queue: "mp.Queue[Optional[Mapping[Metric, float]]]" = mp_ctx.Queue()
+                metrics_process = mp_ctx.Process(
+                    target=_collect_metrics_process,
+                    args=(task, data_cache_dir, random_seed, metrics_queue),
                 )
-            task_repetition[task] += 1
+                metrics_process.start()
+                metrics = metrics_queue.get(timeout=ONE_HOUR_S)
+                metrics_process.join()
+                assert metrics_process.exitcode == 0
+                if metrics is None:
+                    print("Model failed. Retrying with another random seed.")
+                    continue
+
+                for metric, metric_value in metrics.items():
+                    metrics_list.append(
+                        (
+                            metadata.run_id,
+                            task.dataset_name,
+                            task.model_name,
+                            task.do_compile,
+                            task.do_optimise,
+                            task_repetition,
+                            metric.name,
+                            metric_value,
+                        )
+                    )
+                metrics_df = pd.DataFrame(
+                    metrics_list,
+                    columns=[
+                        "run_id",
+                        "dataset",
+                        "model",
+                        "do_compile",
+                        "do_optimise",
+                        "repetition",
+                        "metric",
+                        "value",
+                    ],
+                )
+                print(tabulate(metrics_df, headers="keys", showindex="never"))
+                metrics_path = dest / f"metrics{shard.file_suffix}.csv"
+                metrics_df.to_csv(metrics_path, index=False)
+                break
             global_repetition += 1
 
-            metrics_df = pd.DataFrame(
-                metrics_list,
-                columns=[
-                    "run_id",
-                    "dataset",
-                    "model",
-                    "do_compile",
-                    "do_optimise",
-                    "repetition",
-                    "metric",
-                    "value",
-                ],
-            )
-            print(tabulate(metrics_df, headers="keys", showindex="never"))
-            metrics_df.to_csv(dest / "metrics.csv", index=False)
+    return metrics_df
 
-    if plot:
+
+def run(
+    shard: ShardingStrategy,
+    suite: BenchmarkSuite,
+    dest: Path,
+    no_subdir: bool,
+    cache_dir: Path,
+    plot: bool,
+) -> None:
+    """ Collect data for a benchmark suite. """
+    if shard.setup_dest:
+        metadata = BenchmarkMetadata.create(suite.name)
+        dest = setup_dest(metadata, dest, no_subdir)
+    else:
+        assert no_subdir, "Must use 'no-subdir=True' with 'shard={shard}'."
+        with open(dest / "metadata.json", "rt") as f:
+            metadata = BenchmarkMetadata.from_json(json.load(f))
+        assert metadata.suite_name == suite.name
+        metadata = metadata.for_shard()
+
+    if shard.print_dest:
+        print(dest.resolve())
+
+    if shard.write_metadata:
+        metadata_path = dest / f"metadata{shard.file_suffix}.json"
+        with open(metadata_path, "wt") as f:
+            json.dump(metadata.to_json(), f, indent=4)
+
+    metrics_df: Optional[pd.DataFrame] = None
+
+    if shard.run_benchmarks:
+        metrics_df = _run_benchmarks(
+            metadata,
+            shard,
+            suite,
+            dest,
+            cache_dir,
+        )
+
+    if shard.collect:
+        assert metrics_df is None
+        metrics_path = dest / "metrics.csv"
+        metrics_df_list = [pd.read_csv(p) for p in shard.find_shards(metrics_path)]
+        metrics_df = pd.concat(metrics_df_list, axis="index", ignore_index=True)
+        metrics_df.to_csv(metrics_path, index=False)
+
+    if shard.plot and plot and (metrics_df is not None):
         plot_(
             metadata=metadata,
             suite=suite,
@@ -274,6 +326,23 @@ def run_from_argv() -> None:
         help="Where to cache stuff, like datasets.",
     )
     parser.add_argument(
+        "--shard",
+        default=ShardingStrategy("no"),
+        type=ShardingStrategy,
+        help=(
+            "Sharding strategy:"
+            " If set to 'no' this script performs all necessary work."
+            " If set to 'start' this script creates an output directory for the shards, and"
+            " prints its path."
+            " If set to the format '<i>/<n>', where 0 <= i < n then this script only runs"
+            " benchmarks for shard 'i' out of 'n', and stores partial results in 'dest'."
+            " This requires '--no_subdir'."
+            " If set to 'collect' then this script assumes all benchmarks already have been"
+            " computed, using the '<i>/<n>' commands, and merges their results into one file."
+            " This requires '--no_subdir'."
+        ),
+    )
+    parser.add_argument(
         "suite",
         type=str,
         choices=BENCHMARK_SUITES.names(),
@@ -284,14 +353,17 @@ def run_from_argv() -> None:
         type=Path,
         help="Directory to write results to.",
     )
-    args = parser.parse_args()
 
-    metadata = BenchmarkMetadata.create(args.suite)
+    args = parser.parse_args()
     suite = BENCHMARK_SUITES.get(args.suite)
-    dest = setup_dest(metadata, args.dest, args.no_subdir)
-    cache_dir = args.cache_dir
-    plot = not args.no_plot
-    run(metadata, suite, dest, cache_dir, plot)
+    run(
+        args.shard,
+        suite,
+        args.dest,
+        args.no_subdir,
+        args.cache_dir,
+        not args.no_plot,
+    )
 
 
 if __name__ == "__main__":

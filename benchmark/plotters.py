@@ -15,6 +15,7 @@
 Concrete code for plotting results.
 """
 from dataclasses import replace
+from math import isnan
 from typing import Collection, Tuple
 
 import pandas as pd
@@ -121,12 +122,14 @@ def time_line(
             line_xs.append(parsed_timestamp)
             y_mean = timestamp_df.value.mean()
             y_std = timestamp_df.value.std()
+            if isnan(y_std):
+                y_std = 0.0
             line_y_means.append(y_mean)
-            line_y_uppers.append(y_mean + y_std)
-            line_y_lowers.append(y_mean - y_std)
+            line_y_uppers.append(y_mean + 1.96 * y_std)
+            line_y_lowers.append(y_mean - 1.96 * y_std)
 
             scatter_xs.extend(len(timestamp_df) * [parsed_timestamp])
-            scatter_ys.append(timestamp_df.value)
+            scatter_ys.extend(timestamp_df.value)
 
         (mean_line,) = ax.plot(line_xs, line_y_means, label=_join_key(key))
         color = mean_line.get_color()

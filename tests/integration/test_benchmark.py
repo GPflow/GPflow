@@ -15,26 +15,45 @@ import json
 from pathlib import Path
 
 import pandas as pd
+from _pytest.capture import CaptureFixture
 from PIL import Image
 
 from benchmark.benchmark_api import BENCHMARK_SUITES
-from benchmark.metadata import BenchmarkMetadata
 from benchmark.run import run
+from benchmark.sharding import ShardingStrategy
 
 
-def test_benchmark(tmp_path: Path) -> None:
+def test_benchmark(tmp_path: Path, capsys: CaptureFixture[str]) -> None:
     suite = BENCHMARK_SUITES.get("integration_test")
-    metadata = BenchmarkMetadata.create(suite.name)
     dest = tmp_path / "dest"
-    dest.mkdir(parents=True)
+    yes_subdir = False
+    no_subdir = True
     cache_dir = tmp_path / "cache_dir"
-    cache_dir.mkdir(parents=True)
     plot = True
 
-    run(metadata, suite, dest, cache_dir, plot)
+    run(ShardingStrategy("start"), suite, dest, yes_subdir, cache_dir, plot)
+    out_dir_str = capsys.readouterr().out.strip()
+    out_dir = Path(out_dir_str)
 
-    with open(dest / "metadata.json", "rt") as f:
+    with open(out_dir / "metadata.json", "rt") as f:
         assert isinstance(json.load(f), dict)
-    assert isinstance(pd.read_csv(dest / "metrics.csv"), pd.DataFrame)
-    assert isinstance(Image.open(dest / "metrics_tiny_linear.png"), Image.Image)
-    assert isinstance(Image.open(dest / "metrics_tiny_sine.png"), Image.Image)
+
+    run(ShardingStrategy("0/3"), suite, out_dir, no_subdir, cache_dir, plot)
+    with open(out_dir / "metadata_0of3.json", "rt") as f:
+        assert isinstance(json.load(f), dict)
+    assert isinstance(pd.read_csv(out_dir / "metrics_0of3.csv"), pd.DataFrame)
+
+    run(ShardingStrategy("1/3"), suite, out_dir, no_subdir, cache_dir, plot)
+    with open(out_dir / "metadata_1of3.json", "rt") as f:
+        assert isinstance(json.load(f), dict)
+    assert isinstance(pd.read_csv(out_dir / "metrics_1of3.csv"), pd.DataFrame)
+
+    run(ShardingStrategy("2/3"), suite, out_dir, no_subdir, cache_dir, plot)
+    with open(out_dir / "metadata_2of3.json", "rt") as f:
+        assert isinstance(json.load(f), dict)
+    assert isinstance(pd.read_csv(out_dir / "metrics_2of3.csv"), pd.DataFrame)
+
+    run(ShardingStrategy("collect"), suite, out_dir, no_subdir, cache_dir, plot)
+    assert isinstance(pd.read_csv(out_dir / "metrics.csv"), pd.DataFrame)
+    assert isinstance(Image.open(out_dir / "metrics_tiny_linear.png"), Image.Image)
+    assert isinstance(Image.open(out_dir / "metrics_tiny_sine.png"), Image.Image)

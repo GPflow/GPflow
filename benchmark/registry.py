@@ -16,7 +16,7 @@ Code for registering stuff by name.
 
 We have *a lot* of stuff with names in this project...
 """
-from typing import AbstractSet, Any, Dict, Generic, List, Sequence, TypeVar
+from typing import AbstractSet, Any, Dict, Generic, Sequence, TypeVar
 
 from typing_extensions import Protocol
 

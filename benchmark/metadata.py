@@ -16,7 +16,7 @@ Code for determining metadata for a run.
 """
 import getpass
 import sys
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from datetime import datetime
 from pathlib import Path
 from platform import python_version
@@ -95,6 +95,46 @@ class BenchmarkMetadata:
             git_commit=git_commit,
             run_id=run_id,
         )
+
+    def for_shard(self) -> "BenchmarkMetadata":
+        """
+        Update this metadata with current machine information.
+
+        Used in sharding, to create a machine-specific metadata, while retaining the process
+        timestamp and id.
+        """
+        new_metadata = BenchmarkMetadata.create(self.suite_name)
+        kwargs = asdict(new_metadata)
+        keep_new_fields = [
+            "argv",
+            "user",
+            "hostname",
+            "ram",
+            "cpu_name",
+            "cpu_count",
+            "cpu_frequency",
+            "gpu_names",
+        ]
+        keep_old_fields = ["timestamp", "run_id"]
+        must_match_fields = [
+            "suite_name",
+            "py_ver",
+            "tf_ver",
+            "np_ver",
+            "git_branch_name",
+            "git_commit",
+        ]
+        for field in keep_old_fields:
+            del kwargs[field]
+        for field in must_match_fields:
+            assert getattr(self, field) == kwargs[field], (
+                f"Field {field} must match between new and old metadata."
+                f" Found {getattr(self, field)} and {kwargs[field]}"
+            )
+            del kwargs[field]
+        assert keep_new_fields == list(kwargs)
+
+        return replace(self, **kwargs)
 
     @property
     def gpu_name(self) -> str:

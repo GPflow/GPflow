@@ -32,6 +32,23 @@ to put new results. For example:
 python -m benchmark.plot ci ~/experiment_results/ ~/experiment_results/
 ```
 
+### Sharding
+
+The `run.py` script supports running benchmarks in parallel on different machines.
+For example:
+
+```bash
+out_dir="$(python -m benchmark.run --shard ci ~/experiment_results/)"
+
+# The directory `${out_dir}` should now be distributed to the worker machines.
+# These three lines can then run in parallel on the worker machines:
+python -m benchmark.run --shard 0/3 --no-subdir ci ${out_dir}
+python -m benchmark.run --shard 1/3 --no-subdir ci ${out_dir}
+python -m benchmark.run --shard 2/3 --no-subdir ci ${out_dir}
+
+# Finally collect and merge `$out_dir` from the worker machines, then run:
+python -m benchmark.run --shard collect --no-subdir ci ${out_dir}
+```
 
 ## Understanding the main concepts
 
