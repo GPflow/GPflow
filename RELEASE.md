@@ -84,6 +84,7 @@ This release contains contributions from:
 
 ## Bug Fixes and Other Changes
 
+* Tested with TensorFlow 2.10.
 * Add support for Apple Silicon Macs (`arm64`) via the `tensorflow-macos` dependency. (#1850)
 * New implementation of GPR and SGPR posterior objects. This primarily improves numerical stability.
   (#1960)
