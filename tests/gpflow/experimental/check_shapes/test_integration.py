@@ -183,7 +183,7 @@ def test_check_shapes__tensorflow_compilation(
 
     # See: https://github.com/tensorflow/tensorflow/issues/56414
     if err_wrapper is _RELAXED_TF_FUNCTION:
-        if Version("2.9.0") <= tf_version < Version("2.10.0"):
+        if Version("2.9.0") <= tf_version < Version("2.11.0"):
             err_wrapper = _TF_FUNCTION
 
     if Version(tf.__version__) < Version("2.5.0"):
