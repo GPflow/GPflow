@@ -19,64 +19,28 @@ parameters:
   max_tfp_ver:
     type: string
     default: "0.18.0"
+  min_venv_dir:
+    type: string
+    default: min_venv
+  max_venv_dir:
+    type: string
+    default: max_venv
 
 commands:
-  setup_venv:
-    parameters:
-      py_ver:
-        type: string
-    steps:
-      - checkout
-      - run:
-          name: Setup virtual environment
-          command: |
-            # Run in a fresh virtual environment, to avoid conflicts with preinstalled packages.
-            virtualenv -p python<<parameters.py_ver>> .venv
-            source .venv/bin/activate
-            pip install --progress-bar=off -U pip
-  install_gpflow:
-    parameters:
-      py_ver:
-        type: string
-      tf_ver:
-        type: string
-      tfp_ver:
-        type: string
-    steps:
-      - setup_venv:
-          py_ver: <<parameters.py_ver>>
-      - run:
-          name: Install GPflow
-          command: "
-            source .venv/bin/activate \n
-            # Everything is installed in one pip command, to allow for better dependency version
-            # resolution. Explicit tensorflow and tensorflow-probability version, to ensure
-            # consistency between them. \n
-            pip install --progress-bar=off
-              -e .
-              -r tests_requirements.txt
-              tensorflow==<<parameters.tf_ver>>
-              tensorflow-probability==<<parameters.tfp_ver>> \n
-          "
   run_tests:
     parameters:
-      py_ver:
-        type: string
-      tf_ver:
-        type: string
-      tfp_ver:
+      venv_dir:
         type: string
       pytest_filter:
         type: string
     steps:
-      - install_gpflow:
-          py_ver: <<parameters.py_ver>>
-          tf_ver: <<parameters.tf_ver>>
-          tfp_ver: <<parameters.tfp_ver>>
+      - checkout
+      - attach_workspace:
+          at: /tmp/
       - run:
           name: Run tests
           command: "
-            source .venv/bin/activate \n
+            source /tmp/<<parameters.venv_dir>>/bin/activate \n
             pytest
               -v
               -W ignore::UserWarning
@@ -100,7 +64,7 @@ commands:
             ./codecov -v -t "${CODECOV_TOKEN}" -n "${CIRCLE_BUILD_NUM}"
 
 jobs:
-  verify-install:
+  install_gpflow:
     parameters:
       py_ver:
         type: string
@@ -108,17 +72,58 @@ jobs:
         type: string
       tfp_ver:
         type: string
+      venv_dir:
+        type: string
     docker:
       - image: cimg/python:<<parameters.py_ver>>
     steps:
-      - install_gpflow:
-          py_ver: <<parameters.py_ver>>
-          tf_ver: <<parameters.tf_ver>>
-          tfp_ver: <<parameters.tfp_ver>>
+      - checkout
+      - run:
+          name: Setup virtual environment
+          command: |
+            virtualenv -p python<<parameters.py_ver>> /tmp/<<parameters.venv_dir>>
+            source /tmp/<<parameters.venv_dir>>/bin/activate
+            pip install --progress-bar=off -U pip
+      - run:
+          name: Install GPflow
+          command: "
+            source /tmp/<<parameters.venv_dir>>/bin/activate \n
+            # Everything is installed in one pip command, to allow for better dependency version
+            # resolution. Explicit tensorflow and tensorflow-probability version, to ensure
+            # consistency between them. \n
+            pip install --progress-bar=off
+              -e .
+              -r tests_requirements.txt
+              tensorflow==<<parameters.tf_ver>>
+              tensorflow-probability==<<parameters.tfp_ver>> \n
+          "
+      - run:
+          name: Log dependencies
+          command: |
+            # Log installed dependencies, to make various debugging easier.
+            source /tmp/<<parameters.venv_dir>>/bin/activate
+            pip freeze
+      - persist_to_workspace:
+          root: /tmp/
+          paths:
+            - <<parameters.venv_dir>>
+
+  verify-install:
+    parameters:
+      py_ver:
+        type: string
+      venv_dir:
+        type: string
+    docker:
+      - image: cimg/python:<<parameters.py_ver>>
+    steps:
+      - checkout
+      - attach_workspace:
+          at: /tmp/
       - run:
           name: Check installed dependencies are compatible
           command: |
-            source .venv/bin/activate
+            source /tmp/<<parameters.venv_dir>>/bin/activate
             pip check -vvv
             python -c "import gpflow"
 
@@ -126,21 +131,18 @@ jobs:
     parameters:
       py_ver:
         type: string
-      tf_ver:
-        type: string
-      tfp_ver:
+      venv_dir:
         type: string
     docker:
       - image: cimg/python:<<parameters.py_ver>>
     steps:
-      - install_gpflow:
-          py_ver: <<parameters.py_ver>>
-          tf_ver: <<parameters.tf_ver>>
-          tfp_ver: <<parameters.tfp_ver>>
+      - checkout
+      - attach_workspace:
+          at: /tmp/
       - run:
           name: Run type check
           command: |
-            source .venv/bin/activate
+            source /tmp/<<parameters.venv_dir>>/bin/activate
             # Test without flags, as that is what our users are likely to do:
             mypy gpflow tests benchmark doc/*.py setup.py
             # Test with flags improves coverage:
@@ -150,55 +152,44 @@ jobs:
     parameters:
       py_ver:
         type: string
-      tf_ver:
-        type: string
-      tfp_ver:
+      venv_dir:
         type: string
     docker:
       - image: cimg/python:<<parameters.py_ver>>
     steps:
-      - install_gpflow:
-          py_ver: <<parameters.py_ver>>
-          tf_ver: <<parameters.tf_ver>>
-          tfp_ver: <<parameters.tfp_ver>>
+      - checkout
+      - attach_workspace:
+          at: /tmp/
       - run:
           name: Run format check
           command: |
-            source .venv/bin/activate
+            source /tmp/<<parameters.venv_dir>>/bin/activate
             make format-check
 
   unit-test:
     parameters:
       py_ver:
         type: string
-      tf_ver:
-        type: string
-      tfp_ver:
+      venv_dir:
         type: string
     docker:
       - image: cimg/python:<<parameters.py_ver>>
     steps:
       - run_tests:
-          py_ver: <<parameters.py_ver>>
-          tf_ver: <<parameters.tf_ver>>
-          tfp_ver: <<parameters.tfp_ver>>
+          venv_dir: <<parameters.venv_dir>>
           pytest_filter: not notebooks and not docs
 
   notebook-test:
     parameters:
       py_ver:
         type: string
-      tf_ver:
-        type: string
-      tfp_ver:
+      venv_dir:
         type: string
     docker:
       - image: cimg/python:<<parameters.py_ver>>
     steps:
       - run_tests:
-          py_ver: <<parameters.py_ver>>
-          tf_ver: <<parameters.tf_ver>>
-          tfp_ver: <<parameters.tfp_ver>>
+          venv_dir: <<parameters.venv_dir>>
           pytest_filter: notebooks
 
   docs-test:
@@ -207,9 +198,7 @@ jobs:
       - image: cimg/python:<<pipeline.parameters.max_py_ver>>
     steps:
       - run_tests:
-          py_ver: <<pipeline.parameters.max_py_ver>>
-          tf_ver: <<pipeline.parameters.max_tf_ver>>
-          tfp_ver: <<pipeline.parameters.max_tfp_ver>>
+          venv_dir: <<pipeline.parameters.max_venv_dir>>
           pytest_filter: docs
 
   build-notebooks:
@@ -223,15 +212,14 @@ jobs:
           DOCS: True  # This is used in gpflow/ci_utils.py
     parallelism: 10
     steps:
-      - install_gpflow:
-          py_ver: <<pipeline.parameters.max_py_ver>>
-          tf_ver: <<pipeline.parameters.max_tf_ver>>
-          tfp_ver: <<pipeline.parameters.max_tfp_ver>>
+      - checkout
+      - attach_workspace:
+          at: /tmp/
       - run:
           name: Build notebooks
           no_output_timeout: 60m
           command: |
-            source .venv/bin/activate
+            source /tmp/<<pipeline.parameters.max_venv_dir>>/bin/activate
             mkdir -p /tmp/gpflow_build_docs
             python doc/build_docs.py --shard ${CIRCLE_NODE_INDEX}/${CIRCLE_NODE_TOTAL}
             # Each shard must output unique files, so clean up output directory:
@@ -249,22 +237,19 @@ jobs:
         environment:
           DOCS: True  # This is used in gpflow/ci_utils.py
     steps:
-      - install_gpflow:
-          py_ver: <<pipeline.parameters.max_py_ver>>
-          tf_ver: <<pipeline.parameters.max_tf_ver>>
-          tfp_ver: <<pipeline.parameters.max_tfp_ver>>
+      - checkout
+      - attach_workspace:
+          at: /tmp/
       - run:
           name: Install pandoc
           command: |
             sudo apt update
             sudo apt install pandoc
-      - attach_workspace:
-          at: /tmp/
       - run:
           name: Build documentation
           no_output_timeout: 60m
           command: |
-            source .venv/bin/activate
+            source /tmp/<<pipeline.parameters.max_venv_dir>>/bin/activate
             mkdir docs_tmp
             python doc/build_docs.py --shard collect <<pipeline.git.branch>> docs_tmp
       - add_ssh_keys:
@@ -273,7 +258,7 @@ jobs:
       - run:
           name: Commit documentation
           command: |
-            source .venv/bin/activate
+            source /tmp/<<pipeline.parameters.max_venv_dir>>/bin/activate
 
             git clone -b gh-pages git@github.com:GPflow/GPflow.git gh-pages
 
@@ -312,14 +297,13 @@ jobs:
         type: string
         default: "gh-pages"
     steps:
-      - install_gpflow:
-          py_ver: <<pipeline.parameters.max_py_ver>>
-          tf_ver: <<pipeline.parameters.max_tf_ver>>
-          tfp_ver: <<pipeline.parameters.max_tfp_ver>>
+      - checkout
+      - attach_workspace:
+          at: /tmp/
       - run:
           name: Run benchmarks
           command: |
-            source .venv/bin/activate
+            source /tmp/<<pipeline.parameters.max_venv_dir>>/bin/activate
             rm -rf <<parameters.tmp_results_dir>>
             mkdir -p <<parameters.tmp_results_dir>>
             python -m benchmark.run --no_plot ci <<parameters.tmp_results_dir>>
@@ -329,7 +313,7 @@ jobs:
       - run:
           name: Generate and commit plots
           command: |
-            source .venv/bin/activate
+            source /tmp/<<pipeline.parameters.max_venv_dir>>/bin/activate
 
             echo Checking out
             mkdir -p <<parameters.checkout_dir>>
@@ -372,6 +356,7 @@ jobs:
             # Run in a fresh virtual environment, to avoid conflicts with preinstalled packages.
             virtualenv -p python<<pipeline.parameters.min_py_ver>> .venv
             source .venv/bin/activate
+
             pip install --progress-bar=off -U pip
             pip install --progress-bar=off twine
       - run:
@@ -406,55 +391,81 @@ workflows:
       not:
         equal: [scheduled_pipeline, <<pipeline.trigger_source>>]
     jobs:
-      - verify-install:
-          name: verify-install-min
+      - install_gpflow:
+          name: install_gpflow_min
           py_ver: <<pipeline.parameters.min_py_ver>>
           tf_ver: <<pipeline.parameters.min_tf_ver>>
           tfp_ver: <<pipeline.parameters.min_tfp_ver>>
+          venv_dir: <<pipeline.parameters.min_venv_dir>>
+          filters:
+            tags:
+              only: /^v[0-9]+(\.[0-9]+)*(-rc[0-9]+)?/
+      - install_gpflow:
+          name: install_gpflow_max
+          py_ver: <<pipeline.parameters.max_py_ver>>
+          tf_ver: <<pipeline.parameters.max_tf_ver>>
+          tfp_ver: <<pipeline.parameters.max_tfp_ver>>
+          venv_dir: <<pipeline.parameters.max_venv_dir>>
+          filters:
+            tags:
+              only: /^v[0-9]+(\.[0-9]+)*(-rc[0-9]+)?/
+      - verify-install:
+          name: verify-install-min
+          py_ver: <<pipeline.parameters.min_py_ver>>
+          venv_dir: <<pipeline.parameters.min_venv_dir>>
+          requires:
+            - install_gpflow_min
           filters:
             tags:
               only: /^v[0-9]+(\.[0-9]+)*(-rc[0-9]+)?/
       - verify-install:
           name: verify-install-max
           py_ver: <<pipeline.parameters.max_py_ver>>
-          tf_ver: <<pipeline.parameters.max_tf_ver>>
-          tfp_ver: <<pipeline.parameters.max_tfp_ver>>
+          venv_dir: <<pipeline.parameters.max_venv_dir>>
+          requires:
+            - install_gpflow_max
           filters:
             tags:
               only: /^v[0-9]+(\.[0-9]+)*(-rc[0-9]+)?/
       - type-check:
           name: type-check-min
           py_ver: <<pipeline.parameters.min_py_ver>>
-          tf_ver: <<pipeline.parameters.min_tf_ver>>
-          tfp_ver: <<pipeline.parameters.min_tfp_ver>>
+          venv_dir: <<pipeline.parameters.min_venv_dir>>
+          requires:
+            - install_gpflow_min
           filters:
             tags:
               only: /^v[0-9]+(\.[0-9]+)*(-rc[0-9]+)?/
       - type-check:
           name: type-check-max
           py_ver: <<pipeline.parameters.max_py_ver>>
-          tf_ver: <<pipeline.parameters.max_tf_ver>>
-          tfp_ver: <<pipeline.parameters.max_tfp_ver>>
+          venv_dir: <<pipeline.parameters.max_venv_dir>>
+          requires:
+            - install_gpflow_max
           filters:
             tags:
               only: /^v[0-9]+(\.[0-9]+)*(-rc[0-9]+)?/
       - format-check:
           name: format-check-min
           py_ver: <<pipeline.parameters.min_py_ver>>
-          tf_ver: <<pipeline.parameters.min_tf_ver>>
-          tfp_ver: <<pipeline.parameters.min_tfp_ver>>
+          venv_dir: <<pipeline.parameters.min_venv_dir>>
+          requires:
+            - install_gpflow_min
           filters:
             tags:
               only: /^v[0-9]+(\.[0-9]+)*(-rc[0-9]+)?/
       - format-check:
           name: format-check-max
           py_ver: <<pipeline.parameters.max_py_ver>>
-          tf_ver: <<pipeline.parameters.max_tf_ver>>
-          tfp_ver: <<pipeline.parameters.max_tfp_ver>>
+          venv_dir: <<pipeline.parameters.max_venv_dir>>
+          requires:
+            - install_gpflow_max
           filters:
             tags:
               only: /^v[0-9]+(\.[0-9]+)*(-rc[0-9]+)?/
       - docs-test:
+          requires:
+            - install_gpflow_max
           filters:
             tags:
               only: /^v[0-9]+(\.[0-9]+)*(-rc[0-9]+)?/
@@ -474,9 +485,9 @@ workflows:
       - unit-test:
           name: unit-test-min
           py_ver: <<pipeline.parameters.min_py_ver>>
-          tf_ver: <<pipeline.parameters.min_tf_ver>>
-          tfp_ver: <<pipeline.parameters.min_tfp_ver>>
+          venv_dir: <<pipeline.parameters.min_venv_dir>>
           requires:
+            - install_gpflow_min
             - fast-tests
           filters:
             tags:
@@ -484,9 +495,9 @@ workflows:
       - unit-test:
           name: unit-test-max
           py_ver: <<pipeline.parameters.max_py_ver>>
-          tf_ver: <<pipeline.parameters.max_tf_ver>>
-          tfp_ver: <<pipeline.parameters.max_tfp_ver>>
+          venv_dir: <<pipeline.parameters.max_venv_dir>>
           requires:
+            - install_gpflow_max
             - fast-tests
           filters:
             tags:
@@ -494,9 +505,9 @@ workflows:
       - notebook-test:
           name: notebook-test-min
           py_ver: <<pipeline.parameters.min_py_ver>>
-          tf_ver: <<pipeline.parameters.min_tf_ver>>
-          tfp_ver: <<pipeline.parameters.min_tfp_ver>>
+          venv_dir: <<pipeline.parameters.min_venv_dir>>
           requires:
+            - install_gpflow_min
             - fast-tests
           filters:
             tags:
@@ -504,9 +515,9 @@ workflows:
       - notebook-test:
           name: notebook-test-max
           py_ver: <<pipeline.parameters.max_py_ver>>
-          tf_ver: <<pipeline.parameters.max_tf_ver>>
-          tfp_ver: <<pipeline.parameters.max_tfp_ver>>
+          venv_dir: <<pipeline.parameters.max_venv_dir>>
           requires:
+            - install_gpflow_max
             - fast-tests
           filters:
             tags:
@@ -524,6 +535,7 @@ workflows:
               only: /^v[0-9]+(\.[0-9]+)*(-rc[0-9]+)?/
       - build-notebooks:
           requires:
+            - install_gpflow_max
             - all-tests
           filters:
             branches:
@@ -532,6 +544,7 @@ workflows:
                 - develop
       - build-docs:
           requires:
+            - install_gpflow_max
             - build-notebooks
           filters:
             branches:
@@ -553,4 +566,14 @@ workflows:
         - equal: [scheduled_pipeline, <<pipeline.trigger_source>>]
         - equal: [run_benchmarks, <<pipeline.schedule.name>>]
     jobs:
-      - run_benchmarks
+      - install_gpflow:
+          py_ver: <<pipeline.parameters.max_py_ver>>
+          tf_ver: <<pipeline.parameters.max_tf_ver>>
+          tfp_ver: <<pipeline.parameters.max_tfp_ver>>
+          venv_dir: <<pipeline.parameters.max_venv_dir>>
+          filters:
+            tags:
+              only: /^v[0-9]+(\.[0-9]+)*(-rc[0-9]+)?/
+      - run_benchmarks:
+          requires:
+            - install_gpflow
