@@ -40,20 +40,20 @@ To compile the GPflow documentation locally:
 
 ## Sharding
 
-The `build_docs.py` script supports building notebooks in parallel in different machines. Example:
+The `build_docs.py` script supports building notebooks in parallel on different machines. Example:
 
 ```bash
 rm -rf /tmp/gpflow_build_docs
 mkdir /tmp/gpflow_build_docs
 
 # These three commands can be run in parallel, on different machines:
-time python doc/build_docs.py --shard 0/3
-time python doc/build_docs.py --shard 1/3
-time python doc/build_docs.py --shard 2/3
+python doc/build_docs.py --shard 0/3
+python doc/build_docs.py --shard 1/3
+python doc/build_docs.py --shard 2/3
 
 # The above three lines will have written their results to /tmp/gpflow_build_docs. If run on
 # different machines you'll have to copy over, and merge those directories before this line:
-time python doc/build_docs.py --shard collect develop ${build_dir}/out
+python doc/build_docs.py --shard collect develop ${build_dir}/out
 ```
 
 
