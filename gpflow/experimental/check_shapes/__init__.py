@@ -28,9 +28,9 @@ Speed, and interactions with `tf.function`
 ++++++++++++++++++++++++++++++++++++++++++
 
 Shape checking has some performance impact. Shape checking can be disabled to help alleviate this.
-Shape checking can be set to one of three different states.
+Shape checking can be set to one of three different states:
 
-* ``ENABLED``. Shapes are checked wherever they can.
+* ``ENABLED``. Shapes are checked wherever they can be.
 * ``EAGER_MODE_ONLY``. Shapes are not checked within anything wrapped in :func:`tf.function`.
 * ``DISABLED``. Shapes are never checked.
 
@@ -52,9 +52,9 @@ Beware that any function declared while shape checking is disabled, will continu
 shapes, even if shape checking is otherwise enabled again.
 
 The default state is ``EAGER_MODE_ONLY``; which is appropriate for smaller project, experiments, and
-notebooks. Write and debug your code in eager mode, and add :func:`tf.function` when your code is
-correct and you want it to run fast. For larger project you probably want to modify this setting. In
-particular you may want to enable all shape checks in your unit tests. If you use
+notebooks. Write and debug your code in eager mode, and add :func:`tf.function` when you believe
+your code is correct and you want it to run fast. For larger project you probably want to modify
+this setting. In particular you may want to enable all shape checks in your unit tests. If you use
 `pytest <https://docs.pytest.org/>`_ you can do this by updating your root ``conftest.py`` with:
 
 .. literalinclude:: /examples/test_check_shapes_examples.py
