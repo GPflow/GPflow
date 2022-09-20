@@ -1,0 +1,1138 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+    <title>gpflow.config &#8212; GPflow 2.6.0 documentation</title>
+  <script>
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=9b1a4fa89bdd0e95b23b" rel="stylesheet">
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=9b1a4fa89bdd0e95b23b" rel="stylesheet">
+
+  
+  <link rel="stylesheet"
+    href="../../../_static/vendor/fontawesome/6.1.2/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../../_static/vendor/fontawesome/6.1.2/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../../_static/vendor/fontawesome/6.1.2/webfonts/fa-brands-400.woff2">
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/pydata-custom.css" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=9b1a4fa89bdd0e95b23b">
+
+    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'api/gpflow/config/index';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://gpflow.github.io/GPflow/versions.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.6.0';
+        </script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="gpflow.covariances" href="../covariances/index.html" />
+    <link rel="prev" title="gpflow.conditionals.util" href="../conditionals/util/index.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="docsearch:language" content="en">
+  </head>
+  
+  
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="180" data-default-mode="">
+
+  
+  <input type="checkbox" class="sidebar-toggle" name="__primary" id="__primary">
+  <label class="overlay overlay-primary" for="__primary"></label>
+
+  
+  <input type="checkbox" class="sidebar-toggle" name="__secondary" id="__secondary">
+  <label class="overlay overlay-secondary" for="__secondary"></label>
+
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+      
+<form class="bd-search d-flex align-items-center" action="../../../search.html" method="get">
+  <i class="icon fas fa-search"></i>
+  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+    </div>
+  </div>
+
+  
+  <nav class="bd-header navbar navbar-expand-lg bd-navbar" id="navbar-main"><div class="bd-header__inner bd-page-width">
+  <label class="sidebar-toggle primary-toggle" for="__primary">
+      <span class="fas fa-bars"></span>
+  </label>
+  <div id="navbar-start">
+    
+    
+  
+
+
+<a class="navbar-brand logo" href="../../../index.html">
+
+  
+  
+  
+  
+  
+  
+  
+
+  
+    <img src="../../../_static/gpflow_logo.svg" class="logo__image only-light" alt="Logo image">
+    <img src="../../../_static/gpflow_logo.svg" class="logo__image only-dark" alt="Logo image">
+  
+  
+</a>
+    
+  </div>
+
+  
+  <div class="col-lg-9 navbar-header-items">
+    <div id="navbar-center" class="mr-auto">
+      
+      <div class="navbar-center-item">
+        <nav class="navbar-nav">
+    <p class="sidebar-header-items__title" role="heading" aria-level="1" aria-label="Site Navigation">
+        Site Navigation
+    </p>
+    <ul id="navbar-main-elements" class="navbar-nav">
+        
+                <li class="nav-item">
+                    <a class="nav-link" href="../../../intro.html">
+                        Introduction
+                    </a>
+                </li>
+                
+
+                <li class="nav-item">
+                    <a class="nav-link" href="../../../manual.html">
+                        GPflow manual
+                    </a>
+                </li>
+                
+
+                <li class="nav-item">
+                    <a class="nav-link" href="../../../notebooks/intro_to_gpflow2.html">
+                        GPflow with TensorFlow 2
+                    </a>
+                </li>
+                
+
+                <li class="nav-item">
+                    <a class="nav-link" href="../../../notebooks_file.html">
+                        Notebooks
+                    </a>
+                </li>
+                
+
+                <li class="nav-item">
+                    <a class="nav-link" href="../../../derivations.html">
+                        Derivations
+                    </a>
+                </li>
+                
+            <div class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    More
+                </button>
+                <div class="dropdown-menu">
+                    
+                <li class="nav-item current active">
+                    <a class="nav-link" href="../index.html">
+                        gpflow
+                    </a>
+                </li>
+                
+
+                <li class="nav-item">
+                    <a class="nav-link" href="../../../bibliography.html">
+                        Bibliography
+                    </a>
+                </li>
+                
+                </div>
+            </div>
+            
+    </ul>
+</nav>
+      </div>
+      
+    </div>
+
+    <div id="navbar-end">
+      <div class="navbar-end-item navbar-end__search-button-container">
+        
+<button class="btn btn-sm navbar-btn search-button search-button__button" title="Search">
+  <i class="fas fa-search"></i>
+</button>
+      </div>
+      
+      <div class="navbar-end-item">
+        <div class="version-switcher__container dropdown">
+    <button type="button" class="version-switcher__button btn btn-sm navbar-btn dropdown-toggle" data-toggle="dropdown">
+        2.6.0  <!-- this text may get changed later by javascript -->
+        <span class="caret"></span>
+    </button>
+    <div class="version-switcher__menu dropdown-menu list-group-flush py-0">
+    <!-- dropdown will be populated by javascript on page load -->
+    </div>
+</div>
+      </div>
+      
+    </div>
+  </div>
+
+
+  
+  <div class="search-button-container--mobile">
+<button class="btn btn-sm navbar-btn search-button search-button__button" title="Search">
+  <i class="fas fa-search"></i>
+</button>
+  </div>
+
+  
+  <label class="sidebar-toggle secondary-toggle" for="__secondary">
+      <span class="fas fa-outdent"></span>
+  </label>
+  
+
+</div>
+  </nav>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+      
+      <div class="navbar-center-item">
+        <nav class="navbar-nav">
+    <p class="sidebar-header-items__title" role="heading" aria-level="1" aria-label="Site Navigation">
+        Site Navigation
+    </p>
+    <ul id="navbar-main-elements" class="navbar-nav">
+        
+                <li class="nav-item">
+                    <a class="nav-link" href="../../../intro.html">
+                        Introduction
+                    </a>
+                </li>
+                
+
+                <li class="nav-item">
+                    <a class="nav-link" href="../../../manual.html">
+                        GPflow manual
+                    </a>
+                </li>
+                
+
+                <li class="nav-item">
+                    <a class="nav-link" href="../../../notebooks/intro_to_gpflow2.html">
+                        GPflow with TensorFlow 2
+                    </a>
+                </li>
+                
+
+                <li class="nav-item">
+                    <a class="nav-link" href="../../../notebooks_file.html">
+                        Notebooks
+                    </a>
+                </li>
+                
+
+                <li class="nav-item">
+                    <a class="nav-link" href="../../../derivations.html">
+                        Derivations
+                    </a>
+                </li>
+                
+            <div class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    More
+                </button>
+                <div class="dropdown-menu">
+                    
+                <li class="nav-item current active">
+                    <a class="nav-link" href="../index.html">
+                        gpflow
+                    </a>
+                </li>
+                
+
+                <li class="nav-item">
+                    <a class="nav-link" href="../../../bibliography.html">
+                        Bibliography
+                    </a>
+                </li>
+                
+                </div>
+            </div>
+            
+    </ul>
+</nav>
+      </div>
+      
+      </div>
+    
+
+    
+    
+    <div class="sidebar-header-items__end">
+      
+      <div class="navbar-end-item">
+        <div class="version-switcher__container dropdown">
+    <button type="button" class="version-switcher__button btn btn-sm navbar-btn dropdown-toggle" data-toggle="dropdown">
+        2.6.0  <!-- this text may get changed later by javascript -->
+        <span class="caret"></span>
+    </button>
+    <div class="version-switcher__menu dropdown-menu list-group-flush py-0">
+    <!-- dropdown will be populated by javascript on page load -->
+    </div>
+</div>
+      </div>
+      
+    </div>
+    
+  </div>
+
+  
+  <div class="sidebar-start-items sidebar-primary__section">
+    <div class="sidebar-start-items__item"><nav class="bd-links" id="bd-docs-nav" aria-label="Section navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">
+    Section Navigation
+  </p>
+  <div class="bd-toc-item navbar-nav">
+    <ul class="current nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="../base/index.html">
+   gpflow.base
+  </a>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../conditionals/index.html">
+   gpflow.conditionals
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/>
+  <label class="toctree-toggle" for="toctree-checkbox-1">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../conditionals/util/index.html">
+     gpflow.conditionals.util
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1 current active">
+  <a class="current reference internal" href="#">
+   gpflow.config
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../covariances/index.html">
+   gpflow.covariances
+  </a>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../expectations/index.html">
+   gpflow.expectations
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" type="checkbox"/>
+  <label class="toctree-toggle" for="toctree-checkbox-2">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../expectations/quadratures/index.html">
+     gpflow.expectations.quadratures
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../experimental/index.html">
+   gpflow.experimental
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" type="checkbox"/>
+  <label class="toctree-toggle" for="toctree-checkbox-3">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2 has-children">
+    <a class="reference internal" href="../experimental/check_shapes/index.html">
+     gpflow.experimental.check_shapes
+    </a>
+    <input class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" type="checkbox"/>
+    <label class="toctree-toggle" for="toctree-checkbox-4">
+     <i class="fas fa-chevron-down">
+     </i>
+    </label>
+    <ul>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../experimental/check_shapes/accessors/index.html">
+       gpflow.experimental.check_shapes.accessors
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../experimental/check_shapes/argument_ref/index.html">
+       gpflow.experimental.check_shapes.argument_ref
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../experimental/check_shapes/bool_specs/index.html">
+       gpflow.experimental.check_shapes.bool_specs
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../experimental/check_shapes/checker_context/index.html">
+       gpflow.experimental.check_shapes.checker_context
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../experimental/check_shapes/decorator/index.html">
+       gpflow.experimental.check_shapes.decorator
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../experimental/check_shapes/error_contexts/index.html">
+       gpflow.experimental.check_shapes.error_contexts
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../experimental/check_shapes/exceptions/index.html">
+       gpflow.experimental.check_shapes.exceptions
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../experimental/check_shapes/parser/index.html">
+       gpflow.experimental.check_shapes.parser
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../experimental/check_shapes/shapes/index.html">
+       gpflow.experimental.check_shapes.shapes
+      </a>
+     </li>
+     <li class="toctree-l3">
+      <a class="reference internal" href="../experimental/check_shapes/specs/index.html">
+       gpflow.experimental.check_shapes.specs
+      </a>
+     </li>
+    </ul>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../experimental/utils/index.html">
+     gpflow.experimental.utils
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../functions/index.html">
+   gpflow.functions
+  </a>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../inducing_variables/index.html">
+   gpflow.inducing_variables
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" type="checkbox"/>
+  <label class="toctree-toggle" for="toctree-checkbox-5">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../inducing_variables/inducing_variables/index.html">
+     gpflow.inducing_variables.inducing_variables
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../kernels/index.html">
+   gpflow.kernels
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-6" name="toctree-checkbox-6" type="checkbox"/>
+  <label class="toctree-toggle" for="toctree-checkbox-6">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../kernels/base/index.html">
+     gpflow.kernels.base
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../kullback_leiblers/index.html">
+   gpflow.kullback_leiblers
+  </a>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../likelihoods/index.html">
+   gpflow.likelihoods
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" type="checkbox"/>
+  <label class="toctree-toggle" for="toctree-checkbox-7">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../likelihoods/utils/index.html">
+     gpflow.likelihoods.utils
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../logdensities/index.html">
+   gpflow.logdensities
+  </a>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../models/index.html">
+   gpflow.models
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-8" name="toctree-checkbox-8" type="checkbox"/>
+  <label class="toctree-toggle" for="toctree-checkbox-8">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../models/cglb/index.html">
+     gpflow.models.cglb
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../models/gpr/index.html">
+     gpflow.models.gpr
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../models/sgpr/index.html">
+     gpflow.models.sgpr
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../models/svgp/index.html">
+     gpflow.models.svgp
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../models/util/index.html">
+     gpflow.models.util
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../models/vgp/index.html">
+     gpflow.models.vgp
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../monitor/index.html">
+   gpflow.monitor
+  </a>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../optimizers/index.html">
+   gpflow.optimizers
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-9" name="toctree-checkbox-9" type="checkbox"/>
+  <label class="toctree-toggle" for="toctree-checkbox-9">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../optimizers/natgrad/index.html">
+     gpflow.optimizers.natgrad
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../posteriors/index.html">
+   gpflow.posteriors
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../probability_distributions/index.html">
+   gpflow.probability_distributions
+  </a>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../quadrature/index.html">
+   gpflow.quadrature
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-10" name="toctree-checkbox-10" type="checkbox"/>
+  <label class="toctree-toggle" for="toctree-checkbox-10">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../quadrature/gauss_hermite/index.html">
+     gpflow.quadrature.gauss_hermite
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="../type_flags/index.html">
+   gpflow.type_flags
+  </a>
+ </li>
+ <li class="toctree-l1 has-children">
+  <a class="reference internal" href="../utilities/index.html">
+   gpflow.utilities
+  </a>
+  <input class="toctree-checkbox" id="toctree-checkbox-11" name="toctree-checkbox-11" type="checkbox"/>
+  <label class="toctree-toggle" for="toctree-checkbox-11">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../utilities/ops/index.html">
+     gpflow.utilities.ops
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="../utilities/parameter_or_function/index.html">
+     gpflow.utilities.parameter_or_function
+    </a>
+   </li>
+  </ul>
+ </li>
+</ul>
+
+  </div>
+</nav>
+    </div>
+  </div>
+  
+
+  
+  <div class="sidebar-end-items sidebar-primary__section">
+    <div class="sidebar-end-items__item">
+    </div>
+  </div>
+
+      </div>
+      <main class="bd-main">
+        
+        
+        <div class="bd-content">
+          <div class="bd-article-container">
+            
+            <div class="bd-header-article">
+                
+            </div>
+            
+            
+            <article class="bd-article" role="main">
+              
+  <section id="gpflow-config">
+<h1>gpflow.config<a class="headerlink" href="#gpflow-config" title="Permalink to this heading">#</a></h1>
+<span class="target" id="module-gpflow.config"></span><p>This is a private module that manages GPflow configuration.</p>
+<p>The module provides functions to modify default settings of GPflow, such as:
+- the standard float precision and integer type
+- the type of positive transformation
+- a value for a minimum shift from zero for the positive transformation
+- an output format for <cite>gpflow.utilities.print_summary</cite></p>
+<p>The module holds global configuration <a class="reference internal" href="#gpflow.config.Config" title="gpflow.config.Config"><code class="xref py py-class docutils literal notranslate"><span class="pre">Config</span></code></a> variable that stores all
+setting values.</p>
+<p>Environment variables are an alternative way for changing the default GPflow
+configuration.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>The user has to set environment variables before running python
+interpreter to modify the configuration.</p>
+</div>
+<p>Full set of environment variables and available options:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">GPFLOW_INT</span></code>: “int16”, “int32”, or “int64”</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">GPFLOW_FLOAT</span></code>: “float16”, “float32”, or “float64”</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">GPFLOW_POSITIVE_BIJECTOR</span></code>: “exp” or “softplus”</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">GPFLOW_POSITIVE_MINIMUM</span></code>: Any positive float number</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">GPFLOW_SUMMARY_FMT</span></code>: “notebook” or any other format that <code class="xref py py-mod docutils literal notranslate"><span class="pre">tabulate</span></code> can handle.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">GPFLOW_JITTER</span></code>: Any positive float number</p></li>
+</ul>
+<p>The user can also change the GPflow configuration temporarily with a context
+manager <a class="reference internal" href="#gpflow.config.as_context" title="gpflow.config.as_context"><code class="xref py py-func docutils literal notranslate"><span class="pre">as_context()</span></code></a>:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">config</span> <span class="o">=</span> <span class="n">Config</span><span class="p">(</span><span class="n">jitter</span><span class="o">=</span><span class="mf">1e-5</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">with</span> <span class="n">as_context</span><span class="p">(</span><span class="n">config</span><span class="p">):</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="c1"># ...code here sees new config</span>
+</pre></div>
+</div>
+<section id="classes">
+<h2>Classes<a class="headerlink" href="#classes" title="Permalink to this heading">#</a></h2>
+<section id="gpflow-config-config">
+<h3>gpflow.config.Config<a class="headerlink" href="#gpflow-config-config" title="Permalink to this heading">#</a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="gpflow.config.Config">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">gpflow.config.</span></span><span class="sig-name descname"><span class="pre">Config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">int=&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">float=&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">jitter=&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">positive_bijector=&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">positive_minimum=&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">summary_fmt=&lt;factory&gt;</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/config/__config__.html#Config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.config.Config" title="Permalink to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Immutable object for storing global GPflow settings</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>int</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">type</span></code>) – </p></li>
+<li><p><strong>float</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">type</span></code>) – </p></li>
+<li><p><strong>jitter</strong> (<a class="reference internal" href="#gpflow.config.Config.float" title="gpflow.config.Config.float"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></a>) – </p></li>
+<li><p><strong>positive_bijector</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>) – </p></li>
+<li><p><strong>positive_minimum</strong> (<a class="reference internal" href="#gpflow.config.Config.float" title="gpflow.config.Config.float"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></a>) – </p></li>
+<li><p><strong>summary_fmt</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>]) – </p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="gpflow.config.Config.float">
+<span class="sig-name descname"><span class="pre">float</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">type</span></em><a class="headerlink" href="#gpflow.config.Config.float" title="Permalink to this definition">#</a></dt>
+<dd><p>Float data type, float32 or float64</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="gpflow.config.Config.int">
+<span class="sig-name descname"><span class="pre">int</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">type</span></em><a class="headerlink" href="#gpflow.config.Config.int" title="Permalink to this definition">#</a></dt>
+<dd><p>Integer data type, int32 or int64.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="gpflow.config.Config.jitter">
+<span class="sig-name descname"><span class="pre">jitter</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><a class="headerlink" href="#gpflow.config.Config.jitter" title="Permalink to this definition">#</a></dt>
+<dd><p>Jitter value. Mainly used for for making badly conditioned matrices more stable.</p>
+<p>Default value is <cite>1e-6</cite>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="gpflow.config.Config.positive_bijector">
+<span class="sig-name descname"><span class="pre">positive_bijector</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#gpflow.config.Config.positive_bijector" title="Permalink to this definition">#</a></dt>
+<dd><p>Method for positive bijector, either “softplus” or “exp”.</p>
+<p>Default is “softplus”.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="gpflow.config.Config.positive_minimum">
+<span class="sig-name descname"><span class="pre">positive_minimum</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><a class="headerlink" href="#gpflow.config.Config.positive_minimum" title="Permalink to this definition">#</a></dt>
+<dd><p>Lower bound for the positive transformation.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="gpflow.config.Config.summary_fmt">
+<span class="sig-name descname"><span class="pre">summary_fmt</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#gpflow.config.Config.summary_fmt" title="Permalink to this definition">#</a></dt>
+<dd><p>Summary format for module printing.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+<section id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this heading">#</a></h2>
+<section id="gpflow-config-as-context">
+<h3>gpflow.config.as_context<a class="headerlink" href="#gpflow-config-as-context" title="Permalink to this heading">#</a></h3>
+<dl class="py function">
+<dt class="sig sig-object py" id="gpflow.config.as_context">
+<span class="sig-prename descclassname"><span class="pre">gpflow.config.</span></span><span class="sig-name descname"><span class="pre">as_context</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">temporary_config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/config/__config__.html#as_context"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.config.as_context" title="Permalink to this definition">#</a></dt>
+<dd><p>Ensure that global configs defaults, with a context manager. Useful for testing.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>temporary_config</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<a class="reference internal" href="#gpflow.config.Config" title="gpflow.config.__config__.Config"><code class="xref py py-class docutils literal notranslate"><span class="pre">Config</span></code></a>]) – </p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Generator</span></code>[<code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code>, <code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code>, <code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="id1">
+<h3>gpflow.config.config<a class="headerlink" href="#id1" title="Permalink to this heading">#</a></h3>
+<dl class="py function">
+<dt class="sig sig-object py" id="gpflow.config.config">
+<span class="sig-prename descclassname"><span class="pre">gpflow.config.</span></span><span class="sig-name descname"><span class="pre">config</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/config/__config__.html#config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.config.config" title="Permalink to this definition">#</a></dt>
+<dd><p>Returns current active config.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#gpflow.config.Config" title="gpflow.config.__config__.Config"><code class="xref py py-class docutils literal notranslate"><span class="pre">Config</span></code></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="gpflow-config-default-positive-bijector">
+<h3>gpflow.config.default_positive_bijector<a class="headerlink" href="#gpflow-config-default-positive-bijector" title="Permalink to this heading">#</a></h3>
+<dl class="py function">
+<dt class="sig sig-object py" id="gpflow.config.default_positive_bijector">
+<span class="sig-prename descclassname"><span class="pre">gpflow.config.</span></span><span class="sig-name descname"><span class="pre">default_positive_bijector</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/config/__config__.html#default_positive_bijector"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.config.default_positive_bijector" title="Permalink to this definition">#</a></dt>
+<dd><p>Type of bijector used for positive constraints: exp or softplus.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="gpflow-config-default-positive-minimum">
+<h3>gpflow.config.default_positive_minimum<a class="headerlink" href="#gpflow-config-default-positive-minimum" title="Permalink to this heading">#</a></h3>
+<dl class="py function">
+<dt class="sig sig-object py" id="gpflow.config.default_positive_minimum">
+<span class="sig-prename descclassname"><span class="pre">gpflow.config.</span></span><span class="sig-name descname"><span class="pre">default_positive_minimum</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/config/__config__.html#default_positive_minimum"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.config.default_positive_minimum" title="Permalink to this definition">#</a></dt>
+<dd><p>Shift constant that GPflow adds to all positive constraints.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="gpflow-config-default-summary-fmt">
+<h3>gpflow.config.default_summary_fmt<a class="headerlink" href="#gpflow-config-default-summary-fmt" title="Permalink to this heading">#</a></h3>
+<dl class="py function">
+<dt class="sig sig-object py" id="gpflow.config.default_summary_fmt">
+<span class="sig-prename descclassname"><span class="pre">gpflow.config.</span></span><span class="sig-name descname"><span class="pre">default_summary_fmt</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/config/__config__.html#default_summary_fmt"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.config.default_summary_fmt" title="Permalink to this definition">#</a></dt>
+<dd><p>Summary printing format as understood by <code class="xref py py-mod docutils literal notranslate"><span class="pre">tabulate</span></code> or a special case “notebook”.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="gpflow-config-positive-bijector-type-map">
+<h3>gpflow.config.positive_bijector_type_map<a class="headerlink" href="#gpflow-config-positive-bijector-type-map" title="Permalink to this heading">#</a></h3>
+<dl class="py function">
+<dt class="sig sig-object py" id="gpflow.config.positive_bijector_type_map">
+<span class="sig-prename descclassname"><span class="pre">gpflow.config.</span></span><span class="sig-name descname"><span class="pre">positive_bijector_type_map</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/config/__config__.html#positive_bijector_type_map"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.config.positive_bijector_type_map" title="Permalink to this definition">#</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">type</span></code>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="gpflow-config-set-config">
+<h3>gpflow.config.set_config<a class="headerlink" href="#gpflow-config-set-config" title="Permalink to this heading">#</a></h3>
+<dl class="py function">
+<dt class="sig sig-object py" id="gpflow.config.set_config">
+<span class="sig-prename descclassname"><span class="pre">gpflow.config.</span></span><span class="sig-name descname"><span class="pre">set_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">new_config</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/config/__config__.html#set_config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.config.set_config" title="Permalink to this definition">#</a></dt>
+<dd><p>Update GPflow config with new settings from <cite>new_config</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>new_config</strong> (<a class="reference internal" href="#gpflow.config.Config" title="gpflow.config.__config__.Config"><code class="xref py py-class docutils literal notranslate"><span class="pre">Config</span></code></a>) – </p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="gpflow-config-set-default-float">
+<h3>gpflow.config.set_default_float<a class="headerlink" href="#gpflow-config-set-default-float" title="Permalink to this heading">#</a></h3>
+<dl class="py function">
+<dt class="sig sig-object py" id="gpflow.config.set_default_float">
+<span class="sig-prename descclassname"><span class="pre">gpflow.config.</span></span><span class="sig-name descname"><span class="pre">set_default_float</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value_type</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/config/__config__.html#set_default_float"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.config.set_default_float" title="Permalink to this definition">#</a></dt>
+<dd><p>Sets default float type. Available options are <cite>np.float16</cite>, <cite>np.float32</cite>,
+or <cite>np.float64</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>value_type</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">type</span></code>) – </p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="gpflow-config-set-default-int">
+<h3>gpflow.config.set_default_int<a class="headerlink" href="#gpflow-config-set-default-int" title="Permalink to this heading">#</a></h3>
+<dl class="py function">
+<dt class="sig sig-object py" id="gpflow.config.set_default_int">
+<span class="sig-prename descclassname"><span class="pre">gpflow.config.</span></span><span class="sig-name descname"><span class="pre">set_default_int</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value_type</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/config/__config__.html#set_default_int"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.config.set_default_int" title="Permalink to this definition">#</a></dt>
+<dd><p>Sets default integer type. Available options are <code class="docutils literal notranslate"><span class="pre">np.int16</span></code>, <code class="docutils literal notranslate"><span class="pre">np.int32</span></code>,
+or <code class="docutils literal notranslate"><span class="pre">np.int64</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>value_type</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">type</span></code>) – </p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="gpflow-config-set-default-jitter">
+<h3>gpflow.config.set_default_jitter<a class="headerlink" href="#gpflow-config-set-default-jitter" title="Permalink to this heading">#</a></h3>
+<dl class="py function">
+<dt class="sig sig-object py" id="gpflow.config.set_default_jitter">
+<span class="sig-prename descclassname"><span class="pre">gpflow.config.</span></span><span class="sig-name descname"><span class="pre">set_default_jitter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/config/__config__.html#set_default_jitter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.config.set_default_jitter" title="Permalink to this definition">#</a></dt>
+<dd><p>Sets constant jitter value.
+The jitter is a constant that GPflow adds to the diagonal of matrices
+to achieve numerical stability of the system when the condition number
+of the associated matrices is large, and therefore the matrices nearly singular.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>value</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>) – </p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="gpflow-config-set-default-positive-bijector">
+<h3>gpflow.config.set_default_positive_bijector<a class="headerlink" href="#gpflow-config-set-default-positive-bijector" title="Permalink to this heading">#</a></h3>
+<dl class="py function">
+<dt class="sig sig-object py" id="gpflow.config.set_default_positive_bijector">
+<span class="sig-prename descclassname"><span class="pre">gpflow.config.</span></span><span class="sig-name descname"><span class="pre">set_default_positive_bijector</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/config/__config__.html#set_default_positive_bijector"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.config.set_default_positive_bijector" title="Permalink to this definition">#</a></dt>
+<dd><p>Sets positive bijector type.
+There are currently two options implemented: “exp” and “softplus”.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>value</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>) – </p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="gpflow-config-set-default-positive-minimum">
+<h3>gpflow.config.set_default_positive_minimum<a class="headerlink" href="#gpflow-config-set-default-positive-minimum" title="Permalink to this heading">#</a></h3>
+<dl class="py function">
+<dt class="sig sig-object py" id="gpflow.config.set_default_positive_minimum">
+<span class="sig-prename descclassname"><span class="pre">gpflow.config.</span></span><span class="sig-name descname"><span class="pre">set_default_positive_minimum</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/config/__config__.html#set_default_positive_minimum"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.config.set_default_positive_minimum" title="Permalink to this definition">#</a></dt>
+<dd><p>Sets shift constant for positive transformation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>value</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>) – </p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="gpflow-config-set-default-summary-fmt">
+<h3>gpflow.config.set_default_summary_fmt<a class="headerlink" href="#gpflow-config-set-default-summary-fmt" title="Permalink to this heading">#</a></h3>
+<dl class="py function">
+<dt class="sig sig-object py" id="gpflow.config.set_default_summary_fmt">
+<span class="sig-prename descclassname"><span class="pre">gpflow.config.</span></span><span class="sig-name descname"><span class="pre">set_default_summary_fmt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/gpflow/config/__config__.html#set_default_summary_fmt"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#gpflow.config.set_default_summary_fmt" title="Permalink to this definition">#</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>value</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>]) – </p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+</section>
+</section>
+
+
+            </article>
+            
+            
+            
+          </div>
+          
+          
+          
+            <div class="bd-sidebar-secondary bd-toc">
+              
+<div class="toc-item">
+  
+<div class="tocsection onthispage">
+    <i class="fas fa-list"></i> On this page
+</div>
+<nav id="bd-toc-nav" class="page-toc">
+    <ul class="visible nav section-nav flex-column">
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#classes">
+   Classes
+  </a>
+  <ul class="nav section-nav flex-column">
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#gpflow-config-config">
+     gpflow.config.Config
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#functions">
+   Functions
+  </a>
+  <ul class="nav section-nav flex-column">
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#gpflow-config-as-context">
+     gpflow.config.as_context
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#id1">
+     gpflow.config.config
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#gpflow-config-default-positive-bijector">
+     gpflow.config.default_positive_bijector
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#gpflow-config-default-positive-minimum">
+     gpflow.config.default_positive_minimum
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#gpflow-config-default-summary-fmt">
+     gpflow.config.default_summary_fmt
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#gpflow-config-positive-bijector-type-map">
+     gpflow.config.positive_bijector_type_map
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#gpflow-config-set-config">
+     gpflow.config.set_config
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#gpflow-config-set-default-float">
+     gpflow.config.set_default_float
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#gpflow-config-set-default-int">
+     gpflow.config.set_default_int
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#gpflow-config-set-default-jitter">
+     gpflow.config.set_default_jitter
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#gpflow-config-set-default-positive-bijector">
+     gpflow.config.set_default_positive_bijector
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#gpflow-config-set-default-positive-minimum">
+     gpflow.config.set_default_positive_minimum
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#gpflow-config-set-default-summary-fmt">
+     gpflow.config.set_default_summary_fmt
+    </a>
+   </li>
+  </ul>
+ </li>
+</ul>
+
+</nav>
+</div>
+
+<div class="toc-item">
+  
+</div>
+
+<div class="toc-item">
+  
+</div>
+
+            </div>
+          
+          
+        </div>
+        <footer class="bd-footer-content">
+          <div class="bd-footer-content__inner">
+            
+          </div>
+        </footer>
+        
+      </main>
+    </div>
+  </div>
+
+  
+    
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../../_static/scripts/pydata-sphinx-theme.js?digest=9b1a4fa89bdd0e95b23b"></script>
+
+  <footer class="bd-footer"><div class="bd-footer__inner container">
+  
+  <div class="footer-item">
+    
+<p class="copyright">
+
+    &copy; Copyright 2022, The GPflow Contributors.<br>
+
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+<p class="sphinx-version">
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 5.1.1.<br>
+</p>
+
+  </div>
+  
+</div>
+  </footer>
+  </body>
+</html>

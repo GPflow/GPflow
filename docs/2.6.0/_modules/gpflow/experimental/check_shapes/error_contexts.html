@@ -1,0 +1,1026 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>gpflow.experimental.check_shapes.error_contexts &#8212; GPflow 2.6.0 documentation</title>
+  <script>
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../../_static/styles/theme.css?digest=9b1a4fa89bdd0e95b23b" rel="stylesheet">
+<link href="../../../../_static/styles/pydata-sphinx-theme.css?digest=9b1a4fa89bdd0e95b23b" rel="stylesheet">
+
+  
+  <link rel="stylesheet"
+    href="../../../../_static/vendor/fontawesome/6.1.2/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../../../_static/vendor/fontawesome/6.1.2/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="../../../../_static/vendor/fontawesome/6.1.2/webfonts/fa-brands-400.woff2">
+
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pydata-custom.css" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=9b1a4fa89bdd0e95b23b">
+
+    <script data-url_root="../../../../" id="documentation_options" src="../../../../_static/documentation_options.js"></script>
+    <script src="../../../../_static/jquery.js"></script>
+    <script src="../../../../_static/underscore.js"></script>
+    <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../../../../_static/doctools.js"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@^1.0.1/dist/embed-amd.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/gpflow/experimental/check_shapes/error_contexts';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://gpflow.github.io/GPflow/versions.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.6.0';
+        </script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="docsearch:language" content="en">
+  </head>
+  
+  
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="180" data-default-mode="">
+
+  
+  <input type="checkbox" class="sidebar-toggle" name="__primary" id="__primary">
+  <label class="overlay overlay-primary" for="__primary"></label>
+
+  
+  <input type="checkbox" class="sidebar-toggle" name="__secondary" id="__secondary">
+  <label class="overlay overlay-secondary" for="__secondary"></label>
+
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+      
+<form class="bd-search d-flex align-items-center" action="../../../../search.html" method="get">
+  <i class="icon fas fa-search"></i>
+  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search the docs ..." aria-label="Search the docs ..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+    </div>
+  </div>
+
+  
+  <nav class="bd-header navbar navbar-expand-lg bd-navbar" id="navbar-main"><div class="bd-header__inner bd-page-width">
+  <label class="sidebar-toggle primary-toggle" for="__primary">
+      <span class="fas fa-bars"></span>
+  </label>
+  <div id="navbar-start">
+    
+    
+  
+
+
+<a class="navbar-brand logo" href="../../../../index.html">
+
+  
+  
+  
+  
+  
+  
+  
+
+  
+    <img src="../../../../_static/gpflow_logo.svg" class="logo__image only-light" alt="Logo image">
+    <img src="../../../../_static/gpflow_logo.svg" class="logo__image only-dark" alt="Logo image">
+  
+  
+</a>
+    
+  </div>
+
+  
+  <div class="col-lg-9 navbar-header-items">
+    <div id="navbar-center" class="mr-auto">
+      
+      <div class="navbar-center-item">
+        <nav class="navbar-nav">
+    <p class="sidebar-header-items__title" role="heading" aria-level="1" aria-label="Site Navigation">
+        Site Navigation
+    </p>
+    <ul id="navbar-main-elements" class="navbar-nav">
+        
+                <li class="nav-item">
+                    <a class="nav-link" href="../../../../intro.html">
+                        Introduction
+                    </a>
+                </li>
+                
+
+                <li class="nav-item">
+                    <a class="nav-link" href="../../../../manual.html">
+                        GPflow manual
+                    </a>
+                </li>
+                
+
+                <li class="nav-item">
+                    <a class="nav-link" href="../../../../notebooks/intro_to_gpflow2.html">
+                        GPflow with TensorFlow 2
+                    </a>
+                </li>
+                
+
+                <li class="nav-item">
+                    <a class="nav-link" href="../../../../notebooks_file.html">
+                        Notebooks
+                    </a>
+                </li>
+                
+
+                <li class="nav-item">
+                    <a class="nav-link" href="../../../../derivations.html">
+                        Derivations
+                    </a>
+                </li>
+                
+            <div class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    More
+                </button>
+                <div class="dropdown-menu">
+                    
+                <li class="nav-item">
+                    <a class="nav-link" href="../../../../api/gpflow/index.html">
+                        gpflow
+                    </a>
+                </li>
+                
+
+                <li class="nav-item">
+                    <a class="nav-link" href="../../../../bibliography.html">
+                        Bibliography
+                    </a>
+                </li>
+                
+                </div>
+            </div>
+            
+    </ul>
+</nav>
+      </div>
+      
+    </div>
+
+    <div id="navbar-end">
+      <div class="navbar-end-item navbar-end__search-button-container">
+        
+<button class="btn btn-sm navbar-btn search-button search-button__button" title="Search">
+  <i class="fas fa-search"></i>
+</button>
+      </div>
+      
+      <div class="navbar-end-item">
+        <div class="version-switcher__container dropdown">
+    <button type="button" class="version-switcher__button btn btn-sm navbar-btn dropdown-toggle" data-toggle="dropdown">
+        2.6.0  <!-- this text may get changed later by javascript -->
+        <span class="caret"></span>
+    </button>
+    <div class="version-switcher__menu dropdown-menu list-group-flush py-0">
+    <!-- dropdown will be populated by javascript on page load -->
+    </div>
+</div>
+      </div>
+      
+    </div>
+  </div>
+
+
+  
+  <div class="search-button-container--mobile">
+<button class="btn btn-sm navbar-btn search-button search-button__button" title="Search">
+  <i class="fas fa-search"></i>
+</button>
+  </div>
+
+  
+  <label class="sidebar-toggle secondary-toggle" for="__secondary">
+      <span class="fas fa-outdent"></span>
+  </label>
+  
+
+</div>
+  </nav>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      <div class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+      
+      <div class="navbar-center-item">
+        <nav class="navbar-nav">
+    <p class="sidebar-header-items__title" role="heading" aria-level="1" aria-label="Site Navigation">
+        Site Navigation
+    </p>
+    <ul id="navbar-main-elements" class="navbar-nav">
+        
+                <li class="nav-item">
+                    <a class="nav-link" href="../../../../intro.html">
+                        Introduction
+                    </a>
+                </li>
+                
+
+                <li class="nav-item">
+                    <a class="nav-link" href="../../../../manual.html">
+                        GPflow manual
+                    </a>
+                </li>
+                
+
+                <li class="nav-item">
+                    <a class="nav-link" href="../../../../notebooks/intro_to_gpflow2.html">
+                        GPflow with TensorFlow 2
+                    </a>
+                </li>
+                
+
+                <li class="nav-item">
+                    <a class="nav-link" href="../../../../notebooks_file.html">
+                        Notebooks
+                    </a>
+                </li>
+                
+
+                <li class="nav-item">
+                    <a class="nav-link" href="../../../../derivations.html">
+                        Derivations
+                    </a>
+                </li>
+                
+            <div class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    More
+                </button>
+                <div class="dropdown-menu">
+                    
+                <li class="nav-item">
+                    <a class="nav-link" href="../../../../api/gpflow/index.html">
+                        gpflow
+                    </a>
+                </li>
+                
+
+                <li class="nav-item">
+                    <a class="nav-link" href="../../../../bibliography.html">
+                        Bibliography
+                    </a>
+                </li>
+                
+                </div>
+            </div>
+            
+    </ul>
+</nav>
+      </div>
+      
+      </div>
+    
+
+    
+    
+    <div class="sidebar-header-items__end">
+      
+      <div class="navbar-end-item">
+        <div class="version-switcher__container dropdown">
+    <button type="button" class="version-switcher__button btn btn-sm navbar-btn dropdown-toggle" data-toggle="dropdown">
+        2.6.0  <!-- this text may get changed later by javascript -->
+        <span class="caret"></span>
+    </button>
+    <div class="version-switcher__menu dropdown-menu list-group-flush py-0">
+    <!-- dropdown will be populated by javascript on page load -->
+    </div>
+</div>
+      </div>
+      
+    </div>
+    
+  </div>
+
+  
+
+  
+  <div class="sidebar-end-items sidebar-primary__section">
+    <div class="sidebar-end-items__item">
+    </div>
+  </div>
+
+      </div>
+      <main class="bd-main">
+        
+        
+        <div class="bd-content">
+          <div class="bd-article-container">
+            
+            <div class="bd-header-article">
+                
+            </div>
+            
+            
+            <article class="bd-article" role="main">
+              
+  <h1>Source code for gpflow.experimental.check_shapes.error_contexts</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright 2022 The GPflow Contributors. All Rights Reserved.</span>
+<span class="c1">#</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+<span class="c1">#</span>
+<span class="c1"># http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c1">#</span>
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
+
+<span class="c1"># pylint: disable=broad-except</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Infrastructure for describing the context of an error.</span>
+
+<span class="sd">The :class:`MessageBuilder` is used to format / indent messages nicely.</span>
+
+<span class="sd">The :class:`ErrorContext` is a reusable bit of information about where/why an error occurred that</span>
+<span class="sd">can be written to a :class:`MessageBuilder`.</span>
+
+<span class="sd">:class:`ErrorContext`\ s can be composed using the :class:`StackContext` and</span>
+<span class="sd">:class:`ParallelContext`.</span>
+
+<span class="sd">This allows reusable error messages in a consistent format.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">inspect</span>
+<span class="kn">from</span> <span class="nn">abc</span> <span class="kn">import</span> <span class="n">ABC</span><span class="p">,</span> <span class="n">abstractmethod</span>
+<span class="kn">from</span> <span class="nn">contextlib</span> <span class="kn">import</span> <span class="n">contextmanager</span>
+<span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">TYPE_CHECKING</span><span class="p">,</span>
+    <span class="n">Any</span><span class="p">,</span>
+    <span class="n">Callable</span><span class="p">,</span>
+    <span class="n">Dict</span><span class="p">,</span>
+    <span class="n">Iterator</span><span class="p">,</span>
+    <span class="n">List</span><span class="p">,</span>
+    <span class="n">Mapping</span><span class="p">,</span>
+    <span class="n">Optional</span><span class="p">,</span>
+    <span class="n">Sequence</span><span class="p">,</span>
+    <span class="n">Tuple</span><span class="p">,</span>
+    <span class="n">Union</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="kn">from</span> <span class="nn">lark.exceptions</span> <span class="kn">import</span> <span class="n">UnexpectedCharacters</span><span class="p">,</span> <span class="n">UnexpectedEOF</span><span class="p">,</span> <span class="n">UnexpectedInput</span>
+
+<span class="kn">from</span> <span class="nn">.base_types</span> <span class="kn">import</span> <span class="n">Shape</span>
+<span class="kn">from</span> <span class="nn">.config</span> <span class="kn">import</span> <span class="n">get_enable_function_call_precompute</span>
+
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>  <span class="c1"># pragma: no cover</span>
+    <span class="kn">from</span> <span class="nn">.argument_ref</span> <span class="kn">import</span> <span class="n">ArgumentRef</span>
+    <span class="kn">from</span> <span class="nn">.bool_specs</span> <span class="kn">import</span> <span class="n">ParsedBoolSpec</span>
+    <span class="kn">from</span> <span class="nn">.specs</span> <span class="kn">import</span> <span class="n">ParsedNoteSpec</span><span class="p">,</span> <span class="n">ParsedShapeSpec</span><span class="p">,</span> <span class="n">ParsedTensorSpec</span>
+
+<span class="n">_UNKNOWN_FILE</span> <span class="o">=</span> <span class="s2">&quot;&lt;Unknown file&gt;&quot;</span>
+<span class="n">_UNKNOWN_LINE</span> <span class="o">=</span> <span class="s2">&quot;&lt;Unknown line&gt;&quot;</span>
+<span class="n">_DISABLED_FILE_AND_LINE</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">_UNKNOWN_FILE</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">_UNKNOWN_LINE</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="s2">&quot; (Disabled. Call gpflow.experimental.check_shapes.set_enable_function_call_precompute(True) to&quot;</span>
+    <span class="s2">&quot; see this. (Slow.))&quot;</span>
+<span class="p">)</span>
+<span class="n">_NONE_SHAPE</span> <span class="o">=</span> <span class="s2">&quot;&lt;Tensor is None or has unknown shape&gt;&quot;</span>
+
+<span class="n">_NO_VALUE</span> <span class="o">=</span> <span class="nb">object</span><span class="p">()</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Sentinel to represent &quot;no value&quot; in places where ``None`` is a valid value.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<div class="viewcode-block" id="MessageBuilder"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/error_contexts/index.html#gpflow.experimental.check_shapes.error_contexts.MessageBuilder">[docs]</a><span class="k">class</span> <span class="nc">MessageBuilder</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Utility for formatting nested text.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">indent_str</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_indent_str</span> <span class="o">=</span> <span class="n">indent_str</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_lines</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="s2">&quot;MessageBuilder&quot;</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_column_widths</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+
+<div class="viewcode-block" id="MessageBuilder.add_line"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/error_contexts/index.html#gpflow.experimental.check_shapes.error_contexts.MessageBuilder.add_line">[docs]</a>    <span class="k">def</span> <span class="nf">add_line</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Write a line, indented at the current level.</span>
+
+<span class="sd">        Input is converted to a `str` using `str(text)`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">text_str</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">text_str</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="MessageBuilder.add_columned_line"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/error_contexts/index.html#gpflow.experimental.check_shapes.error_contexts.MessageBuilder.add_columned_line">[docs]</a>    <span class="k">def</span> <span class="nf">add_columned_line</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">texts</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Write a line of several values, left-aligned within the current indentation level.</span>
+
+<span class="sd">        Inputs are converted to `str`s using `str(text)`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">widths</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_column_widths</span>
+        <span class="n">text_strs</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">texts</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">text_strs</span><span class="p">):</span>
+            <span class="n">w</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">widths</span><span class="p">):</span>
+                <span class="n">widths</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">widths</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">w</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">widths</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">text_strs</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="MessageBuilder.indent"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/error_contexts/index.html#gpflow.experimental.check_shapes.error_contexts.MessageBuilder.indent">[docs]</a>    <span class="nd">@contextmanager</span>
+    <span class="k">def</span> <span class="nf">indent</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterator</span><span class="p">[</span><span class="s2">&quot;MessageBuilder&quot;</span><span class="p">]:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Context manager for indenting text.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">child</span> <span class="o">=</span> <span class="n">MessageBuilder</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_indent_str</span> <span class="o">+</span> <span class="s2">&quot;  &quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">child</span><span class="p">)</span>
+        <span class="k">yield</span> <span class="n">child</span></div>
+
+<div class="viewcode-block" id="MessageBuilder.build"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/error_contexts/index.html#gpflow.experimental.check_shapes.error_contexts.MessageBuilder.build">[docs]</a>    <span class="k">def</span> <span class="nf">build</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compile all collected text into a single string.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">fragments</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">def</span> <span class="nf">_collect</span><span class="p">(</span><span class="n">builder</span><span class="p">:</span> <span class="s2">&quot;MessageBuilder&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># pylint: disable=protected-access</span>
+            <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">builder</span><span class="o">.</span><span class="n">_lines</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">line</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                    <span class="n">fragments</span><span class="o">.</span><span class="n">extend</span><span class="p">((</span><span class="n">builder</span><span class="o">.</span><span class="n">_indent_str</span><span class="p">,</span> <span class="n">line</span><span class="p">,</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">))</span>
+                <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">line</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+                    <span class="n">fragments</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">builder</span><span class="o">.</span><span class="n">_indent_str</span><span class="p">)</span>
+                    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">line</span><span class="p">):</span>
+                        <span class="n">fragments</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+                        <span class="k">if</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">line</span><span class="p">):</span>
+                            <span class="n">fragments</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot; &quot;</span> <span class="o">*</span> <span class="p">(</span><span class="n">builder</span><span class="o">.</span><span class="n">_column_widths</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
+                    <span class="n">fragments</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">line</span><span class="p">,</span> <span class="n">MessageBuilder</span><span class="p">)</span>
+                    <span class="n">_collect</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+
+        <span class="n">_collect</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="k">return</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">fragments</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="ErrorContext"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/index.html#gpflow.experimental.check_shapes.error_contexts.ErrorContext">[docs]</a><span class="k">class</span> <span class="nc">ErrorContext</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A context in which an error can occur.</span>
+
+<span class="sd">    Contexts should be immutable, and implement :func:`__eq__` - so that they can be composed using</span>
+<span class="sd">    :class:`StackContext` and :class:`ParallelContext`.</span>
+
+<span class="sd">    The contexts are often created even if an error doesn&#39;t actually occur, so they should be cheap</span>
+<span class="sd">    to create - prefer to do any slow computation in :func:`print`, rather than in :func:`__init__`.</span>
+
+<span class="sd">    Maybe think of an :class:`ErrorContext` as a factory of error messages.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="ErrorContext.print"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/index.html#gpflow.experimental.check_shapes.error_contexts.ErrorContext.print">[docs]</a>    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">print</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">builder</span><span class="p">:</span> <span class="n">MessageBuilder</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Print this context to the given `MessageBuilder`.</span>
+<span class="sd">        &quot;&quot;&quot;</span></div></div>
+
+
+<div class="viewcode-block" id="StackContext"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/error_contexts/index.html#gpflow.experimental.check_shapes.error_contexts.StackContext">[docs]</a><span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">StackContext</span><span class="p">(</span><span class="n">ErrorContext</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Error context where one context is &quot;inside&quot; another one.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">parent</span><span class="p">:</span> <span class="n">ErrorContext</span>
+    <span class="n">child</span><span class="p">:</span> <span class="n">ErrorContext</span>
+
+<div class="viewcode-block" id="StackContext.print"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/error_contexts/index.html#gpflow.experimental.check_shapes.error_contexts.StackContext.print">[docs]</a>    <span class="k">def</span> <span class="nf">print</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">builder</span><span class="p">:</span> <span class="n">MessageBuilder</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">def</span> <span class="nf">_print</span><span class="p">(</span><span class="n">context</span><span class="p">:</span> <span class="n">ErrorContext</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">nonlocal</span> <span class="n">builder</span>
+
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">context</span><span class="p">,</span> <span class="n">StackContext</span><span class="p">):</span>
+                <span class="n">_print</span><span class="p">(</span><span class="n">context</span><span class="o">.</span><span class="n">parent</span><span class="p">)</span>
+                <span class="n">_print</span><span class="p">(</span><span class="n">context</span><span class="o">.</span><span class="n">child</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">context</span><span class="o">.</span><span class="n">print</span><span class="p">(</span><span class="n">builder</span><span class="p">)</span>
+
+                <span class="k">with</span> <span class="n">builder</span><span class="o">.</span><span class="n">indent</span><span class="p">()</span> <span class="k">as</span> <span class="n">b</span><span class="p">:</span>
+                    <span class="n">builder</span> <span class="o">=</span> <span class="n">b</span>
+
+        <span class="n">_print</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="ParallelContext"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/error_contexts/index.html#gpflow.experimental.check_shapes.error_contexts.ParallelContext">[docs]</a><span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">ParallelContext</span><span class="p">(</span><span class="n">ErrorContext</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Error context with many contexts in parallel.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">children</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">ErrorContext</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
+
+<div class="viewcode-block" id="ParallelContext.print"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/error_contexts/index.html#gpflow.experimental.check_shapes.error_contexts.ParallelContext.print">[docs]</a>    <span class="k">def</span> <span class="nf">print</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">builder</span><span class="p">:</span> <span class="n">MessageBuilder</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># Merge any nested parallel contexts.</span>
+        <span class="n">flat</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">ErrorContext</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">def</span> <span class="nf">_flatten</span><span class="p">(</span><span class="n">context</span><span class="p">:</span> <span class="n">ErrorContext</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">context</span><span class="p">,</span> <span class="n">ParallelContext</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">context</span><span class="o">.</span><span class="n">children</span><span class="p">:</span>
+                    <span class="n">_flatten</span><span class="p">(</span><span class="n">child</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">flat</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">context</span><span class="p">)</span>
+
+        <span class="n">_flatten</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+        <span class="c1"># If any `StackContexts`s have the same (grand-) parent, merge them, so that we don&#39;t repeat</span>
+        <span class="c1"># stuff in the output.</span>
+        <span class="k">def</span> <span class="nf">_split_head</span><span class="p">(</span><span class="n">context</span><span class="p">:</span> <span class="n">StackContext</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">ErrorContext</span><span class="p">,</span> <span class="n">ErrorContext</span><span class="p">]:</span>
+            <span class="n">parent</span> <span class="o">=</span> <span class="n">context</span><span class="o">.</span><span class="n">parent</span>
+            <span class="n">child</span> <span class="o">=</span> <span class="n">context</span><span class="o">.</span><span class="n">child</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="n">StackContext</span><span class="p">):</span>
+                <span class="c1"># Transform:</span>
+                <span class="c1">#   /\         /\</span>
+                <span class="c1">#  /\ C  --&gt;  A /\</span>
+                <span class="c1"># A  B         B  C</span>
+                <span class="c1"># So we get:                     /\</span>
+                <span class="c1">#             head = A,  body = B  C</span>
+                <span class="k">return</span> <span class="n">_split_head</span><span class="p">(</span><span class="n">StackContext</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">parent</span><span class="p">,</span> <span class="n">StackContext</span><span class="p">(</span><span class="n">parent</span><span class="o">.</span><span class="n">child</span><span class="p">,</span> <span class="n">child</span><span class="p">)))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">parent</span><span class="p">,</span> <span class="n">child</span>
+
+        <span class="n">by_head</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">ErrorContext</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">ErrorContext</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">flat</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">child</span><span class="p">,</span> <span class="n">StackContext</span><span class="p">):</span>
+                <span class="n">head</span><span class="p">,</span> <span class="n">body</span> <span class="o">=</span> <span class="n">_split_head</span><span class="p">(</span><span class="n">child</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">head</span> <span class="o">=</span> <span class="n">child</span>
+                <span class="n">body</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">bodies</span> <span class="o">=</span> <span class="n">by_head</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">head</span><span class="p">,</span> <span class="p">[])</span>
+            <span class="k">if</span> <span class="n">body</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">bodies</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">body</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">head</span><span class="p">,</span> <span class="n">bodies</span> <span class="ow">in</span> <span class="n">by_head</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">head</span><span class="o">.</span><span class="n">print</span><span class="p">(</span><span class="n">builder</span><span class="p">)</span>
+            <span class="k">with</span> <span class="n">builder</span><span class="o">.</span><span class="n">indent</span><span class="p">()</span> <span class="k">as</span> <span class="n">b</span><span class="p">:</span>
+                <span class="n">ParallelContext</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="n">bodies</span><span class="p">))</span><span class="o">.</span><span class="n">print</span><span class="p">(</span><span class="n">b</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="FunctionCallContext"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/error_contexts/index.html#gpflow.experimental.check_shapes.error_contexts.FunctionCallContext">[docs]</a><span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">FunctionCallContext</span><span class="p">(</span><span class="n">ErrorContext</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    An error occured inside a function that was called.</span>
+
+<span class="sd">    Normally `print` should be called from within the called function: `func`.</span>
+<span class="sd">    If that is impossible, first call `precompute` from within `func`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">func</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
+    <span class="n">path_and_line</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="nf">_get_target</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]:</span>
+        <span class="n">func</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">unwrap</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">func</span><span class="p">)</span>
+        <span class="n">search_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">func</span><span class="o">.</span><span class="vm">__name__</span>
+        <span class="n">search_path</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">getsourcefile</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">search_path</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="n">search_name</span><span class="p">,</span> <span class="n">search_path</span>
+
+    <span class="k">def</span> <span class="nf">_count_wrappers</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="n">wrappers</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+        <span class="n">f</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">func</span>
+        <span class="k">while</span> <span class="n">f</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">wrappers</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="n">f</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="s2">&quot;__wrapped__&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">wrappers</span>
+
+    <span class="k">def</span> <span class="nf">_get_calling_frame</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">inspect</span><span class="o">.</span><span class="n">FrameInfo</span><span class="p">]:</span>
+        <span class="n">search_name_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_target</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">search_name_path</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="n">stack</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">frame</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">stack</span><span class="p">):</span>
+            <span class="n">name_path</span> <span class="o">=</span> <span class="p">(</span><span class="n">frame</span><span class="o">.</span><span class="n">function</span><span class="p">,</span> <span class="n">frame</span><span class="o">.</span><span class="n">filename</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">search_name_path</span> <span class="o">==</span> <span class="n">name_path</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">stack</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_count_wrappers</span><span class="p">()</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="nf">_compute</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">path_and_line</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">path_and_line</span>
+
+        <span class="n">frame</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_calling_frame</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">frame</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">path</span> <span class="o">=</span> <span class="n">_UNKNOWN_FILE</span>
+            <span class="n">line</span> <span class="o">=</span> <span class="n">_UNKNOWN_LINE</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">path</span> <span class="o">=</span> <span class="n">frame</span><span class="o">.</span><span class="n">filename</span>
+            <span class="n">line</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">frame</span><span class="o">.</span><span class="n">lineno</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">line</span><span class="si">}</span><span class="s2">&quot;</span>
+
+<div class="viewcode-block" id="FunctionCallContext.print"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/error_contexts/index.html#gpflow.experimental.check_shapes.error_contexts.FunctionCallContext.print">[docs]</a>    <span class="k">def</span> <span class="nf">print</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">builder</span><span class="p">:</span> <span class="n">MessageBuilder</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">builder</span><span class="o">.</span><span class="n">add_columned_line</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">func</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> called at:&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute</span><span class="p">())</span></div>
+
+<div class="viewcode-block" id="FunctionCallContext.precompute"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/error_contexts/index.html#gpflow.experimental.check_shapes.error_contexts.FunctionCallContext.precompute">[docs]</a>    <span class="k">def</span> <span class="nf">precompute</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;FunctionCallContext&quot;</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Precompute the values to print.</span>
+
+<span class="sd">        This is useful to capture the position of the stack of the relevant call, if this object is</span>
+<span class="sd">        saved for later use.</span>
+
+<span class="sd">        :returns: A new instance with precomptued values.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">get_enable_function_call_precompute</span><span class="p">():</span>
+            <span class="k">return</span> <span class="n">FunctionCallContext</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">func</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute</span><span class="p">())</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">FunctionCallContext</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">func</span><span class="p">,</span> <span class="n">_DISABLED_FILE_AND_LINE</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="FunctionDefinitionContext"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/error_contexts/index.html#gpflow.experimental.check_shapes.error_contexts.FunctionDefinitionContext">[docs]</a><span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">FunctionDefinitionContext</span><span class="p">(</span><span class="n">ErrorContext</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    An error occured in the context of a function definition.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">func</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
+
+<div class="viewcode-block" id="FunctionDefinitionContext.print"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/error_contexts/index.html#gpflow.experimental.check_shapes.error_contexts.FunctionDefinitionContext.print">[docs]</a>    <span class="k">def</span> <span class="nf">print</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">builder</span><span class="p">:</span> <span class="n">MessageBuilder</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">func</span><span class="o">.</span><span class="vm">__qualname__</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">path</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">getsourcefile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">func</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>  <span class="c1"># pragma: no cover</span>
+            <span class="n">path</span> <span class="o">=</span> <span class="n">_UNKNOWN_FILE</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">_</span><span class="p">,</span> <span class="n">line_int</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">getsourcelines</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">func</span><span class="p">)</span>
+            <span class="n">line</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">line_int</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>  <span class="c1"># pragma: no cover</span>
+            <span class="n">line</span> <span class="o">=</span> <span class="n">_UNKNOWN_LINE</span>
+        <span class="n">path_and_line</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">line</span><span class="si">}</span><span class="s2">&quot;</span>
+
+        <span class="n">builder</span><span class="o">.</span><span class="n">add_columned_line</span><span class="p">(</span><span class="s2">&quot;Function:&quot;</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+        <span class="k">with</span> <span class="n">builder</span><span class="o">.</span><span class="n">indent</span><span class="p">()</span> <span class="k">as</span> <span class="n">b</span><span class="p">:</span>
+            <span class="n">b</span><span class="o">.</span><span class="n">add_columned_line</span><span class="p">(</span><span class="s2">&quot;Declared:&quot;</span><span class="p">,</span> <span class="n">path_and_line</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="VariableContext"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/error_contexts/index.html#gpflow.experimental.check_shapes.error_contexts.VariableContext">[docs]</a><span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">VariableContext</span><span class="p">(</span><span class="n">ErrorContext</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    An error occurred in the context of a shape specification variable.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">variable_name</span><span class="p">:</span> <span class="nb">str</span>
+
+<div class="viewcode-block" id="VariableContext.print"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/error_contexts/index.html#gpflow.experimental.check_shapes.error_contexts.VariableContext.print">[docs]</a>    <span class="k">def</span> <span class="nf">print</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">builder</span><span class="p">:</span> <span class="n">MessageBuilder</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">builder</span><span class="o">.</span><span class="n">add_columned_line</span><span class="p">(</span><span class="s2">&quot;Variable:&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">variable_name</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="TensorSpecContext"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/error_contexts/index.html#gpflow.experimental.check_shapes.error_contexts.TensorSpecContext">[docs]</a><span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">TensorSpecContext</span><span class="p">(</span><span class="n">ErrorContext</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    An error occurred in the context of a tensor specification.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">spec</span><span class="p">:</span> <span class="s2">&quot;ParsedTensorSpec&quot;</span>
+
+<div class="viewcode-block" id="TensorSpecContext.print"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/error_contexts/index.html#gpflow.experimental.check_shapes.error_contexts.TensorSpecContext.print">[docs]</a>    <span class="k">def</span> <span class="nf">print</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">builder</span><span class="p">:</span> <span class="n">MessageBuilder</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">builder</span><span class="o">.</span><span class="n">add_columned_line</span><span class="p">(</span><span class="s2">&quot;Specification:&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">spec</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="ArgumentContext"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/error_contexts/index.html#gpflow.experimental.check_shapes.error_contexts.ArgumentContext">[docs]</a><span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">ArgumentContext</span><span class="p">(</span><span class="n">ErrorContext</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    An error occurred in the context of an argument to a function.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">name_or_index</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span>
+    <span class="n">value</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">_NO_VALUE</span>
+
+<div class="viewcode-block" id="ArgumentContext.print"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/error_contexts/index.html#gpflow.experimental.check_shapes.error_contexts.ArgumentContext.print">[docs]</a>    <span class="k">def</span> <span class="nf">print</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">builder</span><span class="p">:</span> <span class="n">MessageBuilder</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name_or_index</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">builder</span><span class="o">.</span><span class="n">add_columned_line</span><span class="p">(</span><span class="s2">&quot;Argument:&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name_or_index</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">builder</span><span class="o">.</span><span class="n">add_columned_line</span><span class="p">(</span><span class="s2">&quot;Argument number (0-indexed):&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name_or_index</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">_NO_VALUE</span><span class="p">:</span>
+            <span class="k">with</span> <span class="n">builder</span><span class="o">.</span><span class="n">indent</span><span class="p">()</span> <span class="k">as</span> <span class="n">b</span><span class="p">:</span>
+                <span class="n">b</span><span class="o">.</span><span class="n">add_columned_line</span><span class="p">(</span><span class="s2">&quot;Value:&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">value</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">==</span> <span class="nb">type</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+            <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">name_or_index</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">name_or_index</span>
+            <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">value</span> <span class="ow">is</span> <span class="n">other</span><span class="o">.</span><span class="n">value</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__hash__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">hash</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">name_or_index</span><span class="p">,</span> <span class="nb">id</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">value</span><span class="p">)))</span></div>
+
+
+<div class="viewcode-block" id="AttributeContext"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/error_contexts/index.html#gpflow.experimental.check_shapes.error_contexts.AttributeContext">[docs]</a><span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">AttributeContext</span><span class="p">(</span><span class="n">ErrorContext</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    An error occurred in the context of an attribute on an object.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">value</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">_NO_VALUE</span>
+
+<div class="viewcode-block" id="AttributeContext.print"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/error_contexts/index.html#gpflow.experimental.check_shapes.error_contexts.AttributeContext.print">[docs]</a>    <span class="k">def</span> <span class="nf">print</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">builder</span><span class="p">:</span> <span class="n">MessageBuilder</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">builder</span><span class="o">.</span><span class="n">add_columned_line</span><span class="p">(</span><span class="s2">&quot;Attribute:&quot;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;.</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">_NO_VALUE</span><span class="p">:</span>
+            <span class="k">with</span> <span class="n">builder</span><span class="o">.</span><span class="n">indent</span><span class="p">()</span> <span class="k">as</span> <span class="n">b</span><span class="p">:</span>
+                <span class="n">b</span><span class="o">.</span><span class="n">add_columned_line</span><span class="p">(</span><span class="s2">&quot;Value:&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">value</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">==</span> <span class="nb">type</span><span class="p">(</span><span class="n">other</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">name</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">value</span> <span class="ow">is</span> <span class="n">other</span><span class="o">.</span><span class="n">value</span>
+
+    <span class="k">def</span> <span class="fm">__hash__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">hash</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="nb">id</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">value</span><span class="p">)))</span></div>
+
+
+<div class="viewcode-block" id="IndexContext"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/error_contexts/index.html#gpflow.experimental.check_shapes.error_contexts.IndexContext">[docs]</a><span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">IndexContext</span><span class="p">(</span><span class="n">ErrorContext</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    An error occurred in the context of an index in a sequence.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">index</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">value</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">_NO_VALUE</span>
+
+<div class="viewcode-block" id="IndexContext.print"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/error_contexts/index.html#gpflow.experimental.check_shapes.error_contexts.IndexContext.print">[docs]</a>    <span class="k">def</span> <span class="nf">print</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">builder</span><span class="p">:</span> <span class="n">MessageBuilder</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">builder</span><span class="o">.</span><span class="n">add_columned_line</span><span class="p">(</span><span class="s2">&quot;Index:&quot;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">index</span><span class="si">}</span><span class="s2">]&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">_NO_VALUE</span><span class="p">:</span>
+            <span class="k">with</span> <span class="n">builder</span><span class="o">.</span><span class="n">indent</span><span class="p">()</span> <span class="k">as</span> <span class="n">b</span><span class="p">:</span>
+                <span class="n">b</span><span class="o">.</span><span class="n">add_columned_line</span><span class="p">(</span><span class="s2">&quot;Value:&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">value</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">==</span> <span class="nb">type</span><span class="p">(</span><span class="n">other</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">index</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">index</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">value</span> <span class="ow">is</span> <span class="n">other</span><span class="o">.</span><span class="n">value</span>
+
+    <span class="k">def</span> <span class="fm">__hash__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">hash</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="nb">id</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">value</span><span class="p">)))</span></div>
+
+
+<div class="viewcode-block" id="MappingKeyContext"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/error_contexts/index.html#gpflow.experimental.check_shapes.error_contexts.MappingKeyContext">[docs]</a><span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">MappingKeyContext</span><span class="p">(</span><span class="n">ErrorContext</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    An error occurent in the context of a key in a map.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">key</span><span class="p">:</span> <span class="n">Any</span>
+
+<div class="viewcode-block" id="MappingKeyContext.print"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/error_contexts/index.html#gpflow.experimental.check_shapes.error_contexts.MappingKeyContext.print">[docs]</a>    <span class="k">def</span> <span class="nf">print</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">builder</span><span class="p">:</span> <span class="n">MessageBuilder</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">builder</span><span class="o">.</span><span class="n">add_columned_line</span><span class="p">(</span><span class="s2">&quot;Map key:&quot;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="si">!r}</span><span class="s2">]&quot;</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">==</span> <span class="nb">type</span><span class="p">(</span><span class="n">other</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">key</span> <span class="ow">is</span> <span class="n">other</span><span class="o">.</span><span class="n">key</span>
+
+    <span class="k">def</span> <span class="fm">__hash__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">id</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="MappingValueContext"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/error_contexts/index.html#gpflow.experimental.check_shapes.error_contexts.MappingValueContext">[docs]</a><span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">MappingValueContext</span><span class="p">(</span><span class="n">ErrorContext</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    An error occurent in the context of a value in a map.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">key</span><span class="p">:</span> <span class="n">Any</span>
+    <span class="n">value</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">_NO_VALUE</span>
+
+<div class="viewcode-block" id="MappingValueContext.print"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/error_contexts/index.html#gpflow.experimental.check_shapes.error_contexts.MappingValueContext.print">[docs]</a>    <span class="k">def</span> <span class="nf">print</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">builder</span><span class="p">:</span> <span class="n">MessageBuilder</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">builder</span><span class="o">.</span><span class="n">add_columned_line</span><span class="p">(</span><span class="s2">&quot;Map value, of key:&quot;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="si">!r}</span><span class="s2">]&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">_NO_VALUE</span><span class="p">:</span>
+            <span class="k">with</span> <span class="n">builder</span><span class="o">.</span><span class="n">indent</span><span class="p">()</span> <span class="k">as</span> <span class="n">b</span><span class="p">:</span>
+                <span class="n">b</span><span class="o">.</span><span class="n">add_columned_line</span><span class="p">(</span><span class="s2">&quot;Value:&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">value</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">==</span> <span class="nb">type</span><span class="p">(</span><span class="n">other</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">key</span> <span class="ow">is</span> <span class="n">other</span><span class="o">.</span><span class="n">key</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">value</span> <span class="ow">is</span> <span class="n">other</span><span class="o">.</span><span class="n">value</span>
+
+    <span class="k">def</span> <span class="fm">__hash__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">hash</span><span class="p">((</span><span class="nb">id</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">),</span> <span class="nb">id</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">value</span><span class="p">)))</span></div>
+
+
+<div class="viewcode-block" id="ConditionContext"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/error_contexts/index.html#gpflow.experimental.check_shapes.error_contexts.ConditionContext">[docs]</a><span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">ConditionContext</span><span class="p">(</span><span class="n">ErrorContext</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    An error occurred in a conditional context.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">condition</span><span class="p">:</span> <span class="s2">&quot;ParsedBoolSpec&quot;</span>
+
+<div class="viewcode-block" id="ConditionContext.print"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/error_contexts/index.html#gpflow.experimental.check_shapes.error_contexts.ConditionContext.print">[docs]</a>    <span class="k">def</span> <span class="nf">print</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">builder</span><span class="p">:</span> <span class="n">MessageBuilder</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">builder</span><span class="o">.</span><span class="n">add_columned_line</span><span class="p">(</span><span class="s2">&quot;Condition:&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">condition</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="ShapeContext"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/error_contexts/index.html#gpflow.experimental.check_shapes.error_contexts.ShapeContext">[docs]</a><span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">ShapeContext</span><span class="p">(</span><span class="n">ErrorContext</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    An error occurred in the context of the shapes of function arguments.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">expected</span><span class="p">:</span> <span class="s2">&quot;ParsedShapeSpec&quot;</span>
+    <span class="n">actual</span><span class="p">:</span> <span class="n">Shape</span>
+
+<div class="viewcode-block" id="ShapeContext.print"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/error_contexts/index.html#gpflow.experimental.check_shapes.error_contexts.ShapeContext.print">[docs]</a>    <span class="k">def</span> <span class="nf">print</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">builder</span><span class="p">:</span> <span class="n">MessageBuilder</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">actual</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">actual_str</span> <span class="o">=</span> <span class="n">_NONE_SHAPE</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">actual_str</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">dim</span><span class="p">)</span> <span class="k">for</span> <span class="n">dim</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">actual</span><span class="p">)</span><span class="si">}</span><span class="s2">]&quot;</span>
+        <span class="n">builder</span><span class="o">.</span><span class="n">add_columned_line</span><span class="p">(</span><span class="s2">&quot;Expected:&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">expected</span><span class="p">)</span>
+        <span class="n">builder</span><span class="o">.</span><span class="n">add_columned_line</span><span class="p">(</span><span class="s2">&quot;Actual:&quot;</span><span class="p">,</span> <span class="n">actual_str</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="NoteContext"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/error_contexts/index.html#gpflow.experimental.check_shapes.error_contexts.NoteContext">[docs]</a><span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">NoteContext</span><span class="p">(</span><span class="n">ErrorContext</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    An error occurred in a context where a user has added a note.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">note</span><span class="p">:</span> <span class="s2">&quot;ParsedNoteSpec&quot;</span>
+
+<div class="viewcode-block" id="NoteContext.print"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/error_contexts/index.html#gpflow.experimental.check_shapes.error_contexts.NoteContext.print">[docs]</a>    <span class="k">def</span> <span class="nf">print</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">builder</span><span class="p">:</span> <span class="n">MessageBuilder</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">builder</span><span class="o">.</span><span class="n">add_columned_line</span><span class="p">(</span><span class="s2">&quot;Note:&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">note</span><span class="o">.</span><span class="n">note</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="ObjectValueContext"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/error_contexts/index.html#gpflow.experimental.check_shapes.error_contexts.ObjectValueContext">[docs]</a><span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">ObjectValueContext</span><span class="p">(</span><span class="n">ErrorContext</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    An error was caused by the value of an object.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">obj</span><span class="p">:</span> <span class="n">Any</span>
+
+<div class="viewcode-block" id="ObjectValueContext.print"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/error_contexts/index.html#gpflow.experimental.check_shapes.error_contexts.ObjectValueContext.print">[docs]</a>    <span class="k">def</span> <span class="nf">print</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">builder</span><span class="p">:</span> <span class="n">MessageBuilder</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">builder</span><span class="o">.</span><span class="n">add_columned_line</span><span class="p">(</span><span class="s2">&quot;Value:&quot;</span><span class="p">,</span> <span class="nb">repr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">obj</span><span class="p">))</span></div>
+
+    <span class="k">def</span> <span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">==</span> <span class="nb">type</span><span class="p">(</span><span class="n">other</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">obj</span> <span class="ow">is</span> <span class="n">other</span><span class="o">.</span><span class="n">obj</span>
+
+    <span class="k">def</span> <span class="fm">__hash__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">id</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">obj</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ObjectTypeContext"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/error_contexts/index.html#gpflow.experimental.check_shapes.error_contexts.ObjectTypeContext">[docs]</a><span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">ObjectTypeContext</span><span class="p">(</span><span class="n">ErrorContext</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    An error was caused by the type of an object.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">obj</span><span class="p">:</span> <span class="n">Any</span>
+
+<div class="viewcode-block" id="ObjectTypeContext.print"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/error_contexts/index.html#gpflow.experimental.check_shapes.error_contexts.ObjectTypeContext.print">[docs]</a>    <span class="k">def</span> <span class="nf">print</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">builder</span><span class="p">:</span> <span class="n">MessageBuilder</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">obj</span><span class="p">)</span>
+        <span class="n">builder</span><span class="o">.</span><span class="n">add_columned_line</span><span class="p">(</span><span class="s2">&quot;Object type:&quot;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">t</span><span class="o">.</span><span class="vm">__module__</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">t</span><span class="o">.</span><span class="vm">__qualname__</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">==</span> <span class="nb">type</span><span class="p">(</span><span class="n">other</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">obj</span> <span class="ow">is</span> <span class="n">other</span><span class="o">.</span><span class="n">obj</span>
+
+    <span class="k">def</span> <span class="fm">__hash__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">id</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">obj</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ParserInputContext"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/error_contexts/index.html#gpflow.experimental.check_shapes.error_contexts.ParserInputContext">[docs]</a><span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># type: ignore[misc]  # mypy doesn&#39;t like abstract `dataclasses`.</span>
+<span class="k">class</span> <span class="nc">ParserInputContext</span><span class="p">(</span><span class="n">ErrorContext</span><span class="p">,</span> <span class="n">ABC</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Abstract base class for contexts that relate to parser input.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">text</span><span class="p">:</span> <span class="nb">str</span>
+
+    <span class="k">def</span> <span class="nf">print_line</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">builder</span><span class="p">:</span> <span class="n">MessageBuilder</span><span class="p">,</span> <span class="n">line</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">column</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">line</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">line_content</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)[</span><span class="n">line</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>
+            <span class="n">builder</span><span class="o">.</span><span class="n">add_columned_line</span><span class="p">(</span><span class="s2">&quot;Line:&quot;</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;&quot;</span><span class="si">{</span><span class="n">line_content</span><span class="si">}</span><span class="s1">&quot;&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">column</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">builder</span><span class="o">.</span><span class="n">add_columned_line</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot; &quot;</span> <span class="o">*</span> <span class="n">column</span> <span class="o">+</span> <span class="s2">&quot;^&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="LarkUnexpectedInputContext"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/error_contexts/index.html#gpflow.experimental.check_shapes.error_contexts.LarkUnexpectedInputContext">[docs]</a><span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">LarkUnexpectedInputContext</span><span class="p">(</span><span class="n">ParserInputContext</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    An error was caused by an `UnexpectedInput` error from `Lark`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">error</span><span class="p">:</span> <span class="n">UnexpectedInput</span>
+    <span class="n">terminal_descriptions</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span>
+
+<div class="viewcode-block" id="LarkUnexpectedInputContext.print"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/error_contexts/index.html#gpflow.experimental.check_shapes.error_contexts.LarkUnexpectedInputContext.print">[docs]</a>    <span class="k">def</span> <span class="nf">print</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">builder</span><span class="p">:</span> <span class="n">MessageBuilder</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">print_line</span><span class="p">(</span>
+            <span class="n">builder</span><span class="p">,</span>
+            <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">error</span><span class="p">,</span> <span class="s2">&quot;line&quot;</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">),</span>
+            <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">error</span><span class="p">,</span> <span class="s2">&quot;column&quot;</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">),</span>
+        <span class="p">)</span>
+
+        <span class="n">expected</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">error</span><span class="p">,</span> <span class="s2">&quot;accepts&quot;</span><span class="p">,</span> <span class="p">[])</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">expected</span><span class="p">:</span>
+            <span class="n">expected</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">error</span><span class="p">,</span> <span class="s2">&quot;expected&quot;</span><span class="p">,</span> <span class="p">[])</span>
+        <span class="n">expected</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">expected</span><span class="p">)</span>
+        <span class="n">expected_key</span> <span class="o">=</span> <span class="s2">&quot;Expected:&quot;</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">expected</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">1</span> <span class="k">else</span> <span class="s2">&quot;Expected one of:&quot;</span>
+        <span class="k">for</span> <span class="n">expected_name</span> <span class="ow">in</span> <span class="n">expected</span><span class="p">:</span>
+            <span class="n">expected_value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">terminal_descriptions</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">expected_name</span><span class="p">,</span> <span class="n">expected_name</span><span class="p">)</span>
+            <span class="n">builder</span><span class="o">.</span><span class="n">add_columned_line</span><span class="p">(</span><span class="n">expected_key</span><span class="p">,</span> <span class="n">expected_value</span><span class="p">)</span>
+            <span class="n">expected_key</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">error</span><span class="p">,</span> <span class="n">UnexpectedCharacters</span><span class="p">):</span>
+            <span class="n">builder</span><span class="o">.</span><span class="n">add_line</span><span class="p">(</span><span class="s2">&quot;Found unexpected character.&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">error</span><span class="p">,</span> <span class="n">UnexpectedEOF</span><span class="p">):</span>
+            <span class="n">builder</span><span class="o">.</span><span class="n">add_line</span><span class="p">(</span><span class="s2">&quot;Found unexpected end of input.&quot;</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="fm">__hash__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">hash</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">error</span><span class="p">,</span> <span class="o">*</span><span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">terminal_descriptions</span><span class="o">.</span><span class="n">items</span><span class="p">())))</span></div>
+
+
+<div class="viewcode-block" id="MultipleElementBoolContext"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/error_contexts/index.html#gpflow.experimental.check_shapes.error_contexts.MultipleElementBoolContext">[docs]</a><span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">MultipleElementBoolContext</span><span class="p">(</span><span class="n">ParserInputContext</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    An error was caused by trying to use a multi-element argument specification as a bool.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">line</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">column</span><span class="p">:</span> <span class="nb">int</span>
+
+<div class="viewcode-block" id="MultipleElementBoolContext.print"><a class="viewcode-back" href="../../../../api/gpflow/experimental/check_shapes/error_contexts/index.html#gpflow.experimental.check_shapes.error_contexts.MultipleElementBoolContext.print">[docs]</a>    <span class="k">def</span> <span class="nf">print</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">builder</span><span class="p">:</span> <span class="n">MessageBuilder</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">print_line</span><span class="p">(</span><span class="n">builder</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">line</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">column</span><span class="p">)</span>
+        <span class="n">builder</span><span class="o">.</span><span class="n">add_line</span><span class="p">(</span>
+            <span class="s2">&quot;Argument references that evaluate to multiple values are not supported for boolean&quot;</span>
+            <span class="s2">&quot; expressions.&quot;</span>
+        <span class="p">)</span></div></div>
+</pre></div>
+
+            </article>
+            
+            
+            
+          </div>
+          
+          
+          
+            <div class="bd-sidebar-secondary bd-toc">
+              
+<div class="toc-item">
+  
+</div>
+
+<div class="toc-item">
+  
+</div>
+
+            </div>
+          
+          
+        </div>
+        <footer class="bd-footer-content">
+          <div class="bd-footer-content__inner">
+            
+          </div>
+        </footer>
+        
+      </main>
+    </div>
+  </div>
+
+  
+    
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../../../_static/scripts/pydata-sphinx-theme.js?digest=9b1a4fa89bdd0e95b23b"></script>
+
+  <footer class="bd-footer"><div class="bd-footer__inner container">
+  
+  <div class="footer-item">
+    
+<p class="copyright">
+
+    &copy; Copyright 2022, The GPflow Contributors.<br>
+
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+<p class="sphinx-version">
+Created using <a href="http://sphinx-doc.org/">Sphinx</a> 5.1.1.<br>
+</p>
+
+  </div>
+  
+</div>
+  </footer>
+  </body>
+</html>
